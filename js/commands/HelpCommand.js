@@ -14,13 +14,13 @@ var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 
 var HelpCommand = function (cli, options) {
-    this.cli = cli;
-    this.super_(cli, options);
+    HelpCommand.super_.call(this, cli, options);
     this.options = extend({}, this.options, options);
 
     this.init();
 };
-HelpCommand.prototype = {
+util.inherits(HelpCommand, BaseCommand);
+HelpCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: "help",
     description: "Help provides information on available commands in the cli",
@@ -28,7 +28,7 @@ HelpCommand.prototype = {
 
     init: function () {
         this.addOption("list", this.listCommands.bind(this));
-        this.addOption(null, this.helpCommand.bind(this));
+        this.addOption("*", this.helpCommand.bind(this));
     },
 
 
@@ -37,11 +37,12 @@ HelpCommand.prototype = {
      * @param name
      */
     helpCommand: function (name) {
-
+        console.log("Deep help command!");
 
     },
 
     listCommands: function () {
+        console.log("list commands command!");
         var commands = this.cli.getCommands();
 
         var results = [];
@@ -62,6 +63,6 @@ HelpCommand.prototype = {
     },
 
     _: null
-};
-util.inherits(HelpCommand, BaseCommand.prototype);
+});
+
 module.exports = HelpCommand;

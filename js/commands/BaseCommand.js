@@ -35,11 +35,13 @@ BaseCommand.prototype = {
 
     runCommand: function (args) {
         if (!args || args.length == 0) {
+            console.log('running wildcard');
             var wild = this.optionsByName["*"];
             if (wild) {
                 return wild();
             }
             else {
+                console.log('running help for command');
                 this.cli.runCommand("help", this.name);
             }
         }
@@ -47,6 +49,7 @@ BaseCommand.prototype = {
             var name = args[0];
             var fn = this.optionsByName[name];
             if (fn) {
+                console.log('running ' + name);
                 return fn(args.slice(1));
             }
         }

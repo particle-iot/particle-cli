@@ -14,12 +14,13 @@ var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 
 var FlashCommand = function (cli, options) {
-    this.super_(options);
+    FlashCommand.super_.call(this, cli, options);
     this.options = extend({}, this.options, options);
 
     this.init();
 };
-FlashCommand.prototype = {
+util.inherits(FlashCommand, BaseCommand);
+FlashCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: "flash",
     description: "copies firmware and data to your core over usb",
@@ -31,6 +32,6 @@ FlashCommand.prototype = {
 
 
     _: null
-};
-util.inherits(FlashCommand, BaseCommand.prototype);
+});
+
 module.exports = FlashCommand;
