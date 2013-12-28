@@ -13,17 +13,17 @@ var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 
-var FlashCommand = function (cli, options) {
-    FlashCommand.super_.call(this, cli, options);
+var SerialCommand = function (cli, options) {
+    SerialCommand.super_.call(this, cli, options);
     this.options = extend({}, this.options, options);
 
     this.init();
 };
-util.inherits(FlashCommand, BaseCommand);
-FlashCommand.prototype = extend(BaseCommand.prototype, {
+util.inherits(SerialCommand, BaseCommand);
+SerialCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: "flash",
-    description: "copies firmware and data to your core over usb",
+    name: "deploy",
+    description: "flashes firmware to your cores over the air",
 
     init: function () {
         //this.addOption("list", this.listCores.bind(this));
@@ -34,4 +34,4 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
     _: null
 });
 
-module.exports = FlashCommand;
+module.exports = SerialCommand;

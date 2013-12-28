@@ -50,7 +50,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
             try {
                 var c = commands[i];
                 if (c.name != null) {
-                    var line = c.name + ": " + c.description;
+                    var line = c.name + ":\t\t" + c.description;
                     results.push(line);
                 }
             }
