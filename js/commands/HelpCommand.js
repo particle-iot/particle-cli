@@ -5,16 +5,17 @@
 var when = require('when');
 var sequence = require('when/sequence');
 var readline = require('readline');
-var fs = require('fs');
-var settings = require('../settings.js');
-var path = require('path');
+
+
+
 
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 
-var HelpCommand = function (options) {
-    this.super_(options);
+var HelpCommand = function (cli, options) {
+    this.cli = cli;
+    this.super_(cli, options);
     this.options = extend({}, this.options, options);
 
     this.init();
@@ -30,20 +31,23 @@ HelpCommand.prototype = {
         this.addOption(null, this.helpCommand.bind(this));
     },
 
+
+    /**
+     * Get more info on a specific command
+     * @param name
+     */
     helpCommand: function (name) {
 
 
     },
 
     listCommands: function () {
-        var files = fs.readdirSync(settings.commandPath);
-        var results = [];
-        for (var i = 0; i < files.length; i++) {
-            var cmdPath = path.join(settings.commandPath, files[i]);
-            try {
-                var Cmd = require(cmdPath);
-                var c = new Cmd();
+        var commands = this.cli.getCommands();
 
+        var results = [];
+        for (var i = 0; i < commands.length; i++) {
+            try {
+                var c = commands[i];
                 if (c.name != null) {
                     var line = c.name + ": " + c.description;
                     results.push(line);

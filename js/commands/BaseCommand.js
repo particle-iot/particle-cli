@@ -5,7 +5,9 @@ var extend = require('xtend');
 var readline = require('readline');
 
 
-var BaseCommand = function() {
+var BaseCommand = function (cli, options) {
+    this.cli = cli;
+    this.optionsByName = {};
 
 };
 BaseCommand.prototype = {
@@ -26,7 +28,28 @@ BaseCommand.prototype = {
         return this._prompt;
     },
 
-    addOption: function(param, fn) {
+    addOption: function (name, fn) {
+        this.optionsByName[name] = fn;
+
+    },
+
+    runCommand: function (args) {
+        if (!args || args.length == 0) {
+            var wild = this.optionsByName["*"];
+            if (wild) {
+                return wild();
+            }
+            else {
+                this.cli.runCommand("help", this.name);
+            }
+        }
+        else if (args.length >= 1) {
+            var name = args[0];
+            var fn = this.optionsByName[name];
+            if (fn) {
+                return fn(args.slice(1));
+            }
+        }
 
     },
 

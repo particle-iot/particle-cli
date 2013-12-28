@@ -3,4 +3,10 @@
  */
 
 
-console.log('sup');
+var Interpreter = require('./lib/Interpreter.js');
+var cli = new Interpreter();
+cli.startup();
+
+cli.handle(process.argv);
+
+
