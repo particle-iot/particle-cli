@@ -22,8 +22,8 @@ var SerialCommand = function (cli, options) {
 util.inherits(SerialCommand, BaseCommand);
 SerialCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: "deploy",
-    description: "flashes firmware to your cores over the air",
+    name: "serial",
+    description: "simple serial interface to your cores",
 
     init: function () {
         //this.addOption("list", this.listCores.bind(this));
