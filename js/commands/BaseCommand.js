@@ -28,6 +28,26 @@ BaseCommand.prototype = {
         return this._prompt;
     },
 
+    promptDfd: function (message) {
+        var dfd = when.defer();
+        var prompt = this.getPrompt();
+        prompt.question(message, function (value) {
+            dfd.resolve(value);
+        });
+        return dfd.promise;
+    },
+    passPromptDfd: function (message) {
+        var dfd = when.defer();
+        var prompt = this.getPrompt();
+
+        //process.stdin.setRawMode(true);
+        prompt.question(message, function (value) {
+            //process.stdin.setRawMode(false);
+            dfd.resolve(value);
+        });
+        return dfd.promise;
+    },
+
     addOption: function (name, fn) {
         this.optionsByName[name] = fn;
 
@@ -49,7 +69,7 @@ BaseCommand.prototype = {
             var name = args[0];
             var fn = this.optionsByName[name];
             if (fn) {
-                console.log('running ' + name);
+                //console.log('running ' + name);
                 return fn(args.slice(1));
             }
         }
