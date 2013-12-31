@@ -23,42 +23,58 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     name: "serial",
     description: "simple serial interface to your cores",
 
+
     init: function () {
-        this.addOption("list", this.listPorts.bind(this));
+        this.addOption("list", this.listPorts.bind(this), "Show Cores connected via serial to your computer");
+        this.addOption("monitor", this.monitorPort.bind(this), "Connect and display messages from a core");
+
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
+
+    listPorts: function (args) {
+        this.findCores(function (cores) {
+            console.log("Found " + cores.length + " core connected via serial: ");
+            for (var i = 0; i < cores.length; i++) {
+                console.log((i + 1) + ":\t" + cores[i].comName);
+            }
+        });
+    },
+
+    monitorPort: function (args) {
+
+        //TODO: listen for interrupts, close gracefully?
+
+        var serialPort = new SerialPort(args[0], {
+            baudrate: 9600
+        });
+        serialPort.on('data', function (data) {
+            process.stdout.write(data.toString());
+        });
+        serialPort.open(function (err) {
+            if (err) {
+                console.error("Serial err: " + err);
+                console.error("Serial problems, please reconnect the core.");
+            }
+
+        });
+    },
+
+
     findCores: function (callback) {
-
         var cores = [];
-
         SerialPortLib.list(function (err, ports) {
-
             for (var i = 0; i < ports.length; i++) {
                 var port = ports[i];
+
                 //not trying to be secure here, just trying to be helpful.
                 if (port.manufacturer.indexOf("Spark Core") >= 0) {
                     cores.push(port);
                 }
             }
-
             callback(cores);
         });
-
     },
-
-
-    listPorts: function (args) {
-
-        this.findCores(function(cores) {
-            console.log("Found " + cores.length + " core connected via serial: ");
-            for(var i=0;i<cores.length;i++) {
-                console.log((i+1) + ":\t" + cores[i].comName);
-            }
-        });
-
-    },
-
 
     closeSerial: function () {
         if (this.serialPort) {
