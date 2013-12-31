@@ -8,6 +8,7 @@ var readline = require('readline');
 var BaseCommand = function (cli, options) {
     this.cli = cli;
     this.optionsByName = {};
+    this.descriptionsByName = {};
 
 };
 BaseCommand.prototype = {
@@ -48,9 +49,9 @@ BaseCommand.prototype = {
         return dfd.promise;
     },
 
-    addOption: function (name, fn) {
+    addOption: function (name, fn, desc) {
         this.optionsByName[name] = fn;
-
+        this.descriptionsByName[name] = desc;
     },
 
     runCommand: function (args) {
