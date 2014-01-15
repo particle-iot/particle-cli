@@ -55,26 +55,30 @@ BaseCommand.prototype = {
     },
 
     runCommand: function (args) {
-        if (!args || args.length == 0) {
-            console.log('running wildcard');
-            var wild = this.optionsByName["*"];
-            if (wild) {
-                return wild();
-            }
-            else {
-                console.log('running help for command');
-                this.cli.runCommand("help", this.name);
-            }
-        }
-        else if (args.length >= 1) {
-            var name = args[0];
-            var fn = this.optionsByName[name];
-            if (fn) {
-                //console.log('running ' + name);
-                return fn(args.slice(1));
+        //default to wildcard
+        var cmdName = "*";
+        var cmdFn = this.optionsByName[cmdName];
+
+        //or, if we have args, try to grab that command and run that instead
+        if (args.length >= 1) {
+            cmdName = args[0];
+
+            if (this.optionsByName[cmdName]) {
+                cmdFn = this.optionsByName[cmdName];
+                args = args.slice(1);
             }
         }
 
+        //run em if we got em.
+        if (cmdFn) {
+            cmdFn.apply(this, args);
+        }
+        else {
+            //no wildcard, and no function specified...
+
+            console.log('running help for command');
+            this.cli.runCommand("help", this.name);
+        }
     },
 
 

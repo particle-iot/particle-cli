@@ -24,10 +24,10 @@ Interpreter.prototype = {
     },
 
     runCommand: function(name, args) {
-        console.log('looking for command ' + name);
+        //console.log('looking for command ' + name);
         var c = this.commandsByName[name];
         if (c) {
-            console.log("running runCommand");
+            //console.log("running runCommand");
             return c.runCommand(args);
         }
         else {
@@ -38,6 +38,28 @@ Interpreter.prototype = {
 
     getCommands: function() {
         return this._commands;
+    },
+
+    findCommand: function(name) {
+        if (!name) {
+            name = "help";
+        }
+
+        var commands = this._commands;
+
+        for (var i = 0; i < commands.length; i++) {
+            try {
+                var c = commands[i];
+                if (c.name == name) {
+                    return c;
+                }
+            }
+            catch (ex) {
+                console.error("Error loading command " + ex);
+            }
+        }
+
+        return null;
     },
 
     /**
@@ -53,7 +75,7 @@ Interpreter.prototype = {
             var cmdPath = path.join(settings.commandPath, files[i]);
             try {
                 var fullPath = path.join("../", cmdPath);
-                console.log('loading ' + fullPath);
+                //console.log('loading ' + fullPath);
                 var Cmd = require(fullPath);
                 var c = new Cmd(this);
 
@@ -62,11 +84,11 @@ Interpreter.prototype = {
                 if (c.name != null) {
                     this._commands.push(c);
                     this.commandsByName[c.name] = c;
-                    console.log("created a new command, ", c.name, ":", c.description);
+                    //console.log("created a new command, ", c.name, ":", c.description);
                 }
             }
             catch (ex) {
-                console.error("Error loading command " + ex);
+                console.error("Error loading command " + fullPath + " " + ex);
             }
         }
 
