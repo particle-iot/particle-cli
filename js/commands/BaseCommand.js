@@ -60,7 +60,7 @@ BaseCommand.prototype = {
         var cmdFn = this.optionsByName[cmdName];
 
         //or, if we have args, try to grab that command and run that instead
-        if (args.length >= 1) {
+        if (args && (args.length >= 1)) {
             cmdName = args[0];
 
             if (this.optionsByName[cmdName]) {
@@ -71,6 +71,11 @@ BaseCommand.prototype = {
 
         //run em if we got em.
         if (cmdFn) {
+            if (!util.isArray(args))
+            {
+                args = [ args ];
+            }
+
             cmdFn.apply(this, args);
         }
         else {

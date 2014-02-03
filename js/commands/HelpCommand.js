@@ -21,8 +21,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     description: "Help provides information on available commands in the cli",
 
     init: function () {
-        this.addOption("list", this.listCommands.bind(this));
-        this.addOption("*", this.helpCommand.bind(this));
+        this.addOption("list", this.listCommands.bind(this), "List commands available for that command");
+        this.addOption("*", this.helpCommand.bind(this), "Provide extra information about the given command");
     },
 
 
@@ -48,6 +48,12 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     helpCommand: function (name) {
         console.log("Deep help command got " + name);
         console.log("");
+
+        if (!name) {
+            this.listCommands();
+            return;
+        }
+
         var command = this.cli.findCommand(name);
         var results = [
             command.name + ":\t" + command.description,
@@ -66,7 +72,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     },
 
     listCommands: function () {
-        console.log("list commands command!");
+        console.log("help list commands command!");
         var commands = this.cli.getCommands();
 
         var results = [];

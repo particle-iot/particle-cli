@@ -34,18 +34,48 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
     listPorts: function (args) {
         this.findCores(function (cores) {
-            console.log("Found " + cores.length + " core connected via serial: ");
+            console.log("Found " + cores.length + " core(s) connected via serial: ");
             for (var i = 0; i < cores.length; i++) {
                 console.log((i + 1) + ":\t" + cores[i].comName);
             }
+            console.log("");
         });
     },
 
-    monitorPort: function (args) {
+    monitorPort: function (comPort) {
+        var that = this;
+
+        if (!comPort) {
+            console.log("Please specify what port you'd like to monitor: ");
+            this.listPorts();
+            return;
+        }
+
+        try {
+            var portNum = parseInt(comPort);
+            if (!isNaN(portNum)) {
+                this.findCores(function(cores) {
+                    var idx = portNum - 1;
+                    if (idx < cores.length) {
+                        //console.log("Using #" + portNum + " " + cores[idx].comName);
+                        return that.monitorPort(cores[idx].comName);
+                    }
+                    else {
+                        console.log("I couldn't find that port number in my list");
+                        that.listPorts();
+                    }
+                });
+                return;
+            }
+        }
+        catch(ex) {}
+
+        console.log("Opening serial monitor for com port: \"" + comPort + "\"");
+
 
         //TODO: listen for interrupts, close gracefully?
 
-        var serialPort = new SerialPort(args[0], {
+        var serialPort = new SerialPort(comPort, {
             baudrate: 9600
         });
         serialPort.on('data', function (data) {
@@ -56,7 +86,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 console.error("Serial err: " + err);
                 console.error("Serial problems, please reconnect the core.");
             }
-
         });
     },
 
@@ -68,7 +97,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 var port = ports[i];
 
                 //not trying to be secure here, just trying to be helpful.
-                if (port.manufacturer.indexOf("Spark Core") >= 0) {
+                if (port.manufacturer.indexOf("Spark") >= 0) {
                     cores.push(port);
                 }
             }
