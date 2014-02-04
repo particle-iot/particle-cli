@@ -54,8 +54,6 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 
     disambiguateGetValue: function (coreid, variableName) {
-        console.log("checking cores and variables to see what matches");
-
         //if their coreid actually matches a core, list those variables.
         //if their coreid matches a variable name, get that var from the relevant cores
 
@@ -164,6 +162,8 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
         if (this._cachedVariableList) {
             return when.resolve(this._cachedVariableList);
         }
+
+        console.log("polling server to see what cores are online, and what variables are available");
 
         var tmp = when.defer();
         var that = this;
