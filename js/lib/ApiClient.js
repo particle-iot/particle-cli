@@ -113,7 +113,7 @@ ApiClient.prototype = {
 
     //GET /v1/devices
     listDevices: function () {
-        console.log('listingDevices for user ');
+        console.log("Retrieving cores... (this might take a few seconds)");
 
         var dfd = when.defer();
         var that = this;
@@ -128,10 +128,10 @@ ApiClient.prototype = {
                 console.log("listDevices got error: ", error);
             }
 
-            console.log("listDevices said", body);
+            //console.log("listDevices said", body);
 
             that._devices = body;
-            dfd.resolve(response);
+            dfd.resolve(body);
         });
 
         return dfd.promise;
@@ -170,7 +170,7 @@ ApiClient.prototype = {
 
     //GET /v1/devices/{DEVICE_ID}
     getAttributes: function (coreID) {
-        console.log('getAttributes for core ' + coreID);
+        //console.log('getAttributes for core ' + coreID);
 
         var dfd = when.defer();
         var that = this;
@@ -185,11 +185,11 @@ ApiClient.prototype = {
             if (error) {
                 console.log("getAttributes got error: ", error);
             }
-            else {
-                console.log("getAttributes got back ", body);
-            }
+//            else {
+//                console.log("getAttributes got back ", body);
+//            }
 
-            dfd.resolve(response);
+            dfd.resolve(body);
         });
 
         return dfd.promise;
