@@ -33,18 +33,36 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
-    getValue: function(args) {
+    getValue: function(coreid, variableName) {
+        var tmp = when.defer();
 
-    },
+        //TODO:
+//        if (!args || (args.length < 1)) {
+//            console.log("Please specify which core ")
+//        }
 
-    listVariables: function (args) {
-
-        var cores = null;
-
+        //TODO: if no device id, list devices
+        //TODO: if no variable name, list variables
 
         var api = new ApiClient(settings.apiUrl);
         api._access_token = settings.access_token;
+        when(api.getVariable(coreid, variableName)).then(
+            function(result) {
+                console.log(result.result);
+                tmp.resolve(result.result);
+            },
+            function(err) {
+                console.error("Error reading value ", err);
+                tmp.reject(err);
+            }
+        );
 
+        return tmp.promise;
+    },
+
+    listVariables: function (args) {
+        var api = new ApiClient(settings.apiUrl);
+        api._access_token = settings.access_token;
 
         var displayVariables = function(cores) {
             //sort alphabetically
@@ -73,8 +91,6 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
         };
 
         var lookupVariables = function(cores) {
-            //console.log("lookup vars got ", arguments);
-
             if (!cores || (cores.length == 0)) {
                 console.log("No cores found.");
             }
@@ -84,7 +100,6 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
                     var coreid = cores[i].id;
                     promises.push(api.getAttributes(coreid));
                 }
-
                 when.all(promises).then(displayVariables);
             }
         };
@@ -95,8 +110,31 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
         ]);
     },
 
-    monitorVariables: function (comPort) {
 
+    monitorVariables: function(coreid, variableName, delay) {
+        //TODO:
+//        if (!args || (args.length < 1)) {
+//            console.log("Please specify which core ")
+//        }
+
+        //TODO: if no device id, list devices
+        //TODO: if no variable name, list variables
+
+
+
+        if (delay < settings.minimumApiDelay) {
+            delay = settings.minimumApiDelay;
+            console.log("Delay was too short, resetting to ", settings.minimumApiDelay);
+        }
+        console.log("Hit CTRL-C to stop!");
+
+        var checkVariable = (function() {
+            var done = this.getValue(coreid, variableName);
+            when(done).ensure(function() {
+                setTimeout(checkVariable, delay);
+            });
+        }).bind(this);
+        checkVariable();
     },
 
 

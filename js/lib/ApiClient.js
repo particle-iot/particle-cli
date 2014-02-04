@@ -196,8 +196,22 @@ ApiClient.prototype = {
     },
 
     //GET /v1/devices/{DEVICE_ID}/{VARIABLE}
-    getVariable: function (coreID, varname) {
+    getVariable: function (coreID, name) {
+        var dfd = when.defer();
+        request({
+                uri: this.baseUrl + "/v1/devices/" + coreID + "/" + name + "?access_token=" + this._access_token,
+                method: "GET",
+                json: true,
+                strictSSL: false
+            },
+            function (error, response, body) {
+                if (error) {
+                    dfd.reject(error);
+                }
+                dfd.resolve(body);
+            });
 
+        return dfd.promise;
     },
 
     //PUT /v1/devices/{DEVICE_ID}
