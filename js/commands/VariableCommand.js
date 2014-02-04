@@ -27,11 +27,15 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
     init: function () {
         this.addOption("list", this.listVariables.bind(this), "Show variables provided by your core(s)");
+        this.addOption("get", this.getValue.bind(this), "Retrieve a value from your core");
         this.addOption("monitor", this.monitorVariables.bind(this), "Connect and display messages from a core");
 
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
+    getValue: function(args) {
+
+    },
 
     listVariables: function (args) {
 
@@ -43,17 +47,27 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 
         var displayVariables = function(cores) {
+            //sort alphabetically
+            cores = cores.sort(function(a, b) {
+                return (a.name || "").localeCompare(b.name);
+            });
+
             var lines = [];
             for(var i=0;i<cores.length;i++) {
                 var core = cores[i];
-                lines.push("Core \"" + core.name + "\" : " + core.id);
-                lines.push("  Has Variables: ");
-
-                for(var key in core.variables) {
-                    var type = core.variables[key];
-                    lines.push("    \"" + key + "\":\t" + type);
+                var available = [];
+                if (core.variables) {
+                    for(var key in core.variables) {
+                        var type = core.variables[key];
+                        available.push("  " + key + ": " + type);
+                    }
                 }
-                lines.push("");
+
+                var status = core.name + " (" + core.id + ") has " + available.length + " variables ";
+                if (available.length == 0) { status += " (or is offline) "; }
+
+                lines.push(status);
+                lines = lines.concat(available);
             }
             console.log(lines.join("\n"));
         };
@@ -75,22 +89,13 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
             }
         };
 
-
-
         pipeline([
             api.listDevices.bind(api),
             lookupVariables
         ]);
-
     },
 
     monitorVariables: function (comPort) {
-
-    },
-
-
-    findCores: function (callback) {
-
 
     },
 
