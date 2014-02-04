@@ -46,8 +46,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
      * @param name
      */
     helpCommand: function (name) {
-        console.log("Deep help command got " + name);
-        console.log("");
+        //console.log("Deep help command got " + name);
+        //console.log("");
 
         if (!name) {
             this.listCommands();

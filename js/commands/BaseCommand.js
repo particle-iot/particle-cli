@@ -81,7 +81,7 @@ BaseCommand.prototype = {
         else {
             //no wildcard, and no function specified...
 
-            console.log('running help for command');
+            //console.log('running help for command');
             this.cli.runCommand("help", this.name);
         }
     },

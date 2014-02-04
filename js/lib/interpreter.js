@@ -14,7 +14,9 @@ Interpreter.prototype = {
 
     },
     handle: function (args) {
-        console.log("Interpreter got args ", args);
+        //console.log("DEBUG: Interpreter got args ", args);
+        //console.log("");
+
         if (!args || args.length == 2) {
             return this.runCommand("help");
         }
@@ -31,7 +33,7 @@ Interpreter.prototype = {
             return c.runCommand(args);
         }
         else {
-            console.log("Unknown command");
+            console.log("Spark-CLI: Unknown command: \"" + name + "\"");
             return -1;
         }
     },
