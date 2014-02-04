@@ -9,8 +9,10 @@ var readline = require('readline');
 var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
+var utilities = require('../lib/utilities.js');
 var BaseCommand = require("./BaseCommand.js");
 var ApiClient = require('../lib/ApiClient.js');
+var moment = require('moment');
 
 var VariableCommand = function (cli, options) {
     VariableCommand.super_.call(this, cli, options);
@@ -30,77 +32,165 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("get", this.getValue.bind(this), "Retrieve a value from your core");
         this.addOption("monitor", this.monitorVariables.bind(this), "Connect and display messages from a core");
 
+        //this.addArgument("get", "--time", "include a timestamp")
+        //this.addArgument("monitor", "--time", "include a timestamp")
+        //this.addArgument("get", "--all", "gets all variables from the specified core")
+        //this.addArgument("monitor", "--all", "gets all variables from the specified core")
+
+
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
-    getValue: function(coreid, variableName) {
-        var tmp = when.defer();
+    checkArguments: function (args) {
+        this.options = this.options || {};
 
-        //TODO:
-//        if (!args || (args.length < 1)) {
-//            console.log("Please specify which core ")
+        if (!this.options.showTime) {
+            this.options.showTime = (utilities.contains(args, "--time"));
+        }
+//        if (!this.options.showAll) {
+//            this.options.showAll = (utilities.contains(args, "--all"));
 //        }
+    },
 
-        //TODO: if no device id, list devices
-        //TODO: if no variable name, list variables
 
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
-        when(api.getVariable(coreid, variableName)).then(
-            function(result) {
-                console.log(result.result);
-                tmp.resolve(result.result);
-            },
-            function(err) {
-                console.error("Error reading value ", err);
-                tmp.reject(err);
+    disambiguateGetValue: function (coreid, variableName) {
+        console.log("checking cores and variables to see what matches");
+
+        //if their coreid actually matches a core, list those variables.
+        //if their coreid matches a variable name, get that var from the relevant cores
+
+        var tmp = when.defer();
+        var that = this;
+
+        //this gets cached after the first request
+        when(this.getAllVariables()).then(function (cores) {
+
+            for (var i = 0; i < cores.length; i++) {
+                if (cores[i].id == coreid) {
+
+                    console.log("Which variable did you want?");
+                    for (var key in foundCore.variables) {
+                        var type = foundCore.variables[key];
+                        console.log("  " + key + " (" + type + ")");
+                    }
+
+                    tmp.resolve();
+                    return;
+                }
             }
-        );
+
+            variableName = coreid + "";
+            coreid = [];
+
+            for (var i = 0; i < cores.length; i++) {
+                //cores[i].variables is an object, so use containsKey
+                if (utilities.containsKey(cores[i].variables, variableName)) {
+                    coreid.push(cores[i].id);
+                }
+            }
+
+            //console.log('found ' + coreid.length + ' cores with that variable');
+            utilities.pipeDeferred(that.getValue(coreid, variableName), tmp);
+        });
 
         return tmp.promise;
     },
 
-    listVariables: function (args) {
+
+    getValue: function (coreid, variableName) {
+        this.checkArguments(arguments);
+
+        if (!coreid && !variableName) {
+            //they just didn't provide any args...
+            return this.listVariables();
+        }
+        else if (coreid && !variableName) {
+            //try to figure out if they left off a variable name, or if they want to pull a var from all cores.
+            return this.disambiguateGetValue(coreid);
+        }
+        else if (coreid == "all" && variableName) {
+            return this.disambiguateGetValue(variableName);
+        }
+
+        var tmp = when.defer();
+        var that = this;
+        if (!util.isArray(coreid)) {
+            coreid = [ coreid ];
+        }
+
+
         var api = new ApiClient(settings.apiUrl);
         api._access_token = settings.access_token;
 
-        var displayVariables = function(cores) {
-            //sort alphabetically
-            cores = cores.sort(function(a, b) {
-                return (a.name || "").localeCompare(b.name);
+        var multipleCores = coreid.length > 1;
+
+        var allDone = when.map(coreid, function (coreid) {
+            return api.getVariable(coreid, variableName);
+        });
+
+        when(allDone)
+            .then(function (results) {
+                for (var i = 0; i < results.length; i++) {
+
+                    var parts = [];
+                    try {
+                        var result = results[i];
+                        if (multipleCores) {
+                            parts.push(result.coreInfo.deviceID);
+                        }
+                        if (that.options.showTime) {
+                            parts.push(moment().format())
+                        }
+                        parts.push(result.result);
+                    }
+                    catch (ex) {
+                        console.error("error " + ex);
+                    }
+
+                    console.log(parts.join(", "));
+                }
+                tmp.resolve(results);
+            },
+            function (err) {
+                console.error("Error reading value ", err);
+                tmp.reject(err);
             });
 
-            var lines = [];
-            for(var i=0;i<cores.length;i++) {
-                var core = cores[i];
-                var available = [];
-                if (core.variables) {
-                    for(var key in core.variables) {
-                        var type = core.variables[key];
-                        available.push("  " + key + ": " + type);
-                    }
-                }
+        return tmp.promise;
+    },
 
-                var status = core.name + " (" + core.id + ") has " + available.length + " variables ";
-                if (available.length == 0) { status += " (or is offline) "; }
 
-                lines.push(status);
-                lines = lines.concat(available);
-            }
-            console.log(lines.join("\n"));
-        };
+    getAllVariables: function (args) {
+        if (this._cachedVariableList) {
+            return when.resolve(this._cachedVariableList);
+        }
 
-        var lookupVariables = function(cores) {
+        var tmp = when.defer();
+        var that = this;
+        var api = new ApiClient(settings.apiUrl);
+        api._access_token = settings.access_token;
+
+        var lookupVariables = function (cores) {
             if (!cores || (cores.length == 0)) {
                 console.log("No cores found.");
+                that._cachedVariableList = null;
             }
             else {
                 var promises = [];
-                for(var i=0;i<cores.length;i++) {
+                for (var i = 0; i < cores.length; i++) {
                     var coreid = cores[i].id;
                     promises.push(api.getAttributes(coreid));
                 }
-                when.all(promises).then(displayVariables);
+
+                when.all(promises).then(function (cores) {
+                    //sort alphabetically
+                    cores = cores.sort(function (a, b) {
+                        return (a.name || "").localeCompare(b.name);
+                    });
+
+                    that._cachedVariableList = cores;
+                    tmp.resolve(cores);
+                });
             }
         };
 
@@ -108,10 +198,38 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
             api.listDevices.bind(api),
             lookupVariables
         ]);
+
+        return tmp.promise;
     },
 
 
-    monitorVariables: function(coreid, variableName, delay) {
+    listVariables: function (args) {
+        when(this.getAllVariables(args)).then(function (cores) {
+            var lines = [];
+            for (var i = 0; i < cores.length; i++) {
+                var core = cores[i];
+                var available = [];
+                if (core.variables) {
+                    for (var key in core.variables) {
+                        var type = core.variables[key];
+                        available.push("  " + key + " (" + type + ")");
+                    }
+                }
+
+                var status = core.name + " (" + core.id + ") has " + available.length + " variables ";
+                if (available.length == 0) {
+                    status += " (or is offline) ";
+                }
+
+                lines.push(status);
+                lines = lines.concat(available);
+            }
+            console.log(lines.join("\n"));
+        });
+    },
+
+
+    monitorVariables: function (coreid, variableName, delay) {
         //TODO:
 //        if (!args || (args.length < 1)) {
 //            console.log("Please specify which core ")
@@ -120,7 +238,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
         //TODO: if no device id, list devices
         //TODO: if no variable name, list variables
 
-
+        this.checkArguments(arguments);
 
         if (delay < settings.minimumApiDelay) {
             delay = settings.minimumApiDelay;
@@ -128,9 +246,9 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
         }
         console.log("Hit CTRL-C to stop!");
 
-        var checkVariable = (function() {
+        var checkVariable = (function () {
             var done = this.getValue(coreid, variableName);
-            when(done).ensure(function() {
+            when(done).ensure(function () {
                 setTimeout(checkVariable, delay);
             });
         }).bind(this);
