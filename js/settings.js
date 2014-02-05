@@ -5,7 +5,9 @@ var settings = {
     commandPath: "./commands/",
     apiUrl: "https://api.spark.io",
     access_token: null,
-    minimumApiDelay: 500
+    minimumApiDelay: 500,
+
+    useOpenSSL: true
 };
 
 

@@ -1,4 +1,5 @@
 var when = require('when');
+var child_process = require('child_process');
 
 var that = module.exports = {
     contains: function(arr, obj) {
@@ -30,7 +31,35 @@ var that = module.exports = {
         }, function() {
             right.reject.apply(right, arguments);
         })
-    }
+    },
+
+    deferredChildProcess: function(exec) {
+        var tmp = when.defer();
+        child_process.exec("openssl genrsa -out core.pem 1024", function(error, stdout, stderr) {
+            if (error) {
+                tmp.reject(error);
+            }
+            else {
+                tmp.resolve(stdout);
+            }
+        });
+
+        return tmp.promise;
+    },
+    filenameNoExt: function (filename) {
+        if (!filename || (filename.length === 0)) {
+            return filename;
+        }
+
+        var idx = filename.lastIndexOf('.');
+        if (idx >= 0) {
+            return filename.substr(0, idx);
+        }
+        else {
+            return filename;
+        }
+    },
 
 
+    _:null
 };
