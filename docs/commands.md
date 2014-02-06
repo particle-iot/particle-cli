@@ -13,7 +13,7 @@ A small file for helping me visualize which commands should go where, and which 
 [ ]	keys
     [x] new
     [ ] load
-    [ ] save
+    [x] save
     [ ] send
 
 	doctor

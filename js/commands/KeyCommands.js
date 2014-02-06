@@ -104,14 +104,39 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
     },
 
     writeKeyToCore: function (filename) {
-        //make sure our core is online and in dfu mode
 
-        //give the user a warning before doing this, since it'll bump their core offline.
+        if (!filename) {
+            console.error("Please provide a filename to store this key.");
+            return -1;
+        }
 
-        //backup their existing key so they don't lock themselves out.
-        //this.saveKeyFromCore()
+        if (!fs.existsSync(filename)) {
+            console.error("This file already exists, please specify a different file, or use the --force flag.");
+            return -1;
+        }
 
+        //TODO: give the user a warning before doing this, since it'll bump their core offline.
 
+        var ready = sequence([
+            function () {
+                //make sure our core is online and in dfu mode
+                return dfu.findCompatiableDFU();
+            },
+            //backup their existing key so they don't lock themselves out.
+            function() {
+                //TODO: better process for making backup filename.
+                this.saveKeyFromCore("pre_" + filename);
+            },
+            function () {
+                return dfu.writePrivateKey(filename, false);
+            }
+        ]);
+
+        when(ready).then(function () {
+            console.log("Saved!");
+        }, function (err) {
+            console.error("Error saving key... " + err);
+        });
     },
 
     saveKeyFromCore: function (filename) {
