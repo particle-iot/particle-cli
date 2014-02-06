@@ -15,6 +15,7 @@ var ApiClient = require('../lib/ApiClient.js');
 var moment = require('moment');
 var child_process = require('child_process');
 var ursa = require('ursa');
+var fs = require('fs');
 
 var KeyCommands = function (cli, options) {
     KeyCommands.super_.call(this, cli, options);
@@ -71,12 +72,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
     },
 
     makeKeyUrsa: function (filename) {
-        var key = ursa.createPrivateKey(data);
-        key.toPrivatePem('binary');
-        //console.log("public key is: ", coreKeys.toPublicPem('binary'));
-
-        //TODO: convert to DER format
-        //TODO: create public and private pem files.
+        var key = ursa.createPrivateKey();
+        fs.writeFileSync(filename + ".pem", key.toPrivatePem('binary'));
+        fs.writeFileSync(filename + ".pub.pem", key.toPublicPem('binary'));
+        //fs.writeFileSync(filename + ".pem", key.toPrivatePem('binary'));
     },
 
 
