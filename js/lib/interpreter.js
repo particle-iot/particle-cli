@@ -72,7 +72,10 @@ Interpreter.prototype = {
         this._commands = [];
         this.commandsByName = {};
 
-        var files = fs.readdirSync(settings.commandPath);
+        var files = fs.readdirSync(settings.commandPath).filter(function(file){
+            return file.indexOf('.') !== 0; // Ignore hidden files (Such as .swp files)
+        });
+
         for (var i = 0; i < files.length; i++) {
             var cmdPath = path.join(settings.commandPath, files[i]);
             try {
@@ -100,3 +103,4 @@ Interpreter.prototype = {
     _: null
 };
 module.exports = Interpreter;
+
