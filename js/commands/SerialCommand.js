@@ -97,7 +97,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 var port = ports[i];
 
                 //not trying to be secure here, just trying to be helpful.
-                if (port.manufacturer.indexOf("Spark") >= 0) {
+                if ( (port.manufacturer && port.manufacturer.indexOf("Spark") >= 0) ||
+                    (port.pnpId && port.pnpId.indexOf("Spark_Core") >= 0)
+                ) {
                     cores.push(port);
                 }
             }
