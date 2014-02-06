@@ -16,6 +16,7 @@ var moment = require('moment');
 var child_process = require('child_process');
 var ursa = require('ursa');
 var fs = require('fs');
+var dfu = require('../lib/dfu.js');
 
 var KeyCommands = function (cli, options) {
     KeyCommands.super_.call(this, cli, options);
@@ -108,14 +109,42 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         //give the user a warning before doing this, since it'll bump their core offline.
 
         //backup their existing key so they don't lock themselves out.
-
-
+        //this.saveKeyFromCore()
 
 
     },
 
-    saveKeyFromCore: function () {
+    saveKeyFromCore: function (filename) {
+        if (!filename) {
+            console.error("Please provide a filename to store this key.");
+            return -1;
+        }
 
+        //TODO: check / ensure ".der" extension
+        //TODO: check for --force flag
+
+        if (fs.existsSync(filename)) {
+            console.error("This file already exists, please specify a different file, or use the --force flag.");
+            return -1;
+        }
+
+        //find dfu devices, make sure a core is connected
+        //pull the key down and save it there
+
+        var ready = sequence([
+            function () {
+                return dfu.findCompatiableDFU();
+            },
+            function () {
+                return dfu.readPrivateKey(filename, false);
+            }
+        ]);
+
+        when(ready).then(function () {
+            console.log("Saved!");
+        }, function (err) {
+            console.error("Error saving key... " + err);
+        });
     },
 
     sendPublicKeyToServer: function () {

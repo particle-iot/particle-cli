@@ -52,61 +52,92 @@ var that = module.exports = {
         return that.writeDfu(0, binaryPath, "0x08005000", leave);
     },
 
+    readServerKey: function(dest, leave) {
+        return that.readDfu(1, dest, "0x00001000:2048", leave);
+    },
+    readPrivateKey: function(dest, leave) {
+        return that.readDfu(1, dest, "0x00002000:1024", leave);
+    },
+    readFactoryReset: function(dest, leave) {
+        return that.readDfu(1, dest, "0x00020000", leave);
+    },
+    readFirmware: function(dest, leave) {
+        return that.readDfu(0, dest, "0x08005000", leave);
+    },
+
+    readDfu: function (memoryInterface, destination, firmwareAddress, leave) {
+        var prefix = that.getCommandPrefix();
+        var leaveStr = (leave) ? ":leave" : "";
+        var cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -U ' + destination;
+
+        return utilities.deferredChildProcess(cmd);
+    },
 
     writeDfu: function (memoryInterface, binaryPath, firmwareAddress, leave) {
-        console.log('programOverDFU');
+        var prefix = that.getCommandPrefix();
+        var leaveStr = (leave) ? ":leave" : "";
+        var cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -D ' + binaryPath;
+        that.checkBinaryAlignment(cmd);
 
-        var tryProgrammingOverUsb = function () {
-            var temp = when.defer();
-            try {
-                var failTimer = setTimeout(function () {
-                    //if we don't hear back from the core in some reasonable amount of time, fail.
-                    temp.reject("programOverDFU: never heard back?");
-                }, 20000);
-
-                var prefix = that.getCommandPrefix();
-                var leaveStr = (leave) ? ":leave" : "";
-
-                var cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -D ' + binaryPath;
-                that.checkBinaryAlignment(cmd);
-
-                console.log("programOverDFU running: " + cmd);
-                child_process.exec(cmd, function (error, stdout, stderr) {
-                    clearTimeout(failTimer);
-
-                    console.log("programOverDFU dfu done !", error, stdout, stderr);
-
-                    if (error) {
-                        temp.reject("programOverDFU: " + error);
-                        console.log("programOverDFU stdout: " + stdout);
-                        console.log("programOverDFU stderr: " + stderr);
-                    }
-                    else {
-                        console.log("programOverDFU success!");
-                        temp.resolve();
-                    }
-                });
-            }
-            catch (ex) {
-                console.error("programOverDFU error: " + ex);
-                temp.reject("programOverDFU error: " + ex);
-            }
-
-            return temp.promise;
-        };
-
-        var promise = sequence([
-            that.findCompatiableDFU,
-            timing.helpers.waitHalfSecond,
-            tryProgrammingOverUsb
-        ]);
-
-        return promise;
+        return utilities.deferredChildProcess(cmd);
     },
 
 
+//    writeDfu: function (memoryInterface, binaryPath, firmwareAddress, leave) {
+//        console.log('programOverDFU');
+//
+//        var tryProgrammingOverUsb = function () {
+//            var temp = when.defer();
+//            try {
+//                var failTimer = setTimeout(function () {
+//                    //if we don't hear back from the core in some reasonable amount of time, fail.
+//                    temp.reject("programOverDFU: never heard back?");
+//                }, 20000);
+//
+//                var prefix = that.getCommandPrefix();
+//                var leaveStr = (leave) ? ":leave" : "";
+//
+//                var cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -D ' + binaryPath;
+//                that.checkBinaryAlignment(cmd);
+//
+//                console.log("programOverDFU running: " + cmd);
+//                child_process.exec(cmd, function (error, stdout, stderr) {
+//                    clearTimeout(failTimer);
+//
+//                    console.log("programOverDFU dfu done !", error, stdout, stderr);
+//
+//                    if (error) {
+//                        temp.reject("programOverDFU: " + error);
+//                        console.log("programOverDFU stdout: " + stdout);
+//                        console.log("programOverDFU stderr: " + stderr);
+//                    }
+//                    else {
+//                        console.log("programOverDFU success!");
+//                        temp.resolve();
+//                    }
+//                });
+//            }
+//            catch (ex) {
+//                console.error("programOverDFU error: " + ex);
+//                temp.reject("programOverDFU error: " + ex);
+//            }
+//
+//            return temp.promise;
+//        };
+//
+//        var promise = sequence([
+//            that.findCompatiableDFU,
+//            timing.helpers.waitHalfSecond,
+//            tryProgrammingOverUsb
+//        ]);
+//
+//        return promise;
+//    },
+
+
     getCommandPrefix: function () {
-        return "sudo dfu-util -d " + that.deviceID;
+        var sudo = (settings.useSudoForDfu) ? "sudo " : "";
+        return sudo + "dfu-util -d " + that.deviceID;
     },
 
     checkBinaryAlignment: function (cmdargs) {

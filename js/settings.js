@@ -7,7 +7,8 @@ var settings = {
     access_token: null,
     minimumApiDelay: 500,
 
-    useOpenSSL: true
+    useOpenSSL: true,
+    useSudoForDfu: false
 };
 
 

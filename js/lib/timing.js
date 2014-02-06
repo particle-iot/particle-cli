@@ -1,5 +1,4 @@
 var when = require('when');
-var logger = require('./logger.js');
 
 var that = module.exports = {
     helpers: {
@@ -7,7 +6,7 @@ var that = module.exports = {
         waitFor: function (delay) {
             return function () {
                 var temp = when.defer();
-                logger.log('.(delay:' + delay + ').');
+                console.log('.(delay:' + delay + ').');
                 setTimeout(function () { temp.resolve(); }, delay);
                 return temp.promise;
             };
@@ -15,19 +14,19 @@ var that = module.exports = {
 
         waitASecond: function () {
             var temp = when.defer();
-            logger.log('..');
+            console.log('..');
             setTimeout(function () { temp.resolve(); }, 1000);
             return temp.promise;
         },
         waitHalfSecond: function () {
             var temp = when.defer();
-            logger.log('.');
+            console.log('.');
             setTimeout(function () { temp.resolve(); }, 500);
             return temp.promise;
         },
         waitFOREVER: function () {
             var temp = when.defer();
-            logger.log(
+            console.log(
                 '--------------------------------------------------------------------\n' +
                 'WAITING FOREVER\n' +
                 '--------------------------------------------------------------------\n'
