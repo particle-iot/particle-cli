@@ -54,28 +54,45 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
     },
 
-    makeKeyOpenSSL: function(filename) {
+    makeKeyOpenSSL: function (filename) {
         filename = utilities.filenameNoExt(filename);
 
         return sequence([
-            function() { return utilities.deferredChildProcess("openssl genrsa -out "+filename+".pem 1024"); },
-            function() { return utilities.deferredChildProcess("openssl rsa -in core.pem -pubout -out "+filename+".pub.pem"); },
-            function() { return utilities.deferredChildProcess("openssl rsa -in core.pem -outform DER -out "+filename+".der"); },
+            function () {
+                return utilities.deferredChildProcess("openssl genrsa -out " + filename + ".pem 1024");
+            },
+            function () {
+                return utilities.deferredChildProcess("openssl rsa -in core.pem -pubout -out " + filename + ".pub.pem");
+            },
+            function () {
+                return utilities.deferredChildProcess("openssl rsa -in core.pem -outform DER -out " + filename + ".der");
+            },
         ]);
     },
 
-    makeKeyUrsa: function(filename) {
+    makeKeyUrsa: function (filename) {
         coreKeys = ursa.createPrivateKey(data);
         console.log("public key is: ", coreKeys.toPublicPem('binary'));
+
+        //TODO: convert to DER format
+        //TODO: create public and private pem files.
     },
 
 
-    makeNewKey: function () {
+    makeNewKey: function (filename) {
+        var keyReady;
         if (settings.useOpenSSL) {
-
+            keyReady = this.makeKeyOpenSSL(filename);
+        }
+        else {
+            keyReady = this.makeKeyUrsa(filename);
         }
 
-
+        when(keyReady).then(function () {
+            console.log("Created!");
+        }, function (err) {
+            console.error("Error creating keys... " + err);
+        })
     },
 
     writeKeyToCore: function () {
