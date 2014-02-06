@@ -63,10 +63,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
                 return utilities.deferredChildProcess("openssl genrsa -out " + filename + ".pem 1024");
             },
             function () {
-                return utilities.deferredChildProcess("openssl rsa -in "+filename+".pem -pubout -out " + filename + ".pub.pem");
+                return utilities.deferredChildProcess("openssl rsa -in " + filename + ".pem -pubout -out " + filename + ".pub.pem");
             },
             function () {
-                return utilities.deferredChildProcess("openssl rsa -in "+filename+".pem -outform DER -out " + filename + ".der");
+                return utilities.deferredChildProcess("openssl rsa -in " + filename + ".pem -outform DER -out " + filename + ".der");
             }
         ]);
     },
@@ -78,7 +78,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
         //Hmm... OpenSSL is an installation requirement for URSA anyway, so maybe this fork is totally unnecessary...
         //in any case, it doesn't look like ursa can do this type conversion, so lets use openssl.
-        return utilities.deferredChildProcess("openssl rsa -in "+filename+".pem -outform DER -out " + filename + ".der");
+        return utilities.deferredChildProcess("openssl rsa -in " + filename + ".pem -outform DER -out " + filename + ".der");
     },
 
 
@@ -102,7 +102,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         })
     },
 
-    writeKeyToCore: function () {
+    writeKeyToCore: function (filename) {
+        //make sure our core is online and in dfu mode
+
+        //give the user a warning before doing this, since it'll bump their core offline.
+
+        //backup their existing key so they don't lock themselves out.
+
+
+
 
     },
 
