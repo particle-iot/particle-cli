@@ -3,7 +3,7 @@
  */
 
 
-var Interpreter = require('./lib/Interpreter.js');
+var Interpreter = require('./lib/interpreter.js');
 var cli = new Interpreter();
 cli.supressWarmupMessages = true;
 cli.startup();
