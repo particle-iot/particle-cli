@@ -35,7 +35,9 @@ var that = module.exports = {
 
     deferredChildProcess: function(exec) {
         var tmp = when.defer();
-        child_process.exec("openssl genrsa -out core.pem 1024", function(error, stdout, stderr) {
+
+        console.log("running " + exec);
+        child_process.exec(exec, function(error, stdout, stderr) {
             if (error) {
                 tmp.reject(error);
             }

@@ -62,17 +62,18 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
                 return utilities.deferredChildProcess("openssl genrsa -out " + filename + ".pem 1024");
             },
             function () {
-                return utilities.deferredChildProcess("openssl rsa -in core.pem -pubout -out " + filename + ".pub.pem");
+                return utilities.deferredChildProcess("openssl rsa -in "+filename+".pem -pubout -out " + filename + ".pub.pem");
             },
             function () {
-                return utilities.deferredChildProcess("openssl rsa -in core.pem -outform DER -out " + filename + ".der");
-            },
+                return utilities.deferredChildProcess("openssl rsa -in "+filename+".pem -outform DER -out " + filename + ".der");
+            }
         ]);
     },
 
     makeKeyUrsa: function (filename) {
-        coreKeys = ursa.createPrivateKey(data);
-        console.log("public key is: ", coreKeys.toPublicPem('binary'));
+        var key = ursa.createPrivateKey(data);
+        key.toPrivatePem('binary');
+        //console.log("public key is: ", coreKeys.toPublicPem('binary'));
 
         //TODO: convert to DER format
         //TODO: create public and private pem files.
@@ -80,6 +81,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 
     makeNewKey: function (filename) {
+        if (!filename) {
+            filename = "core";
+        }
+
         var keyReady;
         if (settings.useOpenSSL) {
             keyReady = this.makeKeyOpenSSL(filename);
