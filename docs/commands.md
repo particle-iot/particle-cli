@@ -10,11 +10,11 @@ A small file for helping me visualize which commands should go where, and which 
 		list
 		monitor
 
-	keys
-		new
-		load
-		save
-		send
+[ ]	keys
+    [x] new
+    [ ] load
+    [ ] save
+    [ ] send
 
 	doctor
 		check the core's external flash

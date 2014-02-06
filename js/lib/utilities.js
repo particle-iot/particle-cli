@@ -62,6 +62,12 @@ var that = module.exports = {
         }
     },
 
+    timeoutGenerator: function (msg, defer, delay) {
+        return setTimeout(function () {
+            defer.reject(msg);
+        }, delay);
+    },
+
 
     _:null
 };
