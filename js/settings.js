@@ -16,7 +16,7 @@ settings.commandPath = __dirname + "/commands/";
 
 
 try {
-    var overrides = "spark.config.json";
+    var overrides = __dirname + "/spark.config.json";
     if (fs.existsSync(overrides)) {
         settings = extend(settings, JSON.parse(fs.readFileSync(overrides)));
     }

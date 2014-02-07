@@ -72,7 +72,11 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     },
 
     listCommands: function () {
-        console.log("help list commands command!");
+        //console.log("help list commands command!");
+        console.log("Welcome to the Spark Command line utility!")
+        console.log("");
+        console.log("The following commands are available:");
+
         var commands = this.cli.getCommands();
 
         var results = [];
@@ -80,7 +84,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
             try {
                 var c = commands[i];
                 if (c.name != null) {
-                    var line = c.name + ":\t\t" + c.description;
+                    var line = "  " + c.name + ":\t\t" + c.description;
                     results.push(line);
                 }
             }
