@@ -2,8 +2,6 @@
 
  */
 var when = require('when');
-var pipeline = require('when/pipeline');
-
 var sequence = require('when/sequence');
 var readline = require('readline');
 var settings = require('../settings.js');
@@ -13,7 +11,6 @@ var utilities = require('../lib/utilities.js');
 var BaseCommand = require("./BaseCommand.js");
 var ApiClient = require('../lib/ApiClient.js');
 var moment = require('moment');
-var child_process = require('child_process');
 var ursa = require('ursa');
 var fs = require('fs');
 var dfu = require('../lib/dfu.js');
@@ -116,6 +113,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         }
 
         //TODO: give the user a warning before doing this, since it'll bump their core offline.
+        var that = this;
 
         var ready = sequence([
             function () {
@@ -125,7 +123,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             //backup their existing key so they don't lock themselves out.
             function() {
                 //TODO: better process for making backup filename.
-                this.saveKeyFromCore("pre_" + filename);
+                that.saveKeyFromCore("pre_" + filename);
             },
             function () {
                 return dfu.writePrivateKey(filename, false);
@@ -172,7 +170,25 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         });
     },
 
-    sendPublicKeyToServer: function () {
+    sendPublicKeyToServer: function (filename) {
+        filename = utilities.filenameNoExt(filename) + ".pub.pem";
+        if (!fs.existsSync(filename)) {
+            console.error("Couldn't find " + filename);
+            return -1;
+        }
+
+        console.log("NOT YET IMPLEMENTED");
+
+//        //TODO: replace with better interactive init
+//        var api = new ApiClient(settings.apiUrl);
+//        api._access_token = settings.access_token;
+//
+//        //TODO: we need to read the core id from the core somehow...
+//
+//        var keyStr = fs.readFileSync(filename).toString();
+//        //api.sendPublicKey(keyStr);
+//
+
 
     },
 

@@ -116,7 +116,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
             coreid = [ coreid ];
         }
 
-
+        //TODO: replace with better interactive init
         var api = new ApiClient(settings.apiUrl);
         api._access_token = settings.access_token;
 
