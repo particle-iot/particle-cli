@@ -79,9 +79,10 @@ Interpreter.prototype = {
         for (var i = 0; i < files.length; i++) {
             var cmdPath = path.join(settings.commandPath, files[i]);
             try {
-                var fullPath = path.join("../", cmdPath);
+//                var fullPath = cmdPath;
+                //var fullPath = path.join(settings.commandPath, cmdPath);
                 //console.log('loading ' + fullPath);
-                var Cmd = require(fullPath);
+                var Cmd = require(cmdPath);
                 var c = new Cmd(this);
 
 
@@ -93,7 +94,7 @@ Interpreter.prototype = {
                 }
             }
             catch (ex) {
-                console.error("Error loading command " + fullPath + " " + ex);
+                console.error("Error loading command " + cmdPath + " " + ex);
             }
         }
 

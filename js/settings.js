@@ -11,6 +11,9 @@ var settings = {
     useSudoForDfu: false
 };
 
+settings.commandPath = __dirname + "/commands/";
+
+
 
 try {
     var overrides = "spark.config.json";
