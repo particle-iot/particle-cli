@@ -73,7 +73,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
     listCommands: function () {
         //console.log("help list commands command!");
-        console.log("Welcome to the Spark Command line utility!")
+        console.log("Welcome to the Spark Command line utility!");
         console.log("");
         console.log("The following commands are available:");
 
