@@ -28,6 +28,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("list", this.listPorts.bind(this), "Show Cores connected via serial to your computer");
         this.addOption("monitor", this.monitorPort.bind(this), "Connect and display messages from a core");
 
+        this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
+
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
@@ -44,6 +46,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
     monitorPort: function (comPort) {
         var that = this;
+
+//        this.whatSerialPortDidYouMean(comPort, function(port) {
+//
+//        });
+
 
         if (!comPort) {
             console.log("Please specify what port you'd like to monitor: ");
@@ -175,19 +182,71 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         return dfd.promise;
     },
 
+    whatSerialPortDidYouMean: function(comPort, callback) {
 
-    tryToGetCoreID: function (serialDevicePath, failDelay) {
+        this.findCores(function (cores) {
+
+            if (!comPort) {
+                //they didn't give us anything.
+                if (cores.length == 1) {
+                    //we have exactly one core, use that.
+                    return callback(cores[0].comName);
+                }
+                //else - which one?
+            }
+            else {
+                var portNum = parseInt(comPort);
+                if (!isNaN(portNum)) {
+                    //they gave us a number
+                    portNum -= 1;
+                    if (cores.length > portNum) {
+                        //we have it, use it.
+                        return callback(cores[portNum].comName);
+                    }
+                    //else - which one?
+
+                }
+                else {
+                    //they gave us a string
+                    //doesn't matter if we have it or not, give it a try.
+                    return callback(comPort);
+                }
+            }
+
+            console.log("Which core did you mean?");
+            console.log("Found " + cores.length + " core(s) connected via serial: ");
+            for (var i = 0; i < cores.length; i++) {
+                console.log((i + 1) + ":\t" + cores[i].comName);
+            }
+            console.log("");
+        });
+    },
+
+
+
+
+
+
+    identifyCore: function (comPort) {
+        var that = this;
+        this.whatSerialPortDidYouMean(comPort, function(port) {
+            that.askForCoreID(port);
+        });
+    },
+
+
+    askForCoreID: function (comPort) {
+        var failDelay = 5000;
+
         var dfd = when.defer();
 
         try {
-            failDelay = failDelay || 5000;
-
             //keep listening for data until we haven't received anything for...
             var boredDelay = 100,
                 boredTimer,
                 chunks = [];
 
-            var serialPort = new SerialPort(serialDevicePath, {
+            var serialPort = new SerialPort(comPort, {
                 baudrate: 9600
             });
             this.serialPort = serialPort;
@@ -195,11 +254,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
             var whenBored = function () {
                 var data = chunks.join("");
-                console.log('data received: ' + data);
-
-                var prefix = "Your core id is ";    //53ff6706beefef44842290187
+                var prefix = "Your core id is ";
                 data = data.replace(prefix, "").trim();
-
                 dfd.resolve(data);
             };
 
@@ -237,7 +293,19 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             console.error("Errors while trying to get coreID -- disconnect and reconnect core");
             dfd.reject("Serial errors");
         }
-        return dfd.promise;
+
+
+        dfd.promise.then(
+            function (data) {
+                console.log("Your core id is: " + data);
+            },
+            function (err) {
+                console.error("Something went wrong " + err);
+            });
+
+        when(dfd.promise).ensure(function () {
+            serialPort.close();
+        });
     },
 
 

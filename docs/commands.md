@@ -7,8 +7,10 @@ A small file for helping me visualize which commands should go where, and which 
 		monitor
 
 [x]	serial
-		list
-		monitor
+		[x] list
+		[x] monitor
+		[x] coreid
+		[ ] terminal
 
 [ ]	keys
     [x] new
@@ -19,25 +21,23 @@ A small file for helping me visualize which commands should go where, and which 
 	doctor
 		check the core's external flash
 
-
-
 	servers
 		list
 		change
 			-- change server key
 			-- change core key
-			-- write server ip to external flash
-
-
+		 	-- write server ip to external flash
 
 
 	cloud
+	    [ ] claim
 		access / token / login
 		login - generates a token for the cli, saves it locally
 		list - shows cores registered to your user
 
 		core_name
 			- lists functions / variables / time last seen online
+
 
 
 	shortcuts -
