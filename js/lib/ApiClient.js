@@ -167,6 +167,33 @@ ApiClient.prototype = {
 
         return dfd.promise;
     },
+    renameCore: function (coreID, name) {
+        console.log("renaming core " + coreID);
+        var dfd = when.defer();
+
+        request({
+            uri: this.baseUrl + "/v1/devices/" + coreID,
+            method: "POST",
+            form: {
+                id: coreID,
+                name: name,
+                access_token: this._access_token
+            },
+            json: true,
+            strictSSL: false
+        }, function (error, response, body) {
+            if (body && body.ok) {
+                console.log("Successfully renamed core " + coreID);
+                dfd.resolve(body);
+            }
+            else if (body && body.errors) {
+                console.log("Failed to rename core, server said ", body.errors);
+                dfd.reject(body);
+            }
+        });
+
+        return dfd.promise;
+    },
 
     //GET /v1/devices/{DEVICE_ID}
     getAttributes: function (coreID) {
@@ -253,7 +280,7 @@ ApiClient.prototype = {
 
     //PUT /v1/devices/{DEVICE_ID}
     renameCore: function (coreID, coreName) {
-        console.log('renameCore for user ');
+        console.log('asking the server to set the friendly name for ' + coreID + ' to ' + coreName);
 
         var dfd = when.defer();
         var that = this;

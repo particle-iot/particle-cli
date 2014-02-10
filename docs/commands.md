@@ -2,15 +2,16 @@ A small file for helping me visualize which commands should go where, and which 
 
 
 [x]	variable
-		list
-		get
-		monitor
+    [x] list
+    [x] get
+    [x] monitor
 
 [x]	serial
-		[x] list
-		[x] monitor
-		[x] coreid
-		[ ] terminal
+    [x] list
+    [x] monitor
+    [x] coreid
+    [x] wifi
+    [ ] terminal
 
 [ ]	keys
     [x] new
@@ -18,10 +19,22 @@ A small file for helping me visualize which commands should go where, and which 
     [x] save
     [ ] send
 
-	doctor
+[ ] cloud
+    [x] claim
+    [x] rename
+    [ ] access / token / login
+    [ ] login - generates a token for the cli, saves it locally
+    [ ] list - shows cores registered to your user
+    [ ] core_name
+        - lists functions / variables / time last seen online
+
+[ ] compile
+[ ] flash
+
+[ ] doctor
 		check the core's external flash
 
-	servers
+[ ] servers
 		list
 		change
 			-- change server key
@@ -29,33 +42,16 @@ A small file for helping me visualize which commands should go where, and which 
 		 	-- write server ip to external flash
 
 
-	cloud
-	    [ ] claim
-		access / token / login
-		login - generates a token for the cli, saves it locally
-		list - shows cores registered to your user
-
-		core_name
-			- lists functions / variables / time last seen online
+[ ] shortcuts -
+    call - call function
+    get - get variable
 
 
-
-	shortcuts -
-		call - call function
-		get - get variable
-
-
-	local
-		compile
-		flash
-		tcp listen
-		udp listen
-
-	compile
-
-	flash
-
-
+[ ] local
+    compile
+    flash
+    tcp listen
+    udp listen
 
 
 commands without a home

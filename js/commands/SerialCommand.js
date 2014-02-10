@@ -129,6 +129,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             baudrate: 9600
         });
 
+        //TODO: correct interaction for unsecured networks
+        //TODO: drop the pre-prompt creds process entirely when we have the built in serial terminal
+
         var writeChunkIndex = 0;
         var writeChunks = [
             "w",
