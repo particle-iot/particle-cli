@@ -10,6 +10,7 @@ var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
+var prompts = require('../lib/prompts.js');
 
 var SerialCommand = function (cli, options) {
     SerialCommand.super_.call(this, cli, options);
@@ -28,6 +29,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("list", this.listPorts.bind(this), "Show Cores connected via serial to your computer");
         this.addOption("monitor", this.monitorPort.bind(this), "Connect and display messages from a core");
         this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
+        this.addOption("wifi", this.configureWifi.bind(this), "Configure wifi credentials over serial");
 
         //this.addOption(null, this.helpCommand.bind(this));
     },
@@ -89,19 +91,52 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     },
 
 
-    serialWifiConfig: function (serialDevicePath, ssid, pass, failDelay) {
+    identifyCore: function (comPort) {
+        var that = this;
+        this.whatSerialPortDidYouMean(comPort, function (port) {
+            that.askForCoreID(port);
+        });
+    },
+    configureWifi: function (comPort) {
+        var that = this;
+        this.whatSerialPortDidYouMean(comPort, function (port) {
+
+            //ask for ssid, pass, security type
+            var gotCreds = sequence([
+                function() { return prompts.promptDfd("SSID:\t"); },
+                function() { return prompts.promptDfd("Pass:\t"); },
+                function() { return prompts.promptDfd("Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:\t"); }
+            ]);
+
+            when(gotCreds).then(function(creds) {
+                that.serialWifiConfig(port, creds[0], creds[1], creds[2]);
+            });
+        });
+    },
+
+
+    serialWifiConfig: function (comPort, ssid, pass, secType, failDelay) {
         var dfd = when.defer();
         failDelay = failDelay || 5000;
+
         var failTimer = setTimeout(function () {
-            dfd.reject("Serial Timed out");
+            dfd.reject("Serial Timed out - Please try restarting your core");
         }, failDelay);
 
-        var serialPort = this.serialPort || new SerialPort(serialDevicePath, {
+        console.log("Attempting to configure wifi on " + comPort);
+
+        var serialPort = this.serialPort || new SerialPort(comPort, {
             baudrate: 9600
         });
 
         var writeChunkIndex = 0;
-        var writeChunks = [ 'w', ssid + "\n", pass + "\n" ];
+        var writeChunks = [
+            "w",
+            ssid + "\n",
+            secType + "\n",
+            pass + "\n",
+            "\n"
+        ];
 
         var writeNextChunk = function () {
             if (writeChunkIndex < writeChunks.length) {
@@ -120,11 +155,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
         var whenBored = function () {
             var data = chunks.join("");
-            console.log("heard :" + data);
             chunks = [];
 
             if (!writeNextChunk()) {
                 if (data.indexOf("Spark <3 you!") >= 0) {
+                    console.log("Configured: Spark <3 you!");
                     dfd.resolve(data);
                 }
             }
@@ -136,73 +171,36 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             chunks.push(data);
             boredTimer = setTimeout(whenBored, boredDelay);
         });
-
-        //serialPort.open(function () {
-        writeNextChunk();
-        //});
-
         when(dfd.promise).ensure(function () {
             serialPort.removeAllListeners("open");
             serialPort.removeAllListeners("data");
+        });
+        serialPort.open(function () {
+            writeNextChunk();
+        });
+
+
+        dfd.promise.then(
+            function () {
+                console.log("Done!  Your core should now restart.");
+            },
+            function (err) {
+                console.error("Something went wrong " + err);
+            });
+
+        when(dfd.promise).ensure(function () {
+            serialPort.close();
+
+            setTimeout(function() {
+                //exit!
+                process.exit(0);
+            }, 2500);
         });
 
         return dfd.promise;
     },
 
-    whatSerialPortDidYouMean: function(comPort, callback) {
 
-        this.findCores(function (cores) {
-
-            if (!comPort) {
-                //they didn't give us anything.
-                if (cores.length == 1) {
-                    //we have exactly one core, use that.
-                    return callback(cores[0].comName);
-                }
-                //else - which one?
-            }
-            else {
-                var portNum = parseInt(comPort);
-                if (!isNaN(portNum)) {
-                    //they gave us a number
-                    if (portNum > 0) {
-                        portNum -= 1;
-                    }
-
-                    if (cores.length > portNum) {
-                        //we have it, use it.
-                        return callback(cores[portNum].comName);
-                    }
-                    //else - which one?
-
-                }
-                else {
-                    //they gave us a string
-                    //doesn't matter if we have it or not, give it a try.
-                    return callback(comPort);
-                }
-            }
-
-            console.log("Which core did you mean?");
-            console.log("Found " + cores.length + " core(s) connected via serial: ");
-            for (var i = 0; i < cores.length; i++) {
-                console.log((i + 1) + ":\t" + cores[i].comName);
-            }
-            console.log("");
-        });
-    },
-
-
-
-
-
-
-    identifyCore: function (comPort) {
-        var that = this;
-        this.whatSerialPortDidYouMean(comPort, function(port) {
-            that.askForCoreID(port);
-        });
-    },
 
 
     askForCoreID: function (comPort) {
@@ -278,6 +276,46 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         });
     },
 
+
+    whatSerialPortDidYouMean: function(comPort, callback) {
+        this.findCores(function (cores) {
+            if (!comPort) {
+                //they didn't give us anything.
+                if (cores.length == 1) {
+                    //we have exactly one core, use that.
+                    return callback(cores[0].comName);
+                }
+                //else - which one?
+            }
+            else {
+                var portNum = parseInt(comPort);
+                if (!isNaN(portNum)) {
+                    //they gave us a number
+                    if (portNum > 0) {
+                        portNum -= 1;
+                    }
+
+                    if (cores.length > portNum) {
+                        //we have it, use it.
+                        return callback(cores[portNum].comName);
+                    }
+                    //else - which one?
+                }
+                else {
+                    //they gave us a string
+                    //doesn't matter if we have it or not, give it a try.
+                    return callback(comPort);
+                }
+            }
+
+            console.log("Which core did you mean?");
+            console.log("Found " + cores.length + " core(s) connected via serial: ");
+            for (var i = 0; i < cores.length; i++) {
+                console.log((i + 1) + ":\t" + cores[i].comName);
+            }
+            console.log("");
+        });
+    },
 
     _: null
 });
