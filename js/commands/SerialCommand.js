@@ -27,7 +27,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     init: function () {
         this.addOption("list", this.listPorts.bind(this), "Show Cores connected via serial to your computer");
         this.addOption("monitor", this.monitorPort.bind(this), "Connect and display messages from a core");
-
         this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
 
         //this.addOption(null, this.helpCommand.bind(this));
@@ -45,54 +44,22 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     },
 
     monitorPort: function (comPort) {
-        var that = this;
+        this.whatSerialPortDidYouMean(comPort, function(port) {
+            console.log("Opening serial monitor for com port: \"" + port + "\"");
 
-//        this.whatSerialPortDidYouMean(comPort, function(port) {
-//
-//        });
-
-
-        if (!comPort) {
-            console.log("Please specify what port you'd like to monitor: ");
-            this.listPorts();
-            return;
-        }
-
-        try {
-            var portNum = parseInt(comPort);
-            if (!isNaN(portNum)) {
-                this.findCores(function(cores) {
-                    var idx = portNum - 1;
-                    if (idx < cores.length) {
-                        //console.log("Using #" + portNum + " " + cores[idx].comName);
-                        return that.monitorPort(cores[idx].comName);
-                    }
-                    else {
-                        console.log("I couldn't find that port number in my list");
-                        that.listPorts();
-                    }
-                });
-                return;
-            }
-        }
-        catch(ex) {}
-
-        console.log("Opening serial monitor for com port: \"" + comPort + "\"");
-
-
-        //TODO: listen for interrupts, close gracefully?
-
-        var serialPort = new SerialPort(comPort, {
-            baudrate: 9600
-        });
-        serialPort.on('data', function (data) {
-            process.stdout.write(data.toString());
-        });
-        serialPort.open(function (err) {
-            if (err) {
-                console.error("Serial err: " + err);
-                console.error("Serial problems, please reconnect the core.");
-            }
+            //TODO: listen for interrupts, close gracefully?
+            var serialPort = new SerialPort(port, {
+                baudrate: 9600
+            });
+            serialPort.on('data', function (data) {
+                process.stdout.write(data.toString());
+            });
+            serialPort.open(function (err) {
+                if (err) {
+                    console.error("Serial err: " + err);
+                    console.error("Serial problems, please reconnect the core.");
+                }
+            });
         });
     },
 
@@ -129,7 +96,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             dfd.reject("Serial Timed out");
         }, failDelay);
 
-        var serialPort = that.serialPort || new SerialPort(serialDevicePath, {
+        var serialPort = this.serialPort || new SerialPort(serialDevicePath, {
             baudrate: 9600
         });
 
@@ -198,7 +165,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 var portNum = parseInt(comPort);
                 if (!isNaN(portNum)) {
                     //they gave us a number
-                    portNum -= 1;
+                    if (portNum > 0) {
+                        portNum -= 1;
+                    }
+
                     if (cores.length > portNum) {
                         //we have it, use it.
                         return callback(cores[portNum].comName);
