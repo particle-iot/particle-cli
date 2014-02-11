@@ -162,11 +162,44 @@ ApiClient.prototype = {
                 console.log("Failed to claim core, server said ", body.errors);
                 dfd.reject(body);
             }
-
         });
 
         return dfd.promise;
     },
+
+    removeCore: function (coreID) {
+        console.log("releasing core " + coreID);
+
+        var dfd = when.defer();
+        var that = this;
+
+        request({
+            uri: this.baseUrl + "/v1/devices/" + coreID,
+            method: "DELETE",
+            form: {
+                id: coreID,
+                access_token: this._access_token
+            },
+            json: true,
+            strictSSL: false
+        }, function (error, response, body) {
+
+            console.log("server said ", body);
+
+            if (body && body.ok) {
+                //console.log("Successfully removed core " + coreID);
+                dfd.resolve(body);
+            }
+            else if (body && body.error) {
+                //console.log("Failed to remove core, server said " + body.error);
+                dfd.reject(body.error);
+            }
+        });
+
+        return dfd.promise;
+    },
+
+
     renameCore: function (coreID, name) {
         console.log("renaming core " + coreID);
         var dfd = when.defer();

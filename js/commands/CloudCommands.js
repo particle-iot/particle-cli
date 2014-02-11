@@ -28,6 +28,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
     init: function () {
         this.addOption("claim", this.claimCore.bind(this), "Register a core with your user account with the cloud");
+        this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
         this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
 
     },
@@ -43,6 +44,33 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         var api = new ApiClient(settings.apiUrl);
         api._access_token = settings.access_token;
         api.claimCore(coreid);
+    },
+
+    removeCore: function(coreid) {
+        if (!coreid) {
+            console.error("Please specify a coreid");
+            return;
+        }
+
+        when(prompts.areYouSure())
+            .then(function (yup) {
+                //TODO: replace with better interactive init
+                var api = new ApiClient(settings.apiUrl);
+                api._access_token = settings.access_token;
+
+                api.removeCore(coreid).then(function () {
+                        console.log("Okay!");
+                        process.exit(0);
+                    },
+                    function (err) {
+                        console.log("Didn't remove the core " + err);
+                        process.exit(1);
+                    });
+            },
+            function (err) {
+                console.log("Didn't remove the core " + err);
+                process.exit(1);
+            });
     },
 
     nameCore: function(coreid, name) {

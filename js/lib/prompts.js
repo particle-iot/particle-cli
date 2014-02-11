@@ -28,6 +28,21 @@ var that = {
         });
         return dfd.promise;
     },
+    askYesNoQuestion: function (message) {
+        var dfd = when.defer();
+        var prompt = that.getPrompt();
+        prompt.question(message, function (value) {
+            value = (value || "").toLowerCase();
+
+            if ((value == "yes") || (value == "y")) {
+                dfd.resolve(value);
+            }
+            else {
+                dfd.reject(value);
+            }
+        });
+        return dfd.promise;
+    },
     passPromptDfd: function (message) {
         var dfd = when.defer();
         var prompt = that.getPrompt();
@@ -38,6 +53,10 @@ var that = {
             dfd.resolve(value);
         });
         return dfd.promise;
+    },
+
+    areYouSure: function() {
+        return that.askYesNoQuestion("Are you sure?  Please Type yes to continue: ");
     },
 
     getCredentials: function () {
