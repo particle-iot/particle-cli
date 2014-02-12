@@ -15,13 +15,17 @@ A small file for helping me visualize which commands should go where, and which 
 
 [ ]	keys
     [x] new
-    [ ] load
+    [x] load
     [x] save
-    [ ] send
+    [x] send
+    [x] doctor
 
 [ ] cloud
     [x] claim
     [x] rename
+    [x] name
+    [ ] flash
+
     [ ] access / token / login
     [ ] login - generates a token for the cli, saves it locally
     [ ] list - shows cores registered to your user
@@ -30,7 +34,6 @@ A small file for helping me visualize which commands should go where, and which 
 
 [ ] compile
 [ ] flash
-
 [ ] doctor
 		check the core's external flash
 

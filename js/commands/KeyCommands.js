@@ -34,13 +34,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         this.addOption("load", this.writeKeyToCore.bind(this), "Load a saved key on disk onto your core");
         this.addOption("save", this.saveKeyFromCore.bind(this), "Save a key from your core onto your disk");
         this.addOption("send", this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
+        this.addOption("doctor", this.keyDoctor.bind(this), "Creates and assigns a new key to your core, and uploads it to the cloud");
 
         //this.addArgument("get", "--time", "include a timestamp")
         //this.addArgument("monitor", "--time", "include a timestamp")
         //this.addArgument("get", "--all", "gets all variables from the specified core")
         //this.addArgument("monitor", "--all", "gets all variables from the specified core")
-
-
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
@@ -94,22 +93,25 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         }
 
         when(keyReady).then(function () {
-            console.log("Created!");
+            console.log("New Key Created!");
         }, function (err) {
             console.error("Error creating keys... " + err);
-        })
+        });
+
+        return keyReady;
     },
 
-    writeKeyToCore: function (filename) {
+    writeKeyToCore: function (filename, leave) {
 
         if (!filename) {
             console.error("Please provide a filename to store this key.");
-            return -1;
+            return when.reject("Please provide a filename to store this key.");
         }
 
+        filename = utilities.filenameNoExt(filename) + ".der";
         if (!fs.existsSync(filename)) {
-            console.error("This file already exists, please specify a different file, or use the --force flag.");
-            return -1;
+            console.error("I couldn't find the file: " + filename);
+            return when.reject("I couldn't find the file: " + filename);
         }
 
         //TODO: give the user a warning before doing this, since it'll bump their core offline.
@@ -123,10 +125,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             //backup their existing key so they don't lock themselves out.
             function() {
                 //TODO: better process for making backup filename.
-                that.saveKeyFromCore("pre_" + filename);
+                return that.saveKeyFromCore("pre_" + filename);
             },
             function () {
-                return dfu.writePrivateKey(filename, false);
+                return dfu.writePrivateKey(filename, leave);
             }
         ]);
 
@@ -135,12 +137,14 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         }, function (err) {
             console.error("Error saving key... " + err);
         });
+
+        return ready;
     },
 
     saveKeyFromCore: function (filename) {
         if (!filename) {
             console.error("Please provide a filename to store this key.");
-            return -1;
+            return when.reject("Please provide a filename to store this key.");
         }
 
         //TODO: check / ensure ".der" extension
@@ -148,7 +152,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
         if (fs.existsSync(filename)) {
             console.error("This file already exists, please specify a different file, or use the --force flag.");
-            return -1;
+            return when.reject("This file already exists, please specify a different file, or use the --force flag.");
         }
 
         //find dfu devices, make sure a core is connected
@@ -168,28 +172,61 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         }, function (err) {
             console.error("Error saving key... " + err);
         });
+
+        return ready;
     },
 
-    sendPublicKeyToServer: function (filename) {
+    sendPublicKeyToServer: function (coreid, filename) {
+        if (!coreid) {
+            console.log("Please provide a core id");
+            return when.reject("Please provide a core id");
+        }
+
         filename = utilities.filenameNoExt(filename) + ".pub.pem";
         if (!fs.existsSync(filename)) {
             console.error("Couldn't find " + filename);
-            return -1;
+            return when.reject("Couldn't find " + filename);
         }
 
-        console.log("NOT YET IMPLEMENTED");
+        //TODO: replace with better interactive init
+        var api = new ApiClient(settings.apiUrl);
+        api._access_token = settings.access_token;
 
-//        //TODO: replace with better interactive init
-//        var api = new ApiClient(settings.apiUrl);
-//        api._access_token = settings.access_token;
-//
-//        //TODO: we need to read the core id from the core somehow...
-//
-//        var keyStr = fs.readFileSync(filename).toString();
-//        //api.sendPublicKey(keyStr);
-//
+        var keyStr = fs.readFileSync(filename).toString();
+        return api.sendPublicKey(coreid, keyStr);
+    },
 
+    keyDoctor: function (coreid) {
+        if (!coreid) {
+            console.log("Please provide your core id");
+            return 0;
+        }
 
+        var that = this;
+        var allDone = sequence([
+            function () {
+                return dfu.findCompatiableDFU();
+            },
+            function() {
+                return that.makeNewKey(coreid + "_new");
+            },
+            function() {
+                return that.writeKeyToCore(coreid + "_new", true);
+            },
+            function() {
+                return that.sendPublicKeyToServer(coreid, coreid + "_new");
+            }
+        ]);
+
+        when(allDone).then(
+            function () {
+                console.log("Okay!  New keys in place, your core should restart.");
+
+            },
+            function (err) {
+                console.log("Make sure your core is in DFU mode (blinking yellow), and that your computer is online.");
+                console.error("Error - " + err);
+            });
     },
 
 

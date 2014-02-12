@@ -307,9 +307,72 @@ ApiClient.prototype = {
     },
 
     //PUT /v1/devices/{DEVICE_ID}
-    flashCore: function (coreID) {
+    flashCore: function (coreID, files) {
+        console.log('attempting to flash firmware to your core ' + coreID);
 
+        var dfd = when.defer();
+        var that = this;
+
+        request({
+            uri: this.baseUrl + "/v1/devices/" + coreID,
+            method: "PUT",
+            form: {
+                files: files,
+                access_token: this._access_token
+            },
+            json: true,
+            strictSSL: false
+        }, function (error, response, body) {
+            //console.log(error, response, body);
+            if (error) {
+                console.log("flash core got error: ", error);
+            }
+            else {
+                console.log("flash core succeeded");
+            }
+
+            that._devices = body;
+            dfd.resolve(response);
+        });
+
+        return dfd.promise;
     },
+
+
+    sendPublicKey: function (coreID, buffer) {
+        console.log('attempting to add a new public key for core ' + coreID);
+
+        var dfd = when.defer();
+        var that = this;
+
+        request({
+            uri: this.baseUrl + "/v1/provisioning/" + coreID,
+            method: "POST",
+            form: {
+                deviceID: coreID,
+                publicKey: buffer.toString(),
+                order: "manual_" + ((new Date()).getTime()),
+                filename: "cli",
+                access_token: this._access_token
+            },
+            json: true,
+            strictSSL: false
+        }, function (error, response, body) {
+            //console.log(error, response, body);
+            if (error || body.error) {
+                console.log("submitPublicKey got error: ", error || body.error);
+            }
+            else {
+                console.log("submitting public key succeeded!");
+            }
+
+            that._devices = body;
+            dfd.resolve(response);
+        });
+
+        return dfd.promise;
+    },
+
 
     //PUT /v1/devices/{DEVICE_ID}
     renameCore: function (coreID, coreName) {
