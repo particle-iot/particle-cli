@@ -12,6 +12,8 @@ var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 var prompts = require('../lib/prompts.js');
 var ApiClient = require('../lib/ApiClient.js');
+var fs = require('fs');
+var path = require('path');
 
 var CloudCommand = function (cli, options) {
     CloudCommand.super_.call(this, cli, options);
@@ -30,15 +32,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("claim", this.claimCore.bind(this), "Register a core with your user account with the cloud");
         this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
         this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
-
+        this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
     },
 
-    claimCore: function(coreid) {
+    claimCore: function (coreid) {
         if (!coreid) {
             console.error("Please specify a coreid");
             return;
         }
-
 
         //TODO: replace with better interactive init
         var api = new ApiClient(settings.apiUrl);
@@ -46,7 +47,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         api.claimCore(coreid);
     },
 
-    removeCore: function(coreid) {
+    removeCore: function (coreid) {
         if (!coreid) {
             console.error("Please specify a coreid");
             return;
@@ -73,7 +74,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             });
     },
 
-    nameCore: function(coreid, name) {
+    nameCore: function (coreid, name) {
         if (!coreid) {
             console.error("Please specify a coreid");
             return;
@@ -84,12 +85,61 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
-
         //TODO: replace with better interactive init
         var api = new ApiClient(settings.apiUrl);
         api._access_token = settings.access_token;
 
         api.renameCore(coreid, name);
+    },
+
+    flashCore: function (coreid, filePath) {
+        if (!coreid) {
+            console.error("Please specify a coreid");
+            return;
+        }
+
+        if (!filePath) {
+            console.error("Please specify a binary file, source file, or source directory");
+            return;
+        }
+
+        if (!fs.existsSync(filePath)) {
+            console.error("I couldn't find that: " + filePath);
+            return;
+        }
+        var files = {};
+        var stats = fs.statSync(filePath);
+        if (stats.isFile()) {
+            files['file'] = filePath;
+        }
+        else if (stats.isDirectory()) {
+            var dirFiles = fs.readdirSync(filePath);
+            for(var i=0;i<dirFiles.length;i++) {
+                var filename = path.join(filePath, dirFiles[i]);
+                var filestats = fs.statSync(filename);
+                if (filestats.size > settings.MAX_FILE_SIZE) {
+                    console.log("Skipping " + filename + " it's too big! " + stats.size);
+                    continue;
+                }
+
+                if (i == 0) {
+                    files['file'] = filename;
+                }
+                else {
+                    files['file' + i] = filename;
+                }
+            }
+        }
+        else {
+            console.log("was that a file or directory?");
+            return;
+        }
+
+
+        //TODO: replace with better interactive init
+        var api = new ApiClient(settings.apiUrl);
+        api._access_token = settings.access_token;
+        api.flashCore(coreid, files);
     },
 
 

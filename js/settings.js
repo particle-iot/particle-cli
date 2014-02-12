@@ -8,7 +8,10 @@ var settings = {
     minimumApiDelay: 500,
 
     useOpenSSL: true,
-    useSudoForDfu: false
+    useSudoForDfu: false,
+
+    //2 megs -- this constant here is arbitrary
+    MAX_FILE_SIZE: 1024 * 1024 * 2
 };
 
 settings.commandPath = __dirname + "/commands/";
