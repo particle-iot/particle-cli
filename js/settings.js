@@ -15,15 +15,35 @@ var settings = {
 };
 
 settings.commandPath = __dirname + "/commands/";
+settings.overridesFile = __dirname + "/spark.config.json";
 
 
-
-try {
-    var overrides = __dirname + "/spark.config.json";
-    if (fs.existsSync(overrides)) {
-        settings = extend(settings, JSON.parse(fs.readFileSync(overrides)));
+settings.loadOverrides = function () {
+    try {
+        if (fs.existsSync(settings.overridesFile)) {
+            settings.overrides = JSON.parse(fs.readFileSync(settings.overridesFile));
+            settings = extend(settings, settings.overrides);
+        }
     }
-} catch (ex) {
-    console.error('There was an error reading ' + overrides + ': ', ex);
-}
+    catch (ex) {
+        console.error('There was an error reading ' + settings.overrides + ': ', ex);
+    }
+};
+settings.override = function (key, value) {
+    if (!settings.overrides) {
+        settings.overrides = {};
+    }
+
+    settings.overrides[key] = value;
+    settings = extend(settings, settings.overrides);
+
+    try {
+        fs.writeFileSync(settings.overridesFile, JSON.stringify(settings.overrides));
+    }
+    catch (ex) {
+        console.error('There was an error writing ' + settings.overrides + ': ', ex);
+    }
+};
+
+settings.loadOverrides();
 module.exports = settings;

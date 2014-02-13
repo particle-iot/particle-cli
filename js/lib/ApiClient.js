@@ -67,7 +67,7 @@ ApiClient.prototype = {
     },
 
     //GET /oauth/token
-    login: function (user, pass) {
+    login: function (client_id, user, pass) {
         var dfd = when.defer();
 
         //todo; if !user, make random?
@@ -85,7 +85,7 @@ ApiClient.prototype = {
                 username: user,
                 password: pass,
                 grant_type: 'password',
-                client_id: "spark",
+                client_id: client_id,
                 client_secret: "client_secret_here"
             },
             json: true,
@@ -105,7 +105,7 @@ ApiClient.prototype = {
             if (body) {
                 that._access_token = body.access_token;
             }
-            dfd.resolve(response);
+            dfd.resolve(that._access_token);
         });
 
         return dfd.promise;
@@ -125,10 +125,8 @@ ApiClient.prototype = {
             strictSSL: false
         }, function (error, response, body) {
             if (error) {
-                console.log("listDevices got error: ", error);
+                console.error("listDevices got error: ", error);
             }
-
-            //console.log("listDevices said", body);
 
             that._devices = body;
             dfd.resolve(body);

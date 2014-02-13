@@ -3,6 +3,8 @@
  */
 var when = require('when');
 var sequence = require('when/sequence');
+var pipeline = require('when/pipeline');
+
 var readline = require('readline');
 var SerialPortLib = require("serialport");
 var SerialPort = SerialPortLib.SerialPort;
@@ -33,6 +35,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
         this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
         this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
+        this.addOption("login", this.login.bind(this), "Lets you login to the cloud and stores an access token locally");
+        this.addOption("logout", this.logout.bind(this), "Logs out your session and clears your saved access token");
     },
 
     claimCore: function (coreid) {
@@ -140,6 +144,40 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         var api = new ApiClient(settings.apiUrl);
         api._access_token = settings.access_token;
         api.flashCore(coreid, files);
+    },
+
+    login: function() {
+        var allDone = pipeline([
+
+            //prompt for creds
+            prompts.getCredentials,
+
+            //login to the server
+            function(creds) {
+                var api = new ApiClient(settings.apiUrl);
+                return api.login("spark-cli", creds[0], creds[1]);
+            }
+        ]);
+
+        when(allDone).then(function (access_token) {
+                console.log("logged in! ", arguments);
+                //console.log("Successfully logged in as " + username);
+                settings.override("access_token", access_token);
+
+                setTimeout(function() {
+                    process.exit(-1);
+                }, 2500);
+            },
+            function (err) {
+                console.error("Error logging in " + err);
+                process.exit(-1);
+            });
+
+
+    },
+    logout: function() {
+        settings.override("access_token", null);
+        console.log("You're now logged out!");
     },
 
 
