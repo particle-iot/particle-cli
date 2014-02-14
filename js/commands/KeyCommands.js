@@ -182,10 +182,17 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             return when.reject("Please provide a core id");
         }
 
-        filename = utilities.filenameNoExt(filename) + ".pub.pem";
+        if (!filename) {
+            console.log("Please provide a filename for your core's public key ending in .pub.pem");
+            return when.reject("Please provide a filename for your core's public key ending in .pub.pem");
+        }
+
         if (!fs.existsSync(filename)) {
-            console.error("Couldn't find " + filename);
-            return when.reject("Couldn't find " + filename);
+            filename = utilities.filenameNoExt(filename) + ".pub.pem";
+            if (!fs.existsSync(filename)) {
+                console.error("Couldn't find " + filename);
+                return when.reject("Couldn't find " + filename);
+            }
         }
 
         //TODO: replace with better interactive init
