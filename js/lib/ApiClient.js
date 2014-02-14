@@ -16,6 +16,7 @@
 var when = require('when');
 var http = require('http');
 var request = require('request');
+var fs = require('fs');
 
 /**
  * Provides a framework for interacting with and testing the API
@@ -309,29 +310,29 @@ ApiClient.prototype = {
         console.log('attempting to flash firmware to your core ' + coreID);
 
         var dfd = when.defer();
-        var that = this;
-
-        request({
-            uri: this.baseUrl + "/v1/devices/" + coreID,
-            method: "PUT",
-            form: {
-                files: files,
-                access_token: this._access_token
-            },
+        var r = request.put(this.baseUrl + "/v1/devices/" + coreID + "?access_token=" + this._access_token, {
             json: true,
             strictSSL: false
         }, function (error, response, body) {
             //console.log(error, response, body);
             if (error) {
-                console.log("flash core got error: ", error);
+                console.log("flash core got error: ", JSON.stringify(error));
             }
             else {
-                console.log("flash core succeeded");
+                console.log("flash core said ", JSON.stringify(body));
             }
 
-            that._devices = body;
             dfd.resolve(response);
         });
+
+        var form = r.form();
+
+
+        for (var name in files) {
+            form.append(name, fs.createReadStream(files[name]), {
+                filename: files[name]
+            });
+        }
 
         return dfd.promise;
     },
