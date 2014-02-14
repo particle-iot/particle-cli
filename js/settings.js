@@ -66,8 +66,7 @@ settings.override = function (key, value) {
     settings = extend(settings, settings.overrides);
 
     try {
-        //TODO: pretty jsonify
-        fs.writeFileSync(settings.overridesFile, JSON.stringify(settings.overrides));
+        fs.writeFileSync(settings.overridesFile, JSON.stringify(settings.overrides, null, 2));
     }
     catch (ex) {
         console.error('There was an error writing ' + settings.overrides + ': ', ex);
