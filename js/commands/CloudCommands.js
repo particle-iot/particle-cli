@@ -40,6 +40,7 @@ var prompts = require('../lib/prompts.js');
 var ApiClient = require('../lib/ApiClient.js');
 var fs = require('fs');
 var path = require('path');
+var moment = require('moment');
 
 var CloudCommand = function (cli, options) {
     CloudCommand.super_.call(this, cli, options);
@@ -59,6 +60,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
         this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
         this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
+        this.addOption("compile", this.compileCode.bind(this), "Compile a source file, or directory using the cloud service");
         this.addOption("login", this.login.bind(this), "Lets you login to the cloud and stores an access token locally");
         this.addOption("logout", this.logout.bind(this), "Logs out your session and clears your saved access token");
     },
@@ -135,31 +137,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             console.error("I couldn't find that: " + filePath);
             return;
         }
-        var files = {};
-        var stats = fs.statSync(filePath);
-        if (stats.isFile()) {
-            files['file'] = filePath;
-        }
-        else if (stats.isDirectory()) {
-            var dirFiles = fs.readdirSync(filePath);
-            for(var i=0;i<dirFiles.length;i++) {
-                var filename = path.join(filePath, dirFiles[i]);
-                var filestats = fs.statSync(filename);
-                if (filestats.size > settings.MAX_FILE_SIZE) {
-                    console.log("Skipping " + filename + " it's too big! " + stats.size);
-                    continue;
-                }
 
-                if (i == 0) {
-                    files['file'] = filename;
-                }
-                else {
-                    files['file' + i] = filename;
-                }
-            }
-        }
-        else {
-            console.log("was that a file or directory?");
+
+        var files = this._getFilesAtPath(filePath);
+        if (!files) {
             return;
         }
 
@@ -168,6 +149,61 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         var api = new ApiClient(settings.apiUrl);
         api._access_token = settings.access_token;
         api.flashCore(coreid, files);
+    },
+
+    compileCode: function (filePath) {
+        if (!filePath) {
+            console.error("Please specify a binary file, source file, or source directory");
+            return;
+        }
+
+        if (!fs.existsSync(filePath)) {
+            console.error("I couldn't find that: " + filePath);
+            return;
+        }
+
+        var files = this._getFilesAtPath(filePath);
+        if (!files) {
+            return;
+        }
+
+        var filename = "firmware_" + (new Date()).getTime() + ".bin";
+
+        //TODO: replace with better interactive init
+        var api = new ApiClient(settings.apiUrl);
+        api._access_token = settings.access_token;
+
+        var allDone = pipeline([
+            //compile
+            function() { return api.compileCode(files); },
+
+            //download
+            function(resp) {
+                if (resp && resp.binary_url) {
+                    return api.downloadBinary(resp.binary_url, filename);
+                }
+                else {
+                    //console.log("got back ", resp);
+                    return when.reject("compile failed");
+                }
+            },
+
+            //save
+            function() {
+                console.log("saved firmware to " + filename);
+                return when.resolve();
+            }
+        ]);
+
+
+        when(allDone).then(
+            function () {
+                console.log("Compiled firmware downloaded.");
+            },
+            function (err) {
+                console.error("Compile failed - ", err);
+            });
+
     },
 
     login: function() {
@@ -202,6 +238,38 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
     logout: function() {
         settings.override("access_token", null);
         console.log("You're now logged out!");
+    },
+
+    _getFilesAtPath: function(filePath) {
+        var files = {};
+        var stats = fs.statSync(filePath);
+        if (stats.isFile()) {
+            files['file'] = filePath;
+        }
+        else if (stats.isDirectory()) {
+            var dirFiles = fs.readdirSync(filePath);
+            for (var i = 0; i < dirFiles.length; i++) {
+                var filename = path.join(filePath, dirFiles[i]);
+                var filestats = fs.statSync(filename);
+                if (filestats.size > settings.MAX_FILE_SIZE) {
+                    console.log("Skipping " + filename + " it's too big! " + stats.size);
+                    continue;
+                }
+
+                if (i == 0) {
+                    files['file'] = filename;
+                }
+                else {
+                    files['file' + i] = filename;
+                }
+            }
+        }
+        else {
+            console.log("was that a file or directory?");
+            return false;
+        }
+
+        return files;
     },
 
 

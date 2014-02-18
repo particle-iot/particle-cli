@@ -355,8 +355,6 @@ ApiClient.prototype = {
         });
 
         var form = r.form();
-
-
         for (var name in files) {
             form.append(name, fs.createReadStream(files[name]), {
                 filename: files[name]
@@ -365,6 +363,53 @@ ApiClient.prototype = {
 
         return dfd.promise;
     },
+
+    compileCode: function(files) {
+       console.log('attempting to compile firmware ');
+
+        var dfd = when.defer();
+        var r = request.post(this.baseUrl + "/v1/binaries?access_token=" + this._access_token, {
+            json: true,
+            strictSSL: false
+        }, function (error, response, body) {
+            if (error) {
+                console.log("compile got error: ", error);
+                dfd.reject(error);
+            }
+            else {
+                dfd.resolve(body);
+            }
+
+
+        });
+
+        var form = r.form();
+        for (var name in files) {
+            form.append(name, fs.createReadStream(files[name]), {
+                filename: files[name]
+            });
+        }
+
+        return dfd.promise;
+    },
+
+    downloadBinary: function (url, filename) {
+        var outFs = fs.createWriteStream(filename);
+
+        var dfd = when.defer();
+        console.log("grabbing binary from: " + this.baseUrl + url);
+        request.get(this.baseUrl + url + "?access_token=" + this._access_token, null,
+            function (error, response, body) {
+                if (error) {
+                    dfd.reject(error);
+                }
+                else {
+                    dfd.resolve(body);
+                }
+            }).pipe(outFs);
+        return dfd.promise;
+    },
+
 
 
     sendPublicKey: function (coreID, buffer) {

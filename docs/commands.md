@@ -24,7 +24,12 @@ A small file for helping me visualize which commands should go where, and which 
     [x] claim
     [x] rename
     [x] name
-    [ ] flash
+    [x] flash
+    [x] login
+    [x] logout
+    [x] compile
+
+
 
     [ ] access / token / login
     [ ] login - generates a token for the cli, saves it locally
