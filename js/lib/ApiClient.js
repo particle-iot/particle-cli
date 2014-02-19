@@ -75,8 +75,7 @@ ApiClient.prototype = {
                 username: user,
                 password: pass
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             if (body && body.ok) {
                 console.log('user creation succeeded!');
@@ -98,16 +97,9 @@ ApiClient.prototype = {
 
     //GET /oauth/token
     login: function (client_id, user, pass) {
-        var dfd = when.defer();
-
-        //todo; if !user, make random?
-        //todo; if !pass, make random?
-
-        //curl -d username=zachary@spark.io -d password=foobar https://api.spark.io/v1/users
-
-        console.log('logging in user ', user, pass);
         var that = this;
 
+        var dfd = when.defer();
         request({
             uri: this.baseUrl + "/oauth/token",
             method: "POST",
@@ -118,8 +110,7 @@ ApiClient.prototype = {
                 client_id: client_id,
                 client_secret: "client_secret_here"
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             if (body && body.access_token) {
                 console.log("Got an access token! " + body.access_token);
@@ -148,11 +139,11 @@ ApiClient.prototype = {
         var dfd = when.defer();
         var that = this;
 
+        //console.log('calling ' + this.baseUrl + "/v1/devices?access_token=" + this._access_token);
         request({
             uri: this.baseUrl + "/v1/devices?access_token=" + this._access_token,
             method: "GET",
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             if (error) {
                 console.error("listDevices got error: ", error);
@@ -169,8 +160,6 @@ ApiClient.prototype = {
         console.log("claiming core " + coreID);
 
         var dfd = when.defer();
-        var that = this;
-
         request({
             uri: this.baseUrl + "/v1/devices",
             method: "POST",
@@ -178,8 +167,7 @@ ApiClient.prototype = {
                 id: coreID,
                 access_token: this._access_token
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
 
             if (body && body.ok) {
@@ -208,8 +196,7 @@ ApiClient.prototype = {
                 id: coreID,
                 access_token: this._access_token
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
 
             console.log("server said ", body);
@@ -240,8 +227,7 @@ ApiClient.prototype = {
                 name: name,
                 access_token: this._access_token
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             if (body && body.ok) {
                 console.log("Successfully renamed core " + coreID);
@@ -258,27 +244,19 @@ ApiClient.prototype = {
 
     //GET /v1/devices/{DEVICE_ID}
     getAttributes: function (coreID) {
-        //console.log('getAttributes for core ' + coreID);
-
         var dfd = when.defer();
-        var that = this;
-
         request({
-            uri: this.baseUrl + "/v1/devices/" + coreID + "?access_token=" + this._access_token,
-            method: "GET",
-            json: true,
-            strictSSL: false
-        }, function (error, response, body) {
-
-            if (error) {
-                console.log("getAttributes got error: ", error);
+                uri: this.baseUrl + "/v1/devices/" + coreID + "?access_token=" + this._access_token,
+                method: "GET",
+                json: true
+            },
+            function (error, response, body) {
+                if (error) {
+                    console.log("getAttributes got error: ", error);
+                }
+                dfd.resolve(body);
             }
-//            else {
-//                console.log("getAttributes got back ", body);
-//            }
-
-            dfd.resolve(body);
-        });
+        );
 
         return dfd.promise;
     },
@@ -289,8 +267,7 @@ ApiClient.prototype = {
         request({
                 uri: this.baseUrl + "/v1/devices/" + coreID + "/" + name + "?access_token=" + this._access_token,
                 method: "GET",
-                json: true,
-                strictSSL: false
+                json: true
             },
             function (error, response, body) {
                 if (error) {
@@ -316,8 +293,7 @@ ApiClient.prototype = {
                 signal: (beSignalling) ? 1 : 0,
                 access_token: this._access_token
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             //console.log(error, response, body);
             if (error) {
@@ -340,8 +316,7 @@ ApiClient.prototype = {
 
         var dfd = when.defer();
         var r = request.put(this.baseUrl + "/v1/devices/" + coreID + "?access_token=" + this._access_token, {
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             //console.log(error, response, body);
             if (error) {
@@ -369,8 +344,7 @@ ApiClient.prototype = {
 
         var dfd = when.defer();
         var r = request.post(this.baseUrl + "/v1/binaries?access_token=" + this._access_token, {
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             if (error) {
                 console.log("compile got error: ", error);
@@ -428,8 +402,7 @@ ApiClient.prototype = {
                 filename: "cli",
                 access_token: this._access_token
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             //console.log(error, response, body);
             if (error || body.error) {
@@ -461,8 +434,7 @@ ApiClient.prototype = {
                 name: coreName,
                 access_token: this._access_token
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             //console.log(error, response, body);
             if (error) {
@@ -492,8 +464,7 @@ ApiClient.prototype = {
                 arg: funcParam,
                 access_token: this._access_token
             },
-            json: true,
-            strictSSL: false
+            json: true
         }, function (error, response, body) {
             //console.log(error, response, body);
             if (error) {
