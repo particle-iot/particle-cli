@@ -186,18 +186,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                     //console.log("got back ", resp);
                     return when.reject("compile failed");
                 }
-            },
-
-            //save
-            function() {
-                console.log("saved firmware to " + filename);
-                return when.resolve();
             }
         ]);
 
 
         when(allDone).then(
             function () {
+                console.log("saved firmware to " + filename);
                 console.log("Compiled firmware downloaded.");
             },
             function (err) {

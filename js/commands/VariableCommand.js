@@ -204,7 +204,12 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
                 var promises = [];
                 for (var i = 0; i < cores.length; i++) {
                     var coreid = cores[i].id;
-                    promises.push(api.getAttributes(coreid));
+                    if (cores[i].connected) {
+                        promises.push(api.getAttributes(coreid));
+                    }
+                    else {
+                        promises.push(when.resolve(cores[i]));
+                    }
                 }
 
                 when.all(promises).then(function (cores) {
