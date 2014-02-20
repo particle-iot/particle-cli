@@ -353,8 +353,6 @@ ApiClient.prototype = {
             else {
                 dfd.resolve(body);
             }
-
-
         });
 
         var form = r.form();

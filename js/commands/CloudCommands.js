@@ -183,8 +183,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                     return api.downloadBinary(resp.binary_url, filename);
                 }
                 else {
-                    //console.log("got back ", resp);
-                    return when.reject("compile failed");
+                    if (resp.errors) {
+                        console.log("Errors");
+                        console.log(resp.errors.join("\n"));
+                    }
+
+
+                    return when.reject("compile failed ");
                 }
             }
         ]);
