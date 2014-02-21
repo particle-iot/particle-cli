@@ -44,7 +44,7 @@ var DoctorCommand = function (cli, options) {
 util.inherits(DoctorCommand, BaseCommand);
 DoctorCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: "doctor",
+    //name: "doctor",
     description: "helps repair cores, run patches, check wifi, and more!",
 
     init: function () {

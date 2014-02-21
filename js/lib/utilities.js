@@ -96,6 +96,31 @@ var that = module.exports = {
         }, delay);
     },
 
+    /**
+     * pad the left side of "str" with "char" until it's length "len"
+     * @param str
+     * @param char
+     * @param len
+     */
+    padLeft: function(str, char, len) {
+        var delta = len - str.length;
+        var extra = [];
+        for(var i=0;i<delta;i++) {
+            extra.push(char);
+        }
+        return extra.join("") + str;
+    },
+
+    padRight: function(str, char, len) {
+        var delta = len - str.length;
+        var extra = [];
+        for(var i=0;i<delta;i++) {
+            extra.push(char);
+        }
+        return str + extra.join("");
+    },
+
+
 
 
     _:null

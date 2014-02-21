@@ -30,6 +30,7 @@ var readline = require('readline');
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
+var utilities = require('../lib/utilities.js');
 
 var HelpCommand = function (cli, options) {
     HelpCommand.super_.call(this, cli, options);
@@ -49,20 +50,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     },
 
 
-    /**
-     * pad the left side of "str" with "char" until it's length "len"
-     * @param str
-     * @param char
-     * @param len
-     */
-    padLeft: function(str, char, len) {
-        var delta = len - str.length;
-        var extra = [];
-        for(var i=0;i<delta;i++) {
-            extra.push(char);
-        }
-        return extra.join("") + str;
-    },
+
 
     /**
      * Get more info on a specific command
@@ -78,13 +66,19 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         var command = this.cli.findCommand(name);
+        if (!command) {
+            this.listCommands();
+            return;
+        }
+
         var results = [
             command.name + ":\t" + command.description,
             "the following commands are available: "
         ];
         for(var name in command.optionsByName) {
             var desc = command.descriptionsByName[name];
-            var line = this.padLeft(name, " ", 15) + ":\t" + desc;
+            var line = "   spark " + command.name + " " + name;
+            line = utilities.padRight(line, " ", 25) + " - " + desc;
             results.push(line);
         }
 
@@ -107,7 +101,9 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
             try {
                 var c = commands[i];
                 if (c.name != null) {
-                    var line = "  " + c.name + ":\t\t" + c.description;
+                    var line = "  spark " + c.name;
+                    line = utilities.padRight(line, " ", 20) + " - " + c.description;
+
                     results.push(line);
                 }
             }

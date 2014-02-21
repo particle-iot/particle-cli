@@ -45,7 +45,7 @@ var DeployCommand = function (cli, options) {
 util.inherits(DeployCommand, BaseCommand);
 DeployCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: "deploy",
+    //name: "deploy",
     description: "flashes firmware to your cores over the air",
 
     init: function () {
