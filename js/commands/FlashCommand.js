@@ -34,6 +34,8 @@ var path = require('path');
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
+var fs = require('fs');
+var dfu = require('../lib/dfu.js');
 
 var FlashCommand = function (cli, options) {
     FlashCommand.super_.call(this, cli, options);
@@ -48,11 +50,34 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
     description: "copies firmware and data to your core over usb",
 
     init: function () {
+        this.addOption("firmware", this.flashCore.bind(this));
         //this.addOption("list", this.listCores.bind(this));
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
-//dfu-util -d 1d50:607f -a 0 -i 0 -s 0x08005000:leave -D core-firmware.bin
+    flashCore: function(firmware) {
+        if (!firmware || !fs.existsSync(firmware)) {
+            console.log("Please specify a firmware file to flash locally to your core ");
+            return -1;
+        }
+
+        var ready = sequence([
+            function () {
+                return dfu.findCompatiableDFU();
+            },
+            function() {
+                return dfu.writeFirmware(firmware, true);
+            }
+        ]);
+
+        when(ready).then(function () {
+            console.log("Flashed!");
+        }, function (err) {
+            console.error("Error writing firmware... " + err);
+        });
+
+        return 0;
+    },
 
 
     _: null

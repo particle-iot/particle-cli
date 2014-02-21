@@ -13,4 +13,6 @@ Initial Release! - 02/20/2014
 * Or you can find us on IRC at freenode #spark
 
 
-02/21/2014 - 0.2.5.1 - Adding Udp client helper
+02/21/2014 - 0.2.6 - Adding Udp client helper
+02/21/2014 - 0.2.7 - Adding local dfu flash
+
