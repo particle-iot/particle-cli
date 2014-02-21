@@ -15,4 +15,5 @@ Initial Release! - 02/20/2014
 
 02/21/2014 - 0.2.6 - Adding Udp client helper
 02/21/2014 - 0.2.7 - Adding local dfu flash
+02/21/2014 - 0.2.8 - Adding cloud list
 

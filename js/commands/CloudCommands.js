@@ -57,6 +57,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
     init: function () {
         this.addOption("claim", this.claimCore.bind(this), "Register a core with your user account with the cloud");
+        this.addOption("list", this.listCores.bind(this), "Show what cores are registered with your account");
         this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
         this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
         this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
@@ -238,6 +239,41 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
     logout: function() {
         settings.override("access_token", null);
         console.log("You're now logged out!");
+    },
+
+    listCores: function () {
+
+        var api = new ApiClient(settings.apiUrl);
+        api._access_token = settings.access_token;
+        api.listDevices()
+            .then(function (cores) {
+                if (!cores || (cores.length == 0)) {
+                    console.log("No cores found.");
+                    return;
+                }
+
+                console.log("Found " + cores.length + " cores ");
+
+                //sort alphabetically
+                cores = cores.sort(function (a, b) {
+                    return (a.name || "").localeCompare(b.name);
+                });
+
+                var lines = [];
+                for (var i = 0; i < cores.length; i++) {
+                    var core = cores[i];
+
+                    var onlineStr = (core.connected) ? "online" : "offline";
+                    var status = "  " + core.name + " (" + core.id + ") is " + onlineStr;
+                    lines.push(status);
+                }
+                lines.push("");
+
+                console.log(lines.join("\n"));
+            },
+            function (err) {
+                console.error("Error listing cores: " + err);
+            });
     },
 
     _getFilesAtPath: function(filePath) {
