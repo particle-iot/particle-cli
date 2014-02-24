@@ -4,13 +4,19 @@ spark-cli
 Spark Command Line Interface for the Cloud
 
 
+Install
+=======
 
-npm install -g spark-cli
+  Make sure you have node installed!  http://nodejs.org/
+
+  Then it's as easy as:
+
+    npm install -g spark-cli
+    spark cloud login
 
 
 
-
-Getting Started
+Getting Started / Documentation
 ===============
 
 ###spark cloud login
