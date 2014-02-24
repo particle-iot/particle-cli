@@ -72,9 +72,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
-        //TODO: replace with better interactive init
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
         api.claimCore(coreid);
     },
 
@@ -84,12 +85,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
+
         when(prompts.areYouSure())
             .then(function (yup) {
-                //TODO: replace with better interactive init
-                var api = new ApiClient(settings.apiUrl);
-                api._access_token = settings.access_token;
-
                 api.removeCore(coreid).then(function () {
                         console.log("Okay!");
                         process.exit(0);
@@ -145,10 +147,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
-
-        //TODO: replace with better interactive init
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
         api.flashCore(coreid, files);
     },
 
@@ -170,9 +172,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         var filename = "firmware_" + (new Date()).getTime() + ".bin";
 
-        //TODO: replace with better interactive init
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
 
         var allDone = pipeline([
             //compile
@@ -243,8 +246,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
     listCores: function () {
 
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
+
+
         api.listDevices()
             .then(function (cores) {
                 if (!cores || (cores.length == 0)) {

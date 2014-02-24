@@ -52,11 +52,22 @@ var fs = require('fs');
  *
  */
 
-var ApiClient = function (baseUrl) {
+var ApiClient = function (baseUrl, access_token) {
     this.baseUrl = baseUrl;
+    this._access_token = access_token;
 };
 
 ApiClient.prototype = {
+    ready: function() {
+        var hasToken = !!this._access_token;
+        if (!hasToken) {
+            console.log("You're not logged in.  Please login using \"spark cloud login\" before using this command ");
+        }
+
+        return hasToken;
+    },
+
+
     createUser: function (user, pass) {
         var dfd = when.defer();
 
