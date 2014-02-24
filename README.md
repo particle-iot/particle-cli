@@ -43,7 +43,6 @@ Getting Started
 
 ###spark cloud flash
 
-
     > spark cloud flash 0123456789ABCDEFGHI core-firmware.bin
     > spark cloud flash 0123456789ABCDEFGHI my_application.ino
     > spark cloud flash 0123456789ABCDEFGHI /projects/big_app/src
@@ -60,6 +59,7 @@ Getting Started
 
 
 ###spark flash firmware
+
 ``` > spark flash firmware core-firmware.bin ```
 
   When your core is flashing yellow (in dfu mode), and connected to your computer, flash your binary locally over USB.
@@ -82,21 +82,47 @@ Getting Started
 
 ###spark variable monitor
 
-> spark variable monitor 0123456789ABCDEFGHI temperature 5000
-> spark variable monitor 0123456789ABCDEFGHI temperature 5000 --time
-> spark variable monitor all temperature 5000
-> spark variable monitor all temperature 5000 --time
+    > spark variable monitor 0123456789ABCDEFGHI temperature 5000
+    > spark variable monitor 0123456789ABCDEFGHI temperature 5000 --time
+    > spark variable monitor all temperature 5000
+    > spark variable monitor all temperature 5000 --time
+    > spark variable monitor all temperature 5000 --time > my_temperatures.csv
 
   Pulls the value of a variable at a set interval, and optionally display a timestamp
 
+###spark serial list
+
 ``` > spark serial list ```
 
-``` > spark serial monitor ```
+  Shows currently connected Spark Core's acting as serial devices over USB
 
-``` > spark serial wifi ```
+###spark serial monitor
 
-``` > spark serial identify ```
+    > spark serial monitor
+    > spark serial monitor 1
+    > spark serial monitor COM3
+    > spark serial monitor /dev/cu.usbmodem12345
 
+  Starts listening to the specified serial device, and echoes to the terminal
+
+
+###spark serial wifi
+
+    > spark serial wifi
+    > spark serial wifi 1
+    > spark serial wifi COM3
+    > spark serial wifi /dev/cu.usbmodem12345
+
+  Helpful shortcut for configuring Wi-Fi credentials over serial when your core is connected and in listening mode (flashing blue)
+
+#spark serial identify
+
+    > spark serial identify
+    > spark serial identify 1
+    > spark serial identify COM3
+    > spark serial identify /dev/cu.usbmodem12345
+
+  Retrieves your core id when the core is connected and in listening mode (flashing blue)
 
 
 ###spark keys doctor
