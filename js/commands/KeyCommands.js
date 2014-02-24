@@ -58,6 +58,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         this.addOption("save", this.saveKeyFromCore.bind(this), "Save a key from your core onto your disk");
         this.addOption("send", this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
         this.addOption("doctor", this.keyDoctor.bind(this), "Creates and assigns a new key to your core, and uploads it to the cloud");
+        this.addOption("server", this.writeServerPublicKey.bind(this), "Switch server public keys");
 
         //this.addArgument("get", "--time", "include a timestamp")
         //this.addArgument("monitor", "--time", "include a timestamp")
@@ -164,6 +165,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         return ready;
     },
 
+
+
     saveKeyFromCore: function (filename) {
         if (!filename) {
             console.error("Please provide a filename to store this key.");
@@ -255,6 +258,24 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             },
             function (err) {
                 console.log("Make sure your core is in DFU mode (blinking yellow), and that your computer is online.");
+                console.error("Error - " + err);
+            });
+    },
+
+    writeServerPublicKey: function (filename) {
+        if (!filename || (!fs.existsSync(filename))) {
+            console.log("Please specify a server key in DER format.");
+            return -1;
+        }
+
+        var allDone = dfu.writeServerKey(filename, false);
+        when(allDone).then(
+            function () {
+                console.log("Okay!  New keys in place, your core will not restart.");
+
+            },
+            function (err) {
+                console.log("Make sure your core is in DFU mode (blinking yellow), and is connected to your computer");
                 console.error("Error - " + err);
             });
     },

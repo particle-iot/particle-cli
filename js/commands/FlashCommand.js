@@ -50,7 +50,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
     description: "copies firmware and data to your core over usb",
 
     init: function () {
-        this.addOption("firmware", this.flashCore.bind(this));
+        this.addOption("firmware", this.flashCore.bind(this), "Flashes a local firmware binary to your core over USB");
         //this.addOption("list", this.listCores.bind(this));
         //this.addOption(null, this.helpCommand.bind(this));
     },

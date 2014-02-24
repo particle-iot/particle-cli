@@ -105,7 +105,7 @@ var that = module.exports = {
     writeDfu: function (memoryInterface, binaryPath, firmwareAddress, leave) {
         var prefix = that.getCommandPrefix();
         var leaveStr = (leave) ? ":leave" : "";
-        var cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -D ' + binaryPath;
+        var cmd = prefix + ' -a ' + memoryInterface + ' -i 0 -s ' + firmwareAddress + leaveStr + ' -D ' + binaryPath;
         that.checkBinaryAlignment(cmd);
 
         return utilities.deferredChildProcess(cmd);
