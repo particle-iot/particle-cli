@@ -115,7 +115,7 @@ Getting Started
 
   Helpful shortcut for configuring Wi-Fi credentials over serial when your core is connected and in listening mode (flashing blue)
 
-#spark serial identify
+###spark serial identify
 
     > spark serial identify
     > spark serial identify 1
