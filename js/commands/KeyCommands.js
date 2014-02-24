@@ -221,9 +221,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             }
         }
 
-        //TODO: replace with better interactive init
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
 
         var keyStr = fs.readFileSync(filename).toString();
         return api.sendPublicKey(coreid, keyStr);

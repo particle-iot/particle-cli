@@ -141,9 +141,10 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
             coreid = [ coreid ];
         }
 
-        //TODO: replace with better interactive init
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
 
         var multipleCores = coreid.length > 1;
 
@@ -192,8 +193,10 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
         var tmp = when.defer();
         var that = this;
-        var api = new ApiClient(settings.apiUrl);
-        api._access_token = settings.access_token;
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return;
+        }
 
         var lookupVariables = function (cores) {
             if (!cores || (cores.length == 0)) {
