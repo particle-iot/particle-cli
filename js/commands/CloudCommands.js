@@ -202,7 +202,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         when(allDone).then(
             function () {
-                console.log("saved firmware to " + filename);
+                console.log("saved firmware to " + path.resolve(filename));
                 console.log("Compiled firmware downloaded.");
             },
             function (err) {
