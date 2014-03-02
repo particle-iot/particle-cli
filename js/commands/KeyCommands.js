@@ -34,7 +34,7 @@ var utilities = require('../lib/utilities.js');
 var BaseCommand = require("./BaseCommand.js");
 var ApiClient = require('../lib/ApiClient.js');
 var moment = require('moment');
-var ursa = require('ursa');
+//var ursa = require('ursa');
 var fs = require('fs');
 var dfu = require('../lib/dfu.js');
 
@@ -92,15 +92,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         ]);
     },
 
-    makeKeyUrsa: function (filename) {
-        var key = ursa.generatePrivateKey(1024);
-        fs.writeFileSync(filename + ".pem", key.toPrivatePem('binary'));
-        fs.writeFileSync(filename + ".pub.pem", key.toPublicPem('binary'));
-
-        //Hmm... OpenSSL is an installation requirement for URSA anyway, so maybe this fork is totally unnecessary...
-        //in any case, it doesn't look like ursa can do this type conversion, so lets use openssl.
-        return utilities.deferredChildProcess("openssl rsa -in " + filename + ".pem -outform DER -out " + filename + ".der");
-    },
+//    makeKeyUrsa: function (filename) {
+//        var key = ursa.generatePrivateKey(1024);
+//        fs.writeFileSync(filename + ".pem", key.toPrivatePem('binary'));
+//        fs.writeFileSync(filename + ".pub.pem", key.toPublicPem('binary'));
+//
+//        //Hmm... OpenSSL is an installation requirement for URSA anyway, so maybe this fork is totally unnecessary...
+//        //in any case, it doesn't look like ursa can do this type conversion, so lets use openssl.
+//        return utilities.deferredChildProcess("openssl rsa -in " + filename + ".pem -outform DER -out " + filename + ".der");
+//    },
 
 
     makeNewKey: function (filename) {
@@ -109,12 +109,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         }
 
         var keyReady;
-        if (settings.useOpenSSL) {
+        //if (settings.useOpenSSL) {
             keyReady = this.makeKeyOpenSSL(filename);
-        }
-        else {
-            keyReady = this.makeKeyUrsa(filename);
-        }
+        //}
+        //else {
+        //    keyReady = this.makeKeyUrsa(filename);
+        //}
 
         when(keyReady).then(function () {
             console.log("New Key Created!");

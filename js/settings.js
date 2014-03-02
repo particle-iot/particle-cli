@@ -35,7 +35,7 @@ var settings = {
     access_token: null,
     minimumApiDelay: 500,
 
-    useOpenSSL: true,
+    //useOpenSSL: true,
     useSudoForDfu: false,
 
     //2 megs -- this constant here is arbitrary
