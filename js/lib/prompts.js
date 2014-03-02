@@ -48,6 +48,13 @@ var that = {
         return that._prompt;
     },
 
+    closePrompt: function() {
+        if (that._prompt) {
+            that._prompt.close();
+            that._prompt = null;
+        }
+    },
+
     promptDfd: function (message) {
         var dfd = when.defer();
         var prompt = that.getPrompt();
@@ -73,13 +80,27 @@ var that = {
     },
     passPromptDfd: function (message) {
         var dfd = when.defer();
-        var prompt = that.getPrompt();
 
-        //process.stdin.setRawMode(true);
-        prompt.question(message, function (value) {
-            //process.stdin.setRawMode(false);
-            dfd.resolve(value);
+        //kill the existing prompt
+        that.closePrompt();
+
+        var stdin = process.openStdin();
+        stdin.setRawMode(true);
+        process.stdin.setRawMode(true);
+        process.stdout.write(message);
+
+        var arr = [];
+        stdin.on('data', function(chunk) {
+            if (chunk[0] != 13) {
+                arr.push(chunk);
+            }
+            else {
+                process.stdin.setRawMode(false);
+                console.log('done');
+                dfd.resolve(arr.join(''));
+            }
         });
+
         return dfd.promise;
     },
 
@@ -94,10 +115,10 @@ var that = {
         ]);
     },
     getUsername: function () {
-        return that.promptDfd("Could I please have your username? :\t");
+        return that.promptDfd("Could I please have your username?  ");
     },
     getPassword: function () {
-        return that.passPromptDfd("and a password? :\t");
+        return that.passPromptDfd("and a password?  ");
     },
 
     getWifiCredentials: function () {
@@ -107,10 +128,10 @@ var that = {
         ]);
     },
     getUsername: function () {
-        return that.promptDfd("Could I please have your username? :\t");
+        return that.promptDfd("Could I please have your username?  ");
     },
     getPassword: function () {
-        return that.passPromptDfd("and a password? :\t");
+        return that.passPromptDfd("and a password?  ");
     },
 
 
