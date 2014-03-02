@@ -58,8 +58,8 @@ Getting Started / Documentation
 
 ###spark cloud compile
 
-    > spark cloud compile 0123456789ABCDEFGHI my_application.ino
-    > spark cloud compile 0123456789ABCDEFGHI /projects/big_app/src
+    > spark cloud compile my_application.ino
+    > spark cloud compile /projects/big_app/src
 
   Create and download a firmware binary, by cloud compiling a source file, or a directory of source files
 
@@ -95,6 +95,9 @@ Getting Started / Documentation
     > spark variable monitor all temperature 5000 --time > my_temperatures.csv
 
   Pulls the value of a variable at a set interval, and optionally display a timestamp
+  
+  * Minimum delay for now is 500 (there is a check anyway if you keyed anything less)
+  * "ctrl + c" in the console stops the monitoring
 
 ###spark serial list
 
