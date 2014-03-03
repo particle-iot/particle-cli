@@ -264,7 +264,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
     monitorVariables: function (coreid, variableName, delay) {
         if (!coreid && !variableName) {
-            console.log("Please specify a coreid and a variable name, or just a variable name.")
+            console.log("Please specify a coreid and a variable name, or just a variable name.");
             return;
         }
 
