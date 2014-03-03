@@ -14,7 +14,11 @@ Install
     npm install -g spark-cli
     spark cloud login
 
+Upgrade
+=======
+To upgrade Spark-CLI, enter the following command:
 
+    npm update -g spark-cli
 
 Getting Started / Documentation
 ===============
