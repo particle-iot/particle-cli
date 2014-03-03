@@ -103,6 +103,21 @@ Getting Started / Documentation
   * Minimum delay for now is 500 (there is a check anyway if you keyed anything less)
   * "ctrl + c" in the console stops the monitoring
 
+###spark function list
+
+``` > spark function list ```
+
+  Gets a list of all your cores and the exposed functions of the cores that are online.
+
+
+###spark function call
+
+    > spark function call
+    > spark function call 0123456789ABCDEFGHI functionName "Here is my string"
+
+  Call a particular function on your core, and show the return value
+
+
 ###spark serial list
 
 ``` > spark serial list ```
