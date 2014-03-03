@@ -263,10 +263,11 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 
     monitorVariables: function (coreid, variableName, delay) {
-        //TODO:
-//        if (!args || (args.length < 1)) {
-//            console.log("Please specify which core ")
-//        }
+        if (!coreid && !variableName) {
+            console.log("Please specify a coreid and a variable name, or just a variable name.")
+            return;
+        }
+
 
         //TODO: if no device id, list devices
         //TODO: if no variable name, list variables
