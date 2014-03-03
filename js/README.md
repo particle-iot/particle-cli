@@ -19,3 +19,10 @@ Initial Release! - 02/20/2014
 
 02/21/2014 - 0.2.8 - Adding cloud list
 
+03/02/2014 - 0.2.9 - Merged in pull request for #6, and #14, fixed #3, #9, and #10,
+
+  Also removed hard dependency on ursa so the build / install is easier.
+  (Issues are listed here: https://github.com/spark/spark-cli/issues?state=open )
+
+
+03/03/2014 - 0.2.92 - Adding basic function call support

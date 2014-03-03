@@ -43,6 +43,8 @@
  *
  **/
 var when = require('when');
+var pipeline = require('when/pipeline');
+
 var http = require('http');
 var request = require('request');
 var fs = require('fs');
@@ -461,33 +463,78 @@ ApiClient.prototype = {
     },
 
     callFunction: function (coreID, functionName, funcParam) {
-        console.log('callFunction for user ');
+        //console.log('callFunction for user ');
 
         var dfd = when.defer();
-        var that = this;
-
         request({
-            uri: this.baseUrl + "/v1/devices/" + coreID + "/" + functionName,
-            method: "POST",
-            form: {
-                arg: funcParam,
-                access_token: this._access_token
+                uri: this.baseUrl + "/v1/devices/" + coreID + "/" + functionName,
+                method: "POST",
+                form: {
+                    arg: funcParam,
+                    access_token: this._access_token
+                },
+                json: true
             },
-            json: true
-        }, function (error, response, body) {
-            //console.log(error, response, body);
-            if (error) {
-                console.log("callFunction got error: ", error);
-            }
-            else {
-                console.log("callFunction succeeded ", body);
-            }
-
-            that._devices = body;
-            dfd.resolve(response);
-        });
+            function (error, response, body) {
+                if (error) {
+                    dfd.reject(error);
+                }
+                else {
+                    dfd.resolve(body);
+                }
+            });
 
         return dfd.promise;
+    },
+
+    getAllAttributes: function () {
+        if (this._attributeCache) {
+            return when.resolve(this._attributeCache);
+        }
+
+        console.log("polling server to see what cores are online, and what functions are available");
+
+
+        var that = this;
+
+
+        var lookupAttributes = function (cores) {
+            var tmp = when.defer();
+
+            if (!cores || (cores.length == 0)) {
+                console.log("No cores found.");
+                that._attributeCache = null;
+                tmp.reject("No cores found");
+            }
+            else {
+                var promises = [];
+                for (var i = 0; i < cores.length; i++) {
+                    var coreid = cores[i].id;
+                    if (cores[i].connected) {
+                        promises.push(that.getAttributes(coreid));
+                    }
+                    else {
+                        promises.push(when.resolve(cores[i]));
+                    }
+                }
+
+                when.all(promises).then(function (cores) {
+                    //sort alphabetically
+                    cores = cores.sort(function (a, b) {
+                        return (a.name || "").localeCompare(b.name);
+                    });
+
+                    that._attributeCache = cores;
+                    tmp.resolve(cores);
+                });
+            }
+            return tmp.promise;
+        };
+
+        return pipeline([
+            that.listDevices.bind(that),
+            lookupAttributes
+        ]);
     },
 
     foo:null
