@@ -76,7 +76,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             //TODO: listen for interrupts, close gracefully?
             var serialPort = new SerialPort(port, {
                 baudrate: 9600
-            });
+            }, false);
             serialPort.on('data', function (data) {
                 process.stdout.write(data.toString());
             });
@@ -151,7 +151,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
         var serialPort = this.serialPort || new SerialPort(comPort, {
             baudrate: 9600
-        });
+        }, false);
 
         //TODO: correct interaction for unsecured networks
         //TODO: drop the pre-prompt creds process entirely when we have the built in serial terminal
@@ -243,7 +243,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
             var serialPort = new SerialPort(comPort, {
                 baudrate: 9600
-            });
+            }, false);
             this.serialPort = serialPort;
 
 
