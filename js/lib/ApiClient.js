@@ -99,7 +99,7 @@ ApiClient.prototype = {
                 console.log("User creation ran into an issue: ", body.errors);
             }
             else {
-                console.log("createUser got ", error, response, body);
+                console.log("createUser got ", body + "");
             }
 
             dfd.resolve(response);
