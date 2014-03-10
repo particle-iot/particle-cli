@@ -155,7 +155,7 @@ Getting Started / Documentation
 
 ###spark keys doctor
 
-``` > spark keys doctor ```
+``` > spark keys doctor 0123456789ABCDEFGHI```
 
   Runs a series of steps to generate a new public/private keypair, and send it to the server for your core.  Helpful
   for recovering from key issues.
