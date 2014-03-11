@@ -234,20 +234,19 @@ ApiClient.prototype = {
 
         request({
             uri: this.baseUrl + "/v1/devices/" + coreID,
-            method: "POST",
+            method: "PUT",
             form: {
-                id: coreID,
                 name: name,
                 access_token: this._access_token
             },
             json: true
         }, function (error, response, body) {
-            if (body && body.ok) {
-                console.log("Successfully renamed core " + coreID);
+            if (body && (body.name == name)) {
+                console.log("Successfully renamed core " + coreID + " to: " + name);
                 dfd.resolve(body);
             }
-            else if (body && body.errors) {
-                console.log("Failed to rename core, server said ", body.errors);
+            else {
+                console.log("Failed to rename core, server said ", body.errors || body);
                 dfd.reject(body);
             }
         });
@@ -370,6 +369,7 @@ ApiClient.prototype = {
 
         var form = r.form();
         for (var name in files) {
+            console.log("pushing file: " + files[name]);
             form.append(name, fs.createReadStream(files[name]), {
                 filename: files[name]
             });
@@ -431,36 +431,7 @@ ApiClient.prototype = {
     },
 
 
-    //PUT /v1/devices/{DEVICE_ID}
-    renameCore: function (coreID, coreName) {
-        console.log('asking the server to set the friendly name for ' + coreID + ' to ' + coreName);
 
-        var dfd = when.defer();
-        var that = this;
-
-        request({
-            uri: this.baseUrl + "/v1/devices/" + coreID,
-            method: "PUT",
-            form: {
-                name: coreName,
-                access_token: this._access_token
-            },
-            json: true
-        }, function (error, response, body) {
-            //console.log(error, response, body);
-            if (error) {
-                console.log("signalCore got error: ", error);
-            }
-            else {
-                console.log("Rename core succeeded");
-            }
-
-            that._devices = body;
-            dfd.resolve(response);
-        });
-
-        return dfd.promise;
-    },
 
     callFunction: function (coreID, functionName, funcParam) {
         //console.log('callFunction for user ');

@@ -192,13 +192,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                         console.log("Errors");
                         console.log(resp.errors.join("\n"));
                     }
-
-
                     return when.reject("compile failed ");
                 }
             }
         ]);
-
 
         when(allDone).then(
             function () {
