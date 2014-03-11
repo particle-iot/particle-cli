@@ -32,7 +32,7 @@ var extend = require('xtend');
 
 var settings = {
     commandPath: "./commands/",
-    apiUrl: "https://staging-api.spark.io",
+    apiUrl: "https://api.spark.io",
     access_token: null,
     minimumApiDelay: 500,
 
