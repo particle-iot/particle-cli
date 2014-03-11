@@ -155,7 +155,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         api.flashCore(coreid, files);
     },
 
-    compileCode: function (filePath) {
+    compileCode: function (filePath, filename) {
         if (!filePath) {
             console.error("Please specify a binary file, source file, or source directory");
             return;
@@ -170,8 +170,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if (!files) {
             return;
         }
+        
+        if(!filename)
+        {
+            filename = "firmware_" + (new Date()).getTime() + ".bin";
+        }
 
-        var filename = "firmware_" + (new Date()).getTime() + ".bin";
 
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
