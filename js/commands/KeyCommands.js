@@ -144,7 +144,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         var ready = sequence([
             function () {
                 //make sure our core is online and in dfu mode
-                return dfu.findCompatiableDFU();
+                return dfu.findCompatibleDFU();
             },
             //backup their existing key so they don't lock themselves out.
             function() {
