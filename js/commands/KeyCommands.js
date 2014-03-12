@@ -144,7 +144,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         var ready = sequence([
             function () {
                 //make sure our core is online and in dfu mode
-                return dfu.findCompatiableDFU();
+                return dfu.findCompatibleDFU();
             },
             //backup their existing key so they don't lock themselves out.
             function() {
@@ -186,7 +186,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
         var ready = sequence([
             function () {
-                return dfu.findCompatiableDFU();
+                return dfu.findCompatibleDFU();
             },
             function () {
                 return dfu.readPrivateKey(filename, false);
@@ -239,7 +239,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         var that = this;
         var allDone = sequence([
             function () {
-                return dfu.findCompatiableDFU();
+                return dfu.findCompatibleDFU();
             },
             function() {
                 return that.makeNewKey(coreid + "_new");

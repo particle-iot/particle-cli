@@ -63,7 +63,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
         var ready = sequence([
             function () {
-                return dfu.findCompatiableDFU();
+                return dfu.findCompatibleDFU();
             },
             function() {
                 return dfu.writeFirmware(firmware, true);

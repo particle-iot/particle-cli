@@ -42,10 +42,10 @@ var that = module.exports = {
         '1d50:607f'
     ],
 
-    findCompatiableDFU: function () {
+    findCompatibleDFU: function () {
         var temp = when.defer();
 
-        var failTimer = utilities.timeoutGenerator("findCompatiableDFU timed out", temp, 5000);
+        var failTimer = utilities.timeoutGenerator("findCompatibleDFU timed out", temp, 5000);
         child_process.exec("dfu-util -l", function (error, stdout, stderr) {
             clearTimeout(failTimer);
 
@@ -155,7 +155,7 @@ var that = module.exports = {
 //        };
 //
 //        var promise = sequence([
-//            that.findCompatiableDFU,
+//            that.findCompatibleDFU,
 //            timing.helpers.waitHalfSecond,
 //            tryProgrammingOverUsb
 //        ]);
