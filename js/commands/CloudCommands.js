@@ -237,8 +237,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 }
 
                 setTimeout(function() {
-                    process.exit(-1);
-                }, 2500);
+                    process.exit(0);
+                }, 1250);
             },
             function (err) {
                 console.error("Error logging in " + err);

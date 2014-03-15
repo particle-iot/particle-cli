@@ -54,11 +54,11 @@ var that = module.exports = {
         return -1;
     },
     pipeDeferred: function(left, right) {
-        when(left).then(function() {
+        return when(left).then(function() {
             right.resolve.apply(right, arguments);
         }, function() {
             right.reject.apply(right, arguments);
-        })
+        });
     },
 
     deferredChildProcess: function(exec) {
@@ -121,6 +121,39 @@ var that = module.exports = {
     },
 
 
+    retryDeferred: function (testFn, numTries) {
+        if (!testFn) {
+            console.error("retryDeferred - comon, pass me a real function.");
+            return when.reject("not a function!");
+        }
+
+        var defer = when.defer(),
+            lastError = null,
+            tryTestFn = function () {
+                numTries--;
+                if (numTries <= 0) {
+                    defer.reject(lastError);
+                    return;
+                }
+
+                try {
+                    when(testFn()).then(
+                        function (value) {
+                            defer.resolve(value);
+                        },
+                        function (msg) {
+                            lastError = msg;
+                            tryTestFn();
+                        });
+                }
+                catch (ex) {
+                    lastError = ex;
+                }
+            };
+
+        tryTestFn();
+        return defer.promise;
+    },
 
 
     _:null

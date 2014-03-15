@@ -44,6 +44,7 @@
  **/
 var when = require('when');
 var pipeline = require('when/pipeline');
+var utilities = require('../lib/utilities.js');
 
 var http = require('http');
 var request = require('request');
@@ -69,6 +70,10 @@ ApiClient.prototype = {
         return hasToken;
     },
 
+    getToken: function () {
+        return this._access_token;
+    },
+
 
     createUser: function (user, pass) {
         var dfd = when.defer();
@@ -77,6 +82,14 @@ ApiClient.prototype = {
         //todo; if !pass, make random?
 
         //curl -d username=zachary@spark.io -d password=foobar https://api.spark.io/v1/users
+
+        if (!user || (user == '')
+            || (!utilities.contains(user, "@"))
+            || (!utilities.contains(user, ".")))
+        {
+            return when.reject("Username must be an email address.")
+        }
+
 
         console.log('creating user ', user, pass);
         var that = this;
@@ -102,7 +115,7 @@ ApiClient.prototype = {
                 console.log("createUser got ", body + "");
             }
 
-            dfd.resolve(response);
+            dfd.resolve(body);
         });
 
         return dfd.promise;
@@ -293,11 +306,7 @@ ApiClient.prototype = {
 
     //PUT /v1/devices/{DEVICE_ID}
     signalCore: function (coreID, beSignalling) {
-        console.log('signalCore for user ');
-
         var dfd = when.defer();
-        var that = this;
-
         request({
             uri: this.baseUrl + "/v1/devices/" + coreID,
             method: "PUT",
@@ -307,16 +316,15 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
-            //console.log(error, response, body);
             if (error) {
                 console.log("signalCore got error: ", error);
+                dfd.reject(error);
             }
             else {
-                console.log("Core signalling change succeeded!");
+                console.log("Successfully updated core signalling mode");
+                dfd.resolve(body);
             }
 
-            that._devices = body;
-            dfd.resolve(response);
         });
 
         return dfd.promise;

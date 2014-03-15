@@ -63,13 +63,17 @@ var that = {
         });
         return dfd.promise;
     },
-    askYesNoQuestion: function (message) {
+    askYesNoQuestion: function (message, alwaysResolve) {
         var dfd = when.defer();
         var prompt = that.getPrompt();
         prompt.question(message, function (value) {
             value = (value || "").toLowerCase();
+            var saidYes = ((value == "yes") || (value == "y"));
 
-            if ((value == "yes") || (value == "y")) {
+            if (alwaysResolve) {
+                dfd.resolve(saidYes);
+            }
+            else if (saidYes) {
                 dfd.resolve(value);
             }
             else {
@@ -78,6 +82,7 @@ var that = {
         });
         return dfd.promise;
     },
+
     passPromptDfd: function (message) {
         var dfd = when.defer();
 
@@ -119,6 +124,9 @@ var that = {
     },
     getPassword: function () {
         return that.passPromptDfd("and a password?  ");
+    },
+    confirmPassword: function () {
+        return that.passPromptDfd("confirm password  ");
     },
 
     getWifiCredentials: function () {

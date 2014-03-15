@@ -35,6 +35,7 @@ var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 var prompts = require('../lib/prompts.js');
+var utilities = require('../lib/utilities.js');
 
 var SerialCommand = function (cli, options) {
     SerialCommand.super_.call(this, cli, options);
@@ -70,7 +71,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     },
 
     monitorPort: function (comPort) {
-        this.whatSerialPortDidYouMean(comPort, function(port) {
+        this.whatSerialPortDidYouMean(comPort, true, function(port) {
             console.log("Opening serial monitor for com port: \"" + port + "\"");
 
             //TODO: listen for interrupts, close gracefully?
@@ -115,15 +116,25 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     },
 
 
+    /**
+     * Check to see if the core is in listening mode, try to get the code ID via serial
+     * @param comPort
+     * @returns {promise|*|Promise|promise}
+     */
     identifyCore: function (comPort) {
+        var tmp = when.defer();
+
         var that = this;
-        this.whatSerialPortDidYouMean(comPort, function (port) {
-            that.askForCoreID(port);
+        this.whatSerialPortDidYouMean(comPort, true, function (port) {
+            utilities.pipeDeferred(that.askForCoreID(port), tmp);
         });
+
+        return tmp.promise;
     },
-    configureWifi: function (comPort) {
+    configureWifi: function (comPort, dontExit) {
+        var tmp = when.defer();
         var that = this;
-        this.whatSerialPortDidYouMean(comPort, function (port) {
+        this.whatSerialPortDidYouMean(comPort, true, function (port) {
 
             //ask for ssid, pass, security type
             var gotCreds = sequence([
@@ -133,9 +144,22 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             ]);
 
             when(gotCreds).then(function(creds) {
-                that.serialWifiConfig(port, creds[0], creds[1], creds[2]);
+                var wifiDone = that.serialWifiConfig(port, creds[0], creds[1], creds[2]);
+
+                utilities.pipeDeferred(wifiDone, tmp);
+
+                //TODO: fix this, this is awkward
+                if (!dontExit) {
+                    when(wifiDone).ensure(function () {
+                        setTimeout(function () {
+                            process.exit(0);
+                        }, 1250);
+                    })
+                }
             });
         });
+
+        return tmp.promise;
     },
 
 
@@ -217,11 +241,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
         when(dfd.promise).ensure(function () {
             serialPort.close();
-
-            setTimeout(function() {
-                //exit!
-                process.exit(0);
-            }, 2500);
         });
 
         return dfd.promise;
@@ -301,10 +320,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         when(dfd.promise).ensure(function () {
             serialPort.close();
         });
+        return dfd.promise;
     },
 
 
-    whatSerialPortDidYouMean: function(comPort, callback) {
+    whatSerialPortDidYouMean: function(comPort, shouldPrompt, callback) {
         this.findCores(function (cores) {
             if (!comPort) {
                 //they didn't give us anything.
@@ -341,6 +361,14 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 console.log((i + 1) + ":\t" + cores[i].comName);
             }
             console.log("");
+
+            if (shouldPrompt) {
+                //ask then what we meant, and try again...
+                var that = this;
+                when(prompts.promptDfd(": ")).then(function (value) {
+                    that.whatSerialPortDidYouMean(value, true, callback);
+                });
+            }
         });
     },
 
