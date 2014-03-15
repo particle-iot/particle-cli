@@ -213,6 +213,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
     },
 
     login: function() {
+        var username = null;
+
         var allDone = pipeline([
 
             //prompt for creds
@@ -221,6 +223,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             //login to the server
             function(creds) {
                 var api = new ApiClient(settings.apiUrl);
+                username = creds[0];
                 return api.login("spark-cli", creds[0], creds[1]);
             }
         ]);
@@ -229,6 +232,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 console.log("logged in! ", arguments);
                 //console.log("Successfully logged in as " + username);
                 settings.override("access_token", access_token);
+                if (username) {
+                    settings.override("username", username);
+                }
 
                 setTimeout(function() {
                     process.exit(-1);
@@ -238,8 +244,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 console.error("Error logging in " + err);
                 process.exit(-1);
             });
-
-
     },
     logout: function() {
         settings.override("access_token", null);
