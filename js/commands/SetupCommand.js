@@ -343,8 +343,15 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                             function() {
                                 //cool, lets login then.
                                 return api.login("spark-cli", creds[0], creds[1]);
-                            }
+                            },
+                            function (token) {
+                                if (creds[0]) {
+                                    settings.override("username", creds[0]);
+                                }
 
+                                //login success
+                                return when.resolve(token);
+                            }
                         ]);
                         return utilities.pipeDeferred(createAccountDone, tmp);
                     });
