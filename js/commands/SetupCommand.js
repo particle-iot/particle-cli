@@ -61,7 +61,6 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
     },
 
     runSetup: function () {
-        console.log("Lets setup your core!");
         var api = new ApiClient(settings.apiUrl, settings.access_token);   //
         var serial = this.cli.findCommand("serial"),
             cloud = this.cli.findCommand("cloud");
@@ -70,14 +69,37 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
             coreID,
             coreName;
 
+        var headerGen = function (text) {
+            return function () {
+                console.log("");
+                console.log("========================================");
+                console.log(text);
+                console.log("");
+
+                return when.resolve();
+            }
+        };
+        var subHeaderGen = function (text) {
+            return function () {
+                console.log("");
+                console.log("----------------------");
+                console.log(text);
+                console.log("");
+
+                return when.resolve();
+            }
+        };
 
         var allDone = pipeline([
+
+            headerGen("Setup your account"),
+
 
             //already logged in or not?
             function () {
                 if (settings.access_token) {
                     var inAs = (settings.username) ? " as " + settings.username : "";
-                    var line = "You're logged in" + inAs + ", do you want to switch accounts? (y/n): ";
+                    var line = "You are already logged in" + inAs + "\nDo you want to switch accounts? (y/N): ";
                     return prompts.askYesNoQuestion(line, true);
                 }
                 else {
@@ -106,6 +128,9 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 }
             },
 
+            subHeaderGen("Finding your core id"),
+
+
             //4.) connect core blinking blue,
             //5.) grab core identity,
 
@@ -115,11 +140,16 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 }
 
                 var getCoreID = function () {
-                    console.log("Make sure your core is blinking solid blue (in listening mode) and is connected to your computer");
                     return serial.identifyCore();
                 };
+                var recoveryFn = function () {
 
-                return utilities.retryDeferred(getCoreID, 3);
+                    console.log("Press and hold the MODE button until your core blinks solid blue");
+                    console.log("");
+                    return prompts.promptDfd(" - Is your core blinking solid blue?  Then press ENTER - ");
+                };
+
+                return utilities.retryDeferred(getCoreID, 3, recoveryFn);
             },
 
             function (serialID) {
@@ -134,6 +164,9 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 return when.resolve();
             },
 
+            headerGen("Setup your wifi"),
+
+
             //6.) prompt for / configure wifi creds,
             function () {
                 var configWifi = function () {
@@ -144,22 +177,51 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
             },
 
             function () {
-                return prompts.promptDfd("Please wait until your core is breathing cyan and then press ENTER");
+                console.log("");
+                return prompts.promptDfd("Please wait until your core is breathing cyan and then press ENTER\n");
             },
+
+            headerGen("Claiming your core"),
+
 
             //7.) claim core,
             function () {
-                return api.claimCore(coreID);
+                var tryFn = function () {
+                    return api.claimCore(coreID);
+                };
+                var recoveryFn = function () {
+                    return prompts.promptDfd("Please wait until your core is breathing cyan and then press ENTER\n");
+                };
+                return utilities.retryDeferred(tryFn, 5, recoveryFn);
             },
 
             function () {
                 api.signalCore(coreID, true);
-                setTimeout(function () {
-                    api.signalCore(coreID, false);
-                }, 5000);
-
                 return when.resolve();
             },
+
+            headerGen("Shouting rainbows..."),
+            function () {
+                return prompts.promptDfd("Press ENTER if your core is excitedly shouting rainbows");
+            },
+
+            function () {
+                var lines = [
+                    "                                 ,---. ",
+                    ",--.   ,--.             ,--.     |   | ",
+                    " \\  `.'  /,---.  ,--,--.|  ,---. |  .' ",
+                    "  '.    /| .-. :' ,-.  ||  .-.  ||  |  ",
+                    "    |  | \\   --.\\ '-'  ||  | |  |`--'  ",
+                    "    `--'  `----' `--`--'`--' `--'.--.  ",
+                    "                                 '--'  ",
+                    ""];
+                console.log(lines.join("\n"));
+                return when.resolve();
+            },
+
+
+            subHeaderGen("Naming your core"),
+
 
             //8.) name your core!
             function () {
@@ -167,14 +229,19 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
             },
             function (name) {
                 coreName = name;
+                api.signalCore(coreID, false);
                 return api.renameCore(coreID, name);
             },
+
+            headerGen("Success!"),
+
 
             function () {
                 return prompts.askYesNoQuestion("Do you want to logout now? (y/n): ", true);
             },
             function (shouldLogout) {
                 if (shouldLogout) {
+                    console.log("Logging out?");
                     return cloud.logout();
                 }
                 return when.resolve();
@@ -186,11 +253,13 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
         //9.) prompt for open web browser to spark/docs
 
 
-        when(allDone).then(function (access_token) {
+        when(allDone).then(function () {
 
-                console.log("Congrats " + settings.username + "!");
-                console.log("You've successfully claimed your core: " + coreName + " (" + coreID + ")");
-                settings.override("access_token", access_token);
+
+                console.log("You've successfully setup your core: " + coreName + " (" + coreID + ")");
+                console.log("");
+                console.log("Nice work " + settings.username + "!");
+                console.log("");
 
                 setTimeout(function () {
                     process.exit(-1);

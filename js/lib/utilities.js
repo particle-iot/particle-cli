@@ -121,7 +121,7 @@ var that = module.exports = {
     },
 
 
-    retryDeferred: function (testFn, numTries) {
+    retryDeferred: function (testFn, numTries, recoveryFn) {
         if (!testFn) {
             console.error("retryDeferred - comon, pass me a real function.");
             return when.reject("not a function!");
@@ -131,8 +131,8 @@ var that = module.exports = {
             lastError = null,
             tryTestFn = function () {
                 numTries--;
-                if (numTries <= 0) {
-                    defer.reject(lastError);
+                if (numTries < 0) {
+                    defer.reject("Out of tries " + lastError);
                     return;
                 }
 
@@ -143,7 +143,13 @@ var that = module.exports = {
                         },
                         function (msg) {
                             lastError = msg;
-                            tryTestFn();
+
+                            if (recoveryFn) {
+                                when(recoveryFn()).then(tryTestFn);
+                            }
+                            else {
+                                tryTestFn();
+                            }
                         });
                 }
                 catch (ex) {
