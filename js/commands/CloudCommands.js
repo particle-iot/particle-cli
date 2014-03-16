@@ -76,6 +76,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if (!api.ready()) {
             return;
         }
+        console.log("Claiming core " + coreid);
         api.claimCore(coreid);
     },
 
@@ -123,6 +124,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
+        console.log("Renaming core " + coreid);
         api.renameCore(coreid, name);
     },
 

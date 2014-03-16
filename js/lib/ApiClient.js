@@ -183,8 +183,6 @@ ApiClient.prototype = {
     },
 
     claimCore: function (coreID) {
-        console.log("claiming core " + coreID);
-
         var dfd = when.defer();
         request({
             uri: this.baseUrl + "/v1/devices",
@@ -242,7 +240,6 @@ ApiClient.prototype = {
 
 
     renameCore: function (coreID, name) {
-        console.log("renaming core " + coreID);
         var dfd = when.defer();
 
         request({
@@ -317,11 +314,11 @@ ApiClient.prototype = {
             json: true
         }, function (error, response, body) {
             if (error) {
-                console.log("signalCore got error: ", error);
+                //console.log("signalCore got error: ", error);
                 dfd.reject(error);
             }
             else {
-                console.log("Successfully updated core signalling mode");
+                //console.log("Successfully updated core signalling mode");
                 dfd.resolve(body);
             }
 
