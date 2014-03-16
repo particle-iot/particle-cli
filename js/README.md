@@ -28,3 +28,5 @@ Initial Release! - 02/20/2014
 03/03/2014 - 0.2.92 - Adding basic function call support
 
 03/07/2014 - 0.2.93 - Merging in a patch that helps with using Serial on Windows
+
+03/16/2014 - 0.2.94 - Adding a guided setup command, lots of small tweaks
