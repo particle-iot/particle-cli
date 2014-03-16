@@ -98,9 +98,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 var port = ports[i];
 
                 //not trying to be secure here, just trying to be helpful.
-                if ( (port.manufacturer && port.manufacturer.indexOf("Spark") >= 0) ||
-                    (port.pnpId && port.pnpId.indexOf("Spark_Core") >= 0)
-                ) {
+                if ((port.manufacturer && port.manufacturer.indexOf("Spark") >= 0) ||
+                    (port.pnpId && port.pnpId.indexOf("Spark_Core") >= 0))
+                {
                     cores.push(port);
                 }
             }
@@ -126,6 +126,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
         var that = this;
         this.whatSerialPortDidYouMean(comPort, true, function (port) {
+            if (!port) {
+                tmp.reject("No serial port identified");
+                return;
+            }
+
             utilities.pipeDeferred(that.askForCoreID(port), tmp);
         });
 
@@ -250,6 +255,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 
     askForCoreID: function (comPort) {
+        if (!comPort) {
+            return when.reject("askForCoreID - no serial port provided");
+        }
+
         var failDelay = 5000;
 
         var dfd = when.defer();
@@ -275,7 +284,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 
             var failTimer = setTimeout(function () {
-                dfd.reject("Serial Timed out");
+                dfd.reject("Serial timed out");
             }, failDelay);
 
 
@@ -355,14 +364,21 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 }
             }
 
-            console.log("Which core did you mean?");
-            console.log("Found " + cores.length + " core(s) connected via serial: ");
-            for (var i = 0; i < cores.length; i++) {
-                console.log((i + 1) + ":\t" + cores[i].comName);
+            if (cores.length > 0) {
+                console.log("Which core did you mean?");
+                console.log("Found " + cores.length + " core(s) connected via serial: ");
+                for (var i = 0; i < cores.length; i++) {
+                    console.log((i + 1) + ":\t" + cores[i].comName);
+                }
+                console.log("");
             }
-            console.log("");
+            else {
+                console.log("I didn't find any cores available via serial");
+                if (shouldPrompt) { callback(null); }
+                return;
+            }
 
-            if (shouldPrompt) {
+            if (shouldPrompt && (cores.length > 0)) {
                 //ask then what we meant, and try again...
                 var that = this;
                 when(prompts.promptDfd(": ")).then(function (value) {
