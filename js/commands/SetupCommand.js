@@ -120,8 +120,10 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 }
 
                 //lets not pretend we're logged in when switching accounts.
-                api.clearToken();
-                cloud.logout();
+                if (settings.access_token) {
+                    api.clearToken();
+                    cloud.logout();
+                }
 
                 return that.login_or_create_account(api);
             },
@@ -245,7 +247,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
 
 
             function () {
-                return prompts.askYesNoQuestion("Do you want to logout now? (y/n): ", true);
+                return prompts.askYesNoQuestion("Do you want to logout  now? (y/n): ", true);
             },
             function (shouldLogout) {
                 if (shouldLogout) {
@@ -299,6 +301,12 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 var tmp = when.defer();
 
                 username = creds[0];
+                if (!username || (username == '')
+                    || (!utilities.contains(username, "@"))
+                    || (!utilities.contains(username, "."))) {
+                    tmp.reject("Username must be an email address.");
+                    return;
+                }
 
                 console.log("");
                 console.log("Trying to login...");
@@ -314,13 +322,16 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                         tmp.resolve(token);
                     },
                     function () {
-                        var user = creds[0];
-                        if (!user || (user == '')
-                            || (!utilities.contains(user, "@"))
-                            || (!utilities.contains(user, "."))) {
+
+                        var username = creds[0];
+                        if (!username || (username == '')
+                            || (!utilities.contains(username, "@"))
+                            || (!utilities.contains(username, "."))) {
                             tmp.reject("Username must be an email address.");
                             return;
                         }
+
+                        console.log("Login failed, Lets create a new account!");
 
 
                         //create account
@@ -345,8 +356,8 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                                 return api.login("spark-cli", creds[0], creds[1]);
                             },
                             function (token) {
-                                if (creds[0]) {
-                                    settings.override("username", creds[0]);
+                                if (username) {
+                                    settings.override("username", username);
                                 }
 
                                 //login success

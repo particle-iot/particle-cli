@@ -107,6 +107,7 @@ var that = {
                 process.stdout.write("*");
             }
             else {
+                process.stdout.write("\n");
                 dfd.resolve(arr.join(''));
             }
         };
