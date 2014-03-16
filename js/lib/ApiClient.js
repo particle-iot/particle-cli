@@ -70,6 +70,10 @@ ApiClient.prototype = {
         return hasToken;
     },
 
+    clearToken: function() {
+        this._access_token = null;
+    },
+
     getToken: function () {
         return this._access_token;
     },
@@ -140,19 +144,17 @@ ApiClient.prototype = {
         }, function (error, response, body) {
             if (body && body.access_token) {
                 console.log("Got an access token! " + body.access_token);
+                that._access_token = body.access_token;
+                dfd.resolve(that._access_token);
             }
             else if (body) {
-                console.log("login got ", body.error);
-                dfd.reject("Login Failed - No access token!");
+                //console.log("login got ", body.error);
+                dfd.reject("Login Failed");
             }
             else {
                 console.error("login error: ", error);
+                dfd.reject("Login Failed: " + error);
             }
-
-            if (body) {
-                that._access_token = body.access_token;
-            }
-            dfd.resolve(that._access_token);
         });
 
         return dfd.promise;

@@ -119,13 +119,21 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                     return when.resolve();
                 }
 
+                //lets not pretend we're logged in when switching accounts.
+                api.clearToken();
+                cloud.logout();
+
                 return that.login_or_create_account(api);
             },
-            function (token) {
-                if (token) {
-                    console.log("Logged in!  Saving access token.");
-                    settings.override("access_token", api.getToken());
+            function () {
+                var token = api.getToken();
+                if (!token) {
+                    return when.reject("Unable to login or create a new account");
                 }
+
+                console.log("Logged in!  Saving access token: " + token);
+                settings.override("access_token", token);
+                return when.resolve();
             },
 
             subHeaderGen("Finding your core id"),
@@ -255,7 +263,6 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
 
         when(allDone).then(function () {
 
-
                 console.log("You've successfully setup your core: " + coreName + " (" + coreID + ")");
                 console.log("");
                 console.log("Nice work " + settings.username + "!");
@@ -293,6 +300,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
 
                 username = creds[0];
 
+                console.log("");
                 console.log("Trying to login...");
 
                 var loginDone = api.login("spark-cli", creds[0], creds[1]);
@@ -306,15 +314,23 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                         tmp.resolve(token);
                     },
                     function () {
+                        var user = creds[0];
+                        if (!user || (user == '')
+                            || (!utilities.contains(user, "@"))
+                            || (!utilities.contains(user, "."))) {
+                            tmp.reject("Username must be an email address.");
+                            return;
+                        }
+
 
                         //create account
-                        var createAccountDone = sequence([
+                        var createAccountDone = pipeline([
                             function () {
                                 return prompts.confirmPassword();
                             },
                             function (pass) {
                                 if (pass != creds[1]) {
-                                    return when.reject("Passwords did not match!");
+                                    return when.reject("Passwords did not match! ");
                                 }
                                 else {
                                     return when.resolve();
@@ -323,7 +339,12 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                             //TODO: prompt to make sure they want to create a new account?
                             function () {
                                 return api.createUser(creds[0], creds[1]);
+                            },
+                            function() {
+                                //cool, lets login then.
+                                return api.login("spark-cli", creds[0], creds[1]);
                             }
+
                         ]);
                         return utilities.pipeDeferred(createAccountDone, tmp);
                     });

@@ -278,8 +278,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             var whenBored = function () {
                 var data = chunks.join("");
                 var prefix = "Your core id is ";
-                data = data.replace(prefix, "").trim();
-                dfd.resolve(data);
+                if (data.indexOf(prefix) >= 0) {
+                    data = data.replace(prefix, "").trim();
+                    dfd.resolve(data);
+                }
             };
 
 

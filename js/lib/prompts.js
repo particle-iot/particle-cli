@@ -95,15 +95,26 @@ var that = {
         process.stdout.write(message);
 
         var arr = [];
-        stdin.on('data', function(chunk) {
-            if (chunk[0] != 13) {
+        var onStdinData = function(chunk) {
+            if ((chunk[0] == 8) || (chunk[0] == 127)) {
+                if (arr.length > 0) {
+                    arr.pop();
+                    process.stdout.write('\b \b');
+                }
+            }
+            else if (chunk[0] != 13) {
                 arr.push(chunk);
+                process.stdout.write("*");
             }
             else {
-                process.stdin.setRawMode(false);
-                console.log('done');
                 dfd.resolve(arr.join(''));
             }
+        };
+        stdin.on('data', onStdinData);
+
+        when(dfd.promise).ensure(function() {
+            process.stdin.setRawMode(false);
+            stdin.removeListener('data', onStdinData);
         });
 
         return dfd.promise;
