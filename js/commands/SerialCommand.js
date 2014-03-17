@@ -241,8 +241,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
         if (prompt) {
             var onMessage = function (data) {
+                data = data.toString();
+
                 if (showTraffic) { console.log("Serial said: " + data);}
-                if (data.indexOf(prompt) >= 0) {
+                if (data && data.indexOf(prompt) >= 0) {
                     if (answer) {
                         serialPort.flush(function() {});
 
@@ -374,7 +376,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 chunks = [];
 
             var serialPort = new SerialPort(comPort, {
-                baudrate: 9600
+                baudrate: 9600,
+                parser: SerialBoredParser.MakeParser(250)
             }, false);
             this.serialPort = serialPort;
 

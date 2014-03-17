@@ -27,7 +27,6 @@
 var when = require('when');
 var sequence = require('when/sequence');
 var readline = require('readline');
-var fs = require('fs');
 var settings = require('../settings.js');
 var path = require('path');
 
