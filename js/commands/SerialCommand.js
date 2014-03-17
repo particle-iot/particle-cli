@@ -157,6 +157,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         var tmp = when.defer();
         var that = this;
         this.whatSerialPortDidYouMean(comPort, true, function (port) {
+            if (!port) {
+                tmp.reject("No serial port identified");
+                return;
+            }
 
             var ssid, password, security;
 
