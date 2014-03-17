@@ -50,12 +50,20 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
     description: "copies firmware and data to your core over usb",
 
     init: function () {
-        this.addOption("firmware", this.flashCore.bind(this), "Flashes a local firmware binary to your core over USB");
+        //this.addAlias("firmware", this.flashDfu.bind(this), null);
+
+        this.addOption("firmware", this.flashDfu.bind(this), "Flashes a local firmware binary to your core over USB");
+        this.addOption("cloud", this.flashCloud.bind(this), "Flashes a binary to your core wirelessly ");
         //this.addOption("list", this.listCores.bind(this));
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
-    flashCore: function(firmware) {
+    flashCloud: function(coreid, filename) {
+        var cloud = this.cli.findCommand("cloud");
+        return cloud.flashCore.apply(cloud, arguments);
+    },
+
+    flashDfu: function(firmware) {
         if (!firmware || !fs.existsSync(firmware)) {
             console.log("Please specify a firmware file to flash locally to your core ");
             return -1;

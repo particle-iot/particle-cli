@@ -30,3 +30,5 @@ Initial Release! - 02/20/2014
 03/07/2014 - 0.2.93 - Merging in a patch that helps with using Serial on Windows
 
 03/16/2014 - 0.2.94 - Adding a guided setup command, lots of small tweaks
+03/17/2014 - 0.2.95 - Improving the guided setup user account behaviors
+03/17/2014 - 0.2.96 - Fixing #18, backwards compatibility for wifi config
