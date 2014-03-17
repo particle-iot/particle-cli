@@ -32,3 +32,4 @@ Initial Release! - 02/20/2014
 03/16/2014 - 0.2.94 - Adding a guided setup command, lots of small tweaks
 03/17/2014 - 0.2.95 - Improving the guided setup user account behaviors
 03/17/2014 - 0.2.96 - Fixing #18, backwards compatibility for wifi config
+03/17/2014 - 0.2.97 - Add a serial find override for /dev/ttyACM if we don't find any cores advertised on serial
