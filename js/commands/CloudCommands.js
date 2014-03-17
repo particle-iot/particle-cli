@@ -33,14 +33,17 @@ var readline = require('readline');
 var SerialPortLib = require("serialport");
 var SerialPort = SerialPortLib.SerialPort;
 var settings = require('../settings.js');
-var extend = require('xtend');
-var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 var prompts = require('../lib/prompts.js');
 var ApiClient = require('../lib/ApiClient.js');
+var utilities = require('../lib/utilities.js');
+
 var fs = require('fs');
 var path = require('path');
 var moment = require('moment');
+var extend = require('xtend');
+var util = require('util');
+
 
 var CloudCommand = function (cli, options) {
     CloudCommand.super_.call(this, cli, options);
@@ -149,6 +152,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if (!files) {
             return;
         }
+        if (settings.showIncludedSourceFiles) {
+            console.log("Including:\n ");
+            for(var key in files) { console.log(files[key]); }
+        }
 
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
@@ -172,9 +179,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if (!files) {
             return;
         }
-        
-        if(!filename)
-        {
+
+        if (settings.showIncludedSourceFiles) {
+            console.log("Including:\n ");
+            for(var key in files) { console.log(files[key]); }
+        }
+
+        if (!filename) {
             filename = "firmware_" + (new Date()).getTime() + ".bin";
         }
 
@@ -301,6 +312,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             var dirFiles = fs.readdirSync(filePath);
             for (var i = 0; i < dirFiles.length; i++) {
                 var filename = path.join(filePath, dirFiles[i]);
+                var ext = utilities.getFilenameExt(filename).toLowerCase();
+                if (utilities.contains(settings.notSourceExtensions, ext)) {
+                    continue;
+                }
+
                 var filestats = fs.statSync(filename);
                 if (filestats.size > settings.MAX_FILE_SIZE) {
                     console.log("Skipping " + filename + " it's too big! " + stats.size);

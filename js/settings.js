@@ -42,7 +42,15 @@ var settings = {
     //2 megs -- this constant here is arbitrary
     MAX_FILE_SIZE: 1024 * 1024 * 2,
 
-    overridesFile: null
+    overridesFile: null,
+
+    notSourceExtensions: [
+        ".ds_store",
+        ".jpg",
+        ".gif",
+        ".png"
+    ],
+    showIncludedSourceFiles: true
 };
 
 settings.commandPath = __dirname + "/commands/";

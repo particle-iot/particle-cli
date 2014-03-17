@@ -89,6 +89,19 @@ var that = module.exports = {
             return filename;
         }
     },
+    getFilenameExt: function (filename) {
+        if (!filename || (filename.length === 0)) {
+            return filename;
+        }
+
+        var idx = filename.lastIndexOf('.');
+        if (idx >= 0) {
+            return filename.substr(idx);
+        }
+        else {
+            return filename;
+        }
+    },
 
     timeoutGenerator: function (msg, defer, delay) {
         return setTimeout(function () {
