@@ -97,6 +97,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     findCores: function (callback) {
         var cores = [];
         SerialPortLib.list(function (err, ports) {
+
+            //grab anything that self-reports as a core
             for (var i = 0; i < ports.length; i++) {
                 var port = ports[i];
 
@@ -106,6 +108,19 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                     cores.push(port);
                 }
             }
+
+            //if I didn't find anything, grab any 'ttyACM's
+            if (cores.length == 0) {
+                for (var i = 0; i < ports.length; i++) {
+                    var port = ports[i];
+
+                    //if it doesn't have a manufacturer or pnpId set, but it's a ttyACM port, then lets grab it.
+                    if (port.comName.indexOf('/dev/ttyACM') == 0) {
+                        cores.push(port);
+                    }
+                }
+            }
+
             callback(cores);
         });
     },
