@@ -515,6 +515,36 @@ ApiClient.prototype = {
         ]);
     },
 
+    getEventStream: function (eventName, coreId, onDataHandler) {
+        var url;
+        if (!coreId) {
+            url = "/v1/events";
+        }
+        else if (coreId == "mine") {
+            url = "/v1/devices/events";
+        }
+        else {
+            url = "/v1/devices/" + coreId + "/events";
+        }
+
+        if (eventName) {
+            url += "/" + eventName;
+        }
+
+        console.log("Listening to: " + url);
+        var requestObj = request({
+            uri: this.baseUrl + url + "?access_token=" + this._access_token,
+            method: "GET"
+        });
+
+        if (onDataHandler) {
+            requestObj.on('data', onDataHandler);
+        }
+
+        return requestObj;
+    },
+
+
     foo:null
 };
 
