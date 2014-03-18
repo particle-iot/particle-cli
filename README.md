@@ -23,6 +23,13 @@ To upgrade Spark-CLI, enter the following command:
 Getting Started / Documentation
 ===============
 
+###spark setup
+
+``` > spark setup```
+
+  Guides you through creating a new account, and claiming your core!
+
+
 ###spark cloud login
 
 ``` > spark cloud login ```
@@ -159,3 +166,17 @@ Getting Started / Documentation
 
   Runs a series of steps to generate a new public/private keypair, and send it to the server for your core.  Helpful
   for recovering from key issues.
+
+
+###spark subscribe
+
+    > spark subscribe
+    > spark subscribe eventName
+    > spark subscribe eventName mine
+    > spark subscribe eventName CoreName
+    > spark subscribe eventName 0123456789ABCDEFGHI
+
+
+  Subscribes to published events on the cloud, and pipes them to the console.  Special core name "mine" will subscribe
+  to events from just your cores.
+
