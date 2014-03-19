@@ -102,6 +102,7 @@ settings.override = function (key, value) {
         settings.overrides = {};
     }
 
+    settings[key] = value;
     settings.overrides[key] = value;
     settings = extend(settings, settings.overrides);
 

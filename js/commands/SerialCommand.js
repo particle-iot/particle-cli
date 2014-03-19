@@ -178,7 +178,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                     if (security == "0") {
                         return when.resolve();
                     }
-                    return prompts.promptDfd("Password:\t");
+                    return prompts.promptDfd("Wifi Password:\t");
                 },
                 function (arg) {
                     password = arg;

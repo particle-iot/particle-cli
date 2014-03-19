@@ -156,7 +156,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
 
                     console.log("Press and hold the MODE button until your core blinks solid blue");
                     console.log("");
-                    return prompts.promptDfd(" - Is your core blinking solid blue?  Then press ENTER - ");
+                    return prompts.promptDfd(" - Is your core blinking blue?  Then press ENTER - ");
                 };
 
                 return utilities.retryDeferred(getCoreID, 3, recoveryFn);
@@ -180,7 +180,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
             //6.) prompt for / configure wifi creds,
             function () {
                 var configWifi = function () {
-                    //console.log("Make sure your core is blinking solid blue (in listening mode) and is connected to your computer");
+                    //console.log("Make sure your core is blinking blue (in listening mode) and is connected to your computer");
                     return serial.configureWifi(null, true);
                 };
                 return utilities.retryDeferred(configWifi, 3);
@@ -305,7 +305,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                     || (!utilities.contains(username, "@"))
                     || (!utilities.contains(username, "."))) {
                     tmp.reject("Username must be an email address.");
-                    return;
+                    return tmp.promise;
                 }
 
                 console.log("");

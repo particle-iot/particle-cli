@@ -132,7 +132,7 @@ var that = {
         ]);
     },
     getUsername: function () {
-        return that.promptDfd("Could I please have your username?  ");
+        return that.promptDfd("Could I please have an email address?  ");
     },
     getPassword: function () {
         return that.passPromptDfd("and a password?  ");
@@ -147,12 +147,12 @@ var that = {
             that.getPassword
         ]);
     },
-    getUsername: function () {
-        return that.promptDfd("Could I please have your username?  ");
-    },
-    getPassword: function () {
-        return that.passPromptDfd("and a password?  ");
-    },
+//    getUsername: function () {
+//        return that.promptDfd("Could I please have your username?  ");
+//    },
+//    getPassword: function () {
+//        return that.passPromptDfd("and a password?  ");
+//    },
 
 
 

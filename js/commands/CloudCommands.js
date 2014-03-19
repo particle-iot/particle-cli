@@ -259,6 +259,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             });
     },
     logout: function() {
+        settings.override("username", null);
         settings.override("access_token", null);
         console.log("You're now logged out!");
     },
