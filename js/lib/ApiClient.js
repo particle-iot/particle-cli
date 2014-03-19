@@ -95,7 +95,7 @@ ApiClient.prototype = {
         }
 
 
-        console.log('creating user ', user, pass);
+        console.log('creating user: ', user);
         var that = this;
 
         request({
