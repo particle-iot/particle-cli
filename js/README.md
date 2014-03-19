@@ -37,3 +37,5 @@ Initial Release! - 02/20/2014
 03/17/2014 - 0.2.98 - fixing a bug where we used the wrong parser
 
 03/18/2014 - 0.2.99 - Adding 'subscribe' for streaming SSE from Spark.publish
+
+03/19/2014 - 0.3.0 - Clarifying language, fixing some prompts
