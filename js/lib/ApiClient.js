@@ -527,7 +527,7 @@ ApiClient.prototype = {
             url = "/v1/devices/" + coreId + "/events";
         }
 
-        if (eventName) {
+        if (eventName != "#") {
             url += "/" + eventName;
         }
 
