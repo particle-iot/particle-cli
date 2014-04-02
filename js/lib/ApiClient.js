@@ -472,10 +472,7 @@ ApiClient.prototype = {
 
         console.log("polling server to see what cores are online, and what functions are available");
 
-
         var that = this;
-
-
         var lookupAttributes = function (cores) {
             var tmp = when.defer();
 
@@ -542,6 +539,72 @@ ApiClient.prototype = {
         }
 
         return requestObj;
+    },
+
+
+    createWebhook: function (event, url, coreID) {
+        var dfd = when.defer();
+        request({
+            uri: this.baseUrl + "/v1/webhooks",
+            method: "POST",
+            form: {
+                event: event,
+                url: url,
+                deviceid: coreID,
+                access_token: this._access_token
+            },
+            json: true
+        }, function (error, response, body) {
+
+            if (body && body.ok) {
+                console.log("Successfully created webhook!");
+                dfd.resolve(body);
+            }
+            else if (body && body.error) {
+                console.log("Failed to create, server said ", body.error);
+                dfd.reject(body);
+            }
+        });
+
+        return dfd.promise;
+    },
+
+    deleteWebhook: function (hookID) {
+        var dfd = when.defer();
+        request({
+            uri: this.baseUrl + "/v1/webhooks/" + hookID + "?access_token=" + this._access_token,
+            method: "DELETE",
+            json: true
+        }, function (error, response, body) {
+            if (body && body.ok) {
+                console.log("Successfully delete webhook!");
+                dfd.resolve(body);
+            }
+            else if (body && body.error) {
+                console.log("Failed to delete, server said ", body.error);
+                dfd.reject(body);
+            }
+        });
+
+        return dfd.promise;
+    },
+
+    listWebhooks: function () {
+        var dfd = when.defer();
+        request({
+                uri: this.baseUrl + "/v1/webhooks/?access_token=" + this._access_token,
+                method: "GET", json: true
+            },
+            function (error, response, body) {
+                if (error) {
+                    dfd.reject(error);
+                }
+                else {
+                    dfd.resolve(body);
+                }
+            });
+
+        return dfd.promise;
     },
 
 
