@@ -118,6 +118,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                     if (port.comName.indexOf('/dev/ttyACM') == 0) {
                         cores.push(port);
                     }
+                    else if (port.comName.indexOf('/dev/cuaU') == 0) {
+                        cores.push(port);
+                    }
                 }
             }
 
