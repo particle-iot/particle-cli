@@ -103,12 +103,22 @@ var that = module.exports = {
     },
 
     writeDfu: function (memoryInterface, binaryPath, firmwareAddress, leave) {
-        var prefix = that.getCommandPrefix();
+        //var prefix = that.getCommandPrefix();
         var leaveStr = (leave) ? ":leave" : "";
-        var cmd = prefix + ' -a ' + memoryInterface + ' -i 0 -s ' + firmwareAddress + leaveStr + ' -D ' + binaryPath;
-        that.checkBinaryAlignment(cmd);
+        //var cmd = ' -a ' + memoryInterface + ' -i 0 -s ' + firmwareAddress + leaveStr + ' -D ' + binaryPath;
+        that.checkBinaryAlignment("-D " + binaryPath);
 
-        return utilities.deferredChildProcess(cmd);
+        //more robust way to protect against weird escape sequences in arguments / filenames
+        var args = [
+            "-d", "1d50:607f",
+            "-a", memoryInterface,
+            "-i", "0",
+            "-s", firmwareAddress + leaveStr,
+            "-D", binaryPath
+        ];
+
+        //cmd = "/usr/local/bin/" + cmd;
+        return utilities.deferredSpawnProcess("dfu-util", args);
     },
 
 

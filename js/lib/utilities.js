@@ -76,6 +76,40 @@ var that = module.exports = {
 
         return tmp.promise;
     },
+
+    deferredSpawnProcess: function(exec, args) {
+        var tmp = when.defer();
+
+        console.log("spawnin " + exec + args.join(" "));
+
+        var options = {
+            stdio: [ 'ignore', process.stdout, process.stderr ]
+        };
+
+        var child = child_process.spawn(exec, args, options);
+        var stdout = [],
+            errors = [];
+
+        child.stdout.on('data', function (data) {
+          stdout.push(data);
+        });
+
+        child.stderr.on('data', function (data) {
+          errors.push(data);
+        });
+
+        child.on('close', function (code) {
+          if (!code) {
+              tmp.resolve(stdout.join("\n"));
+          }
+          else {
+              tmp.reject(errors.join("\n"));
+          }
+        });
+
+        return tmp.promise;
+    },
+
     filenameNoExt: function (filename) {
         if (!filename || (filename.length === 0)) {
             return filename;
