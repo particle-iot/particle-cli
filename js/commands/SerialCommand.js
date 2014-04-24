@@ -75,6 +75,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
     monitorPort: function (comPort) {
         this.whatSerialPortDidYouMean(comPort, true, function (port) {
+            if (!port) {
+                console.error("No serial port identified");
+                return;
+            }
+
             console.log("Opening serial monitor for com port: \"" + port + "\"");
 
             //TODO: listen for interrupts, close gracefully?
