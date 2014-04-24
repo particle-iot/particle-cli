@@ -17,7 +17,7 @@
     "dependencies": {
         "moment": "*",
         "request": "*",
-        "serialport": "*",
+        "serialport": "1.4.0",
         "when": "*",
         "xtend": "*"
     }
