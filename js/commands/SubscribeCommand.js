@@ -60,6 +60,13 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
+        // if they typed: "spark subscribe mine"
+        if ((!coreId || (coreId == "")) && (eventName == "mine")) {
+            eventName = null;
+            coreId = "mine";
+        }
+
+
         var eventLabel = eventName;
         if (eventLabel) {
             eventLabel = "\"" + eventLabel + "\"";
