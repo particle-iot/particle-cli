@@ -160,6 +160,36 @@ ApiClient.prototype = {
         return dfd.promise;
     },
 
+    removeAccessToken: function (username, password, access_token) {
+        console.log("removing access_token " + access_token);
+
+        var dfd = when.defer();
+
+        request({
+            uri: this.baseUrl + "/v1/access_tokens/" + access_token,
+            method: "DELETE",
+            auth: {
+                username: username,
+                password: password
+            },
+            form: {
+                access_token: this._access_token
+            },
+            json: true
+        }, function (error, response, body) {
+            if (body && body.ok) {
+                dfd.resolve(body);
+            }
+            else if (body && body.error) {
+                dfd.reject(body.error);
+            }
+        });
+
+        return dfd.promise;
+    },
+
+
+
     //GET /v1/devices
     listDevices: function () {
         console.log("Retrieving cores... (this might take a few seconds)");

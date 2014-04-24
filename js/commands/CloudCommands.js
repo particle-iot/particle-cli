@@ -291,9 +291,36 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             });
     },
     logout: function() {
-        settings.override("username", null);
-        settings.override("access_token", null);
-        console.log("You're now logged out!");
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+
+        var allDone = pipeline([
+            function() {
+                console.log("");
+                console.log("You can perform a more secure logout by revoking your current access_token for the cloud.");
+                console.log("Revoking your access_token requires your normal credentials, hit ENTER to skip, or ");
+                return prompts.passPromptDfd("enter your password (or blank to skip): ");
+            },
+            function(pass) {
+                if (pass && (pass != "blank")) {
+                    //blank... I see what you did there...
+                    return api.removeAccessToken(settings.username, pass, settings.access_token);
+                }
+                else {
+                    console.log("Okay, leaving access token as-is! ");
+                    return when.resolve();
+                }
+            },
+            function() {
+                settings.override("username", null);
+                settings.override("access_token", null);
+                console.log("You're now logged out!");
+                return when.resolve();
+            }
+        ]);
+
+        when(allDone).ensure(function() {
+            process.exit(0);
+        });
     },
 
     listCores: function () {
