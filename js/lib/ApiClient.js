@@ -192,7 +192,7 @@ ApiClient.prototype = {
 
     //GET /v1/devices
     listDevices: function () {
-        console.log("Retrieving cores... (this might take a few seconds)");
+        console.error("Retrieving cores... (this might take a few seconds)");
 
         var dfd = when.defer();
         var that = this;
@@ -500,7 +500,7 @@ ApiClient.prototype = {
             return when.resolve(this._attributeCache);
         }
 
-        console.log("polling server to see what cores are online, and what functions are available");
+        console.error("polling server to see what cores are online, and what functions are available");
 
         var that = this;
         var lookupAttributes = function (cores) {

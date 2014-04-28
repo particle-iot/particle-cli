@@ -189,7 +189,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
             return when.resolve(this._cachedVariableList);
         }
 
-        console.log("polling server to see what cores are online, and what variables are available");
+        console.error("polling server to see what cores are online, and what variables are available");
 
         var tmp = when.defer();
         var that = this;
@@ -276,9 +276,9 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
         if (delay < settings.minimumApiDelay) {
             delay = settings.minimumApiDelay;
-            console.log("Delay was too short, resetting to ", settings.minimumApiDelay);
+            console.error("Delay was too short, resetting to ", settings.minimumApiDelay);
         }
-        console.log("Hit CTRL-C to stop!");
+        console.error("Hit CTRL-C to stop!");
 
         var checkVariable = (function () {
             var done = this.getValue(coreid, variableName);
