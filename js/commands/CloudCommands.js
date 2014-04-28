@@ -71,6 +71,20 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("logout", this.logout.bind(this), "Logs out your session and clears your saved access token");
     },
 
+   checkArguments: function (args) {
+        this.options = this.options || {};
+
+        if (!this.options.saveBinaryPath && (utilities.contains(args, "--saveTo"))) {
+            var idx = utilities.indexOf(args, "--saveTo");
+            if ((idx + 1) < args.length) {
+                this.options.saveBinaryPath = args[idx + 1];
+            }
+            else {
+                console.log("Please specify a file path when using --saveTo");
+            }
+        }
+    },
+
     claimCore: function (coreid) {
         if (!coreid) {
             console.error("Please specify a coreid");
@@ -207,6 +221,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
+        this.checkArguments(arguments);
+
         var files = this._getFilesAtPath(filePath);
         if (!files) {
             return;
@@ -222,6 +238,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         }
 
 
+        var that = this;
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
             return;
@@ -234,6 +251,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             //download
             function(resp) {
                 if (resp && resp.binary_url) {
+
+                    if (that.options.saveBinaryPath) {
+                        filename = that.options.saveBinaryPath;
+                        //console.log("Saving binary to " + filename);
+                    }
+
                     return api.downloadBinary(resp.binary_url, filename);
                 }
                 else {
