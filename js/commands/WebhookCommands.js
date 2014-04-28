@@ -46,7 +46,7 @@ var WebhookCommand = function (cli, options) {
 util.inherits(WebhookCommand, BaseCommand);
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: "webhooks",
+    name: null,
     description: "helpers for watching Core event streams",
 
     init: function () {
