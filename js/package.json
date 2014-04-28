@@ -1,7 +1,7 @@
 {
     "name": "spark-cli",
     "description": "Simple Node commandline application for working with your Spark Cores and using the Spark Cloud",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "author": "David Middlecamp",
     "repository": {
         "type": "git",
