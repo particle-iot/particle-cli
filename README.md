@@ -171,6 +171,7 @@ Getting Started / Documentation
 ###spark subscribe
 
     > spark subscribe
+    > spark subscribe mine
     > spark subscribe eventName
     > spark subscribe eventName mine
     > spark subscribe eventName CoreName
