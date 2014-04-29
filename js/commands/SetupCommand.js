@@ -156,7 +156,6 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 }
 
                 var getCoreID = function () {
-                    //todo: timeout fail after, ~5 seconds?
                     return serial.identifyCore();
                 };
                 var recoveryFn = function () {

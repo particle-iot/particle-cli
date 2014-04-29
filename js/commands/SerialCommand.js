@@ -149,6 +149,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
     identifyCore: function (comPort) {
         var tmp = when.defer();
 
+        var failTimer = setTimeout(function() {
+            tmp.reject("Timed out");
+        }, 5000);
+
         var that = this;
         this.whatSerialPortDidYouMean(comPort, true, function (port) {
             if (!port) {
@@ -157,6 +161,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             }
 
             utilities.pipeDeferred(that.askForCoreID(port), tmp);
+        });
+
+        when (tmp.promise).ensure(function() {
+            clearTimeout(failTimer);
         });
 
         return tmp.promise;

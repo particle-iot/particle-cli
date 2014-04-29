@@ -313,8 +313,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 process.exit(-1);
             });
     },
-    logout: function() {
+    logout: function(dontExit) {
         var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!settings.access_token) {
+            console.log("You were already logged out.");
+            return when.resolve();
+        }
 
         var allDone = pipeline([
             function() {
@@ -341,9 +345,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             }
         ]);
 
-        when(allDone).ensure(function() {
-            process.exit(0);
-        });
+        if (!dontExit) {
+            when(allDone).ensure(function() {
+                process.exit(0);
+            });
+        }
+
+        return allDone;
     },
 
     listCores: function () {
