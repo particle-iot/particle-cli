@@ -343,6 +343,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                         passPrompt = null;
                     }
 
+                    if (!passPrompt || !password || (password == "")) {
+                        return when.resolve();
+                    }
+
                     return that.serialPromptDfd(serialPort, passPrompt, password + "\n", 5000);
                 },
                 function () {
