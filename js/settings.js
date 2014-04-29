@@ -96,6 +96,7 @@ settings.loadOverrides = function () {
     catch (ex) {
         console.error('There was an error reading ' + settings.overrides + ': ', ex);
     }
+    return settings;
 };
 settings.override = function (key, value) {
     if (!settings.overrides) {

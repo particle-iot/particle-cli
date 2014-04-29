@@ -113,19 +113,25 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
             //2.) confirm pass,
             //3.) create user,
 
-            function (switchAccounts) {
-                if (!switchAccounts) {
-                    //skip this then
+            function(switchAccounts) {
+                if (switchAccounts) {
+                    return cloud.logout(true);
+                }
+                else {
                     return when.resolve();
                 }
+            },
 
-                //lets not pretend we're logged in when switching accounts.
-                if (settings.access_token) {
-                    api.clearToken();
-                    cloud.logout();
+            function () {
+                settings = settings.loadOverrides();
+                if (!settings.access_token) {
+                    //need to login
+                    return that.login_or_create_account(api);
                 }
-
-                return that.login_or_create_account(api);
+                else {
+                    //already / still logged in
+                    return when.resolve();
+                }
             },
             function () {
                 var token = api.getToken();
@@ -150,6 +156,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 }
 
                 var getCoreID = function () {
+                    //todo: timeout fail after, ~5 seconds?
                     return serial.identifyCore();
                 };
                 var recoveryFn = function () {
@@ -264,6 +271,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
 
 
         when(allDone).then(function () {
+                settings = settings.loadOverrides();
 
                 console.log("You've successfully setup your core: " + coreName + " (" + coreID + ")");
                 console.log("");
@@ -364,7 +372,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                                 return when.resolve(token);
                             }
                         ]);
-                        return utilities.pipeDeferred(createAccountDone, tmp);
+                        utilities.pipeDeferred(createAccountDone, tmp);
                     });
 
                 return tmp.promise;
