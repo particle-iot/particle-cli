@@ -1,7 +1,4 @@
 {
-
-
-
     "_commands": [
         "setup",
         "list",
@@ -150,7 +147,6 @@
         "maps": [ "cloud", "logout" ],
         "usage": "logout"
     },
-
 
     "_templates": {
         "help": null
