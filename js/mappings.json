@@ -153,11 +153,7 @@
 
 
     "_templates": {
-        "help": [
-            "Usage: spark <command_name> <arguments>",
-            "Common Commands:",
-            "    {{#this}}{{.}},{{/}}"
-        ]
+        "help": null
 
     }
 }
