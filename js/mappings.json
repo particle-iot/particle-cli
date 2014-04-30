@@ -82,6 +82,7 @@
 
     "core": {
         "_commands": [ "add", "remove", "rename" ],
+        "maps": [ "help", "core" ],
 
         "add": {
             "maps": [ "cloud", "claim" ],
