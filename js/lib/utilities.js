@@ -143,6 +143,14 @@ var that = module.exports = {
         }, delay);
     },
 
+    indentLeft: function(str, char, len) {
+        var extra = [];
+        for(var i=0;i<len;i++) {
+            extra.push(char);
+        }
+        return extra.join("") + str;
+    },
+
     /**
      * pad the left side of "str" with "char" until it's length "len"
      * @param str
@@ -165,6 +173,33 @@ var that = module.exports = {
             extra.push(char);
         }
         return str + extra.join("");
+    },
+
+    wrapArrayText: function(arr, maxLength, delim) {
+        var lines = [];
+        var line = "";
+        delim = delim || ", ";
+
+        for(var i=0;i<arr.length;i++) {
+            var str = arr[i];
+            var newLength = line.length + str.length + delim.length;
+
+            if (newLength >= maxLength) {
+                lines.push(line);
+                line = "";
+            }
+
+            if (line.length > 0) {
+                 line += delim;
+            }
+            line += str;
+        }
+        if (line != "") {
+            lines.push(line);
+        }
+
+
+        return lines;
     },
 
 

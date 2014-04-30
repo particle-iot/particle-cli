@@ -1,0 +1,163 @@
+{
+
+
+
+    "_commands": [
+        "setup",
+        "list",
+        "call",
+        "get",
+        "core",
+        "identify",
+        "flash",
+        "subscribe",
+        "compile",
+        "monitor",
+        "login",
+        "logout",
+        "help"
+    ],
+
+    "call": {
+        "maps": [ "function", "call" ],
+        "usage": "call core_id function_name argument",
+        "does": [
+            "Calls a function registered on one of your Cores",
+            "",
+            "More information about registering a variable available here: ",
+            "http://docs.spark.io/#/firmware/data-and-control-spark-variable"
+        ],
+        "related": [
+            "list - shows your cores, and what variables and functions are available",
+            "get - retrieves a variable value from one of your Cores"
+        ]
+    },
+
+    "get": {
+        "maps": [ "variable", "get" ],
+        "usage": "get core_id variable_name",
+        "does": [
+            "Retrieves a variable value from your core",
+            "",
+            "More information about registering a variable available here: ",
+            "http://docs.spark.io/#/firmware/data-and-control-spark-variable"
+        ],
+        "related": [
+            "list - shows your cores, and what variables and functions are available",
+            "call - runs a registered function on one of your cores"
+        ]
+    },
+
+    "help": {
+        "maps": [ "help" ],
+        "usage": [
+            "help",
+            "help command_name"
+        ],
+        "does": [
+            "Provides extra details and options for a given command"
+        ]
+    },
+
+
+    "setup": {
+        "maps": [ "setup" ],
+        "usage": "setup",
+        "does": [
+            "Guides you through setting up an account, claiming a new core, and getting it on your network"
+        ]
+    },
+
+    "identify": {
+        "maps": [ "serial", "identify" ],
+        "usage": "identify",
+        "does": [
+            "When your core is in connected via USB and in listening mode (flashing blue)",
+            "this asks your core for its device ID"
+        ]
+
+    },
+
+    "list": {
+        "maps": [ "cloud", "list" ],
+        "usage": "list"
+    },
+
+    "core": {
+        "_commands": [ "add", "remove", "rename" ],
+
+        "add": {
+            "maps": [ "cloud", "claim" ],
+            "usage": "call core_id function_name argument"
+        },
+        "remove": {
+            "maps": [ "cloud", "remove" ],
+            "usage": "call core_id function_name argument"
+        },
+        "rename": {
+            "maps": [ "cloud", "name" ],
+            "usage": "call core_id function_name argument"
+        }
+    },
+
+    "flash": {
+        "maps": [ "cloud", "flash" ],
+        "usage": [
+            "flash core_id firmware.bin [--usb]",
+            "flash core_id source_folder [--usb]",
+            "flash core_id file1.ino file2.cpp file2.h file3.cpp [--usb]"
+        ],
+        "does": [
+            "flash remotely pushes a compiled firmware binary to one of your cores over the air, or directly",
+            "over USB / dfu.  If you send it one or more source files, or a directory of source, it will compile",
+            "that remotely first, and push the compiled binary to your core instead, or in the case of code errors",
+            "will show you the errors from the server."
+        ]
+    },
+    "subscribe": {
+        "maps": [ "subscribe" ],
+        "usage": "subscribe"
+    },
+    "compile": {
+        "maps": [ "cloud", "compile" ],
+        "usage": [
+            "compile firmware.bin",
+            "compile source_folder",
+            "compile file1.ino file2.cpp file2.h file3.cpp"
+        ],
+        "does": [
+            "Compiles one or more source files or a directory of source to a firmware binary for the Spark Core,",
+            "or in the case of code errors will display those instead."
+        ]
+    },
+    "monitor": {
+        "maps": [ "variable", "monitor" ],
+        "usage": [
+            "monitor variable_name [--time]",
+            "monitor core_name variable_name [--time]",
+            "monitor core_name variable_name delay_value [--time]"
+        ],
+        "does": [
+            "Repeatedly queries the Spark API every delay_value milliseconds",
+            "for the value of the given variable on one or more Cores."
+        ]
+    },
+    "login": {
+        "maps": [ "cloud", "login" ],
+        "usage": "login"
+    },
+    "logout": {
+        "maps": [ "cloud", "logout" ],
+        "usage": "logout"
+    },
+
+
+    "_templates": {
+        "help": [
+            "Usage: spark <command_name> <arguments>",
+            "Common Commands:",
+            "    {{#this}}{{.}},{{/}}"
+        ]
+
+    }
+}

@@ -31,6 +31,7 @@ var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 var utilities = require('../lib/utilities.js');
+var hogan = require('hogan.js');
 
 var HelpCommand = function (cli, options) {
     HelpCommand.super_.call(this, cli, options);
@@ -45,7 +46,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     description: "Help provides information on available commands in the cli",
 
     init: function () {
-        this.addOption("list", this.listCommands.bind(this), "List commands available for that command");
+        this.addOption("list", this.listCommandsSwitch.bind(this), "List commands available for that command");
         this.addOption("*", this.helpCommand.bind(this), "Provide extra information about the given command");
     },
 
@@ -61,13 +62,13 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
         //console.log("");
 
         if (!name) {
-            this.listCommands();
+            this.listCommandsSwitch();
             return;
         }
 
         var command = this.cli.findCommand(name);
         if (!command) {
-            this.listCommands();
+            this.listCommandsSwitch();
             return;
         }
 
@@ -88,11 +89,15 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
     },
 
-    listCommands: function () {
+    listCommandsTable: function () {
         //console.log("help list commands command!");
         console.log("Welcome to the Spark Command line utility!");
         console.log("");
         console.log("The following commands are available:");
+
+        var appName = "spark",
+            leftPad = 2,
+            rightPad = 20;
 
         var commands = this.cli.getCommands();
 
@@ -101,8 +106,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
             try {
                 var c = commands[i];
                 if (c.name != null) {
-                    var line = "  spark " + c.name;
-                    line = utilities.padRight(line, " ", 20) + " - " + c.description;
+                    var line = utilities.indentLeft(appName + " " + c.name, " ", leftPad);
+                    line = utilities.padRight(line, " ", rightPad) + " - " + c.description;
 
                     results.push(line);
                 }
@@ -113,6 +118,59 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         console.log(results.join("\n"));
+    },
+
+
+    listMappedCommands: function() {
+        var lines = [
+            "",
+            "Welcome to the Spark Command line utility!",
+            "https://github.com/spark/spark-cli",
+            "",
+        ];
+
+        //not sure what I want this to be yet...
+        var node = this.cli._commandsMap;
+        if (node._templates && node._templates.help) {
+
+            var template = node._templates.help;
+            if (util.isArray(template)) {
+                template = template.join("\n");
+            }
+
+            var str = hogan.compile(template).render(node);
+            lines.push(str);
+        }
+        else {
+            lines.push("Usage: spark <command_name> <arguments> ");
+            lines.push("Common Commands:");
+            lines.push("");
+
+            var commands = node._commands;
+            var cmdList = utilities.wrapArrayText(commands, 60);
+            for (var i=0;i<cmdList.length;i++) {
+                lines.push(utilities.indentLeft(cmdList[i], " ", 4));
+            }
+            lines.push("");
+            lines.push("For more information Run: spark help <command_name>");
+            lines.push("");
+        }
+
+        console.log(lines.join("\n"));
+    },
+
+
+    listCommandsSwitch: function() {
+
+        if (this.cli.hasMappings()) {
+            //new style
+            this.listMappedCommands();
+        }
+        else {
+            //old style
+            this.listCommandsTable();
+        }
+
     },
 
     _: null

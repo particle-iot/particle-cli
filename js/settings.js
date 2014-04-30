@@ -50,7 +50,9 @@ var settings = {
         ".gif",
         ".png"
     ],
-    showIncludedSourceFiles: true
+    showIncludedSourceFiles: true,
+
+    commandMappings: path.join(__dirname, "mappings.json")
 };
 
 settings.commandPath = __dirname + "/commands/";
