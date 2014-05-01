@@ -163,8 +163,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
-
-        var files = this._getFilesAtPath(filePath);
+        //make a copy of the arguments sans the 'coreid'
+        var args = Array.prototype.slice.call(arguments, 1);
+        var files = this._getFilesAtPath(args);
         if (!files) {
             return;
         }
@@ -225,7 +226,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         this.checkArguments(arguments);
 
-        var files = this._getFilesAtPath(filePath);
+        //make a copy of the arguments
+        var args = Array.prototype.slice.call(arguments, 0);
+        var files = this._getFilesAtPath(args);
         if (!files) {
             return;
         }
@@ -237,8 +240,20 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             }
         }
 
-        if (!filename) {
-            filename = "firmware_" + (new Date()).getTime() + ".bin";
+        if (this.options.saveBinaryPath) {
+            filename = this.options.saveBinaryPath;
+        }
+        else {
+            //grab the last filename
+            filename = (arguments.length > 1) ? arguments[arguments.length - 1] : null;
+
+            //if it's empty, or it doesn't end in .bin, lets assume it's not an output file.
+            //NOTE: because of the nature of 'options at the end', and the only option is --saveTo,
+            //this should have no side-effects with other usages.  If we did a more sophisticated
+            //argument structure, we'd need to change this logic.
+            if (!filename || (utilities.getFilenameExt(filename) != ".bin")) {
+                filename = "firmware_" + (new Date()).getTime() + ".bin";
+            }
         }
 
 
@@ -257,12 +272,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             //download
             function (resp) {
                 if (resp && resp.binary_url) {
-
-                    if (that.options.saveBinaryPath) {
-                        filename = that.options.saveBinaryPath;
-                        //console.log("Saving binary to " + filename);
-                    }
-
                     return api.downloadBinary(resp.binary_url, filename);
                 }
                 else {
@@ -399,38 +408,70 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             });
     },
 
-    _getFilesAtPath: function (filePath) {
-        var files = {};
-        var stats = fs.statSync(filePath);
-        if (stats.isFile()) {
-            files['file'] = filePath;
+    _getFilesAtPath: function (arr) {
+        //use cases:
+        // compile someDir
+        // compile someFile
+        // compile File1 File2 File3 output.bin
+        // compile File1 File2 File3 --saveTo anotherPlace.bin
+
+        if (!arr || arr.length == 0) {
+            return null;
         }
-        else if (stats.isDirectory()) {
+
+        var filelist = [];
+
+        var files = {};
+        var filePath = arr[0];
+        var stats = fs.statSync(filePath);
+
+
+        if (stats.isDirectory()) {
             var dirFiles = fs.readdirSync(filePath);
             for (var i = 0; i < dirFiles.length; i++) {
-                var filename = path.join(filePath, dirFiles[i]);
-                var ext = utilities.getFilenameExt(filename).toLowerCase();
-                if (utilities.contains(settings.notSourceExtensions, ext)) {
-                    continue;
-                }
-
-                var filestats = fs.statSync(filename);
-                if (filestats.size > settings.MAX_FILE_SIZE) {
-                    console.log("Skipping " + filename + " it's too big! " + stats.size);
-                    continue;
-                }
-
-                if (i == 0) {
-                    files['file'] = filename;
-                }
-                else {
-                    files['file' + i] = filename;
-                }
+                filelist.push(path.join(filePath, dirFiles[i]));
             }
+        }
+        else if (stats.isFile()) {
+            filelist = arr;
         }
         else {
             console.log("was that a file or directory?");
-            return false;
+            return null;
+        }
+
+
+        for (var i = 0; i < filelist.length; i++) {
+            var filename = filelist[i];
+            if (filename.indexOf("--") == 0) {
+                //hit some arguments.
+                break;
+            }
+
+            if (utilities.getFilenameExt(filename) == ".bin") {
+                //hit output binary file
+                break;
+            }
+
+
+            var ext = utilities.getFilenameExt(filename).toLowerCase();
+            if (utilities.contains(settings.notSourceExtensions, ext)) {
+                continue;
+            }
+
+            var filestats = fs.statSync(filename);
+            if (filestats.size > settings.MAX_FILE_SIZE) {
+                console.log("Skipping " + filename + " it's too big! " + stats.size);
+                continue;
+            }
+
+
+            if (i == 0) {
+                files['file'] = filename;
+            }
+            else {
+                files['file' + i] = filename;
+            }
         }
 
         return files;

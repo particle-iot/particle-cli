@@ -26,6 +26,7 @@
  */
 
 
+var fs = require('fs');
 var when = require('when');
 var child_process = require('child_process');
 
@@ -241,6 +242,13 @@ var that = module.exports = {
 
         tryTestFn();
         return defer.promise;
+    },
+
+    isDirectory: function(somepath) {
+        if (fs.existsSync(somepath)) {
+            return fs.statSync(somepath).isDirectory();
+        }
+        return false;
     },
 
 

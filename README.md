@@ -71,6 +71,9 @@ Getting Started / Documentation
 
     > spark cloud compile my_application.ino
     > spark cloud compile /projects/big_app/src
+    > spark cloud compile main.ino SomeLib.h SomeLib.cpp OtherStuff.h
+    > spark cloud compile main.ino SomeLib.h SomeLib.cpp OtherStuff.h output.bin
+    > spark cloud compile main.ino SomeLib.h SomeLib.cpp OtherStuff.h --saveTo ~/output.bin
 
   Create and download a firmware binary, by cloud compiling a source file, or a directory of source files
 
