@@ -8,21 +8,21 @@
  * @date    14-February-2014
  * @brief   Cloud commands module
  ******************************************************************************
-  Copyright (c) 2014 Spark Labs, Inc.  All rights reserved.
+ Copyright (c) 2014 Spark Labs, Inc.  All rights reserved.
 
-  This program is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation, either
-  version 3 of the License, or (at your option) any later version.
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation, either
+ version 3 of the License, or (at your option) any later version.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this program; if not, see <http://www.gnu.org/licenses/>.
-  ******************************************************************************
+ You should have received a copy of the GNU Lesser General Public
+ License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************
  */
 
 var when = require('when');
@@ -71,7 +71,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("logout", this.logout.bind(this), "Logs out your session and clears your saved access token");
     },
 
-   checkArguments: function (args) {
+    checkArguments: function (args) {
         this.options = this.options || {};
 
         if (!this.options.saveBinaryPath && (utilities.contains(args, "--saveTo"))) {
@@ -170,7 +170,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         }
         if (settings.showIncludedSourceFiles) {
             console.log("Including:\n ");
-            for(var key in files) { console.log(files[key]); }
+            for (var key in files) {
+                console.log(files[key]);
+            }
         }
 
         var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -185,7 +187,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
      * @param binary_id
      * @param filename
      */
-    downloadBinary: function(binary_id, filename) {
+    downloadBinary: function (binary_id, filename) {
         if (!filename) {
             filename = "firmware_" + (new Date()).getTime() + ".bin";
         }
@@ -197,7 +199,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
         var binary_url = "/v1/binaries/" + binary_id;
-        var allDone =  api.downloadBinary(binary_url, filename);
+        var allDone = api.downloadBinary(binary_url, filename);
 
         when(allDone).then(
             function () {
@@ -230,7 +232,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         if (settings.showIncludedSourceFiles) {
             console.log("Including:\n ");
-            for(var key in files) { console.log(files[key]); }
+            for (var key in files) {
+                console.log(files[key]);
+            }
         }
 
         if (!filename) {
@@ -246,10 +250,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         var allDone = pipeline([
             //compile
-            function() { return api.compileCode(files); },
+            function () {
+                return api.compileCode(files);
+            },
 
             //download
-            function(resp) {
+            function (resp) {
                 if (resp && resp.binary_url) {
 
                     if (that.options.saveBinaryPath) {
@@ -280,7 +286,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
     },
 
-    login: function() {
+    login: function () {
         var username = null;
 
         var allDone = pipeline([
@@ -289,7 +295,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             prompts.getCredentials,
 
             //login to the server
-            function(creds) {
+            function (creds) {
                 var api = new ApiClient(settings.apiUrl);
                 username = creds[0];
                 return api.login("spark-cli", creds[0], creds[1]);
@@ -304,7 +310,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                     settings.override("username", username);
                 }
 
-                setTimeout(function() {
+                setTimeout(function () {
                     process.exit(0);
                 }, 1250);
             },
@@ -313,7 +319,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 process.exit(-1);
             });
     },
-    logout: function(dontExit) {
+    logout: function (dontExit) {
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!settings.access_token) {
             console.log("You were already logged out.");
@@ -321,13 +327,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         var allDone = pipeline([
-            function() {
+            function () {
                 console.log("");
                 console.log("You can perform a more secure logout by revoking your current access_token for the cloud.");
                 console.log("Revoking your access_token requires your normal credentials, hit ENTER to skip, or ");
                 return prompts.passPromptDfd("enter your password (or blank to skip): ");
             },
-            function(pass) {
+            function (pass) {
                 if (pass && (pass != "blank")) {
                     //blank... I see what you did there...
                     return api.removeAccessToken(settings.username, pass, settings.access_token);
@@ -337,7 +343,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                     return when.resolve();
                 }
             },
-            function() {
+            function () {
                 settings.override("username", null);
                 settings.override("access_token", null);
                 console.log("You're now logged out!");
@@ -346,7 +352,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         ]);
 
         if (!dontExit) {
-            when(allDone).ensure(function() {
+            when(allDone).ensure(function () {
                 process.exit(0);
             });
         }
@@ -393,7 +399,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             });
     },
 
-    _getFilesAtPath: function(filePath) {
+    _getFilesAtPath: function (filePath) {
         var files = {};
         var stats = fs.statSync(filePath);
         if (stats.isFile()) {
