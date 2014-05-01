@@ -170,7 +170,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
         if (settings.showIncludedSourceFiles) {
-            console.log("Including:\n ");
+            console.log("Including:");
             for (var key in files) {
                 console.log(files[key]);
             }
@@ -234,7 +234,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         if (settings.showIncludedSourceFiles) {
-            console.log("Including:\n ");
+            console.log("Including:");
             for (var key in files) {
                 console.log(files[key]);
             }
