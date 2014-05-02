@@ -48,9 +48,14 @@ var settings = {
         ".ds_store",
         ".jpg",
         ".gif",
-        ".png"
+        ".png",
+        ".include",
+        ".ignore"
     ],
     showIncludedSourceFiles: true,
+
+    dirIncludeFilename: "spark.include",
+    dirExcludeFilename: "spark.ignore",
 
     commandMappings: path.join(__dirname, "mappings.json")
 };

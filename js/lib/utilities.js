@@ -27,6 +27,7 @@
 
 
 var fs = require('fs');
+var path = require('path');
 var when = require('when');
 var child_process = require('child_process');
 
@@ -249,6 +250,74 @@ var that = module.exports = {
             return fs.statSync(somepath).isDirectory();
         }
         return false;
+    },
+
+    fixRelativePaths: function (dirname, files) {
+        if (!files || (files.length == 0)) {
+            return null;
+        }
+
+        //convert to absolute paths, and return!
+        return files.map(function (obj) {
+            return path.join(dirname, obj);
+        });
+    },
+
+    trimBlankLines: function (arr) {
+        if (arr && (arr.length != 0)) {
+            return arr.filter(function (obj) {
+                return obj && (obj != "");
+            });
+        }
+        return arr;
+    },
+
+    readLines: function(file) {
+        if (fs.existsSync(file)) {
+            var str = fs.readFileSync(file).toString();
+            if (str) {
+                return str.split("\n");
+            }
+        }
+
+        return null;
+    },
+
+    arrayToHashSet: function (arr) {
+        var h = {};
+        if (arr) {
+            for (var i = 0; i < arr.length; i++) {
+                h[arr[i]] = true;
+            }
+        }
+        return h;
+    },
+
+    /**
+     * recursively create a list of all files in a directory and all subdirectories,
+     * potentially excluding certain directories
+     * @param dir
+     * @param search
+     * @returns {Array}
+     */
+    recursiveListFiles: function (dir, excludedDirs) {
+        excludedDirs = excludedDirs || [];
+
+        var result = [];
+        var files = fs.readdirSync(dir);
+        for (var i = 0; i < files.length; i++) {
+            var fullpath = path.join(dir, files[i]);
+            var stat = fs.statSync(fullpath);
+            if (stat.isDirectory()) {
+                if (!excludedDirs.contains(fullpath)) {
+                    result = result.concat(that.recursiveListFiles(fullpath, excludedDirs));
+                }
+            }
+            else {
+                result.push(fullpath);
+            }
+        }
+        return result;
     },
 
 

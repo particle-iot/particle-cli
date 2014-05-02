@@ -165,7 +165,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         //make a copy of the arguments sans the 'coreid'
         var args = Array.prototype.slice.call(arguments, 1);
-        var files = this._getFilesAtPath(args);
+        var files = this._handleMultiFileArgs(args);
         if (!files) {
             return;
         }
@@ -228,7 +228,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         //make a copy of the arguments
         var args = Array.prototype.slice.call(arguments, 0);
-        var files = this._getFilesAtPath(args);
+        var files = this._handleMultiFileArgs(args);
         if (!files) {
             return;
         }
@@ -408,7 +408,53 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             });
     },
 
-    _getFilesAtPath: function (arr) {
+    /**
+     * helper function for getting the contents of a directory,
+     * checks for '.include', and a '.ignore' files, and uses their contents
+     * instead
+     * @param dirname
+     * @private
+     */
+    _processDirIncludes: function (dirname) {
+        var includesFile = path.join(dirname, settings.dirIncludeFilename),
+            ignoreFile = path.join(dirname, settings.dirExcludeFilename),
+            ignoreSet = {};
+
+        //check for an include file
+        if (fs.existsSync(includesFile)) {
+            //grab it as filenames
+
+
+            return utilities.fixRelativePaths(dirname,
+                utilities.trimBlankLines(
+                    utilities.readLines(includesFile)
+                )
+            );
+        }
+
+        //otherwise, the includes file was missing or empty.
+
+        //check and load an exclude file
+        var excluded = utilities.arrayToHashSet(
+            utilities.readLines(ignoreFile)
+        );
+
+        var results = [];
+        var dirFiles = fs.readdirSync(dirname);
+        for (var i = 0; i < dirFiles.length; i++) {
+            var filename = dirFiles[i];
+            if (excluded[filename]) {
+                continue;
+            }
+
+            results.push(path.join(dirname, filename));
+        }
+
+        return results;
+    },
+
+
+    _handleMultiFileArgs: function (arr) {
         //use cases:
         // compile someDir
         // compile someFile
@@ -425,12 +471,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         var filePath = arr[0];
         var stats = fs.statSync(filePath);
 
-
         if (stats.isDirectory()) {
-            var dirFiles = fs.readdirSync(filePath);
-            for (var i = 0; i < dirFiles.length; i++) {
-                filelist.push(path.join(filePath, dirFiles[i]));
-            }
+            filelist = this._processDirIncludes(filePath);
         }
         else if (stats.isFile()) {
             filelist = arr;
@@ -453,10 +495,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 break;
             }
 
-
             var ext = utilities.getFilenameExt(filename).toLowerCase();
             if (utilities.contains(settings.notSourceExtensions, ext)) {
                 continue;
+            }
+
+            if (!fs.existsSync(filename)) {
+                console.error("I couldn't find the file " + filename);
+                return null;
             }
 
             var filestats = fs.statSync(filename);
@@ -464,7 +510,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 console.log("Skipping " + filename + " it's too big! " + stats.size);
                 continue;
             }
-
 
             if (i == 0) {
                 files['file'] = filename;
