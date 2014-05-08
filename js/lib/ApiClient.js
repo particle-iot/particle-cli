@@ -372,7 +372,7 @@ ApiClient.prototype = {
                 console.log("flash core got error: ", JSON.stringify(error));
             }
             else {
-                console.log("flash core said ", JSON.stringify(body));
+                console.log("flash core said ", JSON.stringify(body || error));
             }
 
             dfd.resolve(response);
@@ -607,7 +607,7 @@ ApiClient.prototype = {
             json: true
         }, function (error, response, body) {
             if (body && body.ok) {
-                console.log("Successfully delete webhook!");
+                console.log("Successfully deleted webhook!");
                 dfd.resolve(body);
             }
             else if (body && body.error) {
