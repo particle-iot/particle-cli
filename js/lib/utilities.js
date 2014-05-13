@@ -81,34 +81,38 @@ var that = module.exports = {
 
     deferredSpawnProcess: function(exec, args) {
         var tmp = when.defer();
+        try {
+            console.log("spawning " + exec + " " + args.join(" "));
 
-        console.log("spawnin " + exec + args.join(" "));
+            var options = {
+                stdio: [ 'ignore', process.stdout, process.stderr ]
+            };
 
-        var options = {
-            stdio: [ 'ignore', process.stdout, process.stderr ]
-        };
+            var child = child_process.spawn(exec, args, options);
+            var stdout = [],
+                errors = [];
 
-        var child = child_process.spawn(exec, args, options);
-        var stdout = [],
-            errors = [];
+            child.stdout.on('data', function (data) {
+                stdout.push(data);
+            });
 
-        child.stdout.on('data', function (data) {
-          stdout.push(data);
-        });
+            child.stderr.on('data', function (data) {
+                errors.push(data);
+            });
 
-        child.stderr.on('data', function (data) {
-          errors.push(data);
-        });
-
-        child.on('close', function (code) {
-          if (!code) {
-              tmp.resolve(stdout.join("\n"));
-          }
-          else {
-              tmp.reject(errors.join("\n"));
-          }
-        });
-
+            child.on('close', function (code) {
+                if (!code) {
+                    tmp.resolve(stdout.join("\n"));
+                }
+                else {
+                    tmp.reject(errors.join("\n"));
+                }
+            });
+        }
+        catch (ex) {
+            console.error("Error during spawn " + ex);
+            tmp.reject(ex);
+        }
         return tmp.promise;
     },
 
