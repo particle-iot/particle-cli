@@ -50,7 +50,8 @@ var settings = {
         ".gif",
         ".png",
         ".include",
-        ".ignore"
+        ".ignore",
+        ".ds_store"
     ],
     showIncludedSourceFiles: true,
 
