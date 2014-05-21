@@ -157,6 +157,14 @@ var that = module.exports = {
         return extra.join("") + str;
     },
 
+    indentLines: function (arr, char, len) {
+        var extra = [];
+        for (var i = 0; i < arr.length; i++) {
+            extra.push(that.indentLeft(arr[i], char, len));
+        }
+        return extra.join("\n");
+    },
+
     /**
      * pad the left side of "str" with "char" until it's length "len"
      * @param str

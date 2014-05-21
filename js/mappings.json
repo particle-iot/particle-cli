@@ -17,7 +17,7 @@
 
     "call": {
         "maps": [ "function", "call" ],
-        "usage": "call core_id function_name argument",
+        "usage": "spark call core_id function_name argument",
         "does": [
             "Calls a function registered on one of your Cores",
             "",
@@ -32,7 +32,7 @@
 
     "get": {
         "maps": [ "variable", "get" ],
-        "usage": "get core_id variable_name",
+        "usage": "spark get core_id variable_name",
         "does": [
             "Retrieves a variable value from your core",
             "",
@@ -48,8 +48,8 @@
     "help": {
         "maps": [ "help" ],
         "usage": [
-            "help",
-            "help command_name"
+            "spark help",
+            "spark help command_name"
         ],
         "does": [
             "Provides extra details and options for a given command"
@@ -59,7 +59,7 @@
 
     "setup": {
         "maps": [ "setup" ],
-        "usage": "setup",
+        "usage": "spark setup",
         "does": [
             "Guides you through setting up an account, claiming a new core, and getting it on your network"
         ]
@@ -67,7 +67,7 @@
 
     "identify": {
         "maps": [ "serial", "identify" ],
-        "usage": "identify",
+        "usage": "spark identify",
         "does": [
             "When your core is in connected via USB and in listening mode (flashing blue)",
             "this asks your core for its device ID"
@@ -77,7 +77,7 @@
 
     "list": {
         "maps": [ "cloud", "list" ],
-        "usage": "list"
+        "usage": "spark list"
     },
 
     "core": {
@@ -85,17 +85,17 @@
 
         "add": {
             "maps": [ "cloud", "claim" ],
-            "usage": "call core_id function_name argument",
+            "usage": "spark add core_id",
             "does": "claims a core to your account"
         },
         "remove": {
             "maps": [ "cloud", "remove" ],
-            "usage": "call core_id function_name argument",
+            "usage": "spark remove core_id",
             "does": "releases a core from your account"
         },
         "rename": {
             "maps": [ "cloud", "name" ],
-            "usage": "call core_id function_name argument",
+            "usage": "spark rename core_id name",
             "does": "changes the friendly name of your core"
         }
     },
@@ -103,9 +103,9 @@
     "flash": {
         "maps": [ "cloud", "flash" ],
         "usage": [
-            "flash core_id firmware.bin [--usb]",
-            "flash core_id source_folder [--usb]",
-            "flash core_id file1.ino file2.cpp file2.h file3.cpp [--usb]"
+            "spark flash core_id firmware.bin [--usb]",
+            "spark flash core_id source_folder [--usb]",
+            "spark flash core_id file1.ino file2.cpp file2.h file3.cpp [--usb]"
         ],
         "does": [
             "flash remotely pushes a compiled firmware binary to one of your cores over the air, or directly",
@@ -116,14 +116,14 @@
     },
     "subscribe": {
         "maps": [ "subscribe" ],
-        "usage": "subscribe"
+        "usage": "spark subscribe"
     },
     "compile": {
         "maps": [ "cloud", "compile" ],
         "usage": [
-            "compile firmware.bin",
-            "compile source_folder",
-            "compile file1.ino file2.cpp file2.h file3.cpp"
+            "spark compile firmware.bin",
+            "spark compile source_folder",
+            "spark compile file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
             "Compiles one or more source files or a directory of source to a firmware binary for the Spark Core,",
@@ -133,9 +133,9 @@
     "monitor": {
         "maps": [ "variable", "monitor" ],
         "usage": [
-            "monitor variable_name [--time]",
-            "monitor core_name variable_name [--time]",
-            "monitor core_name variable_name delay_value [--time]"
+            "spark monitor variable_name [--time]",
+            "spark monitor core_name variable_name [--time]",
+            "spark monitor core_name variable_name delay_value [--time]"
         ],
         "does": [
             "Repeatedly queries the Spark API every delay_value milliseconds",
@@ -144,11 +144,11 @@
     },
     "login": {
         "maps": [ "cloud", "login" ],
-        "usage": "login"
+        "usage": "spark login"
     },
     "logout": {
         "maps": [ "cloud", "logout" ],
-        "usage": "logout"
+        "usage": "spark logout"
     },
 
     "_templates": {

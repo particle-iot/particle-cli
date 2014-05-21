@@ -8,21 +8,21 @@
  * @date    14-February-2014
  * @brief   CLI Help module
  ******************************************************************************
-  Copyright (c) 2014 Spark Labs, Inc.  All rights reserved.
+ Copyright (c) 2014 Spark Labs, Inc.  All rights reserved.
 
-  This program is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation, either
-  version 3 of the License, or (at your option) any later version.
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation, either
+ version 3 of the License, or (at your option) any later version.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this program; if not, see <http://www.gnu.org/licenses/>.
-  ******************************************************************************
+ You should have received a copy of the GNU Lesser General Public
+ License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************
  */
 var when = require('when');
 var sequence = require('when/sequence');
@@ -51,8 +51,6 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     },
 
 
-
-
     /**
      * Get more info on a specific command
      * @param name
@@ -68,24 +66,58 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
         var command = this.cli.findCommand(name);
         if (!command) {
-            this.listCommandsSwitch();
+            this.listCommandsSwitch(name);
             return;
         }
 
-        var results = [
-            command.name + ":\t" + command.description,
-            "the following commands are available: "
+        //var does = (util.isArray(command.does)) ? command.does.join("\n") : command.does;
+
+
+        var lines = [
+            "NAME:",
+            "    spark " + name,
+            "",
+            "DOES: ",
+            utilities.indentLines(command.does, " ", 4)
         ];
-        for(var name in command.optionsByName) {
-            var desc = command.descriptionsByName[name];
-            var line = "   spark " + command.name + " " + name;
-            line = utilities.padRight(line, " ", 25) + " - " + desc;
-            results.push(line);
+        var cmds = command._commands;
+        if (cmds) {
+            lines.push("The following commands are available: ");
+
+            for(var idx = 0;idx< cmds.length;idx++) {
+                var subcmdname = cmds[idx];
+                var subcmd = command[subcmdname];
+
+
+                var line = "   spark " + name + " " + subcmdname;
+                line = utilities.padRight(line, " ", 25) + " - " + subcmd.does;
+                lines.push(line);
+            }
+        }
+        else if (command.usage) {
+            //lines.push("How to use this function ");
+            lines.push("");
+            lines.push("USE:");
+            lines.push(utilities.indentLines(command.usage, " ", 4))
+            //lines.push("    spark " + command.usage);
         }
 
-        results.push("");
-        results.push("");
-        console.log(results.join("\n"));
+
+
+//        var results = [
+//            command.name + ":\t" + command.description,
+//            "the following commands are available: "
+//        ];
+//        for (var name in command.optionsByName) {
+//            var desc = command.descriptionsByName[name];
+//            var line = "   spark " + command.name + " " + name;
+//            line = utilities.padRight(line, " ", 25) + " - " + desc;
+//            results.push(line);
+//        }
+
+        lines.push("");
+        lines.push("");
+        console.log(lines.join("\n"));
 
     },
 
@@ -121,12 +153,12 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     },
 
 
-    listMappedCommands: function() {
+    listMappedCommands: function () {
         var lines = [
             "",
             "Welcome to the Spark Command line utility!",
             "https://github.com/spark/spark-cli",
-            "",
+            ""
         ];
 
         //not sure what I want this to be yet...
@@ -148,10 +180,21 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
             var commands = node._commands;
             var cmdList = utilities.wrapArrayText(commands, 60);
-            for (var i=0;i<cmdList.length;i++) {
+            for (var i = 0; i < cmdList.length; i++) {
                 lines.push(utilities.indentLeft(cmdList[i], " ", 4));
             }
             lines.push("");
+
+            var others = this.cli.getUnmappedTopLevelCommands();
+            if (others && (others.length > 0)) {
+                lines.push("Less Common Commands:");
+                cmdList = utilities.wrapArrayText(others, 60);
+                for (var i = 0; i < cmdList.length; i++) {
+                    lines.push(utilities.indentLeft(cmdList[i], " ", 4));
+                }
+                lines.push("");
+            }
+
             lines.push("For more information Run: spark help <command_name>");
             lines.push("");
         }
@@ -160,15 +203,28 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     },
 
 
-    listCommandsSwitch: function() {
-
+    listCommandsSwitch: function (name) {
         if (this.cli.hasMappings()) {
-            //new style
-            this.listMappedCommands();
+            if (name) {
+                //new style
+                this.helpCommand(name);
+            }
+            else {
+                //new style
+                this.listMappedCommands();
+            }
+
         }
         else {
-            //old style
-            this.listCommandsTable();
+            if (name) {
+                this.helpCommand(name);
+            }
+            else {
+                //old style
+                this.listCommandsTable();
+            }
+
+
         }
 
     },
