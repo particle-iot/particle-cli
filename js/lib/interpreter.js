@@ -59,8 +59,8 @@ Interpreter.prototype = {
         //console.log('looking for command ' + name);
 
         var c = null;
-        if (this._commandsMap) {
-            c = this.getMappedCommand(name);
+        if (this.hasMappings()) {
+            c = this.getMappedCommand(name, args);
             args = this.addMappedArgs(name, args);
         }
 
@@ -89,16 +89,21 @@ Interpreter.prototype = {
             name = "help";
         }
 
-        var commands = this._commands;
-        for (var i = 0; i < commands.length; i++) {
-            try {
-                var c = commands[i];
-                if (c.name == name) {
-                    return c;
+        if (this.hasMappings()) {
+            return this._commandsMap[name];
+        }
+        else {
+            var commands = this._commands;
+            for (var i = 0; i < commands.length; i++) {
+                try {
+                    var c = commands[i];
+                    if (c.name == name) {
+                        return c;
+                    }
                 }
-            }
-            catch (ex) {
-                console.error("Error loading command " + ex);
+                catch (ex) {
+                    console.error("Error loading command " + ex);
+                }
             }
         }
 
@@ -150,6 +155,10 @@ Interpreter.prototype = {
         return null;
     },
 
+    /**
+     * open our command mappings file, and override our stock commands
+     * @param filename
+     */
     loadMappings: function (filename) {
         var data = this.tryReadMappings(filename);
         if (!data || !data._commands) {
@@ -157,58 +166,93 @@ Interpreter.prototype = {
             return;
         }
 
-        this._commandsMap = {
-            _commands: data._commands,
-            _templates: data._templates
-        };
+        this._commandsMap = data;
 
-        this.addMappedList(data._commands, data, this._commandsMap);
+        //tree recursive
+//        this.addMappedList(data._commands, data, this._commandsMap);
 
-        //console.log("all done!", JSON.stringify(this._commandsMap, null, 2));
+        //TODO: DAVE HERE
+        //optional?
+        //make a list of all overridden / mapped commands, so we know not to list them?
+
+        //
+        //[ ] we should show a list of all missed commands under common commands, so that they can be found.
+        //[ ] help should work for mappings containing children
+        //e.g. core
+
+
     },
+//
+//    /**
+//     * recur down the command tree, building our structure
+//     * @param arr
+//     * @param tree
+//     * @param commands
+//     */
+//    addMappedList: function (arr, tree, commands) {
+//        var names = [];
+//        for (var i = 0; i < arr.length; i++) {
+//            var name = arr[i];
+//            var node = tree[name];
+//
+//            names.push(name);
+//            this.addMapping(name, node, commands);
+//            commands._commands = names;
+//        }
+//    },
+//
+//
+//    addMapping: function (name, node, commands) {
+//        if (!node) {
+//            return;
+//        }
+//
+//        node.name = name;
+//        commands[name] = node;
+//
+//        if (node._commands) {
+//            var subcommands = { };
+//            this.addMappedList(node._commands, node, subcommands);
+//            commands[name]._commands = subcommands;
+//        }
+//    },
 
-    addMappedList: function (arr, tree, commands) {
-        var names = [];
-        for (var i = 0; i < arr.length; i++) {
-            var name = arr[i];
-            var node = tree[name];
-
-            names.push(name);
-            this.addMapping(name, node, commands);
-            commands._commands = names;
-        }
-    },
-
-    addMapping: function (name, node, commands) {
-        if (!node) {
-            return;
-        }
-
-        node.name = name;
-        commands[name] = node;
-
-        if (node._commands) {
-            var subcommands = {
-                // _parent: node
-            };
-            this.addMappedList(node._commands, node, subcommands);
-
-            commands[name]._commands = subcommands;
-            return;
-        }
-
-        var parent = (commands._parent) ? commands._parent.name : "";
-
-        //console.log("would add " + parent + " " + name);
-    },
-
-    getMappedCommand: function (name) {
+    getMappedCommand: function (name, args) {
         var node = this._commandsMap[name];
         if (!node) {
             return null;
         }
 
-        var cmdName = node.maps[0];
+        //we don't map to anything, but there are more args?
+        //maybe we're a root element.
+        if (!node.maps && args && (args.length > 0)) {
+            var subCmd = args[0];       //e.g. core add
+
+            //does this root item have a subcommand with that name?
+            if (node[subCmd]) {
+                //what does that subcommand map to?
+                var maps = node[subCmd].maps;
+
+                var cmd = this.commandsByName[maps[0]];
+
+                //cut off the alias from the args, and inject the true command
+                if (maps.length > 1) {
+                    args.splice(0, 1, maps[1]);
+                }
+
+                return cmd;
+            }
+        }
+
+
+        if (!node.maps) {
+            //doesn't map exactly to one command, so lets call help.
+            //updating the maps property will let it trim the arguments later so we get the proper help command
+            node.maps = [ "help", name ];
+        }
+
+
+        var cmdName = (node.maps) ? node.maps[0] : null;
 
         //grab the command we're mapped to
         return this.commandsByName[cmdName];
@@ -220,7 +264,7 @@ Interpreter.prototype = {
         }
 
         //append any remaining chunks of the mapping to the arguments list
-        if (node.maps.length > 1) {
+        if (node.maps && (node.maps.length > 1)) {
             var arr = node.maps.slice(1);
             args = arr.concat(args);
         }
@@ -230,6 +274,39 @@ Interpreter.prototype = {
     hasMappings: function() {
         return !!this._commandsMap;
     },
+
+    getUnmappedTopLevelCommands: function() {
+        var results = [];
+
+        var orig = this.commandsByName;
+        for(var key in orig) {
+            var obj = orig[key];
+
+            var name = obj.name;
+            if (!this._commandsMap[name]) {
+                results.push(name);
+            }
+        }
+
+        return results;
+    },
+
+//    getUnmappedCommands: function() {
+//        var results = [];
+//
+//        var orig = this.cli.commandsByName;
+//        for(var i=0;i<orig.length;i++) {
+//            var name = orig[i].name;
+//
+//            if (!this._commandsMap[name]) {
+//                results.push(name);
+//            }
+//        }
+//
+//        //what do I do about nested commands?
+//
+//        return results;
+//    },
 
     _: null
 };

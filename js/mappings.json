@@ -82,19 +82,21 @@
 
     "core": {
         "_commands": [ "add", "remove", "rename" ],
-        "maps": [ "help", "core" ],
 
         "add": {
             "maps": [ "cloud", "claim" ],
-            "usage": "call core_id function_name argument"
+            "usage": "call core_id function_name argument",
+            "does": "claims a core to your account"
         },
         "remove": {
             "maps": [ "cloud", "remove" ],
-            "usage": "call core_id function_name argument"
+            "usage": "call core_id function_name argument",
+            "does": "releases a core from your account"
         },
         "rename": {
             "maps": [ "cloud", "name" ],
-            "usage": "call core_id function_name argument"
+            "usage": "call core_id function_name argument",
+            "does": "changes the friendly name of your core"
         }
     },
 
