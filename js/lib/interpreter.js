@@ -61,7 +61,10 @@ Interpreter.prototype = {
         var c = null;
         if (this.hasMappings()) {
             c = this.getMappedCommand(name, args);
-            args = this.addMappedArgs(name, args);
+            var newargs = this.addMappedArgs(name, args);
+            if (c) {
+                args = newargs;
+            }
         }
 
         //allowing passthrough for things not mapped
