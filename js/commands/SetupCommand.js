@@ -60,10 +60,10 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("*", this.runSetup.bind(this), "Guides you through setting up your account and your core");
     },
 
-    runSetup: function () {
+    runSetup: function (shortcut) {
         var api = new ApiClient(settings.apiUrl, settings.access_token);   //
-        var serial = this.cli.findCommand("serial"),
-            cloud = this.cli.findCommand("cloud");
+        var serial = this.cli.getCommandModule("serial"),
+            cloud = this.cli.getCommandModule("cloud");
 
         var that = this,
             coreID,
@@ -89,6 +89,10 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 return when.resolve();
             }
         };
+
+        if (shortcut && (shortcut == "wifi")) {
+            return serial.configureWifi();
+        }
 
         var allDone = pipeline([
 

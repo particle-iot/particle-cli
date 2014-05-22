@@ -84,6 +84,33 @@ Interpreter.prototype = {
         return this._commands;
     },
 
+    /**
+     * ignores mappings, just uses the name in the original classfile,
+     * so we can cross-reference commands internally
+     * @param name
+     * @returns {*}
+     */
+    getCommandModule: function (name) {
+        var commands = this._commands;
+        for (var i = 0; i < commands.length; i++) {
+            try {
+                var c = commands[i];
+                if (c.name == name) {
+                    return c;
+                }
+            }
+            catch (ex) {
+                console.error("Error loading command " + ex);
+            }
+        }
+    },
+
+
+    /**
+     * finds a command using the mapped name, or the friendly name in the module
+     * @param name
+     * @returns {*}
+     */
     findCommand: function (name) {
         if (!name) {
             name = "help";
@@ -93,21 +120,8 @@ Interpreter.prototype = {
             return this._commandsMap[name];
         }
         else {
-            var commands = this._commands;
-            for (var i = 0; i < commands.length; i++) {
-                try {
-                    var c = commands[i];
-                    if (c.name == name) {
-                        return c;
-                    }
-                }
-                catch (ex) {
-                    console.error("Error loading command " + ex);
-                }
-            }
+            return this.getCommandModule(name);
         }
-
-        return null;
     },
 
     /**
