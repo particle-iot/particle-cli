@@ -164,7 +164,6 @@ ApiClient.prototype = {
         console.log("removing access_token " + access_token);
 
         var dfd = when.defer();
-
         request({
             uri: this.baseUrl + "/v1/access_tokens/" + access_token,
             method: "DELETE",
@@ -177,11 +176,19 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
+            if (error) {
+                console.error("error removing token: " + error);
+            }
+
             if (body && body.ok) {
                 dfd.resolve(body);
             }
             else if (body && body.error) {
                 dfd.reject(body.error);
+            }
+            else {
+                //huh?
+                dfd.reject(body);
             }
         });
 
