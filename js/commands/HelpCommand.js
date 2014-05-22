@@ -78,7 +78,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
             "    spark " + name,
             "",
             "DOES: ",
-            utilities.indentLines(command.does, " ", 4)
+            utilities.indentLines(command.does || command.description.split('\n'), " ", 4)
         ];
         var cmds = command._commands;
         if (cmds) {
@@ -88,13 +88,27 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
                 var subcmdname = cmds[idx];
                 var subcmd = command[subcmdname];
 
-
                 var line = "   spark " + name + " " + subcmdname;
                 line = utilities.padRight(line, " ", 25) + " - " + subcmd.does;
                 lines.push(line);
             }
         }
+        else if (command.optionsByName) {
+            lines.push("");
+
+            for (var name in command.optionsByName) {
+                var desc = command.descriptionsByName[name];
+                var line = "    spark " + command.name + " " + name;
+                line = utilities.padRight(line, " ", 25) + " - " + desc;
+                lines.push(line);
+            }
+        }
         else if (command.usage) {
+
+            if (!util.isArray(command.usage)) {
+                command.usage = [ command.usage ];
+            }
+
             //lines.push("How to use this function ");
             lines.push("");
             lines.push("USE:");
@@ -108,12 +122,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 //            command.name + ":\t" + command.description,
 //            "the following commands are available: "
 //        ];
-//        for (var name in command.optionsByName) {
-//            var desc = command.descriptionsByName[name];
-//            var line = "   spark " + command.name + " " + name;
-//            line = utilities.padRight(line, " ", 25) + " - " + desc;
-//            results.push(line);
-//        }
+
 
         lines.push("");
         lines.push("");

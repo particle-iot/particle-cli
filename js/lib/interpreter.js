@@ -116,12 +116,16 @@ Interpreter.prototype = {
             name = "help";
         }
 
+        var cmd;
         if (this.hasMappings()) {
-            return this._commandsMap[name];
+             cmd = this._commandsMap[name];
         }
-        else {
+
+        if (!cmd && (name != "help")) {
             return this.getCommandModule(name);
         }
+
+        return cmd;
     },
 
     /**
