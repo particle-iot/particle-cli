@@ -101,7 +101,7 @@
     },
 
     "flash": {
-        "maps": [ "cloud", "flash" ],
+        "maps": [ "flash", "*" ],
         "usage": [
             "spark flash core_id firmware.bin [--usb]",
             "spark flash core_id source_folder [--usb]",
@@ -111,7 +111,9 @@
             "flash remotely pushes a compiled firmware binary to one of your cores over the air, or directly",
             "over USB / dfu.  If you send it one or more source files, or a directory of source, it will compile",
             "that remotely first, and push the compiled binary to your core instead, or in the case of code errors",
-            "will show you the errors from the server."
+            "will show you the errors from the server.",
+            "",
+            "You can also substitute \"tinker\" or \"cc3000\" to flash the provided app."
         ]
     },
     "subscribe": {

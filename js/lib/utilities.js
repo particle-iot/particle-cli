@@ -332,6 +332,27 @@ var that = module.exports = {
         return result;
     },
 
+    tryParseArgs: function (args, name, errText) {
+        var idx = that.indexOf(args, name);
+        var result;
+        if (idx >= 0) {
+            if ((idx + 1) < args.length) {
+                result = args[idx + 1];
+            }
+            else if (errText) {
+                console.log(errText);
+            }
+        }
+        return result;
+    },
+
+    copyArray: function(arr) {
+        var result = [];
+        for(var i=0;i<arr.length;i++) {
+            result.push(arr[i]);
+        }
+        return result;
+    },
 
     _:null
 };
