@@ -20,6 +20,16 @@ To upgrade Spark-CLI, enter the following command:
 
     npm update -g spark-cli
 
+
+Running from source (advanced)
+=======
+To grab the CLI source and play with it locally
+
+    git clone git@github.com:spark/spark-cli.git
+    cd spark-cli/js
+    node app.js help
+
+
 Getting Started / Documentation
 ===============
 
