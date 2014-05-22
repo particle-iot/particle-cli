@@ -154,18 +154,28 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         if (!filePath) {
-            console.error("Please specify a binary file, source file, or source directory");
+            console.error("Please specify a binary file, source file, or source directory, or known app");
             return;
         }
 
+        var files = null;
+
         if (!fs.existsSync(filePath)) {
-            console.error("I couldn't find that: " + filePath);
-            return;
+            if (settings.knownApps[filePath]) {
+                files = { file: settings.knownApps[filePath] };
+            }
+            else {
+                console.error("I couldn't find that: " + filePath);
+                return;
+            }
         }
 
         //make a copy of the arguments sans the 'coreid'
         var args = Array.prototype.slice.call(arguments, 1);
-        var files = this._handleMultiFileArgs(args);
+
+        if (!files) {
+            files = this._handleMultiFileArgs(args);
+        }
         if (!files) {
             return;
         }

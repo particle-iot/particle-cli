@@ -58,10 +58,20 @@ var settings = {
     dirIncludeFilename: "spark.include",
     dirExcludeFilename: "spark.ignore",
 
+    knownApps: {
+        "cc3000": "binaries/cc3000-patch-programmer.bin",
+        "tinker": "binaries/spark_tinker.bin"
+    },
+
     commandMappings: path.join(__dirname, "mappings.json")
 };
 
 settings.commandPath = __dirname + "/commands/";
+
+//fix the paths on the known apps mappings
+for(var name in settings.knownApps) {
+    settings.knownApps[name] = path.join(__dirname, settings.knownApps[name]);
+}
 
 
 settings.findHomePath = function() {
