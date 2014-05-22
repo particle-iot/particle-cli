@@ -72,13 +72,20 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
         //var does = (util.isArray(command.does)) ? command.does.join("\n") : command.does;
 
+        var descr = command.does;
+        if (!descr) {
+            descr = command.description;
+        }
+        if (!util.isArray(descr)) {
+            descr = [ descr ];
+        }
 
         var lines = [
             "NAME:",
             "    spark " + name,
             "",
             "DOES: ",
-            utilities.indentLines(command.does || command.description.split('\n'), " ", 4)
+            utilities.indentLines(descr, " ", 4)
         ];
         var cmds = command._commands;
         if (cmds) {
