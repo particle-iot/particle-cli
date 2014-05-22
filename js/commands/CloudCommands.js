@@ -379,43 +379,109 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         return allDone;
     },
 
-    listCores: function () {
 
+    getAllCoreAttributes: function (args) {
+        console.error("Checking with the cloud...");
+
+        var tmp = when.defer();
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
-            return;
+            return when.reject("not logged in!");
         }
 
-
-        api.listDevices()
-            .then(function (cores) {
-                if (!cores || (cores.length == 0)) {
-                    console.log("No cores found.");
-                    return;
+        var lookupVariables = function (cores) {
+            if (!cores || (cores.length == 0)) {
+                console.log("No cores found.");
+            }
+            else {
+                var promises = [];
+                for (var i = 0; i < cores.length; i++) {
+                    var coreid = cores[i].id;
+                    if (cores[i].connected) {
+                        promises.push(api.getAttributes(coreid));
+                    }
+                    else {
+                        promises.push(when.resolve(cores[i]));
+                    }
                 }
 
-                console.log("Found " + cores.length + " cores ");
-
-                //sort alphabetically
-                cores = cores.sort(function (a, b) {
-                    return (a.name || "").localeCompare(b.name);
+                when.all(promises).then(function (cores) {
+                    //sort alphabetically
+                    cores = cores.sort(function (a, b) {
+                        return (a.name || "").localeCompare(b.name);
+                    });
+                    tmp.resolve(cores);
                 });
+            }
+        };
 
+        pipeline([
+            api.listDevices.bind(api),
+            lookupVariables
+        ]);
+
+        return tmp.promise;
+    },
+
+
+    listCores: function (args) {
+
+        var formatVariables = function (vars, lines) {
+            if (vars) {
+                var arr = [];
+                for (var key in vars) {
+                    var type = vars[key];
+                    arr.push("    " + key + " (" + type + ")");
+                }
+
+                if (arr.length > 0) {
+                    //TODO: better way to accomplish this?
+                    lines.push("  Variables:");
+                    for(var i=0;i<arr.length;i++) { lines.push(arr[i]); }
+                }
+
+            }
+        };
+        var formatFunctions = function (funcs, lines) {
+            if (funcs && (funcs.length > 0)) {
+                lines.push("  Functions:");
+
+                for (var idx = 0; idx < funcs.length; idx++) {
+                    var name = funcs[idx];
+                    lines.push("    int " + name + "(String args) ");
+                }
+            }
+        };
+
+
+        when(this.getAllCoreAttributes(args)).then(function (cores) {
+            try {
                 var lines = [];
                 for (var i = 0; i < cores.length; i++) {
                     var core = cores[i];
 
-                    var onlineStr = (core.connected) ? "online" : "offline";
-                    var status = "  " + core.name + " (" + core.id + ") is " + onlineStr;
+                    var numVars = (core.variables) ? core.variables.length : 0;
+                    var numFuncs = (core.variables) ? core.functions.length : 0;
+
+                    var hasLine = numVars + " variables, and " + numFuncs + " functions";
+
+                    var status = core.name + " (" + core.id + ") " + hasLine;
+                    if ((numVars == 0) && (numFuncs == 0)) {
+                        status += " (or is offline) ";
+                    }
+
                     lines.push(status);
+
+                    formatVariables(core.variables, lines);
+                    formatFunctions(core.functions, lines);
                 }
-                lines.push("");
 
                 console.log(lines.join("\n"));
-            },
-            function (err) {
-                console.error("Error listing cores: " + err);
-            });
+            }
+            catch (ex) {
+                console.error("Error during list " + ex);
+            }
+        });
     },
 
     /**
