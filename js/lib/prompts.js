@@ -102,6 +102,10 @@ var that = {
                     process.stdout.write('\b \b');
                 }
             }
+            else if (chunk[0] == 3) {
+                process.stdout.write("\nBreak!\n");
+                dfd.reject("break");
+            }
             else if (chunk[0] != 13) {
                 arr.push(chunk);
                 process.stdout.write("*");
