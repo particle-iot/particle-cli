@@ -281,6 +281,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
             //download
             function (resp) {
+
+                if (resp && resp.sizeInfo) {
+                    //TODO: needs formatting
+                    console.log("Memory use: ");
+                    console.log(resp.sizeInfo);
+                }
+
+
                 if (resp && resp.binary_url) {
                     return api.downloadBinary(resp.binary_url, filename);
                 }
