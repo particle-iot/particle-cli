@@ -70,9 +70,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
     checkArguments: function (args) {
         this.options = this.options || {};
 
-//        if (!this.options.showTime) {
-//            this.options.showTime = (utilities.contains(args, "--time"));
-//        }
+        if (!this.options.force) {
+            this.options.force = utilities.tryParseArgs(args,
+                "--force",
+                null
+            );
+        }
 
     },
 
@@ -126,10 +129,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
     },
 
     writeKeyToCore: function (filename, leave) {
+        this.checkArguments(arguments);
+
 
         if (!filename) {
-            console.error("Please provide a filename to store this key.");
-            return when.reject("Please provide a filename to store this key.");
+            console.error("Please provide a filename for this key.");
+            return when.reject("Please provide a filename for this key.");
         }
 
         filename = utilities.filenameNoExt(filename) + ".der";
@@ -174,9 +179,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         }
 
         //TODO: check / ensure ".der" extension
-        //TODO: check for --force flag
+        this.checkArguments(arguments);
 
-        if (fs.existsSync(filename)) {
+        if ((!this.options.force) && (fs.existsSync(filename))) {
             console.error("This file already exists, please specify a different file, or use the --force flag.");
             return when.reject("This file already exists, please specify a different file, or use the --force flag.");
         }
@@ -263,7 +268,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             });
     },
 
-    writeServerPublicKey: function (filename) {
+        writeServerPublicKey: function (filename) {
         if (!filename || (!fs.existsSync(filename))) {
             console.log("Please specify a server key in DER format.");
             return -1;
