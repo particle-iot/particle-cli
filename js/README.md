@@ -1,10 +1,12 @@
 changelog
 =========
 
-05/23/2014 - 0.3.2 - Lots of big changes!
-
-TODO: release notes!
-
+05/23/2014 - 0.3.2 - Okay! The command structure got a bit of a remodel, use ```spark help``` to see the new commands.
+  Pro-Tip!  If you don't like the new command structure, the old commands should still mostly work, and you
+  can remove the new commands entirely by adding ```commandMappings: null``` to your settings overrides file
+  (which is here: ~/.spark/spark.config.json ).  There have also been lots of small bug fixes and improvements.
+  Also, the new mappings.json file paves the way for language support for command descriptions and help in languages
+  other than english.  Please feel free to send in translations! :)
 
 
 03/19/2014 - 0.3.0 - Clarifying language, fixing some prompts
