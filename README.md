@@ -155,6 +155,16 @@ Okay!
   Note!  When sending source code, the cloud compiles ```.ino``` and ```.cpp``` files differently.  For ```.ino``` files, the cloud will apply a pre-processor.  It will add missing function declarations, and it will inject an ```#include "
   application.h"``` line at the top of your files if it is missing.
 
+  If you want to build a library that can be used for both Arduino and Spark, here's a useful code snippet:
+
+  ```cpp
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#elif defined(SPARK)
+#include "application.h"
+#endif
+```
+
 ####Flashing a directory
 
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
@@ -195,6 +205,15 @@ $ spark flash --usb firmware.bin
   Note!  The cloud compiles ```.ino``` and ```.cpp``` files differently.  For ```.ino``` files, the cloud will apply a pre-processor.  It will add missing function declarations, and it will inject an ```#include "
   application.h"``` line at the top of your files if it is missing.
 
+  If you want to build a library that can be used for both Arduino and Spark, here's a useful code snippet:
+
+  ```cpp
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
+#elif defined(SPARK)
+#include "application.h"
+#endif
+```
 ####compiling a directory
 
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.  Those files are just plain text with one line per filename
