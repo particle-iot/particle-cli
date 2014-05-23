@@ -73,8 +73,20 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         });
     },
 
+
+    checkArguments: function (args) {
+        this.options = this.options || {};
+
+        if (!this.options.follow) {
+            this.options.follow = utilities.tryParseArgs(args,
+                "--follow",
+               null
+            );
+        }
+    },
+
     monitorPort: function (comPort) {
-        this.whatSerialPortDidYouMean(comPort, true, function (port) {
+        var handlePortFn = function (port) {
             if (!port) {
                 console.error("No serial port identified");
                 return;
@@ -95,7 +107,16 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                     console.error("Serial problems, please reconnect the core.");
                 }
             });
-        });
+        };
+
+        this.checkArguments(arguments);
+
+        if (this.options.follow) {
+            //catch the serial port dying, and keep retrying forever
+            //TODO: needs serialPort error / close event / deferred
+        }
+
+        this.whatSerialPortDidYouMean(comPort, true, handlePortFn);
     },
 
 
