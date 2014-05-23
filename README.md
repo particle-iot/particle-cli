@@ -152,6 +152,9 @@ Okay!
 
   Sends a firmware binary, a source file, or a directory of source files, or a known app to your core.
 
+  Note!  When sending source code, the cloud compiles ```.ino``` and ```.cpp``` files differently.  For ```.ino``` files, the cloud will apply a pre-processor.  It will add missing function declarations, and it will inject an ```#include "
+  application.h"``` line at the top of your files if it is missing.
+
 ####Flashing a directory
 
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
@@ -188,6 +191,9 @@ $ spark flash --usb firmware.bin
 ###spark compile
 
   Compiles one or more source file, or a directory of source files, and downloads a firmware binary.
+
+  Note!  The cloud compiles ```.ino``` and ```.cpp``` files differently.  For ```.ino``` files, the cloud will apply a pre-processor.  It will add missing function declarations, and it will inject an ```#include "
+  application.h"``` line at the top of your files if it is missing.
 
 ####compiling a directory
 
