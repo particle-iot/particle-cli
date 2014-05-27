@@ -578,6 +578,32 @@ ApiClient.prototype = {
         return requestObj;
     },
 
+    publishEvent: function (eventName, data) {
+        var dfd = when.defer();
+        request({
+            uri: this.baseUrl + "/v1/devices/events",
+            method: "POST",
+            form: {
+                name: eventName,
+                data: data,
+                access_token: this._access_token
+            },
+            json: true
+        }, function (error, response, body) {
+
+            if (body && body.ok) {
+                console.log("posted event!");
+                dfd.resolve(body);
+            }
+            else if (body && body.error) {
+                console.log("Server said", body.error);
+                dfd.reject(body);
+            }
+        });
+
+        return dfd.promise;
+    },
+
 
     createWebhook: function (event, url, coreID) {
         var dfd = when.defer();
