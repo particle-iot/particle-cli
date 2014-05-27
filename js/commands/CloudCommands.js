@@ -650,7 +650,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 break;
             }
 
-            if (utilities.getFilenameExt(filename) == ".bin") {
+            if ((utilities.getFilenameExt(filename) == ".bin") && (i != 0)) {
                 //hit output binary file
                 break;
             }
