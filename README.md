@@ -40,13 +40,11 @@ Running from source (advanced)
 ---------------------------
 To grab the CLI source and play with it locally
 
-    git clone git@github.com:spark/spark-cli.git
-    cd spark-cli/js
-    node app.js help
-
-
-
-
+```sh
+git clone git@github.com:spark/spark-cli.git
+cd spark-cli/js
+node app.js help
+```
 
 
 Getting Started
@@ -108,7 +106,7 @@ $ spark logout
 
 ###spark list
 
-Generates a list of what cores you own, and displays information about their status, including what variables and functions are available
+  Generates a list of what cores you own, and displays information about their status, including what variables and functions are available
 
 ```sh
 $ spark list
@@ -123,6 +121,7 @@ my_core_name (0123456789ABCDEFGHI) 0 variables, and 4 functions
     int analogRead(string)
 
 ```
+
 
 ###spark core add
 
@@ -175,6 +174,7 @@ Okay!
 #endif
 ```
 
+
 ####Flashing a directory
 
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
@@ -183,18 +183,26 @@ Okay!
 $ spark flash 0123456789ABCDEFGHI my_project
 ```
 
+
 ####Flashing one or more source files
+
+  You can include any number of individual source files after the device id, and the CLI will include them while flashing your app.
+
 
 ```sh
 $ spark flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
 ```
 
+
 ####Flashing a known app
+
+  You can easily reset a core back to a previous existing app with a quick command. Both "tinker" and "cc3000" are reserved app names currently.  Tinker is the original firmware that ships with the core, and cc3000 will patch the wifi module on your Core.
 
 ```sh
 $ spark flash 0123456789ABCDEFGHI tinker
 $ spark flash 0123456789ABCDEFGHI cc3000
 ```
+
 
 ####Compiling remotely and Flashing locally
 
@@ -224,6 +232,8 @@ $ spark flash --usb firmware.bin
 #include "application.h"
 #endif
 ```
+
+
 ####compiling a directory
 
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.  Those files are just plain text with one line per filename
@@ -232,12 +242,14 @@ $ spark flash --usb firmware.bin
 $ spark compile my_project_folder
 ```
 
+
 ####example spark.include
 ```text
 application.cpp
 library1.h
 library1.cpp
 ```
+
 
 ####example spark.ignore
 ```text
@@ -247,7 +259,10 @@ old_version.cpp
 ```
 
 
-####Flashing one or more source files
+####Compiling one or more source files
+
+  You can include any number of individual source files after the device id, and the CLI will include them while compiling your app.
+
 
 ```sh
 $ spark compile app.ino library1.cpp library1.h
