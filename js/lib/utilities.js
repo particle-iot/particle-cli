@@ -284,6 +284,15 @@ var that = module.exports = {
         return arr;
     },
 
+    trimBlankLinesAndComments: function (arr) {
+        if (arr && (arr.length != 0)) {
+            return arr.filter(function (obj) {
+                return obj && (obj != "") && (obj.indexOf("#") != 0);
+            });
+        }
+        return arr;
+    },
+
     readLines: function(file) {
         if (fs.existsSync(file)) {
             var str = fs.readFileSync(file).toString();

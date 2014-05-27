@@ -1,6 +1,7 @@
 changelog
 =========
 
+05/27/2014 - 0.3.4 - Allowing comment lines prefixed with "#" in spark.include and spark.ignore
 05/27/2014 - 0.3.3 - Fixing a flashing binary bug - don't conclude binary file argument is an output bin unless it's preceded by other filenames.
 
 05/27/2014 - 0.3.2 - Okay! The command structure got a bit of a remodel, use ```spark help``` to see the new commands.

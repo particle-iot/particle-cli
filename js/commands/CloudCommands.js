@@ -586,7 +586,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
             return utilities.fixRelativePaths(dirname,
-                utilities.trimBlankLines(
+                utilities.trimBlankLinesAndComments(
                     utilities.readLines(includesFile)
                 )
             );
