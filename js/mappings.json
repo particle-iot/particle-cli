@@ -121,7 +121,17 @@
     },
     "subscribe": {
         "maps": [ "subscribe" ],
-        "usage": "spark subscribe"
+        "does": [
+            "Subscribes to published events on the cloud, and pipes them to the console.  Special core name \"mine\" will subscribe to events from just your cores."
+        ],
+        "usage": [
+            "spark subscribe",
+            "spark subscribe mine",
+            "spark subscribe event_name",
+            "spark subscribe event_name mine",
+            "spark subscribe event_name device_id"
+        ]
+
     },
     "compile": {
         "maps": [ "cloud", "compile" ],
@@ -149,11 +159,17 @@
     },
     "login": {
         "maps": [ "cloud", "login" ],
-        "usage": "spark login"
+        "usage": "spark login",
+        "does": [
+            "Login and save an access token for interacting with your account on the Spark Cloud."
+        ]
     },
     "logout": {
         "maps": [ "cloud", "logout" ],
-        "usage": "spark logout"
+        "usage": "spark logout",
+        "does": [
+            "Logout and optionally revoke the access token for your CLI session."
+        ]
     },
 
     "_templates": {
