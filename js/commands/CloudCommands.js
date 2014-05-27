@@ -633,6 +633,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         if (stats.isDirectory()) {
             filelist = this._processDirIncludes(filePath);
+            if (!filelist) {
+                console.log("Your " + settings.dirIncludeFilename + " file is empty, not including anything!");
+                return null;
+            }
         }
         else if (stats.isFile()) {
             filelist = arr;
