@@ -1,7 +1,7 @@
 changelog
 =========
 
-05/23/2014 - 0.3.2 - Okay! The command structure got a bit of a remodel, use ```spark help``` to see the new commands.
+05/27/2014 - 0.3.2 - Okay! The command structure got a bit of a remodel, use ```spark help``` to see the new commands.
   Pro-Tip!  If you don't like the new command structure, the old commands should still mostly work, and you
   can remove the new commands entirely by adding ```commandMappings: null``` to your settings overrides file
   (which is here: ~/.spark/spark.config.json ).  There have also been lots of small bug fixes and improvements.
