@@ -107,6 +107,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                     return prompts.askYesNoQuestion(line, true);
                 }
                 else {
+                    //already logged out
                     return when.resolve(true);
                 }
             },
@@ -118,7 +119,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
             //3.) create user,
 
             function(switchAccounts) {
-                if (switchAccounts) {
+                if (settings.access_token && switchAccounts) {
                     return cloud.logout(true);
                 }
                 else {
