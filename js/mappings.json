@@ -186,6 +186,20 @@
         ]
     },
 
+    "nyan": {
+        "maps": [ "cloud", "nyan" ],
+        "usage": [
+            "spark cloud nyan",
+            "spark cloud nyan my_core_id on",
+            "spark cloud nyan my_core_id off",
+            "spark cloud nyan all on",
+            "spark cloud nyan [core_id/all] [on/off]"
+        ],
+        "does": [
+            "That's weird, huh, I guess the description for this mysterious command is missing..."
+        ]
+    },
+
     "_templates": {
         "help": null
 
