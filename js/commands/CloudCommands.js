@@ -464,6 +464,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if ((coreID == "") || (coreID == "all")) {
             coreID = null;
         }
+        else if (coreID == "on") {
+            coreID = null;
+            onOff = true;
+        }
+        else if (coreID == "off") {
+            coreID = null;
+            onOff = false;
+        }
 
 
         if (coreID) {

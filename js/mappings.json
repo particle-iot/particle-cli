@@ -193,6 +193,7 @@
             "spark cloud nyan my_core_id on",
             "spark cloud nyan my_core_id off",
             "spark cloud nyan all on",
+            "spark cloud nyan [on/off]",
             "spark cloud nyan [core_id/all] [on/off]"
         ],
         "does": [
