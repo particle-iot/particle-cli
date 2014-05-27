@@ -59,7 +59,9 @@ Getting Started
 
   Guides you through creating a new account, and claiming your core!
 
-``` $ spark setup```
+```sh
+$ spark setup
+```
 
 
 ###spark help
@@ -81,21 +83,27 @@ Command Reference
 
   Helpful shortcut for adding another wifi network to a core connected over USB.  Make sure your core is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.spark.io/#/connect)
 
-``` $ spark setup wifi```
+```sh
+$ spark setup wifi
+```
 
 
 ###spark login
 
   Login and save an access token for interacting with your account on the Spark Cloud.
 
-``` $ spark login ```
+```sh
+$ spark login
+```
 
 
 ###spark logout
 
   Logout and optionally revoke the access token for your CLI session.
 
-``` $ spark logout ```
+```sh
+$ spark logout
+```
 
 
 ###spark list
@@ -131,7 +139,9 @@ Successfully claimed core 0123456789ABCDEFGHI
 
   Assigns a new name to a core you've claimed
 
-```$ spark core rename 0123456789ABCDEFGHI "pirate frosting" ```
+```sh
+$ spark core rename 0123456789ABCDEFGHI "pirate frosting"
+```
 
 
 
@@ -157,7 +167,7 @@ Okay!
 
   If you want to build a library that can be used for both Arduino and Spark, here's a useful code snippet:
 
-  ```cpp
+```cpp
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #elif defined(SPARK)
@@ -207,7 +217,7 @@ $ spark flash --usb firmware.bin
 
   If you want to build a library that can be used for both Arduino and Spark, here's a useful code snippet:
 
-  ```cpp
+```cpp
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #elif defined(SPARK)
@@ -250,17 +260,20 @@ $ spark compile app.ino library1.cpp library1.h
 
   Calls a function on one of your cores, use ```spark list``` to see which cores are online, and what functions are available.
 
-    $ spark call 0123456789ABCDEFGHI digitalWrite "D7,HIGH"
-    1
-
+```sh
+$ spark call 0123456789ABCDEFGHI digitalWrite "D7,HIGH"
+1
+```
 
 
 ###spark get
 
   Retrieves a variable value from one of your cores, use ```spark list``` to see which cores are online, and what variables are available.
 
-    $ spark get 0123456789ABCDEFGHI temperature
-    72.1
+```sh
+$ spark get 0123456789ABCDEFGHI temperature
+72.1
+```
 
 
 
@@ -315,7 +328,9 @@ $ spark subscribe eventName 0123456789ABCDEFGHI
 
   Shows currently connected Spark Core's acting as serial devices over USB
 
-``` $ spark serial list ```
+```sh
+$ spark serial list
+```
 
 
 ###spark serial monitor
@@ -336,7 +351,9 @@ Helps you update your keys, or recover your core when the keys on the server are
 
 Connect your core in [dfu mode](http://docs.spark.io/#/connect/appendix-dfu-mode-device-firmware-upgrade), and run this command to replace the unique cryptographic keys on your core.  Automatically attempts to send the new public key to the cloud as well.
 
-``` $ spark keys doctor 0123456789ABCDEFGHI```
+```sh
+$ spark keys doctor 0123456789ABCDEFGHI
+```
 
 
 ###spark keys new
