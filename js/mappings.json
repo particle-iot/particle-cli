@@ -77,7 +77,10 @@
 
     "list": {
         "maps": [ "cloud", "list" ],
-        "usage": "spark list"
+        "usage": "spark list",
+        "does": [
+            "Displays a list of your cores, as well as their variables and functions"
+        ]
     },
 
     "core": {

@@ -8,6 +8,11 @@ changelog
   Also, the new mappings.json file paves the way for language support for command descriptions and help in languages
   other than english.  Please feel free to send in translations! :)
 
+  Includes Fixes for #30, #36, pr #35, #32, #39
+
+04/28/2014 - 0.3.1 - New node-serialport that doesn't need to be compiled, yay!  Please check the github readme for new
+  commands :)
+  Includes Fixes for #21, #5, #30, pr #27, pr #29,
 
 03/19/2014 - 0.3.0 - Clarifying language, fixing some prompts
 03/18/2014 - 0.2.99 - Adding 'subscribe' for streaming SSE from Spark.publish

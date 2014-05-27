@@ -60,7 +60,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
     init: function () {
         this.addOption("claim", this.claimCore.bind(this), "Register a core with your user account with the cloud");
-        this.addOption("list", this.listCores.bind(this), "Show what cores are registered with your account");
+        this.addOption("list", this.listCores.bind(this), "Displays a list of your cores, as well as their variables and functions");
         this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
         this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
         this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
