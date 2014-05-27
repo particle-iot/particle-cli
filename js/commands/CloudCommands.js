@@ -67,9 +67,23 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("compile", this.compileCode.bind(this), "Compile a source file, or directory using the cloud service");
         //this.addOption("binary", this.downloadBinary.bind(this), "Compile a source file, or directory using the cloud service");
 
+        this.addOption("nyan", this.nyanMode.bind(this), "How long has this been here?");
+
         this.addOption("login", this.login.bind(this), "Lets you login to the cloud and stores an access token locally");
         this.addOption("logout", this.logout.bind(this), "Logs out your session and clears your saved access token");
     },
+
+
+    usagesByName: {
+        nyan: [
+            "spark cloud nyan",
+            "spark cloud nyan my_core_id on",
+            "spark cloud nyan my_core_id off",
+            "spark cloud nyan all on"
+        ]
+
+    },
+
 
     checkArguments: function (args) {
         this.options = this.options || {};
@@ -430,6 +444,60 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         return tmp.promise;
     },
+
+
+    nyanMode: function(coreID, onOff) {
+
+
+        var api = new ApiClient(settings.apiUrl, settings.access_token);
+        if (!api.ready()) {
+            return when.reject("not logged in!");
+        }
+
+        if (!onOff || (onOff == "") || (onOff == "on")) {
+            onOff = true;
+        }
+        else if (onOff == "off") {
+            onOff = false;
+        }
+
+        if ((coreID == "") || (coreID == "all")) {
+            coreID = null;
+        }
+
+
+        if (coreID) {
+            api.signalCore(coreID, onOff);
+        }
+        else {
+
+           var toggleAll = function (cores) {
+                if (!cores || (cores.length == 0)) {
+                    console.log("No cores found.");
+                }
+                else {
+                    var promises = [];
+                    for (var i = 0; i < cores.length; i++) {
+                        var coreid = cores[i].id;
+                        if (!cores[i].connected) {
+                            promises.push(when.resolve(cores[i]));
+                            continue;
+                        }
+
+                        promises.push(api.signalCore(coreid, onOff));
+                    }
+                    return when.all(promises);
+                }
+            };
+
+
+            pipeline([
+                api.listDevices.bind(api),
+                toggleAll
+            ]);
+        }
+    },
+
 
 
     listCores: function (args) {

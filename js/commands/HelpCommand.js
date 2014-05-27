@@ -55,7 +55,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
      * Get more info on a specific command
      * @param name
      */
-    helpCommand: function (name) {
+    helpCommand: function (name, subcmd) {
         //console.log("Deep help command got " + name);
         //console.log("");
 
@@ -70,15 +70,23 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
             return;
         }
 
-        //var does = (util.isArray(command.does)) ? command.does.join("\n") : command.does;
+        //make a pretty string showing how to use this command, optionally plus a sub-command
+        var cmdLine = "spark " + name;
+        if (subcmd) {
+            cmdLine += " " + subcmd;
+        }
 
         var lines = [
             "NAME:",
-            "    spark " + name,
+            cmdLine,
             ""
         ];
 
         var descr = command.does;
+        if (!descr && subcmd && command.descriptionsByName) {
+            descr = command.descriptionsByName[subcmd];
+        }
+
         if (!descr) {
             descr = command.description;
         }
@@ -91,48 +99,63 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
             lines.push(utilities.indentLines(descr, " ", 4));
         }
 
-        var cmds = command._commands;
-        if (cmds) {
-            lines.push("The following commands are available: ");
 
-            for(var idx = 0;idx< cmds.length;idx++) {
-                var subcmdname = cmds[idx];
-                var subcmd = command[subcmdname];
+        //
+        //  Get Usage text if we have it
+        //
 
-                var line = "   spark " + name + " " + subcmdname;
-                line = utilities.padRight(line, " ", 25) + " - " + subcmd.does;
-                lines.push(line);
-            }
-        }
-        else if (command.optionsByName) {
-            lines.push("");
 
-            for (var name in command.optionsByName) {
-                var desc = command.descriptionsByName[name];
-                var line = "    spark " + command.name + " " + name;
-                line = utilities.padRight(line, " ", 25) + " - " + desc;
-                lines.push(line);
-            }
+        var usageText = null;
+
+        if (subcmd && command.usagesByName && command.usagesByName[subcmd]) {
+            usageText = command.usagesByName[subcmd];
         }
         else if (command.usage) {
+            usageText = command.usage;
+        }
 
-            if (!util.isArray(command.usage)) {
-                command.usage = [ command.usage ];
+        if (usageText) {
+            if (!util.isArray(usageText)) {
+                usageText = [ usageText ];
             }
 
             //lines.push("How to use this function ");
             lines.push("");
             lines.push("USE:");
-            lines.push(utilities.indentLines(command.usage, " ", 4))
-            //lines.push("    spark " + command.usage);
+            lines.push(utilities.indentLines(usageText, " ", 4));
         }
 
 
+        //
+        // If we didn't have usage text, then maybe we're a parent command
+        //
 
-//        var results = [
-//            command.name + ":\t" + command.description,
-//            "the following commands are available: "
-//        ];
+        if (!usageText) {
+
+            var cmds = command._commands;
+            if (cmds) {
+                lines.push("The following commands are available: ");
+
+                for (var idx = 0; idx < cmds.length; idx++) {
+                    var subcmdname = cmds[idx];
+                    var subcmd = command[subcmdname];
+
+                    var line = "   spark " + name + " " + subcmdname;
+                    line = utilities.padRight(line, " ", 25) + " - " + subcmd.does;
+                    lines.push(line);
+                }
+            }
+            else if (command.optionsByName) {
+                lines.push("");
+
+                for (var name in command.optionsByName) {
+                    var desc = command.descriptionsByName[name];
+                    var line = "    spark " + command.name + " " + name;
+                    line = utilities.padRight(line, " ", 25) + " - " + desc;
+                    lines.push(line);
+                }
+            }
+        }
 
 
         lines.push("");
