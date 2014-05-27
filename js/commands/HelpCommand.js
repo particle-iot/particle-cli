@@ -46,7 +46,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
     description: "Help provides information on available commands in the cli",
 
     init: function () {
-        this.addOption("list", this.listCommandsSwitch.bind(this), "List commands available for that command");
+        //this.addOption("list", this.listCommandsSwitch.bind(this), "List commands available for that command");
         this.addOption("*", this.helpCommand.bind(this), "Provide extra information about the given command");
     },
 
@@ -72,21 +72,25 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
         //var does = (util.isArray(command.does)) ? command.does.join("\n") : command.does;
 
+        var lines = [
+            "NAME:",
+            "    spark " + name,
+            ""
+        ];
+
         var descr = command.does;
         if (!descr) {
             descr = command.description;
         }
-        if (!util.isArray(descr)) {
+        if (descr && !util.isArray(descr)) {
             descr = [ descr ];
         }
 
-        var lines = [
-            "NAME:",
-            "    spark " + name,
-            "",
-            "DOES: ",
-            utilities.indentLines(descr, " ", 4)
-        ];
+        if (descr) {
+            lines.push("DOES: ");
+            lines.push(utilities.indentLines(descr, " ", 4));
+        }
+
         var cmds = command._commands;
         if (cmds) {
             lines.push("The following commands are available: ");
