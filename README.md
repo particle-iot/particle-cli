@@ -196,11 +196,12 @@ $ spark flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
 
 ####Flashing a known app
 
-  You can easily reset a core back to a previous existing app with a quick command. Both "tinker" and "cc3000" are reserved app names currently.  Tinker is the original firmware that ships with the core, and cc3000 will patch the wifi module on your Core.
+  You can easily reset a core back to a previous existing app with a quick command. Three app names are reserved right now: "tinker", "voodoo", and "cc3000".  Tinker is the original firmware that ships with the core, and cc3000 will patch the wifi module on your Core. Voodoo is a build of [VoodooSpark](http://voodoospark.me/) to allow local wireless firmata control of a core.
 
 ```sh
 $ spark flash 0123456789ABCDEFGHI tinker
 $ spark flash 0123456789ABCDEFGHI cc3000
+$ spark flash 0123456789ABCDEFGHI voodoo
 ```
 
 
