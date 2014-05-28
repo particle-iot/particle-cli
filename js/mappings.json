@@ -201,6 +201,17 @@
         ]
     },
 
+    "--version": {
+        "maps": [ "help", "version" ],
+        "usage": [
+            "spark --version",
+            "spark help version"
+        ],
+        "does": [
+            "Shows the current version of the CLI"
+        ]
+    },
+
     "_templates": {
         "help": null
 

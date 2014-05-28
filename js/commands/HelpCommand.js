@@ -31,7 +31,6 @@ var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 var utilities = require('../lib/utilities.js');
-var hogan = require('hogan.js');
 
 var HelpCommand = function (cli, options) {
     HelpCommand.super_.call(this, cli, options);
@@ -47,13 +46,20 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
     init: function () {
         //this.addOption("list", this.listCommandsSwitch.bind(this), "List commands available for that command");
+        this.addOption("version", this.showVersion.bind(this), "Displays the CLI version");
         this.addOption("*", this.helpCommand.bind(this), "Provide extra information about the given command");
     },
 
 
+    showVersion: function() {
+        var package_json = require('../package.json');
+        console.log(package_json.version);
+    },
+
     /**
      * Get more info on a specific command
      * @param name
+     * @param subcmd
      */
     helpCommand: function (name, subcmd) {
         //console.log("Deep help command got " + name);
@@ -213,6 +219,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
                 template = template.join("\n");
             }
 
+            //since it's not || rarely used, lets load this sparingly.
+            var hogan = require('hogan.js');
             var str = hogan.compile(template).render(node);
             lines.push(str);
         }
