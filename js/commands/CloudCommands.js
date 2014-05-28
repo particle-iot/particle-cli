@@ -544,8 +544,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 for (var i = 0; i < cores.length; i++) {
                     var core = cores[i];
 
-                    var numVars = (core.variables) ? core.variables.length : 0;
-                    var numFuncs = (core.variables) ? core.functions.length : 0;
+                    var numVars = utilities.countHashItems(core.variables);
+                    var numFuncs = utilities.countHashItems(core.functions);
 
                     var hasLine = numVars + " variables, and " + numFuncs + " functions";
 

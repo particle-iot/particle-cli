@@ -363,5 +363,15 @@ var that = module.exports = {
         return result;
     },
 
+    countHashItems: function(hash) {
+        var count = 0;
+        if (hash) {
+            for (var key in hash) {
+                count++;
+            }
+        }
+        return count;
+    },
+
     _:null
 };
