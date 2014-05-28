@@ -116,7 +116,7 @@
             "that remotely first, and push the compiled binary to your core instead, or in the case of code errors",
             "will show you the errors from the server.",
             "",
-            "You can also substitute \"tinker\" or \"cc3000\" to flash the provided app."
+            "You can also substitute \"tinker\", \"voodoo\", or \"cc3000\" to flash the provided app."
         ]
     },
     "subscribe": {

@@ -60,7 +60,8 @@ var settings = {
 
     knownApps: {
         "cc3000": "binaries/cc3000-patch-programmer.bin",
-        "tinker": "binaries/spark_tinker.bin"
+        "tinker": "binaries/spark_tinker.bin",
+        "voodoo": "binaries/voodoospark.bin"
     },
 
     commandMappings: path.join(__dirname, "mappings.json")
