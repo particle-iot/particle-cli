@@ -402,7 +402,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
     },
 
 
-    getAllCoreAttributes: function (args) {
+     getAllCoreAttributes: function (args) {
         console.error("Checking with the cloud...");
 
         var tmp = when.defer();
@@ -565,6 +565,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             catch (ex) {
                 console.error("Error during list " + ex);
             }
+        }, function(err) {
+            console.log("Please make sure you're online and logged in.");
         });
     },
 
