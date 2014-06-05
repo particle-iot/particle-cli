@@ -149,7 +149,7 @@ $ spark core rename 0123456789ABCDEFGHI "pirate frosting"
   Removes a core from your account so someone else can claim it.
 
 ```sh
-$ node app.js core remove 0123456789ABCDEFGHI
+$ spark core remove 0123456789ABCDEFGHI
 Are you sure?  Please Type yes to continue: yes
 releasing core 0123456789ABCDEFGHI
 server said  { ok: true }
