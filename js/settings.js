@@ -59,6 +59,7 @@ var settings = {
     dirExcludeFilename: "spark.ignore",
 
     knownApps: {
+        "deep_update_2014_06": "binaries/deep_update_2014_06.bin",
         "cc3000": "binaries/cc3000-patch-programmer.bin",
         "tinker": "binaries/spark_tinker.bin",
         "voodoo": "binaries/voodoospark.bin"

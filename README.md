@@ -73,6 +73,19 @@ $ spark help keys
 
 
 
+Performing a "Deep update" on your core
+================
+
+  Any core shipped before Summer 2014 would benefit from having this update applied at least once.  It improves the core's performance on very busy networks, and helps fix some other minor issues.  This update now ships with the cli so you can apply it to cores that are unable to get online otherwise.
+
+1.) Make sure you have [dfu-util](http://dfu-util.gnumonks.org/) installed
+
+2.) Connect your core via usb, and place it into dfu mode by holding both buttons, and releasing reset, keep holding mode until your core flashes yellow.
+
+3.) Run ```spark flash --usb deep_update_2014_06```
+
+4.) Your core should reboot and try to connect to any previously saved wifi networks, and then update itself again.
+
 
 Command Reference
 ================

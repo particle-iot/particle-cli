@@ -1,6 +1,8 @@
 changelog
 =========
 
+06/05/2014 - 0.3.7 - adding "deep_update_2014_06" known app, to help with patching cores that aren't able to patch wirelessly
+
 05/28/2014 - 0.3.6 - adding version to general help, incorporating voodoospark pull request
 05/28/2014 - 0.3.5 - various bug fixes - fixing "undefined" variables, instead of proper count
 05/27/2014 - 0.3.4 - Allowing comment lines prefixed with "#" in spark.include and spark.ignore
