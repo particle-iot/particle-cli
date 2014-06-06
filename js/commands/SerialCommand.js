@@ -489,6 +489,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 
     whatSerialPortDidYouMean: function (comPort, shouldPrompt, callback) {
+        var that = this;
+
         this.findCores(function (cores) {
             if (!comPort) {
                 //they didn't give us anything.
@@ -537,7 +539,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
             if (shouldPrompt && (cores.length > 0)) {
                 //ask then what we meant, and try again...
-                var that = this;
                 when(prompts.promptDfd(": ")).then(function (value) {
                     that.whatSerialPortDidYouMean(value, true, callback);
                 });
