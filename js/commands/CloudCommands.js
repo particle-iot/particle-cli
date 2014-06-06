@@ -430,6 +430,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 when.all(promises).then(function (cores) {
                     //sort alphabetically
                     cores = cores.sort(function (a, b) {
+                        if (a.connected && !b.connected) {
+                            return 1;
+                        }
+
                         return (a.name || "").localeCompare(b.name);
                     });
                     tmp.resolve(cores);
@@ -547,13 +551,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                     var numVars = utilities.countHashItems(core.variables);
                     var numFuncs = utilities.countHashItems(core.functions);
 
-                    var hasLine = numVars + " variables, and " + numFuncs + " functions";
-
-                    var status = core.name + " (" + core.id + ") " + hasLine;
-                    if ((numVars == 0) && (numFuncs == 0)) {
-                        status += " (or is offline) ";
-                    }
-
+                    var status = core.name + " (" + core.id + ") is ";
+                    status += (core.connected) ? "online" : "offline";
                     lines.push(status);
 
                     formatVariables(core.variables, lines);
