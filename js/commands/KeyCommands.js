@@ -134,8 +134,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 
         if (!filename) {
-            console.error("Please provide a filename for this key.");
-            return when.reject("Please provide a filename for this key.");
+            console.error("Please provide a DER format key filename to load to your core");
+            return when.reject("Please provide a DER format key filename to load to your core");
         }
 
         filename = utilities.filenameNoExt(filename) + ".der";
