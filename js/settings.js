@@ -51,7 +51,8 @@ var settings = {
         ".png",
         ".include",
         ".ignore",
-        ".ds_store"
+        ".ds_store",
+        ".git"
     ],
     showIncludedSourceFiles: true,
 
