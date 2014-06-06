@@ -92,13 +92,17 @@ var that = module.exports = {
             var stdout = [],
                 errors = [];
 
-            child.stdout.on('data', function (data) {
-                stdout.push(data);
-            });
+            if (child.stdout) {
+                child.stdout.on('data', function (data) {
+                    stdout.push(data);
+                });
+            }
 
-            child.stderr.on('data', function (data) {
-                errors.push(data);
-            });
+            if (child.stderr) {
+                child.stderr.on('data', function (data) {
+                    errors.push(data);
+                });
+            }
 
             child.on('close', function (code) {
                 if (!code) {

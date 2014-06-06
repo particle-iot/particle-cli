@@ -36,6 +36,7 @@ var ApiClient = require('../lib/ApiClient.js');
 var moment = require('moment');
 //var ursa = require('ursa');
 var fs = require('fs');
+var path = require('path');
 var dfu = require('../lib/dfu.js');
 
 var KeyCommands = function (cli, options) {
@@ -153,8 +154,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             },
             //backup their existing key so they don't lock themselves out.
             function() {
-                //TODO: better process for making backup filename.
-                return that.saveKeyFromCore("pre_" + filename);
+                var prefilename = path.join(
+                        path.dirname(filename),
+                    "pre_" + path.basename(filename)
+                );
+                return that.saveKeyFromCore(prefilename);
             },
             function () {
                 return dfu.writePrivateKey(filename, leave);
