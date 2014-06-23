@@ -376,6 +376,9 @@ var that = module.exports = {
         }
         return count;
     },
+    replaceAll: function(str, src, dest) {
+        return str.split(src).join(dest);
+    },
 
     _:null
 };

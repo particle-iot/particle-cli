@@ -272,11 +272,83 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             });
     },
 
-        writeServerPublicKey: function (filename) {
+    writeServerPublicKey: function (filename, ipOrDomain) {
         if (!filename || (!fs.existsSync(filename))) {
             console.log("Please specify a server key in DER format.");
             return -1;
         }
+
+        if (utilities.getFilenameExt(filename).toLowerCase() != ".der") {
+            var derFile = utilities.filenameNoExt(filename) + ".der";
+
+            if (!fs.existsSync(derFile)) {
+                var that = this;
+                console.log("Creating DER format file");
+                var derFilePromise = utilities.deferredChildProcess("openssl rsa -in  " + filename + " -pubin -pubout -outform DER -out " + derFile);
+                when(derFilePromise).then(function() {
+                    that.writeServerPublicKey(derFile, ipOrDomain);
+                }, function(err) {
+                    console.error("Error creating a DER formatted version of that key.  Make sure you specified the public key: " + err);
+                });
+
+                return;
+            }
+            else {
+                filename = derFile;
+            }
+        }
+
+
+        if (ipOrDomain) {
+            var isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
+
+            var file_with_address = utilities.filenameNoExt(filename) + utilities.replaceAll(ipOrDomain, ".", "_") + ".der";
+            if (!fs.existsSync(file_with_address)) {
+                // create a version of this key that points to a particular server or domain
+                var addressBuf = new Buffer(ipOrDomain.length + 2);
+                addressBuf[0] = (isIpAddress) ? 0 : 1;
+                addressBuf[1] = (isIpAddress) ? 4 : ipOrDomain.length;
+
+                if (isIpAddress) {
+                    var parts = ipOrDomain.split('.').map(function (obj) {
+                        return parseInt(obj);
+                    });
+                    addressBuf[2] = parts[0];
+                    addressBuf[3] = parts[1];
+                    addressBuf[4] = parts[2];
+                    addressBuf[5] = parts[3];
+                }
+                else {
+                    addressBuf.write(ipOrDomain, 2);
+                }
+
+                // To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
+                // Everything between the end of the key and the beginning of the address should be 0xFF.
+                // The first byte representing "type" is 0x00 for 4-byte IP address or 0x01 for domain name—anything else is considered invalid and uses the fallback domain.
+                // The second byte is 0x04 for an IP address or the length of the string for a domain name.
+                // The remaining bytes are the IP or domain name. If the length of the domain name is odd, add a zero byte to get the file length to be even as usual.
+
+
+                var buf = new Buffer(1024);
+
+                //copy in the key
+                var fileBuf = fs.readFileSync(filename);
+                fileBuf.copy(buf, 0, 0, fileBuf.length);
+
+                //fill the rest with "FF"
+                buf.fill(255, fileBuf.length);
+
+                addressBuf.copy(buf, 384, 0, addressBuf.length);
+
+                //console.log("address chunk is now: " + addressBuf.toString('hex'));
+                //console.log("Key chunk is now: " + buf.toString('hex'));
+
+                fs.writeFileSync(file_with_address, buf);
+            }
+            filename = file_with_address;
+        }
+
+
 
         var allDone = dfu.writeServerKey(filename, false);
         when(allDone).then(
