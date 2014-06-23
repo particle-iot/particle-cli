@@ -349,6 +349,7 @@ var that = module.exports = {
         var idx = that.indexOf(args, name);
         var result;
         if (idx >= 0) {
+            result = true;
             if ((idx + 1) < args.length) {
                 result = args[idx + 1];
             }

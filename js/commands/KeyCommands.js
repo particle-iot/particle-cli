@@ -189,6 +189,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             console.error("This file already exists, please specify a different file, or use the --force flag.");
             return when.reject("This file already exists, please specify a different file, or use the --force flag.");
         }
+        else if (fs.existsSync(filename)) {
+            fs.unlinkSync(filename);
+        }
 
         //find dfu devices, make sure a core is connected
         //pull the key down and save it there
@@ -199,6 +202,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             },
             function () {
                 return dfu.readPrivateKey(filename, false);
+            },
+            function () {
+                var pubPemFilename = utilities.filenameNoExt(filename) + ".pub.pem";
+                return utilities.deferredChildProcess("openssl rsa -in " + filename + " -inform DER -pubout -out " + pubPemFilename);
             }
         ]);
 
