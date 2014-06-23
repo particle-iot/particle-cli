@@ -2,7 +2,7 @@ changelog
 =========
 
 06/23/2014 - 0.3.8 - adding "--factory" option for spark flash, to more easily rewrite the factory reset firmware area
-                   - a bunch of little fixes, and a new 'spark list' output format
+  a bunch of little fixes, and a new 'spark list' output format
 
 06/05/2014 - 0.3.7 - adding "deep_update_2014_06" known app, to help with patching cores that aren't able to patch wirelessly
 
