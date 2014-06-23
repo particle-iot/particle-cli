@@ -52,7 +52,8 @@ var settings = {
         ".include",
         ".ignore",
         ".ds_store",
-        ".git"
+        ".git",
+        ".bin"
     ],
     showIncludedSourceFiles: true,
 
