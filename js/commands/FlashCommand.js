@@ -80,6 +80,13 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
                null
             );
         }
+        if (!this.options.useFactoryAddress) {
+            //assume DFU if doing factory
+            this.options.useFactoryAddress = utilities.tryParseArgs(args,
+                "--factory",
+               null
+            );
+        }
     },
 
 
@@ -95,8 +102,8 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
         this.checkArguments(arguments);
 
-        if (this.options.useDfu || (coreid == "--usb")) {
-            this.flashDfu(this.options.useDfu);
+        if (this.options.useDfu || (coreid == "--usb") || (coreid == "--factory")) {
+            this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
         }
         else {
 
@@ -130,12 +137,19 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
             }
         }
 
+        var useFactory = this.options.useFactoryAddress;
+
         var ready = sequence([
             function () {
                 return dfu.findCompatibleDFU();
             },
             function() {
-                return dfu.writeFirmware(firmware, true);
+                if (useFactory) {
+                    return dfu.writeFactoryReset(firmware, false);
+                }
+                else {
+                    return dfu.writeFirmware(firmware, true);
+                }
             }
         ]);
 
