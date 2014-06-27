@@ -305,6 +305,17 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             }
         }
 
+        if (ipOrDomain == "mine") {
+            var ips = utilities.getIPAddresses();
+            if (ips && (ips.length == 1)) {
+                ipOrDomain = ips[0];
+            }
+            else if (ips.length > 0) {
+                console.log("Please specify an ip address: " + ips.join("\n"));
+                return;
+            }
+        }
+
 
         if (ipOrDomain) {
             var isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
