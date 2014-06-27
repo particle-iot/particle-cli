@@ -25,7 +25,7 @@
   ******************************************************************************
  */
 
-
+var os = require('os');
 var fs = require('fs');
 var path = require('path');
 var when = require('when');
@@ -380,6 +380,29 @@ var that = module.exports = {
     replaceAll: function(str, src, dest) {
         return str.split(src).join(dest);
     },
+
+     getIPAddresses: function () {
+        //adapter = adapter || "eth0";
+        var results = [];
+        var nics = os.networkInterfaces();
+
+        for (var name in nics) {
+            var nic = nics[name];
+
+            for (var i = 0; i < nic.length; i++) {
+                var addy = nic[i];
+
+                if ((addy.family != "IPv4") || (addy.address == "127.0.0.1")) {
+                    continue;
+                }
+
+                results.push(addy.address);
+            }
+        }
+
+        return results;
+    },
+
 
     _:null
 };
