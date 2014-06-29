@@ -1,6 +1,8 @@
 changelog
 =========
 
+06/29/2014 - 0.3.9 - fixing a bug where a bin file in a directory would cause the CLI to stop looking for source files when compiling.
+
 06/23/2014 - 0.3.8 - adding "--factory" option for spark flash, to more easily rewrite the factory reset firmware area
   a bunch of little fixes, and a new 'spark list' output format
 

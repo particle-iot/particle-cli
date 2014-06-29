@@ -657,7 +657,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
             if ((utilities.getFilenameExt(filename) == ".bin") && (i != 0)) {
                 //hit output binary file
-                break;
+                continue;
             }
 
             var ext = utilities.getFilenameExt(filename).toLowerCase();
