@@ -412,13 +412,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         var lookupVariables = function (cores) {
-            if (!cores || (cores.length == 0)) {
+            if (!cores || (cores.length == 0) || (typeof cores == "string")) {
                 console.log("No cores found.");
             }
             else {
                 var promises = [];
                 for (var i = 0; i < cores.length; i++) {
                     var coreid = cores[i].id;
+                    if (!coreid) {
+                        continue;
+                    }
+
                     if (cores[i].connected) {
                         promises.push(api.getAttributes(coreid));
                     }
