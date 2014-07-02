@@ -193,6 +193,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if (!files) {
             return;
         }
+        if (!files["file"]) {
+            console.error("no files included?");
+        }
         if (settings.showIncludedSourceFiles) {
             console.log("Including:");
             for (var key in files) {
@@ -651,21 +654,18 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             return null;
         }
 
-
         for (var i = 0; i < filelist.length; i++) {
             var filename = filelist[i];
+            var ext = utilities.getFilenameExt(filename).toLowerCase();
+            var alwaysIncludeThisFile = ((ext == ".bin") && (i == 0) && (filelist.length == 1));
+
             if (filename.indexOf("--") == 0) {
                 //hit some arguments.
                 break;
             }
 
-            if ((utilities.getFilenameExt(filename) == ".bin") && (i != 0)) {
-                //hit output binary file
-                continue;
-            }
-
-            var ext = utilities.getFilenameExt(filename).toLowerCase();
-            if (utilities.contains(settings.notSourceExtensions, ext)) {
+            if (!alwaysIncludeThisFile
+                && utilities.contains(settings.notSourceExtensions, ext)) {
                 continue;
             }
 
