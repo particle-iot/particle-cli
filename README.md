@@ -444,3 +444,12 @@ $ spark keys server my_server.der
 Okay!  New keys in place, your core will not restart.
 ```
 
+
+###spark keys server ip_address
+
+When using the local cloud you can ask the CLI to encode the IP or dns address into your key to control where your core will connect.
+
+```sh
+$ spark keys server my_server.pub.pem 192.168.1.10
+$ spark keys server my_server.der 192.168.1.10
+```
