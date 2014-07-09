@@ -89,7 +89,10 @@ to get connected and developing again.
 
 4.) Run `spark flash --usb tinker`
 
-This will flash a new version of Tinker to your core.
+This will flash a new version of Tinker to your core and return to a blinking blue "listening" state, where
+you can:
+
+5.) Run `spark setup` or `spark setup wifi` to provide your network credentials to get connected again.
 
 
 Performing a "Deep update"
