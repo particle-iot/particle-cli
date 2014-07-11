@@ -407,6 +407,7 @@ Connect your core in [dfu mode](http://docs.spark.io/#/connect/appendix-dfu-mode
 $ spark keys doctor 0123456789ABCDEFGHI
 ```
 
+There have been reports of the new public key not being sent to the cloud, in which case ```spark keys send``` will need to be run manually.
 
 ###spark keys new
 
