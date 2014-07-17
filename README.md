@@ -215,6 +215,12 @@ $ spark flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
 $ spark flash 0123456789ABCDEFGHI tinker
 $ spark flash 0123456789ABCDEFGHI cc3000
 $ spark flash 0123456789ABCDEFGHI voodoo
+
+
+  You can also update the factory reset version using the --factory flag
+
+$ spark flash --factory tinker
+$ spark flash --usb tinker
 ```
 
 

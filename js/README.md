@@ -1,6 +1,7 @@
 changelog
 =========
 
+07/17/2014 - 0.3.93 - adding latest deep_update binary
 07/02/2014 - 0.3.91 - fixing a cloud flash file handling bug
 06/29/2014 - 0.3.9 - fixing a bug where a bin file in a directory would cause the CLI to stop looking for source files when compiling.
 
