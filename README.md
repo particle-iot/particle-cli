@@ -71,12 +71,36 @@ $ spark help
 $ spark help keys 
 ```
 
+Apply the CC3000 patch
+===
+
+The easiest way to apply the CC3000 patch is to flash the known "cc3000" firmware followed by the "tinker" firmware over USB.
+Note, this process will soon be replaced by "deep update" that will streamline and simplify this process further. (see next section)
+
+1.) Make sure you have [dfu-util](http://dfu-util.gnumonks.org/) installed
+
+2.) Connect your core via usb, and place it into dfu mode by holding both buttons, and releasing reset, keep holding mode until your core flashes yellow.
+
+3.) Run `spark flash --usb cc3000`
+
+This will run a special firmware program that will update the firmware running inside the CC3000 WiFi module.
+When it's done running, your core will be blinking yellow in dfu-mode, you'll need to flash regular firmware like Tinker
+to get connected and developing again.
+
+4.) Run `spark flash --usb tinker`
+
+This will flash a new version of Tinker to your core and return to a blinking blue "listening" state, where
+you can:
+
+5.) Run `spark setup` or `spark setup wifi` to provide your network credentials to get connected again.
 
 
 Performing a "Deep update"
 ================
 
-  Any core shipped before Summer 2014 would benefit from having this update applied at least once.  It improves the core's performance on very busy networks, and helps fix other minor issues.  This update now ships with the cli so you can apply it to cores that are unable to get online otherwise.
+NOTE: Not shipped yet, it is expected to in late July '14.
+
+Any core shipped before Summer 2014 would benefit from having this update applied at least once.  It improves the core's performance on very busy networks, and helps fix other minor issues.  This update now ships with the cli so you can apply it to cores that are unable to get online otherwise.
 
 1.) Make sure you have [dfu-util](http://dfu-util.gnumonks.org/) installed
 
@@ -85,7 +109,6 @@ Performing a "Deep update"
 3.) Run ```spark flash --usb deep_update_2014_06```
 
 4.) Your core should reboot and try to connect to any previously saved wifi networks, and then update itself again.
-
 
 Command Reference
 ================
@@ -390,6 +413,7 @@ Connect your core in [dfu mode](http://docs.spark.io/#/connect/appendix-dfu-mode
 $ spark keys doctor 0123456789ABCDEFGHI
 ```
 
+There have been reports of the new public key not being sent to the cloud, in which case ```spark keys send``` will need to be run manually.
 
 ###spark keys new
 
