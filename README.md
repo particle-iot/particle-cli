@@ -239,9 +239,11 @@ $ spark flash 0123456789ABCDEFGHI tinker
 $ spark flash 0123456789ABCDEFGHI cc3000
 $ spark flash 0123456789ABCDEFGHI voodoo
 
+```
 
-  You can also update the factory reset version using the --factory flag
+  You can also update the factory reset version using the --factory flag, and over usb with --usb
 
+```sh
 $ spark flash --factory tinker
 $ spark flash --usb tinker
 ```
