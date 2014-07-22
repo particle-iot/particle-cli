@@ -98,8 +98,6 @@ you can:
 Performing a "Deep update"
 ================
 
-NOTE: Not shipped yet, it is expected to in late July '14.
-
 Any core shipped before Summer 2014 would benefit from having this update applied at least once.  It improves the core's performance on very busy networks, and helps fix other minor issues.  This update now ships with the cli so you can apply it to cores that are unable to get online otherwise.
 
 1.) Make sure you have [dfu-util](http://dfu-util.gnumonks.org/) installed
