@@ -349,9 +349,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         when(allDone).then(function (access_token) {
                 console.log("logged in! ", arguments);
                 //console.log("Successfully logged in as " + username);
-                settings.override("access_token", access_token);
+                settings.override(null, "access_token", access_token);
                 if (username) {
-                    settings.override("username", username);
+                    settings.override(null, "username", username);
                 }
 
                 setTimeout(function () {
@@ -388,8 +388,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
                 }
             },
             function () {
-                settings.override("username", null);
-                settings.override("access_token", null);
+                settings.override(null, "username", null);
+                settings.override(null, "access_token", null);
                 console.log("You're now logged out!");
                 return when.resolve();
             }

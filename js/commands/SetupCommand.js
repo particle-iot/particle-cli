@@ -145,7 +145,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 }
 
                 console.log("Logged in!  Saving access token: " + token);
-                settings.override("access_token", token);
+                settings.override(null, "access_token", token);
                 return when.resolve();
             },
 
@@ -327,7 +327,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 when(loginDone).then(
                     function (token) {
                         if (username) {
-                            settings.override("username", username);
+                            settings.override(null, "username", username);
                         }
 
                         //login success
@@ -369,7 +369,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                             },
                             function (token) {
                                 if (username) {
-                                    settings.override("username", username);
+                                    settings.override(null, "username", username);
                                 }
 
                                 //login success

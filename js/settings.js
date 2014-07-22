@@ -95,21 +95,26 @@ settings.findHomePath = function() {
     return __dirname;
 };
 
-settings.findOverridesFile = function() {
-    if (!settings.overridesFile ) {
-        var sparkDir = path.join(settings.findHomePath(), ".spark");
-        if (!fs.existsSync(sparkDir)) {
-            fs.mkdirSync(sparkDir);
-        }
-        settings.overridesFile = path.join(sparkDir, "spark.config.json");
+settings.ensureFolder = function() {
+    var sparkDir = path.join(settings.findHomePath(), ".spark");
+    if (!fs.existsSync(sparkDir)) {
+        fs.mkdirSync(sparkDir);
     }
-    return settings.overridesFile;
+    return sparkDir;
 };
 
+settings.findOverridesFile = function(profile) {
+    profile = profile || settings.profile || "spark";
 
-settings.loadOverrides = function () {
+    var sparkDir = settings.ensureFolder();
+    return path.join(sparkDir, profile + ".config.json");
+};
+
+settings.loadOverrides = function (profile) {
+    profile = profile || settings.profile || "spark";
+
     try {
-        var filename = settings.findOverridesFile();
+        var filename = settings.findOverridesFile(profile);
         if (fs.existsSync(filename)) {
             settings.overrides = JSON.parse(fs.readFileSync(filename));
             settings = extend(settings, settings.overrides);
@@ -120,17 +125,48 @@ settings.loadOverrides = function () {
     }
     return settings;
 };
-settings.override = function (key, value) {
+
+settings.whichProfile = function() {
+    settings.profile = "spark";
+
+    var sparkDir = settings.ensureFolder();
+    var proFile = path.join(sparkDir, "profile.json");      //proFile, get it?
+    if (fs.existsSync(proFile)) {
+        var data = JSON.parse(fs.readFileSync(proFile));
+
+        settings.profile = (data) ? data.name : "spark";
+        settings.profile_json = data;
+    }
+};
+
+/**
+ * in another file in our user dir, we store a profile name that switches between setting override files
+ */
+settings.switchProfile = function(profileName) {
+    var sparkDir = settings.ensureFolder();
+    var proFile = path.join(sparkDir, "profile.json");      //proFile, get it?
+    var data = {
+        name: profileName
+    };
+    fs.writeFileSync(proFile, JSON.stringify(data, null, 2));
+};
+
+settings.override = function (profile, key, value) {
     if (!settings.overrides) {
         settings.overrides = {};
     }
 
+    //store the new value (redundant)
     settings[key] = value;
+
+    //store that in overrides
     settings.overrides[key] = value;
+
+    //make sure our overrides are in sync
     settings = extend(settings, settings.overrides);
 
     try {
-        var filename = settings.findOverridesFile();
+        var filename = settings.findOverridesFile(profile);
         fs.writeFileSync(filename, JSON.stringify(settings.overrides, null, 2));
     }
     catch (ex) {
@@ -138,5 +174,6 @@ settings.override = function (key, value) {
     }
 };
 
+settings.whichProfile();
 settings.loadOverrides();
 module.exports = settings;

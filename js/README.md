@@ -1,9 +1,14 @@
 changelog
 =========
 
+07/22/2014 - 0.3.95 - adding config command
+
 07/18/2014 - 0.3.94 - adding latest tinker binary
+
 07/17/2014 - 0.3.93 - adding latest deep_update binary
+
 07/02/2014 - 0.3.91 - fixing a cloud flash file handling bug
+
 06/29/2014 - 0.3.9 - fixing a bug where a bin file in a directory would cause the CLI to stop looking for source files when compiling.
 
 06/23/2014 - 0.3.8 - adding "--factory" option for spark flash, to more easily rewrite the factory reset firmware area
