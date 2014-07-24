@@ -47,7 +47,15 @@ util.inherits(WebhookCommand, BaseCommand);
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: null,
-    description: "helpers for watching Core event streams",
+    description: "Experimental Beta - helpers for reacting to Core event streams",
+
+    usagesByName: {
+        "create": [
+            "spark webhook create eventName url coreID",
+            "The page at url will receive a POST request with the event name and data whenver one of your ",
+            "cores publish an event with that name!"
+        ]
+    },
 
     init: function () {
         this.addOption("create", this.createHook.bind(this), "Creates a postback to the given url when your event is sent");
@@ -61,8 +69,19 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             return -1;
         }
 
+        if (!eventName && !url && !coreID) {
+            //todo: trigger help
+            var help = this.cli.getCommandModule("help");
+            return help.helpCommand(this.name, "create");
+        }
+
         if (!eventName || (eventName == "")) {
             console.log("Please specify an event name");
+            return -1;
+        }
+
+        if (!url || (url == "")) {
+            console.log("Please specify a url");
             return -1;
         }
 
