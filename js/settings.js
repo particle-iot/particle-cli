@@ -29,6 +29,7 @@
 var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
+var utilities = require('./lib/utilities.js');
 
 var settings = {
     commandPath: "./commands/",
@@ -154,6 +155,15 @@ settings.switchProfile = function(profileName) {
 settings.override = function (profile, key, value) {
     if (!settings.overrides) {
         settings.overrides = {};
+    }
+
+    if (!settings[key]) {
+        // find any key that matches our key, regardless of case
+        var realKey = utilities.matchKey(key, settings, true);
+        if (realKey) {
+            console.log("Using the setting \"" + realKey + "\" instead ");
+            key = realKey;
+        }
     }
 
     //store the new value (redundant)

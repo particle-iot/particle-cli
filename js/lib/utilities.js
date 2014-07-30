@@ -403,6 +403,20 @@ var that = module.exports = {
         return results;
     },
 
+    matchKey: function(needle, obj, caseInsensitive) {
+        needle = (caseInsensitive) ? needle.toLowerCase() : needle;
+        for(var key in obj) {
+            var keyCopy = (caseInsensitive) ? key.toLowerCase() : key;
+
+            if (keyCopy == needle) {
+                //return the original
+                return key;
+            }
+        }
+
+        return null;
+    },
+
 
     _:null
 };

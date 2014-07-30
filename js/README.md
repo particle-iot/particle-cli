@@ -1,6 +1,8 @@
 changelog
 =========
 
+07/29/2014 - 0.3.96 - adding a helper in the event capitalization is wrong on config settings
+
 07/22/2014 - 0.3.95 - adding config command
 
 07/18/2014 - 0.3.94 - adding latest tinker binary
