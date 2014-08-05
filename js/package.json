@@ -18,11 +18,9 @@
         "hogan.js": "~2.0.0",
         "moment": "*",
         "request": "*",
-        "serialport": "1.4.0",
+        "serialport": "1.4.5",
         "when": "*",
         "xtend": "*"
     },
     "preferGlobal": true
 }
-
-
