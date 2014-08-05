@@ -156,10 +156,10 @@ Checking with the cloud...
 Retrieving cores... (this might take a few seconds)
 my_core_name (0123456789ABCDEFGHI) 0 variables, and 4 functions
   Functions:
-    int digitalWrite(string)
-    int digitalRead(string)
-    int analogWrite(string)
-    int analogRead(string)
+    int digitalwrite(string)
+    int digitalread(string)
+    int analogwrite(string)
+    int analogread(string)
 
 ```
 
@@ -326,7 +326,7 @@ $ spark compile app.ino library1.cpp library1.h
   Calls a function on one of your cores, use ```spark list``` to see which cores are online, and what functions are available.
 
 ```sh
-$ spark call 0123456789ABCDEFGHI digitalWrite "D7,HIGH"
+$ spark call 0123456789ABCDEFGHI digitalwrite "D7,HIGH"
 1
 ```
 
