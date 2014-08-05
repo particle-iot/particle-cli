@@ -109,9 +109,9 @@ spark keys send - Tell a server which key you'd like to use by sending your publ
 spark keys doctor - Creates and assigns a new key to your core, and uploads it to the cloud
 spark keys server - Switch server public keys
 
-spark webhooks create - Creates a postback to the given url when your event is sent
-spark webhooks list - Show your current Webhooks
-spark webhooks delete - Deletes a Webhook
+spark webhook create - Creates a postback to the given url when your event is sent
+spark webhook list - Show your current Webhooks
+spark webhook delete - Deletes a Webhook
 
 
 
