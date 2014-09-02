@@ -417,6 +417,27 @@ var that = module.exports = {
         return null;
     },
 
+    tryStringify: function(obj) {
+        try {
+            if (obj) {
+                return JSON.stringify(obj);
+            }
+        }
+        catch (ex) {
+            console.error("stringify error ", ex);
+        }
+    },
+
+    tryParse: function(str) {
+        try {
+            if (str) {
+                return JSON.parse(str);
+            }
+        }
+        catch (ex) {
+            console.error("tryParse error ", ex);
+        }
+    },
 
     _:null
 };

@@ -35,6 +35,7 @@ var fs = require('fs');
 
 var BaseCommand = require("./BaseCommand.js");
 var ApiClient = require('../lib/ApiClient.js');
+var utilities = require('../lib/utilities.js');
 
 
 var WebhookCommand = function (cli, options) {
@@ -44,16 +45,41 @@ var WebhookCommand = function (cli, options) {
     this.init();
 };
 util.inherits(WebhookCommand, BaseCommand);
+
+WebhookCommand.HookJsonTemplate = {
+    "eventName": "my-event",
+    "url": "https://my-website.com/fancy_things.php",
+    "coreID": "optionally filter by providing a core id",
+
+    "_": "The following parameters are optional",
+    "requestType": "POST",
+    "headers": null,
+    "query": null,
+    "json": null,
+    "auth": null,
+    "mydevices": true
+};
+
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: null,
+    name: "webhook",
     description: "Experimental Beta - helpers for reacting to Core event streams",
+
+
 
     usagesByName: {
         "create": [
+            "spark webhook create hook.json",
             "spark webhook create eventName url coreID",
-            "The page at url will receive a POST request with the event name and data whenver one of your ",
-            "cores publish an event with that name!"
+            "",
+            "The url will receive a request with the event name and data whenever one of your cores ",
+            "publish an event starting with the provided name.  If you do optionally provide a json filename",
+            "you can set lots of advanced properties when creating your hook",
+
+            "",
+            "Optional JSON Template:",
+            JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2),
+
         ]
     },
 
@@ -70,22 +96,44 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         if (!eventName && !url && !coreID) {
-            //todo: trigger help
             var help = this.cli.getCommandModule("help");
             return help.helpCommand(this.name, "create");
         }
 
+        //if they gave us one thing, and it happens to be a file, and we could parse it as json
+        var data = {};
+        if (eventName && !url && !coreID) {
+
+            //
+            // for clarity
+            //
+            var filename = eventName;
+            if (fs.existsSync(filename)) {
+                data = utilities.tryParse(fs.readFileSync(filename)) || {};
+                console.log("Using settings from the file " + filename);
+            }
+
+            //only override these when we didn't get them from the command line
+            eventName = data.eventName;
+            url = data.url;
+            coreID = data.coreID;
+        }
+
+        //required param
         if (!eventName || (eventName == "")) {
             console.log("Please specify an event name");
             return -1;
         }
 
+        //required param
         if (!url || (url == "")) {
             console.log("Please specify a url");
             return -1;
         }
 
-        api.createWebhook(eventName, url, coreID);
+        api.createWebhook(eventName, url, coreID,
+            data.requestType, data.headers, data.json, data.query, data.auth, data.mydevices
+        );
         return 0;
     },
 

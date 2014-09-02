@@ -605,19 +605,29 @@ ApiClient.prototype = {
     },
 
 
-    createWebhook: function (event, url, coreID) {
+    createWebhook: function (event, url, coreID, requestType, headers, json, query, auth, mydevices) {
         var dfd = when.defer();
-        request({
+
+        var obj = {
             uri: this.baseUrl + "/v1/webhooks",
             method: "POST",
             form: {
                 event: event,
                 url: url,
                 deviceid: coreID,
-                access_token: this._access_token
-            },
-            json: true
-        }, function (error, response, body) {
+                access_token: this._access_token,
+                requestType: requestType,
+                headers: headers,
+                json: json,
+                query: query,
+                auth: auth,
+                mydevices: mydevices
+            }
+        };
+
+        console.log("Sending webhook request ", obj);
+
+        request(obj, function (error, response, body) {
 
             if (body && body.ok) {
                 console.log("Successfully created webhook!");
