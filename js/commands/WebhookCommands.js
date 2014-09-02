@@ -42,6 +42,11 @@ var WebhookCommand = function (cli, options) {
     WebhookCommand.super_.call(this, cli, options);
     this.options = extend({}, this.options, options);
 
+    //TODO: better way to render and insert this template
+    this.usagesByName.create = this.usagesByName.create.concat(
+        JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2).split("\n")
+    );
+
     this.init();
 };
 util.inherits(WebhookCommand, BaseCommand);
@@ -73,12 +78,12 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             "spark webhook create eventName url coreID",
             "",
             "The url will receive a request with the event name and data whenever one of your cores ",
-            "publish an event starting with the provided name.  If you do optionally provide a json filename",
-            "you can set lots of advanced properties when creating your hook",
+            "publish an event starting with the provided name.  If you do optionally provide a json ",
+            "filename you can set lots of advanced properties when creating your hook",
 
             "",
             "Optional JSON Template:",
-            JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2),
+            //JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2),
 
         ]
     },
