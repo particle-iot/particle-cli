@@ -1,6 +1,8 @@
 changelog
 =========
 
+09/03/2014 - 0.3.99 - new webhook parameters and features, still in beta, but coming soon!
+
 08/22/2014 - 0.3.98 - new tinker binary! Version 9
 
 08/05/2014 - 0.3.97 - new tinker binary!  Version 8
