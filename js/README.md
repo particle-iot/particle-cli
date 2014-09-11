@@ -1,6 +1,7 @@
 changelog
 =========
 
+09/10/2014 - 0.4.1  - new tinker!  Version 10 -- oops.
 09/10/2014 - 0.4.0  - new tinker!  Version 10
 
 09/03/2014 - 0.3.99 - new webhook parameters and features, still in beta, but coming soon!
