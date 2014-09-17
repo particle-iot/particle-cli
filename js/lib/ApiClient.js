@@ -417,6 +417,9 @@ ApiClient.prototype = {
             form.append(name, fs.createReadStream(files[name]), {
                 filename: files[name]
             });
+            //for latest arg
+            //form.append("branch", "compile-server2");
+            //form.append("latest", "true");
         }
 
         return dfd.promise;
@@ -611,6 +614,7 @@ ApiClient.prototype = {
         var obj = {
             uri: this.baseUrl + "/v1/webhooks",
             method: "POST",
+            json: true,
             form: {
                 event: event,
                 url: url,
@@ -628,7 +632,6 @@ ApiClient.prototype = {
         console.log("Sending webhook request ", obj);
 
         request(obj, function (error, response, body) {
-
             if (body && body.ok) {
                 console.log("Successfully created webhook!");
                 dfd.resolve(body);
@@ -636,6 +639,9 @@ ApiClient.prototype = {
             else if (body && body.error) {
                 console.log("Failed to create, server said ", body.error);
                 dfd.reject(body);
+            }
+            else {
+                console.log("Something went wrong, server said: ", body);
             }
         });
 
