@@ -439,5 +439,24 @@ var that = module.exports = {
         }
     },
 
+    /**
+     * replace unfriendly resolution / rejected messages with something nice.
+     *
+     * @param promise
+     * @param res
+     * @param err
+     */
+    replaceDfdResults: function(promise, res, err) {
+        var dfd = when.defer();
+
+        when(promise).then(function() {
+            dfd.resolve(res);
+        }, function() {
+            dfd.reject(err);
+        });
+
+        return dfd.promise;
+    },
+
     _:null
 };

@@ -148,6 +148,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         var that = this;
 
         var ready = sequence([
+            function() {
+                return dfu.isDfuUtilInstalled();
+            },
             function () {
                 //make sure our core is online and in dfu mode
                 return dfu.findCompatibleDFU();
@@ -168,7 +171,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         when(ready).then(function () {
             console.log("Saved!");
         }, function (err) {
-            console.error("Error saving key... " + err);
+            console.error("Error saving key to core... " + err);
         });
 
         return ready;
@@ -197,6 +200,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         //pull the key down and save it there
 
         var ready = sequence([
+            function() {
+                return dfu.isDfuUtilInstalled();
+            },
             function () {
                 return dfu.findCompatibleDFU();
             },
@@ -212,7 +218,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         when(ready).then(function () {
             console.log("Saved!");
         }, function (err) {
-            console.error("Error saving key... " + err);
+            console.error("Error saving key from core... " + err);
         });
 
         return ready;
@@ -254,6 +260,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
         var that = this;
         var allDone = sequence([
+            function() {
+                return dfu.isDfuUtilInstalled();
+            },
             function () {
                 return dfu.findCompatibleDFU();
             },
@@ -367,8 +376,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
         }
 
 
+        var allDone = sequence([
+            function() {
+                return dfu.isDfuUtilInstalled();
+            },
+            function() {
+                return dfu.writeServerKey(filename, false);
+            }
+        ]);
 
-        var allDone = dfu.writeServerKey(filename, false);
         when(allDone).then(
             function () {
                 console.log("Okay!  New keys in place, your core will not restart.");

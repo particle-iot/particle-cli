@@ -94,6 +94,12 @@ var that = module.exports = {
         return that.readDfu(0, dest, "0x08005000", leave);
     },
 
+    isDfuUtilInstalled: function() {
+        var cmd = "dfu-util -l";
+        var installCheck = utilities.deferredChildProcess(cmd);
+        return utilities.replaceDfdResults(installCheck, "Installed", "dfu-util is not installed");
+    },
+
     readDfu: function (memoryInterface, destination, firmwareAddress, leave) {
         var prefix = that.getCommandPrefix();
         var leaveStr = (leave) ? ":leave" : "";
