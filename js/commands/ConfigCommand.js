@@ -58,7 +58,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
     usage: [
         "spark config local",
         "spark config spark",
-        "spark config local api-url http://localhost:8080",
+        "spark config local apiUrl http://localhost:8080",
         "spark config useSudoForDfu true"
     ],
 
