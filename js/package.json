@@ -22,5 +22,27 @@
         "when": "*",
         "xtend": "*"
     },
+    "contributors": [
+        {
+            "name": "Kenneth Lim",
+            "url": "https://github.com/kennethlimcp"
+        },
+        {
+            "name": "David Washington",
+            "url": "https://github.com/dwcares"
+        },
+        {
+            "name": "TJ Hunter",
+            "url": "https://github.com/Hypnopompia"
+        },
+        {
+            "name": "Udo Kramer",
+            "url": "https://github.com/optikfluffel"
+        },
+        {
+            "name": "vk2tds",
+            "url": "https://github.com/vk2tds"
+        }
+    ],
     "preferGlobal": true
 }
