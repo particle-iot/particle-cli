@@ -596,7 +596,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
             return utilities.fixRelativePaths(dirname,
                 utilities.trimBlankLinesAndComments(
-                    utilities.readLines(includesFile)
+                    utilities.readAndTrimLines(includesFile)
                 )
             );
         }
@@ -605,7 +605,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         //check and load an exclude file
         var excluded = utilities.arrayToHashSet(
-            utilities.readLines(ignoreFile)
+            utilities.readAndTrimLines(ignoreFile)
         );
 
         var results = [];

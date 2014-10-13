@@ -308,6 +308,25 @@ var that = module.exports = {
         return null;
     },
 
+    readAndTrimLines: function(file) {
+        if (!fs.existsSync(file)) {
+            return null;
+        }
+
+        var str = fs.readFileSync(file).toString();
+        if (!str) {
+            return null;
+        }
+
+        var arr = str.split("\n");
+        if (arr && (arr.length > 0)) {
+            for (var i = 0; i < arr.length; i++) {
+                arr[i] = arr[i].trim();
+            }
+        }
+        return arr;
+    },
+
     arrayToHashSet: function (arr) {
         var h = {};
         if (arr) {
