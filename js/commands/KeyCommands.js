@@ -245,7 +245,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
-            return;
+            return when.reject("Not logged in");
         }
 
         var keyStr = fs.readFileSync(filename).toString();
