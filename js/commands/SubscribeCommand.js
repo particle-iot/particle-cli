@@ -65,7 +65,10 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
             eventName = null;
             coreId = "mine";
         }
-
+        else if (eventName == "mine" && coreId) {
+            eventName = null;
+            //okay, listen to all events from this core.
+        }
 
         var eventLabel = eventName;
         if (eventLabel) {
