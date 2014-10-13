@@ -65,13 +65,16 @@ Interpreter.prototype = {
             });
         }
         else {
-            if (shouldExit) {
-                process.exit(parseInt(result));
-            }
-            else {
-                return result;
-            }
+            return result;
         }
+//        else {
+//            if (shouldExit) {
+//                process.exit(parseInt(result));
+//            }
+//            else {
+//                return result;
+//            }
+//        }
     },
 
     runCommand: function (name, args) {
