@@ -490,3 +490,16 @@ When using the local cloud you can ask the CLI to encode the IP or dns address i
 $ spark keys server my_server.pub.pem 192.168.1.10
 $ spark keys server my_server.der 192.168.1.10
 ```
+
+###spark config
+
+The config command lets you create groups of settings and quickly switch to a profile by calling `spark config profile-name`. This is especially useful for switching to your local server or between other environments.
+
+Calling `spark config spark` switch **Spark-Cli** back to the Spark Cloud API server
+
+```sh
+$ spark config profile-name
+$ spark config spark
+$ spark config local api-url http://localhost:8080  //creates a new profile with name "local" and saves the IP-address parameter
+$ spark config useSudoForDfu true
+```
