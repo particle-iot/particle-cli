@@ -103,13 +103,13 @@ BaseCommand.prototype = {
                 args = [ args ];
             }
 
-            cmdFn.apply(this, args);
+            return cmdFn.apply(this, args);
         }
         else {
             //no wildcard, and no function specified...
 
             //console.log('running help for command');
-            this.cli.runCommand("help", this.name);
+            return this.cli.runCommand("help", this.name);
         }
     },
 

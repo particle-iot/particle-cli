@@ -102,11 +102,11 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
         this.checkArguments(arguments);
 
+        var result;
         if (this.options.useDfu || (coreid == "--usb") || (coreid == "--factory")) {
-            this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
+            result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
         }
         else {
-
             //we need to remove the "--cloud" argument so this other command will understand what's going on.
             var args = utilities.copyArray(arguments);
             if (this.options.useCloud) {
@@ -116,9 +116,10 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
                 args.splice(idx, 1);
             }
 
-            this.flashCloud.apply(this, args);
+            result = this.flashCloud.apply(this, args);
         }
 
+        return result;
     },
 
     flashCloud: function(coreid, filename) {
@@ -136,6 +137,8 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
                 return -1;
             }
         }
+
+        //TODO: detect if arguments contain something other than a .bin file
 
         var useFactory = this.options.useFactoryAddress;
 

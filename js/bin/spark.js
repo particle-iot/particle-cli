@@ -7,4 +7,4 @@ var Interpreter = require(lib + '/interpreter.js');
 var cli = new Interpreter();
 cli.supressWarmupMessages = true;
 cli.startup();
-cli.handle(process.argv);
+cli.handle(process.argv, true);

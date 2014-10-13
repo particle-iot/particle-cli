@@ -377,12 +377,12 @@ ApiClient.prototype = {
             //console.log(error, response, body);
             if (error) {
                 console.log("flash core got error: ", JSON.stringify(error));
+                dfd.reject(error);
             }
             else {
                 console.log("flash core said ", JSON.stringify(body || error));
+                dfd.resolve(response);
             }
-
-            dfd.resolve(response);
         });
 
         var form = r.form();

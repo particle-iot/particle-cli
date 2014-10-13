@@ -29,6 +29,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var when = require('when');
 var settings = require('../settings.js');
 
 var Interpreter = function () {
@@ -46,12 +47,30 @@ Interpreter.prototype = {
             this.loadMappings(settings.commandMappings);
         }
     },
-    handle: function (args) {
+    handle: function (args, shouldExit) {
+        var result;
+
         if (!args || args.length == 2) {
-            return this.runCommand("help");
+            result = this.runCommand("help");
         }
         else if (args.length >= 2) {
-            return this.runCommand(args[2], args.slice(3));
+            result = this.runCommand(args[2], args.slice(3));
+        }
+
+        if (when.isPromiseLike(result)) {
+            when(result).catch(function(err) {
+                if (shouldExit) {
+                    process.exit(1);
+                }
+            });
+        }
+        else {
+            if (shouldExit) {
+                process.exit(parseInt(result));
+            }
+            else {
+                return result;
+            }
         }
     },
 
@@ -80,7 +99,6 @@ Interpreter.prototype = {
             console.log("Spark-CLI: Unknown command: \"" + name + "\"");
             return -1;
         }
-
     },
 
     getCommands: function () {

@@ -164,12 +164,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
     flashCore: function (coreid, filePath) {
         if (!coreid) {
             console.error("Please specify a coreid");
-            return;
+            return -1;
         }
 
         if (!filePath) {
             console.error("Please specify a binary file, source file, or source directory, or known app");
-            return;
+            return -1;
         }
 
         var files = null;
@@ -180,7 +180,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             }
             else {
                 console.error("I couldn't find that: " + filePath);
-                return;
+                return -1;
             }
         }
 
@@ -191,7 +191,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             files = this._handleMultiFileArgs(args);
         }
         if (!files) {
-            return;
+            return -1;
         }
         if (!files["file"]) {
             console.error("no files included?");
@@ -205,9 +205,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
-            return;
+            return -1;
         }
-        api.flashCore(coreid, files);
+
+        return api.flashCore(coreid, files);
     },
 
     /**
