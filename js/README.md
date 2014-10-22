@@ -1,6 +1,8 @@
 changelog
 =========
 
+10/22/2014 - 0.4.4 - new tinker, version 11
+
 10/13/2014 - 0.4.3 - bringing in pull requests #92, #93, #98, fixing issues #91, #80, #83, #88, #87, bringing in contributors from 2014
 
 10/07/2014 - 0.4.2  - test for spark vendorid in findcores
