@@ -106,9 +106,9 @@
     "flash": {
         "maps": [ "flash", "*" ],
         "usage": [
-            "spark flash [--usb] core_id firmware.bin",
-            "spark flash [--usb] core_id source_folder",
-            "spark flash [--usb] core_id file1.ino file2.cpp file2.h file3.cpp"
+            "spark flash [--usb or core_id] firmware.bin",
+            "spark flash [--usb or core_id] source_folder",
+            "spark flash [--usb or core_id] file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
             "flash remotely pushes a compiled firmware binary to one of your cores over the air, or directly",
@@ -116,7 +116,10 @@
             "that remotely first, and push the compiled binary to your core instead, or in the case of code errors",
             "will show you the errors from the server.",
             "",
-            "You can also substitute \"tinker\", \"voodoo\", or \"cc3000\" to flash the provided app."
+            "You can also substitute \"tinker\", \"voodoo\", or \"cc3000\" to flash the provided app.",
+            "",
+            "spark flash --usb tinker",
+            "spark flash my_core tinker"
         ]
     },
     "subscribe": {
