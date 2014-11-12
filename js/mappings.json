@@ -106,9 +106,9 @@
     "flash": {
         "maps": [ "flash", "*" ],
         "usage": [
-            "spark flash core_id firmware.bin [--usb]",
-            "spark flash core_id source_folder [--usb]",
-            "spark flash core_id file1.ino file2.cpp file2.h file3.cpp [--usb]"
+            "spark flash [--usb] core_id firmware.bin",
+            "spark flash [--usb] core_id source_folder",
+            "spark flash [--usb] core_id file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
             "flash remotely pushes a compiled firmware binary to one of your cores over the air, or directly",
