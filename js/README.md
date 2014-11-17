@@ -1,6 +1,8 @@
 changelog
 =========
 
+11/17/2014 - 0.4.5 - new version of Voodoospark (2.5.0) requested in #105, yay!
+
 10/22/2014 - 0.4.4 - new tinker, version 11
 
 10/13/2014 - 0.4.3 - bringing in pull requests #92, #93, #98, fixing issues #91, #80, #83, #88, #87, bringing in contributors from 2014
