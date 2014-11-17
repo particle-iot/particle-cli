@@ -25,7 +25,7 @@ $ sudo npm install -g spark-cli
 Install (advanced)
 ---------------------------
 
-To use the local flash and key features you'll need to install [dfu-util](http://dfu-util.gnumonks.org/), and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.  
+To use the local flash and key features you'll need to install [dfu-util](http://dfu-util.sourceforge.net/) (note the normal main page http://dfu-util.gnumonks.org/ is still down), and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.  
 
 Here are some great tutorials on the community for full installs:
 
