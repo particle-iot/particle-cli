@@ -205,18 +205,18 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             //ask for ssid, pass, security type
             var gotCreds = pipeline([
                 function () {
-                    return prompts.promptDfd("SSID:\t");
+                    return prompts.promptDfd("SSID: ");
                 },
                 function (arg) {
                     ssid = arg;
-                    return prompts.promptDfd("Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:\t");
+                    return prompts.promptDfd("Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2: ");
                 },
                 function (arg) {
                     security = arg;
                     if (security == "0") {
                         return when.resolve();
                     }
-                    return prompts.promptDfd("Wifi Password:\t");
+                    return prompts.promptDfd("Wifi Password: ");
                 },
                 function (arg) {
                     password = arg;
