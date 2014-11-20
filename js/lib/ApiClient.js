@@ -107,6 +107,7 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
+            that.hasBadToken(error, body);
             if (body && body.ok) {
                 console.log('user creation succeeded!');
                 that._user = user;
@@ -142,6 +143,8 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
+            that.hasBadToken(error, body);
+
             if (body && body.access_token) {
                 console.log("Got an access token! " + body.access_token);
                 that._access_token = body.access_token;
@@ -196,7 +199,6 @@ ApiClient.prototype = {
     },
 
 
-
     //GET /v1/devices
     listDevices: function () {
         console.error("Retrieving cores... (this might take a few seconds)");
@@ -210,18 +212,22 @@ ApiClient.prototype = {
             method: "GET",
             json: true
         }, function (error, response, body) {
-            if (error) {
-                console.error("listDevices got error: ", error);
+            that.hasBadToken(error, body);
+            if (error || body.error) {
+                console.error("listDevices got error: ", error || body.error);
+                dfd.reject(error || body.error);
             }
-
-            that._devices = body;
-            dfd.resolve(body);
+            else {
+                that._devices = body;
+                dfd.resolve(body);
+            }
         });
 
         return dfd.promise;
     },
 
     claimCore: function (coreID) {
+        var that = this;
         var dfd = when.defer();
         request({
             uri: this.baseUrl + "/v1/devices",
@@ -232,6 +238,7 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
+            that.hasBadToken(error, body);
 
             if (body && body.ok) {
                 console.log("Successfully claimed core " + coreID);
@@ -262,7 +269,7 @@ ApiClient.prototype = {
             json: true
         }, function (error, response, body) {
 
-            console.log("server said ", body);
+            that.hasBadToken(error, body);
 
             if (body && body.ok) {
                 //console.log("Successfully removed core " + coreID);
@@ -279,6 +286,7 @@ ApiClient.prototype = {
 
 
     renameCore: function (coreID, name) {
+        var that = this;
         var dfd = when.defer();
 
         request({
@@ -290,6 +298,9 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
+
+            that.hasBadToken(error, body);
+
             if (body && (body.name == name)) {
                 console.log("Successfully renamed core " + coreID + " to: " + name);
                 dfd.resolve(body);
@@ -305,6 +316,7 @@ ApiClient.prototype = {
 
     //GET /v1/devices/{DEVICE_ID}
     getAttributes: function (coreID) {
+        var that = this;
         var dfd = when.defer();
         request({
                 uri: this.baseUrl + "/v1/devices/" + coreID + "?access_token=" + this._access_token,
@@ -312,6 +324,7 @@ ApiClient.prototype = {
                 json: true
             },
             function (error, response, body) {
+                that.hasBadToken(error, body);
                 if (error) {
                     console.log("getAttributes got error: ", error);
                 }
@@ -324,6 +337,7 @@ ApiClient.prototype = {
 
     //GET /v1/devices/{DEVICE_ID}/{VARIABLE}
     getVariable: function (coreID, name) {
+        var that = this;
         var dfd = when.defer();
         request({
                 uri: this.baseUrl + "/v1/devices/" + coreID + "/" + name + "?access_token=" + this._access_token,
@@ -331,6 +345,7 @@ ApiClient.prototype = {
                 json: true
             },
             function (error, response, body) {
+                that.hasBadToken(error, body);
                 if (error) {
                     dfd.reject(error);
                 }
@@ -370,10 +385,12 @@ ApiClient.prototype = {
     flashCore: function (coreID, files) {
         console.log('attempting to flash firmware to your core ' + coreID);
 
+        var that = this;
         var dfd = when.defer();
         var r = request.put(this.baseUrl + "/v1/devices/" + coreID + "?access_token=" + this._access_token, {
             json: true
         }, function (error, response, body) {
+            that.hasBadToken(error, body);
             //console.log(error, response, body);
             if (error) {
                 console.log("flash core got error: ", JSON.stringify(error));
@@ -398,10 +415,12 @@ ApiClient.prototype = {
     compileCode: function(files) {
        console.log('attempting to compile firmware ');
 
+        var that = this;
         var dfd = when.defer();
         var r = request.post(this.baseUrl + "/v1/binaries?access_token=" + this._access_token, {
             json: true
         }, function (error, response, body) {
+            that.hasBadToken(error, body);
             if (error) {
                 console.log("compile got error: ", error);
                 dfd.reject(error);
@@ -428,10 +447,12 @@ ApiClient.prototype = {
     downloadBinary: function (url, filename) {
         var outFs = fs.createWriteStream(filename);
 
+        var that = this;
         var dfd = when.defer();
         console.log("grabbing binary from: " + this.baseUrl + url);
         request.get(this.baseUrl + url + "?access_token=" + this._access_token, null,
             function (error, response, body) {
+                that.hasBadToken(error, body);
                 if (error) {
                     dfd.reject(error);
                 }
@@ -462,6 +483,7 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
+            that.hasBadToken(error, body);
             //console.log(error, response, body);
             if (error || body.error) {
                 console.log("submitPublicKey got error: ", error || body.error);
@@ -484,6 +506,7 @@ ApiClient.prototype = {
     callFunction: function (coreID, functionName, funcParam) {
         //console.log('callFunction for user ');
 
+        var that = this;
         var dfd = when.defer();
         request({
                 uri: this.baseUrl + "/v1/devices/" + coreID + "/" + functionName,
@@ -495,6 +518,7 @@ ApiClient.prototype = {
                 json: true
             },
             function (error, response, body) {
+                that.hasBadToken(error, body);
                 if (error) {
                     dfd.reject(error);
                 }
@@ -583,6 +607,7 @@ ApiClient.prototype = {
     },
 
     publishEvent: function (eventName, data) {
+        var that = this;
         var dfd = when.defer();
         request({
             uri: this.baseUrl + "/v1/devices/events",
@@ -594,7 +619,7 @@ ApiClient.prototype = {
             },
             json: true
         }, function (error, response, body) {
-
+            that.hasBadToken(error, body);
             if (body && body.ok) {
                 console.log("posted event!");
                 dfd.resolve(body);
@@ -610,6 +635,7 @@ ApiClient.prototype = {
 
 
     createWebhook: function (event, url, coreID, requestType, headers, json, query, auth, mydevices) {
+        var that = this;
         var dfd = when.defer();
 
         var obj = {
@@ -633,6 +659,7 @@ ApiClient.prototype = {
         console.log("Sending webhook request ", obj);
 
         request(obj, function (error, response, body) {
+            that.hasBadToken(error, body);
             if (body && body.ok) {
                 console.log("Successfully created webhook!");
                 dfd.resolve(body);
@@ -670,12 +697,14 @@ ApiClient.prototype = {
     },
 
     listWebhooks: function () {
+        var that = this;
         var dfd = when.defer();
         request({
                 uri: this.baseUrl + "/v1/webhooks/?access_token=" + this._access_token,
                 method: "GET", json: true
             },
             function (error, response, body) {
+                that.hasBadToken(error, body);
                 if (error) {
                     dfd.reject(error);
                 }
@@ -688,7 +717,19 @@ ApiClient.prototype = {
     },
 
 
-    foo:null
+
+    hasBadToken: function(error, body) {
+        error = error || body.error;
+        if (error && error.indexOf('invalid_grant') >= 0) {
+            console.log("*********************************");
+            console.log("      Please login - it appears your access_token may have expired");
+            console.log("*********************************");
+            return true;
+        }
+        return false;
+    },
+
+    _:null
 };
 
 module.exports = ApiClient;
