@@ -465,13 +465,14 @@ ApiClient.prototype = {
             //console.log(error, response, body);
             if (error || body.error) {
                 console.log("submitPublicKey got error: ", error || body.error);
+                dfd.reject(error || body.error);
             }
             else {
                 console.log("submitting public key succeeded!");
+                dfd.resolve(response);
             }
 
             that._devices = body;
-            dfd.resolve(response);
         });
 
         return dfd.promise;
