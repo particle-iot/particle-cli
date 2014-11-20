@@ -253,9 +253,16 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
     },
 
     keyDoctor: function (coreid) {
-        if (!coreid) {
+        if (!coreid || (coreid == "")) {
             console.log("Please provide your core id");
             return 0;
+        }
+
+        if (coreid.length < 24) {
+            console.log("***************************************************************");
+            console.log("   Warning! - core id was shorter than 24 characters - did you use something other than an id?");
+            console.log("   use spark identify to find your core id");
+            console.log("***************************************************************");
         }
 
         var that = this;
