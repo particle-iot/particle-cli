@@ -241,12 +241,15 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
     },
 
-    compileCode: function (filePath, filename) {
-        if (!filePath) {
-            console.error("Please specify a binary file, source file, or source directory");
-            return;
+    compileCode: function () {
+        //  "Please specify a binary file, source file, or source directory");
+
+        var args = Array.prototype.slice.call(arguments, 0);
+        if (args.length == 0) {
+            args.push("."); //default to current directory
         }
 
+        var filePath = args[0];
         if (!fs.existsSync(filePath)) {
             console.error("I couldn't find that: " + filePath);
             return;
@@ -255,7 +258,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         this.checkArguments(arguments);
 
         //make a copy of the arguments
-        var args = Array.prototype.slice.call(arguments, 0);
         var files = this._handleMultiFileArgs(args);
         if (!files) {
             return;
@@ -268,6 +270,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             }
         }
 
+        var filename;
         if (this.options.saveBinaryPath) {
             filename = this.options.saveBinaryPath;
         }
