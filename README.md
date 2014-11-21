@@ -317,6 +317,13 @@ old_version.cpp
 ```sh
 $ spark compile app.ino library1.cpp library1.h
 ```
+####Compiling in a directory containing project files
+
+ This will push all the files in a directory that the command line is currently 'cd' in for compilation.
+ 
+ ```sh
+ $ spark compile .
+ ```
 
 
 
