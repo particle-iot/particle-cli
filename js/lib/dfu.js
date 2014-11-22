@@ -45,7 +45,7 @@ var that = module.exports = {
     findCompatibleDFU: function () {
         var temp = when.defer();
 
-        var failTimer = utilities.timeoutGenerator("findCompatibleDFU timed out", temp, 5000);
+        var failTimer = utilities.timeoutGenerator("findCompatibleDFU timed out", temp, 6000);
         child_process.exec("dfu-util -l", function (error, stdout, stderr) {
             clearTimeout(failTimer);
 
