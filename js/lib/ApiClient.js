@@ -445,6 +445,15 @@ ApiClient.prototype = {
     },
 
     downloadBinary: function (url, filename) {
+        if (fs.existsSync(filename)) {
+            try {
+                fs.unlinkSync(filename);
+            }
+            catch (ex) {
+                console.error("error deleting file: " + filename + " " + ex);
+            }
+        }
+
         var outFs = fs.createWriteStream(filename);
 
         var that = this;
