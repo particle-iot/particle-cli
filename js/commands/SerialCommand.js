@@ -370,6 +370,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                         //normally we would wait for the password prompt, but the 'security' line will have received the
                         //prompt instead, so lets assume we're good since we already got the ssid prompt, and just pipe
                         //the pass.
+
+                        if (securityType == "0") {
+                            //we didn't have a password, so just hit return
+                            serialPort.write("\n");
+
+                        }
                         passPrompt = null;
                     }
 
