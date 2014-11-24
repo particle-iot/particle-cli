@@ -199,7 +199,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if (settings.showIncludedSourceFiles) {
             console.log("Including:");
             for (var key in files) {
-                console.log(files[key]);
+                console.log("    " + files[key]);
             }
         }
 
@@ -266,7 +266,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         if (settings.showIncludedSourceFiles) {
             console.log("Including:");
             for (var key in files) {
-                console.log(files[key]);
+                console.log("    " + files[key]);
             }
         }
 
@@ -592,37 +592,32 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             ignoreFile = path.join(dirname, settings.dirExcludeFilename),
             ignoreSet = {};
 
-        //check for an include file
+        var includes = [
+            "*.h",
+            "*.ino",
+            "*.cpp",
+            "*.c"
+        ];
+
         if (fs.existsSync(includesFile)) {
-            //grab it as filenames
-
-
-            return utilities.fixRelativePaths(dirname,
+            //grab and process all the files in the include file.
+            includes = utilities.fixRelativePaths(dirname,
                 utilities.trimBlankLinesAndComments(
                     utilities.readAndTrimLines(includesFile)
                 )
             );
         }
 
-        //otherwise, the includes file was missing or empty.
+        var files = utilities.globList(includes);
+        if (fs.existsSync(ignoreFile)) {
+            var ignores = utilities.trimBlankLinesAndComments(
+                utilities.readAndTrimLines(ignoreFile)
+            );
 
-        //check and load an exclude file
-        var excluded = utilities.arrayToHashSet(
-            utilities.readAndTrimLines(ignoreFile)
-        );
-
-        var results = [];
-        var dirFiles = fs.readdirSync(dirname);
-        for (var i = 0; i < dirFiles.length; i++) {
-            var filename = dirFiles[i];
-            if (excluded[filename]) {
-                continue;
-            }
-
-            results.push(path.join(dirname, filename));
+            var ignoredFiles = utilities.globList(ignores);
+            files = utilities.compliment(files, ignoredFiles);
         }
-
-        return results;
+        return files;
     },
 
 

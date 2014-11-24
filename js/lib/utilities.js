@@ -30,6 +30,7 @@ var fs = require('fs');
 var path = require('path');
 var when = require('when');
 var child_process = require('child_process');
+var glob = require('glob');
 
 var that = module.exports = {
     contains: function(arr, obj) {
@@ -279,6 +280,48 @@ var that = module.exports = {
         });
     },
 
+    /**
+     * for a given list of absolute filenames, identify directories,
+     * and add them to the end of the list.
+     * @param files
+     * @returns {*}
+     */
+    expandSubdirectories: function(files) {
+        if (!files || (files.length == 0)) {
+            return files;
+        }
+
+        var result = [];
+
+        for(var i=0;i<files.length;i++) {
+            var filename = files[0];
+            var stats = fs.statSync(filename);
+            if (!stats.isDirectory()) {
+                result.push(filename);
+            }
+            else {
+                var arr = that.recursiveListFiles(filename);
+                if (arr) {
+                    result = result.concat(arr);
+                }
+            }
+        }
+        return result;
+    },
+
+    globList: function(arr) {
+        var line, found, files = [];
+        for(var i=0;i<arr.length;i++) {
+            line = arr[i];
+            found = glob.sync(line, null);
+
+            if (found && (found.length > 0)) {
+                files = files.concat(found);
+            }
+        }
+        return files;
+    },
+
     trimBlankLines: function (arr) {
         if (arr && (arr.length != 0)) {
             return arr.filter(function (obj) {
@@ -475,6 +518,19 @@ var that = module.exports = {
         });
 
         return dfd.promise;
+    },
+
+    compliment: function(arr, excluded) {
+        var hash = that.arrayToHashSet(excluded);
+
+        var result = [];
+        for(var i=0;i<arr.length;i++) {
+            var key = arr[i];
+            if (!hash[key]) {
+                result.push(key);
+            }
+        }
+        return result;
     },
 
     _:null

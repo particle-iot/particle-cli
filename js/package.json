@@ -1,48 +1,49 @@
 {
-    "name": "spark-cli",
-    "description": "Simple Node commandline application for working with your Spark Cores and using the Spark Cloud",
-    "version": "0.4.5",
-    "author": "David Middlecamp",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/spark/spark-cli"
+  "name": "spark-cli",
+  "description": "Simple Node commandline application for working with your Spark Cores and using the Spark Cloud",
+  "version": "0.4.6",
+  "author": "David Middlecamp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spark/spark-cli"
+  },
+  "bin": {
+    "spark": "./bin/spark.js"
+  },
+  "main": "./app.js",
+  "engines": {
+    "node": "*"
+  },
+  "dependencies": {
+    "glob": "^4.2.1",
+    "hogan.js": "~2.0.0",
+    "moment": "*",
+    "request": "*",
+    "serialport": "1.4.5",
+    "when": "*",
+    "xtend": "*"
+  },
+  "contributors": [
+    {
+      "name": "Kenneth Lim",
+      "url": "https://github.com/kennethlimcp"
     },
-    "bin": {
-      "spark": "./bin/spark.js"
+    {
+      "name": "David Washington",
+      "url": "https://github.com/dwcares"
     },
-    "main": "./app.js",
-    "engines": {
-        "node": "*"
+    {
+      "name": "TJ Hunter",
+      "url": "https://github.com/Hypnopompia"
     },
-    "dependencies": {
-        "hogan.js": "~2.0.0",
-        "moment": "*",
-        "request": "*",
-        "serialport": "1.4.5",
-        "when": "*",
-        "xtend": "*"
+    {
+      "name": "Udo Kramer",
+      "url": "https://github.com/optikfluffel"
     },
-    "contributors": [
-        {
-            "name": "Kenneth Lim",
-            "url": "https://github.com/kennethlimcp"
-        },
-        {
-            "name": "David Washington",
-            "url": "https://github.com/dwcares"
-        },
-        {
-            "name": "TJ Hunter",
-            "url": "https://github.com/Hypnopompia"
-        },
-        {
-            "name": "Udo Kramer",
-            "url": "https://github.com/optikfluffel"
-        },
-        {
-            "name": "vk2tds",
-            "url": "https://github.com/vk2tds"
-        }
-    ],
-    "preferGlobal": true
+    {
+      "name": "vk2tds",
+      "url": "https://github.com/vk2tds"
+    }
+  ],
+  "preferGlobal": true
 }
