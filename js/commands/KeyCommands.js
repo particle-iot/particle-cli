@@ -83,6 +83,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
     makeKeyOpenSSL: function (filename) {
         filename = utilities.filenameNoExt(filename);
 
+        if (this.options.force) {
+            utilities.tryDelete(filename + ".pem");
+            utilities.tryDelete(filename + ".pub.pem");
+            utilities.tryDelete(filename + ".der");
+        }
+
         return sequence([
             function () {
                 return utilities.deferredChildProcess("openssl genrsa -out " + filename + ".pem 1024");
@@ -112,13 +118,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             filename = "core";
         }
 
-        var keyReady;
-        //if (settings.useOpenSSL) {
-            keyReady = this.makeKeyOpenSSL(filename);
-        //}
-        //else {
-        //    keyReady = this.makeKeyUrsa(filename);
-        //}
+        var keyReady = this.makeKeyOpenSSL(filename);
 
         when(keyReady).then(function () {
             console.log("New Key Created!");
@@ -131,7 +131,6 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
     writeKeyToCore: function (filename, leave) {
         this.checkArguments(arguments);
-
 
         if (!filename) {
             console.error("Please provide a DER format key filename to load to your core");
@@ -193,11 +192,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             return when.reject("This file already exists, please specify a different file, or use the --force flag.");
         }
         else if (fs.existsSync(filename)) {
-            fs.unlinkSync(filename);
+            utilities.tryDelete(filename);
         }
 
         //find dfu devices, make sure a core is connected
         //pull the key down and save it there
+        var that = this;
 
         var ready = sequence([
             function() {
@@ -207,11 +207,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
                 return dfu.findCompatibleDFU();
             },
             function () {
+                //if (that.options.force) { utilities.tryDelete(filename); }
                 return dfu.readPrivateKey(filename, false);
             },
             function () {
                 var pubPemFilename = utilities.filenameNoExt(filename) + ".pub.pem";
-                return utilities.deferredChildProcess("openssl rsa -in " + filename + " -inform DER -pubout -out " + pubPemFilename);
+                if (that.options.force) { utilities.tryDelete(pubPemFilename); }
+                return utilities.deferredChildProcess("openssl rsa -in " + filename + " -inform DER -pubout  -out " + pubPemFilename);
             }
         ]);
 
@@ -257,6 +259,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
             console.log("Please provide your core id");
             return 0;
         }
+
+        this.checkArguments(arguments);
 
         if (coreid.length < 24) {
             console.log("***************************************************************");

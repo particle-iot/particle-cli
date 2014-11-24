@@ -533,5 +533,18 @@ var that = module.exports = {
         return result;
     },
 
+    tryDelete: function(filename) {
+        try {
+            if (fs.existsSync(filename)) {
+                fs.unlinkSync(filename);
+            }
+            return true;
+        }
+        catch(ex) {
+            console.error("error deleting file " + filename);
+        }
+        return false;
+    },
+
     _:null
 };

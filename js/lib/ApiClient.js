@@ -729,7 +729,8 @@ ApiClient.prototype = {
 
     hasBadToken: function(error, body) {
         error = error || body.error;
-        if (error && error.indexOf('invalid_grant') >= 0) {
+        if (error && error.indexOf
+            && (error.indexOf('invalid_grant') >= 0)) {
             console.log("*********************************");
             console.log("      Please login - it appears your access_token may have expired");
             console.log("*********************************");
