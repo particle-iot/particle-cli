@@ -102,7 +102,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
         settings.override(group, name, value);
     },
     
-    identifyServer: function (profile) {
+    identifyServer: function () {
         console.log("Current profile: " + settings.profile);
         console.log("IP address: " + settings.apiUrl);
     },
