@@ -114,7 +114,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 
     listConfigs: function() {
         var sparkDir = settings.ensureFolder();
-        var files = utilities.globList([
+        var files = utilities.globList(null, [
             path.join(sparkDir, "*.config.json")
         ]);
 

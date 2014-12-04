@@ -588,6 +588,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
      * @private
      */
     _processDirIncludes: function (dirname) {
+        dirname = path.resolve(dirname);
+
         var includesFile = path.join(dirname, settings.dirIncludeFilename),
             ignoreFile = path.join(dirname, settings.dirExcludeFilename),
             ignoreSet = {};
@@ -608,13 +610,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             );
         }
 
-        var files = utilities.globList(includes);
+        var files = utilities.globList(dirname, includes);
         if (fs.existsSync(ignoreFile)) {
             var ignores = utilities.trimBlankLinesAndComments(
                 utilities.readAndTrimLines(ignoreFile)
             );
 
-            var ignoredFiles = utilities.globList(ignores);
+            var ignoredFiles = utilities.globList(dirname, ignores);
             files = utilities.compliment(files, ignoredFiles);
         }
         return files;

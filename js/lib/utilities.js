@@ -309,10 +309,13 @@ var that = module.exports = {
         return result;
     },
 
-    globList: function(arr) {
+    globList: function(basepath, arr) {
         var line, found, files = [];
         for(var i=0;i<arr.length;i++) {
             line = arr[i];
+            if (basepath) {
+                line = path.join(basepath, line);
+            }
             found = glob.sync(line, null);
 
             if (found && (found.length > 0)) {
@@ -544,6 +547,13 @@ var that = module.exports = {
             console.error("error deleting file " + filename);
         }
         return false;
+    },
+
+    resolvePaths: function(basepath, files) {
+        for(var i=0;i<files.length;i++) {
+            files[i] = path.join(basepath, files[i]);
+        }
+        return files;
     },
 
     _:null
