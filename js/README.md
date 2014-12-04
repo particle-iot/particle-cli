@@ -1,5 +1,8 @@
 changelog
 =========
+
+12/03/2014 - 0.4.7 - upgrading Voodoospark (2.6.0)
+
 11/24/2014 - 0.4.6 - adding glob support for include / ignore files, and both files are now processed!  Also only pulling in source files by default (*.h, *.cpp, *.c, *.ino) - fixed a ton of issues (#60, #97, #66, #84, #89, #90, #95)
 
 11/17/2014 - 0.4.5 - new version of Voodoospark (2.5.0) requested in #105, yay!
