@@ -53,19 +53,25 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
         "You can quickly switch to a profile by calling \"spark config profile-name\". ",
         "This is especially useful for switching to your local server ",
         "or when switching between other environments.  ",
-        "Call \"spark config spark\" to switch back to the normal api server"
+        "Call \"spark config spark\" to switch back to the normal api server",
+        "Use \"spark config identify\" to see the currently selected configuration profile",
+        "Use \"spark config list\" to see the list of available profiles"
     ],
     usage: [
         "spark config local",
         "spark config spark",
         "spark config local apiUrl http://localhost:8080",
-        "spark config useSudoForDfu true"
+        "spark config useSudoForDfu true",
+        "spark config list",
+        "spark config identify"
     ],
 
 
     init: function () {
 
         this.addOption("*", this.configSwitch.bind(this));
+        this.addOption("identify", this.identifyServer.bind(this), "Display the current server config information.");
+        this.addOption("list", this.listConfigs.bind(this), "Display available configurations");
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
@@ -100,7 +106,35 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
     changeSetting: function (group, name, value) {
         settings.override(group, name, value);
     },
+    
+    identifyServer: function () {
+        console.log("Current profile: " + settings.profile);
+        console.log("Using API: " + settings.apiUrl);
+    },
 
+    listConfigs: function() {
+        var sparkDir = settings.ensureFolder();
+        var files = utilities.globList([
+            path.join(sparkDir, "*.config.json")
+        ]);
+
+        if (files.length > 0) {
+            console.log("Available config files: ");
+            for (var i = 0; i < files.length; i++) {
+
+                //strip the path
+                var filename = path.basename(files[i]);
+
+                //strip the extension
+                var name = filename.replace(".config.json", "");
+
+                console.log((i + 1) + ".) " + name);
+            }
+        }
+        else {
+            console.log("No configuration files found.");
+        }
+    },
 
     _: null
 });
