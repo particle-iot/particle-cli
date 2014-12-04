@@ -66,6 +66,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
     init: function () {
 
         this.addOption("*", this.configSwitch.bind(this));
+        this.addOption("identify", this.identifyServer.bind(this), "Display the current server config information.");
         //this.addOption(null, this.helpCommand.bind(this));
     },
 
@@ -100,7 +101,11 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
     changeSetting: function (group, name, value) {
         settings.override(group, name, value);
     },
-
+    
+    identifyServer: function () {
+        console.log("Current profile: " + settings.profile);
+        console.log("IP address: " + settings.apiUrl);
+    },
 
     _: null
 });
