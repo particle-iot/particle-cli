@@ -1,6 +1,8 @@
 changelog
 =========
 
+12/09/2014 - 0.4.9 - fixing request version at 2.46.0 until we figure out the breaking change in 2.50
+
 12/09/2014 - 0.4.8 - pushing out patches and pull requests
 
 12/03/2014 - 0.4.7 - upgrading Voodoospark (2.6.0)
