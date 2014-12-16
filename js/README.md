@@ -1,7 +1,7 @@
 changelog
 =========
 
-12/09/2014 - 0.4.9 - fixing request version at 2.46.0 until we figure out the breaking change in 2.50
+12/09/2014 - 0.4.91 - adding new patcher that pulls latest patch from TI, 1.14
 
 12/09/2014 - 0.4.8 - pushing out patches and pull requests
 
