@@ -163,7 +163,7 @@ ApiClient.prototype = {
         return dfd.promise;
     },
 
-	//DELETE /v1/access_tokens/{ACCESS_TOKEN}
+    //DELETE /v1/access_tokens/{ACCESS_TOKEN}
     removeAccessToken: function (username, password, access_token) {
         console.log("removing access_token " + access_token);
 
@@ -199,7 +199,7 @@ ApiClient.prototype = {
         return dfd.promise;
     },
 
-	//GET /v1/access_tokens
+    //GET /v1/access_tokens
     listTokens: function (username, password) {
         var that = this;
         var dfd = when.defer();

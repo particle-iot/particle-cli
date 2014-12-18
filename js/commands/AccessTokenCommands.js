@@ -48,63 +48,63 @@ var AccessTokenCommands = function (cli, options) {
 util.inherits(AccessTokenCommands, BaseCommand);
 AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
     options: null,
-	name: "token",
+    name: "token",
     description: "tools to help you manage access tokens on your account",
 
     init: function () {
         this.addOption("list", this.listAccessTokens.bind(this), "List all access tokens for your account");
-		//this.addOption("revoke", this.revokeAccessToken.bind(this), "Revoke an access token");
-		//this.addOption("new", this.createAccessToken.bind(this), "Create a new access token");
+        //this.addOption("revoke", this.revokeAccessToken.bind(this), "Revoke an access token");
+        //this.addOption("new", this.createAccessToken.bind(this), "Create a new access token");
     },
 
-	checkArguments: function (args) {
-		this.options = this.options || {};
+    checkArguments: function (args) {
+        this.options = this.options || {};
 
-		if (!this.options.force) {
-			this.options.force = utilities.tryParseArgs(args,
-				"--force",
-				null
-			);
-		}
-	},
+        if (!this.options.force) {
+            this.options.force = utilities.tryParseArgs(args,
+                "--force",
+                null
+            );
+        }
+    },
 
-	getAccessTokens: function (args) {
-		console.error("Checking with the cloud...");
-		var tmp = when.defer();
+    getAccessTokens: function (args) {
+        console.error("Checking with the cloud...");
+        var tmp = when.defer();
 
-		pipeline([
-			prompts.getCredentials,
-			function (creds) {
-				var api = new ApiClient(settings.apiUrl);
-				tmp.resolve(api.listTokens(creds[0], creds[1]));
-			}
-		]);
+        pipeline([
+            prompts.getCredentials,
+            function (creds) {
+                var api = new ApiClient(settings.apiUrl);
+                tmp.resolve(api.listTokens(creds[0], creds[1]));
+            }
+        ]);
 
-		return tmp.promise;
-	},
+        return tmp.promise;
+    },
 
-	listAccessTokens: function (args) {
+    listAccessTokens: function (args) {
 
-		when(this.getAccessTokens(args)).then(function (tokens) {
-			try {
-				var lines = [];
-				for (var i = 0; i < tokens.length; i++) {
-					// TODO: put a marker on settings.acccess_token
-					// TODO: sort by expiration date
-					token = tokens[i];
-					lines.push('Token: ' + token.token);
-					lines.push('  Expires At: ' + token.expires_at);
-					lines.push('  Client:     ' + token.client);
-				}
-				console.log(lines.join("\n"));
-			}
-			catch (ex) {
-				console.error("Error during list " + ex);
-			}
-		}, function(err) {
-			console.log("Please make sure you're online and logged in.");
-		});
-	},
+        when(this.getAccessTokens(args)).then(function (tokens) {
+            try {
+                var lines = [];
+                for (var i = 0; i < tokens.length; i++) {
+                    // TODO: put a marker on settings.acccess_token
+                    // TODO: sort by expiration date
+                    token = tokens[i];
+                    lines.push('Token: ' + token.token);
+                    lines.push('  Expires At: ' + token.expires_at);
+                    lines.push('  Client:     ' + token.client);
+                }
+                console.log(lines.join("\n"));
+            }
+            catch (ex) {
+                console.error("Error during list " + ex);
+            }
+        }, function(err) {
+            console.log("Please make sure you're online and logged in.");
+        });
+    },
 
     _: null
 });
