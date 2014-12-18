@@ -163,6 +163,7 @@ ApiClient.prototype = {
         return dfd.promise;
     },
 
+	//DELETE /v1/access_tokens/{ACCESS_TOKEN}
     removeAccessToken: function (username, password, access_token) {
         console.log("removing access_token " + access_token);
 
@@ -192,6 +193,33 @@ ApiClient.prototype = {
             else {
                 //huh?
                 dfd.reject(body);
+            }
+        });
+
+        return dfd.promise;
+    },
+
+	//GET /v1/access_tokens
+    listTokens: function (username, password) {
+        var that = this;
+        var dfd = when.defer();
+        request({
+            uri: this.baseUrl + "/v1/access_tokens",
+            method: "GET",
+            auth: {
+                username: username,
+                password: password
+            },
+            json: true
+        }, function (error, response, body) {
+            that.hasBadToken(error, body);
+
+            if (error || body.error) {
+                console.error("listTokens got error: ", error || body.error);
+                dfd.reject(error || body.error);
+            }
+            else {
+                dfd.resolve(body);
             }
         });
 
