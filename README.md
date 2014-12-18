@@ -50,6 +50,7 @@ To grab the CLI source and play with it locally
 ```sh
 git clone git@github.com:spark/spark-cli.git
 cd spark-cli/js
+npm install
 node app.js help
 ```
 
