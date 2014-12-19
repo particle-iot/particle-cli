@@ -110,6 +110,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
     identifyServer: function () {
         console.log("Current profile: " + settings.profile);
         console.log("Using API: " + settings.apiUrl);
+        console.log("Access token: " +  settings.access_token);
     },
 
     listConfigs: function() {
