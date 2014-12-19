@@ -39,6 +39,7 @@ var BaseCommand = require("./BaseCommand.js");
 var prompts = require('../lib/prompts.js');
 var utilities = require('../lib/utilities.js');
 var SerialBoredParser = require('../lib/SerialBoredParser.js');
+var wifiscanner = require('node-wifiscanner/lib/wifiscanner.js');
 
 var SerialCommand = function (cli, options) {
     SerialCommand.super_.call(this, cli, options);
@@ -205,6 +206,26 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
             //ask for ssid, pass, security type
             var gotCreds = pipeline([
                 function () {
+                    var dfd = when.defer();
+                    wifiscanner.scan(function(err, data){
+                        if (err) {
+                            //console.log("[Error] - " + err);
+                            dfd.reject(err);
+                        }
+                        //console.log(data);
+                        dfd.resolve(data);
+                    });
+                    return dfd.promise;
+                },
+                function (arg) {
+                    console.log("I found the following potentially-compatible SSIDs:");
+                    for (var i = arg.length - 1; i >= 0; i--) {
+                        AP = arg[i];
+                        if(AP.channel > 11)
+                            continue;
+                        console.log("\t" + AP.ssid)
+                    };
+                    console.log();
                     return prompts.promptDfd("SSID: ");
                 },
                 function (arg) {
