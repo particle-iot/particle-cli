@@ -49,7 +49,7 @@ util.inherits(AccessTokenCommands, BaseCommand);
 AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: "token",
-    description: "tools to help you manage access tokens on your account",
+    description: "tools to manage access tokens (require username/password)",
 
     init: function () {
         this.addOption("list", this.listAccessTokens.bind(this), "List all access tokens for your account");
@@ -71,12 +71,19 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
     getAccessTokens: function () {
         console.error("Checking with the cloud...");
 
+        var sort_tokens = function (tokens) {
+            return tokens.sort(function (a, b) {
+                return (b.expires_at || '').localeCompare(a.expires_at);
+            });
+        };
+
         return pipeline([
             prompts.getCredentials,
             function (creds) {
                 var api = new ApiClient(settings.apiUrl);
                 return api.listTokens(creds[0], creds[1]);
-            }
+            },
+            sort_tokens
         ]);
     },
 
@@ -86,17 +93,26 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
             try {
                 var lines = [];
                 for (var i = 0; i < tokens.length; i++) {
-                    // TODO: put a marker on settings.acccess_token
-                    // TODO: sort by expiration date
                     token = tokens[i];
-                    lines.push('Token: ' + token.token);
-                    lines.push('  Expires At: ' + token.expires_at);
-                    lines.push('  Client:     ' + token.client);
+
+                    var first_line = token.client;
+                    if (token.token == settings.access_token) {
+                        first_line += '*';
+                    }
+                    var now = (new Date()).toISOString();
+                    if (now > token.expires_at) {
+                        first_line += " (expired)";
+                    }
+
+                    lines.push(first_line);
+                    lines.push(' Token:      ' + token.token);
+                    lines.push(' Expires At: ' + token.expires_at);
+                    lines.push('');
                 }
                 console.log(lines.join("\n"));
             }
             catch (ex) {
-                console.error("Error during list " + ex);
+                console.error("Error listing tokens " + ex);
             }
         }, function(err) {
             console.log("Please make sure you're online and logged in.");
