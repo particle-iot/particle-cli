@@ -68,24 +68,21 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
         }
     },
 
-    getAccessTokens: function (args) {
+    getAccessTokens: function () {
         console.error("Checking with the cloud...");
-        var tmp = when.defer();
 
-        pipeline([
+        return pipeline([
             prompts.getCredentials,
             function (creds) {
                 var api = new ApiClient(settings.apiUrl);
-                tmp.resolve(api.listTokens(creds[0], creds[1]));
+                return api.listTokens(creds[0], creds[1]);
             }
         ]);
-
-        return tmp.promise;
     },
 
-    listAccessTokens: function (args) {
+    listAccessTokens: function () {
 
-        when(this.getAccessTokens(args)).then(function (tokens) {
+        this.getAccessTokens().then(function (tokens) {
             try {
                 var lines = [];
                 for (var i = 0; i < tokens.length; i++) {

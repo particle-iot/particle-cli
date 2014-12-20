@@ -202,28 +202,25 @@ ApiClient.prototype = {
     //GET /v1/access_tokens
     listTokens: function (username, password) {
         var that = this;
-        var dfd = when.defer();
-        request({
-            uri: this.baseUrl + "/v1/access_tokens",
-            method: "GET",
-            auth: {
-                username: username,
-                password: password
-            },
-            json: true
-        }, function (error, response, body) {
-            that.hasBadToken(error, body);
-
-            if (error || body.error) {
-                console.error("listTokens got error: ", error || body.error);
-                dfd.reject(error || body.error);
-            }
-            else {
-                dfd.resolve(body);
-            }
+        return when.promise(function (resolve, reject, notify) {
+            request({
+                uri: that.baseUrl + "/v1/access_tokens",
+                method: "GET",
+                auth: {
+                    username: username,
+                    password: password
+                },
+                json: true
+            }, function (error, response, body) {
+                if (error || (body['ok'] == false)) {
+                    console.error("listTokens got error: ", error || body.errors);
+                    reject(error || body.errors);
+                }
+                else {
+                    resolve(body);
+                }
+            });
         });
-
-        return dfd.promise;
     },
 
 
