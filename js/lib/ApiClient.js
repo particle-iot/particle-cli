@@ -187,8 +187,8 @@ ApiClient.prototype = {
             if (body && body.ok) {
                 dfd.resolve(body);
             }
-            else if (body && body.error) {
-                dfd.reject(body.error);
+            else if (body && (body.error || body.errors)) {
+                dfd.reject(body.error || body.errors);
             }
             else {
                 //huh?
