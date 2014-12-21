@@ -38,6 +38,7 @@ var ApiClient = require('../lib/ApiClient.js');
 var BaseCommand = require("./BaseCommand.js");
 var prompts = require('../lib/prompts.js');
 var settings = require('../settings.js');
+var utilities = require('../lib/utilities.js');
 
 var AccessTokenCommands = function (cli, options) {
     AccessTokenCommands.super_.call(this, cli, options);
@@ -53,7 +54,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 
     init: function () {
         this.addOption("list", this.listAccessTokens.bind(this), "List all access tokens for your account");
-        //this.addOption("revoke", this.revokeAccessToken.bind(this), "Revoke an access token");
+        this.addOption("revoke", this.revokeAccessToken.bind(this), "Revoke an access token");
         //this.addOption("new", this.createAccessToken.bind(this), "Create a new access token");
     },
 
@@ -61,10 +62,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
         this.options = this.options || {};
 
         if (!this.options.force) {
-            this.options.force = utilities.tryParseArgs(args,
-                "--force",
-                null
-            );
+            idx = args.indexOf('--force');
+            if (idx >= 0) {
+                this.options.force = true;
+                args.splice(idx, 1);
+            }
         }
     },
 
@@ -89,7 +91,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 
     listAccessTokens: function () {
 
-        this.getAccessTokens().then(function (tokens) {
+        this.getAccessTokens().done(function (tokens) {
             try {
                 var lines = [];
                 for (var i = 0; i < tokens.length; i++) {
@@ -117,6 +119,42 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
         }, function(err) {
             console.log("Please make sure you're online and logged in.");
         });
+    },
+
+    revokeAccessToken: function () {
+
+        var args = Array.prototype.slice.call(arguments);
+        this.checkArguments(args);
+        token = args[0];
+
+        if (token == settings.access_token) {
+            console.log("WARNING: " + token + " is this CLI's access token");
+            if (this.options.force) {
+                console.log("**forcing**");
+            } else {
+                console.log("use --force to delete it");
+                return;
+            }
+        }
+
+        var allDone = pipeline([
+            prompts.getCredentials,
+            function (creds) {
+                var api = new ApiClient(settings.apiUrl);
+                return api.removeAccessToken(creds[0], creds[1], token);
+            }
+        ]);
+
+        allDone.done(
+            function (result) {
+                console.log('success!');
+            },
+            function (err) {
+                console.log("there was an error deleting " + token + ":");
+                console.log("  " + err);
+            }
+        );
+        return;
     },
 
     _: null
