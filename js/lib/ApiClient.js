@@ -130,37 +130,14 @@ ApiClient.prototype = {
     login: function (client_id, user, pass) {
         var that = this;
 
-        var dfd = when.defer();
-        request({
-            uri: this.baseUrl + "/oauth/token",
-            method: "POST",
-            form: {
-                username: user,
-                password: pass,
-                grant_type: 'password',
-                client_id: client_id,
-                client_secret: "client_secret_here"
-            },
-            json: true
-        }, function (error, response, body) {
-            that.hasBadToken(error, body);
-
-            if (body && body.access_token) {
-                console.log("Got an access token! " + body.access_token);
-                that._access_token = body.access_token;
-                dfd.resolve(that._access_token);
-            }
-            else if (body) {
-                //console.log("login got ", body.error);
-                dfd.reject("Login Failed");
-            }
-            else {
-                console.error("login error: ", error);
-                dfd.reject("Login Failed: " + error);
-            }
+        return this.createAccessToken(client_id, user, pass).then(function(resp) {
+            console.log("Got an access token! " + resp.access_token);
+            that._access_token = resp.access_token;
+            return that._access_token;
+        }).catch(function (err) {
+            console.error("login error: ", err);
+            return("Login Failed: " + err);
         });
-
-        return dfd.promise;
     },
 
     //GET /oauth/token
