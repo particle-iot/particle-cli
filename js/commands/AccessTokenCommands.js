@@ -27,6 +27,7 @@
 var when = require('when');
 var pipeline = require('when/pipeline');
 var parallel = require('when/parallel');
+var sequence = require('when/sequence');
 
 var extend = require('xtend');
 var fs = require('fs');
@@ -58,6 +59,19 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
         this.addOption("new", this.createAccessToken.bind(this), "Create a new access token");
     },
 
+    getCredentials: function() {
+        if (settings.username) {
+            return sequence([
+                function () { return settings.username },
+                function () {
+                    return prompts.passPromptDfd("Please reenter your password:  ");
+                }
+            ]);
+        } else {
+            return prompts.getCredentials();
+        }
+    },
+
     checkArguments: function (args) {
         this.options = this.options || {};
 
@@ -80,7 +94,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
         };
 
         return pipeline([
-            prompts.getCredentials,
+            this.getCredentials,
             function (creds) {
                 var api = new ApiClient(settings.apiUrl);
                 return api.listTokens(creds[0], creds[1]);
@@ -144,7 +158,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
             };
         });
 
-        creds = prompts.getCredentials();
+        creds = this.getCredentials();
         var allDone = creds.then(function (creds) {
             return parallel(revokers, creds);
         });
@@ -177,7 +191,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
         }
 
         var allDone = pipeline([
-            prompts.getCredentials,
+            this.getCredentials,
             function (creds) {
                 var api = new ApiClient(settings.apiUrl);
                 return api.createAccessToken(clientName, creds[0], creds[1]);
