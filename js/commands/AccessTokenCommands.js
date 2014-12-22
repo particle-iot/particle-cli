@@ -55,7 +55,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
     init: function () {
         this.addOption("list", this.listAccessTokens.bind(this), "List all access tokens for your account");
         this.addOption("revoke", this.revokeAccessToken.bind(this), "Revoke an access token");
-        //this.addOption("new", this.createAccessToken.bind(this), "Create a new access token");
+        this.addOption("new", this.createAccessToken.bind(this), "Create a new access token");
     },
 
     checkArguments: function (args) {
@@ -152,6 +152,35 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
             function (err) {
                 console.log("there was an error deleting " + token + ":");
                 console.log("  " + err);
+            }
+        );
+        return;
+    },
+
+    createAccessToken: function (clientName) {
+
+        if (!clientName) {
+            clientName = "user";
+        }
+
+        var allDone = pipeline([
+            prompts.getCredentials,
+            function (creds) {
+                var api = new ApiClient(settings.apiUrl);
+                return api.createAccessToken(clientName, creds[0], creds[1]);
+            }
+        ]);
+
+        allDone.done(
+            function (result) {
+                var now_unix = Date.now();
+                var expires_unix = now_unix + (result.expires_in * 1000);
+                var expires_date = new Date(expires_unix);
+                console.log('New access token expires on ' + expires_date);
+                console.log('    ' + result.access_token);
+            },
+            function (err) {
+                console.log("there was an error creating a new access token: " + err);
             }
         );
         return;

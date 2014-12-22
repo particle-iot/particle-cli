@@ -163,6 +163,35 @@ ApiClient.prototype = {
         return dfd.promise;
     },
 
+    //GET /oauth/token
+    createAccessToken: function (client_id, username, password) {
+        var that = this;
+        return when.promise(function (resolve, reject, notify) {
+            request({
+                uri: that.baseUrl + "/oauth/token",
+                method: "POST",
+                form: {
+                    username: username,
+                    password: password,
+                    grant_type: 'password',
+                    client_id: client_id,
+                    client_secret: "client_secret_here"
+                },
+                json: true
+            }, function (error, response, body) {
+                if (error || body.error) {
+                    console.error(
+                        "Could not get new access token: ",
+                        error || body.error_description
+                    );
+                    reject(error || body.error);
+                } else {
+                    resolve(body);
+                }
+            });
+        });
+    },
+
     //DELETE /v1/access_tokens/{ACCESS_TOKEN}
     removeAccessToken: function (username, password, access_token) {
         console.log("removing access_token " + access_token);
