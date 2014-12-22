@@ -25,8 +25,8 @@
  */
 
 var when = require('when');
-var sequence = require('when/sequence');
 var pipeline = require('when/pipeline');
+var parallel = require('when/parallel');
 
 var extend = require('xtend');
 var fs = require('fs');
@@ -125,10 +125,10 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 
         var args = Array.prototype.slice.call(arguments);
         this.checkArguments(args);
-        token = args[0];
+        tokens = args;
 
-        if (token == settings.access_token) {
-            console.log("WARNING: " + token + " is this CLI's access token");
+        if (tokens.indexOf(settings.access_token) >= 0) {
+            console.log("WARNING: " + settings.access_token + " is this CLI's access token");
             if (this.options.force) {
                 console.log("**forcing**");
             } else {
@@ -137,23 +137,36 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
             }
         }
 
-        var allDone = pipeline([
-            prompts.getCredentials,
-            function (creds) {
-                var api = new ApiClient(settings.apiUrl);
-                return api.removeAccessToken(creds[0], creds[1], token);
-            }
-        ]);
+        var api = new ApiClient(settings.apiUrl);
+        revokers = tokens.map(function(x) {
+            return function (creds) {
+                return [x, api.removeAccessToken(creds[0], creds[1], x)];
+            };
+        });
 
-        allDone.done(
-            function (result) {
-                console.log('success!');
-            },
-            function (err) {
-                console.log("there was an error deleting " + token + ":");
-                console.log("  " + err);
+        creds = prompts.getCredentials();
+        var allDone = creds.then(function (creds) {
+            return parallel(revokers, creds);
+        });
+
+        allDone.done(function (results) {
+            for (var i in results) {
+                // For some reason if I just use result.done here directly it
+                // uses the same value for "token" in each case. Building and
+                // then calling this function rectifies the issue
+                var intermediary = function(token, result) {
+                    result.done(
+                        function () {
+                            console.log('successfully deleted ' + token);
+                        },
+                        function (err) {
+                            console.log('error revoking ' + token + ': ' + JSON.stringify(err));
+                        }
+                    );
+                }
+                intermediary(results[i][0], results[i][1]);
             }
-        );
+        });
         return;
     },
 
