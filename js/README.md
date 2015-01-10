@@ -1,6 +1,8 @@
 changelog
 =========
 
+01/09/2015 - 0.4.93 - reverting patcher for the moment by popular demand
+
 12/16/2014 - 0.4.92 - oops, real "1.14" patcher, cc3000 should report version 1.32
 
 12/16/2014 - 0.4.91 - adding new patcher that pulls latest patch from TI, 1.14
