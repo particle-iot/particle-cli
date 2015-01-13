@@ -603,11 +603,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
         if (fs.existsSync(includesFile)) {
             //grab and process all the files in the include file.
-            //includes = utilities.fixRelativePaths(dirname,
-                utilities.trimBlankLinesAndComments(
-                    utilities.readAndTrimLines(includesFile)
-                );
-            //);
+
+            includes = utilities.trimBlankLinesAndComments(
+                utilities.readAndTrimLines(includesFile)
+            );
         }
 
         var files = utilities.globList(dirname, includes);

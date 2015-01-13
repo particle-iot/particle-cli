@@ -1,6 +1,8 @@
 changelog
 =========
 
+01/13/2015 - 0.4.94 - fixing spark.include not being considered for builds
+
 01/09/2015 - 0.4.93 - reverting patcher for the moment by popular demand
 
 12/16/2014 - 0.4.92 - oops, real "1.14" patcher, cc3000 should report version 1.32
