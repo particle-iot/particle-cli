@@ -21,7 +21,8 @@
     "request": "2.46.0",
     "serialport": "1.4.5",
     "when": "*",
-    "xtend": "*"
+    "xtend": "*",
+    "node-wifiscanner": "*"
   },
   "contributors": [
     {

@@ -65,6 +65,8 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
         var serial = this.cli.getCommandModule("serial"),
             cloud = this.cli.getCommandModule("cloud");
 
+        this.checkArguments(arguments);
+
         var that = this,
             coreID,
             coreName;
@@ -91,7 +93,7 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
         };
 
         if (shortcut && (shortcut == "wifi")) {
-            return serial.configureWifi();
+            return serial.configureWifi(null, null, that.options.scan);
         }
 
         var allDone = pipeline([
@@ -382,6 +384,18 @@ SetupCommand.prototype = extend(BaseCommand.prototype, {
                 return tmp.promise;
             }
         ]);
+    },
+
+
+    checkArguments: function(args) {
+        this.options = this.options || {};
+
+        if (!this.options.scan) {
+            this.options.scan = utilities.tryParseArgs(args,
+                "--scan",
+                null
+            );
+        }
     },
 
 

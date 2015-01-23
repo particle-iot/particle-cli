@@ -39,6 +39,7 @@ var BaseCommand = require("./BaseCommand.js");
 var prompts = require('../lib/prompts.js');
 var utilities = require('../lib/utilities.js');
 var SerialBoredParser = require('../lib/SerialBoredParser.js');
+var WifiUtilities = require("../lib/WifiUtilities.js");
 
 var SerialCommand = function (cli, options) {
     SerialCommand.super_.call(this, cli, options);
@@ -80,6 +81,13 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         if (!this.options.follow) {
             this.options.follow = utilities.tryParseArgs(args,
                 "--follow",
+               null
+            );
+        }
+
+       if (!this.options.scan) {
+            this.options.scan = utilities.tryParseArgs(args,
+                "--scan",
                null
             );
         }
@@ -191,9 +199,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
         return tmp.promise;
     },
-    configureWifi: function (comPort, dontExit) {
+    configureWifi: function (comPort, dontExit, scan ) {
         var tmp = when.defer();
         var that = this;
+
+        this.checkArguments(arguments);
+
         this.whatSerialPortDidYouMean(comPort, true, function (port) {
             if (!port) {
                 tmp.reject("No serial port identified");
@@ -204,7 +215,17 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
             //ask for ssid, pass, security type
             var gotCreds = pipeline([
-                function () {
+                function() {
+                    //if arg scan, then
+
+                    if (that.options.scan || scan) {
+                        return WifiUtilities.scanAndListAPs();
+                    }
+                    else {
+                        return when.resolve();
+                    }
+                },
+                function() {
                     return prompts.promptDfd("SSID: ");
                 },
                 function (arg) {
