@@ -111,7 +111,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
                 for (var i = 0; i < tokens.length; i++) {
                     token = tokens[i];
 
-                    var first_line = token.client;
+                    var first_line = token.client || token.client_id;
                     if (token.token == settings.access_token) {
                         first_line += '*';
                     }
