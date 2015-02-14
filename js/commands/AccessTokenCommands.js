@@ -117,7 +117,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
                     }
                     var now = (new Date()).toISOString();
                     if (now > token.expires_at) {
-                        first_line += " (expired)";
+                        first_line += ' (expired)';
                     }
 
                     lines.push(first_line);
@@ -172,9 +172,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
                     result.done(
                         function () {
                             console.log('successfully deleted ' + token);
+                            process.exit(0);
                         },
                         function (err) {
-                            console.log('error revoking ' + token + ': ' + JSON.stringify(err));
+                            console.log('error revoking ' + token + ': ' + JSON.stringify(err).replace(/\"/g, ""));
+                            process.exit(1);
                         }
                     );
                 }

@@ -219,7 +219,11 @@ ApiClient.prototype = {
                 json: true
             }, function (error, response, body) {
                 if (error || (body['ok'] == false)) {
-                    console.error("listTokens got error: ", error || body.errors);
+                    var err = error || body.errors;
+                    if(typeof err == "object") {
+                        err = err.join(', ');
+                    }
+                    console.error("error listing tokens: ", err);
                     reject(error || body.errors);
                 }
                 else {
