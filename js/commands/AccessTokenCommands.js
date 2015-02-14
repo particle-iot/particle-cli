@@ -126,12 +126,15 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
                     lines.push('');
                 }
                 console.log(lines.join("\n"));
+                process.exit(0);
             }
             catch (ex) {
                 console.error("Error listing tokens " + ex);
+                process.exit(1);
             }
         }, function(err) {
             console.log("Please make sure you're online and logged in.");
+            process.exit(1);
         });
     },
 
@@ -207,9 +210,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
                 var expires_date = new Date(expires_unix);
                 console.log('New access token expires on ' + expires_date);
                 console.log('    ' + result.access_token);
+                process.exit(0);
             },
             function (err) {
-                console.log("there was an error creating a new access token: " + err);
+                // console.log("there was an error creating a new access token: " + err);
+                process.exit(1);
             }
         );
         return;
