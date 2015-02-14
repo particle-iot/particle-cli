@@ -113,7 +113,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 
                     var first_line = token.client || token.client_id;
                     if (token.token == settings.access_token) {
-                        first_line += '*';
+                        first_line += ' (active)';
                     }
                     var now = (new Date()).toISOString();
                     if (now > token.expires_at) {
