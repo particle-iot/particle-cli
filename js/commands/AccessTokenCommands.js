@@ -122,7 +122,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 
                     lines.push(first_line);
                     lines.push(' Token:      ' + token.token);
-                    lines.push(' Expires At: ' + token.expires_at);
+                    lines.push(' Expires at: ' + token.expires_at || 'unknown');
                     lines.push('');
                 }
                 console.log(lines.join("\n"));
