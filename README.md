@@ -503,11 +503,20 @@ $ spark keys server my_server.der 192.168.1.10
 
 The config command lets you create groups of settings and quickly switch to a profile by calling `spark config profile-name`. This is especially useful for switching to your local server or between other environments.
 
-Calling `spark config spark` switch **Spark-Cli** back to the Spark Cloud API server
+Calling `spark config spark` will switch **Spark-Cli** back to the Spark Cloud API server.
 
 ```sh
 $ spark config profile-name
 $ spark config spark
 $ spark config local apiUrl http://localhost:8080  //creates a new profile with name "local" and saves the IP-address parameter
 $ spark config useSudoForDfu true
+```
+
+Calling `spark config identify` will output your current config settings.
+```sh
+$ spark config identify
+Current profile: spark
+Using API: https://api.spark.io
+Access token: e671fadd500a8a3921bb78c8d0400d7ba450a847
+$
 ```
