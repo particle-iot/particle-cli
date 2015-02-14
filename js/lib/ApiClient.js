@@ -130,39 +130,46 @@ ApiClient.prototype = {
     login: function (client_id, user, pass) {
         var that = this;
 
-        var dfd = when.defer();
-        request({
-            uri: this.baseUrl + "/oauth/token",
-            method: "POST",
-            form: {
-                username: user,
-                password: pass,
-                grant_type: 'password',
-                client_id: client_id,
-                client_secret: "client_secret_here"
-            },
-            json: true
-        }, function (error, response, body) {
-            that.hasBadToken(error, body);
-
-            if (body && body.access_token) {
-                console.log("Got an access token! " + body.access_token);
-                that._access_token = body.access_token;
-                dfd.resolve(that._access_token);
-            }
-            else if (body) {
-                //console.log("login got ", body.error);
-                dfd.reject("Login Failed");
-            }
-            else {
-                console.error("login error: ", error);
-                dfd.reject("Login Failed: " + error);
-            }
+        return this.createAccessToken(client_id, user, pass).then(function(resp) {
+            console.log("Got an access token! " + resp.access_token);
+            that._access_token = resp.access_token;
+            return that._access_token;
+        }).catch(function (err) {
+            console.error("login error: ", err);
+            return("Login Failed: " + err);
         });
-
-        return dfd.promise;
     },
 
+    //GET /oauth/token
+    createAccessToken: function (client_id, username, password) {
+        var that = this;
+        return when.promise(function (resolve, reject, notify) {
+            request({
+                uri: that.baseUrl + "/oauth/token",
+                method: "POST",
+                form: {
+                    username: username,
+                    password: password,
+                    grant_type: 'password',
+                    client_id: client_id,
+                    client_secret: "client_secret_here"
+                },
+                json: true
+            }, function (error, response, body) {
+                if (error || body.error) {
+                    console.error(
+                        "Could not get new access token: ",
+                        error || body.error_description
+                    );
+                    reject(error || body.error);
+                } else {
+                    resolve(body);
+                }
+            });
+        });
+    },
+
+    //DELETE /v1/access_tokens/{ACCESS_TOKEN}
     removeAccessToken: function (username, password, access_token) {
         console.log("removing access_token " + access_token);
 
@@ -186,8 +193,8 @@ ApiClient.prototype = {
             if (body && body.ok) {
                 dfd.resolve(body);
             }
-            else if (body && body.error) {
-                dfd.reject(body.error);
+            else if (body && (body.error || body.errors)) {
+                dfd.reject(body.error || body.errors);
             }
             else {
                 //huh?
@@ -196,6 +203,30 @@ ApiClient.prototype = {
         });
 
         return dfd.promise;
+    },
+
+    //GET /v1/access_tokens
+    listTokens: function (username, password) {
+        var that = this;
+        return when.promise(function (resolve, reject, notify) {
+            request({
+                uri: that.baseUrl + "/v1/access_tokens",
+                method: "GET",
+                auth: {
+                    username: username,
+                    password: password
+                },
+                json: true
+            }, function (error, response, body) {
+                if (error || (body['ok'] == false)) {
+                    console.error("listTokens got error: ", error || body.errors);
+                    reject(error || body.errors);
+                }
+                else {
+                    resolve(body);
+                }
+            });
+        });
     },
 
 
