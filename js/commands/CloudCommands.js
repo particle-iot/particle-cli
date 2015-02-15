@@ -116,7 +116,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
     removeCore: function (coreid) {
         if (!coreid) {
             console.error("Please specify a coreid");
-            return;
+            return process.exit(1);
         }
 
         var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -164,12 +164,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
     flashCore: function (coreid, filePath) {
         if (!coreid) {
             console.error("Please specify a coreid");
-            return -1;
+            return process.exit(1);
         }
 
         if (!filePath) {
             console.error("Please specify a binary file, source file, or source directory, or known app");
-            return -1;
+            return process.exit(1);
         }
 
         var files = null;
@@ -180,7 +180,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             }
             else {
                 console.error("I couldn't find that: " + filePath);
-                return -1;
+                return process.exit(1);
             }
         }
 
@@ -252,7 +252,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
         var filePath = args[0];
         if (!fs.existsSync(filePath)) {
             console.error("I couldn't find that: " + filePath);
-            return;
+            return process.exit(1);
         }
 
         this.checkArguments(arguments);
