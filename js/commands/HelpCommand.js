@@ -72,7 +72,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
         var command = this.cli.findCommand(name);
         if (!command) {
-            this.listCommandsSwitch(name);
+            console.log("Sorry, no help available for '%s'", name);
+            this.listCommandsSwitch();
             return;
         }
 
