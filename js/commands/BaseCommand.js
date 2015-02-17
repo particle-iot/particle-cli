@@ -102,14 +102,7 @@ BaseCommand.prototype = {
             {
                 args = [ args ];
             }
-            // prevent help requests for non-existent commands from blowing the stack
-            if(this.name == "help" && args.length > 0) {
-                if(!this.cli._commandsMap[args[0]] && !this.cli.commandsByName[args[0]]) {
 
-                    console.log("Sorry, no help available for '%s'.\n", args[0]);
-                    args = [ ];
-                }
-            }
             return cmdFn.apply(this, args);
         }
         else {

@@ -72,7 +72,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
         var command = this.cli.findCommand(name);
         if (!command) {
-            this.listCommandsSwitch(name);
+            this.listCommandsSwitch();
             return;
         }
 
