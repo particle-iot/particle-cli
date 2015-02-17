@@ -364,7 +364,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
             },
             function (err) {
                 console.error("Error logging in " + err);
-                process.exit(-1);
+                process.exit(1);
             });
     },
     logout: function (dontExit) {
