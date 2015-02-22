@@ -518,5 +518,4 @@ $ spark config identify
 Current profile: spark
 Using API: https://api.spark.io
 Access token: e671fadd500a8a3921bb78c8d0400d7ba450a847
-$
 ```
