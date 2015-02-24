@@ -150,7 +150,7 @@ settings.switchProfile = function(profileName) {
     var data = {
         name: profileName
     };
-    fs.writeFileSync(proFile, JSON.stringify(data, null, 2));
+    fs.writeFileSync(proFile, JSON.stringify(data, null, 2), { mode: '600' });
 };
 
 settings.override = function (profile, key, value) {
@@ -178,7 +178,7 @@ settings.override = function (profile, key, value) {
 
     try {
         var filename = settings.findOverridesFile(profile);
-        fs.writeFileSync(filename, JSON.stringify(settings.overrides, null, 2));
+        fs.writeFileSync(filename, JSON.stringify(settings.overrides, null, 2), { mode: '600' });
     }
     catch (ex) {
         console.error('There was an error writing ' + settings.overrides + ': ', ex);
