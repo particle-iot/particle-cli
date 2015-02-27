@@ -60,6 +60,7 @@ var that = {
         var prompt = that.getPrompt();
         prompt.question(message, function (value) {
             dfd.resolve(value);
+            that.closePrompt();
         });
         return dfd.promise;
     },
@@ -79,6 +80,8 @@ var that = {
             else {
                 dfd.reject(value);
             }
+
+            that.closePrompt();
         });
         return dfd.promise;
     },
@@ -112,6 +115,7 @@ var that = {
             }
             else {
                 process.stdout.write("\n");
+                process.stdin.pause();
                 dfd.resolve(arr.join(''));
             }
         };
