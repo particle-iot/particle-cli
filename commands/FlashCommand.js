@@ -8,22 +8,23 @@
  * @date    14-February-2014
  * @brief   Flash commands module
  ******************************************************************************
-  Copyright (c) 2014 Spark Labs, Inc.  All rights reserved.
+Copyright (c) 2014 Spark Labs, Inc.  All rights reserved.
 
-  This program is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation, either
-  version 3 of the License, or (at your option) any later version.
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation, either
+version 3 of the License, or (at your option) any later version.
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
 
-  You should have received a copy of the GNU Lesser General Public
-  License along with this program; if not, see <http://www.gnu.org/licenses/>.
-  ******************************************************************************
+You should have received a copy of the GNU Lesser General Public
+License along with this program; if not, see <http://www.gnu.org/licenses/>.
+ ******************************************************************************
  */
+ 
 var when = require('when');
 var sequence = require('when/sequence');
 var readline = require('readline');
@@ -38,135 +39,135 @@ var dfu = require('../lib/dfu.js');
 var utilities = require('../lib/utilities.js');
 
 var FlashCommand = function (cli, options) {
-    FlashCommand.super_.call(this, cli, options);
-    this.options = extend({}, this.options, options);
+	FlashCommand.super_.call(this, cli, options);
+	this.options = extend({}, this.options, options);
 
-    this.init();
+	this.init();
 };
 util.inherits(FlashCommand, BaseCommand);
 FlashCommand.prototype = extend(BaseCommand.prototype, {
-    options: null,
-    name: "flash",
-    description: "copies firmware and data to your core over usb",
+	options: null,
+	name: "flash",
+	description: "copies firmware and data to your core over usb",
 
-    init: function () {
-        //this.addAlias("firmware", this.flashDfu.bind(this), null);
+	init: function () {
+		//this.addAlias("firmware", this.flashDfu.bind(this), null);
 
-        this.addOption("firmware", this.flashDfu.bind(this), "Flashes a local firmware binary to your core over USB");
-        this.addOption("cloud", this.flashCloud.bind(this), "Flashes a binary to your core wirelessly ");
+		this.addOption("firmware", this.flashDfu.bind(this), "Flashes a local firmware binary to your core over USB");
+		this.addOption("cloud", this.flashCloud.bind(this), "Flashes a binary to your core wirelessly ");
 
-        this.addOption("*", this.flashSwitch.bind(this));
-        //this.addOption(null, this.helpCommand.bind(this));
-    },
+		this.addOption("*", this.flashSwitch.bind(this));
+		//this.addOption(null, this.helpCommand.bind(this));
+	},
 
-    checkArguments: function (args) {
-        this.options = this.options || {};
+	checkArguments: function (args) {
+		this.options = this.options || {};
 
-        if (!this.options.knownApp) {
-            this.options.knownApp = utilities.tryParseArgs(args,
-                "--known",
-                "Please specify an app name for --known"
-            );
-        }
-        if (!this.options.useCloud) {
-            this.options.useCloud = utilities.tryParseArgs(args,
-                "--cloud",
-               null
-            );
-        }
-        if (!this.options.useDfu) {
-            this.options.useDfu = utilities.tryParseArgs(args,
-                "--usb",
-               null
-            );
-        }
-        if (!this.options.useFactoryAddress) {
-            //assume DFU if doing factory
-            this.options.useFactoryAddress = utilities.tryParseArgs(args,
-                "--factory",
-               null
-            );
-        }
-    },
-
-
-    flashSwitch: function(coreid, firmware) {
-        if (!coreid && !firmware) {
-            var help = this.cli.getCommandModule("help");
-            return help.helpCommand(this.name);
-        }
-
-        //spark flash --usb some-firmware.bin
-        //spark flash --cloud core_name some-firmware.bin
-        //spark flash core_name some-firmware.bin
-
-        this.checkArguments(arguments);
-
-        var result;
-        if (this.options.useDfu || (coreid == "--usb") || (coreid == "--factory")) {
-            result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
-        }
-        else {
-            //we need to remove the "--cloud" argument so this other command will understand what's going on.
-            var args = utilities.copyArray(arguments);
-            if (this.options.useCloud) {
-                //trim
-
-                var idx = utilities.indexOf(args, "--cloud");
-                args.splice(idx, 1);
-            }
-
-            result = this.flashCloud.apply(this, args);
-        }
-
-        return result;
-    },
-
-    flashCloud: function(coreid, filename) {
-        var cloud = this.cli.getCommandModule("cloud");
-        return cloud.flashCore.apply(cloud, arguments);
-    },
-
-    flashDfu: function(firmware) {
-        if (!firmware || !fs.existsSync(firmware)) {
-            if (settings.knownApps[firmware]) {
-                firmware = settings.knownApps[firmware] ;
-            }
-            else {
-                console.log("Please specify a firmware file to flash locally to your core ");
-                return -1;
-            }
-        }
-
-        //TODO: detect if arguments contain something other than a .bin file
-
-        var useFactory = this.options.useFactoryAddress;
-
-        var ready = sequence([
-            function () {
-                return dfu.findCompatibleDFU();
-            },
-            function() {
-                if (useFactory) {
-                    return dfu.writeFactoryReset(firmware, false);
-                }
-                else {
-                    return dfu.writeFirmware(firmware, true);
-                }
-            }
-        ]);
-
-        when(ready).then(function () {
-            console.log("Flashed!");
-        }, function (err) {
-            console.error("Error writing firmware... " + err);
-        });
-
-        return 0;
-    },
+		if (!this.options.knownApp) {
+			this.options.knownApp = utilities.tryParseArgs(args,
+				"--known",
+				"Please specify an app name for --known"
+			);
+		}
+		if (!this.options.useCloud) {
+			this.options.useCloud = utilities.tryParseArgs(args,
+				"--cloud",
+			   null
+			);
+		}
+		if (!this.options.useDfu) {
+			this.options.useDfu = utilities.tryParseArgs(args,
+				"--usb",
+			   null
+			);
+		}
+		if (!this.options.useFactoryAddress) {
+			//assume DFU if doing factory
+			this.options.useFactoryAddress = utilities.tryParseArgs(args,
+				"--factory",
+			   null
+			);
+		}
+	},
 
 
-    _: null
+	flashSwitch: function(coreid, firmware) {
+		if (!coreid && !firmware) {
+			var help = this.cli.getCommandModule("help");
+			return help.helpCommand(this.name);
+		}
+
+		//spark flash --usb some-firmware.bin
+		//spark flash --cloud core_name some-firmware.bin
+		//spark flash core_name some-firmware.bin
+
+		this.checkArguments(arguments);
+
+		var result;
+		if (this.options.useDfu || (coreid == "--usb") || (coreid == "--factory")) {
+			result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
+		}
+		else {
+			//we need to remove the "--cloud" argument so this other command will understand what's going on.
+			var args = utilities.copyArray(arguments);
+			if (this.options.useCloud) {
+				//trim
+
+				var idx = utilities.indexOf(args, "--cloud");
+				args.splice(idx, 1);
+			}
+
+			result = this.flashCloud.apply(this, args);
+		}
+
+		return result;
+	},
+
+	flashCloud: function(coreid, filename) {
+		var cloud = this.cli.getCommandModule("cloud");
+		return cloud.flashCore.apply(cloud, arguments);
+	},
+
+	flashDfu: function(firmware) {
+		if (!firmware || !fs.existsSync(firmware)) {
+			if (settings.knownApps[firmware]) {
+				firmware = settings.knownApps[firmware] ;
+			}
+			else {
+				console.log("Please specify a firmware file to flash locally to your core ");
+				return -1;
+			}
+		}
+
+		//TODO: detect if arguments contain something other than a .bin file
+
+		var useFactory = this.options.useFactoryAddress;
+
+		var ready = sequence([
+			function () {
+				return dfu.findCompatibleDFU();
+			},
+			function() {
+				if (useFactory) {
+					return dfu.writeFactoryReset(firmware, false);
+				}
+				else {
+					return dfu.writeFirmware(firmware, true);
+				}
+			}
+		]);
+
+		when(ready).then(function () {
+			console.log("Flashed!");
+		}, function (err) {
+			console.error("Error writing firmware... " + err);
+		});
+
+		return 0;
+	},
+
+
+	_: null
 });
 
 module.exports = FlashCommand;
