@@ -1,7 +1,7 @@
 {
   "name": "spark-cli",
   "description": "Simple Node commandline application for working with your Spark devices and using the Spark Cloud",
-  "version": "0.4.94",
+  "version": "1.0.0",
   "author": "David Middlecamp",
   "repository": {
     "type": "git",
@@ -16,13 +16,13 @@
   },
   "dependencies": {
     "glob": "^4.2.1",
-    "hogan.js": "~2.0.0",
-    "moment": "*",
-    "request": "2.46.0",
-    "serialport": "1.5.0",
-    "when": "*",
-    "xtend": "*",
-    "node-wifiscanner": "*"
+    "hogan.js": "^2.0.0",
+    "moment": "^2.9.0",
+    "request": "^2.46.0",
+    "serialport": "^1.5.0",
+    "when": "^3.7.2",
+    "xtend": "^4.0.0",
+    "node-wifiscanner": "^0.2.0"
   },
   "contributors": [
     {
@@ -44,6 +44,10 @@
     {
       "name": "vk2tds",
       "url": "https://github.com/vk2tds"
+    },
+    {
+      "name": "Emily Rose",
+      "url": "https://github.com/emilyrose"
     }
   ],
   "preferGlobal": true
