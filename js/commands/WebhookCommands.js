@@ -92,8 +92,8 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("create", this.createHook.bind(this), "Creates a postback to the given url when your event is sent");
         this.addOption("list", this.listHooks.bind(this), "Show your current Webhooks");
         this.addOption("delete", this.deleteHook.bind(this), "Deletes a Webhook");
-
-        this.addOption("POST", this.createPOSTHook.bind(this), "Create a new POST request hook");
+		
+	    this.addOption("POST", this.createPOSTHook.bind(this), "Create a new POST request hook");
         this.addOption("GET", this.createGETHook.bind(this), "Create a new GET request hook");
     },
 
@@ -105,7 +105,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         return this.createHook(eventName, url, coreID, "GET");
     },
 
-    createHook: function (eventName, url, coreID, requestType) {
+    createHook: function (eventName, url, coreID) {
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
             return -1;
@@ -118,10 +118,6 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 
         //if they gave us one thing, and it happens to be a file, and we could parse it as json
         var data = {};
-        if (requestType) {
-            data.requestType = requestType;
-        }
-
         if (eventName && !url && !coreID) {
 
             //
