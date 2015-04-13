@@ -149,7 +149,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 
 		//TODO: clean this up more?
 		data.event = eventName;
-		data.url = url
+		data.url = url;
 		data.deviceid = coreID;
 		data.access_token = api._access_token;
 		data.requestType = requestType;
