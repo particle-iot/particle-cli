@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    js/commands/FunctionCommand.js
+ * @file    commands/FunctionCommand.js
  * @author  David Middlecamp (david@spark.io)
  * @company Spark ( https://www.spark.io/ )
  * @source https://github.com/spark/spark-cli
