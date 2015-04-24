@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    js/commands/SetupCommand.js
+ * @file    commands/SetupCommand.js
  * @author  David Middlecamp (david@spark.io)
  * @company Spark ( https://www.spark.io/ )
  * @source https://github.com/spark/spark-cli

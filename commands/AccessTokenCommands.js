@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    js/commands/AccessTokenCommands.js
+ * @file    commands/AccessTokenCommands.js
  * @author  Kyle Marsh (kyle@cs.hmc.edu)
  * @source  https://github.com/spark/spark-cli
  * @version V1.0.0

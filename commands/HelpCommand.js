@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    js/commands/HelpCommand.js
+ * @file    commands/HelpCommand.js
  * @author  David Middlecamp (david@spark.io)
  * @company Spark ( https://www.spark.io/ )
  * @source https://github.com/spark/spark-cli
