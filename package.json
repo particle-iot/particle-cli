@@ -12,7 +12,7 @@
   },
   "main": "./app.js",
   "engines": {
-    "node": "*"
+    "node": "^0.10.0"
   },
   "dependencies": {
     "glob": "^4.2.1",
