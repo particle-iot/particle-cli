@@ -30,14 +30,18 @@ var sequence = require('when/sequence');
 var util = require('util');
 var extend = require('xtend');
 var readline = require('readline');
+var spinner = require('cli-spinner').Spinner;
+var chalk = require('chalk');
 
+spinner.setDefaultSpinnerString(spinner.spinners[7]); // spinners spinners spinner spinner spinner!
 
 var BaseCommand = function (cli, options) {
 	this.cli = cli;
 	this.optionsByName = {};
 	this.descriptionsByName = {};
-
+	this.newSpin();
 };
+
 BaseCommand.prototype = {
 	/**
 	 * exposed by the help command
@@ -112,9 +116,34 @@ BaseCommand.prototype = {
 			return this.cli.runCommand("help", this.name);
 		}
 	},
+	newSpin: function (str) {
 
+		this.__spin = new spinner(str);
 
+		return this.__spin;
+	},
+	startSpin: function () {
+
+		this.__spin.start();
+	},
+	stopSpin: function () {
+
+		this.__spin.stop(true);
+	},
+	error: function (str) {
+
+		var name = this.name;
+		if(!str) { str = "Unknown error"; }
+		str = "%s: " + str;
+
+		console.log();
+		console.log(chalk.bold.red('!'), chalk.bold.white(util.format(str, name)));
+		process.exit(1);
+
+	},
 	_: null
 };
+
+var arrow = chalk.green('>');
 
 module.exports = BaseCommand;
