@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    js/commands/WirelessCommand.js
+ * @file    commands/WirelessCommand.js
  * @author  Emily Rose (nexxy@spark.io)
  * @company Spark ( https://www.spark.io/ )
  * @source https://github.com/spark/spark-cli
