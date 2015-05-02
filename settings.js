@@ -36,7 +36,6 @@ var settings = {
 	apiUrl: "https://api.spark.io",
 	access_token: null,
 	minimumApiDelay: 500,
-
 	//useOpenSSL: true,
 	useSudoForDfu: false,
 
