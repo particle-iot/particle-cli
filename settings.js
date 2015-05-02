@@ -44,6 +44,7 @@ var settings = {
 	MAX_FILE_SIZE: 1024 * 1024 * 2,
 
 	overridesFile: null,
+	wirelessSetupFilter: /^Photon-.*$/,
 
 	notSourceExtensions: [
 		".ds_store",
