@@ -15,14 +15,18 @@
     "node": "^0.10.0"
   },
   "dependencies": {
+    "chalk": "^1.0.0",
+    "cli-spinner": "^0.2.0",
     "glob": "^4.2.1",
     "hogan.js": "^2.0.0",
+    "inquirer": "^0.8.2",
     "moment": "^2.9.0",
+    "node-wifiscanner": "^0.2.0",
     "request": "^2.46.0",
     "serialport": "^1.5.0",
+    "softap-setup": "^1.0.0",
     "when": "^3.7.2",
-    "xtend": "^4.0.0",
-    "node-wifiscanner": "^0.2.0"
+    "xtend": "^4.0.0"
   },
   "contributors": [
     {
