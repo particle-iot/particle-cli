@@ -24,7 +24,7 @@
     "node-wifiscanner": "^0.2.0",
     "request": "^2.46.0",
     "serialport": "^1.5.0",
-    "softap-setup": "^1.0.0",
+    "softap-setup": "^1.0.1",
     "when": "^3.7.2",
     "xtend": "^4.0.0"
   },
