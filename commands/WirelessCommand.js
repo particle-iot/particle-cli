@@ -530,6 +530,8 @@ function clean(list) {
 	});
 }
 
+// TODO: DRY this up somehow
+
 var cmd = path.basename(process.argv[1]);
 var arrow = chalk.green('>');
 
