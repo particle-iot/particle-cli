@@ -275,6 +275,7 @@ WirelessCommand.prototype.setup = function setup(photon) {
 			}], securityDetection);
 
 		}
+
 		function securityDetection(ans) {
 
 			selected = ans.network;
