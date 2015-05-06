@@ -25,6 +25,10 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
 
+var chalk = require('chalk');
+var prompt = require('inquirer').prompt;
+var ApiClient2 = require('../lib/Apiclient2');
+
 var settings = require('../settings.js');
 var BaseCommand = require("./BaseCommand.js");
 var dfu = require('../lib/dfu.js');
