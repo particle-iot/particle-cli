@@ -41,9 +41,9 @@ var sequence = require('when/sequence');
 var pipeline = require('when/pipeline');
 var readline = require('readline');
 var fs = require('fs');
+var util = require('util');
 var path = require('path');
 var extend = require('xtend');
-var util = require('util');
 
 
 var SetupCommand = function (cli, options) {
