@@ -46,6 +46,15 @@ var path = require('path');
 var extend = require('xtend');
 
 
+// this is mainly so we only break 80 columns in one place.
+var strings = {
+
+	'description': "Helps guide you through the initial setup & claiming of your device",
+	'alreadyLoggedIn': "It appears as though you are already logged in as %s.",
+	'revokeAuthPrompt': "Would you like to revoke the current authentication token?",
+	'signupSuccess': "Great success! You're now the owner of a brand new account!"
+}
+
 var SetupCommand = function (cli, options) {
 	SetupCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
