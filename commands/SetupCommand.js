@@ -58,7 +58,7 @@ var strings = {
 var SetupCommand = function (cli, options) {
 	SetupCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
-
+	this.__wasLoggedIn;
 	this.init();
 };
 util.inherits(SetupCommand, BaseCommand);
