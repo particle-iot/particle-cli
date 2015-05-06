@@ -77,344 +77,267 @@ SetupCommand.prototype.init = function init() {
 	);
 };
 
+SetupCommand.prototype.setup = function setup(shortcut) {
 
-	runSetup: function (shortcut) {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);   //
-		var serial = this.cli.getCommandModule("serial"),
-			cloud = this.cli.getCommandModule("cloud");
+	var self = this;
+	var wireless = this.cli.getCommandModule('wireless');
+	var serial = this.cli.getCommandModule('serial');
+	var cloud = this.cli.getCommandModule('cloud');
+	var coreName;
+	var coreID;
 
-		this.checkArguments(arguments);
+	this.checkArguments(arguments);
 
-		var that = this,
-			coreID,
-			coreName;
+	if(shortcut == 'wifi') {
 
-		var headerGen = function (text) {
-			return function () {
-				console.log("");
-				console.log("========================================");
-				console.log(text);
-				console.log("");
+		//TODO: serial Wi-Fi configuration (Core)
+	}
 
-				return when.resolve();
-			}
-		};
-		var subHeaderGen = function (text) {
-			return function () {
-				console.log("");
-				console.log("----------------------");
-				console.log(text);
-				console.log("");
+	console.log(chalk.bold.cyan(utilities.banner()));
+	console.log(arrow, "Setup is easy! Let's get started...");
 
-				return when.resolve();
-			}
-		};
+	loginCheck();
 
-		if (shortcut && (shortcut == "wifi")) {
-			return serial.configureWifi(null, null, that.options.scan);
+	function loginCheck() {
+
+		if(settings.username) {
+
+			self.__wasLoggedIn = true;
+			return promptSwitch();
 		}
 
-		var allDone = pipeline([
+		// not logged in, go signup/login.
+		accountStatus(false);
+	};
 
-			headerGen("Setup your account"),
+	function promptSwitch() {
 
+		console.log(
+			arrow,
+			util.format(strings.alreadyLoggedIn,
+			chalk.bold.cyan(settings.username))
+		);
 
-			//already logged in or not?
-			function () {
-				if (settings.access_token) {
-					var inAs = (settings.username) ? " as " + settings.username : "";
-					var line = "You are already logged in" + inAs + "\nDo you want to switch accounts? (y/N): ";
-					return prompts.askYesNoQuestion(line, true);
-				}
-				else {
-					//already logged out
-					return when.resolve(true);
-				}
-			},
+		prompt([{
 
+			type: 'confirm',
+			name: 'switch',
+			message: 'Would you like to log in with a different account?',
+			default: false
 
-			//1.) prompt for user/pass,
-			//1a - check if account exists, prompt to create an account
-			//2.) confirm pass,
-			//3.) create user,
+		}], switchChoice);
+	};
 
-			function(switchAccounts) {
-				if (settings.access_token && switchAccounts) {
-					return cloud.logout(true);
-				}
-				else {
-					return when.resolve();
-				}
-			},
+	function switchChoice(ans) {
 
-			function () {
-				settings = settings.loadOverrides();
-				if (!settings.access_token) {
-					//need to login
-					return that.login_or_create_account(api);
-				}
-				else {
-					//already / still logged in
-					return when.resolve();
-				}
-			},
-			function () {
-				var token = api.getToken();
-				if (!token) {
-					return when.reject("Unable to login or create a new account");
-				}
+		// user wants to logout
+		if(ans.switch) {
 
-				console.log("Logged in!  Saving access token: " + token);
-				settings.override(null, "access_token", token);
-				return when.resolve();
-			},
-
-			subHeaderGen("Finding your core id"),
-
-
-			//4.) connect core blinking blue,
-			//5.) grab core identity,
-
-			function () {
-				if (!serial) {
-					return when.reject("Couldn't find serial module");
-				}
-
-				var getCoreID = function () {
-					return serial.identifyCore();
-				};
-				var recoveryFn = function () {
-
-					console.log("Press and hold the MODE button until your core blinks solid blue");
-					console.log("");
-					return prompts.promptDfd(" - Is your core blinking blue?  Then press ENTER - ");
-				};
-
-				return utilities.retryDeferred(getCoreID, 3, recoveryFn);
-			},
-
-			function (serialID) {
-				if (!serialID) {
-					console.log("I couldn't find your core ID, sorry!");
-					return when.reject("Couldn't get core ID");
-				}
-
-				//console.log("It looks like your core id is: " + serialID);
-				coreID = serialID;
-
-				return when.resolve();
-			},
-
-			headerGen("Setup your wifi"),
-
-
-			//6.) prompt for / configure wifi creds,
-			function () {
-				var configWifi = function () {
-					//console.log("Make sure your core is blinking blue (in listening mode) and is connected to your computer");
-					return serial.configureWifi(null, true);
-				};
-				return utilities.retryDeferred(configWifi, 3);
-			},
-
-			function () {
-				console.log("");
-				return prompts.promptDfd("Please wait until your core is breathing cyan and then press ENTER\n");
-			},
-
-			headerGen("Claiming your core"),
-
-
-			//7.) claim core,
-			function () {
-				var tryFn = function () {
-					return api.claimCore(coreID);
-				};
-				var recoveryFn = function () {
-					return prompts.promptDfd("Please wait until your core is breathing cyan and then press ENTER\n");
-				};
-				return utilities.retryDeferred(tryFn, 5, recoveryFn);
-			},
-
-			function () {
-				api.signalCore(coreID, true);
-				return when.resolve();
-			},
-
-			headerGen("Shouting rainbows..."),
-			function () {
-				return prompts.promptDfd("Press ENTER if your core is excitedly shouting rainbows");
-			},
-
-			function () {
-				var lines = [
-					"                                 ,---. ",
-					",--.   ,--.             ,--.     |   | ",
-					" \\  `.'  /,---.  ,--,--.|  ,---. |  .' ",
-					"  '.    /| .-. :' ,-.  ||  .-.  ||  |  ",
-					"    |  | \\   --.\\ '-'  ||  | |  |`--'  ",
-					"    `--'  `----' `--`--'`--' `--'.--.  ",
-					"                                 '--'  ",
-					""];
-				console.log(lines.join("\n"));
-				return when.resolve();
-			},
-
-
-			subHeaderGen("Naming your core"),
-
-
-			//8.) name your core!
-			function () {
-				return prompts.promptDfd("What would you like to call your core? ");
-			},
-			function (name) {
-				coreName = name;
-				api.signalCore(coreID, false);
-				return api.renameCore(coreID, name);
-			},
-
-			headerGen("Success!"),
-
-
-			function () {
-				return prompts.askYesNoQuestion("Do you want to logout  now? (y/n): ", true);
-			},
-			function (shouldLogout) {
-				if (shouldLogout) {
-					console.log("Logging out?");
-					return cloud.logout();
-				}
-				return when.resolve();
-			}
-		]);
-
-		//optional
-		//8.) prompt for open web browser to spark/build
-		//9.) prompt for open web browser to spark/docs
-
-
-		when(allDone).then(function () {
-				settings = settings.loadOverrides();
-
-				console.log("You've successfully setup your core: " + coreName + " (" + coreID + ")");
-				console.log("");
-				console.log("Nice work " + settings.username + "!");
-				console.log("");
-
-				setTimeout(function () {
-					process.exit(-1);
-				}, 1250);
-			},
-			function (err) {
-				console.error("Error setting up your core: " + err);
-				process.exit(-1);
-			});
-
-
-	},
-
-
-	/**
-	 * tries to login, or if that fails, prompt for the password again, and then create an account
-	 * @param api
-	 */
-	login_or_create_account: function (api) {
-
-		//TODO: make this function more pretty
-		var username;
-
-		return pipeline([
-			function () {
-				return prompts.getCredentials()
-			},
-			//login to the server
-			function (creds) {
-				var tmp = when.defer();
-
-				username = creds[0];
-				if (!username || (username == '')
-					|| (!utilities.contains(username, "@"))
-					|| (!utilities.contains(username, "."))) {
-					tmp.reject("Username must be an email address.");
-					return tmp.promise;
-				}
-
-				console.log("");
-				console.log("Trying to login...");
-
-				var loginDone = api.login("spark-cli", creds[0], creds[1]);
-				when(loginDone).then(
-					function (token) {
-						if (username) {
-							settings.override(null, "username", username);
-						}
-
-						//login success
-						tmp.resolve(token);
-					},
-					function () {
-
-						var username = creds[0];
-						if (!username || (username == '')
-							|| (!utilities.contains(username, "@"))
-							|| (!utilities.contains(username, "."))) {
-							tmp.reject("Username must be an email address.");
-							return;
-						}
-
-						console.log("Login failed, Lets create a new account!");
-
-
-						//create account
-						var createAccountDone = pipeline([
-							function () {
-								return prompts.confirmPassword();
-							},
-							function (pass) {
-								if (pass != creds[1]) {
-									return when.reject("Passwords did not match! ");
-								}
-								else {
-									return when.resolve();
-								}
-							},
-							//TODO: prompt to make sure they want to create a new account?
-							function () {
-								return api.createUser(creds[0], creds[1]);
-							},
-							function() {
-								//cool, lets login then.
-								return api.login("spark-cli", creds[0], creds[1]);
-							},
-							function (token) {
-								if (username) {
-									settings.override(null, "username", username);
-								}
-
-								//login success
-								return when.resolve(token);
-							}
-						]);
-						utilities.pipeDeferred(createAccountDone, tmp);
-					});
-
-				return tmp.promise;
-			}
-		]);
-	},
-
-
-	checkArguments: function(args) {
-		this.options = this.options || {};
-
-		if (!this.options.scan) {
-			this.options.scan = utilities.tryParseArgs(args,
-				"--scan",
-				null
+			// TODO: Actually log user out
+			console.log(
+				arrow,
+				util.format('You have been logged out from %s.',
+				chalk.bold.cyan(settings.username))
 			);
+
+			return prompt([{
+
+				type: 'confirm',
+				name: 'wipe',
+				message: strings.revokeAuthPrompt,
+				default: false
+
+			}], wipeChoice);
 		}
-	},
+
+		console.log(
+			arrow,
+			util.format("Proceeding as %s...",
+			chalk.bold.cyan(settings.username))
+		);
+
+
+		// user has remained logged in
+		accountStatus(true);
+	};
+
+	function wipeChoice(ans) {
+
+		if(ans.wipe) {
+
+			// TODO: Actually revoke authentication
+			console.log(arrow, 'Authentication token revoked!');
+		}
+		else {
+
+			console.log(arrow, 'Leaving your token intact.');
+		}
+
+		accountStatus(false);
+	};
+
+	function accountStatus(alreadyLoggedIn) {
+
+		if(!alreadyLoggedIn) {
+
+			// New user!
+			if(!self.__wasLoggedIn) { return self.signup(self.findDevice); }
+			// Not-new user!
+			return self.login(self.findDevice);
+		}
+
+		self.findDevice();
+	};
+};
+
+
+SetupCommand.prototype.signup = function signup(cb, tries) {
+
+	if(!tries) { var tries = 1; }
+	else if(tries && tries > 3) {
+
+		console.log(alert, "Something is going wrong with the signup process.");
+		return console.log(
+			alert,
+			util.format("Please try the `%s help` command for more information.",
+			chalk.bold.cyan(cmd))
+		);
+	}
+	var self = this;
+	var signupUsername = this.__signupUsername || undefined;
+	console.log(arrow, "Let's create your new account!");
+
+	prompt([{
+
+		type: 'input',
+		name: 'username',
+		message: 'Please enter a valid email address:',
+		default: signupUsername
+
+	}, {
+
+		type: 'password',
+		name: 'password',
+		message: 'Please enter a secure password:'
+
+	}, {
+
+		type: 'password',
+		name: 'confirm',
+		message: 'Please confirm your password:'
+
+	}], signupInput);
+
+	function signupInput(ans) {
+		console.log(ans)
+		if(!ans.username) {
+
+			console.log(alert, 'You need an email address to sign up, silly!');
+			return self.login(cb, ++tries);
+		}
+		if(!ans.password) {
+
+			console.log(alert, 'You need a password to sign up, silly!');
+			return self.login(cb, ++tries);
+		}
+		if(!ans.confirm || ans.confirm !== ans.password) {
+
+			// try to remember username to save them some frustration
+			if(ans.username) {
+
+				self.__signupUsername = ans.username
+			}
+			console.log(
+				arrow,
+				"Sorry, those passwords didn't match. Let's try again!"
+			);
+			return self.login(cb, ++tries);
+		}
+
+		// TODO: actually send API signup request
+		console.log(arrow, strings.signupSuccess);
+		cb(null);
+	}
+};
+
+SetupCommand.prototype.login = function login(cb, tries) {
+
+	if(!tries) { var tries = 1; }
+	else if(tries && tries > 3) {
+
+		console.log(alert, "It seems we're having trouble with logging in.");
+		return console.log(
+			alert,
+			util.format("Please try the `%s help` command for more information.",
+			chalk.bold.cyan(cmd))
+		);
+	}
+	var self = this;
+	console.log(arrow, "Let's get you logged in!");
+
+	prompt([{
+
+		type: 'input',
+		name: 'username',
+		message: 'Please enter your email address:'
+
+	}, {
+
+		type: 'password',
+		name: 'password',
+		message: 'Pleas enter your password:'
+
+	}], loginInput);
+
+	function loginInput(ans) {
+
+		if(!ans.username) {
+
+			console.log(arrow, "You need an email address to log in, silly!");
+			return login(cb, ++tries);
+		}
+		if(!ans.password) {
+
+			console.log(arrow, "You need a password to log in, silly!");
+			return login(cb, ++tries);
+		}
+
+		self.__api.login(settings.clientId, ans.username, ans.password, loggedIn);
+	};
+
+	function loggedIn(err, dat) {
+
+		if(err) {
+
+			console.log(alert, "There was an error logging you in! Let's try again.");
+			console.error(err);
+			return login(cb, ++tries);
+		}
+
+		console.log(arrow, 'Successfully completed login!');
+		cb(null, dat);
+	};
+};
+
+SetupCommand.prototype.findDevice = function() {
+
+	console.log(arrow, "Now to find your device...");
+};
+
+SetupCommand.prototype.checkArguments = function(args) {
+
+	this.options = this.options || { };
+
+	// TODO: tryParseArgs?
+	if (!this.options.scan) {
+
+		this.options.scan = utilities.tryParseArgs(
+			args,
+			"--scan",
+			null
+		);
+	}
+};
 
 
 	_: null
