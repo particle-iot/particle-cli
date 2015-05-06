@@ -63,12 +63,17 @@ var SetupCommand = function (cli, options) {
 	this.init();
 };
 util.inherits(SetupCommand, BaseCommand);
-SetupCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: "setup",
-	description: "Helps guide you through the initial claiming of your core",
 
-	init: function () {
+SetupCommand.prototype.name = "setup";
+SetupCommand.prototype.options = null;
+SetupCommand.prototype.description = strings.description;
+SetupCommand.prototype.init = function init() {
+
+	this.addOption("*",
+		this.setup.bind(this),
+		this.description
+	);
+};
 
 		//this.addOption("list", this.listCores.bind(this));
 		this.addOption("*", this.runSetup.bind(this), "Guides you through setting up your account and your core");
