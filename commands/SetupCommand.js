@@ -339,8 +339,10 @@ SetupCommand.prototype.checkArguments = function(args) {
 	}
 };
 
+// TODO: DRY this up somehow
 
-	_: null
-});
+var cmd = path.basename(process.argv[1]);
+var alert = chalk.yellow('!');
+var arrow = chalk.green('>');
 
 module.exports = SetupCommand;
