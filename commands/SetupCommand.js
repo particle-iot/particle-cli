@@ -77,9 +77,6 @@ SetupCommand.prototype.init = function init() {
 	);
 };
 
-		//this.addOption("list", this.listCores.bind(this));
-		this.addOption("*", this.runSetup.bind(this), "Guides you through setting up your account and your core");
-	},
 
 	runSetup: function (shortcut) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);   //
