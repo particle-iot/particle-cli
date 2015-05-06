@@ -59,6 +59,7 @@ var SetupCommand = function (cli, options) {
 	SetupCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 	this.__wasLoggedIn;
+	this.__api = new ApiClient2(settings.apiUrl, settings.access_token);
 	this.init();
 };
 util.inherits(SetupCommand, BaseCommand);
