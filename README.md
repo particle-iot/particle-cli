@@ -483,7 +483,6 @@ submitting public key succeeded!
 
 Switches the server public key stored on the core's external flash.  This command is important when changing which server your core is connecting to, and the server public key helps protect your connection.   Your core will stay in DFU mode after this command, so that you can load new firmware to connect to your server.
 
-Coming Soon - more commands to make it easier to change the server settings on your core!
 
 
 ```sh
