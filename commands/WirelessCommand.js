@@ -107,7 +107,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			type: 'confirm',
 			name: 'setupSingle',
 			message: util.format(
-				'Found "%s". Would you like to perform setup on this Photon now?',
+				'Found "%s". Would you like to perform setup on this one now?',
 				chalk.bold.cyan(detectedDevices[0].ssid)
 			),
 			default: true,
@@ -119,7 +119,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		console.log(
 			arrow,
 			chalk.bold.white('No nearby Photons detected.'),
-			chalk.bold.white('Try the', '`' + chalk.bold.cyan(cmd + ' wireless help') + '` command for more information.')
+			chalk.bold.white('Try the', '`' + chalk.bold.cyan(cmd + ' help') + '` command for more information.')
 		);
 
 		// Monitor for new Photons?
@@ -180,7 +180,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 		if(ans.monitor) {
 
-			console.log(arrow, chalk.bold.white('Monitoring nearby WiFi networks for Photons. This may take up to a minute.'));
+			console.log(arrow, chalk.bold.white('Monitoring nearby Wi-Fi networks for Photons. This may take up to a minute.'));
 			self.monitor();
 		}
 		else {
