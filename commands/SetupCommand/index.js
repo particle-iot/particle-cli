@@ -231,6 +231,8 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 
 SetupCommand.prototype.login = function login(cb, tries) {
 
+	var self = this;
+
 	if(!tries) { var tries = 1; }
 	else if(tries && tries > 3) {
 
@@ -241,7 +243,6 @@ SetupCommand.prototype.login = function login(cb, tries) {
 			chalk.bold.cyan(cmd))
 		);
 	}
-	var self = this;
 	console.log(arrow, "Let's get you logged in!");
 
 	prompt([{
