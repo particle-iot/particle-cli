@@ -150,12 +150,12 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 		if(!alreadyLoggedIn) {
 
 			// New user!
-			if(!self.__wasLoggedIn) { return self.signup(self.findDevice); }
+			if(!self.__wasLoggedIn) { return self.signup(self.findDevice.bind(self)); }
 			// Not-new user!
-			return self.login(self.findDevice);
+			return self.login(self.findDevice.bind(self));
 		}
 
-		self.findDevice();
+		self.findDevice.call(self);
 	};
 };
 
@@ -231,6 +231,8 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 
 SetupCommand.prototype.login = function login(cb, tries) {
 
+	var self = this;
+
 	if(!tries) { var tries = 1; }
 	else if(tries && tries > 3) {
 
@@ -241,7 +243,6 @@ SetupCommand.prototype.login = function login(cb, tries) {
 			chalk.bold.cyan(cmd))
 		);
 	}
-	var self = this;
 	console.log(arrow, "Let's get you logged in!");
 
 	prompt([{
@@ -320,7 +321,7 @@ SetupCommand.prototype.findDevice = function() {
 
 			type: 'confirm',
 			name: 'scan',
-			message: 'Would you like to scan for nearby Photons in setup mode?',
+			message: 'Would you like to scan for nearby Photons in Wi-Fi setup mode?',
 			default: true
 
 		}], scanChoice);
@@ -361,7 +362,7 @@ SetupCommand.prototype.findDevice = function() {
 				if(ans.setup) {
 					console.log(
 						chalk.cyan('!'),
-						"First let's try secure wireless setup."
+						"First let's try secure Wi-Fi setup."
 					);
 					return wireless.list();
 				}

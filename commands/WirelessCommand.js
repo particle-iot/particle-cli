@@ -29,6 +29,7 @@ var exec = require('child_process').exec
 var extend = require('xtend');
 var BaseCommand = require("./BaseCommand.js");
 var utilities = require('../lib/utilities.js');
+var APIClient = require('../lib/ApiClient2');
 var settings = require('../settings.js');
 var prompt = require('inquirer').prompt;
 var chalk = require('chalk');
@@ -62,7 +63,7 @@ WirelessCommand.prototype.description = "simple wireless interface to your Photo
 WirelessCommand.prototype.init = function init() {
 
 	this.addOption("list", this.list.bind(this), "Show nearby Photons in setup mode (blinking blue)");
-	this.addOption("monitor", this.monitor.bind(this), "Begin monitoring nearby WiFi networks for Photons in setup mode.");
+	this.addOption("monitor", this.monitor.bind(this), "Begin monitoring nearby Wi-Fi networks for Photons in setup mode.");
 
 	// this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
 };
@@ -220,6 +221,8 @@ WirelessCommand.prototype._ = null;
 
 WirelessCommand.prototype.setup = function setup(photon) {
 
+	var api = new APIClient(settings.apiUrl, settings.access_token);
+
 	var self = this;
 	var list = { };
 
@@ -232,11 +235,24 @@ WirelessCommand.prototype.setup = function setup(photon) {
 	console.log(chalk.yellow('!'), chalk.bold.white(strings.credentialsNeeded));
 	console.log(chalk.grey('	(press ctrl + C at any time to exit)'));
 
-	this.newSpin('Scanning for nearby WiFi networks...').start();
-	scan(networks);
+	this.newSpin('Obtaining magical secure claim code from the cloud...').start();
+
+	api.getClaimCode(next);
+	function next(err, dat) {
+
+		self.stopSpin();
+		if(err) {
+
+			return console.log(alert, "I encountered an error while trying to retrieve a claim code from the cloud. Are you connected to the internet?");
+		}
+		// console.log(arrow, "Claim code:", dat.claim_code);
+		self.__claimCode = dat.claim_code;
+		self.newSpin('Scanning for nearby Wi-Fi networks...').start();
+		scan(networks);
+	};
+
 	function networks(err, dat) {
 
-		console.log(list);
 		self.stopSpin();
 
 		if(err) { self.error(err); }
@@ -413,9 +429,16 @@ WirelessCommand.prototype.setup = function setup(photon) {
 					};
 					function pubKey(cb) {
 
-						sap.publicKey(configure).on('error', function() {
+						sap.publicKey(code).on('error', function() {
 
-							setTimeout(function() { pubKey(configure); }, 1000);
+							setTimeout(function() { pubKey(code); }, 1000);
+						});
+					};
+					function code(cb) {
+
+						sap.setClaimCode(self.__claimCode, configure).on('error', function() {
+
+							setTimeout(function() { code(self.__claimCode, configure); }, 1000);
 						});
 					};
 					function configure(cb) {
@@ -489,7 +512,7 @@ WirelessCommand.prototype.exit = function() {
 
 		console.log();
 		console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
-			chalk.bold.cyan(cmd + ' wireless help') + '` if you\'re stuck!',
+			chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
 			chalk.bold.magenta('<3'))
 		);
 		process.exit(0);
