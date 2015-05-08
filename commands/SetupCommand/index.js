@@ -150,12 +150,12 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 		if(!alreadyLoggedIn) {
 
 			// New user!
-			if(!self.__wasLoggedIn) { return self.signup(self.findDevice); }
+			if(!self.__wasLoggedIn) { return self.signup(self.findDevice.bind(self)); }
 			// Not-new user!
-			return self.login(self.findDevice);
+			return self.login(self.findDevice.bind(self));
 		}
 
-		self.findDevice();
+		self.findDevice.call(self);
 	};
 };
 
