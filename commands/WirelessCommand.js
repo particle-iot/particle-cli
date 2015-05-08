@@ -154,7 +154,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		}
 	};
 
-	function multipleAnswers(ans) { ans.selected.forEach(self.setup); };
+	function multipleAnswers(ans) { ans.selected.forEach(self.setup, self); };
 
 	function singleChoice(ans) {
 
