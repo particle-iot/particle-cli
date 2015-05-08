@@ -512,7 +512,7 @@ WirelessCommand.prototype.exit = function() {
 
 		console.log();
 		console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
-			chalk.bold.cyan(cmd + ' wireless help') + '` if you\'re stuck!',
+			chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
 			chalk.bold.magenta('<3'))
 		);
 		process.exit(0);
