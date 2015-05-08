@@ -321,7 +321,7 @@ SetupCommand.prototype.findDevice = function() {
 
 			type: 'confirm',
 			name: 'scan',
-			message: 'Would you like to scan for nearby Photons in setup mode?',
+			message: 'Would you like to scan for nearby Photons in Wi-Fi setup mode?',
 			default: true
 
 		}], scanChoice);
@@ -362,7 +362,7 @@ SetupCommand.prototype.findDevice = function() {
 				if(ans.setup) {
 					console.log(
 						chalk.cyan('!'),
-						"First let's try secure wireless setup."
+						"First let's try secure Wi-Fi setup."
 					);
 					return wireless.list();
 				}
