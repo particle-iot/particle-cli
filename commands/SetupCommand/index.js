@@ -1,40 +1,14 @@
-/**
- ******************************************************************************
- * @file    commands/SetupCommand.js
- * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
- * @version V1.0.0
- * @date    14-February-2014
- * @brief   Setup commands module
- ******************************************************************************
-Copyright (c) 2014 Spark Labs, Inc.  All rights reserved.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation, either
-version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************
- */
-
 var chalk = require('chalk');
 var prompt = require('inquirer').prompt;
-var ApiClient2 = require('../lib/Apiclient2');
+var ApiClient2 = require('../../lib/Apiclient2');
 
-var settings = require('../settings.js');
-var BaseCommand = require("./BaseCommand.js");
-var dfu = require('../lib/dfu.js');
-var prompts = require('../lib/prompts.js');
-var ApiClient = require('../lib/ApiClient.js');
-var utilities = require('../lib/utilities.js');
+var settings = require('../../settings.js');
+var BaseCommand = require("../BaseCommand.js");
+var dfu = require('../../lib/dfu.js');
+var specs = require('../../lib/deviceSpecs');
+var prompts = require('../../lib/prompts.js');
+var ApiClient = require('../../lib/ApiClient.js');
+var utilities = require('../../lib/utilities.js');
 
 var when = require('when');
 var sequence = require('when/sequence');
@@ -50,10 +24,12 @@ var extend = require('xtend');
 var strings = {
 
 	'description': "Helps guide you through the initial setup & claiming of your device",
-	'alreadyLoggedIn': "It appears as though you are already logged in as %s.",
+	'alreadyLoggedIn': "It appears as though you are already logged in as %s",
 	'revokeAuthPrompt': "Would you like to revoke the current authentication token?",
-	'signupSuccess': "Great success! You're now the owner of a brand new account!"
-}
+	'signupSuccess': "Great success! You're now the owner of a brand new account!",
+	'loginError': "There was an error logging you in! Let's try again.",
+	'helpForMoreInfo': "Please try the `%s help` command for more information."
+};
 
 var SetupCommand = function (cli, options) {
 
@@ -150,13 +126,6 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 			}], wipeChoice);
 		}
 
-		console.log(
-			arrow,
-			util.format("Proceeding as %s...",
-			chalk.bold.cyan(settings.username))
-		);
-
-
 		// user has remained logged in
 		accountStatus(true);
 	};
@@ -199,7 +168,7 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 		console.log(alert, "Something is going wrong with the signup process.");
 		return console.log(
 			alert,
-			util.format("Please try the `%s help` command for more information.",
+			util.format(strings.helpForMoreInfo,
 			chalk.bold.cyan(cmd))
 		);
 	}
@@ -268,7 +237,7 @@ SetupCommand.prototype.login = function login(cb, tries) {
 		console.log(alert, "It seems we're having trouble with logging in.");
 		return console.log(
 			alert,
-			util.format("Please try the `%s help` command for more information.",
+			util.format(strings.helpForMoreInfo,
 			chalk.bold.cyan(cmd))
 		);
 	}
@@ -285,7 +254,7 @@ SetupCommand.prototype.login = function login(cb, tries) {
 
 		type: 'password',
 		name: 'password',
-		message: 'Pleas enter your password:'
+		message: 'Please enter your password:'
 
 	}], loginInput);
 
@@ -302,14 +271,19 @@ SetupCommand.prototype.login = function login(cb, tries) {
 			return login(cb, ++tries);
 		}
 
-		self.__api.login(settings.clientId, ans.username, ans.password, loggedIn);
+		self.__api.login(
+			settings.clientId,
+			ans.username,
+			ans.password,
+			loggedIn
+		);
 	};
 
 	function loggedIn(err, dat) {
 
 		if(err) {
 
-			console.log(alert, "There was an error logging you in! Let's try again.");
+			console.log(alert, strings.loginError);
 			console.error(err);
 			return login(cb, ++tries);
 		}
@@ -321,7 +295,100 @@ SetupCommand.prototype.login = function login(cb, tries) {
 
 SetupCommand.prototype.findDevice = function() {
 
-	console.log(arrow, "Now to find your device...");
+	var self = this;
+	var serial = this.cli.getCommandModule('serial');
+	var wireless = this.cli.getCommandModule('wireless');
+
+	console.log(
+		chalk.cyan('!'),
+		"PROTIP:",
+		chalk.grey('Hold the'),
+		chalk.cyan('MODE'),
+		chalk.grey('button on your device until it blinks blue!')
+	);
+
+	this.newSpin('Now to find your device(s)...').start();
+
+	serial.findCores(function found(cores) {
+
+		self.stopSpin();
+
+		if(cores.length > 0) { return cores.forEach(inspect, self); }
+		console.log(arrow, 'No devices detected via USB.');
+
+		prompt([{
+
+			type: 'confirm',
+			name: 'scan',
+			message: 'Would you like to scan for nearby Photons in setup mode?',
+			default: true
+
+		}], scanChoice);
+
+		function scanChoice(ans) {
+
+			if(ans.scan) { return wireless.list(); }
+			console.log(arrow, 'Goodbye!');
+		};
+	});
+
+	function inspect(core) {
+
+		console.log(core);
+		// TODO: Update deviceSpecs to include DFU & non-DFU PIDs, use here
+		if(core.productId == 0x607d) {
+
+			detectedPrompt("Spark Core", setupCoreChoice);
+
+			function setupCoreChoice(ans) {
+
+				if(ans.setup) {
+
+					// TODO: setup core via serial
+					return;
+				}
+				// TODO: Offer to do something else. Photon setup?
+			};
+		}
+		else if(core.productId == 0xc006) {
+
+			// Photon detected
+			detectedPrompt("Photon", setupPhotonChoice);
+			function setupPhotonChoice(ans) {
+
+				// TODO: figure out Photon AP name via USB?
+
+				if(ans.setup) {
+					console.log(
+						chalk.cyan('!'),
+						"First let's try secure wireless setup."
+					);
+					return wireless.list();
+				}
+				console.log(arrow, "Goodbye!");
+			}
+		}
+	};
+
+	function detectedPrompt(name, cb) {
+
+		console.log(
+			arrow,
+			"I have detected a",
+			chalk.cyan(name),
+			"connected via USB."
+		);
+
+		prompt([{
+
+			type: 'confirm',
+			name: 'setup',
+			message: 'Would you like to continue with this one?',
+			default: true
+
+		}], cb);
+
+	};
 };
 
 SetupCommand.prototype.checkArguments = function(args) {
