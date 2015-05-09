@@ -282,8 +282,9 @@ WirelessCommand.prototype.setup = function setup(photon) {
 
 			return console.log(alert, "I encountered an error while trying to retrieve a claim code from the cloud. Are you connected to the internet?");
 		}
-		// console.log(arrow, "Claim code:", dat.claim_code);
+
 		self.__claimCode = dat.claim_code;
+
 		self.newSpin('Scanning for nearby Wi-Fi networks...').start();
 		scan(networks);
 	};
