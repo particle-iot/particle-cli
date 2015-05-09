@@ -457,10 +457,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			var whenBored = function () {
 				var data = chunks.join("");
-				var prefix = "Your core id is ";
-				if (data.indexOf(prefix) >= 0) {
-					data = data.replace(prefix, "").trim();
-					dfd.resolve(data);
+				var matches = data.match(/Your (core|device) id is\s+(\w+)/);
+				if (matches && matches.length === 3) {
+					dfd.resolve(matches[2]);
 				}
 			};
 
@@ -486,6 +485,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				}
 				else {
 					serialPort.write("i", function (err, results) {
+						if (err) {
+							console.error("Serial err: " + err);
+							dfd.reject("Serial problems, please reconnect the core.");
+						}
 					});
 				}
 			});
@@ -503,50 +506,59 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		dfd.promise.then(
 			function (data) {
-				console.log("Your core id is: " + data);
+				console.log("Your device id is: " + data);
 			},
 			function (err) {
 				console.error("Something went wrong " + err);
+			})
+			.ensure(function () {
+				serialPort.close();
+				prompts.closePrompt();
 			});
 
-		when(dfd.promise).ensure(function () {
-			serialPort.close();
-		});
 		return dfd.promise;
 	},
 
+	_parsePort: function(cores, comPort) {
+		if (!comPort) {
+			//they didn't give us anything.
+			if (cores.length === 1) {
+				//we have exactly one core, use that.
+				return cores[0].comName;
+			}
+			//else - which one?
+		}
+		else {
+			var portNum = parseInt(comPort);
+			if (!isNaN(portNum)) {
+				//they gave us a number
+				if (portNum > 0) {
+					portNum -= 1;
+				}
+
+				if (cores.length > portNum) {
+					//we have it, use it.
+					return cores[portNum].comName;
+				}
+				//else - which one?
+			}
+			else {
+				//they gave us a string
+				//doesn't matter if we have it or not, give it a try.
+				return comPort;
+			}
+		}
+
+		return null;
+	},
 
 	whatSerialPortDidYouMean: function (comPort, shouldPrompt, callback) {
 		var that = this;
 
 		this.findCores(function (cores) {
-			if (!comPort) {
-				//they didn't give us anything.
-				if (cores.length == 1) {
-					//we have exactly one core, use that.
-					return callback(cores[0].comName);
-				}
-				//else - which one?
-			}
-			else {
-				var portNum = parseInt(comPort);
-				if (!isNaN(portNum)) {
-					//they gave us a number
-					if (portNum > 0) {
-						portNum -= 1;
-					}
-
-					if (cores.length > portNum) {
-						//we have it, use it.
-						return callback(cores[portNum].comName);
-					}
-					//else - which one?
-				}
-				else {
-					//they gave us a string
-					//doesn't matter if we have it or not, give it a try.
-					return callback(comPort);
-				}
+			var port = that._parsePort(cores, comPort);
+			if (port) {
+				return callback(port);
 			}
 
 			if (cores.length > 0) {
@@ -567,8 +579,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			if (shouldPrompt && (cores.length > 0)) {
 				//ask then what we meant, and try again...
-				when(prompts.promptDfd(": ")).then(function (value) {
-					that.whatSerialPortDidYouMean(value, true, callback);
+				prompts.promptDfd(": ").then(function (value) {
+					port = that._parsePort(cores, value);
+					return callback(port);
 				});
 			}
 		});
