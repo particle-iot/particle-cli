@@ -72,6 +72,30 @@ WirelessCommand.prototype.list = function list(args) {
 
 	if(args) { this.deviceFilterPattern = args; }
 
+	console.log();
+	console.log(
+		chalk.cyan('!'),
+		"PROTIP:",
+		chalk.grey("Wireless setup of Photons works like a"),
+		chalk.cyan("wizard!")
+	);
+	console.log(
+		chalk.cyan('!'),
+		"PROTIP:",
+		chalk.grey("We will",
+			chalk.cyan('automagically'),
+			"change the",
+			chalk.cyan('Wi-Fi'),
+			"network to which your computer is connected."
+		)
+	);
+	console.log(
+		chalk.cyan('!'),
+		"PROTIP:",
+		chalk.grey('You may lose your connection to the internet for a moment.'),
+		"\n"
+	);
+
 	this.newSpin('%s ' + chalk.bold.white('Scanning for nearby Photons in setup mode...')).start();
 	scan(this.__networks.bind(this));
 
