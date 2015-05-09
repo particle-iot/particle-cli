@@ -425,7 +425,7 @@ WirelessCommand.prototype.setup = function setup(photon) {
 				prompt([{
 
 					name: 'password',
-					type: 'password',
+					type: 'input',
 					message: 'Please enter the password for your Wi-Fi network:',
 
 				}], passwordChoice);
