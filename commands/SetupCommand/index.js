@@ -300,14 +300,25 @@ SetupCommand.prototype.findDevice = function() {
 	var serial = this.cli.getCommandModule('serial');
 	var wireless = this.cli.getCommandModule('wireless');
 
+	console.log();
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
 		chalk.grey('Hold the'),
-		chalk.cyan('MODE'),
-		chalk.grey('button on your device until it blinks blue!')
+		chalk.cyan('MODE/SETUP'),
+		chalk.grey('button on your device until it'),
+		chalk.cyan('blinks blue!')
 	);
 
+	console.log(
+		chalk.cyan('!'),
+		"PROTIP:",
+		chalk.grey('Please make sure you are'),
+		chalk.cyan('connected'),
+		chalk.grey('to the'),
+		chalk.cyan('internet.'),
+		"\n"
+	);
 	this.newSpin('Now to find your device(s)...').start();
 
 	serial.findCores(function found(cores) {
