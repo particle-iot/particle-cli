@@ -162,7 +162,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 		if(ans.setupAll) {
 
-			self.__batch = true;
+			self.__batch = detectedDevices;
 			self.setup(null);
 		}
 		else {
@@ -179,7 +179,12 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		}
 	};
 
-	function multipleAnswers(ans) { ans.selected.forEach(self.setup, self); };
+	function multipleAnswers(ans) {
+
+
+		self.__batch = ans.selected;
+		self.setup(null);
+	};
 
 	function singleChoice(ans) {
 
@@ -433,7 +438,12 @@ WirelessCommand.prototype.setup = function setup(photon) {
 		function passwordChoice(ans) {
 
 			if(ans.password) { self.__password = ans.password; }
-			// single Photon configuration
+
+			if(!photon && self.__batch) {
+				var photon = { };
+				photon.ssid = self.__batch.pop();
+			}
+
 			if(photon) {
 
 				// TODO: Abstract into cross platform module
