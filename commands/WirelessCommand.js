@@ -399,7 +399,10 @@ WirelessCommand.prototype.setup = function setup(photon) {
 
 			if(self.__security !== 'none') {
 
-				console.log(chalk.yellow('!'), chalk.bold.white('I will encrypt any password sent to the Photon during configuration.'));
+				console.log(
+					chalk.yellow('!'),
+					chalk.bold.white('I will encrypt any password sent to the Photon during configuration.')
+				);
 
 				// what password to use?
 				prompt([{
