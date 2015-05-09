@@ -308,8 +308,8 @@ WirelessCommand.prototype.setup = function setup(photon) {
 			}], rescanChoice);
 			function rescanChoice(ans) {
 
-				if(ans.rescan) { scan(networks); }
-				else { self.exit(); }
+				if(ans.rescan) { return scan(networks); }
+				self.exit();
 			}
 		}
 		else {
