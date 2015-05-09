@@ -346,7 +346,6 @@ SetupCommand.prototype.findDevice = function() {
 
 	function inspect(core) {
 
-		console.log(core);
 		// TODO: Update deviceSpecs to include DFU & non-DFU PIDs, use here
 		if(core.productId == 0x607d) {
 
