@@ -40,9 +40,9 @@ var path = require('path');
 var strings = {
 
 	'monitorPrompt': "Would you like to wait and monitor for Photons entering setup mode?",
-	'scanError': "Unable to scan for WiFi networks. Do you have permission to do that on this system?",
-	'credentialsNeeded': "Heads Up: You will need to know the password and security type for your WiFi network (if any) to proceed.",
-	'selectNetwork': "Select the WiFi network with which you wish to connect your Photon:"
+	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?",
+	'credentialsNeeded': "Heads Up: You will need to know the password and security type for your Wi-Fi network (if any) to proceed.",
+	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:"
 };
 
 var WirelessCommand = function (cli, options) {
