@@ -41,7 +41,7 @@ var strings = {
 
 	'monitorPrompt': "Would you like to wait and monitor for Photons entering setup mode?",
 	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?",
-	'credentialsNeeded': "Heads Up: You will need to know the password and security type for your Wi-Fi network (if any) to proceed.",
+	'credentialsNeeded': "You will need to know the password and security type for your Wi-Fi network (if any) to proceed.",
 	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:"
 };
 
@@ -264,7 +264,8 @@ WirelessCommand.prototype.setup = function setup(photon) {
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey('You can press ctrl + C at any time to quit setup');
+		chalk.grey('You can press ctrl + C to quit setup at any time.')
+	);
 
 	this.newSpin('Obtaining magical secure claim code from the cloud...').start();
 
@@ -409,8 +410,8 @@ WirelessCommand.prototype.setup = function setup(photon) {
 				console.log();
 				console.log(
 					chalk.cyan('!'),
-					"PROTIP:"
-					chalk.grey("Your secret is safe with me. I encrypt any password sent to the device.")
+					"PROTIP:",
+					chalk.grey("Your secret is safe with me. I encrypt any password before sending it to the device.")
 				);
 				console.log();
 

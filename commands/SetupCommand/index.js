@@ -372,7 +372,7 @@ SetupCommand.prototype.findDevice = function() {
 				if(ans.setup) {
 					console.log(
 						chalk.cyan('!'),
-						"First let's try secure Wi-Fi setup."
+						"The Photon supports secure Wi-Fi setup. We'll try that first."
 					);
 					return wireless.list();
 				}
