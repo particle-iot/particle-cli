@@ -256,8 +256,15 @@ WirelessCommand.prototype.setup = function setup(photon) {
 	console.log();
 	console.log(arrow, chalk.bold.white('Congratulations, you\'re on your way to awesome!'));
 	console.log();
-	console.log(chalk.yellow('!'), chalk.bold.white(strings.credentialsNeeded));
-	console.log(chalk.grey('	(press ctrl + C at any time to exit)'));
+	console.log(
+		chalk.cyan('!'),
+		"PROTIP:",
+		chalk.grey(strings.credentialsNeeded)
+	);
+	console.log(
+		chalk.cyan('!'),
+		"PROTIP:",
+		chalk.grey('You can press ctrl + C at any time to quit setup');
 
 	this.newSpin('Obtaining magical secure claim code from the cloud...').start();
 
@@ -399,17 +406,20 @@ WirelessCommand.prototype.setup = function setup(photon) {
 
 			if(self.__security !== 'none') {
 
+				console.log();
 				console.log(
-					chalk.yellow('!'),
-					chalk.bold.white('I will encrypt any password sent to the Photon during configuration.')
+					chalk.cyan('!'),
+					"PROTIP:"
+					chalk.grey("Your secret is safe with me. I encrypt any password sent to the device.")
 				);
+				console.log();
 
 				// what password to use?
 				prompt([{
 
 					name: 'password',
 					type: 'password',
-					message: 'Please enter the password for your wireless network:',
+					message: 'Please enter the password for your Wi-Fi network:',
 
 				}], passwordChoice);
 			}
