@@ -58,7 +58,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption("list", this.listPorts.bind(this), "Show Cores connected via serial to your computer");
 		this.addOption("monitor", this.monitorPort.bind(this), "Connect and display messages from a core");
 		this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
-		this.addOption("wifi", this.configureWifi.bind(this), "Configure wifi credentials over serial");
+		this.addOption("wifi", this.configureWifi.bind(this), "Configure Wi-Fi credentials over serial");
 
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
@@ -349,7 +349,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject("No serial port available");
 		}
 
-		console.log("Attempting to configure wifi on " + comPort);
+		console.log("Attempting to configure Wi-Fi on " + comPort);
 
 		var serialPort = this.serialPort || new SerialPort(comPort, {
 			baudrate: 9600,

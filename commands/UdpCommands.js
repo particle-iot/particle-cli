@@ -48,7 +48,7 @@ util.inherits(UdpCommands, BaseCommand);
 UdpCommands.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: "udp",
-	description: "helps repair cores, run patches, check wifi, and more!",
+	description: "helps repair cores, run patches, check Wi-Fi, and more!",
 
 	init: function () {
 		this.addOption("send", this.sendUdpPacket.bind(this), "Sends a UDP packet to the specified host and port");
