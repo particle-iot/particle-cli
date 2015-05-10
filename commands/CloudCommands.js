@@ -60,7 +60,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	init: function () {
 		this.addOption("claim", this.claimCore.bind(this), "Register a core with your user account with the cloud");
-		this.addOption("list", this.listCores.bind(this), "Displays a list of your cores, as well as their variables and functions");
+		this.addOption("list", this.listDevices.bind(this), "Displays a list of your devices, as well as their variables and functions");
 		this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
 		this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
 		this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
@@ -409,8 +409,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	 getAllCoreAttributes: function (args) {
+	getAllDeviceAttributes: function (args) {
 		console.error("Checking with the cloud...");
+		var self = this;
 
 		var tmp = when.defer();
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -418,36 +419,39 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject("not logged in!");
 		}
 
-		var lookupVariables = function (cores) {
-			if (!cores || (cores.length == 0) || (typeof cores == "string")) {
-				console.log("No cores found.");
+		var lookupVariables = function (devices) {
+			if (!devices || (devices.length === 0) || (typeof devices === "string")) {
+				console.log("No devices found.");
 			}
 			else {
+				self.newSpin('Retrieving device functions and variables...').start();
 				var promises = [];
-				for (var i = 0; i < cores.length; i++) {
-					var coreid = cores[i].id;
-					if (!coreid) {
-						continue;
+				devices.forEach(function (device) {
+					if (!device.id) {
+						return;
 					}
 
-					if (cores[i].connected) {
-						promises.push(api.getAttributes(coreid));
+					if (device.connected) {
+						promises.push(api.getAttributes(device.id).then(function(attrs) {
+							return extend(device, attrs);
+						}));
 					}
 					else {
-						promises.push(when.resolve(cores[i]));
+						promises.push(when.resolve(device));
 					}
-				}
+				});
 
-				when.all(promises).then(function (cores) {
+				when.all(promises).then(function (fullDevices) {
 					//sort alphabetically
-					cores = cores.sort(function (a, b) {
+					fullDevices = fullDevices.sort(function (a, b) {
 						if (a.connected && !b.connected) {
 							return 1;
 						}
 
 						return (a.name || "").localeCompare(b.name);
 					});
-					tmp.resolve(cores);
+					tmp.resolve(fullDevices);
+					self.stopSpin();
 				});
 			}
 		};
@@ -523,7 +527,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 
-	listCores: function (args) {
+	listDevices: function (args) {
 
 		var formatVariables = function (vars, lines) {
 			if (vars) {
@@ -553,21 +557,28 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		};
 
 
-		when(this.getAllCoreAttributes(args)).then(function (cores) {
+		when(this.getAllDeviceAttributes(args)).then(function (devices) {
 			try {
 				var lines = [];
-				for (var i = 0; i < cores.length; i++) {
-					var core = cores[i];
+				for (var i = 0; i < devices.length; i++) {
+					var device = devices[i];
 
-					var numVars = utilities.countHashItems(core.variables);
-					var numFuncs = utilities.countHashItems(core.functions);
+					var deviceType = '';
+					switch(device.product_id) {
+						case 0:
+							deviceType = ' (Spark Core)';
+							break;
+						case 6:
+							deviceType = ' (Photon)';
+							break;
+					}
 
-					var status = core.name + " (" + core.id + ") is ";
-					status += (core.connected) ? "online" : "offline";
+					var status = device.name + " (" + device.id + ")" + deviceType + " is ";
+					status += (device.connected) ? "online" : "offline";
 					lines.push(status);
 
-					formatVariables(core.variables, lines);
-					formatFunctions(core.functions, lines);
+					formatVariables(device.variables, lines);
+					formatFunctions(device.functions, lines);
 				}
 
 				console.log(lines.join("\n"));
