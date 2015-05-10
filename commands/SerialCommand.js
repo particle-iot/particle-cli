@@ -3,7 +3,7 @@
  * @file    commands/SerialCommand.js
  * @author  David Middlecamp (david@spark.io)
  * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @source  https://github.com/spark/spark-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Serial commands module
@@ -24,22 +24,22 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
+'use strict';
+
+var util = require('util');
 
 var when = require('when');
-var sequence = require('when/sequence');
-var pipeline = require('when/pipeline');
-
-var readline = require('readline');
-var SerialPortLib = require("serialport");
-var SerialPort = SerialPortLib.SerialPort;
-var settings = require('../settings.js');
 var extend = require('xtend');
-var util = require('util');
-var BaseCommand = require("./BaseCommand.js");
-var prompts = require('../lib/prompts.js');
+var pipeline = require('when/pipeline');
+var SerialPortLib = require('serialport');
+var SerialPort = SerialPortLib.SerialPort;
+var inquirer = require('inquirer');
+var chalk = require('chalk');
+var wifiScan = require('node-wifiscanner').scan;
+
+var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');
 var SerialBoredParser = require('../lib/SerialBoredParser.js');
-var WifiUtilities = require("../lib/WifiUtilities.js");
 
 var SerialCommand = function (cli, options) {
 	SerialCommand.super_.call(this, cli, options);
@@ -47,63 +47,103 @@ var SerialCommand = function (cli, options) {
 
 	this.init();
 };
+
 util.inherits(SerialCommand, BaseCommand);
+
 SerialCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "serial",
-	description: "simple serial interface to your cores",
-
+	name: 'serial',
+	description: 'simple serial interface to your devices',
 
 	init: function () {
-		this.addOption("list", this.listPorts.bind(this), "Show Cores connected via serial to your computer");
-		this.addOption("monitor", this.monitorPort.bind(this), "Connect and display messages from a core");
-		this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
-		this.addOption("wifi", this.configureWifi.bind(this), "Configure Wi-Fi credentials over serial");
+		this.addOption('list', this.listDevices.bind(this), 'Show devices connected via serial to your computer');
+		this.addOption('monitor', this.monitorPort.bind(this), 'Connect and display messages from a device');
+		this.addOption('identify', this.identifyDevice.bind(this), 'Ask for and display device ID via serial');
+		this.addOption('wifi', this.configureWifi.bind(this), 'Configure Wi-Fi credentials over serial');
 
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
-
-	listPorts: function (args) {
-		this.findCores(function (cores) {
-			console.log("Found " + cores.length + " core(s) connected via serial: ");
-			for (var i = 0; i < cores.length; i++) {
-				console.log((i + 1) + ":\t" + cores[i].comName);
+	findDevices: function (callback) {
+		var devices = [];
+		SerialPortLib.list(function (err, ports) {
+			if (err) {
+				console.error('Error listing serial ports: ', err);
+				return callback([]);
 			}
-			console.log("");
+
+			//grab anything that self-reports as a core
+			ports.forEach(function (port) {
+				//not trying to be secure here, just trying to be helpful.
+				if ((port.manufacturer && port.manufacturer.indexOf('Spark') >= 0) ||
+					(port.pnpId && port.pnpId.indexOf('Spark_Core') >= 0) ||
+					(port.pnpId && port.pnpId.indexOf('VID_1D50') >= 0)) {
+
+					var device = { port: port.comName, type: 'Spark Core' };
+
+					if (port.vendorId === '0x2b04' && port.productId === '0xc006') {
+						device.type = 'Photon';
+					} else if (port.vendorId === '0x1d50' && port.productId === '0x607d') {
+						device.type = 'Spark Core';
+					}
+
+					devices.push(device);
+				}
+			});
+
+			//if I didn't find anything, grab any 'ttyACM's
+			if (devices.length === 0) {
+				ports.forEach(function (port) {
+					//if it doesn't have a manufacturer or pnpId set, but it's a ttyACM port, then lets grab it.
+					if (port.comName.indexOf('/dev/ttyACM') === 0) {
+						devices.push({ port: port.comName, type: '' });
+					}
+					else if (port.comName.indexOf('/dev/cuaU') === 0) {
+						devices.push({ port: port.comName, type: '' });
+					}
+				});
+			}
+
+			callback(devices);
 		});
 	},
 
+	listDevices: function () {
+		this.findDevices(function (devices) {
+			if (devices.length === 0) {
+				console.log(chalk.bold.white('No devices available via serial'));
+				return;
+			}
+
+			console.log('Found', chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device'), 'connected via serial:');
+			devices.forEach(function(device) {
+				console.log(util.format('%s - %s', device.port, device.type));
+			});
+		});
+	},
 
 	checkArguments: function (args) {
 		this.options = this.options || {};
 
 		if (!this.options.follow) {
 			this.options.follow = utilities.tryParseArgs(args,
-				"--follow",
-			   null
-			);
-		}
-
-	   if (!this.options.scan) {
-			this.options.scan = utilities.tryParseArgs(args,
-				"--scan",
-			   null
+				'--follow',
+				null
 			);
 		}
 	},
 
 	monitorPort: function (comPort) {
-		var handlePortFn = function (port) {
-			if (!port) {
-				console.error("No serial port identified");
+		var handlePortFn = function (device) {
+			if (!device) {
+				console.error('No serial device identified');
 				return;
 			}
 
-			console.log("Opening serial monitor for com port: \"" + port + "\"");
+			console.log('Opening serial monitor for com port: "' + device.port + '"');
 
 			//TODO: listen for interrupts, close gracefully?
-			var serialPort = new SerialPort(port, {
+			var serialPort = new SerialPort(device.port, {
 				baudrate: 9600
 			}, false);
 			serialPort.on('data', function (data) {
@@ -111,8 +151,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			});
 			serialPort.open(function (err) {
 				if (err) {
-					console.error("Serial err: " + err);
-					console.error("Serial problems, please reconnect the core.");
+					console.error('Serial err: ' + err);
+					console.error('Serial problems, please reconnect the device.');
 				}
 			});
 		};
@@ -127,141 +167,139 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		this.whatSerialPortDidYouMean(comPort, true, handlePortFn);
 	},
 
-
-	findCores: function (callback) {
-		var cores = [];
-		SerialPortLib.list(function (err, ports) {
-
-			//grab anything that self-reports as a core
-			for (var i = 0; i < ports.length; i++) {
-				var port = ports[i];
-
-				//not trying to be secure here, just trying to be helpful.
-				if ((port.manufacturer && port.manufacturer.indexOf("Spark") >= 0) ||
-					(port.pnpId && port.pnpId.indexOf("Spark_Core") >= 0) ||
-					 port.pnpId && port.pnpId.indexOf("VID_1D50") >= 0) {
-					cores.push(port);
-				}
-			}
-
-			//if I didn't find anything, grab any 'ttyACM's
-			if (cores.length == 0) {
-				for (var i = 0; i < ports.length; i++) {
-					var port = ports[i];
-
-					//if it doesn't have a manufacturer or pnpId set, but it's a ttyACM port, then lets grab it.
-					if (port.comName.indexOf('/dev/ttyACM') == 0) {
-						cores.push(port);
-					}
-					else if (port.comName.indexOf('/dev/cuaU') == 0) {
-						cores.push(port);
-					}
-				}
-			}
-
-			callback(cores);
-		});
-	},
-
-	closeSerial: function () {
-		if (this.serialPort) {
-			this.serialPort.close();
-			this.serialPort = null;
-		}
-	},
-
-
 	/**
-	 * Check to see if the core is in listening mode, try to get the code ID via serial
+	 * Check to see if the device is in listening mode, try to get the device ID via serial
 	 * @param comPort
 	 * @returns {promise|*|Promise|promise}
 	 */
-	identifyCore: function (comPort) {
-		var tmp = when.defer();
-
-		var failTimer = setTimeout(function() {
-			tmp.reject("Timed out");
-		}, 5000);
-
-		var that = this;
-		this.whatSerialPortDidYouMean(comPort, true, function (port) {
-			if (!port) {
-				tmp.reject("No serial port identified");
-				return;
+	identifyDevice: function (comPort) {
+		var self = this;
+		this.whatSerialPortDidYouMean(comPort, true, function (device) {
+			if (!device) {
+				return self.error('No serial port identified');
 			}
 
-			utilities.pipeDeferred(that.askForCoreID(port), tmp);
+			self.askForDeviceID(device);
 		});
-
-		when (tmp.promise).ensure(function() {
-			clearTimeout(failTimer);
-		});
-
-		return tmp.promise;
 	},
-	configureWifi: function (comPort, dontExit, scan ) {
-		var tmp = when.defer();
-		var that = this;
+
+	_scanNetworks: function(next) {
+		var self = this;
+		this.newSpin('Scanning for nearby Wi-Fi networks...').start();
+
+		wifiScan(function (err, networkList) {
+			self.stopSpin();
+
+			if (err) {
+				return self.error('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?');
+			}
+
+			if (networkList.length === 0) {
+				inquirer.prompt([{
+					type: 'confirm',
+					name: 'rescan',
+					message: 'Uh oh, no networks found. Try again?',
+					default: true
+				}], function(answers) {
+					if (answers.rescan) {
+						return self._scanNetworks(next);
+					}
+					return self.exit();
+				});
+			}
+
+			networkList.sort(function (a, b) {
+				return a.ssid.toLowerCase().localeCompare(b.ssid.toLowerCase());
+			});
+			next(networkList);
+		});
+	},
+
+	configureWifi: function (comPort) {
+		var self = this;
 
 		this.checkArguments(arguments);
 
-		this.whatSerialPortDidYouMean(comPort, true, function (port) {
-			if (!port) {
-				tmp.reject("No serial port identified");
-				return;
+		this.whatSerialPortDidYouMean(comPort, true, function (device) {
+			if (!device) {
+				return self.error('No serial port identified');
 			}
 
-			var ssid, password, security;
-
-			//ask for ssid, pass, security type
-			var gotCreds = pipeline([
-				function() {
-					//if arg scan, then
-
-					if (that.options.scan || scan) {
-						return WifiUtilities.scanAndListAPs();
+			inquirer.prompt([
+				{
+					type: 'confirm',
+					name: 'scan',
+					message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
+					default: true
+				},
+				{
+					type: 'list',
+					name: 'ap',
+					message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
+					choices: function () {
+						var done = this.async();
+						self._scanNetworks(function (networks) {
+							var choices = networks.map(function (n) {
+								return {
+									name: n.ssid,
+									value: n
+								};
+							});
+							done(choices);
+						});
+					},
+					when: function (answers) { return answers.scan; }
+				},
+				{
+					type: 'input',
+					name: 'ssid',
+					message: 'SSID',
+					when: function (answers) { return !answers.scan || !answers.ap; }
+				},
+				{
+					type: 'confirm',
+					name: 'detectSecurity',
+					message: chalk.bold.white('Should I try to auto-detect the wireless security type?'),
+					when: function (answers) { return !!answers.ap; },
+					default: true
+				},
+				{
+					type: 'list',
+					name: 'security',
+					message: 'Security Type',
+					choices: [
+						{ name: 'WPA2', value: 3 },
+						{ name: 'WPA', value: 2 },
+						{ name: 'WEP', value: 1 },
+						{ name: 'Unsecured', value: 0 }
+					],
+					when: function (answers) { return !answers.scan || !answers.detectSecurity; }
+				},
+				{
+					type: 'input',
+					name: 'password',
+					message: 'Wi-Fi Password',
+					when: function (answers) {
+						return (answers.detectSecurity && answers.ap.security.indexOf('NONE') === -1) ||
+							answers.security !== 0;
 					}
-					else {
-						return when.resolve();
-					}
-				},
-				function() {
-					return prompts.promptDfd("SSID: ");
-				},
-				function (arg) {
-					ssid = arg;
-					return prompts.promptDfd("Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2: ");
-				},
-				function (arg) {
-					security = arg;
-					if (security == "0") {
-						return when.resolve();
-					}
-					return prompts.promptDfd("Wifi Password: ");
-				},
-				function (arg) {
-					password = arg;
-					return when.resolve();
 				}
-			]);
-
-			when(gotCreds).then(function () {
-				var wifiDone = that.serialWifiConfig(port, ssid, password, security);
-
-				utilities.pipeDeferred(wifiDone, tmp);
-
-				//TODO: fix this, this is awkward
-				if (!dontExit) {
-					when(wifiDone).ensure(function () {
-						setTimeout(function () {
-							process.exit(0);
-						}, 1250);
-					})
+			], function (answers) {
+				var ssid = answers.ssid || answers.ap.ssid;
+				var security = answers.security;
+				if (answers.detectSecurity) {
+					var ap = answers.ap;
+					if (ap.security.indexOf('WPA2') >= 0) { security = 3; }
+					else if (ap.security.indexOf('WPA') >= 0) { security = 2; }
+					else if (ap.security.indexOf('WEP') >= 0) { security = 1; }
+					else if (ap.security.indexOf('NONE') >= 0) { security = 0; }
+					else { security = 3; }
 				}
+
+				self.serialWifiConfig(device, ssid, answers.password, security);
 			});
-		});
 
-		return tmp.promise;
+		});
 	},
 
 	//spark firmware version 1:
@@ -291,12 +329,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (timeout) {
 			failTimer = setTimeout(function () {
-				if (showTraffic) { console.log("timed out on " + prompt); }
+				if (showTraffic) { console.log('timed out on ' + prompt); }
 				if (alwaysResolve) {
 					dfd.resolve(null);
 				}
 				else {
-					dfd.reject("Serial prompt timed out - Please try restarting your core");
+					dfd.reject('Serial prompt timed out - Please try restarting your device');
 				}
 			}, timeout);
 		}
@@ -306,13 +344,13 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			var onMessage = function (data) {
 				data = data.toString();
 
-				if (showTraffic) { console.log("Serial said: " + data);}
+				if (showTraffic) { console.log('Serial said: ' + data); }
 				if (data && data.indexOf(prompt) >= 0) {
 					if (answer) {
 						serialPort.flush(function() {});
 
 						writeAndDrain(answer, function () {
-							if (showTraffic) { console.log("I said: " + answer);}
+							if (showTraffic) { console.log('I said: ' + answer); }
 							//serialPort.pause();     //lets not miss anything
 							dfd.resolve(true);
 						});
@@ -324,7 +362,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			};
 
 			serialPort.on('data', onMessage);
-			//serialPort.resume();
 
 			when(dfd.promise).ensure(function () {
 				clearTimeout(failTimer);
@@ -334,7 +371,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		else if (answer) {
 			clearTimeout(failTimer);
 
-			if (showTraffic) { console.log("I said: " + answer);}
+			if (showTraffic) { console.log('I said: ' + answer); }
 			writeAndDrain(answer, function () {
 				//serialPort.pause();     //lets not miss anything
 				dfd.resolve(true);
@@ -344,21 +381,21 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	serialWifiConfig: function (comPort, ssid, password, securityType, failDelay) {
-		if (!comPort) {
-			return when.reject("No serial port available");
+	serialWifiConfig: function (device, ssid, password, securityType) {
+		if (!device) {
+			return when.reject('No serial port available');
 		}
 
-		console.log("Attempting to configure Wi-Fi on " + comPort);
+		console.log('Attempting to configure Wi-Fi on ' + device.port);
 
-		var serialPort = this.serialPort || new SerialPort(comPort, {
+		var serialPort = this.serialPort || new SerialPort(device.port, {
 			baudrate: 9600,
-			parser: SerialBoredParser.MakeParser(250)
+			parser: SerialBoredParser.makeParser(250)
 		}, false);
 
 		serialPort.on('error', function () {
 			//yeah, don't care.
-			console.error("Serial error:", arguments);
+			console.error('Serial error:', arguments);
 		});
 
 		var that = this,
@@ -367,24 +404,24 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		serialPort.open(function () {
 			var configDone = pipeline([
 				function () {
-					return that.serialPromptDfd(serialPort, null, "w", 5000, true);
+					return that.serialPromptDfd(serialPort, null, 'w', 5000, true);
 				},
 				function (result) {
 					if (!result) {
-						return that.serialPromptDfd(serialPort, null, "w", 5000, true);
+						return that.serialPromptDfd(serialPort, null, 'w', 5000, true);
 					}
 					else {
 						return when.resolve();
 					}
 				},
 				function () {
-					return that.serialPromptDfd(serialPort, "SSID:", ssid + "\n", 5000, false);
+					return that.serialPromptDfd(serialPort, 'SSID:', ssid + '\n', 5000, false);
 				},
 				function () {
-					return that.serialPromptDfd(serialPort, "Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:", securityType + "\n", 1500, true);
+					return that.serialPromptDfd(serialPort, 'Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', securityType + '\n', 1500, true);
 				},
 				function (result) {
-					var passPrompt = "Password:";
+					var passPrompt = 'Password:';
 					if (!result) {
 						//no security prompt, must have had pass prompt.
 
@@ -392,22 +429,25 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 						//prompt instead, so lets assume we're good since we already got the ssid prompt, and just pipe
 						//the pass.
 
-						if (securityType == "0") {
+						if (securityType === '0') {
 							//we didn't have a password, so just hit return
-							serialPort.write("\n");
+							serialPort.write('\n');
 
 						}
 						passPrompt = null;
 					}
 
-					if (!passPrompt || !password || (password == "")) {
+					if (!passPrompt || !password || (password === '')) {
 						return when.resolve();
 					}
 
-					return that.serialPromptDfd(serialPort, passPrompt, password + "\n", 5000);
+					return that.serialPromptDfd(serialPort, passPrompt, password + '\n', 5000);
 				},
 				function () {
-					return that.serialPromptDfd(serialPort, "Spark <3 you!", null, 15000);
+					if (device.type === 'Photon') {
+						return that.serialPromptDfd(serialPort, '\n', null, 15000);
+					}
+					return that.serialPromptDfd(serialPort, 'Spark <3 you!', null, 15000);
 				}
 			]);
 			utilities.pipeDeferred(configDone, wifiDone);
@@ -416,10 +456,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		when(wifiDone.promise).then(
 			function () {
-				console.log("Done!  Your core should now restart.");
+				console.log('Done! Your device should now restart.');
 			},
 			function (err) {
-				console.error("Something went wrong " + err);
+				console.error('Something went wrong ' + err);
 			});
 
 		when(wifiDone.promise).ensure(function () {
@@ -433,10 +473,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	askForCoreID: function (comPort) {
-		if (!comPort) {
-			return when.reject("askForCoreID - no serial port provided");
+	askForDeviceID: function (device) {
+		if (!device) {
+			return when.reject('askForDeviceID - no serial port provided');
 		}
+		var self = this;
 
 		var failDelay = 5000;
 
@@ -444,87 +485,71 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		try {
 			//keep listening for data until we haven't received anything for...
-			var boredDelay = 100,
-				boredTimer,
-				chunks = [];
-
-			var serialPort = new SerialPort(comPort, {
+			var serialPort = new SerialPort(device.port, {
 				baudrate: 9600,
-				parser: SerialBoredParser.MakeParser(250)
+				parser: SerialBoredParser.makeParser(250)
 			}, false);
 			this.serialPort = serialPort;
 
+			var failTimer = setTimeout(function () {
+				dfd.reject('Serial timed out');
+			}, failDelay);
 
-			var whenBored = function () {
-				var data = chunks.join("");
+			serialPort.on('data', function (data) {
+				clearTimeout(failTimer);
 				var matches = data.match(/Your (core|device) id is\s+(\w+)/);
 				if (matches && matches.length === 3) {
 					dfd.resolve(matches[2]);
 				}
-			};
-
-
-			var failTimer = setTimeout(function () {
-				dfd.reject("Serial timed out");
-			}, failDelay);
-
-
-			serialPort.on('data', function (data) {
-				clearTimeout(failTimer);
-				clearTimeout(boredTimer);
-
-				chunks.push(data);
-				boredTimer = setTimeout(whenBored, boredDelay);
 			});
 
 			serialPort.open(function (err) {
 				if (err) {
-					console.error("Serial err: " + err);
-					console.error("Serial problems, please reconnect the core.");
-					dfd.reject("Serial problems, please reconnect the core.");
+					console.error('Serial err: ' + err);
+					console.error('Serial problems, please reconnect the device.');
+					dfd.reject('Serial problems, please reconnect the device.');
 				}
 				else {
-					serialPort.write("i", function (err, results) {
-						if (err) {
-							console.error("Serial err: " + err);
-							dfd.reject("Serial problems, please reconnect the core.");
+					serialPort.write('i', function (werr) {
+						if (werr) {
+							console.error('Serial err: ' + werr);
+							dfd.reject('Serial problems, please reconnect the device.');
 						}
 					});
 				}
 			});
 
 			when(dfd.promise).ensure(function () {
-				serialPort.removeAllListeners("open");
-				serialPort.removeAllListeners("data");
+				serialPort.removeAllListeners('open');
+				serialPort.removeAllListeners('data');
 			});
 		}
 		catch (ex) {
-			console.error("Errors while trying to get coreID -- disconnect and reconnect core");
-			dfd.reject("Serial errors");
+			console.error('Errors while trying to get deviceID -- disconnect and reconnect device');
+			dfd.reject('Serial errors');
 		}
 
-
-		dfd.promise.then(
-			function (data) {
-				console.log("Your device id is: " + data);
-			},
-			function (err) {
-				console.error("Something went wrong " + err);
+		dfd.promise
+			.then(function (data) {
+				console.log();
+				console.log('Your device id is', chalk.bold.cyan(data));
+			})
+			.catch(function (err) {
+				self.error(err, false);
 			})
 			.ensure(function () {
 				serialPort.close();
-				prompts.closePrompt();
 			});
 
 		return dfd.promise;
 	},
 
-	_parsePort: function(cores, comPort) {
+	_parsePort: function(devices, comPort) {
 		if (!comPort) {
 			//they didn't give us anything.
-			if (cores.length === 1) {
+			if (devices.length === 1) {
 				//we have exactly one core, use that.
-				return cores[0].comName;
+				return devices[0];
 			}
 			//else - which one?
 		}
@@ -536,16 +561,16 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					portNum -= 1;
 				}
 
-				if (cores.length > portNum) {
+				if (devices.length > portNum) {
 					//we have it, use it.
-					return cores[portNum].comName;
+					return devices[portNum];
 				}
 				//else - which one?
 			}
 			else {
 				//they gave us a string
 				//doesn't matter if we have it or not, give it a try.
-				return comPort;
+				return { port: comPort, type: '' };
 			}
 		}
 
@@ -553,37 +578,33 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	whatSerialPortDidYouMean: function (comPort, shouldPrompt, callback) {
-		var that = this;
+		var self = this;
 
-		this.findCores(function (cores) {
-			var port = that._parsePort(cores, comPort);
+		this.findDevices(function (devices) {
+			var port = self._parsePort(devices, comPort);
 			if (port) {
 				return callback(port);
 			}
 
-			if (cores.length > 0) {
-				console.log("Which core did you mean?");
-				console.log("Found " + cores.length + " core(s) connected via serial: ");
-				for (var i = 0; i < cores.length; i++) {
-					console.log((i + 1) + ":\t" + cores[i].comName);
-				}
-				console.log("");
-			}
-			else {
-				console.log("I didn't find any cores available via serial");
-				if (shouldPrompt) {
-					callback(null);
-				}
-				return;
+			if (!devices || devices.length === 0) {
+				return self.error('No devices available via serial');
 			}
 
-			if (shouldPrompt && (cores.length > 0)) {
-				//ask then what we meant, and try again...
-				prompts.promptDfd(": ").then(function (value) {
-					port = that._parsePort(cores, value);
-					return callback(port);
-				});
-			}
+			inquirer.prompt([
+				{
+					name: 'port',
+					type: 'list',
+					message: 'Which device did you mean?',
+					choices: devices.map(function (d) {
+						return {
+							name: d.port + ' - ' + d.type,
+							value: d
+						};
+					})
+				}
+			], function (answers) {
+				callback(answers.port);
+			});
 		});
 	},
 

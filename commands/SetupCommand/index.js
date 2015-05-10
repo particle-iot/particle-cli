@@ -321,11 +321,11 @@ SetupCommand.prototype.findDevice = function() {
 	);
 	this.newSpin('Now to find your device(s)...').start();
 
-	serial.findCores(function found(cores) {
+	serial.findDevices(function found(devices) {
 
 		self.stopSpin();
 
-		if(cores.length > 0) { return cores.forEach(inspect, self); }
+		if(devices.length > 0) { return devices.forEach(inspect, self); }
 		console.log(arrow, 'No devices detected via USB.');
 
 		prompt([{
@@ -344,10 +344,10 @@ SetupCommand.prototype.findDevice = function() {
 		};
 	});
 
-	function inspect(core) {
+	function inspect(device) {
 
 		// TODO: Update deviceSpecs to include DFU & non-DFU PIDs, use here
-		if(core.productId == 0x607d) {
+		if(device.type === 'Spark Core') {
 
 			detectedPrompt("Spark Core", setupCoreChoice);
 
@@ -361,7 +361,7 @@ SetupCommand.prototype.findDevice = function() {
 				// TODO: Offer to do something else. Photon setup?
 			};
 		}
-		else if(core.productId == 0xc006) {
+		else if(device.type === 'Photon') {
 
 			// Photon detected
 			detectedPrompt("Photon", setupPhotonChoice);
