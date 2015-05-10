@@ -498,8 +498,6 @@ WirelessCommand.prototype.__configure = function configure(ssid, cb) {
 
 	function info(err, res) {
 
-		console.log("SoftAP Scan:");
-		console.log(err, res);
 		sap.deviceInfo(pubKey).on('error', function() {
 
 			setTimeout(info, 1000);
