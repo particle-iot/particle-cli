@@ -208,6 +208,14 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				});
 			}
 
+			networkList = networkList.filter(function (ap) {
+				// channel # > 14 === 5GHz
+				if (ap.channel && parseInt(ap.channel, 10) > 14) {
+					return false;
+				}
+				return true;
+			});
+
 			networkList.sort(function (a, b) {
 				return a.ssid.toLowerCase().localeCompare(b.ssid.toLowerCase());
 			});
