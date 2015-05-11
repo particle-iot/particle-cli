@@ -345,7 +345,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			//login to the server
 			function (creds) {
 				var api = new ApiClient(settings.apiUrl);
-				username = creds[0];
+				username = creds.username;
 				return api.login("spark-cli", creds.username, creds.password);
 			}
 		]);
