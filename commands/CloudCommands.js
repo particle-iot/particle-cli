@@ -43,7 +43,12 @@ var path = require('path');
 var moment = require('moment');
 var extend = require('xtend');
 var util = require('util');
+var chalk = require('chalk');
+var inquirer = require('inquirer');
 
+var arrow = chalk.green('>');
+var alert = chalk.yellow('!');
+var cmd = path.basename(process.argv[1]);
 
 var CloudCommand = function (cli, options) {
 	CloudCommand.super_.call(this, cli, options);
@@ -335,10 +340,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	login: function () {
+		var self = this;
 		var username = null;
 
-		var allDone = pipeline([
+		if (this.tries >= 3) {
+			console.log();
+			console.log(alert, "It seems we're having trouble with logging in.");
+			console.log(
+				alert,
+				util.format('Please try the `%s help` command for more information.',
+					chalk.bold.cyan(cmd))
+			);
+			return when.reject();
+		}
 
+		var allDone = pipeline([
 			//prompt for creds
 			prompts.getCredentials,
 
@@ -346,66 +362,76 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function (creds) {
 				var api = new ApiClient(settings.apiUrl);
 				username = creds.username;
-				return api.login("spark-cli", creds.username, creds.password);
+				return api.login(settings.clientId, creds.username, creds.password);
+			},
+
+			function (accessToken) {
+				console.log(arrow, 'Successfully completed login!');
+				settings.override(null, 'access_token', accessToken);
+				if (username) {
+					settings.override(null, 'username', username);
+				}
+				self.tries = 0;
 			}
 		]);
 
-		when(allDone).then(function (access_token) {
-				console.log("logged in! ", arguments);
-				//console.log("Successfully logged in as " + username);
-				settings.override(null, "access_token", access_token);
-				if (username) {
-					settings.override(null, "username", username);
-				}
+		return when(allDone).catch(function (err) {
+			console.log(alert, "There was an error logging you in! Let's try again.");
+			console.error(alert, err);
+			self.tries = (self.tries || 0) + 1;
 
-				setTimeout(function () {
-					process.exit(0);
-				}, 1250);
-			},
-			function (err) {
-				console.error("Error logging in " + err);
-				process.exit(1);
-			});
+			return self.login();
+		});
 	},
-	logout: function (dontExit) {
+
+	logout: function () {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!settings.access_token) {
-			console.log("You were already logged out.");
+			console.log('You were already logged out.');
 			return when.resolve();
 		}
 
-		var allDone = pipeline([
-			function () {
-				console.log("");
-				console.log("You can perform a more secure logout by revoking your current access_token for the cloud.");
-				console.log("Revoking your access_token requires your normal credentials, hit ENTER to skip, or ");
-				return prompts.passPromptDfd("enter your password (or blank to skip): ");
+		var allDone = when.defer();
+
+		inquirer.prompt([
+			{
+				type: 'confirm',
+				name: 'wipe',
+				message: 'Would you like to revoke the current authentication token?',
+				default: false
 			},
-			function (pass) {
-				if (pass && (pass != "blank")) {
-					//blank... I see what you did there...
-					return api.removeAccessToken(settings.username, pass, settings.access_token);
-				}
-				else {
-					console.log("Okay, leaving access token as-is! ");
-					return when.resolve();
-				}
-			},
-			function () {
-				settings.override(null, "username", null);
-				settings.override(null, "access_token", null);
-				console.log("You're now logged out!");
-				return when.resolve();
+			{
+				type: 'password',
+				name: 'password',
+				message: 'Please enter your password',
+				when: function(ans) { return ans.wipe; }
 			}
-		]);
-
-		if (!dontExit) {
-			when(allDone).ensure(function () {
-				process.exit(0);
+		], function(answers) {
+			pipeline([
+				function() {
+					if (answers.wipe) {
+						return api.removeAccessToken(settings.username, answers.password, settings.access_token);
+					} else {
+						console.log(arrow, 'Leaving your token intact.');
+					}
+				},
+				function() {
+					console.log(
+						arrow,
+						util.format('You have been logged out from %s.',
+						chalk.bold.cyan(settings.username))
+					);
+					settings.override(null, 'username', null);
+					settings.override(null, 'access_token', null);
+				}
+			]).then(function() {
+				allDone.resolve();
+			}, function(err) {
+				allDone.reject(err);
 			});
-		}
+		});
 
-		return allDone;
+		return allDone.promise;
 	},
 
 

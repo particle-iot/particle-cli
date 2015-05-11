@@ -163,7 +163,7 @@ settings.override = function (profile, key, value) {
 		// find any key that matches our key, regardless of case
 		var realKey = utilities.matchKey(key, settings, true);
 		if (realKey) {
-			console.log("Using the setting \"" + realKey + "\" instead ");
+			//console.log("Using the setting \"" + realKey + "\" instead ");
 			key = realKey;
 		}
 	}

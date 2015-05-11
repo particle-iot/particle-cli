@@ -83,7 +83,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 		// not logged in, go signup/login.
 		accountStatus(false);
-	};
+	}
 
 	function promptSwitch() {
 
@@ -101,48 +101,19 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 			default: false
 
 		}], switchChoice);
-	};
+	}
 
 	function switchChoice(ans) {
-
 		// user wants to logout
-		if(ans.switch) {
-
-			// TODO: Actually log user out
-			console.log(
-				arrow,
-				util.format('You have been logged out from %s.',
-				chalk.bold.cyan(settings.username))
-			);
-
-			return prompt([{
-
-				type: 'confirm',
-				name: 'wipe',
-				message: strings.revokeAuthPrompt,
-				default: false
-
-			}], wipeChoice);
+		if (ans.switch) {
+			cloud.logout().then(function() {
+				accountStatus(false);
+			});
+		} else {
+			// user has remained logged in
+			accountStatus(true);
 		}
-
-		// user has remained logged in
-		accountStatus(true);
-	};
-
-	function wipeChoice(ans) {
-
-		if(ans.wipe) {
-
-			// TODO: Actually revoke authentication
-			console.log(arrow, 'Authentication token revoked!');
-		}
-		else {
-
-			console.log(arrow, 'Leaving your token intact.');
-		}
-
-		accountStatus(false);
-	};
+	}
 
 	function accountStatus(alreadyLoggedIn) {
 
@@ -155,7 +126,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 		}
 
 		self.findDevice.call(self);
-	};
+	}
 };
 
 
@@ -201,25 +172,24 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 		if(!ans.username) {
 
 			console.log(alert, 'You need an email address to sign up, silly!');
-			return self.login(cb, ++tries);
+			return self.signup(cb, ++tries);
 		}
 		if(!ans.password) {
 
 			console.log(alert, 'You need a password to sign up, silly!');
-			return self.login(cb, ++tries);
+			return self.signup(cb, ++tries);
 		}
 		if(!ans.confirm || ans.confirm !== ans.password) {
 
 			// try to remember username to save them some frustration
 			if(ans.username) {
-
-				self.__signupUsername = ans.username
+				self.__signupUsername = ans.username;
 			}
 			console.log(
 				arrow,
 				"Sorry, those passwords didn't match. Let's try again!"
 			);
-			return self.login(cb, ++tries);
+			return self.signup(cb, ++tries);
 		}
 
 		// TODO: actually send API signup request
@@ -228,69 +198,16 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 	}
 };
 
-SetupCommand.prototype.login = function login(cb, tries) {
+SetupCommand.prototype.login = function login(cb) {
+	var cloud = this.cli.getCommandModule('cloud');
 
-	var self = this;
-
-	if(!tries) { var tries = 1; }
-	else if(tries && tries > 3) {
-
-		console.log(alert, "It seems we're having trouble with logging in.");
-		return console.log(
-			alert,
-			util.format(strings.helpForMoreInfo,
-			chalk.bold.cyan(cmd))
-		);
-	}
 	console.log(arrow, "Let's get you logged in!");
 
-	prompt([{
-
-		type: 'input',
-		name: 'username',
-		message: 'Please enter your email address:'
-
-	}, {
-
-		type: 'password',
-		name: 'password',
-		message: 'Please enter your password:'
-
-	}], loginInput);
-
-	function loginInput(ans) {
-
-		if(!ans.username) {
-
-			console.log(arrow, "You need an email address to log in, silly!");
-			return login(cb, ++tries);
-		}
-		if(!ans.password) {
-
-			console.log(arrow, "You need a password to log in, silly!");
-			return login(cb, ++tries);
-		}
-
-		self.__api.login(
-			settings.clientId,
-			ans.username,
-			ans.password,
-			loggedIn
-		);
-	};
-
-	function loggedIn(err, dat) {
-
-		if(err) {
-
-			console.log(alert, strings.loginError);
-			console.error(err);
-			return login(cb, ++tries);
-		}
-
-		console.log(arrow, 'Successfully completed login!');
-		cb(null, dat);
-	};
+	cloud.login().then(function () {
+		cb();
+	}).catch(function() {
+		return;
+	});
 };
 
 SetupCommand.prototype.findDevice = function() {
