@@ -60,6 +60,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption('monitor', this.monitorPort.bind(this), 'Connect and display messages from a device');
 		this.addOption('identify', this.identifyDevice.bind(this), 'Ask for and display device ID via serial');
 		this.addOption('wifi', this.configureWifi.bind(this), 'Configure Wi-Fi credentials over serial');
+		this.addOption('mac', this.deviceMac.bind(this), 'Ask for and display MAC address via serial');
 
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
@@ -183,6 +184,24 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				.then(function (data) {
 					console.log();
 					console.log('Your device id is', chalk.bold.cyan(data));
+				})
+				.catch(function (err) {
+					self.error(err, false);
+				});
+		});
+	},
+
+	deviceMac: function (comPort) {
+		var self = this;
+		this.whatSerialPortDidYouMean(comPort, true, function (device) {
+			if (!device) {
+				return self.error('No serial port identified');
+			}
+
+			self.getDeviceMacAddress(device)
+				.then(function (data) {
+					console.log();
+					console.log('Your device MAC address is', chalk.bold.cyan(data));
 				})
 				.catch(function (err) {
 					self.error(err, false);
@@ -490,6 +509,68 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		//TODO: drop the pre-prompt creds process entirely when we have the built in serial terminal
 	},
 
+	getDeviceMacAddress: function (device) {
+		if (!device) {
+			return when.reject('getDeviceMacAddress - no serial port provided');
+		}
+
+		var failDelay = 5000;
+
+		var dfd = when.defer();
+
+		try {
+			//keep listening for data until we haven't received anything for...
+			var serialPort = new SerialPort(device.port, {
+				baudrate: 9600,
+				parser: SerialBoredParser.makeParser(250)
+			}, false);
+			this.serialPort = serialPort;
+
+			var failTimer = setTimeout(function () {
+				dfd.reject('Serial timed out');
+			}, failDelay);
+
+			serialPort.on('data', function (data) {
+				clearTimeout(failTimer);
+				var matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
+				if (matches) {
+					dfd.resolve(matches[0]);
+				}
+			});
+
+			serialPort.open(function (err) {
+				if (err) {
+					console.error('Serial err: ' + err);
+					console.error('Serial problems, please reconnect the device.');
+					dfd.reject('Serial problems, please reconnect the device.');
+				}
+				else {
+					//serialPort.flush();
+					serialPort.write('m', function (werr) {
+						if (werr) {
+							console.error('Serial err: ' + werr);
+							dfd.reject('Serial problems, please reconnect the device.');
+						}
+					});
+				}
+			});
+
+			dfd.promise.ensure(function () {
+				serialPort.removeAllListeners('open');
+				serialPort.removeAllListeners('data');
+				if (serialPort.isOpen()) {
+					serialPort.close();
+				}
+			});
+		}
+		catch (ex) {
+			console.error('Errors while trying to get device mac address -- disconnect and reconnect device');
+			console.error(ex);
+			dfd.reject('Serial errors');
+		}
+
+		return dfd.promise;
+	},
 
 	askForDeviceID: function (device) {
 		if (!device) {
