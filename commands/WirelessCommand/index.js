@@ -262,6 +262,15 @@ WirelessCommand.prototype.setup = function setup(photon) {
 	var selected;
 	var security;
 
+	if(!photon) {
+		if(self.__batch && self.__batch.length > 0) {
+			var photon = self.__batch.pop();
+		}
+		else {
+			return console.log(alert, 'No Photons selected for setup!');
+		}
+	}
+
 	console.log();
 	console.log(arrow, chalk.bold.white('Congratulations, you\'re on your way to awesome with'), chalk.cyan(photon));
 	console.log();
@@ -293,9 +302,8 @@ WirelessCommand.prototype.setup = function setup(photon) {
 		}
 		self.__claimCode = dat.claim_code;
 
-		var ssid = photon || self.__batch.pop();
-		self.newSpin('Attempting to connect to ' + ssid + '...').start();
-		mgr.connect({ ssid: ssid }, connected);
+		self.newSpin('Attempting to connect to ' + photon + '...').start();
+		mgr.connect({ ssid: photon }, connected);
 	};
 	function connected(err, opts) {
 
