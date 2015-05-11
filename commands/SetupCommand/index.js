@@ -64,9 +64,8 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 	this.checkArguments(arguments);
 
-	if(shortcut == 'wifi') {
-
-		//TODO: serial Wi-Fi configuration (Core)
+	if(shortcut === 'wifi') {
+		return serial.configureWifi();
 	}
 
 	console.log(chalk.bold.cyan(utilities.banner()));
