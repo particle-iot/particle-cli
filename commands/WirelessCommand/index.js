@@ -193,10 +193,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function singleChoice(ans) {
 
-		if(ans.setupSingle) {
-
-			self.setup(detectedDevices[0]);
-		}
+		if(ans.setupSingle) { self.setup(detectedDevices[0].ssid); }
 		else {
 
 			// Monitor for new Photons?
