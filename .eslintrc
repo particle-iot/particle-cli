@@ -5,6 +5,8 @@
 	"rules": {
 		"quotes": [1, "single", "avoid-escape"],
 		"no-underscore-dangle": 0,
-		"consistent-return": 1
+		"consistent-return": 1,
+		"no-use-before-define": 0,
+		"no-alert": 0
 	}
 }

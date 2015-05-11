@@ -179,7 +179,14 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return self.error('No serial port identified');
 			}
 
-			self.askForDeviceID(device);
+			self.askForDeviceID(device)
+				.then(function (data) {
+					console.log();
+					console.log('Your device id is', chalk.bold.cyan(data));
+				})
+				.catch(function (err) {
+					self.error(err, false);
+				});
 		});
 	},
 
@@ -226,6 +233,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	configureWifi: function (comPort) {
 		var self = this;
 
+		var wifi = when.defer();
 		this.checkArguments(arguments);
 
 		this.whatSerialPortDidYouMean(comPort, true, function (device) {
@@ -304,10 +312,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					else { security = 3; }
 				}
 
-				self.serialWifiConfig(device, ssid, answers.password, security);
+				self.serialWifiConfig(device, ssid, answers.password, security).then(wifi.resolve, wifi.reject);
 			});
 
 		});
+
+		return wifi.promise;
 	},
 
 	//spark firmware version 1:
@@ -485,7 +495,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		if (!device) {
 			return when.reject('askForDeviceID - no serial port provided');
 		}
-		var self = this;
 
 		var failDelay = 5000;
 
@@ -527,27 +536,17 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				}
 			});
 
-			when(dfd.promise).ensure(function () {
+			dfd.promise.ensure(function () {
 				serialPort.removeAllListeners('open');
 				serialPort.removeAllListeners('data');
+				serialPort.close();
 			});
 		}
 		catch (ex) {
 			console.error('Errors while trying to get deviceID -- disconnect and reconnect device');
+			console.error(ex);
 			dfd.reject('Serial errors');
 		}
-
-		dfd.promise
-			.then(function (data) {
-				console.log();
-				console.log('Your device id is', chalk.bold.cyan(data));
-			})
-			.catch(function (err) {
-				self.error(err, false);
-			})
-			.ensure(function () {
-				serialPort.close();
-			});
 
 		return dfd.promise;
 	},
@@ -576,6 +575,13 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				//else - which one?
 			}
 			else {
+				var matchedDevices = devices.filter(function (d) {
+					return d.port === comPort;
+				});
+				if (matchedDevices.length) {
+					return matchedDevices[0];
+				}
+
 				//they gave us a string
 				//doesn't matter if we have it or not, give it a try.
 				return { port: comPort, type: '' };

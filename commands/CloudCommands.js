@@ -115,7 +115,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 		console.log("Claiming core " + coreid);
-		api.claimCore(coreid);
+		api.claimCore(coreid).then(function() {
+			console.log("Successfully claimed core " + coreid);
+		}, function(err) {
+			console.log("Failed to claim core, server said ", err);
+		});
 	},
 
 	removeCore: function (coreid) {

@@ -1,3 +1,5 @@
+'use strict';
+
 var chalk = require('chalk');
 var prompt = require('inquirer').prompt;
 var ApiClient2 = require('../../lib/Apiclient2');
@@ -37,6 +39,7 @@ var SetupCommand = function (cli, options) {
 	this.options = extend({}, this.options, options);
 	this.__wasLoggedIn;
 	this.__api = new ApiClient2(settings.apiUrl, settings.access_token);
+	this.__oldapi = new ApiClient(settings.apiUrl, settings.access_token);
 	this.init();
 };
 
@@ -168,7 +171,6 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 	}], signupInput);
 
 	function signupInput(ans) {
-		console.log(ans)
 		if(!ans.username) {
 
 			console.log(alert, 'You need an email address to sign up, silly!');
@@ -219,7 +221,7 @@ SetupCommand.prototype.findDevice = function() {
 	console.log();
 	console.log(
 		chalk.cyan('!'),
-		"PROTIP:",
+		'PROTIP:',
 		chalk.grey('Hold the'),
 		chalk.cyan('MODE/SETUP'),
 		chalk.grey('button on your device until it'),
@@ -228,12 +230,12 @@ SetupCommand.prototype.findDevice = function() {
 
 	console.log(
 		chalk.cyan('!'),
-		"PROTIP:",
+		'PROTIP:',
 		chalk.grey('Please make sure you are'),
 		chalk.cyan('connected'),
 		chalk.grey('to the'),
 		chalk.cyan('internet.'),
-		"\n"
+		'\n'
 	);
 	this.newSpin('Now to find your device(s)...').start();
 
@@ -257,31 +259,24 @@ SetupCommand.prototype.findDevice = function() {
 
 			if(ans.scan) { return wireless.list(); }
 			console.log(arrow, 'Goodbye!');
-		};
+		}
 	});
 
 	function inspect(device) {
-
 		// TODO: Update deviceSpecs to include DFU & non-DFU PIDs, use here
 		if(device.type === 'Spark Core') {
 
-			detectedPrompt("Spark Core", setupCoreChoice);
-
-			function setupCoreChoice(ans) {
+			detectedPrompt('Spark Core', function setupCoreChoice(ans) {
 
 				if(ans.setup) {
-
-					// TODO: setup core via serial
-					return;
+					return self.setupCore(device);
 				}
-				// TODO: Offer to do something else. Photon setup?
-			};
-		}
-		else if(device.type === 'Photon') {
+				console.log(arrow, 'Goodbye!');
+			});
+		} else if(device.type === 'Photon') {
 
 			// Photon detected
-			detectedPrompt("Photon", setupPhotonChoice);
-			function setupPhotonChoice(ans) {
+			detectedPrompt('Photon', function setupPhotonChoice(ans) {
 
 				// TODO: figure out Photon AP name via USB?
 
@@ -292,18 +287,18 @@ SetupCommand.prototype.findDevice = function() {
 					);
 					return wireless.list();
 				}
-				console.log(arrow, "Goodbye!");
-			}
+				console.log(arrow, 'Goodbye!');
+			});
 		}
-	};
+	}
 
 	function detectedPrompt(name, cb) {
 
 		console.log(
 			arrow,
-			"I have detected a",
+			'I have detected a',
 			chalk.cyan(name),
-			"connected via USB."
+			'connected via USB.'
 		);
 
 		prompt([{
@@ -315,7 +310,119 @@ SetupCommand.prototype.findDevice = function() {
 
 		}], cb);
 
-	};
+	}
+};
+
+SetupCommand.prototype.setupCore = function(device) {
+	var self = this;
+	var serial = this.cli.getCommandModule('serial');
+
+	function promptForCyan() {
+		var online = when.defer();
+		prompt([
+			{
+				type: 'input',
+				name: 'online',
+				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is breathing ' + chalk.bold.cyan('CYAN'),
+				default: true
+			}
+		], function() {
+			online.resolve();
+		});
+		return online.promise;
+	}
+
+	function promptForListen() {
+		var listen = when.defer();
+		prompt([
+			{
+				type: 'confirm',
+				name: 'listen',
+				message: 'Is your core blinking ' + chalk.bold.blue('BLUE'),
+				default: true
+			}
+		], function(answer) {
+			if (answer.listen) {
+				console.log('Great! Lets give this another try...');
+			} else {
+				console.log();
+				console.log(alert, 'Hold the', chalk.bold.cyan('MODE'), 'button for a couple seconds, until it starts blinking', chalk.bold.blue('BLUE'));
+				console.log();
+			}
+			listen.resolve();
+		});
+		return listen.promise;
+	}
+
+	var deviceId;
+	var deviceName;
+	pipeline([
+		function () {
+			return utilities.retryDeferred(function () {
+				return serial.askForDeviceID(device);
+			}, 3, promptForListen);
+		},
+		function(id) {
+			deviceId = id;
+			return serial.configureWifi(device.port);
+		},
+		function() {
+			return promptForCyan();
+		},
+		function() {
+			self.newSpin('Claiming the core to your account').start();
+			return utilities.retryDeferred(function () {
+				return self.__oldapi.claimCore(deviceId);
+			}, 3, promptForCyan);
+		},
+		function() {
+			self.stopSpin();
+			return self.__oldapi.signalCore(deviceId, true);
+		},
+		function() {
+			var rainbow = when.defer();
+			prompt([
+				{
+					type: 'input',
+					name: 'rainbows',
+					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is excitedly shouting rainbows',
+					default: true
+				}
+			], function() {
+				rainbow.resolve();
+			});
+			return rainbow.promise;
+		},
+		function() {
+			var naming = when.defer();
+			prompt([
+				{
+					type: 'input',
+					name: 'coreName',
+					message: 'What would you like to call your core?'
+				}
+			], function(ans) {
+				deviceName = ans.coreName;
+				sequence([
+					function() {
+						return self.__oldapi.signalCore(deviceId, false);
+					},
+					function() {
+						return self.__oldapi.renameCore(deviceId, deviceName);
+					}
+				]).then(naming.resolve, naming.reject);
+			});
+			return naming.promise;
+		}
+	]).then(function() {
+		console.log();
+		console.log(util.format("You've successfully setup your core %s (%s)", deviceName, deviceId));
+		console.log('Nice work!');
+	}, function(err) {
+		self.stopSpin();
+		console.error(alert, 'Something went wrong');
+		console.error(alert, err);
+	});
 };
 
 SetupCommand.prototype.checkArguments = function(args) {
@@ -327,7 +434,7 @@ SetupCommand.prototype.checkArguments = function(args) {
 
 		this.options.scan = utilities.tryParseArgs(
 			args,
-			"--scan",
+			'--scan',
 			null
 		);
 	}
