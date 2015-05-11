@@ -98,7 +98,7 @@ WirelessCommand.prototype.list = function list(args) {
 		"\n"
 	);
 
-	this.newSpin('%s ' + chalk.bold.white('Scanning for nearby Photons in setup mode...')).start();
+	this.newSpin('%s ' + chalk.bold.white('Scanning Wi-Fi for nearby Photons in setup mode...')).start();
 	scan(this.__networks.bind(this));
 
 };
