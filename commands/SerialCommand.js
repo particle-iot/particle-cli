@@ -513,6 +513,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		if (!device) {
 			return when.reject('getDeviceMacAddress - no serial port provided');
 		}
+		if (device.type === 'Spark Core') {
+			return when.reject('Unable to get MAC address of a Spark Core');
+		}
 
 		var failDelay = 5000;
 
@@ -534,7 +537,23 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				clearTimeout(failTimer);
 				var matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
 				if (matches) {
-					dfd.resolve(matches[0]);
+					var mac = matches[0].toLowerCase();
+					// manufacturing firmware can sometimes not report the full MAC
+					// lets try and fix it
+					if (mac.length < 17) {
+						var bytes = mac.split(':');
+						while (bytes.length < 6) {
+							bytes.unshift('00');
+						}
+						// if at least one of the first 3 bytes matches, assume photon MAC
+						if (bytes[2] === '84' || bytes[1] === '0b' || bytes[0] === '6c') {
+							bytes[0] = '6c';
+							bytes[1] = '0b';
+							bytes[2] = '84';
+							mac = bytes.join(':');
+						}
+					}
+					dfd.resolve(mac);
 				}
 			});
 
