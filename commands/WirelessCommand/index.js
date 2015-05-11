@@ -188,6 +188,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			self.__batch = ans.selected;
 			return self.setup(null);
 		}
+		self.__batch = undefined;
 		self.setup(ans.selected[0]);
 	};
 
