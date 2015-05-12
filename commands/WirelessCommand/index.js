@@ -358,13 +358,16 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	var network;
 	var retry;
 
-	sap.scan(results).on('error', function(err) {
+	self.stopSpin();
 
-		console.log(alert, 'Your Photon encountered an error while scanning nearby Wi-Fi networks.');
-		console.log(alert, 'DEBUG:', chalk.grey(err));
-		return;
+	function start() {
 
-	});
+		clearTimeout(retry);
+		sap.scan(results).on('error', function() {
+
+			retry = setTimeout(start, 1000);
+		});
+	};
 
 	function results(err, dat) {
 
