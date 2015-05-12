@@ -343,9 +343,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	},
 
-	login: function () {
+	login: function (username) {
 		var self = this;
-		var username = null;
 
 		if (this.tries >= 3) {
 			console.log();
@@ -360,7 +359,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var allDone = pipeline([
 			//prompt for creds
-			prompts.getCredentials,
+			function () {
+				return prompts.getCredentials(username);
+			},
 
 			//login to the server
 			function (creds) {
@@ -376,15 +377,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					settings.override(null, 'username', username);
 				}
 				self.tries = 0;
+				return when.resolve(accessToken);
 			}
 		]);
 
-		return when(allDone).catch(function (err) {
+		return allDone.catch(function (err) {
 			console.log(alert, "There was an error logging you in! Let's try again.");
 			console.error(alert, err);
 			self.tries = (self.tries || 0) + 1;
 
-			return self.login();
+			return self.login(username);
 		});
 	},
 

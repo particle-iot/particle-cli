@@ -109,6 +109,8 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 		// user wants to logout
 		if (ans.switch) {
 			cloud.logout().then(function() {
+				self.__api.clearToken();
+				self.__oldapi.clearToken();
 				accountStatus(false);
 			});
 		} else {
@@ -226,13 +228,15 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 			}
 
 			// Login the new user automatically
-			self.__api.login(settings.clientId, ans.username, ans.password, function (loginErr) {
+			self.__api.login(settings.clientId, ans.username, ans.password, function (loginErr, body) {
 				// if just the login fails, reset to the login part of the setup flow
 				if (loginErr) {
 					console.error(loginErr);
 					console.error(alert, 'We had a problem logging you in :(');
 					return self.login(cb);
 				}
+
+				self.__oldapi.updateToken(body.access_token);
 
 				settings.override(null, 'username', ans.username);
 				console.log(arrow, strings.signupSuccess);
@@ -244,11 +248,14 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 };
 
 SetupCommand.prototype.login = function login(cb) {
+	var self = this;
 	var cloud = this.cli.getCommandModule('cloud');
 
 	console.log(arrow, "Let's get you logged in!");
 
-	cloud.login().then(function () {
+	cloud.login().then(function (accessToken) {
+		self.__api.updateToken(accessToken);
+		self.__oldapi.updateToken(accessToken);
 		cb();
 	}).catch(function() {
 		return;
