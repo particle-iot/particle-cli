@@ -332,10 +332,15 @@ SetupCommand.prototype.findDevice = function() {
 					var macAddress;
 					self.newSpin('Getting device information...').start();
 					serial.getDeviceMacAddress(device).then(function(mac) {
+
 						macAddress = mac;
+
 					}, function() {
+
 						// do nothing on rejection
+
 					}).finally(function () {
+
 						self.stopSpin();
 						console.log(
 							chalk.cyan('!'),

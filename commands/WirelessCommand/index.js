@@ -337,6 +337,7 @@ WirelessCommand.prototype.setup = function setup(photon) {
 			'Hey! We successfully connected to %s!',
 			chalk.bold.cyan(opts.ssid)
 		)));
+
 		self.newSpin('Attempting to send configuration details...').start();
 		self.__configure(opts.ssid, done);
 	};
@@ -453,6 +454,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		});
 	};
 	function configure() {
+
 		var conf = {
 
 			ssid: network,
@@ -479,6 +481,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		self.stopSpin();
 		console.log(arrow, chalk.bold.white('Configuration request complete! You\'ve just won the internet!'));
+
 
 		prompt([{
 
