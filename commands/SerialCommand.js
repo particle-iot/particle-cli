@@ -554,6 +554,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 						}
 					}
 					dfd.resolve(mac);
+				} else {
+					dfd.reject('Unable to find mac address in response');
 				}
 			});
 
