@@ -112,7 +112,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	if(err) { self.error(strings.scanError); }
 
-	detectedDevices = filter(dat, self.deviceFilterPattern);
+	detectedDevices = ssids(filter(dat, self.deviceFilterPattern));
 
 	if(detectedDevices.length > 1) {
 
@@ -135,7 +135,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			name: 'setupSingle',
 			message: util.format(
 				'Found "%s". Would you like to perform setup on this one now?',
-				chalk.bold.cyan(detectedDevices[0].ssid)
+				chalk.bold.cyan(detectedDevices[0])
 			),
 			default: true,
 
@@ -175,7 +175,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 				type: 'checkbox',
 				name: 'selected',
 				message: 'Please select which Photons you would like to setup at this time.',
-				choices: ssids(detectedDevices)
+				choices: detectedDevices
 
 			}], multipleAnswers);
 		}
@@ -194,7 +194,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function singleChoice(ans) {
 
-		if(ans.setupSingle) { self.setup(detectedDevices[0].ssid); }
+		if(ans.setupSingle) { self.setup(detectedDevices[0]); }
 		else {
 
 			// Monitor for new Photons?
@@ -298,8 +298,8 @@ WirelessCommand.prototype.setup = function setup(photon) {
 			// TODO: Graceful recovery here
 			return console.log(alert, "I encountered an error while trying to retrieve a claim code from the cloud. Are you connected to the internet?");
 		}
-		if(!photon && !self.__batch) {
-			return console.log(alert, "No Photons selected for setup.");
+		if(!photon) {
+			return console.log(alert, "No Photon selected for setup.");
 		}
 		self.__claimCode = dat.claim_code;
 
