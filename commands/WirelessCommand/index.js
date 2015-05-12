@@ -372,6 +372,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function results(err, dat) {
 
 		if(err) {
+
+			// TODO: offer to retry
 			return console.log(
 				arrow,
 				'Your Photon encountered an error while trying to scan for nearby Wi-Fi networks.'
