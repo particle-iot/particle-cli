@@ -323,10 +323,11 @@ SetupCommand.prototype.findDevice = function() {
 
 			if(ans.scan) { return wireless.list(); }
 			console.log(arrow, 'Goodbye!');
-		}
+		};
 	});
 
 	function inspect(device) {
+
 		// TODO: Update deviceSpecs to include DFU & non-DFU PIDs, use here
 		if(device.type === 'Spark Core') {
 
@@ -341,6 +342,7 @@ SetupCommand.prototype.findDevice = function() {
 
 			// Photon detected
 			detectedPrompt('Photon', function setupPhotonChoice(ans) {
+
 				if(ans.setup) {
 
 					var macAddress;
