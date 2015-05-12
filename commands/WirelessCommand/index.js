@@ -432,6 +432,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function info(err, res) {
 
 		clearTimeout(retry);
+		console.log(arrow, 'Obtaining device information...');
 		sap.deviceInfo(pubKey).on('error', function() {
 
 			retry = setTimeout(info, 1000);
@@ -440,6 +441,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function pubKey() {
 
 		clearTimeout(retry);
+		console.log(arrow, "Requesting public key from the device...");
 		sap.publicKey(code).on('error', function() {
 
 			retry = setTimeout(pubKey, 1000);
@@ -448,6 +450,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function code() {
 
 		clearTimeout(retry);
+		console.log(arrow, "Setting the magical cloud claim code...");
 		sap.setClaimCode(self.__claimCode, configure).on('error', function() {
 
 			retry = setTimeout(code, 1000);
@@ -464,6 +467,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		};
 
 		clearTimeout(retry);
+		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
 		sap.configure(conf, connect).on('error', function() {
 
 			retry = setTimeout(configure, 1000);
@@ -471,11 +475,13 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	};
 	function connect() {
 
+		console.log(arrow, 'The Photon will now attempt to connect to your Wi-Fi network...');
 		clearTimeout(retry);
 		sap.connect(done);
 	};
 	function done(err) {
 
+		self.stopSpin();
 		clearTimeout(retry);
 		if(self.__batch && self.__batch.length) { self.__configure(self.__batch.pop(), cb); }
 
