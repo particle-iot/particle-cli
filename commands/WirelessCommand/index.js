@@ -353,9 +353,12 @@ WirelessCommand.prototype.__configure = function configure(ssid, cb) {
 	var sap = this.__sap;
 	var retry;
 
-	sap.scan(results).on('error', function(e) {
-		console.log('ERROR>>>');
-		console.log(e);
+	sap.scan(results).on('error', function(err) {
+
+		console.log(alert, 'Your Photon encountered an error while scanning nearby Wi-Fi networks.');
+		console.log(alert, 'DEBUG:', chalk.grey(err));
+		return;
+
 	});
 
 	function results(err, dat) {
@@ -369,10 +372,8 @@ WirelessCommand.prototype.__configure = function configure(ssid, cb) {
 
 		var networks = ssids(dat.scans);
 
-		console.log(networks);
+		sap.scan(info);
 	};
-
-	sap.scan(info);
 
 	function info(err, res) {
 
