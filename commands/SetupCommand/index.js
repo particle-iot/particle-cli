@@ -77,10 +77,9 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 	loginCheck();
 
 	function loginCheck() {
+		self.__wasLoggedIn = !!settings.username;
 
-		if(settings.username) {
-
-			self.__wasLoggedIn = true;
+		if (settings.access_token) {
 			return promptSwitch();
 		}
 
@@ -119,11 +118,29 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 	}
 
 	function accountStatus(alreadyLoggedIn) {
+		if (!alreadyLoggedIn) {
+			// New user or a fresh environment!
+			if (!self.__wasLoggedIn) {
+				prompt([
+					{
+						type: 'list',
+						name: 'login',
+						message: 'Hello Stranger! This seems to be your first time here. What would you like to do?',
+						choices: [
+							{ name: 'Create a new account', value: false },
+							{ name: 'Login', value: true }
+						]
+					}
+				], function(answers) {
+					if (answers.login) {
+						return self.login(self.findDevice.bind(self));
+					}
+					return self.signup(self.findDevice.bind(self));
+				});
 
-		if(!alreadyLoggedIn) {
+				return;
+			}
 
-			// New user!
-			if(!self.__wasLoggedIn) { return self.signup(self.findDevice.bind(self)); }
 			// Not-new user!
 			return self.login(self.findDevice.bind(self));
 		}
@@ -134,11 +151,10 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 
 SetupCommand.prototype.signup = function signup(cb, tries) {
-
 	if(!tries) { var tries = 1; }
 	else if(tries && tries > 3) {
 
-		console.log(alert, "Something is going wrong with the signup process.");
+		console.log(alert, 'Something is going wrong with the signup process.');
 		return console.log(
 			alert,
 			util.format(strings.helpForMoreInfo,
@@ -154,37 +170,45 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 		type: 'input',
 		name: 'username',
 		message: 'Please enter a valid email address:',
-		default: signupUsername
+		default: signupUsername,
+		validate: function(value) {
+			if (value && value.indexOf('@') > 0 && value.indexOf('.') > 0) {
+				// TODO check with API that this is an unused email
+				return true;
+			}
+			return 'Make sure you enter a valid email address';
+		}
 
 	}, {
 
 		type: 'password',
 		name: 'password',
-		message: 'Please enter a secure password:'
-
+		message: 'Please enter a secure password:',
+		validate: function(value) {
+			if (!value) {
+				return "I'm afraid your password cannot be empty. Try again.";
+			}
+			return true;
+		}
 	}, {
 
 		type: 'password',
 		name: 'confirm',
-		message: 'Please confirm your password:'
+		message: 'Please confirm your password:',
+		validate: function(value) {
+			if (!value) {
+				return "I'm afraid your password cannot be empty. Try again.";
+			}
+			return true;
+		}
 
 	}], signupInput);
 
 	function signupInput(ans) {
-		if(!ans.username) {
-
-			console.log(alert, 'You need an email address to sign up, silly!');
-			return self.signup(cb, ++tries);
-		}
-		if(!ans.password) {
-
-			console.log(alert, 'You need a password to sign up, silly!');
-			return self.signup(cb, ++tries);
-		}
-		if(!ans.confirm || ans.confirm !== ans.password) {
+		if (ans.confirm !== ans.password) {
 
 			// try to remember username to save them some frustration
-			if(ans.username) {
+			if (ans.username) {
 				self.__signupUsername = ans.username;
 			}
 			console.log(
@@ -194,9 +218,28 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 			return self.signup(cb, ++tries);
 		}
 
-		// TODO: actually send API signup request
-		console.log(arrow, strings.signupSuccess);
-		cb(null);
+		self.__api.createUser(ans.username, ans.password, function (signupErr) {
+			if (signupErr) {
+				console.error(signupErr);
+				console.error(alert, "Oops, that didn't seem to work. Let's try that again");
+				return self.signup(cb, ++tries);
+			}
+
+			// Login the new user automatically
+			self.__api.login(settings.clientId, ans.username, ans.password, function (loginErr) {
+				// if just the login fails, reset to the login part of the setup flow
+				if (loginErr) {
+					console.error(loginErr);
+					console.error(alert, 'We had a problem logging you in :(');
+					return self.login(cb);
+				}
+
+				settings.override(null, 'username', ans.username);
+				console.log(arrow, strings.signupSuccess);
+				cb(null);
+			});
+		});
+
 	}
 };
 
