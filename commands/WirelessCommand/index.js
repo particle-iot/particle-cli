@@ -394,7 +394,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			type: 'list',
 			name: 'network',
 			message: 'Please select the network to which your Photon should connect:',
-			choices: ssids(networks)
+			choices: removePhotonNetworks(ssids(networks))
 
 		}, {
 
@@ -575,6 +575,15 @@ function ssids(list) {
 
 	return clean(list).map(function map(ap) {
 		return ap.ssid;
+	});
+};
+
+function removePhotonNetworks(ssids) {
+	return ssids.filter(function (ap) {
+		if (ap.indexOf('Photon-') === 0) {
+			return false;
+		}
+		return true;
 	});
 };
 
