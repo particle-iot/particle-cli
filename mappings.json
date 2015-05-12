@@ -4,7 +4,7 @@
         "list",
         "call",
         "get",
-        "core",
+        "device",
         "identify",
         "flash",
         "subscribe",
@@ -88,18 +88,38 @@
 
         "add": {
             "maps": [ "cloud", "claim" ],
-            "usage": "spark add core_id",
+            "usage": "spark core add core_id",
             "does": "claims a core to your account"
         },
         "remove": {
             "maps": [ "cloud", "remove" ],
-            "usage": "spark remove core_id",
+            "usage": "spark core remove core_id",
             "does": "releases a core from your account"
         },
         "rename": {
             "maps": [ "cloud", "name" ],
-            "usage": "spark rename core_id name",
+            "usage": "spark core rename core_id name",
             "does": "changes the friendly name of your core"
+        }
+    },
+
+    "device": {
+        "_commands": [ "add", "remove", "rename" ],
+
+        "add": {
+            "maps": [ "cloud", "claim" ],
+            "usage": "spark device add core_id",
+            "does": "claims a device to your account"
+        },
+        "remove": {
+            "maps": [ "cloud", "remove" ],
+            "usage": "spark device remove device_id",
+            "does": "releases a device from your account"
+        },
+        "rename": {
+            "maps": [ "cloud", "name" ],
+            "usage": "spark device rename device_id name",
+            "does": "changes the friendly name of your device"
         }
     },
 
