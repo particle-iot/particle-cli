@@ -310,195 +310,51 @@ WirelessCommand.prototype.setup = function setup(photon) {
 
 		self.stopSpin();
 		if(err) {
-
-			console.log(chalk.bold.red('!'), chalk.bold.white('Woops. Something went wrong. Trying again...'));
-			return passwordChoice(ans);
+			// TODO: Max retries, help output when reached.
+			console.log(
+				chalk.bold.red('!'),
+				chalk.bold.white('Woops. Something went wrong connecting to ' + opts.ssid + '. Please manually re-connect to your Wi-Fi network.')
+			);
+			return;
 		}
-
 		console.log(arrow, chalk.bold.white(util.format(
 			'Hey! We successfully connected to %s!',
 			chalk.bold.cyan(opts.ssid)
 		)));
-
 		self.newSpin('Attempting to send configuration details...').start();
-
-		self.__configure(opts.ssid);
+		self.__configure(opts.ssid, done);
 	};
 
-	function networks(err, dat) {
+	function done(err) {
 
-		self.stopSpin();
-
-		if(err) { self.error(err); }
-
-		if(dat.length == 0) {
-
-			// No networks found, retry?
-			prompt([{
-
-				type: 'confirm',
-				name: 'rescan',
-				message: 'Uh oh, no networks found. Try again?'
-				, default: true
-
-			}], rescanChoice);
-			function rescanChoice(ans) {
-
-				if(ans.rescan) { return scan(networks); }
-				self.exit();
-			}
-		}
-		else {
-
-			// TODO: Allow user to re-scan if their network isn't in the list
-
-			dat.forEach(function map(ap) { list[ap.ssid] = ap; });
-
-			// to which network should the Photon connect?
-			prompt([{
-
-				type: 'list',
-				name: 'network',
-				message: chalk.bold.white(strings.selectNetwork),
-				choices: ssids(dat)
-
-			}], securityDetection);
-
-		}
-
-		function securityDetection(ans) {
-
-			selected = ans.network;
-
-			// Auto-detect security?
-			prompt([{
-
-				type: 'confirm',
-				name: 'auto',
-				message: chalk.bold.white('Should I try to auto-detect the wireless security type?'),
-				default: true
-
-			}], detectionChoice);
-		};
-
-		function detectionChoice(ans) {
-
-			if(ans.auto) {
-
-				var security = list[selected].security;
-
-				// TODO: simplify this logic.
-
-				if(security.indexOf('WPA2') >= 0) {
-					if(security.indexOf('AES') && security.indexOf('PSK')) {
-						self.__security = 'wpa2_mixed';
-					}
-					else if(security.indeOf('AES') >= 0) {
-						self.__security = 'wpa2_aes';
-					}
-					else if(security.indexOf('TKIP') >= 0) {
-						self.__security = 'wpa2_tkip';
-					}
-				}
-				else if(security.indexOf('WPA') >= 0) {
-
-					if(security.indexOf('AES') >= 0) {
-						self.__security = 'wpa_aes';
-					}
-					else {
-						self.__security = 'wpa_tkip';
-					}
-				}
-				else if(security.indexOf('NONE') >= 0) {
-					self.__security = 'none';
-				}
-				else if(security.indexOf('WEP') >= 0) {
-					self.__security = 'wep_psk';
-				}
-
-				securityChoice({ security: self.__security });
-			}
-			else {
-
-				// select type of security
-				prompt([{
-
-					type: 'list',
-					name: 'security',
-					message: "Please select the type of wireless security you wish the Photon to use:",
-					choices: [
-						'WPA2 Mixed',
-						'WPA2 TKIP',
-						'WPA2 AES',
-						'WPA TKIP',
-						'WPA AES',
-						'None',
-						'WEP'
-					]
-
-				}], securityChoice);
-			}
-		};
-
-		function securityChoice(ans) {
-
-
-			// TODO: Abstract for cross-platform compat
-
-			self.__security = ans.security.toLowerCase().replace(' ', '_');
-
-			if(self.__security !== 'none') {
-
-				console.log();
-				console.log(
-					chalk.cyan('!'),
-					"PROTIP:",
-					chalk.grey("Your secret is safe with me. I encrypt any password before sending it to the device.")
-				);
-				console.log();
-
-				// what password to use?
-				prompt([{
-
-					name: 'password',
-					type: 'input',
-					message: 'Please enter the password for your Wi-Fi network:',
-
-				}], passwordChoice);
-			}
-			else {
-
-				passwordChoice({ password: null });
-			}
-		};
-
-		function passwordChoice(ans) {
-
-			if(ans.password) { self.__password = ans.password; }
-
-			if(!photon && self.__batch) {
-				var photon = { };
-				photon.ssid = self.__batch.pop();
-			}
-
-			if(photon) {
-
-
-			}
-			else {
-
-				// TODO: Maybe give them another chance to select at least one Photon?
-				console.log(chalk.bold.red('!'), 'No wireless Photon selected, and not configuring all Photons.');
-				self.exit();
-			}
-		};
-	}
+		console.log(arrow, "Done configuring your Photon(s)!");
+	};
 };
 
 WirelessCommand.prototype.__configure = function configure(ssid, cb) {
 
 	var self = this;
 	var sap = this.__sap;
+	var retry;
+
+	sap.scan(results).on('error', function(e) {
+		console.log('ERROR>>>');
+		console.log(e);
+	});
+
+	function results(err, dat) {
+
+		if(err) {
+			return console.log(
+				arrow,
+				'Your Photon encountered an error while trying to scan for nearby Wi-Fi networks.'
+			);
+		}
+
+		var networks = ssids(dat.scans);
+
+		console.log(networks);
+	};
 
 	sap.scan(info);
 
