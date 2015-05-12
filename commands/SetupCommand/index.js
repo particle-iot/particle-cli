@@ -293,7 +293,21 @@ SetupCommand.prototype.findDevice = function() {
 
 		self.stopSpin();
 
-		if(devices.length > 0) { return devices.forEach(inspect, self); }
+		if(devices.length > 0) {
+			if(devices.length > 1) {
+
+				console.log(
+					alert,
+					'NOTICE:',
+					chalk.blue('Multiple devices detected. Please run',
+						chalk.bold.cyan(cmd + ' setup'),
+						'again to setup subsequent devices.'
+					)
+				);
+			}
+			// TODO: something other than just doing the first one.
+			return inspect(devices[0]);
+		}
 		console.log(arrow, 'No devices detected via USB.');
 
 		prompt([{
@@ -309,10 +323,11 @@ SetupCommand.prototype.findDevice = function() {
 
 			if(ans.scan) { return wireless.list(); }
 			console.log(arrow, 'Goodbye!');
-		}
+		};
 	});
 
 	function inspect(device) {
+
 		// TODO: Update deviceSpecs to include DFU & non-DFU PIDs, use here
 		if(device.type === 'Spark Core') {
 
@@ -327,6 +342,7 @@ SetupCommand.prototype.findDevice = function() {
 
 			// Photon detected
 			detectedPrompt('Photon', function setupPhotonChoice(ans) {
+
 				if(ans.setup) {
 
 					var macAddress;
