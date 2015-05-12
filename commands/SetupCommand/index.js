@@ -387,7 +387,6 @@ SetupCommand.prototype.setupCore = function(device) {
 				type: 'input',
 				name: 'online',
 				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is breathing ' + chalk.bold.cyan('CYAN'),
-				default: true
 			}
 		], function() {
 			online.resolve();
@@ -449,7 +448,6 @@ SetupCommand.prototype.setupCore = function(device) {
 					type: 'input',
 					name: 'rainbows',
 					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is excitedly shouting rainbows',
-					default: true
 				}
 			], function() {
 				rainbow.resolve();
