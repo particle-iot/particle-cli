@@ -545,13 +545,18 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 						while (bytes.length < 6) {
 							bytes.unshift('00');
 						}
-						// if at least one of the first 3 bytes matches, assume photon MAC
-						if (bytes[2] === '84' || bytes[1] === '0b' || bytes[0] === '6c') {
-							bytes[0] = '6c';
-							bytes[1] = '0b';
-							bytes[2] = '84';
-							mac = bytes.join(':');
-						}
+						var usiMacs = [
+							['6c', '0b', '84'],
+							['44', '39', 'c4']
+						];
+						usiMacs.some(function (usimac) {
+							for (var i = usimac.length - 1; i >= 0; i--) {
+								if (bytes[i] === usimac[i]) {
+									mac = usimac.concat(bytes.slice(usimac.length)).join(':');
+									return true;
+								}
+							}
+						});
 					}
 					dfd.resolve(mac);
 				} else {
