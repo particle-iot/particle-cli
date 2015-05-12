@@ -34,6 +34,7 @@ var fs = require('fs');
 var path = require('path');
 var readline = require('readline');
 var util = require('util');
+var inquirer = require('inquirer');
 
 var ApiClient = require('../lib/ApiClient.js');
 var BaseCommand = require("./BaseCommand.js");
@@ -61,12 +62,18 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 
 	getCredentials: function() {
 		if (settings.username) {
-			return sequence([
-				function () { return settings.username },
-				function () {
-					return prompts.passPromptDfd("Please reenter your password:  ");
-				}
-			]);
+			var creds = when.defer();
+
+			inquirer.prompt([
+				prompts.getPassword('Please re-enter your password')
+			], function (answers) {
+				creds.resolve({
+					username: settings.username,
+					password: answers.password
+				});
+			});
+
+			return creds.promise;
 		} else {
 			return prompts.getCredentials();
 		}
@@ -97,7 +104,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			this.getCredentials,
 			function (creds) {
 				var api = new ApiClient(settings.apiUrl);
-				return api.listTokens(creds[0], creds[1]);
+				return api.listTokens(creds.username, creds.password);
 			},
 			sort_tokens
 		]);
@@ -157,7 +164,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		var api = new ApiClient(settings.apiUrl);
 		revokers = tokens.map(function(x) {
 			return function (creds) {
-				return [x, api.removeAccessToken(creds[0], creds[1], x)];
+				return [x, api.removeAccessToken(creds.username, creds.password, x)];
 			};
 		});
 
@@ -199,7 +206,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			this.getCredentials,
 			function (creds) {
 				var api = new ApiClient(settings.apiUrl);
-				return api.createAccessToken(clientName, creds[0], creds[1]);
+				return api.createAccessToken(clientName, creds.username, creds.password);
 			}
 		]);
 
