@@ -53,6 +53,8 @@ var WirelessCommand = function (cli, options) {
 	this.options = extend({}, this.options, options);
 	this.deviceFilterPattern = settings.wirelessSetupFilter;
 	this.__sap = new SAP();
+	this.__completed = 0;
+
 	this.init();
 };
 
@@ -464,8 +466,13 @@ WirelessCommand.prototype.exit = function() {
 };
 
 function filter(list, pattern, inverse) {
-
+	// var returnedOne = false;
 	return list.filter(function filter(ap) {
+		// if(!returnedOne && ap.ssid.match(pattern)) {
+		// 	returnedOne = true
+		// 	return true
+		// }
+		// return false
 		return inverse ? !ap.ssid.match(pattern) : ap.ssid.match(pattern);
 	});
 };
