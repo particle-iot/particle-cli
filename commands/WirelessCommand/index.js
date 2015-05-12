@@ -359,6 +359,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	var retry;
 
 	self.stopSpin();
+	start();
 
 	function start() {
 
