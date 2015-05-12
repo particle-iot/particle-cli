@@ -94,7 +94,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
     callFunction: function (coreID, functionName, funcParam) {
         funcParam = funcParam || "";
 
-        if (!coreID && !functionName) {
+        if (!coreID || !functionName) {
             //they just didn't provide any args...
             return this.listFunctions();
         }
