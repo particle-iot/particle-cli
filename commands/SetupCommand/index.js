@@ -320,15 +320,23 @@ SetupCommand.prototype.findDevice = function() {
 
 			// Photon detected
 			detectedPrompt('Photon', function setupPhotonChoice(ans) {
-
-				// TODO: figure out Photon AP name via USB?
-
 				if(ans.setup) {
-					console.log(
-						chalk.cyan('!'),
-						"The Photon supports secure Wi-Fi setup. We'll try that first."
-					);
-					return wireless.list();
+
+					var macAddress;
+					self.newSpin('Getting device information...').start();
+					serial.getDeviceMacAddress(device).then(function(mac) {
+						macAddress = mac;
+					}, function() {
+						// do nothing on rejection
+					}).finally(function () {
+						self.stopSpin();
+						console.log(
+							chalk.cyan('!'),
+							"The Photon supports secure Wi-Fi setup. We'll try that first."
+						);
+						return wireless.list(macAddress);
+					});
+					return;
 				}
 				console.log(arrow, 'Goodbye!');
 			});

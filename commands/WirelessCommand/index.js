@@ -72,9 +72,13 @@ WirelessCommand.prototype.init = function init() {
 	// this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
 };
 
-WirelessCommand.prototype.list = function list(args) {
-
-	if(args) { this.deviceFilterPattern = args; }
+WirelessCommand.prototype.list = function list(macAddress) {
+	// if we get passed a MAC address from setup
+	if (macAddress && macAddress.length === 17) {
+		this._macAddressFilter = macAddress;
+	} else {
+		this._macAddressFilter = null;
+	}
 
 	console.log();
 	console.log(
@@ -114,7 +118,17 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	if(err) { self.error(strings.scanError); }
 
-	detectedDevices = ssids(filter(dat, self.deviceFilterPattern));
+	detectedDevices = dat;
+	if (this._macAddressFilter) {
+		var macDevices = detectedDevices.filter(function (ap) {
+			return ap.mac.toLowerCase() === self._macAddressFilter;
+		});
+		if (macDevices && macDevices.length === 1) {
+			detectedDevices = macDevices;
+		}
+	}
+
+	detectedDevices = ssids(filter(detectedDevices, self.deviceFilterPattern));
 
 	if(detectedDevices.length > 1) {
 
