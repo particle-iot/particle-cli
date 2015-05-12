@@ -526,31 +526,30 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 		if (coreID) {
-			api.signalCore(coreID, onOff);
+			return api.signalCore(coreID, onOff);
 		}
 		else {
 
-		   var toggleAll = function (cores) {
-				if (!cores || (cores.length == 0)) {
-					console.log("No cores found.");
+			var toggleAll = function (cores) {
+				if (!cores || (cores.length === 0)) {
+					console.log('No cores found.');
+					return when.resolve();
 				}
 				else {
 					var promises = [];
-					for (var i = 0; i < cores.length; i++) {
-						var coreid = cores[i].id;
-						if (!cores[i].connected) {
-							promises.push(when.resolve(cores[i]));
-							continue;
+					cores.forEach(function (core) {
+						if (!core.connected) {
+							promises.push(when.resolve(core));
+							return;
 						}
-
-						promises.push(api.signalCore(coreid, onOff));
-					}
+						promises.push(api.signalCore(core.id, onOff));
+					});
 					return when.all(promises);
 				}
 			};
 
 
-			pipeline([
+			return pipeline([
 				api.listDevices.bind(api),
 				toggleAll
 			]);
