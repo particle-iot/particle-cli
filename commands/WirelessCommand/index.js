@@ -504,23 +504,26 @@ WirelessCommand.prototype.__configure = function configure(ssid, cb) {
 
 	function info(err, res) {
 
+		clearTimeout(retry);
 		sap.deviceInfo(pubKey).on('error', function() {
 
-			setTimeout(info, 1000);
+			retry = setTimeout(info, 1000);
 		});
 	};
 	function pubKey() {
 
+		clearTimeout(retry);
 		sap.publicKey(code).on('error', function() {
 
-			setTimeout(pubKey, 1000);
+			retry = setTimeout(pubKey, 1000);
 		});
 	};
 	function code() {
 
+		clearTimeout(retry);
 		sap.setClaimCode(self.__claimCode, configure).on('error', function() {
 
-			setTimeout(code, 1000);
+			retry = setTimeout(code, 1000);
 		});
 	};
 	function configure() {
@@ -532,15 +535,21 @@ WirelessCommand.prototype.__configure = function configure(ssid, cb) {
 
 		};
 
+		clearTimeout(retry);
 		sap.configure(conf, connect).on('error', function() {
 
-			setTimeout(configure, 1000);
+			retry = setTimeout(configure, 1000);
 		});
 	};
-	function connect() { sap.connect(done); };
+	function connect() {
+
+		clearTimeout(retry);
+		sap.connect(done);
+	};
 	function done(err) {
 
-		if(self.__batch && self.__batch.length) { self.__configure(self.__batch.pop()); }
+		clearTimeout(retry);
+		if(self.__batch && self.__batch.length) { self.__configure(self.__batch.pop(), cb); }
 
 		self.stopSpin();
 		console.log(arrow, chalk.bold.white('Configuration request complete! You\'ve just won the internet!'));
