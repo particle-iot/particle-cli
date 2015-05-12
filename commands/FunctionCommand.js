@@ -57,7 +57,6 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 
 
     listFunctions: function (args) {
-        console.log("Listfunctions called");
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
             return;
