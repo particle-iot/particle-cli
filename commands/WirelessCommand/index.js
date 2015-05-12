@@ -347,7 +347,7 @@ WirelessCommand.prototype.setup = function setup(photon) {
 	};
 };
 
-WirelessCommand.prototype.__configure = function configure(ssid, cb) {
+WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	var self = this;
 	var sap = this.__sap;
