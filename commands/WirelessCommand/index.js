@@ -351,6 +351,10 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	var self = this;
 	var sap = this.__sap;
+	var list = [ ];
+
+	var password;
+	var network;
 	var retry;
 
 	sap.scan(results).on('error', function(err) {
@@ -370,10 +374,59 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			);
 		}
 
-		var networks = ssids(dat.scans);
+		networks = dat.scans;
 
-		sap.scan(info);
+		dat.scans.forEach(function save(ap) { list[ap.ssid] = ap; });
+
+		prompt([{
+
+			type: 'list',
+			name: 'network',
+			message: 'Please select the network to which your Photon should connect:',
+			choices: ssids(networks)
+
+		}, {
+
+			type: 'input',
+			name: 'password',
+			message: 'Please enter your network password (or leave blank for none):'
+
+		}], networkChoices);
 	};
+
+	function networkChoices(ans) {
+
+		network = ans.network;
+		password = ans.password;
+		security = list[network].sec;
+
+		console.log(arrow, "Here's what we're going to send to the Photon:");
+		console.log();
+		console.log(arrow, "Wi-Fi Network:", chalk.bold.cyan(network));
+		console.log(arrow, "Password:", chalk.bold.cyan(password || '[none]'));
+		console.log(arrow, "Security:", chalk.bold.cyan(security));
+		console.log();
+
+		prompt([{
+
+			type: 'confirm',
+			name: 'continue',
+			message: 'Would you like to continue with the information shown above?'
+
+		}], continueChoice);
+	};
+
+	function continueChoice(ans) {
+
+		if(!ans.continue) {
+
+			console.log(arrow, "Let's try again...");
+			console.log();
+			return self.__configure(ssid, cb);
+		}
+
+		info();
+	}
 
 	function info(err, res) {
 
@@ -402,9 +455,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function configure() {
 		var conf = {
 
-			ssid: ssid,
-			security: self.__security,
-			password: self.__password
+			ssid: network,
+			security: security,
+			password: password
 
 		};
 
