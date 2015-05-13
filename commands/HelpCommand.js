@@ -207,7 +207,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 	listMappedCommands: function () {
 		var lines = [
 			"",
-			"Welcome to the Spark Command line utility!",
+			"Welcome to the Particle Command line utility!",
 			"https://github.com/spark/particle-cli",
 			""
 		];

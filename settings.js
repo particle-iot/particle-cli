@@ -99,18 +99,18 @@ settings.findHomePath = function() {
 };
 
 settings.ensureFolder = function() {
-	var sparkDir = path.join(settings.findHomePath(), ".particle");
-	if (!fs.existsSync(sparkDir)) {
-		fs.mkdirSync(sparkDir);
+	var particleDir = path.join(settings.findHomePath(), ".particle");
+	if (!fs.existsSync(particleDir)) {
+		fs.mkdirSync(particleDir);
 	}
-	return sparkDir;
+	return particleDir;
 };
 
 settings.findOverridesFile = function(profile) {
 	profile = profile || settings.profile || "particle";
 
-	var sparkDir = settings.ensureFolder();
-	return path.join(sparkDir, profile + ".config.json");
+	var particleDir = settings.ensureFolder();
+	return path.join(particleDir, profile + ".config.json");
 };
 
 settings.loadOverrides = function (profile) {
@@ -132,8 +132,8 @@ settings.loadOverrides = function (profile) {
 settings.whichProfile = function() {
 	settings.profile = "particle";
 
-	var sparkDir = settings.ensureFolder();
-	var proFile = path.join(sparkDir, "profile.json");      //proFile, get it?
+	var particleDir = settings.ensureFolder();
+	var proFile = path.join(particleDir, "profile.json");      //proFile, get it?
 	if (fs.existsSync(proFile)) {
 		var data = JSON.parse(fs.readFileSync(proFile));
 
@@ -146,8 +146,8 @@ settings.whichProfile = function() {
  * in another file in our user dir, we store a profile name that switches between setting override files
  */
 settings.switchProfile = function(profileName) {
-	var sparkDir = settings.ensureFolder();
-	var proFile = path.join(sparkDir, "profile.json");      //proFile, get it?
+	var particleDir = settings.ensureFolder();
+	var proFile = path.join(particleDir, "profile.json");      //proFile, get it?
 	var data = {
 		name: profileName
 	};
