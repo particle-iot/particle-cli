@@ -368,7 +368,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		sap.scan(results).on('error', function(err) {
-			console.log(alert, err);
+
 			retry = setTimeout(start, 1000);
 		});
 	};
