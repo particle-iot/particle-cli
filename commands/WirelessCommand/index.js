@@ -69,7 +69,7 @@ WirelessCommand.prototype.init = function init() {
 	this.addOption("list", this.list.bind(this), "Show nearby Photons in setup mode (blinking blue)");
 	this.addOption("monitor", this.monitor.bind(this), "Begin monitoring nearby Wi-Fi networks for Photons in setup mode.");
 
-	// this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
+	// this.addOption("identify", this.identifyCore.bind(this), "Ask for and display device ID via serial");
 };
 
 WirelessCommand.prototype.list = function list(macAddress) {

@@ -50,16 +50,16 @@ util.inherits(KeyCommands, BaseCommand);
 KeyCommands.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: "keys",
-	description: "tools to help you manage keys on your cores",
+	description: "tools to help you manage keys on your devices",
 
 
 	init: function () {
 
-		this.addOption("new", this.makeNewKey.bind(this), "Generate a new set of keys for your core");
-		this.addOption("load", this.writeKeyToCore.bind(this), "Load a saved key on disk onto your core");
-		this.addOption("save", this.saveKeyFromCore.bind(this), "Save a key from your core onto your disk");
+		this.addOption("new", this.makeNewKey.bind(this), "Generate a new set of keys for your device");
+		this.addOption("load", this.writeKeyToCore.bind(this), "Load a saved key on disk onto your device");
+		this.addOption("save", this.saveKeyFromCore.bind(this), "Save a key from your device onto your disk");
 		this.addOption("send", this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
-		this.addOption("doctor", this.keyDoctor.bind(this), "Creates and assigns a new key to your core, and uploads it to the cloud");
+		this.addOption("doctor", this.keyDoctor.bind(this), "Creates and assigns a new key to your device, and uploads it to the cloud");
 		this.addOption("server", this.writeServerPublicKey.bind(this), "Switch server public keys");
 
 		//this.addArgument("get", "--time", "include a timestamp")
@@ -116,7 +116,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	makeNewKey: function (filename) {
 		if (!filename) {
-			filename = "core";
+			filename = "device";
 		}
 
 		var keyReady = this.makeKeyOpenSSL(filename);
@@ -134,8 +134,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		if (!filename) {
-			console.error("Please provide a DER format key filename to load to your core");
-			return when.reject("Please provide a DER format key filename to load to your core");
+			console.error("Please provide a DER format key filename to load to your device");
+			return when.reject("Please provide a DER format key filename to load to your device");
 		}
 
 		filename = utilities.filenameNoExt(filename) + ".der";
@@ -144,7 +144,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			return when.reject("I couldn't find the file: " + filename);
 		}
 
-		//TODO: give the user a warning before doing this, since it'll bump their core offline.
+		//TODO: give the user a warning before doing this, since it'll bump their device offline.
 		var that = this;
 
 		var ready = sequence([
@@ -152,7 +152,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.isDfuUtilInstalled();
 			},
 			function () {
-				//make sure our core is online and in dfu mode
+				//make sure our device is online and in dfu mode
 				return dfu.findCompatibleDFU();
 			},
 			//backup their existing key so they don't lock themselves out.
@@ -171,7 +171,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		when(ready).then(function () {
 			console.log("Saved!");
 		}, function (err) {
-			console.error("Error saving key to core... " + err);
+			console.error("Error saving key to device... " + err);
 		});
 
 		return ready;
@@ -221,7 +221,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		when(ready).then(function () {
 			console.log("Saved!");
 		}, function (err) {
-			console.error("Error saving key from core... " + err);
+			console.error("Error saving key from device... " + err);
 		});
 
 		return ready;
@@ -229,13 +229,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	sendPublicKeyToServer: function (coreid, filename) {
 		if (!coreid) {
-			console.log("Please provide a core id");
-			return when.reject("Please provide a core id");
+			console.log("Please provide a device id");
+			return when.reject("Please provide a device id");
 		}
 
 		if (!filename) {
-			console.log("Please provide a filename for your core's public key ending in .pub.pem");
-			return when.reject("Please provide a filename for your core's public key ending in .pub.pem");
+			console.log("Please provide a filename for your device's public key ending in .pub.pem");
+			return when.reject("Please provide a filename for your device's public key ending in .pub.pem");
 		}
 
 		if (!fs.existsSync(filename)) {
@@ -257,7 +257,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	keyDoctor: function (coreid) {
 		if (!coreid || (coreid == "")) {
-			console.log("Please provide your core id");
+			console.log("Please provide your device id");
 			return 0;
 		}
 
@@ -265,8 +265,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		if (coreid.length < 24) {
 			console.log("***************************************************************");
-			console.log("   Warning! - core id was shorter than 24 characters - did you use something other than an id?");
-			console.log("   use spark identify to find your core id");
+			console.log("   Warning! - device id was shorter than 24 characters - did you use something other than an id?");
+			console.log("   use spark identify to find your device id");
 			console.log("***************************************************************");
 		}
 
@@ -291,11 +291,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		when(allDone).then(
 			function () {
-				console.log("Okay!  New keys in place, your core should restart.");
+				console.log("Okay!  New keys in place, your device should restart.");
 
 			},
 			function (err) {
-				console.log("Make sure your core is in DFU mode (blinking yellow), and that your computer is online.");
+				console.log("Make sure your device is in DFU mode (blinking yellow), and that your computer is online.");
 				console.error("Error - " + err);
 			});
 	},
@@ -402,11 +402,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		when(allDone).then(
 			function () {
-				console.log("Okay!  New keys in place, your core will not restart.");
+				console.log("Okay!  New keys in place, your device will not restart.");
 
 			},
 			function (err) {
-				console.log("Make sure your core is in DFU mode (blinking yellow), and is connected to your computer");
+				console.log("Make sure your device is in DFU mode (blinking yellow), and is connected to your computer");
 				console.error("Error - " + err);
 			});
 	},

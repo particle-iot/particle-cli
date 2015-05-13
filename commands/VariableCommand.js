@@ -48,13 +48,13 @@ util.inherits(VariableCommand, BaseCommand);
 VariableCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: "variable",
-	description: "retrieve and monitor variables on your core",
+	description: "retrieve and monitor variables on your device",
 
 
 	init: function () {
-		this.addOption("list", this.listVariables.bind(this), "Show variables provided by your core(s)");
-		this.addOption("get", this.getValue.bind(this), "Retrieve a value from your core");
-		this.addOption("monitor", this.monitorVariables.bind(this), "Connect and display messages from a core");
+		this.addOption("list", this.listVariables.bind(this), "Show variables provided by your device(s)");
+		this.addOption("get", this.getValue.bind(this), "Retrieve a value from your device");
+		this.addOption("monitor", this.monitorVariables.bind(this), "Connect and display messages from a device");
 
 		//this.addArgument("get", "--time", "include a timestamp")
 		//this.addArgument("monitor", "--time", "include a timestamp")
@@ -188,7 +188,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			return when.resolve(this._cachedVariableList);
 		}
 
-		console.error("polling server to see what cores are online, and what variables are available");
+		console.error("polling server to see what devices are online, and what variables are available");
 
 		var tmp = when.defer();
 		var that = this;
@@ -263,7 +263,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 	monitorVariables: function (coreid, variableName, delay) {
 		if (!coreid && !variableName) {
-			console.log("Please specify a coreid and a variable name, or just a variable name.");
+			console.log("Please specify a device id and a variable name, or just a variable name.");
 			return;
 		}
 

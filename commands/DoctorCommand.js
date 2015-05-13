@@ -46,7 +46,7 @@ util.inherits(DoctorCommand, BaseCommand);
 DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	//name: "doctor",
-	description: "helps repair cores, run patches, check wifi, and more!",
+	description: "helps repair devices, run patches, check wifi, and more!",
 
 	init: function () {
 		//this.addOption("list", this.listCores.bind(this));

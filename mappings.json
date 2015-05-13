@@ -17,31 +17,31 @@
 
     "call": {
         "maps": [ "function", "call" ],
-        "usage": "spark call core_id function_name argument",
+        "usage": "spark call device_id function_name argument",
         "does": [
-            "Calls a function registered on one of your Cores",
+            "Calls a function registered on one of your Devices",
             "",
             "More information about registering a variable available here: ",
             "http://docs.spark.io/#/firmware/data-and-control-spark-variable"
         ],
         "related": [
-            "list - shows your cores, and what variables and functions are available",
-            "get - retrieves a variable value from one of your Cores"
+            "list - shows your devices, and what variables and functions are available",
+            "get - retrieves a variable value from one of your Devices"
         ]
     },
 
     "get": {
         "maps": [ "variable", "get" ],
-        "usage": "spark get core_id variable_name",
+        "usage": "spark get device_id variable_name",
         "does": [
-            "Retrieves a variable value from your core",
+            "Retrieves a variable value from your device",
             "",
             "More information about registering a variable available here: ",
             "http://docs.spark.io/#/firmware/data-and-control-spark-variable"
         ],
         "related": [
-            "list - shows your cores, and what variables and functions are available",
-            "call - runs a registered function on one of your cores"
+            "list - shows your devices, and what variables and functions are available",
+            "call - runs a registered function on one of your devices"
         ]
     },
 
@@ -61,7 +61,7 @@
         "maps": [ "setup" ],
         "usage": "spark setup",
         "does": [
-            "Guides you through setting up an account, claiming a new core, and getting it on your network"
+            "Guides you through setting up an account, claiming a new device, and getting it on your network"
         ]
     },
 
@@ -69,8 +69,8 @@
         "maps": [ "serial", "identify" ],
         "usage": "spark identify",
         "does": [
-            "When your core is in connected via USB and in listening mode (flashing blue)",
-            "this asks your core for its device ID"
+            "When your device is in connected via USB and in listening mode (flashing blue)",
+            "this asks your device for its device ID"
         ]
 
     },
@@ -108,7 +108,7 @@
 
         "add": {
             "maps": [ "cloud", "claim" ],
-            "usage": "spark device add core_id",
+            "usage": "spark device add device_id",
             "does": "claims a device to your account"
         },
         "remove": {
@@ -126,26 +126,26 @@
     "flash": {
         "maps": [ "flash", "*" ],
         "usage": [
-            "spark flash [--usb or core_id] firmware.bin",
-            "spark flash [--usb or core_id] source_folder",
-            "spark flash [--usb or core_id] file1.ino file2.cpp file2.h file3.cpp"
+            "spark flash [--usb or device_id] firmware.bin",
+            "spark flash [--usb or device_id] source_folder",
+            "spark flash [--usb or device_id] file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
-            "flash remotely pushes a compiled firmware binary to one of your cores over the air, or directly",
+            "flash remotely pushes a compiled firmware binary to one of your devices over the air, or directly",
             "over USB / dfu.  If you send it one or more source files, or a directory of source, it will compile",
-            "that remotely first, and push the compiled binary to your core instead, or in the case of code errors",
+            "that remotely first, and push the compiled binary to your device instead, or in the case of code errors",
             "will show you the errors from the server.",
             "",
             "You can also substitute \"tinker\", \"voodoo\", or \"cc3000\" to flash the provided app.",
             "",
             "spark flash --usb tinker",
-            "spark flash my_core tinker"
+            "spark flash my_device tinker"
         ]
     },
     "subscribe": {
         "maps": [ "subscribe" ],
         "does": [
-            "Subscribes to published events on the cloud, and pipes them to the console.  Special core name \"mine\" will subscribe to events from just your cores."
+            "Subscribes to published events on the cloud, and pipes them to the console.  Special device name \"mine\" will subscribe to events from just your devices."
         ],
         "usage": [
             "spark subscribe",
@@ -164,7 +164,7 @@
             "spark compile file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
-            "Compiles one or more source files or a directory of source to a firmware binary for the Spark Core,",
+            "Compiles one or more source files or a directory of source to a firmware binary for your device,",
             "or in the case of code errors will display those instead."
         ]
     },
@@ -172,12 +172,12 @@
         "maps": [ "variable", "monitor" ],
         "usage": [
             "spark monitor variable_name [--time]",
-            "spark monitor core_name variable_name [--time]",
-            "spark monitor core_name variable_name delay_value [--time]"
+            "spark monitor device_name variable_name [--time]",
+            "spark monitor device_name variable_name delay_value [--time]"
         ],
         "does": [
             "Repeatedly queries the Spark API every delay_value milliseconds",
-            "for the value of the given variable on one or more Cores."
+            "for the value of the given variable on one or more devices."
         ]
     },
     "login": {
@@ -205,7 +205,7 @@
             "Note! This command is part of a limited experimental beta, but should become available",
             "available during the summer.  The API endpoints or format may change before it's released.",
             "",
-            "Publishes an event to the cloud that can be received by your cores or other subscribers"
+            "Publishes an event to the cloud that can be received by your devices or other subscribers"
         ]
     },
 
@@ -213,11 +213,11 @@
         "maps": [ "cloud", "nyan" ],
         "usage": [
             "spark cloud nyan",
-            "spark cloud nyan my_core_id on",
-            "spark cloud nyan my_core_id off",
+            "spark cloud nyan my_device_id on",
+            "spark cloud nyan my_device_id off",
             "spark cloud nyan all on",
             "spark cloud nyan [on/off]",
-            "spark cloud nyan [core_id/all] [on/off]"
+            "spark cloud nyan [device_id/all] [on/off]"
         ],
         "does": [
             "That's weird, huh, I guess the description for this mysterious command is missing..."

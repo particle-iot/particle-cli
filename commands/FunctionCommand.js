@@ -48,11 +48,11 @@ util.inherits(FunctionCommand, BaseCommand);
 FunctionCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: "function",
-    description: "call functions on your core",
+    description: "call functions on your device",
 
     init: function () {
-        this.addOption("list", this.listFunctions.bind(this), "List functions provided by your core(s)");
-        this.addOption("call", this.callFunction.bind(this), "Call a particular function on a core");
+        this.addOption("list", this.listFunctions.bind(this), "List functions provided by your device(s)");
+        this.addOption("call", this.callFunction.bind(this), "Call a particular function on a device");
     },
 
 

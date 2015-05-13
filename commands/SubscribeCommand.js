@@ -48,7 +48,7 @@ util.inherits(SubscribeCommand, BaseCommand);
 SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: "subscribe",
-	description: "helpers for watching Core event streams",
+	description: "helpers for watching device event streams",
 
 	init: function () {
 		this.addOption("*", this.startListening.bind(this), "Starts listening and parsing server sent events from the api to your console");
@@ -80,10 +80,10 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!coreId) {
-			console.log("Subscribing to " + eventLabel + " from the firehose (all cores) ")
+			console.log("Subscribing to " + eventLabel + " from the firehose (all devices) ")
 		}
 		else if (coreId == "mine") {
-			console.log("Subscribing to " + eventLabel + " from my personal stream (my cores only) ")
+			console.log("Subscribing to " + eventLabel + " from my personal stream (my devices only) ")
 		}
 		else {
 			console.log("Subscribing to " + eventLabel + " from " + coreId + "'s stream");

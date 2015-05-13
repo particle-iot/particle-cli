@@ -72,9 +72,9 @@ New Command Layout:
 ===================
 
 spark help - show available commands and extra info
-spark setup - setup an account, and a new core
+spark setup - setup an account, and a new device
 spark setup --wifi  -   spark serial wifi - Configure wifi credentials over serial
-spark identify      -   spark serial identify - Ask for and display core ID via serial
+spark identify      -   spark serial identify - Ask for and display device ID via serial
 
 spark get - spark variable get
 spark call - spark function call
@@ -91,22 +91,22 @@ spark login         - spark cloud login
 spark logout        - spark cloud logout
 
 spark subscribe - Starts listening and parsing server sent events from the api to your console
-spark monitor   - spark variable monitor - Connect and display messages from a core
+spark monitor   - spark variable monitor - Connect and display messages from a device
 
 
 spark flash --usb - spark flash firmware
 spark flash --cloud  - spark flash cloud  -- (default)
 
 
-spark serial list - Show Cores connected via serial to your computer
-spark serial monitor - Connect and display messages from a core
+spark serial list - Show devices connected via serial to your computer
+spark serial monitor - Connect and display messages from a device
 
 
-spark keys new - Generate a new set of keys for your core
-spark keys load - Load a saved key on disk onto your core
-spark keys save - Save a key from your core onto your disk
+spark keys new - Generate a new set of keys for your device
+spark keys load - Load a saved key on disk onto your device
+spark keys save - Save a key from your device onto your disk
 spark keys send - Tell a server which key you'd like to use by sending your public key
-spark keys doctor - Creates and assigns a new key to your core, and uploads it to the cloud
+spark keys doctor - Creates and assigns a new key to your device, and uploads it to the cloud
 spark keys server - Switch server public keys
 
 spark webhook create - Creates a postback to the given url when your event is sent
