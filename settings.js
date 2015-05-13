@@ -186,6 +186,44 @@ settings.override = function (profile, key, value) {
 	}
 };
 
+settings.transitionSparkProfiles = function() {
+	var sparkDir = path.join(settings.findHomePath(), '.spark');
+	var particleDir = path.join(settings.findHomePath(), '.particle');
+	if (fs.existsSync(sparkDir) && !fs.existsSync(particleDir)) {
+		fs.mkdirSync(particleDir);
+
+		var files = fs.readdirSync(sparkDir);
+		files.forEach(function (filename) {
+			var data = fs.readFileSync(path.join(sparkDir, filename));
+			var jsonData;
+			try {
+				jsonData = JSON.parse(data);
+			} catch (ex) {
+				// invalid JSON, don't transition
+				return;
+			}
+
+			if (filename === 'profile.json') {
+				if (jsonData.name === 'spark') {
+					jsonData.name = 'particle';
+				}
+			}
+
+			if (filename === 'spark.config.json') {
+				filename = 'particle.config.json';
+			}
+
+			if (jsonData.apiUrl && jsonData.apiUrl.indexOf('.spark.io') > 0) {
+				jsonData.apiUrl = jsonData.apiUrl.replace('.spark.io', '.particle.io');
+			}
+
+			data = JSON.stringify(jsonData, null, 2);
+			fs.writeFileSync(path.join(particleDir, filename), data, { mode: '600' });
+		});
+	}
+};
+
+settings.transitionSparkProfiles();
 settings.whichProfile();
 settings.loadOverrides();
 module.exports = settings;
