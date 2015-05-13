@@ -79,7 +79,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		//make a pretty string showing how to use this command, optionally plus a sub-command
-		var cmdLine = "spark " + name;
+		var cmdLine = "particle " + name;
 		if (subcmd) {
 			cmdLine += " " + subcmd;
 		}
@@ -148,7 +148,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 					var subcmdname = cmds[idx];
 					var subcmd = command[subcmdname];
 
-					var line = "   spark " + name + " " + subcmdname;
+					var line = "   particle " + name + " " + subcmdname;
 					line = utilities.padRight(line, " ", 25) + " - " + subcmd.does;
 					lines.push(line);
 				}
@@ -158,7 +158,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 				for (var name in command.optionsByName) {
 					var desc = command.descriptionsByName[name];
-					var line = "    spark " + command.name + " " + name;
+					var line = "    particle " + command.name + " " + name;
 					line = utilities.padRight(line, " ", 25) + " - " + desc;
 					lines.push(line);
 				}
@@ -178,7 +178,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		console.log("");
 		console.log("The following commands are available:");
 
-		var appName = "spark",
+		var appName = "particle",
 			leftPad = 2,
 			rightPad = 20;
 
@@ -208,7 +208,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		var lines = [
 			"",
 			"Welcome to the Spark Command line utility!",
-			"https://github.com/spark/spark-cli",
+			"https://github.com/spark/particle-cli",
 			""
 		];
 
@@ -227,7 +227,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			lines.push(str);
 		}
 		else {
-			lines.push("Usage: spark <command_name> <arguments> ");
+			lines.push("Usage: particle <command_name> <arguments> ");
 			lines.push("Common Commands:");
 			lines.push("");
 
@@ -248,7 +248,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 				lines.push("");
 			}
 
-			lines.push("For more information Run: spark help <command_name>");
+			lines.push("For more information Run: particle help <command_name>");
 			lines.push("");
 		}
 

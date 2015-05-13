@@ -33,7 +33,7 @@ var utilities = require('./lib/utilities.js');
 
 var settings = {
 	commandPath: "./commands/",
-	apiUrl: "https://api.spark.io",
+	apiUrl: "https://api.particle.io",
 	clientId: "CLI2",
 	access_token: null,
 	minimumApiDelay: 500,

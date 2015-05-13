@@ -51,20 +51,20 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 
 	does: [
 		"The config command lets you create groups of settings. ",
-		"You can quickly switch to a profile by calling \"spark config profile-name\". ",
+		"You can quickly switch to a profile by calling \"particle config profile-name\". ",
 		"This is especially useful for switching to your local server ",
 		"or when switching between other environments.  ",
-		"Call \"spark config spark\" to switch back to the normal api server",
-		"Use \"spark config identify\" to see the currently selected configuration profile",
-		"Use \"spark config list\" to see the list of available profiles"
+		"Call \"particle config particle\" to switch back to the normal api server",
+		"Use \"particle config identify\" to see the currently selected configuration profile",
+		"Use \"particle config list\" to see the list of available profiles"
 	],
 	usage: [
-		"spark config local",
-		"spark config spark",
-		"spark config local apiUrl http://localhost:8080",
-		"spark config useSudoForDfu true",
-		"spark config list",
-		"spark config identify"
+		"particle config local",
+		"particle config particle",
+		"particle config local apiUrl http://localhost:8080",
+		"particle config useSudoForDfu true",
+		"particle config list",
+		"particle config identify"
 	],
 
 

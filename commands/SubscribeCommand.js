@@ -61,7 +61,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
-		// if they typed: "spark subscribe mine"
+		// if they typed: "particle subscribe mine"
 		if ((!coreId || (coreId == "")) && (eventName == "mine")) {
 			eventName = null;
 			coreId = "mine";

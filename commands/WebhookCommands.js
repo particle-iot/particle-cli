@@ -74,8 +74,8 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 
     usagesByName: {
         "create": [
-            "spark webhook create hook.json",
-            "spark webhook create eventName url deviceID",
+            "particle webhook create hook.json",
+            "particle webhook create eventName url deviceID",
             "",
             "The url will receive a request with the event name and data whenever one of your devices ",
             "publish an event starting with the provided name.  If you do optionally provide a json ",

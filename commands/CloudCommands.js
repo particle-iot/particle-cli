@@ -81,10 +81,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	usagesByName: {
 		nyan: [
-			"spark cloud nyan",
-			"spark cloud nyan my_device_id on",
-			"spark cloud nyan my_device_id off",
-			"spark cloud nyan all on"
+			"particle cloud nyan",
+			"particle cloud nyan my_device_id on",
+			"particle cloud nyan my_device_id off",
+			"particle cloud nyan all on"
 		]
 
 	},
