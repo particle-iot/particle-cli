@@ -2,7 +2,7 @@
  ******************************************************************************
  * @file    commands/AccessTokenCommands.js
  * @author  Kyle Marsh (kyle@cs.hmc.edu)
- * @source  https://github.com/spark/spark-cli
+ * @source  https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Access Token commands module

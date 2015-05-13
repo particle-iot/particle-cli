@@ -3,7 +3,7 @@
  * @file    js/commands/WirelessCommand.js
  * @author  Emily Rose (nexxy@spark.io)
  * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    5-May-2015
  * @brief   Wireless commands module

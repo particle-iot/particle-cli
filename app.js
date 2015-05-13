@@ -3,7 +3,7 @@
  * @file    js/app.js
  * @author  David Middlecamp (david@spark.io)
  * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    27-December-2013
  * @brief   Main program body.
