@@ -96,9 +96,9 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	switchGroup: function (group) {
-		//default group is spark
+		//default group is particle
 		if (!group) {
-			group = "spark";
+			group = "particle";
 		}
 
 		settings.switchProfile(group);

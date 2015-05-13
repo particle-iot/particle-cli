@@ -221,7 +221,7 @@ Okay!
 
 ####Flashing a directory
 
-  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
+  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```particle.include``` and / or a ```particle.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
 
 ```sh
 $ particle flash 0123456789ABCDEFGHI my_project
@@ -289,14 +289,14 @@ $ particle flash --usb firmware.bin
 
 ####compiling a directory
 
-  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.  Those files are just plain text with one line per filename
+  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```particle.include``` and / or a ```particle.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.  Those files are just plain text with one line per filename
 
 ```sh
 $ particle compile my_project_folder
 ```
 
 
-####example spark.include
+####example particle.include
 ```text
 application.cpp
 library1.h
@@ -304,7 +304,7 @@ library1.cpp
 ```
 
 
-####example spark.ignore
+####example particle.ignore
 ```text
 .ds_store
 logo.png

@@ -59,8 +59,8 @@ var settings = {
 	],
 	showIncludedSourceFiles: true,
 
-	dirIncludeFilename: "spark.include",
-	dirExcludeFilename: "spark.ignore",
+	dirIncludeFilename: "particle.include",
+	dirExcludeFilename: "particle.ignore",
 
 	knownApps: {
 		"deep_update_2014_06": "binaries/deep_update_2014_06.bin",
@@ -99,7 +99,7 @@ settings.findHomePath = function() {
 };
 
 settings.ensureFolder = function() {
-	var sparkDir = path.join(settings.findHomePath(), ".spark");
+	var sparkDir = path.join(settings.findHomePath(), ".particle");
 	if (!fs.existsSync(sparkDir)) {
 		fs.mkdirSync(sparkDir);
 	}
@@ -107,14 +107,14 @@ settings.ensureFolder = function() {
 };
 
 settings.findOverridesFile = function(profile) {
-	profile = profile || settings.profile || "spark";
+	profile = profile || settings.profile || "particle";
 
 	var sparkDir = settings.ensureFolder();
 	return path.join(sparkDir, profile + ".config.json");
 };
 
 settings.loadOverrides = function (profile) {
-	profile = profile || settings.profile || "spark";
+	profile = profile || settings.profile || "particle";
 
 	try {
 		var filename = settings.findOverridesFile(profile);
@@ -130,14 +130,14 @@ settings.loadOverrides = function (profile) {
 };
 
 settings.whichProfile = function() {
-	settings.profile = "spark";
+	settings.profile = "particle";
 
 	var sparkDir = settings.ensureFolder();
 	var proFile = path.join(sparkDir, "profile.json");      //proFile, get it?
 	if (fs.existsSync(proFile)) {
 		var data = JSON.parse(fs.readFileSync(proFile));
 
-		settings.profile = (data) ? data.name : "spark";
+		settings.profile = (data) ? data.name : "particle";
 		settings.profile_json = data;
 	}
 };
