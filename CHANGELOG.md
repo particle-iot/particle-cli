@@ -1,5 +1,7 @@
 changelog
 =========
+05/14/2015 - 1.4.0 - Introduce support for Photon setup on OS X. New UI implementation for setup and wireless commands. Deprecating spark-cli in favor of the particle-cli as part of Spark's rebranding to Particle. Future releases will be under the 'particle-cli' package.
+
 03/03/2015 - 1.0.0 - introduce token commands by Kyle Marsh, documentation preparation for Photon release, merged js/ and doc/ directories, firmed up semantic versioning for dependencies, converted to hard tabs.
 
 01/13/2015 - 0.4.94 - fixing spark.include not being considered for builds
