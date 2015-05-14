@@ -362,14 +362,15 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	self.newSpin('Asking the Photon to scan for nearby Wi-Fi networks...').start();
 
-	setTimeout(start, 2000);
+	retry = setTimeout(start, 1000);
 
 	function start() {
 
 		clearTimeout(retry);
 		sap.scan(results).on('error', function(err) {
 
-			retry = setTimeout(start, 1000);
+			if(err.code == 'ECONNRESET') { return; }
+			retry = setTimeout(start, 2000);
 		});
 	};
 
@@ -452,6 +453,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Obtaining device information...');
 		sap.deviceInfo(pubKey).on('error', function() {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(info, 1000);
 		});
 	};
@@ -461,6 +463,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, "Requesting public key from the device...");
 		sap.publicKey(code).on('error', function() {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(pubKey, 1000);
 		});
 	};
@@ -470,6 +473,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, "Setting the magical cloud claim code...");
 		sap.setClaimCode(self.__claimCode, configure).on('error', function() {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(code, 1000);
 		});
 	};
@@ -487,6 +491,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
 		sap.configure(conf, connect).on('error', function() {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(configure, 1000);
 		});
 	};
