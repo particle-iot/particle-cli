@@ -451,7 +451,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, 'Obtaining device information...');
-		sap.deviceInfo(pubKey).on('error', function() {
+		sap.deviceInfo(pubKey).on('error', function(err) {
 
 			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(info, 1000);
@@ -461,7 +461,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, "Requesting public key from the device...");
-		sap.publicKey(code).on('error', function() {
+		sap.publicKey(code).on('error', function(err) {
 
 			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(pubKey, 1000);
@@ -471,7 +471,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, "Setting the magical cloud claim code...");
-		sap.setClaimCode(self.__claimCode, configure).on('error', function() {
+		sap.setClaimCode(self.__claimCode, configure).on('error', function(err) {
 
 			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(code, 1000);
@@ -489,7 +489,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
-		sap.configure(conf, connect).on('error', function() {
+		sap.configure(conf, connect).on('error', function(err) {
 
 			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(configure, 1000);
