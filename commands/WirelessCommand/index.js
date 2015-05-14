@@ -42,7 +42,7 @@ var strings = {
 
 	'monitorPrompt': "Would you like to wait and monitor for Photons entering setup mode?",
 	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?",
-	'credentialsNeeded': "You will need to know the password and security type for your Wi-Fi network (if any) to proceed.",
+	'credentialsNeeded': "You will need to know the password for your Wi-Fi network (if any) to proceed.",
 	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:"
 };
 
