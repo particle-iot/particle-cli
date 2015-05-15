@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    commands/ConfigCommand.js
  * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Config commands module
@@ -51,20 +51,20 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 
 	does: [
 		"The config command lets you create groups of settings. ",
-		"You can quickly switch to a profile by calling \"spark config profile-name\". ",
+		"You can quickly switch to a profile by calling \"particle config profile-name\". ",
 		"This is especially useful for switching to your local server ",
 		"or when switching between other environments.  ",
-		"Call \"spark config spark\" to switch back to the normal api server",
-		"Use \"spark config identify\" to see the currently selected configuration profile",
-		"Use \"spark config list\" to see the list of available profiles"
+		"Call \"particle config particle\" to switch back to the normal api server",
+		"Use \"particle config identify\" to see the currently selected configuration profile",
+		"Use \"particle config list\" to see the list of available profiles"
 	],
 	usage: [
-		"spark config local",
-		"spark config spark",
-		"spark config local apiUrl http://localhost:8080",
-		"spark config useSudoForDfu true",
-		"spark config list",
-		"spark config identify"
+		"particle config local",
+		"particle config particle",
+		"particle config local apiUrl http://localhost:8080",
+		"particle config useSudoForDfu true",
+		"particle config list",
+		"particle config identify"
 	],
 
 
@@ -96,9 +96,9 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	switchGroup: function (group) {
-		//default group is spark
+		//default group is particle
 		if (!group) {
-			group = "spark";
+			group = "particle";
 		}
 
 		settings.switchProfile(group);
@@ -115,9 +115,9 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	listConfigs: function() {
-		var sparkDir = settings.ensureFolder();
+		var particleDir = settings.ensureFolder();
 		var files = utilities.globList(null, [
-			path.join(sparkDir, "*.config.json")
+			path.join(particleDir, "*.config.json")
 		]);
 
 		if (files.length > 0) {

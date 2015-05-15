@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    commands/WebhookCommands.js
  * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Webhook commands module
@@ -54,7 +54,7 @@ util.inherits(WebhookCommand, BaseCommand);
 WebhookCommand.HookJsonTemplate = {
     "eventName": "my-event",
     "url": "https://my-website.com/fancy_things.php",
-    "coreID": "optionally filter by providing a core id",
+    "coreID": "optionally filter by providing a device id",
 
     "_": "The following parameters are optional",
     "requestType": "POST",
@@ -68,16 +68,16 @@ WebhookCommand.HookJsonTemplate = {
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: "webhook",
-    description: "Experimental Beta - helpers for reacting to Core event streams",
+    description: "Experimental Beta - helpers for reacting to device event streams",
 
 
 
     usagesByName: {
         "create": [
-            "spark webhook create hook.json",
-            "spark webhook create eventName url coreID",
+            "particle webhook create hook.json",
+            "particle webhook create eventName url deviceID",
             "",
-            "The url will receive a request with the event name and data whenever one of your cores ",
+            "The url will receive a request with the event name and data whenever one of your devices ",
             "publish an event starting with the provided name.  If you do optionally provide a json ",
             "filename you can set lots of advanced properties when creating your hook",
 
@@ -192,7 +192,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 
                         "\n       ", " and posting to: " + hook.url,
 
-                        (hook.deviceID) ? "\n       " + " for core " + hook.deviceID : "",
+                        (hook.deviceID) ? "\n       " + " for device " + hook.deviceID : "",
 
                         "\n       ", " created at " + hook.created_at,
                         "\n"

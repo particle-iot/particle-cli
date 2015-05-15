@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    js/commands/WirelessCommand.js
  * @author  Emily Rose (nexxy@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    5-May-2015
  * @brief   Wireless commands module
@@ -42,7 +42,7 @@ var strings = {
 
 	'monitorPrompt': "Would you like to wait and monitor for Photons entering setup mode?",
 	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?",
-	'credentialsNeeded': "You will need to know the password and security type for your Wi-Fi network (if any) to proceed.",
+	'credentialsNeeded': "You will need to know the password for your Wi-Fi network (if any) to proceed.",
 	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:"
 };
 
@@ -69,7 +69,7 @@ WirelessCommand.prototype.init = function init() {
 	this.addOption("list", this.list.bind(this), "Show nearby Photons in setup mode (blinking blue)");
 	this.addOption("monitor", this.monitor.bind(this), "Begin monitoring nearby Wi-Fi networks for Photons in setup mode.");
 
-	// this.addOption("identify", this.identifyCore.bind(this), "Ask for and display core ID via serial");
+	// this.addOption("identify", this.identifyCore.bind(this), "Ask for and display device ID via serial");
 };
 
 WirelessCommand.prototype.list = function list(macAddress) {
@@ -84,13 +84,13 @@ WirelessCommand.prototype.list = function list(macAddress) {
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey("Wireless setup of Photons works like a"),
+		chalk.white("Wireless setup of Photons works like a"),
 		chalk.cyan("wizard!")
 	);
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey("We will",
+		chalk.white("We will",
 			chalk.cyan('automagically'),
 			"change the",
 			chalk.cyan('Wi-Fi'),
@@ -100,7 +100,7 @@ WirelessCommand.prototype.list = function list(macAddress) {
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey('You may lose your connection to the internet for a moment.'),
+		chalk.white('You may lose your connection to the internet for a moment.'),
 		"\n"
 	);
 
@@ -244,7 +244,7 @@ WirelessCommand.prototype.monitor = function(args) {
 
 	var self = this;
 
-	this.newSpin('%s ' + chalk.bold.white('Waiting for a wild Photon to appear... ') + chalk.grey('(press ctrl + C to exit)')).start();
+	this.newSpin('%s ' + chalk.bold.white('Waiting for a wild Photon to appear... ') + chalk.white('(press ctrl + C to exit)')).start();
 	wildPhotons();
 	function wildPhotons() {
 
@@ -293,12 +293,12 @@ WirelessCommand.prototype.setup = function setup(photon) {
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey(strings.credentialsNeeded)
+		chalk.white(strings.credentialsNeeded)
 	);
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey('You can press ctrl + C to quit setup at any time.')
+		chalk.white('You can press ctrl + C to quit setup at any time.')
 	);
 	console.log();
 
@@ -329,7 +329,7 @@ WirelessCommand.prototype.setup = function setup(photon) {
 			// TODO: Max retries, help output when reached.
 			console.log(
 				chalk.bold.red('!'),
-				chalk.bold.white('Woops. Something went wrong connecting to ' + opts.ssid + '. Please manually re-connect to your Wi-Fi network.')
+				chalk.bold.white('Woops. Something went wrong connecting to ' + photon + '. Please manually re-connect to your Wi-Fi network.')
 			);
 			return;
 		}
@@ -362,14 +362,15 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	self.newSpin('Asking the Photon to scan for nearby Wi-Fi networks...').start();
 
-	setTimeout(start, 2000);
+	retry = setTimeout(start, 1000);
 
 	function start() {
 
 		clearTimeout(retry);
 		sap.scan(results).on('error', function(err) {
-			console.log(alert, err);
-			retry = setTimeout(start, 1000);
+
+			if(err.code == 'ECONNRESET') { return; }
+			retry = setTimeout(start, 2000);
 		});
 	};
 
@@ -394,7 +395,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			type: 'list',
 			name: 'network',
 			message: 'Please select the network to which your Photon should connect:',
-			choices: ssids(networks)
+			choices: removePhotonNetworks(ssids(networks))
 
 		}, {
 
@@ -450,8 +451,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, 'Obtaining device information...');
-		sap.deviceInfo(pubKey).on('error', function() {
+		sap.deviceInfo(pubKey).on('error', function(err) {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(info, 1000);
 		});
 	};
@@ -459,8 +461,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, "Requesting public key from the device...");
-		sap.publicKey(code).on('error', function() {
+		sap.publicKey(code).on('error', function(err) {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(pubKey, 1000);
 		});
 	};
@@ -468,8 +471,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, "Setting the magical cloud claim code...");
-		sap.setClaimCode(self.__claimCode, configure).on('error', function() {
+		sap.setClaimCode(self.__claimCode, configure).on('error', function(err) {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(code, 1000);
 		});
 	};
@@ -485,8 +489,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
-		sap.configure(conf, connect).on('error', function() {
+		sap.configure(conf, connect).on('error', function(err) {
 
+			if(err.code == 'ECONNRESET') { return; }
 			retry = setTimeout(configure, 1000);
 		});
 	};
@@ -533,14 +538,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log(
 				chalk.cyan('!'),
 				"PROTIP:",
-				chalk.grey("Your Photon may start a firmware update immediately upon connecting for the first time.")
+				chalk.white("Your Photon may start a firmware update immediately upon connecting for the first time.")
 			);
 			console.log(
 				chalk.cyan('!'),
 				"PROTIP:",
-				chalk.grey("If it starts an update, you will see it flash"),
+				chalk.white("If it starts an update, you will see it flash"),
 				chalk.magenta('MAGENTA'),
-				chalk.grey("until the update has completed.")
+				chalk.white("until the update has completed.")
 			);
 
 			self.exit();
@@ -575,6 +580,15 @@ function ssids(list) {
 
 	return clean(list).map(function map(ap) {
 		return ap.ssid;
+	});
+};
+
+function removePhotonNetworks(ssids) {
+	return ssids.filter(function (ap) {
+		if (ap.indexOf('Photon-') === 0) {
+			return false;
+		}
+		return true;
 	});
 };
 

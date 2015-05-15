@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    commands/FunctionCommand.js
  * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Cloud functions command module
@@ -48,11 +48,11 @@ util.inherits(FunctionCommand, BaseCommand);
 FunctionCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: "function",
-    description: "call functions on your core",
+    description: "call functions on your device",
 
     init: function () {
-        this.addOption("list", this.listFunctions.bind(this), "List functions provided by your core(s)");
-        this.addOption("call", this.callFunction.bind(this), "Call a particular function on a core");
+        this.addOption("list", this.listFunctions.bind(this), "List functions provided by your device(s)");
+        this.addOption("call", this.callFunction.bind(this), "Call a particular function on a device");
     },
 
 

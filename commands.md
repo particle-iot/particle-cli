@@ -71,52 +71,52 @@ commands without a home
 New Command Layout:
 ===================
 
-spark help - show available commands and extra info
-spark setup - setup an account, and a new core
-spark setup --wifi  -   spark serial wifi - Configure wifi credentials over serial
-spark identify      -   spark serial identify - Ask for and display core ID via serial
+particle help - show available commands and extra info
+particle setup - setup an account, and a new device
+particle setup --wifi  -   particle serial wifi - Configure wifi credentials over serial
+particle identify      -   particle serial identify - Ask for and display device ID via serial
 
-spark get - spark variable get
-spark call - spark function call
+particle get - particle variable get
+particle call - particle function call
 
-spark list          - spark cloud list, spark variable list, spark function list
+particle list          - particle cloud list, particle variable list, particle function list
 
-spark core add      - spark cloud claim
-spark core remove   - spark cloud remove
-spark core rename   - spark cloud name
+particle core add      - particle cloud claim
+particle core remove   - particle cloud remove
+particle core rename   - particle cloud name
 
-spark flash         - spark cloud flash
-spark compile       - spark cloud compile
-spark login         - spark cloud login
-spark logout        - spark cloud logout
+particle flash         - particle cloud flash
+particle compile       - particle cloud compile
+particle login         - particle cloud login
+particle logout        - particle cloud logout
 
-spark subscribe - Starts listening and parsing server sent events from the api to your console
-spark monitor   - spark variable monitor - Connect and display messages from a core
-
-
-spark flash --usb - spark flash firmware
-spark flash --cloud  - spark flash cloud  -- (default)
+particle subscribe - Starts listening and parsing server sent events from the api to your console
+particle monitor   - particle variable monitor - Connect and display messages from a device
 
 
-spark serial list - Show Cores connected via serial to your computer
-spark serial monitor - Connect and display messages from a core
+particle flash --usb - particle flash firmware
+particle flash --cloud  - particle flash cloud  -- (default)
 
 
-spark keys new - Generate a new set of keys for your core
-spark keys load - Load a saved key on disk onto your core
-spark keys save - Save a key from your core onto your disk
-spark keys send - Tell a server which key you'd like to use by sending your public key
-spark keys doctor - Creates and assigns a new key to your core, and uploads it to the cloud
-spark keys server - Switch server public keys
+particle serial list - Show devices connected via serial to your computer
+particle serial monitor - Connect and display messages from a device
 
-spark webhook create - Creates a postback to the given url when your event is sent
-spark webhook list - Show your current Webhooks
-spark webhook delete - Deletes a Webhook
+
+particle keys new - Generate a new set of keys for your device
+particle keys load - Load a saved key on disk onto your device
+particle keys save - Save a key from your device onto your disk
+particle keys send - Tell a server which key you'd like to use by sending your public key
+particle keys doctor - Creates and assigns a new key to your device, and uploads it to the cloud
+particle keys server - Switch server public keys
+
+particle webhook create - Creates a postback to the given url when your event is sent
+particle webhook list - Show your current Webhooks
+particle webhook delete - Deletes a Webhook
 
 
 
 --contested namespaces -- these will both have basic server / clients, so a one-name command might not work.
-spark udp   -   spark udp send - Sends a UDP packet to the specified host and port
-            -   spark udp listen
-spark tcp   -   spark tcp send
-            -   spark tcp listen
+particle udp   -   particle udp send - Sends a UDP packet to the specified host and port
+            -   particle udp listen
+particle tcp   -   particle tcp send
+            -   particle tcp listen

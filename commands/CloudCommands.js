@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    commands/CloudCommands.js
  * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Cloud commands module
@@ -64,11 +64,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	init: function () {
-		this.addOption("claim", this.claimCore.bind(this), "Register a core with your user account with the cloud");
+		this.addOption("claim", this.claimCore.bind(this), "Register a device with your user account with the cloud");
 		this.addOption("list", this.listDevices.bind(this), "Displays a list of your devices, as well as their variables and functions");
-		this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
-		this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
-		this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
+		this.addOption("remove", this.removeCore.bind(this), "Release a device from your account so that another user may claim it");
+		this.addOption("name", this.nameCore.bind(this), "Give a device a name!");
+		this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a device!");
 		this.addOption("compile", this.compileCode.bind(this), "Compile a source file, or directory using the cloud service");
 		//this.addOption("binary", this.downloadBinary.bind(this), "Compile a source file, or directory using the cloud service");
 
@@ -81,10 +81,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	usagesByName: {
 		nyan: [
-			"spark cloud nyan",
-			"spark cloud nyan my_core_id on",
-			"spark cloud nyan my_core_id off",
-			"spark cloud nyan all on"
+			"particle cloud nyan",
+			"particle cloud nyan my_device_id on",
+			"particle cloud nyan my_device_id off",
+			"particle cloud nyan all on"
 		]
 
 	},
@@ -106,7 +106,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	claimCore: function (coreid) {
 		if (!coreid) {
-			console.error("Please specify a coreid");
+			console.error("Please specify a device id");
 			return;
 		}
 
@@ -114,17 +114,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (!api.ready()) {
 			return;
 		}
-		console.log("Claiming core " + coreid);
+		console.log("Claiming device " + coreid);
 		api.claimCore(coreid).then(function() {
-			console.log("Successfully claimed core " + coreid);
+			console.log("Successfully claimed device " + coreid);
 		}, function(err) {
-			console.log("Failed to claim core, server said ", err);
+			console.log("Failed to claim device, server said ", err);
 		});
 	},
 
 	removeCore: function (coreid) {
 		if (!coreid) {
-			console.error("Please specify a coreid");
+			console.error("Please specify a device id");
 			return when.reject()
 		}
 
@@ -140,19 +140,19 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						process.exit(0);
 					},
 					function (err) {
-						console.log("Didn't remove the core " + err);
+						console.log("Didn't remove the device " + err);
 						process.exit(1);
 					});
 			},
 			function (err) {
-				console.log("Didn't remove the core " + err);
+				console.log("Didn't remove the device " + err);
 				process.exit(1);
 			});
 	},
 
 	nameCore: function (coreid, name) {
 		if (!coreid) {
-			console.error("Please specify a coreid");
+			console.error("Please specify a device id");
 			return when.reject();
 		}
 
@@ -166,13 +166,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
-		console.log("Renaming core " + coreid);
+		console.log("Renaming device " + coreid);
 		api.renameCore(coreid, name);
 	},
 
 	flashCore: function (coreid, filePath) {
 		if (!coreid) {
-			console.error("Please specify a coreid");
+			console.error("Please specify a device id");
 			return when.reject();
 		}
 
@@ -532,7 +532,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			var toggleAll = function (cores) {
 				if (!cores || (cores.length === 0)) {
-					console.log('No cores found.');
+					console.log('No devices found.');
 					return when.resolve();
 				}
 				else {

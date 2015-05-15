@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    commands/SubscribeCommand.js
  * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Subscribe commands module
@@ -48,7 +48,7 @@ util.inherits(SubscribeCommand, BaseCommand);
 SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: "subscribe",
-	description: "helpers for watching Core event streams",
+	description: "helpers for watching device event streams",
 
 	init: function () {
 		this.addOption("*", this.startListening.bind(this), "Starts listening and parsing server sent events from the api to your console");
@@ -61,7 +61,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
-		// if they typed: "spark subscribe mine"
+		// if they typed: "particle subscribe mine"
 		if ((!coreId || (coreId == "")) && (eventName == "mine")) {
 			eventName = null;
 			coreId = "mine";
@@ -80,10 +80,10 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!coreId) {
-			console.log("Subscribing to " + eventLabel + " from the firehose (all cores) ")
+			console.log("Subscribing to " + eventLabel + " from the firehose (all devices) ")
 		}
 		else if (coreId == "mine") {
-			console.log("Subscribing to " + eventLabel + " from my personal stream (my cores only) ")
+			console.log("Subscribing to " + eventLabel + " from my personal stream (my devices only) ")
 		}
 		else {
 			console.log("Subscribing to " + eventLabel + " from " + coreId + "'s stream");

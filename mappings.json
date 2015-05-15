@@ -17,39 +17,39 @@
 
     "call": {
         "maps": [ "function", "call" ],
-        "usage": "spark call core_id function_name argument",
+        "usage": "particle call device_id function_name argument",
         "does": [
-            "Calls a function registered on one of your Cores",
+            "Calls a function registered on one of your Devices",
             "",
             "More information about registering a variable available here: ",
-            "http://docs.spark.io/#/firmware/data-and-control-spark-variable"
+            "http://docs.particle.io/core/firmware/#spark-variable"
         ],
         "related": [
-            "list - shows your cores, and what variables and functions are available",
-            "get - retrieves a variable value from one of your Cores"
+            "list - shows your devices, and what variables and functions are available",
+            "get - retrieves a variable value from one of your Devices"
         ]
     },
 
     "get": {
         "maps": [ "variable", "get" ],
-        "usage": "spark get core_id variable_name",
+        "usage": "particle get device_id variable_name",
         "does": [
-            "Retrieves a variable value from your core",
+            "Retrieves a variable value from your device",
             "",
             "More information about registering a variable available here: ",
-            "http://docs.spark.io/#/firmware/data-and-control-spark-variable"
+            "http://docs.particle.io/core/firmware/#spark-variable"
         ],
         "related": [
-            "list - shows your cores, and what variables and functions are available",
-            "call - runs a registered function on one of your cores"
+            "list - shows your devices, and what variables and functions are available",
+            "call - runs a registered function on one of your devices"
         ]
     },
 
     "help": {
         "maps": [ "help" ],
         "usage": [
-            "spark help",
-            "spark help command_name"
+            "particle help",
+            "particle help command_name"
         ],
         "does": [
             "Provides extra details and options for a given command"
@@ -59,25 +59,25 @@
 
     "setup": {
         "maps": [ "setup" ],
-        "usage": "spark setup",
+        "usage": "particle setup",
         "does": [
-            "Guides you through setting up an account, claiming a new core, and getting it on your network"
+            "Guides you through setting up an account, claiming a new device, and getting it on your network"
         ]
     },
 
     "identify": {
         "maps": [ "serial", "identify" ],
-        "usage": "spark identify",
+        "usage": "particle identify",
         "does": [
-            "When your core is in connected via USB and in listening mode (flashing blue)",
-            "this asks your core for its device ID"
+            "When your device is in connected via USB and in listening mode (flashing blue)",
+            "this asks your device for its device ID"
         ]
 
     },
 
     "list": {
         "maps": [ "cloud", "list" ],
-        "usage": "spark list",
+        "usage": "particle list",
         "does": [
             "Displays a list of your devices, as well as their variables and functions"
         ]
@@ -88,17 +88,17 @@
 
         "add": {
             "maps": [ "cloud", "claim" ],
-            "usage": "spark core add core_id",
+            "usage": "particle core add core_id",
             "does": "claims a core to your account"
         },
         "remove": {
             "maps": [ "cloud", "remove" ],
-            "usage": "spark core remove core_id",
+            "usage": "particle core remove core_id",
             "does": "releases a core from your account"
         },
         "rename": {
             "maps": [ "cloud", "name" ],
-            "usage": "spark core rename core_id name",
+            "usage": "particle core rename core_id name",
             "does": "changes the friendly name of your core"
         }
     },
@@ -108,17 +108,17 @@
 
         "add": {
             "maps": [ "cloud", "claim" ],
-            "usage": "spark device add core_id",
+            "usage": "particle device add device_id",
             "does": "claims a device to your account"
         },
         "remove": {
             "maps": [ "cloud", "remove" ],
-            "usage": "spark device remove device_id",
+            "usage": "particle device remove device_id",
             "does": "releases a device from your account"
         },
         "rename": {
             "maps": [ "cloud", "name" ],
-            "usage": "spark device rename device_id name",
+            "usage": "particle device rename device_id name",
             "does": "changes the friendly name of your device"
         }
     },
@@ -126,70 +126,70 @@
     "flash": {
         "maps": [ "flash", "*" ],
         "usage": [
-            "spark flash [--usb or core_id] firmware.bin",
-            "spark flash [--usb or core_id] source_folder",
-            "spark flash [--usb or core_id] file1.ino file2.cpp file2.h file3.cpp"
+            "particle flash [--usb or device_id] firmware.bin",
+            "particle flash [--usb or device_id] source_folder",
+            "particle flash [--usb or device_id] file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
-            "flash remotely pushes a compiled firmware binary to one of your cores over the air, or directly",
+            "flash remotely pushes a compiled firmware binary to one of your devices over the air, or directly",
             "over USB / dfu.  If you send it one or more source files, or a directory of source, it will compile",
-            "that remotely first, and push the compiled binary to your core instead, or in the case of code errors",
+            "that remotely first, and push the compiled binary to your device instead, or in the case of code errors",
             "will show you the errors from the server.",
             "",
             "You can also substitute \"tinker\", \"voodoo\", or \"cc3000\" to flash the provided app.",
             "",
-            "spark flash --usb tinker",
-            "spark flash my_core tinker"
+            "particle flash --usb tinker",
+            "particle flash my_device tinker"
         ]
     },
     "subscribe": {
         "maps": [ "subscribe" ],
         "does": [
-            "Subscribes to published events on the cloud, and pipes them to the console.  Special core name \"mine\" will subscribe to events from just your cores."
+            "Subscribes to published events on the cloud, and pipes them to the console.  Special device name \"mine\" will subscribe to events from just your devices."
         ],
         "usage": [
-            "spark subscribe",
-            "spark subscribe mine",
-            "spark subscribe event_name",
-            "spark subscribe event_name mine",
-            "spark subscribe event_name device_id"
+            "particle subscribe",
+            "particle subscribe mine",
+            "particle subscribe event_name",
+            "particle subscribe event_name mine",
+            "particle subscribe event_name device_id"
         ]
 
     },
     "compile": {
         "maps": [ "cloud", "compile" ],
         "usage": [
-            "spark compile firmware.bin",
-            "spark compile source_folder",
-            "spark compile file1.ino file2.cpp file2.h file3.cpp"
+            "particle compile firmware.bin",
+            "particle compile source_folder",
+            "particle compile file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
-            "Compiles one or more source files or a directory of source to a firmware binary for the Spark Core,",
+            "Compiles one or more source files or a directory of source to a firmware binary for your device,",
             "or in the case of code errors will display those instead."
         ]
     },
     "monitor": {
         "maps": [ "variable", "monitor" ],
         "usage": [
-            "spark monitor variable_name [--time]",
-            "spark monitor core_name variable_name [--time]",
-            "spark monitor core_name variable_name delay_value [--time]"
+            "particle monitor variable_name [--time]",
+            "particle monitor device_name variable_name [--time]",
+            "particle monitor device_name variable_name delay_value [--time]"
         ],
         "does": [
-            "Repeatedly queries the Spark API every delay_value milliseconds",
-            "for the value of the given variable on one or more Cores."
+            "Repeatedly queries the Particle API every delay_value milliseconds",
+            "for the value of the given variable on one or more devices."
         ]
     },
     "login": {
         "maps": [ "cloud", "login" ],
-        "usage": "spark login",
+        "usage": "particle login",
         "does": [
-            "Login and save an access token for interacting with your account on the Spark Cloud."
+            "Login and save an access token for interacting with your account on the Particle Cloud."
         ]
     },
     "logout": {
         "maps": [ "cloud", "logout" ],
-        "usage": "spark logout",
+        "usage": "particle logout",
         "does": [
             "Logout and optionally revoke the access token for your CLI session."
         ]
@@ -198,26 +198,26 @@
     "publish": {
         "maps": [ "publish" ],
         "usage": [
-            "spark publish event_name",
-            "spark publish event_name some_data"
+            "particle publish event_name",
+            "particle publish event_name some_data"
         ],
         "does": [
             "Note! This command is part of a limited experimental beta, but should become available",
             "available during the summer.  The API endpoints or format may change before it's released.",
             "",
-            "Publishes an event to the cloud that can be received by your cores or other subscribers"
+            "Publishes an event to the cloud that can be received by your devices or other subscribers"
         ]
     },
 
     "nyan": {
         "maps": [ "cloud", "nyan" ],
         "usage": [
-            "spark cloud nyan",
-            "spark cloud nyan my_core_id on",
-            "spark cloud nyan my_core_id off",
-            "spark cloud nyan all on",
-            "spark cloud nyan [on/off]",
-            "spark cloud nyan [core_id/all] [on/off]"
+            "particle cloud nyan",
+            "particle cloud nyan my_device_id on",
+            "particle cloud nyan my_device_id off",
+            "particle cloud nyan all on",
+            "particle cloud nyan [on/off]",
+            "particle cloud nyan [device_id/all] [on/off]"
         ],
         "does": [
             "That's weird, huh, I guess the description for this mysterious command is missing..."
@@ -227,8 +227,8 @@
     "--version": {
         "maps": [ "help", "version" ],
         "usage": [
-            "spark --version",
-            "spark help version"
+            "particle --version",
+            "particle help version"
         ],
         "does": [
             "Shows the current version of the CLI"

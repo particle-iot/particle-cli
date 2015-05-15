@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    settings.js
  * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Setting module
@@ -33,7 +33,7 @@ var utilities = require('./lib/utilities.js');
 
 var settings = {
 	commandPath: "./commands/",
-	apiUrl: "https://api.spark.io",
+	apiUrl: "https://api.particle.io",
 	clientId: "CLI2",
 	access_token: null,
 	minimumApiDelay: 500,
@@ -59,8 +59,8 @@ var settings = {
 	],
 	showIncludedSourceFiles: true,
 
-	dirIncludeFilename: "spark.include",
-	dirExcludeFilename: "spark.ignore",
+	dirIncludeFilename: "particle.include",
+	dirExcludeFilename: "particle.ignore",
 
 	knownApps: {
 		"deep_update_2014_06": "binaries/deep_update_2014_06.bin",
@@ -99,22 +99,22 @@ settings.findHomePath = function() {
 };
 
 settings.ensureFolder = function() {
-	var sparkDir = path.join(settings.findHomePath(), ".spark");
-	if (!fs.existsSync(sparkDir)) {
-		fs.mkdirSync(sparkDir);
+	var particleDir = path.join(settings.findHomePath(), ".particle");
+	if (!fs.existsSync(particleDir)) {
+		fs.mkdirSync(particleDir);
 	}
-	return sparkDir;
+	return particleDir;
 };
 
 settings.findOverridesFile = function(profile) {
-	profile = profile || settings.profile || "spark";
+	profile = profile || settings.profile || "particle";
 
-	var sparkDir = settings.ensureFolder();
-	return path.join(sparkDir, profile + ".config.json");
+	var particleDir = settings.ensureFolder();
+	return path.join(particleDir, profile + ".config.json");
 };
 
 settings.loadOverrides = function (profile) {
-	profile = profile || settings.profile || "spark";
+	profile = profile || settings.profile || "particle";
 
 	try {
 		var filename = settings.findOverridesFile(profile);
@@ -130,14 +130,14 @@ settings.loadOverrides = function (profile) {
 };
 
 settings.whichProfile = function() {
-	settings.profile = "spark";
+	settings.profile = "particle";
 
-	var sparkDir = settings.ensureFolder();
-	var proFile = path.join(sparkDir, "profile.json");      //proFile, get it?
+	var particleDir = settings.ensureFolder();
+	var proFile = path.join(particleDir, "profile.json");      //proFile, get it?
 	if (fs.existsSync(proFile)) {
 		var data = JSON.parse(fs.readFileSync(proFile));
 
-		settings.profile = (data) ? data.name : "spark";
+		settings.profile = (data) ? data.name : "particle";
 		settings.profile_json = data;
 	}
 };
@@ -146,8 +146,8 @@ settings.whichProfile = function() {
  * in another file in our user dir, we store a profile name that switches between setting override files
  */
 settings.switchProfile = function(profileName) {
-	var sparkDir = settings.ensureFolder();
-	var proFile = path.join(sparkDir, "profile.json");      //proFile, get it?
+	var particleDir = settings.ensureFolder();
+	var proFile = path.join(particleDir, "profile.json");      //proFile, get it?
 	var data = {
 		name: profileName
 	};
@@ -186,6 +186,44 @@ settings.override = function (profile, key, value) {
 	}
 };
 
+settings.transitionSparkProfiles = function() {
+	var sparkDir = path.join(settings.findHomePath(), '.spark');
+	var particleDir = path.join(settings.findHomePath(), '.particle');
+	if (fs.existsSync(sparkDir) && !fs.existsSync(particleDir)) {
+		fs.mkdirSync(particleDir);
+
+		var files = fs.readdirSync(sparkDir);
+		files.forEach(function (filename) {
+			var data = fs.readFileSync(path.join(sparkDir, filename));
+			var jsonData;
+			try {
+				jsonData = JSON.parse(data);
+			} catch (ex) {
+				// invalid JSON, don't transition
+				return;
+			}
+
+			if (filename === 'profile.json') {
+				if (jsonData.name === 'spark') {
+					jsonData.name = 'particle';
+				}
+			}
+
+			if (filename === 'spark.config.json') {
+				filename = 'particle.config.json';
+			}
+
+			if (jsonData.apiUrl && jsonData.apiUrl.indexOf('.spark.io') > 0) {
+				jsonData.apiUrl = jsonData.apiUrl.replace('.spark.io', '.particle.io');
+			}
+
+			data = JSON.stringify(jsonData, null, 2);
+			fs.writeFileSync(path.join(particleDir, filename), data, { mode: '600' });
+		});
+	}
+};
+
+settings.transitionSparkProfiles();
 settings.whichProfile();
 settings.loadOverrides();
 module.exports = settings;

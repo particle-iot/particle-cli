@@ -1,47 +1,47 @@
-Spark CLI
+Particle CLI
 ==========
 
-The Spark CLI is a powerful tool for interacting with your cores and the Spark Cloud.  The CLI uses [node.js](http://nodejs.org/) and can run on Windows, Mac OS X, and Linux fairly easily.  It's also [open source](https://github.com/spark/spark-cli) so you can edit and change it, and even send in your changes as [pull requests](https://help.github.com/articles/using-pull-requests) if you want to share!
+The Particle CLI is a powerful tool for interacting with your devices and the Particle Cloud.  The CLI uses [node.js](http://nodejs.org/) and can run on Windows, Mac OS X, and Linux fairly easily.  It's also [open source](https://github.com/spark/particle-cli) so you can edit and change it, and even send in your changes as [pull requests](https://help.github.com/articles/using-pull-requests) if you want to share!
 
 Installing
 =======
 
-  First, make sure you have [node.js](http://nodejs.org/) installed!  
+  First, make sure you have [node.js](http://nodejs.org/) installed!
 
   Next, open a command prompt or terminal, and install by typing:
 
-```sh 
-$ npm install -g spark-cli
-$ spark cloud login
+```sh
+$ npm install -g particle-cli
+$ particle cloud login
 ```
 
   *Note!*  If you have problems running this, make sure you using Terminal / the Command Prompt as an Administator, or try using `sudo`
-  
+
 ```sh
-$ sudo npm install -g spark-cli
+$ sudo npm install -g particle-cli
 ```
 
 
 Install (advanced)
 ---------------------------
 
-To use the local flash and key features you'll need to install [dfu-util](http://dfu-util.sourceforge.net/) (note the normal main page http://dfu-util.gnumonks.org/ is still down), and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.  
+To use the local flash and key features you'll need to install [dfu-util](http://dfu-util.sourceforge.net/) (note the normal main page http://dfu-util.gnumonks.org/ is still down), and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.
 
 Here are some great tutorials on the community for full installs:
 
-[Installing on Ubuntu](https://community.spark.io/t/how-to-install-spark-cli-on-ubuntu-12-04/3474)
+[Installing on Ubuntu](https://community.particle.io/t/how-to-install-spark-cli-on-ubuntu-12-04/3474)
 
-[Installing on Windows](https://community.spark.io/t/tutorial-spark-cli-on-windows-06-may-2014/3112)
+[Installing on Windows](https://community.particle.io/t/tutorial-spark-cli-on-windows-06-may-2014/3112)
 
-#### Installing on Mac OS X: 
+#### Installing on Mac OS X:
 Rather than installing these packages from source, and instead of using MacPorts, it is relatively straightforward to use [Homebrew](http://brew.sh) to install `dfu-util`, `openssl`, and `libusb` (required for dfu-util). Once you have installed `brew` the basic command for each is `brew install dfu-util` . For the final step of `openssl` you will need to do `sudo brew install openssl` and enter your admin password.
 
 Upgrading
 ---------------------------
-To upgrade Spark-CLI, enter the following command:
+To upgrade Particle-CLI, enter the following command:
 
 ```sh
-$ npm update -g spark-cli
+$ npm update -g particle-cli
 ```
 
 
@@ -50,8 +50,8 @@ Running from source (advanced)
 To grab the CLI source and play with it locally
 
 ```sh
-git clone git@github.com:spark/spark-cli.git
-cd spark-cli
+git clone git@github.com:spark/particle-cli.git
+cd particle-cli
 npm install
 node app.js help
 ```
@@ -60,25 +60,25 @@ node app.js help
 Getting Started
 ===============
 
-  These next two commands are all you need to get started setting up an account, claiming a core, and discovering new features.
+  These next two commands are all you need to get started setting up an account, claiming a device, and discovering new features.
 
 
-###spark setup
+###particle setup
 
-  Guides you through creating a new account, and claiming your core!
+  Guides you through creating a new account, and claiming your device!
 
 ```sh
-$ spark setup
+$ particle setup
 ```
 
 
-###spark help
+###particle help
 
   Shows you what commands are available, and how to use them.  You can also give the name of a command for detailed help.
-  
+
 ```sh
-$ spark help
-$ spark help keys 
+$ particle help
+$ particle help keys
 ```
 
 Apply the CC3000 patch
@@ -91,18 +91,18 @@ Note, this process will soon be replaced by "deep update" that will streamline a
 
 2.) Connect your core via usb, and place it into dfu mode by holding both buttons, and releasing reset, keep holding mode until your core flashes yellow.
 
-3.) Run `spark flash --usb cc3000`
+3.) Run `particle flash --usb cc3000`
 
 This will run a special firmware program that will update the firmware running inside the CC3000 WiFi module.
 When it's done running, your core will be blinking yellow in dfu-mode, you'll need to flash regular firmware like Tinker
 to get connected and developing again.
 
-4.) Run `spark flash --usb tinker`
+4.) Run `particle flash --usb tinker`
 
 This will flash a new version of Tinker to your core and return to a blinking blue "listening" state, where
 you can:
 
-5.) Run `spark setup` or `spark setup wifi` to provide your network credentials to get connected again.
+5.) Run `particle setup` or `particle setup wifi` to provide your network credentials to get connected again.
 
 
 Performing a "Deep update"
@@ -114,50 +114,50 @@ Any core shipped before Summer 2014 would benefit from having this update applie
 
 2.) Connect your core via usb, and place it into dfu mode by holding both buttons, and releasing reset, keep holding mode until your core flashes yellow.
 
-3.) Run ```spark flash --usb deep_update_2014_06```
+3.) Run ```particle flash --usb deep_update_2014_06```
 
 4.) Your core should reboot and try to connect to any previously saved wifi networks, and then update itself again.
 
 Command Reference
 ================
 
-###spark setup wifi
+###particle setup wifi
 
-  Helpful shortcut for adding another wifi network to a core connected over USB.  Make sure your core is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.spark.io/#/connect)
+  Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/core/connect/)
 
 ```sh
-$ spark setup wifi
+$ particle setup wifi
 ```
 
 
-###spark login
+###particle login
 
-  Login and save an access token for interacting with your account on the Spark Cloud.
+  Login and save an access token for interacting with your account on the Particle Cloud.
 
 ```sh
-$ spark login
+$ particle login
 ```
 
 
-###spark logout
+###particle logout
 
   Logout and optionally revoke the access token for your CLI session.
 
 ```sh
-$ spark logout
+$ particle logout
 ```
 
 
-###spark list
+###particle list
 
-  Generates a list of what cores you own, and displays information about their status, including what variables and functions are available
+  Generates a list of what devices you own, and displays information about their status, including what variables and functions are available
 
 ```sh
-$ spark list
+$ particle list
 
 Checking with the cloud...
-Retrieving cores... (this might take a few seconds)
-my_core_name (0123456789ABCDEFGHI) 0 variables, and 4 functions
+Retrieving devices... (this might take a few seconds)
+my_device_name (0123456789ABCDEFGHI) 0 variables, and 4 functions
   Functions:
     int digitalwrite(string)
     int digitalread(string)
@@ -167,48 +167,48 @@ my_core_name (0123456789ABCDEFGHI) 0 variables, and 4 functions
 ```
 
 
-###spark core add
+###particle core add
 
   Adds a new core to your account
 
-```sh 
-$ spark cloud claim 0123456789ABCDEFGHI
-Claiming core 0123456789ABCDEFGHI
-Successfully claimed core 0123456789ABCDEFGHI
+```sh
+$ particle cloud claim 0123456789ABCDEFGHI
+Claiming device 0123456789ABCDEFGHI
+Successfully claimed device 0123456789ABCDEFGHI
 ```
 
 
-###spark core rename
+###particle core rename
 
   Assigns a new name to a core you've claimed
 
 ```sh
-$ spark core rename 0123456789ABCDEFGHI "pirate frosting"
+$ particle core rename 0123456789ABCDEFGHI "pirate frosting"
 ```
 
 
 
-###spark core remove
+###particle core remove
 
   Removes a core from your account so someone else can claim it.
 
 ```sh
-$ spark core remove 0123456789ABCDEFGHI
+$ particle core remove 0123456789ABCDEFGHI
 Are you sure?  Please Type yes to continue: yes
-releasing core 0123456789ABCDEFGHI
+releasing device 0123456789ABCDEFGHI
 server said  { ok: true }
 Okay!
 ```
 
 
-###spark flash
+###particle flash
 
-  Sends a firmware binary, a source file, or a directory of source files, or a known app to your core.
+  Sends a firmware binary, a source file, or a directory of source files, or a known app to your device.
 
   Note!  When sending source code, the cloud compiles ```.ino``` and ```.cpp``` files differently.  For ```.ino``` files, the cloud will apply a pre-processor.  It will add missing function declarations, and it will inject an ```#include "
   application.h"``` line at the top of your files if it is missing.
 
-  If you want to build a library that can be used for both Arduino and Spark, here's a useful code snippet:
+  If you want to build a library that can be used for both Arduino and Particle, here's a useful code snippet:
 
 ```cpp
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -221,10 +221,10 @@ Okay!
 
 ####Flashing a directory
 
-  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
+  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```particle.include``` and / or a ```particle.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
 
 ```sh
-$ spark flash 0123456789ABCDEFGHI my_project
+$ particle flash 0123456789ABCDEFGHI my_project
 ```
 
 
@@ -234,49 +234,49 @@ $ spark flash 0123456789ABCDEFGHI my_project
 
 
 ```sh
-$ spark flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
+$ particle flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
 ```
 
 
 ####Flashing a known app
 
-  You can easily reset a core back to a previous existing app with a quick command. Three app names are reserved right now: "tinker", "voodoo", and "cc3000".  Tinker is the original firmware that ships with the core, and cc3000 will patch the wifi module on your Core. Voodoo is a build of [VoodooSpark](http://voodoospark.me/) to allow local wireless firmata control of a core.
+  You can easily reset a device back to a previous existing app with a quick command. Three app names are reserved right now: "tinker", "voodoo", and "cc3000".  Tinker is the original firmware that ships with the device, and cc3000 will patch the wifi module on your Core. Voodoo is a build of [VoodooSpark](http://voodoospark.me/) to allow local wireless firmata control of a device.
 
 ```sh
-$ spark flash 0123456789ABCDEFGHI tinker
-$ spark flash 0123456789ABCDEFGHI cc3000
-$ spark flash 0123456789ABCDEFGHI voodoo
+$ particle flash 0123456789ABCDEFGHI tinker
+$ particle flash 0123456789ABCDEFGHI cc3000
+$ particle flash 0123456789ABCDEFGHI voodoo
 
 ```
 
   You can also update the factory reset version using the --factory flag, and over usb with --usb
 
 ```sh
-$ spark flash --factory tinker
-$ spark flash --usb tinker
+$ particle flash --factory tinker
+$ particle flash --usb tinker
 ```
 
 
 ####Compiling remotely and Flashing locally
 
-To work locally, but use the cloud compiler, simply use the compile command, and then the local flash command after.  Make sure you connect your core via USB and place it into [dfu mode](http://docs.spark.io/#/connect/appendix-dfu-mode-device-firmware-upgrade).
+To work locally, but use the cloud compiler, simply use the compile command, and then the local flash command after.  Make sure you connect your device via USB and place it into [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).
 
 ```sh
-$ spark compile my_project_folder --saveTo firmware.bin
+$ particle compile my_project_folder --saveTo firmware.bin
 OR
-$ spark compile app.ino library1.cpp library1.h --saveTo firmware.bin
-$ spark flash --usb firmware.bin
+$ particle compile app.ino library1.cpp library1.h --saveTo firmware.bin
+$ particle flash --usb firmware.bin
 ```
 
 
-###spark compile
+###particle compile
 
   Compiles one or more source file, or a directory of source files, and downloads a firmware binary.
 
   Note!  The cloud compiles ```.ino``` and ```.cpp``` files differently.  For ```.ino``` files, the cloud will apply a pre-processor.  It will add missing function declarations, and it will inject an ```#include "
   application.h"``` line at the top of your files if it is missing.
 
-  If you want to build a library that can be used for both Arduino and Spark, here's a useful code snippet:
+  If you want to build a library that can be used for both Arduino and Particle, here's a useful code snippet:
 
 ```cpp
 #if defined(ARDUINO) && ARDUINO >= 100
@@ -289,14 +289,14 @@ $ spark flash --usb firmware.bin
 
 ####compiling a directory
 
-  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```spark.include``` and / or a ```spark.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.  Those files are just plain text with one line per filename
+  You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```particle.include``` and / or a ```particle.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.  Those files are just plain text with one line per filename
 
 ```sh
-$ spark compile my_project_folder
+$ particle compile my_project_folder
 ```
 
 
-####example spark.include
+####example particle.include
 ```text
 application.cpp
 library1.h
@@ -304,7 +304,7 @@ library1.cpp
 ```
 
 
-####example spark.ignore
+####example particle.ignore
 ```text
 .ds_store
 logo.png
@@ -318,205 +318,204 @@ old_version.cpp
 
 
 ```sh
-$ spark compile app.ino library1.cpp library1.h
+$ particle compile app.ino library1.cpp library1.h
 ```
 ####Compiling in a directory containing project files
 
  This will push all the files in a directory that the command line is currently 'cd' in for compilation.
- 
+
  ```sh
- $ spark compile .
+ $ particle compile .
  ```
 
 
 
 
-###spark call
+###particle call
 
-  Calls a function on one of your cores, use ```spark list``` to see which cores are online, and what functions are available.
+  Calls a function on one of your devices, use ```particle list``` to see which devices are online, and what functions are available.
 
 ```sh
-$ spark call 0123456789ABCDEFGHI digitalwrite "D7,HIGH"
+$ particle call 0123456789ABCDEFGHI digitalwrite "D7,HIGH"
 1
 ```
 
 
-###spark get
+###particle get
 
-  Retrieves a variable value from one of your cores, use ```spark list``` to see which cores are online, and what variables are available.
+  Retrieves a variable value from one of your devices, use ```particle list``` to see which devices are online, and what variables are available.
 
 ```sh
-$ spark get 0123456789ABCDEFGHI temperature
+$ particle get 0123456789ABCDEFGHI temperature
 72.1
 ```
 
 
 
-###spark monitor
+###particle monitor
 
   Pulls the value of a variable at a set interval, and optionally display a timestamp
-  
+
   * Minimum delay for now is 500 (there is a check anyway if you keyed anything less)
   * hitting ```CTRL + C``` in the console will exit the monitoring
 
 ```sh
-$ spark monitor 0123456789ABCDEFGHI temperature 5000
-$ spark monitor 0123456789ABCDEFGHI temperature 5000 --time
-$ spark monitor all temperature 5000
-$ spark monitor all temperature 5000 --time
-$ spark monitor all temperature 5000 --time > my_temperatures.csv
+$ particle monitor 0123456789ABCDEFGHI temperature 5000
+$ particle monitor 0123456789ABCDEFGHI temperature 5000 --time
+$ particle monitor all temperature 5000
+$ particle monitor all temperature 5000 --time
+$ particle monitor all temperature 5000 --time > my_temperatures.csv
 ```
 
 
-###spark identify
+###particle identify
 
-  Retrieves your core id when the core is connected via USB and in listening mode (flashing blue).
+  Retrieves your device id when the device is connected via USB and in listening mode (flashing blue).
 
 ```sh
-$ spark identify
-$ spark identify 1
-$ spark identify COM3
-$ spark identify /dev/cu.usbmodem12345
+$ particle identify
+$ particle identify 1
+$ particle identify COM3
+$ particle identify /dev/cu.usbmodem12345
 
-$ spark identify
+$ particle identify
 0123456789ABCDEFGHI
 ```
 
-###spark subscribe
+###particle subscribe
 
-  Subscribes to published events on the cloud, and pipes them to the console.  Special core name "mine" will subscribe to events from just your cores.
+  Subscribes to published events on the cloud, and pipes them to the console.  Special device name "mine" will subscribe to events from just your cores.
 
-
-```sh 
-$ spark subscribe
-$ spark subscribe mine
-$ spark subscribe eventName
-$ spark subscribe eventName mine
-$ spark subscribe eventName CoreName
-$ spark subscribe eventName 0123456789ABCDEFGHI
-```
-
-
-
-
-###spark serial list
-
-  Shows currently connected Spark Core's acting as serial devices over USB
 
 ```sh
-$ spark serial list
+$ particle subscribe
+$ particle subscribe mine
+$ particle subscribe eventName
+$ particle subscribe eventName mine
+$ particle subscribe eventName deviceName
+$ particle subscribe eventName 0123456789ABCDEFGHI
 ```
 
 
-###spark serial monitor
+
+
+###particle serial list
+
+  Shows currently connected devices acting as serial devices over USB
+
+```sh
+$ particle serial list
+```
+
+
+###particle serial monitor
 
   Starts listening to the specified serial device, and echoes to the terminal
 
 ```sh
-$ spark serial monitor
-$ spark serial monitor 1
-$ spark serial monitor COM3
-$ spark serial monitor /dev/cu.usbmodem12345
+$ particle serial monitor
+$ particle serial monitor 1
+$ particle serial monitor COM3
+$ particle serial monitor /dev/cu.usbmodem12345
 ```
 
 
-###spark keys doctor
+###particle keys doctor
 
-Helps you update your keys, or recover your core when the keys on the server are out of sync with the keys on your core.  The ```spark keys``` tools requires both dfu-util, and openssl to be installed.
+Helps you update your keys, or recover your device when the keys on the server are out of sync with the keys on your device.  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.
 
-Connect your core in [dfu mode](http://docs.spark.io/#/connect/appendix-dfu-mode-device-firmware-upgrade), and run this command to replace the unique cryptographic keys on your core.  Automatically attempts to send the new public key to the cloud as well.
+Connect your device in [dfu mode](http://docs.particle.io/#/connect/appendix-dfu-mode-device-firmware-upgrade), and run this command to replace the unique cryptographic keys on your device.  Automatically attempts to send the new public key to the cloud as well.
 
 ```sh
-$ spark keys doctor 0123456789ABCDEFGHI
+$ particle keys doctor 0123456789ABCDEFGHI
 ```
 
-There have been reports of the new public key not being sent to the cloud, in which case ```spark keys send``` will need to be run manually.
+There have been reports of the new public key not being sent to the cloud, in which case ```particle keys send``` will need to be run manually.
 
-###spark keys new
+###particle keys new
 
-Generates a new public / private keypair that can be used on a core.
+Generates a new public / private keypair that can be used on a device.
 
 ```sh
-$ spark keys new
-running openssl genrsa -out core.pem 1024
-running openssl rsa -in core.pem -pubout -out core.pub.pem
-running openssl rsa -in core.pem -outform DER -out core.der
+$ particle keys new
+running openssl genrsa -out device.pem 1024
+running openssl rsa -in device.pem -pubout -out device.pub.pem
+running openssl rsa -in device.pem -outform DER -out device.der
 New Key Created!
 
-$ spark keys new mykey
+$ particle keys new mykey
 running openssl genrsa -out mykey.pem 1024
 running openssl rsa -in mykey.pem -pubout -out mykey.pub.pem
 running openssl rsa -in mykey.pem -outform DER -out mykey.der
 New Key Created!
 ```
 
-###spark keys load
+###particle keys load
 
-Copies a ```.DER``` formatted private key onto your core's external flash.  Make sure your core is connected and in [dfu mode](http://docs.spark.io/#/connect/appendix-dfu-mode-device-firmware-upgrade).  The ```spark keys``` tools requires both dfu-util, and openssl to be installed.  Make sure any key you load is sent to the cloud with ```spark keys send core.pub.pem```
+Copies a ```.DER``` formatted private key onto your device's external flash.  Make sure your device is connected and in [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.  Make sure any key you load is sent to the cloud with ```particle keys send device.pub.pem```
 
 ```sh
-$ spark keys load core.der
+$ particle keys load device.der
 ...
 Saved!
 ```
 
-###spark keys save
+###particle keys save
 
-Copies a ```.DER``` formatted private key from your core's external flash to your computer.  Make sure your core is connected and in [dfu mode](http://docs.spark.io/#/connect/appendix-dfu-mode-device-firmware-upgrade).  The ```spark keys``` tools requires both dfu-util, and openssl to be installed.
+Copies a ```.DER``` formatted private key from your device's external flash to your computer.  Make sure your device is connected and in [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.
 
 ```sh
-$ spark keys save core.der
+$ particle keys save device.der
 ...
 Saved!
 ```
 
-###spark keys send
+###particle keys send
 
-Sends a core's public key to the cloud for use in opening an encrypted session with your core.  Please make sure your core has the corresponding private key loaded using the ```spark keys load``` command.
+Sends a device's public key to the cloud for use in opening an encrypted session with your device.  Please make sure your device has the corresponding private key loaded using the ```particle keys load``` command.
 
 ```sh
-$ spark keys send 0123456789ABCDEFGHI core.pub.pem
+$ particle keys send 0123456789ABCDEFGHI device.pub.pem
 submitting public key succeeded!
 ```
 
-###spark keys server
+###particle keys server
 
-Switches the server public key stored on the core's external flash.  This command is important when changing which server your core is connecting to, and the server public key helps protect your connection.   Your core will stay in DFU mode after this command, so that you can load new firmware to connect to your server.
-
+Switches the server public key stored on the device's external flash.  This command is important when changing which server your device is connecting to, and the server public key helps protect your connection.   Your device will stay in DFU mode after this command, so that you can load new firmware to connect to your server.
 
 
 ```sh
-$ spark keys server my_server.der
-Okay!  New keys in place, your core will not restart.
+$ particle keys server my_server.der
+Okay!  New keys in place, your device will not restart.
 ```
 
 
-###spark keys server ip_address
+###particle keys server ip_address
 
-When using the local cloud you can ask the CLI to encode the IP or dns address into your key to control where your core will connect.
+When using the local cloud you can ask the CLI to encode the IP or dns address into your key to control where your device will connect.
 
 ```sh
-$ spark keys server my_server.pub.pem 192.168.1.10
-$ spark keys server my_server.der 192.168.1.10
+$ particle keys server my_server.pub.pem 192.168.1.10
+$ particle keys server my_server.der 192.168.1.10
 ```
 
-###spark config
+###particle config
 
-The config command lets you create groups of settings and quickly switch to a profile by calling `spark config profile-name`. This is especially useful for switching to your local server or between other environments.
+The config command lets you create groups of settings and quickly switch to a profile by calling `particle config profile-name`. This is especially useful for switching to your local server or between other environments.
 
-Calling `spark config spark` will switch **Spark-Cli** back to the Spark Cloud API server.
+Calling `particle config particle` will switch **Particle-Cli** back to the Particle Cloud API server.
 
 ```sh
-$ spark config profile-name
-$ spark config spark
-$ spark config local apiUrl http://localhost:8080  //creates a new profile with name "local" and saves the IP-address parameter
-$ spark config useSudoForDfu true
+$ particle config profile-name
+$ particle config particle
+$ particle config local apiUrl http://localhost:8080  //creates a new profile with name "local" and saves the IP-address parameter
+$ particle config useSudoForDfu true
 ```
 
-Calling `spark config identify` will output your current config settings.
+Calling `particle config identify` will output your current config settings.
 ```sh
-$ spark config identify
-Current profile: spark
-Using API: https://api.spark.io
+$ particle config identify
+Current profile: particle
+Using API: https://api.particle.io
 Access token: e671fadd500a8a3921bb78c8d0400d7ba450a847
 ```

@@ -2,8 +2,8 @@
  ******************************************************************************
  * @file    commands/DoctorCommand.js
  * @author  David Middlecamp (david@spark.io)
- * @company Spark ( https://www.spark.io/ )
- * @source https://github.com/spark/spark-cli
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    14-February-2014
  * @brief   Doctor commands module
@@ -46,7 +46,7 @@ util.inherits(DoctorCommand, BaseCommand);
 DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	//name: "doctor",
-	description: "helps repair cores, run patches, check wifi, and more!",
+	description: "helps repair devices, run patches, check wifi, and more!",
 
 	init: function () {
 		//this.addOption("list", this.listCores.bind(this));
