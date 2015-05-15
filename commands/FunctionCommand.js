@@ -57,7 +57,6 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 
 
     listFunctions: function (args) {
-        console.log("Listfunctions called");
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
             return;
@@ -94,7 +93,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
     callFunction: function (coreID, functionName, funcParam) {
         funcParam = funcParam || "";
 
-        if (!coreID && !functionName) {
+        if (!coreID || !functionName) {
             //they just didn't provide any args...
             return this.listFunctions();
         }

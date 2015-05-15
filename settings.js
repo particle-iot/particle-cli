@@ -34,6 +34,7 @@ var utilities = require('./lib/utilities.js');
 var settings = {
 	commandPath: "./commands/",
 	apiUrl: "https://api.spark.io",
+	clientId: "CLI2",
 	access_token: null,
 	minimumApiDelay: 500,
 	//useOpenSSL: true,
@@ -162,7 +163,7 @@ settings.override = function (profile, key, value) {
 		// find any key that matches our key, regardless of case
 		var realKey = utilities.matchKey(key, settings, true);
 		if (realKey) {
-			console.log("Using the setting \"" + realKey + "\" instead ");
+			//console.log("Using the setting \"" + realKey + "\" instead ");
 			key = realKey;
 		}
 	}

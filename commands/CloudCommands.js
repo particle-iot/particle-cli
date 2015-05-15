@@ -43,7 +43,12 @@ var path = require('path');
 var moment = require('moment');
 var extend = require('xtend');
 var util = require('util');
+var chalk = require('chalk');
+var inquirer = require('inquirer');
 
+var arrow = chalk.green('>');
+var alert = chalk.yellow('!');
+var cmd = path.basename(process.argv[1]);
 
 var CloudCommand = function (cli, options) {
 	CloudCommand.super_.call(this, cli, options);
@@ -60,7 +65,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	init: function () {
 		this.addOption("claim", this.claimCore.bind(this), "Register a core with your user account with the cloud");
-		this.addOption("list", this.listCores.bind(this), "Displays a list of your cores, as well as their variables and functions");
+		this.addOption("list", this.listDevices.bind(this), "Displays a list of your devices, as well as their variables and functions");
 		this.addOption("remove", this.removeCore.bind(this), "Release a core from your account so that another user may claim it");
 		this.addOption("name", this.nameCore.bind(this), "Give a core a name!");
 		this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a core!");
@@ -110,7 +115,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 		console.log("Claiming core " + coreid);
-		api.claimCore(coreid);
+		api.claimCore(coreid).then(function() {
+			console.log("Successfully claimed core " + coreid);
+		}, function(err) {
+			console.log("Failed to claim core, server said ", err);
+		});
 	},
 
 	removeCore: function (coreid) {
@@ -334,83 +343,107 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	},
 
-	login: function () {
-		var username = null;
+	login: function (username) {
+		var self = this;
+
+		if (this.tries >= 3) {
+			console.log();
+			console.log(alert, "It seems we're having trouble with logging in.");
+			console.log(
+				alert,
+				util.format('Please try the `%s help` command for more information.',
+					chalk.bold.cyan(cmd))
+			);
+			return when.reject();
+		}
 
 		var allDone = pipeline([
-
 			//prompt for creds
-			prompts.getCredentials,
+			function () {
+				return prompts.getCredentials(username);
+			},
 
 			//login to the server
 			function (creds) {
 				var api = new ApiClient(settings.apiUrl);
-				username = creds[0];
-				return api.login("spark-cli", creds[0], creds[1]);
+				username = creds.username;
+				return api.login(settings.clientId, creds.username, creds.password);
+			},
+
+			function (accessToken) {
+				console.log(arrow, 'Successfully completed login!');
+				settings.override(null, 'access_token', accessToken);
+				if (username) {
+					settings.override(null, 'username', username);
+				}
+				self.tries = 0;
+				return when.resolve(accessToken);
 			}
 		]);
 
-		when(allDone).then(function (access_token) {
-				console.log("logged in! ", arguments);
-				//console.log("Successfully logged in as " + username);
-				settings.override(null, "access_token", access_token);
-				if (username) {
-					settings.override(null, "username", username);
-				}
+		return allDone.catch(function (err) {
+			console.log(alert, "There was an error logging you in! Let's try again.");
+			console.error(alert, err);
+			self.tries = (self.tries || 0) + 1;
 
-				setTimeout(function () {
-					process.exit(0);
-				}, 1250);
-			},
-			function (err) {
-				console.error("Error logging in " + err);
-				process.exit(1);
-			});
+			return self.login(username);
+		});
 	},
-	logout: function (dontExit) {
+
+	logout: function () {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!settings.access_token) {
-			console.log("You were already logged out.");
+			console.log('You were already logged out.');
 			return when.resolve();
 		}
 
-		var allDone = pipeline([
-			function () {
-				console.log("");
-				console.log("You can perform a more secure logout by revoking your current access_token for the cloud.");
-				console.log("Revoking your access_token requires your normal credentials, hit ENTER to skip, or ");
-				return prompts.passPromptDfd("enter your password (or blank to skip): ");
+		var allDone = when.defer();
+
+		inquirer.prompt([
+			{
+				type: 'confirm',
+				name: 'wipe',
+				message: 'Would you like to revoke the current authentication token?',
+				default: false
 			},
-			function (pass) {
-				if (pass && (pass != "blank")) {
-					//blank... I see what you did there...
-					return api.removeAccessToken(settings.username, pass, settings.access_token);
-				}
-				else {
-					console.log("Okay, leaving access token as-is! ");
-					return when.resolve();
-				}
-			},
-			function () {
-				settings.override(null, "username", null);
-				settings.override(null, "access_token", null);
-				console.log("You're now logged out!");
-				return when.resolve();
+			{
+				type: 'password',
+				name: 'password',
+				message: 'Please enter your password',
+				when: function(ans) { return ans.wipe; }
 			}
-		]);
-
-		if (!dontExit) {
-			when(allDone).ensure(function () {
-				process.exit(0);
+		], function(answers) {
+			pipeline([
+				function() {
+					if (answers.wipe) {
+						return api.removeAccessToken(settings.username, answers.password, settings.access_token);
+					} else {
+						console.log(arrow, 'Leaving your token intact.');
+					}
+				},
+				function() {
+					console.log(
+						arrow,
+						util.format('You have been logged out from %s.',
+						chalk.bold.cyan(settings.username))
+					);
+					settings.override(null, 'username', null);
+					settings.override(null, 'access_token', null);
+				}
+			]).then(function() {
+				allDone.resolve();
+			}, function(err) {
+				allDone.reject(err);
 			});
-		}
+		});
 
-		return allDone;
+		return allDone.promise;
 	},
 
 
-	 getAllCoreAttributes: function (args) {
+	getAllDeviceAttributes: function (args) {
 		console.error("Checking with the cloud...");
+		var self = this;
 
 		var tmp = when.defer();
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -418,36 +451,39 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject("not logged in!");
 		}
 
-		var lookupVariables = function (cores) {
-			if (!cores || (cores.length == 0) || (typeof cores == "string")) {
-				console.log("No cores found.");
+		var lookupVariables = function (devices) {
+			if (!devices || (devices.length === 0) || (typeof devices === "string")) {
+				console.log("No devices found.");
 			}
 			else {
+				self.newSpin('Retrieving device functions and variables...').start();
 				var promises = [];
-				for (var i = 0; i < cores.length; i++) {
-					var coreid = cores[i].id;
-					if (!coreid) {
-						continue;
+				devices.forEach(function (device) {
+					if (!device.id) {
+						return;
 					}
 
-					if (cores[i].connected) {
-						promises.push(api.getAttributes(coreid));
+					if (device.connected) {
+						promises.push(api.getAttributes(device.id).then(function(attrs) {
+							return extend(device, attrs);
+						}));
 					}
 					else {
-						promises.push(when.resolve(cores[i]));
+						promises.push(when.resolve(device));
 					}
-				}
+				});
 
-				when.all(promises).then(function (cores) {
+				when.all(promises).then(function (fullDevices) {
 					//sort alphabetically
-					cores = cores.sort(function (a, b) {
+					fullDevices = fullDevices.sort(function (a, b) {
 						if (a.connected && !b.connected) {
 							return 1;
 						}
 
 						return (a.name || "").localeCompare(b.name);
 					});
-					tmp.resolve(cores);
+					tmp.resolve(fullDevices);
+					self.stopSpin();
 				});
 			}
 		};
@@ -490,31 +526,30 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 		if (coreID) {
-			api.signalCore(coreID, onOff);
+			return api.signalCore(coreID, onOff);
 		}
 		else {
 
-		   var toggleAll = function (cores) {
-				if (!cores || (cores.length == 0)) {
-					console.log("No cores found.");
+			var toggleAll = function (cores) {
+				if (!cores || (cores.length === 0)) {
+					console.log('No cores found.');
+					return when.resolve();
 				}
 				else {
 					var promises = [];
-					for (var i = 0; i < cores.length; i++) {
-						var coreid = cores[i].id;
-						if (!cores[i].connected) {
-							promises.push(when.resolve(cores[i]));
-							continue;
+					cores.forEach(function (core) {
+						if (!core.connected) {
+							promises.push(when.resolve(core));
+							return;
 						}
-
-						promises.push(api.signalCore(coreid, onOff));
-					}
+						promises.push(api.signalCore(core.id, onOff));
+					});
 					return when.all(promises);
 				}
 			};
 
 
-			pipeline([
+			return pipeline([
 				api.listDevices.bind(api),
 				toggleAll
 			]);
@@ -523,7 +558,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 
-	listCores: function (args) {
+	listDevices: function (args) {
 
 		var formatVariables = function (vars, lines) {
 			if (vars) {
@@ -553,21 +588,28 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		};
 
 
-		when(this.getAllCoreAttributes(args)).then(function (cores) {
+		when(this.getAllDeviceAttributes(args)).then(function (devices) {
 			try {
 				var lines = [];
-				for (var i = 0; i < cores.length; i++) {
-					var core = cores[i];
+				for (var i = 0; i < devices.length; i++) {
+					var device = devices[i];
 
-					var numVars = utilities.countHashItems(core.variables);
-					var numFuncs = utilities.countHashItems(core.functions);
+					var deviceType = '';
+					switch(device.product_id) {
+						case 0:
+							deviceType = ' (Spark Core)';
+							break;
+						case 6:
+							deviceType = ' (Photon)';
+							break;
+					}
 
-					var status = core.name + " (" + core.id + ") is ";
-					status += (core.connected) ? "online" : "offline";
+					var status = device.name + " (" + device.id + ")" + deviceType + " is ";
+					status += (device.connected) ? "online" : "offline";
 					lines.push(status);
 
-					formatVariables(core.variables, lines);
-					formatFunctions(core.functions, lines);
+					formatVariables(device.variables, lines);
+					formatFunctions(device.functions, lines);
 				}
 
 				console.log(lines.join("\n"));

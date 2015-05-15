@@ -130,7 +130,7 @@ BaseCommand.prototype = {
 
 		this.__spin.stop(true);
 	},
-	error: function (str) {
+	error: function (str, exit) {
 
 		var name = this.name;
 		if(!str) { str = "Unknown error"; }
@@ -138,8 +138,9 @@ BaseCommand.prototype = {
 
 		console.log();
 		console.log(chalk.bold.red('!'), chalk.bold.white(util.format(str, name)));
-		process.exit(1);
-
+		if (exit || exit === undefined) {
+			process.exit(1);
+		}
 	},
 	_: null
 };
