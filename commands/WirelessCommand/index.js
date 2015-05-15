@@ -84,13 +84,13 @@ WirelessCommand.prototype.list = function list(macAddress) {
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey("Wireless setup of Photons works like a"),
+		chalk.white("Wireless setup of Photons works like a"),
 		chalk.cyan("wizard!")
 	);
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey("We will",
+		chalk.white("We will",
 			chalk.cyan('automagically'),
 			"change the",
 			chalk.cyan('Wi-Fi'),
@@ -100,7 +100,7 @@ WirelessCommand.prototype.list = function list(macAddress) {
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey('You may lose your connection to the internet for a moment.'),
+		chalk.white('You may lose your connection to the internet for a moment.'),
 		"\n"
 	);
 
@@ -244,7 +244,7 @@ WirelessCommand.prototype.monitor = function(args) {
 
 	var self = this;
 
-	this.newSpin('%s ' + chalk.bold.white('Waiting for a wild Photon to appear... ') + chalk.grey('(press ctrl + C to exit)')).start();
+	this.newSpin('%s ' + chalk.bold.white('Waiting for a wild Photon to appear... ') + chalk.white('(press ctrl + C to exit)')).start();
 	wildPhotons();
 	function wildPhotons() {
 
@@ -293,12 +293,12 @@ WirelessCommand.prototype.setup = function setup(photon) {
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey(strings.credentialsNeeded)
+		chalk.white(strings.credentialsNeeded)
 	);
 	console.log(
 		chalk.cyan('!'),
 		"PROTIP:",
-		chalk.grey('You can press ctrl + C to quit setup at any time.')
+		chalk.white('You can press ctrl + C to quit setup at any time.')
 	);
 	console.log();
 
@@ -538,14 +538,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log(
 				chalk.cyan('!'),
 				"PROTIP:",
-				chalk.grey("Your Photon may start a firmware update immediately upon connecting for the first time.")
+				chalk.white("Your Photon may start a firmware update immediately upon connecting for the first time.")
 			);
 			console.log(
 				chalk.cyan('!'),
 				"PROTIP:",
-				chalk.grey("If it starts an update, you will see it flash"),
+				chalk.white("If it starts an update, you will see it flash"),
 				chalk.magenta('MAGENTA'),
-				chalk.grey("until the update has completed.")
+				chalk.white("until the update has completed.")
 			);
 
 			self.exit();

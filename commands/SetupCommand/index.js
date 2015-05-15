@@ -272,18 +272,18 @@ SetupCommand.prototype.findDevice = function() {
 	console.log(
 		chalk.cyan('!'),
 		'PROTIP:',
-		chalk.grey('Hold the'),
+		chalk.white('Hold the'),
 		chalk.cyan('MODE/SETUP'),
-		chalk.grey('button on your device until it'),
+		chalk.white('button on your device until it'),
 		chalk.cyan('blinks blue!')
 	);
 
 	console.log(
 		chalk.cyan('!'),
 		'PROTIP:',
-		chalk.grey('Please make sure you are'),
+		chalk.white('Please make sure you are'),
 		chalk.cyan('connected'),
-		chalk.grey('to the'),
+		chalk.white('to the'),
 		chalk.cyan('internet.'),
 		'\n'
 	);
