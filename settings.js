@@ -29,6 +29,8 @@
 var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
+var chalk = require('chalk');
+
 var utilities = require('./lib/utilities.js');
 
 var settings = {
@@ -191,6 +193,11 @@ settings.transitionSparkProfiles = function() {
 	var particleDir = path.join(settings.findHomePath(), '.particle');
 	if (fs.existsSync(sparkDir) && !fs.existsSync(particleDir)) {
 		fs.mkdirSync(particleDir);
+
+		console.log();
+		console.log(chalk.yellow('!!!'), "I detected a Spark profile directory, and will now migrate your settings.");
+		console.log(chalk.yellow('!!!'), "This will only happen once, since you previously used our Spark-CLI tools.");
+		console.log();
 
 		var files = fs.readdirSync(sparkDir);
 		files.forEach(function (filename) {
