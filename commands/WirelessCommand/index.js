@@ -76,12 +76,13 @@ WirelessCommand.prototype.init = function init() {
 };
 
 WirelessCommand.prototype.list = function list(macAddress) {
+
 	// if we get passed a MAC address from setup
 	if (macAddress && macAddress.length === 17) {
-		this._macAddressFilter = macAddress;
-	} else {
-		this._macAddressFilter = null;
-	}
+
+		this.__macAddressFilter = macAddress;
+
+	} else { this.__macAddressFilter = null; }
 
 	console.log();
 	protip('Wireless setup of Photons works like a', chalk.cyan("wizard!"));
@@ -107,15 +108,41 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	this.stopSpin();
 
-	if(err) { self.error(strings.scanError); }
+	if(err) {
+
+		protip(
+			"Some computers may require",
+			chalk.cyan('Administrator'),
+			"permissions for my",
+			chalk.cyan("automagical"),
+			"Wi-Fi scanning capabilities."
+		);
+		console.log();
+		console.log(alert, chalk.bold.white('OOPS:'), "I was unable to scan for nearby Wi-Fi networks", chalk.magenta('(-___-)'));
+		console.log();
+
+		return prompt([{
+
+			type: 'confirm',
+			name: 'manual',
+			message: "We can still proceed in 'manual' mode. Would you like to continue?",
+			default: true
+
+		}], manualChoice);
+	}
 
 	detectedDevices = dat;
-	if (this._macAddressFilter) {
+	if (this.__macAddressFilter) {
+
 		var macDevices = detectedDevices.filter(function (ap) {
-			return ap.mac.toLowerCase() === self._macAddressFilter;
+
+			return ap.mac.toLowerCase() === self.__macAddressFilter;
+
 		});
 		if (macDevices && macDevices.length === 1) {
+
 			detectedDevices = macDevices;
+
 		}
 	}
 
@@ -453,7 +480,6 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log();
 			return self.__configure(ssid, cb);
 		}
-
 		self.__network = network;
 		self.__password = password;
 
@@ -463,6 +489,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function info(err, res) {
 
 		clearTimeout(retry);
+
+		console.log();
 		console.log(arrow, 'Obtaining device information...');
 		sap.deviceInfo(pubKey).on('error', function(err) {
 
@@ -511,6 +539,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function connect() {
 
 		console.log(arrow, 'The Photon will now attempt to connect to your Wi-Fi network...');
+		console.log();
 		clearTimeout(retry);
 		sap.connect(done);
 	};
