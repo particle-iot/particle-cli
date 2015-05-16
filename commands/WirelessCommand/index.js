@@ -517,8 +517,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			retry = setTimeout(info, 1000);
 		});
 	};
-	function pubKey() {
+	function pubKey(err, dat) {
 
+		if(dat && dat.id) { self.__deviceID = dat.id; }
 		clearTimeout(retry);
 		console.log(arrow, "Requesting public key from the device...");
 		sap.publicKey(code).on('error', function(err) {
