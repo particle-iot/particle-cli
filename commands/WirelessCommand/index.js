@@ -53,7 +53,9 @@ var WirelessCommand = function (cli, options) {
 
 	this.options = extend({}, this.options, options);
 	this.deviceFilterPattern = settings.wirelessSetupFilter;
+
 	this.__sap = new SAP();
+	this.__manual = false;
 	this.__completed = 0;
 
 	this.init();
@@ -225,7 +227,19 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 			self.exit();
 		}
-	}
+	};
+
+	function manualDone(err, dat) {
+
+		if(err) {
+
+			return console.log(chalk.read('!'), "An error occurred:", err);
+		}
+		if(dat && dat.id) {
+
+			return console.log(arrow, "We successfully configured your Photon! Great work. We make a good team!", chalk.magenta('<3'));
+		};
+	};
 };
 
 
@@ -276,19 +290,11 @@ WirelessCommand.prototype.setup = function setup(photon) {
 		}
 	}
 
-	console.log();
-	console.log(arrow, chalk.bold.white('Congratulations, you\'re on your way to awesome with'), chalk.cyan(photon));
-	console.log();
-	console.log(
-		chalk.cyan('!'),
-		"PROTIP:",
-		chalk.white(strings.credentialsNeeded)
-	);
-	console.log(
-		chalk.cyan('!'),
-		"PROTIP:",
-		chalk.white('You can press ctrl + C to quit setup at any time.')
-	);
+		if(self.__batch && self.__batch.length > 0) { var photon = self.__batch.pop(); }
+		else if(!self.__manual) { return console.log(alert, 'No Photons selected for setup!'); }
+	}
+	protip(strings.credentialsNeeded);
+	protip('You can press ctrl + C to quit setup at any time.');
 	console.log();
 
 	this.newSpin('Obtaining magical secure claim code from the cloud...').start();
@@ -307,8 +313,26 @@ WirelessCommand.prototype.setup = function setup(photon) {
 		}
 		self.__claimCode = dat.claim_code;
 
-		self.newSpin('Attempting to connect to ' + photon + '...').start();
-		mgr.connect({ ssid: photon }, connected);
+		if(!self.__manual) {
+
+			self.newSpin('Attempting to connect to ' + photon + '...').start();
+			mgr.connect({ ssid: photon }, connected);
+		}
+		else {
+
+			return prompt([{
+
+				type: 'input',
+				name: 'connect',
+				message: "Please connect to the Photon's Wi-Fi network now. Press enter when ready."
+
+			}], manualReady);
+		}
+	};
+
+	function manualReady(ans) { self.__configure(null, manualConfigure); };
+	function manualConfigure(err, dat) {
+		cb(err, dat);
 	};
 
 	function connected(err, opts) {
@@ -497,18 +521,22 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		if(self.__batch && self.__batch.length) { self.__configure(self.__batch.pop(), cb); }
 
 		self.stopSpin();
-		console.log(arrow, chalk.bold.white('Configuration request complete! You\'ve just won the internet!'));
+		console.log(arrow, chalk.bold.white('Configuration complete! You\'ve just won the internet!'));
 
+		if(!self.__manual) {
 
-		prompt([{
+			prompt([{
 
-			name: 'revive',
-			type: 'confirm',
-			message: 'Would you like to return this computer to the wireless network you just configured?',
-			default: true
+				name: 'revive',
+				type: 'confirm',
+				message: 'Would you like to return this computer to the wireless network you just configured?',
+				default: true
 
-		}], originalPrompt);
-	}
+			}], originalPrompt);
+		}
+		else {
+
+			prompt([{
 
 				name: 'reconnect',
 				type: 'input',
