@@ -1,6 +1,12 @@
 changelog
 =========
 
+05/15/2015 - 1.5.2 - Fixed a visual formatting bug of markdown on the README
+
+05/15/2015 - 1.5.1 - Fixed DFU specification regression causing users to be unable to locally flash keys and firmware to Photons.
+
+05/15/2015 - 1.5.0 - Rebranding complete! This project is now known as particle-cli
+
 05/14/2015 - 1.4.1 - Fixed error handling on Wireless Photon setup routine.
 
 05/14/2015 - 1.4.0 - Introduce support for Photon setup on OS X. New UI implementation for setup and wireless commands. Deprecating spark-cli in favor of the particle-cli as part of Spark's rebranding to Particle. Future releases will be under the 'particle-cli' package.

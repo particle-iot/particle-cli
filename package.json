@@ -1,14 +1,15 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "author": "David Middlecamp",
   "repository": {
     "type": "git",
     "url": "https://github.com/spark/particle-cli"
   },
   "bin": {
-    "particle": "./bin/particle.js"
+    "particle": "./bin/particle.js",
+    "spark": "./bin/particle.js"
   },
   "main": "./app.js",
   "engines": {
