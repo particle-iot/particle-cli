@@ -330,14 +330,8 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	var selected;
 	var security;
 
+	console.log();
 	if(!photon) {
-		if(self.__batch && self.__batch.length > 0) {
-			var photon = self.__batch.pop();
-		}
-		else {
-			return console.log(alert, 'No Photons selected for setup!');
-		}
-	}
 
 		if(self.__batch && self.__batch.length > 0) { var photon = self.__batch.pop(); }
 		else if(!self.__manual) { return console.log(alert, 'No Photons selected for setup!'); }
