@@ -407,7 +407,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	console.log();
-	console.log(arrow, 'Now to configure our dear', chalk.cyan(ssid ? ssid : 'Photon'), '...');
+	console.log(arrow, 'Now to configure our dear', chalk.cyan(ssid ? ssid : 'Photon'));
 	console.log();
 
 	var self = this;
