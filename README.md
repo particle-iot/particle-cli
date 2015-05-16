@@ -63,7 +63,7 @@ Getting Started
   These next two commands are all you need to get started setting up an account, claiming a device, and discovering new features.
 
 
-###particle setup
+### particle setup
 
   Guides you through creating a new account, and claiming your device!
 
@@ -72,7 +72,7 @@ $ particle setup
 ```
 
 
-###particle help
+### particle help
 
   Shows you what commands are available, and how to use them.  You can also give the name of a command for detailed help.
 
@@ -121,7 +121,7 @@ Any core shipped before Summer 2014 would benefit from having this update applie
 Command Reference
 ================
 
-###particle setup wifi
+### particle setup wifi
 
   Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/core/connect/)
 
@@ -130,7 +130,7 @@ $ particle setup wifi
 ```
 
 
-###particle login
+### particle login
 
   Login and save an access token for interacting with your account on the Particle Cloud.
 
@@ -139,7 +139,7 @@ $ particle login
 ```
 
 
-###particle logout
+### particle logout
 
   Logout and optionally revoke the access token for your CLI session.
 
@@ -148,7 +148,7 @@ $ particle logout
 ```
 
 
-###particle list
+### particle list
 
   Generates a list of what devices you own, and displays information about their status, including what variables and functions are available
 
@@ -167,7 +167,7 @@ my_device_name (0123456789ABCDEFGHI) 0 variables, and 4 functions
 ```
 
 
-###particle core add
+### particle core add
 
   Adds a new core to your account
 
@@ -178,7 +178,7 @@ Successfully claimed device 0123456789ABCDEFGHI
 ```
 
 
-###particle core rename
+### particle core rename
 
   Assigns a new name to a core you've claimed
 
@@ -188,7 +188,7 @@ $ particle core rename 0123456789ABCDEFGHI "pirate frosting"
 
 
 
-###particle core remove
+### particle core remove
 
   Removes a core from your account so someone else can claim it.
 
@@ -201,7 +201,7 @@ Okay!
 ```
 
 
-###particle flash
+### particle flash
 
   Sends a firmware binary, a source file, or a directory of source files, or a known app to your device.
 
@@ -219,7 +219,7 @@ Okay!
 ```
 
 
-####Flashing a directory
+#### Flashing a directory
 
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```particle.include``` and / or a ```particle.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
 
@@ -228,7 +228,7 @@ $ particle flash 0123456789ABCDEFGHI my_project
 ```
 
 
-####Flashing one or more source files
+#### Flashing one or more source files
 
   You can include any number of individual source files after the device id, and the CLI will include them while flashing your app.
 
@@ -238,7 +238,7 @@ $ particle flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
 ```
 
 
-####Flashing a known app
+#### Flashing a known app
 
   You can easily reset a device back to a previous existing app with a quick command. Three app names are reserved right now: "tinker", "voodoo", and "cc3000".  Tinker is the original firmware that ships with the device, and cc3000 will patch the wifi module on your Core. Voodoo is a build of [VoodooSpark](http://voodoospark.me/) to allow local wireless firmata control of a device.
 
@@ -257,7 +257,7 @@ $ particle flash --usb tinker
 ```
 
 
-####Compiling remotely and Flashing locally
+#### Compiling remotely and Flashing locally
 
 To work locally, but use the cloud compiler, simply use the compile command, and then the local flash command after.  Make sure you connect your device via USB and place it into [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).
 
@@ -269,7 +269,7 @@ $ particle flash --usb firmware.bin
 ```
 
 
-###particle compile
+### particle compile
 
   Compiles one or more source file, or a directory of source files, and downloads a firmware binary.
 
@@ -287,7 +287,7 @@ $ particle flash --usb firmware.bin
 ```
 
 
-####compiling a directory
+#### compiling a directory
 
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```particle.include``` and / or a ```particle.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.  Those files are just plain text with one line per filename
 
@@ -296,7 +296,7 @@ $ particle compile my_project_folder
 ```
 
 
-####example particle.include
+#### example particle.include
 ```text
 application.cpp
 library1.h
@@ -304,7 +304,7 @@ library1.cpp
 ```
 
 
-####example particle.ignore
+#### example particle.ignore
 ```text
 .ds_store
 logo.png
@@ -312,7 +312,7 @@ old_version.cpp
 ```
 
 
-####Compiling one or more source files
+#### Compiling one or more source files
 
   You can include any number of individual source files after the device id, and the CLI will include them while compiling your app.
 
@@ -320,7 +320,7 @@ old_version.cpp
 ```sh
 $ particle compile app.ino library1.cpp library1.h
 ```
-####Compiling in a directory containing project files
+#### Compiling in a directory containing project files
 
  This will push all the files in a directory that the command line is currently 'cd' in for compilation.
 
@@ -331,7 +331,7 @@ $ particle compile app.ino library1.cpp library1.h
 
 
 
-###particle call
+### particle call
 
   Calls a function on one of your devices, use ```particle list``` to see which devices are online, and what functions are available.
 
@@ -341,7 +341,7 @@ $ particle call 0123456789ABCDEFGHI digitalwrite "D7,HIGH"
 ```
 
 
-###particle get
+### particle get
 
   Retrieves a variable value from one of your devices, use ```particle list``` to see which devices are online, and what variables are available.
 
@@ -352,7 +352,7 @@ $ particle get 0123456789ABCDEFGHI temperature
 
 
 
-###particle monitor
+### particle monitor
 
   Pulls the value of a variable at a set interval, and optionally display a timestamp
 
@@ -368,7 +368,7 @@ $ particle monitor all temperature 5000 --time > my_temperatures.csv
 ```
 
 
-###particle identify
+### particle identify
 
   Retrieves your device id when the device is connected via USB and in listening mode (flashing blue).
 
@@ -382,7 +382,7 @@ $ particle identify
 0123456789ABCDEFGHI
 ```
 
-###particle subscribe
+### particle subscribe
 
   Subscribes to published events on the cloud, and pipes them to the console.  Special device name "mine" will subscribe to events from just your cores.
 
@@ -399,7 +399,7 @@ $ particle subscribe eventName 0123456789ABCDEFGHI
 
 
 
-###particle serial list
+### particle serial list
 
   Shows currently connected devices acting as serial devices over USB
 
@@ -408,7 +408,7 @@ $ particle serial list
 ```
 
 
-###particle serial monitor
+### particle serial monitor
 
   Starts listening to the specified serial device, and echoes to the terminal
 
@@ -420,7 +420,7 @@ $ particle serial monitor /dev/cu.usbmodem12345
 ```
 
 
-###particle keys doctor
+### particle keys doctor
 
 Helps you update your keys, or recover your device when the keys on the server are out of sync with the keys on your device.  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.
 
@@ -432,7 +432,7 @@ $ particle keys doctor 0123456789ABCDEFGHI
 
 There have been reports of the new public key not being sent to the cloud, in which case ```particle keys send``` will need to be run manually.
 
-###particle keys new
+### particle keys new
 
 Generates a new public / private keypair that can be used on a device.
 
@@ -450,7 +450,7 @@ running openssl rsa -in mykey.pem -outform DER -out mykey.der
 New Key Created!
 ```
 
-###particle keys load
+### particle keys load
 
 Copies a ```.DER``` formatted private key onto your device's external flash.  Make sure your device is connected and in [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.  Make sure any key you load is sent to the cloud with ```particle keys send device.pub.pem```
 
@@ -460,7 +460,7 @@ $ particle keys load device.der
 Saved!
 ```
 
-###particle keys save
+### particle keys save
 
 Copies a ```.DER``` formatted private key from your device's external flash to your computer.  Make sure your device is connected and in [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.
 
@@ -470,7 +470,7 @@ $ particle keys save device.der
 Saved!
 ```
 
-###particle keys send
+### particle keys send
 
 Sends a device's public key to the cloud for use in opening an encrypted session with your device.  Please make sure your device has the corresponding private key loaded using the ```particle keys load``` command.
 
@@ -479,7 +479,7 @@ $ particle keys send 0123456789ABCDEFGHI device.pub.pem
 submitting public key succeeded!
 ```
 
-###particle keys server
+### particle keys server
 
 Switches the server public key stored on the device's external flash.  This command is important when changing which server your device is connecting to, and the server public key helps protect your connection.   Your device will stay in DFU mode after this command, so that you can load new firmware to connect to your server.
 
@@ -490,7 +490,7 @@ Okay!  New keys in place, your device will not restart.
 ```
 
 
-###particle keys server ip_address
+### particle keys server ip_address
 
 When using the local cloud you can ask the CLI to encode the IP or dns address into your key to control where your device will connect.
 
@@ -499,7 +499,7 @@ $ particle keys server my_server.pub.pem 192.168.1.10
 $ particle keys server my_server.der 192.168.1.10
 ```
 
-###particle config
+### particle config
 
 The config command lets you create groups of settings and quickly switch to a profile by calling `particle config profile-name`. This is especially useful for switching to your local server or between other environments.
 
