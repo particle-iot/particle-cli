@@ -85,7 +85,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					if (port.vendorId === '0x2b04' && port.productId === '0xc006') {
 						device.type = 'Photon';
 					} else if (port.vendorId === '0x1d50' && port.productId === '0x607d') {
-						device.type = 'Spark Core';
+						device.type = 'Core';
 					}
 
 					devices.push(device);
@@ -514,7 +514,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('getDeviceMacAddress - no serial port provided');
 		}
 		if (device.type === 'Spark Core') {
-			return when.reject('Unable to get MAC address of a Spark Core');
+			return when.reject('Unable to get MAC address of a Core');
 		}
 
 		var failDelay = 5000;
