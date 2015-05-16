@@ -603,7 +603,6 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log(arrow, "Please manually reconnect to your Wi-Fi network to complete the setup process.");
 		}
 		function revived(err) {
-			if(err) {
 
 			// TODO: Name & verify that the Photon successfully made it to the cloud
 			if(err) { return console.log(alert, "Whoops! I wasn't able to re-connect your computer to your Wi-Fi network. Please do so manually."); }
