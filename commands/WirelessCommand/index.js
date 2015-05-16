@@ -318,7 +318,7 @@ WirelessCommand.prototype.monitor = function(args) {
 
 WirelessCommand.prototype._ = null;
 
-WirelessCommand.prototype.setup = function setup(photon) {
+WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 	var api = new APIClient(settings.apiUrl, settings.access_token);
 	var mgr = new WiFiManager();
