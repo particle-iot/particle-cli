@@ -610,18 +610,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log(arrow, chalk.bold.white('Fantastic! You should be back to normal now!'));
 
 			console.log();
-			console.log(
-				chalk.cyan('!'),
-				"PROTIP:",
-				chalk.white("Your Photon may start a firmware update immediately upon connecting for the first time.")
-			);
-			console.log(
-				chalk.cyan('!'),
-				"PROTIP:",
-				chalk.white("If it starts an update, you will see it flash"),
-				chalk.magenta('MAGENTA'),
-				chalk.white("until the update has completed.")
-			);
+			updateWarning();
 
 			self.exit();
 		};
@@ -692,5 +681,25 @@ function clean(list) {
 var cmd = path.basename(process.argv[1]);
 var arrow = chalk.green('>');
 var alert = chalk.yellow('!');
+var protip = function() {
+
+	var args = Array.prototype.slice.call(arguments);
+	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
+	console.log.apply(null, args);
+
+};
+var updateWarning = function() {
+
+	protip(
+		"Your Photon may start a",
+		chalk.cyan('firmware update'),
+		"immediately upon connecting for the first time."
+	);
+	protip(
+		chalk.white("If it starts an update, you will see it flash"),
+		chalk.magenta('MAGENTA'),
+		chalk.white("until the update has completed.")
+	);
+};
 
 module.exports = WirelessCommand;
