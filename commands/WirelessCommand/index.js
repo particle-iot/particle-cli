@@ -41,7 +41,7 @@ var path = require('path');
 var strings = {
 
 	'monitorPrompt': "Would you like to wait and monitor for Photons entering setup mode?",
-	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?",
+	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this computer?",
 	'credentialsNeeded': "You will need to know the password for your Wi-Fi network (if any) to proceed.",
 	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:"
 };
@@ -81,28 +81,16 @@ WirelessCommand.prototype.list = function list(macAddress) {
 	}
 
 	console.log();
-	console.log(
-		chalk.cyan('!'),
-		"PROTIP:",
-		chalk.white("Wireless setup of Photons works like a"),
-		chalk.cyan("wizard!")
+	protip('Wireless setup of Photons works like a', chalk.cyan("wizard!"));
+	protip(
+		"We will",
+		chalk.cyan('automagically'),
+		"change the",
+		chalk.cyan('Wi-Fi'),
+		"network to which your computer is connected."
 	);
-	console.log(
-		chalk.cyan('!'),
-		"PROTIP:",
-		chalk.white("We will",
-			chalk.cyan('automagically'),
-			"change the",
-			chalk.cyan('Wi-Fi'),
-			"network to which your computer is connected."
-		)
-	);
-	console.log(
-		chalk.cyan('!'),
-		"PROTIP:",
-		chalk.white('You may lose your connection to the internet for a moment.'),
-		"\n"
-	);
+	protip('You may lose your connection to the internet for a moment.');
+	console.log();
 
 	this.newSpin('%s ' + chalk.bold.white('Scanning Wi-Fi for nearby Photons in setup mode...')).start();
 	scan(this.__networks.bind(this));
@@ -521,6 +509,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}], originalPrompt);
 	}
 
+				name: 'reconnect',
+				type: 'input',
+				message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
+
+			}], manualPrompt);
+		}
+	}
+	function manualPrompt(ans) { cb(null, { id: self.__deviceID }); };
 	function originalPrompt(ans) {
 
 		if(ans.revive) { mgr.connect({ ssid: self.__network, password: self.__password }, revived); }
@@ -530,8 +526,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		function revived(err) {
 			if(err) {
 
-				return console.log(alert, 'Whoops! I couldn\'t do that. Please reconnect manually.');
-			}
+			// TODO: Name & verify that the Photon successfully made it to the cloud
+			if(err) { return console.log(alert, "Whoops! I wasn't able to re-connect your computer to your Wi-Fi network. Please do so manually."); }
 			console.log(arrow, chalk.bold.white('Fantastic! You should be back to normal now!'));
 
 			console.log();
