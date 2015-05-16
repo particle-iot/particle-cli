@@ -154,9 +154,9 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		prompt([{
 
 			type: 'confirm',
-			name: 'setupAll',
-			message: 'Multiple Photons detected nearby. Would you like to perform setup on all of them now?',
-			default: false,
+			name: 'setup',
+			message: 'Multiple Photons detected nearby. Would you like to select one to setup now?',
+			default: true,
 
 		}], multipleChoice);
 	}
@@ -198,15 +198,15 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 		if(ans.setupAll) {
 
-			self.__batch = detectedDevices;
-			self.setup(null);
+			self.__manual = true;
+			return self.setup(null, manualDone);
 		}
 		else {
 
 			// Select any/all Photons to setup
 			prompt([{
 
-				type: 'checkbox',
+				type: 'list',
 				name: 'selected',
 				message: 'Please select which Photons you would like to setup at this time.',
 				choices: detectedDevices
