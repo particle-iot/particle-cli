@@ -43,7 +43,8 @@ var strings = {
 	'monitorPrompt': "Would you like to wait and monitor for Photons entering setup mode?",
 	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this computer?",
 	'credentialsNeeded': "You will need to know the password for your Wi-Fi network (if any) to proceed.",
-	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:"
+	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:",
+	'startingSetup': "Congratulations, you're on your way to awesome"
 };
 
 var WirelessCommand = function (cli, options) {
