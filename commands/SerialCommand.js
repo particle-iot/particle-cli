@@ -484,7 +484,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					if (device.type === 'Photon') {
 						return that.serialPromptDfd(serialPort, '\n', null, 15000);
 					}
-					return that.serialPromptDfd(serialPort, 'Particle <3 you!', null, 15000);
+					return that.serialPromptDfd(serialPort, 'Spark <3 you!', null, 15000);
 				}
 			]);
 			utilities.pipeDeferred(configDone, wifiDone);
