@@ -35,7 +35,7 @@ var SerialPortLib = require('serialport');
 var SerialPort = SerialPortLib.SerialPort;
 var inquirer = require('inquirer');
 var chalk = require('chalk');
-var wifiScan = require('node-wifiscanner').scan;
+var wifiScan = require('node-wifiscanner2').scan;
 
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');

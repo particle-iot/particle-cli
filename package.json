@@ -23,7 +23,7 @@
     "hogan.js": "^2.0.0",
     "inquirer": "^0.8.2",
     "moment": "^2.9.0",
-    "node-wifiscanner": "git+https://github.com/spark/node-wifiscanner.git",
+    "node-wifiscanner2": "^1.0.0",
     "request": "^2.46.0",
     "serialport": "^1.5.0",
     "softap-setup": "^1.1.4",

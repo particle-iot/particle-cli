@@ -1,5 +1,5 @@
 var os = require('os');
-var scan = require('node-wifiscanner').scan;
+var scan = require('node-wifiscanner2').scan;
 var connect = {
 	'darwin': require('./connect/darwin')
 };

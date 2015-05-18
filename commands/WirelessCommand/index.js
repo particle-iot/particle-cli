@@ -34,7 +34,7 @@ var APIClient = require('../../lib/ApiClient2');
 var settings = require('../../settings.js');
 var prompt = require('inquirer').prompt;
 var chalk = require('chalk');
-var scan = require('node-wifiscanner').scan;
+var scan = require('node-wifiscanner2').scan;
 var SAP = require('softap-setup')
 var path = require('path');
 
