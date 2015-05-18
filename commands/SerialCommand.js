@@ -230,11 +230,16 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					if (answers.rescan) {
 						return self._scanNetworks(next);
 					}
-					return self.exit();
+					return next([]);
 				});
+				return;
 			}
 
 			networkList = networkList.filter(function (ap) {
+				if (!ap) {
+					return false;
+				}
+
 				// channel # > 14 === 5GHz
 				if (ap.channel && parseInt(ap.channel, 10) > 14) {
 					return false;
@@ -266,77 +271,91 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					name: 'scan',
 					message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
 					default: true
-				},
-				{
-					type: 'list',
-					name: 'ap',
-					message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
-					choices: function () {
-						var done = this.async();
-						self._scanNetworks(function (networks) {
-							var choices = networks.map(function (n) {
-								return {
-									name: n.ssid,
-									value: n
-								};
-							});
-							done(choices);
-						});
-					},
-					when: function (answers) { return answers.scan; }
-				},
-				{
-					type: 'input',
-					name: 'ssid',
-					message: 'SSID',
-					when: function (answers) { return !answers.scan || !answers.ap; }
-				},
-				{
-					type: 'confirm',
-					name: 'detectSecurity',
-					message: chalk.bold.white('Should I try to auto-detect the wireless security type?'),
-					when: function (answers) { return !!answers.ap; },
-					default: true
-				},
-				{
-					type: 'list',
-					name: 'security',
-					message: 'Security Type',
-					choices: [
-						{ name: 'WPA2', value: 3 },
-						{ name: 'WPA', value: 2 },
-						{ name: 'WEP', value: 1 },
-						{ name: 'Unsecured', value: 0 }
-					],
-					when: function (answers) { return !answers.scan || !answers.detectSecurity; }
-				},
-				{
-					type: 'input',
-					name: 'password',
-					message: 'Wi-Fi Password',
-					when: function (answers) {
-						return (answers.detectSecurity && answers.ap.security.indexOf('NONE') === -1) ||
-							answers.security !== 0;
-					}
 				}
-			], function (answers) {
-				var ssid = answers.ssid || answers.ap.ssid;
-				var security = answers.security;
-				if (answers.detectSecurity) {
-					var ap = answers.ap;
-					if (ap.security.indexOf('WPA2') >= 0) { security = 3; }
-					else if (ap.security.indexOf('WPA') >= 0) { security = 2; }
-					else if (ap.security.indexOf('WEP') >= 0) { security = 1; }
-					else if (ap.security.indexOf('NONE') >= 0) { security = 0; }
-					else { security = 3; }
+			], function(ans) {
+				if (ans.scan) {
+					return self._scanNetworks(function (networks) {
+						self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
+					});
+				} else {
+					self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
 				}
-
-				self.serialWifiConfig(device, ssid, answers.password, security).then(wifi.resolve, wifi.reject);
 			});
-
 		});
 
 		return wifi.promise;
+	},
+
+	_getWifiInformation: function(device, networks) {
+		var wifiInfo = when.defer();
+		var self = this;
+
+		networks = networks || [];
+		inquirer.prompt([
+			{
+				type: 'list',
+				name: 'ap',
+				message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
+				choices: function () {
+					return networks.map(function (n) {
+						return {
+							name: n.ssid,
+							value: n
+						};
+					});
+				},
+				when: function () { return networks.length; }
+			},
+			{
+				type: 'input',
+				name: 'ssid',
+				message: 'SSID',
+				when: function (answers) { return !networks.length || !answers.ap; }
+			},
+			{
+				type: 'confirm',
+				name: 'detectSecurity',
+				message: chalk.bold.white('Should I try to auto-detect the wireless security type?'),
+				when: function (answers) { return !!answers.ap; },
+				default: true
+			},
+			{
+				type: 'list',
+				name: 'security',
+				message: 'Security Type',
+				choices: [
+					{ name: 'WPA2', value: 3 },
+					{ name: 'WPA', value: 2 },
+					{ name: 'WEP', value: 1 },
+					{ name: 'Unsecured', value: 0 }
+				],
+				when: function (answers) { return !networks.length || !answers.detectSecurity; }
+			},
+			{
+				type: 'input',
+				name: 'password',
+				message: 'Wi-Fi Password',
+				when: function (answers) {
+					return (answers.detectSecurity && answers.ap.security.indexOf('NONE') === -1) ||
+						answers.security !== 0;
+				}
+			}
+		], function (answers) {
+			var ssid = answers.ssid || answers.ap.ssid;
+			var security = answers.security;
+			if (answers.detectSecurity) {
+				var ap = answers.ap;
+				if (ap.security.indexOf('WPA2') >= 0) { security = 3; }
+				else if (ap.security.indexOf('WPA') >= 0) { security = 2; }
+				else if (ap.security.indexOf('WEP') >= 0) { security = 1; }
+				else if (ap.security.indexOf('NONE') >= 0) { security = 0; }
+				else { security = 3; }
+			}
+
+			self.serialWifiConfig(device, ssid, answers.password, security).then(wifiInfo.resolve, wifiInfo.reject);
+		});
+
+		return wifiInfo.promise;
 	},
 
 	//spark firmware version 1:
