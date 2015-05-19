@@ -14,6 +14,9 @@ Known Issues
 Installing
 =======
 
+#### If you've already installed `spark-cli`, please uninstall it before continuing.
+#### Simply type: `npm uninstall -g spark-cli` into the command line.
+
   First, make sure you have [node.js](http://nodejs.org/) installed!
 
   Next, open a command prompt or terminal, and install by typing:
