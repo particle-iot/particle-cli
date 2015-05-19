@@ -1,7 +1,7 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "author": "David Middlecamp",
   "repository": {
     "type": "git",
