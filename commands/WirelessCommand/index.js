@@ -354,7 +354,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		if(err) {
 
 			// TODO: Graceful recovery here
-
+			console.log(arrow, arrow, err);
 			protip('We need an active internet connection to successfully complete setup.');
 			protip('Are you currently connected to the internet? Please double-check and try again.');
 			return;
