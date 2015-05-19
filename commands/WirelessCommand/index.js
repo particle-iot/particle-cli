@@ -342,7 +342,12 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 	this.newSpin('Obtaining magical secure claim code from the cloud...').start();
 
-	api.getClaimCode(next);
+	var sock = api.getClaimCode(next);
+	sock.on('error', reclaim);
+	function reclaim(err) {
+
+		console.log(alert, alert, err);
+	};
 	function next(err, dat) {
 
 		self.stopSpin();
