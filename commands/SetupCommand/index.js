@@ -2,7 +2,7 @@
 
 var chalk = require('chalk');
 var prompt = require('inquirer').prompt;
-var ApiClient2 = require('../../lib/Apiclient2');
+var ApiClient2 = require('../../lib/ApiClient2');
 
 var settings = require('../../settings.js');
 var BaseCommand = require("../BaseCommand.js");
