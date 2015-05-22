@@ -543,7 +543,16 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		network = ans.network;
 		password = ans.password;
-		security = list[network].sec;
+		security = ans.security || list[network].sec
+
+		if(self.__sap.securityLookup(security)) {
+
+			var visibleSecurity = self.__sap.securityLookup(security).toUpperCase().replace('_', ' ');
+		}
+		else {
+
+			var visibleSecurity = security.toUpperCase().replace('_', ' ');
+		}
 
 		console.log(arrow, "Here's what we're going to send to the Photon:");
 		console.log();
@@ -552,7 +561,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(
 			arrow,
 			"Security:",
-			chalk.bold.cyan(self.__sap.securityLookup(security).toUpperCase().replace('_', ' '))
+			chalk.bold.cyan(visibleSecurity)
 		);
 		console.log();
 
