@@ -418,10 +418,84 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	var password;
 	var network;
 	var retry;
+	var security;
+	var visibleSecurity;
 
-	self.newSpin('Asking the Photon to scan for nearby Wi-Fi networks...').start();
+	protip('I can only scan for Wi-Fi networks that', chalk.cyan('broadcast'), 'their network name (most networks do).');
+	protip('If you want to skip scanning, or your network is configured as a', chalk.cyan('non-broadcast'), 'network');
+	protip('answer', chalk.cyan('no'), 'to the prompt below. Otherwise, we will continue with the Wi-Fi wizard setup process...');
+	console.log();
 
-	retry = setTimeout(start, 1000);
+	prompt([{
+
+		type: 'confirm',
+		name: 'manual',
+		message: "Would you like to manually enter your Wi-Fi network configuration?",
+		default: false
+
+	}], scanChoice);
+
+	function scanChoice(ans) {
+
+		if(ans.manual) {
+
+			return prompt([{
+
+				type: 'input',
+				name: 'network',
+				message: 'Please enter the SSID of your Wi-Fi network:'
+
+			}, {
+
+				type: 'input',
+				name: 'password',
+				message: 'Please enter your Wi-Fi network password (leave blank for none):'
+
+			}, {
+
+				type: 'list',
+				name: 'security',
+				message: 'Please select the security used by your Wi-Fi network:',
+				choices: [
+
+					"None",
+					"WEP Shared",
+					"WPA TKIP",
+					"WPA AES",
+					"WPA2 AES",
+					"WPA2 TKIP",
+					"WPA2 Mixed",
+					"WPA2"
+				]
+
+			}], manualChoices);
+		}
+
+		self.newSpin('Asking the Photon to scan for nearby Wi-Fi networks...').start();
+		retry = setTimeout(start, 1000);
+
+	};
+
+	function manualChoices(ans) {
+
+		if(!ans.network) {
+
+			console.log(alert, "We can't setup your Photon without a Wi-Fi network! Let's try again...");
+			return scanChoice({ manual: true });
+		}
+		if(!ans.password && ans.security !== "None") {
+
+			console.log(alert, "You chose a security type that requires a password! Let's try again...");
+			return scanChoice({ manual: true });
+		}
+		networkChoices({
+
+			network: ans.network,
+			password: ans.password,
+			security: ans.security.toLowerCase().replace(" ", "_")
+
+		});
+	};
 
 	function start() {
 
