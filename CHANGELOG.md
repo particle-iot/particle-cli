@@ -1,5 +1,8 @@
 changelog
 =========
+05/21/2015 - 1.5.10 - Fix tiny but important typo in prompts around manual Wi-Fi credentials.
+
+05/21/2015 - 1.5.9 - Added manual Wi-Fi credential mode. If your Wi-Fi network is non-broadcast, or if you'd just rather avoid scanning for networks, you can choose to manually enter your network details.
 
 05/15/2015 - 1.5.2 - Fixed a visual formatting bug of markdown on the README
 
