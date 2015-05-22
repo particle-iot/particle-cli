@@ -423,7 +423,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	protip('I can only scan for Wi-Fi networks that', chalk.cyan('broadcast'), 'their network name (most networks do).');
 	protip('If you want to skip scanning, or your network is configured as a', chalk.cyan('non-broadcast'), 'network');
-	protip('answer', chalk.cyan('no'), 'to the prompt below. Otherwise, we will continue with the Wi-Fi wizard setup process...');
+	protip('answer', chalk.cyan('yes'), 'to the prompt below. Otherwise, we will continue with the Wi-Fi wizard setup process...');
 	console.log();
 
 	prompt([{
