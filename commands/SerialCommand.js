@@ -75,21 +75,31 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			//grab anything that self-reports as a core
 			ports.forEach(function (port) {
+				var deviceType;
+				
 				//not trying to be secure here, just trying to be helpful.
-				if ((port.manufacturer && port.manufacturer.indexOf('Spark') >= 0) ||
-					(port.pnpId && port.pnpId.indexOf('Spark_Core') >= 0) ||
-					(port.pnpId && port.pnpId.indexOf('VID_1D50') >= 0)) {
-
-					var device = { port: port.comName, type: 'Spark Core' };
-
-					if (port.vendorId === '0x2b04' && port.productId === '0xc006') {
-						device.type = 'Photon';
-					} else if (port.vendorId === '0x1d50' && port.productId === '0x607d') {
-						device.type = 'Core';
-					}
-
-					devices.push(device);
+				if ((port.pnpId && port.pnpId.indexOf('VID_2B04') >= 0 && 
+					port.pnpId && port.pnpId.indexOf('PID_C006') >= 0) || 
+					(port.vendorId === '0x2b04' && port.productId === '0xc006')) {
+						deviceType = 'Photon';
 				}
+				else if ((port.pnpId && port.pnpId.indexOf('VID_1D50') >= 0  && 
+					port.pnpId && port.pnpId.indexOf('PID_607D') >= 0) || 
+					(port.vendorId === '0x1d50' && port.productId === '0x607d')) {
+						deviceType = 'Core';
+				}
+				else if ((port.manufacturer && port.manufacturer.indexOf('Spark') >= 0) || 
+					(port.pnpId && port.pnpId.indexOf('Spark_Core') >= 0)) {
+					deviceType == 'Spark Core';
+				}
+				
+				console.log('deviceType: ' + deviceType);
+				console.log('port' + port.comName);
+
+				if (deviceType) {
+					var device = { port: port.comName, type: deviceType };
+					devices.push(device);	
+				}	
 			});
 
 			//if I didn't find anything, grab any 'ttyACM's
