@@ -85,7 +85,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					if (port.vendorId === '0x2b04' && port.productId === '0xc006') {
 						device.type = 'Photon';
 					} else if (port.vendorId === '0x1d50' && port.productId === '0x607d') {
-						device.type = 'Core';
+						device.type = 'Spark Core';
 					}
 
 					devices.push(device);
