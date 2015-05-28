@@ -44,7 +44,7 @@ Here are some great tutorials on the community for full installs:
 [Installing on Windows](https://community.particle.io/t/tutorial-spark-cli-on-windows-06-may-2014/3112)
 
 #### Installing on Mac OS X:
-Rather than installing these packages from source, and instead of using MacPorts, it is relatively straightforward to use [Homebrew](http://brew.sh) to install `dfu-util`, `openssl`, and `libusb` (required for dfu-util). Once you have installed `brew` the basic command for each is `brew install dfu-util` . For the final step of `openssl` you will need to do `sudo brew install openssl` and enter your admin password.
+Rather than installing these packages from source, and instead of using MacPorts, it is relatively straightforward to use [Homebrew](http://brew.sh) to install `dfu-util` and `openssl`. Once you have installed `brew` the basic command is `brew install dfu-util openssl`.
 
 Upgrading
 ---------------------------
