@@ -1,5 +1,7 @@
 changelog
 =========
+05/28/2015 - 1.5.11 - Fix core setup
+
 05/21/2015 - 1.5.10 - Fix tiny but important typo in prompts around manual Wi-Fi credentials.
 
 05/21/2015 - 1.5.9 - Added manual Wi-Fi credential mode. If your Wi-Fi network is non-broadcast, or if you'd just rather avoid scanning for networks, you can choose to manually enter your network details.
