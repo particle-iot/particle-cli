@@ -152,7 +152,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 		data.url = url;
 		data.deviceid = coreID;
 		data.access_token = api._access_token;
-		data.requestType = requestType;
+		data.requestType = requestType || data.requestType;
 
 		api.createWebhookWithObj(data);
 
