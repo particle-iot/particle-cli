@@ -592,6 +592,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			try {
 				var lines = [];
 				for (var i = 0; i < devices.length; i++) {
+					var name;
 					var device = devices[i];
 
 					var deviceType = '';
@@ -604,7 +605,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							break;
 					}
 
-					var status = device.name + " (" + device.id + ")" + deviceType + " is ";
+					if(!device.name || device.name == "null") { name = '<no name>'; }
+					else { name = device.name; }
+
+					if(device.connected) { name = chalk.bold.green(name); }
+					else { name = chalk.bold.red(name); }
+
+					var status = name + " [" + device.id + "]" + deviceType + " is ";
 					status += (device.connected) ? "online" : "offline";
 					lines.push(status);
 
