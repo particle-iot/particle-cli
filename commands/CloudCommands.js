@@ -365,6 +365,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			//login to the server
 			function (creds) {
+
 				var api = new ApiClient(settings.apiUrl);
 				username = creds.username;
 				self.newSpin('Sending login details...').start();
@@ -593,11 +594,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		when(this.getAllDeviceAttributes(args)).then(function (devices) {
 			try {
+
 				var lines = [];
 				for (var i = 0; i < devices.length; i++) {
 					var name;
 					var device = devices[i];
-
 					var deviceType = '';
 					switch(device.product_id) {
 						case 0:
