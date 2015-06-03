@@ -120,6 +120,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 	}
 
 	function accountStatus(alreadyLoggedIn) {
+
 		if (!alreadyLoggedIn) {
 			// New user or a fresh environment!
 			if (!self.__wasLoggedIn) {
@@ -287,6 +288,7 @@ SetupCommand.prototype.findDevice = function() {
 		chalk.cyan('internet.'),
 		'\n'
 	);
+
 	this.newSpin('Now to find your device(s)...').start();
 
 	serial.findDevices(function found(devices) {
@@ -308,6 +310,7 @@ SetupCommand.prototype.findDevice = function() {
 			// TODO: something other than just doing the first one.
 			return inspect(devices[0]);
 		}
+
 		console.log(arrow, 'No devices detected via USB.');
 
 		prompt([{
