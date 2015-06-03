@@ -602,7 +602,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					var deviceType = '';
 					switch(device.product_id) {
 						case 0:
-							deviceType = ' (Spark Core)';
+							deviceType = ' (Core)';
 							break;
 						case 6:
 							deviceType = ' (Photon)';
