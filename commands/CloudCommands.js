@@ -367,10 +367,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function (creds) {
 				var api = new ApiClient(settings.apiUrl);
 				username = creds.username;
+				self.newSpin('Sending login details...').start();
 				return api.login(settings.clientId, creds.username, creds.password);
 			},
 
 			function (accessToken) {
+
+				self.stopSpin();
 				console.log(arrow, 'Successfully completed login!');
 				settings.override(null, 'access_token', accessToken);
 				if (username) {
@@ -442,7 +445,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	getAllDeviceAttributes: function (args) {
-		console.error("Checking with the cloud...");
+
 		var self = this;
 
 		var tmp = when.defer();
