@@ -474,7 +474,7 @@ Saved!
 Copies a ```.DER``` formatted private key from your device's external flash to your computer.  Make sure your device is connected and in [DFU mode](http://docs.particle.io/Core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both DFU-util, and openssl to be installed.
 
 ```sh
-$ particle keys save device.der
+$ particle keys save name_of_file
 ...
 Saved!
 ```

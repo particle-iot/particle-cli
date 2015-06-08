@@ -56,16 +56,16 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	init: function () {
 
 		this.addOption("new", this.makeNewKey.bind(this), "Generate a new set of keys for your device");
-		this.addOption("load", this.writeKeyToCore.bind(this), "Load a saved key on disk onto your device");
-		this.addOption("save", this.saveKeyFromCore.bind(this), "Save a key from your device onto your disk");
+		this.addOption("load", this.writeKeyToDevice.bind(this), "Load a saved key on disk onto your device");
+		this.addOption("save", this.saveKeyFromDevice.bind(this), "Save a key from your device onto your disk");
 		this.addOption("send", this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
 		this.addOption("doctor", this.keyDoctor.bind(this), "Creates and assigns a new key to your device, and uploads it to the cloud");
 		this.addOption("server", this.writeServerPublicKey.bind(this), "Switch server public keys");
 
 		//this.addArgument("get", "--time", "include a timestamp")
 		//this.addArgument("monitor", "--time", "include a timestamp")
-		//this.addArgument("get", "--all", "gets all variables from the specified core")
-		//this.addArgument("monitor", "--all", "gets all variables from the specified core")
+		//this.addArgument("get", "--all", "gets all variables from the specified deviceid")
+		//this.addArgument("monitor", "--all", "gets all variables from the specified deviceid")
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
@@ -130,7 +130,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return keyReady;
 	},
 
-	writeKeyToCore: function (filename, leave) {
+	writeKeyToDevice: function (filename, leave) {
 		this.checkArguments(arguments);
 
 		if (!filename) {
@@ -179,13 +179,14 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 
 
-	saveKeyFromCore: function (filename) {
+	saveKeyFromDevice: function (filename) {
 		if (!filename) {
 			console.error("Please provide a filename to store this key.");
 			return when.reject("Please provide a filename to store this key.");
 		}
 
-		//TODO: check / ensure ".der" extension
+		filename = utilities.filenameNoExt(filename) + ".der";
+
 		this.checkArguments(arguments);
 
 		if ((!this.options.force) && (fs.existsSync(filename))) {
@@ -196,7 +197,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			utilities.tryDelete(filename);
 		}
 
-		//find dfu devices, make sure a core is connected
+		//find dfu devices, make sure a device is connected
 		//pull the key down and save it there
 		var that = this;
 
@@ -227,8 +228,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return ready;
 	},
 
-	sendPublicKeyToServer: function (coreid, filename) {
-		if (!coreid) {
+	sendPublicKeyToServer: function (deviceid, filename) {
+		if (!deviceid) {
 			console.log("Please provide a device id");
 			return when.reject("Please provide a device id");
 		}
@@ -252,18 +253,18 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var keyStr = fs.readFileSync(filename).toString();
-		return api.sendPublicKey(coreid, keyStr);
+		return api.sendPublicKey(deviceid, keyStr);
 	},
 
-	keyDoctor: function (coreid) {
-		if (!coreid || (coreid == "")) {
+	keyDoctor: function (deviceid) {
+		if (!deviceid || (deviceid == "")) {
 			console.log("Please provide your device id");
 			return 0;
 		}
 
 		this.checkArguments(arguments);
 
-		if (coreid.length < 24) {
+		if (deviceid.length < 24) {
 			console.log("***************************************************************");
 			console.log("   Warning! - device id was shorter than 24 characters - did you use something other than an id?");
 			console.log("   use particle identify to find your device id");
@@ -279,13 +280,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function() {
-				return that.makeNewKey(coreid + "_new");
+				return that.makeNewKey(deviceid + "_new");
 			},
 			function() {
-				return that.writeKeyToCore(coreid + "_new", true);
+				return that.writeKeyToCore(deviceid + "_new", true);
 			},
 			function() {
-				return that.sendPublicKeyToServer(coreid, coreid + "_new");
+				return that.sendPublicKeyToServer(deviceid, deviceid + "_new");
 			}
 		]);
 
