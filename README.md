@@ -35,7 +35,7 @@ $ sudo npm install -g particle-cli
 Install (advanced)
 ---------------------------
 
-To use the local flash and key features you'll need to install [DFU-util](http://DFU-util.sourceforge.net/) (note the normal main page http://DFU-util.gnumonks.org/ is still down), and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.
+To use the local flash and key features you'll need to install [DFU-util](http://DFU-util.sourceforge.net/) and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.
 
 Here are some great tutorials on the community for full installs:
 
