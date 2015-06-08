@@ -13,8 +13,8 @@ Known Issues
 Installing
 =======
 
-#### If you've already installed `spark-cli`, please uninstall it before continuing.
-#### Simply type: `npm uninstall -g spark-cli` into the command line.
+#### If you've already installed ```spark-cli```, please uninstall it before continuing.
+#### Simply type: ```npm uninstall -g spark-cli``` into the command line.
 
   First, make sure you have [node.js](http://nodejs.org/) installed!
 
@@ -25,7 +25,7 @@ $ npm install -g particle-cli
 $ particle cloud login
 ```
 
-  *Note!*  If you have problems running this, make sure you using Terminal / the Command Prompt as an Administator, or try using `sudo`
+  *Note!*  If you have problems running this, make sure you using Terminal / the Command Prompt as an Administator, or try using ```sudo```
 
 ```sh
 $ sudo npm install -g particle-cli
@@ -35,7 +35,7 @@ $ sudo npm install -g particle-cli
 Install (advanced)
 ---------------------------
 
-To use the local flash and key features you'll need to install [dfu-util](http://dfu-util.sourceforge.net/) (note the normal main page http://dfu-util.gnumonks.org/ is still down), and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.
+To use the local flash and key features you'll need to install [DFU-util](http://DFU-util.sourceforge.net/) and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.
 
 Here are some great tutorials on the community for full installs:
 
@@ -44,7 +44,7 @@ Here are some great tutorials on the community for full installs:
 [Installing on Windows](https://community.particle.io/t/tutorial-spark-cli-on-windows-06-may-2014/3112)
 
 #### Installing on Mac OS X:
-Rather than installing these packages from source, and instead of using MacPorts, it is relatively straightforward to use [Homebrew](http://brew.sh) to install `dfu-util` and `openssl`. Once you have installed `brew` the basic command is `brew install dfu-util openssl`.
+Rather than installing these packages from source, and instead of using MacPorts, it is relatively straightforward to use [Homebrew](http://brew.sh) to install ```DFU-util``` and ```openssl```. Once you have installed `brew` the basic command is ```brew install DFU-util openssl```.
 
 Upgrading
 ---------------------------
@@ -91,49 +91,48 @@ $ particle help
 $ particle help keys
 ```
 
-Apply the CC3000 patch
+Apply the CC3000 patch [Core only]
 ===
 
 The easiest way to apply the CC3000 patch is to flash the known "cc3000" firmware followed by the "tinker" firmware over USB.
-Note, this process will soon be replaced by "deep update" that will streamline and simplify this process further. (see next section)
 
-1.) Make sure you have [dfu-util](http://dfu-util.gnumonks.org/) installed
+1.) Make sure you have [DFU-util](http://DFU-util.gnumonks.org/) installed
 
-2.) Connect your core via usb, and place it into dfu mode by holding both buttons, and releasing reset, keep holding mode until your core flashes yellow.
+2.) Connect your Core via usb, and place it into DFU mode by holding both buttons, and releasing reset, keep holding mode until your Core flashes yellow.
 
-3.) Run `particle flash --usb cc3000`
+3.) Run ```particle flash --usb cc3000```
 
 This will run a special firmware program that will update the firmware running inside the CC3000 WiFi module.
-When it's done running, your core will be blinking yellow in dfu-mode, you'll need to flash regular firmware like Tinker
+When it's done running, your Core will be blinking yellow in DFU-mode, you'll need to flash regular firmware like Tinker
 to get connected and developing again.
 
-4.) Run `particle flash --usb tinker`
+4.) Run ```particle flash --usb tinker```
 
-This will flash a new version of Tinker to your core and return to a blinking blue "listening" state, where
+This will flash a new version of Tinker to your Core and return to a blinking blue "listening" state, where
 you can:
 
-5.) Run `particle setup` or `particle setup wifi` to provide your network credentials to get connected again.
+5.) Run ```particle setup``` or ```particle setup wifi``` to provide your network credentials to get connected again.
 
 
 Performing a "Deep update"
 ================
 
-Any core shipped before Summer 2014 would benefit from having this update applied at least once.  It improves the core's performance on very busy networks, and helps fix other minor issues.  This update now ships with the cli so you can apply it to cores that are unable to get online otherwise.
+Any Core shipped before Summer 2014 would benefit from having this update applied at least once. It improves the Core's performance on very busy networks, and helps fix other minor issues. This update now ships with the CLI so you can apply it to Cores that are unable to get online otherwise.
 
-1.) Make sure you have [dfu-util](http://dfu-util.gnumonks.org/) installed
+1.) Make sure you have [DFU-util](http://DFU-util.gnumonks.org/) installed
 
-2.) Connect your core via usb, and place it into dfu mode by holding both buttons, and releasing reset, keep holding mode until your core flashes yellow.
+2.) Connect your Core via usb, and place it into DFU mode by holding both buttons, and releasing RESET, keep holding MODE until your Core flashes yellow.
 
 3.) Run ```particle flash --usb deep_update_2014_06```
 
-4.) Your core should reboot and try to connect to any previously saved wifi networks, and then update itself again.
+4.) Your Core should reboot and try to connect to any previously saved wifi networks, and then update itself again.
 
 Command Reference
 ================
 
 ### particle setup wifi
 
-  Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/core/connect/)
+  Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/Core/connect/)
 
 ```sh
 $ particle setup wifi
@@ -177,33 +176,33 @@ my_device_name (0123456789ABCDEFGHI) 0 variables, and 4 functions
 ```
 
 
-### particle core add
+### particle device add
 
-  Adds a new core to your account
+  Adds a new device to your account
 
 ```sh
-$ particle cloud claim 0123456789ABCDEFGHI
+$ particle device add 0123456789ABCDEFGHI
 Claiming device 0123456789ABCDEFGHI
 Successfully claimed device 0123456789ABCDEFGHI
 ```
 
 
-### particle core rename
+### particle device rename
 
-  Assigns a new name to a core you've claimed
+  Assigns a new name to a device you've claimed
 
 ```sh
-$ particle core rename 0123456789ABCDEFGHI "pirate frosting"
+$ particle device rename 0123456789ABCDEFGHI "pirate frosting"
 ```
 
 
 
-### particle core remove
+### particle device remove
 
-  Removes a core from your account so someone else can claim it.
+  Removes a device from your account so someone else can claim it.
 
 ```sh
-$ particle core remove 0123456789ABCDEFGHI
+$ particle device remove 0123456789ABCDEFGHI
 Are you sure?  Please Type yes to continue: yes
 releasing device 0123456789ABCDEFGHI
 server said  { ok: true }
@@ -234,17 +233,17 @@ Okay!
   You can setup a directory of source files and libraries for your project, and the CLI will use those when compiling remotely.  You can also create ```particle.include``` and / or a ```particle.ignore``` file in that directory that will tell the CLI specifically which files to use or ignore.
 
 ```sh
-$ particle flash 0123456789ABCDEFGHI my_project
+$ particle flash deviceName my_project
 ```
 
 
 #### Flashing one or more source files
 
-  You can include any number of individual source files after the device id, and the CLI will include them while flashing your app.
+  You can include any number of individual source files after the device Name, and the CLI will include them while flashing your app.
 
 
 ```sh
-$ particle flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
+$ particle flash deviceName app.ino library1.cpp library1.h
 ```
 
 
@@ -253,9 +252,9 @@ $ particle flash 0123456789ABCDEFGHI app.ino library1.cpp library1.h
   You can easily reset a device back to a previous existing app with a quick command. Three app names are reserved right now: "tinker", "voodoo", and "cc3000".  Tinker is the original firmware that ships with the device, and cc3000 will patch the wifi module on your Core. Voodoo is a build of [VoodooSpark](http://voodoospark.me/) to allow local wireless firmata control of a device.
 
 ```sh
-$ particle flash 0123456789ABCDEFGHI tinker
-$ particle flash 0123456789ABCDEFGHI cc3000
-$ particle flash 0123456789ABCDEFGHI voodoo
+$ particle flash deviceName tinker
+$ particle flash deviceName cc3000
+$ particle flash deviceName voodoo
 
 ```
 
@@ -269,7 +268,7 @@ $ particle flash --usb tinker
 
 #### Compiling remotely and Flashing locally
 
-To work locally, but use the cloud compiler, simply use the compile command, and then the local flash command after.  Make sure you connect your device via USB and place it into [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).
+To work locally, but use the cloud compiler, simply use the compile command, and then the local flash command after.  Make sure you connect your device via USB and place it into [DFU mode](http://docs.particle.io/Core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).
 
 ```sh
 $ particle compile my_project_folder --saveTo firmware.bin
@@ -346,7 +345,7 @@ $ particle compile app.ino library1.cpp library1.h
   Calls a function on one of your devices, use ```particle list``` to see which devices are online, and what functions are available.
 
 ```sh
-$ particle call 0123456789ABCDEFGHI digitalwrite "D7,HIGH"
+$ particle call deviceName digitalwrite "D7,HIGH"
 1
 ```
 
@@ -356,7 +355,7 @@ $ particle call 0123456789ABCDEFGHI digitalwrite "D7,HIGH"
   Retrieves a variable value from one of your devices, use ```particle list``` to see which devices are online, and what variables are available.
 
 ```sh
-$ particle get 0123456789ABCDEFGHI temperature
+$ particle get deviceName temperature
 72.1
 ```
 
@@ -370,8 +369,8 @@ $ particle get 0123456789ABCDEFGHI temperature
   * hitting ```CTRL + C``` in the console will exit the monitoring
 
 ```sh
-$ particle monitor 0123456789ABCDEFGHI temperature 5000
-$ particle monitor 0123456789ABCDEFGHI temperature 5000 --time
+$ particle monitor deviceName temperature 5000
+$ particle monitor deviceName temperature 5000 --time
 $ particle monitor all temperature 5000
 $ particle monitor all temperature 5000 --time
 $ particle monitor all temperature 5000 --time > my_temperatures.csv
@@ -394,7 +393,7 @@ $ particle identify
 
 ### particle subscribe
 
-  Subscribes to published events on the cloud, and pipes them to the console.  Special device name "mine" will subscribe to events from just your cores.
+  Subscribes to published events on the cloud, and pipes them to the console.  Special device name "mine" will subscribe to events from just your devices.
 
 
 ```sh
@@ -432,12 +431,12 @@ $ particle serial monitor /dev/cu.usbmodem12345
 
 ### particle keys doctor
 
-Helps you update your keys, or recover your device when the keys on the server are out of sync with the keys on your device.  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.
+Helps you update your keys, or recover your device when the keys on the server are out of sync with the keys on your device.  The ```particle keys``` tools requires both DFU-util, and openssl to be installed.
 
-Connect your device in [dfu mode](http://docs.particle.io/#/connect/appendix-dfu-mode-device-firmware-upgrade), and run this command to replace the unique cryptographic keys on your device.  Automatically attempts to send the new public key to the cloud as well.
+Connect your device in [DFU mode](http://docs.particle.io/#/connect/appendix-DFU-mode-device-firmware-upgrade), and run this command to replace the unique cryptographic keys on your device.  Automatically attempts to send the new public key to the cloud as well.
 
 ```sh
-$ particle keys doctor 0123456789ABCDEFGHI
+$ particle keys doctor your_device_id
 ```
 
 There have been reports of the new public key not being sent to the cloud, in which case ```particle keys send``` will need to be run manually.
@@ -462,7 +461,7 @@ New Key Created!
 
 ### particle keys load
 
-Copies a ```.DER``` formatted private key onto your device's external flash.  Make sure your device is connected and in [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.  Make sure any key you load is sent to the cloud with ```particle keys send device.pub.pem```
+Copies a ```.DER``` formatted private key onto your device's external flash.  Make sure your device is connected and in [DFU mode](http://docs.particle.io/Core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).  The `particle keys` tools requires both DFU-util, and openssl to be installed.  Make sure any key you load is sent to the cloud with `particle keys send device.pub.pem`
 
 ```sh
 $ particle keys load device.der
@@ -472,7 +471,7 @@ Saved!
 
 ### particle keys save
 
-Copies a ```.DER``` formatted private key from your device's external flash to your computer.  Make sure your device is connected and in [dfu mode](http://docs.particle.io/core/modes/#core-modes-dfu-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both dfu-util, and openssl to be installed.
+Copies a ```.DER``` formatted private key from your device's external flash to your computer.  Make sure your device is connected and in [DFU mode](http://docs.particle.io/Core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both DFU-util, and openssl to be installed.
 
 ```sh
 $ particle keys save device.der
@@ -491,7 +490,7 @@ submitting public key succeeded!
 
 ### particle keys server
 
-Switches the server public key stored on the device's external flash.  This command is important when changing which server your device is connecting to, and the server public key helps protect your connection.   Your device will stay in DFU mode after this command, so that you can load new firmware to connect to your server.
+Switches the server public key stored on the device's external flash. This command is important when changing which server your device is connecting to, and the server public key helps protect your connection. Your device will stay in DFU mode after this command, so that you can load new firmware to connect to your server.
 
 
 ```sh
@@ -523,6 +522,7 @@ $ particle config useSudoForDfu true
 ```
 
 Calling `particle config identify` will output your current config settings.
+
 ```sh
 $ particle config identify
 Current profile: particle
