@@ -24,7 +24,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
- 
+
 var when = require('when');
 var sequence = require('when/sequence');
 
@@ -55,18 +55,18 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	startListening: function (eventName, coreId) {
+	startListening: function (eventName, deviceID) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			return;
 		}
 
 		// if they typed: "particle subscribe mine"
-		if ((!coreId || (coreId == "")) && (eventName == "mine")) {
+		if ((!deviceID || (deviceID == "")) && (eventName == "mine")) {
 			eventName = null;
-			coreId = "mine";
+      deviceID = "mine";
 		}
-		else if (eventName == "mine" && coreId) {
+		else if (eventName == "mine" && deviceID) {
 			eventName = null;
 			//okay, listen to all events from this core.
 		}
@@ -79,14 +79,14 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			eventLabel = "all events";
 		}
 
-		if (!coreId) {
+		if (!deviceID) {
 			console.log("Subscribing to " + eventLabel + " from the firehose (all devices) ")
 		}
-		else if (coreId == "mine") {
+		else if (deviceID == "mine") {
 			console.log("Subscribing to " + eventLabel + " from my personal stream (my devices only) ")
 		}
 		else {
-			console.log("Subscribing to " + eventLabel + " from " + coreId + "'s stream");
+			console.log("Subscribing to " + eventLabel + " from " + deviceID + "'s stream");
 		}
 
 		var chunks = [];
@@ -125,7 +125,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			var chunk = event.toString();
 			appendToQueue(chunk.split("\n"));
 		};
-		api.getEventStream(eventName, coreId, onData);
+		api.getEventStream(eventName, deviceID, onData);
 
 		return 0;
 	},

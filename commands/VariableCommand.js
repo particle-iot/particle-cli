@@ -77,18 +77,18 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	disambiguateGetValue: function (coreid, variableName) {
-		//if their coreid actually matches a core, list those variables.
-		//if their coreid matches a variable name, get that var from the relevant cores
+	disambiguateGetValue: function (deviceID, variableName) {
+		//if their deviceID actually matches a device, list those variables.
+		//if their deviceID matches a variable name, get that var from the relevant devices
 
 		var tmp = when.defer();
 		var that = this;
 
 		//this gets cached after the first request
-		when(this.getAllVariables()).then(function (cores) {
+		when(this.getAllVariables()).then(function (devices) {
 
-			for (var i = 0; i < cores.length; i++) {
-				if (cores[i].id == coreid) {
+			for (var i = 0; i < devices.length; i++) {
+				if (devices[i].id == deviceID) {
 
 					console.log("Which variable did you want?");
 					for (var key in foundCore.variables) {
@@ -101,43 +101,43 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 				}
 			}
 
-			variableName = coreid + "";
-			coreid = [];
+			variableName = deviceID + "";
+			deviceID = [];
 
-			for (var i = 0; i < cores.length; i++) {
+			for (var i = 0; i < devices.length; i++) {
 				//cores[i].variables is an object, so use containsKey
-				if (utilities.containsKey(cores[i].variables, variableName)) {
-					coreid.push(cores[i].id);
+				if (utilities.containsKey(devices[i].variables, variableName)) {
+					deviceID.push(devices[i].id);
 				}
 			}
 
 			//console.log('found ' + coreid.length + ' cores with that variable');
-			utilities.pipeDeferred(that.getValue(coreid, variableName), tmp);
+			utilities.pipeDeferred(that.getValue(deviceID, variableName), tmp);
 		});
 
 		return tmp.promise;
 	},
 
 
-	getValue: function (coreid, variableName) {
+	getValue: function (deviceID, variableName) {
 		this.checkArguments(arguments);
 
-		if (!coreid && !variableName) {
+		if (!deviceID && !variableName) {
 			//they just didn't provide any args...
 			return this.listVariables();
 		}
-		else if (coreid && !variableName) {
+		else if (deviceID && !variableName) {
 			//try to figure out if they left off a variable name, or if they want to pull a var from all cores.
-			return this.disambiguateGetValue(coreid);
+			return this.disambiguateGetValue(deviceID);
 		}
-		else if (coreid == "all" && variableName) {
+		else if (deviceID == "all" && variableName) {
 			return this.disambiguateGetValue(variableName);
 		}
 
 		var tmp = when.defer();
 		var that = this;
-		if (!util.isArray(coreid)) {
-			coreid = [ coreid ];
+		if (!util.isArray(deviceID)) {
+			deviceID = [ deviceID ];
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -145,10 +145,10 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
-		var multipleCores = coreid.length > 1;
+		var multipleCores = deviceID.length > 1;
 
-		var allDone = when.map(coreid, function (coreid) {
-			return api.getVariable(coreid, variableName);
+		var allDone = when.map(deviceID, function (deviceID) {
+			return api.getVariable(deviceID, variableName);
 		});
 
 		when(allDone)
@@ -197,31 +197,31 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
-		var lookupVariables = function (cores) {
-			if (!cores || (cores.length == 0)) {
-				console.log("No cores found.");
+		var lookupVariables = function (devices) {
+			if (!devices || (devices.length == 0)) {
+				console.log("No devices found.");
 				that._cachedVariableList = null;
 			}
 			else {
 				var promises = [];
-				for (var i = 0; i < cores.length; i++) {
-					var coreid = cores[i].id;
-					if (cores[i].connected) {
-						promises.push(api.getAttributes(coreid));
+				for (var i = 0; i < devices.length; i++) {
+					var deviceID = devices[i].id;
+					if (devices[i].connected) {
+						promises.push(api.getAttributes(deviceID));
 					}
 					else {
-						promises.push(when.resolve(cores[i]));
+						promises.push(when.resolve(devices[i]));
 					}
 				}
 
-				when.all(promises).then(function (cores) {
+				when.all(promises).then(function (devices) {
 					//sort alphabetically
-					cores = cores.sort(function (a, b) {
+					devices = devices.sort(function (a, b) {
 						return (a.name || "").localeCompare(b.name);
 					});
 
-					that._cachedVariableList = cores;
-					tmp.resolve(cores);
+					that._cachedVariableList = devices;
+					tmp.resolve(devices);
 				});
 			}
 		};
@@ -236,19 +236,19 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	listVariables: function (args) {
-		when(this.getAllVariables(args)).then(function (cores) {
+		when(this.getAllVariables(args)).then(function (devices) {
 			var lines = [];
-			for (var i = 0; i < cores.length; i++) {
-				var core = cores[i];
+			for (var i = 0; i < devices.length; i++) {
+				var device = devices[i];
 				var available = [];
-				if (core.variables) {
-					for (var key in core.variables) {
-						var type = core.variables[key];
+				if (device.variables) {
+					for (var key in device.variables) {
+						var type = device.variables[key];
 						available.push("  " + key + " (" + type + ")");
 					}
 				}
 
-				var status = core.name + " (" + core.id + ") has " + available.length + " variables ";
+				var status = device.name + " (" + device.id + ") has " + available.length + " variables ";
 				if (available.length == 0) {
 					status += " (or is offline) ";
 				}
@@ -261,8 +261,8 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	monitorVariables: function (coreid, variableName, delay) {
-		if (!coreid && !variableName) {
+	monitorVariables: function (deviceID, variableName, delay) {
+		if (!deviceID && !variableName) {
 			console.log("Please specify a device id and a variable name, or just a variable name.");
 			return;
 		}
@@ -280,7 +280,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		console.error("Hit CTRL-C to stop!");
 
 		var checkVariable = (function () {
-			var done = this.getValue(coreid, variableName);
+			var done = this.getValue(deviceID, variableName);
 			when(done).ensure(function () {
 				setTimeout(checkVariable, delay);
 			});
