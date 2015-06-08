@@ -64,11 +64,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	init: function () {
-		this.addOption("claim", this.claimCore.bind(this), "Register a device with your user account with the cloud");
+		this.addOption("claim", this.claimDevice.bind(this), "Register a device with your user account with the cloud");
 		this.addOption("list", this.listDevices.bind(this), "Displays a list of your devices, as well as their variables and functions");
-		this.addOption("remove", this.removeCore.bind(this), "Release a device from your account so that another user may claim it");
-		this.addOption("name", this.nameCore.bind(this), "Give a device a name!");
-		this.addOption("flash", this.flashCore.bind(this), "Pass a binary, source file, or source directory to a device!");
+		this.addOption("remove", this.removeDevice.bind(this), "Release a device from your account so that another user may claim it");
+		this.addOption("name", this.nameDevice.bind(this), "Give a device a name!");
+		this.addOption("flash", this.flashDevice.bind(this), "Pass a binary, source file, or source directory to a device!");
 		this.addOption("compile", this.compileCode.bind(this), "Compile a source file, or directory using the cloud service");
 		//this.addOption("binary", this.downloadBinary.bind(this), "Compile a source file, or directory using the cloud service");
 
@@ -104,8 +104,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 	},
 
-	claimCore: function (coreid) {
-		if (!coreid) {
+	claimDevice: function (deviceid) {
+		if (!deviceid) {
 			console.error("Please specify a device id");
 			return;
 		}
@@ -114,16 +114,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (!api.ready()) {
 			return;
 		}
-		console.log("Claiming device " + coreid);
-		api.claimCore(coreid).then(function() {
-			console.log("Successfully claimed device " + coreid);
+		console.log("Claiming device " + deviceid);
+		api.claimCore(deviceid).then(function() {
+			console.log("Successfully claimed device " + deviceid);
 		}, function(err) {
 			console.log("Failed to claim device, server said ", err);
 		});
 	},
 
-	removeCore: function (coreid) {
-		if (!coreid) {
+	removeDevice: function (deviceid) {
+		if (!deviceid) {
 			console.error("Please specify a device id");
 			return when.reject()
 		}
@@ -135,7 +135,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		when(prompts.areYouSure())
 			.then(function (yup) {
-				api.removeCore(coreid).then(function () {
+				api.removeCore(deviceid).then(function () {
 						console.log("Okay!");
 						process.exit(0);
 					},
@@ -150,8 +150,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			});
 	},
 
-	nameCore: function (coreid, name) {
-		if (!coreid) {
+	nameDevice: function (deviceid, name) {
+		if (!deviceid) {
 			console.error("Please specify a device id");
 			return when.reject();
 		}
@@ -166,12 +166,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
-		console.log("Renaming device " + coreid);
-		api.renameCore(coreid, name);
+		console.log("Renaming device " + deviceid);
+
+		var allDone = api.renameCore(deviceid, name);
+
+		when(allDone).then(
+			function () {
+				console.log("Successfully renamed device " + deviceid + " to: " + name);
+			},
+			function (err) {
+				console.error("Failed to rename " + deviceid + ", server said", err.errors);
+			});
 	},
 
-	flashCore: function (coreid, filePath) {
-		if (!coreid) {
+	flashDevice: function (deviceid, filePath) {
+		if (!deviceid) {
 			console.error("Please specify a device id");
 			return when.reject();
 		}
@@ -193,7 +202,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		//make a copy of the arguments sans the 'coreid'
+		//make a copy of the arguments sans the 'deviceid'
 		var args = Array.prototype.slice.call(arguments, 1);
 
 		if (!files) {
@@ -217,7 +226,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		return api.flashCore(coreid, files);
+		return api.flashDevice(deviceid, files);
 	},
 
 	/**
@@ -501,7 +510,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	nyanMode: function(coreID, onOff) {
+	nyanMode: function(deviceid, onOff) {
 
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -516,37 +525,37 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			onOff = false;
 		}
 
-		if ((coreID == "") || (coreID == "all")) {
-			coreID = null;
+		if ((deviceid == "") || (deviceid == "all")) {
+			deviceid = null;
 		}
-		else if (coreID == "on") {
-			coreID = null;
+		else if (deviceid == "on") {
+			deviceid = null;
 			onOff = true;
 		}
-		else if (coreID == "off") {
-			coreID = null;
+		else if (deviceid == "off") {
+			deviceid = null;
 			onOff = false;
 		}
 
 
-		if (coreID) {
-			return api.signalCore(coreID, onOff);
+		if (deviceid) {
+			return api.signalCore(deviceid, onOff);
 		}
 		else {
 
-			var toggleAll = function (cores) {
-				if (!cores || (cores.length === 0)) {
+			var toggleAll = function (devices) {
+				if (!devices || (devices.length === 0)) {
 					console.log('No devices found.');
 					return when.resolve();
 				}
 				else {
 					var promises = [];
-					cores.forEach(function (core) {
-						if (!core.connected) {
-							promises.push(when.resolve(core));
+					devices.forEach(function (device) {
+						if (!device.connected) {
+							promises.push(when.resolve(device));
 							return;
 						}
-						promises.push(api.signalCore(core.id, onOff));
+						promises.push(api.signalCore(device.id, onOff));
 					});
 					return when.all(promises);
 				}
