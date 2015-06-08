@@ -92,7 +92,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("create", this.createHook.bind(this), "Creates a postback to the given url when your event is sent");
         this.addOption("list", this.listHooks.bind(this), "Show your current Webhooks");
         this.addOption("delete", this.deleteHook.bind(this), "Deletes a Webhook");
-		
+
 	    this.addOption("POST", this.createPOSTHook.bind(this), "Create a new POST request hook");
         this.addOption("GET", this.createGETHook.bind(this), "Create a new GET request hook");
     },
@@ -187,7 +187,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                     var hook = hooks[i];
                     var line = [
                         "    ", (i+1),
-                        ".) Hook #" + hook.id + " is watching for ",
+                        ".) Hook ID " + hook.id + " is watching for ",
                         "\""+hook.event+"\"",
 
                         "\n       ", " and posting to: " + hook.url,
