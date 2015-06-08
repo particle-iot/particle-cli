@@ -65,7 +65,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			var creds = when.defer();
 
 			inquirer.prompt([
-				prompts.getPassword('Please re-enter your password')
+				{
+					type: 'password',
+					name: 'password',
+					message: "Using account "+  settings.username + '\nPlease enter your password:'
+				}
 			], function (answers) {
 				creds.resolve({
 					username: settings.username,
