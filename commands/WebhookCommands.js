@@ -54,7 +54,7 @@ util.inherits(WebhookCommand, BaseCommand);
 WebhookCommand.HookJsonTemplate = {
     "eventName": "my-event",
     "url": "https://my-website.com/fancy_things.php",
-    "coreID": "optionally filter by providing a device id",
+    "deviceID": "optionally filter by providing a device id",
 
     "_": "The following parameters are optional",
     "requestType": "POST",
@@ -92,33 +92,33 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         this.addOption("create", this.createHook.bind(this), "Creates a postback to the given url when your event is sent");
         this.addOption("list", this.listHooks.bind(this), "Show your current Webhooks");
         this.addOption("delete", this.deleteHook.bind(this), "Deletes a Webhook");
-		
+
 	    this.addOption("POST", this.createPOSTHook.bind(this), "Create a new POST request hook");
         this.addOption("GET", this.createGETHook.bind(this), "Create a new GET request hook");
     },
 
-    createPOSTHook: function(eventName, url, coreID) {
-        return this.createHook(eventName, url, coreID, "POST");
+    createPOSTHook: function(eventName, url, deviceID) {
+        return this.createHook(eventName, url, deviceID, "POST");
     },
 
-    createGETHook: function(eventName, url, coreID) {
-        return this.createHook(eventName, url, coreID, "GET");
+    createGETHook: function(eventName, url, deviceID) {
+        return this.createHook(eventName, url, deviceID, "GET");
     },
 
-    createHook: function (eventName, url, coreID, requestType) {
+    createHook: function (eventName, url, deviceID, requestType) {
         var api = new ApiClient(settings.apiUrl, settings.access_token);
         if (!api.ready()) {
             return -1;
         }
 
-        if (!eventName && !url && !coreID && !requestType) {
+        if (!eventName && !url && !deviceID && !requestType) {
             var help = this.cli.getCommandModule("help");
             return help.helpCommand(this.name, "create");
         }
 
         //if they gave us one thing, and it happens to be a file, and we could parse it as json
         var data = {};
-        if (eventName && !url && !coreID) {
+        if (eventName && !url && !deviceID) {
 
             //
             // for clarity
@@ -132,7 +132,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             //only override these when we didn't get them from the command line
             eventName = data.eventName;
             url = data.url;
-            coreID = data.coreID;
+            deviceID = data.deviceID;
         }
 
         //required param
@@ -150,7 +150,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 		//TODO: clean this up more?
 		data.event = eventName;
 		data.url = url;
-		data.deviceid = coreID;
+		data.deviceid = deviceID;
 		data.access_token = api._access_token;
 		data.requestType = requestType || data.requestType;
 

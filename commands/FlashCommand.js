@@ -24,7 +24,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
- 
+
 var when = require('when');
 var sequence = require('when/sequence');
 var readline = require('readline');
@@ -91,8 +91,8 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	flashSwitch: function(coreid, firmware) {
-		if (!coreid && !firmware) {
+	flashSwitch: function(deviceID, firmware) {
+		if (!deviceID && !firmware) {
 			var help = this.cli.getCommandModule("help");
 			return help.helpCommand(this.name);
 		}
@@ -104,7 +104,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		var result;
-		if (this.options.useDfu || (coreid == "--usb") || (coreid == "--factory")) {
+		if (this.options.useDfu || (deviceID == "--usb") || (deviceID == "--factory")) {
 			result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
 		}
 		else {
@@ -123,7 +123,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		return result;
 	},
 
-	flashCloud: function(coreid, filename) {
+	flashCloud: function(deviceID, filename) {
 		var cloud = this.cli.getCommandModule("cloud");
 		return cloud.flashCore.apply(cloud, arguments);
 	},

@@ -227,8 +227,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return ready;
 	},
 
-	sendPublicKeyToServer: function (coreid, filename) {
-		if (!coreid) {
+	sendPublicKeyToServer: function (deviceID, filename) {
+		if (!deviceID) {
 			console.log("Please provide a device id");
 			return when.reject("Please provide a device id");
 		}
@@ -252,18 +252,18 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var keyStr = fs.readFileSync(filename).toString();
-		return api.sendPublicKey(coreid, keyStr);
+		return api.sendPublicKey(deviceID, keyStr);
 	},
 
-	keyDoctor: function (coreid) {
-		if (!coreid || (coreid == "")) {
+	keyDoctor: function (deviceID) {
+		if (!deviceID || (deviceID == "")) {
 			console.log("Please provide your device id");
 			return 0;
 		}
 
 		this.checkArguments(arguments);
 
-		if (coreid.length < 24) {
+		if (deviceID.length < 24) {
 			console.log("***************************************************************");
 			console.log("   Warning! - device id was shorter than 24 characters - did you use something other than an id?");
 			console.log("   use particle identify to find your device id");
@@ -279,13 +279,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function() {
-				return that.makeNewKey(coreid + "_new");
+				return that.makeNewKey(deviceID + "_new");
 			},
 			function() {
-				return that.writeKeyToCore(coreid + "_new", true);
+				return that.writeKeyToCore(deviceID + "_new", true);
 			},
 			function() {
-				return that.sendPublicKeyToServer(coreid, coreid + "_new");
+				return that.sendPublicKeyToServer(deviceID, deviceID + "_new");
 			}
 		]);
 
