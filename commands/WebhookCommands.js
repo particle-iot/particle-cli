@@ -57,25 +57,21 @@ WebhookCommand.HookJsonTemplate = {
     "deviceid": "optionally filter by providing a device id",
 
     "_": "The following parameters are optional",
-    "mydevices": true/false
-    "requestType": ( "GET", "POST", "PUT", "DELETE" ),
-    "form": null;
+    "mydevices": "true/false",
+    "requestType": "GET/POST/PUT/DELETE",
+    "form": null,
     "headers": null,
     "query": null,
     "json": null,
     "auth": null,
     "responseTemplate": null,
-    "rejectUnauthorized:" true/false,
-
+    "rejectUnauthorized": "true/false"
 };
 
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
     name: "webhook",
     description: "Experimental Beta - helpers for reacting to device event streams",
-
-
-
     usagesByName: {
         "create": [
             "particle webhook create hook.json",
@@ -128,10 +124,15 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             var filename = eventName;
 
             if(utilities.getFilenameExt(filename) == ".json"){
-                console.log("here");
                 if (fs.existsSync(filename)) {
                     data = utilities.tryParse(fs.readFileSync(filename)) || {};
-                    console.log("Using settings from the file " + filename);
+                    if(typeof data == "object" && Object.keys(data).length == 0) {
+                      console.log("Please check your .json file");
+                      return -1;
+                    }
+                    else{
+                      console.log("Using settings from the file " + filename);
+                    }
                 }
 
                 //only override these when we didn't get them from the command line
@@ -148,11 +149,6 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             return -1;
         }
 
-        //required param
-        if (!deviceID || (deviceID == "")) {
-            console.log("Please specify a deviceID");
-            return -1;
-        }
 
 		//TODO: clean this up more?
 		data.event = eventName;

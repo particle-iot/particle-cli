@@ -1,0 +1,25 @@
+{
+  event: "",
+  url: "",
+  deviceid: "",
+  mydevices: ( true/false),
+  requestType: ( "GET", "POST", "PUT", "DELETE" ),
+  headers: {
+    "Authorization": ""
+  },
+  json: {},
+  query: {},
+  form: {
+    "custom-field": ""
+  },
+  auth: {
+    user: "",
+    pass: ""
+  },
+  responseTemplate: "",
+  rejectUnauthorized: true/false,
+  azure_sas_token:
+    { key_name: "",
+      key: ""
+    }
+}

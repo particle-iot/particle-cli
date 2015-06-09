@@ -1,0 +1,14 @@
+{
+    "event": "hit-rqb",
+    url": "",
+    "deviceid": "",
+    "requestType": "POST",
+    "headers": null,
+    "query": null,
+    "json": {
+      "param_1": "1",
+      "param_2": "2"
+    },
+    "auth": null,
+    "mydevices": false
+}
