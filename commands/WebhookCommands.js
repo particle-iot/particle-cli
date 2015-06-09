@@ -54,15 +54,19 @@ util.inherits(WebhookCommand, BaseCommand);
 WebhookCommand.HookJsonTemplate = {
     "event": "my-event",
     "url": "https://my-website.com/fancy_things.php",
-    "deviceID": "optionally filter by providing a device id",
+    "deviceid": "optionally filter by providing a device id",
 
     "_": "The following parameters are optional",
-    "requestType": "POST",
+    "mydevices": true/false
+    "requestType": ( "GET", "POST", "PUT", "DELETE" ),
+    "form": null;
     "headers": null,
     "query": null,
     "json": null,
     "auth": null,
-    "mydevices": true
+    "responseTemplate": null,
+    "rejectUnauthorized:" true/false,
+
 };
 
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
@@ -133,7 +137,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                 //only override these when we didn't get them from the command line
                 eventName = data.event;
                 url = data.url;
-                deviceID = data.deviceID;
+                deviceID = data.deviceid;
             }
         }
 
@@ -153,7 +157,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 		//TODO: clean this up more?
 		data.event = eventName;
 		data.url = url;
-		data.deviceID = deviceID;
+		data.deviceid = deviceID;
 		data.access_token = api._access_token;
 		data.requestType = requestType || data.requestType;
 
@@ -190,7 +194,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                     var hook = hooks[i];
                     var line = [
                         "    ", (i+1),
-                        ".) Hook #" + hook.id + " is watching for ",
+                        ".) Hook " + hook.id + " is watching for ",
                         "\""+hook.event+"\"",
 
                         "\n       ", " and posting to: " + hook.url,
