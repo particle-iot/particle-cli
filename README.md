@@ -96,7 +96,7 @@ Apply the CC3000 patch [Core only]
 
 The easiest way to apply the CC3000 patch is to flash the known "cc3000" firmware followed by the "tinker" firmware over USB.
 
-1.) Make sure you have [DFU-util](http://DFU-util.gnumonks.org/) installed
+1.) Make sure you have [DFU-util](http://dfu-util.sourceforge.net/) installed
 
 2.) Connect your Core via usb, and place it into DFU mode by holding both buttons, and releasing reset, keep holding mode until your Core flashes yellow.
 
@@ -119,7 +119,7 @@ Performing a "Deep update"
 
 Any Core shipped before Summer 2014 would benefit from having this update applied at least once. It improves the Core's performance on very busy networks, and helps fix other minor issues. This update now ships with the CLI so you can apply it to Cores that are unable to get online otherwise.
 
-1.) Make sure you have [DFU-util](http://DFU-util.gnumonks.org/) installed
+1.) Make sure you have [DFU-util](http://dfu-util.sourceforge.net/) installed
 
 2.) Connect your Core via usb, and place it into DFU mode by holding both buttons, and releasing RESET, keep holding MODE until your Core flashes yellow.
 
