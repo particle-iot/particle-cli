@@ -77,8 +77,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			// manufacturer value
 			// Mac - Spark devices
-			// Win - Spark Core, Photon
-			if (port.manufacturer && (port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0)) {
+			// Devices on old driver - Spark Core, Photon
+			// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
+			if (port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0)) {
 			    var device = { port: port.comName, type: 'Spark Core' };
 
 			    //possbibly on linux/mac
