@@ -164,6 +164,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 		data.deviceid = deviceID;
 		data.access_token = api._access_token;
 		data.requestType = requestType || data.requestType;
+    if (data.mydevices == undefined) data.mydevices = true;
 
 		api.createWebhookWithObj(data);
 
