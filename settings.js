@@ -32,6 +32,7 @@ var extend = require('xtend');
 var chalk = require('chalk');
 
 var utilities = require('./lib/utilities.js');
+var specs = require('./lib/deviceSpecs');
 
 var settings = {
 	commandPath: "./commands/",
@@ -77,10 +78,20 @@ var settings = {
 
 settings.commandPath = __dirname + "/commands/";
 
-//fix the paths on the known apps mappings
+//Only used for OTA flash without detecting targeted device
+//Should be deprecated and eventually use new function below
 for(var name in settings.knownApps) {
 	settings.knownApps[name] = path.join(__dirname, settings.knownApps[name]);
 }
+
+//fix the paths on the known apps mappings
+Object.keys(specs).forEach(function (id) {
+	var deviceSpecs = specs[id];
+	var knownApps = deviceSpecs["knownApps"];
+	for(var appName in knownApps) {
+		knownApps[appName] =  path.join(__dirname,"binaries", knownApps[appName]);
+	};
+})
 
 
 settings.findHomePath = function() {
