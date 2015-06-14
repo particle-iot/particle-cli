@@ -259,10 +259,36 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	},
 
-	compileCode: function () {
-		//  "Please specify a binary file, source file, or source directory");
+	compileCode: function (deviceType) {
+		if (!deviceType) {
+			console.error("\nPlease specify the target device type. eg. particle compile photon xxx\n");
+			return;
+		}
 
-		var args = Array.prototype.slice.call(arguments, 0);
+		//defaults to 0 for core
+		var platform_id = 0;
+
+		switch (deviceType) {
+		  case "photon":
+		  case "p":
+				deviceType = "photon";
+				platform_id = 6;
+		    break;
+
+		  case "core":
+			case "c":
+				deviceType = "core";
+				break;
+
+		  default:
+		    console.error("\nTarget device " + deviceType + " is not valid\n");
+		    return;
+		}
+
+		console.log("\nCompiling code for " + deviceType + "\n");
+
+		//  "Please specify a binary file, source file, or source directory");
+		var args = Array.prototype.slice.call(arguments, 1);
 		if (args.length == 0) {
 			args.push("."); //default to current directory
 		}
@@ -301,7 +327,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			//this should have no side-effects with other usages.  If we did a more sophisticated
 			//argument structure, we'd need to change this logic.
 			if (!filename || (utilities.getFilenameExt(filename) != ".bin")) {
-				filename = "firmware_" + (new Date()).getTime() + ".bin";
+				filename = deviceType + "_firmware_" + (new Date()).getTime() + ".bin";
 			}
 		}
 
@@ -315,7 +341,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var allDone = pipeline([
 			//compile
 			function () {
-				return api.compileCode(files);
+				return api.compileCode(files, platform_id);
 			},
 
 			//download
