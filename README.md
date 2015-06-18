@@ -132,7 +132,7 @@ Command Reference
 
 ### particle setup wifi
 
-  Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/Core/connect/)
+  Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/core/connect/)
 
 ```sh
 $ particle setup wifi
