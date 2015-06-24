@@ -161,7 +161,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 						path.dirname(filename),
 					"pre_" + path.basename(filename)
 				);
-				return that.saveKeyFromCore(prefilename);
+				return that.saveKeyFromDevice(prefilename);
 			},
 			function () {
 				return dfu.writePrivateKey(filename, leave);
@@ -283,7 +283,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return that.makeNewKey(deviceid + "_new");
 			},
 			function() {
-				return that.writeKeyToCore(deviceid + "_new", true);
+				return that.writeKeyToDevice(deviceid + "_new", true);
 			},
 			function() {
 				return that.sendPublicKeyToServer(deviceid, deviceid + "_new");
