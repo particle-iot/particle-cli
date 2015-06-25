@@ -621,8 +621,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					if(!device.name || device.name == "null") { name = '<no name>'; }
 					else { name = device.name; }
 
-					if(device.connected) { name = chalk.bold.green(name); }
-					else { name = chalk.bold.red(name); }
+					if(device.connected) { name = chalk.cyan.bold(name); }
+					else { name = chalk.cyan.dim(name); }
 
 					var status = name + " [" + device.id + "]" + deviceType + " is ";
 					status += (device.connected) ? "online" : "offline";
