@@ -102,6 +102,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				console.log("Please specify a file path when using --saveTo");
 			}
 		}
+
+		if (utilities.contains(args, "--deviceType")) {
+			var idx = utilities.indexOf(args, "--deviceType");
+			if ((idx + 1) < args.length) {
+				this.options.deviceType = args[idx + 1];
+			}
+		}
 	},
 
 	claimDevice: function (deviceid) {
@@ -305,6 +312,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
+		var productId;
+		switch(this.options.deviceType) {
+			case "photon":
+				productId = 6;
+				break;
+			default:
+			case "core":
+				productId = 0;
+				break;
+		}
 
 		var that = this;
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -315,7 +332,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var allDone = pipeline([
 			//compile
 			function () {
-				return api.compileCode(files);
+				return api.compileCode(files, productId);
 			},
 
 			//download
