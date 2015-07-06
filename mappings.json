@@ -159,9 +159,9 @@
     "compile": {
         "maps": [ "cloud", "compile" ],
         "usage": [
-            "particle compile firmware.bin",
-            "particle compile source_folder",
-            "particle compile file1.ino file2.cpp file2.h file3.cpp"
+            "particle compile device_type firmware.bin",
+            "particle compile device_type source_folder",
+            "particle compile device_type file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
             "Compiles one or more source files or a directory of source to a firmware binary for your device,",

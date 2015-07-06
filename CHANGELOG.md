@@ -1,5 +1,15 @@
 changelog
 =========
+07/06/2015 - 1.5.16 - Fix core setup
+
+07/06/2015 - 1.5.15 - update to use "flashDevice"
+
+06/26/2015 - 1.5.14 - fix cloud flash command
+
+06/26/2015 - 1.5.13 - keys command fixes and update colour to be blindness friendly
+
+06/26/2015 - 1.5.12 - Webhook fixes
+
 05/28/2015 - 1.5.11 - Fix core setup
 
 05/21/2015 - 1.5.10 - Fix tiny but important typo in prompts around manual Wi-Fi credentials.
@@ -117,4 +127,3 @@ Initial Release! - 02/20/2014
 * You can find documentation on Spark here: http://docs.spark.io/
 * You can post and find answers on the forums here: http://community.spark.io/
 * Or you can find us on IRC at freenode #spark
-
