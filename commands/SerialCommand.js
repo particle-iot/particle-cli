@@ -73,23 +73,28 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return callback([]);
 			}
 
-			//grab anything that self-reports as a core
 			ports.forEach(function (port) {
-				//not trying to be secure here, just trying to be helpful.
-				if ((port.manufacturer && port.manufacturer.indexOf('Spark') >= 0) ||
-					(port.pnpId && port.pnpId.indexOf('Spark_Core') >= 0) ||
-					(port.pnpId && port.pnpId.indexOf('VID_1D50') >= 0)) {
 
-					var device = { port: port.comName, type: 'Spark Core' };
+			// manufacturer value
+			// Mac - Spark devices
+			// Devices on old driver - Spark Core, Photon
+			// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
+			if (port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0)) {
+			    var device = { port: port.comName, type: 'Spark Core' };
 
-					if (port.vendorId === '0x2b04' && port.productId === '0xc006') {
-						device.type = 'Photon';
-					} else if (port.vendorId === '0x1d50' && port.productId === '0x607d') {
-						device.type = 'Spark Core';
-					}
-
-					devices.push(device);
-				}
+			    //possbibly on linux/mac
+			    if ((port.vendorId === '0x2b04' && port.productId === '0xc006') ||
+			    //Windows only contains the pnpId field
+			            (port.pnpId.indexOf('VID_2B04') >= 0 && port.pnpId.indexOf('PID_C006') >= 0)) {
+			        device.type = 'Photon';
+			        //possbibly on linux/mac
+			    } else if ((port.vendorId === '0x1d50' && port.productId === '0x607d') ||
+			    //Windows only contains the pnpId field
+			                        (port.pnpId.indexOf('VID_1D50') >= 0 && port.pnpId.indexOf('PID_607D') >= 0)) {
+			        device.type = 'Spark Core';
+			    }
+			    devices.push(device);
+			}
 			});
 
 			//if I didn't find anything, grab any 'ttyACM's
