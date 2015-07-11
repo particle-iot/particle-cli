@@ -281,7 +281,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				break;
 
 		  default:
-		    console.error("\nTarget device " + deviceType + " is not valid\n");
+		    console.error("\nTarget device " + deviceType + " is not valid");
+				console.error("	eg. particle compile core xxx");
+				console.error("	eg. particle compile photon xxx\n");
 		    return;
 		}
 
