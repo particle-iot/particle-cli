@@ -125,7 +125,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
 	flashCloud: function(coreid, filename) {
 		var cloud = this.cli.getCommandModule("cloud");
-		return cloud.flashDevice.apply(cloud, arguments);
+		cloud.flashDevice.apply(cloud, arguments);
 	},
 
 	flashDfu: function(firmware) {

@@ -226,7 +226,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		return api.flashDevice(deviceid, files);
+		api.flashDevice(deviceid, files).then(function(resp) {
+			if(resp.message) {
+				console.log("Flash device OK: ", resp.message);
+			} else if(resp.errors) {
+				console.log("Flash device failed");
+				console.log(resp.errors.join("\n"));
+			}
+		});
 	},
 
 	/**
