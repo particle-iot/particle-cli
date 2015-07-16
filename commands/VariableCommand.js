@@ -90,6 +90,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			for (var i = 0; i < cores.length; i++) {
 				if (cores[i].id == coreid) {
 
+					var foundCore = cores[i];
 					console.log("Which variable did you want?");
 					for (var key in foundCore.variables) {
 						var type = foundCore.variables[key];
