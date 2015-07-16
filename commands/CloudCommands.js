@@ -295,6 +295,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var filePath = args[0];
 		if (!fs.existsSync(filePath)) {
+
 			console.error("I couldn't find that: " + filePath);
 			return process.exit(1);
 		}
@@ -304,7 +305,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		//make a copy of the arguments
 		var files = this._handleMultiFileArgs(args);
 		if (!files) {
-			return;
+
+			console.log("No source to compile!");
+			return process.exit(1);
 		}
 
 		if (settings.showIncludedSourceFiles) {
@@ -335,7 +338,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var that = this;
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+
+			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
+			return process.exit(1);
 		}
 
 		var allDone = pipeline([
@@ -358,23 +363,26 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					return api.downloadBinary(resp.binary_url, filename);
 				}
 				else {
+
 					if (resp.errors) {
 						console.log("Errors");
 						console.log(resp.errors.join("\n"));
 					}
-					return when.reject("compile failed ");
+					return when.reject();
 				}
 			}
 		]);
 
 		when(allDone).then(
 			function () {
-				console.log("saved firmware to " + path.resolve(filename));
-				console.log("Compiled firmware downloaded.");
+				console.log("Compile succeeded.");
+				console.log("Saved firmware to:", path.resolve(filename));
 			},
 			function (err) {
-				console.error("Compile failed - ", err);
-			});
+				console.error("Compile failed. Exiting.");
+				process.exit(1);
+			}
+		);
 
 	},
 
