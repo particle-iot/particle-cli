@@ -429,6 +429,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		]);
 
 		return allDone.catch(function (err) {
+
+			self.stopSpin();
 			console.log(alert, "There was an error logging you in! Let's try again.");
 			console.error(alert, err);
 			self.tries = (self.tries || 0) + 1;

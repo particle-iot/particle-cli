@@ -32,7 +32,8 @@ var BaseCommand = require("../BaseCommand.js");
 var utilities = require('../../lib/utilities.js');
 var APIClient = require('../../lib/ApiClient2');
 var settings = require('../../settings.js');
-var prompt = require('inquirer').prompt;
+var inquirer = require('inquirer');
+var prompt = inquirer.prompt;
 var chalk = require('chalk');
 var scan = require('node-wifiscanner2').scan;
 var SAP = require('softap-setup')
@@ -44,7 +45,8 @@ var strings = {
 	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this computer?",
 	'credentialsNeeded': "You will need to know the password for your Wi-Fi network (if any) to proceed.",
 	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:",
-	'startingSetup': "Congratulations, you're on your way to awesome"
+	'startingSetup': "Congratulations, you're on your way to awesome",
+	'rescanLabel': '[rescan networks]'
 };
 
 var WirelessCommand = function (cli, options) {
@@ -57,7 +59,7 @@ var WirelessCommand = function (cli, options) {
 	this.__sap = new SAP();
 	this.__manual = false;
 	this.__completed = 0;
-
+	this.__apiClient = new APIClient(settings.apiUrl, settings.access_token);
 	this.init();
 };
 
@@ -71,8 +73,6 @@ WirelessCommand.prototype.init = function init() {
 
 	this.addOption("list", this.list.bind(this), "Show nearby Photons in setup mode (blinking blue)");
 	this.addOption("monitor", this.monitor.bind(this), "Begin monitoring nearby Wi-Fi networks for Photons in setup mode.");
-
-	// this.addOption("identify", this.identifyCore.bind(this), "Ask for and display device ID via serial");
 };
 
 WirelessCommand.prototype.list = function list(macAddress) {
@@ -93,7 +93,7 @@ WirelessCommand.prototype.list = function list(macAddress) {
 		chalk.cyan('Wi-Fi'),
 		"network to which your computer is connected."
 	);
-	protip('You may lose your connection to the internet for a moment.');
+	protip('You will lose your connection to the internet periodically.');
 	console.log();
 
 	this.newSpin('%s ' + chalk.bold.white('Scanning Wi-Fi for nearby Photons in setup mode...')).start();
@@ -315,7 +315,7 @@ WirelessCommand.prototype._ = null;
 
 WirelessCommand.prototype.setup = function setup(photon, cb) {
 
-	var api = new APIClient(settings.apiUrl, settings.access_token);
+	var api = this.__apiClient;
 	var mgr = new WiFiManager();
 	var sap = this.__sap;
 
@@ -324,12 +324,14 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 	var selected;
 	var security;
+	this.__ssid = photon;
 
 	console.log();
 	if(!photon && !self.__manual) {
 
 		console.log(alert, 'No Photons selected for setup!');
 		return self.exit();
+
 	}
 	protip(strings.credentialsNeeded);
 	protip('You can press ctrl + C to quit setup at any time.');
@@ -341,10 +343,20 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	function next(err, dat) {
 
 		self.stopSpin();
+		console.log(arrow, 'Obtained magical secure claim code.');
+		console.log();
 		if(err) {
 
 			// TODO: Graceful recovery here
-			console.log(arrow, arrow, err);
+			// console.log(arrow, arrow, err);
+			if(err.code == 'ENOTFOUND') {
+
+				protip("Your computer couldn't find the cloud...");
+			}
+			else {
+
+				protip("There was a network error while connecting to the cloud...");
+			}
 			protip('We need an active internet connection to successfully complete setup.');
 			protip('Are you currently connected to the internet? Please double-check and try again.');
 			return;
@@ -370,9 +382,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	};
 
 	function manualReady(ans) { self.__configure(null, manualConfigure); };
-	function manualConfigure(err, dat) {
-		cb(err, dat);
-	};
+	function manualConfigure(err, dat) { cb(err, dat); };
 
 	function connected(err, opts) {
 
@@ -390,12 +400,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 			'Hey! We successfully connected to',
 			chalk.bold.cyan(opts.ssid)
 		);
-		self.__configure(opts.ssid, done);
-	};
-
-	function done(err) {
-
-		console.log(arrow, "Done configuring your Photon(s)!");
+		self.__configure(opts.ssid);
 	};
 };
 
@@ -407,18 +412,17 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	var self = this;
 	var sap = this.__sap;
+	var api = self.__apiClient;
 	var mgr = new WiFiManager();
 	var list = [ ];
-
 	var password;
 	var network;
 	var retry;
 	var security;
 	var visibleSecurity;
 
-	protip('I can only scan for Wi-Fi networks that', chalk.cyan('broadcast'), 'their network name (most networks do).');
-	protip('If you want to skip scanning, or your network is configured as a', chalk.cyan('non-broadcast'), 'network');
-	protip('answer', chalk.cyan('yes'), 'to the prompt below. Otherwise, we will continue with the Wi-Fi wizard setup process...');
+	protip('If you want to skip scanning, or your network is configured as a');
+	protip(chalk.cyan('non-broadcast'), 'network, please enter manual mode to proceed...');
 	console.log();
 
 	prompt([{
@@ -518,20 +522,45 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		networks = dat.scans;
 
 		dat.scans.forEach(function save(ap) { list[ap.ssid] = ap; });
+
+		networks = removePhotonNetworks(ssids(networks));
+
+		networks.unshift(new inquirer.Separator());
+		networks.unshift(strings.rescanLabel);
+		networks.unshift(new inquirer.Separator());
+
 		prompt([{
 
 			type: 'list',
 			name: 'network',
 			message: 'Please select the network to which your Photon should connect:',
-			choices: removePhotonNetworks(ssids(networks))
+			choices: networks
 
-		}, {
+		}], __networkChoice);
 
-			type: 'input',
-			name: 'password',
-			message: 'Please enter your network password (or leave blank for none):'
+		function __networkChoice(ans) {
 
-		}], networkChoices);
+			if(ans.network == strings.rescanLabel) {
+
+				console.log();
+				self.newSpin('Asking the Photon to re-scan nearby Wi-Fi networks...').start();
+				return start();
+			}
+
+			network = ans.network;
+
+			prompt([{
+
+				type: 'input',
+				name: 'password',
+				message: 'Please enter your network password (or leave blank for none):'
+
+			}], __passwordChoice);
+		}
+		function __passwordChoice(ans) {
+
+			networkChoices({ network: network, password: ans.password });
+		}
 	};
 
 	function networkChoices(ans) {
@@ -581,7 +610,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		self.__password = password;
 
 		info();
-	}
+	};
 
 	function info(err, res) {
 
@@ -595,6 +624,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			retry = setTimeout(info, 1000);
 		});
 	};
+
 	function pubKey(err, dat) {
 
 		if(dat && dat.id) { self.__deviceID = dat.id; }
@@ -606,6 +636,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			retry = setTimeout(pubKey, 1000);
 		});
 	};
+
 	function code() {
 
 		clearTimeout(retry);
@@ -616,6 +647,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			retry = setTimeout(code, 1000);
 		});
 	};
+
 	function configure() {
 
 		var conf = {
@@ -634,6 +666,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			retry = setTimeout(configure, 1000);
 		});
 	};
+
 	function connect() {
 
 		console.log(arrow, 'The Photon will now attempt to connect to your Wi-Fi network...');
@@ -641,6 +674,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 		sap.connect(done);
 	};
+
 	function done(err) {
 
 		self.stopSpin();
@@ -658,7 +692,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'Would you like to return this computer to the wireless network you just configured?',
 				default: true
 
-			}], originalPrompt);
+			}], reconnect);
 		}
 		else {
 
@@ -670,26 +704,88 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 			}], manualPrompt);
 		}
-	}
-	function manualPrompt(ans) { cb(null, { id: self.__deviceID }); };
-	function originalPrompt(ans) {
+	};
 
-		if(ans.revive) { mgr.connect({ ssid: self.__network, password: self.__password }, revived); }
+	function manualPrompt(ans) { reconnect(true); };
+	function reconnect(manual) {
+
+		if(!manual) {
+
+			self.newSpin('Reconnecting your computer to your Wi-Fi network...').start();
+			mgr.connect({ ssid: self.__network, password: self.__password }, revived);
+		}
 		else {
 
-			console.log(arrow, "Please manually reconnect to your Wi-Fi network to complete the setup process.");
+			revived();
 		}
-		function revived(err) {
+	};
+	function revived(err) {
 
-			// TODO: Name & verify that the Photon successfully made it to the cloud
-			if(err) { return console.log(alert, "Whoops! I wasn't able to re-connect your computer to your Wi-Fi network. Please do so manually."); }
-			console.log(arrow, chalk.bold.white('Fantastic! You should be back to normal now!'));
+		self.stopSpin();
+		self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
 
-			console.log();
+		setTimeout(function () {
+
+			api.listDevices(checkDevices);
+
+		}, 2000);
+
+	};
+	function checkDevices(err, dat) {
+
+		self.stopSpin();
+		if(err) {
+
+			if(err.code == 'ENOTFOUND') {
+
+				console.log(alert, "Network not ready yet, retrying...");
+				console.log();
+				return revived(null);
+			}
+			console.log(alert, 'Unable to verify your Photon\'s connection.');
+			console.log(alert, "Please make sure you're connected to the internet.");
+			console.log(alert, "Then try", chalk.bold.cyan(cmd + ' list'), "to verify it's connected.");
+
 			updateWarning();
-
 			self.exit();
-		};
+		}
+
+		dat.forEach(function (device) {
+
+			if((device.id.toUpperCase() == self.__deviceID.toUpperCase()) && device.connected == true) {
+
+				console.log(arrow, 'It looks like your Photon has made it happily to the cloud!');
+				console.log(arrow, "Congratulations! You've just won the internet!")
+				console.log();
+				updateWarning();
+				self.exit();
+			}
+		});
+
+		console.log(alert, "It doesn't look like your Photon has made it to the cloud yet.");
+		console.log();
+		prompt([{
+
+			type: 'list',
+			name: 'recheck',
+			message: 'What would you like to do?',
+			choices: [
+				{ name: "Reconfigure the Wi-Fi settings of the Photon", value: 'reconfigure' },
+				{ name: "Check again to see if the Photon has connected", value: 'recheck' }
+			]
+
+		}], recheck);
+
+		function recheck(ans) {
+			if(ans.recheck == 'recheck') {
+
+				api.listDevices(checkDevices);
+			}
+			else {
+
+				self.setup(self.__ssid);
+			}
+		}
 	};
 };
 
