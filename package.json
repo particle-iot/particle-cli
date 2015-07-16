@@ -29,6 +29,9 @@
     "when": "^3.7.2",
     "xtend": "^4.0.0"
   },
+  "scripts": {
+    "test": "mocha test/"
+  },
   "contributors": [
     {
       "name": "Kenneth Lim",
@@ -67,5 +70,10 @@
       "url": "https://github.com/brycekahle"
     }
   ],
-  "preferGlobal": true
+  "preferGlobal": true,
+  "devDependencies": {
+    "mocha": "^2.2.5",
+    "should": "^7.0.2",
+    "sinon": "^1.15.4"
+  }
 }
