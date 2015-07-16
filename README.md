@@ -132,7 +132,7 @@ Command Reference
 
 ### particle setup wifi
 
-  Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/Core/connect/)
+  Helpful shortcut for adding another wifi network to a device connected over USB.  Make sure your device is connected via a USB cable, and is slow blinking blue [listening mode](http://docs.particle.io/core/connect/)
 
 ```sh
 $ particle setup wifi
@@ -268,7 +268,7 @@ $ particle flash --usb tinker
 
 #### Compiling remotely and Flashing locally
 
-To work locally, but use the cloud compiler, simply use the compile command, and then the local flash command after.  Make sure you connect your device via USB and place it into [DFU mode](http://docs.particle.io/Core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).
+To work locally, but use the cloud compiler, simply use the compile command, and then the local flash command after.  Make sure you connect your device via USB and place it into [DFU mode](http://docs.particle.io/core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).
 
 ```sh
 $ particle compile device_type my_project_folder --saveTo firmware.bin
@@ -468,7 +468,7 @@ New Key Created!
 
 ### particle keys load
 
-Copies a ```.DER``` formatted private key onto your device's external flash.  Make sure your device is connected and in [DFU mode](http://docs.particle.io/Core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).  The `particle keys` tools requires both DFU-util, and openssl to be installed.  Make sure any key you load is sent to the cloud with `particle keys send device.pub.pem`
+Copies a ```.DER``` formatted private key onto your device's external flash.  Make sure your device is connected and in [DFU mode](http://docs.particle.io/core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).  The `particle keys` tools requires both DFU-util, and openssl to be installed.  Make sure any key you load is sent to the cloud with `particle keys send device.pub.pem`
 
 ```sh
 $ particle keys load device.der
@@ -478,7 +478,7 @@ Saved!
 
 ### particle keys save
 
-Copies a ```.DER``` formatted private key from your device's external flash to your computer.  Make sure your device is connected and in [DFU mode](http://docs.particle.io/Core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both DFU-util, and openssl to be installed.
+Copies a ```.DER``` formatted private key from your device's external flash to your computer.  Make sure your device is connected and in [DFU mode](http://docs.particle.io/core/modes/#Core-modes-DFU-mode-device-firmware-upgrade).  The ```particle keys``` tools requires both DFU-util, and openssl to be installed.
 
 ```sh
 $ particle keys save name_of_file
