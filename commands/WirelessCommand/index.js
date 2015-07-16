@@ -326,10 +326,10 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	var security;
 
 	console.log();
-	if(!photon) {
+	if(!photon && !self.__manual) {
 
-		if(self.__batch && self.__batch.length > 0) { var photon = self.__batch.pop(); }
-		else if(!self.__manual) { return console.log(alert, 'No Photons selected for setup!'); }
+		console.log(alert, 'No Photons selected for setup!');
+		return self.exit();
 	}
 	protip(strings.credentialsNeeded);
 	protip('You can press ctrl + C to quit setup at any time.');
@@ -645,7 +645,6 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		self.stopSpin();
 		clearTimeout(retry);
-		if(self.__batch && self.__batch.length) { self.__configure(self.__batch.pop(), cb); }
 
 		self.stopSpin();
 		console.log(arrow, chalk.bold.white('Configuration complete! You\'ve just won the internet!'));
