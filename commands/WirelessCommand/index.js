@@ -222,30 +222,25 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			self.__batch = false;
 
 			// Select any/all Photons to setup
-			prompt([{
+			return prompt([{
 
 				type: 'list',
 				name: 'selected',
-				message: 'Please select which Photons you would like to setup at this time.',
+				message: 'Please select which Photon you would like to setup at this time.',
 				choices: detectedDevices
 
-			}], multipleAnswers);
+			}], multipleAnswer);
 		}
-		else {
-
-			console.log('OK, bye!', chalk.magenta('<3'));
-		}
+		self.exit();
 	};
 
-	function multipleAnswers(ans) {
+	function multipleAnswer(ans) {
 
-		if(ans.selected.length > 1) {
+		if(ans.selected) {
 
-			self.__batch = ans.selected;
-			return self.setup(null);
+			return self.setup(ans.selected);
 		}
-		self.__batch = undefined;
-		self.setup(ans.selected[0]);
+		self.exit();
 	};
 
 	function singleChoice(ans) {
