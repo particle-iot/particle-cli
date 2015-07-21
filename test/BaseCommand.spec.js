@@ -1,6 +1,7 @@
 var Spinner = require('./mocks/Spinner.mock.js');
 var Interpreter = require('../lib/interpreter');
 var proxyquire = require('proxyquire');
+
 var stream = require('stream');
 var should = require('should');
 
@@ -42,23 +43,5 @@ describe('BaseCommand', function() {
 			base.__spin.running.should.equal(false);
 		});
 
-	});
-
-	// describe('Prompts', function() {
-
-	// 	it('getPrompt works', function() {
-
-	// 		base.getPrompt();
-	// 		base._prompt.should.be.an.instanceOf(EventEmitter);
-	// 		base.__prompt.readable.should.equal(true);
-	// 	});
-	// });
-
-	describe('Run Command', function() {
-
-		it('works', function() {
-
-			base.runCommand('help');
-		});
 	});
 });
