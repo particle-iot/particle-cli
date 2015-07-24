@@ -692,7 +692,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'Would you like to return this computer to the wireless network you just configured?',
 				default: true
 
-			}], reconnect);
+			}], function() { reconnect(false); });
 		}
 		else {
 
