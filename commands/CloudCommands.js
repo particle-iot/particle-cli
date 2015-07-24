@@ -194,7 +194,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (!fs.existsSync(filePath)) {
 			if (settings.knownApps[filePath]) {
-				files = { file: settings.knownApps[filePath] };
+
+				return inquirer.prompt([{
+					name: 'type',
+					type: 'list',
+					message: 'Which type of device?',
+					choices: [
+						'Photon',
+						'Core'
+					]
+				}], function(ans) {
+
+					var file = { file: settings.knownApps[filePath][ans.type.toLowerCase()] };
+					doFlash(file)
+
+				});
 			}
 			else {
 				console.error("I couldn't find that: " + filePath);
@@ -221,19 +235,23 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
-		if (!api.ready()) {
-			return -1;
-		}
+		doFlash(files);
+		function doFlash(files) {
 
-		api.flashDevice(deviceid, files).then(function(resp) {
-			if(resp.message) {
-				console.log("Flash device OK: ", resp.message);
-			} else if(resp.errors) {
-				console.log("Flash device failed");
-				console.log(resp.errors.join("\n"));
+			var api = new ApiClient(settings.apiUrl, settings.access_token);
+			if (!api.ready()) {
+				return -1;
 			}
-		});
+
+			api.flashDevice(deviceid, files).then(function(resp) {
+				if(resp.message) {
+					console.log("Flash device OK: ", resp.message);
+				} else if(resp.errors) {
+					console.log("Flash device failed");
+					console.log(resp.errors.join("\n"));
+				}
+			});
+		};
 	},
 
 	/**
