@@ -66,9 +66,16 @@ var settings = {
 
 	knownApps: {
 		"deep_update_2014_06": "binaries/deep_update_2014_06.bin",
-		"cc3000": "binaries/cc3000-patch-programmer.bin",
-		"cc3000_1_14": "binaries/cc3000-patch-programmer_1_14.bin",
-		"tinker": "binaries/spark_tinker.bin",
+		"cc3000": {
+			'core': "binaries/cc3000-patch-programmer.bin"
+		},
+		"cc3000_1_14": {
+			'core': "binaries/cc3000-patch-programmer_1_14.bin"
+		},
+		"tinker": {
+			'core': "binaries/core_tinker.bin",
+			'photon': "binaries/photon_tinker.bin"
+		},
 		"voodoo": "binaries/voodoospark.bin"
 	},
 
@@ -79,7 +86,15 @@ settings.commandPath = __dirname + "/commands/";
 
 //fix the paths on the known apps mappings
 for(var name in settings.knownApps) {
-	settings.knownApps[name] = path.join(__dirname, settings.knownApps[name]);
+	if(typeof settings.knownApps[name] == "string") {
+
+		settings.knownApps[name] = path.join(__dirname, settings.knownApps[name]);
+	}
+	else {
+		for(var type in settings.knownApps[name]) {
+			settings.knownApps[name][type] = path.join(__dirname, settings.knownApps[name][type]);
+		}
+	}
 }
 
 
