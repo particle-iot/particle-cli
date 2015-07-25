@@ -30,7 +30,6 @@ var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
 var chalk = require('chalk');
-
 var utilities = require('./lib/utilities.js');
 
 var settings = {
@@ -65,38 +64,17 @@ var settings = {
 	dirExcludeFilename: "particle.ignore",
 
 	knownApps: {
-		"deep_update_2014_06": "binaries/deep_update_2014_06.bin",
-		"cc3000": {
-			'core': "binaries/cc3000-patch-programmer.bin"
-		},
-		"cc3000_1_14": {
-			'core': "binaries/cc3000-patch-programmer_1_14.bin"
-		},
-		"tinker": {
-			'core': "binaries/core_tinker.bin",
-			'photon': "binaries/photon_tinker.bin"
-		},
-		"voodoo": "binaries/voodoospark.bin"
+		"deep_update_2014_06": true,
+		"cc3000": true,
+		"cc3000_1_14": true,
+		"tinker": true,
+		"voodoo": true
 	},
 
 	commandMappings: path.join(__dirname, "mappings.json")
 };
 
 settings.commandPath = __dirname + "/commands/";
-
-//fix the paths on the known apps mappings
-for(var name in settings.knownApps) {
-	if(typeof settings.knownApps[name] == "string") {
-
-		settings.knownApps[name] = path.join(__dirname, settings.knownApps[name]);
-	}
-	else {
-		for(var type in settings.knownApps[name]) {
-			settings.knownApps[name][type] = path.join(__dirname, settings.knownApps[name][type]);
-		}
-	}
-}
-
 
 settings.findHomePath = function() {
 	var envVars = [
@@ -248,4 +226,5 @@ settings.transitionSparkProfiles = function() {
 settings.transitionSparkProfiles();
 settings.whichProfile();
 settings.loadOverrides();
+
 module.exports = settings;

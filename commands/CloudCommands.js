@@ -33,6 +33,7 @@ var readline = require('readline');
 var SerialPortLib = require("serialport");
 var SerialPort = SerialPortLib.SerialPort;
 var settings = require('../settings.js');
+var specs = require('../lib/deviceSpecs');
 var BaseCommand = require("./BaseCommand.js");
 var prompts = require('../lib/prompts.js');
 var ApiClient = require('../lib/ApiClient.js');
@@ -205,7 +206,19 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					]
 				}], function(ans) {
 
-					var file = { file: settings.knownApps[filePath][ans.type.toLowerCase()] };
+					var type = ans.type;
+					var binary = null;
+					for(id in specs) {
+
+						if(specs[id].productName == type) {
+							binary = specs[id].knownApps[filePath];
+						}
+					}
+					if(!binary) {
+						console.log("I don't have a %s binary for %s.", filePath, type);
+						return process.exit(1);
+					}
+					var file = { file: binary };
 					doFlash(file)
 
 				});
