@@ -131,7 +131,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	flashDfu: function(firmware) {
 		if (!firmware || !fs.existsSync(firmware)) {
 			if (settings.knownApps[firmware]) {
-				firmware = settings.knownApps[firmware] ;
+				firmware = settings.knownApps[firmware];
 			}
 			else {
 				console.log("Please specify a firmware file to flash locally to your device ");
