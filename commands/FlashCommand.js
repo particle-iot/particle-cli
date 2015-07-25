@@ -129,39 +129,42 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	flashDfu: function(firmware) {
-		if (!firmware || !fs.existsSync(firmware)) {
-			if (settings.knownApps[firmware]) {
-				firmware = settings.knownApps[firmware];
-			}
-			else {
-				console.log("Please specify a firmware file to flash locally to your device ");
-				return -1;
-			}
-		}
 
-		//TODO: detect if arguments contain something other than a .bin file
+    //TODO: detect if arguments contain something other than a .bin file
+    var useFactory = this.options.useFactoryAddress;
 
-		var useFactory = this.options.useFactoryAddress;
+      var ready = sequence([
+        function () {
+          return dfu.findCompatibleDFU();
+        },
+        function () {
+          //only match against knownApp if file is not found
+          if (!fs.existsSync(firmware)){
+            firmware = dfu.checkKnownApp(firmware);
+            if(firmware === undefined)
+              return when.reject("no known App found.");
+            else
+            return firmware;
+          }
+        },
+        function () {
+          if (useFactory) {
+              return dfu.writeFactoryReset(firmware, false);
+          }
+          else {
+              return dfu.writeFirmware(firmware, true);
+          }
+        }
+      ]);
 
-		var ready = sequence([
-			function () {
-				return dfu.findCompatibleDFU();
-			},
-			function() {
-				if (useFactory) {
-					return dfu.writeFactoryReset(firmware, false);
-				}
-				else {
-					return dfu.writeFirmware(firmware, true);
-				}
-			}
-		]);
+    when(ready).then(function () {
+      console.log ("\nFlash success!");
+    }, function (err) {
+      console.error("\nError writing firmware..." + err  + "\n");
+      return -1;
+    });
 
-		when(ready).then(function () {
-			console.log("Flashed!");
-		}, function (err) {
-			console.error("Error writing firmware... " + err);
-		});
+
 
 		return 0;
 	},
