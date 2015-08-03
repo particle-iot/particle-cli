@@ -31,6 +31,7 @@ var path = require('path');
 var extend = require('xtend');
 var chalk = require('chalk');
 var utilities = require('./lib/utilities.js');
+var specs = require('./lib/deviceSpecs');
 
 var settings = {
 	commandPath: "./commands/",
@@ -73,6 +74,16 @@ var settings = {
 
 	commandMappings: path.join(__dirname, "mappings.json")
 };
+
+//fix the paths on the known apps mappings
+Object.keys(specs).forEach(function (id) {
+	var deviceSpecs = specs[id];
+	var knownApps = deviceSpecs["knownApps"];
+	for(var appName in knownApps) {
+		knownApps[appName] =  path.join(__dirname,"binaries", knownApps[appName]);
+	};
+});
+
 
 settings.commandPath = __dirname + "/commands/";
 
