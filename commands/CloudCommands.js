@@ -195,33 +195,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (!fs.existsSync(filePath)) {
 			if (settings.knownApps[filePath]) {
-
-				return inquirer.prompt([{
-					name: 'type',
-					type: 'list',
-					message: 'Which type of device?',
-					choices: [
-						'Photon',
-						'Core'
-					]
-				}], function(ans) {
-
-					var type = ans.type;
-					var binary = null;
-					for(id in specs) {
-
-						if(specs[id].productName == type) {
-							binary = specs[id].knownApps[filePath];
-						}
-					}
-					if(!binary) {
-						console.log("I don't have a %s binary for %s.", filePath, type);
-						return process.exit(1);
-					}
-					var file = { file: binary };
-					doFlash(file)
-
-				});
+				files = { file: settings.knownApps[filePath] };
 			}
 			else {
 				console.error("I couldn't find that: " + filePath);
@@ -248,24 +222,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		doFlash(files);
-		function doFlash(files) {
+		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		if (!api.ready()) {
+			return -1;
+		}
 
-			var api = new ApiClient(settings.apiUrl, settings.access_token);
-			if (!api.ready()) {
-				return -1;
-			}
-
-			api.flashDevice(deviceid, files).then(function(resp) {
-				if(resp.message) {
-					console.log("Flash device OK: ", resp.message);
-				} else if(resp.errors) {
-					console.log("Flash device failed");
-					console.log(resp.errors.join("\n"));
-				}
-			});
-		};
+		return api.flashDevice(deviceid, files);
 	},
+
 
 	/**
 	 * use application ID instead of binary ID
