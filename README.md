@@ -289,6 +289,14 @@ $ particle flash --usb firmware.bin
 
   eg. `particle compile photon xxx` OR `particle compile p xxxx` both targets the photon
 
+  The default target device is **core**.
+
+  eg. `particle compile .` VS `particle compile core .`
+
+  **NOTE**: There is also a `defaultCompileDevice` flag that allows the user to target a device by default and omit the `device_type` argument.
+
+  To set the default target for your profile, use the command `particle config defaultCompileDevice device_type`.
+
   Note!  The cloud compiles ```.ino``` and ```.cpp``` files differently.  For ```.ino``` files, the cloud will apply a pre-processor.  It will add missing function declarations, and it will inject an ```#include "
   application.h"``` line at the top of your files if it is missing.
 

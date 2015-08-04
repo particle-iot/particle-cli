@@ -298,7 +298,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	compileCode: function (deviceType) {
-
 		deviceType = 	deviceType.toLowerCase();
 		//defaults to 0 for core
 		var platform_id = 0;
