@@ -160,7 +160,6 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 
 				function success() {
 					spin.stop(true);
-					console.log();
 					console.log(chalk.cyan('!'), "System firmware update successfully completed!");
 					console.log();
 					console.log(chalk.cyan('>'), "Your device should now restart automatically.");
