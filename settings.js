@@ -75,6 +75,10 @@ var settings = {
 		"2b04:d006": {
 			SystemFirmwareOne: "system-part1-0.4.3-photon.bin",
 			SystemFirmwareTwo: "system-part2-0.4.3-photon.bin"
+		},
+		"2b04:d008": {
+			SystemFirmwareOne: "system-part1-0.4.3-p1.bin",
+			SystemFirmwareTwo: "system-part2-0.4.3-p1.bin"
 		}
 	},
 	commandMappings: path.join(__dirname, "mappings.json")
