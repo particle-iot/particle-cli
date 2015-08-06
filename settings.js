@@ -71,7 +71,12 @@ var settings = {
 		"tinker": true,
 		"voodoo": true
 	},
-
+	updates: {
+		"2b04:d006": {
+			SystemFirmwareOne: "system-part1-0.4.3-photon.bin",
+			SystemFirmwareTwo: "system-part2-0.4.3-photon.bin"
+		}
+	},
 	commandMappings: path.join(__dirname, "mappings.json")
 };
 
