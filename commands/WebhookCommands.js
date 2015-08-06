@@ -202,7 +202,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                         ".) Hook ID " + hook.id + " is watching for ",
                         "\""+hook.event+"\"",
 
-                        "\n       ", " and posting to: " + hook.url,
+                        "\n       ", " and sending to: " + hook.url,
 
                         (hook.deviceID) ? "\n       " + " for device " + hook.deviceID : "",
 
