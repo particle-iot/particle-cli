@@ -73,12 +73,12 @@ var settings = {
 	},
 	updates: {
 		"2b04:d006": {
-			SystemFirmwareOne: "system-part1-0.4.4-rc.1-photon.bin",
-			SystemFirmwareTwo: "system-part2-0.4.4-rc.1-photon.bin"
+			SystemFirmwareOne: "system-part1-0.4.4-rc.2-photon.bin",
+			SystemFirmwareTwo: "system-part2-0.4.4-rc.2-photon.bin"
 		},
 		"2b04:d008": {
-			SystemFirmwareOne: "system-part1-0.4.4-rc.1-p1.bin",
-			SystemFirmwareTwo: "system-part2-0.4.4-rc.1-p1.bin"
+			SystemFirmwareOne: "system-part1-0.4.4-rc.2-p1.bin",
+			SystemFirmwareTwo: "system-part2-0.4.4-rc.2-p1.bin"
 		}
 	},
 	commandMappings: path.join(__dirname, "mappings.json")
