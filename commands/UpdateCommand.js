@@ -145,7 +145,8 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 				});
 
 				console.log();
-				console.log(chalk.cyan('>'), 'Your device is ready for a system update. Here goes!');
+				console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
+				console.log(chalk.cyan('>'), 'This process should take about 30 seconds. Here goes!');
 				console.log();
 
 				spin.start();
