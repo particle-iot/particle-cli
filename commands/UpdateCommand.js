@@ -127,6 +127,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 				var first = true;
 				var i = 0;
 				if(!updates) {
+					console.log();
 					return console.log(
 						chalk.cyan('!'),
 						"There are currently no system firmware updates available for this device."
