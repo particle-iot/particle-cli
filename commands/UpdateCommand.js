@@ -214,7 +214,7 @@ function dfuWrite(id, part, binary, leave, cb) {
 function dfuMode() {
 
 	console.log();
-	console.log(chalk.cyan('!'), 'I was unable to detect any devices in DFU mode...');
+	console.log(chalk.red('!!!'), 'I was unable to detect any devices in DFU mode...');
 	console.log();
 	console.log(chalk.cyan('>'), 'Your device will blink yellow when in DFU mode.');
 	console.log(chalk.cyan('>'), 'If your device is not blinking yellow, please:');
@@ -252,7 +252,7 @@ function dfuError(err) {
 	else {
 		dfuInstall(false);
 		console.log(
-			chalk.red('!'),
+			chalk.cyan('!!!'),
 			"You may also find our community forums helpful:\n",
 			chalk.bold.white("https://community.particle.io/"),
 			"\n"
@@ -270,14 +270,14 @@ function dfuError(err) {
 function dfuInstall(noent) {
 
 	if(noent) {
-		console.log(chalk.red('!'), "It doesn't seem like DFU utilities are installed...");
+		console.log(chalk.red('!!!'), "It doesn't seem like DFU utilities are installed...");
 	}
 	else {
-		console.log(chalk.red('!'), "There was an error trying execute DFU utilities.");
+		console.log(chalk.red('!!!'), "There was an error trying execute DFU utilities.");
 	}
 	console.log("");
 	console.log(
-		chalk.red('!'),
+		chalk.cyan('!!!'),
 		"For help with installing DFU Utilities, please see:\n",
 		chalk.bold.white("http://support.particle.io/hc/en-us/articles/203265730-Installing-the-Particle-CLI")
 	);
