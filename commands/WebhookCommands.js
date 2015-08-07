@@ -132,7 +132,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                     else{
                       console.log("Using settings from the file " + filename);
                       //only override these when we didn't get them from the command line
-                      eventName = data.event;
+                      eventName = data.event || data.eventName;
                       url = data.url;
                       deviceID = data.deviceid;
                     }
