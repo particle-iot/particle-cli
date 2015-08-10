@@ -5,7 +5,6 @@ The Particle CLI is a powerful tool for interacting with your devices and the Pa
 
 Known Issues
 ========
-* Currently the CLI is unable to perform cloud compiling for Photons. This will be fixed shortly.
 * The Wireless Photon Setup Wizard is currently only available for OS X. Users of other operating systems will need to manually connect their computer to the Photon's Wi-Fi.
 * The Wireless Photon Setup Wizard will occasionally output an error regarding 'unhandled rejection'. This is annoying but harmless and will be fixed in future releases.
 * Photon setup does not currently ask you to name your Photon. You can still do so from the IDE: https://build.particle.io/build
