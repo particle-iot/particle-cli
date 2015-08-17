@@ -88,7 +88,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 			this.switchGroup(group);
 		}
 		else if (group && name && !value) {
-			this.changeSetting(null, group, name);
+			this.changeSetting(group, name);
 		}
 		else if (group && name && value) {
 			this.changeSetting(group, name, value);
