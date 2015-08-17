@@ -74,27 +74,30 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			ports.forEach(function (port) {
+				// manufacturer value
+				// Mac - Spark devices
+				// Devices on old driver - Spark Core, Photon
+				// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
+				// Windows only contains the pnpId field
+				var matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
+				var usbMatchesPhoton = (port.vendorId === '0x2b04' && port.productId === '0xc006') || (port.pnpId && port.pnpId.indexOf('VID_2B04') >= 0 && port.pnpId.indexOf('PID_C006') >= 0);
+				var usbMatchesCore = (port.vendorId === '0x1d50' && port.productId === '0x607d') || (port.pnpId && port.pnpId.indexOf('VID_1D50') >= 0 && port.pnpId.indexOf('PID_607D') >= 0);
 
-			// manufacturer value
-			// Mac - Spark devices
-			// Devices on old driver - Spark Core, Photon
-			// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
-			if (port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0)) {
-			    var device = { port: port.comName, type: 'Spark Core' };
+				var device;
+				if (matchesManufacturer) {
+					device = { port: port.comName, type: 'Spark Core' };
+					if (usbMatchesPhoton) {
+						device.type = 'Photon';
+					}
+				} else if (usbMatchesPhoton) {
+					device = { port: port.comName, type: 'Photon' };
+				} else if (usbMatchesCore) {
+					device = { port: port.comName, type: 'Spark Core' };
+				}
 
-			    //possbibly on linux/mac
-			    if ((port.vendorId === '0x2b04' && port.productId === '0xc006') ||
-			    //Windows only contains the pnpId field
-			            (port.pnpId.indexOf('VID_2B04') >= 0 && port.pnpId.indexOf('PID_C006') >= 0)) {
-			        device.type = 'Photon';
-			        //possbibly on linux/mac
-			    } else if ((port.vendorId === '0x1d50' && port.productId === '0x607d') ||
-			    //Windows only contains the pnpId field
-			                        (port.pnpId.indexOf('VID_1D50') >= 0 && port.pnpId.indexOf('PID_607D') >= 0)) {
-			        device.type = 'Spark Core';
-			    }
-			    devices.push(device);
-			}
+				if (device) {
+					devices.push(device);
+				}
 			});
 
 			//if I didn't find anything, grab any 'ttyACM's
