@@ -31,7 +31,8 @@
     "xtend": "^4.0.0"
   },
   "scripts": {
-    "test": "mocha test/"
+    "test": "mocha test/",
+    "lint": "eslint commands/*.js lib/*.js test/*.js"
   },
   "contributors": [
     {
@@ -73,6 +74,7 @@
   ],
   "preferGlobal": true,
   "devDependencies": {
+    "eslint": "^1.1.0",
     "mocha": "^2.2.5",
     "proxyquire": "^1.6.0",
     "should": "^7.0.2",
