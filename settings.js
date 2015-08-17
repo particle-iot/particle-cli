@@ -41,6 +41,7 @@ var settings = {
 	minimumApiDelay: 500,
 	//useOpenSSL: true,
 	useSudoForDfu: false,
+	defaultCompileDevice: "core",
 
 	//2 megs -- this constant here is arbitrary
 	MAX_FILE_SIZE: 1024 * 1024 * 2,

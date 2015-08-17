@@ -298,34 +298,29 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	compileCode: function (deviceType) {
-		if (!deviceType) {
-			console.error("\nPlease specify the target device type. eg. particle compile photon xxx\n");
-			return;
-		}
-
+		deviceType = 	deviceType.toLowerCase();
 		//defaults to 0 for core
 		var platform_id = 0;
 
 		switch (deviceType) {
-		  case "photon":
-		  case "p":
+			case "photon":
+			case "p":
 				deviceType = "photon";
 				platform_id = 6;
-		    break;
-
-		  case "core":
-			case "c":
-				deviceType = "core";
+				console.log("\nCompiling code for " + deviceType + "\n");
 				break;
 
-		  default:
-		    console.error("\nTarget device " + deviceType + " is not valid");
-				console.error("	eg. particle compile core xxx");
-				console.error("	eg. particle compile photon xxx\n");
-		    return;
-		}
+			case "core":
+			case "c":
+				deviceType = "core";
+				console.log("\nCompiling code for " + deviceType + "\n");
+				break;
 
-		console.log("\nCompiling code for " + deviceType + "\n");
+			default:
+				deviceType = settings.defaultCompileDevice;
+				console.log("\nCompiling code for default target: " + deviceType  + "\n");
+				}
+
 
 		//  "Please specify a binary file, source file, or source directory");
 		var args = Array.prototype.slice.call(arguments, 1);
@@ -344,6 +339,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		//make a copy of the arguments
 		var files = this._handleMultiFileArgs(args);
+
 		if (!files) {
 
 			console.log("No source to compile!");
