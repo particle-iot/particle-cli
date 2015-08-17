@@ -319,10 +319,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				name: 'ssid',
 				message: 'SSID',
 				validate: function(input) {
-					if(input.length == 0)
-						return "please enter a valid SSID";
-					else
+					if (input.length === 0) {
+						return 'please enter a valid SSID';
+					} else {
 						return true;
+					}
 				},
 				when: function (answers) { return !networks.length || !answers.ap; }
 			},
