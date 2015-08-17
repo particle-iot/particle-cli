@@ -1,5 +1,19 @@
 changelog
 =========
+08/17/2015 - 1.6.2 - Fix Win10 device detection with default USB serial driver
+
+08/06/2015 - 1.6.1 - Update system firmware binaries
+
+08/06/2015 - 1.6.0 - Add tests. Add system firmware updating.
+
+08/04/2015 - 1.5.20 - Fix known app paths. Remove unused promise.
+
+07/25/2015 - 1.5.19 - Add known apps to device specs
+
+07/24/2015 - 1.5.18 - Add missing semicolons 
+
+07/24/2015 - 1.5.17 - Format flash output. Use sudo correctly when necessary. Validate SSID entry. Update README with device_type args to compile command. Fix docs links. Update dfu-util links. Ask for device type when flashing. Fix Wi-Fi reconnection.
+
 07/06/2015 - 1.5.16 - Fix core setup
 
 07/06/2015 - 1.5.15 - update to use "flashDevice"
