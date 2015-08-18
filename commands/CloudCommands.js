@@ -307,22 +307,22 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var platform_id = 0;
 
 		switch (deviceType) {
-		  case "photon":
-		  case "p":
+			case "photon":
+			case "p":
 				deviceType = "photon";
 				platform_id = 6;
-		    break;
+				break;
 
-		  case "core":
+			case "core":
 			case "c":
 				deviceType = "core";
 				break;
 
-		  default:
-		    console.error("\nTarget device " + deviceType + " is not valid");
+			default:
+				console.error("\nTarget device " + deviceType + " is not valid");
 				console.error("	eg. particle compile core xxx");
 				console.error("	eg. particle compile photon xxx\n");
-		    return;
+				return;
 		}
 
 		console.log("\nCompiling code for " + deviceType + "\n");

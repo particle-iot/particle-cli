@@ -4,9 +4,12 @@
 	},
 	"rules": {
 		"quotes": [1, "single", "avoid-escape"],
+		"curly": 2,
 		"no-underscore-dangle": 0,
 		"consistent-return": 0,
 		"no-use-before-define": 0,
-		"no-alert": 0
+		"no-alert": 0,
+		"no-mixed-spaces-and-tabs": 2,
+		"space-after-keywords": [1, "always"]
 	}
 }

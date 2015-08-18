@@ -72,20 +72,20 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		if (!this.options.useCloud) {
 			this.options.useCloud = utilities.tryParseArgs(args,
 				"--cloud",
-			   null
+				null
 			);
 		}
 		if (!this.options.useDfu) {
 			this.options.useDfu = utilities.tryParseArgs(args,
 				"--usb",
-			   null
+				null
 			);
 		}
 		if (!this.options.useFactoryAddress) {
 			//assume DFU if doing factory
 			this.options.useFactoryAddress = utilities.tryParseArgs(args,
 				"--factory",
-			   null
+				null
 			);
 		}
 	},
@@ -130,39 +130,40 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
 	flashDfu: function(firmware) {
 
-    //TODO: detect if arguments contain something other than a .bin file
-    var useFactory = this.options.useFactoryAddress;
+		//TODO: detect if arguments contain something other than a .bin file
+		var useFactory = this.options.useFactoryAddress;
 
-      var ready = sequence([
-        function () {
-          return dfu.findCompatibleDFU();
-        },
-        function () {
-          //only match against knownApp if file is not found
-          if (!fs.existsSync(firmware)){
-            firmware = dfu.checkKnownApp(firmware);
-            if(firmware === undefined)
-              return when.reject("no known App found.");
-            else
-            return firmware;
-          }
-        },
-        function () {
-          if (useFactory) {
-              return dfu.writeFactoryReset(firmware, false);
-          }
-          else {
-              return dfu.writeFirmware(firmware, true);
-          }
-        }
-      ]);
+			var ready = sequence([
+				function () {
+					return dfu.findCompatibleDFU();
+				},
+				function () {
+					//only match against knownApp if file is not found
+					if (!fs.existsSync(firmware)){
+						firmware = dfu.checkKnownApp(firmware);
+						if (firmware === undefined) {
+							return when.reject("no known App found.");
+						} else {
+							return firmware;
+						}
+					}
+				},
+				function () {
+					if (useFactory) {
+							return dfu.writeFactoryReset(firmware, false);
+					}
+					else {
+							return dfu.writeFirmware(firmware, true);
+					}
+				}
+			]);
 
-    when(ready).then(function () {
-      console.log ("\nFlash success!");
-    }, function (err) {
-      console.error("\nError writing firmware..." + err  + "\n");
-      return -1;
-    });
+		when(ready).then(function () {
+			console.log ("\nFlash success!");
+		}, function (err) {
+			console.error("\nError writing firmware..." + err  + "\n");
+			return -1;
+		});
 
 
 
