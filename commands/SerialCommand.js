@@ -331,7 +331,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				type: 'confirm',
 				name: 'detectSecurity',
 				message: chalk.bold.white('Should I try to auto-detect the wireless security type?'),
-				when: function (answers) { return !!answers.ap; },
+				when: function (answers) { return !!answers.ap && !!answers.ap.security; },
 				default: true
 			},
 			{
@@ -344,14 +344,14 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					{ name: 'WEP', value: 1 },
 					{ name: 'Unsecured', value: 0 }
 				],
-				when: function (answers) { return !networks.length || !answers.detectSecurity; }
+				when: function (answers) { return !networks.length || !answers.detectSecurity || !answers.ap.security; }
 			},
 			{
 				type: 'input',
 				name: 'password',
 				message: 'Wi-Fi Password',
 				when: function (answers) {
-					return (answers.detectSecurity && answers.ap.security.indexOf('NONE') === -1) ||
+					return (answers.detectSecurity && answers.ap.security && answers.ap.security.indexOf('NONE') === -1) ||
 						answers.security !== 0;
 				}
 			}
@@ -360,11 +360,13 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			var security = answers.security;
 			if (answers.detectSecurity) {
 				var ap = answers.ap;
-				if (ap.security.indexOf('WPA2') >= 0) { security = 3; }
-				else if (ap.security.indexOf('WPA') >= 0) { security = 2; }
-				else if (ap.security.indexOf('WEP') >= 0) { security = 1; }
-				else if (ap.security.indexOf('NONE') >= 0) { security = 0; }
-				else { security = 3; }
+				security = 3;
+				if (ap.security) {
+					if (ap.security.indexOf('WPA2') >= 0) { security = 3; }
+					else if (ap.security.indexOf('WPA') >= 0) { security = 2; }
+					else if (ap.security.indexOf('WEP') >= 0) { security = 1; }
+					else if (ap.security.indexOf('NONE') >= 0) { security = 0; }
+				}
 			}
 
 			self.serialWifiConfig(device, ssid, answers.password, security).then(wifiInfo.resolve, wifiInfo.reject);
