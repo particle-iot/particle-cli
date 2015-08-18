@@ -24,7 +24,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
- 
+
 var when = require('when');
 var sequence = require('when/sequence');
 var readline = require('readline');
@@ -107,11 +107,12 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	changeSetting: function (group, name, value) {
 		settings.override(group, name, value);
 	},
-	
+
 	identifyServer: function () {
 		console.log("Current profile: " + settings.profile);
 		console.log("Using API: " + settings.apiUrl);
 		console.log("Access token: " +  settings.access_token);
+		console.log("Default compile target: " +  settings.defaultCompileDevice);
 	},
 
 	listConfigs: function() {

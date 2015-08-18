@@ -298,7 +298,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	compileCode: function (deviceType) {
-		deviceType = 	deviceType.toLowerCase();
+		deviceType = deviceType.toLowerCase();
 		//defaults to 0 for core
 		var platform_id = 0;
 
@@ -319,7 +319,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			default:
 				deviceType = settings.defaultCompileDevice;
 				console.log("\nCompiling code for default target: " + deviceType  + "\n");
-				}
+		}
 
 
 		//  "Please specify a binary file, source file, or source directory");
