@@ -1,5 +1,7 @@
 changelog
 =========
+08/20/2015 - 1.6.4 - Update system firmware to 0.4.4
+
 08/18/2015 - 1.6.3 - Fix verbose DFU output. Fix config value deletion. Handle network scan security type missing. Handle trailing slashes in api url. Select first Wi-Fi port instead of hard-coded (OS X). Check for correct error from API when a token is invalid
 
 08/17/2015 - 1.6.2 - Fix Win10 device detection with default USB serial driver
