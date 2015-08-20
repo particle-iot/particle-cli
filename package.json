@@ -22,6 +22,7 @@
     "glob": "^4.2.1",
     "hogan.js": "^2.0.0",
     "inquirer": "^0.8.2",
+    "lodash": "^3.10.1",
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.0.0",
     "request": "^2.46.0",
