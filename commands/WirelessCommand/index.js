@@ -101,6 +101,17 @@ WirelessCommand.prototype.list = function list(macAddress) {
 
 };
 
+function manualAsk(cb) {
+	return prompt([{
+
+		type: 'confirm',
+		name: 'manual',
+		message: "We can still proceed in 'manual' mode. Would you like to continue?",
+		default: true
+
+	}], cb);
+}
+
 WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	var self = this;
@@ -121,14 +132,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		console.log(alert, chalk.bold.white('OOPS:'), "I was unable to scan for nearby Wi-Fi networks", chalk.magenta('(-___-)'));
 		console.log();
 
-		return prompt([{
-
-			type: 'confirm',
-			name: 'manual',
-			message: "We can still proceed in 'manual' mode. Would you like to continue?",
-			default: true
-
-		}], manualChoice);
+		return manualAsk(manualChoice);
 	}
 
 	detectedDevices = dat;
@@ -391,19 +395,34 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		}
 
 		self.__claimCode = dat.claim_code;
+		if (!self.__manual && !mgr.supported.connect) {
+			console.log();
+			console.log(alert, 'I am unable to automatically connect to Wi-Fi networks', chalk.magenta('(-___-)'));
+			console.log();
 
-		if(!self.__manual) {
+			return manualAsk(function (ans) {
+				if (ans.manual) {
+					self.__manual = true;
+					return manualConnect();
+				}
+				console.log(arrow, 'Goodbye!');
+			});
+		}
 
+		if (!self.__manual) {
 			self.newSpin('Attempting to connect to ' + photon + '...').start();
 			mgr.connect({ ssid: photon }, connected);
 		}
 		else {
+			manualConnect();
+		}
 
+		function manualConnect() {
 			return prompt([{
 
 				type: 'input',
 				name: 'connect',
-				message: "Please connect to the Photon's Wi-Fi network now. Press enter when ready."
+				message: util.format("Please connect to the %s network now. Press enter when ready.", photon || 'Photon\'s Wi-Fi')
 
 			}], manualReady);
 		}

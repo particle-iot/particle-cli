@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var os = require('os');
 var scan = require('node-wifiscanner2').scan;
 var connect = {
@@ -5,22 +6,27 @@ var connect = {
 };
 
 function WiFiManager(opts) {
-
-	if(opts) {
+	if (opts) {
 		// TODO: something fancy with the interfaces.
 		// Some users will need to be able to customize this.
 	}
+
+	this.platform = os.platform();
+	this.osConnect = connect[this.platform];
+	this.supported = {
+		getCurrentNetwork: !!(this.osConnect && this.osConnect.getCurrentNetwork),
+		connect: !!(this.osConnect && this.osConnect.connect)
+	};
 
 	this.__cache = undefined;
 };
 
 WiFiManager.prototype.getCurrentNetwork = function(cb) {
-	var osConnect = connect[os.platform()];
-	if (!osConnect || !osConnect.getCurrentNetwork) {
+	if (!this.supported.getCurrentNetwork) {
 		// default to nothing
 		return cb();
 	}
-	osConnect.getCurrentNetwork(cb);
+	this.osConnect.getCurrentNetwork(cb);
 };
 
 WiFiManager.prototype.scan = function scan(opts, cb) {
@@ -28,8 +34,8 @@ WiFiManager.prototype.scan = function scan(opts, cb) {
 	var self = this;
 	scan(function results(err, dat) {
 
-		if(err) { return cb(err); }
-		if(dat.length) {
+		if (err) { return cb(err); }
+		if (dat.length) {
 
 			self.__cache = dat;
 			return cb(null, dat);
@@ -43,15 +49,15 @@ WiFiManager.prototype.connect = function(opts, cb) {
 	var self = this;
 	var ap;
 
-	if(!opts) { var opts = { }; }
-	if(!opts.mac && !opts.ssid) {
+	if (!opts) { var opts = { }; }
+	if (!opts.mac && !opts.ssid) {
 
 		cb(new Error('Must specify either ssid or mac of network with which to connect.'));
 	}
 
-	if(opts.mac) {
+	if (opts.mac) {
 
-		if(!(ap = this.__lookupMAC(opts.mac))) { return this.scan(null, recheck); }
+		if (!(ap = this.__lookupMAC(opts.mac))) { return this.scan(null, recheck); }
 		opts.ssid = ap.ssid;
 		return self.__connect(opts, cb);
 	}
@@ -60,8 +66,8 @@ WiFiManager.prototype.connect = function(opts, cb) {
 
 	function recheck(err, dat) {
 
-		if(err) { return cb(new Error('Unknown MAC address and unable to perform a Wi-Fi scan.')); }
-		if(!(ap = self.__lookupMAC(identifier))) {
+		if (err) { return cb(new Error('Unknown MAC address and unable to perform a Wi-Fi scan.')); }
+		if (!(ap = self.__lookupMAC(identifier))) {
 			return cb(new Error('Unable to locate SSID matching provided MAC address.'));
 		}
 		opts.ssid = ap.ssid;
@@ -72,22 +78,14 @@ WiFiManager.prototype.connect = function(opts, cb) {
 
 // actually connect via OS-dependent binary execution
 WiFiManager.prototype.__connect = function(opts, cb) {
-	var platform = os.platform();
-	var osConnect = connect[platform];
-	if (!osConnect || !osConnect.connect) { 
-		return cb(new Error('Unsupported platform. Don\'t know how to automatically connect to Wi-Fi on ' + platform));
+	if (!this.supported.connect) { 
+		return cb(new Error('Unsupported platform. Don\'t know how to automatically connect to Wi-Fi on ' + this.platform));
 	}
-	osConnect.connect(opts, cb);
+	this.osConnect.connect(opts, cb);
 };
 
 WiFiManager.prototype.__lookupMAC = function(mac) {
-
-	this.__cache.forEach(function check(ap) {
-
-		if(ap.mac == mac) { return ap; }
-
-	});
-	return null;
+	return _.find(this.__cache, 'mac', mac);
 };
 
 module.exports = WiFiManager;
