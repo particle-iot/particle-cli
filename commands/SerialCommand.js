@@ -545,6 +545,53 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		//TODO: drop the pre-prompt creds process entirely when we have the built in serial terminal
 	},
 
+	_issueSerialCommand: function(device, command, timeout) {
+		if (!device) {
+			return when.reject('no serial port provided');
+		}
+		var failDelay = timeout || 5000;
+
+		var serialPort;
+		return when.promise(function (resolve, reject) {
+			serialPort = new SerialPort(device.port, {
+				baudrate: 9600,
+				parser: SerialBoredParser.makeParser(250)
+			}, false);
+
+			var failTimer = setTimeout(function () {
+				reject('Serial timed out');
+			}, failDelay);
+
+			serialPort.on('data', function (data) {
+				clearTimeout(failTimer);
+				resolve(data);
+			});
+
+			serialPort.open(function (err) {
+				if (err) {
+					console.error('Serial err: ' + err);
+					console.error('Serial problems, please reconnect the device.');
+					reject('Serial problems, please reconnect the device.');
+					return;
+				}
+
+				serialPort.write(command, function (werr) {
+					if (werr) {
+						reject(err);
+					}
+				});
+			});
+		}).finally(function () {
+			if (serialPort) {
+				serialPort.removeAllListeners('open');
+				serialPort.removeAllListeners('data');
+				if (serialPort.isOpen()) {
+					serialPort.close();
+				}
+			}
+		});
+	},
+
 	getDeviceMacAddress: function (device) {
 		if (!device) {
 			return when.reject('getDeviceMacAddress - no serial port provided');
@@ -553,85 +600,35 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('Unable to get MAC address of a Core');
 		}
 
-		var failDelay = 5000;
-
-		var dfd = when.defer();
-
-		try {
-			//keep listening for data until we haven't received anything for...
-			var serialPort = new SerialPort(device.port, {
-				baudrate: 9600,
-				parser: SerialBoredParser.makeParser(250)
-			}, false);
-			this.serialPort = serialPort;
-
-			var failTimer = setTimeout(function () {
-				dfd.reject('Serial timed out');
-			}, failDelay);
-
-			serialPort.on('data', function (data) {
-				clearTimeout(failTimer);
-				var matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
-				if (matches) {
-					var mac = matches[0].toLowerCase();
-					// manufacturing firmware can sometimes not report the full MAC
-					// lets try and fix it
-					if (mac.length < 17) {
-						var bytes = mac.split(':');
-						while (bytes.length < 6) {
-							bytes.unshift('00');
-						}
-						var usiMacs = [
-							['6c', '0b', '84'],
-							['44', '39', 'c4']
-						];
-						usiMacs.some(function (usimac) {
-							for (var i = usimac.length - 1; i >= 0; i--) {
-								if (bytes[i] === usimac[i]) {
-									mac = usimac.concat(bytes.slice(usimac.length)).join(':');
-									return true;
-								}
-							}
-						});
+		return this._issueSerialCommand(device, 'm').then(function (data) {
+			var matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
+			matches = false;
+			if (matches) {
+				var mac = matches[0].toLowerCase();
+				// manufacturing firmware can sometimes not report the full MAC
+				// lets try and fix it
+				if (mac.length < 17) {
+					var bytes = mac.split(':');
+					while (bytes.length < 6) {
+						bytes.unshift('00');
 					}
-					dfd.resolve(mac);
-				} else {
-					dfd.reject('Unable to find mac address in response');
-				}
-			});
-
-			serialPort.open(function (err) {
-				if (err) {
-					console.error('Serial err: ' + err);
-					console.error('Serial problems, please reconnect the device.');
-					dfd.reject('Serial problems, please reconnect the device.');
-				}
-				else {
-					//serialPort.flush();
-					serialPort.write('m', function (werr) {
-						if (werr) {
-							console.error('Serial err: ' + werr);
-							dfd.reject('Serial problems, please reconnect the device.');
+					var usiMacs = [
+						['6c', '0b', '84'],
+						['44', '39', 'c4']
+					];
+					usiMacs.some(function (usimac) {
+						for (var i = usimac.length - 1; i >= 0; i--) {
+							if (bytes[i] === usimac[i]) {
+								mac = usimac.concat(bytes.slice(usimac.length)).join(':');
+								return true;
+							}
 						}
 					});
 				}
-			});
-
-			dfd.promise.ensure(function () {
-				serialPort.removeAllListeners('open');
-				serialPort.removeAllListeners('data');
-				if (serialPort.isOpen()) {
-					serialPort.close();
-				}
-			});
-		}
-		catch (ex) {
-			console.error('Errors while trying to get device mac address -- disconnect and reconnect device');
-			console.error(ex);
-			dfd.reject('Serial errors');
-		}
-
-		return dfd.promise;
+				return mac;
+			}
+			throw new Error('Unable to find mac address in response');
+		});
 	},
 
 	askForDeviceID: function (device) {
@@ -639,59 +636,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('askForDeviceID - no serial port provided');
 		}
 
-		var failDelay = 5000;
-
-		var dfd = when.defer();
-
-		try {
-			//keep listening for data until we haven't received anything for...
-			var serialPort = new SerialPort(device.port, {
-				baudrate: 9600,
-				parser: SerialBoredParser.makeParser(250)
-			}, false);
-			this.serialPort = serialPort;
-
-			var failTimer = setTimeout(function () {
-				dfd.reject('Serial timed out');
-			}, failDelay);
-
-			serialPort.on('data', function (data) {
-				clearTimeout(failTimer);
-				var matches = data.match(/Your (core|device) id is\s+(\w+)/);
-				if (matches && matches.length === 3) {
-					dfd.resolve(matches[2]);
-				}
-			});
-
-			serialPort.open(function (err) {
-				if (err) {
-					console.error('Serial err: ' + err);
-					console.error('Serial problems, please reconnect the device.');
-					dfd.reject('Serial problems, please reconnect the device.');
-				}
-				else {
-					serialPort.write('i', function (werr) {
-						if (werr) {
-							console.error('Serial err: ' + werr);
-							dfd.reject('Serial problems, please reconnect the device.');
-						}
-					});
-				}
-			});
-
-			dfd.promise.ensure(function () {
-				serialPort.removeAllListeners('open');
-				serialPort.removeAllListeners('data');
-				serialPort.close();
-			});
-		}
-		catch (ex) {
-			console.error('Errors while trying to get deviceID -- disconnect and reconnect device');
-			console.error(ex);
-			dfd.reject('Serial errors');
-		}
-
-		return dfd.promise;
+		return this._issueSerialCommand(device, 'i').then(function (data) {
+			var matches = data.match(/Your (core|device) id is\s+(\w+)/);
+			if (matches && matches.length === 3) {
+				return matches[2];
+			}
+		});
 	},
 
 	_parsePort: function(devices, comPort) {
