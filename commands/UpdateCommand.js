@@ -36,6 +36,7 @@ var prompt = inquirer.prompt;
 var exec = require('child_process').exec;
 var dfu = require('../lib/dfu');
 var when = require('when');
+var whenNode = require('when/node');
 var specs = require('../lib/deviceSpecs/specifications');
 var spinner = require('cli-spinner').Spinner;
 var sequence = require('when/sequence');
@@ -62,194 +63,88 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	updateDevice: function updateDevice() {
+		// by default we don't want crazy DFU output
+		settings.verboseOutput = false;
 
 		var self = this;
-
-		detectDevice(function deviceDetected(err, devices) {
-
-			if(err) { return dfuError(err); }
-			if(!devices.length) { return dfuMode(); }
-
-			var choices = devices.map(function getProduct(id) {
-				if(specs[id]) { return specs[id].productName; }
-			});
-
-			if(!choices.length) { return dfuMode(); }
-
-			selectDevice(choices, doUpdate);
-
+		dfu.findCompatibleDFU().then(function (deviceId) {
+			doUpdate(deviceId);
+		}).catch(function (err) {
+			return dfuError(err);
 		});
-		function detectDevice(cb) {
 
-			var cmd = dfu.getCommand();
-			exec(cmd + ' -l', dfuListResults);
-			function dfuListResults(err, stdout, stderr) {
-
-				var seen = { };
-
-				if(err) { return cb(err); }
-
-				return cb(null, stdout.split('\n').filter(function(line) {
-						if(line.indexOf('Found DFU') >= 0) { return true; }
-					}).map(function(device) {
-						return device.match(/\[(.*:.*)\]/)[1];
-					}).filter(function(id) {
-						if(!seen[id]) { return seen[id] = true; }
-						return false;
-					})
+		function doUpdate(id) {
+			var updates = settings.updates[id] || null;
+			var steps = [ ];
+			var first = true;
+			var i = 0;
+			if (!updates) {
+				console.log();
+				return console.log(
+					chalk.cyan('!'),
+					'There are currently no system firmware updates available for this device.'
 				);
-
-			};
-		};
-
-		function selectDevice(choices) {
-
-			if(choices.length == 1) { return doUpdate(choices[0]); }
-			prompt([{
-
-				type: 'list',
-				name: 'device',
-				message: 'Which device would you like to select for updates?',
-				choices: choices
-
-			}], function (chosen) { doUpdate(chosen.device); });
-		};
-
-		function doUpdate(device) {
-
-			Object.keys(specs).forEach(function (id) {
-				specs[id].productName && specs[id].productName == device && start(id);
-			});
-			function start(id) {
-
-				var updates = settings.updates[id] || null;
-				var steps = [ ];
-				var first = true;
-				var i = 0;
-				if(!updates) {
-					console.log();
-					return console.log(
-						chalk.cyan('!'),
-						"There are currently no system firmware updates available for this device."
-					);
-				}
-				Object.keys(updates).forEach(function (part) {
-					var leave = !first;
-					steps.push(function (cb) {
-
-						var binary = path.resolve(__dirname, '..', 'updates', updates[part]);
-						dfu.checkBinaryAlignment('-D ' + binary);
-						dfuWrite(id, part, binary, leave, cb);
-
-					});
-					first = false;
+			}
+			Object.keys(updates).forEach(function (part) {
+				var leave = !first;
+				steps.push(function (cb) {
+					var binary = path.resolve(__dirname, '..', 'updates', updates[part]);
+					whenNode.bindCallback(
+						dfu.writeSystemFirmware(part, binary, leave)
+						.then(null, function (err) {
+							// don't reject for get_status error
+							if (err.indexOf('get_status') > 0) {
+								return '';
+							}
+						})
+						.delay(2000)
+					, cb);
 				});
+				first = false;
+			});
 
-				console.log();
-				console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
-				console.log(chalk.cyan('>'), 'This process should take about 30 seconds. Here goes!');
-				console.log();
+			console.log();
+			console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
+			console.log(chalk.cyan('>'), 'This process should take about 30 seconds. Here goes!');
+			console.log();
 
+			if (!settings.verboseOutput) {
 				spin.start();
+			}
 
-				flash();
-				function flash(err, dat) {
-					if(err) { return failure(err); }
-					if(steps.length > 0) { return steps.shift()(flash); }
-					success();
-				};
+			flash();
+			function flash(err, dat) {
+				if (err) { return failure(err); }
+				if (steps.length > 0) { return steps.shift()(flash); }
+				success();
+			};
 
-				function success() {
-					spin.stop(true);
-					console.log(chalk.cyan('!'), "System firmware update successfully completed!");
-					console.log();
-					console.log(chalk.cyan('>'), "Your device should now restart automatically.");
-					console.log(chalk.cyan('>'), "You may need to re-flash your application to the device.");
-					console.log();
-				};
+			function success() {
+				spin.stop(true);
+				console.log(chalk.cyan('!'), "System firmware update successfully completed!");
+				console.log();
+				console.log(chalk.cyan('>'), "Your device should now restart automatically.");
+				console.log(chalk.cyan('>'), "You may need to re-flash your application to the device.");
+				console.log();
+			};
 
-				function failure(err) {
-					console.log();
-					console.log(chalk.red('!'), "An error occurred while attempting to update the system firmware of your device:");
-					console.log();
-					console.log(chalk.bold.white(err.toString()));
-					console.log();
-					console.log(chalk.cyan('>'), "Please visit our community forums for help with this error:");
-					console.log(chalk.bold.white('https://community.particle.io/'))
-				};
+			function failure(err) {
+				spin.stop(true);
+				console.log();
+				console.log(chalk.red('!'), "An error occurred while attempting to update the system firmware of your device:");
+				console.log();
+				console.log(chalk.bold.white(err.toString()));
+				console.log();
+				console.log(chalk.cyan('>'), "Please visit our community forums for help with this error:");
+				console.log(chalk.bold.white('https://community.particle.io/'))
 			};
 		};
-	},
-	_: null
+	}
 });
 
-
-function dfuWrite(id, part, binary, leave, cb) {
-
-	// function exec(cmd, cb) {
-	// 	console.log("Executing", cmd);
-	// 	cb(null, '', '');
-	// }
-	var leaveStr = (leave) ? ":leave" : "";
-	var args = [
-		"-d", id,
-		"-a", specs[id][part].alt,
-		"-i", "0",
-		"-s", specs[id][part].address + leaveStr,
-		"-D", binary
-	];
-	exec(dfu.getCommand() + ' ' + args.join(' '), function(err, stdout, stderr) {
-
-		if(err && err.toString().indexOf('get_status') < 0) {
-			console.log(chalk.red('!'), "An error occurred while attempting to flash system firmware:");
-			console.log();
-			console.log(err);
-			return process.exit(1);
-		}
-		setTimeout(function() {
-			cb(null, stdout);
-		}, 2000);
-	});
-};
-
-function dfuMode() {
-
-	console.log();
-	console.log(chalk.red('!!!'), 'I was unable to detect any devices in DFU mode...');
-	console.log();
-	console.log(chalk.cyan('>'), 'Your device will blink yellow when in DFU mode.');
-	console.log(chalk.cyan('>'), 'If your device is not blinking yellow, please:');
-	console.log();
-	console.log(
-		chalk.bold.white('1)'),
-		"Press and hold both the",
-		chalk.bold.cyan("RESET/RST"),
-		"and",
-		chalk.bold.cyan("MODE/SETUP"),
-		"buttons simultaneously."
-	);
-	console.log();
-	console.log(
-		chalk.bold.white('2)'),
-		"Release only the",
-		chalk.bold.cyan("RESET/RST"),
-		"button while continuing to hold the",
-		chalk.bold.cyan("MODE/SETUP"),
-		"button."
-	);
-	console.log();
-	console.log(
-		chalk.bold.white('3)'),
-		"Release the",
-		chalk.bold.cyan("MODE/SETUP"),
-		"button once the device begins to blink yellow."
-	);
-	console.log();
-};
-
 function dfuError(err) {
-
-	if(err.code == 127) { dfuInstall(true); }
+	if (err === 'No DFU device found') {}
+	else if (err.code == 127) { dfuInstall(true); }
 	else {
 		dfuInstall(false);
 		console.log(

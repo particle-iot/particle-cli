@@ -24,7 +24,7 @@ dfu.writeFirmware = function() { return true; }
 function fs() { this.willExist = true; };
 fs.existsSync = function() { return this.willExist; }
 
-describe('Setup Command', function() {
+describe('Flash Command', function() {
 
 	var cli;
 	var flash;

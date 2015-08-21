@@ -30,7 +30,6 @@ var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
 var chalk = require('chalk');
-var utilities = require('./lib/utilities.js');
 var specs = require('./lib/deviceSpecs');
 
 var settings = {
@@ -41,6 +40,8 @@ var settings = {
 	minimumApiDelay: 500,
 	//useOpenSSL: true,
 	useSudoForDfu: false,
+	// TODO set to false once we give flags to control this
+	verboseOutput: true,
 
 	//2 megs -- this constant here is arbitrary
 	MAX_FILE_SIZE: 1024 * 1024 * 2,
@@ -169,6 +170,22 @@ settings.switchProfile = function(profileName) {
 	fs.writeFileSync(proFile, JSON.stringify(data, null, 2), { mode: '600' });
 };
 
+// this is here instead of utilities to prevent a require-loop
+// when files that utilties requires need settings
+function matchKey(needle, obj, caseInsensitive) {
+	needle = (caseInsensitive) ? needle.toLowerCase() : needle;
+	for (var key in obj) {
+		var keyCopy = (caseInsensitive) ? key.toLowerCase() : key;
+
+		if (keyCopy == needle) {
+			//return the original
+			return key;
+		}
+	}
+
+	return null;
+};
+
 settings.override = function (profile, key, value) {
 	if (!settings.overrides) {
 		settings.overrides = {};
@@ -176,7 +193,7 @@ settings.override = function (profile, key, value) {
 
 	if (!settings[key]) {
 		// find any key that matches our key, regardless of case
-		var realKey = utilities.matchKey(key, settings, true);
+		var realKey = matchKey(key, settings, true);
 		if (realKey) {
 			//console.log("Using the setting \"" + realKey + "\" instead ");
 			key = realKey;
