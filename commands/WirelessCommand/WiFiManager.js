@@ -14,6 +14,15 @@ function WiFiManager(opts) {
 	this.__cache = undefined;
 };
 
+WiFiManager.prototype.getCurrentNetwork = function(cb) {
+	var osConnect = connect[os.platform()];
+	if (!osConnect || !osConnect.getCurrentNetwork) {
+		// default to nothing
+		return cb();
+	}
+	osConnect.getCurrentNetwork(cb);
+};
+
 WiFiManager.prototype.scan = function scan(opts, cb) {
 
 	var self = this;
@@ -63,14 +72,12 @@ WiFiManager.prototype.connect = function(opts, cb) {
 
 // actually connect via OS-dependent binary execution
 WiFiManager.prototype.__connect = function(opts, cb) {
-
 	var platform = os.platform();
-
-	if(!connect[platform]) {
-
-		return cb(new Error('Unsupported platform. Don\'t know how to scan Wi-Fi on ' + platform));
+	var osConnect = connect[platform];
+	if (!osConnect || !osConnect.connect) { 
+		return cb(new Error('Unsupported platform. Don\'t know how to automatically connect to Wi-Fi on ' + platform));
 	}
-	connect[platform](opts, cb);
+	osConnect.connect(opts, cb);
 };
 
 WiFiManager.prototype.__lookupMAC = function(mac) {

@@ -1,11 +1,10 @@
 var exec = require('child_process').exec;
-function darwin(opts, cb) {
 
+function getFirstWifiPort(cb) {
 	exec('networksetup -listnetworkserviceorder', function (err, stdout, stderr) {
 		if (err || stderr) {
 			return cb(err || stderr);
 		}
-
 		var device;
 		var useNextDevice = false;
 		var lines = stdout.split('\n');
@@ -31,6 +30,43 @@ function darwin(opts, cb) {
 			}
 		}
 
+		return cb(null, device);
+	});
+}
+
+function getCurrentNetwork(cb) {
+	getFirstWifiPort(function (err, device) {
+		if (err) {
+			return cb(err);
+		}
+
+		if (!device) {
+			return cb(new Error('Unable to find a Wi-Fi network interface'));
+		}
+
+		exec('networksetup -getairportnetwork ' + device, function (err, stdout, stderr) {
+			if (err || stderr) {
+				return cb(err || stderr);
+			}
+
+			var lines = stdout.split('\n');
+			var currentString = 'Current Wi-Fi Network: ';
+			if (lines.length && lines[0].indexOf(currentString) === 0) {
+				var network = lines[0].slice(currentString.length).trim();
+				return cb(null, network);
+			}
+
+			return cb();
+		});
+	});
+}
+
+function connect(opts, cb) {
+	getFirstWifiPort(function (err, device) {
+		if (err) {
+			return cb(err);
+		}
+
 		if (!device) {
 			return cb(new Error('Unable to find a Wi-Fi network interface'));
 		}
@@ -49,4 +85,7 @@ function darwin(opts, cb) {
 	});
 };
 
-module.exports = darwin;
+module.exports = {
+	connect: connect,
+	getCurrentNetwork: getCurrentNetwork
+};

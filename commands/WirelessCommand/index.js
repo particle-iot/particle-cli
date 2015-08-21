@@ -337,9 +337,37 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	protip('You can press ctrl + C to quit setup at any time.');
 	console.log();
 
-	this.newSpin('Obtaining magical secure claim code from the cloud...').start();
+	mgr.getCurrentNetwork(function (err, network) {
+		if (err || !network) {
+			return getClaim();
+		}
 
-	var sock = api.getClaimCode(next);
+		if (network.indexOf('Photon-') === 0) {
+			console.log(
+				chalk.bold.red('!'),
+				chalk.bold.white('You are still connected to your Photon\'s Wi-Fi network. Please reconnect to a Wi-Fi network with internet access.')
+			);
+			console.log();
+			prompt([{
+				type: 'confirm',
+				message: 'Have you reconnected to the internet?',
+				default: true,
+				name: 'reconnected'
+			}], function (ans) {
+				if (ans.reconnected) {
+					return getClaim();
+				}
+				console.log(arrow, 'Goodbye!');
+			});
+			return;
+		}
+		return getClaim();
+	});
+
+	function getClaim() {
+		self.newSpin('Obtaining magical secure claim code from the cloud...').start();
+		api.getClaimCode(next);
+	}
 	function next(err, dat) {
 
 		self.stopSpin();
