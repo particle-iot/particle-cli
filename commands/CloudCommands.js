@@ -162,6 +162,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
+		if (arguments.length > 2) {
+			console.error('Device names cannot contain spaces');
+			return;
+		}
+
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			return;
