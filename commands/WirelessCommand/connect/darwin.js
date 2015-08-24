@@ -1,7 +1,30 @@
-var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
+
+function runCommand(cmd, args, cb) {
+	var argArray = args.split(' ');
+
+	var s = spawn(cmd, argArray, {
+		stdio: ['ignore', 'pipe', 'pipe']
+	});
+
+	var stdout = '';
+	s.stdout.on('data', function (data) {
+		stdout += data;
+	});
+
+	var stderr = '';
+	s.stderr.on('data', function (data) {
+		stderr += data;
+	});
+
+	s.on('close', function (code) {
+		cb(code, stdout, stderr);
+	});
+}
+
 
 function getFirstWifiPort(cb) {
-	exec('networksetup -listnetworkserviceorder', function (err, stdout, stderr) {
+	runCommand('networksetup', '-listnetworkserviceorder', function (err, stdout, stderr) {
 		if (err || stderr) {
 			return cb(err || stderr);
 		}
@@ -44,7 +67,7 @@ function getCurrentNetwork(cb) {
 			return cb(new Error('Unable to find a Wi-Fi network interface'));
 		}
 
-		exec('networksetup -getairportnetwork ' + device, function (err, stdout, stderr) {
+		runCommand('networksetup', '-getairportnetwork ' + device, function (err, stdout, stderr) {
 			if (err || stderr) {
 				return cb(err || stderr);
 			}
@@ -71,11 +94,11 @@ function connect(opts, cb) {
 			return cb(new Error('Unable to find a Wi-Fi network interface'));
 		}
 
-		var params = 'networksetup -setairportnetwork ' + device + ' ' + opts.ssid;
+		var params = '-setairportnetwork ' + device + ' ' + opts.ssid;
 		if (opts.password) { params += ' ' + opts.password; }
 
 		// TODO: something with opts & interfaces?
-		exec(params, function results(err, stdout, stderr) {
+		runCommand('networksetup', params, function results(err, stdout, stderr) {
 			if (err || stderr) {
 				// TODO: more research into failure modes of this command
 				return cb(err || stderr);
