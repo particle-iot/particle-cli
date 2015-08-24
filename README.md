@@ -9,7 +9,7 @@ The Particle CLI is a powerful tool for interacting with your devices and the Pa
 
 Known Issues
 ========
-* The Wireless Photon Setup Wizard is currently only available for OS X. Users of other operating systems will need to manually connect their computer to the Photon's Wi-Fi.
+* The Wireless Photon Setup Wizard will only automatically switch networks on OS X. Users of other operating systems will need to manually connect their computer to the Photon's Wi-Fi. You will be prompted during the wizard when this is required.
 
 Installing
 =======
