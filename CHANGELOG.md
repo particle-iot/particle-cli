@@ -1,5 +1,7 @@
 changelog
 =========
+08/23/2015 - 1.6.5 - Fix variable monitor. Warn if connected to Photon AP when starting setup. Fail if device name contains spaces. Add support for manual mode when scanning but not connecting works. Ask for device name when setting up a photon. Use child_process.spawn to avoid password prompts on OS X.
+
 08/20/2015 - 1.6.4 - Update system firmware to 0.4.4
 
 08/18/2015 - 1.6.3 - Fix verbose DFU output. Fix config value deletion. Handle network scan security type missing. Handle trailing slashes in api url. Select first Wi-Fi port instead of hard-coded (OS X). Check for correct error from API when a token is invalid
