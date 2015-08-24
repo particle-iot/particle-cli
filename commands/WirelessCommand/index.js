@@ -27,9 +27,11 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var util = require('util');
 var exec = require('child_process').exec
 var extend = require('xtend');
+var _ = require('lodash');
 var WiFiManager = require('./WiFiManager');
 var BaseCommand = require("../BaseCommand.js");
 var utilities = require('../../lib/utilities.js');
+var OldApiClient = require('../../lib/ApiClient.js');
 var APIClient = require('../../lib/ApiClient2');
 var settings = require('../../settings.js');
 var inquirer = require('inquirer');
@@ -60,6 +62,7 @@ var WirelessCommand = function (cli, options) {
 	this.__manual = false;
 	this.__completed = 0;
 	this.__apiClient = new APIClient(settings.apiUrl, settings.access_token);
+	this.__oldapi = new OldApiClient(settings.apiUrl, settings.access_token);
 	this.init();
 };
 
@@ -801,17 +804,17 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			self.exit();
 		}
 
-		dat.forEach(function (device) {
-
-			if((device.id.toUpperCase() == self.__deviceID.toUpperCase()) && device.connected == true) {
-
-				console.log(arrow, 'It looks like your Photon has made it happily to the cloud!');
-				console.log(arrow, "Congratulations! You've just won the internet!")
-				console.log();
-				updateWarning();
-				self.exit();
-			}
+		var onlinePhoton = _.find(dat, function (device) {
+			return (device.id.toUpperCase() == self.__deviceID.toUpperCase()) && device.connected == true;
 		});
+
+		if (onlinePhoton) {
+			console.log(arrow, 'It looks like your Photon has made it happily to the cloud!');
+			console.log();
+			updateWarning();
+			namePhoton(onlinePhoton.id);
+			return;
+		}
 
 		console.log(alert, "It doesn't look like your Photon has made it to the cloud yet.");
 		console.log();
@@ -838,6 +841,27 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			}
 		}
 	};
+	function namePhoton(deviceId) {
+		prompt([
+			{
+				type: 'input',
+				name: 'deviceName',
+				message: 'What would you like to call your photon?'
+			}
+		], function(ans) {
+			deviceName = ans.deviceName;
+			self.__oldapi.renameCore(deviceId, deviceName).then(function () {
+				console.log();
+				console.log(arrow, "Your Photon has been bestowed with the name", chalk.bold.cyan(deviceName));
+				console.log(arrow, "Congratulations! You've just won the internet!");
+				console.log();
+				self.exit();
+			}, function(err) {
+				console.error(alert, 'Error naming your photon: ', err);
+				namePhoton(deviceId);
+			});
+		});
+	}
 };
 
 WirelessCommand.prototype.exit = function() {
