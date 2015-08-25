@@ -207,7 +207,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					message: 'Which type of device?',
 					choices: [
 						'Photon',
-						'Core'
+						'Core',
+						'P1'
 					]
 				}], function(ans) {
 

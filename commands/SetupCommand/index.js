@@ -332,19 +332,19 @@ SetupCommand.prototype.findDevice = function() {
 	function inspect(device) {
 
 		// TODO: Update deviceSpecs to include DFU & non-DFU PIDs, use here
-		if(device.type === 'Spark Core') {
+		if (device.type === 'Core') {
 
-			detectedPrompt('Spark Core', function setupCoreChoice(ans) {
+			detectedPrompt('Core', function setupCoreChoice(ans) {
 
 				if(ans.setup) {
 					return self.setupCore(device);
 				}
 				console.log(arrow, 'Goodbye!');
 			});
-		} else if(device.type === 'Photon') {
+		} else if (device.type === 'Photon' || device.type === 'P1') {
 
 			// Photon detected
-			detectedPrompt('Photon', function setupPhotonChoice(ans) {
+			detectedPrompt(device.type, function setupPhotonChoice(ans) {
 
 				if(ans.setup) {
 
