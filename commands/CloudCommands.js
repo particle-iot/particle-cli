@@ -321,6 +321,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			case "core":
 			case "c":
 				deviceType = "core";
+				platform_id = 0;
+				break;
+
+			case "p1":
+				deviceType = "p1";
+				platform_id = 8;
 				break;
 
 			default:
