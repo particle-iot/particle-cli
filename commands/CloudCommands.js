@@ -703,6 +703,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						case 6:
 							deviceType = ' (Photon)';
 							break;
+						case 8:
+							deviceType = ' (P1)';
+							break;
 					}
 
 					if(!device.name || device.name == "null") { name = '<no name>'; }
