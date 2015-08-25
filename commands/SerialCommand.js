@@ -27,6 +27,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 var util = require('util');
+var _ = require('lodash');
 
 var when = require('when');
 var extend = require('xtend');
@@ -36,6 +37,7 @@ var SerialPort = SerialPortLib.SerialPort;
 var inquirer = require('inquirer');
 var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
+var specs = require('../lib/deviceSpecs');
 
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');
@@ -79,20 +81,26 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				// Devices on old driver - Spark Core, Photon
 				// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
 				// Windows only contains the pnpId field
-				var matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
-				var usbMatchesPhoton = (port.vendorId === '0x2b04' && port.productId === '0xc006') || (port.pnpId && port.pnpId.indexOf('VID_2B04') >= 0 && port.pnpId.indexOf('PID_C006') >= 0);
-				var usbMatchesCore = (port.vendorId === '0x1d50' && port.productId === '0x607d') || (port.pnpId && port.pnpId.indexOf('VID_1D50') >= 0 && port.pnpId.indexOf('PID_607D') >= 0);
+				
+				var device = _.find(Object.keys(specs), function (vidpid) {
+					var parts = vidpid.split(':');
+					var vid = parts[0];
+					var pid = parts[1];
 
-				var device;
-				if (matchesManufacturer) {
-					device = { port: port.comName, type: 'Spark Core' };
-					if (usbMatchesPhoton) {
-						device.type = 'Photon';
+					var usbMatches = (port.vendorId === '0x' + vid.toLowerCase() && port.productId === '0x' + pid.toLowerCase());
+					var pnpMatches = (port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
+
+					if (usbMatches || pnpMatches) {
+						return {
+							port: port.comName,
+							type: specs[vidpid].productName
+						};
 					}
-				} else if (usbMatchesPhoton) {
-					device = { port: port.comName, type: 'Photon' };
-				} else if (usbMatchesCore) {
-					device = { port: port.comName, type: 'Spark Core' };
+				});
+
+				var matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
+				if (!device && matchesManufacturer) {
+					device = { port: port.comName, type: 'Core' };
 				}
 
 				if (device) {
@@ -517,10 +525,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					return that.serialPromptDfd(serialPort, passPrompt, password + '\n', 5000);
 				},
 				function () {
-					if (device.type === 'Photon') {
-						return that.serialPromptDfd(serialPort, '\n', null, 15000);
+					if (device.type === 'Core' || device.type === '') {
+						return that.serialPromptDfd(serialPort, 'Spark <3 you!', null, 15000);
 					}
-					return that.serialPromptDfd(serialPort, 'Spark <3 you!', null, 15000);
+					return that.serialPromptDfd(serialPort, '\n', null, 15000);
 				}
 			]);
 			utilities.pipeDeferred(configDone, wifiDone);
@@ -596,7 +604,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		if (!device) {
 			return when.reject('getDeviceMacAddress - no serial port provided');
 		}
-		if (device.type === 'Spark Core') {
+		if (device.type === 'Core') {
 			return when.reject('Unable to get MAC address of a Core');
 		}
 
@@ -713,9 +721,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				callback(answers.port);
 			});
 		});
-	},
-
-	_: null
+	}
 });
 
 module.exports = SerialCommand;
