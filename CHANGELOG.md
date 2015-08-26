@@ -1,5 +1,11 @@
 changelog
 =========
+08/26/2015 - 1.6.9 - Re-add fixed P1 serial support. Fix device MAC address detection.
+
+08/25/2015 - 1.6.8 - Revert serial changes
+
+08/25/2015 - 1.6.7 - Add serial support for P1
+
 08/25/2015 - 1.6.6 - Add support for P1 cloud compiling from CLI
 
 08/23/2015 - 1.6.5 - Fix variable monitor. Warn if connected to Photon AP when starting setup. Fail if device name contains spaces. Add support for manual mode when scanning but not connecting works. Ask for device name when setting up a photon. Use child_process.spawn to avoid password prompts on OS X.
