@@ -82,21 +82,28 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
 				// Windows only contains the pnpId field
 				
-				var device = _.find(Object.keys(specs), function (vidpid) {
-					var parts = vidpid.split(':');
-					var vid = parts[0];
-					var pid = parts[1];
+				var device;
+				var serialDeviceSpec = _.find(specs, function (deviceSpec) {
+					if (!deviceSpec.serial) {
+						return false;
+					}
+					var vid = deviceSpec.serial.vid;
+					var pid = deviceSpec.serial.pid;
 
 					var usbMatches = (port.vendorId === '0x' + vid.toLowerCase() && port.productId === '0x' + pid.toLowerCase());
-					var pnpMatches = (port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
+					var pnpMatches = !!(port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
 
 					if (usbMatches || pnpMatches) {
-						return {
-							port: port.comName,
-							type: specs[vidpid].productName
-						};
+						return true;
 					}
+					return false;
 				});
+				if (serialDeviceSpec) {
+					device = {
+						port: port.comName,
+						type: serialDeviceSpec.productName
+					};
+				}
 
 				var matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
 				if (!device && matchesManufacturer) {
