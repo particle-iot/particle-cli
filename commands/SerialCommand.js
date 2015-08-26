@@ -617,7 +617,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		return this._issueSerialCommand(device, 'm').then(function (data) {
 			var matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
-			matches = false;
 			if (matches) {
 				var mac = matches[0].toLowerCase();
 				// manufacturing firmware can sometimes not report the full MAC
