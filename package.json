@@ -19,6 +19,7 @@
     "chalk": "^1.0.0",
     "cli-spinner": "^0.2.1",
     "cli-table": "^0.3.1",
+    "fast-luhn": "^1.0.2",
     "glob": "^4.2.1",
     "hogan.js": "^2.0.0",
     "inquirer": "^0.8.2",

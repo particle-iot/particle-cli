@@ -2,6 +2,8 @@
 
 var chalk = require('chalk');
 var prompt = require('inquirer').prompt;
+var luhn = require('fast-luhn');
+var _ = require('lodash');
 var ApiClient2 = require('../../lib/ApiClient2');
 
 var settings = require('../../settings.js');
@@ -67,7 +69,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 	this.checkArguments(arguments);
 
-	if(shortcut === 'wifi') {
+	if (shortcut === 'wifi') {
 		return serial.configureWifi();
 	}
 
@@ -121,6 +123,8 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 	function accountStatus(alreadyLoggedIn) {
 
+		var nextFn = (shortcut === 'electron') ? self.setupElectron.bind(self) : self.findDevice.bind(self);
+
 		if (!alreadyLoggedIn) {
 			// New user or a fresh environment!
 			if (!self.__wasLoggedIn) {
@@ -136,19 +140,19 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 					}
 				], function(answers) {
 					if (answers.login) {
-						return self.login(self.findDevice.bind(self));
+						return self.login(nextFn);
 					}
-					return self.signup(self.findDevice.bind(self));
+					return self.signup(nextFn);
 				});
 
 				return;
 			}
 
 			// Not-new user!
-			return self.login(self.findDevice.bind(self));
+			return self.login(nextFn);
 		}
 
-		self.findDevice.call(self);
+		nextFn();
 	}
 };
 
@@ -371,6 +375,13 @@ SetupCommand.prototype.findDevice = function() {
 				}
 				console.log(arrow, 'Goodbye!');
 			});
+		} else if (device.type === 'Electron') {
+			detectedPrompt(device.type, function setupElectronChoice(ans) {
+				if (ans.setup) {
+					return self.setupElectron(device);
+				}
+				console.log(arrow, 'Goodbye!');
+			});
 		}
 	}
 
@@ -505,6 +516,152 @@ SetupCommand.prototype.setupCore = function(device) {
 	});
 };
 
+SetupCommand.prototype.setupElectron = function(device) {
+	var self = this;
+	var serial = this.cli.getCommandModule('serial');
+
+	// TODO get IMEI over serial if possible
+
+	console.log();
+	protip('The SIM card number (ICCID) is located on the back of the actual SIM card');
+	protip('It is also located on the larger containing card as a barcode');
+	protip('If you cannot read the number, leave the value blank');
+	console.log();
+
+	prompt([
+		{
+			type: 'input',
+			name: 'iccid',
+			message: 'Please enter the SIM card number (ICCID):',
+			validate: function(val) {
+				// allow blank
+				if (val && !luhn(val)) {
+					return 'This is not a valid SIM card number. Please check the number and try again';
+				}
+				return true;
+			}
+		},
+		{
+			type: 'input',
+			name: 'imei',
+			message: 'Please enter the IMEI number located on the top of the uBlox cellular module:',
+			when: function(answers) {
+				return !answers.iccid;
+			},
+			validate: function(val) {
+				if (!luhn(val)) {
+					return 'This is not a valid IMEI number. Please check the number and try again';
+				}
+				return true;
+			}
+		}
+	], function(answers) {
+		// TODO check if ICCID is a Particle SIM
+
+		self.newSpin('Obtaining magical secure claim code from the cloud...').start();
+		self.__api.getClaimCode(answers, function (err) {
+			self.stopSpin();
+			if (err) {
+				console.error(err);
+				if (err.code == 'ENOTFOUND') { 
+					protip('Your computer couldn\'t find the cloud...');
+				} else {
+					protip('There was a network error while connecting to the cloud...');
+				}
+				protip('We need an active internet connection to successfully complete setup.');
+				protip('Are you currently connected to the internet? Please double-check and try again.');
+				return;
+			}
+
+			console.log();
+			console.log(arrow, 'Please insert your SIM card into the Electron and ' + chalk.bold.cyan('RESET') + ' it.');
+			console.log();
+
+			prompt([{
+				type: 'input',
+				name: 'inserted',
+				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your Electron is breathing ' + chalk.cyan('cyan'),
+			}], function() {
+				checkIfElectronIsOnline();
+			});
+		});
+
+		function checkIfElectronIsOnline() {
+			self.stopSpin();
+			self.newSpin("Attempting to verify the Electron's connection to the cloud...").start();
+			self.__api.listDevices(findElectron);
+		}
+		function findElectron(err, devices) {
+			self.stopSpin();
+			if (err) {
+				if (err.code == 'ENOTFOUND') {
+					console.log(alert, 'Network not ready yet, retrying...');
+					console.log();
+					return checkIfElectronIsOnline();
+				}
+				console.log(alert, 'Unable to verify your Electron\'s connection.');
+				console.log(alert, "Please make sure you're connected to the internet.");
+				console.log(alert, 'Then try', chalk.bold.cyan(cmd + ' list'), 'to verify it\'s connected.');
+			}
+
+			var electron;
+			if (answers.iccid) {
+				electron = _.find(devices, {last_iccid: answers.iccid});
+			} else if (answers.imei) {
+				electron = _.find(devices, {imei: answers.imei});
+			}
+
+			if (electron) {
+				console.log(arrow, 'It looks like your Electron has made it happily to the cloud!');
+				console.log();
+
+				return nameElectron(electron.id);
+			}
+
+			console.log(alert, "It doesn't look like your Electron has made it to the cloud yet.");
+			console.log();
+			prompt([{
+				type: 'list',
+				name: 'recheck',
+				message: 'What would you like to do?',
+				choices: [
+					{ name: 'Check again to see if the Electron has connected', value: 'recheck' },
+					{ name: 'Exit Setup', value: 'exit' }
+				]
+			}], function (ans) {
+				if (ans.recheck === 'recheck') {
+					checkIfElectronIsOnline();
+				} else {
+					self.exit(0);
+				}
+			});
+		}
+		var deviceName;
+		function nameElectron(deviceId) {
+			prompt([
+				{
+					type: 'input',
+					name: 'deviceName',
+					message: 'What would you like to call your Electron?',
+					default: deviceName
+				}
+			], function(ans) {
+				deviceName = ans.deviceName;
+				self.__oldapi.renameCore(deviceId, deviceName).then(function () {
+					console.log();
+					console.log(arrow, 'Your Electron has been bestowed with the name', chalk.bold.cyan(deviceName));
+					console.log(arrow, "Congratulations! You've just won the internet!");
+					console.log();
+					self.exit();
+				}, function(err) {
+					console.error(alert, 'Error naming your Electron: ', err);
+					nameElectron(deviceId);
+				});
+			});
+		}
+	});
+};
+
 SetupCommand.prototype.checkArguments = function(args) {
 
 	this.options = this.options || { };
@@ -520,10 +677,26 @@ SetupCommand.prototype.checkArguments = function(args) {
 	}
 };
 
+SetupCommand.prototype.exit = function() {
+
+	console.log();
+	console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
+		chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
+		chalk.bold.magenta('<3'))
+	);
+	process.exit(0);
+
+};
+
 // TODO: DRY this up somehow
 
 var cmd = path.basename(process.argv[1]);
 var alert = chalk.yellow('!');
 var arrow = chalk.green('>');
+var protip = function() {
+	var args = Array.prototype.slice.call(arguments);
+	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
+	console.log.apply(null, args);
+};
 
 module.exports = SetupCommand;
