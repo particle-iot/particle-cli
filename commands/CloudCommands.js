@@ -201,6 +201,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (!fs.existsSync(filePath)) {
 			if (settings.knownApps[filePath]) {
 
+				// TODO grab device type from API instead of prompting now
+
 				return inquirer.prompt([{
 					name: 'type',
 					type: 'list',
@@ -706,6 +708,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							break;
 						case 8:
 							deviceType = ' (P1)';
+							break;
+						case 10:
+							deviceType = ' (Electron)';
 							break;
 					}
 
