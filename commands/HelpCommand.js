@@ -32,6 +32,7 @@ var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require("./BaseCommand.js");
 var utilities = require('../lib/utilities.js');
+var package_json = require('../package.json');
 
 var HelpCommand = function (cli, options) {
 	HelpCommand.super_.call(this, cli, options);
@@ -53,7 +54,6 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	showVersion: function() {
-		var package_json = require('../package.json');
 		console.log(package_json.version);
 	},
 
@@ -175,6 +175,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 	listCommandsTable: function () {
 		//console.log("help list commands command!");
 		console.log("Welcome to the Spark Command line utility!");
+		console.log('Version', package_json.version);
 		console.log("");
 		console.log("The following commands are available:");
 
@@ -208,6 +209,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		var lines = [
 			"",
 			"Welcome to the Particle Command line utility!",
+			'Version ' + package_json.version,
 			"https://github.com/spark/particle-cli",
 			""
 		];
