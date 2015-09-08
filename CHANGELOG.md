@@ -151,7 +151,7 @@ Initial Release! - 02/20/2014
   There will be bugs, and I hope you'll help us find them and add suggestions along the way.
 
 
-* Please feel free to submit issues, pull requests, comments, suggestions, and more at the repository https://github.com/spark/spark-cli
-* You can find documentation on Spark here: http://docs.spark.io/
-* You can post and find answers on the forums here: http://community.spark.io/
-* Or you can find us on IRC at freenode #spark
+* Please feel free to submit issues, pull requests, comments, suggestions, and more at the repository https://github.com/spark/particle-cli
+* You can find documentation on Particle here: http://docs.particle.io/
+* You can post and find answers on the forums here: http://community.particle.io/
+* Or you can find us on IRC at freenode #particle

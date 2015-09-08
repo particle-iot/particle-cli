@@ -174,7 +174,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 	listCommandsTable: function () {
 		//console.log("help list commands command!");
-		console.log("Welcome to the Spark Command line utility!");
+		console.log("Welcome to the Particle Command line utility!");
 		console.log('Version', package_json.version);
 		console.log("");
 		console.log("The following commands are available:");
