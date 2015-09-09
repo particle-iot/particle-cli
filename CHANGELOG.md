@@ -1,5 +1,7 @@
 changelog
 =========
+09/09/2015 - 1.7.0 - Handle optional serial wifi prompt for cipher type. Add version to help commands. Add P1 tinker to known apps. Display Electron label in device list. Fix webhook type information being lost. Upgrade node-wifiscanner2 to work in more locales.
+
 08/26/2015 - 1.6.9 - Re-add fixed P1 serial support. Fix device MAC address detection.
 
 08/25/2015 - 1.6.8 - Revert serial changes
