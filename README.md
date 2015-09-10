@@ -10,6 +10,7 @@ The Particle CLI is a powerful tool for interacting with your devices and the Pa
 Known Issues
 ========
 * The Wireless Photon Setup Wizard will only automatically switch networks on OS X. Users of other operating systems will need to manually connect their computer to the Photon's Wi-Fi. You will be prompted during the wizard when this is required.
+* [`node-serialport`](https://github.com/voodootikigod/node-serialport) currently does not install on node 4.0, so `particle-cli` will not install either. We are tracking the issues and will update `particle-cli` as soon as `node-serialport` is fixed.
 
 Installing
 =======

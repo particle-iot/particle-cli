@@ -13,7 +13,7 @@
   },
   "main": "./app.js",
   "engines": {
-    "node": "^0.10.0"
+    "node": "0.10 - 0.12"
   },
   "dependencies": {
     "chalk": "^1.0.0",
