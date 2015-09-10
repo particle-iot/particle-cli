@@ -1,7 +1,7 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "1.6.9",
+  "version": "1.7.0",
   "author": "David Middlecamp",
   "repository": {
     "type": "git",
@@ -25,7 +25,7 @@
     "inquirer": "^0.8.2",
     "lodash": "^3.10.1",
     "moment": "^2.9.0",
-    "node-wifiscanner2": "^1.0.0",
+    "node-wifiscanner2": "^1.1.0",
     "request": "^2.46.0",
     "serialport": "^1.5.0",
     "softap-setup": "^1.1.4",

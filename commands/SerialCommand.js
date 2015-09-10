@@ -38,10 +38,13 @@ var inquirer = require('inquirer');
 var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
 var specs = require('../lib/deviceSpecs');
+var log = require('../lib/log');
+var settings = require('../settings')
 
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');
 var SerialBoredParser = require('../lib/SerialBoredParser.js');
+var SerialTrigger = require('../lib/SerialTrigger');
 
 var SerialCommand = function (cli, options) {
 	SerialCommand.super_.call(this, cli, options);
@@ -279,6 +282,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	configureWifi: function (comPort) {
 		var self = this;
+		// TODO remove once we have verbose flag
+		settings.verboseOutput = false;
 
 		var wifi = when.defer();
 		this.checkArguments(arguments);
@@ -312,79 +317,45 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	_getWifiInformation: function(device, networks) {
 		var wifiInfo = when.defer();
 		var self = this;
+		var rescanLabel = '[rescan networks]';
 
 		networks = networks || [];
+		var networkMap = _.indexBy(networks, 'ssid');
+
 		inquirer.prompt([
 			{
 				type: 'list',
 				name: 'ap',
 				message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
 				choices: function () {
-					return networks.map(function (n) {
-						return {
-							name: n.ssid,
-							value: n
-						};
-					});
+					var ns = _.pluck(networks, 'ssid');
+					ns.unshift(new inquirer.Separator());
+					ns.unshift(rescanLabel);
+					ns.unshift(new inquirer.Separator());
+
+					return ns;
 				},
 				when: function () { return networks.length; }
-			},
-			{
-				type: 'input',
-				name: 'ssid',
-				message: 'SSID',
-				validate: function(input) {
-					if (input.length === 0) {
-						return 'please enter a valid SSID';
-					} else {
-						return true;
-					}
-				},
-				when: function (answers) { return !networks.length || !answers.ap; }
 			},
 			{
 				type: 'confirm',
 				name: 'detectSecurity',
 				message: chalk.bold.white('Should I try to auto-detect the wireless security type?'),
-				when: function (answers) { return !!answers.ap && !!answers.ap.security; },
+				when: function (answers) { return !!answers.ap && !!networkMap[answers.ap] && !!networkMap[answers.ap].security; },
 				default: true
-			},
-			{
-				type: 'list',
-				name: 'security',
-				message: 'Security Type',
-				choices: [
-					{ name: 'WPA2', value: 3 },
-					{ name: 'WPA', value: 2 },
-					{ name: 'WEP', value: 1 },
-					{ name: 'Unsecured', value: 0 }
-				],
-				when: function (answers) { return !networks.length || !answers.detectSecurity || !answers.ap.security; }
-			},
-			{
-				type: 'input',
-				name: 'password',
-				message: 'Wi-Fi Password',
-				when: function (answers) {
-					return (answers.detectSecurity && answers.ap.security && answers.ap.security.indexOf('NONE') === -1) ||
-						answers.security !== 0;
-				}
 			}
 		], function (answers) {
-			var ssid = answers.ssid || answers.ap.ssid;
-			var security = answers.security;
-			if (answers.detectSecurity) {
-				var ap = answers.ap;
-				security = 3;
-				if (ap.security) {
-					if (ap.security.indexOf('WPA2') >= 0) { security = 3; }
-					else if (ap.security.indexOf('WPA') >= 0) { security = 2; }
-					else if (ap.security.indexOf('WEP') >= 0) { security = 1; }
-					else if (ap.security.indexOf('NONE') >= 0) { security = 0; }
-				}
+			if (answers.ap === rescanLabel) {
+				return self._scanNetworks(function (networks) {
+					self._getWifiInformation(device, networks).then(wifiInfo.resolve, wifiInfo.reject);
+				});
 			}
 
-			self.serialWifiConfig(device, ssid, answers.password, security).then(wifiInfo.resolve, wifiInfo.reject);
+			var ssid = answers.ap;
+			var ap = networkMap[ssid];
+			var security = answers.detectSecurity && ap && ap.security;
+			
+			self.serialWifiConfig(device, ssid, security).then(wifiInfo.resolve, wifiInfo.reject);
 		});
 
 		return wifiInfo.promise;
@@ -469,95 +440,173 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	serialWifiConfig: function (device, ssid, password, securityType) {
+	serialWifiConfig: function (device, ssid, securityType) {
 		if (!device) {
 			return when.reject('No serial port available');
 		}
 
-		console.log('Attempting to configure Wi-Fi on ' + device.port);
+		log.verbose('Attempting to configure Wi-Fi on ' + device.port);
 
 		var serialPort = this.serialPort || new SerialPort(device.port, {
 			baudrate: 9600,
 			parser: SerialBoredParser.makeParser(250)
 		}, false);
 
-		serialPort.on('error', function () {
-			//yeah, don't care.
-			console.error('Serial error:', arguments);
+		var wifiDone = when.defer();
+		serialPort.on('error', function (err) {
+			wifiDone.reject(err);
 		});
+		function serialClosedEarly() {
+			wifiDone.reject('Serial port closed early');
+		}
+		serialPort.on('close', serialClosedEarly);
 
-		var that = this,
-			wifiDone = when.defer();
+		var self = this;
+		function startTimeout(to) {
+			self._serialTimeout = setTimeout(function () {
+				wifiDone.reject('Serial timed out');
+			}, to);
+		}
+		function resetTimeout() {
+			clearTimeout(self._serialTimeout);
+			self._serialTimeout = null;
+		}
 
-		serialPort.open(function () {
-			var configDone = pipeline([
-				function () {
-					return that.serialPromptDfd(serialPort, null, 'w', 5000, true);
-				},
-				function (result) {
-					if (!result) {
-						return that.serialPromptDfd(serialPort, null, 'w', 5000, true);
+		var st = new SerialTrigger(serialPort);
+		
+		st.addTrigger('SSID:', function(cb) {
+			resetTimeout();
+			if (ssid) {
+				return cb(ssid + '\n');
+			}
+
+			inquirer.prompt([{
+				type: 'input',
+				name: 'ssid',
+				message: 'SSID',
+				validate: function(input) {
+					if (!input || !input.trim()) {
+						return 'Please enter a valid SSID';
+					} else {
+						return true;
 					}
-					else {
-						return when.resolve();
-					}
 				},
-				function () {
-					return that.serialPromptDfd(serialPort, 'SSID:', ssid + '\n', 5000, false);
-				},
-				function () {
-					return that.serialPromptDfd(serialPort, 'Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', securityType + '\n', 1500, true);
-				},
-				function (result) {
-					var passPrompt = 'Password:';
-					if (!result) {
-						//no security prompt, must have had pass prompt.
-
-						//normally we would wait for the password prompt, but the 'security' line will have received the
-						//prompt instead, so lets assume we're good since we already got the ssid prompt, and just pipe
-						//the pass.
-
-						if (securityType === '0') {
-							//we didn't have a password, so just hit return
-							serialPort.write('\n');
-
-						}
-						passPrompt = null;
-					}
-
-					if (!passPrompt || !password || (password === '')) {
-						return when.resolve();
-					}
-
-					return that.serialPromptDfd(serialPort, passPrompt, password + '\n', 5000);
-				},
-				function () {
-					if (device.type === 'Core' || device.type === '') {
-						return that.serialPromptDfd(serialPort, 'Spark <3 you!', null, 15000);
-					}
-					return that.serialPromptDfd(serialPort, '\n', null, 15000);
+				filter: function(input) {
+					return input.trim();
 				}
-			]);
-			utilities.pipeDeferred(configDone, wifiDone);
+			}], function(ans) {
+				cb(ans.ssid + '\n', startTimeout.bind(self, 5000));
+			});
 		});
 
+		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', function(cb) {
+			resetTimeout();
+			if (securityType) {
+				var security = 3;
+				if (securityType.indexOf('WPA2') >= 0) { security = 3; }
+				else if (securityType.indexOf('WPA') >= 0) { security = 2; }
+				else if (securityType.indexOf('WEP') >= 0) { security = 1; }
+				else if (securityType.indexOf('NONE') >= 0) { security = 0; }
+
+				return cb(security + '\n', startTimeout.bind(self, 5000));
+			}
+
+			inquirer.prompt([{
+				type: 'list',
+				name: 'security',
+				message: 'Security Type',
+				choices: [
+					{ name: 'WPA2', value: 3 },
+					{ name: 'WPA', value: 2 },
+					{ name: 'WEP', value: 1 },
+					{ name: 'Unsecured', value: 0 }
+				]
+			}], function(ans) {
+				cb(ans.security + '\n', startTimeout.bind(self, 5000));
+			});
+		});
+
+		st.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', function(cb) {
+			resetTimeout();
+			if (securityType !== undefined) {
+				var cipherType = 1;
+				if (securityType.indexOf('AES') >= 0 && securityType.indexOf('TKIP') >= 0) { cipherType = 3; }
+				else if (securityType.indexOf('TKIP') >= 0) { cipherType = 2; }
+				else if (securityType.indexOf('AES') >= 0) { cipherType = 1; }
+				
+				return cb(cipherType + '\n', startTimeout.bind(self, 5000));
+			}
+
+			inquirer.prompt([{
+				type: 'list',
+				name: 'cipher',
+				message: 'Cipher Type',
+				choices: [
+					{ name: 'AES+TKIP', value: 3 },
+					{ name: 'TKIP', value: 2 },
+					{ name: 'AES', value: 1 }
+				]
+			}], function(ans) {
+				cb(ans.cipher + '\n', startTimeout.bind(self, 5000));
+			});
+		});
+
+		st.addTrigger('Password:', function(cb) {
+			resetTimeout();
+			inquirer.prompt([{
+				type: 'input',
+				name: 'password',
+				message: 'Wi-Fi Password',
+				validate: function(val) {
+					return !!val;
+				}
+			}], function(ans) {
+				cb(ans.password + '\n', startTimeout.bind(self, 15000));
+			});
+		});
+
+		st.addTrigger('Spark <3 you!', function() {
+			resetTimeout();
+			wifiDone.resolve();
+		});
+
+		st.addTrigger('Particle <3 you!', function() {
+			resetTimeout();
+			wifiDone.resolve();
+		});
+
+		serialPort.open(function (err) {
+			if (err) {
+				return wifiDone.reject(err);
+			}
+
+			serialPort.flush(function() {
+				serialPort.on('data', function(data) {
+					log.serialOutput(data.toString());
+				});
+
+				st.start();
+				serialPort.write('w', function() {
+					serialPort.drain();
+				});
+			});
+		});
 
 		when(wifiDone.promise).then(
 			function () {
 				console.log('Done! Your device should now restart.');
 			},
 			function (err) {
-				console.error('Something went wrong ' + err);
+				log.error('Something went wrong:', err);
 			});
 
 		when(wifiDone.promise).ensure(function () {
+			resetTimeout();
+			serialPort.removeListener('close', serialClosedEarly);
 			serialPort.close();
 		});
 
 		return wifiDone.promise;
-
-		//TODO: correct interaction for unsecured networks
-		//TODO: drop the pre-prompt creds process entirely when we have the built in serial terminal
 	},
 
 	_issueSerialCommand: function(device, command, timeout) {

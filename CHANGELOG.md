@@ -1,5 +1,7 @@
 changelog
 =========
+09/09/2015 - 1.7.0 - Handle optional serial wifi prompt for cipher type. Add version to help commands. Add P1 tinker to known apps. Display Electron label in device list. Fix webhook type information being lost. Upgrade node-wifiscanner2 to work in more locales.
+
 08/26/2015 - 1.6.9 - Re-add fixed P1 serial support. Fix device MAC address detection.
 
 08/25/2015 - 1.6.8 - Revert serial changes
@@ -151,7 +153,7 @@ Initial Release! - 02/20/2014
   There will be bugs, and I hope you'll help us find them and add suggestions along the way.
 
 
-* Please feel free to submit issues, pull requests, comments, suggestions, and more at the repository https://github.com/spark/spark-cli
-* You can find documentation on Spark here: http://docs.spark.io/
-* You can post and find answers on the forums here: http://community.spark.io/
-* Or you can find us on IRC at freenode #spark
+* Please feel free to submit issues, pull requests, comments, suggestions, and more at the repository https://github.com/spark/particle-cli
+* You can find documentation on Particle here: http://docs.particle.io/
+* You can post and find answers on the forums here: http://community.particle.io/
+* Or you can find us on IRC at freenode #particle
