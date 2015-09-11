@@ -48,7 +48,7 @@ util.inherits(PublishCommand, BaseCommand);
 PublishCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: "publish",
-	description: "This feature is in a limited beta, and is not yet generally available",
+	description: "Publishes an event to the cloud.",
 
 	init: function () {
 		this.addOption("*", this.publishEvent.bind(this), "Publishes an event to the cloud");
