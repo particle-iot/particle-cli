@@ -1,5 +1,7 @@
 changelog
 =========
+09/11/2015 - 1.8.1 - Update system firmware to 0.4.5
+
 09/11/2015 - 1.8.0 - Add Electron setup. Update event publish description.
 
 09/09/2015 - 1.7.0 - Handle optional serial wifi prompt for cipher type. Add version to help commands. Add P1 tinker to known apps. Display Electron label in device list. Fix webhook type information being lost. Upgrade node-wifiscanner2 to work in more locales.
