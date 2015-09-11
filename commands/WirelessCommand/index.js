@@ -377,7 +377,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 	function getClaim() {
 		self.newSpin('Obtaining magical secure claim code from the cloud...').start();
-		api.getClaimCode(next);
+		api.getClaimCode(null, next);
 	}
 	function next(err, dat) {
 
