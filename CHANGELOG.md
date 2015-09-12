@@ -1,5 +1,7 @@
 changelog
 =========
+09/11/2015 - 1.8.2 - Critical fix to system firmware 0.4.5
+
 09/11/2015 - 1.8.1 - Update system firmware to 0.4.5
 
 09/11/2015 - 1.8.0 - Add Electron setup. Update event publish description.
