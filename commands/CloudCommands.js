@@ -210,7 +210,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					choices: [
 						'Photon',
 						'Core',
-						'P1'
+						'P1',
+						'Electron'
 					]
 				}], function(ans) {
 
@@ -330,6 +331,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			case "p1":
 				deviceType = "p1";
 				platform_id = 8;
+				break;
+
+			case "electron":
+			case "e":
+				deviceType = "electron";
+				platform_id = 10;
 				break;
 
 			default:
