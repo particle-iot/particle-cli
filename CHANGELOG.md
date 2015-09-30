@@ -1,5 +1,7 @@
 changelog
 =========
+09/30/2015 - 1.8.4 - Add Electron update binaries and tinker
+
 09/12/2015 - 1.8.3 - Fix Photon claiming
 
 09/11/2015 - 1.8.2 - Critical fix to system firmware 0.4.5
