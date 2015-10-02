@@ -1,5 +1,7 @@
 changelog
 =========
+10/02/2015 - 1.8.7 - revert Electron modular settings and update binaries
+
 10/02/2015 - 1.8.6 - Include voodoospark v3.0.0 binary.
 
 10/01/2015 - 1.8.5 - Update system firmware to 0.4.6 for Photon/P1.
