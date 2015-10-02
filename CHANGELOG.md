@@ -2,9 +2,11 @@ changelog
 =========
 10/02/2015 - 1.8.6 - Include voodoospark v3.0.0 binary.
 
-09/30/2015 - 1.8.4 - Add Electron update binaries and tinker
+10/01/2015 - 1.8.5 - Update system firmware to 0.4.6 for Photon/P1.
 
-09/12/2015 - 1.8.3 - Fix Photon claiming
+09/30/2015 - 1.8.4 - Add Electron update binaries and tinker.
+
+09/12/2015 - 1.8.3 - Fix Photon claiming.
 
 09/11/2015 - 1.8.2 - Critical fix to system firmware 0.4.5
 
