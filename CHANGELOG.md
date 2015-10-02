@@ -1,5 +1,7 @@
 changelog
 =========
+10/01/2015 - 1.8.5 - Update system firmware to 0.4.6 for Photon/P1
+
 09/30/2015 - 1.8.4 - Add Electron update binaries and tinker
 
 09/12/2015 - 1.8.3 - Fix Photon claiming
@@ -36,7 +38,7 @@ changelog
 
 07/25/2015 - 1.5.19 - Add known apps to device specs
 
-07/24/2015 - 1.5.18 - Add missing semicolons 
+07/24/2015 - 1.5.18 - Add missing semicolons
 
 07/24/2015 - 1.5.17 - Format flash output. Use sudo correctly when necessary. Validate SSID entry. Update README with device_type args to compile command. Fix docs links. Update dfu-util links. Ask for device type when flashing. Fix Wi-Fi reconnection.
 
