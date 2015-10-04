@@ -1,6 +1,8 @@
 changelog
 =========
-10/02/2015 - 1.8.7 - revert Electron modular settings and update binaries
+10/04/2015 - 1.8.8 - Include voodoospark v3.1.0 binary.
+
+10/02/2015 - 1.8.7 - revert Electron modular settings and update binaries.
 
 10/02/2015 - 1.8.6 - Include voodoospark v3.0.0 binary.
 
