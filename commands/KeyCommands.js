@@ -161,7 +161,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 						path.dirname(filename),
 					"pre_" + path.basename(filename)
 				);
-				return that.saveKeyFromDevice(prefilename);
+				return that.saveKeyFromDevice(prefilename).then(null, function(err) {
+					console.log('Continuing...');
+					// we shouldn't stop this process just because we can't backup the key
+					return when.resolve();
+				});
 			},
 			function () {
 				return dfu.writePrivateKey(filename, leave);
@@ -215,7 +219,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			function () {
 				var pubPemFilename = utilities.filenameNoExt(filename) + ".pub.pem";
 				if (that.options.force) { utilities.tryDelete(pubPemFilename); }
-				return utilities.deferredChildProcess("openssl rsa -in " + filename + " -inform DER -pubout  -out " + pubPemFilename);
+				return utilities.deferredChildProcess("openssl rsa -in " + filename + " -inform DER -pubout  -out " + pubPemFilename).catch(function (err) {
+					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
+				});
 			}
 		]);
 
