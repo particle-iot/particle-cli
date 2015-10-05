@@ -34,7 +34,9 @@
   },
   "scripts": {
     "test": "mocha test/",
-    "lint": "eslint commands/*.js lib/*.js test/*.js"
+    "lint": "eslint commands/*.js lib/*.js test/*.js",
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/",
+    "codecov": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/ && cat ./coverage/coverage.json | ./node_modules/codecov.io/bin/codecov.io.js"
   },
   "contributors": [
     {
@@ -76,7 +78,9 @@
   ],
   "preferGlobal": true,
   "devDependencies": {
+    "codecov.io": "^0.1.6",
     "eslint": "^1.1.0",
+    "istanbul": "^0.3.22",
     "mocha": "^2.2.5",
     "proxyquire": "^1.6.0",
     "should": "^7.0.2",
