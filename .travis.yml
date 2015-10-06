@@ -12,3 +12,4 @@ matrix:
     - node_js: "4"
 after_success:
   - npm run codecov
+  - npm run coveralls
