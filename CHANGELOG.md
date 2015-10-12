@@ -1,5 +1,7 @@
 changelog
 =========
+10/12/2015 - 1.8.9 - Include v2.0 of node-serialport. This makes the Particle CLI compatible with Node v4.x!
+
 10/04/2015 - 1.8.8 - Include voodoospark v3.1.0 binary.
 
 10/02/2015 - 1.8.7 - revert Electron modular settings and update binaries.
