@@ -1,5 +1,7 @@
 changelog
 =========
+10/21/2015 - 1.8.13 - Update node-serialport dependency to require 2.0.1 or later.
+
 10/20/2015 - 1.8.12 - Update system firmware to 0.4.7 for Photon/P1.
 
 10/12/2015 - 1.8.11 - Include voodoospark v3.1.1 binary. Update package.json engines requirement.
