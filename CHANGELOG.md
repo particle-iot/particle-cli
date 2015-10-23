@@ -1,5 +1,7 @@
 changelog
 =========
+10/23/2015 - 1.8.14 - Add Electron update binaries and tinker. Add IMEI/ICCID serial parsing.
+
 10/21/2015 - 1.8.13 - Update node-serialport dependency to require 2.0.1 or later.
 
 10/20/2015 - 1.8.12 - Update system firmware to 0.4.7 for Photon/P1.
