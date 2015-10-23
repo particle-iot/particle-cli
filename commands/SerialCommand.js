@@ -208,6 +208,18 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			self.askForDeviceID(device)
 				.then(function (data) {
+					if (_.isObject(data)) {
+						console.log();
+						console.log('Your device id is', chalk.bold.cyan(data.id));
+						if (data.imei) {
+							console.log('Your IMEI is', chalk.bold.cyan(data.imei));
+						}
+						if (data.iccid) {
+							console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
+						}
+						return;
+					}
+
 					console.log();
 					console.log('Your device id is', chalk.bold.cyan(data));
 				})
@@ -703,6 +715,20 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			var matches = data.match(/Your (core|device) id is\s+(\w+)/);
 			if (matches && matches.length === 3) {
 				return matches[2];
+			}
+			var electronMatches = data.match(/\s+([a-fA-F0-9]{24})\s+/);
+			if (electronMatches && electronMatches.length === 2) {
+				var info = { id: electronMatches[1] };
+				var imeiMatches = data.match(/IMEI: (\w+)/);
+				if (imeiMatches) {
+					info.imei = imeiMatches[1];
+				}
+				var iccidMatches = data.match(/ICCID: (\w+)/);
+				if (iccidMatches) {
+					info.iccid = iccidMatches[1];
+				}
+
+				return info;
 			}
 		});
 	},
