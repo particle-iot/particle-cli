@@ -82,8 +82,8 @@ var settings = {
 			SystemFirmwareTwo: "system-part2-0.4.7-p1.bin"
 		},
 		"2b04:d00a": {
-			SystemFirmwareOne: "system-part1-v0.0.3-rc.1-electron.bin",
-			SystemFirmwareTwo: "system-part2-v0.0.3-rc.1-electron.bin"
+			SystemFirmwareOne: "system-part1-v0.0.3-rc.2-electron.bin",
+			SystemFirmwareTwo: "system-part2-v0.0.3-rc.2-electron.bin"
 		}
 	},
 	commandMappings: path.join(__dirname, "mappings.json")
