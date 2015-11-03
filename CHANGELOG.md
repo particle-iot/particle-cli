@@ -1,5 +1,7 @@
 changelog
 =========
+11/03/2015 - 1.8.16 - Add `bluz` to cloud compile platforms
+
 10/30/2015 - 1.8.15 - Update Electron binaries to v0.0.3-rc.2
 
 10/23/2015 - 1.8.14 - Add Electron update binaries and tinker. Add IMEI/ICCID serial parsing.
