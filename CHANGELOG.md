@@ -1,6 +1,24 @@
 changelog
 =========
-10/02/2015 - 1.8.7 - revert Electron modular settings and update binaries
+11/03/2015 - 1.8.16 - Add `bluz` to cloud compile platforms
+
+10/30/2015 - 1.8.15 - Update Electron binaries to v0.0.3-rc.2
+
+10/23/2015 - 1.8.14 - Add Electron update binaries and tinker. Add IMEI/ICCID serial parsing.
+
+10/21/2015 - 1.8.13 - Update node-serialport dependency to require 2.0.1 or later.
+
+10/20/2015 - 1.8.12 - Update system firmware to 0.4.7 for Photon/P1.
+
+10/12/2015 - 1.8.11 - Include voodoospark v3.1.1 binary. Update package.json engines requirement.
+
+10/12/2015 - 1.8.10 - Forgot to publish update to README removing mention of Node 4.x incompatibility.
+
+10/12/2015 - 1.8.9 - Include v2.0 of node-serialport. This makes the Particle CLI compatible with Node v4.x!
+
+10/04/2015 - 1.8.8 - Include voodoospark v3.1.0 binary.
+
+10/02/2015 - 1.8.7 - revert Electron modular settings and update binaries.
 
 10/02/2015 - 1.8.6 - Include voodoospark v3.0.0 binary.
 

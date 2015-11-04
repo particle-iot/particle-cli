@@ -1,8 +1,8 @@
 language: node_js
 node_js:
-  - "0.10"
-  - "0.12"
-  - "4"
+- '0.10'
+- '0.12'
+- '4'
 sudo: false
 script:
   - npm run lint
@@ -13,3 +13,13 @@ matrix:
 after_success:
   - npm run codecov
   - npm run coveralls
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - g++-4.8
+env: CXX=g++-4.8
+notifications:
+  slack:
+    secure: D1UYT6DvXsvRhzYVOwPDNeVPmq19jAx8QMmAR7b2uAF1+coQNn/CIToKIjgdnlaEPCKElNG4MqxYg4v3BFA5r+gXsHE6lBsKtZFJk1OAQ8hiL1At6pNxOFNlR+P3lmH9N+Y7hKQNxi5MHP+qTV9GE/we/1oMyoGoBEVEmT7I/YndCcdQihQVhFnvBkVdOfyFUIwJBwlNyFa29WT9da282wouli74f0pbU/pKl7hQwCld6/76gW0nnQ2ZrsQqyk8RYKVI8tcGw0BzgmFR9xYvg94uKJ2dy9Dt2aYwq6pHtYyXPhEKNzMDGB4IpJynEPXPId7GrxIAIZu68IWUuG6Im1kqfm2wk9P4TIZECensqcRG2STdlPzt+b9UJF6DsmlL4Xfrn7ZZEppP8mni7uAI1WjNa/WMJ09VsMQ0Rpd6SPfDPR37d0TqhOefq01OI5wOBTsimLycx6cq8JIYG03FAZ/UzaFnvOlmsLI322u1dSsmbYpgjch62n+J27gAgHsn5rk4H3h9LDeutixQtZWClHDS27BRbllinhifdfC6NqseDAsF9tH1oOhR493unfPEjRy0O0bxSpvP1mK8Sfqz9UdtGjeIDyMylXiNtzfiKpsXtEomvltQFToF+LnDXCjyH7lUN/HAkZQiOA24INUmKUZHufectio63rVds9xX/2E=

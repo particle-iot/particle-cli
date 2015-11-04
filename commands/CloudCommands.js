@@ -315,6 +315,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		//defaults to 0 for core
 		var platform_id = 0;
 
+		//TODO: this should be checking against the cloud, not hardcoded
 		switch (deviceType) {
 			case "photon":
 			case "p":
@@ -337,6 +338,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			case "e":
 				deviceType = "electron";
 				platform_id = 10;
+				break;
+
+			case "bluz":
+				deviceType = "bluz";
+				platform_id = 103;
 				break;
 
 			default:
