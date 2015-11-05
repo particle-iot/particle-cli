@@ -262,7 +262,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			var api = new ApiClient(settings.apiUrl, settings.access_token);
 			if (!api.ready()) {
-				return -1;
+				process.exit(-1);
 			}
 
 			api.flashDevice(deviceid, files).then(function(resp) {
@@ -271,6 +271,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				} else if(resp.errors) {
 					console.log("Flash device failed");
 					console.log(resp.errors.join("\n"));
+					process.exit(-1);
 				}
 			});
 		};
