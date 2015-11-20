@@ -14,7 +14,7 @@ var settings = {
 };
 
 function when() {
-	if(!(this instanceof when)) {
+	if (!(this instanceof when)) {
 		return new when();
 	}
 	return this;

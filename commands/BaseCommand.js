@@ -133,7 +133,7 @@ BaseCommand.prototype = {
 	error: function (str, exit) {
 
 		var name = this.name;
-		if(!str) { str = 'Unknown error'; }
+		if (!str) { str = 'Unknown error'; }
 		str = '%s: ' + str;
 
 		console.log();

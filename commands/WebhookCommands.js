@@ -122,14 +122,14 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         if (eventName && !url && !deviceID) {
             var filename = eventName;
 
-            if(utilities.getFilenameExt(filename) == '.json'){
+            if (utilities.getFilenameExt(filename) == '.json'){
                 if (fs.existsSync(filename)) {
                     data = utilities.tryParse(fs.readFileSync(filename)) || {};
-                    if(typeof data == 'object' && Object.keys(data).length == 0) {
+                    if (typeof data == 'object' && Object.keys(data).length == 0) {
                       console.log('Please check your .json file for syntax error.');
                       return -1;
                     }
-                    else{
+                    else {
                       console.log('Using settings from the file ' + filename);
                       //only override these when we didn't get them from the command line
                       eventName = data.event || data.eventName;
@@ -196,7 +196,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         when(api.listWebhooks()).then(
             function (hooks) {
                 console.log('Found ' + hooks.length + ' hooks registered\n');
-                for(var i=0;i < hooks.length;i++) {
+                for (var i=0;i < hooks.length;i++) {
                     var hook = hooks[i];
                     var line = [
                         '    ', (i+1),

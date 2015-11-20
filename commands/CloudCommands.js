@@ -698,7 +698,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				if (arr.length > 0) {
 					//TODO: better way to accomplish this?
 					lines.push('  Variables:');
-					for(var i=0;i<arr.length;i++) { lines.push(arr[i]); }
+					for (var i=0;i<arr.length;i++) { lines.push(arr[i]); }
 				}
 
 			}
@@ -723,7 +723,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					var name;
 					var device = devices[i];
 					var deviceType = '';
-					switch(device.product_id) {
+					switch (device.product_id) {
 						case 0:
 							deviceType = ' (Core)';
 							break;
@@ -738,10 +738,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							break;
 					}
 
-					if(!device.name || device.name == 'null') { name = '<no name>'; }
+					if (!device.name || device.name == 'null') { name = '<no name>'; }
 					else { name = device.name; }
 
-					if(device.connected) { name = chalk.cyan.bold(name); }
+					if (device.connected) { name = chalk.cyan.bold(name); }
 					else { name = chalk.cyan.dim(name); }
 
 					var status = name + ' [' + device.id + ']' + deviceType + ' is ';

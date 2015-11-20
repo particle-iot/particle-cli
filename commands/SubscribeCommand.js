@@ -91,7 +91,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 
 		var chunks = [];
 		var appendToQueue = function(arr) {
-			for(var i=0;i<arr.length;i++) {
+			for (var i=0;i<arr.length;i++) {
 				var line = (arr[i] || '').trim();
 				if (line == '') {
 					continue;
@@ -106,7 +106,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 
 		var processItem = function(arr) {
 			var obj = {};
-			for(var i=0;i<arr.length;i++) {
+			for (var i=0;i<arr.length;i++) {
 				var line = arr[i];
 
 				if (line.indexOf('event:') == 0) {

@@ -165,7 +165,7 @@ function dfuError(err) {
 
 function dfuInstall(noent) {
 
-	if(noent) {
+	if (noent) {
 		console.log(chalk.red('!!!'), "It doesn't seem like DFU utilities are installed...");
 	}
 	else {
