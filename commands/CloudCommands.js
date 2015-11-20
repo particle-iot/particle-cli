@@ -47,6 +47,17 @@ var arrow = chalk.green('>');
 var alert = chalk.yellow('!');
 var cmd = path.basename(process.argv[1]);
 
+var PLATFORMS = {
+	'core': 0,
+	'c': 0,
+	'photon': 6,
+	'p': 6,
+	'p1': 8,
+	'electron': 10,
+	'e': 10,
+	'bluz': 103
+};
+
 var CloudCommand = function (cli, options) {
 	CloudCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
@@ -311,6 +322,23 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	},
 
+	_getDownloadPath: function(args, deviceType) {
+		if (this.options.saveBinaryPath) {
+			return this.options.saveBinaryPath;
+		}
+		//grab the last filename
+		var filename = (args.length > 1) ? args[args.length - 1] : null;
+
+		//if it's empty, or it doesn't end in .bin, lets assume it's not an output file.
+		//NOTE: because of the nature of 'options at the end', and the only option is --saveTo,
+		//this should have no side-effects with other usages.  If we did a more sophisticated
+		//argument structure, we'd need to change this logic.
+		if (!filename || (utilities.getFilenameExt(filename) !== '.bin')) {
+			filename = deviceType + '_firmware_' + (Date.now()).getTime() + '.bin';
+		}
+		return filename;
+	},
+
 	compileCode: function (deviceType) {
 		if (!deviceType) {
 			console.error('\nPlease specify the target device type. eg. particle compile photon xxx\n');
@@ -320,41 +348,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		//defaults to 0 for core
 		var platform_id = 0;
 
-		//TODO: this should be checking against the cloud, not hardcoded
-		switch (deviceType) {
-			case 'photon':
-			case 'p':
-				deviceType = 'photon';
-				platform_id = 6;
-				break;
-
-			case 'core':
-			case 'c':
-				deviceType = 'core';
-				platform_id = 0;
-				break;
-
-			case 'p1':
-				deviceType = 'p1';
-				platform_id = 8;
-				break;
-
-			case 'electron':
-			case 'e':
-				deviceType = 'electron';
-				platform_id = 10;
-				break;
-
-			case 'bluz':
-				deviceType = 'bluz';
-				platform_id = 103;
-				break;
-
-			default:
-				console.error('\nTarget device ' + deviceType + ' is not valid');
-				console.error('	eg. particle compile core xxx');
-				console.error('	eg. particle compile photon xxx\n');
-				return;
+		if (deviceType in PLATFORMS) {
+			platform_id = PLATFORMS[deviceType];
+		} else {
+			console.error('\nTarget device ' + deviceType + ' is not valid');
+			console.error('	eg. particle compile core xxx');
+			console.error('	eg. particle compile photon xxx\n');
+			return;
 		}
 
 		console.log('\nCompiling code for ' + deviceType + '\n');
@@ -367,7 +367,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var filePath = args[0];
 		if (!fs.existsSync(filePath)) {
-
 			console.error("I couldn't find that: " + filePath);
 			return process.exit(1);
 		}
@@ -377,7 +376,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		//make a copy of the arguments
 		var files = this._handleMultiFileArgs(args);
 		if (!files) {
-
 			console.log('No source to compile!');
 			return process.exit(1);
 		}
@@ -389,26 +387,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		var filename;
-		if (this.options.saveBinaryPath) {
-			filename = this.options.saveBinaryPath;
-		} else {
-			//grab the last filename
-			filename = (arguments.length > 1) ? arguments[arguments.length - 1] : null;
+		var filename = this._getDownloadPath(arguments, deviceType);
+		this._compileAndDownload(files, platform_id, filename);
+	},
 
-			//if it's empty, or it doesn't end in .bin, lets assume it's not an output file.
-			//NOTE: because of the nature of 'options at the end', and the only option is --saveTo,
-			//this should have no side-effects with other usages.  If we did a more sophisticated
-			//argument structure, we'd need to change this logic.
-			if (!filename || (utilities.getFilenameExt(filename) !== '.bin')) {
-				filename = deviceType + '_firmware_' + (new Date()).getTime() + '.bin';
-			}
-		}
-
-
+	_compileAndDownload: function(files, platform_id, filename) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-
 			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
 			return process.exit(1);
 		}
@@ -428,16 +413,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					console.log(resp.sizeInfo);
 				}
 
-
 				if (resp && resp.binary_url) {
 					return api.downloadBinary(resp.binary_url, filename);
 				} else {
-
-					if (resp.errors) {
-						console.log('Errors');
-						console.log(resp.errors.join('\n'));
-					}
-					return when.reject();
+					return when.reject(resp.errors);
 				}
 			}
 		]);
@@ -453,7 +432,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				process.exit(1);
 			}
 		);
-
 	},
 
 	login: function (username) {
@@ -825,7 +803,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		} else if (stats.isFile()) {
 			filelist = arr;
 		} else {
-			console.log('was that a file or directory?');
 			return null;
 		}
 
@@ -854,12 +831,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				console.log('Skipping ' + filename + " it's too big! " + stats.size);
 				continue;
 			}
-
-			if (i === 0) {
-				files['file'] = filename;
-			} else {
-				files['file' + i] = filename;
-			}
+			files['file' + (i || '')] = filename;
 		}
 
 		return files;

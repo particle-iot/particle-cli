@@ -306,6 +306,29 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			});
 	},
 
+	_createAddressBuffer: function(ipOrDomain) {
+		var isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
+
+		// create a version of this key that points to a particular server or domain
+		var addressBuf = new Buffer(ipOrDomain.length + 2);
+		addressBuf[0] = (isIpAddress) ? 0 : 1;
+		addressBuf[1] = (isIpAddress) ? 4 : ipOrDomain.length;
+
+		if (isIpAddress) {
+			var parts = ipOrDomain.split('.').map(function (obj) {
+				return parseInt(obj);
+			});
+			addressBuf[2] = parts[0];
+			addressBuf[3] = parts[1];
+			addressBuf[4] = parts[2];
+			addressBuf[5] = parts[3];
+		} else {
+			addressBuf.write(ipOrDomain, 2);
+		}
+
+		return addressBuf;
+	},
+
 	writeServerPublicKey: function (filename, ipOrDomain) {
 		if (!filename || (!fs.existsSync(filename))) {
 			console.log('Please specify a server key in DER format.');
@@ -343,26 +366,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 
 		if (ipOrDomain) {
-			var isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
-
 			var file_with_address = utilities.filenameNoExt(filename) + utilities.replaceAll(ipOrDomain, '.', '_') + '.der';
 			if (!fs.existsSync(file_with_address)) {
-				// create a version of this key that points to a particular server or domain
-				var addressBuf = new Buffer(ipOrDomain.length + 2);
-				addressBuf[0] = (isIpAddress) ? 0 : 1;
-				addressBuf[1] = (isIpAddress) ? 4 : ipOrDomain.length;
-
-				if (isIpAddress) {
-					var parts = ipOrDomain.split('.').map(function (obj) {
-						return parseInt(obj);
-					});
-					addressBuf[2] = parts[0];
-					addressBuf[3] = parts[1];
-					addressBuf[4] = parts[2];
-					addressBuf[5] = parts[3];
-				} else {
-					addressBuf.write(ipOrDomain, 2);
-				}
+				var addressBuf = this._createAddressBuffer(ipOrDomain);
 
 				// To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
 				// Everything between the end of the key and the beginning of the address should be 0xFF.
@@ -391,22 +397,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 
-		var allDone = sequence([
-			function() {
-				return dfu.isDfuUtilInstalled();
-			},
-			function() {
-				return dfu.findCompatibleDFU();
-			},
+		sequence([
+			dfu.isDfuUtilInstalled,
+			dfu.findCompatibleDFU,
 			function() {
 				return dfu.writeServerKey(filename, false);
 			}
-		]);
-
-		when(allDone).then(
+		]).then(
 			function () {
 				console.log('Okay!  New keys in place, your device will not restart.');
-
 			},
 			function (err) {
 				console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');

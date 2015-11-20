@@ -110,7 +110,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             return -1;
         }
 
-        //Nothing was passed in except `spark webhook create`
+        //Nothing was passed in except `particle webhook create`
         if (!eventName && !url && !deviceID && !requestType) {
             var help = this.cli.getCommandModule('help');
             return help.helpCommand(this.name, 'create');
@@ -118,55 +118,51 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 
         //if they gave us one thing, and it happens to be a file, and we could parse it as json
         var data = {};
-        //spark webhook create xxx.json
+        //particle webhook create xxx.json
         if (eventName && !url && !deviceID) {
             var filename = eventName;
 
-            if (utilities.getFilenameExt(filename) === '.json'){
-                if (fs.existsSync(filename)) {
-                    data = utilities.tryParse(fs.readFileSync(filename)) || {};
-                    if (typeof data == 'object' && Object.keys(data).length === 0) {
-                      console.log('Please check your .json file for syntax error.');
-                      return -1;
-                    } else {
-                      console.log('Using settings from the file ' + filename);
-                      //only override these when we didn't get them from the command line
-                      eventName = data.event || data.eventName;
-                      url = data.url;
-                      deviceID = data.deviceid;
-                    }
-                } else {
-                  console.log(filename + ' is not found.');
+            if (utilities.getFilenameExt(filename) === '.json') {
+                if (!fs.existsSync(filename)) {
+                    console.log(filename + ' is not found.');
+                    return -1;
+                }
+
+                data = utilities.tryParse(fs.readFileSync(filename));
+                if (!data) {
+                  console.log('Please check your .json file for syntax error.');
                   return -1;
                 }
+                console.log('Using settings from the file ' + filename);
+                //only override these when we didn't get them from the command line
+                eventName = data.event || data.eventName;
+                url = data.url;
+                deviceID = data.deviceid;
             }
-
         }
 
         //required param
-        if (!eventName || (eventName === '')) {
+        if (!eventName) {
             console.log('Please specify an event name');
             return -1;
         }
 
         //required param
-        if (!url || (url === '')) {
+        if (!url) {
             console.log('Please specify a url');
             return -1;
         }
 
-
 		//TODO: clean this up more?
-		data.event = eventName;
-		data.url = url;
-		data.deviceid = deviceID;
-		data.requestType = requestType || data.requestType;
-        if (data.mydevices === undefined) {
-            data.mydevices = true;
-        }
+		var webhookData = {
+            event: eventName,
+            url: url,
+            deviceid: deviceID,
+            requestType: requestType || data.requestType,
+            mydevices: data.mydevices === undefined ? true : data.mydevices
+        };
 
-		api.createWebhookWithObj(data);
-
+		api.createWebhookWithObj(webhookData);
         return 0;
     },
 

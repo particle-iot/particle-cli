@@ -55,15 +55,48 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		console.log(package_json.version);
 	},
 
+	_getCommandDescription: function(command, subcmd) {
+		var descr = command.does;
+		if (!descr && subcmd && command.descriptionsByName) {
+			descr = command.descriptionsByName[subcmd];
+		}
+
+		if (!descr) {
+			descr = command.description;
+		}
+		if (descr && !util.isArray(descr)) {
+			descr = [ descr ];
+		}
+
+		if (descr) {
+			return ['DOES: ', utilities.indentLines(descr, ' ', 4)];
+		}
+		return [];
+	},
+
+	_getUsageText: function(command, subcmd) {
+		var usageText = null;
+
+		if (subcmd && command.usagesByName && command.usagesByName[subcmd]) {
+			usageText = command.usagesByName[subcmd];
+		} else if (command.usage) {
+			usageText = command.usage;
+		}
+
+		if (usageText) {
+			if (!util.isArray(usageText)) {
+				usageText = [ usageText ];
+			}
+		}
+		return usageText;
+	},
+
 	/**
 	 * Get more info on a specific command
 	 * @param {String} name
 	 * @param {String} subcmd
 	 */
 	helpCommand: function (name, subcmd) {
-		//console.log("Deep help command got " + name);
-		//console.log("");
-
 		if (!name) {
 			this.listCommandsSwitch();
 			return;
@@ -87,68 +120,31 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			cmdLine,
 			''
 		];
-
-		var descr = command.does;
-		if (!descr && subcmd && command.descriptionsByName) {
-			descr = command.descriptionsByName[subcmd];
-		}
-
-		if (!descr) {
-			descr = command.description;
-		}
-		if (descr && !util.isArray(descr)) {
-			descr = [ descr ];
-		}
-
-		if (descr) {
-			lines.push('DOES: ');
-			lines.push(utilities.indentLines(descr, ' ', 4));
-		}
-
+		lines = lines.concat(this._getCommandDescription(command, subcmd));
 
 		//
 		//  Get Usage text if we have it
 		//
-
-
-		var usageText = null;
-
-		if (subcmd && command.usagesByName && command.usagesByName[subcmd]) {
-			usageText = command.usagesByName[subcmd];
-		} else if (command.usage) {
-			usageText = command.usage;
-		}
-
+		var usageText = this._getUsageText(command, subcmd);
 		if (usageText) {
-			if (!util.isArray(usageText)) {
-				usageText = [ usageText ];
-			}
-
 			//lines.push("How to use this function ");
-			lines.push('');
-			lines.push('USE:');
-			lines.push(utilities.indentLines(usageText, ' ', 4));
+			lines = lines.concat(['', 'USE:', utilities.indentLines(usageText, ' ', 4)]);
 		}
-
 
 		//
 		// If we didn't have usage text, then maybe we're a parent command
 		//
 
 		if (!usageText) {
-
 			var cmds = command._commands;
 			if (cmds) {
 				lines.push('The following commands are available: ');
 
-				for (var idx = 0; idx < cmds.length; idx++) {
-					var subcmdname = cmds[idx];
+				lines.concat(cmds.map(function (subcmdname) {
 					var subcmdObj = command[subcmdname];
-
 					var line = '   particle ' + name + ' ' + subcmdname;
-					line = utilities.padRight(line, ' ', 25) + ' - ' + subcmdObj.does;
-					lines.push(line);
-				}
+					return utilities.padRight(line, ' ', 25) + ' - ' + subcmdObj.does;
+				}));
 			} else if (command.optionsByName) {
 				lines.push('');
 
@@ -161,11 +157,9 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-
 		lines.push('');
 		lines.push('');
 		console.log(lines.join('\n'));
-
 	},
 
 	listCommandsTable: function () {

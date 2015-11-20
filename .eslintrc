@@ -26,8 +26,9 @@
     "space-after-keywords": [2, "always"],
     "space-unary-ops": [2, {"words": true, "nonwords": false}],
     "strict": [2, "global"],
-    "valid-jsdoc": [2, {
-        "requireReturn": false
+    "valid-jsdoc": [1, {
+        "requireReturn": false,
+        "requireParamDescription": false
     }],
     "func-names": 2,
     "no-multi-spaces": [1, {
