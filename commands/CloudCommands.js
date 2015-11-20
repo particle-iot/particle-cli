@@ -98,8 +98,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			var idx = utilities.indexOf(args, '--saveTo');
 			if ((idx + 1) < args.length) {
 				this.options.saveBinaryPath = args[idx + 1];
-			}
-			else {
+			} else {
 				console.log('Please specify a file path when using --saveTo');
 			}
 		}
@@ -230,8 +229,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						doFlash(file).then(resolve, reject);
 					});
 				});
-			}
-			else {
+			} else {
 				console.error("I couldn't find that file: " + filePath);
 				return when.reject();
 			}
@@ -398,8 +396,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var filename;
 		if (this.options.saveBinaryPath) {
 			filename = this.options.saveBinaryPath;
-		}
-		else {
+		} else {
 			//grab the last filename
 			filename = (arguments.length > 1) ? arguments[arguments.length - 1] : null;
 
@@ -439,8 +436,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 				if (resp && resp.binary_url) {
 					return api.downloadBinary(resp.binary_url, filename);
-				}
-				else {
+				} else {
 
 					if (resp.errors) {
 						console.log('Errors');
@@ -581,8 +577,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var lookupVariables = function (devices) {
 			if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
 				console.log('No devices found.');
-			}
-			else {
+			} else {
 				self.newSpin('Retrieving device functions and variables...').start();
 				var promises = [];
 				devices.forEach(function (device) {
@@ -594,8 +589,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						promises.push(api.getAttributes(device.id).then(function(attrs) {
 							return extend(device, attrs);
 						}));
-					}
-					else {
+					} else {
 						promises.push(when.resolve(device));
 					}
 				});
@@ -634,19 +628,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (!onOff || (onOff === '') || (onOff === 'on')) {
 			onOff = true;
-		}
-		else if (onOff === 'off') {
+		} else if (onOff === 'off') {
 			onOff = false;
 		}
 
 		if ((deviceid === '') || (deviceid === 'all')) {
 			deviceid = null;
-		}
-		else if (deviceid === 'on') {
+		} else if (deviceid === 'on') {
 			deviceid = null;
 			onOff = true;
-		}
-		else if (deviceid === 'off') {
+		} else if (deviceid === 'off') {
 			deviceid = null;
 			onOff = false;
 		}
@@ -654,15 +645,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (deviceid) {
 			return api.signalCore(deviceid, onOff);
-		}
-		else {
+		} else {
 
 			var toggleAll = function (devices) {
 				if (!devices || (devices.length === 0)) {
 					console.log('No devices found.');
 					return when.resolve();
-				}
-				else {
+				} else {
 					var promises = [];
 					devices.forEach(function (device) {
 						if (!device.connected) {
@@ -827,11 +816,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				console.log('Your ' + settings.dirIncludeFilename + ' file is empty, not including anything!');
 				return null;
 			}
-		}
-		else if (stats.isFile()) {
+		} else if (stats.isFile()) {
 			filelist = arr;
-		}
-		else {
+		} else {
 			console.log('was that a file or directory?');
 			return null;
 		}
@@ -864,8 +851,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			if (i === 0) {
 				files['file'] = filename;
-			}
-			else {
+			} else {
 				files['file' + i] = filename;
 			}
 		}

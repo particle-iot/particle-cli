@@ -124,8 +124,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					//if it doesn't have a manufacturer or pnpId set, but it's a ttyACM port, then lets grab it.
 					if (port.comName.indexOf('/dev/ttyACM') === 0) {
 						devices.push({ port: port.comName, type: '' });
-					}
-					else if (port.comName.indexOf('/dev/cuaU') === 0) {
+					} else if (port.comName.indexOf('/dev/cuaU') === 0) {
 						devices.push({ port: port.comName, type: '' });
 					}
 				});
@@ -403,8 +402,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				if (showTraffic) { console.log('timed out on ' + prompt); }
 				if (alwaysResolve) {
 					dfd.resolve(null);
-				}
-				else {
+				} else {
 					dfd.reject('Serial prompt timed out - Please try restarting your device');
 				}
 			}, timeout);
@@ -425,8 +423,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 							//serialPort.pause();     //lets not miss anything
 							dfd.resolve(true);
 						});
-					}
-					else {
+					} else {
 						dfd.resolve(true);
 					}
 				}
@@ -438,8 +435,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				clearTimeout(failTimer);
 				serialPort.removeListener('data', onMessage);
 			});
-		}
-		else if (answer) {
+		} else if (answer) {
 			clearTimeout(failTimer);
 
 			if (showTraffic) { console.log('I said: ' + answer); }
@@ -741,8 +737,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return devices[0];
 			}
 			//else - which one?
-		}
-		else {
+		} else {
 			var portNum = parseInt(comPort);
 			if (!isNaN(portNum)) {
 				//they gave us a number
@@ -755,8 +750,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					return devices[portNum];
 				}
 				//else - which one?
-			}
-			else {
+			} else {
 				var matchedDevices = devices.filter(function (d) {
 					return d.port === comPort;
 				});

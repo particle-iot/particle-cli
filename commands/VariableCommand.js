@@ -170,14 +170,12 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		if (!deviceId && !variableName) {
 			//they just didn't provide any args...
 			return this.listVariables();
-		}
-		else if (deviceId && !variableName) {
+		} else if (deviceId && !variableName) {
 			//try to figure out if they left off a variable name, or if they want to pull a var from all cores.
 			return this.disambiguateGetValue(deviceId).then(function (result) {
 				return self._getValue(result.deviceIds, result.variableName);
 			});
-		}
-		else if (deviceId === 'all' && variableName) {
+		} else if (deviceId === 'all' && variableName) {
 			return this.disambiguateGetValue(null, variableName).then(function (result) {
 				return self._getValue(result.deviceIds, result.variableName);
 			});;
@@ -204,15 +202,13 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			if (!cores || (cores.length === 0)) {
 				console.log('No cores found.');
 				that._cachedVariableList = null;
-			}
-			else {
+			} else {
 				var promises = [];
 				for (var i = 0; i < cores.length; i++) {
 					var coreid = cores[i].id;
 					if (cores[i].connected) {
 						promises.push(api.getAttributes(coreid));
-					}
-					else {
+					} else {
 						promises.push(when.resolve(cores[i]));
 					}
 				}

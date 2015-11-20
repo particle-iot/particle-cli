@@ -106,8 +106,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		var result;
 		if (this.options.useDfu || (coreid === '--usb') || (coreid === '--factory')) {
 			result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
-		}
-		else {
+		} else {
 			//we need to remove the "--cloud" argument so this other command will understand what's going on.
 			var args = utilities.copyArray(arguments);
 			if (this.options.useCloud) {
@@ -151,8 +150,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				function () {
 					if (useFactory) {
 							return dfu.writeFactoryReset(firmware, false);
-					}
-					else {
+					} else {
 							return dfu.writeFirmware(firmware, true);
 					}
 				}

@@ -128,16 +128,14 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                     if (typeof data == 'object' && Object.keys(data).length === 0) {
                       console.log('Please check your .json file for syntax error.');
                       return -1;
-                    }
-                    else {
+                    } else {
                       console.log('Using settings from the file ' + filename);
                       //only override these when we didn't get them from the command line
                       eventName = data.event || data.eventName;
                       url = data.url;
                       deviceID = data.deviceid;
                     }
-                }
-                else {
+                } else {
                   console.log(filename + ' is not found.');
                   return -1;
                 }

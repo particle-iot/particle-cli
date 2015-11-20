@@ -108,8 +108,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
                 if (result && result.error) {
                     console.log('Function call failed ', result.error);
 
-                }
-                else {
+                } else {
                     console.log(result.return_value);
                 }
 

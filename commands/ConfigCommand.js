@@ -86,11 +86,9 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 		if (group && !name && !value) {
 			//switch to that group
 			this.switchGroup(group);
-		}
-		else if (group && name && !value) {
+		} else if (group && name && !value) {
 			this.changeSetting(group, name);
-		}
-		else if (group && name && value) {
+		} else if (group && name && value) {
 			this.changeSetting(group, name, value);
 		}
 	},
@@ -132,8 +130,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 
 				console.log((i + 1) + '.) ' + name);
 			}
-		}
-		else {
+		} else {
 			console.log('No configuration files found.');
 		}
 	},

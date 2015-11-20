@@ -108,8 +108,7 @@ BaseCommand.prototype = {
 			}
 
 			return cmdFn.apply(this, args);
-		}
-		else {
+		} else {
 			//no wildcard, and no function specified...
 
 			//console.log('running help for command');

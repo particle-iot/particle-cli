@@ -117,8 +117,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (subcmd && command.usagesByName && command.usagesByName[subcmd]) {
 			usageText = command.usagesByName[subcmd];
-		}
-		else if (command.usage) {
+		} else if (command.usage) {
 			usageText = command.usage;
 		}
 
@@ -152,8 +151,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 					line = utilities.padRight(line, ' ', 25) + ' - ' + subcmd.does;
 					lines.push(line);
 				}
-			}
-			else if (command.optionsByName) {
+			} else if (command.optionsByName) {
 				lines.push('');
 
 				for (var name in command.optionsByName) {
@@ -227,8 +225,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			var hogan = require('hogan.js');
 			var str = hogan.compile(template).render(node);
 			lines.push(str);
-		}
-		else {
+		} else {
 			lines.push('Usage: particle <command_name> <arguments> ');
 			lines.push('Common Commands:');
 			lines.push('');
@@ -263,18 +260,15 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			if (name) {
 				//new style
 				this.helpCommand(name);
-			}
-			else {
+			} else {
 				//new style
 				this.listMappedCommands();
 			}
 
-		}
-		else {
+		} else {
 			if (name) {
 				this.helpCommand(name);
-			}
-			else {
+			} else {
 				//old style
 				this.listCommandsTable();
 			}

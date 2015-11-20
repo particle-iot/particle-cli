@@ -196,8 +196,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		if ((!this.options.force) && (fs.existsSync(filename))) {
 			console.error('This file already exists, please specify a different file, or use the --force flag.');
 			return when.reject('This file already exists, please specify a different file, or use the --force flag.');
-		}
-		else if (fs.existsSync(filename)) {
+		} else if (fs.existsSync(filename)) {
 			utilities.tryDelete(filename);
 		}
 
@@ -327,8 +326,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				});
 
 				return;
-			}
-			else {
+			} else {
 				filename = derFile;
 			}
 		}
@@ -337,8 +335,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			var ips = utilities.getIPAddresses();
 			if (ips && (ips.length === 1)) {
 				ipOrDomain = ips[0];
-			}
-			else if (ips.length > 0) {
+			} else if (ips.length > 0) {
 				console.log('Please specify an ip address: ' + ips.join('\n'));
 				return;
 			}
@@ -363,8 +360,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 					addressBuf[3] = parts[1];
 					addressBuf[4] = parts[2];
 					addressBuf[5] = parts[3];
-				}
-				else {
+				} else {
 					addressBuf.write(ipOrDomain, 2);
 				}
 
