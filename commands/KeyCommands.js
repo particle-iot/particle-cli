@@ -28,15 +28,12 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 var when = require('when');
 var sequence = require('when/sequence');
-var readline = require('readline');
 var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
 var utilities = require('../lib/utilities.js');
 var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
-var moment = require('moment');
-//var ursa = require('ursa');
 var fs = require('fs');
 var path = require('path');
 var dfu = require('../lib/dfu.js');
@@ -162,7 +159,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 						path.dirname(filename),
 					'pre_' + path.basename(filename)
 				);
-				return that.saveKeyFromDevice(prefilename).then(null, function(err) {
+				return that.saveKeyFromDevice(prefilename).then(null, function() {
 					console.log('Continuing...');
 					// we shouldn't stop this process just because we can't backup the key
 					return when.resolve();

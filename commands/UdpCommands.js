@@ -26,13 +26,6 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
-var when = require('when');
-var sequence = require('when/sequence');
-var readline = require('readline');
-var fs = require('fs');
-var settings = require('../settings.js');
-var path = require('path');
-
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
@@ -63,7 +56,7 @@ UdpCommands.prototype = extend(BaseCommand.prototype, {
 		var buf = new Buffer(message);
 
 		console.log('Sending "' + message + '" to ', host, ' at port ', port);
-		client.send(buf, 0, buf.length, port, host, function(err, bytes) {
+		client.send(buf, 0, buf.length, port, host, function(err) {
 			if (err) {
 				console.log('error during send ' + err);
 			}

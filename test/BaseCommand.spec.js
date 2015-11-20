@@ -4,8 +4,7 @@ var Spinner = require('./mocks/Spinner.mock.js');
 var Interpreter = require('../lib/interpreter');
 var proxyquire = require('proxyquire');
 
-var stream = require('stream');
-var should = require('should');
+require('should');
 
 
 var BaseCommand = proxyquire('../commands/BaseCommand', {

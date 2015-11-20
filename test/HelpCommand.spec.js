@@ -3,10 +3,7 @@
 var Spinner = require('./mocks/Spinner.mock.js');
 var Interpreter = require('../lib/interpreter');
 var proxyquire = require('proxyquire');
-var ApiClient2 = require('../lib/ApiClient2');
-var ApiClient = require('../lib/ApiClient');
-
-var should = require('should');
+require('should');
 var sinon = require('sinon');
 var fs = require('fs');
 

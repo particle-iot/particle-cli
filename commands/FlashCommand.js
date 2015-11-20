@@ -28,9 +28,6 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 var when = require('when');
 var sequence = require('when/sequence');
-var readline = require('readline');
-var settings = require('../settings.js');
-var path = require('path');
 
 var extend = require('xtend');
 var util = require('util');
@@ -123,7 +120,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		return result;
 	},
 
-	flashCloud: function(coreid, filename) {
+	flashCloud: function() {
 		var cloud = this.cli.getCommandModule('cloud');
 		return cloud.flashDevice.apply(cloud, arguments);
 	},

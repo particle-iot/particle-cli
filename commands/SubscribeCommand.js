@@ -26,14 +26,9 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
-var when = require('when');
-var sequence = require('when/sequence');
-
 var settings = require('../settings.js');
-var path = require('path');
 var extend = require('xtend');
 var util = require('util');
-var fs = require('fs');
 
 var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');

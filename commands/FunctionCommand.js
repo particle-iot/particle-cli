@@ -27,17 +27,11 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 var when = require('when');
-var pipeline = require('when/pipeline');
-
-var sequence = require('when/sequence');
-var readline = require('readline');
 var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
-var utilities = require('../lib/utilities.js');
 var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
-var moment = require('moment');
 
 var FunctionCommand = function (cli, options) {
     FunctionCommand.super_.call(this, cli, options);

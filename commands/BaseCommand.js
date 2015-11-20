@@ -27,16 +27,14 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 var when = require('when');
-var sequence = require('when/sequence');
 var util = require('util');
-var extend = require('xtend');
 var readline = require('readline');
 var spinner = require('cli-spinner').Spinner;
 var chalk = require('chalk');
 
 spinner.setDefaultSpinnerString(spinner.spinners[7]); // spinners spinners spinner spinner spinner!
 
-var BaseCommand = function (cli, options) {
+var BaseCommand = function (cli) {
 	this.cli = cli;
 	this.optionsByName = {};
 	this.descriptionsByName = {};
@@ -144,7 +142,5 @@ BaseCommand.prototype = {
 	},
 	_: null
 };
-
-var arrow = chalk.green('>');
 
 module.exports = BaseCommand;

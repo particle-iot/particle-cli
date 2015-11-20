@@ -30,8 +30,6 @@ var when = require('when');
 var pipeline = require('when/pipeline');
 var _ = require('lodash');
 
-var sequence = require('when/sequence');
-var readline = require('readline');
 var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
@@ -93,7 +91,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 					return when.reject('No matching device');
 				}
 
-				return when.promise(function (resolve, reject) {
+				return when.promise(function (resolve) {
 					prompt([{
 						type: 'list',
 						name: 'variableName',
@@ -186,7 +184,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	getAllVariables: function (args) {
+	getAllVariables: function () {
 		if (this._cachedVariableList) {
 			return when.resolve(this._cachedVariableList);
 		}

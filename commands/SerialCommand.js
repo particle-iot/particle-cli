@@ -31,7 +31,6 @@ var _ = require('lodash');
 
 var when = require('when');
 var extend = require('xtend');
-var pipeline = require('when/pipeline');
 var SerialPortLib = require('serialport');
 var SerialPort = SerialPortLib.SerialPort;
 var inquirer = require('inquirer');

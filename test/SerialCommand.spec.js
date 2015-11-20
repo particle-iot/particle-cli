@@ -2,7 +2,7 @@
 
 var proxyquire = require('proxyquire');
 
-var should = require('should');
+require('should');
 var Interpreter = require('../lib/interpreter');
 
 var SerialCommand = proxyquire('../commands/SerialCommand.js', {
@@ -11,7 +11,6 @@ var SerialCommand = proxyquire('../commands/SerialCommand.js', {
 
 describe('Serial Command', function() {
 
-	var cli;
 	var serial;
 
 	before(function() {

@@ -27,12 +27,8 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 var when = require('when');
-var sequence = require('when/sequence');
 var pipeline = require('when/pipeline');
 
-var readline = require('readline');
-var SerialPortLib = require('serialport');
-var SerialPort = SerialPortLib.SerialPort;
 var settings = require('../settings.js');
 var specs = require('../lib/deviceSpecs');
 var BaseCommand = require('./BaseCommand.js');
@@ -42,7 +38,6 @@ var utilities = require('../lib/utilities.js');
 
 var fs = require('fs');
 var path = require('path');
-var moment = require('moment');
 var extend = require('xtend');
 var util = require('util');
 var chalk = require('chalk');
@@ -135,7 +130,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		when(prompts.areYouSure())
-			.then(function (yup) {
+			.then(function () {
 				api.removeCore(deviceid).then(function () {
 						console.log('Okay!');
 						process.exit(0);
@@ -411,7 +406,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 
-		var that = this;
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 
@@ -455,6 +449,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			},
 			function (err) {
 				console.error('Compile failed. Exiting.');
+				console.error(err);
 				process.exit(1);
 			}
 		);
@@ -565,7 +560,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	getAllDeviceAttributes: function (args) {
+	getAllDeviceAttributes: function () {
 
 		var self = this;
 
@@ -749,6 +744,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}, function(err) {
 			console.log("Please make sure you're online and logged in.");
+			console.log(err);
 		});
 	},
 
@@ -763,8 +759,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		dirname = path.resolve(dirname);
 
 		var includesFile = path.join(dirname, settings.dirIncludeFilename),
-			ignoreFile = path.join(dirname, settings.dirExcludeFilename),
-			ignoreSet = {};
+			ignoreFile = path.join(dirname, settings.dirExcludeFilename);
 
 		var includes = [
 			'*.h',

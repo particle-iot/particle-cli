@@ -6,7 +6,7 @@ var proxyquire = require('proxyquire');
 var ApiClient2 = require('../lib/ApiClient2');
 var ApiClient = require('../lib/ApiClient');
 
-var should = require('should');
+require('should');
 
 var SetupCommand = proxyquire('../commands/SetupCommand', {
 	'cli-spinner': Spinner

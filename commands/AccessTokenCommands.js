@@ -28,12 +28,8 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var when = require('when');
 var pipeline = require('when/pipeline');
 var parallel = require('when/parallel');
-var sequence = require('when/sequence');
 
 var extend = require('xtend');
-var fs = require('fs');
-var path = require('path');
-var readline = require('readline');
 var util = require('util');
 var inquirer = require('inquirer');
 
@@ -41,7 +37,6 @@ var ApiClient = require('../lib/ApiClient.js');
 var BaseCommand = require('./BaseCommand.js');
 var prompts = require('../lib/prompts.js');
 var settings = require('../settings.js');
-var utilities = require('../lib/utilities.js');
 
 var AccessTokenCommands = function (cli, options) {
 	AccessTokenCommands.super_.call(this, cli, options);
@@ -146,6 +141,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		}, function(err) {
 			console.log("Please make sure you're online and logged in.");
+			console.log(err);
 			process.exit(1);
 		});
 	},
@@ -225,7 +221,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				process.exit(0);
 			},
 			function (err) {
-				// console.log("there was an error creating a new access token: " + err);
+				console.log('there was an error creating a new access token: ' + err);
 				process.exit(1);
 			}
 		);

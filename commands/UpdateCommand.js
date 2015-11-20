@@ -32,15 +32,9 @@ var chalk = require('chalk');
 var extend = require('xtend');
 var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand');
-var inquirer = require('inquirer');
-var prompt = inquirer.prompt;
-var exec = require('child_process').exec;
 var dfu = require('../lib/dfu');
-var when = require('when');
 var whenNode = require('when/node');
-var specs = require('../lib/deviceSpecs/specifications');
 var spinner = require('cli-spinner').Spinner;
-var sequence = require('when/sequence');
 
 spinner.setDefaultSpinnerString(spinner.spinners[7]);
 var spin = new spinner('Updating system firmware on the device...');
@@ -67,7 +61,6 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 		// by default we don't want crazy DFU output
 		settings.verboseOutput = false;
 
-		var self = this;
 		dfu.findCompatibleDFU().then(function (deviceId) {
 			doUpdate(deviceId);
 		}).catch(function (err) {
@@ -78,7 +71,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 			var updates = settings.updates[id] || null;
 			var steps = [ ];
 			var first = true;
-			var i = 0;
+
 			if (!updates) {
 				console.log();
 				return console.log(
@@ -114,7 +107,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			flash();
-			function flash(err, dat) {
+			function flash(err) {
 				if (err) { return failure(err); }
 				if (steps.length > 0) { return steps.shift()(flash); }
 				success();
