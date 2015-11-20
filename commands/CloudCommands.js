@@ -202,38 +202,37 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			if (settings.knownApps[filePath]) {
 
 				// TODO grab device type from API instead of prompting now
+				return when.promise(function (resolve, reject) {
+					inquirer.prompt([{
+						name: 'type',
+						type: 'list',
+						message: 'Which type of device?',
+						choices: [
+							'Photon',
+							'Core',
+							'P1',
+							'Electron'
+						]
+					}], function(ans) {
 
-				return inquirer.prompt([{
-					name: 'type',
-					type: 'list',
-					message: 'Which type of device?',
-					choices: [
-						'Photon',
-						'Core',
-						'P1',
-						'Electron'
-					]
-				}], function(ans) {
-
-					var type = ans.type;
-					var binary = null;
-					for(id in specs) {
-
-						if(specs[id].productName == type) {
-							binary = specs[id].knownApps[filePath];
+						var type = ans.type;
+						var binary = null;
+						for (id in specs) {
+							if (specs[id].productName == type) {
+								binary = specs[id].knownApps[filePath];
+							}
 						}
-					}
-					if(!binary) {
-						console.log("I don't have a %s binary for %s.", filePath, type);
-						return process.exit(1);
-					}
-					var file = { file: binary };
-					doFlash(file)
-
+						if (!binary) {
+							console.log("I don't have a %s binary for %s.", filePath, type);
+							return reject();
+						}
+						var file = { file: binary };
+						doFlash(file).then(resolve, reject);
+					});
 				});
 			}
 			else {
-				console.error("I couldn't find that: " + filePath);
+				console.error("I couldn't find that file: " + filePath);
 				return when.reject();
 			}
 		}
@@ -244,11 +243,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (!files) {
 			files = this._handleMultiFileArgs(args);
 		}
-		if (!files) {
-			return -1;
-		}
-		if (!files["file"]) {
+		if (!files || !files["file"]) {
 			console.error("no files included?");
+			return when.reject();;
 		}
 		if (settings.showIncludedSourceFiles) {
 			console.log("Including:");
@@ -257,20 +254,28 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		doFlash(files);
+		return doFlash(files);
+
 		function doFlash(files) {
 
 			var api = new ApiClient(settings.apiUrl, settings.access_token);
 			if (!api.ready()) {
-				return -1;
+				return when.reject('Not logged in');
 			}
 
-			api.flashDevice(deviceid, files).then(function(resp) {
-				if(resp.message) {
+			return api.flashDevice(deviceid, files).then(function(resp) {
+				if (resp.message) {
 					console.log("Flash device OK: ", resp.message);
-				} else if(resp.errors) {
+				} else if (resp.errors) {
 					console.log("Flash device failed");
-					console.log(resp.errors.join("\n"));
+					resp.errors.forEach(function(err) {
+						if (err.error) {
+							console.log(err.error);
+						} else {
+							console.log(err);
+						}
+					});
+					return when.reject();
 				}
 			});
 		};
