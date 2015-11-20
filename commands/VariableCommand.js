@@ -177,7 +177,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 				return self._getValue(result.deviceIds, result.variableName);
 			});
 		}
-		else if (deviceId == 'all' && variableName) {
+		else if (deviceId === 'all' && variableName) {
 			return this.disambiguateGetValue(null, variableName).then(function (result) {
 				return self._getValue(result.deviceIds, result.variableName);
 			});;
@@ -201,7 +201,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var lookupVariables = function (cores) {
-			if (!cores || (cores.length == 0)) {
+			if (!cores || (cores.length === 0)) {
 				console.log('No cores found.');
 				that._cachedVariableList = null;
 			}
@@ -250,7 +250,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 				}
 
 				var status = core.name + ' (' + core.id + ') has ' + available.length + ' variables ';
-				if (available.length == 0) {
+				if (available.length === 0) {
 					status += ' (or is offline) ';
 				}
 

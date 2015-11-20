@@ -144,7 +144,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 
 function dfuError(err) {
 	if (err === 'No DFU device found') {}
-	else if (err.code == 127) { dfuInstall(true); }
+	else if (err.code === 127) { dfuInstall(true); }
 	else {
 		dfuInstall(false);
 		console.log(

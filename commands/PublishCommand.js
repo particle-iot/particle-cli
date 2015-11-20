@@ -67,10 +67,10 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		if (data == '--private' && setPrivate === undefined) {
+		if (data === '--private' && setPrivate === undefined) {
 			setPrivate = true;
 			data = undefined;
-		} else if (data !== undefined && setPrivate == '--private') {
+		} else if (data !== undefined && setPrivate === '--private') {
 			setPrivate = true;
 		} else {
 			setPrivate = false;

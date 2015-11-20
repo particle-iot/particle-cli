@@ -123,7 +123,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 					token = tokens[i];
 
 					var first_line = token.client || token.client_id;
-					if (token.token == settings.access_token) {
+					if (token.token === settings.access_token) {
 						first_line += ' (active)';
 					}
 					var now = (new Date()).toISOString();

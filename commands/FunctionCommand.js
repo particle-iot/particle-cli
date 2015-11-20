@@ -79,7 +79,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
                     }
 
                     var status = core.name + ' (' + core.id + ') has ' + available.length + ' functions ';
-                    if (available.length == 0) {
+                    if (available.length === 0) {
                         status += ' (or is offline) ';
                     }
 

@@ -263,7 +263,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	keyDoctor: function (deviceid) {
-		if (!deviceid || (deviceid == '')) {
+		if (!deviceid || (deviceid === '')) {
 			console.log('Please provide your device id');
 			return 0;
 		}
@@ -313,7 +313,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		if (utilities.getFilenameExt(filename).toLowerCase() != '.der') {
+		if (utilities.getFilenameExt(filename).toLowerCase() !== '.der') {
 			var derFile = utilities.filenameNoExt(filename) + '.der';
 
 			if (!fs.existsSync(derFile)) {
@@ -333,9 +333,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		if (ipOrDomain == 'mine') {
+		if (ipOrDomain === 'mine') {
 			var ips = utilities.getIPAddresses();
-			if (ips && (ips.length == 1)) {
+			if (ips && (ips.length === 1)) {
 				ipOrDomain = ips[0];
 			}
 			else if (ips.length > 0) {

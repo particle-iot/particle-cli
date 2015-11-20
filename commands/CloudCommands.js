@@ -218,7 +218,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						var type = ans.type;
 						var binary = null;
 						for (id in specs) {
-							if (specs[id].productName == type) {
+							if (specs[id].productName === type) {
 								binary = specs[id].knownApps[filePath];
 							}
 						}
@@ -367,7 +367,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		//  "Please specify a binary file, source file, or source directory");
 		var args = Array.prototype.slice.call(arguments, 1);
-		if (args.length == 0) {
+		if (args.length === 0) {
 			args.push('.'); //default to current directory
 		}
 
@@ -407,7 +407,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			//NOTE: because of the nature of 'options at the end', and the only option is --saveTo,
 			//this should have no side-effects with other usages.  If we did a more sophisticated
 			//argument structure, we'd need to change this logic.
-			if (!filename || (utilities.getFilenameExt(filename) != '.bin')) {
+			if (!filename || (utilities.getFilenameExt(filename) !== '.bin')) {
 				filename = deviceType + '_firmware_' + (new Date()).getTime() + '.bin';
 			}
 		}
@@ -632,21 +632,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('not logged in!');
 		}
 
-		if (!onOff || (onOff == '') || (onOff == 'on')) {
+		if (!onOff || (onOff === '') || (onOff === 'on')) {
 			onOff = true;
 		}
-		else if (onOff == 'off') {
+		else if (onOff === 'off') {
 			onOff = false;
 		}
 
-		if ((deviceid == '') || (deviceid == 'all')) {
+		if ((deviceid === '') || (deviceid === 'all')) {
 			deviceid = null;
 		}
-		else if (deviceid == 'on') {
+		else if (deviceid === 'on') {
 			deviceid = null;
 			onOff = true;
 		}
-		else if (deviceid == 'off') {
+		else if (deviceid === 'off') {
 			deviceid = null;
 			onOff = false;
 		}
@@ -738,7 +738,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							break;
 					}
 
-					if (!device.name || device.name == 'null') { name = '<no name>'; }
+					if (!device.name || device.name === 'null') { name = '<no name>'; }
 					else { name = device.name; }
 
 					if (device.connected) { name = chalk.cyan.bold(name); }
@@ -811,7 +811,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		// compile File1 File2 File3 output.bin
 		// compile File1 File2 File3 --saveTo anotherPlace.bin
 
-		if (!arr || arr.length == 0) {
+		if (!arr || arr.length === 0) {
 			return null;
 		}
 
@@ -839,9 +839,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		for (var i = 0; i < filelist.length; i++) {
 			var filename = filelist[i];
 			var ext = utilities.getFilenameExt(filename).toLowerCase();
-			var alwaysIncludeThisFile = ((ext == '.bin') && (i == 0) && (filelist.length == 1));
+			var alwaysIncludeThisFile = ((ext === '.bin') && (i === 0) && (filelist.length === 1));
 
-			if (filename.indexOf('--') == 0) {
+			if (filename.indexOf('--') === 0) {
 				//hit some arguments.
 				break;
 			}
@@ -862,7 +862,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				continue;
 			}
 
-			if (i == 0) {
+			if (i === 0) {
 				files['file'] = filename;
 			}
 			else {

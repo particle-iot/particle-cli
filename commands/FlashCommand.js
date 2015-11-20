@@ -104,7 +104,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		var result;
-		if (this.options.useDfu || (coreid == '--usb') || (coreid == '--factory')) {
+		if (this.options.useDfu || (coreid === '--usb') || (coreid === '--factory')) {
 			result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
 		}
 		else {

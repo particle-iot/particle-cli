@@ -122,10 +122,10 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         if (eventName && !url && !deviceID) {
             var filename = eventName;
 
-            if (utilities.getFilenameExt(filename) == '.json'){
+            if (utilities.getFilenameExt(filename) === '.json'){
                 if (fs.existsSync(filename)) {
                     data = utilities.tryParse(fs.readFileSync(filename)) || {};
-                    if (typeof data == 'object' && Object.keys(data).length == 0) {
+                    if (typeof data == 'object' && Object.keys(data).length === 0) {
                       console.log('Please check your .json file for syntax error.');
                       return -1;
                     }
@@ -146,13 +146,13 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         //required param
-        if (!eventName || (eventName == '')) {
+        if (!eventName || (eventName === '')) {
             console.log('Please specify an event name');
             return -1;
         }
 
         //required param
-        if (!url || (url == '')) {
+        if (!url || (url === '')) {
             console.log('Please specify a url');
             return -1;
         }
@@ -163,7 +163,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 		data.url = url;
 		data.deviceid = deviceID;
 		data.requestType = requestType || data.requestType;
-        if (data.mydevices == undefined) {
+        if (data.mydevices === undefined) {
             data.mydevices = true;
         }
 
@@ -178,7 +178,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             return -1;
         }
 
-        if (!hookID || (hookID == '')) {
+        if (!hookID || (hookID === '')) {
             console.log('Please specify a hook id');
             return -1;
         }

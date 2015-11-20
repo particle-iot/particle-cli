@@ -62,11 +62,11 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		// if they typed: "particle subscribe mine"
-		if ((!coreId || (coreId == '')) && (eventName == 'mine')) {
+		if ((!coreId || (coreId === '')) && (eventName === 'mine')) {
 			eventName = null;
 			coreId = 'mine';
 		}
-		else if (eventName == 'mine' && coreId) {
+		else if (eventName === 'mine' && coreId) {
 			eventName = null;
 			//okay, listen to all events from this core.
 		}
@@ -82,7 +82,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		if (!coreId) {
 			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) ');
 		}
-		else if (coreId == 'mine') {
+		else if (coreId === 'mine') {
 			console.log('Subscribing to ' + eventLabel + ' from my personal stream (my devices only) ');
 		}
 		else {
@@ -93,11 +93,11 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		var appendToQueue = function(arr) {
 			for (var i=0;i<arr.length;i++) {
 				var line = (arr[i] || '').trim();
-				if (line == '') {
+				if (line === '') {
 					continue;
 				}
 				chunks.push(line);
-				if (line.indexOf('data:') == 0) {
+				if (line.indexOf('data:') === 0) {
 					processItem(chunks);
 					chunks = [];
 				}
@@ -109,10 +109,10 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			for (var i=0;i<arr.length;i++) {
 				var line = arr[i];
 
-				if (line.indexOf('event:') == 0) {
+				if (line.indexOf('event:') === 0) {
 					obj.name = line.replace('event:', '').trim();
 				}
-				else if (line.indexOf('data:') == 0) {
+				else if (line.indexOf('data:') === 0) {
 					line = line.replace('data:', '');
 					obj = extend(obj, JSON.parse(line));
 				}
