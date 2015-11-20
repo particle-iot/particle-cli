@@ -194,8 +194,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	/**
 	 * Check to see if the device is in listening mode, try to get the device ID via serial
-	 * @param comPort
-	 * @returns {promise|*|Promise|promise}
+	 * @param {Number|String} comPort
 	 */
 	identifyDevice: function (comPort) {
 		var self = this;
@@ -384,8 +383,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	/**
 	 * wait for a prompt, optionally write back and answer, and optionally time out if the prompt doesn't appear in time.
-	 * @param prompt
-	 * @param answer
+	 * @param  {Object} serialPort
+	 * @param  {String} prompt
+	 * @param  {String} answer
+	 * @param  {Number} timeout
+	 * @param  {Boolean} alwaysResolve
+	 * @return {Promise} promise that resolves if successful.
 	 */
 	serialPromptDfd: function (serialPort, prompt, answer, timeout, alwaysResolve) {
 		//console.log("waiting on " + prompt + " answer will be " + answer);

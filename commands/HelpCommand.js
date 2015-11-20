@@ -57,8 +57,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 	/**
 	 * Get more info on a specific command
-	 * @param name
-	 * @param subcmd
+	 * @param {String} name
+	 * @param {String} subcmd
 	 */
 	helpCommand: function (name, subcmd) {
 		//console.log("Deep help command got " + name);

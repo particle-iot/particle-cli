@@ -283,8 +283,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	/**
 	 * use application ID instead of binary ID
-	 * @param binary_id
-	 * @param filename
+	 * @param {String} binary_id
+	 * @param {String} filename
 	 */
 	downloadBinary: function (binary_id, filename) {
 		if (!filename) {
@@ -761,8 +761,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	 * helper function for getting the contents of a directory,
 	 * checks for '.include', and a '.ignore' files, and uses their contents
 	 * instead
-	 * @param dirname
+	 * @param {String} dirname
 	 * @private
+	 * @returns {Array} array of filenames to include
 	 */
 	_processDirIncludes: function (dirname) {
 		dirname = path.resolve(dirname);
