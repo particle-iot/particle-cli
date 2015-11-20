@@ -33,7 +33,7 @@ var extend = require('xtend');
 var util = require('util');
 var fs = require('fs');
 
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
 var utilities = require('../lib/utilities.js');
 
@@ -44,7 +44,7 @@ var WebhookCommand = function (cli, options) {
 
     //TODO: better way to render and insert this template
     this.usagesByName.create = this.usagesByName.create.concat(
-        JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2).split("\n")
+        JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2).split('\n')
     );
 
     this.init();
@@ -52,56 +52,56 @@ var WebhookCommand = function (cli, options) {
 util.inherits(WebhookCommand, BaseCommand);
 
 WebhookCommand.HookJsonTemplate = {
-    "event": "my-event",
-    "url": "https://my-website.com/fancy_things.php",
-    "deviceid": "optionally filter by providing a device id",
+    'event': 'my-event',
+    'url': 'https://my-website.com/fancy_things.php',
+    'deviceid': 'optionally filter by providing a device id',
 
-    "_": "The following parameters are optional",
-    "mydevices": "true/false",
-    "requestType": "GET/POST/PUT/DELETE",
-    "form": null,
-    "headers": null,
-    "query": null,
-    "json": null,
-    "auth": null,
-    "responseTemplate": null,
-    "rejectUnauthorized": "true/false"
+    '_': 'The following parameters are optional',
+    'mydevices': 'true/false',
+    'requestType': 'GET/POST/PUT/DELETE',
+    'form': null,
+    'headers': null,
+    'query': null,
+    'json': null,
+    'auth': null,
+    'responseTemplate': null,
+    'rejectUnauthorized': 'true/false'
 };
 
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: "webhook",
-    description: "Experimental Beta - helpers for reacting to device event streams",
+    name: 'webhook',
+    description: 'Experimental Beta - helpers for reacting to device event streams',
     usagesByName: {
-        "create": [
-            "particle webhook create hook.json",
-            "particle webhook create eventName url deviceID",
-            "",
-            "The url will receive a request with the event name and data whenever one of your devices ",
-            "publish an event starting with the provided name.  If you do optionally provide a json ",
-            "filename you can set lots of advanced properties when creating your hook",
+        'create': [
+            'particle webhook create hook.json',
+            'particle webhook create eventName url deviceID',
+            '',
+            'The url will receive a request with the event name and data whenever one of your devices ',
+            'publish an event starting with the provided name.  If you do optionally provide a json ',
+            'filename you can set lots of advanced properties when creating your hook',
 
-            "",
-            "Optional JSON Template:",
+            '',
+            'Optional JSON Template:',
             //JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2),
 
         ]
     },
 
     init: function () {
-        this.addOption("create", this.createHook.bind(this), "Creates a postback to the given url when your event is sent");
-        this.addOption("list", this.listHooks.bind(this), "Show your current Webhooks");
-        this.addOption("delete", this.deleteHook.bind(this), "Deletes a Webhook");
-        this.addOption("POST", this.createPOSTHook.bind(this), "Create a new POST request hook");
-        this.addOption("GET", this.createGETHook.bind(this), "Create a new GET request hook");
+        this.addOption('create', this.createHook.bind(this), 'Creates a postback to the given url when your event is sent');
+        this.addOption('list', this.listHooks.bind(this), 'Show your current Webhooks');
+        this.addOption('delete', this.deleteHook.bind(this), 'Deletes a Webhook');
+        this.addOption('POST', this.createPOSTHook.bind(this), 'Create a new POST request hook');
+        this.addOption('GET', this.createGETHook.bind(this), 'Create a new GET request hook');
     },
 
     createPOSTHook: function(eventName, url, deviceID) {
-        return this.createHook(eventName, url, deviceID, "POST");
+        return this.createHook(eventName, url, deviceID, 'POST');
     },
 
     createGETHook: function(eventName, url, deviceID) {
-        return this.createHook(eventName, url, deviceID, "GET");
+        return this.createHook(eventName, url, deviceID, 'GET');
     },
 
     createHook: function (eventName, url, deviceID, requestType) {
@@ -112,8 +112,8 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 
         //Nothing was passed in except `spark webhook create`
         if (!eventName && !url && !deviceID && !requestType) {
-            var help = this.cli.getCommandModule("help");
-            return help.helpCommand(this.name, "create");
+            var help = this.cli.getCommandModule('help');
+            return help.helpCommand(this.name, 'create');
         }
 
         //if they gave us one thing, and it happens to be a file, and we could parse it as json
@@ -122,15 +122,15 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         if (eventName && !url && !deviceID) {
             var filename = eventName;
 
-            if(utilities.getFilenameExt(filename) == ".json"){
+            if(utilities.getFilenameExt(filename) == '.json'){
                 if (fs.existsSync(filename)) {
                     data = utilities.tryParse(fs.readFileSync(filename)) || {};
-                    if(typeof data == "object" && Object.keys(data).length == 0) {
-                      console.log("Please check your .json file for syntax error.");
+                    if(typeof data == 'object' && Object.keys(data).length == 0) {
+                      console.log('Please check your .json file for syntax error.');
                       return -1;
                     }
                     else{
-                      console.log("Using settings from the file " + filename);
+                      console.log('Using settings from the file ' + filename);
                       //only override these when we didn't get them from the command line
                       eventName = data.event || data.eventName;
                       url = data.url;
@@ -138,7 +138,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                     }
                 }
                 else {
-                  console.log(filename + " is not found.");
+                  console.log(filename + ' is not found.');
                   return -1;
                 }
             }
@@ -146,14 +146,14 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
         }
 
         //required param
-        if (!eventName || (eventName == "")) {
-            console.log("Please specify an event name");
+        if (!eventName || (eventName == '')) {
+            console.log('Please specify an event name');
             return -1;
         }
 
         //required param
-        if (!url || (url == "")) {
-            console.log("Please specify a url");
+        if (!url || (url == '')) {
+            console.log('Please specify a url');
             return -1;
         }
 
@@ -178,8 +178,8 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
             return -1;
         }
 
-        if (!hookID || (hookID == "")) {
-            console.log("Please specify a hook id");
+        if (!hookID || (hookID == '')) {
+            console.log('Please specify a hook id');
             return -1;
         }
 
@@ -195,27 +195,27 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 
         when(api.listWebhooks()).then(
             function (hooks) {
-                console.log("Found " + hooks.length + " hooks registered\n");
+                console.log('Found ' + hooks.length + ' hooks registered\n');
                 for(var i=0;i < hooks.length;i++) {
                     var hook = hooks[i];
                     var line = [
-                        "    ", (i+1),
-                        ".) Hook ID " + hook.id + " is watching for ",
-                        "\""+hook.event+"\"",
+                        '    ', (i+1),
+                        '.) Hook ID ' + hook.id + ' is watching for ',
+                        '"'+hook.event+'"',
 
-                        "\n       ", " and sending to: " + hook.url,
+                        '\n       ', ' and sending to: ' + hook.url,
 
-                        (hook.deviceID) ? "\n       " + " for device " + hook.deviceID : "",
+                        (hook.deviceID) ? '\n       ' + ' for device ' + hook.deviceID : '',
 
-                        "\n       ", " created at " + hook.created_at,
-                        "\n"
-                    ].join("");
+                        '\n       ', ' created at ' + hook.created_at,
+                        '\n'
+                    ].join('');
 
                     console.log(line);
                 }
             },
             function (err) {
-                console.error("Problem listing webhooks " + err);
+                console.error('Problem listing webhooks ' + err);
             });
         return 0;
     },

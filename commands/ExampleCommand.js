@@ -34,7 +34,7 @@ var path = require('path');
 
 var extend = require('xtend');
 var util = require('util');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 
 var ExampleCommand = function (cli, options) {
 	ExampleCommand.super_.call(this, cli, options);

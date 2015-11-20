@@ -55,11 +55,11 @@ util.inherits(UpdateCommand, BaseCommand);
 
 UpdateCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "update",
-	description: "This command allows you to update the system firmware of your device via USB",
+	name: 'update',
+	description: 'This command allows you to update the system firmware of your device via USB',
 
 	init: function () {
-		this.addOption("*", this.updateDevice.bind(this), "Update a device's system firmware via USB");
+		this.addOption('*', this.updateDevice.bind(this), "Update a device's system firmware via USB");
 	},
 
 	updateDevice: function updateDevice() {
@@ -121,21 +121,21 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 
 			function success() {
 				spin.stop(true);
-				console.log(chalk.cyan('!'), "System firmware update successfully completed!");
+				console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
 				console.log();
-				console.log(chalk.cyan('>'), "Your device should now restart automatically.");
-				console.log(chalk.cyan('>'), "You may need to re-flash your application to the device.");
+				console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
+				console.log(chalk.cyan('>'), 'You may need to re-flash your application to the device.');
 				console.log();
 			};
 
 			function failure(err) {
 				spin.stop(true);
 				console.log();
-				console.log(chalk.red('!'), "An error occurred while attempting to update the system firmware of your device:");
+				console.log(chalk.red('!'), 'An error occurred while attempting to update the system firmware of your device:');
 				console.log();
 				console.log(chalk.bold.white(err.toString()));
 				console.log();
-				console.log(chalk.cyan('>'), "Please visit our community forums for help with this error:");
+				console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
 				console.log(chalk.bold.white('https://community.particle.io/'))
 			};
 		};
@@ -149,15 +149,15 @@ function dfuError(err) {
 		dfuInstall(false);
 		console.log(
 			chalk.cyan('!!!'),
-			"You may also find our community forums helpful:\n",
-			chalk.bold.white("https://community.particle.io/"),
-			"\n"
+			'You may also find our community forums helpful:\n',
+			chalk.bold.white('https://community.particle.io/'),
+			'\n'
 		);
 		console.log(
 			chalk.red.bold('>'),
-			"Error code:",
+			'Error code:',
 			chalk.bold.white(err.code || 'unknown'),
-			"\n"
+			'\n'
 		);
 	}
 	process.exit(1);
@@ -169,13 +169,13 @@ function dfuInstall(noent) {
 		console.log(chalk.red('!!!'), "It doesn't seem like DFU utilities are installed...");
 	}
 	else {
-		console.log(chalk.red('!!!'), "There was an error trying execute DFU utilities.");
+		console.log(chalk.red('!!!'), 'There was an error trying execute DFU utilities.');
 	}
-	console.log("");
+	console.log('');
 	console.log(
 		chalk.cyan('!!!'),
-		"For help with installing DFU Utilities, please see:\n",
-		chalk.bold.white("http://support.particle.io/hc/en-us/articles/203265730-Installing-the-Particle-CLI")
+		'For help with installing DFU Utilities, please see:\n',
+		chalk.bold.white('http://support.particle.io/hc/en-us/articles/203265730-Installing-the-Particle-CLI')
 	);
 	console.log();
 };

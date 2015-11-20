@@ -87,7 +87,7 @@ BaseCommand.prototype = {
 
 	runCommand: function (args) {
 		//default to wildcard
-		var cmdName = "*";
+		var cmdName = '*';
 		var cmdFn = this.optionsByName[cmdName];
 
 		//or, if we have args, try to grab that command and run that instead
@@ -113,7 +113,7 @@ BaseCommand.prototype = {
 			//no wildcard, and no function specified...
 
 			//console.log('running help for command');
-			return this.cli.runCommand("help", this.name);
+			return this.cli.runCommand('help', this.name);
 		}
 	},
 	newSpin: function (str) {
@@ -133,8 +133,8 @@ BaseCommand.prototype = {
 	error: function (str, exit) {
 
 		var name = this.name;
-		if(!str) { str = "Unknown error"; }
-		str = "%s: " + str;
+		if(!str) { str = 'Unknown error'; }
+		str = '%s: ' + str;
 
 		console.log();
 		console.log(chalk.bold.red('!'), chalk.bold.white(util.format(str, name)));

@@ -33,7 +33,7 @@ var path = require('path');
 
 var extend = require('xtend');
 var util = require('util');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var fs = require('fs');
 var dfu = require('../lib/dfu.js');
 var utilities = require('../lib/utilities.js');
@@ -47,16 +47,16 @@ var FlashCommand = function (cli, options) {
 util.inherits(FlashCommand, BaseCommand);
 FlashCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "flash",
-	description: "copies firmware and data to your device over usb",
+	name: 'flash',
+	description: 'copies firmware and data to your device over usb',
 
 	init: function () {
 		//this.addAlias("firmware", this.flashDfu.bind(this), null);
 
-		this.addOption("firmware", this.flashDfu.bind(this), "Flashes a local firmware binary to your device over USB");
-		this.addOption("cloud", this.flashCloud.bind(this), "Flashes a binary to your device wirelessly ");
+		this.addOption('firmware', this.flashDfu.bind(this), 'Flashes a local firmware binary to your device over USB');
+		this.addOption('cloud', this.flashCloud.bind(this), 'Flashes a binary to your device wirelessly ');
 
-		this.addOption("*", this.flashSwitch.bind(this));
+		this.addOption('*', this.flashSwitch.bind(this));
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
@@ -65,26 +65,26 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (!this.options.knownApp) {
 			this.options.knownApp = utilities.tryParseArgs(args,
-				"--known",
-				"Please specify an app name for --known"
+				'--known',
+				'Please specify an app name for --known'
 			);
 		}
 		if (!this.options.useCloud) {
 			this.options.useCloud = utilities.tryParseArgs(args,
-				"--cloud",
+				'--cloud',
 				null
 			);
 		}
 		if (!this.options.useDfu) {
 			this.options.useDfu = utilities.tryParseArgs(args,
-				"--usb",
+				'--usb',
 				null
 			);
 		}
 		if (!this.options.useFactoryAddress) {
 			//assume DFU if doing factory
 			this.options.useFactoryAddress = utilities.tryParseArgs(args,
-				"--factory",
+				'--factory',
 				null
 			);
 		}
@@ -93,7 +93,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
 	flashSwitch: function(coreid, firmware) {
 		if (!coreid && !firmware) {
-			var help = this.cli.getCommandModule("help");
+			var help = this.cli.getCommandModule('help');
 			return help.helpCommand(this.name);
 		}
 
@@ -104,7 +104,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		var result;
-		if (this.options.useDfu || (coreid == "--usb") || (coreid == "--factory")) {
+		if (this.options.useDfu || (coreid == '--usb') || (coreid == '--factory')) {
 			result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
 		}
 		else {
@@ -113,7 +113,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 			if (this.options.useCloud) {
 				//trim
 
-				var idx = utilities.indexOf(args, "--cloud");
+				var idx = utilities.indexOf(args, '--cloud');
 				args.splice(idx, 1);
 			}
 
@@ -124,7 +124,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	flashCloud: function(coreid, filename) {
-		var cloud = this.cli.getCommandModule("cloud");
+		var cloud = this.cli.getCommandModule('cloud');
 		return cloud.flashDevice.apply(cloud, arguments);
 	},
 
@@ -142,7 +142,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 					if (!fs.existsSync(firmware)){
 						firmware = dfu.checkKnownApp(firmware);
 						if (firmware === undefined) {
-							return when.reject("no known App found.");
+							return when.reject('no known App found.');
 						} else {
 							return firmware;
 						}
@@ -159,9 +159,9 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 			]);
 
 		return ready.then(function () {
-			console.log ("\nFlash success!");
+			console.log ('\nFlash success!');
 		}, function (err) {
-			console.error("\nError writing firmware..." + err  + "\n");
+			console.error('\nError writing firmware...' + err  + '\n');
 			return when.reject();
 		});
 	},

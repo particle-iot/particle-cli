@@ -50,14 +50,14 @@ var VariableCommand = function (cli, options) {
 util.inherits(VariableCommand, BaseCommand);
 VariableCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "variable",
-	description: "retrieve and monitor variables on your device",
+	name: 'variable',
+	description: 'retrieve and monitor variables on your device',
 
 
 	init: function () {
-		this.addOption("list", this.listVariables.bind(this), "Show variables provided by your device(s)");
-		this.addOption("get", this.getValue.bind(this), "Retrieve a value from your device");
-		this.addOption("monitor", this.monitorVariables.bind(this), "Connect and display messages from a device");
+		this.addOption('list', this.listVariables.bind(this), 'Show variables provided by your device(s)');
+		this.addOption('get', this.getValue.bind(this), 'Retrieve a value from your device');
+		this.addOption('monitor', this.monitorVariables.bind(this), 'Connect and display messages from a device');
 
 		//this.addArgument("get", "--time", "include a timestamp")
 		//this.addArgument("monitor", "--time", "include a timestamp")
@@ -72,7 +72,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		this.options = this.options || {};
 
 		if (!this.options.showTime) {
-			this.options.showTime = (utilities.contains(args, "--time"));
+			this.options.showTime = (utilities.contains(args, '--time'));
 		}
 //        if (!this.options.showAll) {
 //            this.options.showAll = (utilities.contains(args, "--all"));
@@ -150,15 +150,15 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 					parts.push(result.result);
 				}
 				catch (ex) {
-					console.error("error " + ex);
+					console.error('error ' + ex);
 				}
 
-				console.log(parts.join(", "));
+				console.log(parts.join(', '));
 			}
 			tmp.resolve(results);
 		},
 		function (err) {
-			console.error("Error reading value ", err);
+			console.error('Error reading value ', err);
 			throw err;
 		});
 	},
@@ -192,7 +192,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			return when.resolve(this._cachedVariableList);
 		}
 
-		console.error("polling server to see what devices are online, and what variables are available");
+		console.error('polling server to see what devices are online, and what variables are available');
 
 		var that = this;
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -202,7 +202,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 		var lookupVariables = function (cores) {
 			if (!cores || (cores.length == 0)) {
-				console.log("No cores found.");
+				console.log('No cores found.');
 				that._cachedVariableList = null;
 			}
 			else {
@@ -220,7 +220,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 				return when.all(promises).then(function (cores) {
 					//sort alphabetically
 					cores = cores.sort(function (a, b) {
-						return (a.name || "").localeCompare(b.name);
+						return (a.name || '').localeCompare(b.name);
 					});
 
 					that._cachedVariableList = cores;
@@ -245,19 +245,19 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 				if (core.variables) {
 					for (var key in core.variables) {
 						var type = core.variables[key];
-						available.push("  " + key + " (" + type + ")");
+						available.push('  ' + key + ' (' + type + ')');
 					}
 				}
 
-				var status = core.name + " (" + core.id + ") has " + available.length + " variables ";
+				var status = core.name + ' (' + core.id + ') has ' + available.length + ' variables ';
 				if (available.length == 0) {
-					status += " (or is offline) ";
+					status += ' (or is offline) ';
 				}
 
 				lines.push(status);
 				lines = lines.concat(available);
 			}
-			console.log(lines.join("\n"));
+			console.log(lines.join('\n'));
 		});
 	},
 

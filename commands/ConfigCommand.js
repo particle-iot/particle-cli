@@ -33,7 +33,7 @@ var path = require('path');
 
 var extend = require('xtend');
 var util = require('util');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var fs = require('fs');
 var utilities = require('../lib/utilities.js');
 
@@ -46,40 +46,40 @@ var ConfigCommand = function (cli, options) {
 util.inherits(ConfigCommand, BaseCommand);
 ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "config",
-	description: "helps create and switch between groups of commands",
+	name: 'config',
+	description: 'helps create and switch between groups of commands',
 
 	does: [
-		"The config command lets you create groups of settings. ",
-		"You can quickly switch to a profile by calling \"particle config profile-name\". ",
-		"This is especially useful for switching to your local server ",
-		"or when switching between other environments.  ",
-		"Call \"particle config particle\" to switch back to the normal api server",
-		"Use \"particle config identify\" to see the currently selected configuration profile",
-		"Use \"particle config list\" to see the list of available profiles"
+		'The config command lets you create groups of settings. ',
+		'You can quickly switch to a profile by calling "particle config profile-name". ',
+		'This is especially useful for switching to your local server ',
+		'or when switching between other environments.  ',
+		'Call "particle config particle" to switch back to the normal api server',
+		'Use "particle config identify" to see the currently selected configuration profile',
+		'Use "particle config list" to see the list of available profiles'
 	],
 	usage: [
-		"particle config local",
-		"particle config particle",
-		"particle config local apiUrl http://localhost:8080",
-		"particle config useSudoForDfu true",
-		"particle config list",
-		"particle config identify"
+		'particle config local',
+		'particle config particle',
+		'particle config local apiUrl http://localhost:8080',
+		'particle config useSudoForDfu true',
+		'particle config list',
+		'particle config identify'
 	],
 
 
 	init: function () {
 
-		this.addOption("*", this.configSwitch.bind(this));
-		this.addOption("identify", this.identifyServer.bind(this), "Display the current server config information.");
-		this.addOption("list", this.listConfigs.bind(this), "Display available configurations");
+		this.addOption('*', this.configSwitch.bind(this));
+		this.addOption('identify', this.identifyServer.bind(this), 'Display the current server config information.');
+		this.addOption('list', this.listConfigs.bind(this), 'Display available configurations');
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
 
 	configSwitch: function (group, name, value) {
 		if (!group && !name && !value) {
-			var help = this.cli.getCommandModule("help");
+			var help = this.cli.getCommandModule('help');
 			return help.helpCommand(this.name, null);
 		}
 
@@ -98,7 +98,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	switchGroup: function (group) {
 		//default group is particle
 		if (!group) {
-			group = "particle";
+			group = 'particle';
 		}
 
 		settings.switchProfile(group);
@@ -109,32 +109,32 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	},
 	
 	identifyServer: function () {
-		console.log("Current profile: " + settings.profile);
-		console.log("Using API: " + settings.apiUrl);
-		console.log("Access token: " +  settings.access_token);
+		console.log('Current profile: ' + settings.profile);
+		console.log('Using API: ' + settings.apiUrl);
+		console.log('Access token: ' +  settings.access_token);
 	},
 
 	listConfigs: function() {
 		var particleDir = settings.ensureFolder();
 		var files = utilities.globList(null, [
-			path.join(particleDir, "*.config.json")
+			path.join(particleDir, '*.config.json')
 		]);
 
 		if (files.length > 0) {
-			console.log("Available config files: ");
+			console.log('Available config files: ');
 			for (var i = 0; i < files.length; i++) {
 
 				//strip the path
 				var filename = path.basename(files[i]);
 
 				//strip the extension
-				var name = filename.replace(".config.json", "");
+				var name = filename.replace('.config.json', '');
 
-				console.log((i + 1) + ".) " + name);
+				console.log((i + 1) + '.) ' + name);
 			}
 		}
 		else {
-			console.log("No configuration files found.");
+			console.log('No configuration files found.');
 		}
 	},
 

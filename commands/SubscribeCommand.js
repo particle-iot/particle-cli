@@ -34,7 +34,7 @@ var extend = require('xtend');
 var util = require('util');
 var fs = require('fs');
 
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
 
 
@@ -47,11 +47,11 @@ var SubscribeCommand = function (cli, options) {
 util.inherits(SubscribeCommand, BaseCommand);
 SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "subscribe",
-	description: "helpers for watching device event streams",
+	name: 'subscribe',
+	description: 'helpers for watching device event streams',
 
 	init: function () {
-		this.addOption("*", this.startListening.bind(this), "Starts listening and parsing server sent events from the api to your console");
+		this.addOption('*', this.startListening.bind(this), 'Starts listening and parsing server sent events from the api to your console');
 	},
 
 
@@ -62,42 +62,42 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		// if they typed: "particle subscribe mine"
-		if ((!coreId || (coreId == "")) && (eventName == "mine")) {
+		if ((!coreId || (coreId == '')) && (eventName == 'mine')) {
 			eventName = null;
-			coreId = "mine";
+			coreId = 'mine';
 		}
-		else if (eventName == "mine" && coreId) {
+		else if (eventName == 'mine' && coreId) {
 			eventName = null;
 			//okay, listen to all events from this core.
 		}
 
 		var eventLabel = eventName;
 		if (eventLabel) {
-			eventLabel = "\"" + eventLabel + "\"";
+			eventLabel = '"' + eventLabel + '"';
 		}
 		else {
-			eventLabel = "all events";
+			eventLabel = 'all events';
 		}
 
 		if (!coreId) {
-			console.log("Subscribing to " + eventLabel + " from the firehose (all devices) ")
+			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) ')
 		}
-		else if (coreId == "mine") {
-			console.log("Subscribing to " + eventLabel + " from my personal stream (my devices only) ")
+		else if (coreId == 'mine') {
+			console.log('Subscribing to ' + eventLabel + ' from my personal stream (my devices only) ')
 		}
 		else {
-			console.log("Subscribing to " + eventLabel + " from " + coreId + "'s stream");
+			console.log('Subscribing to ' + eventLabel + ' from ' + coreId + "'s stream");
 		}
 
 		var chunks = [];
 		var appendToQueue = function(arr) {
 			for(var i=0;i<arr.length;i++) {
-				var line = (arr[i] || "").trim();
-				if (line == "") {
+				var line = (arr[i] || '').trim();
+				if (line == '') {
 					continue;
 				}
 				chunks.push(line);
-				if (line.indexOf("data:") == 0) {
+				if (line.indexOf('data:') == 0) {
 					processItem(chunks);
 					chunks = [];
 				}
@@ -109,11 +109,11 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			for(var i=0;i<arr.length;i++) {
 				var line = arr[i];
 
-				if (line.indexOf("event:") == 0) {
-					obj.name = line.replace("event:", "").trim();
+				if (line.indexOf('event:') == 0) {
+					obj.name = line.replace('event:', '').trim();
 				}
-				else if (line.indexOf("data:") == 0) {
-					line = line.replace("data:", "");
+				else if (line.indexOf('data:') == 0) {
+					line = line.replace('data:', '');
 					obj = extend(obj, JSON.parse(line));
 				}
 			}
@@ -123,7 +123,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 
 		var onData = function(event) {
 			var chunk = event.toString();
-			appendToQueue(chunk.split("\n"));
+			appendToQueue(chunk.split('\n'));
 		};
 		api.getEventStream(eventName, coreId, onData);
 

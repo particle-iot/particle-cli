@@ -34,7 +34,7 @@ var extend = require('xtend');
 var util = require('util');
 var fs = require('fs');
 
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
 
 
@@ -47,11 +47,11 @@ var PublishCommand = function (cli, options) {
 util.inherits(PublishCommand, BaseCommand);
 PublishCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "publish",
-	description: "Publishes an event to the cloud.",
+	name: 'publish',
+	description: 'Publishes an event to the cloud.',
 
 	init: function () {
-		this.addOption("*", this.publishEvent.bind(this), "Publishes an event to the cloud");
+		this.addOption('*', this.publishEvent.bind(this), 'Publishes an event to the cloud');
 	},
 
 
@@ -63,14 +63,14 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!eventName) {
-			console.log("Please specify an event name");
+			console.log('Please specify an event name');
 			return -1;
 		}
 
-		if (data == "--private" && setPrivate === undefined){
+		if (data == '--private' && setPrivate === undefined) {
 			setPrivate = true;
 			data = undefined;
-		} else if (data !== undefined && setPrivate == "--private") {
+		} else if (data !== undefined && setPrivate == '--private') {
 			setPrivate = true;
 		} else {
 			setPrivate = false;

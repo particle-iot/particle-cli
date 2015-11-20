@@ -34,7 +34,7 @@ var path = require('path');
 
 var extend = require('xtend');
 var util = require('util');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 
 var DoctorCommand = function (cli, options) {
 	DoctorCommand.super_.call(this, cli, options);
@@ -46,7 +46,7 @@ util.inherits(DoctorCommand, BaseCommand);
 DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	//name: "doctor",
-	description: "helps repair devices, run patches, check wifi, and more!",
+	description: 'helps repair devices, run patches, check wifi, and more!',
 
 	init: function () {
 		//this.addOption("list", this.listCores.bind(this));

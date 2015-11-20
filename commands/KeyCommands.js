@@ -32,7 +32,7 @@ var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
 var utilities = require('../lib/utilities.js');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
 var moment = require('moment');
 //var ursa = require('ursa');
@@ -49,18 +49,18 @@ var KeyCommands = function (cli, options) {
 util.inherits(KeyCommands, BaseCommand);
 KeyCommands.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "keys",
-	description: "tools to help you manage keys on your devices",
+	name: 'keys',
+	description: 'tools to help you manage keys on your devices',
 
 
 	init: function () {
 
-		this.addOption("new", this.makeNewKey.bind(this), "Generate a new set of keys for your device");
-		this.addOption("load", this.writeKeyToDevice.bind(this), "Load a saved key on disk onto your device");
-		this.addOption("save", this.saveKeyFromDevice.bind(this), "Save a key from your device onto your disk");
-		this.addOption("send", this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
-		this.addOption("doctor", this.keyDoctor.bind(this), "Creates and assigns a new key to your device, and uploads it to the cloud");
-		this.addOption("server", this.writeServerPublicKey.bind(this), "Switch server public keys");
+		this.addOption('new', this.makeNewKey.bind(this), 'Generate a new set of keys for your device');
+		this.addOption('load', this.writeKeyToDevice.bind(this), 'Load a saved key on disk onto your device');
+		this.addOption('save', this.saveKeyFromDevice.bind(this), 'Save a key from your device onto your disk');
+		this.addOption('send', this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
+		this.addOption('doctor', this.keyDoctor.bind(this), 'Creates and assigns a new key to your device, and uploads it to the cloud');
+		this.addOption('server', this.writeServerPublicKey.bind(this), 'Switch server public keys');
 
 		//this.addArgument("get", "--time", "include a timestamp")
 		//this.addArgument("monitor", "--time", "include a timestamp")
@@ -74,7 +74,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		if (!this.options.force) {
 			this.options.force = utilities.tryParseArgs(args,
-				"--force",
+				'--force',
 				null
 			);
 		}
@@ -85,20 +85,20 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		filename = utilities.filenameNoExt(filename);
 
 		if (this.options.force) {
-			utilities.tryDelete(filename + ".pem");
-			utilities.tryDelete(filename + ".pub.pem");
-			utilities.tryDelete(filename + ".der");
+			utilities.tryDelete(filename + '.pem');
+			utilities.tryDelete(filename + '.pub.pem');
+			utilities.tryDelete(filename + '.der');
 		}
 
 		return sequence([
 			function () {
-				return utilities.deferredChildProcess("openssl genrsa -out " + filename + ".pem 1024");
+				return utilities.deferredChildProcess('openssl genrsa -out ' + filename + '.pem 1024');
 			},
 			function () {
-				return utilities.deferredChildProcess("openssl rsa -in " + filename + ".pem -pubout -out " + filename + ".pub.pem");
+				return utilities.deferredChildProcess('openssl rsa -in ' + filename + '.pem -pubout -out ' + filename + '.pub.pem');
 			},
 			function () {
-				return utilities.deferredChildProcess("openssl rsa -in " + filename + ".pem -outform DER -out " + filename + ".der");
+				return utilities.deferredChildProcess('openssl rsa -in ' + filename + '.pem -outform DER -out ' + filename + '.der');
 			}
 		]);
 	},
@@ -116,15 +116,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	makeNewKey: function (filename) {
 		if (!filename) {
-			filename = "device";
+			filename = 'device';
 		}
 
 		var keyReady = this.makeKeyOpenSSL(filename);
 
 		when(keyReady).then(function () {
-			console.log("New Key Created!");
+			console.log('New Key Created!');
 		}, function (err) {
-			console.error("Error creating keys... " + err);
+			console.error('Error creating keys... ' + err);
 		});
 
 		return keyReady;
@@ -134,11 +134,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		if (!filename) {
-			console.error("Please provide a DER format key filename to load to your device");
-			return when.reject("Please provide a DER format key filename to load to your device");
+			console.error('Please provide a DER format key filename to load to your device');
+			return when.reject('Please provide a DER format key filename to load to your device');
 		}
 
-		filename = utilities.filenameNoExt(filename) + ".der";
+		filename = utilities.filenameNoExt(filename) + '.der';
 		if (!fs.existsSync(filename)) {
 			console.error("I couldn't find the file: " + filename);
 			return when.reject("I couldn't find the file: " + filename);
@@ -159,7 +159,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			function() {
 				var prefilename = path.join(
 						path.dirname(filename),
-					"pre_" + path.basename(filename)
+					'pre_' + path.basename(filename)
 				);
 				return that.saveKeyFromDevice(prefilename).then(null, function(err) {
 					console.log('Continuing...');
@@ -173,9 +173,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		]);
 
 		when(ready).then(function () {
-			console.log("Saved!");
+			console.log('Saved!');
 		}, function (err) {
-			console.error("Error saving key to device... " + err);
+			console.error('Error saving key to device... ' + err);
 		});
 
 		return ready;
@@ -185,17 +185,17 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	saveKeyFromDevice: function (filename) {
 		if (!filename) {
-			console.error("Please provide a filename to store this key.");
-			return when.reject("Please provide a filename to store this key.");
+			console.error('Please provide a filename to store this key.');
+			return when.reject('Please provide a filename to store this key.');
 		}
 
-		filename = utilities.filenameNoExt(filename) + ".der";
+		filename = utilities.filenameNoExt(filename) + '.der';
 
 		this.checkArguments(arguments);
 
 		if ((!this.options.force) && (fs.existsSync(filename))) {
-			console.error("This file already exists, please specify a different file, or use the --force flag.");
-			return when.reject("This file already exists, please specify a different file, or use the --force flag.");
+			console.error('This file already exists, please specify a different file, or use the --force flag.');
+			return when.reject('This file already exists, please specify a different file, or use the --force flag.');
 		}
 		else if (fs.existsSync(filename)) {
 			utilities.tryDelete(filename);
@@ -217,18 +217,18 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.readPrivateKey(filename, false);
 			},
 			function () {
-				var pubPemFilename = utilities.filenameNoExt(filename) + ".pub.pem";
+				var pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
 				if (that.options.force) { utilities.tryDelete(pubPemFilename); }
-				return utilities.deferredChildProcess("openssl rsa -in " + filename + " -inform DER -pubout  -out " + pubPemFilename).catch(function (err) {
+				return utilities.deferredChildProcess('openssl rsa -in ' + filename + ' -inform DER -pubout  -out ' + pubPemFilename).catch(function (err) {
 					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
 				});
 			}
 		]);
 
 		when(ready).then(function () {
-			console.log("Saved!");
+			console.log('Saved!');
 		}, function (err) {
-			console.error("Error saving key from device... " + err);
+			console.error('Error saving key from device... ' + err);
 		});
 
 		return ready;
@@ -236,8 +236,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	sendPublicKeyToServer: function (deviceid, filename) {
 		if (!deviceid) {
-			console.log("Please provide a device id");
-			return when.reject("Please provide a device id");
+			console.log('Please provide a device id');
+			return when.reject('Please provide a device id');
 		}
 
 		if (!filename) {
@@ -246,7 +246,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!fs.existsSync(filename)) {
-			filename = utilities.filenameNoExt(filename) + ".pub.pem";
+			filename = utilities.filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)) {
 				console.error("Couldn't find " + filename);
 				return when.reject("Couldn't find " + filename);
@@ -255,7 +255,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return when.reject("Not logged in");
+			return when.reject('Not logged in');
 		}
 
 		var keyStr = fs.readFileSync(filename).toString();
@@ -263,18 +263,18 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	keyDoctor: function (deviceid) {
-		if (!deviceid || (deviceid == "")) {
-			console.log("Please provide your device id");
+		if (!deviceid || (deviceid == '')) {
+			console.log('Please provide your device id');
 			return 0;
 		}
 
 		this.checkArguments(arguments);
 
 		if (deviceid.length < 24) {
-			console.log("***************************************************************");
-			console.log("   Warning! - device id was shorter than 24 characters - did you use something other than an id?");
-			console.log("   use particle identify to find your device id");
-			console.log("***************************************************************");
+			console.log('***************************************************************');
+			console.log('   Warning! - device id was shorter than 24 characters - did you use something other than an id?');
+			console.log('   use particle identify to find your device id');
+			console.log('***************************************************************');
 		}
 
 		var that = this;
@@ -286,44 +286,44 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function() {
-				return that.makeNewKey(deviceid + "_new");
+				return that.makeNewKey(deviceid + '_new');
 			},
 			function() {
-				return that.writeKeyToDevice(deviceid + "_new", true);
+				return that.writeKeyToDevice(deviceid + '_new', true);
 			},
 			function() {
-				return that.sendPublicKeyToServer(deviceid, deviceid + "_new");
+				return that.sendPublicKeyToServer(deviceid, deviceid + '_new');
 			}
 		]);
 
 		when(allDone).then(
 			function () {
-				console.log("Okay!  New keys in place, your device should restart.");
+				console.log('Okay!  New keys in place, your device should restart.');
 
 			},
 			function (err) {
-				console.log("Make sure your device is in DFU mode (blinking yellow), and that your computer is online.");
-				console.error("Error - " + err);
+				console.log('Make sure your device is in DFU mode (blinking yellow), and that your computer is online.');
+				console.error('Error - ' + err);
 			});
 	},
 
 	writeServerPublicKey: function (filename, ipOrDomain) {
 		if (!filename || (!fs.existsSync(filename))) {
-			console.log("Please specify a server key in DER format.");
+			console.log('Please specify a server key in DER format.');
 			return -1;
 		}
 
-		if (utilities.getFilenameExt(filename).toLowerCase() != ".der") {
-			var derFile = utilities.filenameNoExt(filename) + ".der";
+		if (utilities.getFilenameExt(filename).toLowerCase() != '.der') {
+			var derFile = utilities.filenameNoExt(filename) + '.der';
 
 			if (!fs.existsSync(derFile)) {
 				var that = this;
-				console.log("Creating DER format file");
-				var derFilePromise = utilities.deferredChildProcess("openssl rsa -in  " + filename + " -pubin -pubout -outform DER -out " + derFile);
+				console.log('Creating DER format file');
+				var derFilePromise = utilities.deferredChildProcess('openssl rsa -in  ' + filename + ' -pubin -pubout -outform DER -out ' + derFile);
 				when(derFilePromise).then(function() {
 					that.writeServerPublicKey(derFile, ipOrDomain);
 				}, function(err) {
-					console.error("Error creating a DER formatted version of that key.  Make sure you specified the public key: " + err);
+					console.error('Error creating a DER formatted version of that key.  Make sure you specified the public key: ' + err);
 				});
 
 				return;
@@ -333,13 +333,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		if (ipOrDomain == "mine") {
+		if (ipOrDomain == 'mine') {
 			var ips = utilities.getIPAddresses();
 			if (ips && (ips.length == 1)) {
 				ipOrDomain = ips[0];
 			}
 			else if (ips.length > 0) {
-				console.log("Please specify an ip address: " + ips.join("\n"));
+				console.log('Please specify an ip address: ' + ips.join('\n'));
 				return;
 			}
 		}
@@ -348,7 +348,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		if (ipOrDomain) {
 			var isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
 
-			var file_with_address = utilities.filenameNoExt(filename) + utilities.replaceAll(ipOrDomain, ".", "_") + ".der";
+			var file_with_address = utilities.filenameNoExt(filename) + utilities.replaceAll(ipOrDomain, '.', '_') + '.der';
 			if (!fs.existsSync(file_with_address)) {
 				// create a version of this key that points to a particular server or domain
 				var addressBuf = new Buffer(ipOrDomain.length + 2);
@@ -409,12 +409,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		when(allDone).then(
 			function () {
-				console.log("Okay!  New keys in place, your device will not restart.");
+				console.log('Okay!  New keys in place, your device will not restart.');
 
 			},
 			function (err) {
-				console.log("Make sure your device is in DFU mode (blinking yellow), and is connected to your computer");
-				console.error("Error - " + err);
+				console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');
+				console.error('Error - ' + err);
 			});
 	},
 

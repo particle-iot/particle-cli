@@ -37,7 +37,7 @@ var util = require('util');
 var inquirer = require('inquirer');
 
 var ApiClient = require('../lib/ApiClient.js');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var prompts = require('../lib/prompts.js');
 var settings = require('../settings.js');
 var utilities = require('../lib/utilities.js');
@@ -51,13 +51,13 @@ var AccessTokenCommands = function (cli, options) {
 util.inherits(AccessTokenCommands, BaseCommand);
 AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "token",
-	description: "tools to manage access tokens (require username/password)",
+	name: 'token',
+	description: 'tools to manage access tokens (require username/password)',
 
 	init: function () {
-		this.addOption("list", this.listAccessTokens.bind(this), "List all access tokens for your account");
-		this.addOption("revoke", this.revokeAccessToken.bind(this), "Revoke an access token");
-		this.addOption("new", this.createAccessToken.bind(this), "Create a new access token");
+		this.addOption('list', this.listAccessTokens.bind(this), 'List all access tokens for your account');
+		this.addOption('revoke', this.revokeAccessToken.bind(this), 'Revoke an access token');
+		this.addOption('new', this.createAccessToken.bind(this), 'Create a new access token');
 	},
 
 	getCredentials: function() {
@@ -68,7 +68,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				{
 					type: 'password',
 					name: 'password',
-					message: "Using account "+  settings.username + '\nPlease enter your password:'
+					message: 'Using account '+  settings.username + '\nPlease enter your password:'
 				}
 			], function (answers) {
 				creds.resolve({
@@ -96,7 +96,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	getAccessTokens: function () {
-		console.error("Checking with the cloud...");
+		console.error('Checking with the cloud...');
 
 		var sort_tokens = function (tokens) {
 			return tokens.sort(function (a, b) {
@@ -136,11 +136,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 					lines.push(' Expires at: ' + token.expires_at || 'unknown');
 					lines.push('');
 				}
-				console.log(lines.join("\n"));
+				console.log(lines.join('\n'));
 				process.exit(0);
 			}
 			catch (ex) {
-				console.error("Error listing tokens " + ex);
+				console.error('Error listing tokens ' + ex);
 				process.exit(1);
 			}
 		}, function(err) {
@@ -156,11 +156,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		tokens = args;
 
 		if (tokens.indexOf(settings.access_token) >= 0) {
-			console.log("WARNING: " + settings.access_token + " is this CLI's access token");
+			console.log('WARNING: ' + settings.access_token + " is this CLI's access token");
 			if (this.options.force) {
-				console.log("**forcing**");
+				console.log('**forcing**');
 			} else {
-				console.log("use --force to delete it");
+				console.log('use --force to delete it');
 				return;
 			}
 		}
@@ -189,7 +189,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 							process.exit(0);
 						},
 						function (err) {
-							console.log('error revoking ' + token + ': ' + JSON.stringify(err).replace(/\"/g, ""));
+							console.log('error revoking ' + token + ': ' + JSON.stringify(err).replace(/\"/g, ''));
 							process.exit(1);
 						}
 					);
@@ -203,7 +203,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 	createAccessToken: function (clientName) {
 
 		if (!clientName) {
-			clientName = "user";
+			clientName = 'user';
 		}
 
 		var allDone = pipeline([

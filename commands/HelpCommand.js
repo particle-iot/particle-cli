@@ -30,7 +30,7 @@ var sequence = require('when/sequence');
 var readline = require('readline');
 var extend = require('xtend');
 var util = require('util');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');
 var package_json = require('../package.json');
 
@@ -43,13 +43,13 @@ var HelpCommand = function (cli, options) {
 util.inherits(HelpCommand, BaseCommand);
 HelpCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "help",
-	description: "Help provides information on available commands in the cli",
+	name: 'help',
+	description: 'Help provides information on available commands in the cli',
 
 	init: function () {
 		//this.addOption("list", this.listCommandsSwitch.bind(this), "List commands available for that command");
-		this.addOption("version", this.showVersion.bind(this), "Displays the CLI version");
-		this.addOption("*", this.helpCommand.bind(this), "Provide extra information about the given command");
+		this.addOption('version', this.showVersion.bind(this), 'Displays the CLI version');
+		this.addOption('*', this.helpCommand.bind(this), 'Provide extra information about the given command');
 	},
 
 
@@ -79,15 +79,15 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		//make a pretty string showing how to use this command, optionally plus a sub-command
-		var cmdLine = "particle " + name;
+		var cmdLine = 'particle ' + name;
 		if (subcmd) {
-			cmdLine += " " + subcmd;
+			cmdLine += ' ' + subcmd;
 		}
 
 		var lines = [
-			"NAME:",
+			'NAME:',
 			cmdLine,
-			""
+			''
 		];
 
 		var descr = command.does;
@@ -103,8 +103,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (descr) {
-			lines.push("DOES: ");
-			lines.push(utilities.indentLines(descr, " ", 4));
+			lines.push('DOES: ');
+			lines.push(utilities.indentLines(descr, ' ', 4));
 		}
 
 
@@ -128,9 +128,9 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			//lines.push("How to use this function ");
-			lines.push("");
-			lines.push("USE:");
-			lines.push(utilities.indentLines(usageText, " ", 4));
+			lines.push('');
+			lines.push('USE:');
+			lines.push(utilities.indentLines(usageText, ' ', 4));
 		}
 
 
@@ -142,44 +142,44 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 			var cmds = command._commands;
 			if (cmds) {
-				lines.push("The following commands are available: ");
+				lines.push('The following commands are available: ');
 
 				for (var idx = 0; idx < cmds.length; idx++) {
 					var subcmdname = cmds[idx];
 					var subcmd = command[subcmdname];
 
-					var line = "   particle " + name + " " + subcmdname;
-					line = utilities.padRight(line, " ", 25) + " - " + subcmd.does;
+					var line = '   particle ' + name + ' ' + subcmdname;
+					line = utilities.padRight(line, ' ', 25) + ' - ' + subcmd.does;
 					lines.push(line);
 				}
 			}
 			else if (command.optionsByName) {
-				lines.push("");
+				lines.push('');
 
 				for (var name in command.optionsByName) {
 					var desc = command.descriptionsByName[name];
-					var line = "    particle " + command.name + " " + name;
-					line = utilities.padRight(line, " ", 25) + " - " + desc;
+					var line = '    particle ' + command.name + ' ' + name;
+					line = utilities.padRight(line, ' ', 25) + ' - ' + desc;
 					lines.push(line);
 				}
 			}
 		}
 
 
-		lines.push("");
-		lines.push("");
-		console.log(lines.join("\n"));
+		lines.push('');
+		lines.push('');
+		console.log(lines.join('\n'));
 
 	},
 
 	listCommandsTable: function () {
 		//console.log("help list commands command!");
-		console.log("Welcome to the Particle Command line utility!");
+		console.log('Welcome to the Particle Command line utility!');
 		console.log('Version', package_json.version);
-		console.log("");
-		console.log("The following commands are available:");
+		console.log('');
+		console.log('The following commands are available:');
 
-		var appName = "particle",
+		var appName = 'particle',
 			leftPad = 2,
 			rightPad = 20;
 
@@ -190,28 +190,28 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			try {
 				var c = commands[i];
 				if (c.name != null) {
-					var line = utilities.indentLeft(appName + " " + c.name, " ", leftPad);
-					line = utilities.padRight(line, " ", rightPad) + " - " + c.description;
+					var line = utilities.indentLeft(appName + ' ' + c.name, ' ', leftPad);
+					line = utilities.padRight(line, ' ', rightPad) + ' - ' + c.description;
 
 					results.push(line);
 				}
 			}
 			catch (ex) {
-				console.error("Error loading command " + ex);
+				console.error('Error loading command ' + ex);
 			}
 		}
 
-		console.log(results.join("\n"));
+		console.log(results.join('\n'));
 	},
 
 
 	listMappedCommands: function () {
 		var lines = [
-			"",
-			"Welcome to the Particle Command line utility!",
+			'',
+			'Welcome to the Particle Command line utility!',
 			'Version ' + package_json.version,
-			"https://github.com/spark/particle-cli",
-			""
+			'https://github.com/spark/particle-cli',
+			''
 		];
 
 		//not sure what I want this to be yet...
@@ -220,7 +220,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 			var template = node._templates.help;
 			if (util.isArray(template)) {
-				template = template.join("\n");
+				template = template.join('\n');
 			}
 
 			//since it's not || rarely used, lets load this sparingly.
@@ -229,32 +229,32 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			lines.push(str);
 		}
 		else {
-			lines.push("Usage: particle <command_name> <arguments> ");
-			lines.push("Common Commands:");
-			lines.push("");
+			lines.push('Usage: particle <command_name> <arguments> ');
+			lines.push('Common Commands:');
+			lines.push('');
 
 			var commands = node._commands;
 			var cmdList = utilities.wrapArrayText(commands, 60);
 			for (var i = 0; i < cmdList.length; i++) {
-				lines.push(utilities.indentLeft(cmdList[i], " ", 4));
+				lines.push(utilities.indentLeft(cmdList[i], ' ', 4));
 			}
-			lines.push("");
+			lines.push('');
 
 			var others = this.cli.getUnmappedTopLevelCommands();
 			if (others && (others.length > 0)) {
-				lines.push("Less Common Commands:");
+				lines.push('Less Common Commands:');
 				cmdList = utilities.wrapArrayText(others, 60);
 				for (var i = 0; i < cmdList.length; i++) {
-					lines.push(utilities.indentLeft(cmdList[i], " ", 4));
+					lines.push(utilities.indentLeft(cmdList[i], ' ', 4));
 				}
-				lines.push("");
+				lines.push('');
 			}
 
-			lines.push("For more information Run: particle help <command_name>");
-			lines.push("");
+			lines.push('For more information Run: particle help <command_name>');
+			lines.push('');
 		}
 
-		console.log(lines.join("\n"));
+		console.log(lines.join('\n'));
 	},
 
 

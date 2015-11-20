@@ -34,7 +34,7 @@ var path = require('path');
 
 var extend = require('xtend');
 var util = require('util');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var dgram = require('dgram');
 
 
@@ -47,27 +47,27 @@ var UdpCommands = function (cli, options) {
 util.inherits(UdpCommands, BaseCommand);
 UdpCommands.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "udp",
-	description: "helps repair devices, run patches, check Wi-Fi, and more!",
+	name: 'udp',
+	description: 'helps repair devices, run patches, check Wi-Fi, and more!',
 
 	init: function () {
-		this.addOption("send", this.sendUdpPacket.bind(this), "Sends a UDP packet to the specified host and port");
+		this.addOption('send', this.sendUdpPacket.bind(this), 'Sends a UDP packet to the specified host and port');
 		//this.addOption("listen", this.sendUdpPacket.bind(this), "");
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
 	sendUdpPacket: function(host, port, message) {
 
-		var client = dgram.createSocket("udp4");
+		var client = dgram.createSocket('udp4');
 		var buf = new Buffer(message);
 
-		console.log("Sending \"" + message + "\" to ", host, " at port ", port);
+		console.log('Sending "' + message + '" to ', host, ' at port ', port);
 		client.send(buf, 0, buf.length, port, host, function(err, bytes) {
 			if (err) {
-				console.log("error during send " + err);
+				console.log('error during send ' + err);
 			}
 
-			console.log("Sent.");
+			console.log('Sent.');
 			client.close();
 		});
 

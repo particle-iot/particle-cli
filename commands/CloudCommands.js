@@ -30,11 +30,11 @@ var sequence = require('when/sequence');
 var pipeline = require('when/pipeline');
 
 var readline = require('readline');
-var SerialPortLib = require("serialport");
+var SerialPortLib = require('serialport');
 var SerialPort = SerialPortLib.SerialPort;
 var settings = require('../settings.js');
 var specs = require('../lib/deviceSpecs');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var prompts = require('../lib/prompts.js');
 var ApiClient = require('../lib/ApiClient.js');
 var utilities = require('../lib/utilities.js');
@@ -60,32 +60,32 @@ var CloudCommand = function (cli, options) {
 util.inherits(CloudCommand, BaseCommand);
 CloudCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: "cloud",
-	description: "simple interface for common cloud functions",
+	name: 'cloud',
+	description: 'simple interface for common cloud functions',
 
 
 	init: function () {
-		this.addOption("claim", this.claimDevice.bind(this), "Register a device with your user account with the cloud");
-		this.addOption("list", this.listDevices.bind(this), "Displays a list of your devices, as well as their variables and functions");
-		this.addOption("remove", this.removeDevice.bind(this), "Release a device from your account so that another user may claim it");
-		this.addOption("name", this.nameDevice.bind(this), "Give a device a name!");
-		this.addOption("flash", this.flashDevice.bind(this), "Pass a binary, source file, or source directory to a device!");
-		this.addOption("compile", this.compileCode.bind(this), "Compile a source file, or directory using the cloud service");
+		this.addOption('claim', this.claimDevice.bind(this), 'Register a device with your user account with the cloud');
+		this.addOption('list', this.listDevices.bind(this), 'Displays a list of your devices, as well as their variables and functions');
+		this.addOption('remove', this.removeDevice.bind(this), 'Release a device from your account so that another user may claim it');
+		this.addOption('name', this.nameDevice.bind(this), 'Give a device a name!');
+		this.addOption('flash', this.flashDevice.bind(this), 'Pass a binary, source file, or source directory to a device!');
+		this.addOption('compile', this.compileCode.bind(this), 'Compile a source file, or directory using the cloud service');
 		//this.addOption("binary", this.downloadBinary.bind(this), "Compile a source file, or directory using the cloud service");
 
-		this.addOption("nyan", this.nyanMode.bind(this), "How long has this been here?");
+		this.addOption('nyan', this.nyanMode.bind(this), 'How long has this been here?');
 
-		this.addOption("login", this.login.bind(this), "Lets you login to the cloud and stores an access token locally");
-		this.addOption("logout", this.logout.bind(this), "Logs out your session and clears your saved access token");
+		this.addOption('login', this.login.bind(this), 'Lets you login to the cloud and stores an access token locally');
+		this.addOption('logout', this.logout.bind(this), 'Logs out your session and clears your saved access token');
 	},
 
 
 	usagesByName: {
 		nyan: [
-			"particle cloud nyan",
-			"particle cloud nyan my_device_id on",
-			"particle cloud nyan my_device_id off",
-			"particle cloud nyan all on"
+			'particle cloud nyan',
+			'particle cloud nyan my_device_id on',
+			'particle cloud nyan my_device_id off',
+			'particle cloud nyan all on'
 		]
 
 	},
@@ -94,20 +94,20 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	checkArguments: function (args) {
 		this.options = this.options || {};
 
-		if (!this.options.saveBinaryPath && (utilities.contains(args, "--saveTo"))) {
-			var idx = utilities.indexOf(args, "--saveTo");
+		if (!this.options.saveBinaryPath && (utilities.contains(args, '--saveTo'))) {
+			var idx = utilities.indexOf(args, '--saveTo');
 			if ((idx + 1) < args.length) {
 				this.options.saveBinaryPath = args[idx + 1];
 			}
 			else {
-				console.log("Please specify a file path when using --saveTo");
+				console.log('Please specify a file path when using --saveTo');
 			}
 		}
 	},
 
 	claimDevice: function (deviceid) {
 		if (!deviceid) {
-			console.error("Please specify a device id");
+			console.error('Please specify a device id');
 			return;
 		}
 
@@ -115,17 +115,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (!api.ready()) {
 			return;
 		}
-		console.log("Claiming device " + deviceid);
+		console.log('Claiming device ' + deviceid);
 		api.claimCore(deviceid).then(function() {
-			console.log("Successfully claimed device " + deviceid);
+			console.log('Successfully claimed device ' + deviceid);
 		}, function(err) {
-			console.log("Failed to claim device, server said ", err);
+			console.log('Failed to claim device, server said ', err);
 		});
 	},
 
 	removeDevice: function (deviceid) {
 		if (!deviceid) {
-			console.error("Please specify a device id");
+			console.error('Please specify a device id');
 			return when.reject()
 		}
 
@@ -137,7 +137,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		when(prompts.areYouSure())
 			.then(function (yup) {
 				api.removeCore(deviceid).then(function () {
-						console.log("Okay!");
+						console.log('Okay!');
 						process.exit(0);
 					},
 					function (err) {
@@ -153,12 +153,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 	nameDevice: function (deviceid, name) {
 		if (!deviceid) {
-			console.error("Please specify a device id");
+			console.error('Please specify a device id');
 			return when.reject();
 		}
 
 		if (!name) {
-			console.error("Please specify a name");
+			console.error('Please specify a name');
 			return;
 		}
 
@@ -172,27 +172,27 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return;
 		}
 
-		console.log("Renaming device " + deviceid);
+		console.log('Renaming device ' + deviceid);
 
 		var allDone = api.renameCore(deviceid, name);
 
 		when(allDone).then(
 			function () {
-				console.log("Successfully renamed device " + deviceid + " to: " + name);
+				console.log('Successfully renamed device ' + deviceid + ' to: ' + name);
 			},
 			function (err) {
-				console.error("Failed to rename " + deviceid + ", server said", err.errors);
+				console.error('Failed to rename ' + deviceid + ', server said', err.errors);
 			});
 	},
 
 	flashDevice: function (deviceid, filePath) {
 		if (!deviceid) {
-			console.error("Please specify a device id");
+			console.error('Please specify a device id');
 			return when.reject();
 		}
 
 		if (!filePath) {
-			console.error("Please specify a binary file, source file, or source directory, or known app");
+			console.error('Please specify a binary file, source file, or source directory, or known app');
 			return when.reject();
 		}
 
@@ -243,14 +243,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (!files) {
 			files = this._handleMultiFileArgs(args);
 		}
-		if (!files || !files["file"]) {
-			console.error("no files included?");
+		if (!files || !files['file']) {
+			console.error('no files included?');
 			return when.reject();;
 		}
 		if (settings.showIncludedSourceFiles) {
-			console.log("Including:");
+			console.log('Including:');
 			for (var key in files) {
-				console.log("    " + files[key]);
+				console.log('    ' + files[key]);
 			}
 		}
 
@@ -265,9 +265,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			return api.flashDevice(deviceid, files).then(function(resp) {
 				if (resp.status || resp.message) {
-					console.log("Flash device OK: ", resp.status || resp.message);
+					console.log('Flash device OK: ', resp.status || resp.message);
 				} else if (resp.errors) {
-					console.log("Flash device failed");
+					console.log('Flash device failed');
 					resp.errors.forEach(function(err) {
 						if (err.error) {
 							console.log(err.error);
@@ -294,7 +294,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	 */
 	downloadBinary: function (binary_id, filename) {
 		if (!filename) {
-			filename = "firmware_" + (new Date()).getTime() + ".bin";
+			filename = 'firmware_' + (new Date()).getTime() + '.bin';
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -303,23 +303,23 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 
-		var binary_url = "/v1/binaries/" + binary_id;
+		var binary_url = '/v1/binaries/' + binary_id;
 		var allDone = api.downloadBinary(binary_url, filename);
 
 		when(allDone).then(
 			function () {
-				console.log("saved firmware to " + path.resolve(filename));
-				console.log("Firmware Binary downloaded.");
+				console.log('saved firmware to ' + path.resolve(filename));
+				console.log('Firmware Binary downloaded.');
 			},
 			function (err) {
-				console.error("Download failed - ", err);
+				console.error('Download failed - ', err);
 			});
 
 	},
 
 	compileCode: function (deviceType) {
 		if (!deviceType) {
-			console.error("\nPlease specify the target device type. eg. particle compile photon xxx\n");
+			console.error('\nPlease specify the target device type. eg. particle compile photon xxx\n');
 			return;
 		}
 
@@ -328,47 +328,47 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		//TODO: this should be checking against the cloud, not hardcoded
 		switch (deviceType) {
-			case "photon":
-			case "p":
-				deviceType = "photon";
+			case 'photon':
+			case 'p':
+				deviceType = 'photon';
 				platform_id = 6;
 				break;
 
-			case "core":
-			case "c":
-				deviceType = "core";
+			case 'core':
+			case 'c':
+				deviceType = 'core';
 				platform_id = 0;
 				break;
 
-			case "p1":
-				deviceType = "p1";
+			case 'p1':
+				deviceType = 'p1';
 				platform_id = 8;
 				break;
 
-			case "electron":
-			case "e":
-				deviceType = "electron";
+			case 'electron':
+			case 'e':
+				deviceType = 'electron';
 				platform_id = 10;
 				break;
 
-			case "bluz":
-				deviceType = "bluz";
+			case 'bluz':
+				deviceType = 'bluz';
 				platform_id = 103;
 				break;
 
 			default:
-				console.error("\nTarget device " + deviceType + " is not valid");
-				console.error("	eg. particle compile core xxx");
-				console.error("	eg. particle compile photon xxx\n");
+				console.error('\nTarget device ' + deviceType + ' is not valid');
+				console.error('	eg. particle compile core xxx');
+				console.error('	eg. particle compile photon xxx\n');
 				return;
 		}
 
-		console.log("\nCompiling code for " + deviceType + "\n");
+		console.log('\nCompiling code for ' + deviceType + '\n');
 
 		//  "Please specify a binary file, source file, or source directory");
 		var args = Array.prototype.slice.call(arguments, 1);
 		if (args.length == 0) {
-			args.push("."); //default to current directory
+			args.push('.'); //default to current directory
 		}
 
 		var filePath = args[0];
@@ -384,14 +384,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var files = this._handleMultiFileArgs(args);
 		if (!files) {
 
-			console.log("No source to compile!");
+			console.log('No source to compile!');
 			return process.exit(1);
 		}
 
 		if (settings.showIncludedSourceFiles) {
-			console.log("Including:");
+			console.log('Including:');
 			for (var key in files) {
-				console.log("    " + files[key]);
+				console.log('    ' + files[key]);
 			}
 		}
 
@@ -407,8 +407,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			//NOTE: because of the nature of 'options at the end', and the only option is --saveTo,
 			//this should have no side-effects with other usages.  If we did a more sophisticated
 			//argument structure, we'd need to change this logic.
-			if (!filename || (utilities.getFilenameExt(filename) != ".bin")) {
-				filename = deviceType + "_firmware_" + (new Date()).getTime() + ".bin";
+			if (!filename || (utilities.getFilenameExt(filename) != '.bin')) {
+				filename = deviceType + '_firmware_' + (new Date()).getTime() + '.bin';
 			}
 		}
 
@@ -432,7 +432,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 				if (resp && resp.sizeInfo) {
 					//TODO: needs formatting
-					console.log("Memory use: ");
+					console.log('Memory use: ');
 					console.log(resp.sizeInfo);
 				}
 
@@ -443,8 +443,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				else {
 
 					if (resp.errors) {
-						console.log("Errors");
-						console.log(resp.errors.join("\n"));
+						console.log('Errors');
+						console.log(resp.errors.join('\n'));
 					}
 					return when.reject();
 				}
@@ -453,11 +453,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		when(allDone).then(
 			function () {
-				console.log("Compile succeeded.");
-				console.log("Saved firmware to:", path.resolve(filename));
+				console.log('Compile succeeded.');
+				console.log('Saved firmware to:', path.resolve(filename));
 			},
 			function (err) {
-				console.error("Compile failed. Exiting.");
+				console.error('Compile failed. Exiting.');
 				process.exit(1);
 			}
 		);
@@ -575,12 +575,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var tmp = when.defer();
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return when.reject("not logged in!");
+			return when.reject('not logged in!');
 		}
 
 		var lookupVariables = function (devices) {
-			if (!devices || (devices.length === 0) || (typeof devices === "string")) {
-				console.log("No devices found.");
+			if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
+				console.log('No devices found.');
 			}
 			else {
 				self.newSpin('Retrieving device functions and variables...').start();
@@ -607,7 +607,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							return 1;
 						}
 
-						return (a.name || "").localeCompare(b.name);
+						return (a.name || '').localeCompare(b.name);
 					});
 					tmp.resolve(fullDevices);
 					self.stopSpin();
@@ -629,24 +629,24 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return when.reject("not logged in!");
+			return when.reject('not logged in!');
 		}
 
-		if (!onOff || (onOff == "") || (onOff == "on")) {
+		if (!onOff || (onOff == '') || (onOff == 'on')) {
 			onOff = true;
 		}
-		else if (onOff == "off") {
+		else if (onOff == 'off') {
 			onOff = false;
 		}
 
-		if ((deviceid == "") || (deviceid == "all")) {
+		if ((deviceid == '') || (deviceid == 'all')) {
 			deviceid = null;
 		}
-		else if (deviceid == "on") {
+		else if (deviceid == 'on') {
 			deviceid = null;
 			onOff = true;
 		}
-		else if (deviceid == "off") {
+		else if (deviceid == 'off') {
 			deviceid = null;
 			onOff = false;
 		}
@@ -692,12 +692,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				var arr = [];
 				for (var key in vars) {
 					var type = vars[key];
-					arr.push("    " + key + " (" + type + ")");
+					arr.push('    ' + key + ' (' + type + ')');
 				}
 
 				if (arr.length > 0) {
 					//TODO: better way to accomplish this?
-					lines.push("  Variables:");
+					lines.push('  Variables:');
 					for(var i=0;i<arr.length;i++) { lines.push(arr[i]); }
 				}
 
@@ -705,11 +705,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		};
 		var formatFunctions = function (funcs, lines) {
 			if (funcs && (funcs.length > 0)) {
-				lines.push("  Functions:");
+				lines.push('  Functions:');
 
 				for (var idx = 0; idx < funcs.length; idx++) {
 					var name = funcs[idx];
-					lines.push("    int " + name + "(String args) ");
+					lines.push('    int ' + name + '(String args) ');
 				}
 			}
 		};
@@ -738,24 +738,24 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							break;
 					}
 
-					if(!device.name || device.name == "null") { name = '<no name>'; }
+					if(!device.name || device.name == 'null') { name = '<no name>'; }
 					else { name = device.name; }
 
 					if(device.connected) { name = chalk.cyan.bold(name); }
 					else { name = chalk.cyan.dim(name); }
 
-					var status = name + " [" + device.id + "]" + deviceType + " is ";
-					status += (device.connected) ? "online" : "offline";
+					var status = name + ' [' + device.id + ']' + deviceType + ' is ';
+					status += (device.connected) ? 'online' : 'offline';
 					lines.push(status);
 
 					formatVariables(device.variables, lines);
 					formatFunctions(device.functions, lines);
 				}
 
-				console.log(lines.join("\n"));
+				console.log(lines.join('\n'));
 			}
 			catch (ex) {
-				console.error("Error during list " + ex);
+				console.error('Error during list ' + ex);
 			}
 		}, function(err) {
 			console.log("Please make sure you're online and logged in.");
@@ -777,10 +777,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			ignoreSet = {};
 
 		var includes = [
-			"*.h",
-			"*.ino",
-			"*.cpp",
-			"*.c"
+			'*.h',
+			'*.ino',
+			'*.cpp',
+			'*.c'
 		];
 
 		if (fs.existsSync(includesFile)) {
@@ -824,7 +824,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (stats.isDirectory()) {
 			filelist = this._processDirIncludes(filePath);
 			if (!filelist) {
-				console.log("Your " + settings.dirIncludeFilename + " file is empty, not including anything!");
+				console.log('Your ' + settings.dirIncludeFilename + ' file is empty, not including anything!');
 				return null;
 			}
 		}
@@ -832,16 +832,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			filelist = arr;
 		}
 		else {
-			console.log("was that a file or directory?");
+			console.log('was that a file or directory?');
 			return null;
 		}
 
 		for (var i = 0; i < filelist.length; i++) {
 			var filename = filelist[i];
 			var ext = utilities.getFilenameExt(filename).toLowerCase();
-			var alwaysIncludeThisFile = ((ext == ".bin") && (i == 0) && (filelist.length == 1));
+			var alwaysIncludeThisFile = ((ext == '.bin') && (i == 0) && (filelist.length == 1));
 
-			if (filename.indexOf("--") == 0) {
+			if (filename.indexOf('--') == 0) {
 				//hit some arguments.
 				break;
 			}
@@ -858,7 +858,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			var filestats = fs.statSync(filename);
 			if (filestats.size > settings.MAX_FILE_SIZE) {
-				console.log("Skipping " + filename + " it's too big! " + stats.size);
+				console.log('Skipping ' + filename + " it's too big! " + stats.size);
 				continue;
 			}
 

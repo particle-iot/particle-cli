@@ -34,7 +34,7 @@ var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
 var utilities = require('../lib/utilities.js');
-var BaseCommand = require("./BaseCommand.js");
+var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
 var moment = require('moment');
 
@@ -47,12 +47,12 @@ var FunctionCommand = function (cli, options) {
 util.inherits(FunctionCommand, BaseCommand);
 FunctionCommand.prototype = extend(BaseCommand.prototype, {
     options: null,
-    name: "function",
-    description: "call functions on your device",
+    name: 'function',
+    description: 'call functions on your device',
 
     init: function () {
-        this.addOption("list", this.listFunctions.bind(this), "List functions provided by your device(s)");
-        this.addOption("call", this.callFunction.bind(this), "Call a particular function on a device");
+        this.addOption('list', this.listFunctions.bind(this), 'List functions provided by your device(s)');
+        this.addOption('call', this.callFunction.bind(this), 'Call a particular function on a device');
     },
 
 
@@ -74,24 +74,24 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 
                         for (var idx = 0; idx < core.functions.length; idx++) {
                             var name = core.functions[idx];
-                            available.push("  int " + name + "(String args) ");
+                            available.push('  int ' + name + '(String args) ');
                         }
                     }
 
-                    var status = core.name + " (" + core.id + ") has " + available.length + " functions ";
+                    var status = core.name + ' (' + core.id + ') has ' + available.length + ' functions ';
                     if (available.length == 0) {
-                        status += " (or is offline) ";
+                        status += ' (or is offline) ';
                     }
 
                     lines.push(status);
                     lines = lines.concat(available);
                 }
-                console.log(lines.join("\n"));
+                console.log(lines.join('\n'));
             });
     },
 
     callFunction: function (coreID, functionName, funcParam) {
-        funcParam = funcParam || "";
+        funcParam = funcParam || '';
 
         if (!coreID || !functionName) {
             //they just didn't provide any args...
@@ -106,7 +106,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
         api.callFunction(coreID, functionName, funcParam).then(
             function (result) {
                 if (result && result.error) {
-                    console.log("Function call failed ", result.error);
+                    console.log('Function call failed ', result.error);
 
                 }
                 else {
@@ -117,7 +117,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 
             },
             function (err) {
-                console.log("Function call failed ", err);
+                console.log('Function call failed ', err);
             });
     },
 
