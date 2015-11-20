@@ -193,7 +193,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 							process.exit(1);
 						}
 					);
-				}
+				};
 				intermediary(results[i][0], results[i][1]);
 			}
 		});

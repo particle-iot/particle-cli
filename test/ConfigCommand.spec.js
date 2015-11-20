@@ -19,11 +19,11 @@ function settings() {
 settings.switchProfile = function() {
 
 	this.switched = true;
-}
+};
 settings.override = function() {
 
 	this.overridden = true;
-}
+};
 
 describe('Config Command', function() {
 

@@ -39,7 +39,7 @@ var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
 var specs = require('../lib/deviceSpecs');
 var log = require('../lib/log');
-var settings = require('../settings')
+var settings = require('../settings');
 
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');

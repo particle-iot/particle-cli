@@ -29,7 +29,7 @@ var path = require('path');
 var util = require('util');
 var chalk = require('chalk');
 var extend = require('xtend');
-var settings = require('../settings.js')
+var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand');
 var inquirer = require('inquirer');
 var prompt = inquirer.prompt;
@@ -42,7 +42,7 @@ var spinner = require('cli-spinner').Spinner;
 var sequence = require('when/sequence');
 
 spinner.setDefaultSpinnerString(spinner.spinners[7]);
-var spin = new spinner('Updating system firmware on the device...')
+var spin = new spinner('Updating system firmware on the device...');
 
 var UpdateCommand = function (cli, options) {
 	UpdateCommand.super_.call(this, cli, options);
@@ -136,7 +136,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 				console.log(chalk.bold.white(err.toString()));
 				console.log();
 				console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
-				console.log(chalk.bold.white('https://community.particle.io/'))
+				console.log(chalk.bold.white('https://community.particle.io/'));
 			};
 		};
 	}

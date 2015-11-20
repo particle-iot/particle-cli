@@ -18,11 +18,11 @@ settings.knownApps['test'] = '/path/to/firmware';
 settings.options = { useFactoryAddress: false };
 
 function dfu() { };
-dfu.findCompatibleDFU = function() { return true; }
-dfu.writeFirmware = function() { return true; }
+dfu.findCompatibleDFU = function() { return true; };
+dfu.writeFirmware = function() { return true; };
 
 function fs() { this.willExist = true; };
-fs.existsSync = function() { return this.willExist; }
+fs.existsSync = function() { return this.willExist; };
 
 describe('Flash Command', function() {
 
@@ -49,7 +49,7 @@ describe('Flash Command', function() {
 		flash.cli.getCommandModule = function() {
 
 			var x = function() { };
-			x.flashDevice = function() { return true; }
+			x.flashDevice = function() { return true; };
 
 			return x;
 		};

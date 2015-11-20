@@ -58,7 +58,7 @@ describe('Cloud Command', function() {
 	it('Can check arguments', function() {
 
 		cloud.checkArguments([ 'test', '--saveTo', '/path/to/binary' ]);
-		cloud.options.saveBinaryPath.should.equal('/path/to/binary')
+		cloud.options.saveBinaryPath.should.equal('/path/to/binary');
 	});
 
 });

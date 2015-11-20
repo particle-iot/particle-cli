@@ -80,10 +80,10 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!coreId) {
-			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) ')
+			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) ');
 		}
 		else if (coreId == 'mine') {
-			console.log('Subscribing to ' + eventLabel + ' from my personal stream (my devices only) ')
+			console.log('Subscribing to ' + eventLabel + ' from my personal stream (my devices only) ');
 		}
 		else {
 			console.log('Subscribing to ' + eventLabel + ' from ' + coreId + "'s stream");

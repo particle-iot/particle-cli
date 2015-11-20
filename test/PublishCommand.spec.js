@@ -14,8 +14,8 @@ var PublishCommand = proxyquire('../commands/PublishCommand', {
 var hasPublished = false;
 
 function apiClient() { };
-apiClient.prototype.publishEvent = function() { hasPublished = true; }
-apiClient.prototype.ready = function() { return true; }
+apiClient.prototype.publishEvent = function() { hasPublished = true; };
+apiClient.prototype.ready = function() { return true; };
 
 describe('Publish Command', function() {
 
@@ -35,7 +35,7 @@ describe('Publish Command', function() {
 		publish.optionsByName['*'].should.be.instanceOf(Function);
 		publish.publishEvent('test', 'test');
 
-		hasPublished.should.equal(true)
+		hasPublished.should.equal(true);
 	});
 
 });

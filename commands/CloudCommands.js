@@ -126,7 +126,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	removeDevice: function (deviceid) {
 		if (!deviceid) {
 			console.error('Please specify a device id');
-			return when.reject()
+			return when.reject();
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);

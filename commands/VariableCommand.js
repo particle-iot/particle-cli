@@ -135,7 +135,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		return when.map(coreid, function (coreid) {
 			return api.getVariable(coreid, variableName);
 		}).then(function (results) {
-			var time = moment().format()
+			var time = moment().format();
 			for (var i = 0; i < results.length; i++) {
 
 				var parts = [];
