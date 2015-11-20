@@ -30,7 +30,7 @@
         "requireReturn": false,
         "requireParamDescription": false
     }],
-    "func-names": 2,
+    "func-names": 1,
     "no-multi-spaces": [1, {
         "exceptions": {
             "VariableDeclarator": true
