@@ -1,3 +1,5 @@
+'use strict';
+
 var proxyquire = require('proxyquire');
 
 var should = require('should');

@@ -24,6 +24,8 @@
  License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
+'use strict';
+
 var when = require('when');
 var sequence = require('when/sequence');
 
