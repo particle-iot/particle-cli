@@ -24,7 +24,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
- 
+
 var when = require('when');
 var sequence = require('when/sequence');
 
@@ -55,7 +55,8 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	publishEvent: function (eventName, data) {
+	publishEvent: function (eventName, data, setPrivate) {
+
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			return -1;
@@ -66,7 +67,17 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		api.publishEvent(eventName, data);
+		if(data == "--private" && setPrivate === undefined){
+			setPrivate = true;
+			data = undefined;
+		}
+		else if (data !== undefined && setPrivate == "--private"){
+			setPrivate = true;
+		}
+		else
+			setPrivate = false;
+
+		api.publishEvent(eventName, data, setPrivate);
 
 		return 0;
 	},
