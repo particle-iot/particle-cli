@@ -276,6 +276,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						}
 					});
 					return when.reject();
+				} else if (resp.info) {
+					console.log("Flash device failed");
+					console.log(resp.info);
+				} else if (resp.error) {
+					console.log("Flash device failed");
+					console.log(resp.error);
 				}
 			});
 		};
