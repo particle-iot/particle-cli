@@ -5,8 +5,10 @@ node_js:
 - '4'
 sudo: false
 script:
-- npm run lint
-- npm test
+  - npm run lint
+  - npm test
+after_success:
+  - npm run coveralls
 addons:
   apt:
     sources:

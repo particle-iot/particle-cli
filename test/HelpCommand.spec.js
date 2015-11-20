@@ -5,6 +5,8 @@ var ApiClient2 = require('../lib/ApiClient2');
 var ApiClient = require('../lib/ApiClient');
 
 var should = require('should');
+var sinon = require('sinon');
+var fs = require('fs');
 
 var settings = {
 
@@ -21,6 +23,7 @@ describe('Help Command', function() {
 
 	var cli;
 	var help;
+	var sandbox;
 
 	before(function() {
 
@@ -30,9 +33,26 @@ describe('Help Command', function() {
 		help = new HelpCommand(cli);
 	});
 
+	beforeEach(function() {
+		sandbox = sinon.sandbox.create();
+	});
+
+	afterEach(function() {
+		sandbox.restore();
+	});
+
 	it('Can output version', function() {
 
 		help.optionsByName['version'].should.be.instanceOf(Function);
+	});
+
+	it('Prints current package version', function() {
+		sandbox.stub(console, 'log');
+		help.showVersion();
+		console.log.called.should.be.true;
+		var json = JSON.parse(fs.readFileSync(__dirname + '/../package.json'));
+		console.log.firstCall.args[0].should.equal(json.version);
+		sandbox.restore();
 	});
 
 });
