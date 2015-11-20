@@ -198,14 +198,13 @@
     "publish": {
         "maps": [ "publish" ],
         "usage": [
-            "particle publish event_name",
-            "particle publish event_name some_data"
+            "particle publish eventName",
+            "particle publish eventName someData",
+						"particle publish eventName someData --private"
         ],
         "does": [
-            "Note! This command is part of a limited experimental beta, but should become available",
-            "available during the summer.  The API endpoints or format may change before it's released.",
-            "",
-            "Publishes an event to the cloud that can be received by your devices or other subscribers"
+            "Publishes an event to the cloud that can be received by your devices or other subscribers",
+						"There is a `--private` flag setting that allows published messages to only be received by your devices"
         ]
     },
 
