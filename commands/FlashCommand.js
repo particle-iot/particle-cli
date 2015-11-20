@@ -158,16 +158,12 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				}
 			]);
 
-		when(ready).then(function () {
+		return ready.then(function () {
 			console.log ("\nFlash success!");
 		}, function (err) {
 			console.error("\nError writing firmware..." + err  + "\n");
-			return -1;
+			return when.reject();
 		});
-
-
-
-		return 0;
 	},
 
 
