@@ -75,10 +75,7 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 		api.publishEvent(eventName, data, setPrivate);
 
 		return 0;
-	},
-
-
-	_: null
+	}
 });
 
 module.exports = PublishCommand;

@@ -12,13 +12,16 @@ var settings = {
 
 };
 
+/* eslint new-cap: 0 */
 function when() {
 	if (!(this instanceof when)) {
 		return new when();
 	}
 	return this;
 };
-when.prototype.then = function() { return true; };
+when.prototype.then = function() {
+	return true;
+};
 
 var KeyCommand = proxyquire('../commands/KeyCommands', {
 	'cli-spinner': Spinner,

@@ -157,13 +157,10 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		return ready.then(function () {
 			console.log ('\nFlash success!');
 		}, function (err) {
-			console.error('\nError writing firmware...' + err  + '\n');
+			console.error('\nError writing firmware...' + err + '\n');
 			return when.reject();
 		});
-	},
-
-
-	_: null
+	}
 });
 
 module.exports = FlashCommand;

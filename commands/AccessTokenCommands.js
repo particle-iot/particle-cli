@@ -64,7 +64,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				{
 					type: 'password',
 					name: 'password',
-					message: 'Using account '+  settings.username + '\nPlease enter your password:'
+					message: 'Using account ' + settings.username + '\nPlease enter your password:'
 				}
 			], function (answers) {
 				creds.resolve({
@@ -83,7 +83,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		this.options = this.options || {};
 
 		if (!this.options.force) {
-			idx = args.indexOf('--force');
+			var idx = args.indexOf('--force');
 			if (idx >= 0) {
 				this.options.force = true;
 				args.splice(idx, 1);
@@ -116,7 +116,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			try {
 				var lines = [];
 				for (var i = 0; i < tokens.length; i++) {
-					token = tokens[i];
+					var token = tokens[i];
 
 					var first_line = token.client || token.client_id;
 					if (token.token === settings.access_token) {
@@ -134,8 +134,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				}
 				console.log(lines.join('\n'));
 				process.exit(0);
-			}
-			catch (ex) {
+			} catch (ex) {
 				console.error('Error listing tokens ' + ex);
 				process.exit(1);
 			}
@@ -150,7 +149,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 
 		var args = Array.prototype.slice.call(arguments);
 		this.checkArguments(args);
-		tokens = args;
+		var tokens = args;
 
 		if (tokens.indexOf(settings.access_token) >= 0) {
 			console.log('WARNING: ' + settings.access_token + " is this CLI's access token");
@@ -163,13 +162,13 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var api = new ApiClient(settings.apiUrl);
-		revokers = tokens.map(function(x) {
+		var revokers = tokens.map(function(x) {
 			return function (creds) {
 				return [x, api.removeAccessToken(creds.username, creds.password, x)];
 			};
 		});
 
-		creds = this.getCredentials();
+		var creds = this.getCredentials();
 		var allDone = creds.then(function (creds) {
 			return parallel(revokers, creds);
 		});
@@ -226,9 +225,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		);
 		return;
-	},
-
-	_: null
+	}
 });
 
 module.exports = AccessTokenCommands;

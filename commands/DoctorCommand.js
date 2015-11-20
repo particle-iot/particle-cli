@@ -45,10 +45,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	init: function () {
 		//this.addOption("list", this.listCores.bind(this));
 		//this.addOption(null, this.helpCommand.bind(this));
-	},
-
-
-	_: null
+	}
 });
 
 module.exports = DoctorCommand;

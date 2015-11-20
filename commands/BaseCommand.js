@@ -29,10 +29,10 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var when = require('when');
 var util = require('util');
 var readline = require('readline');
-var spinner = require('cli-spinner').Spinner;
+var Spinner = require('cli-spinner').Spinner;
 var chalk = require('chalk');
 
-spinner.setDefaultSpinnerString(spinner.spinners[7]); // spinners spinners spinner spinner spinner!
+Spinner.setDefaultSpinnerString(Spinner.spinners[7]); // spinners spinners spinner spinner spinner!
 
 var BaseCommand = function (cli) {
 	this.cli = cli;
@@ -101,8 +101,7 @@ BaseCommand.prototype = {
 
 		//run em if we got em.
 		if (cmdFn) {
-			if (!util.isArray(args))
-			{
+			if (!util.isArray(args)) {
 				args = [ args ];
 			}
 
@@ -116,7 +115,7 @@ BaseCommand.prototype = {
 	},
 	newSpin: function (str) {
 
-		this.__spin = new spinner(str);
+		this.__spin = new Spinner(str);
 
 		return this.__spin;
 	},
@@ -131,7 +130,9 @@ BaseCommand.prototype = {
 	error: function (str, exit) {
 
 		var name = this.name;
-		if (!str) { str = 'Unknown error'; }
+		if (!str) {
+			str = 'Unknown error';
+		}
 		str = '%s: ' + str;
 
 		console.log();
@@ -139,8 +140,7 @@ BaseCommand.prototype = {
 		if (exit || exit === undefined) {
 			process.exit(1);
 		}
-	},
-	_: null
+	}
 };
 
 module.exports = BaseCommand;

@@ -143,20 +143,20 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 				for (var idx = 0; idx < cmds.length; idx++) {
 					var subcmdname = cmds[idx];
-					var subcmd = command[subcmdname];
+					var subcmdObj = command[subcmdname];
 
 					var line = '   particle ' + name + ' ' + subcmdname;
-					line = utilities.padRight(line, ' ', 25) + ' - ' + subcmd.does;
+					line = utilities.padRight(line, ' ', 25) + ' - ' + subcmdObj.does;
 					lines.push(line);
 				}
 			} else if (command.optionsByName) {
 				lines.push('');
 
-				for (var name in command.optionsByName) {
-					var desc = command.descriptionsByName[name];
-					var line = '    particle ' + command.name + ' ' + name;
-					line = utilities.padRight(line, ' ', 25) + ' - ' + desc;
-					lines.push(line);
+				for (var optionName in command.optionsByName) {
+					var desc = command.descriptionsByName[optionName];
+					var hline = '    particle ' + command.name + ' ' + optionName;
+					hline = utilities.padRight(hline, ' ', 25) + ' - ' + desc;
+					lines.push(hline);
 				}
 			}
 		}
@@ -191,8 +191,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 					results.push(line);
 				}
-			}
-			catch (ex) {
+			} catch (ex) {
 				console.error('Error loading command ' + ex);
 			}
 		}
@@ -239,8 +238,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			if (others && (others.length > 0)) {
 				lines.push('Less Common Commands:');
 				cmdList = utilities.wrapArrayText(others, 60);
-				for (var i = 0; i < cmdList.length; i++) {
-					lines.push(utilities.indentLeft(cmdList[i], ' ', 4));
+				for (var j = 0; j < cmdList.length; j++) {
+					lines.push(utilities.indentLeft(cmdList[j], ' ', 4));
 				}
 				lines.push('');
 			}
@@ -274,9 +273,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 		}
 
-	},
-
-	_: null
+	}
 });
 
 module.exports = HelpCommand;

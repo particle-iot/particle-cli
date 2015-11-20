@@ -113,9 +113,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
             function (err) {
                 console.log('Function call failed ', err);
             });
-    },
-
-    _: null
+    }
 });
 
 module.exports = FunctionCommand;

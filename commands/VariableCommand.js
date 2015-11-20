@@ -147,8 +147,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 						parts.push(time);
 					}
 					parts.push(result.result);
-				}
-				catch (ex) {
+				} catch (ex) {
 					console.error('error ' + ex);
 				}
 
@@ -180,7 +179,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			});;
 		}
 
-		return this._getValue(deviceId, variableName);		
+		return this._getValue(deviceId, variableName);
 	},
 
 

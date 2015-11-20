@@ -216,10 +216,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
                 console.error('Problem listing webhooks ' + err);
             });
         return 0;
-    },
-
-
-    _: null
+    }
 });
 
 module.exports = WebhookCommand;

@@ -212,7 +212,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 						var type = ans.type;
 						var binary = null;
-						for (id in specs) {
+						for (var id in specs) {
 							if (specs[id].productName === type) {
 								binary = specs[id].knownApps[filePath];
 							}
@@ -529,7 +529,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				type: 'password',
 				name: 'password',
 				message: 'Please enter your password',
-				when: function(ans) { return ans.wipe; }
+				when: function(ans) {
+					return ans.wipe;
+				}
 			}
 		], function(answers) {
 			pipeline([
@@ -683,7 +685,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				if (arr.length > 0) {
 					//TODO: better way to accomplish this?
 					lines.push('  Variables:');
-					for (var i=0;i<arr.length;i++) { lines.push(arr[i]); }
+					for (var i=0;i<arr.length;i++) {
+						lines.push(arr[i]);
+					}
 				}
 
 			}
@@ -723,11 +727,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							break;
 					}
 
-					if (!device.name || device.name === 'null') { name = '<no name>'; }
-					else { name = device.name; }
+					if (!device.name || device.name === 'null') {
+						name = '<no name>';
+					} else {
+						name = device.name;
+					}
 
-					if (device.connected) { name = chalk.cyan.bold(name); }
-					else { name = chalk.cyan.dim(name); }
+					if (device.connected) {
+						name = chalk.cyan.bold(name);
+					} else {
+						name = chalk.cyan.dim(name);
+					}
 
 					var status = name + ' [' + device.id + ']' + deviceType + ' is ';
 					status += (device.connected) ? 'online' : 'offline';
@@ -738,8 +748,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				}
 
 				console.log(lines.join('\n'));
-			}
-			catch (ex) {
+			} catch (ex) {
 				console.error('Error during list ' + ex);
 			}
 		}, function(err) {
@@ -853,10 +862,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		return files;
-	},
-
-
-	_: null
+	}
 });
 
 module.exports = CloudCommand;

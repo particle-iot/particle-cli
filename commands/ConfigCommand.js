@@ -102,11 +102,11 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	changeSetting: function (group, name, value) {
 		settings.override(group, name, value);
 	},
-	
+
 	identifyServer: function () {
 		console.log('Current profile: ' + settings.profile);
 		console.log('Using API: ' + settings.apiUrl);
-		console.log('Access token: ' +  settings.access_token);
+		console.log('Access token: ' + settings.access_token);
 	},
 
 	listConfigs: function() {
@@ -130,9 +130,7 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 		} else {
 			console.log('No configuration files found.');
 		}
-	},
-
-	_: null
+	}
 });
 
 module.exports = ConfigCommand;

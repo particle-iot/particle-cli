@@ -13,8 +13,12 @@ var PublishCommand = proxyquire('../commands/PublishCommand', {
 var hasPublished = false;
 
 function apiClient() { };
-apiClient.prototype.publishEvent = function() { hasPublished = true; };
-apiClient.prototype.ready = function() { return true; };
+apiClient.prototype.publishEvent = function() {
+	hasPublished = true;
+};
+apiClient.prototype.ready = function() {
+	return true;
+};
 
 describe('Publish Command', function() {
 

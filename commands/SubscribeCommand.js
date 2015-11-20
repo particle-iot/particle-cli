@@ -96,7 +96,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		};
 
-		var processItem = function(arr) {
+		function processItem(arr) {
 			var obj = {};
 			for (var i=0;i<arr.length;i++) {
 				var line = arr[i];
@@ -119,10 +119,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		api.getEventStream(eventName, coreId, onData);
 
 		return 0;
-	},
-
-
-	_: null
+	}
 });
 
 module.exports = SubscribeCommand;

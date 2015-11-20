@@ -65,10 +65,7 @@ UdpCommands.prototype = extend(BaseCommand.prototype, {
 			client.close();
 		});
 
-	},
-
-
-	_: null
+	}
 });
 
 module.exports = UdpCommands;

@@ -34,10 +34,10 @@ var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand');
 var dfu = require('../lib/dfu');
 var whenNode = require('when/node');
-var spinner = require('cli-spinner').Spinner;
+var Spinner = require('cli-spinner').Spinner;
 
-spinner.setDefaultSpinnerString(spinner.spinners[7]);
-var spin = new spinner('Updating system firmware on the device...');
+Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
+var spin = new Spinner('Updating system firmware on the device...');
 
 var UpdateCommand = function (cli, options) {
 	UpdateCommand.super_.call(this, cli, options);
@@ -108,8 +108,12 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 
 			flash();
 			function flash(err) {
-				if (err) { return failure(err); }
-				if (steps.length > 0) { return steps.shift()(flash); }
+				if (err) {
+					return failure(err);
+				}
+				if (steps.length > 0) {
+					return steps.shift()(flash);
+				}
 				success();
 			};
 
@@ -137,9 +141,11 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 });
 
 function dfuError(err) {
-	if (err === 'No DFU device found') {}
-	else if (err.code === 127) { dfuInstall(true); }
-	else {
+	if (err === 'No DFU device found') {
+		// do nothing
+	} else if (err.code === 127) {
+		dfuInstall(true);
+	} else {
 		dfuInstall(false);
 		console.log(
 			chalk.cyan('!!!'),

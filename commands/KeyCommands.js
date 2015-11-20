@@ -215,7 +215,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			function () {
 				var pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
-				if (that.options.force) { utilities.tryDelete(pubPemFilename); }
+				if (that.options.force) {
+					utilities.tryDelete(pubPemFilename);
+				}
 				return utilities.deferredChildProcess('openssl rsa -in ' + filename + ' -inform DER -pubout  -out ' + pubPemFilename).catch(function (err) {
 					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
 				});
@@ -410,10 +412,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');
 				console.error('Error - ' + err);
 			});
-	},
-
-
-	_: null
+	}
 });
 
 module.exports = KeyCommands;

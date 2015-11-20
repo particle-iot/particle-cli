@@ -83,7 +83,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				// Devices on old driver - Spark Core, Photon
 				// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
 				// Windows only contains the pnpId field
-				
+
 				var device;
 				var serialDeviceSpec = _.find(specs, function (deviceSpec) {
 					if (!deviceSpec.serial) {
@@ -345,13 +345,17 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 					return ns;
 				},
-				when: function () { return networks.length; }
+				when: function () {
+					return networks.length;
+				}
 			},
 			{
 				type: 'confirm',
 				name: 'detectSecurity',
 				message: chalk.bold.white('Should I try to auto-detect the wireless security type?'),
-				when: function (answers) { return !!answers.ap && !!networkMap[answers.ap] && !!networkMap[answers.ap].security; },
+				when: function (answers) {
+					return !!answers.ap && !!networkMap[answers.ap] && !!networkMap[answers.ap].security;
+				},
 				default: true
 			}
 		], function (answers) {
@@ -364,7 +368,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			var ssid = answers.ap;
 			var ap = networkMap[ssid];
 			var security = answers.detectSecurity && ap && ap.security;
-			
+
 			self.serialWifiConfig(device, ssid, security).then(wifiInfo.resolve, wifiInfo.reject);
 		});
 
@@ -398,7 +402,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (timeout) {
 			failTimer = setTimeout(function () {
-				if (showTraffic) { console.log('timed out on ' + prompt); }
+				if (showTraffic) {
+					console.log('timed out on ' + prompt);
+				}
 				if (alwaysResolve) {
 					dfd.resolve(null);
 				} else {
@@ -412,13 +418,17 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			var onMessage = function (data) {
 				data = data.toString();
 
-				if (showTraffic) { console.log('Serial said: ' + data); }
+				if (showTraffic) {
+					console.log('Serial said: ' + data);
+				}
 				if (data && data.indexOf(prompt) >= 0) {
 					if (answer) {
 						serialPort.flush(function() {});
 
 						writeAndDrain(answer, function () {
-							if (showTraffic) { console.log('I said: ' + answer); }
+							if (showTraffic) {
+								console.log('I said: ' + answer);
+							}
 							//serialPort.pause();     //lets not miss anything
 							dfd.resolve(true);
 						});
@@ -437,7 +447,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		} else if (answer) {
 			clearTimeout(failTimer);
 
-			if (showTraffic) { console.log('I said: ' + answer); }
+			if (showTraffic) {
+				console.log('I said: ' + answer);
+			}
 			writeAndDrain(answer, function () {
 				//serialPort.pause();     //lets not miss anything
 				dfd.resolve(true);
@@ -480,7 +492,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var st = new SerialTrigger(serialPort);
-		
+
 		st.addTrigger('SSID:', function(cb) {
 			resetTimeout();
 			if (ssid) {
@@ -510,10 +522,15 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			resetTimeout();
 			if (securityType) {
 				var security = 3;
-				if (securityType.indexOf('WPA2') >= 0) { security = 3; }
-				else if (securityType.indexOf('WPA') >= 0) { security = 2; }
-				else if (securityType.indexOf('WEP') >= 0) { security = 1; }
-				else if (securityType.indexOf('NONE') >= 0) { security = 0; }
+				if (securityType.indexOf('WPA2') >= 0) {
+					security = 3;
+				} else if (securityType.indexOf('WPA') >= 0) {
+					security = 2;
+				} else if (securityType.indexOf('WEP') >= 0) {
+					security = 1;
+				} else if (securityType.indexOf('NONE') >= 0) {
+					security = 0;
+				}
 
 				return cb(security + '\n', startTimeout.bind(self, 5000));
 			}
@@ -537,10 +554,14 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			resetTimeout();
 			if (securityType !== undefined) {
 				var cipherType = 1;
-				if (securityType.indexOf('AES') >= 0 && securityType.indexOf('TKIP') >= 0) { cipherType = 3; }
-				else if (securityType.indexOf('TKIP') >= 0) { cipherType = 2; }
-				else if (securityType.indexOf('AES') >= 0) { cipherType = 1; }
-				
+				if (securityType.indexOf('AES') >= 0 && securityType.indexOf('TKIP') >= 0) {
+					cipherType = 3;
+				} else if (securityType.indexOf('TKIP') >= 0) {
+					cipherType = 2;
+				} else if (securityType.indexOf('AES') >= 0) {
+					cipherType = 1;
+				}
+
 				return cb(cipherType + '\n', startTimeout.bind(self, 5000));
 			}
 
