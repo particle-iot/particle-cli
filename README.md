@@ -337,6 +337,7 @@ old_version.cpp
 ```sh
 $ particle compile device_type app.ino library1.cpp library1.h
 ```
+
 #### Compiling in a directory containing project files
 
  This will push all the files in a directory that the command line is currently 'cd' in for compilation.
@@ -413,7 +414,18 @@ $ particle subscribe eventName deviceName
 $ particle subscribe eventName 0123456789ABCDEFGHI
 ```
 
+### particle publish
 
+	Allows a message to be published via the CLI without using a physical Particle device. This is particularly useful when you are testing your firmware against an actual `published` event.
+
+	There is a `--private` flag that allows you to `publish` events to devices subscribing to events with the `MY_DEVICES` option.
+
+```sh
+$	particle publish eventName
+$	particle publish eventName --private
+$	particle publish eventName someData
+$	particle publish eventName someData --private
+```
 
 
 ### particle serial list
