@@ -200,11 +200,11 @@
         "usage": [
             "particle publish eventName",
             "particle publish eventName someData",
-						"particle publish eventName someData --private"
+            "particle publish eventName someData --private"
         ],
         "does": [
             "Publishes an event to the cloud that can be received by your devices or other subscribers",
-						"There is a `--private` flag setting that allows published messages to only be received by your devices"
+            "There is a `--private` flag setting that allows published messages to only be received by your devices"
         ]
     },
 

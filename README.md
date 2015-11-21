@@ -416,15 +416,15 @@ $ particle subscribe eventName 0123456789ABCDEFGHI
 
 ### particle publish
 
-	Allows a message to be published via the CLI without using a physical Particle device. This is particularly useful when you are testing your firmware against an actual `published` event.
+  Allows a message to be published via the CLI without using a physical Particle device. This is particularly useful when you are testing your firmware against an actual `published` event.
 
-	There is a `--private` flag that allows you to `publish` events to devices subscribing to events with the `MY_DEVICES` option.
+  There is a `--private` flag that allows you to `publish` events to devices subscribing to events with the `MY_DEVICES` option.
 
 ```sh
-$	particle publish eventName
-$	particle publish eventName --private
-$	particle publish eventName someData
-$	particle publish eventName someData --private
+$ particle publish eventName
+$ particle publish eventName --private
+$ particle publish eventName someData
+$ particle publish eventName someData --private
 ```
 
 
