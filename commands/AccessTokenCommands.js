@@ -93,6 +93,14 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				args.splice(idx, 1);
 			}
 		}
+
+		if (!this.options.purge) {
+			idx = args.indexOf('--purge');
+			if (idx >= 0) {
+				this.options.purge = true;
+				args.splice(idx, 1);
+			}
+		}
 	},
 
 	getAccessTokens: function () {
@@ -154,6 +162,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		var args = Array.prototype.slice.call(arguments);
 		this.checkArguments(args);
 		tokens = args;
+		var options = this.options;
 
 		if (tokens.indexOf(settings.access_token) >= 0) {
 			console.log("WARNING: " + settings.access_token + " is this CLI's access token");
@@ -166,15 +175,41 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var api = new ApiClient(settings.apiUrl);
-		revokers = tokens.map(function(x) {
-			return function (creds) {
-				return [x, api.removeAccessToken(creds.username, creds.password, x)];
-			};
-		});
-
 		creds = this.getCredentials();
+
+		var revoke = function(tokens, creds) {
+			var revokers = tokens.map(function(x) {
+				return function (creds) {
+					return [x, api.removeAccessToken(creds.username, creds.password, x)];
+				};
+			});
+			return parallel(revokers, creds)
+		}
+
 		var allDone = creds.then(function (creds) {
-			return parallel(revokers, creds);
+			if (options.purge) {
+				return api.listTokens(creds.username, creds.password).then(function(data) {
+					var toRevoke = data.filter(
+						// Let's not delete the token that's the access token unless force is true
+						function(t) {
+							if (t.token !== settings.access_token) {
+								return t
+							} else {
+								if (options.force) {
+									return t
+								}
+							}
+					}).map(
+						// Get out the token id from the payload
+						function(t) { return t.token }
+					);
+
+					return revoke(toRevoke, creds)
+				})
+
+			} else {
+				return revoke(tokens, creds)
+			}
 		});
 
 		allDone.done(function (results) {
@@ -230,7 +265,6 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		);
 		return;
 	},
-
 	_: null
 });
 
