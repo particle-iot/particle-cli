@@ -25,7 +25,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
 var util = require('util');
-var exec = require('child_process').exec
+var exec = require('child_process').exec;
 var extend = require('xtend');
 var _ = require('lodash');
 var WiFiManager = require('./WiFiManager');
@@ -38,7 +38,7 @@ var inquirer = require('inquirer');
 var prompt = inquirer.prompt;
 var chalk = require('chalk');
 var scan = require('node-wifiscanner2').scan;
-var SAP = require('softap-setup')
+var SAP = require('softap-setup');
 var path = require('path');
 
 var strings = {
@@ -621,7 +621,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		network = ans.network;
 		password = ans.password;
-		security = ans.security || list[network].sec
+		security = ans.security || list[network].sec;
 
 		if(self.__sap.securityLookup(security)) {
 
