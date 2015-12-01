@@ -29,7 +29,7 @@ var exec = require('child_process').exec
 var extend = require('xtend');
 var _ = require('lodash');
 var WiFiManager = require('./WiFiManager');
-var BaseCommand = require("../BaseCommand.js");
+var BaseCommand = require('../BaseCommand.js');
 var utilities = require('../../lib/utilities.js');
 var OldApiClient = require('../../lib/ApiClient.js');
 var APIClient = require('../../lib/ApiClient2');
@@ -43,10 +43,10 @@ var path = require('path');
 
 var strings = {
 
-	'monitorPrompt': "Would you like to wait and monitor for Photons entering setup mode?",
-	'scanError': "Unable to scan for Wi-Fi networks. Do you have permission to do that on this computer?",
-	'credentialsNeeded': "You will need to know the password for your Wi-Fi network (if any) to proceed.",
-	'selectNetwork': "Select the Wi-Fi network with which you wish to connect your Photon:",
+	'monitorPrompt': 'Would you like to wait and monitor for Photons entering setup mode?',
+	'scanError': 'Unable to scan for Wi-Fi networks. Do you have permission to do that on this computer?',
+	'credentialsNeeded': 'You will need to know the password for your Wi-Fi network (if any) to proceed.',
+	'selectNetwork': 'Select the Wi-Fi network with which you wish to connect your Photon:',
 	'startingSetup': "Congratulations, you're on your way to awesome",
 	'rescanLabel': '[rescan networks]'
 };
@@ -68,14 +68,14 @@ var WirelessCommand = function (cli, options) {
 
 util.inherits(WirelessCommand, BaseCommand);
 
-WirelessCommand.prototype.name = "wireless";
+WirelessCommand.prototype.name = 'wireless';
 WirelessCommand.prototype.options = null;
-WirelessCommand.prototype.description = "simple wireless interface to your Photons";
+WirelessCommand.prototype.description = 'simple wireless interface to your Photons';
 
 WirelessCommand.prototype.init = function init() {
 
-	this.addOption("list", this.list.bind(this), "Show nearby Photons in setup mode (blinking blue)");
-	this.addOption("monitor", this.monitor.bind(this), "Begin monitoring nearby Wi-Fi networks for Photons in setup mode.");
+	this.addOption('list', this.list.bind(this), 'Show nearby Photons in setup mode (blinking blue)');
+	this.addOption('monitor', this.monitor.bind(this), 'Begin monitoring nearby Wi-Fi networks for Photons in setup mode.');
 };
 
 WirelessCommand.prototype.list = function list(macAddress) {
@@ -88,13 +88,13 @@ WirelessCommand.prototype.list = function list(macAddress) {
 	} else { this.__macAddressFilter = null; }
 
 	console.log();
-	protip('Wireless setup of Photons works like a', chalk.cyan("wizard!"));
+	protip('Wireless setup of Photons works like a', chalk.cyan('wizard!'));
 	protip(
-		"We will",
+		'We will',
 		chalk.cyan('automagically'),
-		"change the",
+		'change the',
 		chalk.cyan('Wi-Fi'),
-		"network to which your computer is connected."
+		'network to which your computer is connected.'
 	);
 	protip('You will lose your connection to the internet periodically.');
 	console.log();
@@ -125,14 +125,14 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 	if(err) {
 
 		protip(
-			"Some computers may require",
+			'Some computers may require',
 			chalk.cyan('Administrator'),
-			"permissions for my",
-			chalk.cyan("automagical"),
-			"Wi-Fi scanning capabilities."
+			'permissions for my',
+			chalk.cyan('automagical'),
+			'Wi-Fi scanning capabilities.'
 		);
 		console.log();
-		console.log(alert, chalk.bold.white('OOPS:'), "I was unable to scan for nearby Wi-Fi networks", chalk.magenta('(-___-)'));
+		console.log(alert, chalk.bold.white('OOPS:'), 'I was unable to scan for nearby Wi-Fi networks', chalk.magenta('(-___-)'));
 		console.log();
 
 		return manualAsk(manualChoice);
@@ -207,18 +207,18 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 			// manual mode
 			console.log();
-			protip("Manual mode will", chalk.cyan('prompt'), "you to manage the", chalk.cyan('Wi-Fi'), "connection of your computer when it's necessary.");
-			protip("To proceed, you will need to be able to manually change the Wi-Fi connectivity of your computer.");
+			protip('Manual mode will', chalk.cyan('prompt'), 'you to manage the', chalk.cyan('Wi-Fi'), "connection of your computer when it's necessary.");
+			protip('To proceed, you will need to be able to manually change the Wi-Fi connectivity of your computer.');
 			protip("Your Photon will appear in your computer's list of Wi-Fi networks with a name like,", chalk.cyan('Photon-XXXX'));
-			protip("Where", chalk.cyan('XXXX'), "is a string of random letters and/or numbers", chalk.cyan("unique"), "to that specific Photon.");
+			protip('Where', chalk.cyan('XXXX'), 'is a string of random letters and/or numbers', chalk.cyan('unique'), 'to that specific Photon.');
 
 			self.__manual = true;
 			return self.setup(null, manualDone);
 		}
 
 		console.log();
-		console.log(alert, "Try running", chalk.cyan(cmd + ' setup'), 'with Administrator privileges.');
-		console.log(alert, "If the problem persists, please let us know:", chalk.cyan('https://community.particle.io/'));
+		console.log(alert, 'Try running', chalk.cyan(cmd + ' setup'), 'with Administrator privileges.');
+		console.log(alert, 'If the problem persists, please let us know:', chalk.cyan('https://community.particle.io/'));
 		console.log();
 	};
 
@@ -284,11 +284,11 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 		if(err) {
 
-			return console.log(chalk.read('!'), "An error occurred:", err);
+			return console.log(chalk.read('!'), 'An error occurred:', err);
 		}
 		if(dat && dat.id) {
 
-			return console.log(arrow, "We successfully configured your Photon! Great work. We make a good team!", chalk.magenta('<3'));
+			return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));
 		};
 	};
 };
@@ -394,7 +394,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 			}
 			else {
 
-				protip("There was a network error while connecting to the cloud...");
+				protip('There was a network error while connecting to the cloud...');
 			}
 			protip('We need an active internet connection to successfully complete setup.');
 			protip('Are you currently connected to the internet? Please double-check and try again.');
@@ -429,7 +429,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 				type: 'input',
 				name: 'connect',
-				message: util.format("Please connect to the %s network now. Press enter when ready.", photon || 'Photon\'s Wi-Fi')
+				message: util.format('Please connect to the %s network now. Press enter when ready.', photon || 'Photon\'s Wi-Fi')
 
 			}], manualReady);
 		}
@@ -483,7 +483,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		type: 'confirm',
 		name: 'manual',
-		message: "Would you like to manually enter your Wi-Fi network configuration?",
+		message: 'Would you like to manually enter your Wi-Fi network configuration?',
 		default: false
 
 	}], scanChoice);
@@ -511,14 +511,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'Please select the security used by your Wi-Fi network:',
 				choices: [
 
-					"None",
-					"WEP Shared",
-					"WPA TKIP",
-					"WPA AES",
-					"WPA2 AES",
-					"WPA2 TKIP",
-					"WPA2 Mixed",
-					"WPA2"
+					'None',
+					'WEP Shared',
+					'WPA TKIP',
+					'WPA AES',
+					'WPA2 AES',
+					'WPA2 TKIP',
+					'WPA2 Mixed',
+					'WPA2'
 				]
 
 			}], manualChoices);
@@ -536,7 +536,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log(alert, "We can't setup your Photon without a Wi-Fi network! Let's try again...");
 			return scanChoice({ manual: true });
 		}
-		if(!ans.password && ans.security !== "None") {
+		if(!ans.password && ans.security !== 'None') {
 
 			console.log(alert, "You chose a security type that requires a password! Let's try again...");
 			return scanChoice({ manual: true });
@@ -545,7 +545,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 			network: ans.network,
 			password: ans.password,
-			security: ans.security.toLowerCase().replace(" ", "_")
+			security: ans.security.toLowerCase().replace(' ', '_')
 
 		});
 	};
@@ -634,11 +634,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		console.log(arrow, "Here's what we're going to send to the Photon:");
 		console.log();
-		console.log(arrow, "Wi-Fi Network:", chalk.bold.cyan(network));
-		console.log(arrow, "Password:", chalk.bold.cyan(password || '[none]'));
+		console.log(arrow, 'Wi-Fi Network:', chalk.bold.cyan(network));
+		console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
 		console.log(
 			arrow,
-			"Security:",
+			'Security:',
 			chalk.bold.cyan(visibleSecurity)
 		);
 		console.log();
@@ -683,7 +683,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		if(dat && dat.id) { self.__deviceID = dat.id; }
 		clearTimeout(retry);
-		console.log(arrow, "Requesting public key from the device...");
+		console.log(arrow, 'Requesting public key from the device...');
 		sap.publicKey(code).on('error', function(err) {
 
 			if(err.code == 'ECONNRESET') { return; }
@@ -694,7 +694,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function code() {
 
 		clearTimeout(retry);
-		console.log(arrow, "Setting the magical cloud claim code...");
+		console.log(arrow, 'Setting the magical cloud claim code...');
 		sap.setClaimCode(self.__claimCode, configure).on('error', function(err) {
 
 			if(err.code == 'ECONNRESET') { return; }
@@ -792,13 +792,13 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 			if(err.code == 'ENOTFOUND') {
 
-				console.log(alert, "Network not ready yet, retrying...");
+				console.log(alert, 'Network not ready yet, retrying...');
 				console.log();
 				return revived(null);
 			}
 			console.log(alert, 'Unable to verify your Photon\'s connection.');
 			console.log(alert, "Please make sure you're connected to the internet.");
-			console.log(alert, "Then try", chalk.bold.cyan(cmd + ' list'), "to verify it's connected.");
+			console.log(alert, 'Then try', chalk.bold.cyan(cmd + ' list'), "to verify it's connected.");
 
 			updateWarning();
 			self.exit();
@@ -824,8 +824,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			name: 'recheck',
 			message: 'What would you like to do?',
 			choices: [
-				{ name: "Reconfigure the Wi-Fi settings of the Photon", value: 'reconfigure' },
-				{ name: "Check again to see if the Photon has connected", value: 'recheck' }
+				{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' },
+				{ name: 'Check again to see if the Photon has connected', value: 'recheck' }
 			]
 
 		}], recheck);
@@ -852,7 +852,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			deviceName = ans.deviceName;
 			self.__oldapi.renameCore(deviceId, deviceName).then(function () {
 				console.log();
-				console.log(arrow, "Your Photon has been bestowed with the name", chalk.bold.cyan(deviceName));
+				console.log(arrow, 'Your Photon has been bestowed with the name', chalk.bold.cyan(deviceName));
 				console.log(arrow, "Congratulations! You've just won the internet!");
 				console.log();
 				self.exit();
@@ -938,14 +938,14 @@ var protip = function() {
 var updateWarning = function() {
 
 	protip(
-		"Your Photon may start a",
+		'Your Photon may start a',
 		chalk.cyan('firmware update'),
-		"immediately upon connecting for the first time."
+		'immediately upon connecting for the first time.'
 	);
 	protip(
-		chalk.white("If it starts an update, you will see it flash"),
+		chalk.white('If it starts an update, you will see it flash'),
 		chalk.magenta('MAGENTA'),
-		chalk.white("until the update has completed.")
+		chalk.white('until the update has completed.')
 	);
 };
 
