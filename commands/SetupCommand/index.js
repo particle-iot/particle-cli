@@ -158,8 +158,8 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 
 SetupCommand.prototype.signup = function signup(cb, tries) {
-	if(!tries) { var tries = 1; }
-	else if(tries && tries > 3) {
+	if (!tries) { var tries = 1; }
+	else if (tries && tries > 3) {
 
 		console.log(alert, 'Something is going wrong with the signup process.');
 		return console.log(
@@ -299,8 +299,8 @@ SetupCommand.prototype.findDevice = function() {
 
 		self.stopSpin();
 
-		if(devices.length > 0) {
-			if(devices.length > 1) {
+		if (devices.length > 0) {
+			if (devices.length > 1) {
 
 				console.log(
 					alert,
@@ -328,7 +328,7 @@ SetupCommand.prototype.findDevice = function() {
 
 		function scanChoice(ans) {
 
-			if(ans.scan) { return wireless.list(); }
+			if (ans.scan) { return wireless.list(); }
 			console.log(arrow, 'Goodbye!');
 		};
 	});
@@ -340,7 +340,7 @@ SetupCommand.prototype.findDevice = function() {
 
 			detectedPrompt('Core', function setupCoreChoice(ans) {
 
-				if(ans.setup) {
+				if (ans.setup) {
 					return self.setupCore(device);
 				}
 				console.log(arrow, 'Goodbye!');
@@ -350,7 +350,7 @@ SetupCommand.prototype.findDevice = function() {
 			// Photon detected
 			detectedPrompt(device.type, function setupPhotonChoice(ans) {
 
-				if(ans.setup) {
+				if (ans.setup) {
 
 					var macAddress;
 					self.newSpin('Getting device information...').start();

@@ -122,7 +122,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	this.stopSpin();
 
-	if(err) {
+	if (err) {
 
 		protip(
 			'Some computers may require',
@@ -155,7 +155,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	detectedDevices = ssids(filter(detectedDevices, self.deviceFilterPattern));
 
-	if(detectedDevices.length > 1) {
+	if (detectedDevices.length > 1) {
 
 		// Multiple Photons detected
 		prompt([{
@@ -167,7 +167,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 		}], multipleChoice);
 	}
-	else if(detectedDevices.length === 1) {
+	else if (detectedDevices.length === 1) {
 
 		// Perform wireless setup?
 		prompt([{
@@ -203,7 +203,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function manualChoice(ans) {
 
-		if(ans.manual) {
+		if (ans.manual) {
 
 			// manual mode
 			console.log();
@@ -224,7 +224,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function multipleChoice(ans) {
 
-		if(ans.setup) {
+		if (ans.setup) {
 
 			self.__batch = false;
 
@@ -243,7 +243,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function multipleAnswer(ans) {
 
-		if(ans.selected) {
+		if (ans.selected) {
 
 			return self.setup(ans.selected);
 		}
@@ -252,7 +252,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function singleChoice(ans) {
 
-		if(ans.setupSingle) { self.setup(detectedDevices[0]); }
+		if (ans.setupSingle) { self.setup(detectedDevices[0]); }
 		else {
 
 			// Monitor for new Photons?
@@ -269,7 +269,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function monitorChoice(ans) {
 
-		if(ans.monitor) {
+		if (ans.monitor) {
 
 			console.log(arrow, chalk.bold.white('Monitoring nearby Wi-Fi networks for Photons. This may take up to a minute.'));
 			self.monitor();
@@ -282,11 +282,11 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function manualDone(err, dat) {
 
-		if(err) {
+		if (err) {
 
 			return console.log(chalk.read('!'), 'An error occurred:', err);
 		}
-		if(dat && dat.id) {
+		if (dat && dat.id) {
 
 			return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));
 		};
@@ -304,9 +304,9 @@ WirelessCommand.prototype.monitor = function(args) {
 
 		scan(function (err, dat) {
 
-			if(!dat) { var dat = [ ]; }
+			if (!dat) { var dat = [ ]; }
 			var foundPhotons = filter(dat, args || settings.wirelessSetupFilter);
-			if(foundPhotons.length > 0) {
+			if (foundPhotons.length > 0) {
 
 				self.__networks(null, foundPhotons);
 			}
@@ -334,7 +334,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	this.__ssid = photon;
 
 	console.log();
-	if(!photon && !self.__manual) {
+	if (!photon && !self.__manual) {
 
 		console.log(alert, 'No Photons selected for setup!');
 		return self.exit();
@@ -384,11 +384,11 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		self.stopSpin();
 		console.log(arrow, 'Obtained magical secure claim code.');
 		console.log();
-		if(err) {
+		if (err) {
 
 			// TODO: Graceful recovery here
 			// console.log(arrow, arrow, err);
-			if(err.code === 'ENOTFOUND') {
+			if (err.code === 'ENOTFOUND') {
 
 				protip("Your computer couldn't find the cloud...");
 			}
@@ -441,7 +441,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	function connected(err, opts) {
 
 		self.stopSpin();
-		if(err) {
+		if (err) {
 			// TODO: Max retries, help output when reached.
 			console.log(
 				chalk.bold.red('!'),
@@ -490,7 +490,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	function scanChoice(ans) {
 
-		if(ans.manual) {
+		if (ans.manual) {
 
 			return prompt([{
 
@@ -531,12 +531,12 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	function manualChoices(ans) {
 
-		if(!ans.network) {
+		if (!ans.network) {
 
 			console.log(alert, "We can't setup your Photon without a Wi-Fi network! Let's try again...");
 			return scanChoice({ manual: true });
 		}
-		if(!ans.password && ans.security !== 'None') {
+		if (!ans.password && ans.security !== 'None') {
 
 			console.log(alert, "You chose a security type that requires a password! Let's try again...");
 			return scanChoice({ manual: true });
@@ -555,7 +555,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 		sap.scan(results).on('error', function(err) {
 
-			if(err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(start, 2000);
 		});
 	};
@@ -564,7 +564,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		self.stopSpin();
 
-		if(err) {
+		if (err) {
 
 			// TODO: offer to retry
 			return console.log(
@@ -594,7 +594,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		function __networkChoice(ans) {
 
-			if(ans.network === strings.rescanLabel) {
+			if (ans.network === strings.rescanLabel) {
 
 				console.log();
 				self.newSpin('Asking the Photon to re-scan nearby Wi-Fi networks...').start();
@@ -623,7 +623,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		password = ans.password;
 		security = ans.security || list[network].sec;
 
-		if(self.__sap.securityLookup(security)) {
+		if (self.__sap.securityLookup(security)) {
 
 			var visibleSecurity = self.__sap.securityLookup(security).toUpperCase().replace('_', ' ');
 		}
@@ -654,7 +654,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	function continueChoice(ans) {
 
-		if(!ans.continue) {
+		if (!ans.continue) {
 
 			console.log(arrow, "Let's try again...");
 			console.log();
@@ -674,19 +674,19 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Obtaining device information...');
 		sap.deviceInfo(pubKey).on('error', function(err) {
 
-			if(err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(info, 1000);
 		});
 	};
 
 	function pubKey(err, dat) {
 
-		if(dat && dat.id) { self.__deviceID = dat.id; }
+		if (dat && dat.id) { self.__deviceID = dat.id; }
 		clearTimeout(retry);
 		console.log(arrow, 'Requesting public key from the device...');
 		sap.publicKey(code).on('error', function(err) {
 
-			if(err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(pubKey, 1000);
 		});
 	};
@@ -697,7 +697,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Setting the magical cloud claim code...');
 		sap.setClaimCode(self.__claimCode, configure).on('error', function(err) {
 
-			if(err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(code, 1000);
 		});
 	};
@@ -716,7 +716,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
 		sap.configure(conf, connect).on('error', function(err) {
 
-			if(err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(configure, 1000);
 		});
 	};
@@ -737,7 +737,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		self.stopSpin();
 		console.log(arrow, chalk.bold.white('Configuration complete! You\'ve just won the internet!'));
 
-		if(!self.__manual) {
+		if (!self.__manual) {
 
 			prompt([{
 
@@ -763,7 +763,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function manualPrompt(ans) { reconnect(true); };
 	function reconnect(manual) {
 
-		if(!manual) {
+		if (!manual) {
 
 			self.newSpin('Reconnecting your computer to your Wi-Fi network...').start();
 			mgr.connect({ ssid: self.__network, password: self.__password }, revived);
@@ -788,9 +788,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function checkDevices(err, dat) {
 
 		self.stopSpin();
-		if(err) {
+		if (err) {
 
-			if(err.code === 'ENOTFOUND') {
+			if (err.code === 'ENOTFOUND') {
 
 				console.log(alert, 'Network not ready yet, retrying...');
 				console.log();
@@ -831,7 +831,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}], recheck);
 
 		function recheck(ans) {
-			if(ans.recheck === 'recheck') {
+			if (ans.recheck === 'recheck') {
 
 				api.listDevices(checkDevices);
 			}
@@ -909,13 +909,13 @@ function clean(list) {
 
 	return list.sort(function compare(a, b) {
 
-		if(a.ssid && !b.ssid) { return 1; }
-		else if(b.ssid && !a.ssid) { return -1; }
+		if (a.ssid && !b.ssid) { return 1; }
+		else if (b.ssid && !a.ssid) { return -1; }
 		return a.ssid.localeCompare(b.ssid);
 
 	}).filter(function dedupe(ap) {
 
-		if(dupes[ap.ssid]) { return false; }
+		if (dupes[ap.ssid]) { return false; }
 
 		dupes[ap.ssid] = true;
 		return true;
