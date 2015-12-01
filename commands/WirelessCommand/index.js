@@ -27,12 +27,10 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 var util = require('util');
-var exec = require('child_process').exec;
 var extend = require('xtend');
 var _ = require('lodash');
 var WiFiManager = require('./WiFiManager');
 var BaseCommand = require('../BaseCommand.js');
-var utilities = require('../../lib/utilities.js');
 var OldApiClient = require('../../lib/ApiClient.js');
 var APIClient = require('../../lib/ApiClient2');
 var settings = require('../../settings.js');
@@ -51,6 +49,32 @@ var strings = {
 	'selectNetwork': 'Select the Wi-Fi network with which you wish to connect your Photon:',
 	'startingSetup': "Congratulations, you're on your way to awesome",
 	'rescanLabel': '[rescan networks]'
+};
+
+// TODO: DRY this up somehow
+
+var cmd = path.basename(process.argv[1]);
+var arrow = chalk.green('>');
+var alert = chalk.yellow('!');
+var protip = function() {
+
+	var args = Array.prototype.slice.call(arguments);
+	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
+	console.log.apply(null, args);
+
+};
+var updateWarning = function() {
+
+	protip(
+		'Your Photon may start a',
+		chalk.cyan('firmware update'),
+		'immediately upon connecting for the first time.'
+	);
+	protip(
+		chalk.white('If it starts an update, you will see it flash'),
+		chalk.magenta('MAGENTA'),
+		chalk.white('until the update has completed.')
+	);
 };
 
 var WirelessCommand = function (cli, options) {
@@ -87,7 +111,9 @@ WirelessCommand.prototype.list = function list(macAddress) {
 
 		this.__macAddressFilter = macAddress;
 
-	} else { this.__macAddressFilter = null; }
+	} else {
+		this.__macAddressFilter = null;
+	}
 
 	console.log();
 	protip('Wireless setup of Photons works like a', chalk.cyan('wizard!'));
@@ -168,8 +194,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			default: true,
 
 		}], multipleChoice);
-	}
-	else if (detectedDevices.length === 1) {
+	} else if (detectedDevices.length === 1) {
 
 		// Perform wireless setup?
 		prompt([{
@@ -183,8 +208,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			default: true,
 
 		}], singleChoice);
-	}
-	else {
+	} else {
 
 		console.log(
 			arrow,
@@ -254,8 +278,9 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	function singleChoice(ans) {
 
-		if (ans.setupSingle) { self.setup(detectedDevices[0]); }
-		else {
+		if (ans.setupSingle) {
+			self.setup(detectedDevices[0]);
+		} else {
 
 			// Monitor for new Photons?
 			prompt([{
@@ -275,9 +300,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 			console.log(arrow, chalk.bold.white('Monitoring nearby Wi-Fi networks for Photons. This may take up to a minute.'));
 			self.monitor();
-		}
-		else {
-
+		} else {
 			self.exit();
 		}
 	};
@@ -305,14 +328,14 @@ WirelessCommand.prototype.monitor = function(args) {
 	function wildPhotons() {
 
 		scan(function (err, dat) {
-
-			if (!dat) { var dat = [ ]; }
+			if (!dat) {
+				dat = [];
+			}
 			var foundPhotons = filter(dat, args || settings.wirelessSetupFilter);
 			if (foundPhotons.length > 0) {
 
 				self.__networks(null, foundPhotons);
-			}
-			else {
+			} else {
 
 				setTimeout(wildPhotons, 5000);
 			}
@@ -393,8 +416,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 			if (err.code === 'ENOTFOUND') {
 
 				protip("Your computer couldn't find the cloud...");
-			}
-			else {
+			} else {
 
 				protip('There was a network error while connecting to the cloud...');
 			}
@@ -421,8 +443,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		if (!self.__manual) {
 			self.newSpin('Attempting to connect to ' + photon + '...').start();
 			mgr.connect({ ssid: photon }, connected);
-		}
-		else {
+		} else {
 			manualConnect();
 		}
 
@@ -437,8 +458,12 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		}
 	};
 
-	function manualReady(ans) { self.__configure(null, manualConfigure); };
-	function manualConfigure(err, dat) { cb(err, dat); };
+	function manualReady(ans) {
+		self.__configure(null, manualConfigure);
+	};
+	function manualConfigure(err, dat) {
+		cb(err, dat);
+	};
 
 	function connected(err, opts) {
 
@@ -557,7 +582,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 		sap.scan(results).on('error', function(err) {
 
-			if (err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') {
+				return;
+			}
 			retry = setTimeout(start, 2000);
 		});
 	};
@@ -575,9 +602,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			);
 		}
 
-		networks = dat.scans;
+		var networks = dat.scans;
 
-		dat.scans.forEach(function save(ap) { list[ap.ssid] = ap; });
+		dat.scans.forEach(function save(ap) {
+			list[ap.ssid] = ap;
+		});
 
 		networks = removePhotonNetworks(ssids(networks));
 
@@ -625,13 +654,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		password = ans.password;
 		security = ans.security || list[network].sec;
 
+		var visibleSecurity;
 		if (self.__sap.securityLookup(security)) {
-
-			var visibleSecurity = self.__sap.securityLookup(security).toUpperCase().replace('_', ' ');
-		}
-		else {
-
-			var visibleSecurity = security.toUpperCase().replace('_', ' ');
+			visibleSecurity = self.__sap.securityLookup(security).toUpperCase().replace('_', ' ');
+		} else {
+			visibleSecurity = security.toUpperCase().replace('_', ' ');
 		}
 
 		console.log(arrow, "Here's what we're going to send to the Photon:");
@@ -676,19 +703,25 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Obtaining device information...');
 		sap.deviceInfo(pubKey).on('error', function(err) {
 
-			if (err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') {
+				return;
+			}
 			retry = setTimeout(info, 1000);
 		});
 	};
 
 	function pubKey(err, dat) {
 
-		if (dat && dat.id) { self.__deviceID = dat.id; }
+		if (dat && dat.id) {
+			self.__deviceID = dat.id;
+		}
 		clearTimeout(retry);
 		console.log(arrow, 'Requesting public key from the device...');
 		sap.publicKey(code).on('error', function(err) {
 
-			if (err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') {
+				return;
+			}
 			retry = setTimeout(pubKey, 1000);
 		});
 	};
@@ -699,7 +732,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Setting the magical cloud claim code...');
 		sap.setClaimCode(self.__claimCode, configure).on('error', function(err) {
 
-			if (err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') {
+				return;
+			}
 			retry = setTimeout(code, 1000);
 		});
 	};
@@ -718,7 +753,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
 		sap.configure(conf, connect).on('error', function(err) {
 
-			if (err.code === 'ECONNRESET') { return; }
+			if (err.code === 'ECONNRESET') {
+				return;
+			}
 			retry = setTimeout(configure, 1000);
 		});
 	};
@@ -748,9 +785,10 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'Would you like to return this computer to the wireless network you just configured?',
 				default: true
 
-			}], function() { reconnect(false); });
-		}
-		else {
+			}], function() {
+				reconnect(false);
+			});
+		} else {
 
 			prompt([{
 
@@ -762,16 +800,16 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}
 	};
 
-	function manualPrompt(ans) { reconnect(true); };
+	function manualPrompt(ans) {
+		reconnect(true);
+	};
 	function reconnect(manual) {
 
 		if (!manual) {
 
 			self.newSpin('Reconnecting your computer to your Wi-Fi network...').start();
 			mgr.connect({ ssid: self.__network, password: self.__password }, revived);
-		}
-		else {
-
+		} else {
 			revived();
 		}
 	};
@@ -836,8 +874,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			if (ans.recheck === 'recheck') {
 
 				api.listDevices(checkDevices);
-			}
-			else {
+			} else {
 
 				self.setup(self.__ssid);
 			}
@@ -851,7 +888,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'What would you like to call your photon?'
 			}
 		], function(ans) {
-			deviceName = ans.deviceName;
+			var deviceName = ans.deviceName;
 			self.__oldapi.renameCore(deviceId, deviceName).then(function () {
 				console.log();
 				console.log(arrow, 'Your Photon has been bestowed with the name', chalk.bold.cyan(deviceName));
@@ -911,13 +948,18 @@ function clean(list) {
 
 	return list.sort(function compare(a, b) {
 
-		if (a.ssid && !b.ssid) { return 1; }
-		else if (b.ssid && !a.ssid) { return -1; }
+		if (a.ssid && !b.ssid) {
+			return 1;
+		} else if (b.ssid && !a.ssid) {
+			return -1;
+		}
 		return a.ssid.localeCompare(b.ssid);
 
 	}).filter(function dedupe(ap) {
 
-		if (dupes[ap.ssid]) { return false; }
+		if (dupes[ap.ssid]) {
+			return false;
+		}
 
 		dupes[ap.ssid] = true;
 		return true;
@@ -925,30 +967,6 @@ function clean(list) {
 	});
 }
 
-// TODO: DRY this up somehow
 
-var cmd = path.basename(process.argv[1]);
-var arrow = chalk.green('>');
-var alert = chalk.yellow('!');
-var protip = function() {
-
-	var args = Array.prototype.slice.call(arguments);
-	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
-	console.log.apply(null, args);
-
-};
-var updateWarning = function() {
-
-	protip(
-		'Your Photon may start a',
-		chalk.cyan('firmware update'),
-		'immediately upon connecting for the first time.'
-	);
-	protip(
-		chalk.white('If it starts an update, you will see it flash'),
-		chalk.magenta('MAGENTA'),
-		chalk.white('until the update has completed.')
-	);
-};
 
 module.exports = WirelessCommand;

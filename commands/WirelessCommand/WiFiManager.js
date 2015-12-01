@@ -2,7 +2,6 @@
 
 var _ = require('lodash');
 var os = require('os');
-var scan = require('node-wifiscanner2').scan;
 var connect = {
 	'darwin': require('./connect/darwin')
 };
@@ -35,8 +34,9 @@ WiFiManager.prototype.scan = function scan(opts, cb) {
 
 	var self = this;
 	scan(function results(err, dat) {
-
-		if (err) { return cb(err); }
+		if (err) {
+			return cb(err);
+		}
 		if (dat.length) {
 
 			self.__cache = dat;
@@ -51,15 +51,18 @@ WiFiManager.prototype.connect = function(opts, cb) {
 	var self = this;
 	var ap;
 
-	if (!opts) { var opts = { }; }
+	if (!opts) {
+		opts = { };
+	}
 	if (!opts.mac && !opts.ssid) {
-
 		cb(new Error('Must specify either ssid or mac of network with which to connect.'));
 	}
 
 	if (opts.mac) {
 
-		if (!(ap = this.__lookupMAC(opts.mac))) { return this.scan(null, recheck); }
+		if (!(ap = this.__lookupMAC(opts.mac))) {
+			return this.scan(null, recheck);
+		}
 		opts.ssid = ap.ssid;
 		return self.__connect(opts, cb);
 	}
@@ -68,8 +71,10 @@ WiFiManager.prototype.connect = function(opts, cb) {
 
 	function recheck(err, dat) {
 
-		if (err) { return cb(new Error('Unknown MAC address and unable to perform a Wi-Fi scan.')); }
-		if (!(ap = self.__lookupMAC(identifier))) {
+		if (err) {
+			return cb(new Error('Unknown MAC address and unable to perform a Wi-Fi scan.'));
+		}
+		if (!(ap = self.__lookupMAC(opts.mac))) {
 			return cb(new Error('Unable to locate SSID matching provided MAC address.'));
 		}
 		opts.ssid = ap.ssid;
@@ -80,7 +85,7 @@ WiFiManager.prototype.connect = function(opts, cb) {
 
 // actually connect via OS-dependent binary execution
 WiFiManager.prototype.__connect = function(opts, cb) {
-	if (!this.supported.connect) { 
+	if (!this.supported.connect) {
 		return cb(new Error('Unsupported platform. Don\'t know how to automatically connect to Wi-Fi on ' + this.platform));
 	}
 	this.osConnect.connect(opts, cb);

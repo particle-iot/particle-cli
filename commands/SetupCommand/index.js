@@ -8,17 +8,12 @@ var ApiClient2 = require('../../lib/ApiClient2');
 
 var settings = require('../../settings.js');
 var BaseCommand = require('../BaseCommand.js');
-var dfu = require('../../lib/dfu.js');
-var specs = require('../../lib/deviceSpecs');
-var prompts = require('../../lib/prompts.js');
 var ApiClient = require('../../lib/ApiClient.js');
 var utilities = require('../../lib/utilities.js');
 
 var when = require('when');
 var sequence = require('when/sequence');
 var pipeline = require('when/pipeline');
-var readline = require('readline');
-var fs = require('fs');
 var util = require('util');
 var path = require('path');
 var extend = require('xtend');
@@ -33,6 +28,16 @@ var strings = {
 	'signupSuccess': "Great success! You're now the owner of a brand new account!",
 	'loginError': "There was an error logging you in! Let's try again.",
 	'helpForMoreInfo': 'Please try the `%s help` command for more information.'
+};
+
+// TODO: DRY this up somehow
+var cmd = path.basename(process.argv[1]);
+var alert = chalk.yellow('!');
+var arrow = chalk.green('>');
+var protip = function() {
+	var args = Array.prototype.slice.call(arguments);
+	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
+	console.log.apply(null, args);
 };
 
 var SetupCommand = function (cli, options) {
@@ -61,11 +66,8 @@ SetupCommand.prototype.init = function init() {
 SetupCommand.prototype.setup = function setup(shortcut) {
 
 	var self = this;
-	var wireless = this.cli.getCommandModule('wireless');
 	var serial = this.cli.getCommandModule('serial');
 	var cloud = this.cli.getCommandModule('cloud');
-	var coreName;
-	var coreID;
 
 	this.checkArguments(arguments);
 
@@ -158,9 +160,9 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 
 SetupCommand.prototype.signup = function signup(cb, tries) {
-	if (!tries) { var tries = 1; }
-	else if (tries && tries > 3) {
-
+	if (!tries) {
+		tries = 1;
+	} else if (tries && tries > 3) {
 		console.log(alert, 'Something is going wrong with the signup process.');
 		return console.log(
 			alert,
@@ -327,8 +329,9 @@ SetupCommand.prototype.findDevice = function() {
 		}], scanChoice);
 
 		function scanChoice(ans) {
-
-			if (ans.scan) { return wireless.list(); }
+			if (ans.scan) {
+				return wireless.list();
+			}
 			console.log(arrow, 'Goodbye!');
 		};
 	});
@@ -563,7 +566,7 @@ SetupCommand.prototype.setupElectron = function(device) {
 			self.stopSpin();
 			if (err) {
 				console.error(err);
-				if (err.code === 'ENOTFOUND') { 
+				if (err.code === 'ENOTFOUND') {
 					protip('Your computer couldn\'t find the cloud...');
 				} else {
 					protip('There was a network error while connecting to the cloud...');
@@ -686,17 +689,6 @@ SetupCommand.prototype.exit = function() {
 	);
 	process.exit(0);
 
-};
-
-// TODO: DRY this up somehow
-
-var cmd = path.basename(process.argv[1]);
-var alert = chalk.yellow('!');
-var arrow = chalk.green('>');
-var protip = function() {
-	var args = Array.prototype.slice.call(arguments);
-	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
-	console.log.apply(null, args);
 };
 
 module.exports = SetupCommand;
