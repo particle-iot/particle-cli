@@ -563,7 +563,7 @@ SetupCommand.prototype.setupElectron = function(device) {
 			self.stopSpin();
 			if (err) {
 				console.error(err);
-				if (err.code == 'ENOTFOUND') { 
+				if (err.code === 'ENOTFOUND') { 
 					protip('Your computer couldn\'t find the cloud...');
 				} else {
 					protip('There was a network error while connecting to the cloud...');
@@ -594,7 +594,7 @@ SetupCommand.prototype.setupElectron = function(device) {
 		function findElectron(err, devices) {
 			self.stopSpin();
 			if (err) {
-				if (err.code == 'ENOTFOUND') {
+				if (err.code === 'ENOTFOUND') {
 					console.log(alert, 'Network not ready yet, retrying...');
 					console.log();
 					return checkIfElectronIsOnline();

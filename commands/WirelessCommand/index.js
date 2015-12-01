@@ -167,7 +167,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 		}], multipleChoice);
 	}
-	else if(detectedDevices.length == 1) {
+	else if(detectedDevices.length === 1) {
 
 		// Perform wireless setup?
 		prompt([{
@@ -388,7 +388,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 			// TODO: Graceful recovery here
 			// console.log(arrow, arrow, err);
-			if(err.code == 'ENOTFOUND') {
+			if(err.code === 'ENOTFOUND') {
 
 				protip("Your computer couldn't find the cloud...");
 			}
@@ -555,7 +555,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 		sap.scan(results).on('error', function(err) {
 
-			if(err.code == 'ECONNRESET') { return; }
+			if(err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(start, 2000);
 		});
 	};
@@ -594,7 +594,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		function __networkChoice(ans) {
 
-			if(ans.network == strings.rescanLabel) {
+			if(ans.network === strings.rescanLabel) {
 
 				console.log();
 				self.newSpin('Asking the Photon to re-scan nearby Wi-Fi networks...').start();
@@ -674,7 +674,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Obtaining device information...');
 		sap.deviceInfo(pubKey).on('error', function(err) {
 
-			if(err.code == 'ECONNRESET') { return; }
+			if(err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(info, 1000);
 		});
 	};
@@ -686,7 +686,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Requesting public key from the device...');
 		sap.publicKey(code).on('error', function(err) {
 
-			if(err.code == 'ECONNRESET') { return; }
+			if(err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(pubKey, 1000);
 		});
 	};
@@ -697,7 +697,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Setting the magical cloud claim code...');
 		sap.setClaimCode(self.__claimCode, configure).on('error', function(err) {
 
-			if(err.code == 'ECONNRESET') { return; }
+			if(err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(code, 1000);
 		});
 	};
@@ -716,7 +716,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
 		sap.configure(conf, connect).on('error', function(err) {
 
-			if(err.code == 'ECONNRESET') { return; }
+			if(err.code === 'ECONNRESET') { return; }
 			retry = setTimeout(configure, 1000);
 		});
 	};
@@ -790,7 +790,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		self.stopSpin();
 		if(err) {
 
-			if(err.code == 'ENOTFOUND') {
+			if(err.code === 'ENOTFOUND') {
 
 				console.log(alert, 'Network not ready yet, retrying...');
 				console.log();
@@ -805,7 +805,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}
 
 		var onlinePhoton = _.find(dat, function (device) {
-			return (device.id.toUpperCase() == self.__deviceID.toUpperCase()) && device.connected == true;
+			return (device.id.toUpperCase() === self.__deviceID.toUpperCase()) && device.connected === true;
 		});
 
 		if (onlinePhoton) {
@@ -831,7 +831,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}], recheck);
 
 		function recheck(ans) {
-			if(ans.recheck == 'recheck') {
+			if(ans.recheck === 'recheck') {
 
 				api.listDevices(checkDevices);
 			}
