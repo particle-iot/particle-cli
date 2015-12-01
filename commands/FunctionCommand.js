@@ -34,86 +34,86 @@ var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
 
 var FunctionCommand = function (cli, options) {
-    FunctionCommand.super_.call(this, cli, options);
-    this.options = extend({}, this.options, options);
+	FunctionCommand.super_.call(this, cli, options);
+	this.options = extend({}, this.options, options);
 
-    this.init();
+	this.init();
 };
 util.inherits(FunctionCommand, BaseCommand);
 FunctionCommand.prototype = extend(BaseCommand.prototype, {
-    options: null,
-    name: 'function',
-    description: 'call functions on your device',
+	options: null,
+	name: 'function',
+	description: 'call functions on your device',
 
-    init: function () {
-        this.addOption('list', this.listFunctions.bind(this), 'List functions provided by your device(s)');
-        this.addOption('call', this.callFunction.bind(this), 'Call a particular function on a device');
-    },
-
-
-    listFunctions: function (args) {
-        var api = new ApiClient(settings.apiUrl, settings.access_token);
-        if (!api.ready()) {
-            return;
-        }
-
-        when(api.getAllAttributes(args))
-            .then(function (cores) {
-
-                var lines = [];
-                for (var i = 0; i < cores.length; i++) {
-
-                    var core = cores[i];
-                    var available = [];
-                    if (core.functions) {
-
-                        for (var idx = 0; idx < core.functions.length; idx++) {
-                            var name = core.functions[idx];
-                            available.push('  int ' + name + '(String args) ');
-                        }
-                    }
-
-                    var status = core.name + ' (' + core.id + ') has ' + available.length + ' functions ';
-                    if (available.length === 0) {
-                        status += ' (or is offline) ';
-                    }
-
-                    lines.push(status);
-                    lines = lines.concat(available);
-                }
-                console.log(lines.join('\n'));
-            });
-    },
-
-    callFunction: function (coreID, functionName, funcParam) {
-        funcParam = funcParam || '';
-
-        if (!coreID || !functionName) {
-            //they just didn't provide any args...
-            return this.listFunctions();
-        }
-
-        var api = new ApiClient(settings.apiUrl, settings.access_token);
-        if (!api.ready()) {
-            return;
-        }
-
-        api.callFunction(coreID, functionName, funcParam).then(
-            function (result) {
-                if (result && result.error) {
-                    console.log('Function call failed ', result.error);
-
-                } else {
-                    console.log(result.return_value);
-                }
+	init: function () {
+		this.addOption('list', this.listFunctions.bind(this), 'List functions provided by your device(s)');
+		this.addOption('call', this.callFunction.bind(this), 'Call a particular function on a device');
+	},
 
 
+	listFunctions: function (args) {
+		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		if (!api.ready()) {
+			return;
+		}
 
-            },
-            function (err) {
-                console.log('Function call failed ', err);
-            });
-    }
+		when(api.getAllAttributes(args))
+			.then(function (cores) {
+
+				var lines = [];
+				for (var i = 0; i < cores.length; i++) {
+
+					var core = cores[i];
+					var available = [];
+					if (core.functions) {
+
+						for (var idx = 0; idx < core.functions.length; idx++) {
+							var name = core.functions[idx];
+							available.push('  int ' + name + '(String args) ');
+						}
+					}
+
+					var status = core.name + ' (' + core.id + ') has ' + available.length + ' functions ';
+					if (available.length === 0) {
+						status += ' (or is offline) ';
+					}
+
+					lines.push(status);
+					lines = lines.concat(available);
+				}
+				console.log(lines.join('\n'));
+			});
+	},
+
+	callFunction: function (coreID, functionName, funcParam) {
+		funcParam = funcParam || '';
+
+		if (!coreID || !functionName) {
+			//they just didn't provide any args...
+			return this.listFunctions();
+		}
+
+		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		if (!api.ready()) {
+			return;
+		}
+
+		api.callFunction(coreID, functionName, funcParam).then(
+			function (result) {
+				if (result && result.error) {
+					console.log('Function call failed ', result.error);
+
+				} else {
+					console.log(result.return_value);
+				}
+
+
+
+			},
+			function (err) {
+				console.log('Function call failed ', err);
+			});
+	}
 });
 
 module.exports = FunctionCommand;

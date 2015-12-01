@@ -35,6 +35,9 @@
         "exceptions": {
             "VariableDeclarator": true
         }
+    }],
+    "indent": [2, "tab", {
+        SwitchCase: 1
     }]
   }
 }

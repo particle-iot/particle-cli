@@ -143,13 +143,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		when(prompts.areYouSure())
 			.then(function () {
 				api.removeCore(deviceid).then(function () {
-						console.log('Okay!');
-						process.exit(0);
-					},
-					function (err) {
-						console.log("Didn't remove the device " + err);
-						process.exit(1);
-					});
+					console.log('Okay!');
+					process.exit(0);
+				},
+				function (err) {
+					console.log("Didn't remove the device " + err);
+					process.exit(1);
+				});
 			},
 			function (err) {
 				console.log("Didn't remove the device " + err);

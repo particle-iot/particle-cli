@@ -130,29 +130,29 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		//TODO: detect if arguments contain something other than a .bin file
 		var useFactory = this.options.useFactoryAddress;
 
-			var ready = sequence([
-				function () {
-					return dfu.findCompatibleDFU();
-				},
-				function () {
-					//only match against knownApp if file is not found
-					if (!fs.existsSync(firmware)){
-						firmware = dfu.checkKnownApp(firmware);
-						if (firmware === undefined) {
-							return when.reject('no known App found.');
-						} else {
-							return firmware;
-						}
-					}
-				},
-				function () {
-					if (useFactory) {
-							return dfu.writeFactoryReset(firmware, false);
+		var ready = sequence([
+			function () {
+				return dfu.findCompatibleDFU();
+			},
+			function () {
+				//only match against knownApp if file is not found
+				if (!fs.existsSync(firmware)){
+					firmware = dfu.checkKnownApp(firmware);
+					if (firmware === undefined) {
+						return when.reject('no known App found.');
 					} else {
-							return dfu.writeFirmware(firmware, true);
+						return firmware;
 					}
 				}
-			]);
+			},
+			function () {
+				if (useFactory) {
+					return dfu.writeFactoryReset(firmware, false);
+				} else {
+					return dfu.writeFirmware(firmware, true);
+				}
+			}
+		]);
 
 		return ready.then(function () {
 			console.log ('\nFlash success!');
