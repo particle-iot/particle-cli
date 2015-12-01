@@ -1,3 +1,5 @@
+'use strict';
+
 var _ = require('lodash');
 var os = require('os');
 var scan = require('node-wifiscanner2').scan;
