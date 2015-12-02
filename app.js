@@ -24,6 +24,7 @@
 	License along with this program; if not, see <http://www.gnu.org/licenses/>.
 	******************************************************************************
  */
+'use strict';
 
 var Interpreter = require('./lib/interpreter.js');
 var cli = new Interpreter();

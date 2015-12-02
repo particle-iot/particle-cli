@@ -24,7 +24,7 @@
   License along with this program; if not, see <http://www.gnu.org/licenses/>.
   ******************************************************************************
  */
-
+'use strict';
 
 var fs = require('fs');
 var path = require('path');
@@ -33,9 +33,9 @@ var chalk = require('chalk');
 var specs = require('./lib/deviceSpecs');
 
 var settings = {
-	commandPath: "./commands/",
-	apiUrl: "https://api.particle.io",
-	clientId: "CLI2",
+	commandPath: './commands/',
+	apiUrl: 'https://api.particle.io',
+	clientId: 'CLI2',
 	access_token: null,
 	minimumApiDelay: 500,
 	//useOpenSSL: true,
@@ -50,56 +50,56 @@ var settings = {
 	wirelessSetupFilter: /^Photon-.*$/,
 
 	notSourceExtensions: [
-		".ds_store",
-		".jpg",
-		".gif",
-		".png",
-		".include",
-		".ignore",
-		".ds_store",
-		".git",
-		".bin"
+		'.ds_store',
+		'.jpg',
+		'.gif',
+		'.png',
+		'.include',
+		'.ignore',
+		'.ds_store',
+		'.git',
+		'.bin'
 	],
 	showIncludedSourceFiles: true,
 
-	dirIncludeFilename: "particle.include",
-	dirExcludeFilename: "particle.ignore",
+	dirIncludeFilename: 'particle.include',
+	dirExcludeFilename: 'particle.ignore',
 
 	knownApps: {
-		"deep_update_2014_06": true,
-		"cc3000": true,
-		"cc3000_1_14": true,
-		"tinker": true,
-		"voodoo": true
+		'deep_update_2014_06': true,
+		'cc3000': true,
+		'cc3000_1_14': true,
+		'tinker': true,
+		'voodoo': true
 	},
 	updates: {
-		"2b04:d006": {
-			SystemFirmwareOne: "system-part1-0.4.7-photon.bin",
-			SystemFirmwareTwo: "system-part2-0.4.7-photon.bin"
+		'2b04:d006': {
+			SystemFirmwareOne: 'system-part1-0.4.7-photon.bin',
+			SystemFirmwareTwo: 'system-part2-0.4.7-photon.bin'
 		},
-		"2b04:d008": {
-			SystemFirmwareOne: "system-part1-0.4.7-p1.bin",
-			SystemFirmwareTwo: "system-part2-0.4.7-p1.bin"
+		'2b04:d008': {
+			SystemFirmwareOne: 'system-part1-0.4.7-p1.bin',
+			SystemFirmwareTwo: 'system-part2-0.4.7-p1.bin'
 		},
-		"2b04:d00a": {
-			SystemFirmwareOne: "system-part1-v0.0.3-rc.2-electron.bin",
-			SystemFirmwareTwo: "system-part2-v0.0.3-rc.2-electron.bin"
+		'2b04:d00a': {
+			SystemFirmwareOne: 'system-part1-v0.0.3-rc.2-electron.bin',
+			SystemFirmwareTwo: 'system-part2-v0.0.3-rc.2-electron.bin'
 		}
 	},
-	commandMappings: path.join(__dirname, "mappings.json")
+	commandMappings: path.join(__dirname, 'mappings.json')
 };
 
 //fix the paths on the known apps mappings
 Object.keys(specs).forEach(function (id) {
 	var deviceSpecs = specs[id];
-	var knownApps = deviceSpecs["knownApps"];
-	for(var appName in knownApps) {
-		knownApps[appName] =  path.join(__dirname,"binaries", knownApps[appName]);
+	var knownApps = deviceSpecs['knownApps'];
+	for (var appName in knownApps) {
+		knownApps[appName] = path.join(__dirname,'binaries', knownApps[appName]);
 	};
 });
 
 
-settings.commandPath = __dirname + "/commands/";
+settings.commandPath = __dirname + '/commands/';
 
 settings.findHomePath = function() {
 	var envVars = [
@@ -109,7 +109,7 @@ settings.findHomePath = function() {
 		'USERPROFILE'
 	];
 
-	for(var i=0;i<envVars.length;i++) {
+	for (var i=0;i<envVars.length;i++) {
 		var dir = process.env[envVars[i]];
 		if (dir && fs.existsSync(dir)) {
 			return dir;
@@ -119,7 +119,7 @@ settings.findHomePath = function() {
 };
 
 settings.ensureFolder = function() {
-	var particleDir = path.join(settings.findHomePath(), ".particle");
+	var particleDir = path.join(settings.findHomePath(), '.particle');
 	if (!fs.existsSync(particleDir)) {
 		fs.mkdirSync(particleDir);
 	}
@@ -127,14 +127,14 @@ settings.ensureFolder = function() {
 };
 
 settings.findOverridesFile = function(profile) {
-	profile = profile || settings.profile || "particle";
+	profile = profile || settings.profile || 'particle';
 
 	var particleDir = settings.ensureFolder();
-	return path.join(particleDir, profile + ".config.json");
+	return path.join(particleDir, profile + '.config.json');
 };
 
 settings.loadOverrides = function (profile) {
-	profile = profile || settings.profile || "particle";
+	profile = profile || settings.profile || 'particle';
 
 	try {
 		var filename = settings.findOverridesFile(profile);
@@ -142,22 +142,21 @@ settings.loadOverrides = function (profile) {
 			settings.overrides = JSON.parse(fs.readFileSync(filename));
 			settings = extend(settings, settings.overrides);
 		}
-	}
-	catch (ex) {
+	} catch (ex) {
 		console.error('There was an error reading ' + settings.overrides + ': ', ex);
 	}
 	return settings;
 };
 
 settings.whichProfile = function() {
-	settings.profile = "particle";
+	settings.profile = 'particle';
 
 	var particleDir = settings.ensureFolder();
-	var proFile = path.join(particleDir, "profile.json");      //proFile, get it?
+	var proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
 	if (fs.existsSync(proFile)) {
 		var data = JSON.parse(fs.readFileSync(proFile));
 
-		settings.profile = (data) ? data.name : "particle";
+		settings.profile = (data) ? data.name : 'particle';
 		settings.profile_json = data;
 	}
 };
@@ -167,7 +166,7 @@ settings.whichProfile = function() {
  */
 settings.switchProfile = function(profileName) {
 	var particleDir = settings.ensureFolder();
-	var proFile = path.join(particleDir, "profile.json");      //proFile, get it?
+	var proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
 	var data = {
 		name: profileName
 	};
@@ -181,7 +180,7 @@ function matchKey(needle, obj, caseInsensitive) {
 	for (var key in obj) {
 		var keyCopy = (caseInsensitive) ? key.toLowerCase() : key;
 
-		if (keyCopy == needle) {
+		if (keyCopy === needle) {
 			//return the original
 			return key;
 		}
@@ -216,8 +215,7 @@ settings.override = function (profile, key, value) {
 	try {
 		var filename = settings.findOverridesFile(profile);
 		fs.writeFileSync(filename, JSON.stringify(settings.overrides, null, 2), { mode: '600' });
-	}
-	catch (ex) {
+	} catch (ex) {
 		console.error('There was an error writing ' + settings.overrides + ': ', ex);
 	}
 };
@@ -229,8 +227,8 @@ settings.transitionSparkProfiles = function() {
 		fs.mkdirSync(particleDir);
 
 		console.log();
-		console.log(chalk.yellow('!!!'), "I detected a Spark profile directory, and will now migrate your settings.");
-		console.log(chalk.yellow('!!!'), "This will only happen once, since you previously used our Spark-CLI tools.");
+		console.log(chalk.yellow('!!!'), 'I detected a Spark profile directory, and will now migrate your settings.');
+		console.log(chalk.yellow('!!!'), 'This will only happen once, since you previously used our Spark-CLI tools.');
 		console.log();
 
 		var files = fs.readdirSync(sparkDir);
