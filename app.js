@@ -26,8 +26,12 @@
  */
 'use strict';
 
-var Interpreter = require('./lib/interpreter.js');
-var cli = new Interpreter();
-cli.supressWarmupMessages = true;
-cli.startup();
-cli.handle(process.argv, true);
+var updateCheck = require('./lib/update-check');
+
+updateCheck(function () {
+	var Interpreter = require('./lib/interpreter.js');
+	var cli = new Interpreter();
+	cli.supressWarmupMessages = true;
+	cli.startup();
+	cli.handle(process.argv, true);
+});
