@@ -43,6 +43,7 @@ var settings = {
 	// TODO set to false once we give flags to control this
 	verboseOutput: true,
 	disableUpdateCheck: false,
+	updateCheckTimeout: 3000,
 
 	//2 megs -- this constant here is arbitrary
 	MAX_FILE_SIZE: 1024 * 1024 * 2,
