@@ -1,0 +1,9 @@
+dfu-util 0.8
+
+Copyright 2005-2009 Weston Schmidt, Harald Welte and OpenMoko Inc.
+Copyright 2010-2014 Tormod Volden and Stefan Schmidt
+This program is Free Software and has ABSOLUTELY NO WARRANTY
+Please report bugs to dfu-util@lists.gnumonks.org
+
+Found DFU: [2b04:d006] ver=0200, devnum=25, cfg=1, intf=0, alt=1, name="@DCT Flash   /0x00000000/01*016Kg", serial="00000000010C"
+Found DFU: [2b04:d006] ver=0200, devnum=25, cfg=1, intf=0, alt=0, name="@Internal Flash   /0x08000000/03*016Ka,01*016Kg,01*064Kg,07*128Kg", serial="00000000010C"
