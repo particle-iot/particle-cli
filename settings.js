@@ -43,6 +43,7 @@ var settings = {
 	// TODO set to false once we give flags to control this
 	verboseOutput: true,
 	disableUpdateCheck: false,
+	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours
 	updateCheckTimeout: 3000,
 
 	//2 megs -- this constant here is arbitrary
