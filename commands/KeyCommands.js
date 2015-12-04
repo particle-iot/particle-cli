@@ -352,6 +352,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			console.log('Please specify a server key in DER format.');
 			return -1;
 		}
+		if (ipOrDomain === '--alt') {
+			ipOrDomain = null;
+		}
 		var self = this;
 		this.checkArguments(arguments);
 
