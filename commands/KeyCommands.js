@@ -28,6 +28,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 var when = require('when');
 var sequence = require('when/sequence');
+var pipeline = require('when/pipeline');
 var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
@@ -37,6 +38,7 @@ var ApiClient = require('../lib/ApiClient.js');
 var fs = require('fs');
 var path = require('path');
 var dfu = require('../lib/dfu.js');
+var deviceSpecs = require('../lib/deviceSpecs');
 
 var KeyCommands = function (cli, options) {
 	KeyCommands.super_.call(this, cli, options);
@@ -69,6 +71,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	checkArguments: function (args) {
 		this.options = this.options || {};
+		args = Array.prototype.slice.call(args);
 
 		if (!this.options.force) {
 			this.options.force = utilities.tryParseArgs(args,
@@ -77,6 +80,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			);
 		}
 
+		if (!this.options.alt) {
+			this.options.alt = utilities.tryParseArgs(args,
+				'--alt',
+				null
+			);
+		}
 	},
 
 	makeKeyOpenSSL: function (filename) {
@@ -88,15 +97,21 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			utilities.tryDelete(filename + '.der');
 		}
 
+		var alg = this._getPrivateKeyAlgorithm() || 'rsa';
+
 		return sequence([
 			function () {
-				return utilities.deferredChildProcess('openssl genrsa -out ' + filename + '.pem 1024');
+				if (alg === 'rsa') {
+					return utilities.deferredChildProcess('openssl genrsa -out ' + filename + '.pem 1024');
+				} else {
+					return utilities.deferredChildProcess('openssl ecparam -name prime256v1 -out ' + filename + '.pem');
+				}
 			},
 			function () {
-				return utilities.deferredChildProcess('openssl rsa -in ' + filename + '.pem -pubout -out ' + filename + '.pub.pem');
+				return utilities.deferredChildProcess('openssl ' + alg + ' -in ' + filename + '.pem -pubout -out ' + filename + '.pub.pem');
 			},
 			function () {
-				return utilities.deferredChildProcess('openssl rsa -in ' + filename + '.pem -outform DER -out ' + filename + '.der');
+				return utilities.deferredChildProcess('openssl ' + alg + ' -in ' + filename + '.pem -outform DER -out ' + filename + '.der');
 			}
 		]);
 	},
@@ -211,14 +226,16 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			function () {
 				//if (that.options.force) { utilities.tryDelete(filename); }
-				return dfu.readPrivateKey(filename, false);
+				var segment = that.options.alt ? 'altPrivateKey' : 'privateKey';
+				return dfu._read(filename, segment, false);
 			},
 			function () {
 				var pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
 				if (that.options.force) {
 					utilities.tryDelete(pubPemFilename);
 				}
-				return utilities.deferredChildProcess('openssl rsa -in ' + filename + ' -inform DER -pubout  -out ' + pubPemFilename).catch(function (err) {
+				var alg = that._getPrivateKeyAlgorithm() || 'rsa';
+				return utilities.deferredChildProcess('openssl ' + alg + ' -in ' + filename + ' -inform DER -pubout  -out ' + pubPemFilename).catch(function (err) {
 					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
 				});
 			}
@@ -322,6 +339,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			addressBuf[3] = parts[1];
 			addressBuf[4] = parts[2];
 			addressBuf[5] = parts[3];
+			return addressBuf.slice(0, 6);
 		} else {
 			addressBuf.write(ipOrDomain, 2);
 		}
@@ -334,39 +352,112 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			console.log('Please specify a server key in DER format.');
 			return -1;
 		}
+		var self = this;
+		this.checkArguments(arguments);
 
+		return pipeline([
+			dfu.isDfuUtilInstalled,
+			dfu.findCompatibleDFU,
+			function() {
+				return self._getDERPublicKey(filename);
+			},
+			function(derFile) {
+				filename = derFile;
+				return self._getIpAddress(ipOrDomain);
+			},
+			function(ip) {
+				return self._formatPublicKey(filename, ip);
+			},
+			function(bufferFile) {
+				var segment = self.options.alt ? 'altServerKey' : 'serverKey';
+				return dfu._write(bufferFile, segment, false);
+			}
+		]).then(
+			function () {
+				console.log('Okay!  New keys in place, your device will not restart.');
+			},
+			function (err) {
+				console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');
+				console.error('Error - ' + err);
+				return when.reject(err);
+			});
+	},
+
+	_getServerKeySegment: function() {
+		if (!dfu.deviceID) {
+			return;
+		}
+
+		var key = this.options.alt ? 'altServerKey' : 'serverKey';
+		var specs = deviceSpecs[dfu.deviceID];
+		if (!specs || !specs[key]) {
+			return;
+		}
+		return specs[key];
+	},
+
+	_getServerKeyAlgorithm: function() {
+		var segment = this._getServerKeySegment();
+		if (!segment) {
+			return;
+		}
+		return segment.alg || 'rsa';
+	},
+
+	_getPrivateKeyAlgorithm: function() {
+		if (!dfu.deviceID) {
+			return;
+		}
+
+		var key = this.options.alt ? 'altPrivateKey' : 'privateKey';
+		var specs = deviceSpecs[dfu.deviceID];
+		if (!specs || !specs[key]) {
+			return;
+		}
+		return specs[key].alg || 'rsa';
+	},
+
+	_getServerAddressOffset: function() {
+		var segment = this._getServerKeySegment();
+		if (!segment) {
+			return;
+		}
+		return segment.addressOffset;
+	},
+
+	_getDERPublicKey: function(filename) {
 		if (utilities.getFilenameExt(filename).toLowerCase() !== '.der') {
 			var derFile = utilities.filenameNoExt(filename) + '.der';
 
+			var alg = this._getServerKeyAlgorithm();
+			if (!alg) {
+				return when.reject('No device specs');
+			}
+
 			if (!fs.existsSync(derFile)) {
-				var that = this;
 				console.log('Creating DER format file');
-				var derFilePromise = utilities.deferredChildProcess('openssl rsa -in  ' + filename + ' -pubin -pubout -outform DER -out ' + derFile);
-				when(derFilePromise).then(function() {
-					that.writeServerPublicKey(derFile, ipOrDomain);
+				var derFilePromise = utilities.deferredChildProcess('openssl ' + alg + ' -in  ' + filename + ' -pubin -pubout -outform DER -out ' + derFile);
+				return when(derFilePromise).then(function() {
+					return derFile;
 				}, function(err) {
 					console.error('Error creating a DER formatted version of that key.  Make sure you specified the public key: ' + err);
+					return when.reject();
 				});
-
-				return;
 			} else {
-				filename = derFile;
+				return when.resolve(derFile);
 			}
 		}
+		return when.resolve(filename);
+	},
 
-		if (ipOrDomain === 'mine') {
-			var ips = utilities.getIPAddresses();
-			if (ips && (ips.length === 1)) {
-				ipOrDomain = ips[0];
-			} else if (ips.length > 0) {
-				console.log('Please specify an ip address: ' + ips.join('\n'));
-				return;
-			}
-		}
-
-
+	_formatPublicKey: function(filename, ipOrDomain) {
 		if (ipOrDomain) {
-			var file_with_address = utilities.filenameNoExt(filename) + utilities.replaceAll(ipOrDomain, '.', '_') + '.der';
+			var segment = this._getServerKeySegment();
+			if (!segment) {
+				return when.reject('No device specs');
+			}
+			var alg = segment.alg || 'rsa';
+			var file_with_address = util.format('%s-%s-%s.der', utilities.filenameNoExt(filename), utilities.replaceAll(ipOrDomain, '.', '_'), alg);
 			if (!fs.existsSync(file_with_address)) {
 				var addressBuf = this._createAddressBuffer(ipOrDomain);
 
@@ -376,8 +467,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				// The second byte is 0x04 for an IP address or the length of the string for a domain name.
 				// The remaining bytes are the IP or domain name. If the length of the domain name is odd, add a zero byte to get the file length to be even as usual.
 
-
-				var buf = new Buffer(1024);
+				var buf = new Buffer(segment.size);
 
 				//copy in the key
 				var fileBuf = fs.readFileSync(filename);
@@ -386,31 +476,33 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				//fill the rest with "FF"
 				buf.fill(255, fileBuf.length);
 
-				addressBuf.copy(buf, 384, 0, addressBuf.length);
+
+				var offset = segment.addressOffset || 384;
+				addressBuf.copy(buf, offset, 0, addressBuf.length);
 
 				//console.log("address chunk is now: " + addressBuf.toString('hex'));
 				//console.log("Key chunk is now: " + buf.toString('hex'));
 
 				fs.writeFileSync(file_with_address, buf);
 			}
-			filename = file_with_address;
+			return file_with_address;
 		}
+		return filename;
+	},
 
-
-		sequence([
-			dfu.isDfuUtilInstalled,
-			dfu.findCompatibleDFU,
-			function() {
-				return dfu.writeServerKey(filename, false);
+	_getIpAddress: function(ipOrDomain) {
+		if (ipOrDomain === 'mine') {
+			var ips = utilities.getIPAddresses();
+			if (ips.length === 1) {
+				return ips[0];
+			} else if (ips.length > 0) {
+				// TODO show selector?
+				return when.reject('Multiple valid ip addresses');
+			} else {
+				return when.reject('No IP addresses');
 			}
-		]).then(
-			function () {
-				console.log('Okay!  New keys in place, your device will not restart.');
-			},
-			function (err) {
-				console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');
-				console.error('Error - ' + err);
-			});
+		}
+		return ipOrDomain;
 	}
 });
 
