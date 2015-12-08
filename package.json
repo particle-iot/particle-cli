@@ -16,6 +16,7 @@
     "node": ">=0.10.40"
   },
   "dependencies": {
+    "@particle/api": "^4.0.2",
     "binary-version-reader": "^0.3.0",
     "chalk": "^1.0.0",
     "cli-spinner": "^0.2.1",
@@ -33,7 +34,8 @@
     "softap-setup": "^1.1.4",
     "temp": "^0.8.3",
     "when": "^3.7.2",
-    "xtend": "^4.0.0"
+    "xtend": "^4.0.0",
+    "yargs": "^3.31.0"
   },
   "scripts": {
     "test": "mocha test/",

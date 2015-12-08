@@ -1,0 +1,82 @@
+get (variable/get)
+call (function/call)
+identify (serial/identify)
+list (cloud/list)
+core
+	add (cloud/claim)
+	remove (cloud/remove)
+	rename (cloud/name)
+device
+	add (cloud/claim)
+	remove (cloud/remove)
+	rename (cloud/name)
+compile (cloud/compile)
+monitor (variable/monitor)
+login (cloud/login)
+logout (cloud/logout)
+nyan (cloud/nyan)
+
+help
+  *
+	version
+setup
+	*
+flash
+	*
+	firmware
+	cloud
+subscribe
+	*
+publish
+	*
+token
+	list
+	revoke
+	new
+cloud
+	claim
+	list
+	remove
+	name
+	flash
+	compile
+	nyan
+	login
+	logout
+config
+	*
+	identify
+	list
+function
+	list
+	call
+keys
+	new
+	load
+	save
+	send
+	doctor
+	server
+serial
+	list
+	monitor
+	identify
+	wifi
+	mac
+udp
+	send
+update
+	*
+variable
+	list
+	get
+	monitor
+webhook
+	create
+	list
+	delete
+	POST
+	GET
+wireless
+	list
+	monitor
