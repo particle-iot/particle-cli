@@ -27,8 +27,10 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 var when = require('when');
+var whenNode = require('when/node');
 var sequence = require('when/sequence');
 var pipeline = require('when/pipeline');
+var temp = require('temp').track();
 var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
@@ -61,6 +63,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		this.addOption('send', this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
 		this.addOption('doctor', this.keyDoctor.bind(this), 'Creates and assigns a new key to your device, and uploads it to the cloud');
 		this.addOption('server', this.writeServerPublicKey.bind(this), 'Switch server public keys');
+		this.addOption('address', this.readServerAddress.bind(this), 'Read server configured in device server public key');
 
 		//this.addArgument("get", "--time", "include a timestamp")
 		//this.addArgument("monitor", "--time", "include a timestamp")
@@ -384,6 +387,52 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				console.error('Error - ' + err);
 				return when.reject(err);
 			});
+	},
+
+	readServerAddress: function() {
+		var self = this;
+		this.checkArguments(arguments);
+
+		var filename;
+		var segment = this.options.alt ? 'altServerKey' : 'serverKey';
+
+		return pipeline([
+			dfu.isDfuUtilInstalled,
+			dfu.findCompatibleDFU,
+			function() {
+				filename = temp.path({ suffix: '.der' });
+				//if (that.options.force) { utilities.tryDelete(filename); }
+				return dfu._read(filename, segment, false);
+			},
+			function() {
+				return whenNode.lift(fs.readFile)(filename).then(function (buf) {
+					var serverKeySeg = self._getServerKeySegment();
+					var offset = serverKeySeg.addressOffset || 384;
+					var type = buf[offset];
+					var len = buf[offset+1];
+					var data = buf.slice(offset + 2, offset + 2 + len);
+
+					console.log();
+					switch (type) {
+						case 0:
+							console.log(Array.prototype.slice.call(data).join('.'));
+							break;
+						case 1:
+							console.log(data.toString('utf8'));
+							break;
+					}
+				});
+			}
+		]).catch(function (err) {
+			if (filename) {
+				fs.unlink(filename, function() {
+					// do nothing
+				});
+			}
+			console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');
+			console.error('Error - ' + err);
+			return when.reject(err);
+		});
 	},
 
 	_getServerKeySegment: function() {
