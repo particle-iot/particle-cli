@@ -5,16 +5,21 @@ var Interpreter = require('../lib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 
+var settings = {
+	knownApps: {
+		test: '/path/to/firmware'
+	},
+	options: {
+		useFactoryAddress: false
+	}
+};
+
 var FlashCommand = proxyquire('../commands/FlashCommand', {
 	'cli-spinner': Spinner,
 	'fs': fs,
 	'../settings.js': settings,
 	'../lib/dfu.js': dfu
 });
-
-function settings() { };
-settings.knownApps['test'] = '/path/to/firmware';
-settings.options = { useFactoryAddress: false };
 
 function dfu() { };
 dfu.findCompatibleDFU = function() {
