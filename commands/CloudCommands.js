@@ -48,16 +48,12 @@ var arrow = chalk.green('>');
 var alert = chalk.yellow('!');
 var cmd = path.basename(process.argv[1]);
 
-var PLATFORMS = {
-	'core': 0,
+// Use known platforms and add shortcuts
+var PLATFORMS = extend(utilities.knownPlatforms(), {
 	'c': 0,
-	'photon': 6,
 	'p': 6,
-	'p1': 8,
-	'electron': 10,
-	'e': 10,
-	'bluz': 103
-};
+	'e': 10
+});
 
 var CloudCommand = function (cli, options) {
 	CloudCommand.super_.call(this, cli, options);
