@@ -1,0 +1,36 @@
+init:
+  - git config --global core.autocrlf true
+
+shallow_clone: true
+
+environment:
+  matrix:
+  - nodejs_version: "0.10"
+  - nodejs_version: "0.12"
+  - nodejs_version: "4.2"
+  - nodejs_version: "5.1"
+
+platform:
+  - x86
+  - x64
+
+install:
+  - cmd: ECHO %nodejs_version%
+  - cmd: SET PATH=%cd%\node_modules\.bin\;%PATH%
+  - ps: Install-Product node $env:nodejs_version $env:platform
+  - cmd: IF %nodejs_version% LSS 1 npm -g install npm
+  - cmd: IF %nodejs_version% LSS 1 set PATH=%APPDATA%\npm;%PATH%
+
+build_script:
+  - cmd: npm install
+
+test_script:
+  - cmd: npm test
+
+deploy: off
+
+notifications:
+  - provider: Slack
+    auth_token:
+      secure: b84dlqnysahaZyDd0oxm9d2Td8u+U9gtyo0u4+nnAsOz1whgbrAZ3TcXNvp1eQuJng0KSW7z7Po/LoArs9VPZw==
+    channel: open-source
