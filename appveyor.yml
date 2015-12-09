@@ -1,7 +1,7 @@
 init:
   - git config --global core.autocrlf true
 
-version: {build}
+version: "{build}"
 
 shallow_clone: true
 
