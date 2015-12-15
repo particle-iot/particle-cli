@@ -299,7 +299,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	 */
 	downloadBinary: function (binary_id, filename) {
 		if (!filename) {
-			filename = 'firmware_' + (new Date()).getTime() + '.bin';
+			filename = 'firmware_' + Date.now() + '.bin';
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -334,7 +334,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		//this should have no side-effects with other usages.  If we did a more sophisticated
 		//argument structure, we'd need to change this logic.
 		if (!filename || (utilities.getFilenameExt(filename) !== '.bin')) {
-			filename = deviceType + '_firmware_' + (Date.now()).getTime() + '.bin';
+			filename = deviceType + '_firmware_' + Date.now() + '.bin';
 		}
 		return filename;
 	},
