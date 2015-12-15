@@ -1,5 +1,7 @@
 changelog
 =========
+12/15/2015 - 1.8.19 - Fix cloud compiling error
+
 12/14/2015 - 1.8.18 - Fix early returns from promise using commands
 
 12/14/2015 - 1.8.17 - Update Electron binaries to v0.0.3-rc.3
