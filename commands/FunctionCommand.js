@@ -54,10 +54,10 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 	listFunctions: function (args) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
-		when(api.getAllAttributes(args))
+		return api.getAllAttributes(args)
 			.then(function (cores) {
 
 				var lines = [];
@@ -95,23 +95,19 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
-		api.callFunction(coreID, functionName, funcParam).then(
+		return api.callFunction(coreID, functionName, funcParam).then(
 			function (result) {
 				if (result && result.error) {
 					console.log('Function call failed ', result.error);
-
 				} else {
 					console.log(result.return_value);
 				}
-
-
-
-			},
-			function (err) {
+			}).catch(function (err) {
 				console.log('Function call failed ', err);
+				return when.reject(err);
 			});
 	}
 });

@@ -72,9 +72,7 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 			setPrivate = false;
 		}
 
-		api.publishEvent(eventName, data, setPrivate);
-
-		return 0;
+		return api.publishEvent(eventName, data, setPrivate);
 	}
 });
 

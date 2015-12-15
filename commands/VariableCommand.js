@@ -126,7 +126,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 		var multipleCores = coreid.length > 1;

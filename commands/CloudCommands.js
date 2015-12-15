@@ -114,12 +114,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	claimDevice: function (deviceid) {
 		if (!deviceid) {
 			console.error('Please specify a device id');
-			return;
+			return -1;
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 		console.log('Claiming device ' + deviceid);
 		api.claimCore(deviceid).then(function() {
@@ -137,7 +137,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 		when(prompts.areYouSure())
@@ -165,17 +165,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (!name) {
 			console.error('Please specify a name');
-			return;
+			return -1;
 		}
 
 		if (arguments.length > 2) {
 			console.error('Device names cannot contain spaces');
-			return;
+			return -1;
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 		console.log('Renaming device ' + deviceid);
@@ -304,7 +304,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 
