@@ -141,20 +141,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		when(prompts.areYouSure())
+		return prompts.areYouSure()
 			.then(function () {
-				api.removeCore(deviceid).then(function () {
+				return api.removeCore(deviceid).then(function () {
 					console.log('Okay!');
-					process.exit(0);
-				},
-				function (err) {
-					console.log("Didn't remove the device " + err);
-					process.exit(1);
 				});
-			},
-			function (err) {
+			}).catch(function (err) {
 				console.log("Didn't remove the device " + err);
-				process.exit(1);
+				return when.reject();
 			});
 	},
 
