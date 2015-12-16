@@ -148,7 +148,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				console.log('**forcing**');
 			} else {
 				console.log('use --force to delete it');
-				return;
+				return -1;
 			}
 		}
 

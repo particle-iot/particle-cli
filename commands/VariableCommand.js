@@ -193,7 +193,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		var that = this;
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 		var lookupVariables = function (cores) {
@@ -260,7 +260,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		var self = this;
 		if (!deviceId && !variableName) {
 			console.log('Please specify a device id (or all) and a variable name.');
-			return;
+			return -1;
 		}
 		this.checkArguments(arguments);
 

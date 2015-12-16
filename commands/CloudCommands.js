@@ -337,7 +337,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	compileCode: function (deviceType) {
 		if (!deviceType) {
 			console.error('\nPlease specify the target device type. eg. particle compile photon xxx\n');
-			return;
+			return -1;
 		}
 
 		//defaults to 0 for core
@@ -349,7 +349,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.error('\nTarget device ' + deviceType + ' is not valid');
 			console.error('	eg. particle compile core xxx');
 			console.error('	eg. particle compile photon xxx\n');
-			return;
+			return -1;
 		}
 
 		console.log('\nCompiling code for ' + deviceType + '\n');
@@ -363,7 +363,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var filePath = args[0];
 		if (!fs.existsSync(filePath)) {
 			console.error("I couldn't find that: " + filePath);
-			return process.exit(1);
+			return -1;
 		}
 
 		this.checkArguments(arguments);
@@ -372,7 +372,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var files = this._handleMultiFileArgs(args);
 		if (!files) {
 			console.log('No source to compile!');
-			return process.exit(1);
+			return -1;
 		}
 
 		if (settings.showIncludedSourceFiles) {
