@@ -26,6 +26,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
+var _ = require('lodash');
 var when = require('when');
 var pipeline = require('when/pipeline');
 
@@ -388,14 +389,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var filename = this._getDownloadPath(arguments, deviceType);
-		this._compileAndDownload(files, platform_id, filename);
+		return this._compileAndDownload(files, platform_id, filename);
 	},
 
 	_compileAndDownload: function(files, platform_id, filename) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
-			return process.exit(1);
+			return -1;
 		}
 
 		var allDone = pipeline([
@@ -421,15 +422,19 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		]);
 
-		when(allDone).then(
+		return allDone.then(
 			function () {
 				console.log('Compile succeeded.');
 				console.log('Saved firmware to:', path.resolve(filename));
 			},
 			function (err) {
 				console.error('Compile failed. Exiting.');
-				console.error(err);
-				process.exit(1);
+				if (_.isArray(err)) {
+					console.log(err.join('\n'));
+				} else {
+					console.error(err);
+				}
+				return when.reject();
 			}
 		);
 	},
