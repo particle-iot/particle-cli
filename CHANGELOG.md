@@ -1,5 +1,7 @@
 changelog
 =========
+12/16/2015 - 1.8.20 - Fix cloud compile error output. Improve error code reporting in several places.
+
 12/15/2015 - 1.8.19 - Fix cloud compiling error
 
 12/14/2015 - 1.8.18 - Fix early returns from promise using commands
