@@ -101,12 +101,13 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 		return api.callFunction(coreID, functionName, funcParam).then(
 			function (result) {
 				if (result && result.error) {
-					console.log('Function call failed ', result.error);
+					console.log('Function call failed', result.error);
+					return when.reject(result.error);
 				} else {
 					console.log(result.return_value);
 				}
 			}).catch(function (err) {
-				console.log('Function call failed ', err);
+				console.log('Function call failed', err);
 				return when.reject(err);
 			});
 	}
