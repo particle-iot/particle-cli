@@ -117,11 +117,10 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
-	_getValue: function(coreid, variableName) {
-		var tmp = when.defer();
+	_getValue: function(deviceId, variableName) {
 		var that = this;
-		if (!util.isArray(coreid)) {
-			coreid = [ coreid ];
+		if (!_.isArray(deviceId)) {
+			deviceId = [ deviceId ];
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -129,35 +128,39 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		var multipleCores = coreid.length > 1;
+		var multipleCores = deviceId.length > 1;
 
-		return when.map(coreid, function (coreid) {
-			return api.getVariable(coreid, variableName);
+		return when.map(deviceId, function (deviceId) {
+			return api.getVariable(deviceId, variableName);
 		}).then(function (results) {
 			var time = moment().format();
+			var hasErrors = false;
 			for (var i = 0; i < results.length; i++) {
-
 				var parts = [];
-				try {
-					var result = results[i];
-					if (multipleCores) {
-						parts.push(result.coreInfo.deviceID);
-					}
-					if (that.options.showTime) {
-						parts.push(time);
-					}
-					parts.push(result.result);
-				} catch (ex) {
-					console.error('error ' + ex);
+				var result = results[i];
+				if (result.error) {
+					console.log('Error:', result.error);
+					hasErrors = true;
+					continue;
 				}
+
+				if (multipleCores) {
+					parts.push(result.coreInfo.deviceID);
+				}
+				if (that.options.showTime) {
+					parts.push(time);
+				}
+				parts.push(result.result);
 
 				console.log(parts.join(', '));
 			}
-			tmp.resolve(results);
-		},
-		function (err) {
-			console.error('Error reading value ', err);
-			throw err;
+			if (hasErrors) {
+				return when.reject();
+			}
+			return when.resolve(results);
+		}, function (err) {
+			console.error('Error reading value:', err);
+			return when.reject(err);
 		});
 	},
 
