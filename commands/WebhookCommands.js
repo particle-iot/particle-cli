@@ -162,6 +162,10 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			mydevices: data.mydevices === undefined ? true : data.mydevices
 		};
 
+		if (data) {
+			webhookData = extend(webhookData, data);
+		}
+
 		return api.createWebhookWithObj(webhookData);
 	},
 
