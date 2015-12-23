@@ -1,5 +1,7 @@
 changelog
 =========
+12/23/2015 - 1.8.22 - New firmware release for electron
+
 12/21/2015 - 1.8.21 - 21 on the 21st!  Fixing small bug that impacted webhook creation.
 
 12/16/2015 - 1.8.20 - Fix cloud compile error output. Improve error code reporting in several places.
