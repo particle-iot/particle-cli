@@ -99,14 +99,14 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 	helpCommand: function (name, subcmd) {
 		if (!name) {
 			this.listCommandsSwitch();
-			return;
+			return -1;
 		}
 
 		var command = this.cli.findCommand(name);
 		if (!command) {
 			console.log("Sorry, no help available for '%s'", name);
 			this.listCommandsSwitch();
-			return;
+			return -1;
 		}
 
 		//make a pretty string showing how to use this command, optionally plus a sub-command

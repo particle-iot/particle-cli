@@ -26,6 +26,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
+var _ = require('lodash');
 var when = require('when');
 var pipeline = require('when/pipeline');
 
@@ -114,12 +115,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	claimDevice: function (deviceid) {
 		if (!deviceid) {
 			console.error('Please specify a device id');
-			return;
+			return -1;
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 		console.log('Claiming device ' + deviceid);
 		api.claimCore(deviceid).then(function() {
@@ -137,23 +138,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
-		when(prompts.areYouSure())
+		return prompts.areYouSure()
 			.then(function () {
-				api.removeCore(deviceid).then(function () {
+				return api.removeCore(deviceid).then(function () {
 					console.log('Okay!');
-					process.exit(0);
-				},
-				function (err) {
-					console.log("Didn't remove the device " + err);
-					process.exit(1);
 				});
-			},
-			function (err) {
+			}).catch(function (err) {
 				console.log("Didn't remove the device " + err);
-				process.exit(1);
+				return when.reject();
 			});
 	},
 
@@ -165,17 +160,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (!name) {
 			console.error('Please specify a name');
-			return;
+			return -1;
 		}
 
 		if (arguments.length > 2) {
 			console.error('Device names cannot contain spaces');
-			return;
+			return -1;
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 		console.log('Renaming device ' + deviceid);
@@ -299,12 +294,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	 */
 	downloadBinary: function (binary_id, filename) {
 		if (!filename) {
-			filename = 'firmware_' + (new Date()).getTime() + '.bin';
+			filename = 'firmware_' + Date.now() + '.bin';
 		}
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 
@@ -334,7 +329,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		//this should have no side-effects with other usages.  If we did a more sophisticated
 		//argument structure, we'd need to change this logic.
 		if (!filename || (utilities.getFilenameExt(filename) !== '.bin')) {
-			filename = deviceType + '_firmware_' + (Date.now()).getTime() + '.bin';
+			filename = deviceType + '_firmware_' + Date.now() + '.bin';
 		}
 		return filename;
 	},
@@ -342,7 +337,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	compileCode: function (deviceType) {
 		if (!deviceType) {
 			console.error('\nPlease specify the target device type. eg. particle compile photon xxx\n');
-			return;
+			return -1;
 		}
 
 		//defaults to 0 for core
@@ -354,7 +349,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.error('\nTarget device ' + deviceType + ' is not valid');
 			console.error('	eg. particle compile core xxx');
 			console.error('	eg. particle compile photon xxx\n');
-			return;
+			return -1;
 		}
 
 		console.log('\nCompiling code for ' + deviceType + '\n');
@@ -368,7 +363,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var filePath = args[0];
 		if (!fs.existsSync(filePath)) {
 			console.error("I couldn't find that: " + filePath);
-			return process.exit(1);
+			return -1;
 		}
 
 		this.checkArguments(arguments);
@@ -377,7 +372,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var files = this._handleMultiFileArgs(args);
 		if (!files) {
 			console.log('No source to compile!');
-			return process.exit(1);
+			return -1;
 		}
 
 		if (settings.showIncludedSourceFiles) {
@@ -388,14 +383,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var filename = this._getDownloadPath(arguments, deviceType);
-		this._compileAndDownload(files, platform_id, filename);
+		return this._compileAndDownload(files, platform_id, filename);
 	},
 
 	_compileAndDownload: function(files, platform_id, filename) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
-			return process.exit(1);
+			return -1;
 		}
 
 		var allDone = pipeline([
@@ -421,15 +416,19 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		]);
 
-		when(allDone).then(
+		return allDone.then(
 			function () {
 				console.log('Compile succeeded.');
 				console.log('Saved firmware to:', path.resolve(filename));
 			},
 			function (err) {
 				console.error('Compile failed. Exiting.');
-				console.error(err);
-				process.exit(1);
+				if (_.isArray(err)) {
+					console.log(err.join('\n'));
+				} else {
+					console.error(err);
+				}
+				return when.reject();
 			}
 		);
 	},

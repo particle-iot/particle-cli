@@ -27,7 +27,6 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 var when = require('when');
 var pipeline = require('when/pipeline');
-var parallel = require('when/parallel');
 
 var extend = require('xtend');
 var util = require('util');
@@ -111,42 +110,34 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	listAccessTokens: function () {
+		return this.getAccessTokens().then(function (tokens) {
+			var lines = [];
+			for (var i = 0; i < tokens.length; i++) {
+				var token = tokens[i];
 
-		this.getAccessTokens().done(function (tokens) {
-			try {
-				var lines = [];
-				for (var i = 0; i < tokens.length; i++) {
-					var token = tokens[i];
-
-					var first_line = token.client || token.client_id;
-					if (token.token === settings.access_token) {
-						first_line += ' (active)';
-					}
-					var now = (new Date()).toISOString();
-					if (now > token.expires_at) {
-						first_line += ' (expired)';
-					}
-
-					lines.push(first_line);
-					lines.push(' Token:      ' + token.token);
-					lines.push(' Expires at: ' + token.expires_at || 'unknown');
-					lines.push('');
+				var first_line = token.client || token.client_id;
+				if (token.token === settings.access_token) {
+					first_line += ' (active)';
 				}
-				console.log(lines.join('\n'));
-				process.exit(0);
-			} catch (ex) {
-				console.error('Error listing tokens ' + ex);
-				process.exit(1);
+				var now = (new Date()).toISOString();
+				if (now > token.expires_at) {
+					first_line += ' (expired)';
+				}
+
+				lines.push(first_line);
+				lines.push(' Token:      ' + token.token);
+				lines.push(' Expires at: ' + token.expires_at || 'unknown');
+				lines.push('');
 			}
-		}, function(err) {
+			console.log(lines.join('\n'));
+		}).catch(function(err) {
 			console.log("Please make sure you're online and logged in.");
 			console.log(err);
-			process.exit(1);
+			return when.reject(err);
 		});
 	},
 
 	revokeAccessToken: function () {
-
 		var args = Array.prototype.slice.call(arguments);
 		this.checkArguments(args);
 		var tokens = args;
@@ -157,43 +148,26 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				console.log('**forcing**');
 			} else {
 				console.log('use --force to delete it');
-				return;
+				return -1;
 			}
 		}
 
 		var api = new ApiClient(settings.apiUrl);
-		var revokers = tokens.map(function(x) {
-			return function (creds) {
-				return [x, api.removeAccessToken(creds.username, creds.password, x)];
-			};
-		});
 
-		var creds = this.getCredentials();
-		var allDone = creds.then(function (creds) {
-			return parallel(revokers, creds);
-		});
-
-		allDone.done(function (results) {
-			for (var i in results) {
-				// For some reason if I just use result.done here directly it
-				// uses the same value for "token" in each case. Building and
-				// then calling this function rectifies the issue
-				var intermediary = function(token, result) {
-					result.done(
-						function () {
-							console.log('successfully deleted ' + token);
-							process.exit(0);
-						},
-						function (err) {
-							console.log('error revoking ' + token + ': ' + JSON.stringify(err).replace(/\"/g, ''));
-							process.exit(1);
+		return this.getCredentials().then(function (creds) {
+			return when.map(tokens, function (x) {
+				return api.removeAccessToken(creds.username, creds.password, x)
+					.then(function () {
+						console.log('successfully deleted ' + x);
+						if (x === settings.access_token) {
+							settings.override(null, 'access_token', null);
 						}
-					);
-				};
-				intermediary(results[i][0], results[i][1]);
-			}
+					}, function(err) {
+						console.log('error revoking ' + x + ': ' + JSON.stringify(err).replace(/\"/g, ''));
+						return when.reject(err);
+					});
+			});
 		});
-		return;
 	},
 
 	createAccessToken: function (clientName) {
@@ -210,21 +184,17 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		]);
 
-		allDone.done(
+		return allDone.then(
 			function (result) {
 				var now_unix = Date.now();
 				var expires_unix = now_unix + (result.expires_in * 1000);
 				var expires_date = new Date(expires_unix);
 				console.log('New access token expires on ' + expires_date);
 				console.log('    ' + result.access_token);
-				process.exit(0);
-			},
-			function (err) {
+			}).catch(function (err) {
 				console.log('there was an error creating a new access token: ' + err);
-				process.exit(1);
-			}
-		);
-		return;
+				return when.reject(err);
+			});
 	}
 });
 

@@ -162,8 +162,11 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			mydevices: data.mydevices === undefined ? true : data.mydevices
 		};
 
-		api.createWebhookWithObj(webhookData);
-		return 0;
+		if (data) {
+			webhookData = extend(webhookData, data);
+		}
+
+		return api.createWebhookWithObj(webhookData);
 	},
 
 	deleteHook: function (hookID) {
@@ -177,8 +180,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		api.deleteWebhook(hookID);
-		return 0;
+		return api.deleteWebhook(hookID);
 	},
 
 	listHooks: function () {
@@ -187,7 +189,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		when(api.listWebhooks()).then(
+		return api.listWebhooks().then(
 			function (hooks) {
 				console.log('Found ' + hooks.length + ' hooks registered\n');
 				for (var i=0;i < hooks.length;i++) {
@@ -211,7 +213,6 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			function (err) {
 				console.error('Problem listing webhooks ' + err);
 			});
-		return 0;
 	}
 });
 

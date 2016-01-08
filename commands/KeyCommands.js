@@ -137,7 +137,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		var keyReady = this.makeKeyOpenSSL(filename);
 
-		when(keyReady).then(function () {
+		keyReady.then(function () {
 			console.log('New Key Created!');
 		}, function (err) {
 			console.error('Error creating keys... ' + err);
@@ -188,7 +188,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		]);
 
-		when(ready).then(function () {
+		ready.then(function () {
 			console.log('Saved!');
 		}, function (err) {
 			console.error('Error saving key to device... ' + err);
@@ -244,7 +244,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		]);
 
-		when(ready).then(function () {
+		ready.then(function () {
 			console.log('Saved!');
 		}, function (err) {
 			console.error('Error saving key from device... ' + err);
@@ -284,7 +284,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	keyDoctor: function (deviceid) {
 		if (!deviceid || (deviceid === '')) {
 			console.log('Please provide your device id');
-			return 0;
+			return -1;
 		}
 
 		this.checkArguments(arguments);
@@ -315,7 +315,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		]);
 
-		when(allDone).then(
+		allDone.then(
 			function () {
 				console.log('Okay!  New keys in place, your device should restart.');
 
@@ -324,6 +324,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				console.log('Make sure your device is in DFU mode (blinking yellow), and that your computer is online.');
 				console.error('Error - ' + err);
 			});
+
+		return allDone;
 	},
 
 	_createAddressBuffer: function(ipOrDomain) {
@@ -493,7 +495,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 					return derFile;
 				}, function(err) {
 					console.error('Error creating a DER formatted version of that key.  Make sure you specified the public key: ' + err);
-					return when.reject();
+					return when.reject(err);
 				});
 			} else {
 				return when.resolve(derFile);

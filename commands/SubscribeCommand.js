@@ -54,7 +54,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 	startListening: function (eventName, coreId) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
-			return;
+			return -1;
 		}
 
 		// if they typed: "particle subscribe mine"
@@ -117,8 +117,6 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			appendToQueue(chunk.split('\n'));
 		};
 		api.getEventStream(eventName, coreId, onData);
-
-		return 0;
 	}
 });
 

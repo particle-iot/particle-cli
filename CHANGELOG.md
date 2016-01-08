@@ -1,5 +1,17 @@
 changelog
 =========
+12/23/2015 - 1.8.22 - New firmware release for electron
+
+12/21/2015 - 1.8.21 - 21 on the 21st!  Fixing small bug that impacted webhook creation.
+
+12/16/2015 - 1.8.20 - Fix cloud compile error output. Improve error code reporting in several places.
+
+12/15/2015 - 1.8.19 - Fix cloud compiling error
+
+12/14/2015 - 1.8.18 - Fix early returns from promise using commands
+
+12/14/2015 - 1.8.17 - Update Electron binaries to v0.0.3-rc.3
+
 11/03/2015 - 1.8.16 - Add `bluz` to cloud compile platforms
 
 10/30/2015 - 1.8.15 - Update Electron binaries to v0.0.3-rc.2
