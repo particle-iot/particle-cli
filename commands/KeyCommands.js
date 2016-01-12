@@ -237,7 +237,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 		//find dfu devices, make sure a device is connected
 		//pull the key down and save it there
-		var that = this;
+		var self = this;
 
 		var ready = sequence([
 			function() {
@@ -247,17 +247,17 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function () {
-				//if (that.options.force) { utilities.tryDelete(filename); }
-				var segment = that._getPrivateKeySegmentName();
+				//if (self.options.force) { utilities.tryDelete(filename); }
+				var segment = self._getPrivateKeySegmentName();
 				return dfu._read(filename, segment, false);
 			},
 			function () {
 				var pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
-				if (that.options.force) {
+				if (self.options.force) {
 					utilities.tryDelete(pubPemFilename);
 				}
-				var alg = that._getPrivateKeyAlgorithm() || 'rsa';
-				return utilities.deferredChildProcess('openssl ' + alg + ' -in ' + filename + ' -inform DER -pubout  -out ' + pubPemFilename).catch(function (err) {
+				var alg = self._getPrivateKeyAlgorithm() || 'rsa';
+				return utilities.deferredChildProcess('openssl ' + alg + ' -in ' + filename + ' -inform DER -pubout -out ' + pubPemFilename).catch(function (err) {
 					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
 				});
 			}
