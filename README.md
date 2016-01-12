@@ -1,18 +1,16 @@
-[![Build Status](https://travis-ci.org/spark/particle-cli.svg)](https://travis-ci.org/spark/particle-cli)
-[![Open Issues](https://img.shields.io/github/issues/spark/particle-cli.svg)](https://github.com/spark/particle-cli/issues)
-[![License](https://img.shields.io/badge/license-LGPL-blue.svg)](https://github.com/spark/particle-cli/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli)
+[![Build Status](https://travis-ci.org/spark/particle-cli.svg?style=flat-square)](https://travis-ci.org/spark/particle-cli)
+[![Open Issues](https://img.shields.io/github/issues/spark/particle-cli.svg?style=flat-square)](https://github.com/spark/particle-cli/issues)
+[![License](https://img.shields.io/badge/license-LGPL-blue.svg?style=flat-square)](https://github.com/spark/particle-cli/blob/master/LICENSE)
 
-Particle CLI
-==========
+# Particle CLI
 
 The Particle CLI is a powerful tool for interacting with your devices and the Particle Cloud.  The CLI uses [node.js](http://nodejs.org/) and can run on Windows, Mac OS X, and Linux fairly easily.  It's also [open source](https://github.com/spark/particle-cli) so you can edit and change it, and even send in your changes as [pull requests](https://help.github.com/articles/using-pull-requests) if you want to share!
 
-Known Issues
-========
+## Known Issues
 * The Wireless Photon Setup Wizard will only automatically switch networks on OS X. Users of other operating systems will need to manually connect their computer to the Photon's Wi-Fi. You will be prompted during the wizard when this is required.
 
-Installing
-=======
+## Installing
 
 #### If you've already installed ```spark-cli```, please uninstall it before continuing.
 #### Simply type: ```npm uninstall -g spark-cli``` into the command line.
@@ -33,8 +31,7 @@ $ sudo npm install -g particle-cli
 ```
 
 
-Install (advanced)
----------------------------
+## Install (advanced)
 
 To use the local flash and key features you'll need to install [DFU-util](http://DFU-util.sourceforge.net/) and [openssl](http://www.openssl.org/).  They are freely available and open-source, and there are installers and binaries for most major platforms as well.
 
@@ -44,11 +41,11 @@ Here are some great tutorials on the community for full installs:
 
 [Installing on Windows](https://community.particle.io/t/tutorial-spark-cli-on-windows-06-may-2014/3112)
 
-#### Installing on Mac OS X:
+### Installing on Mac OS X:
 Rather than installing these packages from source, and instead of using MacPorts, it is relatively straightforward to use [Homebrew](http://brew.sh) to install ```dfu-util``` and ```openssl```. Once you have installed `brew` the basic command is ```brew install dfu-util openssl```.
 
-Upgrading
----------------------------
+## Upgrading
+
 To upgrade Particle-CLI, enter the following command:
 
 ```sh
@@ -56,8 +53,8 @@ $ npm update -g particle-cli
 ```
 
 
-Running from source (advanced)
----------------------------
+## Running from source (advanced)
+
 To grab the CLI source and play with it locally
 
 ```sh
@@ -69,7 +66,7 @@ node app.js help
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-
+## Table of Contents
 
 - [Getting Started](#getting-started)
   - [particle setup](#particle-setup)
