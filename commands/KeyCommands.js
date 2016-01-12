@@ -610,11 +610,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_formatPublicKey: function(filename, ipOrDomain) {
+		var segment = this._getServerKeySegment();
+		if (!segment) {
+			return when.reject('No device specs');
+		}
+
+		var buf, fileBuf;
 		if (ipOrDomain) {
-			var segment = this._getServerKeySegment();
-			if (!segment) {
-				return when.reject('No device specs');
-			}
 			var alg = segment.alg || 'rsa';
 			var file_with_address = util.format('%s-%s-%s.der', utilities.filenameNoExt(filename), utilities.replaceAll(ipOrDomain, '.', '_'), alg);
 			if (!fs.existsSync(file_with_address)) {
@@ -626,10 +628,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				// The second byte is 0x04 for an IP address or the length of the string for a domain name.
 				// The remaining bytes are the IP or domain name. If the length of the domain name is odd, add a zero byte to get the file length to be even as usual.
 
-				var buf = new Buffer(segment.size);
+				buf = new Buffer(segment.size);
 
 				//copy in the key
-				var fileBuf = fs.readFileSync(filename);
+				fileBuf = fs.readFileSync(filename);
 				fileBuf.copy(buf, 0, 0, fileBuf.length);
 
 				//fill the rest with "FF"
@@ -645,6 +647,22 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				fs.writeFileSync(file_with_address, buf);
 			}
 			return file_with_address;
+		}
+
+		var stats = fs.statSync(filename);
+		if (stats.size < segment.size) {
+			var fileWithSize = util.format('%s-padded.der', utilities.filenameNoExt(filename));
+			if (!fs.existsSync(fileWithSize)) {
+				buf = new Buffer(segment.size);
+
+				fileBuf = fs.readFileSync(filename);
+				fileBuf.copy(buf, 0, 0, fileBuf.length);
+
+				buf.fill(255, fileBuf.length);
+
+				fs.writeFileSync(fileWithSize, buf);
+			}
+			return fileWithSize;
 		}
 		return filename;
 	},
