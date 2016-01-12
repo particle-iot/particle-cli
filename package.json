@@ -37,7 +37,8 @@
     "test": "mocha test/",
     "lint": "eslint commands/**/*.js lib/**/*.js test/**/*.js *.js",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/",
-    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
+    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "doctoc": "doctoc README.md"
   },
   "contributors": [
     {
@@ -80,6 +81,7 @@
   "preferGlobal": true,
   "devDependencies": {
     "coveralls": "^2.11.4",
+    "doctoc": "^0.15.0",
     "eslint": "^1.9.0",
     "istanbul": "^0.3.22",
     "mocha": "^2.2.5",
