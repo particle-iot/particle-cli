@@ -83,9 +83,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			);
 		}
 
-		if (!this.options.alt) {
-			this.options.alt = utilities.tryParseArgs(args,
-				'--alt',
+		if (!this.options.protocol) {
+			this.options.protocol = utilities.tryParseArgs(args,
+				'--protocol',
 				null
 			);
 		}
@@ -106,7 +106,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			function () {
 				if (alg === 'rsa') {
 					return utilities.deferredChildProcess('openssl genrsa -out ' + filename + '.pem 1024');
-				} else {
+				} else if (alg === 'ec') {
 					return utilities.deferredChildProcess('openssl ecparam -name prime256v1 -out ' + filename + '.pem');
 				}
 			},
@@ -131,10 +131,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 
 	makeNewKey: function (filename) {
-		if (!filename) {
+		this.checkArguments(arguments);
+		if (!filename || filename === '--protocol') {
 			filename = 'device';
 		}
 
+		return this._makeNewKey(filename);
+	},
+
+	_makeNewKey: function(filename) {
 		var keyReady = this.makeKeyOpenSSL(filename);
 
 		keyReady.then(function () {
@@ -184,7 +189,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				});
 			},
 			function () {
-				return dfu.writePrivateKey(filename, leave);
+				var segment = this._getPrivateKeySegmentName();
+				return dfu._write(filename, segment, leave);
 			}
 		]);
 
@@ -229,7 +235,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			function () {
 				//if (that.options.force) { utilities.tryDelete(filename); }
-				var segment = that.options.alt ? 'altPrivateKey' : 'privateKey';
+				var segment = that._getPrivateKeySegmentName();
 				return dfu._read(filename, segment, false);
 			},
 			function () {
@@ -305,7 +311,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function() {
-				return that.makeNewKey(deviceid + '_new');
+				return that._makeNewKey(deviceid + '_new');
 			},
 			function() {
 				return that.writeKeyToDevice(deviceid + '_new', true);
@@ -357,7 +363,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			console.log('Please specify a server key in DER format.');
 			return -1;
 		}
-		if (ipOrDomain === '--alt') {
+		if (ipOrDomain === '--protocol') {
 			ipOrDomain = null;
 		}
 		var self = this;
@@ -377,7 +383,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return self._formatPublicKey(filename, ip);
 			},
 			function(bufferFile) {
-				var segment = self.options.alt ? 'altServerKey' : 'serverKey';
+				var segment = this._getServerKeySegmentName();
 				return dfu._write(bufferFile, segment, false);
 			}
 		]).then(
@@ -396,13 +402,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		var filename;
-		var segment = this.options.alt ? 'altServerKey' : 'serverKey';
 
 		return pipeline([
 			dfu.isDfuUtilInstalled,
 			dfu.findCompatibleDFU,
 			function() {
 				filename = temp.path({ suffix: '.der' });
+				var segment = this._getServerKeySegmentName();
 				//if (that.options.force) { utilities.tryDelete(filename); }
 				return dfu._read(filename, segment, false);
 			},
@@ -437,17 +443,30 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
-	_getServerKeySegment: function() {
+	_getServerKeySegmentName: function() {
 		if (!dfu.deviceID) {
 			return;
 		}
 
-		var key = this.options.alt ? 'altServerKey' : 'serverKey';
 		var specs = deviceSpecs[dfu.deviceID];
-		if (!specs || !specs[key]) {
+		if (!specs) {
 			return;
 		}
-		return specs[key];
+		var protocol = this.options.protocol || specs.defaultProtocol || 'tcp';
+		var key = protocol + 'ServerKey';
+		return key;
+	},
+
+	_getServerKeySegment: function() {
+		if (!dfu.deviceID) {
+			return;
+		}
+		var specs = deviceSpecs[dfu.deviceID];
+		var segmentName = this._getServerKeySegmentName();
+		if (!specs || !segmentName) {
+			return;
+		}
+		return specs[segmentName];
 	},
 
 	_getServerKeyAlgorithm: function() {
@@ -458,17 +477,38 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return segment.alg || 'rsa';
 	},
 
-	_getPrivateKeyAlgorithm: function() {
+	_getPrivateKeySegmentName: function() {
 		if (!dfu.deviceID) {
 			return;
 		}
 
-		var key = this.options.alt ? 'altPrivateKey' : 'privateKey';
 		var specs = deviceSpecs[dfu.deviceID];
-		if (!specs || !specs[key]) {
+		if (!specs) {
 			return;
 		}
-		return specs[key].alg || 'rsa';
+		var protocol = this.options.protocol || specs.defaultProtocol || 'tcp';
+		var key = protocol + 'PrivateKey';
+		return key;
+	},
+
+	_getPrivateKeySegment: function() {
+		if (!dfu.deviceID) {
+			return;
+		}
+		var specs = deviceSpecs[dfu.deviceID];
+		var segmentName = this._getPrivateKeySegmentName();
+		if (!specs || !segmentName) {
+			return;
+		}
+		return specs[segmentName];
+	},
+
+	_getPrivateKeyAlgorithm: function() {
+		var segment = this._getPrivateKeySegment();
+		if (!segment) {
+			return;
+		}
+		return segment.alg || 'rsa';
 	},
 
 	_getServerAddressOffset: function() {
