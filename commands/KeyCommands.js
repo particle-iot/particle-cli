@@ -399,7 +399,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return self._formatPublicKey(filename, ip);
 			},
 			function(bufferFile) {
-				var segment = this._getServerKeySegmentName();
+				var segment = self._getServerKeySegmentName();
 				return dfu._write(bufferFile, segment, false);
 			}
 		]).then(
