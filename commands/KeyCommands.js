@@ -107,7 +107,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				if (alg === 'rsa') {
 					return utilities.deferredChildProcess('openssl genrsa -out ' + filename + '.pem 1024');
 				} else if (alg === 'ec') {
-					return utilities.deferredChildProcess('openssl ecparam -name prime256v1 -out ' + filename + '.pem');
+					return utilities.deferredChildProcess('openssl ecparam -name prime256v1 -genkey -out ' + filename + '.pem');
 				}
 			},
 			function () {
@@ -140,7 +140,19 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_makeNewKey: function(filename) {
-		var keyReady = this.makeKeyOpenSSL(filename);
+		var self = this;
+		var keyReady = sequence([
+			function() {
+				return dfu.isDfuUtilInstalled();
+			},
+			function() {
+				//make sure our device is online and in dfu mode
+				return dfu.findCompatibleDFU();
+			},
+			function() {
+				return self.makeKeyOpenSSL(filename);
+			}
+		]);
 
 		keyReady.then(function () {
 			console.log('New Key Created!');
