@@ -315,7 +315,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			console.log('***************************************************************');
 		}
 
-		var that = this;
+		var self = this;
+		var alg, filename;
 		var allDone = sequence([
 			function() {
 				return dfu.isDfuUtilInstalled();
@@ -324,13 +325,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function() {
-				return that._makeNewKey(deviceid + '_new');
+				alg = self._getPrivateKeyAlgorithm() || 'rsa';
+				filename = deviceid + '_' + alg + '_new';
+				return self._makeNewKey(filename);
 			},
 			function() {
-				return that.writeKeyToDevice(deviceid + '_new', true);
+				return self.writeKeyToDevice(filename, true);
 			},
 			function() {
-				return that.sendPublicKeyToServer(deviceid, deviceid + '_new');
+				return self.sendPublicKeyToServer(deviceid, filename);
 			}
 		]);
 
