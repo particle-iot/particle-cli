@@ -416,13 +416,17 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return addressBuf;
 	},
 
-	writeServerPublicKey: function (filename, ipOrDomain) {
+	writeServerPublicKey: function (filename, ipOrDomain, port) {
 		if (!filename || (!fs.existsSync(filename))) {
 			console.log('Please specify a server key in DER format.');
 			return -1;
 		}
+		if (port === '--protocol') {
+			port = null;
+		}
 		if (ipOrDomain === '--protocol') {
 			ipOrDomain = null;
+			port = null;
 		}
 		var self = this;
 		this.checkArguments(arguments);
@@ -438,7 +442,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return self._getIpAddress(ipOrDomain);
 			},
 			function(ip) {
-				return self._formatPublicKey(filename, ip);
+				return self._formatPublicKey(filename, ip, port);
 			},
 			function(bufferFile) {
 				var segment = self._getServerKeySegmentName();
@@ -650,7 +654,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return when.resolve(filename);
 	},
 
-	_formatPublicKey: function(filename, ipOrDomain) {
+	_formatPublicKey: function(filename, ipOrDomain, port) {
 		var segment = this._getServerKeySegment();
 		if (!segment) {
 			return when.reject('No device specs');
@@ -681,6 +685,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 				var offset = segment.addressOffset || 384;
 				addressBuf.copy(buf, offset, 0, addressBuf.length);
+
+				if (port && segment.portOffset) {
+					buf.writeUInt16BE(port, segment.portOffset);
+				}
 
 				//console.log("address chunk is now: " + addressBuf.toString('hex'));
 				//console.log("Key chunk is now: " + buf.toString('hex'));
