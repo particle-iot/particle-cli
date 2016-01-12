@@ -1,7 +1,4 @@
-[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli)
-[![Build Status](https://travis-ci.org/spark/particle-cli.svg?style=flat-square)](https://travis-ci.org/spark/particle-cli)
-[![Open Issues](https://img.shields.io/github/issues/spark/particle-cli.svg?style=flat-square)](https://github.com/spark/particle-cli/issues)
-[![License](https://img.shields.io/badge/license-LGPL-blue.svg?style=flat-square)](https://github.com/spark/particle-cli/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli)[![Build Status](https://img.shields.io/travis/spark/particle-cli.svg?style=flat-square)](https://travis-ci.org/spark/particle-cli)[![Open Issues](https://img.shields.io/github/issues/spark/particle-cli.svg?style=flat-square)](https://github.com/spark/particle-cli/issues)[![Code Coverage](https://img.shields.io/coveralls/spark/particle-cli.svg?style=flat-square)](https://coveralls.io/github/spark/particle-cli)[![License](https://img.shields.io/badge/license-LGPL-blue.svg?style=flat-square)](https://github.com/spark/particle-cli/blob/master/LICENSE)
 
 # Particle CLI
 
