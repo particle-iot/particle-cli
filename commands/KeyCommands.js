@@ -178,7 +178,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 		//TODO: give the user a warning before doing this, since it'll bump their device offline.
-		var that = this;
+		var self = this;
 
 		var ready = sequence([
 			function() {
@@ -190,18 +190,19 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			//backup their existing key so they don't lock themselves out.
 			function() {
+				var alg = self._getPrivateKeyAlgorithm() || 'rsa';
 				var prefilename = path.join(
 						path.dirname(filename),
-					'pre_' + path.basename(filename)
+					'backup_' + alg + '_' + path.basename(filename)
 				);
-				return that.saveKeyFromDevice(prefilename).then(null, function() {
+				return self.saveKeyFromDevice(prefilename).then(null, function() {
 					console.log('Continuing...');
 					// we shouldn't stop this process just because we can't backup the key
 					return when.resolve();
 				});
 			},
 			function () {
-				var segment = this._getPrivateKeySegmentName();
+				var segment = self._getPrivateKeySegmentName();
 				return dfu._write(filename, segment, leave);
 			}
 		]);
