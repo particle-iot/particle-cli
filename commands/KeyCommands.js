@@ -65,6 +65,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		this.addOption('doctor', this.keyDoctor.bind(this), 'Creates and assigns a new key to your device, and uploads it to the cloud');
 		this.addOption('server', this.writeServerPublicKey.bind(this), 'Switch server public keys');
 		this.addOption('address', this.readServerAddress.bind(this), 'Read server configured in device server public key');
+		this.addOption('protocol', this.changeTransportProtocol.bind(this), 'Change transport protocol the device uses to communicate with the cloud');
 
 		//this.addArgument("get", "--time", "include a timestamp")
 		//this.addArgument("monitor", "--time", "include a timestamp")
@@ -90,6 +91,46 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				null
 			);
 		}
+	},
+
+	changeTransportProtocol: function(protocol) {
+		if (protocol !== 'udp' && protocol !== 'tcp') {
+			console.log('Invalid protocol');
+			return -1;
+		}
+
+		var specs;
+		var flagFile = temp.path({ suffix: '.bin' });
+
+		var changed = sequence([
+			function() {
+				return dfu.isDfuUtilInstalled();
+			},
+			function() {
+				//make sure our device is online and in dfu mode
+				return dfu.findCompatibleDFU();
+			},
+			function() {
+				specs = deviceSpecs[dfu.deviceID];
+				if (!specs.transport) {
+					return when.reject('No transport flag available');
+				}
+
+				var flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
+				fs.writeFileSync(flagFile, flagValue);
+				return dfu._write(flagFile, 'transport', false);
+			}
+		]);
+
+		changed.catch(function(err) {
+			console.log('Error', err);
+		}).finally(function() {
+			fs.unlinkSync(flagFile, function() {
+				// do nothing
+			});
+		});
+
+		return changed;
 	},
 
 	makeKeyOpenSSL: function (filename) {
