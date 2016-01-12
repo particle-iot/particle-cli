@@ -325,6 +325,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			return when.reject("Please provide a filename for your device's public key ending in .pub.pem");
 		}
 
+		return this._sendPublicKeyToServer(deviceid, filename, 'rsa');
+	},
+
+	_sendPublicKeyToServer: function(deviceid, filename, algorithm) {
 		if (!fs.existsSync(filename)) {
 			filename = utilities.filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)) {
@@ -338,8 +342,40 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			return when.reject('Not logged in');
 		}
 
-		var keyStr = fs.readFileSync(filename).toString();
-		return api.sendPublicKey(deviceid, keyStr);
+		var pubKey = temp.path({ suffix: '.pub.pem' });
+		var inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';
+
+		return pipeline([
+			function() {
+				// try both private and public versions and both algorithms
+				return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey)
+					.catch(function(err) {
+						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+					})
+					.catch(function(err) {
+						// try other algorithm next
+						algorithm = algorithm === 'rsa' ? 'ec' : 'rsa';
+						return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+					})
+					.catch(function(err) {
+						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+					});
+			},
+			function() {
+				return whenNode.lift(fs.readFile)(pubKey);
+			},
+			function(keyBuf) {
+				var apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
+				return api.sendPublicKey(deviceid, keyBuf, apiAlg);
+			}
+		]).catch(function(err) {
+			console.log('Error sending public key to server: ' + err);
+			return when.reject();
+		}).finally(function() {
+			fs.unlink(pubKey, function() {
+				// do nothing
+			});
+		});
 	},
 
 	keyDoctor: function (deviceid) {
@@ -375,7 +411,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return self.writeKeyToDevice(filename, true);
 			},
 			function() {
-				return self.sendPublicKeyToServer(deviceid, filename);
+				return self._sendPublicKeyToServer(deviceid, filename, alg);
 			}
 		]);
 
