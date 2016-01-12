@@ -26,6 +26,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
+var url = require('url');
 var when = require('when');
 var whenNode = require('when/node');
 var sequence = require('when/sequence');
@@ -417,42 +418,90 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		var self = this;
 		this.checkArguments(arguments);
 
-		var filename;
+		var keyBuf, keyFilename, serverKeySeg, specs, transportFilename, transportFlag;
 
 		return pipeline([
 			dfu.isDfuUtilInstalled,
 			dfu.findCompatibleDFU,
 			function() {
-				filename = temp.path({ suffix: '.der' });
-				var segment = this._getServerKeySegmentName();
-				//if (that.options.force) { utilities.tryDelete(filename); }
-				return dfu._read(filename, segment, false);
+				serverKeySeg = self._getServerKeySegment();
+				specs = deviceSpecs[dfu.deviceID];
 			},
 			function() {
-				return whenNode.lift(fs.readFile)(filename).then(function (buf) {
-					var serverKeySeg = self._getServerKeySegment();
-					var offset = serverKeySeg.addressOffset || 384;
-					var type = buf[offset];
-					var len = buf[offset+1];
-					var data = buf.slice(offset + 2, offset + 2 + len);
+				keyFilename = temp.path({ suffix: '.der' });
+				var segment = self._getServerKeySegmentName();
+				//if (self.options.force) { utilities.tryDelete(filename); }
+				return dfu._read(keyFilename, segment, false)
+					.then(function() {
+						return whenNode.lift(fs.readFile)(keyFilename);
+					})
+					.then(function(buf) {
+						keyBuf = buf;
+					})
+					.finally(function() {
+						fs.unlink(keyFilename, function() {
+							// do nothing
+						});
+					});
+			},
+			function() {
+				if (!self.options.protocol && specs.transport && specs.defaultProtocol === 'udp') {
+					transportFilename = temp.path({ suffix: '.bin' });
+					return dfu._read(transportFilename, 'transport', false)
+						.then(function() {
+							return whenNode.lift(fs.readFile)(transportFilename);
+						})
+						.then(function(buf) {
+							transportFlag = buf;
+						})
+						.finally(function() {
+							fs.unlink(transportFilename, function() {
+								// do nothing
+							});
+						});
+				}
+				transportFlag = new Buffer([0xFF]);
+				return when.resolve();
+			},
+			function() {
+				var offset = serverKeySeg.addressOffset || 384;
+				var portOffset = serverKeySeg.portOffset || 450;
+				var type = keyBuf[offset];
+				var len = keyBuf[offset+1];
+				var data = keyBuf.slice(offset + 2, offset + 2 + len);
 
-					console.log();
-					switch (type) {
-						case 0:
-							console.log(Array.prototype.slice.call(data).join('.'));
-							break;
-						case 1:
-							console.log(data.toString('utf8'));
-							break;
+				var protocol = self.options.protocol;
+				if (!protocol) {
+					if (specs.defaultProtocol === 'udp' && transportFlag[0] !== 0xFF) {
+						protocol = 'tcp';
+					} else {
+						protocol = specs.defaultProtocol;
 					}
-				});
+				}
+
+				var port = keyBuf[portOffset] << 8 | keyBuf[portOffset+1];
+				if (port === 0xFFFF) {
+					port = protocol === 'tcp' ? 5683 : 5684;
+				}
+
+				var host = protocol === 'tcp' ? 'device.spark.io' : 'udp.particle.io';
+				if (len > 0) {
+					if (type === 0) {
+						host = Array.prototype.slice.call(data).join('.');
+					} else if (type === 1) {
+						host = data.toString('utf8');
+					}
+				}
+
+				console.log();
+				console.log(url.format({
+					hostname: host,
+					port: port,
+					protocol: protocol,
+					slashes: true
+				}));
 			}
 		]).catch(function (err) {
-			if (filename) {
-				fs.unlink(filename, function() {
-					// do nothing
-				});
-			}
 			console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');
 			console.error('Error - ' + err);
 			return when.reject(err);
