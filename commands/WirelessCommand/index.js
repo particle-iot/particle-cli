@@ -711,9 +711,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	};
 
 	function pubKey(err, dat) {
+		if (err) {
+			retry = setTimeout(info, 1000);
+			return;
+		}
 
 		if (dat && dat.id) {
 			self.__deviceID = dat.id;
+			console.log(arrow, 'Setting up device id', chalk.bold.cyan(dat.id));
 		}
 		clearTimeout(retry);
 		console.log(arrow, 'Requesting public key from the device...');
@@ -726,7 +731,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		});
 	};
 
-	function code() {
+	function code(err) {
+		if (err) {
+			retry = setTimeout(pubKey, 1000);
+			return;
+		}
 
 		clearTimeout(retry);
 		console.log(arrow, 'Setting the magical cloud claim code...');
@@ -739,7 +748,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		});
 	};
 
-	function configure() {
+	function configure(err) {
+		if (err) {
+			retry = setTimeout(code, 1000);
+			return;
+		}
 
 		var conf = {
 
@@ -760,7 +773,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		});
 	};
 
-	function connect() {
+	function connect(err) {
+		if (err) {
+			retry = setTimeout(configure, 1000);
+			return;
+		}
 
 		console.log(arrow, 'The Photon will now attempt to connect to your Wi-Fi network...');
 		console.log();
@@ -769,6 +786,10 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	};
 
 	function done(err) {
+		if (err) {
+			retry = setTimeout(connect, 1000);
+			return;
+		}
 
 		self.stopSpin();
 		clearTimeout(retry);
