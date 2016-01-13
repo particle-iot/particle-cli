@@ -119,10 +119,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 		console.log('Claiming device ' + deviceid);
-		api.claimCore(deviceid).then(function() {
+		api.claimDevice(deviceid).then(function() {
 			console.log('Successfully claimed device ' + deviceid);
 		}, function(err) {
-			console.log('Failed to claim device, server said ', err);
+			console.log('Failed to claim device, server said', err);
 		});
 	},
 

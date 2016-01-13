@@ -465,7 +465,7 @@ SetupCommand.prototype.setupCore = function(device) {
 		function() {
 			self.newSpin('Claiming the core to your account').start();
 			return utilities.retryDeferred(function () {
-				return self.__oldapi.claimCore(deviceId);
+				return self.__oldapi.claimDevice(deviceId);
 			}, 3, promptForCyan);
 		},
 		function() {
