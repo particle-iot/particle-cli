@@ -142,6 +142,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(args);
 		var tokens = args;
 
+		if (tokens.length === 0) {
+			console.error('You must provide at least one access token to revoke');
+			return -1;
+		}
+
 		if (tokens.indexOf(settings.access_token) >= 0) {
 			console.log('WARNING: ' + settings.access_token + " is this CLI's access token");
 			if (this.options.force) {
