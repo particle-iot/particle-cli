@@ -26,11 +26,11 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
+var when = require('when');
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
 var dgram = require('dgram');
-
 
 var UdpCommands = function (cli, options) {
 	UdpCommands.super_.call(this, cli, options);
@@ -51,20 +51,27 @@ UdpCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	sendUdpPacket: function(host, port, message) {
+		if (!host || !port || !message) {
+			console.error('A host, port, and message must be provided.');
+			return -1;
+		}
 
 		var client = dgram.createSocket('udp4');
 		var buf = new Buffer(message);
 
-		console.log('Sending "' + message + '" to ', host, ' at port ', port);
-		client.send(buf, 0, buf.length, port, host, function(err) {
-			if (err) {
-				console.log('error during send ' + err);
-			}
-
-			console.log('Sent.');
-			client.close();
+		console.log('Sending "' + message + '" to', host, 'at port', port);
+		return when.promise(function(resolve, reject) {
+			client.send(buf, 0, buf.length, port, host, function(err) {
+				if (err) {
+					console.log('error during send ' + err);
+					reject();
+				} else {
+					console.log('Sent.');
+					resolve();
+				}
+				client.close();
+			});
 		});
-
 	}
 });
 
