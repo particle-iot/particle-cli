@@ -806,7 +806,17 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'Would you like to return this computer to the wireless network you just configured?',
 				default: true
 
-			}], function() {
+			}], function(ans) {
+				if (!ans.revive) {
+					prompt([{
+
+						name: 'reconnect',
+						type: 'input',
+						message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
+
+					}], manualPrompt);
+					return;
+				}
 				reconnect(false);
 			});
 		} else {
