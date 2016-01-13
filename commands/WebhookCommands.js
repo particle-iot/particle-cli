@@ -166,7 +166,10 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			webhookData = extend(webhookData, data);
 		}
 
-		return api.createWebhookWithObj(webhookData);
+		return api.createWebhookWithObj(webhookData).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});
 	},
 
 	deleteHook: function (hookID) {
@@ -180,7 +183,10 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		return api.deleteWebhook(hookID);
+		return api.deleteWebhook(hookID).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});
 	},
 
 	listHooks: function () {

@@ -1,5 +1,6 @@
 'use strict';
 
+var when = require('when');
 var Spinner = require('./mocks/Spinner.mock.js');
 var Interpreter = require('../lib/interpreter');
 var proxyquire = require('proxyquire');
@@ -15,6 +16,7 @@ var hasPublished = false;
 function apiClient() { };
 apiClient.prototype.publishEvent = function() {
 	hasPublished = true;
+	return when.resolve();
 };
 apiClient.prototype.ready = function() {
 	return true;

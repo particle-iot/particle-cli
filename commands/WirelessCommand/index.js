@@ -920,7 +920,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			}
 		], function(ans) {
 			var deviceName = ans.deviceName;
-			self.__oldapi.renameCore(deviceId, deviceName).then(function () {
+			self.__oldapi.renameDevice(deviceId, deviceName).then(function () {
 				console.log();
 				console.log(arrow, 'Your Photon has been bestowed with the name', chalk.bold.cyan(deviceName));
 				console.log(arrow, "Congratulations! You've just won the internet!");

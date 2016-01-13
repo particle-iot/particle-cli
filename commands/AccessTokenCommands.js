@@ -106,7 +106,10 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 				return api.listTokens(creds.username, creds.password);
 			},
 			sort_tokens
-		]);
+		]).catch(function(err) {
+			console.error('Error listing access tokens', err);
+			return when.reject(err);
+		});
 	},
 
 	listAccessTokens: function () {

@@ -139,7 +139,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		return prompts.areYouSure()
 			.then(function () {
-				return api.removeCore(deviceid).then(function () {
+				return api.removeDevice(deviceid).then(function () {
 					console.log('Okay!');
 				});
 			}).catch(function (err) {
@@ -171,7 +171,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		console.log('Renaming device ' + deviceid);
 
-		var allDone = api.renameCore(deviceid, name);
+		var allDone = api.renameDevice(deviceid, name);
 
 		when(allDone).then(
 			function () {
@@ -224,7 +224,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							return reject();
 						}
 						var file = { file: binary };
-						doFlash(file).then(resolve, reject);
+						doFlash(file).then(resolve, function(err) {
+							console.error('Error', err);
+							reject(err);
+						});
 					});
 				});
 			} else {
@@ -250,7 +253,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		return doFlash(files);
+		return doFlash(files).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});
 
 		function doFlash(files) {
 
@@ -527,6 +533,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			]).then(function() {
 				allDone.resolve();
 			}, function(err) {
+				console.error('There was an error revoking the token', err);
 				allDone.reject(err);
 			});
 		});
@@ -583,15 +590,15 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		pipeline([
 			api.listDevices.bind(api),
 			lookupVariables
-		]);
+		]).catch(function(err) {
+			tmp.reject(err);
+		});
 
 		return tmp.promise;
 	},
 
 
 	nyanMode: function(deviceid, onOff) {
-
-
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			return when.reject('not logged in!');
@@ -615,7 +622,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 		if (deviceid) {
-			return api.signalCore(deviceid, onOff);
+			return api.signalDevice(deviceid, onOff).catch(function (err) {
+				console.error('Error', err);
+				return when.reject(err);
+			});
 		} else {
 
 			var toggleAll = function (devices) {
@@ -629,7 +639,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							promises.push(when.resolve(device));
 							return;
 						}
-						promises.push(api.signalCore(device.id, onOff));
+						promises.push(api.signalDevice(device.id, onOff));
 					});
 					return when.all(promises);
 				}
@@ -639,7 +649,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return pipeline([
 				api.listDevices.bind(api),
 				toggleAll
-			]);
+			]).catch(function(err) {
+				console.error('Error', err);
+				return when.reject(err);
+			});
 		}
 	},
 

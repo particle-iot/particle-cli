@@ -26,6 +26,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
+var when = require('when');
 var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
@@ -72,7 +73,10 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 			setPrivate = false;
 		}
 
-		return api.publishEvent(eventName, data, setPrivate);
+		return api.publishEvent(eventName, data, setPrivate).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});
 	}
 });
 

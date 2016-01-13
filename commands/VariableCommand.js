@@ -114,7 +114,10 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 				return _.has(c.variables, variableName);
 			}), 'id');
 			return { deviceIds: deviceIds, variableName: variableName };
-		});
+		}).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});;
 	},
 
 	_getValue: function(deviceId, variableName) {
@@ -234,7 +237,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	listVariables: function (args) {
-		this.getAllVariables(args).then(function (cores) {
+		return this.getAllVariables(args).then(function (cores) {
 			var lines = [];
 			for (var i = 0; i < cores.length; i++) {
 				var core = cores[i];
@@ -255,7 +258,10 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 				lines = lines.concat(available);
 			}
 			console.log(lines.join('\n'));
-		});
+		}).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});;
 	},
 
 
@@ -291,7 +297,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			}
 			checkVariable();
 		}).catch(function (err) {
-			console.error(err);
+			self.error(err);
 		});
 	}
 });

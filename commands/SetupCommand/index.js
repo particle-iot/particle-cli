@@ -470,7 +470,7 @@ SetupCommand.prototype.setupCore = function(device) {
 		},
 		function() {
 			self.stopSpin();
-			return self.__oldapi.signalCore(deviceId, true);
+			return self.__oldapi.signalDevice(deviceId, true);
 		},
 		function() {
 			var rainbow = when.defer();
@@ -497,10 +497,10 @@ SetupCommand.prototype.setupCore = function(device) {
 				deviceName = ans.coreName;
 				sequence([
 					function() {
-						return self.__oldapi.signalCore(deviceId, false);
+						return self.__oldapi.signalDevice(deviceId, false);
 					},
 					function() {
-						return self.__oldapi.renameCore(deviceId, deviceName);
+						return self.__oldapi.renameDevice(deviceId, deviceName);
 					}
 				]).then(naming.resolve, naming.reject);
 			});
