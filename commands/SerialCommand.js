@@ -219,6 +219,15 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 					console.log();
 					console.log('Your device id is', chalk.bold.cyan(data));
+
+					return self.askForSystemFirmwareVersion(device, 2000)
+						.then(function(version) {
+							console.log('Your system firmware version is', chalk.bold.cyan(version));
+						})
+						.catch(function(err) {
+							console.log('Unable to determine system firmware version');
+							return when.resolve();
+						});
 				})
 				.catch(function (err) {
 					self.error(err, false);
@@ -748,6 +757,19 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				}
 
 				return info;
+			}
+		});
+	},
+
+	askForSystemFirmwareVersion: function(device, timeout) {
+		if (!device) {
+			return when.reject('askForSystemFirmwareVersion - no serial port provided');
+		}
+
+		return this._issueSerialCommand(device, 'v', timeout).then(function (data) {
+			var matches = data.match(/system firmware version:\s+([\w.]+)/);
+			if (matches && matches.length === 2) {
+				return matches[1];
 			}
 		});
 	},
