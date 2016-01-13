@@ -546,7 +546,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		var self = this;
 
-		var tmp = when.defer();
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			return when.reject('not logged in!');
@@ -572,7 +571,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					}
 				});
 
-				when.all(promises).then(function (fullDevices) {
+				return when.all(promises).then(function (fullDevices) {
 					//sort alphabetically
 					fullDevices = fullDevices.sort(function (a, b) {
 						if (a.connected && !b.connected) {
@@ -581,20 +580,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 						return (a.name || '').localeCompare(b.name);
 					});
-					tmp.resolve(fullDevices);
 					self.stopSpin();
+					return fullDevices;
 				});
 			}
 		};
 
-		pipeline([
+		return pipeline([
 			api.listDevices.bind(api),
 			lookupVariables
-		]).catch(function(err) {
-			tmp.reject(err);
-		});
-
-		return tmp.promise;
+		]);
 	},
 
 
@@ -689,57 +684,51 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		};
 
-
-		when(this.getAllDeviceAttributes(args)).then(function (devices) {
-			try {
-
-				var lines = [];
-				for (var i = 0; i < devices.length; i++) {
-					var name;
-					var device = devices[i];
-					var deviceType = '';
-					switch (device.product_id) {
-						case 0:
-							deviceType = ' (Core)';
-							break;
-						case 6:
-							deviceType = ' (Photon)';
-							break;
-						case 8:
-							deviceType = ' (P1)';
-							break;
-						case 10:
-							deviceType = ' (Electron)';
-							break;
-					}
-
-					if (!device.name || device.name === 'null') {
-						name = '<no name>';
-					} else {
-						name = device.name;
-					}
-
-					if (device.connected) {
-						name = chalk.cyan.bold(name);
-					} else {
-						name = chalk.cyan.dim(name);
-					}
-
-					var status = name + ' [' + device.id + ']' + deviceType + ' is ';
-					status += (device.connected) ? 'online' : 'offline';
-					lines.push(status);
-
-					formatVariables(device.variables, lines);
-					formatFunctions(device.functions, lines);
+		return this.getAllDeviceAttributes(args).then(function (devices) {
+			var lines = [];
+			for (var i = 0; i < devices.length; i++) {
+				var name;
+				var device = devices[i];
+				var deviceType = '';
+				switch (device.product_id) {
+					case 0:
+						deviceType = ' (Core)';
+						break;
+					case 6:
+						deviceType = ' (Photon)';
+						break;
+					case 8:
+						deviceType = ' (P1)';
+						break;
+					case 10:
+						deviceType = ' (Electron)';
+						break;
 				}
 
-				console.log(lines.join('\n'));
-			} catch (ex) {
-				console.error('Error during list ' + ex);
+				if (!device.name || device.name === 'null') {
+					name = '<no name>';
+				} else {
+					name = device.name;
+				}
+
+				if (device.connected) {
+					name = chalk.cyan.bold(name);
+				} else {
+					name = chalk.cyan.dim(name);
+				}
+
+				var status = name + ' [' + device.id + ']' + deviceType + ' is ';
+				status += (device.connected) ? 'online' : 'offline';
+				lines.push(status);
+
+				formatVariables(device.variables, lines);
+				formatFunctions(device.functions, lines);
 			}
-		}, function(err) {
-			console.log("Please make sure you're online and logged in.");
-			console.log(err);
+
+			console.log(lines.join('\n'));
+		}).catch(function(err) {
+			console.log('Error', err);
+			return when.reject(err);
 		});
 	},
 
