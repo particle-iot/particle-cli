@@ -42,6 +42,9 @@ var settings = {
 	useSudoForDfu: false,
 	// TODO set to false once we give flags to control this
 	verboseOutput: true,
+	disableUpdateCheck: false,
+	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours
+	updateCheckTimeout: 3000,
 
 	//2 megs -- this constant here is arbitrary
 	MAX_FILE_SIZE: 1024 * 1024 * 2,
@@ -150,7 +153,22 @@ settings.loadOverrides = function (profile) {
 
 settings.whichProfile = function() {
 	settings.profile = 'particle';
+	settings.readProfileData();
+};
 
+/**
+ * in another file in our user dir, we store a profile name that switches between setting override files
+ */
+settings.switchProfile = function(profileName) {
+	if (!settings.profile_json) {
+		settings.profile_json = {};
+	}
+
+	settings.profile_json.name = profileName;
+	settings.saveProfileData();
+};
+
+settings.readProfileData = function() {
 	var particleDir = settings.ensureFolder();
 	var proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
 	if (fs.existsSync(proFile)) {
@@ -158,19 +176,16 @@ settings.whichProfile = function() {
 
 		settings.profile = (data) ? data.name : 'particle';
 		settings.profile_json = data;
+	} else {
+		settings.profile = 'particle';
+		settings.profile_json = {};
 	}
 };
 
-/**
- * in another file in our user dir, we store a profile name that switches between setting override files
- */
-settings.switchProfile = function(profileName) {
+settings.saveProfileData = function() {
 	var particleDir = settings.ensureFolder();
 	var proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
-	var data = {
-		name: profileName
-	};
-	fs.writeFileSync(proFile, JSON.stringify(data, null, 2), { mode: '600' });
+	fs.writeFileSync(proFile, JSON.stringify(settings.profile_json, null, 2), { mode: '600' });
 };
 
 // this is here instead of utilities to prevent a require-loop
