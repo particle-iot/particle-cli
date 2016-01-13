@@ -2,8 +2,6 @@
 
 var chalk = require('chalk');
 var prompt = require('inquirer').prompt;
-var luhn = require('fast-luhn');
-var _ = require('lodash');
 var ApiClient2 = require('../../lib/ApiClient2');
 
 var settings = require('../../settings.js');
