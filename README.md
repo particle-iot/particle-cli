@@ -21,7 +21,7 @@ $ npm install -g particle-cli
 $ particle cloud login
 ```
 
-  *Note!*  If you have problems running this, make sure you using Terminal / the Command Prompt as an Administator, or try using ```sudo```
+  *Note!*  If you have problems running this, make sure you're using Terminal / the Command Prompt as an Administator, or try using ```sudo```
 
 ```sh
 $ sudo npm install -g particle-cli
