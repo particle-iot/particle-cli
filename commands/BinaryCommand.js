@@ -65,6 +65,11 @@ BinaryCommand.prototype = extend(BaseCommand.prototype, {
 				return dfd.reject();
 			}
 
+			if (fileInfo.suffixInfo.suffixSize === 65535) {
+				console.error(binaryFile + ' does not contain inspection information');
+				return dfd.reject();
+			}
+
 			console.log(chalk.bold(path.basename(binaryFile)));
 
 			this._showCrc(fileInfo);
