@@ -174,7 +174,7 @@ function dfuInstall(noent) {
 	console.log(
 		chalk.cyan('!!!'),
 		'For help with installing DFU Utilities, please see:\n',
-		chalk.bold.white('http://support.particle.io/hc/en-us/articles/203265730-Installing-the-Particle-CLI')
+		chalk.bold.white('https://docs.particle.io/guide/tools-and-features/cli/#advanced-install')
 	);
 	console.log();
 };
