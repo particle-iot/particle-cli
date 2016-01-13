@@ -77,9 +77,16 @@ describe('Key Command', function() {
 		key.optionsByName['new'].should.be.instanceOf(Function);
 	});
 
+	it('Can read server address from key', function() {
+
+		key.optionsByName['address'].should.be.instanceOf(Function);
+	});
+
 	it('Can check arguments', function() {
 
 		key.checkArguments([ '--force' ]);
 		key.options.force.should.equal(true);
+		key.checkArguments([ '--protocol', 'tcp' ]);
+		key.options.protocol.should.equal('tcp');
 	});
 });
