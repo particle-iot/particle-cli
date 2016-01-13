@@ -332,6 +332,15 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		return wifi.promise;
 	},
 
+	_removePhotonNetworks: function(ssids) {
+		return ssids.filter(function (ap) {
+			if (ap.indexOf('Photon-') === 0) {
+				return false;
+			}
+			return true;
+		});
+	},
+
 	_getWifiInformation: function(device, networks) {
 		var wifiInfo = when.defer();
 		var self = this;
@@ -340,13 +349,16 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		networks = networks || [];
 		var networkMap = _.indexBy(networks, 'ssid');
 
+		var ssids = _.pluck(networks, 'ssid');
+		ssids = this._removePhotonNetworks(ssids);
+
 		inquirer.prompt([
 			{
 				type: 'list',
 				name: 'ap',
 				message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
 				choices: function () {
-					var ns = _.pluck(networks, 'ssid');
+					var ns = ssids.slice();
 					ns.unshift(new inquirer.Separator());
 					ns.unshift(rescanLabel);
 					ns.unshift(new inquirer.Separator());
