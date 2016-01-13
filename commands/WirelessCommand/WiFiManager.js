@@ -69,7 +69,7 @@ WiFiManager.prototype.connect = function(opts, cb) {
 
 	self.__connect(opts, cb);
 
-	function recheck(err, dat) {
+	function recheck(err) {
 
 		if (err) {
 			return cb(new Error('Unknown MAC address and unable to perform a Wi-Fi scan.'));

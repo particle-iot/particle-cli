@@ -349,13 +349,8 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 	var api = this.__apiClient;
 	var mgr = new WiFiManager();
-	var sap = this.__sap;
 
 	var self = this;
-	var list = { };
-
-	var selected;
-	var security;
 	this.__ssid = photon;
 
 	console.log();
@@ -458,7 +453,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		}
 	};
 
-	function manualReady(ans) {
+	function manualReady() {
 		self.__configure(null, manualConfigure);
 	};
 	function manualConfigure(err, dat) {
@@ -500,7 +495,6 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	var network;
 	var retry;
 	var security;
-	var visibleSecurity;
 
 	protip('If you want to skip scanning, or your network is configured as a');
 	protip(chalk.cyan('non-broadcast'), 'network, please enter manual mode to proceed...');
@@ -695,7 +689,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		info();
 	};
 
-	function info(err, res) {
+	function info() {
 
 		clearTimeout(retry);
 
@@ -808,30 +802,27 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 			}], function(ans) {
 				if (!ans.revive) {
-					prompt([{
-
-						name: 'reconnect',
-						type: 'input',
-						message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
-
-					}], manualPrompt);
+					manualReconnectPrompt();
 					return;
 				}
 				reconnect(false);
 			});
 		} else {
-
-			prompt([{
-
-				name: 'reconnect',
-				type: 'input',
-				message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
-
-			}], manualPrompt);
+			manualReconnectPrompt();
 		}
 	};
 
-	function manualPrompt(ans) {
+	function manualReconnectPrompt() {
+		prompt([{
+
+			name: 'reconnect',
+			type: 'input',
+			message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
+
+		}], manualPrompt);
+	}
+
+	function manualPrompt() {
 		reconnect(true);
 	};
 	function reconnect(manual) {
@@ -845,6 +836,10 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}
 	};
 	function revived(err) {
+		if (err) {
+			manualReconnectPrompt();
+			return;
+		}
 
 		self.stopSpin();
 		self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();

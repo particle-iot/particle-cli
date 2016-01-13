@@ -1,6 +1,4 @@
 'use strict';
-var readline = require('readline');
-
 var defaultSpinnerString = 0;
 var defaultSpinnerDelay = 60;
 
@@ -35,7 +33,7 @@ Spinner.prototype.setSpinnerString = function(str) {
 	this.chars = mapToSpinner(str, this.spinners).split('');
 };
 
-Spinner.prototype.stop = function(clear) {
+Spinner.prototype.stop = function() {
 	this.running = false;
 };
 
@@ -45,7 +43,7 @@ function isInt(value) {
 	return (typeof value==='number' && (value%1)===0);
 }
 
-function mapToSpinner(value, spinners) {
+function mapToSpinner(value) {
 	// Not an integer, return as strng
 	if (!isInt(value)) {
 		return value + '';
@@ -57,11 +55,6 @@ function mapToSpinner(value, spinners) {
 	value = (value < 0) ? Spinner.spinners.length + value : value;
 
 	return Spinner.spinners[value];
-}
-
-function clearLine() {
-	readline.clearLine(process.stdout, 0);
-	readline.cursorTo(process.stdout, 0);
 }
 
 exports.Spinner = Spinner;

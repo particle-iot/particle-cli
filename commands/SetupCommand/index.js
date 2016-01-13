@@ -32,11 +32,6 @@ var strings = {
 var cmd = path.basename(process.argv[1]);
 var alert = chalk.yellow('!');
 var arrow = chalk.green('>');
-var protip = function() {
-	var args = Array.prototype.slice.call(arguments);
-	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
-	console.log.apply(null, args);
-};
 
 var SetupCommand = function (cli, options) {
 
