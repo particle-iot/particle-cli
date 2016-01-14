@@ -453,7 +453,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	writeServerPublicKey: function (filename, ipOrDomain, port) {
-		if (!filename || (!fs.existsSync(filename))) {
+		if (filename === '--protocol') {
+			filename = null;
+			ipOrDomain = null;
+		}
+		if (filename && !fs.existsSync(filename)) {
 			console.log('Please specify a server key in DER format.');
 			return -1;
 		}
@@ -666,13 +670,17 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_getDERPublicKey: function(filename) {
+		var alg = this._getServerKeyAlgorithm();
+		if (!alg) {
+			return when.reject('No device specs');
+		}
+
+		if (!filename) {
+			filename = path.join(__dirname, '../keys/' + alg + '.pub.der');
+		}
+
 		if (utilities.getFilenameExt(filename).toLowerCase() !== '.der') {
 			var derFile = utilities.filenameNoExt(filename) + '.der';
-
-			var alg = this._getServerKeyAlgorithm();
-			if (!alg) {
-				return when.reject('No device specs');
-			}
 
 			if (!fs.existsSync(derFile)) {
 				console.log('Creating DER format file');
