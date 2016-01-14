@@ -561,8 +561,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	getAllDeviceAttributes: function () {
-
+	getAllDeviceAttributes: function (filter) {
 		var self = this;
 
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
@@ -600,6 +599,30 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						return (a.name || '').localeCompare(b.name);
 					});
 					self.stopSpin();
+
+					if (filter && fullDevices) {
+						var filterFunc;
+						var platforms = utilities.knownPlatforms();
+						if (filter === 'online') {
+							filterFunc = function(d) {
+								return d.connected;
+							};
+						} else if (filter === 'offline') {
+							filterFunc = function(d) {
+								return !d.connected;
+							};
+						} else if (Object.keys(platforms).indexOf(filter) >= 0) {
+							filterFunc = function(d) {
+								return d.product_id === platforms[filter];
+							};
+						} else {
+							filterFunc = function(d) {
+								return d.id === filter || d.name === filter;
+							};
+						}
+
+						fullDevices = fullDevices.filter(filterFunc);
+					}
 					return fullDevices;
 				});
 			}
@@ -672,7 +695,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 
-	listDevices: function (args) {
+	listDevices: function (filter) {
 
 		var formatVariables = function (vars, lines) {
 			if (vars) {
@@ -703,7 +726,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		};
 
-		return this.getAllDeviceAttributes(args).then(function (devices) {
+		return this.getAllDeviceAttributes(filter).then(function (devices) {
 			var lines = [];
 			for (var i = 0; i < devices.length; i++) {
 				var name;
