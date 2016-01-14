@@ -127,8 +127,8 @@
         "maps": [ "flash", "*" ],
         "usage": [
             "particle flash [--usb or device_id] firmware.bin",
-            "particle flash [--usb or device_id] source_folder",
-            "particle flash [--usb or device_id] file1.ino file2.cpp file2.h file3.cpp"
+            "particle flash device_id source_folder",
+            "particle flash device_id file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
             "flash remotely pushes a compiled firmware binary to one of your devices over the air, or directly",
