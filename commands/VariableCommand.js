@@ -57,14 +57,6 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption('list', this.listVariables.bind(this), 'Show variables provided by your device(s)');
 		this.addOption('get', this.getValue.bind(this), 'Retrieve a value from your device');
 		this.addOption('monitor', this.monitorVariables.bind(this), 'Connect and display messages from a device');
-
-		//this.addArgument("get", "--time", "include a timestamp")
-		//this.addArgument("monitor", "--time", "include a timestamp")
-		//this.addArgument("get", "--all", "gets all variables from the specified core")
-		//this.addArgument("monitor", "--all", "gets all variables from the specified core")
-
-
-		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
 	checkArguments: function (args) {
@@ -73,9 +65,6 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		if (!this.options.showTime) {
 			this.options.showTime = (utilities.contains(args, '--time'));
 		}
-//        if (!this.options.showAll) {
-//            this.options.showAll = (utilities.contains(args, "--all"));
-//        }
 	},
 
 
@@ -185,7 +174,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			//they just didn't provide any args...
 			return this.listVariables();
 		} else if (deviceId && !variableName) {
-			//try to figure out if they left off a variable name, or if they want to pull a var from all cores.
+			//try to figure out if they left off a variable name, or if they want to pull a var from all devices.
 			return this.disambiguateGetValue(deviceId).then(function (result) {
 				return self._getValue(result.deviceIds, result.variableName);
 			});
@@ -247,19 +236,19 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	listVariables: function (args) {
-		return this.getAllVariables(args).then(function (cores) {
+		return this.getAllVariables(args).then(function (devices) {
 			var lines = [];
-			for (var i = 0; i < cores.length; i++) {
-				var core = cores[i];
+			for (var i = 0; i < devices.length; i++) {
+				var device = devices[i];
 				var available = [];
-				if (core.variables) {
-					for (var key in core.variables) {
-						var type = core.variables[key];
+				if (device.variables) {
+					for (var key in device.variables) {
+						var type = device.variables[key];
 						available.push('  ' + key + ' (' + type + ')');
 					}
 				}
 
-				var status = core.name + ' (' + core.id + ') has ' + available.length + ' variables ';
+				var status = device.name + ' (' + device.id + ') has ' + available.length + ' variables ';
 				if (available.length === 0) {
 					status += ' (or is offline) ';
 				}

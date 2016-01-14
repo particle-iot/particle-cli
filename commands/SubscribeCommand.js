@@ -51,19 +51,19 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	startListening: function (eventName, coreId) {
+	startListening: function (eventName, deviceId) {
 		var api = new ApiClient(settings.apiUrl, settings.access_token);
 		if (!api.ready()) {
 			return -1;
 		}
 
 		// if they typed: "particle subscribe mine"
-		if ((!coreId || (coreId === '')) && (eventName === 'mine')) {
+		if ((!deviceId || (deviceId === '')) && (eventName === 'mine')) {
 			eventName = null;
-			coreId = 'mine';
-		} else if (eventName === 'mine' && coreId) {
+			deviceId = 'mine';
+		} else if (eventName === 'mine' && deviceId) {
 			eventName = null;
-			//okay, listen to all events from this core.
+			//okay, listen to all events from this device.
 		}
 
 		var eventLabel = eventName;
@@ -73,12 +73,12 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			eventLabel = 'all events';
 		}
 
-		if (!coreId) {
+		if (!deviceId) {
 			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) ');
-		} else if (coreId === 'mine') {
+		} else if (deviceId === 'mine') {
 			console.log('Subscribing to ' + eventLabel + ' from my personal stream (my devices only) ');
 		} else {
-			console.log('Subscribing to ' + eventLabel + ' from ' + coreId + "'s stream");
+			console.log('Subscribing to ' + eventLabel + ' from ' + deviceId + "'s stream");
 		}
 
 		var chunks = [];
@@ -116,7 +116,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			var chunk = event.toString();
 			appendToQueue(chunk.split('\n'));
 		};
-		api.getEventStream(eventName, coreId, onData);
+		api.getEventStream(eventName, deviceId, onData);
 	}
 });
 

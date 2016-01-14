@@ -58,22 +58,22 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		return api.getAllAttributes(args)
-			.then(function (cores) {
+			.then(function (devices) {
 
 				var lines = [];
-				for (var i = 0; i < cores.length; i++) {
+				for (var i = 0; i < devices.length; i++) {
 
-					var core = cores[i];
+					var device = devices[i];
 					var available = [];
-					if (core.functions) {
+					if (device.functions) {
 
-						for (var idx = 0; idx < core.functions.length; idx++) {
-							var name = core.functions[idx];
+						for (var idx = 0; idx < device.functions.length; idx++) {
+							var name = device.functions[idx];
 							available.push('  int ' + name + '(String args) ');
 						}
 					}
 
-					var status = core.name + ' (' + core.id + ') has ' + available.length + ' functions ';
+					var status = device.name + ' (' + device.id + ') has ' + available.length + ' functions ';
 					if (available.length === 0) {
 						status += ' (or is offline) ';
 					}
@@ -85,10 +85,10 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 			});
 	},
 
-	callFunction: function (coreID, functionName, funcParam) {
+	callFunction: function (deviceId, functionName, funcParam) {
 		funcParam = funcParam || '';
 
-		if (!coreID || !functionName) {
+		if (!deviceId || !functionName) {
 			//they just didn't provide any args...
 			return this.listFunctions();
 		}
@@ -98,7 +98,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		return api.callFunction(coreID, functionName, funcParam).then(
+		return api.callFunction(deviceId, functionName, funcParam).then(
 			function (result) {
 				if (result && result.error) {
 					console.log('Function call failed', result.error);

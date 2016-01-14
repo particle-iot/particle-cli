@@ -870,7 +870,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		if (!comPort) {
 			//they didn't give us anything.
 			if (devices.length === 1) {
-				//we have exactly one core, use that.
+				//we have exactly one device, use that.
 				return devices[0];
 			}
 			//else - which one?
