@@ -48,7 +48,8 @@ var strings = {
 	'credentialsNeeded': 'You will need to know the password for your Wi-Fi network (if any) to proceed.',
 	'selectNetwork': 'Select the Wi-Fi network with which you wish to connect your Photon:',
 	'startingSetup': "Congratulations, you're on your way to awesome",
-	'rescanLabel': '[rescan networks]'
+	'rescanLabel': '[rescan networks]',
+	'manualEntryLabel': '[manual entry]'
 };
 
 // TODO: DRY this up somehow
@@ -604,8 +605,13 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		networks = removePhotonNetworks(ssids(networks));
 
+		var noNetworks = networks.length === 0;
+
 		networks.unshift(new inquirer.Separator());
 		networks.unshift(strings.rescanLabel);
+		if (noNetworks) {
+			networks.unshift(strings.manualEntryLabel);
+		}
 		networks.unshift(new inquirer.Separator());
 
 		prompt([{
@@ -624,6 +630,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				console.log();
 				self.newSpin('Asking the Photon to re-scan nearby Wi-Fi networks...').start();
 				return start();
+			}
+
+			if (ans.network === strings.manualEntryLabel) {
+				scanChoice({ manual: true });
+				return;
 			}
 
 			network = ans.network;
