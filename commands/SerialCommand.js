@@ -39,6 +39,7 @@ var wifiScan = require('node-wifiscanner2').scan;
 var specs = require('../lib/deviceSpecs');
 var log = require('../lib/log');
 var settings = require('../settings');
+var DescribeParser = require('binary-version-reader').HalDescribeParser;
 
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');
@@ -67,6 +68,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption('identify', this.identifyDevice.bind(this), 'Ask for and display device ID via serial');
 		this.addOption('wifi', this.configureWifi.bind(this), 'Configure Wi-Fi credentials over serial');
 		this.addOption('mac', this.deviceMac.bind(this), 'Ask for and display MAC address via serial');
+		this.addOption('inspect', this.inspectDevice.bind(this), 'Ask for and display device module information via serial');
 
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
@@ -248,6 +250,71 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				.then(function (data) {
 					console.log();
 					console.log('Your device MAC address is', chalk.bold.cyan(data));
+				})
+				.catch(function (err) {
+					self.error(err, false);
+				});
+		});
+	},
+
+	inspectDevice: function(comPort) {
+		var self = this;
+		this.whatSerialPortDidYouMean(comPort, true, function (device) {
+			if (!device) {
+				return self.error('No serial port identified');
+			}
+
+			var functionMap = {
+				s: 'System',
+				u: 'User',
+				b: 'Bootloader',
+				r: 'Res',
+				m: 'Monolithic'
+			};
+			var locationMap = {
+				m: 'main',
+				b: 'backup',
+				f: 'factory',
+				t: 'temp'
+			};
+
+			self.getSystemInformation(device)
+				.then(function (data) {
+					var d = JSON.parse(data);
+					var parser = new DescribeParser();
+					var modules = parser.getModules(d);
+
+					if (d.p !== undefined) {
+						var platformName = settings.knownPlatforms[d.p];
+						console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
+					}
+					if (modules && modules.length > 0) {
+						console.log(chalk.underline('Modules'));
+						modules.forEach(function(m) {
+							var func = functionMap[m.func];
+							if (!func) {
+								console.log(util.format('  empty - %s location, %d bytes max size', locationMap[m.location], m.maxSize));
+								return;
+							}
+
+							console.log(util.format('  %s module %s - version %s, %s location, %d bytes max size', chalk.bold.cyan(func), chalk.bold('#' + m.name), chalk.bold(m.version), locationMap[m.location], m.maxSize));
+
+							if (m.isUserModule() && m.uuid) {
+								console.log('    UUID:', m.uuid);
+							}
+
+							console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
+							console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
+							console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+							console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+							if (m.dependencies.length > 0) {
+								m.dependencies.forEach(function(dep) {
+									var df = functionMap[dep.func];
+									console.log(util.format('      %s module #%d - version %d', df, dep.name, dep.version));
+								});
+							}
+						});
+					}
 				})
 				.catch(function (err) {
 					self.error(err, false);
@@ -749,6 +816,14 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			}
 			throw new Error('Unable to find mac address in response');
 		});
+	},
+
+	getSystemInformation: function(device) {
+		if (!device) {
+			return when.reject('getSystemInformation - no serial port provided');
+		}
+
+		return this._issueSerialCommand(device, 's');
 	},
 
 	askForDeviceID: function (device) {

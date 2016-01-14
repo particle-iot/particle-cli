@@ -75,6 +75,13 @@ var settings = {
 		'tinker': true,
 		'voodoo': true
 	},
+	knownPlatforms: {
+		0: 'Core',
+		6: 'Photon',
+		8: 'P1',
+		10: 'Electron',
+		103: 'Bluz'
+	},
 	updates: {
 		'2b04:d006': {
 			SystemFirmwareOne: 'system-part1-0.4.7-photon.bin',
