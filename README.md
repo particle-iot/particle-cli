@@ -111,6 +111,8 @@ node app.js help
   - [particle keys address](#particle-keys-address)
   - [particle keys protocol](#particle-keys-protocol)
   - [particle config](#particle-config)
+  - [particle binary inspect file.bin](#particle-binary-inspect-filebin)
+  - [particle webhook](#particle-webhook)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -598,3 +600,31 @@ file.bin
  This is a system module number 2 at version 6
  It depends on a system module number 1 at version 6
 ```
+
+### particle webhook
+
+Registers your webhook with the Particle Cloud. Creates a postback to the given url when your event is sent.
+
+```sh
+$ particle webhook list
+$ particle webhook delete WEBHOOK_ID
+$ particle webhook create example.json #run this command in the directory containing example.json
+$ particle webhook GET <your_event_name> http://<website.you.are.trying.to.contact
+```
+
+For `$ particle webhook GET <your_event_name> http://<website.you.are.trying.to.contact`, you can retrieve the response using:
+
+```sh
+void setup(){
+Particle.subscribe("hook-response/<event_name>", handlerFunction, MY_DEVICES);
+}
+
+void handlerFunction(const char *name, const char *data) {
+  // Important note!  -- Right now the response comes in 512 byte chunks.  
+  // This code assumes we're getting the response in large chunks, and this
+  // assumption breaks down if a line happens to be split across response chunks
+  
+  process the data received here....
+}
+```
+More examples and information about **webhooks** can be found here: https://docs.particle.io/guide/tools-and-features/webhooks/
