@@ -91,6 +91,13 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				null
 			);
 		}
+
+		if (!this.options.productId) {
+			this.options.productId = utilities.tryParseArgs(args,
+				'--product_id',
+				null
+			);
+		}
 	},
 
 	changeTransportProtocol: function(protocol) {
@@ -315,20 +322,23 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	sendPublicKeyToServer: function (deviceid, filename) {
-		if (!deviceid) {
+		if (!deviceid || filename === '--product_id') {
 			console.log('Please provide a device id');
 			return when.reject('Please provide a device id');
 		}
 
-		if (!filename) {
+		if (!filename || filename === '--product_id') {
 			console.log("Please provide a filename for your device's public key ending in .pub.pem");
 			return when.reject("Please provide a filename for your device's public key ending in .pub.pem");
 		}
+
+		this.checkArguments(arguments);
 
 		return this._sendPublicKeyToServer(deviceid, filename, 'rsa');
 	},
 
 	_sendPublicKeyToServer: function(deviceid, filename, algorithm) {
+		var self = this;
 		if (!fs.existsSync(filename)) {
 			filename = utilities.filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)) {
@@ -366,7 +376,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			function(keyBuf) {
 				var apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
-				return api.sendPublicKey(deviceid, keyBuf, apiAlg);
+				return api.sendPublicKey(deviceid, keyBuf, apiAlg, self.options.productId);
 			}
 		]).catch(function(err) {
 			console.log('Error sending public key to server: ' + err);
