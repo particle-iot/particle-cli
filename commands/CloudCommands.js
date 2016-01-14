@@ -193,42 +193,67 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject();
 		}
 
+		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		if (!api.ready()) {
+			return when.reject('Not logged in');
+		}
+
 		var files = null;
 
 		if (!fs.existsSync(filePath)) {
 			if (settings.knownApps[filePath]) {
-
-				// TODO grab device type from API instead of prompting now
-				return when.promise(function (resolve, reject) {
-					inquirer.prompt([{
-						name: 'type',
-						type: 'list',
-						message: 'Which type of device?',
-						choices: [
-							'Photon',
-							'Core',
-							'P1',
-							'Electron'
-						]
-					}], function(ans) {
-
-						var type = ans.type;
-						var binary = null;
-						for (var id in specs) {
-							if (specs[id].productName === type) {
-								binary = specs[id].knownApps[filePath];
-							}
+				return api.getAttributes(deviceid).then(function (attrs) {
+					var binary, productName;
+					for (var id in specs) {
+						if (specs[id].productId === attrs.product_id) {
+							binary = specs[id].knownApps[filePath];
+							productName = specs[id].productName;
+							break;
 						}
-						if (!binary) {
-							console.log("I don't have a %s binary for %s.", filePath, type);
-							return reject();
-						}
+					}
+
+					if (binary) {
 						var file = { file: binary };
-						doFlash(file).then(resolve, function(err) {
-							console.error('Error', err);
-							reject(err);
+						return doFlash(file);
+					}
+
+					if (productName) {
+						console.log("I don't have a %s binary for %s.", filePath, productName);
+						return when.reject();
+					}
+
+					return when.promise(function (resolve, reject) {
+						inquirer.prompt([{
+							name: 'type',
+							type: 'list',
+							message: 'Which type of device?',
+							choices: [
+								'Photon',
+								'Core',
+								'P1',
+								'Electron'
+							]
+						}], function(ans) {
+							var type = ans.type;
+							for (var id in specs) {
+								if (specs[id].productName === type) {
+									binary = specs[id].knownApps[filePath];
+									break;
+								}
+							}
+
+							if (!binary) {
+								console.log("I don't have a %s binary for %s.", filePath, type);
+								return reject();
+							}
+
+							var file = { file: binary };
+							doFlash(file).then(resolve, reject);
 						});
 					});
+				}).catch(function(err) {
+					console.error('Error', err);
+					return when.reject(err);
 				});
 			} else {
 				console.error("I couldn't find that file: " + filePath);
@@ -259,12 +284,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		});
 
 		function doFlash(files) {
-
-			var api = new ApiClient(settings.apiUrl, settings.access_token);
-			if (!api.ready()) {
-				return when.reject('Not logged in');
-			}
-
 			return api.flashDevice(deviceid, files).then(function(resp) {
 				if (resp.status || resp.message) {
 					console.log('Flash device OK: ', resp.status || resp.message);
