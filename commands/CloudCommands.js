@@ -803,6 +803,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return null;
 		}
 
+		var fileNum = 0;
 		for (var i = 0; i < filelist.length; i++) {
 			var filename = filelist[i];
 			var ext = utilities.getFilenameExt(filename).toLowerCase();
@@ -813,22 +814,29 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				break;
 			}
 
+			var filestats;
+			try {
+				filestats = fs.statSync(filename);
+			} catch (ex) {
+				console.error("I couldn't find the file " + filename);
+				return null;
+			}
+
+			if (filestats.isDirectory()) {
+				console.log('Skipping ' + filename + ' because it is a directory');
+				continue;
+			}
+
 			if (!alwaysIncludeThisFile
 				&& utilities.contains(settings.notSourceExtensions, ext)) {
 				continue;
 			}
 
-			if (!fs.existsSync(filename)) {
-				console.error("I couldn't find the file " + filename);
-				return null;
-			}
-
-			var filestats = fs.statSync(filename);
 			if (filestats.size > settings.MAX_FILE_SIZE) {
 				console.log('Skipping ' + filename + " it's too big! " + stats.size);
 				continue;
 			}
-			files['file' + (i || '')] = filename;
+			files['file' + (fileNum++ || '')] = filename;
 		}
 
 		return files;
