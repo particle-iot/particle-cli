@@ -35,6 +35,8 @@ var BaseCommand = require('./BaseCommand.js');
 var fs = require('fs');
 var dfu = require('../lib/dfu.js');
 var utilities = require('../lib/utilities.js');
+var ModuleParser = require('binary-version-reader').HalModuleParser;
+var deviceSpecs = require('../lib/deviceSpecs');
 
 var FlashCommand = function (cli, options) {
 	FlashCommand.super_.call(this, cli, options);
@@ -86,11 +88,17 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				null
 			);
 		}
+		if (!this.options.force) {
+			this.options.force = utilities.tryParseArgs(args,
+				'--force',
+				null
+			);
+		}
 	},
 
 
-	flashSwitch: function(coreid, firmware) {
-		if (!coreid && !firmware) {
+	flashSwitch: function(deviceId, firmware) {
+		if (!deviceId && !firmware) {
 			var help = this.cli.getCommandModule('help');
 			return help.helpCommand(this.name);
 		}
@@ -102,7 +110,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		var result;
-		if (this.options.useDfu || (coreid === '--usb') || (coreid === '--factory')) {
+		if (this.options.useDfu || (deviceId === '--usb') || (deviceId === '--factory')) {
 			result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
 		} else {
 			//we need to remove the "--cloud" argument so this other command will understand what's going on.
@@ -128,6 +136,8 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	flashDfu: function(firmware) {
 		var useFactory = this.options.useFactoryAddress;
 
+		var self = this;
+		var specs, destSegment;
 		var ready = sequence([
 			function() {
 				return dfu.isDfuUtilInstalled();
@@ -155,11 +165,57 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				}
 			},
 			function() {
-				if (useFactory) {
-					return dfu.writeFactoryReset(firmware, false);
-				} else {
-					return dfu.writeFirmware(firmware, true);
+				destSegment = useFactory ? 'factoryReset' : 'userFirmware';
+
+				return when.promise(function(resolve, reject) {
+					var parser = new ModuleParser();
+					parser.parseFile(firmware, function(info, err) {
+						if (err) {
+							return reject(err);
+						}
+
+						console.log(info);
+						if (info.suffixInfo.suffixSize === 65535) {
+							console.log('warn: unable to verify binary info');
+							return resolve();
+						}
+
+						if (!info.crc.ok && !self.options.force) {
+							return reject('CRC is invalid, use --force to override');
+						}
+
+						specs = deviceSpecs[dfu.deviceID];
+						if (info.prefixInfo.platformID !== specs.productId && !self.options.force) {
+							return reject(util.format('Incorrect platform id (expected %d, parsed %d), use --force to override', specs.productId, info.prefixInfo.platformID));
+						}
+
+						switch (info.prefixInfo.moduleFunction) {
+							case 3:
+								// monolithic
+								// only override if modular capable
+								destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
+								break;
+							case 4:
+								destSegment = info.prefixInfo.moduleIndex === 1 ? 'systemFirmwareOne' : 'systemFirmwareTwo';
+								break;
+							case 5:
+								// use existing destSegment for userFirmware/factoryReset
+								break;
+							default:
+								if (!self.options.force) {
+									return reject('unknown module function ' + info.prefixInfo.moduleFunction + ', use --force to override');
+								}
+								break;
+						}
+						resolve();
+					});
+				});
+			},
+			function() {
+				if (!destSegment) {
+					return when.reject('Unknown destination');
 				}
+				return dfu.write(firmware, destSegment, false);
 			}
 		]);
 

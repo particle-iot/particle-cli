@@ -84,7 +84,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 				steps.push(function (cb) {
 					var binary = path.resolve(__dirname, '..', 'updates', updates[part]);
 					whenNode.bindCallback(
-						dfu.writeSystemFirmware(part, binary, leave)
+						dfu.write(binary, part, leave)
 						.then(null, function (err) {
 							// don't reject for get_status error
 							if (err.indexOf('get_status') > 0) {

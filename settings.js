@@ -84,16 +84,16 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			SystemFirmwareOne: 'system-part1-0.4.7-photon.bin',
-			SystemFirmwareTwo: 'system-part2-0.4.7-photon.bin'
+			systemFirmwareOne: 'system-part1-0.4.7-photon.bin',
+			systemFirmwareTwo: 'system-part2-0.4.7-photon.bin'
 		},
 		'2b04:d008': {
-			SystemFirmwareOne: 'system-part1-0.4.7-p1.bin',
-			SystemFirmwareTwo: 'system-part2-0.4.7-p1.bin'
+			systemFirmwareOne: 'system-part1-0.4.7-p1.bin',
+			systemFirmwareTwo: 'system-part2-0.4.7-p1.bin'
 		},
 		'2b04:d00a': {
-			SystemFirmwareOne: 'system-part1-v0.4.8-rc.6-electron.bin',
-			SystemFirmwareTwo: 'system-part2-v0.4.8-rc.6-electron.bin'
+			systemFirmwareOne: 'system-part1-v0.4.8-rc.6-electron.bin',
+			systemFirmwareTwo: 'system-part2-v0.4.8-rc.6-electron.bin'
 		}
 	},
 	commandMappings: path.join(__dirname, 'mappings.json')

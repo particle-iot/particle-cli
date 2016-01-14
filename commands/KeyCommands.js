@@ -125,7 +125,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 				var flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
 				fs.writeFileSync(flagFile, flagValue);
-				return dfu._write(flagFile, 'transport', false);
+				return dfu.write(flagFile, 'transport', false);
 			}
 		]);
 
@@ -252,7 +252,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			function () {
 				var segment = self._getPrivateKeySegmentName();
-				return dfu._write(filename, segment, leave);
+				return dfu.write(filename, segment, leave);
 			}
 		]);
 
@@ -298,7 +298,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			function () {
 				//if (self.options.force) { utilities.tryDelete(filename); }
 				var segment = self._getPrivateKeySegmentName();
-				return dfu._read(filename, segment, false);
+				return dfu.read(filename, segment, false);
 			},
 			function () {
 				var pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
@@ -496,7 +496,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			function(bufferFile) {
 				var segment = self._getServerKeySegmentName();
-				return dfu._write(bufferFile, segment, false);
+				return dfu.write(bufferFile, segment, false);
 			}
 		]).then(
 			function () {
@@ -526,7 +526,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				keyFilename = temp.path({ suffix: '.der' });
 				var segment = self._getServerKeySegmentName();
 				//if (self.options.force) { utilities.tryDelete(filename); }
-				return dfu._read(keyFilename, segment, false)
+				return dfu.read(keyFilename, segment, false)
 					.then(function() {
 						return whenNode.lift(fs.readFile)(keyFilename);
 					})
@@ -542,7 +542,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			function() {
 				if (!self.options.protocol && specs.transport && specs.defaultProtocol === 'udp') {
 					transportFilename = temp.path({ suffix: '.bin' });
-					return dfu._read(transportFilename, 'transport', false)
+					return dfu.read(transportFilename, 'transport', false)
 						.then(function() {
 							return whenNode.lift(fs.readFile)(transportFilename);
 						})

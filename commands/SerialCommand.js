@@ -268,7 +268,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				s: 'System',
 				u: 'User',
 				b: 'Bootloader',
-				r: 'Res',
+				r: 'Reserved',
 				m: 'Monolithic'
 			};
 			var locationMap = {
