@@ -45,6 +45,8 @@ var utilities = require('../lib/utilities.js');
 var SerialBoredParser = require('../lib/SerialBoredParser.js');
 var SerialTrigger = require('../lib/SerialTrigger');
 
+var arrow = chalk.green('>');
+
 var SerialCommand = function (cli, options) {
 	SerialCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
@@ -388,6 +390,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			var ssid = answers.ap;
 			var ap = networkMap[ssid];
 			var security = answers.detectSecurity && ap && ap.security;
+			if (security) {
+				console.log(arrow, 'Detected', security, 'security');
+			}
 
 			self.serialWifiConfig(device, ssid, security).then(wifiInfo.resolve, wifiInfo.reject);
 		});
