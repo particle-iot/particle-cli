@@ -86,9 +86,19 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		//this gets cached after the first request
 		return this.getAllVariables().then(function (devices) {
 			if (deviceId) {
-				var device = _.findWhere(devices, {id: deviceId});
+				var device = _.find(devices, function(d) {
+					return d.id === deviceId || d.name === deviceId;
+				});
 				if (!device) {
-					return when.reject('No matching device');
+					// see if any devices have a variable name matching value of deviceId
+					variableName = deviceId;
+					var maybeDeviceIds = _.pluck(_.filter(devices, function(c) {
+						return _.has(c.variables, variableName);
+					}), 'id');
+					if (maybeDeviceIds.length === 0) {
+						return when.reject('No matching device');
+					}
+					return { deviceIds: maybeDeviceIds, variableName: variableName };
 				}
 
 				return when.promise(function (resolve) {
@@ -202,29 +212,29 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		var lookupVariables = function (cores) {
-			if (!cores || (cores.length === 0)) {
-				console.log('No cores found.');
+		var lookupVariables = function (devices) {
+			if (!devices || (devices.length === 0)) {
+				console.log('No devices found.');
 				that._cachedVariableList = null;
 			} else {
 				var promises = [];
-				for (var i = 0; i < cores.length; i++) {
-					var coreid = cores[i].id;
-					if (cores[i].connected) {
-						promises.push(api.getAttributes(coreid));
+				for (var i = 0; i < devices.length; i++) {
+					var deviceid = devices[i].id;
+					if (devices[i].connected) {
+						promises.push(api.getAttributes(deviceid));
 					} else {
-						promises.push(when.resolve(cores[i]));
+						promises.push(when.resolve(devices[i]));
 					}
 				}
 
-				return when.all(promises).then(function (cores) {
+				return when.all(promises).then(function (devices) {
 					//sort alphabetically
-					cores = cores.sort(function (a, b) {
+					devices = devices.sort(function (a, b) {
 						return (a.name || '').localeCompare(b.name);
 					});
 
-					that._cachedVariableList = cores;
-					return cores;
+					that._cachedVariableList = devices;
+					return devices;
 				});
 			}
 		};
