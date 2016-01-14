@@ -126,26 +126,35 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	flashDfu: function(firmware) {
-
-		//TODO: detect if arguments contain something other than a .bin file
 		var useFactory = this.options.useFactoryAddress;
 
 		var ready = sequence([
-			function () {
+			function() {
+				return dfu.isDfuUtilInstalled();
+			},
+			function() {
 				return dfu.findCompatibleDFU();
 			},
-			function () {
+			function() {
 				//only match against knownApp if file is not found
-				if (!fs.existsSync(firmware)){
+				var stats;
+				try {
+					stats = fs.statSync(firmware);
+				} catch (ex) {
+					// file does not exist
 					firmware = dfu.checkKnownApp(firmware);
 					if (firmware === undefined) {
-						return when.reject('no known App found.');
+						return when.reject('file does not exist and no known app found.');
 					} else {
 						return firmware;
 					}
 				}
+
+				if (!stats.isFile()){
+					return when.reject('You cannot flash a directory over USB');
+				}
 			},
-			function () {
+			function() {
 				if (useFactory) {
 					return dfu.writeFactoryReset(firmware, false);
 				} else {
