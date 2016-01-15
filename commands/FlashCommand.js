@@ -214,7 +214,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				if (!destSegment) {
 					return when.reject('Unknown destination');
 				}
-				return dfu.write(firmware, destSegment, false);
+				return dfu.write(firmware, destSegment, destSegment === 'userFirmware');
 			}
 		]);
 
