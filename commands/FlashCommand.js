@@ -174,7 +174,6 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 							return reject(err);
 						}
 
-						console.log(info);
 						if (info.suffixInfo.suffixSize === 65535) {
 							console.log('warn: unable to verify binary info');
 							return resolve();
