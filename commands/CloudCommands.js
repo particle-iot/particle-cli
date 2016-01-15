@@ -29,6 +29,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var _ = require('lodash');
 var when = require('when');
 var pipeline = require('when/pipeline');
+var sequence = require('when/sequence');
 
 var settings = require('../settings.js');
 var specs = require('../lib/deviceSpecs');
@@ -105,6 +106,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			} else {
 				console.log('Please specify a file path when using --saveTo');
 			}
+		}
+		if (!this.options.target) {
+			this.options.target = utilities.tryParseArgs(args,
+				'--target',
+				null
+			);
 		}
 	},
 
@@ -356,10 +363,18 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	compileCode: function (deviceType) {
-		if (!deviceType) {
+		if (!deviceType || deviceType === '--target') {
 			console.error('\nPlease specify the target device type. eg. particle compile photon xxx\n');
 			return -1;
 		}
+
+		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		if (!api.ready()) {
+			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
+			return -1;
+		}
+
+		this.checkArguments(arguments);
 
 		//defaults to 0 for core
 		var platform_id = 0;
@@ -373,51 +388,87 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		console.log('\nCompiling code for ' + deviceType + '\n');
+		console.log('\nCompiling code for ' + deviceType);
 
 		//  "Please specify a binary file, source file, or source directory");
 		var args = Array.prototype.slice.call(arguments, 1);
-		if (args.length === 0) {
-			args.push('.'); //default to current directory
-		}
+		var self = this;
 
-		var filePath = args[0];
-		if (!fs.existsSync(filePath)) {
-			console.error("I couldn't find that: " + filePath);
-			return -1;
-		}
+		return pipeline([
+			function() {
+				// remove arguments that match target data
+				if (self.options.target) {
+					args = args.filter(function (f) {
+						return (f !== '--target' && f !== self.options.target);
+					});
 
-		this.checkArguments(arguments);
+					if (self.options.target === 'latest') {
+						return when.resolve();
+					}
 
-		//make a copy of the arguments
-		var files = this._handleMultiFileArgs(args);
-		if (!files) {
-			console.log('No source to compile!');
-			return -1;
-		}
+					return api.getBuildTargets().then(function (data) {
+						var validTargets = data.targets.filter(function (t) {
+							return t.platforms.indexOf(platform_id) >= 0;
+						});
+						var validTarget = validTargets.filter(function (t) {
+							return t.version === self.options.target;
+						});
+						if (!validTarget.length) {
+							return when.reject(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')));
+						}
+						var version = validTarget[0].version;
+						console.log('Targeting version:', version);
+						return when.resolve(version);
+					});
+				}
+				return when.resolve();
+			},
+			function(targetVersion) {
+				console.log();
 
-		if (settings.showIncludedSourceFiles) {
-			console.log('Including:');
-			for (var key in files) {
-				console.log('    ' + files[key]);
+				if (args.length === 0) {
+					args.push('.'); //default to current directory
+				}
+
+				var filePath = args[0];
+				if (!fs.existsSync(filePath)) {
+					console.error("I couldn't find that: " + filePath);
+					return when.reject();
+				}
+
+				//make a copy of the arguments
+				var files = self._handleMultiFileArgs(args);
+				if (!files) {
+					console.log('No source to compile!');
+					return when.reject();
+				}
+
+				if (settings.showIncludedSourceFiles) {
+					console.log('Including:');
+					for (var key in files) {
+						console.log('    ' + files[key]);
+					}
+				}
+
+				var filename = self._getDownloadPath(arguments, deviceType);
+				return self._compileAndDownload(api, files, platform_id, filename, targetVersion);
 			}
-		}
-
-		var filename = this._getDownloadPath(arguments, deviceType);
-		return this._compileAndDownload(files, platform_id, filename);
+		]).catch(function(err) {
+			console.error('Compile failed. Exiting.');
+			if (_.isArray(err)) {
+				console.log(err.join('\n'));
+			} else {
+				console.error(err);
+			}
+			return when.reject();
+		});
 	},
 
-	_compileAndDownload: function(files, platform_id, filename) {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
-		if (!api.ready()) {
-			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
-			return -1;
-		}
-
+	_compileAndDownload: function(api, files, platform_id, filename, targetVersion) {
 		var allDone = pipeline([
 			//compile
 			function () {
-				return api.compileCode(files, platform_id);
+				return api.compileCode(files, platform_id, targetVersion);
 			},
 
 			//download
@@ -441,17 +492,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function () {
 				console.log('Compile succeeded.');
 				console.log('Saved firmware to:', path.resolve(filename));
-			},
-			function (err) {
-				console.error('Compile failed. Exiting.');
-				if (_.isArray(err)) {
-					console.log(err.join('\n'));
-				} else {
-					console.error(err);
-				}
-				return when.reject();
-			}
-		);
+			});
 	},
 
 	login: function (username) {
