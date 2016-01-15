@@ -218,11 +218,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 						if (data.iccid) {
 							console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
 						}
-						return;
+					} else {
+						console.log();
+						console.log('Your device id is', chalk.bold.cyan(data));
 					}
-
-					console.log();
-					console.log('Your device id is', chalk.bold.cyan(data));
 
 					return self.askForSystemFirmwareVersion(device, 2000)
 						.then(function(version) {
