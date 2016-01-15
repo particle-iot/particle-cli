@@ -1,5 +1,13 @@
 # changelog
 
+## 1.9.1 - 15 Jan 2016
+
+### Fixes
+
+* Fix `leave` being left off the DFU command when flashing user application firmware.
+* Remove excess `console.log`
+* Fix system version display during `identify` for Electrons
+
 ## 1.9.0 - 14 Jan 2016
 
 ### New Features
