@@ -190,6 +190,18 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	flashDevice: function (deviceid, filePath) {
+		var self = this;
+		this.checkArguments(arguments);
+
+		var args = Array.prototype.slice.call(arguments);
+		if (this.options.target) {
+			args = args.filter(function (f) {
+				return (f !== '--target' && f !== self.options.target);
+			});
+			deviceid = args[0];
+			filePath = args[1];
+		}
+
 		if (!deviceid) {
 			console.error('Please specify a device id');
 			return when.reject();
@@ -208,69 +220,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var files = null;
 
 		if (!fs.existsSync(filePath)) {
-			if (settings.knownApps[filePath]) {
-				return api.getAttributes(deviceid).then(function (attrs) {
-					var binary, productName;
-					for (var id in specs) {
-						if (specs[id].productId === attrs.product_id) {
-							binary = specs[id].knownApps[filePath];
-							productName = specs[id].productName;
-							break;
-						}
-					}
-
-					if (binary) {
-						var file = { file: binary };
-						return doFlash(file);
-					}
-
-					if (productName) {
-						console.log("I don't have a %s binary for %s.", filePath, productName);
-						return when.reject();
-					}
-
-					return when.promise(function (resolve, reject) {
-						inquirer.prompt([{
-							name: 'type',
-							type: 'list',
-							message: 'Which type of device?',
-							choices: [
-								'Photon',
-								'Core',
-								'P1',
-								'Electron'
-							]
-						}], function(ans) {
-							var type = ans.type;
-							for (var id in specs) {
-								if (specs[id].productName === type) {
-									binary = specs[id].knownApps[filePath];
-									break;
-								}
-							}
-
-							if (!binary) {
-								console.log("I don't have a %s binary for %s.", filePath, type);
-								return reject();
-							}
-
-							var file = { file: binary };
-							doFlash(file).then(resolve, reject);
-						});
-					});
-				}).catch(function(err) {
-					console.error('Error', err);
-					return when.reject(err);
-				});
-			} else {
-				console.error("I couldn't find that file: " + filePath);
+			return this._flashKnownApp(api, deviceid, filePath).catch(function(err) {
+				console.log('Flash device failed');
+				console.log(err);
 				return when.reject();
-			}
+			});
+		}
+
+		var version = this.options.target === 'latest' ? null : this.options.target;
+		if (version) {
+			console.log('Targeting version:', version);
+			console.log();
 		}
 
 		//make a copy of the arguments sans the 'deviceid'
-		var args = Array.prototype.slice.call(arguments, 1);
-
+		args = args.slice(1);
 		if (!files) {
 			files = this._handleMultiFileArgs(args);
 		}
@@ -285,34 +249,95 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		return doFlash(files).catch(function(err) {
-			console.error('Error', err);
-			return when.reject(err);
+		return this._doFlash(api, deviceid, files, version).catch(function(err) {
+			console.log('Flash device failed');
+			console.log(err);
+			return when.reject();
 		});
+	},
 
-		function doFlash(files) {
-			return api.flashDevice(deviceid, files).then(function(resp) {
-				if (resp.status || resp.message) {
-					console.log('Flash device OK: ', resp.status || resp.message);
-				} else if (resp.errors) {
-					console.log('Flash device failed');
-					resp.errors.forEach(function(err) {
-						if (err.error) {
-							console.log(err.error);
-						} else {
-							console.log(err);
-						}
-					});
-					return when.reject();
-				} else if (resp.info) {
-					console.log('Flash device failed');
-					console.log(resp.info);
-				} else if (resp.error) {
-					console.log('Flash device failed');
-					console.log(resp.error);
+	_doFlash: function(api, deviceid, files, targetVersion) {
+		return api.flashDevice(deviceid, files, targetVersion).then(function(resp) {
+			if (resp.status || resp.message) {
+				console.log('Flash device OK: ', resp.status || resp.message);
+				return when.resolve();
+			} else if (resp.errors) {
+				var errors = resp.errors.map(function(err) {
+					if (err.error) {
+						return err.error;
+					} else {
+						return err;
+					}
+				});
+				return when.reject(errors.join('\n'));
+			} else if (resp.info) {
+				return when.reject(resp.info);
+			} else if (resp.error) {
+				return when.reject(resp.error);
+			}
+		});
+	},
+
+	_flashKnownApp: function(api, deviceid, filePath) {
+		var self = this;
+		if (settings.knownApps[filePath]) {
+			return api.getAttributes(deviceid).then(function (attrs) {
+				var binary, productName;
+				for (var id in specs) {
+					if (specs[id].productId === attrs.product_id) {
+						binary = specs[id].knownApps[filePath];
+						productName = specs[id].productName;
+						break;
+					}
 				}
+
+				if (binary) {
+					var file = { file: binary };
+					return self._doFlash(api, deviceid, file);
+				}
+
+				if (productName) {
+					console.log("I don't have a %s binary for %s.", filePath, productName);
+					return when.reject();
+				}
+
+				return when.promise(function (resolve, reject) {
+					inquirer.prompt([{
+						name: 'type',
+						type: 'list',
+						message: 'Which type of device?',
+						choices: [
+							'Photon',
+							'Core',
+							'P1',
+							'Electron'
+						]
+					}], function(ans) {
+						var type = ans.type;
+						for (var id in specs) {
+							if (specs[id].productName === type) {
+								binary = specs[id].knownApps[filePath];
+								break;
+							}
+						}
+
+						if (!binary) {
+							console.log("I don't have a %s binary for %s.", filePath, type);
+							return reject();
+						}
+
+						var file = { file: binary };
+						self._doFlash(api, deviceid, file).then(resolve, reject);
+					});
+				});
+			}).catch(function(err) {
+				console.error('Error', err);
+				return when.reject(err);
 			});
-		};
+		} else {
+			console.error("I couldn't find that file: " + filePath);
+			return when.reject();
+		}
 	},
 
 	/**
@@ -363,7 +388,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	compileCode: function (deviceType) {
-		if (!deviceType || deviceType === '--target') {
+		var self = this;
+		this.checkArguments(arguments);
+		var args = Array.prototype.slice.call(arguments);
+		if (this.options.target) {
+			args = args.filter(function (f) {
+				return (f !== '--target' && f !== self.options.target);
+			});
+			deviceType = args[0];
+		}
+
+		if (!deviceType) {
 			console.error('\nPlease specify the target device type. eg. particle compile photon xxx\n');
 			return -1;
 		}
@@ -373,8 +408,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
 			return -1;
 		}
-
-		this.checkArguments(arguments);
 
 		//defaults to 0 for core
 		var platform_id = 0;
@@ -391,17 +424,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		console.log('\nCompiling code for ' + deviceType);
 
 		//  "Please specify a binary file, source file, or source directory");
-		var args = Array.prototype.slice.call(arguments, 1);
+		var args = args.slice(1);
 		var self = this;
 
 		return pipeline([
 			function() {
 				// remove arguments that match target data
 				if (self.options.target) {
-					args = args.filter(function (f) {
-						return (f !== '--target' && f !== self.options.target);
-					});
-
 					if (self.options.target === 'latest') {
 						return when.resolve();
 					}
