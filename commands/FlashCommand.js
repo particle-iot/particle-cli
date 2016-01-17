@@ -138,6 +138,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 
 		var self = this;
 		var specs, destSegment;
+		var flashingKnownApp = false;
 		var ready = sequence([
 			function() {
 				return dfu.isDfuUtilInstalled();
@@ -156,6 +157,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 					if (firmware === undefined) {
 						return when.reject('file does not exist and no known app found.');
 					} else {
+						flashingKnownApp = true;
 						return firmware;
 					}
 				}
@@ -166,6 +168,9 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 			},
 			function() {
 				destSegment = useFactory ? 'factoryReset' : 'userFirmware';
+				if (flashingKnownApp) {
+					return when.resolve();
+				}
 
 				return when.promise(function(resolve, reject) {
 					var parser = new ModuleParser();
