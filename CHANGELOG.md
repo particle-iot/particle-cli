@@ -1,5 +1,11 @@
 # changelog
 
+## 1.9.2 - 16 Jan 2016
+
+### Fixes
+
+* Fix `node-wifiscanner2` not reporting any SSID results on non-`en` locales in Windows. Thanks [@ScruffR](https://github.com/ScruffR)! ([#118](https://github.com/spark/particle-cli/issues/118))
+
 ## 1.9.1 - 15 Jan 2016
 
 ### Fixes
