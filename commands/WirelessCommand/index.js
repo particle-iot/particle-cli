@@ -1,14 +1,14 @@
 /**
  ******************************************************************************
  * @file    js/commands/WirelessCommand.js
- * @author  Emily Rose (nexxy@spark.io)
+ * @author  Emily Rose (nexxy@particle.io)
  * @company Particle ( https://www.particle.io/ )
  * @source https://github.com/spark/particle-cli
  * @version V1.0.0
  * @date    5-May-2015
  * @brief   Wireless commands module
  ******************************************************************************
-Copyright (c) 2015 Spark Labs, Inc.  All rights reserved.
+Copyright (c) 2016 Particle Industries, Inc.  All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
