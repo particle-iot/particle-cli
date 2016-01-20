@@ -95,11 +95,13 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					}
 					var vid = deviceSpec.serial.vid;
 					var pid = deviceSpec.serial.pid;
+					var serialNumber = deviceSpec.serial.serialNumber;
 
 					var usbMatches = (port.vendorId === '0x' + vid.toLowerCase() && port.productId === '0x' + pid.toLowerCase());
 					var pnpMatches = !!(port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
+					var serialNumberMatches = port.serialNumber && port.serialNumber.indexOf(serialNumber) >= 0;
 
-					if (usbMatches || pnpMatches) {
+					if (usbMatches || pnpMatches || serialNumberMatches) {
 						return true;
 					}
 					return false;
