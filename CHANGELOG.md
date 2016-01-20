@@ -1,5 +1,11 @@
 # changelog
 
+## 1.9.3 - 20 Jan 2016
+
+### Fixes
+
+* Do not fail DFU commands if any `stderr` output is generated.
+
 ## 1.9.2 - 16 Jan 2016
 
 ### Fixes
