@@ -22,7 +22,7 @@
             "Calls a function registered on one of your Devices",
             "",
             "More information about registering a variable available here: ",
-            "http://docs.particle.io/core/firmware/#spark-variable"
+            "https://docs.particle.io/reference/firmware/#particle-variable-"
         ],
         "related": [
             "list - shows your devices, and what variables and functions are available",
@@ -37,7 +37,7 @@
             "Retrieves a variable value from your device",
             "",
             "More information about registering a variable available here: ",
-            "http://docs.particle.io/core/firmware/#spark-variable"
+            "https://docs.particle.io/reference/firmware/#particle-variable-"
         ],
         "related": [
             "list - shows your devices, and what variables and functions are available",
