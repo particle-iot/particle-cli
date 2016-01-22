@@ -28,8 +28,11 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 var util = require('util');
 var _ = require('lodash');
+var fs = require('fs');
+var prompt = require('inquirer').prompt;
 
 var when = require('when');
+var sequence = require('when/sequence');
 var extend = require('xtend');
 var SerialPortLib = require('serialport');
 var SerialPort = SerialPortLib.SerialPort;
@@ -40,6 +43,7 @@ var specs = require('../lib/deviceSpecs');
 var log = require('../lib/log');
 var settings = require('../settings');
 var DescribeParser = require('binary-version-reader').HalDescribeParser;
+var YModem = require('../lib/ymodem');
 
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../lib/utilities.js');
@@ -69,6 +73,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption('wifi', this.configureWifi.bind(this), 'Configure Wi-Fi credentials over serial');
 		this.addOption('mac', this.deviceMac.bind(this), 'Ask for and display MAC address via serial');
 		this.addOption('inspect', this.inspectDevice.bind(this), 'Ask for and display device module information via serial');
+		this.addOption('flash', this.flashDevice.bind(this), 'Flash firmware over serial using YMODEM protocol');
 
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
@@ -320,6 +325,92 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				.catch(function (err) {
 					self.error(err, false);
 				});
+		});
+	},
+
+	_promptForListeningMode: function() {
+		return when.promise(function(resolve, reject) {
+			console.log(
+				chalk.cyan('!'),
+				'PROTIP:',
+				chalk.white('Hold the'),
+				chalk.cyan('SETUP'),
+				chalk.white('button on your device until it'),
+				chalk.cyan('blinks blue!')
+			);
+
+			prompt([
+				{
+					type: 'input',
+					name: 'listening',
+					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE'),
+				}
+			], function() {
+				resolve();
+			});
+		});
+	},
+
+	flashDevice: function(firmware) {
+		var self = this;
+		settings.verboseOutput = false;
+
+		this._promptForListeningMode().then(function() {
+			self.whatSerialPortDidYouMean(null, true, function(device) {
+				if (!device) {
+					return self.error('No serial port identified');
+				}
+				if (device.type === 'Core') {
+					return self.error('serial flashing is not supported on the Core');
+				}
+
+				var complete = sequence([
+					function() {
+						//only match against knownApp if file is not found
+						var stats;
+						try {
+							stats = fs.statSync(firmware);
+						} catch (ex) {
+							// file does not exist
+							var specsByProduct = _.indexBy(specs, 'productName');
+							var productSpecs = specsByProduct[device.type];
+							firmware = productSpecs && productSpecs.knownApps[firmware];
+							if (firmware === undefined) {
+								return when.reject('file does not exist and no known app found.');
+							} else {
+								return;
+							}
+						}
+
+						if (!stats.isFile()){
+							return when.reject('You cannot flash a directory over USB');
+						}
+					},
+					function() {
+						var serialPort = new SerialPort(device.port, {
+							baudrate: 28800
+						}, false);
+
+						function closePort() {
+							if (serialPort.isOpen()) {
+								serialPort.close();
+							}
+							process.exit(0);
+						}
+						process.on('SIGINT', closePort);
+						process.on('SIGTERM', closePort);
+
+						var ymodem = new YModem(serialPort, { debug: true });
+						return ymodem.send(firmware);
+					}
+				]);
+
+				return complete.then(function() {
+					console.log('\nFlash success!');
+				}, function(err) {
+					self.error('\nError writing firmware...' + err + '\n' + err.stack, true);
+				});
+			});
 		});
 	},
 

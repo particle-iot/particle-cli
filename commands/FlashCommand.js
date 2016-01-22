@@ -81,6 +81,12 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				null
 			);
 		}
+		if (!this.options.serial) {
+			this.options.serial = utilities.tryParseArgs(args,
+				'--serial',
+				null
+			);
+		}
 		if (!this.options.useFactoryAddress) {
 			//assume DFU if doing factory
 			this.options.useFactoryAddress = utilities.tryParseArgs(args,
@@ -112,9 +118,11 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		var result;
 		if (this.options.useDfu || (deviceId === '--usb') || (deviceId === '--factory')) {
 			result = this.flashDfu(this.options.useDfu || this.options.useFactoryAddress);
+		} else if (this.options.serial) {
+			result = this.flashYModem(this.options.serial);
 		} else {
 			//we need to remove the "--cloud" argument so this other command will understand what's going on.
-			var args = utilities.copyArray(arguments);
+			var args = Array.prototype.slice.call(arguments);
 			if (this.options.useCloud) {
 				//trim
 
@@ -131,6 +139,11 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	flashCloud: function() {
 		var cloud = this.cli.getCommandModule('cloud');
 		return cloud.flashDevice.apply(cloud, arguments);
+	},
+
+	flashYModem: function() {
+		var serial = this.cli.getCommandModule('serial');
+		return serial.flashDevice.apply(serial, arguments);
 	},
 
 	flashDfu: function(firmware) {
