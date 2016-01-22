@@ -60,6 +60,9 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		if (!descr && subcmd && command.descriptionsByName) {
 			descr = command.descriptionsByName[subcmd];
 		}
+		if (!descr && subcmd && command[subcmd]) {
+			descr = command[subcmd].does;
+		}
 
 		if (!descr) {
 			descr = command.description;
@@ -79,6 +82,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (subcmd && command.usagesByName && command.usagesByName[subcmd]) {
 			usageText = command.usagesByName[subcmd];
+		} else if (subcmd && command[subcmd] && command[subcmd].usage) {
+			usageText = command[subcmd].usage;
 		} else if (command.usage) {
 			usageText = command.usage;
 		}
@@ -120,7 +125,8 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			cmdLine,
 			''
 		];
-		lines = lines.concat(this._getCommandDescription(command, subcmd));
+		var descr = this._getCommandDescription(command, subcmd);
+		lines = lines.concat(descr);
 
 		//
 		//  Get Usage text if we have it
@@ -135,12 +141,12 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 		// If we didn't have usage text, then maybe we're a parent command
 		//
 
-		if (!usageText) {
+		if (!usageText && !subcmd) {
 			var cmds = command._commands;
 			if (cmds) {
 				lines.push('The following commands are available: ');
 
-				lines.concat(cmds.map(function (subcmdname) {
+				lines = lines.concat(cmds.map(function (subcmdname) {
 					var subcmdObj = command[subcmdname];
 					var line = '   particle ' + name + ' ' + subcmdname;
 					return utilities.padRight(line, ' ', 25) + ' - ' + subcmdObj.does;
