@@ -1,5 +1,17 @@
 # changelog
 
+## Unreleased
+
+### New Features
+
+* Add `serial flash` command and `flash --serial` mode to flash firmware over serial using the YMODEM protocol. ([#200](https://github.com/spark/particle-cli/pull/200))
+* Add compile version targeting using `--target` argument. `compile` and `flash` both support this argument, when compiling via the cloud. ([#183](https://github.com/spark/particle-cli/issues/183))
+
+### Fixes
+
+* Fix serial device detection on Linux. Thanks [@monkbroc](https://github.com/monkbroc)! ([#190](https://github.com/spark/particle-cli/issues/190))
+* Fix `help` command output that was missing information in some cases.
+
 ## 1.9.3 - 20 Jan 2016
 
 ### Fixes
