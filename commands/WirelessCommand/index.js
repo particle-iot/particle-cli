@@ -522,12 +522,6 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 			}, {
 
-				type: 'input',
-				name: 'password',
-				message: 'Please enter your Wi-Fi network password (leave blank for none):'
-
-			}, {
-
 				type: 'list',
 				name: 'security',
 				message: 'Please select the security used by your Wi-Fi network:',
@@ -542,6 +536,21 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 					'WPA2 Mixed',
 					'WPA2'
 				]
+
+			}, {
+
+				type: 'input',
+				name: 'password',
+				message: 'Please enter your Wi-Fi network password:',
+				when: function(ans) {
+					return ans.security !== 'None';
+				},
+				validate: function(input) {
+					if (input && input.trim()) {
+						return true;
+					}
+					return "You must enter a password. Let's try again...";
+				}
 
 			}], manualChoices);
 		}
@@ -585,16 +594,16 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	};
 
 	function results(err, dat) {
-
+		clearTimeout(retry);
 		self.stopSpin();
 
 		if (err) {
-
-			// TODO: offer to retry
-			return console.log(
+			console.log(
 				arrow,
-				'Your Photon encountered an error while trying to scan for nearby Wi-Fi networks.'
+				'Your Photon encountered an error while trying to scan for nearby Wi-Fi networks. Retrying...'
 			);
+			retry = setTimeout(start, 2000);
+			return;
 		}
 
 		var networks = dat.scans;
@@ -639,11 +648,15 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 			network = ans.network;
 
+			if (list[network].sec === 0) {
+				return networkChoices({ network: network });
+			}
+
 			prompt([{
 
 				type: 'input',
 				name: 'password',
-				message: 'Please enter your network password (or leave blank for none):'
+				message: 'Please enter your network password:'
 
 			}], __passwordChoice);
 		}
@@ -669,12 +682,12 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, "Here's what we're going to send to the Photon:");
 		console.log();
 		console.log(arrow, 'Wi-Fi Network:', chalk.bold.cyan(network));
-		console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
 		console.log(
 			arrow,
 			'Security:',
 			chalk.bold.cyan(visibleSecurity)
 		);
+		console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
 		console.log();
 
 		prompt([{
