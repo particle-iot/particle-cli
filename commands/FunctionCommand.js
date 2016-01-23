@@ -52,7 +52,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	listFunctions: function (args) {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -93,7 +93,7 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 			return this.listFunctions();
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}

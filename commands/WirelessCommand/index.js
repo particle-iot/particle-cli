@@ -88,8 +88,8 @@ var WirelessCommand = function (cli, options) {
 	this.__sap = new SAP();
 	this.__manual = false;
 	this.__completed = 0;
-	this.__apiClient = new APIClient(settings.apiUrl, settings.access_token);
-	this.__oldapi = new OldApiClient(settings.apiUrl, settings.access_token);
+	this.__apiClient = new APIClient();
+	this.__oldapi = new OldApiClient();
 	this.init();
 };
 

@@ -6,6 +6,7 @@
 
 * Add `serial flash` command and `flash --serial` mode to flash firmware over serial using the YMODEM protocol. ([#200](https://github.com/spark/particle-cli/pull/200))
 * Add compile version targeting using `--target` argument. `compile` and `flash` both support this argument, when compiling via the cloud. ([#183](https://github.com/spark/particle-cli/issues/183))
+* Add support for `proxyUrl` settings to be used when communicating with the Particle Cloud. ([#108](https://github.com/spark/particle-cli/issues/108))
 
 ### Fixes
 

@@ -102,7 +102,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		return pipeline([
 			this.getCredentials,
 			function (creds) {
-				var api = new ApiClient(settings.apiUrl);
+				var api = new ApiClient();
 				return api.listTokens(creds.username, creds.password);
 			},
 			sort_tokens
@@ -160,7 +160,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		var api = new ApiClient(settings.apiUrl);
+		var api = new ApiClient();
 
 		return this.getCredentials().then(function (creds) {
 			return when.map(tokens, function (x) {
@@ -187,7 +187,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		var allDone = pipeline([
 			this.getCredentials,
 			function (creds) {
-				var api = new ApiClient(settings.apiUrl);
+				var api = new ApiClient();
 				return api.createAccessToken(clientName, creds.username, creds.password);
 			}
 		]);

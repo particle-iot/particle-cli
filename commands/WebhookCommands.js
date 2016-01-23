@@ -105,7 +105,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	createHook: function (eventName, url, deviceID, requestType) {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -173,7 +173,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	deleteHook: function (hookID) {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -190,7 +190,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	listHooks: function () {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}

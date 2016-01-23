@@ -121,7 +121,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -139,7 +139,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject();
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -171,7 +171,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -212,7 +212,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject();
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return when.reject('Not logged in');
 		}
@@ -350,7 +350,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			filename = 'firmware_' + Date.now() + '.bin';
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -403,7 +403,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
 			return -1;
@@ -547,7 +547,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			//login to the server
 			function (creds) {
 
-				var api = new ApiClient(settings.apiUrl);
+				var api = new ApiClient();
 				username = creds.username;
 				self.newSpin('Sending login details...').start();
 				return api.login(settings.clientId, creds.username, creds.password);
@@ -578,7 +578,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	logout: function () {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!settings.access_token) {
 			console.log('You were already logged out.');
 			return when.resolve();
@@ -634,7 +634,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	getAllDeviceAttributes: function (filter) {
 		var self = this;
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return when.reject('not logged in!');
 		}
@@ -706,7 +706,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	nyanMode: function(deviceid, onOff) {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return when.reject('not logged in!');
 		}

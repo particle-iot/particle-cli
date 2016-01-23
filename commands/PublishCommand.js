@@ -54,7 +54,7 @@ PublishCommand.prototype = extend(BaseCommand.prototype, {
 
 	publishEvent: function (eventName, data, setPrivate) {
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}

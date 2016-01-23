@@ -38,8 +38,8 @@ var SetupCommand = function (cli, options) {
 	SetupCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 	this.__wasLoggedIn;
-	this.__api = new ApiClient2(settings.apiUrl, settings.access_token);
-	this.__oldapi = new ApiClient(settings.apiUrl, settings.access_token);
+	this.__api = new ApiClient2();
+	this.__oldapi = new ApiClient();
 	this.init();
 };
 

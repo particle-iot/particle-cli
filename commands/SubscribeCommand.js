@@ -52,7 +52,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	startListening: function (eventName, deviceId) {
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}

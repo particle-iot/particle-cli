@@ -125,7 +125,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			deviceId = [ deviceId ];
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
@@ -196,7 +196,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		console.error('polling server to see what devices are online, and what variables are available');
 
 		var that = this;
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}

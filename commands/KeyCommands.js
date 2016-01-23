@@ -347,7 +347,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		var api = new ApiClient(settings.apiUrl, settings.access_token);
+		var api = new ApiClient();
 		if (!api.ready()) {
 			return when.reject('Not logged in');
 		}
