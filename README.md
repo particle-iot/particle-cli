@@ -559,7 +559,7 @@ tcp://device.spark.io:5683
 
 ### particle keys protocol
 
-Changes the transport protocol used to communicate with the cloud. Available options are `tcp` and `udp` for Photons and Electrons (if you are running at least firmware version 0.4.8).
+Changes the transport protocol used to communicate with the cloud. Available options are `tcp` and `udp` for Electrons (if you are running at least firmware version 0.4.8).
 
 ```sh
 $ particle keys protocol tcp
