@@ -720,7 +720,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					security = 0;
 				}
 
-				return cb(security + '\n', startTimeout.bind(self, 5000));
+				return cb(security + '\n', startTimeout.bind(self, 10000));
 			}
 
 			inquirer.prompt([{
@@ -734,7 +734,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					{ name: 'Unsecured', value: 0 }
 				]
 			}], function(ans) {
-				cb(ans.security + '\n', startTimeout.bind(self, 5000));
+				cb(ans.security + '\n', startTimeout.bind(self, 10000));
 			});
 		});
 
