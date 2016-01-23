@@ -818,6 +818,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		};
 
 		return this.getAllDeviceAttributes(filter).then(function (devices) {
+			if (!devices) {
+				return;
+			}
+
 			var lines = [];
 			for (var i = 0; i < devices.length; i++) {
 				var name;

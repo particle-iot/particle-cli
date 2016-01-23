@@ -15,6 +15,7 @@
 * Fix `help` command output that was missing information in some cases.
 * Fix timeout error during `setup wifi` on Cores. ([#144](https://github.com/spark/particle-cli/issues/144))
 * Standardize Wi-Fi question order. ([#19](https://github.com/spark/particle-cli/issues/19))
+* Fix `list` if no devices are found.
 
 ## 1.9.3 - 20 Jan 2016
 
