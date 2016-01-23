@@ -29,7 +29,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var _ = require('lodash');
 var when = require('when');
 var pipeline = require('when/pipeline');
-var sequence = require('when/sequence');
+var prompt = require('inquirer').prompt;
 
 var settings = require('../settings.js');
 var specs = require('../lib/deviceSpecs');
@@ -126,10 +126,31 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 		console.log('Claiming device ' + deviceid);
-		api.claimDevice(deviceid).then(function() {
+		return api.claimDevice(deviceid).then(function() {
 			console.log('Successfully claimed device ' + deviceid);
 		}, function(err) {
-			console.log('Failed to claim device, server said', err);
+			if (err && err.indexOf('That belongs to someone else.') >= 0) {
+				return when.promise(function(resolve, reject) {
+					prompt([{
+						type: 'confirm',
+						name: 'transfer',
+						message: 'That device belongs to someone else. Would you like to request a transfer?',
+						default: true
+					}], function(ans) {
+						if (ans.transfer) {
+							return api.claimDevice(deviceid, true).then(function(body) {
+								console.log('Transfer #' + body.transfer_id + ' requested. You will receive an email if your transfer is approved or denied.');
+								resolve();
+							}, reject);
+						}
+						reject('You cannot claim a device owned by someone else');
+					});
+				});
+			}
+			return when.reject(err);
+		}).catch(function(err) {
+			console.log('Failed to claim device, server said:', err);
+			return when.reject(err);
 		});
 	},
 
