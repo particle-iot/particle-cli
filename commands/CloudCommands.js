@@ -76,7 +76,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption('name', this.nameDevice.bind(this), 'Give a device a name!');
 		this.addOption('flash', this.flashDevice.bind(this), 'Pass a binary, source file, or source directory to a device!');
 		this.addOption('compile', this.compileCode.bind(this), 'Compile a source file, or directory using the cloud service');
-		//this.addOption("binary", this.downloadBinary.bind(this), "Compile a source file, or directory using the cloud service");
 
 		this.addOption('nyan', this.nyanMode.bind(this), 'How long has this been here?');
 
@@ -359,36 +358,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.error("I couldn't find that file: " + filePath);
 			return when.reject();
 		}
-	},
-
-	/**
-	 * use application ID instead of binary ID
-	 * @param {String} binary_id
-	 * @param {String} filename
-	 */
-	downloadBinary: function (binary_id, filename) {
-		if (!filename) {
-			filename = 'firmware_' + Date.now() + '.bin';
-		}
-
-		var api = new ApiClient();
-		if (!api.ready()) {
-			return -1;
-		}
-
-
-		var binary_url = '/v1/binaries/' + binary_id;
-		var allDone = api.downloadBinary(binary_url, filename);
-
-		when(allDone).then(
-			function () {
-				console.log('saved firmware to ' + path.resolve(filename));
-				console.log('Firmware Binary downloaded.');
-			},
-			function (err) {
-				console.error('Download failed - ', err);
-			});
-
 	},
 
 	_getDownloadPath: function(args, deviceType) {
