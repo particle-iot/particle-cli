@@ -32,7 +32,6 @@ var whenNode = require('when/node');
 var sequence = require('when/sequence');
 var pipeline = require('when/pipeline');
 var temp = require('temp').track();
-var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
 var utilities = require('../lib/utilities.js');
@@ -140,7 +139,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return changed;
 	},
 
-	makeKeyOpenSSL: function (filename) {
+	makeKeyOpenSSL: function (filename, alg) {
 		filename = utilities.filenameNoExt(filename);
 
 		if (this.options.force) {
@@ -149,7 +148,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			utilities.tryDelete(filename + '.der');
 		}
 
-		var alg = this._getPrivateKeyAlgorithm() || 'rsa';
+		alg = alg || this._getPrivateKeyAlgorithm() || 'rsa';
 
 		return sequence([
 			function () {
@@ -190,16 +189,23 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	_makeNewKey: function(filename) {
 		var self = this;
+		var alg;
+		var showHelp = !self.options.protocol;
 		var keyReady = sequence([
 			function() {
-				return dfu.isDfuUtilInstalled();
+				return sequence([
+					dfu.isDfuUtilInstalled.bind(dfu),
+					dfu.findCompatibleDFU.bind(dfu, showHelp)
+				]).catch(function(err) {
+					if (self.options.protocol) {
+						alg = self.options.protocol === 'udp' ? 'ec' : 'rsa';
+						return when.resolve();
+					}
+					return when.reject(err);
+				});
 			},
 			function() {
-				//make sure our device is online and in dfu mode
-				return dfu.findCompatibleDFU();
-			},
-			function() {
-				return self.makeKeyOpenSSL(filename);
+				return self.makeKeyOpenSSL(filename, alg);
 			}
 		]);
 
