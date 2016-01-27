@@ -1,6 +1,6 @@
 # changelog
 
-## Unreleased
+## 1.10.0 - 27 Jan 2016
 
 ### New Features
 
