@@ -101,6 +101,7 @@ node app.js help
   - [particle publish](#particle-publish)
   - [particle serial list](#particle-serial-list)
   - [particle serial monitor](#particle-serial-monitor)
+  - [particle serial flash](#particle-serial-flash)
   - [particle keys doctor](#particle-keys-doctor)
   - [particle keys new](#particle-keys-new)
   - [particle keys load](#particle-keys-load)
@@ -292,11 +293,12 @@ $ particle flash deviceName voodoo
 
 ```
 
-You can also update the factory reset version using the --factory flag, and over usb with --usb
+You can also update the factory reset version using the `--factory` flag, over USB with `--usb`, or over serial using `--serial`.
 
 ```sh
 $ particle flash --factory tinker
 $ particle flash --usb tinker
+$ particle flash --serial tinker
 ```
 
 #### Compiling remotely and Flashing locally
@@ -307,7 +309,10 @@ To work locally, but use the cloud compiler, simply use the compile command, and
 $ particle compile device_type my_project_folder --saveTo firmware.bin
 OR
 $ particle compile device_type app.ino library1.cpp library1.h --saveTo firmware.bin
+
 $ particle flash --usb firmware.bin
+OR
+$ particle flash --serial firmware.bin
 ```
 
 
@@ -449,7 +454,7 @@ $ particle publish eventName someData --private
 
 ### particle serial list
 
-Shows currently connected devices acting as serial devices over USB
+Shows currently connected devices acting as serial devices over USB.
 
 ```sh
 $ particle serial list
@@ -458,7 +463,7 @@ $ particle serial list
 
 ### particle serial monitor
 
-Starts listening to the specified serial device, and echoes to the terminal
+Starts listening to the specified serial device, and echoes to the terminal.
 
 ```sh
 $ particle serial monitor
@@ -467,6 +472,13 @@ $ particle serial monitor COM3
 $ particle serial monitor /dev/cu.usbmodem12345
 ```
 
+### particle serial flash
+
+Flash a firmware binary over serial using the YMODEM protocol.
+
+```sh
+$ particle serial flash firmware.bin
+```
 
 ### particle keys doctor
 

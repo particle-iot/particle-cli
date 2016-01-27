@@ -126,20 +126,21 @@
     "flash": {
         "maps": [ "flash", "*" ],
         "usage": [
-            "particle flash [--usb or device_id] firmware.bin",
+            "particle flash [--usb or --serial or device_id] firmware.bin",
             "particle flash device_id source_folder",
             "particle flash device_id file1.ino file2.cpp file2.h file3.cpp"
         ],
         "does": [
-            "flash remotely pushes a compiled firmware binary to one of your devices over the air, or directly",
-            "over USB / dfu.  If you send it one or more source files, or a directory of source, it will compile",
+            "flash remotely pushes a compiled firmware binary to one of your devices over the air, directly",
+            "over USB using dfu, or over serial using the YMODEM protocol.  If you send it one or more source files, or a directory of source, it will compile",
             "that remotely first, and push the compiled binary to your device instead, or in the case of code errors",
             "will show you the errors from the server.",
             "",
             "You can also substitute \"tinker\", \"voodoo\", or \"cc3000\" to flash the provided app.",
             "",
+            "particle flash my_device tinker",
             "particle flash --usb tinker",
-            "particle flash my_device tinker"
+            "particle flash --serial tinker"
         ]
     },
     "subscribe": {
