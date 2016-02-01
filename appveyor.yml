@@ -35,4 +35,4 @@ notifications:
   - provider: Slack
     auth_token:
       secure: b84dlqnysahaZyDd0oxm9d2Td8u+U9gtyo0u4+nnAsOz1whgbrAZ3TcXNvp1eQuJng0KSW7z7Po/LoArs9VPZw==
-    channel: open-source
+    channel: "#open-source"
