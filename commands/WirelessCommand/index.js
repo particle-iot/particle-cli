@@ -736,7 +736,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		if (dat && dat.id) {
 			self.__deviceID = dat.id;
-			console.log(arrow, 'Setting up device id', chalk.bold.cyan(dat.id));
+			console.log(arrow, 'Setting up device id', chalk.bold.cyan(dat.id.toLowerCase()));
 		}
 		clearTimeout(retry);
 		console.log(arrow, 'Requesting public key from the device...');
