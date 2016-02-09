@@ -26,21 +26,21 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 'use strict';
 
-var settings = require('../settings.js');
+var when = require('when');
 var extend = require('xtend');
 var util = require('util');
 
 var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../lib/ApiClient.js');
 
-
-var SubscribeCommand = function (cli, options) {
+function SubscribeCommand(cli, options) {
 	SubscribeCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
 	this.init();
 };
 util.inherits(SubscribeCommand, BaseCommand);
+
 SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: 'subscribe',
@@ -82,10 +82,10 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var chunks = [];
-		var appendToQueue = function(arr) {
-			for (var i=0;i<arr.length;i++) {
+		function appendToQueue(arr) {
+			for (var i = 0; i < arr.length; i++) {
 				var line = (arr[i] || '').trim();
-				if (line === '') {
+				if (!line) {
 					continue;
 				}
 				chunks.push(line);
@@ -112,11 +112,13 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			console.log(JSON.stringify(obj));
 		};
 
-		var onData = function(event) {
+		return api.getEventStream(eventName, deviceId, function(event) {
 			var chunk = event.toString();
 			appendToQueue(chunk.split('\n'));
-		};
-		api.getEventStream(eventName, deviceId, onData);
+		}).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});
 	}
 });
 
