@@ -87,7 +87,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 						dfu.write(binary, part, leave)
 						.then(null, function (err) {
 							// don't reject for get_status error
-							if (err.indexOf('get_status') > 0) {
+							if (err.indexOf('Error during download get_status') >= 0) {
 								return '';
 							}
 						})
