@@ -417,10 +417,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function doTheFlash(file) {
 				return self._doFlash(api, deviceid, file);
 			}
-		]).catch(function(err) {
-			console.error('Error', err);
-			return when.reject(err);
-		});
+		]);
 	},
 
 	_getDownloadPath: function(args, deviceType) {
