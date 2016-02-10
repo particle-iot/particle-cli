@@ -1,5 +1,17 @@
 # changelog
 
+## 1.11.0 - 10 Feb 2016
+
+### New Features
+
+* Prompt for confirmation of OTA data usage, when flashing cellular devices.
+
+### Fixes
+
+* Handle invalid token for `subscribe` commands. ([#207](https://github.com/spark/particle-cli/issues/207))
+* Lowercase device id output during `setup`. ([#208](https://github.com/spark/particle-cli/issues/208))
+* Increase specific error to ignore during `update`. ([#206](https://github.com/spark/particle-cli/issues/206))
+
 ## 1.10.0 - 27 Jan 2016
 
 ### New Features
