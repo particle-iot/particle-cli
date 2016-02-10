@@ -28,8 +28,10 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 var _ = require('lodash');
 var when = require('when');
+var whenNode = require('when/node');
 var pipeline = require('when/pipeline');
 var prompt = require('inquirer').prompt;
+var temp = require('temp').track();
 
 var settings = require('../settings.js');
 var specs = require('../lib/deviceSpecs');
@@ -276,8 +278,73 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
+	_promptForOta: function(api, attrs, files, targetVersion) {
+		var self = this;
+		var filename;
+		return pipeline([
+			function() {
+				var sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
+				var isSourcey = _.some(files, function(file) {
+					return sourceExtensions.indexOf(path.extname(file)) >= 0;
+				});
+				if (!isSourcey) {
+					return files.file;
+				}
+
+				filename = temp.path({ suffix: '.bin' });
+				return self._compileAndDownload(api, files, attrs.platform_id, filename, targetVersion).then(function() {
+					return filename;
+				});
+			},
+			function(file) {
+				filename = file;
+				return whenNode.lift(fs.stat)(file);
+			},
+			function(stats) {
+				var dataUsage = utilities.cellularOtaUsage(stats.size);
+
+				return when.promise(function(resolve, reject) {
+					console.log();
+					console.log(alert, 'Flashing firmware Over The Air (OTA) uses cellular data, which may cause you to incur usage charges.');
+					console.log(alert, 'This flash is estimated to use at least ' + chalk.bold(dataUsage + ' MB') + ', but may use more depending on network conditions.');
+					console.log();
+					console.log(alert, 'Please type ' + chalk.bold(dataUsage) + ' below to confirm you wish to proceed with the OTA flash.');
+					console.log(alert, 'Any other input will cancel.');
+
+					inquirer.prompt([{
+						name: 'confirmota',
+						type: 'input',
+						message: 'Confirm the amount of data usage in MB:'
+					}], function(ans) {
+						if (ans.confirmota !== dataUsage) {
+							return reject('User cancelled');
+						}
+						resolve({ file: filename });
+					});
+				});
+			}
+		]);
+	},
+
 	_doFlash: function(api, deviceid, files, targetVersion) {
-		return api.flashDevice(deviceid, files, targetVersion).then(function(resp) {
+		var self = this;
+		var isCellular;
+		return pipeline([
+			function isCellular() {
+				return api.getAttributes(deviceid);
+			},
+			function promptOTA(attrs) {
+				isCellular = attrs.cellular;
+				if (!isCellular) {
+					return files;
+				}
+
+				return self._promptForOta(api, attrs, files, targetVersion);
+			},
+			function flashyFlash(flashFiles) {
+				return api.flashDevice(deviceid, flashFiles, targetVersion);
+			}
+		]).then(function(resp) {
 			if (resp.status || resp.message) {
 				console.log('Flash device OK: ', resp.status || resp.message);
 				return when.resolve();
@@ -295,30 +362,32 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			} else if (resp.error) {
 				return when.reject(resp.error);
 			}
+			return when.reject();
 		});
 	},
 
 	_flashKnownApp: function(api, deviceid, filePath) {
 		var self = this;
-		if (settings.knownApps[filePath]) {
-			return api.getAttributes(deviceid).then(function (attrs) {
-				var binary, productName;
-				for (var id in specs) {
-					if (specs[id].productId === attrs.product_id) {
-						binary = specs[id].knownApps[filePath];
-						productName = specs[id].productName;
-						break;
+		if (!settings.knownApps[filePath]) {
+			console.error("I couldn't find that file: " + filePath);
+			return when.reject();
+		}
+
+		return pipeline([
+			function getAttrs() {
+				return api.getAttributes(deviceid);
+			},
+			function getFile(attrs) {
+				var spec = _.find(specs, { productId: attrs.product_id });
+				if (spec) {
+					if (spec.knownApps[filePath]) {
+						return { file: spec.knownApps[filePath] };
 					}
-				}
 
-				if (binary) {
-					var file = { file: binary };
-					return self._doFlash(api, deviceid, file);
-				}
-
-				if (productName) {
-					console.log("I don't have a %s binary for %s.", filePath, productName);
-					return when.reject();
+					if (spec.productName) {
+						console.log("I don't have a %s binary for %s.", filePath, spec.productName);
+						return when.reject();
+					}
 				}
 
 				return when.promise(function (resolve, reject) {
@@ -333,31 +402,25 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							'Electron'
 						]
 					}], function(ans) {
-						var type = ans.type;
-						for (var id in specs) {
-							if (specs[id].productName === type) {
-								binary = specs[id].knownApps[filePath];
-								break;
-							}
-						}
+						var spec = _.find(specs, { productName: ans.type });
+						var binary = spec && spec.knownApps[filePath];
 
 						if (!binary) {
-							console.log("I don't have a %s binary for %s.", filePath, type);
+							console.log("I don't have a %s binary for %s.", filePath, ans.type);
 							return reject();
 						}
 
-						var file = { file: binary };
-						self._doFlash(api, deviceid, file).then(resolve, reject);
+						resolve({ file: binary });
 					});
 				});
-			}).catch(function(err) {
-				console.error('Error', err);
-				return when.reject(err);
-			});
-		} else {
-			console.error("I couldn't find that file: " + filePath);
-			return when.reject();
-		}
+			},
+			function doTheFlash(file) {
+				return self._doFlash(api, deviceid, file);
+			}
+		]).catch(function(err) {
+			console.error('Error', err);
+			return when.reject(err);
+		});
 	},
 
 	_getDownloadPath: function(args, deviceType) {
@@ -484,7 +547,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_compileAndDownload: function(api, files, platform_id, filename, targetVersion) {
-		var allDone = pipeline([
+		return pipeline([
 			//compile
 			function () {
 				return api.compileCode(files, platform_id, targetVersion);
@@ -492,23 +555,20 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			//download
 			function (resp) {
-
-				if (resp && resp.sizeInfo) {
-					//TODO: needs formatting
-					console.log('Memory use: ');
-					console.log(resp.sizeInfo);
-				}
-
 				if (resp && resp.binary_url) {
-					return api.downloadBinary(resp.binary_url, filename);
+					return api.downloadBinary(resp.binary_url, filename).then(function() {
+						return resp.sizeInfo;
+					});
 				} else {
 					return when.reject(resp.errors);
 				}
 			}
-		]);
-
-		return allDone.then(
-			function () {
+		]).then(
+			function (sizeInfo) {
+				if (sizeInfo) {
+					console.log('Memory use: ');
+					console.log(sizeInfo);
+				}
 				console.log('Compile succeeded.');
 				console.log('Saved firmware to:', path.resolve(filename));
 			});
