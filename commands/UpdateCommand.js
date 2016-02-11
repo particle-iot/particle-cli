@@ -84,14 +84,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 				steps.push(function (cb) {
 					var binary = path.resolve(__dirname, '..', 'updates', updates[part]);
 					whenNode.bindCallback(
-						dfu.write(binary, part, leave)
-						.then(null, function (err) {
-							// don't reject for get_status error
-							if (err.indexOf('Error during download get_status') >= 0) {
-								return '';
-							}
-						})
-						.delay(2000)
+						dfu.write(binary, part, leave).delay(2000)
 					, cb);
 				});
 				first = false;
