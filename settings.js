@@ -80,6 +80,7 @@ var settings = {
 		6: 'Photon',
 		8: 'P1',
 		10: 'Electron',
+		88: 'Duo',
 		103: 'Bluz'
 	},
 	updates: {
