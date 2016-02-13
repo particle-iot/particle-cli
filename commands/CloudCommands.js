@@ -55,7 +55,8 @@ var cmd = path.basename(process.argv[1]);
 var PLATFORMS = extend(utilities.knownPlatforms(), {
 	'c': 0,
 	'p': 6,
-	'e': 10
+	'e': 10,
+	'd': 88
 });
 
 var CloudCommand = function (cli, options) {
