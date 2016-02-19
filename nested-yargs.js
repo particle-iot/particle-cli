@@ -1,3 +1,4 @@
+/* eslint curly: [2, "multi-line"] */
 'use strict';
 
 var when = require('when');
@@ -52,9 +53,11 @@ Category.prototype.run = function (yargs) {
 			var command = self.commands[commandName];
 
 			if (!commandName) throw Cli.usageError('Please enter a valid command.');
-			if (!command) throw Cli.usageError('No such command `'
-				+ self.path.slice(1).join(' ')+ ' '
-				+ commandName + '`');
+			if (!command) {
+				throw Cli.usageError('No such command `'
+					+ self.path.slice(1).join(' ')+ ' '
+					+ commandName + '`');
+			}
 
 			return true;
 		})
@@ -118,9 +121,10 @@ Command.prototype.run = function (yargs) {
 
 	var argv = yargs.argv;
 
-	if (this.options.handler)
+	if (this.options.handler) {
 		when.try(this.options.handler.bind(this, argv))
 			.catch(errorHandler);
+	}
 
 	return argv;
 };
@@ -128,8 +132,9 @@ Command.prototype.run = function (yargs) {
 
 function createErrorHandler (yargs) {
 	return function (err) {
-		if (!err || !(err instanceof Error) || err.isUsageError)
+		if (!err || !(err instanceof Error) || err.isUsageError) {
 			yargs.showHelp();
+		}
 
 		console.log(chalk.red(err.message || err));
 
@@ -176,8 +181,9 @@ function parseParams (yargs, argv, command) {
 
 	command.options.params.replace(/(<[^>]+>|\[[^\]]+\])/g,
 		function (match) {
-			if (variadic)
+			if (variadic) {
 				throw Cli.applicationError('Variadic parameters must the final parameter.');
+			}
 
 			var isRequired = match[0] === '<';
 			var param = match
@@ -195,18 +201,23 @@ function parseParams (yargs, argv, command) {
 				value = argv._.slice(command.path.length - 2 + required + optional)
 					.map(String);
 
-				if (isRequired && !value.length) throw Cli.usageError('Parameter '
-					+ '`' + param + '` is must have at least one item.');
+				if (isRequired && !value.length) {
+					throw Cli.usageError('Parameter '
+						+ '`' + param + '` is must have at least one item.');
+				}
 			} else {
-				if (isRequired && optional > 0)
+				if (isRequired && optional > 0) {
 					throw Cli.applicationError('Optional parameters must be specified last');
+				}
 
 				value = argv._[command.path.length - 2 + required + optional];
 
 				if (value) value = String(value);
 
-				if (isRequired && typeof value === 'undefined') throw Cli.usageError('Parameter '
-					+ '`' + param + '` is required.');
+				if (isRequired && typeof value === 'undefined') {
+					throw Cli.usageError('Parameter '
+						+ '`' + param + '` is required.');
+				}
 			}
 
 			argv.params[param] = value;
