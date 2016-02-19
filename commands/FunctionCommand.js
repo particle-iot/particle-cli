@@ -45,6 +45,8 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 	name: 'function',
 	description: 'call functions on your device',
 
+	maxNameLength: 12,
+
 	init: function () {
 		this.addOption('list', this.listFunctions.bind(this), 'List functions provided by your device(s)');
 		this.addOption('call', this.callFunction.bind(this), 'Call a particular function on a device');
@@ -96,6 +98,11 @@ FunctionCommand.prototype = extend(BaseCommand.prototype, {
 		var api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
+		}
+
+		if(functionName.length > this.maxNameLength) {
+			console.log('Function name is too long (maximum ' + this.maxNameLength + ' characters)');
+			return when.reject();
 		}
 
 		return api.callFunction(deviceId, functionName, funcParam).then(
