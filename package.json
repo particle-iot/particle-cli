@@ -3,46 +3,11 @@
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
   "version": "1.11.0",
   "author": "David Middlecamp",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/spark/particle-cli"
-  },
-  "license": "LGPL-3.0",
   "bin": {
     "particle": "./bin/particle.js"
   },
-  "main": "./app.js",
-  "engines": {
-    "node": ">=0.10.40"
-  },
-  "dependencies": {
-    "@particle/api": "^4.0.2",
-    "binary-version-reader": "^0.3.0",
-    "chalk": "^1.0.0",
-    "cli-spinner": "^0.2.1",
-    "cli-table": "^0.3.1",
-    "glob": "^4.2.1",
-    "hogan.js": "^2.0.0",
-    "inquirer": "^0.11.2",
-    "latest-version": "^2.0.0",
-    "lodash": "^3.10.1",
-    "moment": "^2.9.0",
-    "node-wifiscanner2": "^1.1.1",
-    "request": "^2.46.0",
-    "semver": "^5.1.0",
-    "serialport": "^2.0.1",
-    "softap-setup": "^1.1.4",
-    "temp": "^0.8.3",
-    "when": "^3.7.2",
-    "xtend": "^4.0.0",
-    "yargs": "^3.31.0"
-  },
-  "scripts": {
-    "test": "mocha test/",
-    "lint": "eslint commands/**/*.js lib/**/*.js test/**/*.js *.js",
-    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/",
-    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "doctoc": "doctoc --title '## Table of Contents' README.md"
+  "bugs": {
+    "url": "https://github.com/spark/particle-cli/issues"
   },
   "contributors": [
     {
@@ -82,7 +47,28 @@
       "url": "https://github.com/brycekahle"
     }
   ],
-  "preferGlobal": true,
+  "dependencies": {
+    "binary-version-reader": "^0.3.0",
+    "chalk": "^1.0.0",
+    "cli-spinner": "^0.2.1",
+    "cli-table": "^0.3.1",
+    "glob": "^4.2.1",
+    "hogan.js": "^2.0.0",
+    "inquirer": "^0.11.2",
+    "latest-version": "^2.0.0",
+    "lodash": "^3.10.1",
+    "moment": "^2.9.0",
+    "node-wifiscanner2": "^1.1.1",
+    "particle-api-js": "^5.0.0",
+    "request": "^2.46.0",
+    "semver": "^5.1.0",
+    "serialport": "^2.0.1",
+    "softap-setup": "^1.1.4",
+    "temp": "^0.8.3",
+    "when": "^3.7.2",
+    "xtend": "^4.0.0",
+    "yargs": "^3.31.0"
+  },
   "devDependencies": {
     "coveralls": "^2.11.4",
     "doctoc": "^0.15.0",
@@ -93,5 +79,32 @@
     "proxyquire": "^1.6.0",
     "should": "^7.0.2",
     "sinon": "^1.15.4"
+  },
+  "engines": {
+    "node": ">=0.10.40"
+  },
+  "homepage": "https://github.com/spark/particle-cli/",
+  "keywords": [
+    "cli",
+    "core",
+    "electron",
+    "iot",
+    "particle",
+    "photon",
+    "spark"
+  ],
+  "license": "LGPL-3.0",
+  "main": "./app.js",
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spark/particle-cli"
+  },
+  "scripts": {
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/",
+    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "doctoc": "doctoc --title '## Table of Contents' README.md",
+    "lint": "eslint commands/**/*.js lib/**/*.js test/**/*.js *.js",
+    "test": "mocha test/"
   }
 }
