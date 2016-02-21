@@ -881,8 +881,15 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					name = chalk.cyan.dim(name);
 				}
 
-				var status = name + ' [' + device.id + ']' + deviceType + ' is ';
-				status += (device.connected) ? 'online' : 'offline';
+				var status = name + ' [' + device.id + ']' + deviceType;
+				if (deviceType === ' (Electron)') {
+					lines.push(status);
+					var lastHeard = new Date(device.last_heard).toLocaleString();
+					status = '  Last heard: ' + lastHeard;
+				} else {
+					status += ' is ';
+					status += (device.connected) ? 'online' : 'offline';
+				}
 				lines.push(status);
 
 				formatVariables(device.variables, lines);
