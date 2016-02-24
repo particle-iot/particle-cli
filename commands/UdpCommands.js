@@ -46,7 +46,7 @@ UdpCommands.prototype = extend(BaseCommand.prototype, {
 
 	init: function () {
 		this.addOption('send', this.sendUdpPacket.bind(this), 'Sends a UDP packet to the specified host and port');
-		//this.addOption("listen", this.sendUdpPacket.bind(this), "");
+		this.addOption("listen", this.listenUdp.bind(this), 'Listens for UDP packets on an optional port (default 5549)');
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
@@ -72,6 +72,23 @@ UdpCommands.prototype = extend(BaseCommand.prototype, {
 				client.close();
 			});
 		});
+	},
+
+	listenUdp: function(port) {
+		if(port==undefined)
+			port = 5549;
+
+		var udpSocket = dgram.createSocket('udp4');
+
+		udpSocket.on('listening', function() {
+			console.log('Listening for UDP packets on port '+port+' ...');
+		});
+
+		udpSocket.on('message', function(msg, rinfo) {
+			console.log('['+rinfo.address+'] '+msg.toString());
+		});
+
+		udpSocket.bind(port);
 	}
 });
 
