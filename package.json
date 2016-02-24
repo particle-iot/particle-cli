@@ -63,7 +63,7 @@
     "request": "^2.46.0",
     "semver": "^5.1.0",
     "serialport": "^2.0.1",
-    "softap-setup": "^1.1.4",
+    "softap-setup": "^4.0.0",
     "temp": "^0.8.3",
     "when": "^3.7.2",
     "xtend": "^4.0.0",
