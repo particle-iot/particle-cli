@@ -1,19 +1,21 @@
-'use strict';
+import cloudCli from '../cli/cloud';
 
-var cloudCli = require('../cli/cloud');
-
-module.exports = function cloudCommands(app, cli) {
-	var cloud = cli.createCategory('cloud', 'Commands to interact with the Particle Cloud');
+export default (app, cli) => {
+	const cloud = cli.createCategory('cloud', 'Commands to interact with the Particle Cloud');
 
 	cloud.command(cli.createCommand('login', 'Login and save an access token for interacting with your account on the Particle Cloud', {
 		options: {
-			u: {
-				alias: 'username',
-				string: true
+			username: {
+				alias: 'u',
+				string: true,
+				description: 'Username',
+				required: !global.isInteractive
 			},
-			p: {
-				alias: 'password',
-				string: true
+			password: {
+				alias: 'p',
+				string: true,
+				description: 'Password',
+				required: !global.isInteractive
 			}
 		},
 		handler: cloudCli.login
@@ -24,17 +26,18 @@ module.exports = function cloudCommands(app, cli) {
 			revoke: {
 				boolean: true,
 				description: 'Revoke the current access token'
+			},
+			p: {
+				alias: 'password',
+				string: true,
+				description: 'Password'
 			}
 		},
-		handler: function(argv) {
-			
-		}
+		handler: cloudCli.logout
 	}));
 
 	cloud.command(cli.createCommand('list', 'Displays a list of your devices, along with their variables and functions', {
-		handler: function(argv) {
-
-		}
+		handler: cloudCli.listDevices
 	}));
 
 	cloud.command(cli.createCommand('claim', 'Claim a device to your account', {

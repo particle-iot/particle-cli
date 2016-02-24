@@ -57,12 +57,16 @@ keys
 	send
 	doctor
 	server
+	address
+	protocol
 serial
 	list
 	monitor
 	identify
 	wifi
 	mac
+	inspect
+	flash
 udp
 	send
 update
@@ -80,3 +84,5 @@ webhook
 wireless
 	list
 	monitor
+binary
+	inspect

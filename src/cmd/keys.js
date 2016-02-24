@@ -1,7 +1,5 @@
-'use strict';
-
-module.exports = function keysCommands(app, cli) {
-	var keys = cli.createCategory('keys', 'Manage your device\'s keypair and server public key');
+export default (app, cli) => {
+	const keys = cli.createCategory('keys', 'Manage your device\'s keypair and server public key');
 	keys.command(cli.createCommand('save', 'Save your keys', {
 		params: '<filename>',
 		options: {
@@ -11,7 +9,7 @@ module.exports = function keysCommands(app, cli) {
 				description: 'Force overwriting of <filename> if it exists'
 			}
 		},
-		handler: function(argv) {
+		handler: (argv) => {
 			console.log(argv);
 		}
 	}));

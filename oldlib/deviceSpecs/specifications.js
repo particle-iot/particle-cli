@@ -1,6 +1,8 @@
 'use strict';
 
-module.exports = {
+var path = require('path');
+
+var specs = {
 
 	'1d50:607f': {
 		productName: 'Core',
@@ -244,6 +246,17 @@ module.exports = {
 		productId: 10
 	}
 };
+
+//fix the paths on the known apps mappings
+Object.keys(specs).forEach(function(id) {
+	var deviceSpecs = specs[id];
+	var knownApps = deviceSpecs['knownApps'];
+	for (var appName in knownApps) {
+		knownApps[appName] = path.join(__dirname, '../../binaries', knownApps[appName]);
+	};
+});
+
+module.exports = specs;
 
 // device spec "model"
 // key: "vendor:device" ID

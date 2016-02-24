@@ -1,9 +1,11 @@
 {
+  "parser": "babel-eslint",
   "extends": "particle",
   "env": {
-    "node": true
+  	"es6": true,
+  	"node": true
   },
   "rules": {
-  	"func-names": 1
+  	"no-var": 2
   }
 }
