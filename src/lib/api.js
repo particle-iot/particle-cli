@@ -84,14 +84,22 @@ class ParticleApi {
 			const destUrl = url.format(parsedUrl);
 			log.silly('REQUEST');
 			log.silly(`${req.method.toUpperCase()} ${destUrl}`);
-			if (Object.keys(req.header).length) {
-				log.silly(_.map(req.header, (v, k) => `${k}: ${v.replace(this.accessToken, '<redacted>')}`).join('\n'));
+			if (req.header && Object.keys(req.header).length) {
+				log.silly(_.map(req.header, (v, k) => {
+					let val = v;
+					if (k === 'authorization') {
+						val = val.replace(this.accessToken, '<redacted>');
+					}
+					return `${k}: ${val}`;
+				}).join('\n'));
 			}
-			const clonedData = Object.assign({}, req._data);
-			if (clonedData.password) {
-				clonedData.password = '<redacted>';
+			if (req._data && Object.keys(req._data).length) {
+				const clonedData = Object.assign({}, req._data);
+				if (clonedData.password) {
+					clonedData.password = '<redacted>';
+				}
+				log.silly(clonedData);
 			}
-			log.silly(clonedData);
 			req.on('response', res => {
 				log.silly();
 				log.silly('RESPONSE');
