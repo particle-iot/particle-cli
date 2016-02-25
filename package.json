@@ -112,6 +112,7 @@
     "lint": "eslint commands/**/*.js lib/**/*.js test/**/*.js *.js",
     "test": "mocha test/ --compilers js:babel-register",
     "compile": "babel src -d dist",
-    "prepublish": "npm run compile"
+    "templates": "handlebars ./templates/*.hbs -f ./dist/templates.js -c handlebars -e hbs",
+    "prepublish": "npm run templates && npm run compile"
   }
 }

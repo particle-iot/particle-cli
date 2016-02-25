@@ -1,6 +1,5 @@
 import when from 'when';
 import pipeline from 'when/pipeline';
-import { deviceList } from './templates';
 
 import * as ui from './ui';
 import prompts from './prompts';
@@ -89,7 +88,7 @@ const cloud = {
 					return log.info('No devices claimed to your account');
 				}
 
-				console.log(deviceList({ devices, platformsById }));
+				ui.render('deviceList', { devices, platformsById });
 			}
 		]).catch(UnauthorizedError, () => {
 			log.error('Not logged in');

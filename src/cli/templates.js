@@ -1,6 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import Handlebars from 'handlebars';
+import '../templates';
 import chalklib from 'chalk';
 
 Handlebars.registerHelper({
@@ -17,9 +16,3 @@ Handlebars.registerHelper({
 		return val ? trueVal : falseVal;
 	}
 });
-
-const deviceList = Handlebars.compile(fs.readFileSync(path.join(__dirname, '../../templates/deviceList.hbs')).toString());
-
-export {
-	deviceList
-};

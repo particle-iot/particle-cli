@@ -1,6 +1,8 @@
 import inquirer from 'inquirer';
 import when from 'when';
 import { Spinner } from 'cli-spinner';
+import './templates';
+import Handlebars from 'handlebars';
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 
@@ -53,8 +55,13 @@ function retry(fToRetry, times, handler, finalHandler) {
 	};
 };
 
+function render(templateName, data) {
+	process.stdout.write(Handlebars.templates[templateName](data));
+}
+
 export {
 	prompt,
 	spin,
-	retry
+	retry,
+	render
 };
