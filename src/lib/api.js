@@ -32,6 +32,7 @@ class ParticleApi {
 		return when(this.api.login({ username: username, password: password }))
 			.then(result => {
 				this.accessToken = result.body.access_token;
+				return this.accessToken;
 			});
 	}
 

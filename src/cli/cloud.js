@@ -37,16 +37,14 @@ function doLogin(user, pass) {
 	return ui.spin(cloudLib.login(user, pass), 'Sending login details...')
 		.then(token => {
 			log.success('Successfully completed login!');
+			settings.override(null, 'username', user);
 			settings.override(null, 'access_token', token);
-			if (user) {
-				settings.override(null, 'username', user);
-			}
 		});
 }
 
 const cloud = {
 	login(opts) {
-		ui.retry(login, 3, (err) => {
+		return ui.retry(login, 3, (err) => {
 			log.warn("There was an error logging you in! Let's try again.");
 			log.error(err);
 		}, (err) => {
@@ -59,29 +57,27 @@ const cloud = {
 
 	logout(opts) {
 		// TODO ensure logged in first
-		const qs = [];
-		if (opts.revoke && !opts.password) {
-			qs.push(prompts.password());
-		}
-		if (!opts.revoke) {
-
-		}
-
-		if (opts.revoke) {
-			return pipeline([
-				() => {
-					if (qs.length) {
-						return ui.prompt(qs);
-					}
-					return when.resolve();
-				},
-				(ans) => {
+		return pipeline([
+			() => {
+				if (opts.revoke && !opts.password) {
+					return ui.prompt([prompts.password()]);
+				}
+				return;
+			},
+			(ans) => {
+				if (opts.revoke) {
 					const pass = opts.password || ans.password;
 					return cloudLib.removeAccessToken(settings.username, pass, settings.access_token);
+				} else {
+					return cloudLib.logout();
 				}
-			]);
-		}
-		return cloudLib.logout();
+			},
+			() => {
+				settings.override(null, 'username', null);
+				settings.override(null, 'access_token', null);
+				log.success('Successfully logged out!');
+			}
+		]);
 	},
 
 	listDevices(opts) {
