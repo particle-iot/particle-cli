@@ -43,13 +43,17 @@ function doLogin(user, pass) {
 }
 
 const cloud = {
-	login: ui.retry(login, 3, (err) => {
-		log.warn("There was an error logging you in! Let's try again.");
-		log.error(err);
-	}, (err) => {
-		log.error('Unable to login :(');
-		log.error(err);
-	}),
+	login(opts) {
+		ui.retry(login, 3, (err) => {
+			log.warn("There was an error logging you in! Let's try again.");
+			log.error(err);
+		}, (err) => {
+			log.error('Unable to login :(');
+			if (err) {
+				log.error(err);
+			}
+		})(opts);
+	},
 
 	logout(opts) {
 		// TODO ensure logged in first

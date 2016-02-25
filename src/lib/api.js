@@ -45,13 +45,19 @@ class ParticleApi {
 	}
 
 	listDevices() {
-		return when(this.api.listDevices({ auth: this.accessToken }))
-			.then(result => result.body)
-			.catch(this._checkToken);
+		return this._wrap(this.api.listDevices({ auth: this.accessToken }));
 	}
 
 	getDeviceAttributes(deviceId) {
-		return when(this.api.getDevice({ deviceId, auth: this.accessToken }))
+		return this._wrap(this.api.getDevice({ deviceId, auth: this.accessToken }));
+	}
+
+	claimDevice(deviceId, requestTransfer) {
+		return this._wrap(this.api.claimDevice({ deviceId, requestTransfer, auth: this.accessToken }));
+	}
+
+	_wrap(promise) {
+		return when(promise)
 			.then(result => result.body)
 			.catch(this._checkToken);
 	}
