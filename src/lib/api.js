@@ -3,6 +3,7 @@ import Particle from 'particle-api-js';
 import log from '../cli/log';
 import _ from 'lodash';
 import url from 'url';
+import chalk from 'chalk';
 
 class UnauthorizedError extends Error {
 	constructor(message) {
@@ -64,6 +65,14 @@ class ParticleApi {
 		return this._wrap(this.api.removeDevice({ deviceId, auth: this.accessToken }));
 	}
 
+	renameDevice(deviceId, name) {
+		return this._wrap(this.api.renameDevice({ deviceId, name, auth: this.accessToken }));
+	}
+
+	signalDevice(deviceId, signal) {
+		return this._wrap(this.api.signalDevice({ deviceId, signal, auth: this.accessToken }));
+	}
+
 	_wrap(promise) {
 		return when(promise)
 			.then(result => result.body)
@@ -82,7 +91,7 @@ class ParticleApi {
 			const parsedUrl = url.parse(req.url);
 			parsedUrl.query = req.qs;
 			const destUrl = url.format(parsedUrl);
-			log.silly('REQUEST');
+			log.silly(chalk.underline('REQUEST'));
 			log.silly(`${req.method.toUpperCase()} ${destUrl}`);
 			if (req.header && Object.keys(req.header).length) {
 				log.silly(_.map(req.header, (v, k) => {
@@ -100,9 +109,10 @@ class ParticleApi {
 				}
 				log.silly(clonedData);
 			}
+			log.silly();
 			req.on('response', res => {
-				log.silly();
-				log.silly('RESPONSE');
+				log.silly(chalk.underline('RESPONSE'));
+				log.silly(`${req.method.toUpperCase()} ${destUrl}`);
 				log.silly(res.statusCode);
 				log.silly(res.text);
 				log.silly();

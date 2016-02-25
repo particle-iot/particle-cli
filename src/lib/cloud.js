@@ -22,7 +22,11 @@ export default {
 		return api.removeAccessToken(user, pass, token);
 	},
 
-	listDevices(filter) {
+	listDevices() {
+		return api.listDevices();
+	},
+
+	listDevicesWithFunctionsAndVariables(filter) {
 		return pipeline([
 			api.listDevices.bind(api),
 			(devices) => {
@@ -62,5 +66,13 @@ export default {
 
 	removeDevice(deviceIdOrName) {
 		return api.removeDevice(deviceIdOrName);
+	},
+
+	renameDevice(deviceIdOrName, name) {
+		return api.renameDevice(deviceIdOrName, name);
+	},
+
+	signalDevice(deviceIdOrName, onOff) {
+		return api.signalDevice(deviceIdOrName, onOff);
 	}
 };

@@ -80,14 +80,23 @@ export default (app, cli) => {
 	}));
 
 	cloud.command(cli.createCommand('name', 'Change the friendly name of a device', {
-		params: '<deviceIDOrName> <name>',
+		params: '<deviceIdOrName> <name...>',
+		options: {
+			f: {
+				alias: 'force',
+				boolean: true,
+				description: 'Rename device without confirmation'
+			}
+		},
 		handler(argv) {
-			
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			argv.name = argv.params.name.join('-');
+			return cloudCli.renameDevice(argv);
 		}
 	}));
 
 	cloud.command(cli.createCommand('flash', 'Flash a binary, source file, or source directory to a device over the air', {
-		params: '<deviceIDOrName> <filesOrFolder...>',
+		params: '<deviceIdOrName> <filesOrFolder...>',
 		options: {
 		},
 		handler(argv) {
@@ -105,11 +114,13 @@ export default (app, cli) => {
 	}));
 
 	cloud.command(cli.createCommand('nyan', 'Commands your device to start/stop shouting rainbows', {
-		params: '[deviceIDOrName] [onOff]',
+		params: '[deviceIdOrName] [onOff]',
 		options: {
 		},
 		handler(argv) {
-			
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			argv.onOff = argv.params.onOff;
+			return cloudCli.signal(argv);
 		}
 	}));
 

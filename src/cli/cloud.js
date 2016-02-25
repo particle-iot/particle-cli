@@ -1,7 +1,9 @@
 import when from 'when';
 import pipeline from 'when/pipeline';
+import _ from 'lodash';
 
 import * as ui from './ui';
+import chalk from 'chalk';
 import prompts from './prompts';
 import cloudLib from '../lib/cloud';
 import { UnauthorizedError } from '../lib/api';
@@ -85,7 +87,7 @@ const cloud = {
 	listDevices(opts) {
 		return pipeline([
 			() => {
-				return ui.spin(cloudLib.listDevices(opts.filter), 'Retrieving device functions and variables...');
+				return ui.spin(cloudLib.listDevicesWithFunctionsAndVariables(opts.filter), 'Retrieving device functions and variables...');
 			},
 			(devices) => {
 				if (devices.length === 0) {
@@ -157,6 +159,87 @@ const cloud = {
 		}
 
 		return doRemove();
+	},
+
+	renameDevice(opts) {
+		const name = opts.name.replace(' ', '-');
+		function doRename() {
+			return cloudLib.renameDevice(opts.deviceIdOrName, name)
+				.then(() => {
+					log.success(`Successfully renamed device ${opts.deviceIdOrName} to ${name}`);
+				})
+				.catch(err => {
+					const error = err && err.body && err.body.info;
+					return when.reject(error || err);
+				});
+		}
+
+		if (!opts.force) {
+			if (!global.isInteractive) {
+				return when.reject('Confirmation required, use -f argument to force renaming.');
+			}
+
+			return ui.prompt([prompts.areYouSure(`you want to rename device ${chalk.cyan.bold(opts.deviceIdOrName)} to ${chalk.cyan.bold(name)}`)])
+				.then(ans => {
+					if (ans.sure) {
+						return doRename();
+					}
+					log.warn('Device was not renamed');
+				});
+		}
+		return doRename();
+	},
+
+	signal(opts) {
+		let onOff = !opts.onOff || opts.onOff === 'on';
+		let deviceId = opts.deviceIdOrName;
+		switch (deviceId) {
+			case 'on':
+				deviceId = undefined;
+				onOff = true;
+				break;
+			case 'off':
+				deviceId = undefined;
+				onOff = false;
+				break;
+			case 'all':
+				deviceId = undefined;
+				break;
+		}
+
+		if (deviceId) {
+			return cloudLib.signalDevice(deviceId, onOff)
+				.then(() => {
+					log.success(`${deviceId} is ${onOff ? 'shouting rainbows' : 'back to normal'}`);
+				});
+		}
+
+		return pipeline([
+			() => {
+				if (deviceId) {
+					return [deviceId];
+				}
+
+				return cloudLib.listDevices().then(devices => {
+					return _.chain(devices).filter('connected').map('id').value();
+				});
+			},
+			(deviceIds) => {
+				return when.settle(deviceIds.map(id => {
+					return cloudLib.signalDevice(id, onOff).catch(err => {
+						const errors = err && err.body && err.body.errors;
+						return when.reject(errors || err);
+					});
+				}));
+			}
+		]).then(results => {
+			const segmentedResults = _.groupBy(results, 'state');
+			log.success(`${segmentedResults.fulfilled.length} device(s) ${onOff ? 'shouting rainbows' : 'back to normal'}`);
+			if (segmentedResults.rejected.length) {
+				log.warn(`${segmentedResults.rejected.length} device(s) unable to signal:`);
+				segmentedResults.rejected.forEach(r => log.warn(r.reason));
+			}
+		});
 	}
 };
 
