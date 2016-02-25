@@ -113,6 +113,7 @@
     "test": "mocha test/ --compilers js:babel-register",
     "compile": "babel src -d dist",
     "templates": "handlebars ./templates/*.hbs -f ./dist/templates.js -c handlebars -e hbs",
+    "watch": "babel src --watch -d dist",
     "prepublish": "npm run templates && npm run compile"
   }
 }
