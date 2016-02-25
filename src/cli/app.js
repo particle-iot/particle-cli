@@ -51,8 +51,9 @@ function addGlobalSetup(cat) {
 
 function addGlobalOptions(yargs) {
 	_.each(app.options.options, function addGlobalOption(opt, name) {
-		yargs.option(name, opt);
+		yargs.option(name, opt).group(name, 'Global Options:');
 	});
+	yargs.group('help', 'Global Options:');
 }
 
 export default {

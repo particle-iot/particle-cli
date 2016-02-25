@@ -36,7 +36,9 @@ class Category {
 			this.options.setup(yargs);
 		}
 		if (this.options.examples) {
-			_.forEach(this.options.examples, yargs.example.bind(yargs));
+			_.forEach(this.options.examples, e => {
+				yargs.example(e);
+			});
 		}
 		if (this.options.version) {
 			yargs.version(this.options.version);
@@ -104,7 +106,9 @@ class Command {
 			this.options.setup(yargs);
 		}
 		if (this.options.examples) {
-			_.forEach(this.options.examples, yargs.example.bind(yargs));
+			_.forEach(this.options.examples, e => {
+				yargs.example(e);
+			});
 		}
 		if (this.options.version) {
 			yargs.version(this.options.version);

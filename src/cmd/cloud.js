@@ -5,14 +5,14 @@ export default (app, cli) => {
 
 	cloud.command(cli.createCommand('login', 'Login and save an access token for interacting with your account on the Particle Cloud', {
 		options: {
-			username: {
-				alias: 'u',
+			u: {
+				alias: 'username',
 				string: true,
 				description: 'Username',
 				required: !global.isInteractive
 			},
-			password: {
-				alias: 'p',
+			p: {
+				alias: 'password',
 				string: true,
 				description: 'Password',
 				required: !global.isInteractive
@@ -115,8 +115,13 @@ export default (app, cli) => {
 
 	cloud.command(cli.createCommand('nyan', 'Commands your device to start/stop shouting rainbows', {
 		params: '[deviceIdOrName] [onOff]',
-		options: {
-		},
+		examples: [
+			'$0 cloud nyan my_device_id on',
+			'$0 cloud nyan my_device_id off',
+			'$0 cloud nyan all on',
+			'$0 cloud nyan on',
+			'$0 cloud nyan off',
+		],
 		handler(argv) {
 			argv.deviceIdOrName = argv.params.deviceIdOrName;
 			argv.onOff = argv.params.onOff;
