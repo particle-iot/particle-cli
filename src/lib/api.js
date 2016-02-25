@@ -1,5 +1,8 @@
 import when from 'when';
 import Particle from 'particle-api-js';
+import log from '../cli/log';
+import _ from 'lodash';
+import url from 'url';
 
 class UnauthorizedError extends Error {
 	constructor(message) {
@@ -19,6 +22,7 @@ class ParticleApi {
 			clientId: options.clientId || 'particle-cli',
 			clientSecret: 'particle-cli',
 			tokenDuration: 7776000, // 90 days
+			debug: this._debug.bind(this)
 		});
 		this.accessToken = options.accessToken;
 	}
@@ -67,6 +71,31 @@ class ParticleApi {
 			return when.reject(new UnauthorizedError());
 		}
 		return when.reject(err);
+	}
+
+	_debug(req) {
+		if (global.verboseLevel > 2) {
+			const parsedUrl = url.parse(req.url);
+			parsedUrl.query = req.qs;
+			const destUrl = url.format(parsedUrl);
+			log.silly('REQUEST');
+			log.silly(`${req.method.toUpperCase()} ${destUrl}`);
+			if (Object.keys(req.header).length) {
+				log.silly(_.map(req.header, (v, k) => `${k}: ${v.replace(this.accessToken, '<redacted>')}`).join('\n'));
+			}
+			const clonedData = Object.assign({}, req._data);
+			if (clonedData.password) {
+				clonedData.password = '<redacted>';
+			}
+			log.silly(clonedData);
+			req.on('response', res => {
+				log.silly();
+				log.silly('RESPONSE');
+				log.silly(res.statusCode);
+				log.silly(res.text);
+				log.silly();
+			});
+		}
 	}
 };
 
