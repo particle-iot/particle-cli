@@ -16,6 +16,27 @@ class FilteredLogStream extends stream.Transform {
 }
 
 export default {
+	silly() {
+		if (global.verboseLevel < 3) {
+			return;
+		}
+		console.log(...arguments);
+	},
+
+	verbose() {
+		if (global.verboseLevel < 2) {
+			return;
+		}
+		console.log(...arguments);
+	},
+
+	debug() {
+		if (global.verboseLevel < 1) {
+			return;
+		}
+		console.log(...arguments);
+	},
+
 	info() {
 		console.log(...arguments);
 	},
@@ -26,13 +47,6 @@ export default {
 
 	success() {
 		console.log(chalk.green('>'), ...arguments);
-	},
-
-	verbose() {
-		if (global.verboseLevel < 1) {
-			return;
-		}
-		console.log(...arguments);
 	},
 
 	error() {

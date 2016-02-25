@@ -19,7 +19,7 @@ function prompt(qs) {
 }
 
 function spin(promise, str) {
-	if (!global.isInteractive) {
+	if (!global.isInteractive || global.verboseLevel > 0) {
 		return promise;
 	}
 
