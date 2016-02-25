@@ -47,8 +47,8 @@ export default {
 						return devices.filter(d => d.connected);
 					case (filter === 'offline'):
 						return devices.filter(d => !d.connected);
-					case (Object.keys(platformsByName).indexOf(filter) >= 0):
-						return devices.filter(d => d.platform_id === platformsByName[filter]);
+					case (Object.keys(platformsByName).indexOf(filter.toLowerCase()) >= 0):
+						return devices.filter(d => d.platform_id === platformsByName[filter.toLowerCase()]);
 					default:
 						return devices.filter(d => d.name === filter || d.id === filter);
 				}
