@@ -65,9 +65,17 @@ export default (app, cli) => {
 	}));
 
 	cloud.command(cli.createCommand('remove', 'Release a device from your account', {
-		params: '<deviceIDOrName>',
+		params: '<deviceIdOrName>',
+		options: {
+			f: {
+				alias: 'force',
+				boolean: true,
+				description: 'Remove device without confirmation'
+			}
+		},
 		handler(argv) {
-			
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			return cloudCli.removeDevice(argv);
 		}
 	}));
 

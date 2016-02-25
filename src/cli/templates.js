@@ -10,9 +10,9 @@ Handlebars.registerHelper({
 		return chalklib[color][strength](options.fn(this));
 	},
 	defaultValue(val, defaultVal) {
-		return val || defaultVal;
+		return new Handlebars.SafeString(val || defaultVal);
 	},
 	printIf(val, trueVal, falseVal) {
-		return val ? trueVal : falseVal;
+		return new Handlebars.SafeString(val ? trueVal : falseVal);
 	}
 });

@@ -128,6 +128,35 @@ const cloud = {
 				}
 				return when.reject(msg);
 			});
+	},
+
+	removeDevice(opts) {
+		function doRemove() {
+			return cloudLib.removeDevice(opts.deviceIdOrName)
+				.then(() => {
+					log.success(`Successfully removed device ${opts.deviceIdOrName} from your account`);
+				})
+				.catch(err => {
+					const error = err && err.body && err.body.info;
+					return when.reject(error || err);
+				});
+		}
+
+		if (!opts.force) {
+			if (!global.isInteractive) {
+				return when.reject('Confirmation required, use -f argument to force removal.');
+			}
+
+			return ui.prompt([prompts.areYouSure(`you want to remove device ${opts.deviceIdOrName} from your account`)])
+				.then(ans => {
+					if (ans.sure) {
+						return doRemove();
+					}
+					log.warn('Device was not removed');
+				});
+		}
+
+		return doRemove();
 	}
 };
 

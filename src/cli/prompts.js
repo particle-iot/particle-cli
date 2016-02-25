@@ -35,5 +35,14 @@ export default {
 			message: 'That device belongs to someone else. Would you like to request a transfer?',
 			default: true
 		};
+	},
+
+	areYouSure(msg) {
+		return {
+			type: 'confirm',
+			name: 'sure',
+			message: `Are you sure ${msg}?`,
+			default: false
+		};
 	}
 };

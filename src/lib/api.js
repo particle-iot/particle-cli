@@ -60,6 +60,10 @@ class ParticleApi {
 		return this._wrap(this.api.claimDevice({ deviceId, requestTransfer, auth: this.accessToken }));
 	}
 
+	removeDevice(deviceId) {
+		return this._wrap(this.api.removeDevice({ deviceId, auth: this.accessToken }));
+	}
+
 	_wrap(promise) {
 		return when(promise)
 			.then(result => result.body)
