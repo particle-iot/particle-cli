@@ -19,6 +19,10 @@ const app = cli.createApp({
 		'non-interactive': {
 			boolean: true,
 			description: 'Run in non-interactive mode. This means all required data must be passed as command line arguments.'
+		},
+		'json': {
+			boolean: true,
+			description: 'Output in JSON format instead of human friendly'
 		}
 	},
 	version: pkg.version,
@@ -26,6 +30,7 @@ const app = cli.createApp({
 	setup(yargs) {
 		global.isInteractive = tty.isatty(process.stdin) && !yargs.argv.nonInteractive;
 		global.verboseLevel = yargs.argv.verbose;
+		global.outputJson = yargs.argv.json;
 		commands(app, cli);
 		_.each(app.commands, addGlobalSetup);
 	}

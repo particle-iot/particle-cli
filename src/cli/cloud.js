@@ -88,7 +88,7 @@ const cloud = {
 					return log.info('No devices claimed to your account');
 				}
 
-				ui.render('deviceList', { devices, platformsById });
+				ui.render('deviceList', devices, { platformsById });
 			}
 		]).catch(UnauthorizedError, () => {
 			log.error('Not logged in');

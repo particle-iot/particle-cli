@@ -1,4 +1,4 @@
-{{#each devices}}
+{{#each data}}
   {{~#if connected}}{{#chalk 'cyan' 'bold'}}{{defaultValue name '<no name>'}}{{/chalk}}{{else}}{{#chalk 'cyan' 'dim'}}{{defaultValue name '<no name>'}}{{/chalk}}{{/if}} [{{id}}] ({{lookup @root.platformsById platform_id}}) is {{printIf connected 'online' 'offline'}}
   {{#if variables.length}}
   Variables:

@@ -55,8 +55,12 @@ function retry(fToRetry, times, handler, finalHandler) {
 	};
 };
 
-function render(templateName, data) {
-	process.stdout.write(Handlebars.templates[templateName](data));
+function render(templateName, data, supportingData) {
+	if (global.outputJson) {
+		process.stdout.write(JSON.stringify(data, null, 2));
+		return;
+	}
+	process.stdout.write(Handlebars.templates[templateName](Object.assign({ data }, supportingData)));
 }
 
 export {
