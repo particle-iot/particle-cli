@@ -54,5 +54,9 @@ export default {
 				}
 			}
 		]);
+	},
+
+	claimDevice(deviceId, requestTransfer) {
+		return api.claimDevice(deviceId, requestTransfer);
 	}
 };

@@ -50,9 +50,17 @@ export default (app, cli) => {
 	}));
 
 	cloud.command(cli.createCommand('claim', 'Claim a device to your account', {
-		params: '<deviceID>',
+		params: '<deviceId>',
+		options: {
+			t: {
+				alias: 'request-transfer',
+				boolean: true,
+				description: 'Automatically request transfer if necessary'
+			}
+		},
 		handler(argv) {
-			
+			argv.deviceId = argv.params.deviceId;
+			return cloudCli.claimDevice(argv);
 		}
 	}));
 

@@ -26,5 +26,14 @@ export default {
 				return true;
 			}
 		};
+	},
+
+	requestTransfer() {
+		return {
+			type: 'confirm',
+			name: 'transfer',
+			message: 'That device belongs to someone else. Would you like to request a transfer?',
+			default: true
+		};
 	}
 };

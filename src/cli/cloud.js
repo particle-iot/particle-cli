@@ -97,6 +97,37 @@ const cloud = {
 		]).catch(UnauthorizedError, () => {
 			log.error('Not logged in');
 		});
+	},
+
+	claimDevice(opts) {
+		return ui.spin(cloudLib.claimDevice(opts.deviceId, opts.requestTransfer),
+			`Claiming device ${opts.deviceId}`)
+			.then(body => {
+				if (opts.requestTransfer && body.transfer_id) {
+					log.success(`Transfer #${body.transfer_id} requested. You will receive an email if your transfer is approved or denied.`);
+					return;
+				}
+				log.success(`Successfully claimed device ${opts.deviceId}`);
+			})
+			.catch(err => {
+				const errors = err && err.body && err.body.errors;
+				const msg = `Error claiming device: ${errors || err}`;
+				if (errors && errors.join('\n').indexOf('That belongs to someone else.') >= 0) {
+					if (global.isInteractive) {
+						return ui.prompt([prompts.requestTransfer()]).then(ans => {
+							if (ans.transfer) {
+								return cloudLib.claimDevice(opts.deviceId, true).then(body => {
+									log.success(`Transfer #${body.transfer_id} requested. You will receive an email if your transfer is approved or denied.`);
+								}).catch(err => {
+									return when.reject(err);
+								});
+							}
+							return when.reject(msg);
+						});
+					}
+				}
+				return when.reject(msg);
+			});
 	}
 };
 
