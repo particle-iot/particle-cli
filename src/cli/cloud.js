@@ -1,5 +1,6 @@
 import when from 'when';
 import pipeline from 'when/pipeline';
+import { deviceList } from './templates';
 
 import * as ui from './ui';
 import prompts from './prompts';
@@ -7,6 +8,7 @@ import cloudLib from '../lib/cloud';
 import { UnauthorizedError } from '../lib/api';
 import log from './log';
 import settings from '../../settings';
+import { platformsById } from '../lib/constants';
 
 function login(opts) {
 	const qs = [];
@@ -50,7 +52,7 @@ const cloud = {
 		log.error(err);
 	}),
 
-	logout: (opts) => {
+	logout(opts) {
 		// TODO ensure logged in first
 		const qs = [];
 		if (opts.revoke && !opts.password) {
@@ -77,17 +79,21 @@ const cloud = {
 		return cloudLib.logout();
 	},
 
-	listDevices: (opts) => {
-		cloudLib.listDevices()
-			.then(data => {
-				console.log(data);
-			})
-			.catch(UnauthorizedError, () => {
-				log.error('Not logged in');
-			})
-			.catch(err => {
-				log.error('ERROR', err);
-			});
+	listDevices(opts) {
+		return pipeline([
+			() => {
+				return ui.spin(cloudLib.listDevices(opts.filter), 'Retrieving device functions and variables...');
+			},
+			(devices) => {
+				if (devices.length === 0) {
+					return log.info('No devices claimed to your account');
+				}
+
+				console.log(deviceList({ devices, platformsById }));
+			}
+		]).catch(UnauthorizedError, () => {
+			log.error('Not logged in');
+		});
 	}
 };
 

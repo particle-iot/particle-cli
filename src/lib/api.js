@@ -50,6 +50,12 @@ class ParticleApi {
 			.catch(this._checkToken);
 	}
 
+	getDeviceAttributes(deviceId) {
+		return when(this.api.getDevice({ deviceId, auth: this.accessToken }))
+			.then(result => result.body)
+			.catch(this._checkToken);
+	}
+
 	_checkToken(err) {
 		if (err.statusCode === 401) {
 			return when.reject(new UnauthorizedError());

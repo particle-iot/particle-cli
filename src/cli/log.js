@@ -39,6 +39,10 @@ export default {
 		console.error(chalk.red('!'), ...arguments);
 	},
 
+	fatal() {
+		console.error(chalk.red(...arguments));
+	},
+
 	serialInput(data) {
 		if (global.verboseLevel < 2) {
 			return;

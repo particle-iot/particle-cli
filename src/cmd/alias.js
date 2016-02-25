@@ -1,8 +1,17 @@
+import _ from 'lodash';
+
 export default (app, cli) => {
 	function alias(category, aliasName, path) {
 		let cmd = app;
 		path.forEach(p => {
-			cmd = cmd.commands[p];
+			let tcmd = cmd.commands[p];
+			// for commands with positional arguments, do a split then compare
+			if (!tcmd) {
+				tcmd = _.find(cmd.commands, (c, cmdName) => {
+					return cmdName.split(' ')[0] === p;
+				});
+			}
+			cmd = tcmd;
 		});
 		category.command(cli.createCommand(aliasName, cmd.description, cmd.options));
 	}

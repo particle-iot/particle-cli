@@ -23,7 +23,7 @@ const app = cli.createApp({
 	},
 	version: pkg.version,
 	epilogue: 'For more information, visit our documentation at https://docs.particle.io\n\nparticle-cli ' + pkg.version,
-	setup: yargs => {
+	setup(yargs) {
 		global.isInteractive = tty.isatty(process.stdin) && !yargs.argv.nonInteractive;
 		global.verboseLevel = yargs.argv.verbose;
 		commands(app, cli);
@@ -32,7 +32,15 @@ const app = cli.createApp({
 });
 
 function addGlobalSetup(cat) {
-	cat.options.setup = addGlobalOptions;
+	if (!cat.options.setup) {
+		cat.options.setup = addGlobalOptions;
+	} else {
+		const oldFunc = cat.options.setup;
+		cat.options.setup = (yargs) => {
+			oldFunc(yargs);
+			addGlobalSetup(yargs);
+		};
+	}
 	_.each(cat.commands, addGlobalSetup);
 }
 

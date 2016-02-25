@@ -17,7 +17,7 @@ function check() {
 		const lastCheck = settings.profile_json.last_version_check || 0;
 		if (now - lastCheck >= settings.updateCheckInterval) {
 			settings.profile_json.last_version_check = now;
-			checkVersion.then(() => {
+			checkVersion().then(() => {
 				settings.saveProfileData();
 				start();
 				resolve();

@@ -33,30 +33,39 @@ export default (app, cli) => {
 				description: 'Password'
 			}
 		},
-		handler: cloudCli.logout
+		handler: cloudCli.logout,
+		setup(yargs) {
+			if (!global.isInteractive && yargs.argv.revoke) {
+				yargs.demand('password');
+			}
+		}
 	}));
 
 	cloud.command(cli.createCommand('list', 'Displays a list of your devices, along with their variables and functions', {
-		handler: cloudCli.listDevices
+		params: '[filter]',
+		handler(argv) {
+			argv.filter = argv.params.filter;
+			return cloudCli.listDevices(argv);
+		}
 	}));
 
 	cloud.command(cli.createCommand('claim', 'Claim a device to your account', {
 		params: '<deviceID>',
-		handler: function(argv) {
+		handler(argv) {
 			
 		}
 	}));
 
 	cloud.command(cli.createCommand('remove', 'Release a device from your account', {
 		params: '<deviceIDOrName>',
-		handler: function(argv) {
+		handler(argv) {
 			
 		}
 	}));
 
 	cloud.command(cli.createCommand('name', 'Change the friendly name of a device', {
 		params: '<deviceIDOrName> <name>',
-		handler: function(argv) {
+		handler(argv) {
 			
 		}
 	}));
@@ -65,7 +74,7 @@ export default (app, cli) => {
 		params: '<deviceIDOrName> <filesOrFolder...>',
 		options: {
 		},
-		handler: function(argv) {
+		handler(argv) {
 			
 		}
 	}));
@@ -74,7 +83,7 @@ export default (app, cli) => {
 		params: '<deviceType> <filesOrFolder...>',
 		options: {
 		},
-		handler: function(argv) {
+		handler(argv) {
 			
 		}
 	}));
@@ -83,7 +92,7 @@ export default (app, cli) => {
 		params: '[deviceIDOrName] [onOff]',
 		options: {
 		},
-		handler: function(argv) {
+		handler(argv) {
 			
 		}
 	}));
