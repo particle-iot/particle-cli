@@ -15,6 +15,15 @@ const event = {
 			eventName = undefined;
 		}
 
+		const eventLabel = eventName ? `"${eventName}"` : 'all events';
+		if (!deviceIdOrName) {
+			log.success(`Subscribing to ${eventLabel} from the firehose (all devices)`);
+		} else if (deviceIdOrName === 'mine') {
+			log.success(`Subscribing to ${eventLabel} from your personal stream (your devices only)`);
+		} else {
+			log.success(`Subscribing to ${eventLabel} from ${deviceIdOrName}'s stream`);
+		}
+
 		return eventLib.subscribe(deviceIdOrName, eventName).then(req => {
 			return when.promise((resolve, reject) => {
 				req.on('event', e => {
@@ -22,6 +31,10 @@ const event = {
 				});
 				req.on('error', reject);
 			});
+		}).catch(err => {
+			const errors = err && err.body && err.body.info;
+			return when.reject(errors || err);
+		});
 	},
 
 	publish(opts) {
