@@ -1,6 +1,7 @@
 import Handlebars from 'handlebars';
 import '../templates';
 import chalklib from 'chalk';
+import momentjs from 'moment';
 
 Handlebars.registerHelper({
 	lookup(hash, key) {
@@ -14,5 +15,11 @@ Handlebars.registerHelper({
 	},
 	printIf(val, trueVal, falseVal) {
 		return new Handlebars.SafeString(val ? trueVal : falseVal);
+	},
+	moment(date, format) {
+		return new Handlebars.SafeString(momentjs(date).format(format));
+	},
+	tab() {
+		return new Handlebars.SafeString('\t');
 	}
 });

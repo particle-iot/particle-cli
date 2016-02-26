@@ -92,6 +92,10 @@ class ParticleApi {
 		});
 	}
 
+	getEventStream(deviceId, name) {
+		return this.api.getEventStream({ deviceId, name, auth: this.accessToken });
+	}
+
 	_wrap(promise) {
 		return when(promise)
 			.then(result => result.body)
@@ -107,13 +111,21 @@ class ParticleApi {
 
 	_debug(req) {
 		if (global.verboseLevel > 3) {
-			const parsedUrl = url.parse(req.url);
-			parsedUrl.query = req.qs;
-			const destUrl = url.format(parsedUrl);
+			const request = req.url ? req : req.req;
+			let destUrl;
+			// superagent vs plain http
+			if (request.url) {
+				const parsedUrl = url.parse(request.url);
+				parsedUrl.query = request.qs;
+				destUrl = url.format(parsedUrl);
+			} else {
+				destUrl = `${request.path}`;
+			}
 			log.silly(chalk.underline('REQUEST'));
-			log.silly(`${req.method.toUpperCase()} ${destUrl}`);
-			if (req.header && Object.keys(req.header).length) {
-				log.silly(_.map(req.header, (v, k) => {
+			log.silly(`${request.method.toUpperCase()} ${destUrl}`);
+			const headers = (request.header || request._headers);
+			if (headers && Object.keys(headers).length) {
+				log.silly(_.map(headers, (v, k) => {
 					let val = v;
 					if (k === 'authorization') {
 						val = val.replace(this.accessToken, '<redacted>');
@@ -121,8 +133,8 @@ class ParticleApi {
 					return `${k}: ${val}`;
 				}).join('\n'));
 			}
-			if (req._data && Object.keys(req._data).length) {
-				const clonedData = Object.assign({}, req._data);
+			if (request._data && Object.keys(request._data).length) {
+				const clonedData = Object.assign({}, request._data);
 				if (clonedData.password) {
 					clonedData.password = '<redacted>';
 				}
@@ -131,10 +143,10 @@ class ParticleApi {
 			log.silly();
 			req.on('response', res => {
 				log.silly(chalk.underline('RESPONSE'));
-				log.silly(`${req.method.toUpperCase()} ${destUrl}`);
+				log.silly(`${request.method.toUpperCase()} ${destUrl}`);
 				log.silly(res.statusCode);
-				if (res.text) {
-					log.silly(res.text);
+				if (res.text || res.body) {
+					log.silly(res.text || res.body);
 				}
 				log.silly();
 			});
