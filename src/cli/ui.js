@@ -3,6 +3,7 @@ import when from 'when';
 import { Spinner } from 'cli-spinner';
 import './templates';
 import Handlebars from 'handlebars';
+import log from './log';
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 
@@ -19,7 +20,11 @@ function prompt(qs) {
 }
 
 function spin(promise, str) {
-	if (!global.isInteractive || global.verboseLevel > 0) {
+	if (!global.isInteractive) {
+		return promise;
+	}
+	if (global.verboseLevel > 1) {
+		log.debug(str);
 		return promise;
 	}
 
