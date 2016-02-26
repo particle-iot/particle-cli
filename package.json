@@ -57,7 +57,7 @@
     "hogan.js": "^2.0.0",
     "inquirer": "^0.11.2",
     "latest-version": "^2.0.0",
-    "lodash": "^3.10.1",
+    "lodash": "^4.5.1",
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.1.1",
     "particle-api-js": "^5.0.2",

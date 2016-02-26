@@ -107,9 +107,20 @@ export default (app, cli) => {
 	cloud.command(cli.createCommand('compile', 'Compiles one or more source files or a directory of source to a firmware binary for your device', {
 		params: '<deviceType> <filesOrFolder...>',
 		options: {
+			t: {
+				alias: 'target',
+				type: 'string',
+				description: 'System firmware version you wish to compile against'
+			},
+			saveTo: {
+				type: 'string',
+				description: 'File path where you want to save the compiled firmware binary'
+			}
 		},
 		handler(argv) {
-			
+			argv.deviceType = argv.params.deviceType;
+			argv.filesOrFolder = argv.params.filesOrFolder;
+			return cloudCli.compileCode(argv);
 		}
 	}));
 

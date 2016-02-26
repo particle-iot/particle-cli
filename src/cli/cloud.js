@@ -1,4 +1,8 @@
+import fs from 'fs';
+import path from 'path';
+
 import when from 'when';
+import whenNode from 'when/node';
 import pipeline from 'when/pipeline';
 import _ from 'lodash';
 
@@ -235,6 +239,31 @@ const cloud = {
 				log.warn(`${segmentedResults.rejected.length} device(s) unable to signal:`);
 				segmentedResults.rejected.forEach(r => log.warn(r.reason));
 			}
+		});
+	},
+
+	compileCode(opts) {
+		const downloadPath = path.resolve(opts.saveTo || `${opts.deviceType}_firmware_${Date.now()}.bin`);
+
+		return pipeline([
+			() => {
+				return whenNode.lift(fs.stat)(downloadPath).then(() => {
+					log.silly(`Deleting ${downloadPath} before download`);
+					return whenNode.lift(fs.unlink)(downloadPath);
+				}, () => {});
+			},
+			() => {
+				return ui.spin(cloudLib.compileCode(opts), 'Compiling');
+			},
+			(resp) => {
+				return ui.spin(cloudLib.downloadFirmwareBinary(resp.binary_id, downloadPath), `Downloading to ${downloadPath}`)
+					.then(() => {
+						log.success(`Downloaded to ${downloadPath}`);
+						log.info(resp.sizeInfo);
+					});
+			}
+		]).catch(err => {
+			console.log(err);
 		});
 	}
 };

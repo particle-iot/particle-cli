@@ -1,3 +1,4 @@
+import fs from 'fs';
 import when from 'when';
 import Particle from 'particle-api-js';
 import log from '../cli/log';
@@ -74,6 +75,23 @@ class ParticleApi {
 		return this._wrap(this.api.signalDevice({ deviceId, signal, auth: this.accessToken }));
 	}
 
+	listBuildTargets(onlyFeatured) {
+		return this._wrap(this.api.listBuildTargets({ onlyFeatured, auth: this.accessToken }));
+	}
+
+	compileCode(files, platformId, targetVersion) {
+		return this._wrap(this.api.compileCode({ files, platformId, targetVersion, auth: this.accessToken }));
+	}
+
+	downloadFirmwareBinary(binaryId, downloadPath) {
+		return when.promise((resolve, reject) => {
+			const req = this.api.downloadFirmwareBinary({ binaryId, auth: this.accessToken });
+			req.pipe(fs.createWriteStream(downloadPath))
+				.on('error', reject)
+				.on('finish', resolve);
+		});
+	}
+
 	_wrap(promise) {
 		return when(promise)
 			.then(result => result.body)
@@ -88,7 +106,7 @@ class ParticleApi {
 	}
 
 	_debug(req) {
-		if (global.verboseLevel > 2) {
+		if (global.verboseLevel > 3) {
 			const parsedUrl = url.parse(req.url);
 			parsedUrl.query = req.qs;
 			const destUrl = url.format(parsedUrl);
@@ -115,7 +133,9 @@ class ParticleApi {
 				log.silly(chalk.underline('RESPONSE'));
 				log.silly(`${req.method.toUpperCase()} ${destUrl}`);
 				log.silly(res.statusCode);
-				log.silly(res.text);
+				if (res.text) {
+					log.silly(res.text);
+				}
 				log.silly();
 			});
 		}
