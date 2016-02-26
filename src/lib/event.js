@@ -8,5 +8,9 @@ const api = new ParticleApi(settings.apiUrl, {
 export default {
 	subscribe(deviceId, name) {
 		return api.getEventStream(deviceId, name);
+	},
+
+	publish(name, data, isPrivate) {
+		return api.publishEvent(name, data, isPrivate);
 	}
 };

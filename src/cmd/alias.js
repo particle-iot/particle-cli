@@ -12,6 +12,7 @@ export default (app, cli) => {
 	alias(app, 'list', ['cloud', 'list']);
 	alias(app, 'nyan', ['cloud', 'nyan']);
 	alias(app, 'compile', ['cloud', 'compile']);
+	alias(app, 'publish', ['event', 'publish']);
 	alias(app, 'subscribe', ['event', 'subscribe']);
 
 	const device = cli.createCategory('device', 'Commands to manipulate a device');

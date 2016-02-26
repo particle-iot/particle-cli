@@ -96,6 +96,10 @@ class ParticleApi {
 		return this.api.getEventStream({ deviceId, name, auth: this.accessToken });
 	}
 
+	publishEvent(name, data, isPrivate) {
+		return this.api.publishEvent({ name, data, isPrivate, auth: this.accessToken });
+	}
+
 	_wrap(promise) {
 		return when(promise)
 			.then(result => result.body)

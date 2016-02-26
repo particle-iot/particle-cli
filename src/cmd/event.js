@@ -12,5 +12,21 @@ export default (app, cli) => {
 		}
 	}));
 
+	event.command(cli.createCommand('publish', 'Publish an event to the event stream', {
+		params: '<eventName> [data]',
+		options: {
+			private: {
+				boolean: true,
+				default: false,
+				description: 'Publish the event to the private data stream for your devices only'
+			}
+		},
+		handler(argv) {
+			argv.data = argv.params.data;
+			argv.eventName = argv.params.eventName;
+			return eventCli.publish(argv);
+		}
+	}));
+
 	app.command(event);
 };

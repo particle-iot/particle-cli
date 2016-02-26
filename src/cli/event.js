@@ -1,6 +1,7 @@
 import when from 'when';
 import eventLib from '../lib/event';
 import * as ui from './ui';
+import log from './log';
 
 const event = {
 	subscribe(opts) {
@@ -21,6 +22,11 @@ const event = {
 				});
 				req.on('error', reject);
 			});
+	},
+
+	publish(opts) {
+		return eventLib.publish(opts.eventName, opts.data, opts.private).then(() => {
+			log.success(`Successfully published event ${opts.eventName}`);
 		});
 	}
 };
