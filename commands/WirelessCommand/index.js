@@ -591,6 +591,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				arrow,
 				'Your Photon failed to scan for nearby Wi-Fi networks.'
 			);
+			prompt([{
+
+				type: 'confirm',
+				name: 'manual',
+				message: 'Would you like to manually enter your Wi-Fi network configuration?',
+				default: true
+
+			}], scanChoice);
 			return;
 		}
 
