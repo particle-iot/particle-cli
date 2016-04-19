@@ -585,16 +585,17 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function start() {
 
 		clearTimeout(retry);
-		sap.scan(results).on('error', function(err) {
 
+		if (retries >= 9) { // scan has failed 10 times already
+			console.log(
+				arrow,
+				'Your Photon failed to scan for nearby Wi-Fi networks.'
+			);
+			return;
+		}
+
+		sap.scan(results).on('error', function(err) {
 			if (err.code === 'ECONNRESET') {
-				return;
-			}
-			if (retries >= 9) {
-				console.log(
-					arrow,
-					'Your Photon failed to scan for nearby Wi-Fi networks.'
-				);
 				return;
 			}
 			retry = setTimeout(start, 2000);
