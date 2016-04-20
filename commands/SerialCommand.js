@@ -68,7 +68,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	init: function () {
 		this.addOption('list', this.listDevices.bind(this), 'Show devices connected via serial to your computer');
-		this.addOption('monitor', this.monitorPort.bind(this), 'Connect and display messages from a device');
+		this.addOption('monitor', this.monitorSwitch.bind(this), 'Connect and display messages from a device');
 		this.addOption('identify', this.identifyDevice.bind(this), 'Ask for and display device ID via serial');
 		this.addOption('wifi', this.configureWifi.bind(this), 'Configure Wi-Fi credentials over serial');
 		this.addOption('mac', this.deviceMac.bind(this), 'Ask for and display MAC address via serial');
@@ -169,37 +169,117 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		}
 	},
 
+	// TODO: Unfortunately we have to use this switch function in order to remove
+	// the "--follow" argument before passing on to monitorPort.
+	// This follows FlashCommand's precedent, but we should create a universal
+	// way to handle this properly.
+	monitorSwitch: function(comPort) {
+		this.checkArguments(arguments);
+
+		var args = Array.prototype.slice.call(arguments);
+		if (this.options.follow) {
+			//trim
+
+			var idx = utilities.indexOf(args, '--follow');
+			args.splice(idx, 1);
+		}
+
+		return this.monitorPort.apply(this, args);
+	},
+
 	monitorPort: function (comPort) {
+		var cleaningUp = false;
+
 		var handlePortFn = function (device) {
 			if (!device) {
-				console.error('No serial device identified');
-				return;
+				if (self.options.follow) {
+					setTimeout(function () {
+						self.whatSerialPortDidYouMean(comPort, true, handlePortFn);
+					}, 5);
+					return;
+				} else {
+					console.error(chalk.bold.white('No serial device identified'));
+					return;
+				}
 			}
 
 			console.log('Opening serial monitor for com port: "' + device.port + '"');
+			openPort(device);
+		};
 
-			//TODO: listen for interrupts, close gracefully?
-			var serialPort = new SerialPort(device.port, {
-				baudrate: 9600
-			}, false);
-			serialPort.on('data', function (data) {
-				process.stdout.write(data.toString());
-			});
-			serialPort.open(function (err) {
+		var openPort = function (device) {
+			var displayError = function (err) {
 				if (err) {
 					console.error('Serial err: ' + err);
 					console.error('Serial problems, please reconnect the device.');
 				}
+			};
+
+			// Called when port closes
+			var handleClose = function () {
+				if (self.options.follow && !cleaningUp) {
+					console.log(
+						chalk.bold.white(
+							'Serial connection closed.  Attempting to reconnect...'));
+					reconnect(device);
+				} else {
+					console.log(chalk.bold.white('Serial connection closed.'));
+				}
+			};
+
+			// Handle interrupts and close the port gracefully
+			var handleInterrupt = function () {
+				if (!cleaningUp) {
+					console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
+					cleaningUp = true;
+					if (serialPort.isOpen()) {
+						serialPort.flush(function () {
+							serialPort.close();
+						})
+					}
+				}
+			}
+
+			// Called only when the port opens successfully
+			var handleOpen = function () {
+				console.log(chalk.bold.white('Serial monitor opened successfully:'));
+
+				process.on('SIGINT', handleInterrupt);
+				process.on('SIGQUIT', handleInterrupt);
+				process.on('SIGTERM', handleInterrupt);
+				process.on('exit', handleInterrupt);
+			};
+
+			var reconnect = function (device) {
+				setTimeout(function () {
+					openPort(device);
+				}, 5);
+			}
+
+			var serialPort = new SerialPort(device.port, {
+				baudrate: 9600
+			}, false);
+			serialPort.on('close', handleClose);
+			serialPort.on('data', function (data) {
+				process.stdout.write(data.toString());
+			});
+			serialPort.on('error', displayError);
+			serialPort.open(function (err) {
+				if (err && self.options.follow) {
+					reconnect(device);
+				} else if (err) {
+					displayError(err);
+				} else {
+					handleOpen();
+				}
 			});
 		};
 
-		this.checkArguments(arguments);
-
 		if (this.options.follow) {
-			//catch the serial port dying, and keep retrying forever
-			//TODO: needs serialPort error / close event / deferred
+			console.log('Polling for available serial device...');
 		}
 
+		var self = this;
 		this.whatSerialPortDidYouMean(comPort, true, handlePortFn);
 	},
 
@@ -1006,7 +1086,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			if (!devices || devices.length === 0) {
-				return self.error('No devices available via serial');
+				return callback(undefined);
 			}
 
 			inquirer.prompt([
