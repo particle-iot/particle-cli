@@ -189,6 +189,45 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	monitorPort: function (comPort) {
 		var cleaningUp = false;
+		var selectedDevice;
+		var serialPort;
+
+		var displayError = function (err) {
+			if (err) {
+				console.error('Serial err: ' + err);
+				console.error('Serial problems, please reconnect the device.');
+			}
+		};
+
+		// Called when port closes
+		var handleClose = function () {
+			if (self.options.follow && !cleaningUp) {
+				console.log(
+					chalk.bold.white(
+						'Serial connection closed.  Attempting to reconnect...'));
+				reconnect();
+			} else {
+				console.log(chalk.bold.white('Serial connection closed.'));
+			}
+		};
+
+		// Handle interrupts and close the port gracefully
+		var handleInterrupt = function () {
+			if (!cleaningUp) {
+				console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
+				cleaningUp = true;
+				if (serialPort && serialPort.isOpen()) {
+					serialPort.flush(function () {
+						serialPort.close();
+					})
+				}
+			}
+		}
+
+		// Called only when the port opens successfully
+		var handleOpen = function () {
+			console.log(chalk.bold.white('Serial monitor opened successfully:'));
+		};
 
 		var handlePortFn = function (device) {
 			if (!device) {
@@ -204,59 +243,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			console.log('Opening serial monitor for com port: "' + device.port + '"');
-			openPort(device);
+			selectedDevice = device;
+			openPort();
 		};
 
-		var openPort = function (device) {
-			var displayError = function (err) {
-				if (err) {
-					console.error('Serial err: ' + err);
-					console.error('Serial problems, please reconnect the device.');
-				}
-			};
-
-			// Called when port closes
-			var handleClose = function () {
-				if (self.options.follow && !cleaningUp) {
-					console.log(
-						chalk.bold.white(
-							'Serial connection closed.  Attempting to reconnect...'));
-					reconnect(device);
-				} else {
-					console.log(chalk.bold.white('Serial connection closed.'));
-				}
-			};
-
-			// Handle interrupts and close the port gracefully
-			var handleInterrupt = function () {
-				if (!cleaningUp) {
-					console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
-					cleaningUp = true;
-					if (serialPort.isOpen()) {
-						serialPort.flush(function () {
-							serialPort.close();
-						})
-					}
-				}
-			}
-
-			// Called only when the port opens successfully
-			var handleOpen = function () {
-				console.log(chalk.bold.white('Serial monitor opened successfully:'));
-
-				process.on('SIGINT', handleInterrupt);
-				process.on('SIGQUIT', handleInterrupt);
-				process.on('SIGTERM', handleInterrupt);
-				process.on('exit', handleInterrupt);
-			};
-
-			var reconnect = function (device) {
-				setTimeout(function () {
-					openPort(device);
-				}, 5);
-			}
-
-			var serialPort = new SerialPort(device.port, {
+		var openPort = function () {
+			serialPort = new SerialPort(selectedDevice.port, {
 				baudrate: 9600
 			}, false);
 			serialPort.on('close', handleClose);
@@ -266,7 +258,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			serialPort.on('error', displayError);
 			serialPort.open(function (err) {
 				if (err && self.options.follow) {
-					reconnect(device);
+					reconnect(selectedDevice);
 				} else if (err) {
 					displayError(err);
 				} else {
@@ -274,6 +266,17 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				}
 			});
 		};
+
+		var reconnect = function () {
+			setTimeout(function () {
+				openPort(selectedDevice);
+			}, 5);
+		}
+
+		process.on('SIGINT', handleInterrupt);
+		process.on('SIGQUIT', handleInterrupt);
+		process.on('SIGTERM', handleInterrupt);
+		process.on('exit', handleInterrupt);
 
 		if (this.options.follow) {
 			console.log('Polling for available serial device...');
