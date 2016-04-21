@@ -1,5 +1,22 @@
 # changelog
 
+## 1.12.0 - 21 Apr 2016
+
+### New Features
+
+* Add `udp listen` command. ([#220](https://github.com/spark/particle-cli/issues/220))
+
+### Updates
+
+* Add `0.5.0` update binaries for Electron, Photon, and P1.
+* Add Redbear Duo to known platform list.
+* Add a debugging version of tinker for Electrons that logs AT commands over serial.
+
+### Fixes
+
+* Better DFU util error handling. ([#206](https://github.com/spark/particle-cli/issues/206))
+* Fix usage of `Buffer.fill` on older versions of node. ([#224](https://github.com/spark/particle-cli/issues/224))
+
 ## 1.11.0 - 10 Feb 2016
 
 ### New Features
