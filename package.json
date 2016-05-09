@@ -60,7 +60,7 @@
     "lodash": "^4.5.1",
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.1.1",
-    "particle-api-js": "^5.1.0",
+    "particle-api-js": "^5.1.1",
     "request": "^2.46.0",
     "semver": "^5.1.0",
     "serialport": "^2.0.1",

@@ -98,9 +98,16 @@ export default (app, cli) => {
 	cloud.command(cli.createCommand('flash', 'Flash a binary, source file, or source directory to a device over the air', {
 		params: '<deviceIdOrName> <filesOrFolder...>',
 		options: {
+			t: {
+				alias: 'target',
+				type: 'string',
+				description: 'System firmware version you wish to compile against'
+			}
 		},
 		handler(argv) {
-			
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			argv.filesOrFolder = argv.params.filesOrFolder;
+			return cloudCli.flashDevice(argv);
 		}
 	}));
 
