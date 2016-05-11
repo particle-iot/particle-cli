@@ -268,6 +268,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		if (settings.showIncludedSourceFiles) {
 			console.log('Including:');
 			for (var key in files) {
+				if(key === "basePath") continue;
 				console.log('    ' + files[key]);
 			}
 		}
@@ -526,6 +527,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				if (settings.showIncludedSourceFiles) {
 					console.log('Including:');
 					for (var key in files) {
+						if(key === "basePath") continue;
 						console.log('    ' + files[key]);
 					}
 				}
@@ -934,9 +936,23 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			var ignoredFiles = utilities.globList(dirname, ignores);
 			files = utilities.compliment(files, ignoredFiles);
 		}
-		return files;
+		var subdirFiles = this._processSubdirIncludes(dirname);
+		return files.concat(subdirFiles);
 	},
 
+	_processSubdirIncludes: function (dirname) {
+		var subdirs = fs.readdirSync(dirname)
+		.map(function (file) {
+			return path.join(dirname, file);
+		})
+		.filter(function (filePath) {
+		return fs.statSync(filePath).isDirectory();
+		});
+
+		return subdirs.reduce(function (subdirFiles, subdir) {
+			return subdirFiles.concat(this._processDirIncludes(subdir));
+		}.bind(this), []);
+	},
 
 	_handleMultiFileArgs: function (arr) {
 		//use cases:
@@ -957,6 +973,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		if (stats.isDirectory()) {
 			filelist = this._processDirIncludes(filePath);
+			files.basePath = filePath;
 			if (!filelist) {
 				console.log('Your ' + settings.dirIncludeFilename + ' file is empty, not including anything!');
 				return null;
