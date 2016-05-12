@@ -1,4 +1,20 @@
-# changelog
+# Changelog
+
+## 1.13.0 - 25 May 2016
+
+### New Features
+
+* Photon WiFi setup on Linux. ([#209](https://github.com/spark/particle-cli/pr/209))
+* Compile code in sub-directories ([#248](https://github.com/spark/particle-cli/pr/248))
+
+### Updates
+
+* Serial port package updated to version 3.1.1 for compatibility with Node.js v6. Thanks @nfriedly! ([#244](https://github.com/spark/particle-cli/pr/244))
+
+### Fixes
+
+* Better error message when renaming devices. Thanks @derekmpeterson ([#238](https://github.com/spark/particle-cli/pr/238))
+* Remove debug output from `particle keys send`. Thanks @derekmpeterson! ([#239](https://github.com/spark/particle-cli/pr/239))
 
 ## 1.12.0 - 21 Apr 2016
 
