@@ -208,7 +208,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				console.log('Successfully renamed device ' + deviceid + ' to: ' + name);
 			},
 			function (err) {
-				console.error('Failed to rename ' + deviceid + ', server said', err.errors);
+				if (err.info.indexOf('I didn\'t recognize that device name or ID') >= 0) {
+					console.error('Device ' + deviceid + ' not found.');
+				} else {
+					console.error('Failed to rename ' + deviceid + ', server said', err);
+				}
 			});
 	},
 
