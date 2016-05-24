@@ -35,6 +35,7 @@ var specs = require('./lib/deviceSpecs');
 var settings = {
 	commandPath: './commands/',
 	apiUrl: 'https://api.particle.io',
+	buildUrl: 'http://localhost:3000',
 	clientId: 'CLI2',
 	access_token: null,
 	minimumApiDelay: 500,
