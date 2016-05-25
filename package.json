@@ -21,6 +21,7 @@
     "cli-spinner": "^0.2.1",
     "cli-table": "^0.3.1",
     "glob": "^4.2.1",
+    "form-data": "git://github.com/spark/form-data.git#relative-path",
     "hogan.js": "^2.0.0",
     "inquirer": "^0.11.2",
     "latest-version": "^2.0.0",

@@ -244,8 +244,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('Not logged in');
 		}
 
-		var files = null;
-
 		if (!fs.existsSync(filePath)) {
 			return this._flashKnownApp(api, deviceid, filePath).catch(function(err) {
 				console.log('Flash device failed');
@@ -262,17 +260,15 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		//make a copy of the arguments sans the 'deviceid'
 		args = args.slice(1);
-		if (!files) {
-			files = this._handleMultiFileArgs(args);
-		}
-		if (!files || !files['file']) {
+		var files = this._handleMultiFileArgs(args);
+		if (!files || files.list.length == 0) {
 			console.error('no files included?');
 			return when.reject();;
 		}
 		if (settings.showIncludedSourceFiles) {
 			console.log('Including:');
-			for (var key in files) {
-				console.log('    ' + files[key]);
+			for (var i = 0, n = files.list.length; i < n; i++) {
+				console.log('    ' + files.list[i]);
 			}
 		}
 
@@ -289,11 +285,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		return pipeline([
 			function() {
 				var sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
-				var isSourcey = _.some(files, function(file) {
+				var isSourcey = _.some(files.list, function(file) {
 					return sourceExtensions.indexOf(path.extname(file)) >= 0;
 				});
 				if (!isSourcey) {
-					return files.file;
+					return files.list[0];
 				}
 
 				filename = temp.path({ suffix: '.bin' });
@@ -529,8 +525,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 				if (settings.showIncludedSourceFiles) {
 					console.log('Including:');
-					for (var key in files) {
-						console.log('    ' + files[key]);
+					for (var i = 0, n = files.list.length; i < n; i++) {
+						console.log('    ' + files.list[i]);
 					}
 				}
 
@@ -938,9 +934,23 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			var ignoredFiles = utilities.globList(dirname, ignores);
 			files = utilities.compliment(files, ignoredFiles);
 		}
-		return files;
+		var subdirFiles = this._processSubdirIncludes(dirname);
+		return files.concat(subdirFiles);
 	},
 
+	_processSubdirIncludes: function (dirname) {
+		var subdirs = fs.readdirSync(dirname)
+		.map(function (file) {
+			return path.join(dirname, file);
+		})
+		.filter(function (filePath) {
+		return fs.statSync(filePath).isDirectory();
+		});
+
+		return subdirs.reduce(function (subdirFiles, subdir) {
+			return subdirFiles.concat(this._processDirIncludes(subdir));
+		}.bind(this), []);
+	},
 
 	_handleMultiFileArgs: function (arr) {
 		//use cases:
@@ -953,27 +963,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return null;
 		}
 
-		var filelist = [];
+		var filenames = arr;
+		var files = {
+			list: [],
+			basePath: ''
+		};
 
-		var files = {};
-		var filePath = arr[0];
-		var stats = fs.statSync(filePath);
-
-		if (stats.isDirectory()) {
-			filelist = this._processDirIncludes(filePath);
-			if (!filelist) {
-				console.log('Your ' + settings.dirIncludeFilename + ' file is empty, not including anything!');
-				return null;
-			}
-		} else if (stats.isFile()) {
-			filelist = arr;
-		} else {
-			return null;
-		}
-
-		var fileNum = 0;
-		for (var i = 0; i < filelist.length; i++) {
-			var filename = filelist[i];
+		for (var i = 0; i < filenames.length; i++) {
+			var filename = filenames[i];
 			var ext = utilities.getFilenameExt(filename).toLowerCase();
 			var alwaysIncludeThisFile = ((ext === '.bin') && (i === 0) && (filelist.length === 1));
 
@@ -982,16 +979,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				break;
 			}
 
-			var filestats;
 			try {
-				filestats = fs.statSync(filename);
+				var filestats = fs.statSync(filename);
 			} catch (ex) {
 				console.error("I couldn't find the file " + filename);
 				return null;
 			}
 
 			if (filestats.isDirectory()) {
-				console.log('Skipping ' + filename + ' because it is a directory');
+				var dirfiles = this._processDirIncludes(filename);
+				filenames = filenames.concat(dirfiles);
+				files.basePath = this._updateBasePath(files.basePath, filename);
 				continue;
 			}
 
@@ -1004,10 +1002,19 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				console.log('Skipping ' + filename + " it's too big! " + stats.size);
 				continue;
 			}
-			files['file' + (fileNum++ || '')] = filename;
+			files.list.push(filename);
+			files.basePath = this._updateBasePath(files.basePath, path.dirname(filename));
 		}
 
 		return files;
+	},
+
+	_updateBasePath: function(basePath, path) {
+		if(basePath) {
+			return basePath.length < path.length ? basePath : path;
+		} else {
+			return path;
+		}
 	}
 });
 
