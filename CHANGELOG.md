@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+
+* Fix incorrect platform id error when doing a DFU flash for Core ([#232](https://github.com/spark/particle-cli/issues/232))
+
 ## 1.13.0 - 25 May 2016
 
 ### New Features
