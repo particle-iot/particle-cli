@@ -382,7 +382,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				var spec = _.find(specs, { productId: attrs.product_id });
 				if (spec) {
 					if (spec.knownApps[filePath]) {
-						return { file: spec.knownApps[filePath] };
+						return { list: [spec.knownApps[filePath]] };
 					}
 
 					if (spec.productName) {
@@ -411,7 +411,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							return reject();
 						}
 
-						resolve({ file: binary });
+						resolve({ list: [binary] });
 					});
 				});
 			},
