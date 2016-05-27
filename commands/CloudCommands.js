@@ -972,7 +972,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		for (var i = 0; i < filenames.length; i++) {
 			var filename = filenames[i];
 			var ext = utilities.getFilenameExt(filename).toLowerCase();
-			var alwaysIncludeThisFile = ((ext === '.bin') && (i === 0) && (filelist.length === 1));
+			var alwaysIncludeThisFile = ((ext === '.bin') && (i === 0) && (filenames.length === 1));
 
 			if (filename.indexOf('--') === 0) {
 				//hit some arguments.
