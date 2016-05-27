@@ -1,10 +1,15 @@
 # Changelog
 
-## Unreleased
+## 1.14.0 - 27 May 2016
+
+### Updates
+
+* Include binaries for firmware 0.5.1
 
 ### Fixes
 
 * Fix incorrect platform id error when doing a DFU flash for Core ([#232](https://github.com/spark/particle-cli/issues/232))
+* Able to OTA flash binary files again ([#251](https://github.com/spark/particle-cli/issues/251))
 
 ## 1.13.0 - 25 May 2016
 
