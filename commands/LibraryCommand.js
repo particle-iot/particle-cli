@@ -39,7 +39,9 @@ var inquirer = require('inquirer');
 var output = require('../lib/output.js');
 
 function libmgr(name) {
-	return '../../cli-library-manager/lib/src/'+name;
+	return 'particle-cli-library-manager';
+	// used for local development
+	//return '../../cli-library-manager/lib/src/'+name;
 }
 var BuildLibraryRepository = require(libmgr('librepo_build')).BuildLibraryRepository;
 var FileSystemLibraryRepository = require(libmgr('librepo_fs')).FileSystemLibraryRepository;

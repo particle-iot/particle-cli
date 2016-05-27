@@ -29,6 +29,7 @@
     "lodash": "^3.10.1",
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.2.0",
+    "particle-cli-library-manager": "../cli-library-manager",
     "request": "^2.46.0",
     "semver": "^5.1.0",
     "serialport": "^3.1.1",
