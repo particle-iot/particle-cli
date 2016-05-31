@@ -975,8 +975,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			var alwaysIncludeThisFile = ((ext === '.bin') && (i === 0) && (filenames.length === 1));
 
 			if (filename.indexOf('--') === 0) {
-				//hit some arguments.
-				break;
+				// go over the argument
+				i++;
+				continue;
 			}
 
 			try {
