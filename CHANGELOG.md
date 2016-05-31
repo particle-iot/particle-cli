@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.14.1 - 31 May 2016
+
+## Fixes
+
+* Use tarball instead of git dependency to be able to install on computers without git
+* Fix particle compile with --saveTo flag
+
 ## 1.14.0 - 27 May 2016
 
 ### Updates
