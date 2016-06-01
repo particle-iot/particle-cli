@@ -320,7 +320,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						if (ans.confirmota !== dataUsage) {
 							return reject('User cancelled');
 						}
-						resolve({ file: filename });
+						resolve({ list: [filename] });
 					});
 				});
 			}
