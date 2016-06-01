@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.2 - 1 June 2016
+
+## Fixes
+
+* Fix flashing binaries to Electron over the air
+
 ## 1.14.1 - 31 May 2016
 
 ## Fixes
