@@ -115,6 +115,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				null
 			);
 		}
+		if (!this.options.local) {
+			// todo - move args parsing to a dedicated portion of the command interface (bound to I/O, and separate
+			// from the main command logic.)
+			var idx = utilities.indexOf(args, '--local');
+			this.options.local = idx>=0;
+		}
+		if (!this.options.verbose) {
+			var idx = utilities.indexOf(args, '--verbose')
+			this.options.verbose = idx>=0;
+		}
 	},
 
 	claimDevice: function (deviceid) {
@@ -438,6 +448,78 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		return filename;
 	},
 
+	// todo - move this into cli-library-manager and make async
+	enumVendoredLibs: function(dir) {
+		var src = path.join(dir, 'src');
+		var lib = path.join(dir, 'lib');
+
+		// todo - validate each library
+		var libs = fs.readdirSync(lib);
+		var result = libs.map(function(name) {
+			return path.resolve(path.join(lib, name));
+		});
+		return result;
+	},
+
+	launchAndWait: function(cmd, args, verbose) {
+		var util  = require('util'),
+			spawn = require('child_process').spawn,
+			CondVar = require('condvar'),
+			proc    = spawn(cmd, args);
+
+		console.log("launching "+cmd+' '+args);
+
+		// how can there not be a race condition between launching the process
+		// and hooking up the event handlers?
+
+		proc.stdout.on('data', function (data) {
+			if (verbose)
+				console.log('stdout: ' + data);
+		});
+
+		proc.stderr.on('data', function (data) {
+			if (verbose)
+				console.log('stderr: ' + data);
+		});
+
+		var exit_code_cv = new CondVar;
+
+		proc.on('exit', function (code) {
+			exit_code_cv.send(code);
+		});
+
+		var exit_code = exit_code_cv.recv();
+		if (exit_code) {
+			console.error("Womp womp. Compile job failed. See the output above for details.");
+		}
+		return exit_code;
+	},
+
+
+	localCompile: function(deviceType) {
+		var firmware = settings.profile_json.firmwareDir;
+		var libdirs = this.enumVendoredLibs('./');
+
+		var args = {
+			platform: deviceType,
+			cwd: path.join(firmware, 'main'),
+			appdir: path.resolve('./src'),
+			applibs: libdirs.join(' '),
+			target_dir: path.resolve('./target'),
+			target_name: deviceType,
+			target: path.resolve(deviceType+'.bin')
+		};
+		var cmdargs_template =  ['-C', '{{cwd}}', 'all', 'TARGET_DIR={{target_dir}}', 'TARGET_NAME={{target_name}}',
+			'PLATFORM={{platform}}', 'APPDIR={{appdir}}', 'APPLIBSV2={{applibs}}'];
+
+		var cmdargs = cmdargs_template.map(function(value) {
+			var template = require('hogan.js').compile(value);
+			return template.render(args);
+		});
+
+		return this.launchAndWait("make", cmdargs, this.options.verbose);
+	},
+
 	compileCode: function (deviceType) {
 		var self = this;
 		this.checkArguments(arguments);
@@ -454,12 +536,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		var api = new ApiClient();
-		if (!api.ready()) {
-			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
-			return -1;
-		}
-
 		//defaults to 0 for core
 		var platform_id = 0;
 
@@ -469,6 +545,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.error('\nTarget device ' + deviceType + ' is not valid');
 			console.error('	eg. particle compile core xxx');
 			console.error('	eg. particle compile photon xxx\n');
+			return -1;
+		}
+
+		if (this.options.local) {
+			return this.localCompile(deviceType);
+		}
+
+		var api = new ApiClient();
+		if (!api.ready()) {
+			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
 			return -1;
 		}
 
