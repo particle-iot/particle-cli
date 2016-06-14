@@ -43,8 +43,19 @@ function libmgr(name) {
 	// used for local development
 	//return '../../cli-library-manager/lib/src/'+name;
 }
+
 var BuildLibraryRepository = require(libmgr('librepo_build')).BuildLibraryRepository;
+var CloudLibraryRepository = require(libmgr('librepo_cloud')).CloudLibraryRepository;
 var FileSystemLibraryRepository = require(libmgr('librepo_fs')).FileSystemLibraryRepository;
+
+
+var particleApiJsConfig =
+{
+	baseUrl: settings.apiUrl,
+	clientSecret: 'particle-api',
+	clientId: 'particle-api',
+	tokenDuration: 7776000 // 90 days
+};
 
 
 var LibraryCommand = function (cli, options) {
@@ -68,14 +79,12 @@ LibraryCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_remoteRepo: function() {
-		var uri = settings.buildUrl;
-		if (!uri.endsWith('/'))
-			uri += '/';
-		return new BuildLibraryRepository({endpoint:uri});
+		// so evil!
+		return new CloudLibraryRepository({config: particleApiJsConfig, auth: 'cf3fce66c7d84ee4ad228641680d4bfba9f63c00'});
 	},
 
 	_localRepo: function() {
-		return new FileSystemLibraryRepository('./'); // use cwd
+		return new FileSystemLibraryRepository('./lib'); // use cwd
 	},
 
 
