@@ -467,7 +467,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			CondVar = require('condvar'),
 			proc    = spawn(cmd, args);
 
-		console.log("launching "+cmd+' '+args);
+//		console.log("launching "+cmd+' '+args);
 
 		// how can there not be a race condition between launching the process
 		// and hooking up the event handlers?

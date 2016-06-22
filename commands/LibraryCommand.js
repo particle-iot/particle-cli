@@ -93,7 +93,7 @@ LibraryCommand.prototype = extend(BaseCommand.prototype, {
 			console.log('Please provide the name of a library to install.');
 		}
 		else {
-			this._installHelper(name, this._remoteRepo(), this._localRepo());
+			return this._installHelper(name, this._remoteRepo(), this._localRepo());
 		}
 	},
 
@@ -109,6 +109,7 @@ LibraryCommand.prototype = extend(BaseCommand.prototype, {
 			console.log('Error adding library '+name);
 			console.log(error);
 		});
+		return promise;
 	},
 
 	list: function () {
