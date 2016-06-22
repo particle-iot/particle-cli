@@ -1,13 +1,4 @@
-import Interpreter from '../../lib/interpreter';
-
-export default {
-	run() {
-		const cli = new Interpreter();
-		cli.supressWarmupMessages = true;
-		cli.startup();
-		cli.handle(process.argv, true);
-	}
-};
+import Interpreter from '../../oldlib/interpreter';
 import tty from 'tty';
 import _ from 'lodash';
 
@@ -68,6 +59,9 @@ function addGlobalOptions(yargs) {
 
 export default {
 	run() {
+		oldrun()
+	},
+	newrun() {
 		updateCheck().then(() => {
 			cli.run(app);
 		});

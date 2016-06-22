@@ -1,7 +1,7 @@
 'use strict';
 
 var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../lib/interpreter');
+var Interpreter = require('../oldlib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 
@@ -18,10 +18,10 @@ var FlashCommand = proxyquire('../commands/FlashCommand', {
 	'cli-spinner': Spinner,
 	'fs': fs,
 	'../settings.js': settings,
-	'../lib/dfu.js': dfu
+	'../oldlib/dfu.js': dfu
 });
 
-function dfu() { };
+function dfu() { }
 dfu.findCompatibleDFU = function() {
 	return true;
 };

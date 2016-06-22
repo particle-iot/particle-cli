@@ -44,7 +44,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  **/
 var when = require('when');
 var pipeline = require('when/pipeline');
-var utilities = require('../lib/utilities.js');
+var utilities = require('./utilities.js');
 var settings = require('../settings');
 
 var request = require('request');

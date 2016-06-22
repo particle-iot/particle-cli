@@ -1,5 +1,4 @@
 import Handlebars from 'handlebars';
-import '../templates';
 import chalklib from 'chalk';
 import momentjs from 'moment';
 

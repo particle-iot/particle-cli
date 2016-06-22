@@ -1,7 +1,7 @@
 'use strict';
 
 var request = require('request');
-var utilities = require('../lib/utilities');
+var utilities = require('./utilities');
 var settings = require('../settings');
 
 function APIClient2(baseUrl, token) {

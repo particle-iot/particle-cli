@@ -34,13 +34,13 @@ var pipeline = require('when/pipeline');
 var temp = require('temp').track();
 var extend = require('xtend');
 var util = require('util');
-var utilities = require('../lib/utilities.js');
+var utilities = require('../oldlib/utilities.js');
 var BaseCommand = require('./BaseCommand.js');
-var ApiClient = require('../lib/ApiClient.js');
+var ApiClient = require('../oldlib/ApiClient.js');
 var fs = require('fs');
 var path = require('path');
-var dfu = require('../lib/dfu.js');
-var deviceSpecs = require('../lib/deviceSpecs');
+var dfu = require('../oldlib/dfu.js');
+var deviceSpecs = require('../oldlib/deviceSpecs');
 
 var KeyCommands = function (cli, options) {
 	KeyCommands.super_.call(this, cli, options);

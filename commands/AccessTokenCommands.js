@@ -32,9 +32,9 @@ var extend = require('xtend');
 var util = require('util');
 var inquirer = require('inquirer');
 
-var ApiClient = require('../lib/ApiClient.js');
+var ApiClient = require('../oldlib/ApiClient.js');
 var BaseCommand = require('./BaseCommand.js');
-var prompts = require('../lib/prompts.js');
+var prompts = require('../oldlib/prompts.js');
 var settings = require('../settings.js');
 
 var AccessTokenCommands = function (cli, options) {

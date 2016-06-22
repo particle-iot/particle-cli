@@ -33,10 +33,10 @@ var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
 var fs = require('fs');
-var dfu = require('../lib/dfu.js');
-var utilities = require('../lib/utilities.js');
+var dfu = require('../oldlib/dfu.js');
+var utilities = require('../oldlib/utilities.js');
 var ModuleParser = require('binary-version-reader').HalModuleParser;
-var deviceSpecs = require('../lib/deviceSpecs');
+var deviceSpecs = require('../oldlib/deviceSpecs');
 
 var FlashCommand = function (cli, options) {
 	FlashCommand.super_.call(this, cli, options);

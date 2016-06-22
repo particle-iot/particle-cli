@@ -1,7 +1,7 @@
 'use strict';
 
 var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../lib/interpreter');
+var Interpreter = require('../oldlib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 var sinon = require('sinon');
@@ -27,10 +27,10 @@ var KeyCommand = proxyquire('../commands/KeyCommands', {
 	'cli-spinner': Spinner,
 	'../settings.js': settings,
 	'when': when,
-	'../lib/utilities.js': utilities
+	'../oldlib/utilities.js': utilities
 });
 
-function utilities() { };
+function utilities() { }
 sinon.stub(utilities, 'deferredChildProcess');
 
 describe('Key Command', function() {

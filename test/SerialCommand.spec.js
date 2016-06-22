@@ -3,7 +3,7 @@
 var proxyquire = require('proxyquire');
 
 require('should');
-var Interpreter = require('../lib/interpreter');
+var Interpreter = require('../oldlib/interpreter');
 
 var SerialCommand = proxyquire('../commands/SerialCommand.js', {
 

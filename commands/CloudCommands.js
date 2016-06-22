@@ -34,11 +34,11 @@ var prompt = require('inquirer').prompt;
 var temp = require('temp').track();
 
 var settings = require('../settings.js');
-var specs = require('../lib/deviceSpecs');
+var specs = require('../oldlib/deviceSpecs');
 var BaseCommand = require('./BaseCommand.js');
-var prompts = require('../lib/prompts.js');
-var ApiClient = require('../lib/ApiClient.js');
-var utilities = require('../lib/utilities.js');
+var prompts = require('../oldlib/prompts.js');
+var ApiClient = require('../oldlib/ApiClient.js');
+var utilities = require('../oldlib/utilities.js');
 
 var fs = require('fs');
 var path = require('path');

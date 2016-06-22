@@ -31,7 +31,7 @@ var settings = require('../settings.js');
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
-var ApiClient = require('../lib/ApiClient.js');
+var ApiClient = require('../oldlib/ApiClient.js');
 
 var FunctionCommand = function (cli, options) {
 	FunctionCommand.super_.call(this, cli, options);

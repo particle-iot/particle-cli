@@ -1,10 +1,10 @@
 'use strict';
 
 var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../lib/interpreter');
+var Interpreter = require('../oldlib/interpreter');
 var proxyquire = require('proxyquire');
-var ApiClient2 = require('../lib/ApiClient2');
-var ApiClient = require('../lib/ApiClient');
+var ApiClient2 = require('../oldlib/ApiClient2');
+var ApiClient = require('../oldlib/ApiClient');
 
 require('should');
 

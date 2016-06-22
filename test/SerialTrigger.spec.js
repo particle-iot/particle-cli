@@ -3,7 +3,7 @@
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 
-var SerialTrigger = require('../lib/SerialTrigger');
+var SerialTrigger = require('../oldlib/SerialTrigger');
 
 function MockPort() {
 }
