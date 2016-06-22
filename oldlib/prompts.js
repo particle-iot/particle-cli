@@ -1,30 +1,3 @@
-/**
- ******************************************************************************
- * @file    lib/prompts.js
- * @author  David Middlecamp (david@particle.io)
- * @company Particle ( https://www.particle.io/ )
- * @source https://github.com/spark/particle-cli
- * @version V1.0.0
- * @date    14-February-2014
- * @brief   Prompts module
- ******************************************************************************
-Copyright (c) 2016 Particle Industries, Inc.  All rights reserved.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation, either
-version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************
- */
-'use strict';
 
 var when = require('when');
 var readline = require('readline');
@@ -137,33 +110,7 @@ var that = {
 
 		return creds.promise;
 	},
-	getUsername: function (username) {
-		return {
-			type: 'input',
-			name: 'username',
-			message: 'Please enter your email address',
-			default: username,
-			validate: function(value) {
-				if (!value) {
-					return 'You need an email address to log in, silly!';
-				}
-				return true;
-			}
-		};
-	},
-	getPassword: function (msg) {
-		return {
-			type: 'password',
-			name: 'password',
-			message: msg || 'Please enter your password',
-			validate: function(value) {
-				if (!value) {
-					return 'You need a password to log in, silly!';
-				}
-				return true;
-			}
-		};
-	},
+	
 	confirmPassword: function () {
 		return that.passPromptDfd('confirm password  ');
 	},
