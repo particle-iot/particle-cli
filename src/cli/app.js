@@ -1,9 +1,8 @@
-import Interpreter from '../../oldlib/interpreter';
 import tty from 'tty';
 import _ from 'lodash';
 
 import updateCheck from './update-check';
-import pkg from '../../package';
+import pkg from '../../package.json';
 import * as cli from './nested-yargs';
 import commands from '../cmd';
 
@@ -58,9 +57,7 @@ function addGlobalOptions(yargs) {
 }
 
 export default {
-	run() {
-		oldrun()
-	},
+
 	newrun() {
 		updateCheck().then(() => {
 			cli.run(app);
@@ -68,9 +65,13 @@ export default {
 	},
 
 	oldrun() {
+		const Interpreter = require('../../oldlib/interpreter');
 		const cli = new Interpreter();
 		cli.supressWarmupMessages = true;
 		cli.startup();
 		cli.handle(process.argv, true);
+	},
+	run() {
+		this.oldrun();
 	}
 };
