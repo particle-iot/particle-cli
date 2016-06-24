@@ -34,8 +34,6 @@ var child_process = require('child_process');
 var glob = require('glob');
 var log = require('./log');
 
-var __banner = fs.readFileSync(path.join(__dirname, 'banner.txt'));
-
 var that = module.exports = {
 	contains: function(arr, obj) {
 		return (that.indexOf(arr, obj) >= 0);
@@ -535,10 +533,17 @@ var that = module.exports = {
 		return files;
 	},
 
+	__banner: undefined,
+
 	banner: function() {
+		var bannerFile = path.join(__dirname, 'banner.txt');
+		if (self.__banner===undefined) {
+			self.__banner = fs.existsSync(bannerFile) ? fs.readFileSync() : '';
+		}
 		return __banner;
 	},
 
+	// todo - factor from/to constants.js
 	knownPlatforms: function knownPlatforms() {
 		return {
 			'core': 0,
@@ -549,6 +554,7 @@ var that = module.exports = {
 			'bluz': 103
 		};
 	},
+
 
 	cellularOtaUsage: function(fileSize) {
 		var numChunks = Math.ceil(fileSize / 512);
