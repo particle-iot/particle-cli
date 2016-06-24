@@ -115,7 +115,7 @@
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/ --compilers js:babel-register",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --compilers js:babel-register test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
-    "lint": "eslint src/**/*.js",
+    "lint": "eslint -f unix src/**/*.js",
     "test": "mocha test/ --compilers js:babel-register",
     "compile": "babel src -d dist",
     "prepublish": "npm run compile"
