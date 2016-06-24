@@ -160,7 +160,7 @@ Interpreter.prototype = {
 		this.commandsByName = {};
 
 		var files = fs.readdirSync(settings.commandPath).filter(function (file) {
-			return file.indexOf('.') !== 0; // Ignore hidden files (Such as .swp files)
+			return file.indexOf('.') !== 0 && !file.endsWith('.map'); // Ignore hidden files (Such as .swp files)
 		});
 
 		for (var i = 0; i < files.length; i++) {
