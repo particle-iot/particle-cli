@@ -81,6 +81,7 @@ class Category {
 
 
 class Command {
+	// todo - add site parameter (replaces options?)
 	constructor(name, description, options) {
 		this.name = name || '$0';
 		this.description = description || '';
@@ -247,7 +248,7 @@ function parseParams(yargs, argv, command) {
 
 function createApp(options) {
 	return new Category('$0', '', options);
-};
+}
 
 function createCategory(name, description, options) {
 	if (_.isObject(description)) {
@@ -256,7 +257,7 @@ function createCategory(name, description, options) {
 	}
 
 	return new Category(name, description, options);
-};
+}
 
 function createCommand(name, description, options) {
 	if (_.isObject(name)) {
@@ -271,12 +272,12 @@ function createCommand(name, description, options) {
 	}
 
 	return new Command(name, description, options);
-};
+}
 
 
 function run(command, yargs) {
 	return command.run(yargs || Yargs);
-};
+}
 
 function usageError(message, data) {
 	const error = new Error(message ? message : undefined);
@@ -285,7 +286,7 @@ function usageError(message, data) {
 	error.isUsageError = true;
 
 	return error;
-};
+}
 
 function applicationError(message, data) {
 	const error = new Error(message ? message : undefined);
@@ -294,7 +295,7 @@ function applicationError(message, data) {
 	error.isApplicationError = true;
 
 	return error;
-};
+}
 
 export {
 	run,
