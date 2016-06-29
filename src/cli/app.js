@@ -69,7 +69,7 @@ export default {
 		const cli = new Interpreter();
 		cli.supressWarmupMessages = true;
 		cli.startup();
-		cli.handle(arguments, true);
+		cli.handle(args, true);
 	},
 
 	run(args) {
