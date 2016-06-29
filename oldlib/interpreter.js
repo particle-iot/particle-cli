@@ -73,7 +73,7 @@ Interpreter.prototype = {
 	},
 
 	setupTerminal: function () {
-		if(process.stdout._handle.setBlocking) {
+		if(process.stdout._handle && process.stdout._handle.setBlocking) {
 			process.stdout._handle.setBlocking(true);
 		}
 	},
