@@ -58,13 +58,13 @@ function addGlobalOptions(yargs) {
 
 export default {
 
-	newrun(arguments) {
+	newrun(args) {
 		updateCheck().then(() => {
-			cli.run(app, arguments);
+			cli.run(app, args);
 		});
 	},
 
-	oldrun(arguments) {
+	oldrun(args) {
 		const Interpreter = require('../../oldlib/interpreter');
 		const cli = new Interpreter();
 		cli.supressWarmupMessages = true;
@@ -72,7 +72,7 @@ export default {
 		cli.handle(arguments, true);
 	},
 
-	run(arguments) {
-		this.oldrun(arguments);
+	run(args) {
+		this.oldrun(args);
 	}
 };
