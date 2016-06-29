@@ -1,3 +1,3 @@
 import app from './app'
 
-app.run();
+app.run(process.argv);
