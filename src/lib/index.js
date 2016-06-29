@@ -1,5 +1,1 @@
-import cloud from './cloud';
-
-export {
-	cloud
-};
+export { cloud } from './cloud';
