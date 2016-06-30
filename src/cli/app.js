@@ -28,12 +28,24 @@ const app = cli.createAppCategory({
 	},
 	version: pkg.version,
 	epilogue: 'For more information, visit our documentation at https://docs.particle.io\n\nparticle-cli ' + pkg.version,
+
+	/**
+	 * Setup global attributes from the parsed arguments.
+	 * @param yargs
+	 */
 	setup(yargs) {
+		commands(app, cli);
+		_.each(app.commands, addGlobalSetup);
+	},
+
+	/**
+	 * Set up the global state from the initial command parsing. 
+	 * @param yargs
+	 */
+	parsed(yargs) {
 		global.isInteractive = tty.isatty(process.stdin) && !yargs.argv.nonInteractive;
 		global.verboseLevel = global.verboseLevel + yargs.argv.verbose;
 		global.outputJson = yargs.argv.json;
-		commands(app, cli);
-		_.each(app.commands, addGlobalSetup);
 	}
 });
 

@@ -1,5 +1,16 @@
 /**
- * Builds yargs parsers for each successive level of commands.
+ * Builds the command line parser based on yargs.
+ *
+ * The commands are arranged as a hierarchy, with the root representing invocation with no commands, children
+ * under the root as the first level of commands, their children are 2nd level commands etc.
+ *
+ * The immediate child commands of the root is built by calling the `setup()` method on the root command configuration,
+ * after `run()` is called on the root command. At this point, the command line has not yet been parsed.
+ *
+ * Once the first set of commands have been built, the parser is ran. If the command line matches one of the commands,
+ * the `run()` method for the command is invoked. This registers options, help text, examples and subcommands under
+ * the first level and the command string parsed again, causing subsequent nested commands to be registered and parsed.
+ * 
  * The first parser handles the top-level command, the next level handles sub-commands
  * of the top level and so on.
  * With each level, the yargs parser is augmented with new commands, options and parameters.
@@ -107,6 +118,25 @@ class CLICommandItem {
 			yargs.epilogue(epilogue);
 		}
 
+		const errorHandler = createErrorHandler(yargs);
+		yargs.fail(errorHandler);
+
+		yargs.help('help');
+	}
+
+	parse(yargs, args) {
+		const argv = yargs.argv; //args===undefined ? yargs.argv : yargs.parse(args);
+
+		if (this.options.parsed) {
+			this.options.parsed(yargs);
+		}
+
+		if (this.options.handler) {
+			when.try(this.options.handler.bind(this, argv))
+				.done(() => {}, errorHandler);
+		}
+
+		return argv;
 	}
 }
 
@@ -143,23 +173,18 @@ class CLICommandCategory extends CLICommandItem {
 	}
 
 	run(yargs, args) {
-		const errorHandler = createErrorHandler(yargs);
-
 		this.configure(yargs, this.options);
 
 		_.forEach(this.commands, (command) => {
-			yargs.command(command.name, command.description, () => command.run(yargs, args));
+			yargs.command(command.name, command.description, () => command.run(Yargs, args));
 		});
 
 		yargs
 			.usage('Usage: ' + this.path.join(' ') + ' <command>')
 			.check((argv) => this.check(argv))
-			.demand(this.path.length, 'Please enter a valid command2.')
-			.fail(errorHandler);
+			.demand(this.path.length, 'Please enter a valid command2.');
 
-		const argv = yargs.parse(args);
-
-		return argv;
+		return this.parse(yargs, args);
 	}
 }
 
@@ -193,6 +218,8 @@ class CLICommand extends CLICommandItem {
 
 	run(yargs, args) {
 
+		this.configure(yargs, this.options);
+
 		yargs
 			.check((argv) => {
 				// We can't use `yargs.strict()` because it is possible that
@@ -212,14 +239,7 @@ class CLICommand extends CLICommandItem {
 				+ ' [options]'
 				+ (this.options.params ? ' ' + this.options.params : ''));
 
-		const argv = yargs.parse(args);
-
-		if (this.options.handler) {
-			when.try(this.options.handler.bind(this, argv))
-				.done(() => {}, errorHandler);
-		}
-
-		return argv;
+		return this.parse(yargs, args);
 	}
 }
 
@@ -341,13 +361,15 @@ function createAppCategory(options) {
 	return new CLIRootCategory(options);
 }
 
-function createCategory(name, description, options) {
+function createCategory(parent, name, description, options) {
 	if (_.isObject(description)) {
 		options = description;
 		description = '';
 	}
 
-	return new CLICommandCategory(name, description, options);
+	const cat = new CLICommandCategory(name, description, options);
+	parent.addItem(cat);
+	return cat;
 }
 
 function createCommand(category, name, description, options) {
@@ -374,7 +396,7 @@ function createCommand(category, name, description, options) {
  * @returns {*}
  */
 function run(command, args) {
-	return command.run(Yargs, args);
+	return (args===Yargs) ? command.run(args, undefined) : command.run(Yargs, args);
 }
 
 function baseError(message, data) {

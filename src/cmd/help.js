@@ -6,7 +6,8 @@ export default (app, cli) => {
 		handler: function helpHandler(argv) {
 			const cmd = argv._.slice(1);
 			cmd.push('--help');
-			cli.run(app, cmd);
+			yargs(cmd);
+			cli.run(app, yargs);
 		}
 	});
 };
