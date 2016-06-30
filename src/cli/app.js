@@ -6,7 +6,8 @@ import pkg from '../../package.json';
 import * as cli from './nested-yargs';
 import commands from '../cmd';
 
-const app = cli.createApp({
+const app = cli.createAppCategory({
+	// options for yargs
 	options: {
 		args: {
 			config: true
@@ -60,7 +61,7 @@ export default {
 
 	newrun(args) {
 		updateCheck().then(() => {
-			cli.run(app, args);
+		 	cli.run(app, args.slice(2));
 		});
 	},
 
@@ -73,6 +74,6 @@ export default {
 	},
 
 	run(args) {
-		this.oldrun(args);
+		this.newrun(args);
 	}
 };

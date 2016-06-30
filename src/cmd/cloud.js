@@ -1,9 +1,9 @@
 import cloudCli from '../cli/cloud';
 
 export default (app, cli) => {
-	const cloud = cli.createCategory('cloud', 'Commands to interact with the Particle Cloud');
+	const cloud = cli.createCategory(app, 'cloud', 'Commands to interact with the Particle Cloud');
 
-	cloud.command(cli.createCommand('login', 'Login and save an access token for interacting with your account on the Particle Cloud', {
+	cli.createCommand(cloud, 'login', 'Login and save an access token for interacting with your account on the Particle Cloud', {
 		options: {
 			u: {
 				alias: 'username',
@@ -19,9 +19,9 @@ export default (app, cli) => {
 			}
 		},
 		handler: cloudCli.login
-	}));
+	});
 
-	cloud.command(cli.createCommand('logout', 'Logout from the Particle Cloud', {
+	cli.createCommand(cloud, 'logout', 'Logout from the Particle Cloud', {
 		options: {
 			revoke: {
 				boolean: true,
@@ -39,17 +39,17 @@ export default (app, cli) => {
 				yargs.demand('password');
 			}
 		}
-	}));
+	});
 
-	cloud.command(cli.createCommand('list', 'Displays a list of your devices, along with their variables and functions', {
+	cli.createCommand(cloud, 'list', 'Displays a list of your devices, along with their variables and functions', {
 		params: '[filter]',
 		handler(argv) {
 			argv.filter = argv.params.filter;
 			return cloudCli.listDevices(argv);
 		}
-	}));
+	});
 
-	cloud.command(cli.createCommand('claim', 'Claim a device to your account', {
+	cli.createCommand(cloud, 'claim', 'Claim a device to your account', {
 		params: '<deviceId>',
 		options: {
 			t: {
@@ -62,9 +62,9 @@ export default (app, cli) => {
 			argv.deviceId = argv.params.deviceId;
 			return cloudCli.claimDevice(argv);
 		}
-	}));
+	});
 
-	cloud.command(cli.createCommand('remove', 'Release a device from your account', {
+	cli.createCommand(cloud, 'remove', 'Release a device from your account', {
 		params: '<deviceIdOrName>',
 		options: {
 			f: {
@@ -77,9 +77,9 @@ export default (app, cli) => {
 			argv.deviceIdOrName = argv.params.deviceIdOrName;
 			return cloudCli.removeDevice(argv);
 		}
-	}));
+	});
 
-	cloud.command(cli.createCommand('name', 'Change the friendly name of a device', {
+	cli.createCommand(cloud, 'name', 'Change the friendly name of a device', {
 		params: '<deviceIdOrName> <name...>',
 		options: {
 			f: {
@@ -93,9 +93,9 @@ export default (app, cli) => {
 			argv.name = argv.params.name.join('-');
 			return cloudCli.renameDevice(argv);
 		}
-	}));
+	});
 
-	cloud.command(cli.createCommand('flash', 'Flash a binary, source file, or source directory to a device over the air', {
+	cli.createCommand(cloud, 'flash', 'Flash a binary, source file, or source directory to a device over the air', {
 		params: '<deviceIdOrName> <filesOrFolder...>',
 		options: {
 			t: {
@@ -109,9 +109,9 @@ export default (app, cli) => {
 			argv.filesOrFolder = argv.params.filesOrFolder;
 			return cloudCli.flashDevice(argv);
 		}
-	}));
+	});
 
-	cloud.command(cli.createCommand('compile', 'Compiles one or more source files or a directory of source to a firmware binary for your device', {
+	cli.createCommand(cloud, 'compile', 'Compiles one or more source files or a directory of source to a firmware binary for your device', {
 		params: '<deviceType> <filesOrFolder...>',
 		options: {
 			t: {
@@ -129,9 +129,9 @@ export default (app, cli) => {
 			argv.filesOrFolder = argv.params.filesOrFolder;
 			return cloudCli.compileCode(argv);
 		}
-	}));
+	});
 
-	cloud.command(cli.createCommand('nyan', 'Commands your device to start/stop shouting rainbows', {
+	cli.createCommand(cloud, 'nyan', 'Commands your device to start/stop shouting rainbows', {
 		params: '[deviceIdOrName] [onOff]',
 		examples: [
 			'$0 cloud nyan my_device_id on',
@@ -145,7 +145,5 @@ export default (app, cli) => {
 			argv.onOff = argv.params.onOff;
 			return cloudCli.signal(argv);
 		}
-	}));
-
-	app.command(cloud);
+	});
 };

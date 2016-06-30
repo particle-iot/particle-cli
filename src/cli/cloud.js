@@ -15,6 +15,8 @@ import log from './log';
 import settings from '../../settings';
 import { platformsById } from '../lib/constants';
 
+// todo - surely this should be in lib?
+
 function login(opts) {
 	const qs = [];
 	if (!opts.username) {
