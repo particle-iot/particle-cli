@@ -1,11 +1,11 @@
 'use strict';
 
-var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../oldlib/interpreter');
+var Spinner = require('./../mocks/Spinner.mock.js');
+var Interpreter = require('../../oldlib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 
-var ConfigCommand = proxyquire('../commands/ConfigCommand', {
+var ConfigCommand = proxyquire('../../commands/ConfigCommand', {
 	'cli-spinner': Spinner,
 	'../settings.js': settings
 });

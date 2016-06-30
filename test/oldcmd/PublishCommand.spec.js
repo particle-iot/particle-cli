@@ -1,12 +1,12 @@
 'use strict';
 
 var when = require('when');
-var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../oldlib/interpreter');
+var Spinner = require('./../mocks/Spinner.mock.js');
+var Interpreter = require('../../oldlib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 
-var PublishCommand = proxyquire('../commands/PublishCommand', {
+var PublishCommand = proxyquire('../../commands/PublishCommand', {
 	'cli-spinner': Spinner,
 	'../oldlib/ApiClient.js': apiClient
 });

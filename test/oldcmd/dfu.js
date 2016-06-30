@@ -1,6 +1,6 @@
 'use strict';
 
-var dfu = require('../oldlib/dfu');
+var dfu = require('../../oldlib/dfu');
 var fs = require('fs');
 var path = require('path');
 var assert = require('assert');

@@ -1,7 +1,7 @@
 'use strict';
 
-var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../oldlib/interpreter');
+var Spinner = require('./../mocks/Spinner.mock.js');
+var Interpreter = require('../../oldlib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 var sinon = require('sinon');
@@ -13,9 +13,9 @@ var settings = {
 
 };
 
-var HelpCommand = proxyquire('../commands/HelpCommand', {
+var HelpCommand = proxyquire('../../commands/HelpCommand', {
 	'cli-spinner': Spinner,
-	'../settings.js': settings
+	'../../settings.js': settings
 });
 
 describe('Help Command', function() {
@@ -49,7 +49,7 @@ describe('Help Command', function() {
 		sandbox.stub(console, 'log');
 		help.showVersion();
 		console.log.called.should.be.true;
-		var json = JSON.parse(fs.readFileSync(__dirname + '/../package.json'));
+		var json = JSON.parse(fs.readFileSync(__dirname + '/../../package.json'));
 		console.log.firstCall.args[0].should.equal(json.version);
 		sandbox.restore();
 	});

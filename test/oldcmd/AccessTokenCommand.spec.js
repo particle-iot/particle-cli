@@ -1,7 +1,7 @@
 'use strict';
 
-var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../oldlib/interpreter');
+var Spinner = require('./../mocks/Spinner.mock.js');
+var Interpreter = require('../../oldlib/interpreter');
 var proxyquire = require('proxyquire');
 
 require('should');
@@ -12,7 +12,7 @@ var settings = {
 
 };
 
-var AccessTokenCommand = proxyquire('../commands/AccessTokenCommands', {
+var AccessTokenCommand = proxyquire('../../commands/AccessTokenCommands', {
 	'cli-spinner': Spinner,
 	'../settings.js': settings
 });

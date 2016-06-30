@@ -1,7 +1,7 @@
 'use strict';
 
-var Spinner = require('./mocks/Spinner.mock.js');
-var Interpreter = require('../oldlib/interpreter');
+var Spinner = require('./../mocks/Spinner.mock.js');
+var Interpreter = require('../../oldlib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 var sinon = require('sinon');
@@ -23,7 +23,7 @@ when.prototype.then = function() {
 	return true;
 };
 
-var KeyCommand = proxyquire('../commands/KeyCommands', {
+var KeyCommand = proxyquire('../../commands/KeyCommands', {
 	'cli-spinner': Spinner,
 	'../settings.js': settings,
 	'when': when,
