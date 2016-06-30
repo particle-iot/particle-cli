@@ -76,7 +76,7 @@
     "yargs": "^4.7.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.5.1",
+    "babel-cli": "^6.10.1",
     "babel-eslint": "^5.0.0",
     "babel-plugin-add-module-exports": "^0.1.2",
     "babel-polyfill": "^6.9.1",
@@ -114,6 +114,7 @@
   },
   "scripts": {
     "accept": "npm run compile && accept/run",
+    "babel-watch": "babel src -d dist --watch --source-maps",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/ --compilers js:babel-register",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --compilers js:babel-register test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
@@ -121,5 +122,6 @@
     "test": "mocha test/ test/oldcmd/ --compilers js:babel-register",
     "compile": "babel src -d dist",
     "prepublish": "npm run compile"
+
   }
 }
