@@ -75,7 +75,7 @@ class CLICommandItem {
 		}
 		const name = path[0];
 		const remain = path.slice(1);
-		const cmd = this._item(name);
+		const cmd = this.item(name);
 		return cmd && cmd.find(remain);
 	}
 
