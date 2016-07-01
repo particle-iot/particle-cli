@@ -2,4 +2,4 @@
 /* eslint no-var: 0 */
 global.verboseLevel = 1;
 var app = require('../dist/cli/app');
-app.run();
+app.run(process.argv);

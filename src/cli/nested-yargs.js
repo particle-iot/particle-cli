@@ -2,9 +2,9 @@
  * Builds the command line parser based on yargs.
  *
  * The commands are arranged as a hierarchy, with the root representing invocation with no commands, children
- * under the root as the first level of commands, their children are 2nd level commands etc.
+ * under the root as the first level of commands, their children are 2nd level commands and so on.
  *
- * The immediate child commands of the root is built by calling the `setup()` method on the root command configuration,
+ * The immediate child commands of the root are built via the `setup()` callback on the root command configuration,
  * after `run()` is called on the root command. At this point, the command line has not yet been parsed.
  *
  * Once the first set of commands have been built, the parser is ran. If the command line matches one of the commands,
@@ -55,7 +55,12 @@ class CLICommandItem {
 			: [this.name];
 	}
 
-	_item(name) {
+	/**
+	 * Fetches a subitem from this item.
+	 * @param {string} name  The name of the sub item to retrieve.
+	 * @returns {CLICommandItem} A command item matching the name, or `undefined` if the named item doesn't exist.
+	 */
+	item(name) {
 		return this.commands[name];
 	}
 
@@ -88,12 +93,12 @@ class CLICommandItem {
 	/**
 	 * Configures the yargs parser for this command.
 	 * @private
-	 * @param yargs
-	 * @param options
-	 * @param setup
-	 * @param examples
-	 * @param version
-	 * @param epilogue
+	 * @param {yargs} yargs         the yargs instance to configure
+	 * @param {object} options      yargs options
+	 * @param {function(yargs)} setup     a function to call after setting the options
+	 * @param {Array} examples      yargs examples
+	 * @param {function} version    A function to retrieve the version
+	 * @param {string} epilogue     Printed at the end of the command block.
 	 */
 	configure(yargs, {options, setup, examples, version, epilogue}) {
 		if (options) {
@@ -118,31 +123,65 @@ class CLICommandItem {
 			yargs.epilogue(epilogue);
 		}
 
-		const errorHandler = createErrorHandler(yargs);
-		yargs.fail(errorHandler);
-
+		yargs.exitProcess(false);
 		yargs.help('help');
 	}
 
-	parse(yargs, args) {
-		const argv = yargs.argv; //args===undefined ? yargs.argv : yargs.parse(args);
+	/**
+	 * @param args  An array of command line arguments to parse
+	 * @param yargs The yargs instance to use for parsing.
+	 *
+	 * This method is called by the yargs parser, passing in the yargs instance. It's bound with this and the args
+	 * from the context.
+	 */
+	parse(args, yargs) {
 
-		if (this.options.parsed) {
-			this.options.parsed(yargs);
+		if (yargs===undefined) {
+			yargs = Yargs;
 		}
 
-		if (this.options.handler) {
-			when.try(this.options.handler.bind(this, argv))
-				.done(() => {}, errorHandler);
+		let error = undefined;
+		yargs.fail((msg, err) => {
+			error = err || msg;
+		});
+
+		const argv = this.configureAndParse(args, yargs);
+		if (!error) {
+			if (this.options.parsed) {
+				this.options.parsed(yargs);
+			}
+
+			if (this.matches(argv)) {
+				argv.clicommand = this;
+			}
+		} else {
+			argv.clierror = error;
 		}
 
 		return argv;
 	}
+
+	configureAndParse(args, yargs) {
+		this.configureParser(args, yargs);
+		return yargs.parse(args);
+	}
+
+	matches(argv) {
+		return _.isEqual(argv._, this.path);
+	}
+
+	exec(argv) {
+		if (this.options.handler) {
+			when.try(this.options.handler.bind(this, argv))
+				.done(() => {}, errorHandler);
+		}
+	}
 }
 
 /**
- * Describes a group of commands that are related, and whose path has a common prefix.
- * Commands and sub-categories
+ * Describes a container of commands, and whose path has a common prefix.
+ * Uses the container pattern where child items can be further nested categories or
+ * CLICommand instance.
  */
 class CLICommandCategory extends CLICommandItem {
 	constructor(name, description, options) {
@@ -156,35 +195,37 @@ class CLICommandCategory extends CLICommandItem {
 	 * @param argv  the parsed yargs arguments
 	 * @returns {boolean} the validity of the check.
 	 */
-	check(argv) {
-		const commandName = argv._[this.path.length - 1];
-		const command = this.commands[commandName];
+	check(yargs, argv) {
+		// We can't use `yargs.strict()` because it is possible that
+		// `options.setup` changes the options during execution and this
+		// seems to interfere with the timing for strict mode.
+		// Additionally, `yargs.strict()` does not seem to handle pre-
+		// negated params like `--no-run`.
+		checkForUnknownArguments(yargs, argv);
 
-		if (!commandName) {
-			throw usageError('Please enter a valid command.');
+		// ensure common prefix
+		if (!this.matches(argv)) {
+			throw unknownCommandError(argv._);
 		}
 
-		if (!command) {
-			throw usageError('No such command `'
-				+ this.path.slice(1).join(' ')+ ' '
-				+ commandName + '`');
-		}
 		return true;
 	}
 
-	run(yargs, args) {
+	configureParser(args, yargs) {
+
 		this.configure(yargs, this.options);
 
+		// add the subcommands of this category
 		_.forEach(this.commands, (command) => {
-			yargs.command(command.name, command.description, () => command.run(Yargs, args));
+			yargs.command(command.name, command.description, (yargs) => { return { argv: command.parse(args, yargs)}; } );
 		});
 
 		yargs
 			.usage('Usage: ' + this.path.join(' ') + ' <command>')
-			.check((argv) => this.check(argv))
-			.demand(this.path.length, 'Please enter a valid command2.');
+			.check((argv) => this.check(yargs, argv))
+			.demand(this.path.length, 'Please enter a valid command.');
 
-		return this.parse(yargs, args);
+		return yargs;
 	}
 }
 
@@ -196,6 +237,11 @@ class CLIRootCategory extends CLICommandCategory {
 	get path() {
 		return [];
 	}
+
+	exec(yargs) {
+		yargs.showHelp();
+	}
+
 }
 
 class CLICommand extends CLICommandItem {
@@ -216,7 +262,7 @@ class CLICommand extends CLICommandItem {
 		this.parent = null;
 	}
 
-	run(yargs, args) {
+	configureParser(args, yargs) {
 
 		this.configure(yargs, this.options);
 
@@ -226,7 +272,7 @@ class CLICommand extends CLICommandItem {
 				// `options.setup` changes the options during execution and this
 				// seems to interfere with the timing for strict mode.
 				// Additionally, `yargs.strict()` does not seem to handle pre-
-				// negated params like `--no-parse`.
+				// negated params like `--no-run`.
 				checkForUnknownArguments(yargs, argv);
 
 				if (this.options.params) {
@@ -239,7 +285,7 @@ class CLICommand extends CLICommandItem {
 				+ ' [options]'
 				+ (this.options.params ? ' ' + this.options.params : ''));
 
-		return this.parse(yargs, args);
+		return yargs;
 	}
 }
 
@@ -259,6 +305,7 @@ function createErrorHandler(yargs) {
 		if (err.stack) {
 			console.log(err, err.stack.split("\n"));
 		}
+		// todo - try to find a more controllable way to singal an error - this isn't easily testable.
 		process.exit(1);
 	};
 }
@@ -286,10 +333,8 @@ function checkForUnknownArguments(yargs, argv) {
 		}
 	});
 
-	if (unknown.length === 1) {
-		throw usageError('Unknown argument: ' + unknown[0]);
-	} else if (unknown.length > 1) {
-		throw usageError('Unknown arguments: ' + unknown.join(', '));
+	if (unknown.length) {
+		throw unknownArgumentError(unknown);
 	}
 }
 
@@ -299,7 +344,7 @@ function checkForUnknownArguments(yargs, argv) {
  * @param {object} yargs    The yargs command line parser
  * @param {Array<String>} argv     The parsed command line
  * @param {Array<String>} path     The command path the params apply to
- * @param {string} params   The params to parse.
+ * @param {string} params   The params to doParse.
  */
 function parseParams(yargs, argv, path, params) {
 	let required = 0;
@@ -357,6 +402,10 @@ function parseParams(yargs, argv, path, params) {
 		});
 }
 
+/**
+ * @param {object} options
+ * @returns {CLIRootCategory} The root category for the app command line args.
+ */
 function createAppCategory(options) {
 	return new CLIRootCategory(options);
 }
@@ -391,12 +440,12 @@ function createCommand(category, name, description, options) {
 
 /**
  * Top-level invocation of the command processor.
- * @param command
- * @param args
+ * @param {CLICommandItem} command
+ * @param {Array} args
  * @returns {*}
  */
 function run(command, args) {
-	return (args===Yargs) ? command.run(args, undefined) : command.run(Yargs, args);
+	return command.parse(args, Yargs);
 }
 
 function baseError(message, data) {
@@ -420,9 +469,23 @@ function applicationError(message, data) {
 	return error;
 }
 
+function unknownCommandError(command) {
+	const command_string = command.join(' ');
+	return usageError(`No such command '${command_string}'`, command);
+}
+
+function unknownArgumentError(argument) {
+	const args_string = argument.join(', ');
+	const s = argument.length > 1 ? 's' : '';
+	return usageError(`Unknown argument${s} '${args_string}'`, argument);
+}
+
+
 export {
 	run,
 	createCommand,
 	createCategory,
-	createAppCategory
+	createAppCategory,
+	unknownCommandError,
+	unknownArgumentError
 };
