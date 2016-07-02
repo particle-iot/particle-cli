@@ -86,14 +86,11 @@ export default {
 			// this also gives us more control.
 			if (argv.help) {
 				cli.showHelp();
-			}
-			else if (argv.version) {
+			} else if (argv.version) {
 				console.log(pkg.version);
-			}
-			else if (argv.clierror) {
+			} else if (argv.clierror) {
 				errors(argv.clierror);
-			}
-			else if (argv.clicommand) {
+			} else if (argv.clicommand) {
 				argv.clicommand.exec(argv, errors);
 			}
 		});
