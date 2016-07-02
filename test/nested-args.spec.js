@@ -261,7 +261,7 @@ describe('command-line parsing', () => {
 			const app = cli.createAppCategory();
 			const cmd = cli.createCommand(app, 'cmd', 'do summat');
 
-			expect(cmd.parse(['cmd', 'stragglers', 'here'])).to.have.property('clierror')
+			expect(cli.parse(app, ['cmd', 'stragglers', 'here'])).to.have.property('clierror')
 				.deep.equal(cli.errors.unknownParametersError(['stragglers', 'here']));
 		});
 	});
