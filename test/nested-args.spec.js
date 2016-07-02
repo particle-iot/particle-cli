@@ -81,6 +81,13 @@ describe('command-line parsing', () => {
 			expect(result.isUsageError).to.be.true;
 		});
 
+		it('unknown parameters', () => {
+			const param = ['1', '2'];
+			const result = cli.errors.unknownParametersError(param);
+			expect(result.data).to.be.equal(param);
+			expect(result.msg).to.be.equal('Command parameters \'1 2\' are not expected here.');
+			expect(result.isUsageError).to.be.true;
+		});
 	});
 	
 	it('returns the root cateogry for an empty command line', () => {
@@ -221,8 +228,9 @@ describe('command-line parsing', () => {
 		expect(result).to.have.property('c').deep.equal(['3','4']);
 	});
 
-	it('rejects commands with surplus arguments', () => {
-		expect(paramsCommand('[a]', ['hey', 'there'])).to.have.property('clierror').equal('hey');
+	it('rejects parameterized command with surplus arguments', () => {
+		expect(paramsCommand('[a]', ['hey', 'there', 'you'])).to.have.property('clierror')
+			.deep.equal(cli.errors.unknownParametersError(['there', 'you']));
 	});
 
 

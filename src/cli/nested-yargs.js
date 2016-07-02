@@ -406,6 +406,10 @@ function parseParams(yargs, argv, path, params) {
 
 			argv.params[param] = value;
 		});
+
+	if (!variadic && required+optional < extra.length) {
+		throw unknownParametersError(extra.slice(required+optional));
+	}
 }
 
 /**
@@ -505,13 +509,19 @@ function requiredParameterPositionError(param) {
 	return applicationError(`Required parameter '${param}' must be placed before all optional parameters.`, param);
 }
 
+function unknownParametersError(params) {
+	const paramsString = params.join(' ');
+	return usageError(`Command parameters '${paramsString}' are not expected here.`, params);
+}
+
 const errors = {
 	unknownCommandError,
 	unknownArgumentError,
 	requiredParameterError,
 	variadicParameterRequiredError,
 	variadicParameterPositionError,
-	requiredParameterPositionError
+	requiredParameterPositionError,
+	unknownParametersError
 };
 
 function showHelp() {
