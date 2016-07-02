@@ -184,7 +184,14 @@ describe('command-line parsing', () => {
 			const cmd = cli.createCommand(app, 'cmd', 'do stuff', {
 				params: params
 			});
-			return app.parse(['cmd'].concat(args));
+			const result = app.parse(['cmd'].concat(args));
+			// only one of them set
+			expect(result.clicommand || result.clierror).to.be.ok;
+			expect(result.clicommand && result.clierror).to.be.not.ok;
+			if (result.clicommand) {
+				expect(result.clicommand).to.be.equal(cmd);
+			}
+			return result;
 		}
 
 		it("rejects varadic parameters not in final position", () => {

@@ -359,6 +359,8 @@ function parseParams(yargs, argv, path, params) {
 
 	const extra = argv._.slice(path.length);
 
+	argv._ = argv._.slice(0, path.length);
+
 	params.replace(/(<[^>]+>|\[[^\]]+\])/g,
 		(match) => {
 			if (variadic) {
