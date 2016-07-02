@@ -24,14 +24,21 @@ const app = cli.createAppCategory({
 		'json': {
 			boolean: true,
 			description: 'Output in JSON format instead of human friendly'
+		},
+		'help': {
+			boolean: true,
+			description: 'Provides extra details and options for a given command'
+		},
+		'version': {
+			boolean: true,
+			description: 'Show version number'
 		}
 	},
-	version: pkg.version,
 	epilogue: 'For more information, visit our documentation at https://docs.particle.io\n\nparticle-cli ' + pkg.version,
 
 	/**
 	 * Setup global attributes from the parsed arguments.
-	 * @param yargs
+	 * @param {*} yargs The yargs parser to setup
 	 */
 	setup(yargs) {
 		commands(app, cli);
@@ -39,13 +46,13 @@ const app = cli.createAppCategory({
 	},
 
 	/**
-	 * Set up the global state from the initial command parsing. 
-	 * @param yargs
+	 * Set up the global state from the initial command parsing.
+	 * @param {*} argv The parsed command line arguments.
 	 */
-	parsed(yargs) {
-		global.isInteractive = tty.isatty(process.stdin) && !yargs.argv.nonInteractive;
-		global.verboseLevel = global.verboseLevel + yargs.argv.verbose;
-		global.outputJson = yargs.argv.json;
+	parsed(argv) {
+		global.isInteractive = tty.isatty(process.stdin) && !argv.nonInteractive;
+		global.verboseLevel = global.verboseLevel + argv.verbose;
+		global.outputJson = argv.json;
 	}
 });
 
@@ -73,8 +80,33 @@ export default {
 
 	newrun(args) {
 		updateCheck().then(() => {
-		 	cli.run(app, args.slice(2));
+			const errors = cli.createErrorHandler();
+			const argv = cli.parse(app, args.slice(2));
+			// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
+			// this also gives us more control.
+			if (argv.help) {
+				cli.showHelp();
+			}
+			else if (argv.version) {
+				console.log(pkg.version);
+			}
+			else if (argv.clierror) {
+				errors(argv.clierror);
+			}
+			else if (argv.clicommand) {
+				argv.clicommand.exec(argv, errors);
+			}
 		});
+	},
+
+	isNewCommand(args) {
+		args = args.slice(2);       // remove executable and script
+		if (args.length===0 || args[0]==='help') {
+			// use old help for now
+			return false;
+		}
+		const argv = app.parse(args);
+		return argv.help || (argv.clicommand && !argv.clierror);
 	},
 
 	oldrun(args) {
@@ -86,6 +118,12 @@ export default {
 	},
 
 	run(args) {
-		this.newrun(args);
+		updateCheck().then(() => {
+			if (this.isNewCommand(args)) {
+				this.newrun(args);
+			} else {
+				this.oldrun(args);
+			}
+		});
 	}
 };

@@ -10,7 +10,7 @@
  * Once the first set of commands have been built, the parser is ran. If the command line matches one of the commands,
  * the `run()` method for the command is invoked. This registers options, help text, examples and subcommands under
  * the first level and the command string parsed again, causing subsequent nested commands to be registered and parsed.
- * 
+ *
  * The first parser handles the top-level command, the next level handles sub-commands
  * of the top level and so on.
  * With each level, the yargs parser is augmented with new commands, options and parameters.
@@ -25,10 +25,10 @@ import _ from 'lodash';
 class CLICommandItem {
 
 	/**
-	 *
-	 * @param name
-	 * @param description
-	 * @param options - options for yargs processing. it has these defined attributes:
+	 * Constructor.
+	 * @param {string} name             The name of the command. This is the text the command is recognized by.
+	 * @param {string} description      A description of the command. Used to print help text / error messages.
+	 * @param {object} options - options for yargs processing. it has these defined attributes:
 	 *  - options: the options to pass to yargs
 	 *  - setup: a function called with yargs to allow additional setup of the command line parsing
 	 *  - examples: an array of examples to add to yargs
@@ -66,11 +66,11 @@ class CLICommandItem {
 
 	/**
 	 * Finds the command at the given path.
-	 * @param path
-	 * @returns {*}
+	 * @param {Array<string>} path  The command path to find from this command
+	 * @returns {CliCommandItem}  the item found at the path or undefined
 	 */
 	find(path) {
-		if (!path) {
+		if (!path || !path.length) {
 			return this;
 		}
 		const name = path[0];
@@ -80,8 +80,8 @@ class CLICommandItem {
 	}
 
 	/**
-	 * Adds a command item to this point in the command tree.
-	 * @param {CLICommandItem} the command to add.
+	 * Adds a command item at this point in the command tree.
+	 * @param {CLICommandItem} item     the command to add.
 	 * @returns {CLICommandItem} this
 	 */
 	addItem(item) {
@@ -124,15 +124,15 @@ class CLICommandItem {
 		}
 
 		yargs.exitProcess(false);
-		yargs.help('help');
 	}
 
 	/**
-	 * @param args  An array of command line arguments to parse
-	 * @param yargs The yargs instance to use for parsing.
-	 *
-	 * This method is called by the yargs parser, passing in the yargs instance. It's bound with this and the args
-	 * from the context.
+	 * @param {Array<string>} args  The command line arguments to parse
+	 * @param {object} yargs The yargs instance to use for parsing.
+	 * @return {object} the results of parsing. The object has these properties:
+	 *  clicommand: the CLICommandItem instance that matched
+	 *  clierror: any errors produces (mutually exclusive with clicommand)
+	 *  *: properties corresponding to any options specified on the command line.
 	 */
 	parse(args, yargs) {
 
@@ -148,7 +148,7 @@ class CLICommandItem {
 		const argv = this.configureAndParse(args, yargs);
 		if (!error) {
 			if (this.options.parsed) {
-				this.options.parsed(yargs);
+				this.options.parsed(argv);
 			}
 
 			if (this.matches(argv)) {
@@ -170,7 +170,7 @@ class CLICommandItem {
 		return _.isEqual(argv._, this.path);
 	}
 
-	exec(argv) {
+	exec(argv, errorHandler) {
 		if (this.options.handler) {
 			when.try(this.options.handler.bind(this, argv))
 				.done(() => {}, errorHandler);
@@ -192,7 +192,8 @@ class CLICommandCategory extends CLICommandItem {
 	/**
 	 * Checks that the given command exists.
 	 * @callback
-	 * @param argv  the parsed yargs arguments
+	 * @param {object} yargs The yargs parser instance for this command.
+	 * @param {object} argv  the parsed yargs arguments
 	 * @returns {boolean} the validity of the check.
 	 */
 	check(yargs, argv) {
@@ -217,7 +218,9 @@ class CLICommandCategory extends CLICommandItem {
 
 		// add the subcommands of this category
 		_.forEach(this.commands, (command) => {
-			yargs.command(command.name, command.description, (yargs) => { return { argv: command.parse(args, yargs)}; } );
+			yargs.command(command.name, command.description, (yargs) => {
+				return { argv: command.parse(args, yargs)};
+			} );
 		});
 
 		yargs
@@ -238,7 +241,7 @@ class CLIRootCategory extends CLICommandCategory {
 		return [];
 	}
 
-	exec(yargs) {
+	exec(yargs, errorHandler) {
 		yargs.showHelp();
 	}
 
@@ -296,6 +299,9 @@ class CLICommand extends CLICommandItem {
  * @returns {function(err)} the error handler function
  */
 function createErrorHandler(yargs) {
+	if (!yargs) {
+		yargs = Yargs;
+	}
 	return (err) => {
 		if (!err || err.isUsageError) {
 			yargs.showHelp();
@@ -303,7 +309,7 @@ function createErrorHandler(yargs) {
 
 		console.log(chalk.red(err.message || err));
 		if (err.stack) {
-			console.log(err, err.stack.split("\n"));
+			console.log(err, err.stack.split('\n'));
 		}
 		// todo - try to find a more controllable way to singal an error - this isn't easily testable.
 		process.exit(1);
@@ -442,9 +448,12 @@ function createCommand(category, name, description, options) {
  * Top-level invocation of the command processor.
  * @param {CLICommandItem} command
  * @param {Array} args
- * @returns {*}
+ * @returns {*} The argv from yargs parsing.
+ * Options/booleans are attributes of the object. The property `clicommand` contains the command corresponding
+ * to the requested command. `clierror` contains any error encountered durng parsing.
  */
-function run(command, args) {
+function parse(command, args) {
+	Yargs.reset();
 	return command.parse(args, Yargs);
 }
 
@@ -470,22 +479,27 @@ function applicationError(message, data) {
 }
 
 function unknownCommandError(command) {
-	const command_string = command.join(' ');
-	return usageError(`No such command '${command_string}'`, command);
+	const commandString = command.join(' ');
+	return usageError(`No such command '${commandString}'`, command);
 }
 
 function unknownArgumentError(argument) {
-	const args_string = argument.join(', ');
+	const argsString = argument.join(', ');
 	const s = argument.length > 1 ? 's' : '';
-	return usageError(`Unknown argument${s} '${args_string}'`, argument);
+	return usageError(`Unknown argument${s} '${argsString}'`, argument);
 }
 
+function showHelp() {
+	Yargs.showHelp();
+}
 
 export {
-	run,
+	parse,
 	createCommand,
 	createCategory,
 	createAppCategory,
 	unknownCommandError,
-	unknownArgumentError
+	unknownArgumentError,
+	createErrorHandler,
+	showHelp,
 };

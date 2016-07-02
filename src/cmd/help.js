@@ -1,4 +1,3 @@
-import yargs from 'yargs';
 
 export default (app, cli) => {
 	cli.createCommand(app, 'help', 'Provides extra details and options for a given command', {
