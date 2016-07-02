@@ -102,8 +102,9 @@ export default {
 			// use old help for now
 			return false;
 		}
-		const argv = app.parse(args);
-		return argv.help || (argv.clicommand && !argv.clierror);
+		const argv = cli.parse(app, args);
+		const result = argv.help || (argv.clicommand && (!argv.clierror || argv.clierror.type!==cli.errors.unknownCommandError) );
+		return result;
 	},
 
 	oldrun(args) {
