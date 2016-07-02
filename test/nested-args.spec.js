@@ -34,6 +34,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(args);
 			expect(result.msg).to.be.equal('No such command \'a b\'');
 			expect(result.isUsageError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.unknownCommandError);
 		});
 
 		it('unknown argument', () => {
@@ -42,6 +43,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(arg);
 			expect(result.msg).to.be.equal('Unknown argument \'a\'');
 			expect(result.isUsageError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.unknownArgumentError);
 		});
 
 		it('unknown arguments', () => {
@@ -50,6 +52,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(arg);
 			expect(result.msg).to.be.equal('Unknown arguments \'a, b\'');
 			expect(result.isUsageError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.unknownArgumentError);
 		});
 
 		const param = 'param';
@@ -58,6 +61,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(param);
 			expect(result.msg).to.be.equal('Variadic parameter \'param\' must the final parameter.');
 			expect(result.isApplicationError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.variadicParameterPositionError);
 		});
 
 		it('optional parameter position', () => {
@@ -65,6 +69,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(param);
 			expect(result.msg).to.be.equal('Required parameter \'param\' must be placed before all optional parameters.');
 			expect(result.isApplicationError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.requiredParameterPositionError);
 		});
 
 		it('parameter required', () => {
@@ -72,6 +77,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(param);
 			expect(result.msg).to.be.equal('Parameter \'param\' is required.');
 			expect(result.isUsageError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.requiredParameterError);
 		});
 
 		it('variadic parameter required', () => {
@@ -79,6 +85,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(param);
 			expect(result.msg).to.be.equal('Parameter \'param\' must have at least one item.');
 			expect(result.isUsageError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.variadicParameterRequiredError);
 		});
 
 		it('unknown parameters', () => {
@@ -87,6 +94,7 @@ describe('command-line parsing', () => {
 			expect(result.data).to.be.equal(param);
 			expect(result.msg).to.be.equal('Command parameters \'1 2\' are not expected here.');
 			expect(result.isUsageError).to.be.true;
+			expect(result.type).to.be.equal(cli.errors.unknownParametersError);
 		});
 	});
 	
@@ -113,6 +121,14 @@ describe('command-line parsing', () => {
 		const argv = app.parse(['one', 'chance']);
 		expect(argv.clierror).to.be.undefined;
 		expect(argv.clicommand).to.be.equal(cmd);
+	});
+
+	it('returns the category when the command line matches', () => {
+		const app = cli.createAppCategory();
+		const one = cli.createCategory(app, 'one', 'you get');
+		const argv = app.parse(['one']);
+		expect(argv.clierror).to.be.undefined;
+		expect(argv.clicommand).to.be.equal(one);
 	});
 
 	it('returns an error when the command line is not recognized', () => {

@@ -468,48 +468,50 @@ function baseError(message, data) {
 	return error;
 }
 
-function usageError(message, data) {
+function usageError(message, data, type) {
 	const error = baseError(message, data);
 	error.isUsageError = true;
+	error.type = type;
 	return error;
 }
 
-function applicationError(message, data) {
+function applicationError(message, data, type) {
 	const error = baseError(message, data);
 	error.isApplicationError = true;
+	error.type = type;
 	return error;
 }
 
 function unknownCommandError(command) {
 	const commandString = command.join(' ');
-	return usageError(`No such command '${commandString}'`, command);
+	return usageError(`No such command '${commandString}'`, command, unknownCommandError);
 }
 
 function unknownArgumentError(argument) {
 	const argsString = argument.join(', ');
 	const s = argument.length > 1 ? 's' : '';
-	return usageError(`Unknown argument${s} '${argsString}'`, argument);
+	return usageError(`Unknown argument${s} '${argsString}'`, argument, unknownArgumentError);
 }
 
 function requiredParameterError(param) {
-	return usageError(`Parameter '${param}' is required.`, param);
+	return usageError(`Parameter '${param}' is required.`, param, requiredParameterError);
 }
 
 function variadicParameterRequiredError(param) {
-	return usageError(`Parameter '${param}' must have at least one item.`, param);
+	return usageError(`Parameter '${param}' must have at least one item.`, param, variadicParameterRequiredError);
 }
 
 function variadicParameterPositionError(param) {
-	return applicationError(`Variadic parameter '${param}' must the final parameter.`, param);
+	return applicationError(`Variadic parameter '${param}' must the final parameter.`, param, variadicParameterPositionError);
 }
 
 function requiredParameterPositionError(param) {
-	return applicationError(`Required parameter '${param}' must be placed before all optional parameters.`, param);
+	return applicationError(`Required parameter '${param}' must be placed before all optional parameters.`, param, requiredParameterPositionError);
 }
 
 function unknownParametersError(params) {
 	const paramsString = params.join(' ');
-	return usageError(`Command parameters '${paramsString}' are not expected here.`, params);
+	return usageError(`Command parameters '${paramsString}' are not expected here.`, params, unknownParametersError);
 }
 
 const errors = {
