@@ -162,83 +162,85 @@ describe('command-line parsing', () => {
 			cli.errors.unknownArgumentError(['one']));
 	});
 
-	function paramsCommand(params, args) {
-		const app = cli.createAppCategory();
-		const cmd = cli.createCommand(app, 'cmd', 'do stuff', {
-			params: params
-		});
-		return app.parse(['cmd'].concat(args));
-	}
-	
-	it("rejects varadic parameters not in final position", () => {
-		expect(paramsCommand('[a] [b...] [c]', ['1','2', '3']).clierror).
+	describe('parameters', () => {
+		function paramsCommand(params, args) {
+			const app = cli.createAppCategory();
+			const cmd = cli.createCommand(app, 'cmd', 'do stuff', {
+				params: params
+			});
+			return app.parse(['cmd'].concat(args));
+		}
+
+		it("rejects varadic parameters not in final position", () => {
+			expect(paramsCommand('[a] [b...] [c]', ['1','2', '3']).clierror).
 			to.deep.equal(cli.errors.variadicParameterPositionError('b'));
-	});
+		});
 
-	it("rejects omitted required varadic parameters", () => {
-		expect(paramsCommand('[a] <b...>', ['1']).clierror).
+		it("rejects omitted required varadic parameters", () => {
+			expect(paramsCommand('[a] <b...>', ['1']).clierror).
 			to.deep.equal(cli.errors.variadicParameterRequiredError('b'));
-	});
+		});
 
-	it("rejects omitted required parameters", () => {
-		expect(paramsCommand('<a> <b>', ['1']).clierror).
+		it("rejects omitted required parameters", () => {
+			expect(paramsCommand('<a> <b>', ['1']).clierror).
 			to.deep.equal(cli.errors.requiredParameterError('b'));
-	});
+		});
 
-	it("rejects required parameters after optional parameters", () => {
-		expect(paramsCommand('[a] <b>', ['1']).clierror).
+		it("rejects required parameters after optional parameters", () => {
+			expect(paramsCommand('[a] <b>', ['1']).clierror).
 			to.deep.equal(cli.errors.requiredParameterPositionError('b'));
-	});
+		});
 
-	it('allows commands with unfilled optional parameters', () => {
-		expect(paramsCommand('[a]', []).params).to.have.property('a').equal(undefined);
-	});
+		it('allows commands with unfilled optional parameters', () => {
+			expect(paramsCommand('[a]', []).params).to.have.property('a').equal(undefined);
+		});
 
-	it('allows commands with filled optional parameters', () => {
-		expect(paramsCommand('[a]', ['hey']).params).to.have.property('a').equal('hey');
-	});
+		it('allows commands with filled optional parameters', () => {
+			expect(paramsCommand('[a]', ['hey']).params).to.have.property('a').equal('hey');
+		});
 
-	it('allows commands with filled required parameters', () => {
-		expect(paramsCommand('<a>', ['hey']).params).to.have.property('a').equal('hey');
-	});
+		it('allows commands with filled required parameters', () => {
+			expect(paramsCommand('<a>', ['hey']).params).to.have.property('a').equal('hey');
+		});
 
-	it('rejects commands with unfilled required parameters', () => {
-		expect(paramsCommand('<a> <b>', ['1'])).to.have.property('clierror')
-			.deep.equal(cli.errors.requiredParameterError('b'));
-	});
+		it('rejects commands with unfilled required parameters', () => {
+			expect(paramsCommand('<a> <b>', ['1'])).to.have.property('clierror')
+				.deep.equal(cli.errors.requiredParameterError('b'));
+		});
 
-	it('allows commands with mixed optional and required parameters', () => {
-		const result = paramsCommand('<a> [b] [c]', ['1', '2']).params;
-		expect(result).to.have.property('a').equal('1');
-		expect(result).to.have.property('b').equal('2');
-		expect(result).to.have.property('c').equal(undefined);
-	});
+		it('allows commands with mixed optional and required parameters', () => {
+			const result = paramsCommand('<a> [b] [c]', ['1', '2']).params;
+			expect(result).to.have.property('a').equal('1');
+			expect(result).to.have.property('b').equal('2');
+			expect(result).to.have.property('c').equal(undefined);
+		});
 
-	it('allows commands with mixed optional and required parameters and optional unfilled variadic', () => {
-		const result = paramsCommand('<a> [b] [c...]', ['1', '2']).params;
-		expect(result).to.have.property('a').equal('1');
-		expect(result).to.have.property('b').equal('2');
-		expect(result).to.have.property('c').deep.equal([]);
-	});
+		it('allows commands with mixed optional and required parameters and optional unfilled variadic', () => {
+			const result = paramsCommand('<a> [b] [c...]', ['1', '2']).params;
+			expect(result).to.have.property('a').equal('1');
+			expect(result).to.have.property('b').equal('2');
+			expect(result).to.have.property('c').deep.equal([]);
+		});
 
-	it('allows commands with mixed optional and required parameters and optional filled variadic', () => {
-		const result = paramsCommand('<a> [b] [c...]', ['1', '2', '3', '4']).params;
-		expect(result).to.have.property('a').equal('1');
-		expect(result).to.have.property('b').equal('2');
-		expect(result).to.have.property('c').deep.equal(['3','4']);
-	});
+		it('allows commands with mixed optional and required parameters and optional filled variadic', () => {
+			const result = paramsCommand('<a> [b] [c...]', ['1', '2', '3', '4']).params;
+			expect(result).to.have.property('a').equal('1');
+			expect(result).to.have.property('b').equal('2');
+			expect(result).to.have.property('c').deep.equal(['3','4']);
+		});
 
-	it('rejects parameterized command with surplus arguments', () => {
-		expect(paramsCommand('[a]', ['hey', 'there', 'you'])).to.have.property('clierror')
-			.deep.equal(cli.errors.unknownParametersError(['there', 'you']));
-	});
+		it('rejects parameterized command with surplus arguments', () => {
+			expect(paramsCommand('[a]', ['hey', 'there', 'you'])).to.have.property('clierror')
+				.deep.equal(cli.errors.unknownParametersError(['there', 'you']));
+		});
 
-	it('rejects parameters to non-parameterized command', () => {
-		const app = cli.createAppCategory();
-		const cmd = cli.createCommand(app, 'cmd', 'do summat');
+		it('rejects parameters to non-parameterized command', () => {
+			const app = cli.createAppCategory();
+			const cmd = cli.createCommand(app, 'cmd', 'do summat');
 
-		expect(cmd.parse(['cmd', 'stragglers', 'here'])).to.have.property('clierror')
-			.deep.equal(cli.errors.unknownParametersError(['stragglers', 'here']));
+			expect(cmd.parse(['cmd', 'stragglers', 'here'])).to.have.property('clierror')
+				.deep.equal(cli.errors.unknownParametersError(['stragglers', 'here']));
+		});
 	});
 
 });
