@@ -233,6 +233,13 @@ describe('command-line parsing', () => {
 			.deep.equal(cli.errors.unknownParametersError(['there', 'you']));
 	});
 
+	it('rejects parameters to non-parameterized command', () => {
+		const app = cli.createAppCategory();
+		const cmd = cli.createCommand(app, 'cmd', 'do summat');
+
+		expect(cmd.parse(['cmd', 'stragglers', 'here'])).to.have.property('clierror')
+			.deep.equal(cli.errors.unknownParametersError(['stragglers', 'here']));
+	});
 
 });
 

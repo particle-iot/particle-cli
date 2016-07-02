@@ -278,9 +278,7 @@ class CLICommand extends CLICommandItem {
 				// negated params like `--no-run`.
 				checkForUnknownArguments(yargs, argv);
 
-				if (this.options.params) {
-					parseParams(yargs, argv, this.path, this.options.params);
-				}
+				parseParams(yargs, argv, this.path, this.options.params);
 
 				return true;
 			})
