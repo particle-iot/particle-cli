@@ -350,7 +350,7 @@ function checkForUnknownArguments(yargs, argv) {
  * @param {object} yargs    The yargs command line parser
  * @param {Array<String>} argv     The parsed command line
  * @param {Array<String>} path     The command path the params apply to
- * @param {string} params   The params to doParse.
+ * @param {string} params   The params to parse.
  */
 function parseParams(yargs, argv, path, params) {
 	let required = 0;
@@ -359,10 +359,12 @@ function parseParams(yargs, argv, path, params) {
 
 	argv.params = {};
 
+	const extra = argv._.slice(path.length);
+
 	params.replace(/(<[^>]+>|\[[^\]]+\])/g,
 		(match) => {
 			if (variadic) {
-				throw applicationError('Variadic parameters must the final parameter.');
+				throw variadicParameterPositionError(variadic);
 			}
 
 			const isRequired = match[0] === '<';
@@ -373,7 +375,6 @@ function parseParams(yargs, argv, path, params) {
 					return param;
 				});
 			let value;
-
 			if (isRequired) {
 				required++;
 			} else {
@@ -381,26 +382,25 @@ function parseParams(yargs, argv, path, params) {
 			}
 
 			if (variadic) {
-				value = argv._.slice(path.length - 2 + required + optional)
-					.map(String);
+				variadic = param;   // save the name
+				value = extra.slice(-1 + required + optional).map(String);
 
 				if (isRequired && !value.length) {
-					throw usageError('Parameter '
-						+ '`' + param + '` is must have at least one item.');
+					throw variadicParameterRequiredError(param);
 				}
 			} else {
 				if (isRequired && optional > 0) {
-					throw applicationError('Optional parameters must be specified last');
+					throw requiredParameterPositionError(param);
 				}
 
-				value = argv._[path.length - 2 + required + optional];
+				value = extra[-1 + required + optional];
 
 				if (value) {
 					value = String(value);
 				}
 
 				if (isRequired && typeof value === 'undefined') {
-					throw usageError('Parameter ' + '`' + param + '` is required.');
+					throw requiredParameterError(param);
 				}
 			}
 
@@ -489,17 +489,42 @@ function unknownArgumentError(argument) {
 	return usageError(`Unknown argument${s} '${argsString}'`, argument);
 }
 
+function requiredParameterError(param) {
+	return usageError(`Parameter '${param}' is required.`, param);
+}
+
+function variadicParameterRequiredError(param) {
+	return usageError(`Parameter '${param}' must have at least one item.`, param);
+}
+
+function variadicParameterPositionError(param) {
+	return applicationError(`Variadic parameter '${param}' must the final parameter.`, param);
+}
+
+function requiredParameterPositionError(param) {
+	return applicationError(`Required parameter '${param}' must be placed before all optional parameters.`, param);
+}
+
+const errors = {
+	unknownCommandError,
+	unknownArgumentError,
+	requiredParameterError,
+	variadicParameterRequiredError,
+	variadicParameterPositionError,
+	requiredParameterPositionError
+};
+
 function showHelp() {
 	Yargs.showHelp();
 }
+
 
 export {
 	parse,
 	createCommand,
 	createCategory,
 	createAppCategory,
-	unknownCommandError,
-	unknownArgumentError,
 	createErrorHandler,
+	errors,
 	showHelp,
 };
