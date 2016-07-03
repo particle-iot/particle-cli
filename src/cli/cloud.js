@@ -16,6 +16,8 @@ import settings from '../../settings';
 import { platformsById } from '../lib/constants';
 
 // todo - surely this should be in lib?
+// currently it mixes command logic and UI - when these are separated then it will be suitable
+// for migration to ./lib.
 
 function login(opts) {
 	const qs = [];

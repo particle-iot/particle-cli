@@ -3,10 +3,10 @@ import _ from 'lodash';
 
 import updateCheck from './update-check';
 import pkg from '../../package.json';
-import * as cli from './nested-yargs';
+import * as cliargs from './nested-yargs';
 import commands from '../cmd';
 
-const app = cli.createAppCategory({
+const app = cliargs.createAppCategory({
 	// options for yargs
 	options: {
 		args: {
@@ -41,7 +41,7 @@ const app = cli.createAppCategory({
 	 * @param {*} yargs The yargs parser to setup
 	 */
 	setup(yargs) {
-		commands(app, cli);
+		commands(app, cliargs);
 		_.each(app.commands, addGlobalSetup);
 	},
 
@@ -76,16 +76,15 @@ function addGlobalOptions(yargs) {
 	yargs.group('help', 'Global Options:');
 }
 
-export default {
-
+export class CLI {
 	newrun(args) {
 		updateCheck().then(() => {
-			const errors = cli.createErrorHandler();
-			const argv = cli.parse(app, args.slice(2));
+			const errors = cliargs.createErrorHandler();
+			const argv = cliargs.parse(app, args.slice(2));
 			// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
 			// this also gives us more control.
 			if (argv.help) {
-				cli.showHelp();
+				cliargs.showHelp();
 			} else if (argv.version) {
 				console.log(pkg.version);
 			} else if (argv.clierror) {
@@ -94,7 +93,7 @@ export default {
 				argv.clicommand.exec(argv, errors);
 			}
 		});
-	},
+	}
 
 	isNewCommand(args) {
 		args = args.slice(2);       // remove executable and script
@@ -102,10 +101,10 @@ export default {
 			// use old help for now
 			return false;
 		}
-		const argv = cli.parse(app, args);
-		const result = argv.help || (argv.clicommand && (!argv.clierror || argv.clierror.type!==cli.errors.unknownCommandError) );
+		const argv = cliargs.parse(app, args);
+		const result = argv.help || (argv.clicommand && (!argv.clierror || argv.clierror.type!==cliargs.errors.unknownCommandError) );
 		return result;
-	},
+	}
 
 	oldrun(args) {
 		const Interpreter = require('../../oldlib/interpreter');
@@ -113,7 +112,7 @@ export default {
 		cli.supressWarmupMessages = true;
 		cli.startup();
 		cli.handle(args, true);
-	},
+	}
 
 	run(args) {
 		updateCheck().then(() => {
@@ -124,4 +123,12 @@ export default {
 			}
 		});
 	}
+}
+
+export default {
+	run(args) {
+		return new CLI().run(args);
+	}
 };
+
+
