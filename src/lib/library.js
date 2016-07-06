@@ -1,6 +1,6 @@
 import {Command, CommandSite} from './command';
 
-import {FileSystemLibraryRepository} from 'particle-cli-library-manager';
+import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
 const path = require('path');
 
 export class LibraryMigrateCommandSite extends CommandSite {
@@ -11,27 +11,36 @@ export class LibraryMigrateCommandSite extends CommandSite {
 	getLibraries() {}
 
 	notifyStart(lib) {}
-	notifyEnd(lib, result, err) {}
+
+	notifyEnd(lib, result, err) {
+
+	}
 }
 
 
 class AbstractLibraryMigrateCommand extends Command {
 	/**
-	 *
-	 * @param {object} state
-	 * @param {LibraryMigrateCommandSite} site
+	 * Executes the library command.
+	 * @param {object} state Conversation state
+	 * @param {LibraryMigrateCommandSite} site Conversation interface
+	 * @return {Array<object>} Returns an array, one index for each library processed.
+	 * Each element has properties:
+	 *  - libdir: the directory of the library
+	 *  - result: result of running `processLibrary()` if no errors were produced.
+	 *  - err: any error that was produced.
 	 */
 	async run(state, site) {
 		const libs = await site.getLibraries();
+		const result = [];
 		for (let libdir of libs) {
 			site.notifyStart(libdir);
 			const dir = path.resolve(libdir);
-			const parent = path.resolve(path.join(dir, '..'));
-			const libname = path.basename(dir);
-			const repo = new FileSystemLibraryRepository(parent);
-			const [result,err] = await this.processLibrary(repo, libname, state, site);
+			const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
+			const [result,err] = await this.processLibrary(repo, '', state, site);
 			site.notifyEnd(libdir, result, err);
+			result.push({libdir, result, err});
 		}
+		return result;
 	}
 
 	processLibrary(repo, libname, state, site) {}
@@ -67,7 +76,7 @@ export class LibraryMigrateCommand extends AbstractLibraryMigrateCommand {
 				result = true;
 			}
 		} catch (e) {
-			// todo - only cature and report library errors
+			// todo - only capture and report library errors
 			// other errors should be propagated and abort the command
 			err = e;
 		}

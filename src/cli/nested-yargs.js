@@ -172,8 +172,8 @@ class CLICommandItem {
 
 	exec(argv, errorHandler) {
 		if (this.options.handler) {
-			when.try(this.options.handler.bind(this, argv))
-				.done(() => {}, errorHandler);
+			return when.try(this.options.handler.bind(this, argv))
+				.done(result => result, errorHandler);
 		}
 	}
 }

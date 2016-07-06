@@ -1,3 +1,5 @@
+require 'diff_dirs'
+
 Given(/^I run particle ([^"`].*)$/) do |arg|
   step "I run `particle #{arg}`"
 end
@@ -17,11 +19,17 @@ end
 And(/^the (stderr|stdout|output) should show the new help page$/) do |out|
   step "the #{out} should contain \"Usage:\""
   step "the #{out} should contain \"Options\""
-  step "the #{out} should match exactly once /help  Provides extra details and options for a given command/"
+  step "the #{out} should match exactly once /--help\\s+Provides extra details and options for a given command/"
 end
 
 
 And(/^the (stderr|stdout|output) should match exactly once \/([^\/]*)\/$/) do |out, expected|
   step "the #{out} should match /#{expected}/"
   step "the #{out} should not match /#{expected}.*#{expected}/"
+end
+
+
+And(/^the directories "([^"]*)" and "([^"]*)" should be equal$/) do |dir1, dir2|
+  result = dirDiff expand_path(dir1), expand_path(dir2)
+  expect(result).to eq(0)
 end

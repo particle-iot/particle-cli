@@ -25,7 +25,7 @@ class CommandSite {
 		state = state || {};
 		await this.begin(state, this);
 		try {
-			await cmd.run(state, this);
+			return await cmd.run(state, this);
 		} finally {
 			await this.end(state, this);
 		}
