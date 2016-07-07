@@ -1,5 +1,5 @@
 var GitHubApi = require("github");
-var http = require('http');
+var request = require('request');
 var fs = require('fs');
 var rimraf = require('rimraf-promise');
 var _ = require('lodash');
@@ -46,7 +46,7 @@ function cleanBinariesDirectory() {
 };
 
 function downloadFirmwareBinaries(assets) {
-	Promise.all(assets.map(function (asset) {
+	return Promise.all(assets.map(function (asset) {
 		if (asset.name.match(/^system-part/)) {
 			return downloadFile(asset.browser_download_url);
 		}
@@ -59,9 +59,13 @@ function downloadFile(url) {
 		console.log("Downloading " + filename + "...");
 		downloadedBinaries.push(filename);
 		var file = fs.createWriteStream(binariesDirectory + "/" + filename);
-		http.get(url, function (response) {
-			response.pipe(file);
-			fulfill();
+		file.on('finish', function () {
+			file.close(function () {
+				fulfill();
+			});
+		});
+		request(url).pipe(file).on('error', function (err) {
+			exitWithJSON(err);
 		});
 	});
 }
