@@ -5,6 +5,7 @@
 ### Updates
 
 * Include binaries for firmware 0.5.2
+* Add Oak and Bluz platforms
 
 ## 1.14.2 - 1 June 2016
 
