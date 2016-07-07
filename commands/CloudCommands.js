@@ -56,7 +56,11 @@ var PLATFORMS = extend(utilities.knownPlatforms(), {
 	'c': 0,
 	'p': 6,
 	'e': 10,
-	'd': 88
+	'o': 82,
+	'd': 88,
+	'b': 103,
+	'bg': 269,
+	'bb': 270
 });
 
 var CloudCommand = function (cli, options) {
