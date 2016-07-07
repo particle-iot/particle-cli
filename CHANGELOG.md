@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.15.0 - 7 July 2016
+
+### Updates
+
+* Include binaries for firmware 0.5.2
+
 ## 1.14.2 - 1 June 2016
 
 ## Fixes
