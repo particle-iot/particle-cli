@@ -42,7 +42,7 @@ var path = require('path');
 var dfu = require('../oldlib/dfu.js');
 var deviceSpecs = require('../oldlib/deviceSpecs');
 
-var KeyCommands = function (cli, options) {
+function KeyCommands(cli, options) {
 	KeyCommands.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
