@@ -36,13 +36,13 @@ class AbstractLibraryMigrateCommand extends Command {
 			site.notifyStart(libdir);
 			const dir = path.resolve(libdir);
 			const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
-			const [result,err] = await this.processLibrary(repo, '', state, site);
-			site.notifyEnd(libdir, result, err);
-			result.push({libdir, result, err});
+			const [res,err] = await this.processLibrary(repo, '', state, site);
+			site.notifyEnd(libdir, res, err);
+			result.push({libdir, res, err});
 		}
 		return result;
 	}
-
+	
 	processLibrary(repo, libname, state, site) {}
 }
 

@@ -57,7 +57,7 @@ command exit code properly honoured for success/nonsuccess. Commands can further
 - Command comprises core command logic (the command) and a CommandSite object.
 
 - Command:
- - an ES6 object in src/cmd/<commandname>.js
+ - an ES6 object in src/lib/<commandname>.js
  - provides the core application logic, which may exist there, or may delegate to external
    node modules (e.g. cli-library-manager)
  - constructor takes command parameters object, command site object
