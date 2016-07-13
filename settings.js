@@ -7,7 +7,7 @@ var chalk = require('chalk');
 
 var settings = {
 	commandPath: './commands/',
-	apiUrl: 'http://localhost:9090',
+	apiUrl: 'https://api.particle.io',
 	buildUrl: 'https://build.particle.io',
 	clientId: 'CLI2',
 	access_token: null,
