@@ -34,14 +34,12 @@ class CLICommandItem {
 	 *  - examples: an array of examples to add to yargs
 	 *  - version: the version function to pass to yargs
 	 */
-	constructor(name, description, options) {
+	constructor(name, description = '', options = {}) {
 		if (!name) {
 			throw Error('name must be defined');
 		}
 		this.commands = {};
-		this.name = name;
-		this.description = description !== undefined ? description : '';
-		this.options = options || {};
+		Object.assign(this, { name, description, options });
 	}
 
 	/**

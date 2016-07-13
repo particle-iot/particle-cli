@@ -18,11 +18,8 @@
  ******************************************************************************
  */
 
-const chai = require('chai');
-const sinon = require('sinon');
-chai.use(require('sinon-chai'));
-chai.use(require('chai-as-promised'));
-const expect = chai.expect;
+
+import {expect} from '../test-setup';
 const path = require('path');
 import createLibraryCommand from '../../src/cmd/library';
 import * as cli from '../../src/cli/nested-yargs';
@@ -31,19 +28,17 @@ import { resourcesDir } from 'particle-cli-library-manager';
 describe("library", () => {
 
 	const libraryDir = path.join(resourcesDir(), 'libraries');
+	const app = cli.createAppCategory();
+	createLibraryCommand(app, cli);
 
 	describe('migrate', () => {
 		it('supports --dryrun flag', () => {
-			const app = cli.createAppCategory();
-			createLibraryCommand(app, cli);
 			const argv = cli.parse(app, ['library', 'migrate', '--dryrun']);
 			expect(argv).to.have.property('dryrun').equal(true);
 			expect(argv).to.have.property('clicommand');
 		});
 
 		it('can execute --test flag', () => {
-			const app = cli.createAppCategory();
-			createLibraryCommand(app, cli);
 			const argv = cli.parse(app, ['library', 'migrate', '--dryrun', path.join(libraryDir, 'libraries-v1')]);
 			return argv.clicommand.exec(argv);
 		});
@@ -51,10 +46,14 @@ describe("library", () => {
 
 	describe('add', () => {
 		it('populates the library name', () => {
-			const app = cli.createAppCategory();
-			createLibraryCommand(app, cli);
 			const argv = cli.parse(app, ['library', 'add', 'assettracker']);
-			expect(argv).to.have.property('name').equal('assettracker');
+			expect(argv.params).to.have.property('name').equal('assettracker');
+		});
+
+		it('requires the library name', () => {
+			const argv = cli.parse(app, ['library', 'add']);
+			const expectedError = cli.errors.requiredParameterError('name');
+			expect(argv.clierror).to.eql(expectedError);
 		});
 	});
 

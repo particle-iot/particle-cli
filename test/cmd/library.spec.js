@@ -17,11 +17,7 @@
  ******************************************************************************
  */
 
-const chai = require('chai');
-const sinon = require('sinon');
-chai.use(require('sinon-chai'));
-chai.use(require('chai-as-promised'));
-const expect = chai.expect;
+import {expect, sinon} from '../test-setup';
 const path = require('path');
 const library = require('../../src/cmd/library');
 

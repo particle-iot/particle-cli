@@ -17,11 +17,7 @@
  ******************************************************************************
  */
 
-const chai = require('chai');
-const sinon = require('sinon');
-chai.use(require('sinon-chai'));
-chai.use(require('chai-as-promised'));
-const expect = chai.expect;
+import {expect} from './test-setup';
 
 import * as cli from '../src/cli/nested-yargs'
 
@@ -97,10 +93,10 @@ describe('command-line parsing', () => {
 			expect(result.type).to.be.equal(cli.errors.unknownParametersError);
 		});
 	});
-	
+
 	it('returns the root cateogry for an empty command line', () => {
 		const app = cli.createAppCategory();
-		const argv = app.parse([]);
+		const argv = cli.parse(app, []);
 		expect(argv.clierror).to.be.undefined;
 		expect(argv.clicommand).to.be.equal(app);
 	});
@@ -108,7 +104,7 @@ describe('command-line parsing', () => {
 	it('returns an error for an unknown command', () => {
 		const app = cli.createAppCategory();
 		const unknown_command = ['funkwomble', 'farcenugget'];
-		const argv = app.parse(unknown_command);
+		const argv = cli.parse(app, unknown_command);
 		expect(argv.clicommand).to.be.undefined;
 		expect(argv.clierror).to.not.be.undefined;
 		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownCommandError(unknown_command));
@@ -118,7 +114,7 @@ describe('command-line parsing', () => {
 		const app = cli.createAppCategory();
 		const one = cli.createCategory(app, 'one', 'you get');
 		const cmd = cli.createCommand(one, 'chance', 'at life');
-		const argv = app.parse(['one', 'chance']);
+		const argv = cli.parse(app, ['one', 'chance']);
 		expect(argv.clierror).to.be.undefined;
 		expect(argv.clicommand).to.be.equal(cmd);
 	});
@@ -126,7 +122,7 @@ describe('command-line parsing', () => {
 	it('returns the category when the command line matches', () => {
 		const app = cli.createAppCategory();
 		const one = cli.createCategory(app, 'one', 'you get');
-		const argv = app.parse(['one']);
+		const argv = cli.parse(app, ['one']);
 		expect(argv.clierror).to.be.undefined;
 		expect(argv.clicommand).to.be.equal(one);
 	});
@@ -135,7 +131,7 @@ describe('command-line parsing', () => {
 		const app = cli.createAppCategory();
 		const one = cli.createCategory(app, 'one', 'you get');
 		const args = ['one', 'frumpet'];
-		const argv = app.parse(args);
+		const argv = cli.parse(app, args);
 		expect(argv.clicommand).to.be.equal(undefined);
 		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownCommandError(args));
 	});
@@ -143,7 +139,7 @@ describe('command-line parsing', () => {
 	it('returns an error when an unknown option is present', () => {
 		const app = cli.createAppCategory();
 		const args = ['--ftlspeed'];
-		const argv = app.parse(args);
+		const argv = cli.parse(app, args);
 		expect(argv.clicommand).to.be.equal(undefined);
 		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownArgumentError(['ftlspeed']));
 	});
@@ -154,8 +150,8 @@ describe('command-line parsing', () => {
 			cm: { alias: 'chundermonkey' }
 		}});
 
-		expect(app.parse(['--cm'])).to.have.property('cm').equal(true);
-		expect(app.parse(['--chundermonkey'])).to.have.property('cm').equal(true);
+		expect(cli.parse(app, ['--cm'])).to.have.property('cm').equal(true);
+		expect(cli.parse(app, ['--chundermonkey'])).to.have.property('cm').equal(true);
 	});
 
 	it('refuses options meant for other commands', () => {
@@ -168,13 +164,13 @@ describe('command-line parsing', () => {
 		}});
 
 		// sanity test
-		expect(app.parse(['one', '--one'])).to.not.have.property('clierror');
-		expect(app.parse(['one', '--one'])).to.have.property('clicommand').equal(one);
-		expect(app.parse(['one', '--one'])).to.have.property('one').equal(true);
+		expect(cli.parse(app, ['one', '--one'])).to.not.have.property('clierror');
+		expect(cli.parse(app, ['one', '--one'])).to.have.property('clicommand').equal(one);
+		expect(cli.parse(app, ['one', '--one'])).to.have.property('one').equal(true);
 
 		// the real test
-		expect(app.parse(['two', '--one'])).to.not.have.property('clicommand');
-		expect(app.parse(['two', '--one'])).to.have.property('clierror').deep.equal(
+		expect(cli.parse(app, ['two', '--one'])).to.not.have.property('clicommand');
+		expect(cli.parse(app, ['two', '--one'])).to.have.property('clierror').deep.equal(
 			cli.errors.unknownArgumentError(['one']));
 	});
 
@@ -184,7 +180,7 @@ describe('command-line parsing', () => {
 			const cmd = cli.createCommand(app, 'cmd', 'do stuff', {
 				params: params
 			});
-			const result = app.parse(['cmd'].concat(args));
+			const result = cli.parse(app, ['cmd'].concat(args));
 			// only one of them set
 			expect(result.clicommand || result.clierror).to.be.ok;
 			expect(result.clicommand && result.clierror).to.be.not.ok;
