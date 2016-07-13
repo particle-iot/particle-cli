@@ -30,7 +30,8 @@ var fs = require('fs');
 var path = require('path');
 var when = require('when');
 var settings = require('../settings.js');
-require("babel-polyfill");
+// I get Error: only one instance of babel-polyfill is allowed when adding this back
+//require("babel-polyfill");
 
 var Interpreter = function () {
 

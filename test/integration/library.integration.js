@@ -24,7 +24,7 @@ chai.use(require('sinon-chai'));
 chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 const path = require('path');
-const library = require('../../src/cmd/library');
+import createLibraryCommand from '../../src/cmd/library';
 import * as cli from '../../src/cli/nested-yargs';
 import { resourcesDir } from 'particle-cli-library-manager';
 
@@ -32,23 +32,33 @@ describe("library", () => {
 
 	const libraryDir = path.join(resourcesDir(), 'libraries');
 
-	it('supports --dryrun flag', () => {
-		const app = cli.createAppCategory();
-		library.default(app, cli);
-		const argv = cli.parse(app, ['library', 'migrate', '--dryrun']);
-		expect(argv).to.have.property('dryrun').equal(true);
-		expect(argv).to.have.property('clicommand');
+	describe('migrate', () => {
+		it('supports --dryrun flag', () => {
+			const app = cli.createAppCategory();
+			createLibraryCommand(app, cli);
+			const argv = cli.parse(app, ['library', 'migrate', '--dryrun']);
+			expect(argv).to.have.property('dryrun').equal(true);
+			expect(argv).to.have.property('clicommand');
+		});
+
+		it('can execute --test flag', () => {
+			const app = cli.createAppCategory();
+			createLibraryCommand(app, cli);
+			const argv = cli.parse(app, ['library', 'migrate', '--dryrun', path.join(libraryDir, 'libraries-v1')]);
+			return argv.clicommand.exec(argv);
+		});
 	});
 
-	it('can execute --test flag', () => {
-		const app = cli.createAppCategory();
-		library.default(app, cli);
-		const argv = cli.parse(app, ['library', 'migrate', '--dryrun', path.join(libraryDir, 'libraries-v1')]);
-		return argv.clicommand.exec(argv);
+	describe('add', () => {
+		it('populates the library name', () => {
+			const app = cli.createAppCategory();
+			createLibraryCommand(app, cli);
+			const argv = cli.parse(app, ['library', 'add', 'assettracker']);
+			expect(argv).to.have.property('name').equal('assettracker');
+		});
 	});
 
-	
-	
-	// todo - exit codes for the command? or command response. 
+
+	// todo - exit codes for the command? or command response.
 
 });

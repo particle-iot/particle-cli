@@ -104,5 +104,29 @@ export default (app, cli) => {
 			return site.run(cmd);
 		}
 	});
+	cli.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
+		options: {
+			test: {
+				alias: 'dryrun',
+				boolean: true,
+				description: 'test if the library can be migrated'
+			}
+		},
+		params: '[library...]',
+
+		handler: function libraryMigrateHandler(argv) {
+			let Site, Cmd;
+			if (argv.test) {
+				Site = CLILibraryTestMigrateCommandSite;
+				Cmd = LibraryMigrateTestCommand;
+			} else {
+				Site = CLILibraryMigrateCommandSite;
+				Cmd = LibraryMigrateCommand;
+			}
+			const site = new Site(argv, process.cwd());
+			const cmd = new Cmd();
+			return site.run(cmd);
+		}
+	});
 	return lib;
 };
