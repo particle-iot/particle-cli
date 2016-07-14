@@ -1,4 +1,5 @@
-import {LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand} from '../lib/library';
+import {LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand,
+LibraryAddCommand} from '../lib/library';
 
 //const ui = require('../cli/ui');
 
@@ -78,6 +79,13 @@ export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSi
 	}
 }
 
+export class CLILibraryAddCommandSite {
+	constructor() {
+		const [name, version='latest'] = argv.params.name.split('@');
+	}
+
+}
+
 export default (app, cli) => {
 	const lib = cli.createCategory(app, 'library', 'Manages firmware libraries');
 	cli.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
@@ -104,27 +112,14 @@ export default (app, cli) => {
 			return site.run(cmd);
 		}
 	});
-	cli.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
-		options: {
-			test: {
-				alias: 'dryrun',
-				boolean: true,
-				description: 'test if the library can be migrated'
-			}
-		},
-		params: '[library...]',
 
-		handler: function libraryMigrateHandler(argv) {
-			let Site, Cmd;
-			if (argv.test) {
-				Site = CLILibraryTestMigrateCommandSite;
-				Cmd = LibraryMigrateTestCommand;
-			} else {
-				Site = CLILibraryMigrateCommandSite;
-				Cmd = LibraryMigrateCommand;
-			}
-			const site = new Site(argv, process.cwd());
-			const cmd = new Cmd();
+	cli.createCommand(lib, 'add', 'Add a library to the current project.', {
+		options: {},
+		params: '<name>',
+
+		handler: function libraryAddHandler(argv) {
+			const site = new CLILibraryAddCommandSite();
+			const cmd = new LibraryAddCommand();
 			return site.run(cmd);
 		}
 	});

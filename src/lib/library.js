@@ -1,7 +1,8 @@
 import {Command, CommandSite} from './command';
 
 import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
-const path = require('path');
+import ProjectProperties from './ProjectProperties';
+import path from 'path';
 
 export class LibraryMigrateCommandSite extends CommandSite {
 
@@ -42,7 +43,7 @@ class AbstractLibraryMigrateCommand extends Command {
 		}
 		return result;
 	}
-	
+
 	processLibrary(repo, libname, state, site) {}
 }
 
@@ -81,5 +82,24 @@ export class LibraryMigrateCommand extends AbstractLibraryMigrateCommand {
 			err = e;
 		}
 		return [result, err];
+	}
+}
+
+
+/** Library add **/
+export class LibraryAddCommand {
+	async run(site, { name, version, projectDir } = {}) {
+		this.site = site;
+
+		this.dir = projectDir;
+		this.projectProperties = new ProjectProperties(this.dir);
+
+		if(!await projectExist()) {
+			const create = await site.promptInitializeProject();
+		}
+	}
+
+	async projectExist() {
+		return this.projectProperties.exists();
 	}
 }

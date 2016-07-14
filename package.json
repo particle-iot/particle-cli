@@ -67,6 +67,7 @@
     "node-wifiscanner2": "^1.2.0",
     "particle-api-js": "^5.3.0",
     "particle-cli-library-manager": "0.0.4",
+    "promisify-node": "^0.4.0",
     "request": "^2.46.0",
     "semver": "^5.1.0",
     "serialport": "^3.1.1",
@@ -91,12 +92,16 @@
     "doctoc": "^0.15.0",
     "eslint": "~2.2.0",
     "eslint-config-particle": "^1.0.1",
+    "fs-extra": "^0.30.0",
     "istanbul": "^0.3.22",
     "mocha": "^2.2.5",
     "proxyquire": "^1.6.0",
     "should": "^7.0.2",
     "sinon": "^1.15.4",
-    "sinon-chai": "^2.8.0"
+    "sinon-chai": "^2.8.0",
+    "testdouble": "^1.6.0",
+    "testdouble-chai": "^0.2.2",
+    "tmp": "0.0.28"
   },
   "engines": {
     "node": ">=0.10.40"
