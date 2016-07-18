@@ -80,10 +80,14 @@ export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSi
 }
 
 export class CLILibraryAddCommandSite {
-	constructor() {
-		const [name, version='latest'] = argv.params.name.split('@');
+	constructor({ dir } = {}) {
+		// const [name, version='latest'] = argv.params.name.split('@');
+		this.dir = dir || process.cwd();
 	}
 
+	projectDir() {
+		this.dir;
+	}
 }
 
 export default (app, cli) => {

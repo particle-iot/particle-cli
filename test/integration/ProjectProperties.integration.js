@@ -5,55 +5,66 @@ import getProjectFixture from '../fixtures/projects';
 
 describe('ProjectProperties', () => {
 	describe('exists', () => {
-		it('returns true when project properties exists', async () => {
+		it('returns true when project properties exists', () => {
 			const dir = getProjectFixture('simple');
 			const sut = new ProjectProperties(dir);
-			expect(await sut.exists()).to.equal(true);
+			return sut.exists().then(result => {
+				expect(result).to.be.true;
+			})
 		})
 
-		it("returns false when project properties doesn't exist", async () => {
+		it("returns false when project properties doesn't exist", () => {
 			const dir = getProjectFixture('blank');
 			const sut = new ProjectProperties(dir);
-			expect(await sut.exists()).to.equal(false);
+			return sut.exists().then(result => {
+				expect(result).to.be.false;
+			})
 		})
 	})
 
 	describe('load', () => {
-		it('load the fields', async () => {
-				const dir = getProjectFixture('simple');
-				const sut = new ProjectProperties(dir);
+		it('load the fields', () => {
+			const dir = getProjectFixture('simple');
+			const sut = new ProjectProperties(dir);
 
-				await sut.load();
+			return sut.load().then(() => {
 				const expectedProperties = JSON.parse(fs.readFileSync(`${dir}/expectedProperties.json`));
 				expect(sut.fields).to.eql(expectedProperties);
 			})
 		})
+	})
 
 	describe('save', () => {
-		it('saves the same content', async () => {
+		it('saves the same content',  () => {
 			const dir = getProjectFixture('simple');
 			const sut = new ProjectProperties(dir);
+			const propsFile = `${dir}/project.properties`;
 
-			const originalProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
+			const originalProperties = fs.readFileSync(propsFile, 'utf8');
 
-			await sut.load();
-			await sut.save();
-
-			const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
-			expect(savedProperties).to.equal(originalProperties);
+			return sut.load().then(() => {
+				fs.unlinkSync(propsFile);
+				return sut.save();
+			}).then(() => {
+				const savedProperties = fs.readFileSync(propsFile, 'utf8');
+				expect(savedProperties).to.equal(originalProperties);
+			})
 		})
 
-		it('saves new content', async () => {
+		it('saves new content', () => {
 			const dir = getProjectFixture('blank');
 			const sut = new ProjectProperties(dir);
 
-			sut.fields['name'] = 'my project';
-			sut.fields['dependencies.assettracker'] = '1.0.0';
-			await sut.save();
+			Object.assign(sut.fields, {
+				name: 'my project',
+				'dependencies.assettracker': '1.0.0'
+			});
 
-			const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
-			const expectedProperties = "name=my project\ndependencies.assettracker=1.0.0";
-			expect(savedProperties).to.equal(expectedProperties);
+			return sut.save().then(() => {
+				const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
+				const expectedProperties = "name=my project\ndependencies.assettracker=1.0.0";
+				expect(savedProperties).to.equal(expectedProperties);
+			})
 		})
 	})
 })

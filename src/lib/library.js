@@ -2,6 +2,7 @@ import {Command, CommandSite} from './command';
 
 import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
 import ProjectProperties from './ProjectProperties';
+import Particle from 'particle-api-js';
 import path from 'path';
 
 export class LibraryMigrateCommandSite extends CommandSite {
@@ -85,21 +86,50 @@ export class LibraryMigrateCommand extends AbstractLibraryMigrateCommand {
 	}
 }
 
+class AbortCommandError extends Error {}
 
 /** Library add **/
 export class LibraryAddCommand {
-	async run(site, { name, version, projectDir } = {}) {
-		this.site = site;
-
-		this.dir = projectDir;
-		this.projectProperties = new ProjectProperties(this.dir);
-
-		if(!await projectExist()) {
-			const create = await site.promptInitializeProject();
-		}
+	constructor({ apiClient } = {}) {
+		this.apiClient = apiClient;
 	}
 
-	async projectExist() {
+	run(site, { name, version = 'latest' } = {}) {
+		return Promise.resolve().then(() => {
+			this.site = site;
+			this.projectProperties = new ProjectProperties(this.site.projectDir());
+
+			return this.projectExist();
+		}).then(exists => {
+			if (!exists) {
+				return this.createProject();
+			}
+		}).then(() => {
+			return this.fetchLibrary(name, version);
+		}).then(library => {
+			return this.addLibraryToProject(library);
+		}).then(() => {
+			return this.saveProject();
+		})
+	}
+
+	projectExist() {
 		return this.projectProperties.exists();
+	}
+
+	createProject() {
+		// TODO
+	}
+
+	fetchLibrary(name, version) {
+		return this.apiClient.library(name, version);
+	}
+
+	addLibraryToProject(library) {
+		this.projectProperties.addDependency(library.name, library.version);
+	}
+
+	saveProject() {
+		this.projectProperties.save();
 	}
 }

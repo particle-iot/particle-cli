@@ -42,7 +42,14 @@ export default class ProjectProperties {
 
 	exists() {
 		return fs.stat(this.name())
-			.then(stats => stats.isFile(),
-				() => false);
+			.then(stats => stats.isFile(), () => false);
+	}
+
+	addDependency(name, version) {
+		this.fields[this.dependencyField(name)] = version;
+	}
+
+	dependencyField(name) {
+		return `dependency.${name}`
 	}
 }
