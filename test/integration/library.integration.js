@@ -25,7 +25,7 @@ import createLibraryCommand from '../../src/cmd/library';
 import * as cli from '../../src/cli/nested-yargs';
 import { resourcesDir } from 'particle-cli-library-manager';
 
-describe("library", () => {
+describe('library', () => {
 
 	const libraryDir = path.join(resourcesDir(), 'libraries');
 	const app = cli.createAppCategory();
@@ -55,6 +55,10 @@ describe("library", () => {
 			const expectedError = cli.errors.requiredParameterError('name');
 			expect(argv.clierror).to.eql(expectedError);
 		});
+
+		it('adds a library to an existing project', () => {
+			// TODO!
+		})
 	});
 
 

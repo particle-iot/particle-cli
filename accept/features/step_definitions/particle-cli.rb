@@ -30,6 +30,6 @@ end
 
 
 And(/^the directories "([^"]*)" and "([^"]*)" should be equal$/) do |dir1, dir2|
-  result = dirDiff expand_path(dir1), expand_path(dir2)
-  expect(result).to eq(0)
+  result = diff_dirs expand_path(dir1), expand_path(dir2)
+  expect(result).to eq([])
 end

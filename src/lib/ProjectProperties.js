@@ -6,7 +6,7 @@ export default class ProjectProperties {
 	constructor(dir, { filename = 'project.properties' } = {}) {
 		this.dir = dir;
 		this.filename = filename;
-		this.fields = {}
+		this.fields = {};
 	}
 
 	name() {
@@ -15,7 +15,7 @@ export default class ProjectProperties {
 
 	load() {
 		return fs.readFile(this.name(), 'utf8')
-			.then(data => this.parse(data))
+			.then(data => this.parse(data));
 	}
 
 	parse(data) {
@@ -37,7 +37,7 @@ export default class ProjectProperties {
 	serialize() {
 		return Object.keys(this.fields).map(field => {
 			return `${field}=${this.fields[field]}`;
-		}).join('\n');
+		}).join('\n')+'\n';
 	}
 
 	exists() {
@@ -50,6 +50,6 @@ export default class ProjectProperties {
 	}
 
 	dependencyField(name) {
-		return `dependency.${name}`
+		return `dependencies.${name}`;
 	}
 }

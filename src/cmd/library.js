@@ -1,7 +1,18 @@
 import {LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand,
 LibraryAddCommand} from '../lib/library';
+import ParticleApi from '../lib/api';
+import settings from '../../settings';
+
+import chalk from 'chalk';
+import log from '../cli/log';
+
 
 //const ui = require('../cli/ui');
+
+const apiJS = new ParticleApi(settings.apiUrl, {
+	accessToken: settings.access_token
+}).api;
+const apiClient = apiJS.client({ auth: settings.access_token });
 
 export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite {
 	constructor(argv, defaultDir) {
@@ -80,13 +91,24 @@ export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSi
 }
 
 export class CLILibraryAddCommandSite {
-	constructor({ dir } = {}) {
-		// const [name, version='latest'] = argv.params.name.split('@');
-		this.dir = dir || process.cwd();
+	constructor(argv) {
+		[this.name, this.version='latest'] = argv.params.name.split('@');
+		this.dir = argv.params.dir || process.cwd();
+	}
+
+	run(cmd) {
+		return cmd.run(this, {
+			name: this.name,
+			version: this.version
+		});
 	}
 
 	projectDir() {
-		this.dir;
+		return this.dir;
+	}
+
+	messageAddingLibrary(name, version) {
+		return Promise.resolve(() => log.info(`Adding library ${chalk.green(name)} (version ${version})`));
 	}
 }
 
@@ -122,9 +144,13 @@ export default (app, cli) => {
 		params: '<name>',
 
 		handler: function libraryAddHandler(argv) {
-			const site = new CLILibraryAddCommandSite();
-			const cmd = new LibraryAddCommand();
-			return site.run(cmd);
+			const site = new CLILibraryAddCommandSite(argv);
+			const cmd = new LibraryAddCommand({ apiClient });
+			return site.run(cmd)
+			// TODO: Remove this when the errors are properly displayed by the command runner
+				.catch(error => {
+					console.log(JSON.stringify(error));
+				});
 		}
 	});
 	return lib;

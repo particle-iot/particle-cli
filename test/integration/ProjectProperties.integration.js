@@ -62,7 +62,7 @@ describe('ProjectProperties', () => {
 
 			return sut.save().then(() => {
 				const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
-				const expectedProperties = "name=my project\ndependencies.assettracker=1.0.0";
+				const expectedProperties = "name=my project\ndependencies.assettracker=1.0.0\n";
 				expect(savedProperties).to.equal(expectedProperties);
 			})
 		})

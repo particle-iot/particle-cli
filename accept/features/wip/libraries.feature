@@ -15,5 +15,3 @@ Feature: libraries
      And I successfully run the cli with `library add neopixel --vendored`
      And I successfully run the cli with `local compile photon --saveTo neopixel.bin`
      Then the file `neopixel.bin` should be valid photon firmware.
- 
-
