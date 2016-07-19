@@ -170,11 +170,20 @@ class CLICommandItem {
 		return _.isEqual(argv._, this.path);
 	}
 
-	exec(argv, errorHandler) {
+	/**
+	 * Executes the given command, optionally consuming the result if an error handler is provided.
+	 * @param argv  The parsed arguments for the cli command.
+	 * @returns {*}
+	 */
+	exec(argv) {
+		let result;
 		if (this.options.handler) {
-			return when.try(this.options.handler.bind(this, argv))
-				.done(result => result, errorHandler);
+			result = when.try(this.options.handler.bind(this, argv));
 		}
+		else {
+			result = Promise.resolve();
+		}
+		return result;
 	}
 }
 
@@ -241,7 +250,7 @@ class CLIRootCategory extends CLICommandCategory {
 		return [];
 	}
 
-	exec(yargs, errorHandler) {
+	exec(yargs) {
 		yargs.showHelp();
 	}
 

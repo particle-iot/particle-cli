@@ -12,9 +12,7 @@ export class LibraryMigrateCommandSite extends CommandSite {
 
 	notifyStart(lib) {}
 
-	notifyEnd(lib, result, err) {
-
-	}
+	notifyEnd(lib, result, err) {}
 }
 
 
@@ -42,7 +40,7 @@ class AbstractLibraryMigrateCommand extends Command {
 		}
 		return result;
 	}
-	
+
 	processLibrary(repo, libname, state, site) {}
 }
 

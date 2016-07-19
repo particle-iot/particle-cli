@@ -90,7 +90,7 @@ export class CLI {
 			} else if (argv.clierror) {
 				errors(argv.clierror);
 			} else if (argv.clicommand) {
-				argv.clicommand.exec(argv, errors);
+				argv.clicommand.exec(argv).done(result => result, errors);
 			}
 		});
 	}
