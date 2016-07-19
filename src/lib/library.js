@@ -120,7 +120,8 @@ export class LibraryAddCommand {
 	}
 
 	createProject() {
-		// TODO
+		// save a blank project.properties
+		return this.projectProperties.save();
 	}
 
 	loadProject() {
@@ -128,11 +129,11 @@ export class LibraryAddCommand {
 	}
 
 	fetchLibrary(name, version) {
-		return this.apiClient.library(name, version);
+		return this.site.fetchingLibrary(this.apiClient.library(name, version), name);
 	}
 
 	addLibraryToProject(library) {
-		return this.site.messageAddingLibrary(library.name, library.version).then(() => {
+		return this.site.addedLibrary(library.name, library.version).then(() => {
 			return this.projectProperties.addDependency(library.name, library.version);
 		});
 	}

@@ -3,8 +3,10 @@ LibraryAddCommand} from '../lib/library';
 import ParticleApi from '../lib/api';
 import settings from '../../settings';
 
+import when from 'when';
 import chalk from 'chalk';
 import log from '../cli/log';
+import {spin} from '../cli/ui';
 
 
 //const ui = require('../cli/ui');
@@ -107,8 +109,13 @@ export class CLILibraryAddCommandSite {
 		return this.dir;
 	}
 
-	messageAddingLibrary(name, version) {
-		return Promise.resolve(() => log.info(`Adding library ${chalk.green(name)} (version ${version})`));
+	fetchingLibrary(promise, name) {
+		return spin(when(promise), `Adding library ${chalk.green(name)}`);
+	}
+
+	addedLibrary(name, version) {
+		log.info(`Added library ${chalk.green(name)} ${version} to project`);
+		return Promise.resolve();
 	}
 }
 
@@ -149,7 +156,7 @@ export default (app, cli) => {
 			return site.run(cmd)
 			// TODO: Remove this when the errors are properly displayed by the command runner
 				.catch(error => {
-					console.log(JSON.stringify(error));
+					console.log(error);
 				});
 		}
 	});
