@@ -3,7 +3,6 @@ LibraryAddCommand} from '../lib/library';
 import ParticleApi from '../lib/api';
 import settings from '../../settings';
 
-import when from 'when';
 import chalk from 'chalk';
 import log from '../cli/log';
 import {spin} from '../cli/ui';
@@ -110,7 +109,7 @@ export class CLILibraryAddCommandSite {
 	}
 
 	fetchingLibrary(promise, name) {
-		return spin(when(promise), `Adding library ${chalk.green(name)}`);
+		return spin(promise, `Adding library ${chalk.green(name)}`);
 	}
 
 	addedLibrary(name, version) {
@@ -153,11 +152,7 @@ export default (app, cli) => {
 		handler: function libraryAddHandler(argv) {
 			const site = new CLILibraryAddCommandSite(argv);
 			const cmd = new LibraryAddCommand({ apiClient });
-			return site.run(cmd)
-			// TODO: Remove this when the errors are properly displayed by the command runner
-				.catch(error => {
-					console.log(error);
-				});
+			return site.run(cmd);
 		}
 	});
 	return lib;

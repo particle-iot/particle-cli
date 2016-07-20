@@ -13,14 +13,17 @@ describe('LibraryAddCommand', () => {
 		const dir = getProjectFixture('simple');
 		const testSite = td.object(CLILibraryAddCommandSite);
 		td.when(testSite.projectDir()).thenReturn(dir);
-		td.when(testSite.messageAddingLibrary('neopixel', '1.0.0')).thenReturn(Promise.resolve());
+		testSite.fetchingLibrary = function (promise) {
+			return promise;
+		};
+		td.when(testSite.addedLibrary('neopixel', '1.0.0')).thenReturn(Promise.resolve());
 
 		const apiClient = td.object(['library']);
 		const neopixelLatest = {
 			name: 'neopixel',
 			version: '1.0.0',
 		};
-		td.when(apiClient.library('neopixel', 'latest')).thenReturn(neopixelLatest);
+		td.when(apiClient.library('neopixel', { version: 'latest' })).thenReturn(Promise.resolve(neopixelLatest));
 
 		const sut = new LibraryAddCommand({ apiClient });
 		return sut.run(testSite, { name: 'neopixel' })

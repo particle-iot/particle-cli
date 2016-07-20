@@ -30,7 +30,7 @@ function spin(promise, str) {
 
 	const s = new Spinner(str);
 	s.start();
-	return promise.finally(() => s.stop(true));
+	return when(promise).finally(() => s.stop(true));
 }
 
 function retry(fToRetry, times, handler, finalHandler) {
