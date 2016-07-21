@@ -1004,7 +1004,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			'*.h',
 			'*.ino',
 			'*.cpp',
-			'*.c'
+			'*.c',
+			'project.properties'
 		];
 
 		if (fs.existsSync(includesFile)) {
