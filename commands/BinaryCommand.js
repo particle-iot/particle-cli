@@ -34,7 +34,7 @@ var path = require('path');
 var chalk = require('chalk');
 var Parser = require('binary-version-reader').HalModuleParser;
 var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../lib/utilities.js');
+var utilities = require('../oldlib/utilities.js');
 
 var BinaryCommand = function (cli, options) {
 	BinaryCommand.super_.call(this, cli, options);

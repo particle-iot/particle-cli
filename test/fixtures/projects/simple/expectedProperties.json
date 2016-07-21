@@ -1,0 +1,5 @@
+{
+  "name": "My project",
+  "sentence": "Short description of the project",
+  "dependencies.internetbutton": "1.0.0"
+}

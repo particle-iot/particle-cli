@@ -29,7 +29,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../lib/utilities.js');
+var utilities = require('../oldlib/utilities.js');
 var package_json = require('../package.json');
 
 var HelpCommand = function (cli, options) {

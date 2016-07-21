@@ -39,16 +39,16 @@ var SerialPort = SerialPortLib.SerialPort;
 var inquirer = require('inquirer');
 var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
-var specs = require('../lib/deviceSpecs');
-var log = require('../lib/log');
+var specs = require('../oldlib/deviceSpecs');
+var log = require('../oldlib/log');
 var settings = require('../settings');
 var DescribeParser = require('binary-version-reader').HalDescribeParser;
-var YModem = require('../lib/ymodem');
+var YModem = require('../oldlib/ymodem');
 
 var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../lib/utilities.js');
-var SerialBoredParser = require('../lib/SerialBoredParser.js');
-var SerialTrigger = require('../lib/SerialTrigger');
+var utilities = require('../oldlib/utilities.js');
+var SerialBoredParser = require('../oldlib/SerialBoredParser.js');
+var SerialTrigger = require('../oldlib/SerialTrigger');
 
 var arrow = chalk.green('>');
 

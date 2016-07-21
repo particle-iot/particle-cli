@@ -31,8 +31,8 @@ var extend = require('xtend');
 var _ = require('lodash');
 var WiFiManager = require('./WiFiManager');
 var BaseCommand = require('../BaseCommand.js');
-var OldApiClient = require('../../lib/ApiClient.js');
-var APIClient = require('../../lib/ApiClient2');
+var OldApiClient = require('../../oldlib/ApiClient.js');
+var APIClient = require('../../oldlib/ApiClient2');
 var settings = require('../../settings.js');
 var inquirer = require('inquirer');
 var prompt = inquirer.prompt;
@@ -584,13 +584,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	function start() {
 
 		clearTimeout(retry);
-		sap.scan(results).on('error', function(err) {
-
-			if (err.code === 'ECONNRESET') {
-				return;
-			}
-			retry = setTimeout(start, 2000);
-		});
+		sap.scan(results);
 	};
 
 	function results(err, dat) {
@@ -719,13 +713,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		console.log();
 		console.log(arrow, 'Obtaining device information...');
-		sap.deviceInfo(pubKey).on('error', function(err) {
-
-			if (err.code === 'ECONNRESET') {
-				return;
-			}
-			retry = setTimeout(info, 1000);
-		});
+		sap.deviceInfo(pubKey);
 	};
 
 	function pubKey(err, dat) {
@@ -740,13 +728,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}
 		clearTimeout(retry);
 		console.log(arrow, 'Requesting public key from the device...');
-		sap.publicKey(code).on('error', function(err) {
-
-			if (err.code === 'ECONNRESET') {
-				return;
-			}
-			retry = setTimeout(pubKey, 1000);
-		});
+		sap.publicKey(code);
 	};
 
 	function code(err) {
@@ -757,13 +739,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, 'Setting the magical cloud claim code...');
-		sap.setClaimCode(self.__claimCode, configure).on('error', function(err) {
-
-			if (err.code === 'ECONNRESET') {
-				return;
-			}
-			retry = setTimeout(code, 1000);
-		});
+		sap.setClaimCode(self.__claimCode, configure);
 	};
 
 	function configure(err) {
@@ -782,13 +758,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		clearTimeout(retry);
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
-		sap.configure(conf, connect).on('error', function(err) {
-
-			if (err.code === 'ECONNRESET') {
-				return;
-			}
-			retry = setTimeout(configure, 1000);
-		});
+		sap.configure(conf, connect);
 	};
 
 	function connect(err) {

@@ -9,6 +9,7 @@ script:
   - npm test
 after_success:
   - npm run coveralls
+  - gem install aruba && source accept/.profile && npm run accept
 addons:
   apt:
     sources:
