@@ -62,7 +62,7 @@ describe('library init command', () => {
 				callback(null); // no error
 			};
 			site.yeomanAdapter = sinon.stub().returns(adapter);
-			site.arguments = sinon.stub().returns(args);
+			site.args = sinon.stub().returns(args);
 			site.options = sinon.stub().returns(options);
 			site.yeomanEnvironment = sinon.stub().returns({ createEnv: sinon.stub().returns(env)});
 			// when

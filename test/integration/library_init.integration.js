@@ -37,15 +37,9 @@ import {appRoot} from 'particle-cli-library-manager';
  */
 function mirrorDir(dir, mock) {
 	if (mock===undefined) {
+		// add the path to the directory (which can be either absolute or relative.)
 		mock = {};
-		const parts = dir.split(path.sep);
-		let subdir = mock;
-		for (let p in parts) {
-			const next = {};
-			subdir['p'] = next;
-			subdir = next;
-		}
-		mirrorDir(dir, subdir);
+		mock[dir] = mirrorDir(dir, {});
 		return mock;
 	}
 
@@ -54,20 +48,19 @@ function mirrorDir(dir, mock) {
 		let name = files[i];
 		const fq = path.join(dir, name);
 		if (fs.statSync(fq).isDirectory()) {
-			mock['name'] = mirrorDir(fq, {});
+			mock[name] = mirrorDir(fq, {});
 		} else {
-			mock['name'] = fs.readFileSync(fq, 'utf-8');
+			mock[name] = fs.readFileSync(fq, 'utf-8');
 		}
 	}
 	return mock;
 }
 
-
 function getFiles (dir, files_){
 	files_ = files_ || [];
 	var files = fs.readdirSync(dir);
 	for (var i in files){
-		var name = dir + '/' + files[i];
+		var name = path.join(dir, files[i]);
 		if (fs.statSync(name).isDirectory()){
 			getFiles(name, files_);
 		} else {
@@ -96,19 +89,18 @@ describe('library init', () => {
 		done();
 	});
 
-	it('can run library init without prompts', (done) => {
+	it('can run library init without prompts', () => {
 		const app = cli.createAppCategory();
-		libraryInit.default(app, cli);
-		const argv = cli.parse(app, ['library', 'init', '--name', 'foo',
+		const lib = cli.createCategory(app, 'library');
+		libraryInit.default(lib, cli);
+		const argv = cli.parse(app, ['library', 'init', '--name', 'foobar',
 			'--version=123', '--author=mrbig']);
 		expect(argv.clicommand).to.be.ok;
 
 		const result = argv.clicommand.exec(argv).then(() => {
-			console.log(getFiles('/'));
-
 			expect(fs.existsSync('library.properties')).to.equal(true);
-			expect(fs.existsSync('foo.cpp')).to.equal(true);
-			expect(fs.existsSync('foo.cpp')).to.equal(true);
+			expect(fs.existsSync('src/foobar.cpp')).to.equal(true);
+			expect(fs.existsSync('src/foobar.h')).to.equal(true);
 		});
 		return result;
 	});

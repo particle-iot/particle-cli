@@ -17,6 +17,10 @@ const app = cliargs.createAppCategory({
 			count: true,
 			description: 'How much logging to display'
 		},
+		interactive: {
+			boolean:true,
+			description: 'forces interactive mode'
+		},
 		'non-interactive': {
 			boolean: true,
 			description: 'Run in non-interactive mode. This means all required data must be passed as command line arguments.'
@@ -29,10 +33,6 @@ const app = cliargs.createAppCategory({
 			boolean: true,
 			description: 'Provides extra details and options for a given command'
 		},
-		'version': {
-			boolean: true,
-			description: 'Show version number'
-		}
 	},
 	epilogue: 'For more information, visit our documentation at https://docs.particle.io\n\nparticle-cli ' + pkg.version,
 
@@ -50,7 +50,7 @@ const app = cliargs.createAppCategory({
 	 * @param {*} argv The parsed command line arguments.
 	 */
 	parsed(argv) {
-		global.isInteractive = tty.isatty(process.stdin) && !argv.nonInteractive;
+		global.isInteractive = argv.interactive===true || (tty.isatty(process.stdin) && !argv.nonInteractive);
 		global.verboseLevel = global.verboseLevel + argv.verbose;
 		global.outputJson = argv.json;
 	}
@@ -83,10 +83,9 @@ export class CLI {
 			const argv = cliargs.parse(app, args.slice(2));
 			// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
 			// this also gives us more control.
+			// todo - handle root command passing --version
 			if (argv.help) {
 				cliargs.showHelp();
-			} else if (argv.version) {
-				console.log(pkg.version);
 			} else if (argv.clierror) {
 				errors(argv.clierror);
 			} else if (argv.clicommand) {

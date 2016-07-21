@@ -40,8 +40,7 @@ export class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 }
 
 
-export default (app, cli) => {
-	const lib = cli.createCategory(app, 'library', 'Manages firmware libraries');
+export default (lib, cli) => {
 	cli.createCommand(lib, 'init', 'Initializes a new library in the specified or current directory..', {
 		options: {
 			'name': {

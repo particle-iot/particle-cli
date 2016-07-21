@@ -18,8 +18,9 @@ export default (app, cli) => {
 	// help must come first
 	help(app, cli);
 	echo(app, cli);
-	//library(app, cli);
-	libraryInit(app, cli);
+
+	const lib = library(app, cli);
+	libraryInit(lib, cli);
 
 	// disable these for now until we have acceptance tests in place
 	// cloud(app, cli);
