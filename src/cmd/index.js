@@ -6,6 +6,7 @@ import help from './help';
 
 import echo from './echo';
 import library from './library';
+import libraryInit from './library_init';
 
 /**
  * The command modules take the root command they should be registered in and the cli service
@@ -17,7 +18,10 @@ export default (app, cli) => {
 	// help must come first
 	help(app, cli);
 	echo(app, cli);
-	library(app, cli);
+
+	const lib = library(app, cli);
+	libraryInit(lib, cli);
+
 	// disable these for now until we have acceptance tests in place
 	// cloud(app, cli);
 	// keys(app, cli);

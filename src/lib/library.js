@@ -15,9 +15,7 @@ export class LibraryMigrateCommandSite extends CommandSite {
 
 	notifyStart(lib) {}
 
-	notifyEnd(lib, result, err) {
-
-	}
+	notifyEnd(lib, result, err) {}
 }
 
 

@@ -8,6 +8,11 @@ Given(/^I run particle "([^"]*)"$/) do |arg|
   step "I run `particle #{arg}`"
 end
 
+Given(/^I run particle "([^"]*)" interactively$/) do |arg|
+  step "I run `particle #{arg}` interactively"
+end
+
+
 Given(/^I have installed the CLI$/) do
   # will take care of this later. For now, we assume the CLI has been installed locally using npm install
 end
@@ -32,4 +37,36 @@ end
 And(/^the directories "([^"]*)" and "([^"]*)" should be equal$/) do |dir1, dir2|
   result = diff_dirs expand_path(dir1), expand_path(dir2)
   expect(result).to eq([])
+end
+
+
+When(/^I respond to the prompt "([^"]*)" with "([^"]*)"$/) do |prompt, response|
+  begin
+    Timeout.timeout(aruba.config.exit_timeout) do
+      loop do
+        begin
+          expect(last_command_started).to have_interactive_stdout an_output_string_including(prompt)
+        rescue RSpec::Expectations::ExpectationNotMetError
+          sleep 0.1
+          retry
+        end
+        break
+      end
+    end
+  rescue TimeoutError
+    expect(last_command_started).to have_interactive_stdout an_output_string_including(prompt)
+  end
+  step "I type \"#{response}\""
+end
+
+RSpec::Matchers.define :have_interactive_stdout do |expected|
+  match do |actual|
+    @actual = sanitize_text(actual.stdout)
+
+    values_match?(expected, @actual)
+  end
+
+  diffable
+
+  description { "have output: #{description_of expected}" }
 end
