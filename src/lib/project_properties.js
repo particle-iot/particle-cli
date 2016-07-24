@@ -1,20 +1,24 @@
-import promisify from 'es6-promisify';
-const fs = promisify('fs');
+const promisefs = require('es6-promisify-all')(require('fs'));
 import path from 'path';
 
+const legacy = 'legacy';
+const simple = 'simple';
+const extended = 'extended';
+
 export default class ProjectProperties {
-	constructor(dir, { filename = 'project.properties' } = {}) {
+	constructor(dir, { filename = 'project.properties', fs = promisefs } = {}) {
 		this.dir = dir;
+		this.fs = fs;
 		this.filename = filename;
 		this.fields = {};
 	}
-	
+
 	name() {
 		return path.join(this.dir, this.filename);
 	}
 
 	load() {
-		return fs.readFile(this.name(), 'utf8')
+		return this.fs.readFileAsync(this.name(), 'utf8')
 			.then(data => this.parse(data));
 	}
 
@@ -31,7 +35,7 @@ export default class ProjectProperties {
 
 	save() {
 		const data = this.serialize();
-		return fs.writeFile(this.name(), data, 'utf8');
+		return this.fs.writeFileAsync(this.name(), data, 'utf8');
 	}
 
 	serialize() {
@@ -41,15 +45,32 @@ export default class ProjectProperties {
 	}
 
 	exists() {
-		return fs.stat(this.name())
-			.then(stats => stats.isFile(), () => false);
+		const stat = this.fs.statAsync(this.name());
+		return stat.then(stats => {
+			return stats.isFile();
+		},
+		err => {
+			return false;
+		});
 	}
 
 	sourceDirExists() {
-		return fs.stat(path.join(this.dir, 'src'))
-			.then(stats => stats.isDirectory(), () => false);
+		const stat = this.fs.statAsync(path.join(this.dir, 'src'));
+		return stat.then(stats => stats.isDirectory(), () => false);
 	}
-	
+
+	projectLayout() {
+		return this.exists()
+			.then((exists) => {
+				if (exists) {
+					return this.sourceDirExists()
+						.then((exists) => exists ? extended : simple);
+				} else {
+					return legacy;
+				}
+			});
+	}
+
 	addDependency(name, version) {
 		this.fields[this.dependencyField(name)] = version;
 	}
@@ -57,5 +78,17 @@ export default class ProjectProperties {
 	dependencyField(name) {
 		return `dependencies.${name}`;
 	}
-	
+
+	libraryDirectory(vendored, libName) {
+		if (!vendored) {
+			throw new Error('non-vendored library install not yet supported. Come back later.');
+		}
+		const relative = vendored ? 'lib' : '.lib';
+		return path.join(this.dir, relative, libName);
+	}
 }
+
+
+export {
+	legacy, simple, extended
+};
