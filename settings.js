@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
 var chalk = require('chalk');
+var _ = require('lodash');
 
 var settings = {
 	commandPath: './commands/',
@@ -115,7 +116,9 @@ settings.loadOverrides = function (profile) {
 		var filename = settings.findOverridesFile(profile);
 		if (fs.existsSync(filename)) {
 			settings.overrides = JSON.parse(fs.readFileSync(filename));
-			settings = extend(settings, settings.overrides);
+			// need to do an in-situ extend since external clients may have already obtained the settings object
+			// settings = extend(settings, settings.overrides);
+			_.extend(settings, settings.overrides);
 		}
 	} catch (ex) {
 		console.error('There was an error reading ' + settings.overrides + ': ', ex);
@@ -174,7 +177,7 @@ function matchKey(needle, obj, caseInsensitive) {
 	}
 
 	return null;
-};
+}
 
 settings.override = function (profile, key, value) {
 	if (!settings.overrides) {
@@ -248,9 +251,5 @@ settings.transitionSparkProfiles = function() {
 		});
 	}
 };
-
-settings.transitionSparkProfiles();
-settings.whichProfile();
-settings.loadOverrides();
 
 module.exports = settings;

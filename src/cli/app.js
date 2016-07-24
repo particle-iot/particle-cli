@@ -5,6 +5,7 @@ import updateCheck from './update-check';
 import pkg from '../../package.json';
 import * as cliargs from './nested-yargs';
 import commands from '../cmd';
+import * as settings from '../../settings';
 
 const app = cliargs.createAppCategory({
 	// options for yargs
@@ -114,6 +115,10 @@ export class CLI {
 	}
 
 	run(args) {
+		settings.transitionSparkProfiles();
+		settings.whichProfile();
+		settings.loadOverrides();
+
 		updateCheck().then(() => {
 			if (this.isNewCommand(args)) {
 				this.newrun(args);
