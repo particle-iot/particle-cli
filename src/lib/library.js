@@ -1,7 +1,7 @@
 import {Command, CommandSite} from './command';
 
 import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
-import ProjectProperties from './ProjectProperties';
+import ProjectProperties from './project_properties';
 import path from 'path';
 import when from 'when';
 import pipeline from 'when/pipeline';

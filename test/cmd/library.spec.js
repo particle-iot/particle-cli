@@ -18,6 +18,7 @@
  */
 
 import {expect, sinon} from '../test-setup';
+import {CLILibraryTestMigrateCommandSite} from "../../src/cmd/library_migrate";
 const path = require('path');
 const library = require('../../src/cmd/library');
 
@@ -26,7 +27,7 @@ describe('library command', () => {
 	describe('CLILibraryTestMigrateCommandSite', () => {
 
 		const argv = { params: {} };
-		const sut = new library.CLILibraryTestMigrateCommandSite(argv, __dirname);
+		const sut = new CLILibraryTestMigrateCommandSite(argv, __dirname);
 
 		it('calls handleError when notifyEnd is called with a non-zero 3rd parameter', () => {
 

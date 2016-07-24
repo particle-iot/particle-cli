@@ -1,5 +1,6 @@
 import {Command, CommandSite} from './command';
 import {CloudLibraryRepository} from 'particle-cli-library-manager';
+import ProjectProperties, {extended} from './project_properties';
 
 
 /**
@@ -12,10 +13,17 @@ export class LibraryInstallCommandSite extends CommandSite {
 		super();
 	}
 
+	isVendored() {
+		return false;
+	}
+
 	libraryName() {
 		throw Error('not implemented');
 	}
 
+	/**
+	 * The target directory containing the project to install the library into.
+	 */
 	targetDirectory() {
 		throw Error('not implemented');
 	}
@@ -26,6 +34,22 @@ export class LibraryInstallCommandSite extends CommandSite {
 
 	error(err) {
 		throw err;
+	}
+
+	notifyIncorrectLayout(actualLayout, expectedLayout, libName, targetDir) {
+		return Promise.resolve();
+	}
+
+	notifyCheckingLibrary(libName) {
+		return Promise.resolve();
+	}
+
+	notifyFetchingLibrary(lib, targetDir) {
+		return Promise.resolve();
+	}
+
+	notifyInstalledLibrary(lib, targetDir) {
+		return Promise.resolve();
 	}
 }
 
@@ -44,15 +68,37 @@ export class LibraryInstallCommand extends Command {
 		const targetDir = site.targetDirectory();
 		const libName = site.libraryName();
 		const auth = site.accessToken();
-		const cloudRepo = new CloudLibraryRepository(auth);
+		const cloudRepo = new CloudLibraryRepository({auth});
+		const project = new ProjectProperties(targetDir);
 
-		return cloudRepo.fetch(libName)
-			.then(lib => {
-				return lib.copyTo(targetDir);
-			})
-			.catch(err => {
-				site.error(err);
-			});
+		if (!libName) {
+			return cloudRepo.names(names => console.log(names));
+		} else {
+			const libDir = project.libraryDirectory(site.isVendored(), site.libraryName());
+			return project.projectLayout()
+				.then((layout) => {
+					if (layout!==extended) {
+						return site.notifyIncorrectLayout(layout, extended, libName, targetDir);
+					} else {
+						return site.notifyCheckingLibrary(libName)
+							.then(() => {
+								return cloudRepo.fetch(libName);
+							})
+							.then((lib) => {
+								return site.notifyFetchingLibrary(lib.metadata, targetDir).
+									then(() => lib);
+							})
+							.then(lib => {
+								return lib.copyTo(libDir);
+							})
+							.then(lib => site.notifyInstalledLibrary(lib.metadata, targetDir))
+							.catch(err => site.error(err));
+					}
+				});
+
+		}
+
+
 	}
 }
 

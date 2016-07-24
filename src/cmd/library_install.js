@@ -1,22 +1,21 @@
-import {LibraryInstallCommand} from '../lib/library_install';
-import {LibraryInstallCommandSite} from '../lib/library_install';
-import * as settings from '../../settings';
-import path from 'path';
+import {LibraryInstallCommand, LibraryInstallCommandSite} from '../lib/library_install';
+const settings = require('../../settings');
 
-class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
+export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 
-	CLILibraryInstallCommandSite(argv, dir) {
+	constructor(argv, dir) {
+		super();
 		this.argv = argv;
+		this.dir = dir;
+	}
 
-		if (!this.argv.vendored) {
-			throw new Error('non-vendored library install not yet supported. Come back later.');
-		}
-		const relative = (this.argv.vendored) ? 'lib' : '.lib';
-		this.dir = path.join(dir, relative, this.libraryName());
+	isVendored() {
+		return this.argv.vendored;
 	}
 
 	libraryName() {
-		return this.argv.name;
+		const params = this.argv.params;
+		return params && params.name;
 	}
 
 	targetDirectory() {
@@ -26,6 +25,31 @@ class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	accessToken() {
 		return settings.access_token;
 	}
+
+
+	error(err) {
+		return this.promiseLog(err);
+	}
+
+	notifyIncorrectLayout(actualLayout, expectedLayout, libName, targetDir) {
+		return this.promiseLog(`Cannot install library: directory '${targetDir}' is a '${actualLayout}' format project, please change to a '${expectedLayout}' format.`);
+	}
+
+	notifyCheckingLibrary(libName) {
+		return this.promiseLog(`Checking library '${libName}'...`);
+	}
+
+	notifyFetchingLibrary(lib, targetDir) {
+		return this.promiseLog(`Installing library '${lib.name} ${lib.version}' to '${targetDir}' ...`);
+	}
+
+	notifyInstalledLibrary(lib, targetDir) {
+		return this.promiseLog(`Library '${lib.name} ${lib.version}' installed.`);
+	}
+
+	promiseLog(msg) {
+		return Promise.resolve().then(() => console.log(msg));
+	}
 }
 
 export default (lib, cli) => {
@@ -33,10 +57,11 @@ export default (lib, cli) => {
 		options: {
 			'vendored': {
 				required: false,
+				boolean: true,
 				description: 'install the library as the vendored library in the given directory.'
 			},
 		},
-		params: '<name>',
+		params: '[name]',
 		handler: function LibraryInstallHandler(argv) {
 			const site = new CLILibraryInstallCommandSite(argv, process.cwd());
 			const cmd = new LibraryInstallCommand();

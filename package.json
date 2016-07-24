@@ -57,6 +57,7 @@
     "chalk": "^1.0.0",
     "cli-spinner": "^0.2.1",
     "cli-table": "^0.3.1",
+    "es6-promisify-all": "^0.1.0",
     "form-data": "https://github.com/spark/form-data/archive/v1.0.0-relative-path.tar.gz",
     "glob": "^4.2.1",
     "handlebars": "^4.0.5",
@@ -66,9 +67,8 @@
     "lodash": "^3.10.1",
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.2.0",
-    "particle-api-js": "^5.3.0",
-    "particle-cli-library-manager": "0.0.4",
-    "promisify-node": "^0.4.0",
+    "particle-api-js": "file:///Users/mat1/dev/spark/particle-api-js",
+    "particle-cli-library-manager": "../libmgr",
     "request": "^2.46.0",
     "semver": "^5.1.0",
     "serialport": "^3.1.1",
@@ -136,6 +136,6 @@
     "test": "mocha test/ test/oldcmd/ test/cmd test/integration --compilers js:babel-register",
     "compile": "babel src -d dist",
     "prepublish": "npm run compile",
-	"update-firmware-binaries": "node scripts/update-firmware-binaries.js"
+    "update-firmware-binaries": "node scripts/update-firmware-binaries.js"
   }
 }

@@ -15,7 +15,6 @@ import libraryInit from './library_init';
 const apiJS = new ParticleApi(settings.apiUrl, {
 	accessToken: settings.access_token
 }).api;
-const apiClient = apiJS.client({ auth: settings.access_token });
 
 
 export class CLILibraryAddCommandSite {
@@ -57,6 +56,7 @@ export default (app, cli) => {
 		params: '<name>',
 
 		handler: function libraryAddHandler(argv) {
+			const apiClient = apiJS.client({ auth: settings.access_token });
 			const site = new CLILibraryAddCommandSite(argv);
 			const cmd = new LibraryAddCommand({ apiClient });
 			return site.run(cmd);

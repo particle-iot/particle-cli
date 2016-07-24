@@ -277,7 +277,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var files = this._handleMultiFileArgs(args);
 		if (!files || files.list.length == 0) {
 			console.error('no files included?');
-			return when.reject();;
+			return when.reject();
 		}
 		if (settings.showIncludedSourceFiles) {
 			console.log('Including:');

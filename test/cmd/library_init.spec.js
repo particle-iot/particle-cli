@@ -17,11 +17,7 @@
  ******************************************************************************
  */
 
-const chai = require('chai');
-const sinon = require('sinon');
-chai.use(require('sinon-chai'));
-chai.use(require('chai-as-promised'));
-const expect = chai.expect;
+import {sinon, expect} from '../test-setup';
 const path = require('path');
 import { CLILibraryInitCommandSite } from '../../src/cmd/library_init';
 import { LibraryInitGenerator } from 'particle-cli-library-manager';

@@ -18,18 +18,13 @@
  ******************************************************************************
  */
 
-const chai = require('chai');
-const sinon = require('sinon');
-chai.use(require('sinon-chai'));
-chai.use(require('chai-as-promised'));
-const expect = chai.expect;
+import {expect} from '../test-setup';
 const path = require('path');
 const mockfs = require('mock-fs');
 const fs = require('fs');
 
 import * as cli from '../../src/cli/nested-yargs';
-const libraryInit = require('../../src/cmd/library_init');
-import {appRoot} from 'particle-cli-library-manager';
+import libraryInit from '../../src/cmd/library_init';
 
 /**
  * Synchronously reads a directory from the real filesystem into the format as expected by mock-fs.
@@ -92,7 +87,7 @@ describe('library init', () => {
 	it('can run library init without prompts', () => {
 		const app = cli.createAppCategory();
 		const lib = cli.createCategory(app, 'library');
-		libraryInit.default(lib, cli);
+		libraryInit(lib, cli);
 		const argv = cli.parse(app, ['library', 'init', '--name', 'foobar',
 			'--version=123', '--author=mrbig']);
 		expect(argv.clicommand).to.be.ok;
