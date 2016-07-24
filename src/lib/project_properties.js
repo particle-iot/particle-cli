@@ -1,4 +1,4 @@
-import promisify from 'promisify-node';
+import promisify from 'es6-promisify';
 const fs = promisify('fs');
 import path from 'path';
 
@@ -8,7 +8,7 @@ export default class ProjectProperties {
 		this.filename = filename;
 		this.fields = {};
 	}
-
+	
 	name() {
 		return path.join(this.dir, this.filename);
 	}
@@ -45,6 +45,11 @@ export default class ProjectProperties {
 			.then(stats => stats.isFile(), () => false);
 	}
 
+	sourceDirExists() {
+		return fs.stat(path.join(this.dir, 'src'))
+			.then(stats => stats.isDirectory(), () => false);
+	}
+	
 	addDependency(name, version) {
 		this.fields[this.dependencyField(name)] = version;
 	}
@@ -52,4 +57,5 @@ export default class ProjectProperties {
 	dependencyField(name) {
 		return `dependencies.${name}`;
 	}
+	
 }

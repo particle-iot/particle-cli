@@ -170,15 +170,14 @@ class CLICommandItem {
 
 	/**
 	 * Executes the given command, optionally consuming the result if an error handler is provided.
-	 * @param argv  The parsed arguments for the cli command.
-	 * @returns {*}
+	 * @param {object} argv  The parsed arguments for the cli command.
+	 * @returns {Promise} to run the comand
 	 */
 	exec(argv) {
 		let result;
 		if (this.options.handler) {
 			result = when.try(this.options.handler.bind(this, argv));
-		}
-		else {
+		} else {
 			result = Promise.resolve();
 		}
 		return result;

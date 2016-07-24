@@ -178,7 +178,13 @@ describe('command-line parsing', () => {
 		function paramsCommand(params, args) {
 			const app = cli.createAppCategory();
 			const cmd = cli.createCommand(app, 'cmd', 'do stuff', {
-				params: params
+				params: params,
+				options: {
+					test: {
+						alias: 'flag',
+						boolean: true
+					}
+				}
 			});
 			const result = cli.parse(app, ['cmd'].concat(args));
 			// only one of them set
@@ -189,6 +195,24 @@ describe('command-line parsing', () => {
 			}
 			return result;
 		}
+
+		it('accepts parameters before flags', () => {
+			const result = paramsCommand('[a]', ['1', '--flag']);
+			expect(result.params).to.deep.equal({a:'1'});
+			expect(result).to.have.property('flag').that.is.true;
+		});
+
+		it('accepts parameters after flags', () => {
+			const result = paramsCommand('[a]', ['--flag', '1']);
+			expect(result.params).to.deep.equal({a:'1'});
+			expect(result).to.have.property('flag').that.is.true;
+		});
+
+		it('accepts parameters before and after flags', () => {
+			const result = paramsCommand('[a...]', ['1', '--flag', '2']);
+			expect(result.params).to.deep.equal({a:['1','2']});
+			expect(result).to.have.property('flag').that.is.true;
+		});
 
 		it("rejects varadic parameters not in final position", () => {
 			expect(paramsCommand('[a] [b...] [c]', ['1','2', '3']).clierror).
