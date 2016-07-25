@@ -127,6 +127,14 @@ describe('command-line parsing', () => {
 		expect(argv.clicommand).to.be.equal(one);
 	});
 
+	it('returns the category when the alias matches', () => {
+		const app = cli.createAppCategory();
+		const one = cli.createCategory(app, 'one', { alias: 'uno' });
+		const argv = cli.parse(app, ['uno']);
+		expect(argv.clierror).to.be.undefined;
+		expect(argv.clicommand).to.be.equal(one);
+	});
+
 	it('returns an error when the command line is not recognized', () => {
 		const app = cli.createAppCategory();
 		const one = cli.createCategory(app, 'one', 'you get');

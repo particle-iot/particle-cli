@@ -224,9 +224,15 @@ class CLICommandCategory extends CLICommandItem {
 
 		// add the subcommands of this category
 		_.forEach(this.commands, (command) => {
-			yargs.command(command.name, command.description, (yargs) => {
+			const handler = (yargs) => {
+				// replace arg by cannonical command name
+				args[this.path.length] = command.name;
 				return { argv: command.parse(args, yargs)};
-			} );
+			};
+			yargs.command(command.name, command.description, handler);
+			if (command.options && command.options.alias) {
+				yargs.command(command.options.alias, false, handler);
+			}
 		});
 
 		yargs

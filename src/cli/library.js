@@ -45,7 +45,7 @@ export class CLILibraryAddCommandSite {
 }
 
 export default (app, cli) => {
-	const lib = cli.createCategory(app, 'library', 'Manages firmware libraries');
+	const lib = cli.createCategory(app, 'library', 'Manages firmware libraries', { alias: 'libraries' });
 
 	libraryInit(lib, cli);
 	libraryInstall(lib, cli);
