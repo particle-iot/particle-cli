@@ -10,6 +10,7 @@ export default class ProjectProperties {
 		this.dir = dir;
 		this.fs = fs;
 		this.filename = filename;
+		this.groups = {};
 		this.fields = {};
 	}
 
@@ -25,12 +26,29 @@ export default class ProjectProperties {
 	parse(data) {
 		this.fields = data.split('\n')
 			.reduce((obj, line) => {
-				const [field, value] = line.split('=');
-				if (value !== undefined) {
+				let [field, value] = line.split('=');
+				if (field && value !== undefined) {
+					field = field.trim();
+					value = value.trim();
 					obj[field] = value;
+					const groups = field.split('.');
+					this.addGroups(this.groups, groups, value);
 				}
 				return obj;
 			}, {});
+	}
+
+	addGroups(target, groups, value) {
+		const key = groups[0].trim();
+		if (key) {
+			if (groups.length===1) {
+				target[key] = value;
+			} else {
+				const next = target[key] = (target[key] || {});
+				groups.shift();
+				this.addGroups(next, groups, value);
+			}
+		}
 	}
 
 	save() {
@@ -86,6 +104,7 @@ export default class ProjectProperties {
 		const relative = vendored ? 'lib' : '.lib';
 		return path.join(this.dir, relative, libName);
 	}
+	
 }
 
 

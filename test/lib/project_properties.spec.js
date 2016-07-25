@@ -62,4 +62,39 @@ describe('project properties', () => {
 			return expect(sut.projectLayout()).to.eventually.be.equal(extended);
 		});
 	});
+
+	describe('properties', () => {
+		it('strips spaces from properties and values', () => {
+			sut.parse(
+			`
+			a = 1
+			b = 2
+			`);
+			expect(sut.fields.a).is.equal('1');
+			expect(sut.fields.b).is.equal('2');
+		});
+	});
+
+	describe('groupped properties', () => {
+
+		it('groups properties with the same dotted prefix', () => {
+			sut.parse(`
+			value.1=one
+			value.2=two
+			`);
+			expect(sut.groups['value']).to.be.deep.equal({1:'one', 2:'two'});
+		});
+
+		it('groups multiple nested properties with the same dotted prefix', () => {
+			sut.parse(`
+			foo.value.1 = one
+			foo.  value.  2=two
+			foo. bar=baz
+			`);
+			expect(sut.groups.foo.value).to.have.property('1').equal('one');
+			expect(sut.groups.foo.value).to.have.property('2').equal('two');
+			expect(sut.groups.foo).to.have.property('bar').equal('baz');
+		});
+
+	});
 });
