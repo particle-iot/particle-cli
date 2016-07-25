@@ -21,8 +21,8 @@
 
 import {expect} from '../test-setup';
 const path = require('path');
-import createLibraryCommand from '../../src/cmd/library';
-import * as cli from '../../src/cli/nested-yargs';
+import createLibraryCommand from '../../src/cli/library';
+import * as cli from '../../src/app/nested-yargs';
 import { resourcesDir } from 'particle-cli-library-manager';
 
 describe('library', () => {

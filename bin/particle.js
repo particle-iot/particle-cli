@@ -7,8 +7,8 @@ app.default.run(process.argv);
 function appForEnvironment() {
 	if (process.env.PARTICLE_CLI_DEVELOPMENT) {
 		require('babel-register');
-		return require('../src/cli/app');
+		return require('../src/app/app');
 	} else {
-		return require('../dist/cli/app');
+		return require('../dist/app/app');
 	}
 }

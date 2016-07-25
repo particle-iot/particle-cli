@@ -1,149 +1,207 @@
-import cloudCli from '../cli/cloud';
+import fs from 'fs';
+import path from 'path';
+import pipeline from 'when/pipeline';
+import _ from 'lodash';
+import when from 'when';
+import whenNode from 'when/node';
+import glob from 'glob';
 
-export default (app, cli) => {
-	const cloud = cli.createCategory(app, 'cloud', 'Commands to interact with the Particle Cloud');
+import log from '../app/log';
+import settings from '../../settings';
+import ParticleApi from './api';
+import { platformsByName, notSourceExtensions, MAX_FILE_SIZE } from './constants';
 
-	cli.createCommand(cloud, 'login', 'Login and save an access token for interacting with your account on the Particle Cloud', {
-		options: {
-			u: {
-				alias: 'username',
-				string: true,
-				description: 'Username',
-				required: !global.isInteractive
+const api = new ParticleApi(settings.apiUrl, {
+	accessToken: settings.access_token
+});
+
+export default {
+	login(user, pass) {
+		return api.login(user, pass);
+	},
+
+	logout() {
+		return api.logout();
+	},
+
+	removeAccessToken(user, pass, token) {
+		return api.removeAccessToken(user, pass, token);
+	},
+
+	listDevices() {
+		return api.listDevices();
+	},
+
+	listDevicesWithFunctionsAndVariables(filter) {
+		return pipeline([
+			api.listDevices.bind(api),
+			(devices) => {
+				return when.map(devices, d => {
+					if (d.connected) {
+						return api.getDeviceAttributes(d.id)
+							.then(attrs => Object.assign(d, attrs));
+					}
+					return d;
+				});
 			},
-			p: {
-				alias: 'password',
-				string: true,
-				description: 'Password',
-				required: !global.isInteractive
-			}
-		},
-		handler: cloudCli.login
-	});
-
-	cli.createCommand(cloud, 'logout', 'Logout from the Particle Cloud', {
-		options: {
-			revoke: {
-				boolean: true,
-				description: 'Revoke the current access token'
+			(devices) => {
+				return _.sortBy(devices, 'name');
 			},
-			p: {
-				alias: 'password',
-				string: true,
-				description: 'Password'
-			}
-		},
-		handler: cloudCli.logout,
-		setup(yargs) {
-			if (!global.isInteractive && yargs.argv.revoke) {
-				yargs.demand('password');
-			}
-		}
-	});
+			(devices) => {
+				if (!filter) {
+					return devices;
+				}
 
-	cli.createCommand(cloud, 'list', 'Displays a list of your devices, along with their variables and functions', {
-		params: '[filter]',
-		handler(argv) {
-			argv.filter = argv.params.filter;
-			return cloudCli.listDevices(argv);
-		}
-	});
-
-	cli.createCommand(cloud, 'claim', 'Claim a device to your account', {
-		params: '<deviceId>',
-		options: {
-			t: {
-				alias: 'request-transfer',
-				boolean: true,
-				description: 'Automatically request transfer if necessary'
+				switch (true) {
+					case (filter === 'online'):
+						return devices.filter(d => d.connected);
+					case (filter === 'offline'):
+						return devices.filter(d => !d.connected);
+					case (Object.keys(platformsByName).indexOf(filter.toLowerCase()) >= 0):
+						return devices.filter(d => d.platform_id === platformsByName[filter.toLowerCase()]);
+					default:
+						return devices.filter(d => d.name === filter || d.id === filter);
+				}
 			}
-		},
-		handler(argv) {
-			argv.deviceId = argv.params.deviceId;
-			return cloudCli.claimDevice(argv);
-		}
-	});
+		]);
+	},
 
-	cli.createCommand(cloud, 'remove', 'Release a device from your account', {
-		params: '<deviceIdOrName>',
-		options: {
-			f: {
-				alias: 'force',
-				boolean: true,
-				description: 'Remove device without confirmation'
-			}
-		},
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			return cloudCli.removeDevice(argv);
-		}
-	});
+	claimDevice(deviceId, requestTransfer) {
+		return api.claimDevice(deviceId, requestTransfer);
+	},
 
-	cli.createCommand(cloud, 'name', 'Change the friendly name of a device', {
-		params: '<deviceIdOrName> <name...>',
-		options: {
-			f: {
-				alias: 'force',
-				boolean: true,
-				description: 'Rename device without confirmation'
-			}
-		},
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			argv.name = argv.params.name.join('-');
-			return cloudCli.renameDevice(argv);
-		}
-	});
+	removeDevice(deviceIdOrName) {
+		return api.removeDevice(deviceIdOrName);
+	},
 
-	cli.createCommand(cloud, 'flash', 'Flash a binary, source file, or source directory to a device over the air', {
-		params: '<deviceIdOrName> <filesOrFolder...>',
-		options: {
-			t: {
-				alias: 'target',
-				type: 'string',
-				description: 'System firmware version you wish to compile against'
-			}
-		},
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			argv.filesOrFolder = argv.params.filesOrFolder;
-			return cloudCli.flashDevice(argv);
-		}
-	});
+	renameDevice(deviceIdOrName, name) {
+		return api.renameDevice(deviceIdOrName, name);
+	},
 
-	cli.createCommand(cloud, 'compile', 'Compiles one or more source files or a directory of source to a firmware binary for your device', {
-		params: '<deviceType> <filesOrFolder...>',
-		options: {
-			t: {
-				alias: 'target',
-				type: 'string',
-				description: 'System firmware version you wish to compile against'
+	signalDevice(deviceIdOrName, onOff) {
+		return api.signalDevice(deviceIdOrName, onOff);
+	},
+
+	listBuildTargets(onlyFeatured) {
+		return api.listBuildTargets(onlyFeatured);
+	},
+
+	compileCode({ deviceType, filesOrFolder, target }) {
+		const platformId = platformsByName[deviceType];
+		if (platformId === undefined) {
+			return when.reject('Invalid device type');
+		}
+
+		return pipeline([
+			() => {
+				if (!target || target === 'latest') {
+					return;
+				}
+
+				return this.listBuildTargets(true).then(data => {
+					const validTargets = data.targets.filter(t => t.platforms.indexOf(platformId) >= 0);
+					const validTarget = validTargets.filter(t => t.version === target)[0];
+
+					if (!validTarget) {
+						return when.reject(['Invalid build target version.', 'Valid targets:'].concat(_.map(validTargets, 'version')));
+					}
+					log.info(`Targeting version ${validTarget.version}`);
+				});
 			},
-			saveTo: {
-				type: 'string',
-				description: 'File path where you want to save the compiled firmware binary'
-			}
-		},
-		handler(argv) {
-			argv.deviceType = argv.params.deviceType;
-			argv.filesOrFolder = argv.params.filesOrFolder;
-			return cloudCli.compileCode(argv);
-		}
-	});
+			() => {
+				return this._processFileArguments(filesOrFolder);
+			},
+			(files) => {
+				if (!files.length) {
+					return when.reject('No source files to compile');
+				}
 
-	cli.createCommand(cloud, 'nyan', 'Commands your device to start/stop shouting rainbows', {
-		params: '[deviceIdOrName] [onOff]',
-		examples: [
-			'$0 cloud nyan my_device_id on',
-			'$0 cloud nyan my_device_id off',
-			'$0 cloud nyan all on',
-			'$0 cloud nyan on',
-			'$0 cloud nyan off',
-		],
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			argv.onOff = argv.params.onOff;
-			return cloudCli.signal(argv);
+				log.info('Including:');
+				const fileMap = {};
+				files.forEach(f => {
+					log.info(`  ${f}`);
+					fileMap[path.basename(f)] = f;
+				});
+				return api.compileCode(fileMap, platformId, target);
+			}
+		]);
+	},
+
+	downloadFirmwareBinary(binaryId, downloadPath) {
+		return api.downloadFirmwareBinary(binaryId, downloadPath);
+	},
+
+	_readTrimBlankLinesAndComments(file) {
+		const read = whenNode.lift(fs.readFile);
+		return read(file).then(buf => {
+			const lines = buf.toString().split('\n');
+			return _.chain(lines)
+				.map(l => l.trim())
+				.compact()
+				.filter(l => !l.match(/^#.*$/))
+				.value();
+		});
+	},
+
+	_processDirIncludes(dirname) {
+		const dir = path.resolve(dirname);
+		const includeFile = path.join(dir, 'particle.include');
+		const excludeFile = path.join(dir, 'particle.exclude');
+		let includes = ['*.h', '*.ino', '*.cpp', '*.c'];
+
+		const stat = whenNode.lift(fs.stat);
+		const liftGlob = whenNode.lift(glob);
+
+		return pipeline([
+			() => {
+				return stat(includeFile).then(() => {
+					return this._readTrimBlankLinesAndComments(includeFile).then(lines => {
+						includes = lines;
+					});
+				}, () => {});
+			},
+			() => {
+				return liftGlob(`${dir}/+(${includes.join('|')})`);
+			},
+			(fileList) => {
+				return stat(excludeFile).then(() => {
+					this._readTrimBlankLinesAndComments(excludeFile).then(lines => {
+						return liftGlob(`${dir}/+(${lines.join('|')})`).then(exclude => {
+							return _.difference(fileList, exclude);
+						});
+					});
+				}, () => {});
+			}
+		]);
+	},
+
+	_processFileArguments(files) {
+		log.silly(`processing file list: ${files}`);
+		const stat = whenNode.lift(fs.stat);
+		if (!files.length) {
+			// default to current directory
+			files.push('.');
 		}
-	});
+
+		return stat(files[0]).then(s => {
+			if (s.isDirectory()) {
+				return this._processDirIncludes(files[0]);
+			} else if (s.isFile()) {
+				return files;
+			}
+		}).then(incFiles => {
+			return when.map(incFiles, f => stat(f))
+				.then(stats => {
+					stats.forEach((s, i) => s.name = incFiles[i]);
+					return stats;
+				});
+		}).then(stats => {
+			return _.chain(stats)
+				.filter(s => s.isFile())
+				.filter(s => notSourceExtensions.indexOf(path.extname(s.name)) === -1)
+				.filter(s => s.size < MAX_FILE_SIZE)
+				.map('name')
+				.value();
+		});
+	}
 };

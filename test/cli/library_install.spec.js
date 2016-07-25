@@ -19,9 +19,9 @@
 
 import {expect} from '../test-setup';
 const path = require('path');
-import libraryInstall, {CLILibraryInstallCommandSite} from '../../src/cmd/library_install';
-import {LibraryInstallCommand} from '../../src/lib/library_install';
-import * as cli from '../../src/cli/nested-yargs';
+import libraryInstall, {CLILibraryInstallCommandSite} from '../../src/cli/library_install';
+import {LibraryInstallCommand} from '../../src/cmd/library_install';
+import * as cli from '../../src/app/nested-yargs';
 
 describe('library install command', () => {
 
@@ -62,6 +62,14 @@ describe('library install command', () => {
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 		});
+
+		it('recognizes the install vendored command with confirmation', () => {
+			const argv = app.parse('install --vendored -y'.split(' '));
+			expect(argv.clicommand).to.be.ok;
+			expect(argv).to.have.property('vendored').that.is.true;
+			expect(argv).to.have.property('confirm').that.is.true;
+		});
+
 
 		it('recognizes the install vendored command with library', () => {
 			const argv = app.parse('install neopixel --vendored'.split(' '));

@@ -1,275 +1,149 @@
-import fs from 'fs';
-import path from 'path';
+import cloudCli from '../app/cloud';
 
-import when from 'when';
-import whenNode from 'when/node';
-import pipeline from 'when/pipeline';
-import _ from 'lodash';
+export default (app, cli) => {
+	const cloud = cli.createCategory(app, 'cloud', 'Commands to interact with the Particle Cloud');
 
-import * as ui from './ui';
-import chalk from 'chalk';
-import prompts from './prompts';
-import cloudLib from '../lib/cloud';
-import { UnauthorizedError } from '../lib/api';
-import log from './log';
-import settings from '../../settings';
-import { platformsById } from '../lib/constants';
-
-// todo - surely this should be in lib?
-// currently it mixes command logic and UI - when these are separated then it will be suitable
-// for migration to ./lib.
-
-function login(opts) {
-	const qs = [];
-	if (!opts.username) {
-		qs.push(prompts.username(opts.defaultUsername));
-	}
-	if (!opts.password) {
-		qs.push(prompts.password());
-	}
-
-	if (qs.length) {
-		return ui.prompt(qs).then(ans => {
-			const user = opts.username || ans.username;
-			const pass = opts.password || ans.password;
-
-			opts.defaultUsername = user;
-			return doLogin(user, pass);
-		});
-	}
-
-	return doLogin(opts.username, opts.password);
-}
-
-function doLogin(user, pass) {
-	return ui.spin(cloudLib.login(user, pass), 'Sending login details...')
-		.then(token => {
-			log.success('Successfully completed login!');
-			settings.override(null, 'username', user);
-			settings.override(null, 'access_token', token);
-		});
-}
-
-const cloud = {
-	login(opts) {
-		return ui.retry(login, 3, (err) => {
-			log.warn("There was an error logging you in! Let's try again.");
-			log.error(err);
-		}, (err) => {
-			log.error('Unable to login :(');
-			if (err) {
-				log.error(err);
-			}
-		})(opts);
-	},
-
-	logout(opts) {
-		// TODO ensure logged in first
-		return pipeline([
-			() => {
-				if (opts.revoke && !opts.password) {
-					return ui.prompt([prompts.password()]);
-				}
-				return;
+	cli.createCommand(cloud, 'login', 'Login and save an access token for interacting with your account on the Particle Cloud', {
+		options: {
+			u: {
+				alias: 'username',
+				string: true,
+				description: 'Username',
+				required: !global.isInteractive
 			},
-			(ans) => {
-				if (opts.revoke) {
-					const pass = opts.password || ans.password;
-					return cloudLib.removeAccessToken(settings.username, pass, settings.access_token);
-				} else {
-					return cloudLib.logout();
-				}
+			p: {
+				alias: 'password',
+				string: true,
+				description: 'Password',
+				required: !global.isInteractive
+			}
+		},
+		handler: cloudCli.login
+	});
+
+	cli.createCommand(cloud, 'logout', 'Logout from the Particle Cloud', {
+		options: {
+			revoke: {
+				boolean: true,
+				description: 'Revoke the current access token'
 			},
-			() => {
-				settings.override(null, 'username', null);
-				settings.override(null, 'access_token', null);
-				log.success('Successfully logged out!');
+			p: {
+				alias: 'password',
+				string: true,
+				description: 'Password'
 			}
-		]);
-	},
+		},
+		handler: cloudCli.logout,
+		setup(yargs) {
+			if (!global.isInteractive && yargs.argv.revoke) {
+				yargs.demand('password');
+			}
+		}
+	});
 
-	listDevices(opts) {
-		return pipeline([
-			() => {
-				return ui.spin(cloudLib.listDevicesWithFunctionsAndVariables(opts.filter), 'Retrieving device functions and variables...');
+	cli.createCommand(cloud, 'list', 'Displays a list of your devices, along with their variables and functions', {
+		params: '[filter]',
+		handler(argv) {
+			argv.filter = argv.params.filter;
+			return cloudCli.listDevices(argv);
+		}
+	});
+
+	cli.createCommand(cloud, 'claim', 'Claim a device to your account', {
+		params: '<deviceId>',
+		options: {
+			t: {
+				alias: 'request-transfer',
+				boolean: true,
+				description: 'Automatically request transfer if necessary'
+			}
+		},
+		handler(argv) {
+			argv.deviceId = argv.params.deviceId;
+			return cloudCli.claimDevice(argv);
+		}
+	});
+
+	cli.createCommand(cloud, 'remove', 'Release a device from your account', {
+		params: '<deviceIdOrName>',
+		options: {
+			f: {
+				alias: 'force',
+				boolean: true,
+				description: 'Remove device without confirmation'
+			}
+		},
+		handler(argv) {
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			return cloudCli.removeDevice(argv);
+		}
+	});
+
+	cli.createCommand(cloud, 'name', 'Change the friendly name of a device', {
+		params: '<deviceIdOrName> <name...>',
+		options: {
+			f: {
+				alias: 'force',
+				boolean: true,
+				description: 'Rename device without confirmation'
+			}
+		},
+		handler(argv) {
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			argv.name = argv.params.name.join('-');
+			return cloudCli.renameDevice(argv);
+		}
+	});
+
+	cli.createCommand(cloud, 'flash', 'Flash a binary, source file, or source directory to a device over the air', {
+		params: '<deviceIdOrName> <filesOrFolder...>',
+		options: {
+			t: {
+				alias: 'target',
+				type: 'string',
+				description: 'System firmware version you wish to compile against'
+			}
+		},
+		handler(argv) {
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			argv.filesOrFolder = argv.params.filesOrFolder;
+			return cloudCli.flashDevice(argv);
+		}
+	});
+
+	cli.createCommand(cloud, 'compile', 'Compiles one or more source files or a directory of source to a firmware binary for your device', {
+		params: '<deviceType> <filesOrFolder...>',
+		options: {
+			t: {
+				alias: 'target',
+				type: 'string',
+				description: 'System firmware version you wish to compile against'
 			},
-			(devices) => {
-				if (devices.length === 0) {
-					return log.info('No devices claimed to your account');
-				}
-
-				ui.render('deviceList', devices, { platformsById });
+			saveTo: {
+				type: 'string',
+				description: 'File path where you want to save the compiled firmware binary'
 			}
-		]).catch(UnauthorizedError, () => {
-			log.error('Not logged in');
-		});
-	},
-
-	claimDevice(opts) {
-		return ui.spin(cloudLib.claimDevice(opts.deviceId, opts.requestTransfer),
-			`Claiming device ${opts.deviceId}`)
-			.then(body => {
-				if (opts.requestTransfer && body.transfer_id) {
-					log.success(`Transfer #${body.transfer_id} requested. You will receive an email if your transfer is approved or denied.`);
-					return;
-				}
-				log.success(`Successfully claimed device ${opts.deviceId}`);
-			})
-			.catch(err => {
-				const errors = err && err.body && err.body.errors;
-				const msg = `Error claiming device: ${errors || err}`;
-				if (errors && errors.join('\n').indexOf('That belongs to someone else.') >= 0) {
-					if (global.isInteractive) {
-						return ui.prompt([prompts.requestTransfer()]).then(ans => {
-							if (ans.transfer) {
-								return cloudLib.claimDevice(opts.deviceId, true).then(body => {
-									log.success(`Transfer #${body.transfer_id} requested. You will receive an email if your transfer is approved or denied.`);
-								}).catch(err => {
-									return when.reject(err);
-								});
-							}
-							return when.reject(msg);
-						});
-					}
-				}
-				return when.reject(msg);
-			});
-	},
-
-	removeDevice(opts) {
-		function doRemove() {
-			return cloudLib.removeDevice(opts.deviceIdOrName)
-				.then(() => {
-					log.success(`Successfully removed device ${opts.deviceIdOrName} from your account`);
-				})
-				.catch(err => {
-					const error = err && err.body && err.body.info;
-					return when.reject(error || err);
-				});
+		},
+		handler(argv) {
+			argv.deviceType = argv.params.deviceType;
+			argv.filesOrFolder = argv.params.filesOrFolder;
+			return cloudCli.compileCode(argv);
 		}
+	});
 
-		if (!opts.force) {
-			if (!global.isInteractive) {
-				return when.reject('Confirmation required, use -f argument to force removal.');
-			}
-
-			return ui.prompt([prompts.areYouSure(`you want to remove device ${opts.deviceIdOrName} from your account`)])
-				.then(ans => {
-					if (ans.sure) {
-						return doRemove();
-					}
-					log.warn('Device was not removed');
-				});
+	cli.createCommand(cloud, 'nyan', 'Commands your device to start/stop shouting rainbows', {
+		params: '[deviceIdOrName] [onOff]',
+		examples: [
+			'$0 cloud nyan my_device_id on',
+			'$0 cloud nyan my_device_id off',
+			'$0 cloud nyan all on',
+			'$0 cloud nyan on',
+			'$0 cloud nyan off',
+		],
+		handler(argv) {
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			argv.onOff = argv.params.onOff;
+			return cloudCli.signal(argv);
 		}
-
-		return doRemove();
-	},
-
-	renameDevice(opts) {
-		const name = opts.name.replace(' ', '-');
-		function doRename() {
-			return cloudLib.renameDevice(opts.deviceIdOrName, name)
-				.then(() => {
-					log.success(`Successfully renamed device ${opts.deviceIdOrName} to ${name}`);
-				})
-				.catch(err => {
-					const error = err && err.body && err.body.info;
-					return when.reject(error || err);
-				});
-		}
-
-		if (!opts.force) {
-			if (!global.isInteractive) {
-				return when.reject('Confirmation required, use -f argument to force renaming.');
-			}
-
-			return ui.prompt([prompts.areYouSure(`you want to rename device ${chalk.cyan.bold(opts.deviceIdOrName)} to ${chalk.cyan.bold(name)}`)])
-				.then(ans => {
-					if (ans.sure) {
-						return doRename();
-					}
-					log.warn('Device was not renamed');
-				});
-		}
-		return doRename();
-	},
-
-	signal(opts) {
-		let onOff = !opts.onOff || opts.onOff === 'on';
-		let deviceId = opts.deviceIdOrName;
-		switch (deviceId) {
-			case 'on':
-				deviceId = undefined;
-				onOff = true;
-				break;
-			case 'off':
-				deviceId = undefined;
-				onOff = false;
-				break;
-			case 'all':
-				deviceId = undefined;
-				break;
-		}
-
-		if (deviceId) {
-			return cloudLib.signalDevice(deviceId, onOff)
-				.then(() => {
-					log.success(`${deviceId} is ${onOff ? 'shouting rainbows' : 'back to normal'}`);
-				});
-		}
-
-		return pipeline([
-			() => {
-				if (deviceId) {
-					return [deviceId];
-				}
-
-				return cloudLib.listDevices().then(devices => {
-					return _.chain(devices).filter('connected').map('id').value();
-				});
-			},
-			(deviceIds) => {
-				return when.settle(deviceIds.map(id => {
-					return cloudLib.signalDevice(id, onOff).catch(err => {
-						const errors = err && err.body && err.body.errors;
-						return when.reject(errors || err);
-					});
-				}));
-			}
-		]).then(results => {
-			const segmentedResults = _.groupBy(results, 'state');
-			log.success(`${segmentedResults.fulfilled.length} device(s) ${onOff ? 'shouting rainbows' : 'back to normal'}`);
-			if (segmentedResults.rejected.length) {
-				log.warn(`${segmentedResults.rejected.length} device(s) unable to signal:`);
-				segmentedResults.rejected.forEach(r => log.warn(r.reason));
-			}
-		});
-	},
-
-	compileCode(opts) {
-		const downloadPath = path.resolve(opts.saveTo || `${opts.deviceType}_firmware_${Date.now()}.bin`);
-
-		return pipeline([
-			() => {
-				return whenNode.lift(fs.stat)(downloadPath).then(() => {
-					log.silly(`Deleting ${downloadPath} before download`);
-					return whenNode.lift(fs.unlink)(downloadPath);
-				}, () => {});
-			},
-			() => {
-				return ui.spin(cloudLib.compileCode(opts), 'Compiling');
-			},
-			(resp) => {
-				return ui.spin(cloudLib.downloadFirmwareBinary(resp.binary_id, downloadPath), `Downloading to ${downloadPath}`)
-					.then(() => {
-						log.success(`Downloaded to ${downloadPath}`);
-						log.info(resp.sizeInfo);
-					});
-			}
-		]).catch(err => {
-			console.log(err);
-		});
-	}
+	});
 };
-
-export default cloud;

@@ -1,30 +1,16 @@
-import eventCli from '../cli/event';
+import settings from '../../settings';
+import ParticleApi from './api';
 
-export default (app, cli) => {
-	const event = cli.createCategory(app, 'event', 'Commands to publish and subscribe to the event stream');
+const api = new ParticleApi(settings.apiUrl, {
+	accessToken: settings.access_token
+});
 
-	cli.createCommand(event, 'subscribe', 'Subscribe to the event stream', {
-		params: '[eventName] [deviceIdOrName]',
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			argv.eventName = argv.params.eventName;
-			return eventCli.subscribe(argv);
-		}
-	});
+export default {
+	subscribe(deviceId, name) {
+		return api.getEventStream(deviceId, name);
+	},
 
-	cli.createCommand(event, 'publish', 'Publish an event to the event stream', {
-		params: '<eventName> [data]',
-		options: {
-			private: {
-				boolean: true,
-				default: false,
-				description: 'Publish the event to the private data stream for your devices only'
-			}
-		},
-		handler(argv) {
-			argv.data = argv.params.data;
-			argv.eventName = argv.params.eventName;
-			return eventCli.publish(argv);
-		}
-	});
+	publish(name, data, isPrivate) {
+		return api.publishEvent(name, data, isPrivate);
+	}
 };

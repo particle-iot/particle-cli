@@ -2,8 +2,8 @@
 import {expect, td, sinon} from '../test-setup';
 import fs from 'fs';
 
-import {LibraryAddCommand} from '../../src/lib/library';
-import {CLILibraryAddCommandSite} from '../../src/cmd/library';
+import {LibraryAddCommand} from '../../src/cmd/library';
+import {CLILibraryAddCommandSite} from '../../src/cli/library';
 // FIXME: testdouble.js doesn't work properly with ES6 classes
 //const projectProperties = td.replace('../../src/lib/ProjectProperties');
 import getProjectFixture from '../fixtures/projects';
@@ -27,10 +27,10 @@ describe('LibraryAddCommand', () => {
 
 		const sut = new LibraryAddCommand({ apiClient });
 		return sut.run(testSite, { name: 'neopixel' })
-		.then(() => {
-			const expectedDependency = /dependencies.neopixel=1\.0\.0/;
-			const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
-			expect(savedProperties).to.match(expectedDependency);
-		})
+			.then(() => {
+				const expectedDependency = /dependencies.neopixel=1\.0\.0/;
+				const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
+				expect(savedProperties).to.match(expectedDependency);
+			})
 	});
 });

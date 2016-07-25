@@ -1,66 +1,133 @@
-import {LibraryAddCommand} from '../lib/library';
-import ParticleApi from '../lib/api';
-import settings from '../../settings';
+import {Command, CommandSite} from './command';
 
-import chalk from 'chalk';
-import log from '../cli/log';
-import {spin} from '../cli/ui';
+import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
+import ProjectProperties from './project_properties';
+import path from 'path';
+import when from 'when';
+import pipeline from 'when/pipeline';
 
-import libraryInstall from './library_install';
-import libraryMigrate from './library_migrate';
-import libraryInit from './library_init';
+export class LibraryMigrateCommandSite extends CommandSite {
 
-//const ui = require('../cli/ui');
+	/**
+	 * Provides the list of library directories to process.
+	 */
+	getLibraries() {}
 
-const apiJS = new ParticleApi(settings.apiUrl, {
-	accessToken: settings.access_token
-}).api;
+	notifyStart(lib) {}
+
+	notifyEnd(lib, result, err) {}
+}
 
 
-export class CLILibraryAddCommandSite {
-	constructor(argv) {
-		[this.name, this.version='latest'] = argv.params.name.split('@');
-		this.dir = argv.params.dir || process.cwd();
-	}
-
-	run(cmd) {
-		return cmd.run(this, {
-			name: this.name,
-			version: this.version
+class AbstractLibraryMigrateCommand extends Command {
+	/**
+	 * Executes the library command.
+	 * @param {object} state Conversation state
+	 * @param {LibraryMigrateCommandSite} site Conversation interface
+	 * @return {Array<object>} Returns a promise for an array, one index for each library processed.
+	 * Each element has properties:
+	 *  - libdir: the directory of the library
+	 *  - result: result of running `processLibrary()` if no errors were produced.
+	 *  - err: any error that was produced.
+	 */
+	run(state, site) {
+		const libsPromise = when().then(() => site.getLibraries());
+		return when.map(libsPromise, libdir => {
+			site.notifyStart(libdir);
+			const dir = path.resolve(libdir);
+			const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
+			return this.processLibrary(repo, '', state, site)
+			.then(([res, err]) => {
+				site.notifyEnd(libdir, res, err);
+				return {libdir, res, err};
+			});
 		});
 	}
 
-	projectDir() {
-		return this.dir;
-	}
+	processLibrary(repo, libname, state, site) {}
+}
 
-	fetchingLibrary(promise, name) {
-		return spin(promise, `Adding library ${chalk.green(name)}`);
-	}
+function resultError(promise) {
+	return promise.then(
+		result => [result, null],
+		err => [err, null]
+	);
+}
 
-	addedLibrary(name, version) {
-		log.info(`Added library ${chalk.green(name)} ${version} to project`);
-		return Promise.resolve();
+export class LibraryMigrateTestCommand extends AbstractLibraryMigrateCommand {
+
+	processLibrary(repo, libname, state, site) {
+		return resultError(repo.getLibraryLayout(libname));
 	}
 }
 
-export default (app, cli) => {
-	const lib = cli.createCategory(app, 'library', 'Manages firmware libraries');
+export class LibraryMigrateCommand extends AbstractLibraryMigrateCommand {
 
-	libraryInit(lib, cli);
-	libraryInstall(lib, cli);
-	libraryMigrate(lib, cli);
+	processLibrary(repo, libname, state, site) {
+		return resultError(pipeline([
+			() => repo.getLibraryLayout(libname),
+			(layout) => {
+				if (layout === 2) {
+					return false;
+				} else {
+					return repo.setLibraryLayout(libname, 2)
+					.then(() => true);
+				}
+			}
+		]));
+	}
+}
 
-	cli.createCommand(lib, 'add', 'Add a library to the current project.', {
-		options: {},
-		params: '<name>',
+/** Library add **/
+export class LibraryAddCommand {
+	constructor({ apiClient } = {}) {
+		this.apiClient = apiClient;
+	}
+	run(site, { name, version = 'latest' } = {}) {
+		this.site = site;
+		this.projectProperties = new ProjectProperties(this.site.projectDir());
+		return pipeline([
+			() => this.ensureProjectExists(),
+			() => this.loadProject(),
+			() => this.fetchLibrary(name, version),
+			(library) => this.addLibraryToProject(library),
+			() => this.saveProject()
+		]);
+	}
 
-		handler: function libraryAddHandler(argv) {
-			const apiClient = apiJS.client({ auth: settings.access_token });
-			const site = new CLILibraryAddCommandSite(argv);
-			const cmd = new LibraryAddCommand({ apiClient });
-			return site.run(cmd);
-		}
-	});
-	return lib;
-};
+	ensureProjectExists() {
+		return this.projectExist().then(exists => {
+			if (!exists) {
+				return this.createProject();
+			}
+		});
+	}
+
+	projectExist() {
+		return this.projectProperties.exists();
+	}
+
+	createProject() {
+		// save a blank project.properties
+		return this.projectProperties.save();
+	}
+
+	loadProject() {
+		return this.projectProperties.load();
+	}
+
+	fetchLibrary(name, version) {
+		return this.site.fetchingLibrary(this.apiClient.library(name, { version }), name);
+	}
+
+	addLibraryToProject(library) {
+		return pipeline([
+			() => this.site.addedLibrary(library.name, library.version),
+			() => this.projectProperties.addDependency(library.name, library.version)
+		]);
+	}
+
+	saveProject() {
+		return this.projectProperties.save();
+	}
+}

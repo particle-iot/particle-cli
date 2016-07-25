@@ -18,9 +18,8 @@
  */
 
 import {expect, sinon} from '../test-setup';
-import {CLILibraryTestMigrateCommandSite} from "../../src/cmd/library_migrate";
+import {CLILibraryTestMigrateCommandSite} from "../../src/cli/library_migrate";
 const path = require('path');
-const library = require('../../src/cmd/library');
 
 describe('library command', () => {
 

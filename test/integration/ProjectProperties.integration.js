@@ -1,6 +1,6 @@
 import {expect} from '../test-setup';
 import fs from 'fs';
-import ProjectProperties from '../../src/lib/project_properties';
+import ProjectProperties from '../../src/cmd/project_properties';
 import getProjectFixture from '../fixtures/projects';
 
 describe('ProjectProperties', () => {

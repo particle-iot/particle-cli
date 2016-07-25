@@ -23,8 +23,8 @@ const path = require('path');
 const mockfs = require('mock-fs');
 const fs = require('fs');
 
-import * as cli from '../../src/cli/nested-yargs';
-import libraryInit from '../../src/cmd/library_init';
+import * as cli from '../../src/app/nested-yargs';
+import libraryInit from '../../src/cli/library_init';
 
 /**
  * Synchronously reads a directory from the real filesystem into the format as expected by mock-fs.

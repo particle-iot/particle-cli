@@ -1,47 +1,30 @@
-import when from 'when';
-import eventLib from '../lib/event';
-import * as ui from './ui';
-import log from './log';
+import eventCli from '../app/event';
 
-const event = {
-	subscribe(opts) {
-		let eventName = opts.eventName;
-		let deviceIdOrName = opts.deviceIdOrName;
+export default (app, cli) => {
+	const event = cli.createCategory(app, 'event', 'Commands to publish and subscribe to the event stream');
 
-		if (!deviceIdOrName && eventName === 'mine') {
-			deviceIdOrName = 'mine';
-			eventName = undefined;
-		} else if (eventName === 'mine' && deviceIdOrName) {
-			eventName = undefined;
+	cli.createCommand(event, 'subscribe', 'Subscribe to the event stream', {
+		params: '[eventName] [deviceIdOrName]',
+		handler(argv) {
+			argv.deviceIdOrName = argv.params.deviceIdOrName;
+			argv.eventName = argv.params.eventName;
+			return eventCli.subscribe(argv);
 		}
+	});
 
-		const eventLabel = eventName ? `"${eventName}"` : 'all events';
-		if (!deviceIdOrName) {
-			log.success(`Subscribing to ${eventLabel} from the firehose (all devices)`);
-		} else if (deviceIdOrName === 'mine') {
-			log.success(`Subscribing to ${eventLabel} from your personal stream (your devices only)`);
-		} else {
-			log.success(`Subscribing to ${eventLabel} from ${deviceIdOrName}'s stream`);
+	cli.createCommand(event, 'publish', 'Publish an event to the event stream', {
+		params: '<eventName> [data]',
+		options: {
+			private: {
+				boolean: true,
+				default: false,
+				description: 'Publish the event to the private data stream for your devices only'
+			}
+		},
+		handler(argv) {
+			argv.data = argv.params.data;
+			argv.eventName = argv.params.eventName;
+			return eventCli.publish(argv);
 		}
-
-		return eventLib.subscribe(deviceIdOrName, eventName).then(req => {
-			return when.promise((resolve, reject) => {
-				req.on('event', e => {
-					ui.render('eventFeed', e);
-				});
-				req.on('error', reject);
-			});
-		}).catch(err => {
-			const errors = err && err.body && err.body.info;
-			return when.reject(errors || err);
-		});
-	},
-
-	publish(opts) {
-		return eventLib.publish(opts.eventName, opts.data, opts.private).then(() => {
-			log.success(`Successfully published event ${opts.eventName}`);
-		});
-	}
+	});
 };
-
-export default event;

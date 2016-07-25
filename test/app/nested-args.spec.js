@@ -17,9 +17,9 @@
  ******************************************************************************
  */
 
-import {expect} from './test-setup';
+import {expect} from '../test-setup';
 
-import * as cli from '../src/cli/nested-yargs'
+import * as cli from '../../src/app/nested-yargs'
 
 describe('command-line parsing', () => {
 

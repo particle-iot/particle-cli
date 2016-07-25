@@ -24,8 +24,8 @@ const path = require('path');
 const mockfs = require('mock-fs');
 const fs = require('fs');
 
-import * as cli from '../../src/cli/nested-yargs';
-import libraryInstall from '../../src/cmd/library_install';
+import * as cli from '../../src/app/nested-yargs';
+import libraryInstall from '../../src/cli/library_install';
 
 describe('library install', () => {
 

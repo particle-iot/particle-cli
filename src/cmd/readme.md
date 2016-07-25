@@ -1,2 +1,1 @@
-CLI-specific command customizations, including the CLI Command arguments and
-CLICommandSite implemetnation for each command.
+UI-neutral command framework and command implementations.

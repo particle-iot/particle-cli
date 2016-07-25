@@ -1,6 +1,6 @@
 
 import {expect} from '../test-setup';
-import ProjectProperties, {legacy, simple, extended} from "../../src/lib/project_properties";
+import ProjectProperties, {legacy, simple, extended} from "../../src/cmd/project_properties";
 const fs = require('fs');
 const mockfs = require('mock-fs');
 const promisify = require('es6-promisify');

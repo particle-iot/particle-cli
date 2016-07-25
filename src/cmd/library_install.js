@@ -1,71 +1,104 @@
-import {LibraryInstallCommand, LibraryInstallCommandSite} from '../lib/library_install';
-const settings = require('../../settings');
+import {Command, CommandSite} from './command';
+import {CloudLibraryRepository} from 'particle-cli-library-manager';
+import ProjectProperties, {extended} from './project_properties';
 
-export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 
-	constructor(argv, dir) {
+/**
+ * Specification and base implementation for the site instance expected by
+ * the LibraryInstallCommand.
+ */
+export class LibraryInstallCommandSite extends CommandSite {
+
+	constructor() {
 		super();
-		this.argv = argv;
-		this.dir = dir;
 	}
 
 	isVendored() {
-		return this.argv.vendored;
+		return false;
 	}
 
 	libraryName() {
-		const params = this.argv.params;
-		return params && params.name;
+		throw Error('not implemented');
 	}
 
+	/**
+	 * The target directory containing the project to install the library into.
+	 */
 	targetDirectory() {
-		return this.dir;
+		throw Error('not implemented');
 	}
 
 	accessToken() {
-		return settings.access_token;
+		throw Error('not implemented');
 	}
 
-
 	error(err) {
-		return this.promiseLog(err);
+		throw err;
 	}
 
 	notifyIncorrectLayout(actualLayout, expectedLayout, libName, targetDir) {
-		return this.promiseLog(`Cannot install library: directory '${targetDir}' is a '${actualLayout}' format project, please change to a '${expectedLayout}' format.`);
+		return Promise.resolve();
 	}
 
 	notifyCheckingLibrary(libName) {
-		return this.promiseLog(`Checking library '${libName}'...`);
+		return Promise.resolve();
 	}
 
 	notifyFetchingLibrary(lib, targetDir) {
-		return this.promiseLog(`Installing library '${lib.name} ${lib.version}' to '${targetDir}' ...`);
+		return Promise.resolve();
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
-		return this.promiseLog(`Library '${lib.name} ${lib.version}' installed.`);
-	}
-
-	promiseLog(msg) {
-		return Promise.resolve().then(() => console.log(msg));
+		return Promise.resolve();
 	}
 }
 
-export default (lib, cli) => {
-	cli.createCommand(lib, 'install', 'installs a library', {
-		options: {
-			'vendored': {
-				required: false,
-				boolean: true,
-				description: 'install the library as the vendored library in the given directory.'
-			},
-		},
-		params: '[name]',
-		handler: function LibraryInstallHandler(argv) {
-			const site = new CLILibraryInstallCommandSite(argv, process.cwd());
-			const cmd = new LibraryInstallCommand();
-			return site.run(cmd);
+/**
+ * Implements the library initialization command.
+ */
+export class LibraryInstallCommand extends Command {
+
+	/**
+	 *
+	 * @param {object} state The current conversation state.
+	 * @param {LibraryInstallCommandSite} site external services.
+	 * @returns {Promise} To run the library install command.
+	 */
+	run(state, site) {
+		const targetDir = site.targetDirectory();
+		const libName = site.libraryName();
+		const auth = site.accessToken();
+		const cloudRepo = new CloudLibraryRepository({auth});
+		const project = new ProjectProperties(targetDir);
+
+		if (!libName) {
+			return cloudRepo.names(names => console.log(names));
+		} else {
+			const libDir = project.libraryDirectory(site.isVendored(), site.libraryName());
+			return project.projectLayout()
+				.then((layout) => {
+					if (layout!==extended) {
+						return site.notifyIncorrectLayout(layout, extended, libName, targetDir);
+					} else {
+						return site.notifyCheckingLibrary(libName)
+							.then(() => {
+								return cloudRepo.fetch(libName);
+							})
+							.then((lib) => {
+								return site.notifyFetchingLibrary(lib.metadata, targetDir).
+									then(() => lib);
+							})
+							.then(lib => {
+								return lib.copyTo(libDir);
+							})
+							.then(lib => site.notifyInstalledLibrary(lib.metadata, targetDir))
+							.catch(err => site.error(err));
+					}
+				});
+
 		}
-	});
-};
+
+
+	}
+}
+

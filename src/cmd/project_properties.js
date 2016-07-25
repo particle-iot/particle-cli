@@ -104,7 +104,6 @@ export default class ProjectProperties {
 		const relative = vendored ? 'lib' : '.lib';
 		return path.join(this.dir, relative, libName);
 	}
-	
 }
 
 

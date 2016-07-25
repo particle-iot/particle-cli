@@ -1,106 +1,78 @@
-import {LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand} from '../lib/library_migrate';
+import {Command, CommandSite} from './command';
 
-export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite {
-	constructor(argv, defaultDir) {
-		super();
-		this.argv = argv;
-		if (!argv.params.library || !argv.params.library.length) {
-			argv.params.library = [defaultDir];
-			this.cwd = true;
-		}
-		this.libraries = argv.params.library;
-		this.result = null;
-	}
+import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
+import path from 'path';
+import when from 'when';
+import pipeline from 'when/pipeline';
 
-	getLibraries() {
-		return this.libraries;
-	}
+export class LibraryMigrateCommandSite extends CommandSite {
 
-	notifyEnd(lib, data, err) {
-		this.result = {lib, data, err};
-	}
+	/**
+	 * Provides the list of library directories to process.
+	 */
+	getLibraries() {}
 
-	handleError(lib, err) {
-		if (err.name==='LibraryNotFoundError') {
-			if (this.cwd) {
-				console.error('No valid library found in current directory');
-			} else {
-				console.error('No valid library found in '+lib);
-			}
-		} else {
-			if (this.cwd) {
-				console.error(`Error processing library in current directory: ${err}`);
-			} else {
-				console.error(`Error processing library '${lib}': ${err}`);
-			}
-		}
-	}
+	notifyStart(lib) {}
+
+	notifyEnd(lib, result, err) {}
 }
 
 
-export class CLILibraryTestMigrateCommandSite extends CLIBaseLibraryMigrateCommandSite {
+class AbstractLibraryMigrateCommand extends Command {
+	/**
+	 * Executes the library command.
+	 * @param {object} state Conversation state
+	 * @param {LibraryMigrateCommandSite} site Conversation interface
+	 * @return {Array<object>} Returns a promise for an array, one index for each library processed.
+	 * Each element has properties:
+	 *  - libdir: the directory of the library
+	 *  - result: result of running `processLibrary()` if no errors were produced.
+	 *  - err: any error that was produced.
+	 */
+	run(state, site) {
+		const libsPromise = when().then(() => site.getLibraries());
+		return when.map(libsPromise, libdir => {
+			site.notifyStart(libdir);
+			const dir = path.resolve(libdir);
+			const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
+			return this.processLibrary(repo, '', state, site)
+				.then(([res, err]) => {
+					site.notifyEnd(libdir, res, err);
+					return {libdir, res, err};
+				});
+		});
+	}
 
-	notifyEnd(lib, result, err) {
-		super.notifyEnd(lib, result, err);
-		if (err) {
-			this.handleError(lib, err);
-		} else {
-			if (result===1) {
-				if (this.cwd) {
-					console.info('Library can be migrated');
+	processLibrary(repo, libname, state, site) {}
+}
+
+function resultError(promise) {
+	return promise.then(
+		result => [result, null],
+		err => [err, null]
+	);
+}
+
+export class LibraryMigrateTestCommand extends AbstractLibraryMigrateCommand {
+
+	processLibrary(repo, libname, state, site) {
+		return resultError(repo.getLibraryLayout(libname));
+	}
+}
+
+export class LibraryMigrateCommand extends AbstractLibraryMigrateCommand {
+
+	processLibrary(repo, libname, state, site) {
+		return resultError(pipeline([
+			() => repo.getLibraryLayout(libname),
+			(layout) => {
+				if (layout === 2) {
+					return false;
 				} else {
-					console.info(`Library can be migrated: '${lib}'`);
-				}
-			} else {
-				if (this.cwd) {
-					console.info('Library already in v2 format');
-				} else {
-					console.info(`Library already in v2 format: '${lib}'`);
+					return repo.setLibraryLayout(libname, 2)
+						.then(() => true);
 				}
 			}
-		}
+		]));
 	}
 }
-
-
-export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSite {
-	notifyEnd(lib, result, err) {
-		if (err) {
-			this.handleError(lib, err);
-		} else {
-			if (result === true) {
-				console.info(`Library migrated to v2 format: '${lib}'`);
-			} else {
-				console.info(`Library already in v2 format: '${lib}'`);
-			}
-		}
-	}
-}
-
-
-export default (lib, cli) => {
-	cli.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
-		options: {
-			test: {
-				alias: 'dryrun',
-				boolean: true,
-				description: 'test if the library can be migrated'
-			}
-		},
-		params: '[library...]',
-
-		handler: function libraryMigrateHandler(argv) {
-			let Site, Cmd;
-			if (argv.test) {
-				Site = CLILibraryTestMigrateCommandSite;
-				Cmd = LibraryMigrateTestCommand;
-			} else {
-				Site = CLILibraryMigrateCommandSite;
-				Cmd = LibraryMigrateCommand;
-			}
-			const site = new Site(argv, process.cwd());
-			const cmd = new Cmd();
-			return site.run(cmd);
-		}
-	});
-};
