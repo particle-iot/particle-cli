@@ -13,6 +13,11 @@ export class LibraryInstallCommandSite extends CommandSite {
 		super();
 	}
 
+
+	// mdm - I'm not sure about having all these methods for accessing simple properties.
+	// It might be simpler to have a cmd args object with properties. It depends upon if the
+	// property values need to come from the user, e.g. an interactive prompt for all the values.
+
 	isVendored() {
 		return false;
 	}
@@ -68,37 +73,67 @@ export class LibraryInstallCommand extends Command {
 		const targetDir = site.targetDirectory();
 		const libName = site.libraryName();
 		const auth = site.accessToken();
-		const cloudRepo = new CloudLibraryRepository({auth});
+		let result;
 		const project = new ProjectProperties(targetDir);
+		const cloudRepo = new CloudLibraryRepository({auth});
 
-		if (!libName) {
-			return cloudRepo.names(names => console.log(names));
+		if (libName) {
+			result = this.installSingleLib(site, cloudRepo, site.isVendored(), libName, undefined, targetDir, project);
 		} else {
-			const libDir = project.libraryDirectory(site.isVendored(), site.libraryName());
-			return project.projectLayout()
-				.then((layout) => {
-					if (layout!==extended) {
-						return site.notifyIncorrectLayout(layout, extended, libName, targetDir);
-					} else {
-						return site.notifyCheckingLibrary(libName)
-							.then(() => {
-								return cloudRepo.fetch(libName);
-							})
-							.then((lib) => {
-								return site.notifyFetchingLibrary(lib.metadata, targetDir).
-									then(() => lib);
-							})
-							.then(lib => {
-								return lib.copyTo(libDir);
-							})
-							.then(lib => site.notifyInstalledLibrary(lib.metadata, targetDir))
-							.catch(err => site.error(err));
-					}
-				});
-
+			result = this.installProjectLibs(site, cloudRepo, site.isVendored(), targetDir, project);
 		}
+		return result;
+	}
 
+	installProjectLibs(site, cloudRepo, vendored, projectDir, project) {
+		// read the project
+		return project.load()
+			.then(() => {
+				const deps = project.groups.dependencies || {};
+				const install = [];
+				for (let d in deps) {
+					const libName = d;
+					const libVersion = deps[d];
+					install.push(this.installSingleLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project));
+				}
+				return Promise.all(install);
+			});
+	}
 
+	/**
+	 * Install a single library.
+	 * @param {LibraryIntallCommandSite} site          The command site to receive install updates
+	 * @param {CloudLibraryRepository} cloudRepo     The cloud repository that is used to retrieve the library.
+	 * @param {bool} vendored      true if the library should be vendored.
+	 * @param {string} libName       the name of the library to install
+	 * @param {string} libVersion    the version of the library to install, or undefined for the latest version.
+	 *          (currently unused.)
+	 * @param {string} projectDir    the project directory
+	 * @param {ProjectProperties}   project       the project to update
+     * @returns {Promise} to install the library.
+	 */
+	installSingleLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project) {
+		const libDir = project.libraryDirectory(vendored, libName);
+		return project.projectLayout()
+			.then((layout) => {
+				if (layout!==extended) {
+					return site.notifyIncorrectLayout(layout, extended, libName, projectDir);
+				} else {
+					return site.notifyCheckingLibrary(libName)
+						.then(() => {
+							return cloudRepo.fetch(libName);
+						})
+						.then((lib) => {
+							return site.notifyFetchingLibrary(lib.metadata, projectDir).
+							then(() => lib);
+						})
+						.then(lib => {
+							return lib.copyTo(libDir);
+						})
+						.then(lib => site.notifyInstalledLibrary(lib.metadata, projectDir))
+						.catch(err => site.error(err));
+				}
+			});
 	}
 }
 

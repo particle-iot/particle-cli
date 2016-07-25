@@ -4,6 +4,8 @@ var proxyquire = require('proxyquire');
 require('should');
 require('temp');
 
+/// This is old-style command implementation. No point maintaining this. 
+
 var LibraryCommand = require('../commands/LibraryCommand');
 
 

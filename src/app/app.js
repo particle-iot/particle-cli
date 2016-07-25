@@ -4,7 +4,7 @@ import _ from 'lodash';
 import updateCheck from './update-check';
 import pkg from '../../package.json';
 import * as cliargs from './nested-yargs';
-import commands from '../cmd';
+import commands from '../cli';
 import * as settings from '../../settings';
 
 const app = cliargs.createAppCategory({
