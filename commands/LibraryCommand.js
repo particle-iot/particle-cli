@@ -68,7 +68,7 @@ util.inherits(LibraryCommand, BaseCommand);
 
 LibraryCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
-	name: 'library',
+	name: 'library-old',
 	description: 'management of locally installed firmware libraries',
 	
 	init: function () {
