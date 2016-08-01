@@ -17,7 +17,6 @@
  *
  */
 
-import when from 'when';
 import chalk from 'chalk';
 import Yargs from 'yargs';
 import _ from 'lodash';
@@ -174,14 +173,19 @@ class CLICommandItem {
 	 * @returns {Promise} to run the comand
 	 */
 	exec(argv) {
-		let result;
+		let promise;
 		if (this.options.handler) {
-			result = when.try(this.options.handler.bind(this, argv));
+			promise = this.options.handler.bind(this, argv);
 		} else {
-			result = Promise.resolve();
+			promise = this.showHelp;
 		}
-		return result;
+		return Promise.resolve().then(() => promise());
 	}
+
+	showHelp() {
+
+	}
+	
 }
 
 /**
@@ -241,6 +245,10 @@ class CLICommandCategory extends CLICommandItem {
 			.demand(this.path.length, 'Please enter a valid command.');
 
 		return yargs;
+	}
+
+	exec() {
+		
 	}
 }
 
