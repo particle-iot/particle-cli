@@ -6,6 +6,8 @@ import pkg from '../../package.json';
 import * as cliargs from './nested-yargs';
 import commands from '../cli';
 import * as settings from '../../settings';
+import when from 'when';
+
 
 const app = cliargs.createAppCategory({
 	// options for yargs
@@ -79,7 +81,7 @@ function addGlobalOptions(yargs) {
 
 export class CLI {
 	newrun(args) {
-		updateCheck().then(() => {
+		return Promise.resolve().then(() => {
 			const errors = cliargs.createErrorHandler();
 			const argv = cliargs.parse(app, args.slice(2));
 			// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
@@ -90,7 +92,7 @@ export class CLI {
 			} else if (argv.clierror) {
 				errors(argv.clierror);
 			} else if (argv.clicommand) {
-				argv.clicommand.exec(argv).done(result => result, errors);
+				when(argv.clicommand.exec(argv)).done(result => result, errors);
 			}
 		});
 	}
@@ -120,11 +122,13 @@ export class CLI {
 		settings.loadOverrides();
 
 		updateCheck().then(() => {
+			let promise;
 			if (this.isNewCommand(args)) {
-				this.newrun(args);
+				promise = this.newrun(args);
 			} else {
-				this.oldrun(args);
+				promise = this.oldrun(args);
 			}
+			return promise;
 		});
 	}
 }
