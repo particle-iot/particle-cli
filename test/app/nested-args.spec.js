@@ -26,8 +26,10 @@ describe('command-line parsing', () => {
 	describe('errors', () => {
 		it('unknown command', () => {
 			const args = ['a', 'b'];
-			const result = cli.errors.unknownCommandError(args);
+			const item = {};
+			const result = cli.errors.unknownCommandError(args, item);
 			expect(result.data).to.be.equal(args);
+			expect(result.item).to.be.equal(item);
 			expect(result.msg).to.be.equal('No such command \'a b\'');
 			expect(result.isUsageError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.unknownCommandError);
@@ -107,7 +109,7 @@ describe('command-line parsing', () => {
 		const argv = cli.parse(app, unknown_command);
 		expect(argv.clicommand).to.be.undefined;
 		expect(argv.clierror).to.not.be.undefined;
-		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownCommandError(unknown_command));
+		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownCommandError(unknown_command, app));
 	});
 
 	it('returns the command when the command line matches', () => {
@@ -141,7 +143,8 @@ describe('command-line parsing', () => {
 		const args = ['one', 'frumpet'];
 		const argv = cli.parse(app, args);
 		expect(argv.clicommand).to.be.equal(undefined);
-		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownCommandError(args));
+		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownCommandError(args, one));
+		expect(one.path)
 	});
 
 	it('returns an error when an unknown option is present', () => {

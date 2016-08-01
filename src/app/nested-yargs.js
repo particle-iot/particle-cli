@@ -216,7 +216,7 @@ class CLICommandCategory extends CLICommandItem {
 
 		// ensure common prefix
 		if (!this.matches(argv)) {
-			throw unknownCommandError(argv._);
+			throw unknownCommandError(argv._, this);
 		}
 
 		return true;
@@ -490,10 +490,11 @@ function baseError(message, data) {
 	return error;
 }
 
-function usageError(message, data, type) {
+function usageError(message, data, type, item) {
 	const error = baseError(message, data);
 	error.isUsageError = true;
 	error.type = type;
+	error.item = item;
 	return error;
 }
 
@@ -504,9 +505,9 @@ function applicationError(message, data, type) {
 	return error;
 }
 
-function unknownCommandError(command) {
+function unknownCommandError(command, item) {
 	const commandString = command.join(' ');
-	return usageError(`No such command '${commandString}'`, command, unknownCommandError);
+	return usageError(`No such command '${commandString}'`, command, unknownCommandError, item);
 }
 
 function unknownArgumentError(argument) {

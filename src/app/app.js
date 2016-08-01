@@ -83,7 +83,7 @@ export class CLI {
 	newrun(args) {
 		return Promise.resolve().then(() => {
 			const errors = cliargs.createErrorHandler();
-			const argv = cliargs.parse(app, args.slice(2));
+			const argv = cliargs.parse(app, args);
 			// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
 			// this also gives us more control.
 			// todo - handle root command passing --version
@@ -98,14 +98,18 @@ export class CLI {
 	}
 
 	isNewCommand(args) {
-		args = args.slice(2);       // remove executable and script
 		if (args.length===0 || args[0]==='help') {
 			// use old help for now
 			return false;
 		}
 		const argv = cliargs.parse(app, args);
-		const result = argv.help || (argv.clicommand && (!argv.clierror || argv.clierror.type!==cliargs.errors.unknownCommandError) );
+		return this.checkNewCommand(argv);
 		return result;
+	}
+
+	checkNewCommand(argv) {
+		const result = argv.help || argv.clicommand || (argv.clierror.type===cliargs.errors.unknownCommandError && (argv.clierror.item.path.length > 0));
+		return !!result;
 	}
 
 	oldrun(args) {
@@ -122,9 +126,10 @@ export class CLI {
 		settings.loadOverrides();
 
 		updateCheck().then(() => {
+			const cmdargs = args.slice(2);       // remove executable and script
 			let promise;
-			if (this.isNewCommand(args)) {
-				promise = this.newrun(args);
+			if (this.isNewCommand(cmdargs)) {
+				promise = this.newrun(cmdargs);
 			} else {
 				promise = this.oldrun(args);
 			}
