@@ -76,7 +76,7 @@
     "temp": "^0.8.3",
     "when": "^3.7.2",
     "xtend": "^4.0.0",
-    "yargs": "^4.7.1",
+    "yargs": "^4.8.1",
     "yeoman-environment": "^1.6.3"
   },
   "devDependencies": {
