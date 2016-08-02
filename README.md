@@ -352,7 +352,7 @@ If you want to build a library that can be used for both Arduino and Particle, h
 You can specify a `--target` when compiling or flashing to target a particular system target. 
 
 - `particle compile electron myapp.ino --target 0.5.1` would compile myapp.ino for an Electron running system firmware 0.5.1.
-- `particle flash <deviceid> myapp.ino --target 0.5.1` would compile and flash myapp.ino for device <deviceid> against system firmware 0.4.8.
+- `particle flash <deviceid> myapp.ino --target 0.5.1` would compile and flash myapp.ino for device <deviceid> against system firmware 0.5.1.
 
 #### compiling a directory
 
