@@ -12,9 +12,7 @@ import libraryInit from './library_init';
 
 //const ui = require('../cli/ui');
 
-const apiJS = new ParticleApi(settings.apiUrl, {
-	accessToken: settings.access_token
-}).api;
+let apiJS;
 
 
 export class CLILibraryAddCommandSite {
@@ -45,6 +43,10 @@ export class CLILibraryAddCommandSite {
 }
 
 export default (app, cli) => {
+	apiJS =  new ParticleApi(settings.apiUrl, {
+		accessToken: settings.access_token
+	}).api;
+
 	const lib = cli.createCategory(app, 'library', 'Manages firmware libraries', { alias: 'libraries' });
 
 	libraryInit(lib, cli);
