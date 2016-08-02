@@ -324,6 +324,12 @@ The devices available are:
 
 - photon (alias is 'p')
 - core (alias is 'c')
+- electron (alias is 'e')
+- duo (alias is 'd')
+- oak (alias is 'o')
+- bluz (alias is 'b')
+- bluz-gateway (alias is 'bg')
+- bluz-beacon (alias is 'bb')
 
 eg. `particle compile photon xxx` OR `particle compile p xxxx` both targets the photon
 
