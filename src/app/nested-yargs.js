@@ -19,6 +19,7 @@
 
 import chalk from 'chalk';
 import Yargs from 'yargs';
+import util from 'util';
 import _ from 'lodash';
 
 class CLICommandItem {
@@ -183,9 +184,7 @@ class CLICommandItem {
 	}
 
 	showHelp() {
-
 	}
-	
 }
 
 /**
@@ -248,7 +247,6 @@ class CLICommandCategory extends CLICommandItem {
 	}
 
 	exec() {
-		
 	}
 }
 
@@ -264,7 +262,6 @@ class CLIRootCategory extends CLICommandCategory {
 	exec(yargs) {
 		yargs.showHelp();
 	}
-
 }
 
 class CLICommand extends CLICommandItem {
@@ -320,18 +317,38 @@ function createErrorHandler(yargs) {
 	if (!yargs) {
 		yargs = Yargs;
 	}
-	return (err) => {
-		if (!err || err.isUsageError) {
-			yargs.showHelp();
-		}
+	return consoleErrorLogger.bind(undefined, console, yargs, true);
+}
 
-		console.log(chalk.red(err.message || err));
-		if (err.stack) {
-			console.log(err, err.stack.split('\n'));
-		}
-		// todo - try to find a more controllable way to singal an error - this isn't easily testable.
+function stringify(err) {
+	return util.inspect(err);
+}
+
+/**
+ * Logs an error to the console given and optionally calls yargs.showHelp() if the
+ * error is a usage error.
+ * @param {object} console   The console to log to.
+ * @param {Yargs} yargs     the yargs instance
+ * @param {boolean} exit     if true, process.exit() is called.
+ * @param {object} err      The error to log. If it has a `message` property, that is logged, otherwise
+ *  the error is converted to a string by calling `stringify(err)`.
+ */
+function consoleErrorLogger(console, yargs, exit, err) {
+	const usage = (!err || err.isUsageError);
+	if (usage) {
+		yargs.showHelp();
+	}
+
+	if (err) {
+		console.log(chalk.red(err.message || stringify(err)));
+	}
+	if (!usage && err.stack) {
+		console.log(err, err.stack.split('\n'));
+	}
+	// todo - try to find a more controllable way to singal an error - this isn't easily testable.
+	if (exit) {
 		process.exit(1);
-	};
+	}
 }
 
 // Adapted from: https://github.com/bcoe/yargs/blob/master/lib/validation.js#L83-L110
@@ -485,7 +502,7 @@ function baseError(message, data) {
 	const error = new Error();
 	// yargs doesn't pass the full error if a message is defined, only the message
 	// since we need the full object, use an alias
-	error.msg = message;
+	error.message = message;
 	error.data = data || null;
 	return error;
 }
@@ -547,10 +564,13 @@ const errors = {
 	unknownParametersError
 };
 
+const test = {
+	consoleErrorLogger
+};
+
 function showHelp() {
 	Yargs.showHelp();
 }
-
 
 export {
 	parse,
@@ -558,6 +578,7 @@ export {
 	createCategory,
 	createAppCategory,
 	createErrorHandler,
-	errors,
 	showHelp,
+	errors,
+	test,
 };

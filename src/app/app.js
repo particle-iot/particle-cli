@@ -104,7 +104,6 @@ export class CLI {
 		}
 		const argv = cliargs.parse(app, args);
 		return this.checkNewCommand(argv);
-		return result;
 	}
 
 	checkNewCommand(argv) {

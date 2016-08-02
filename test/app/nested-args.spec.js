@@ -17,7 +17,7 @@
  ******************************************************************************
  */
 
-import {expect} from '../test-setup';
+import {expect, sinon} from '../test-setup';
 
 import * as cli from '../../src/app/nested-yargs'
 
@@ -30,7 +30,7 @@ describe('command-line parsing', () => {
 			const result = cli.errors.unknownCommandError(args, item);
 			expect(result.data).to.be.equal(args);
 			expect(result.item).to.be.equal(item);
-			expect(result.msg).to.be.equal('No such command \'a b\'');
+			expect(result.message).to.be.equal('No such command \'a b\'');
 			expect(result.isUsageError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.unknownCommandError);
 		});
@@ -39,7 +39,7 @@ describe('command-line parsing', () => {
 			const arg = ['a'];
 			const result = cli.errors.unknownArgumentError(arg);
 			expect(result.data).to.be.equal(arg);
-			expect(result.msg).to.be.equal('Unknown argument \'a\'');
+			expect(result.message).to.be.equal('Unknown argument \'a\'');
 			expect(result.isUsageError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.unknownArgumentError);
 		});
@@ -48,7 +48,7 @@ describe('command-line parsing', () => {
 			const arg = ['a', 'b'];
 			const result = cli.errors.unknownArgumentError(arg);
 			expect(result.data).to.be.equal(arg);
-			expect(result.msg).to.be.equal('Unknown arguments \'a, b\'');
+			expect(result.message).to.be.equal('Unknown arguments \'a, b\'');
 			expect(result.isUsageError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.unknownArgumentError);
 		});
@@ -57,7 +57,7 @@ describe('command-line parsing', () => {
 		it('variadic parameter position', () => {
 			const result = cli.errors.variadicParameterPositionError(param);
 			expect(result.data).to.be.equal(param);
-			expect(result.msg).to.be.equal('Variadic parameter \'param\' must the final parameter.');
+			expect(result.message).to.be.equal('Variadic parameter \'param\' must the final parameter.');
 			expect(result.isApplicationError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.variadicParameterPositionError);
 		});
@@ -65,7 +65,7 @@ describe('command-line parsing', () => {
 		it('optional parameter position', () => {
 			const result = cli.errors.requiredParameterPositionError(param);
 			expect(result.data).to.be.equal(param);
-			expect(result.msg).to.be.equal('Required parameter \'param\' must be placed before all optional parameters.');
+			expect(result.message).to.be.equal('Required parameter \'param\' must be placed before all optional parameters.');
 			expect(result.isApplicationError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.requiredParameterPositionError);
 		});
@@ -73,7 +73,7 @@ describe('command-line parsing', () => {
 		it('parameter required', () => {
 			const result = cli.errors.requiredParameterError(param);
 			expect(result.data).to.be.equal(param);
-			expect(result.msg).to.be.equal('Parameter \'param\' is required.');
+			expect(result.message).to.be.equal('Parameter \'param\' is required.');
 			expect(result.isUsageError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.requiredParameterError);
 		});
@@ -81,7 +81,7 @@ describe('command-line parsing', () => {
 		it('variadic parameter required', () => {
 			const result = cli.errors.variadicParameterRequiredError(param);
 			expect(result.data).to.be.equal(param);
-			expect(result.msg).to.be.equal('Parameter \'param\' must have at least one item.');
+			expect(result.message).to.be.equal('Parameter \'param\' must have at least one item.');
 			expect(result.isUsageError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.variadicParameterRequiredError);
 		});
@@ -90,7 +90,7 @@ describe('command-line parsing', () => {
 			const param = ['1', '2'];
 			const result = cli.errors.unknownParametersError(param);
 			expect(result.data).to.be.equal(param);
-			expect(result.msg).to.be.equal('Command parameters \'1 2\' are not expected here.');
+			expect(result.message).to.be.equal('Command parameters \'1 2\' are not expected here.');
 			expect(result.isUsageError).to.be.true;
 			expect(result.type).to.be.equal(cli.errors.unknownParametersError);
 		});
@@ -295,6 +295,59 @@ describe('command-line parsing', () => {
 			expect(cli.parse(app, ['cmd', 'stragglers', 'here'])).to.have.property('clierror')
 				.deep.equal(cli.errors.unknownParametersError(['stragglers', 'here']));
 		});
+	});
+
+	describe('consoleErrorHandler', () => {
+
+		it('calls yargs.showHelp if the error is falsey', () => {
+			const yargs = { showHelp: sinon.stub() };
+			const error = '';
+			const console = { log: sinon.stub() };
+			cli.test.consoleErrorLogger(console, yargs, false, error);
+			return expect(yargs.showHelp).to.have.been.calledOnce;
+		});
+
+		it('calls yargs.showHelp if the error is a usage error', () => {
+			const yargs = { showHelp: sinon.stub() };
+			const error = { isUsageError: true };
+			const console = { log: sinon.stub() };
+			cli.test.consoleErrorLogger(console, yargs, false, error);
+			return expect(yargs.showHelp).to.have.been.calledOnce;
+		});
+
+		it('logs the error message to the console', () => {
+			const yargs = { };
+			const message = 'we come in peace';
+			const error = { message };
+			const console = { log: sinon.stub() };
+			cli.test.consoleErrorLogger(console, yargs, false, error);
+			expect(console.log).to.have.been.calledWithMatch(message);
+		});
+
+		it('logs the error to the console when no message is given', () => {
+			const yargs = { };
+			const error = { bass: 'ice ice baby' };
+			const console = { log: sinon.stub() };
+			cli.test.consoleErrorLogger(console, yargs, false, error);
+			expect(console.log).to.have.been.calledWithMatch('{ bass: \'ice ice baby\' }');
+		});
+
+		it('splits the stack string and logs that to the console', () => {
+			const console = { log: sinon.stub() };
+			const error = { stack: '1\n2\n3' };
+			cli.test.consoleErrorLogger(console, undefined /*yargs*/, false, error);
+			expect(console.log).to.have.been.calledWith(error, ['1', '2', '3']);
+		});
+
+		it('does not log the stack for usage errors.', () => {
+			const console = { log: sinon.stub() };
+			const error = { stack: '1\n2\n3', isUsageError:true, message: 'hey' };
+			const yargs = { showHelp: sinon.stub() };
+			cli.test.consoleErrorLogger(console,  yargs, false, error);
+			expect(console.log).to.have.been.calledWithMatch('hey').and.calledOnce;
+		});
+
+
 	});
 
 });
