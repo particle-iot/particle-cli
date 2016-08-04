@@ -871,6 +871,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					case 10:
 						deviceType = ' (Electron)';
 						break;
+					default:
+						deviceType = ' (Product ' + device.product_id + ')';
 				}
 
 				if (!device.name || device.name === 'null') {
