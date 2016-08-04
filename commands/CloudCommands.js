@@ -471,8 +471,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			platform_id = PLATFORMS[deviceType];
 		} else {
 			console.error('\nTarget device ' + deviceType + ' is not valid');
-			console.error('	eg. particle compile core xxx');
-			console.error('	eg. particle compile photon xxx\n');
+			console.error(' eg. particle compile core xxx');
+			console.error(' eg. particle compile photon xxx\n');
 			return -1;
 		}
 
@@ -691,6 +691,29 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('not logged in!');
 		}
 
+		var filterFunc = null;
+
+		if (filter){
+			var platforms = utilities.knownPlatforms();
+			if (filter === 'online') {
+				filterFunc = function(d) {
+					return d.connected;
+				};
+			} else if (filter === 'offline') {
+				filterFunc = function(d) {
+					return !d.connected;
+				};
+			} else if (Object.keys(platforms).indexOf(filter) >= 0) {
+				filterFunc = function(d) {
+					return d.product_id === platforms[filter];
+				};
+			} else {
+				filterFunc = function(d) {
+					return d.id === filter || d.name === filter;
+				};
+			}
+		}
+
 		var lookupVariables = function (devices) {
 			if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
 				console.log('No devices found.');
@@ -698,7 +721,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				self.newSpin('Retrieving device functions and variables...').start();
 				var promises = [];
 				devices.forEach(function (device) {
-					if (!device.id) {
+					if (!device.id || (filter && !filterFunc(device))) {
+					// Don't request attributes from unnecessary devices...
 						return;
 					}
 
@@ -721,30 +745,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						return (a.name || '').localeCompare(b.name);
 					});
 					self.stopSpin();
-
-					if (filter && fullDevices) {
-						var filterFunc;
-						var platforms = utilities.knownPlatforms();
-						if (filter === 'online') {
-							filterFunc = function(d) {
-								return d.connected;
-							};
-						} else if (filter === 'offline') {
-							filterFunc = function(d) {
-								return !d.connected;
-							};
-						} else if (Object.keys(platforms).indexOf(filter) >= 0) {
-							filterFunc = function(d) {
-								return d.product_id === platforms[filter];
-							};
-						} else {
-							filterFunc = function(d) {
-								return d.id === filter || d.name === filter;
-							};
-						}
-
-						fullDevices = fullDevices.filter(filterFunc);
-					}
 					return fullDevices;
 				});
 			}
