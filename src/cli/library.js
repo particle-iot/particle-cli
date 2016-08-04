@@ -43,7 +43,7 @@ export class CLILibraryAddCommandSite {
 }
 
 export default (app, cli) => {
-	apiJS =  new ParticleApi(settings.apiUrl, {
+	apiJS = new ParticleApi(settings.apiUrl, {
 		accessToken: settings.access_token
 	}).api;
 
