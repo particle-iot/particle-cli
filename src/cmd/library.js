@@ -1,6 +1,7 @@
 
 import ProjectProperties from './project_properties';
 import pipeline from 'when/pipeline';
+import {convertApiError} from './api';
 
 
 /** Library add **/
@@ -49,13 +50,7 @@ export class LibraryAddCommand {
 	}
 
 	apiError(err) {
-		if (err.error && err.error.response && err.error.response.text) {
-			const obj = JSON.parse(err.error.response.text);
-			if (obj.errors && obj.errors.length) {
-				err = { message: obj.errors[0].message };
-			}
-		}
-		return err;
+		return convertApiError(err);
 	}
 
 	addLibraryToProject(library) {
