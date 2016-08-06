@@ -1,4 +1,5 @@
 import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd/library_install';
+import {convertApiError} from '../cmd/api';
 const settings = require('../../settings');
 
 export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
@@ -26,9 +27,8 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 		return settings.access_token;
 	}
 
-
-	error(err) {
-		return this.promiseLog(err);
+	error(error) {
+		throw convertApiError(error);
 	}
 
 	notifyIncorrectLayout(actualLayout, expectedLayout, libName, targetDir) {

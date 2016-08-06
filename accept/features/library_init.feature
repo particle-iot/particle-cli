@@ -10,6 +10,7 @@ Feature: library init
        create src/uberlib2.h
        create examples/doit/doit_example.cpp
     """
+    And the exit status should be 0
     And the file "library.properties" should exist
     And the file "src/uberlib2.cpp" should exist
     And the file "src/uberlib2.h" should exist
@@ -23,6 +24,7 @@ Feature: library init
     And the file "library.properties" should exist
     And the file "src/interactive.cpp" should exist
     And the file "src/interactive.h" should exist
+    And the exit status should be 0
 
 
 # todo - validate input data
