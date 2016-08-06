@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.0 - 5 August 2016
+
+### Updates
+
+* Support DFU flashing 3-part Electron system firmware (0.6.0 and later)
+
 ## 1.15.0 - 7 July 2016
 
 ### Updates
