@@ -88,6 +88,7 @@ node app.js help
     - [Flashing a known app](#flashing-a-known-app)
     - [Compiling remotely and Flashing locally](#compiling-remotely-and-flashing-locally)
   - [particle compile](#particle-compile)
+    - [compiling against a particular system firmware target](#compiling against a particular system firmware target)
     - [compiling a directory](#compiling-a-directory)
     - [example particle.include](#example-particleinclude)
     - [example particle.ignore](#example-particleignore)
@@ -324,6 +325,12 @@ The devices available are:
 
 - photon (alias is 'p')
 - core (alias is 'c')
+- electron (alias is 'e')
+- duo (alias is 'd')
+- oak (alias is 'o')
+- bluz (alias is 'b')
+- bluz-gateway (alias is 'bg')
+- bluz-beacon (alias is 'bb')
 
 eg. `particle compile photon xxx` OR `particle compile p xxxx` both targets the photon
 
@@ -339,6 +346,13 @@ If you want to build a library that can be used for both Arduino and Particle, h
 #include "application.h"
 #endif
 ```
+
+#### compiling against a particular system firmware target
+
+You can specify a `--target` when compiling or flashing to target a particular system target. 
+
+- `particle compile electron myapp.ino --target 0.5.1` would compile myapp.ino for an Electron running system firmware 0.5.1.
+- `particle flash <deviceid> myapp.ino --target 0.5.1` would compile and flash myapp.ino for device <deviceid> against system firmware 0.5.1.
 
 #### compiling a directory
 
