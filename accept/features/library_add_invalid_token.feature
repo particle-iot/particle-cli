@@ -1,3 +1,4 @@
+Feature: add library without a valid access token
 
   # setup the test environment
 
@@ -10,11 +11,12 @@
     {
       "name":"test_invalid"
     }
-    """
+  """
 
   Scenario: a user cannot add a library with an invalid access token
   When I run particle "library add neopixel"
-  Then the output should contain "blah"
+  Then the output should contain "invalid"
+  And the output should contain "invalid_token"
 
   Scenario: tear down the test access token
   And I copy the file "~/.particle/profile.json.bak" to "~/.particle/profile.json"
