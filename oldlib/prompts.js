@@ -110,7 +110,33 @@ var that = {
 
 		return creds.promise;
 	},
-	
+	getUsername: function (username) {
+		return {
+			type: 'input',
+			name: 'username',
+			message: 'Please enter your email address',
+			default: username,
+			validate: function(value) {
+				if (!value) {
+					return 'You need an email address to log in, silly!';
+				}
+				return true;
+			}
+		};
+	},
+	getPassword: function (msg) {
+		return {
+			type: 'password',
+			name: 'password',
+			message: msg || 'Please enter your password',
+			validate: function(value) {
+				if (!value) {
+					return 'You need a password to log in, silly!';
+				}
+				return true;
+			}
+		};
+	},
 	confirmPassword: function () {
 		return that.passPromptDfd('confirm password  ');
 	},
