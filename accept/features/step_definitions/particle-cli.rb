@@ -39,8 +39,15 @@ And(/^the directories "([^"]*)" and "([^"]*)" should be equal$/) do |dir1, dir2|
   expect(result).to eq([])
 end
 
+CONTROL_CODES = {
+  '<Up>'    => "\e[A",
+  '<Down>'  => "\e[B",
+  '<Right>' => "\e[C",
+  '<Left>'  => "\e[D",
+}
 
 When(/^I respond to the prompt "([^"]*)" with "([^"]*)"$/) do |prompt, response|
+  response_control = response.gsub(/<[A-Za-z0-9]+>/, CONTROL_CODES)
   begin
     Timeout.timeout(aruba.config.exit_timeout) do
       loop do
@@ -56,7 +63,7 @@ When(/^I respond to the prompt "([^"]*)" with "([^"]*)"$/) do |prompt, response|
   rescue TimeoutError
     expect(last_command_started).to have_interactive_stdout an_output_string_including(prompt)
   end
-  step "I type \"#{response}\""
+  step "I type \"#{response_control}\""
 end
 
 RSpec::Matchers.define :have_interactive_stdout do |expected|
