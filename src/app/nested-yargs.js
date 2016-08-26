@@ -246,7 +246,8 @@ class CLICommandCategory extends CLICommandItem {
 		return yargs;
 	}
 
-	exec() {
+	exec(yargs) {
+		Yargs.showHelp();
 	}
 }
 
