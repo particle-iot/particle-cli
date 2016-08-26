@@ -903,9 +903,12 @@ ApiClient.prototype = {
 		return dfd.promise;
 	},
 
+
+
 	hasBadToken: function(body) {
 		if (body && body.error && body.error.indexOf
 			&& (body.error.indexOf('invalid_token') >= 0)) {
+			// todo - factor out the console logging out of the predicate
 			console.log();
 			console.log(chalk.red('!'), 'Please login - it appears your access token may have expired');
 			console.log();
