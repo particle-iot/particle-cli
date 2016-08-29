@@ -1,1 +1,2 @@
-export { cloud } from './cloud';
+
+export * from 'commands';

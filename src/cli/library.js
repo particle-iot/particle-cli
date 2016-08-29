@@ -1,4 +1,4 @@
-import {LibraryAddCommand} from '../cmd/library';
+import {LibraryAddCommand, LibraryAddCommandSite} from '../cmd/library';
 import ParticleApi from '../cmd/api';
 import settings from '../../settings';
 
@@ -15,17 +15,19 @@ import libraryInit from './library_init';
 let apiJS;
 
 
-export class CLILibraryAddCommandSite {
+export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	constructor(argv) {
+		super();
 		[this.name, this.version='latest'] = argv.params.name.split('@');
 		this.dir = argv.params.dir || process.cwd();
 	}
 
-	run(cmd) {
-		return cmd.run(this, {
+	libraryIdent() {
+		// todo - shouldn't this be a promise?
+		return {
 			name: this.name,
 			version: this.version
-		});
+		};
 	}
 
 	projectDir() {

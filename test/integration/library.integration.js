@@ -18,14 +18,23 @@
  ******************************************************************************
  */
 
-
-import {expect} from '../test-setup';
+import {expect, sinon} from '../test-setup';
+import {LibraryAddCommand} from "../../src/cmd/library";
+import {LibraryAddCommandSite} from "../../src/cmd/library";
+import settings from "../../settings";
 const path = require('path');
 import createLibraryCommand from '../../src/cli/library';
 import * as cli from '../../src/app/nested-yargs';
 import { resourcesDir } from 'particle-cli-library-manager';
 
+import ParticleApi from '../../src/cmd/api';
+
 describe('library', () => {
+
+	before(()=> {
+		settings.whichProfile();
+		settings.loadOverrides();
+	});
 
 	const libraryDir = path.join(resourcesDir(), 'libraries');
 	const app = cli.createAppCategory();
@@ -54,6 +63,33 @@ describe('library', () => {
 			const argv = cli.parse(app, ['library', 'add']);
 			const expectedError = cli.errors.requiredParameterError('name');
 			expect(argv.clierror).to.eql(expectedError);
+		});
+
+		it('can fetch a list of libraries with a filter', () => {
+
+			// todo - I copied this from the libraryAdd command - why do we need to specify access token twice?
+			const apiJS = new ParticleApi(settings.apiUrl, {
+				accessToken: settings.access_token
+			}).api;
+
+			const apiClient = apiJS.client({ auth: settings.access_token });
+			const sut = new LibraryAddCommand({apiClient});
+			const site = new LibraryAddCommandSite();
+			site.notifyListLibrariesStart = sinon.spy(site.notifyListLibrariesStart);
+			site.notifyListLibrariesComplete = sinon.spy(site.notifyListLibrariesComplete);
+
+			return sut.listLibraries(site, 'neo').then(result => {
+				expect(Array.isArray(result)).to.be.true;
+
+				const names = result.map( (item) => {
+					expect(item).has.property('name');
+					return item.name;
+				} );
+
+				expect(names).to.include('neopixel');
+				expect(site.notifyListLibrariesStart).to.be.calledOnce;
+				expect(site.notifyListLibrariesComplete).to.be.calledOnce;
+			});
 		});
 
 		it('adds a library to an existing project', () => {
