@@ -39,6 +39,7 @@ class CLICommandItem {
 			throw Error('name must be defined');
 		}
 		this.commands = {};
+		this.aliases = [];
 		Object.assign(this, { name, description, options });
 	}
 
@@ -100,6 +101,7 @@ class CLICommandItem {
 	 */
 	configure(yargs, {options, setup, examples, version, epilogue}) {
 		if (options) {
+			this.fetchAliases(options);
 			yargs.options(options);
 		}
 
@@ -122,6 +124,24 @@ class CLICommandItem {
 		}
 
 		yargs.exitProcess(false);
+	}
+
+	fetchAliases(options) {
+		Object.keys(options).forEach((key) => {
+			const option = options[key];
+			const alias = option.alias;
+			if (alias) {
+				this.aliases[alias] = key;
+			}
+		});
+	}
+
+	/**
+	 * Finds the original name of an option given a possible alias.
+	 * @param name The option name to unalias.
+	 */
+	unaliasOption(name) {
+		return this.aliases[name] || (this.parent ? this.parent.unaliasOption(name) : undefined);
 	}
 
 	/**
@@ -211,7 +231,7 @@ class CLICommandCategory extends CLICommandItem {
 		// seems to interfere with the timing for strict mode.
 		// Additionally, `yargs.strict()` does not seem to handle pre-
 		// negated params like `--no-run`.
-		checkForUnknownArguments(yargs, argv);
+		checkForUnknownArguments(yargs, argv, this);
 
 		// ensure common prefix
 		if (!this.matches(argv)) {
@@ -294,7 +314,7 @@ class CLICommand extends CLICommandItem {
 				// seems to interfere with the timing for strict mode.
 				// Additionally, `yargs.strict()` does not seem to handle pre-
 				// negated params like `--no-run`.
-				checkForUnknownArguments(yargs, argv);
+				checkForUnknownArguments(yargs, argv, this);
 
 				parseParams(yargs, argv, this.path, this.options.params);
 
@@ -343,7 +363,8 @@ function consoleErrorLogger(console, yargs, exit, err) {
 	if (err) {
 		console.log(chalk.red(err.message || stringify(err)));
 	}
-	if (!usage && err.stack) {
+	if (!usage && (err.stack && (verboseLevel>0))) {
+		console.log('verbose', verboseLevel);
 		console.log(err, err.stack.split('\n'));
 	}
 	// todo - try to find a more controllable way to singal an error - this isn't easily testable.
@@ -353,7 +374,7 @@ function consoleErrorLogger(console, yargs, exit, err) {
 }
 
 // Adapted from: https://github.com/bcoe/yargs/blob/master/lib/validation.js#L83-L110
-function checkForUnknownArguments(yargs, argv) {
+function checkForUnknownArguments(yargs, argv, command) {
 	const aliasLookup = {};
 	const descriptions = yargs.getUsageInstance().getDescriptions();
 	const demanded = yargs.getDemanded();
@@ -365,12 +386,21 @@ function checkForUnknownArguments(yargs, argv) {
 		});
 	});
 
-	Object.keys(argv).forEach((key) => {
-		if (key !== '$0' && key !== '_' && key !== 'params' &&
+	function isUnknown(key) {
+		return (key !== '$0' && key !== '_' && key !== 'params' &&
 			!descriptions.hasOwnProperty(key) &&
 			!demanded.hasOwnProperty(key) &&
 			!aliasLookup.hasOwnProperty('no-' + key) &&
-			!aliasLookup.hasOwnProperty(key)) {
+			!aliasLookup.hasOwnProperty(key));
+	}
+
+	function aliasFor(key) {
+		return command.unaliasOption(key);
+	}
+
+	Object.keys(argv).forEach((key) => {
+		const alias = aliasFor(key);
+		if (isUnknown(key) && (!alias || isUnknown(alias))) {
 			unknown.push(key);
 		}
 	});

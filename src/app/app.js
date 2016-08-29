@@ -9,7 +9,7 @@ import * as settings from '../../settings';
 import when from 'when';
 
 
-const app = cliargs.createAppCategory({
+export const app = cliargs.createAppCategory({
 	// options for yargs
 	options: {
 		args: {
@@ -54,7 +54,7 @@ const app = cliargs.createAppCategory({
 	 */
 	parsed(argv) {
 		global.isInteractive = argv.interactive===true || (tty.isatty(process.stdin) && !argv.nonInteractive);
-		global.verboseLevel = global.verboseLevel + argv.verbose;
+		global.verboseLevel = argv.verbose;
 		global.outputJson = argv.json;
 	}
 });
