@@ -18,7 +18,6 @@
  */
 
 import {chai, sinon, expect} from '../test-setup';
-chai.use(require('chai-fs'));
 const settings = require('../../settings');
 const path = require('path');
 const mockfs = require('mock-fs');
@@ -39,7 +38,7 @@ describe('library install', () => {
 		done();
 	});
 
-	it('can install a vendored library in an extended application project', () => {
+	xit('can install a vendored library in an extended application project', () => {
 		// todo - get access token from the environment
 		const auth = 'a1756ba10078bfacd21a26d68c1a6bb2274e565a';
 		settings.access_token = auth;
@@ -55,9 +54,13 @@ describe('library install', () => {
 		expect(argv.clicommand).to.be.ok;
 
 		const result = argv.clicommand.exec(argv).then(() => {
-			expect('lib/neopixel/library.properties').to.be.a.file;
-			expect('lib/neopixel/src/neopixel.cpp').to.be.a.file;
-			expect('lib/neopixel/src/neopixel.h').to.be.a.file;
+			[
+			'lib/neopixel/library.properties',
+			'lib/neopixel/src/neopixel.cpp',
+			'lib/neopixel/src/neopixel.h'
+			].forEach(filename => {
+				expect(fs.statSync(filename).isFile()).to.be.true;
+			});
 		});
 		return result;
 	});

@@ -1,5 +1,12 @@
-const promisefs = require('es6-promisify-all')(require('fs'));
+import promisify from 'es6-promisify';
+import nodeFs from 'fs';
 import path from 'path';
+const promisefs = {};
+[
+	'readFile',
+	'writeFile',
+	'stat'
+].forEach(fn => promisefs[fn] = promisify(nodeFs[fn]));
 
 const legacy = 'legacy';
 const simple = 'simple';
@@ -19,7 +26,7 @@ export default class ProjectProperties {
 	}
 
 	load() {
-		return this.fs.readFileAsync(this.name(), 'utf8')
+		return this.fs.readFile(this.name(), 'utf8')
 			.then(data => this.parse(data));
 	}
 
@@ -53,7 +60,7 @@ export default class ProjectProperties {
 
 	save() {
 		const data = this.serialize();
-		return this.fs.writeFileAsync(this.name(), data, 'utf8');
+		return this.fs.writeFile(this.name(), data, 'utf8');
 	}
 
 	serialize() {
@@ -63,7 +70,7 @@ export default class ProjectProperties {
 	}
 
 	exists() {
-		const stat = this.fs.statAsync(this.name());
+		const stat = this.fs.stat(this.name());
 		return stat.then(stats => {
 			return stats.isFile();
 		},
@@ -73,7 +80,7 @@ export default class ProjectProperties {
 	}
 
 	sourceDirExists() {
-		const stat = this.fs.statAsync(path.join(this.dir, 'src'));
+		const stat = this.fs.stat(path.join(this.dir, 'src'));
 		return stat.then(stats => stats.isDirectory(), () => false);
 	}
 

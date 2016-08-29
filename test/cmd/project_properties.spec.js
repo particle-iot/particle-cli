@@ -8,9 +8,9 @@ const promisify = require('es6-promisify');
 describe('project properties', () => {
 
 	const sut = new ProjectProperties('.', { fs: {
-		statAsync: (...args) => promisify(fs.stat)(...args),
-		writeFileAsync: (...args) => promisify(fs.writeFile)(...args),
-		readFileAsync: (...args) => promisify(fs.readFile)(...args)
+		stat: (...args) => promisify(fs.stat)(...args),
+		writeFile: (...args) => promisify(fs.writeFile)(...args),
+		readFile: (...args) => promisify(fs.readFile)(...args)
 	}});
 
 	beforeEach((done) => {
