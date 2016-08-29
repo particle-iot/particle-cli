@@ -332,10 +332,16 @@ describe('command-line parsing', () => {
 			expect(console.log).to.have.been.calledWithMatch('{ bass: \'ice ice baby\' }');
 		});
 
-		it('splits the stack string and logs that to the console', () => {
+		it('splits the stack string and logs that to the console when verbose mode is enabled', () => {
 			const console = { log: sinon.stub() };
 			const error = { stack: '1\n2\n3' };
-			cli.test.consoleErrorLogger(console, undefined /*yargs*/, false, error);
+			try {
+				global.verboseLevel = 1;
+				cli.test.consoleErrorLogger(console, undefined /*yargs*/, false, error);
+			}
+			finally {
+				delete global.verboseLevel;
+			}
 			expect(console.log).to.have.been.calledWith(error, ['1', '2', '3']);
 		});
 

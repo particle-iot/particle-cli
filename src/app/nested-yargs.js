@@ -363,8 +363,7 @@ function consoleErrorLogger(console, yargs, exit, err) {
 	if (err) {
 		console.log(chalk.red(err.message || stringify(err)));
 	}
-	if (!usage && (err.stack && (verboseLevel>0))) {
-		console.log('verbose', verboseLevel);
+	if (!usage && (err.stack && ((global.verboseLevel || 0)>0))) {
 		console.log(err, err.stack.split('\n'));
 	}
 	// todo - try to find a more controllable way to singal an error - this isn't easily testable.
