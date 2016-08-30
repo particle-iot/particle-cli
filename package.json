@@ -57,6 +57,7 @@
     "chalk": "^1.0.0",
     "cli-spinner": "^0.2.1",
     "cli-table": "^0.3.1",
+    "es6-promisify": "^4.1.0",
     "form-data": "https://github.com/spark/form-data/archive/v1.0.0-relative-path.tar.gz",
     "glob": "^4.2.1",
     "handlebars": "^4.0.5",

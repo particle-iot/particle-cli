@@ -17,9 +17,9 @@ export class LibraryAddCommandSite extends CommandSite {
 
 	/**
 	 * Notifies the site that the command is about to retrieve the libraries.
-	 * @param promise   The command to retrieve the libraries.
-	 * @param filter
-	 * @return promse, or an extension of that promise. Return a falsey value
+	 * @param {Promise}promise   The command to retrieve the libraries.
+	 * @param {string}filter     Optional
+	 * @return {Promise} Return a falsey value
 	 *
 	 */
 	notifyListLibrariesStart(promise, filter) {
@@ -48,11 +48,12 @@ export class LibraryAddCommand {
 
 	/**
 	 * A request to list the libraries using the given filter.
+	 * @param {LibraryAddCommandSite} site Provides the parameters for the command
 	 * @param {string} filter a filter for the library name
 	 * @returns {Promise} to fetch the libraries.
 	 *
 	 * The site methods notifyListLibrariesStart/notifyListLibrariesComplete are called
-	 * at the start and end of the operation. 
+	 * at the start and end of the operation.
 	 */
 	listLibraries(site, filter) {
 		this.site = site;
@@ -74,13 +75,15 @@ export class LibraryAddCommand {
 	}
 
 	/**
+	 * @param {Object} state Unused
 	 * @param {LibraryAddCommandSite} site Provides the parameters for the command.
+	 * @returns {Promise} Library add process
 	 */
 	run(state, site) {
 		this.site = site;
 		this.projectProperties = new ProjectProperties(this.site.projectDir());
 		const lib = site.libraryIdent();
-		if (lib.version===undefined) {
+		if (lib.version === undefined) {
 			lib.version = 'latest';
 		}
 		return pipeline([

@@ -138,7 +138,8 @@ class CLICommandItem {
 
 	/**
 	 * Finds the original name of an option given a possible alias.
-	 * @param name The option name to unalias.
+	 * @param {string} name The option name to unalias.
+	 * @returns {string} The original option name
 	 */
 	unaliasOption(name) {
 		return this.aliases[name] || (this.parent ? this.parent.unaliasOption(name) : undefined);
