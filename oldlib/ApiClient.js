@@ -508,10 +508,16 @@ ApiClient.prototype = {
 		for (var i = 0, n = files.list.length; i < n; i++) {
 			var filename = files.list[i];
 			var name = "file" + (i ? i : "");
-			var relativePath = files.basePath ? path.dirname(path.relative(files.basePath, filename)) : null;
+			var relativeFilename;
+			if (files.basePath) {
+				// normalize relative paths for Windows
+				relativeFilename = path.relative(files.basePath, filename).replace(/\\/g, '/');
+			} else {
+				relativeFilename = path.basename(filename);
+			}
 			form.append(name, fs.createReadStream(filename), {
-				filename: filename,
-				relativePath: relativePath
+				filename: relativeFilename,
+				includePath: true
 			});
 		}
 		if (platform_id) {
