@@ -9,11 +9,22 @@ export class LibraryMigrateCommandSite extends CommandSite {
 
 	/**
 	 * Provides the list of library directories to process.
+	 * Can return a value or a promise.
 	 */
 	getLibraries() {}
 
-	notifyStart(lib) {}
+	/**
+	 * Notify that the given library is being migrated.
+	 * @param {string} dir The directory containing the library
+	 */
+	notifyStart(dir) {}
 
+	/**
+	 *
+	 * @param {string}  lib The directory containing the library that migration was attempted on.
+	 * @param {object}  result  There result of the migration.
+	 * @param err
+	 */
 	notifyEnd(lib, result, err) {}
 }
 
@@ -32,14 +43,17 @@ class AbstractLibraryMigrateCommand extends Command {
 	run(state, site) {
 		const libsPromise = when().then(() => site.getLibraries());
 		return when.map(libsPromise, libdir => {
-			site.notifyStart(libdir);
-			const dir = path.resolve(libdir);
-			const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
-			return this.processLibrary(repo, '', state, site)
-				.then(([res, err]) => {
-					site.notifyEnd(libdir, res, err);
-					return {libdir, res, err};
-				});
+			// todo - should the notifications be promisable?
+			return Promise.resolve(site.notifyStart(libdir)).then(() => {
+				const dir = path.resolve(libdir);
+				const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
+				return this.processLibrary(repo, '', state, site)
+					.then(([res, err]) => {
+						return Promise.resolve(site.notifyEnd(libdir, res, err)).then(() => {
+							return {libdir, res, err};
+						});
+					});
+			});
 		});
 	}
 
@@ -49,7 +63,7 @@ class AbstractLibraryMigrateCommand extends Command {
 function resultError(promise) {
 	return promise.then(
 		result => [result, null],
-		err => [err, null]
+		err => [null, err]
 	);
 }
 
