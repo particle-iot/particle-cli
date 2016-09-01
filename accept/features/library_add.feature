@@ -30,3 +30,7 @@ Feature: library add
     Then the output should contain "Library doesnotexist_lib not found"
     And the exit status should not be 0
 
+  Scenario: a user may get help when running particle library add with no additinoal parameters
+    When I run particle "library add"
+    Then the output should contain "Usage: library add [options] <name>"
+    # todo - also show command description "Add a library to a project"??

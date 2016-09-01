@@ -40,7 +40,8 @@ class CLICommandItem {
 		}
 		this.commands = {};
 		this.aliases = [];
-		Object.assign(this, { name, description, options });
+		description = description!==undefined ? description : '';
+		Object.assign(this, { name, description, options, inherited: options.inherited });
 	}
 
 	/**
@@ -99,14 +100,14 @@ class CLICommandItem {
 	 * @param {function} version    A function to retrieve the version
 	 * @param {string} epilogue     Printed at the end of the command block.
 	 */
-	configure(yargs, {options, setup, examples, version, epilogue}) {
+	configure(yargs, {options, setup, examples, version, epilogue}=this.buildOptions()) {
 		if (options) {
 			this.fetchAliases(options);
 			yargs.options(options);
 		}
 
 		if (setup) {
-			setup(yargs);
+			setup(yargs, this);
 		}
 
 		if (examples) {
@@ -116,7 +117,7 @@ class CLICommandItem {
 		}
 
 		if (version) {
-			yargs.version(version);
+			this.version = version;
 		}
 
 		if (epilogue) {
@@ -198,6 +199,8 @@ class CLICommandItem {
 		let promise;
 		if (this.options.handler) {
 			promise = this.options.handler.bind(this, argv);
+		} else if (argv.version && this.version) {
+			promise = Promise.resolve(this.version(argv));
 		} else {
 			promise = this.showHelp;
 		}
@@ -205,6 +208,32 @@ class CLICommandItem {
 	}
 
 	showHelp() {
+		Yargs.showHelp();
+	}
+
+
+	addInheritedOptions(target) {
+		const parent = this.parent;
+		if (parent) {
+			parent.addInheritedOptions(target);
+		}
+		this.assign(target, this.inherited);
+	}
+
+	buildOptions() {
+		const target = {};
+		this.addInheritedOptions(target);
+		this.assign(target, this.options);
+		return target;
+	}
+
+	assign(target, value) {
+		if (!value)
+			return;
+		// this is a dirty hack! for now, only merge the options
+		const options = target.options || {};
+		Object.assign(target, value);
+		target.options = Object.assign(options, value.options);
 	}
 }
 
@@ -244,31 +273,30 @@ class CLICommandCategory extends CLICommandItem {
 
 	configureParser(args, yargs) {
 
-		this.configure(yargs, this.options);
+		this.configure(yargs);
 
 		// add the subcommands of this category
 		_.forEach(this.commands, (command) => {
-			const handler = (yargs) => {
-				// replace arg by cannonical command name
-				args[this.path.length] = command.name;
+			const builder = (yargs) => {
 				return { argv: command.parse(args, yargs)};
 			};
-			yargs.command(command.name, command.description, handler);
+
+			const handler = (yargs) => {
+				yargs.showHelp();
+			};
+
+			yargs.command(command.name, command.description, builder);
 			if (command.options && command.options.alias) {
-				yargs.command(command.options.alias, false, handler);
+				// hidden command
+				yargs.command(command.options.alias, false, builder);
 			}
 		});
 
 		yargs
 			.usage('Usage: ' + this.path.join(' ') + ' <command>')
-			.check((argv) => this.check(yargs, argv))
-			.demand(this.path.length, 'Please enter a valid command.');
+			.check((argv) => this.check(yargs, argv));
 
 		return yargs;
-	}
-
-	exec(yargs) {
-		Yargs.showHelp();
 	}
 }
 
@@ -281,9 +309,6 @@ class CLIRootCategory extends CLICommandCategory {
 		return [];
 	}
 
-	exec(yargs) {
-		yargs.showHelp();
-	}
 }
 
 class CLICommand extends CLICommandItem {
@@ -300,13 +325,12 @@ class CLICommand extends CLICommandItem {
 			params: '',
 		}));
 		this.name = name || '$0';
-		this.description = description || '';
 		this.parent = null;
 	}
 
 	configureParser(args, yargs) {
 
-		this.configure(yargs, this.options);
+		this.configure(yargs);
 
 		yargs
 			.check((argv) => {
