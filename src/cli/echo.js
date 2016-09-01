@@ -2,8 +2,8 @@
  * A simple command to echo the passed in options and parameters.
  */
 
-export default (app, cli) => {
-	cli.createCommand(app, 'echo', 'Echoes the command and options.', {
+export default ({root, factory}) => {
+	factory.createCommand(root, 'echo', false, {
 		options: {
 			f: {
 				alias: 'flag',
