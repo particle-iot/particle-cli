@@ -237,26 +237,26 @@
     },
 
 
-    "library": {
+    "library-v1": {
         "_commands": [ "install", "list", "available" ],
 
         "install": {
-            "maps" : [ "library", "install" ],
+            "maps" : [ "library-v1", "install" ],
             "usage": "particle library install [name] ...",
             "does": "installs a library to the current directory"
         },
         "list": {
-            "maps" : [ "library", "list" ],
+            "maps" : [ "library-v1", "list" ],
             "usage": "particle library list",
             "does": "lists the libraries stored in the current directory"
         },
         "update": {
-            "maps" : [ "library", "update" ],
+            "maps" : [ "library-v1", "update" ],
             "usage": "particle library update",
             "does": "updates the libraries in the current directory"
         },
         "available": {
-            "maps" : [ "library", "available" ],
+            "maps" : [ "library-v1", "available" ],
             "usage" : "particle library available",
             "does" : "lists the remote libraries available"
         }
