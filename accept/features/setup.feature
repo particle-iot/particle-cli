@@ -16,7 +16,7 @@ Feature: setup
 
   Scenario: as a user, running setup walks me through logging in and adding a device
     When I run particle "setup" interactively
-    And I respond to the prompt "What would you like" with "<Down>"
+    And I respond to the prompt "What would you like" with code "<Down>"
     And I respond to the prompt "email address" with "mat+test@particle.io"
     And I respond to the prompt "password" with "mdmamdma"
     And I respond to the prompt "scan for nearby Photons" with "n"

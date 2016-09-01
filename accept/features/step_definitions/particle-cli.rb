@@ -46,8 +46,13 @@ CONTROL_CODES = {
   '<Left>'  => "\e[D",
 }
 
-When(/^I respond to the prompt "([^"]*)" with "([^"]*)"$/) do |prompt, response|
+When(/^I respond to the prompt "([^"]*)" with code "([^"]*)"$/) do |prompt, response|
   response_control = response.gsub(/<[A-Za-z0-9]+>/, CONTROL_CODES)
+  step "I respond to the prompt \"#{prompt}\" with \"#{response_control}\""
+end
+
+
+When(/^I respond to the prompt "([^"]*)" with "([^"]*)"$/) do |prompt, response|
   begin
     Timeout.timeout(aruba.config.exit_timeout) do
       loop do
@@ -63,7 +68,7 @@ When(/^I respond to the prompt "([^"]*)" with "([^"]*)"$/) do |prompt, response|
   rescue TimeoutError
     expect(last_command_started).to have_interactive_stdout an_output_string_including(prompt)
   end
-  step "I type \"#{response_control}\""
+  step "I type \"#{response}\""
 end
 
 RSpec::Matchers.define :have_interactive_stdout do |expected|
