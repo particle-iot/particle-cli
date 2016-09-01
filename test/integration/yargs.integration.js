@@ -20,7 +20,7 @@
 import {expect} from '../test-setup';
 import * as cli from '../../src/app/nested-yargs';
 
-import {app} from '../../src/app/app';
+import {rootCategory} from '../../src/app/app';
 
 describe('command line parsing', () => {
 
@@ -39,17 +39,17 @@ describe('command line parsing', () => {
 			}
 
 			it('is 0 by default', () => {
-				const argv = cli.parse(app, []);
+				const argv = cli.parse(rootCategory, []);
 				assertVerbosity(argv, 0);
 			});
 
 			it('is 1 for a single v flag', () => {
-				const argv = cli.parse(app, ['-v']);
+				const argv = cli.parse(rootCategory, ['-v']);
 				assertVerbosity(argv, 1);
 			});
 
 			it('is 2 for a double v flag', () => {
-				const argv = cli.parse(app, ['-vv']);
+				const argv = cli.parse(rootCategory, ['-vv']);
 				assertVerbosity(argv, 2);
 			});
 

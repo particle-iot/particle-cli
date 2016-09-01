@@ -356,5 +356,22 @@ describe('command-line parsing', () => {
 
 	});
 
+
+	describe('CLICommand', () => {
+		function assertCanSetDescription(desc) {
+			const root = cli.createAppCategory();
+			const sut = cli.createCommand(root, 'test', desc);
+			expect(sut).to.have.property('description').equal(desc);
+		}
+
+		it('can have a false description to indicate a hidden command', () => {
+			assertCanSetDescription(false);
+		});
+
+		it('can have a string description', () => {
+			assertCanSetDescription('123');
+		});
+
+	})
 });
 

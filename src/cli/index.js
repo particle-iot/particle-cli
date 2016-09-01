@@ -8,16 +8,22 @@ import echo from './echo';
 import library from './library';
 
 /**
- * The command modules take the root command they should be registered in and the cli service
- * that provides factories for creating new commands and command categories.
- * @param {CLICommandCategory} app The location where this module's commands should be added.
- * @param {CLI} cli   The cli service.
+ * The default function export from this module registers all the available commands.
+ * Each command is contained in it's own module, for..er...modularity.
+ *
+ * The command modules take an object as the argument with these properties:
+ *  root: the root command which is used to register top-level commands.
+ *  factory:  the command factory service that provides factories for creating
+ *      new commands and command categories.
+ *  app: the executing CLI instance. This can be used to modify the command line and re-execute
+ *   the new command line by calling `app.runCommand(cmdarray)`.
+ *
  */
-export default (app, cli) => {
+export default (context) => {
 	// help must come first
-	help(app, cli);
-	echo(app, cli);
-	library(app, cli);
+	help(context);
+	echo(context);
+	library(context);
 	// disable these for now until we have acceptance tests in place
 	// cloud(app, cli);
 	// keys(app, cli);

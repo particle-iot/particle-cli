@@ -78,8 +78,8 @@ export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSi
 }
 
 
-export default (lib, cli) => {
-	cli.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
+export default ({lib, factory}) => {
+	factory.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
 		options: {
 			test: {
 				alias: 'dryrun',

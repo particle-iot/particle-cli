@@ -44,18 +44,18 @@ export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	}
 }
 
-export default (app, cli) => {
+export default ({root, factory}) => {
 	apiJS = new ParticleApi(settings.apiUrl, {
 		accessToken: settings.access_token
 	}).api;
 
-	const lib = cli.createCategory(app, 'library', 'Manages firmware libraries', { alias: 'libraries' });
+	const lib = factory.createCategory(root, 'library', 'Manages firmware libraries', { alias: 'libraries' });
 
-	libraryInit(lib, cli);
-	libraryInstall(lib, cli);
-	libraryMigrate(lib, cli);
+	libraryInit({root, lib, factory});
+	libraryInstall({lib, factory});
+	libraryMigrate({lib, factory});
 
-	cli.createCommand(lib, 'add', 'Add a library to the current project.', {
+	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
 		options: {},
 		params: '<name>',
 

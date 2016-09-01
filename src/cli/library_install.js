@@ -52,8 +52,8 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 }
 
-export default (lib, cli) => {
-	cli.createCommand(lib, 'install', 'installs a library', {
+export default ({lib, factory}) => {
+	factory.createCommand(lib, 'install', 'installs a library', {
 		options: {
 			'vendored': {
 				required: false,
