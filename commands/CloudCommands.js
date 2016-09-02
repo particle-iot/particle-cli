@@ -98,7 +98,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			'particle cloud nyan my_device_id off',
 			'particle cloud nyan all on'
 		]
-
 	},
 
 
@@ -662,10 +661,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			});
 	},
 
-	login: function (username) {
+	login: function (username, password) {
 		var self = this;
 
-		if (this.tries >= 3) {
+		if (this.tries >= (password ? 1 : 3)) {
 			console.log();
 			console.log(alert, "It seems we're having trouble with logging in.");
 			console.log(
@@ -679,7 +678,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var allDone = pipeline([
 			//prompt for creds
 			function () {
-				return prompts.getCredentials(username);
+				if (password) {
+					return {username, password};
+				}
+				return prompts.getCredentials(username, password);
 			},
 
 			//login to the server
