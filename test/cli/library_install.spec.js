@@ -43,28 +43,28 @@ describe('library install command', () => {
 
 	describe('command line', () => {
 
-		const app = cli.createAppCategory();
-		libraryInstall(app, cli);
+		const lib = cli.createAppCategory();
+		libraryInstall({lib, factory:cli});
 
 		it('recognizes the install command', () => {
-			const argv = app.parse('install'.split(' '));
+			const argv = lib.parse('install'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 		});
 
 		it('recognizes the install command with library', () => {
-			const argv = app.parse('install neopixel'.split(' '));
+			const argv = lib.parse('install neopixel'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv.params).to.be.deep.equal({name:'neopixel'});
 		});
 
 		it('recognizes the install vendored command', () => {
-			const argv = app.parse('install --vendored'.split(' '));
+			const argv = lib.parse('install --vendored'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 		});
 
 		it('recognizes the install vendored command with confirmation', () => {
-			const argv = app.parse('install --vendored -y'.split(' '));
+			const argv = lib.parse('install --vendored -y'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 			expect(argv).to.have.property('confirm').that.is.true;
@@ -72,14 +72,14 @@ describe('library install command', () => {
 
 
 		it('recognizes the install vendored command with library', () => {
-			const argv = app.parse('install neopixel --vendored'.split(' '));
+			const argv = lib.parse('install neopixel --vendored'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 			expect(argv.params).to.be.deep.equal({name:'neopixel'});
 		});
 
 		it('recognizes the install vendored command with library name at end', () => {
-			const argv = app.parse('install --vendored neopixel'.split(' '));
+			const argv = lib.parse('install --vendored neopixel'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 			expect(argv.params).to.be.deep.equal({name:'neopixel'});

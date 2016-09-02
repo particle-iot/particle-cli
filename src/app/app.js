@@ -51,7 +51,7 @@ export class CLI {
 			options: {
 				version: {
 					boolean: true,
-					description: "Show the version of particle-cli installed."
+					description: 'Show the version of particle-cli installed.'
 				}
 			},
 
@@ -62,6 +62,7 @@ export class CLI {
 			/**
 			 * Setup global attributes from the parsed arguments.
 			 * @param {*} yargs The yargs parser to setup
+			 * @param {CLIRootCommandCategory} root The root command category to setup.
 			 */
 			setup(yargs, root) {
 				commands({root, factory: cliargs, app});
@@ -96,10 +97,12 @@ export class CLI {
 	}
 
 	addGlobalOptions(yargs) {
+		// the options are added by each subcommand, so we just
+		// todo - if a command overrides an option, then it should not be set as a global option.
+		// This is probably best moved into the yargs-parser.js module
 		_.each(this.rootCategory.options.inherited.options, function addGlobalOption(opt, name) {
 			yargs.group(name, 'Global Options:');
 		});
-//		yargs.group('help', 'Global Options:');
 	}
 
 	newrun(args) {
@@ -132,9 +135,6 @@ export class CLI {
 		return this.checkNewCommand(argv);
 	}
 
-	/**
-	 * Rebuilds the args including all commands for listing in the help.
-	 */
 	showHelp(cmdline) {
 
 	}
@@ -150,8 +150,8 @@ export class CLI {
 			|| (argv.clierror
 			&& argv.clierror.type   // has an parsing error
 			&& (
-			argv.clierror.type == cliargs.errors.requiredParameterError
-			|| argv.clierror.type == cliargs.errors.unknownArgumentError
+			argv.clierror.type === cliargs.errors.requiredParameterError
+			|| argv.clierror.type === cliargs.errors.unknownArgumentError
 			|| (argv.clierror.type === cliargs.errors.unknownCommandError) && (argv.clierror.item.path.length > 0)));
 		return !!result;
 	}

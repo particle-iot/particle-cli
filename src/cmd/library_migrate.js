@@ -23,7 +23,7 @@ export class LibraryMigrateCommandSite extends CommandSite {
 	 *
 	 * @param {string}  lib The directory containing the library that migration was attempted on.
 	 * @param {object}  result  There result of the migration.
-	 * @param err
+	 * @param {object}  err if defined, is the error that occurred migrating the library.
 	 */
 	notifyEnd(lib, result, err) {}
 }

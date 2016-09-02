@@ -18,6 +18,7 @@ import library from './library';
  *  app: the executing CLI instance. This can be used to modify the command line and re-execute
  *   the new command line by calling `app.runCommand(cmdarray)`.
  *
+ * @param {object} context  The context for configuring the command.
  */
 export default (context) => {
 	// help must come first

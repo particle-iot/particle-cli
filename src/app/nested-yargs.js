@@ -211,7 +211,6 @@ class CLICommandItem {
 		Yargs.showHelp();
 	}
 
-
 	addInheritedOptions(target) {
 		const parent = this.parent;
 		if (parent) {
@@ -228,12 +227,12 @@ class CLICommandItem {
 	}
 
 	assign(target, value) {
-		if (!value)
-			return;
-		// this is a dirty hack! for now, only merge the options
-		const options = target.options || {};
-		Object.assign(target, value);
-		target.options = Object.assign(options, value.options);
+		if (value) {
+			// this is a dirty hack! for now, only merge the options
+			const options = target.options || {};
+			Object.assign(target, value);
+			target.options = Object.assign(options, value.options);
+		}
 	}
 }
 
@@ -281,9 +280,9 @@ class CLICommandCategory extends CLICommandItem {
 				return { argv: command.parse(args, yargs)};
 			};
 
-			const handler = (yargs) => {
-				yargs.showHelp();
-			};
+			// const handler = (yargs) => {
+			// 	yargs.showHelp();
+			// };
 
 			yargs.command(command.name, command.description, builder);
 			if (command.options && command.options.alias) {

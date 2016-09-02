@@ -22,9 +22,10 @@ import {expect, sinon} from '../test-setup';
 import {LibraryAddCommand} from "../../src/cmd/library";
 import {LibraryAddCommandSite} from "../../src/cmd/library";
 import settings from "../../settings";
+import {it_has_access_token, fetch_access_token} from './access_token';
 const path = require('path');
 import createLibraryCommand from '../../src/cli/library';
-import * as cli from '../../src/app/nested-yargs';
+import * as factory from '../../src/app/nested-yargs';
 import { resourcesDir } from 'particle-cli-library-manager';
 
 import ParticleApi from '../../src/cmd/api';
@@ -37,41 +38,38 @@ describe('library', () => {
 	});
 
 	const libraryDir = path.join(resourcesDir(), 'libraries');
-	const app = cli.createAppCategory();
-	createLibraryCommand(app, cli);
+	const root = factory.createAppCategory();
+	createLibraryCommand({root, factory});
 
 	describe('migrate', () => {
 		it('supports --dryrun flag', () => {
-			const argv = cli.parse(app, ['library', 'migrate', '--dryrun']);
+			const argv = factory.parse(root, ['library', 'migrate', '--dryrun']);
 			expect(argv).to.have.property('dryrun').equal(true);
 			expect(argv).to.have.property('clicommand');
 		});
 
 		it('can execute --test flag', () => {
-			const argv = cli.parse(app, ['library', 'migrate', '--dryrun', path.join(libraryDir, 'libraries-v1')]);
+			const argv = factory.parse(root, ['library', 'migrate', '--dryrun', path.join(libraryDir, 'libraries-v1')]);
 			return argv.clicommand.exec(argv);
 		});
 	});
 
 	describe('add', () => {
 		it('populates the library name', () => {
-			const argv = cli.parse(app, ['library', 'add', 'assettracker']);
+			const argv = factory.parse(root, ['library', 'add', 'assettracker']);
 			expect(argv.params).to.have.property('name').equal('assettracker');
 		});
 
 		it('requires the library name', () => {
-			const argv = cli.parse(app, ['library', 'add']);
-			const expectedError = cli.errors.requiredParameterError('name');
+			const argv = factory.parse(root, ['library', 'add']);
+			const expectedError = factory.errors.requiredParameterError('name');
 			expect(argv.clierror).to.eql(expectedError);
 		});
 
-		// FIXME: this test depends on the CLI being logged in which is not the case on Travis.
-		// Must get the token from the environment
-		xit('can fetch a list of libraries with a filter', () => {
-
-			// todo - I copied this from the libraryAdd command - why do we need to specify access token twice?
+		it_has_access_token('can fetch a list of libraries with a filter', () => {
+			// todo - I copied this from the libraryAdd command - why do we need to specify access token twice? --mdma
 			const apiJS = new ParticleApi(settings.apiUrl, {
-				accessToken: settings.access_token
+				accessToken: fetch_access_token()
 			}).api;
 
 			const apiClient = apiJS.client({ auth: settings.access_token });
