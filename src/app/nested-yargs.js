@@ -187,7 +187,21 @@ class CLICommandItem {
 	}
 
 	matches(argv) {
-		return _.isEqual(argv._, this.path);
+		return this.matchesArgs(argv._);
+	}
+
+	matchesArgs(args) {
+		if (!this.path.length) {
+			return !args.length;
+		}
+
+		// walk the argv matching each command in sequence
+		const last = args[args.length-1];
+		return this.matchesName(last) && (!this.parent || this.parent.matchesArgs(args.slice(0, args.length-1)));
+	}
+
+	matchesName(name) {
+		return this.name===name || (this.options.alias && this.options.alias===name);
 	}
 
 	/**
