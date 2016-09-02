@@ -23,7 +23,7 @@ describe('AccessToken Command', function() {
 	var access;
 
 	before(function() {
-
+		this.timeout(10*1000);
 		cli = new Interpreter();
 		cli.startup();
 
