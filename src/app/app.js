@@ -14,7 +14,7 @@ export class CLI {
 		this.rootCategory = this.createRootCategory();
 	}
 
-	createRootCategory() {
+	createRootCategory(includeOldCommands=false) {
 		const app = this;
 
 		return cliargs.createAppCategory({
@@ -71,6 +71,9 @@ export class CLI {
 			 */
 			setup(yargs, root) {
 				commands({root, factory: cliargs, app});
+				if (includeOldCommands) {
+					app.addOldCommands(yargs);
+				}
 				app.addGlobalOptions.bind(app)(yargs);
 				const globalSetup = app.addGlobalSetup.bind(app);
 				_.each(root.commands, globalSetup);
@@ -86,6 +89,29 @@ export class CLI {
 				global.outputJson = argv.json;
 			}
 		});
+	}
+
+	/**
+	 * Adds the old commands so they are displayed in the help system
+	 */
+	addOldCommands(yargs) {
+		const cli = this.oldInterpreter();
+
+		function builder(yargs) {
+			return yargs;
+		}
+
+		const commands = cli.getCommands();
+		for (var i = 0; i < commands.length; i++) {
+			try {
+				const c = commands[i];
+				if (c.name !== null) {
+					yargs.command(c.name, c.description, builder);
+				}
+			} catch (ex) {
+				console.error('Error loading command ' + ex);
+			}
+		}
 	}
 
 	addGlobalSetup(cat) {
@@ -112,12 +138,13 @@ export class CLI {
 
 	newrun(args) {
 		return Promise.resolve().then(() => {
-			this.runCommand(args);
+			this.runCommand(args, true);
 		});
 	}
 
-	runCommand(args) {
+	runCommand(args, includeOldCommands) {
 		const errors = cliargs.createErrorHandler();
+		this.rootCategory = this.createRootCategory(includeOldCommands);
 		const argv = cliargs.parse(this.rootCategory, args);
 		// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
 		// this also gives us more control.
@@ -161,11 +188,16 @@ export class CLI {
 		return !!result;
 	}
 
-	oldrun(args) {
+	oldInterpreter() {
 		const Interpreter = require('../../oldlib/interpreter');
 		const cli = new Interpreter();
 		cli.supressWarmupMessages = true;
 		cli.startup();
+		return cli;
+	}
+
+	oldrun(args) {
+		const cli = this.oldInterpreter();
 		cli.handle(args, true);
 	}
 

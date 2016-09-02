@@ -5,9 +5,12 @@ export default ({root, factory, app}) => {
 		params: '[command] [subcommand...]',
 		handler: function helpHandler(argv) {
 			// todo - remove `help` wherever it appears in the command line - it may not be the first one
-			const cmd = argv._.slice(1);
+			let cmd = argv._;
+			cmd = cmd.slice(1);
+			cmd = cmd.concat(argv.params.command || []);
 			cmd.push('--help');
-			return app.runCommand(cmd);
+
+			return app.runCommand(cmd, true);
 		}
 	});
 };
