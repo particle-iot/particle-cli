@@ -336,7 +336,7 @@ describe('command-line parsing', () => {
 			const console = { log: sinon.stub() };
 			const error = { stack: '1\n2\n3' };
 			try {
-				global.verboseLevel = 1;
+				global.verboseLevel = 2;
 				cli.test.consoleErrorLogger(console, undefined /*yargs*/, false, error);
 			}
 			finally {

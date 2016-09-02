@@ -401,7 +401,7 @@ function consoleErrorLogger(console, yargs, exit, err) {
 	if (err) {
 		console.log(chalk.red(err.message || stringify(err)));
 	}
-	if (!usage && (err.stack && ((global.verboseLevel || 0)>0))) {
+	if (!usage && (err.stack && ((global.verboseLevel || 0)>1))) {
 		console.log(err, err.stack.split('\n'));
 	}
 	// todo - try to find a more controllable way to singal an error - this isn't easily testable.

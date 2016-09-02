@@ -39,19 +39,24 @@ describe('command line parsing', () => {
 				}
 			}
 
-			it('is 0 by default', () => {
+			it('is 1 by default', () => {
 				const argv = cli.parse(rootCategory, []);
-				assertVerbosity(argv, 0);
-			});
-
-			it('is 1 for a single v flag', () => {
-				const argv = cli.parse(rootCategory, ['-v']);
 				assertVerbosity(argv, 1);
 			});
 
-			it('is 2 for a double v flag', () => {
-				const argv = cli.parse(rootCategory, ['-vv']);
+			it('is 2 for a single v flag', () => {
+				const argv = cli.parse(rootCategory, ['-v']);
 				assertVerbosity(argv, 2);
+			});
+
+			it('is 3 for a double v flag', () => {
+				const argv = cli.parse(rootCategory, ['-vv']);
+				assertVerbosity(argv, 3);
+			});
+
+			it('is 0 with one quiet', () => {
+				const argv = cli.parse(rootCategory, ['-q']);
+				assertVerbosity(argv, 0);
 			});
 
 		});

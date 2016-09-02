@@ -39,8 +39,7 @@ export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	}
 
 	addedLibrary(name, version) {
-		log.info(`Added library ${chalk.green(name)} ${version} to project`);
-		return Promise.resolve();
+		return Promise.resolve().then(() => log.success(`Added library ${chalk.green(name)} ${version} to project`));
 	}
 }
 

@@ -29,7 +29,12 @@ export class CLI {
 					v: {
 						alias: 'verbose',
 						count: true,
-						description: 'How much logging to display'
+						description: 'Increases how much logging to display'
+					},
+					q: {
+						alias: 'quiet',
+						count: true,
+						description: 'Decreases how much logging to display'
 					},
 					/*
 					 interactive: {
@@ -77,7 +82,7 @@ export class CLI {
 			 */
 			parsed(argv) {
 				global.isInteractive = argv.interactive === true || (tty.isatty(process.stdin) && !argv.nonInteractive);
-				global.verboseLevel = argv.verbose;
+				global.verboseLevel = argv.verbose+1-argv.quiet;
 				global.outputJson = argv.json;
 			}
 		});
