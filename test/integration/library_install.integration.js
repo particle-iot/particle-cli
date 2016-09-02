@@ -18,50 +18,79 @@
  */
 
 import {chai, sinon, expect} from '../test-setup';
+import {it_has_access_token, fetch_access_token} from './access_token';
 const settings = require('../../settings');
 const path = require('path');
 const mockfs = require('mock-fs');
-const fs = require('fs');
+const when = require('when');
 
 import * as cli from '../../src/app/nested-yargs';
-import libraryInstall from '../../src/cli/library_install';
+
+
 
 describe('library install', () => {
 
-	beforeEach(done => {
+	let token;
+
+	beforeEach(() => {
+		token = settings.access_token;
+		settings.access_token = fetch_access_token();
 		mockfs();
-		done();
 	});
 
-	afterEach(done => {
+	afterEach((done) => {
+		settings.access_token = token;
+		console.log('restore fs');
 		mockfs.restore();
 		done();
 	});
 
-	xit('can install a vendored library in an extended application project', () => {
-		// todo - get access token from the environment
-		const auth = 'a1756ba10078bfacd21a26d68c1a6bb2274e565a';
-		settings.access_token = auth;
-
+	it_has_access_token('can install a vendored library in an extended application project', function test() {
+		this.timeout(20*1000);
+		const fs = require('fs');
 		fs.mkdirSync('project');
-		fs.writeFileSync('project/project.properties', '');
-		fs.mkdirSync('project/src');
-		process.chdir('project');
+		process.chdir('./project');
+		fs.writeFileSync('project.properties', '');
+		fs.mkdirSync('src');
+
+
+		const libraryInstall = require('../../src/cli/library_install').default;
+
 		const app = cli.createAppCategory();
 		const lib = cli.createCategory(app, 'library');
-		libraryInstall(lib, cli);
+		libraryInstall({lib, factory:cli});
 		const argv = cli.parse(app, ['library', 'install', '--vendored', 'neopixel']);
 		expect(argv.clicommand).to.be.ok;
+
+		var _getAllFilesFromFolder = function(dir) {
+
+			var filesystem = require("fs");
+			var results = [];
+
+			filesystem.readdirSync(dir).forEach(function(file) {
+
+				file = dir+'/'+file;
+				var stat = filesystem.statSync(file);
+
+				if (stat && stat.isDirectory()) {
+					results = results.concat(_getAllFilesFromFolder(file))
+				} else results.push(file);
+
+			});
+
+			return results;
+		};
 
 		const result = argv.clicommand.exec(argv).then(() => {
 			[
 			'lib/neopixel/library.properties',
 			'lib/neopixel/src/neopixel.cpp',
-			'lib/neopixel/src/neopixel.h'
+			'lib/neopixel/src/neopixel.h',
+			'./lib/neopixel/examples/rgbw-strandtest/rgbw-strandtest.cpp'
 			].forEach(filename => {
 				expect(fs.statSync(filename).isFile()).to.be.true;
 			});
 		});
-		return result;
+		return expect(result).to.eventually.be.fulfilled;
 	});
 });
