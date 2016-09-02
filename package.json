@@ -95,7 +95,7 @@
     "eslint-config-particle": "^1.0.1",
     "fs-extra": "^0.30.0",
     "istanbul": "^0.3.22",
-    "mocha": "^2.2.5",
+    "mocha": "^3.0.2",
     "mock-fs": "^3.11.0",
     "proxyquire": "^1.6.0",
     "rimraf-promise": "^2.0.0",
