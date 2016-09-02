@@ -10,9 +10,8 @@ import when from 'when';
 
 export class CLI {
 
-	initialize() {
+	constructor() {
 		this.rootCategory = this.createRootCategory();
-		return this;
 	}
 
 	createRootCategory() {
@@ -185,7 +184,7 @@ export class CLI {
 
 export default {
 	run(args) {
-		return new CLI().initialize().run(args);
+		return new CLI().run(args);
 	}
 };
 

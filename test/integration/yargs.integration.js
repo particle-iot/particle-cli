@@ -20,12 +20,13 @@
 import {expect} from '../test-setup';
 import * as cli from '../../src/app/nested-yargs';
 
-import {rootCategory} from '../../src/app/app';
+import {CLI} from '../../src/app/app';
 
 describe('command line parsing', () => {
 
 	describe('global flags', () => {
 		describe('verbosity', () => {
+			const rootCategory = new CLI().rootCategory;
 
 			function assertVerbosity(argv, expected) {
 				if (argv.clierror) {
