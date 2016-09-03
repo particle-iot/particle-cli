@@ -9,17 +9,21 @@ import {spin} from '../app/ui';
 import libraryInstall from './library_install';
 import libraryMigrate from './library_migrate';
 import libraryInit from './library_init';
+import librarySearch from './library_search';
+import {buildAPIClient} from './library_search';
 
 //const ui = require('../cli/ui');
 
-let apiJS;
-
-
 export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
-	constructor(argv) {
+	constructor(argv, apiClient) {
 		super();
+		this._apiClient = apiClient;
 		[this.name, this.version='latest'] = argv.params.name.split('@');
 		this.dir = argv.params.dir || process.cwd();
+	}
+
+	apiClient() {
+		return this._apiClient;
 	}
 
 	libraryIdent() {
@@ -44,7 +48,8 @@ export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 }
 
 export default ({root, factory}) => {
-	apiJS = new ParticleApi(settings.apiUrl, {
+	// todo - Julien - how come access token needs to be specified here...
+	let apiJS = new ParticleApi(settings.apiUrl, {
 		accessToken: settings.access_token
 	}).api;
 
@@ -53,15 +58,16 @@ export default ({root, factory}) => {
 	libraryInit({root, lib, factory});
 	libraryInstall({lib, factory});
 	libraryMigrate({lib, factory});
+	librarySearch({lib, factory, apiJS});
 
 	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
 		options: {},
 		params: '<name>',
 
 		handler: function libraryAddHandler(argv) {
-			const apiClient = apiJS.client({ auth: settings.access_token });
-			const site = new CLILibraryAddCommandSite(argv);
-			const cmd = new LibraryAddCommand({ apiClient });
+			// todo ... and here
+			const site = new CLILibraryAddCommandSite(argv, buildAPIClient(apiJS));
+			const cmd = new LibraryAddCommand();
 			return site.run(cmd);
 		}
 	});

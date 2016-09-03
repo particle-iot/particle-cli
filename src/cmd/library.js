@@ -7,6 +7,10 @@ import {CommandSite} from './command';
 
 export class LibraryAddCommandSite extends CommandSite {
 
+	apiClient() {
+		throw new Error('not implemented');
+	}
+
 	projectDir() {
 		throw new Error('not implemented');
 	}
@@ -14,22 +18,6 @@ export class LibraryAddCommandSite extends CommandSite {
 	libraryIdent() {
 		throw new Error('not implemented');
 	}
-
-	/**
-	 * Notifies the site that the command is about to retrieve the libraries.
-	 * @param {Promise}promise   The command to retrieve the libraries.
-	 * @param {string}filter     Optional
-	 * @return {Promise} Return a falsey value
-	 *
-	 */
-	notifyListLibrariesStart(promise, filter) {
-		return promise;
-	}
-
-	notifyListLibrariesComplete(promise, filter, libraries, error) {
-
-	}
-
 
 	fetchingLibrary(promise, name) {
 		return promise;
@@ -42,37 +30,6 @@ export class LibraryAddCommandSite extends CommandSite {
 
 /** Library add **/
 export class LibraryAddCommand {
-	constructor({ apiClient } = {}) {
-		this.apiClient = apiClient;
-	}
-
-	/**
-	 * A request to list the libraries using the given filter.
-	 * @param {LibraryAddCommandSite} site Provides the parameters for the command
-	 * @param {string} filter a filter for the library name
-	 * @returns {Promise} to fetch the libraries.
-	 *
-	 * The site methods notifyListLibrariesStart/notifyListLibrariesComplete are called
-	 * at the start and end of the operation.
-	 */
-	listLibraries(site, filter) {
-		this.site = site;
-		const listPromise = this.apiClient.libraries({ filter })
-			.catch(err => {
-				const result = this.apiError(err);
-				throw result;
-			});
-
-		return Promise.resolve(this.site.notifyListLibrariesStart(listPromise, filter)
-			.then(libraries => {
-				this.site.notifyListLibrariesComplete(listPromise, filter, libraries, null);
-				return libraries;
-			})
-			.catch(err => {
-				this.site.notifyListLibrariesComplete(listPromise, filter, null, err);
-				throw err;
-			}));
-	}
 
 	/**
 	 * @param {Object} state Unused
@@ -117,7 +74,11 @@ export class LibraryAddCommand {
 	}
 
 	fetchLibrary(name, version) {
-		return Promise.resolve(this.site.fetchingLibrary(this.apiClient.library(name, { version }), name, version))
+
+		return Promise.resolve(this.site.apiClient())
+		.then((apiClient) => {
+			return Promise.resolve(this.site.fetchingLibrary(apiClient.library(name, { version }), name, version));
+		})
 		.catch(err => {
 			throw this.apiError(err);
 		});

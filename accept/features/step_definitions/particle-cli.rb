@@ -42,8 +42,9 @@ end
 
 
 And(/^the (stderr|stdout|output) should match exactly once \/([^\/]*)\/$/) do |out, expected|
-  step "the #{out} should match /#{expected}/"
-  step "the #{out} should not match /#{expected}.*#{expected}/"
+# todo - the aruba commands only have regex matching on the complete output.
+  step "the output should match /#{expected}/"
+  step "the output should not match /#{expected}.*#{expected}/"
 end
 
 
