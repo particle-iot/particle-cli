@@ -127,6 +127,7 @@
     "url": "https://github.com/spark/particle-cli"
   },
   "scripts": {
+    "all": "npm run lint && npm run test && npm run accept",
     "accept": "npm run compile && accept/run",
     "babel-watch": "babel src -d dist --watch --source-maps",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/ --compilers js:babel-register",

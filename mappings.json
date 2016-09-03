@@ -236,7 +236,6 @@
         ]
     },
 
-
     "library-v1": {
         "_commands": [ "install", "list", "available" ],
 
@@ -259,6 +258,31 @@
             "maps" : [ "library-v1", "available" ],
             "usage" : "particle library available",
             "does" : "lists the remote libraries available"
+        }
+    },
+
+    "library": {
+        "_commands": [ "add", "install", "migrate", "init" ],
+
+        "install": {
+            "maps" : [ "library", "install" ],
+            "usage": "particle library install [--vendored] [name]",
+            "does": "Installs a vendored library to the project in the current directory"
+        },
+        "add": {
+            "maps" : [ "library", "add" ],
+            "usage": "particle library add [name]",
+            "does": "Adds a library to the project in the current directory"
+        },
+        "init": {
+            "maps" : [ "library", "init" ],
+            "usage": "particle library init [--name] [--version] [--author]",
+            "does": "Adds a library to the project in the current directory"
+        },
+        "migrate": {
+            "maps" : [ "library", "migrate" ],
+            "usage": "particle library migrate [--dir]",
+            "does": "Migrates a v1 library in named/current directory to v2 format."
         }
     },
 

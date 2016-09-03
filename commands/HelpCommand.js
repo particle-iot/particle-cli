@@ -114,11 +114,11 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		const lines = this.commandText(name, subcmd);
+		const lines = this.commandText(name, subcmd, command);
 		console.log(lines.join('\n'));
 	},
 
-	commandText: function (name, subcmd) {
+	commandText: function (name, subcmd, command) {
 
 		//make a pretty string showing how to use this command, optionally plus a sub-command
 		var cmdLine = 'particle ' + name;
@@ -171,6 +171,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 		lines.push('');
 		lines.push('');
+		return lines;
 	},
 
 	listCommandsTable: function () {

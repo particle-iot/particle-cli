@@ -93,6 +93,7 @@ export class CLI {
 
 	/**
 	 * Adds the old commands so they are displayed in the help system
+	 * @param {Yargs} yargs the yargs instance to receive all the old style command definitions.
 	 */
 	addOldCommands(yargs) {
 		const cli = this.oldInterpreter();
@@ -102,7 +103,7 @@ export class CLI {
 		}
 
 		const commands = cli.getCommands();
-		for (var i = 0; i < commands.length; i++) {
+		for (let i = 0; i < commands.length; i++) {
 			try {
 				const c = commands[i];
 				if (c.name !== null) {
@@ -138,7 +139,7 @@ export class CLI {
 
 	newrun(args) {
 		return Promise.resolve().then(() => {
-			this.runCommand(args, true);
+			this.runCommand(args, false);
 		});
 	}
 
@@ -160,8 +161,8 @@ export class CLI {
 
 	isNewCommand(args) {
 		if (args.length === 0 || args[0] === 'help') {
-			// use new help
-			return true;
+			// use old help
+			return false;
 		}
 		const argv = cliargs.parse(this.rootCategory, args);
 		return this.checkNewCommand(argv);
