@@ -14,6 +14,10 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 		return this.argv.vendored;
 	}
 
+	isAdaptersRequired() {
+		return this.argv.adapter;
+	}
+
 	libraryName() {
 		const params = this.argv.params;
 		return params && params.name;
@@ -59,6 +63,11 @@ export default ({lib, factory}) => {
 				required: false,
 				boolean: true,
 				description: 'install the library as the vendored library in the given directory.'
+			},
+			'adapter': {
+				required: false,
+				boolean: true,
+				description: 'add include file adapters to support v1-style includes "library/library.h"'
 			},
 			'confirm': {
 				required: false,

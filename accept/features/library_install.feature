@@ -9,6 +9,18 @@ Feature: library install
     And the file "lib/neopixel/library.properties" should exist
     And the file "lib/neopixel/src/neopixel.cpp" should exist
     And the file "lib/neopixel/src/neopixel.h" should exist
+    And the file "lib/neopixel/src/neopixel/neopixel.h" should not exist
+    And the exit status should be 0
+
+  Scenario: as a user I can install neopixel as a vendored library in an extended project with adapter headers
+    Given an empty file named "project.properties"
+    And an empty file named "src/hello.cpp"
+    When I run particle "library install --vendored --adapter neopixel"
+    Then the directory "lib" should exist
+    And the file "lib/neopixel/library.properties" should exist
+    And the file "lib/neopixel/src/neopixel.cpp" should exist
+    And the file "lib/neopixel/src/neopixel.h" should exist
+    And the file "lib/neopixel/src/neopixel/neopixel.h" should exist
     And the exit status should be 0
 
   Scenario: as a user I can attempt to install a non-existent library as a vendored library in an extended project

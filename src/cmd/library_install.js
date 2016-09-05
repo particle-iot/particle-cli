@@ -1,7 +1,7 @@
 import {Command, CommandSite} from './command';
-import {CloudLibraryRepository} from 'particle-cli-library-manager';
+import {CloudLibraryRepository, FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
 import ProjectProperties, {extended} from './project_properties';
-
+import path from 'path';
 
 /**
  * Specification and base implementation for the site instance expected by
@@ -21,6 +21,11 @@ export class LibraryInstallCommandSite extends CommandSite {
 	isVendored() {
 		return false;
 	}
+
+	isAdaptersRequired() {
+		return false;
+	}
+
 
 	libraryName() {
 		throw Error('not implemented');
@@ -64,7 +69,6 @@ export class LibraryInstallCommandSite extends CommandSite {
 export class LibraryInstallCommand extends Command {
 
 	/**
-	 *
 	 * @param {object} state The current conversation state.
 	 * @param {LibraryInstallCommandSite} site external services.
 	 * @returns {Promise} To run the library install command.
@@ -124,13 +128,16 @@ export class LibraryInstallCommand extends Command {
 							return cloudRepo.fetch(libName);
 						})
 						.then((lib) => {
-							return site.notifyFetchingLibrary(lib.metadata, projectDir).
-							then(() => lib);
+							return site.notifyFetchingLibrary(lib.metadata, projectDir)
+								.then(() => lib.copyTo(libDir))
+								.then(() => {
+									if (site.isAdaptersRequired()) {
+										const fsrepo = new FileSystemLibraryRepository(libDir, FileSystemNamingStrategy.DIRECT);
+										return fsrepo.addAdapters(() => {}, lib.name, path.join(libDir, 'src'));
+									}
+								})
+								.then(() => site.notifyInstalledLibrary(lib.metadata, projectDir))
 						})
-						.then(lib => {
-							return lib.copyTo(libDir);
-						})
-						.then(lib => site.notifyInstalledLibrary(lib.metadata, projectDir))
 						.catch(err => site.error(err));
 				}
 			});
