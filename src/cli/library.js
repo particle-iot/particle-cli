@@ -10,6 +10,7 @@ import libraryInstall from './library_install';
 import libraryMigrate from './library_migrate';
 import libraryInit from './library_init';
 import librarySearch from './library_search';
+import libraryPublish from './library_publish';
 import {buildAPIClient} from './library_search';
 
 //const ui = require('../cli/ui');
@@ -59,6 +60,7 @@ export default ({root, factory}) => {
 	libraryInstall({lib, factory});
 	libraryMigrate({lib, factory});
 	librarySearch({lib, factory, apiJS});
+	libraryPublish({lib, factory, apiJS});
 
 	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
 		options: {},
