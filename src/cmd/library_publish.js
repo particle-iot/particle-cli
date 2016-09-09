@@ -9,6 +9,10 @@ export class LibraryPublishCommandSite extends CommandSite {
 		super();
 	}
 
+	apiClient() {
+		throw new Error('apiClient not available');
+	}
+
 	dryRun() {
 		return false;
 	}
@@ -62,7 +66,6 @@ export class LibraryPublishCommand extends Command {
 			fn(...args);
 		};
 
-		const client = {};
 		const name = '';
 		let dryRun = false;
 		return Promise.resolve(site.libraryDirectory())
@@ -72,7 +75,7 @@ export class LibraryPublishCommand extends Command {
 				.then(() => site.accessToken())
 				.then(token => {
 					const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
-					return repo.publish(name, client, dryRun, events);
+					return repo.publish(name, site.apiClient(), dryRun, events);
 				});
 		});
 	}

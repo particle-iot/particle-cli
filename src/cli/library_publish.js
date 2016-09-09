@@ -6,17 +6,25 @@ import chalk from 'chalk';
 import log from '../app/log';
 import {spin} from '../app/ui';
 
+export function buildAPIClient(apiJS) {
+	return apiJS.client({ auth: settings.access_token });
+}
 
 export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 
-	constructor(argv, dir) {
+	constructor(argv, dir, apiClient) {
 		super();
 		this.argv = argv;
 		this.dir = dir;
+		this._apiClient = apiClient;
 	}
 
 	libraryDirectory() {
 		return this.dir;
+	}
+
+	apiClient() {
+		return this._apiClient;
 	}
 
 	dryRun() {
@@ -48,11 +56,12 @@ export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 	}
 
 	publishComplete(library) {
-		return log.success(`Library ${chalk.green(library.name)} was successfully published.`);
+		return log.success(`Library ${chalk.green(library.name)} was successfully published.\n` +
+		`Add it to your project with ${chalk.green('particle library add ' + library.name)}`);
 	}
 }
 
-export default ({lib, factory}) => {
+export default ({lib, factory, apiJS}) => {
 	factory.createCommand(lib, 'publish', 'publishes a library', {
 		options: {
 			'dryRun': {
@@ -62,7 +71,7 @@ export default ({lib, factory}) => {
 			}
 		},
 		handler: function LibraryPublishHandler(argv) {
-			const site = new CLILibraryPublishCommandSite(argv, process.cwd());
+			const site = new CLILibraryPublishCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 			const cmd = new LibraryPublishCommand();
 			return site.run(cmd);
 		}
