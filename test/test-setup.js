@@ -14,6 +14,7 @@ chai.use(tdChai(td));
 chai.use(sinonChai);
 chai.use(chaiAsPromised);
 const expect = chai.expect;
+import 'sinon-as-promised';
 
 afterEach(() => td.reset());
 

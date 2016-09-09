@@ -102,6 +102,7 @@
     "rimraf-promise": "^2.0.0",
     "should": "^7.0.2",
     "sinon": "^1.15.4",
+    "sinon-as-promised": "^4.0.2",
     "sinon-chai": "^2.8.0",
     "testdouble": "^1.6.0",
     "testdouble-chai": "^0.2.2",
