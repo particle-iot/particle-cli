@@ -1,5 +1,5 @@
 import {Command, CommandSite} from './command';
-import {LibraryInitGenerator} from 'particle-cli-library-manager';
+import {buildLibraryInitGeneratorClass} from 'particle-cli-library-manager';
 
 const promisify = require('es6-promisify');
 
@@ -47,7 +47,7 @@ export class LibraryInitCommand extends Command {
 		const args = site.args();
 		const opts = site.options();
 		const env = yeoman.createEnv(args, opts, site.yeomanAdapter());
-		env.registerStub(LibraryInitGenerator, 'library:init');
+		env.registerStub(buildLibraryInitGeneratorClass(), 'library:init');
 		const run = promisify((...args) => env.run(...args));
 		return run(['library:init'], opts);
 

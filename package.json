@@ -77,7 +77,8 @@
     "when": "^3.7.2",
     "xtend": "^4.0.0",
     "yargs": "^5.0.0",
-    "yeoman-environment": "^1.6.3"
+    "yeoman-environment": "^1.6.3",
+    "yeoman-generator": "^0.24.1"
   },
   "devDependencies": {
     "babel-cli": "^6.10.1",
