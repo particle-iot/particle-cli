@@ -1,4 +1,5 @@
 import {Command, CommandSite} from './command';
+import {convertApiError} from './api';
 
 /**
  * Specification and base implementation for the site instance expected by
@@ -70,6 +71,10 @@ export class LibrarySearchCommand extends Command {
 					throw err;
 				}));
 		});
+	}
+
+	apiError(err) {
+		return convertApiError(err);
 	}
 
 	/**
