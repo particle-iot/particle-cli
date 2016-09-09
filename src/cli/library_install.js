@@ -2,12 +2,22 @@ import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd/library_i
 import {convertApiError} from '../cmd/api';
 const settings = require('../../settings');
 
+
+export function buildAPIClient(apiJS) {
+	return apiJS.client({ auth: settings.access_token });
+}
+
 export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 
-	constructor(argv, dir) {
+	constructor(argv, dir, apiClient) {
 		super();
+		this._apiClient = apiClient;
 		this.argv = argv;
 		this.dir = dir;
+	}
+
+	apiClient() {
+		return this._apiClient;
 	}
 
 	isVendored() {
@@ -25,10 +35,6 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 
 	targetDirectory() {
 		return this.dir;
-	}
-
-	accessToken() {
-		return settings.access_token;
 	}
 
 	error(error) {
@@ -56,7 +62,7 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 }
 
-export default ({lib, factory}) => {
+export default ({lib, factory, apiJS}) => {
 	factory.createCommand(lib, 'install', 'installs a library', {
 		options: {
 			'vendored': {
@@ -77,7 +83,7 @@ export default ({lib, factory}) => {
 		},
 		params: '[name]',
 		handler: function LibraryInstallHandler(argv) {
-			const site = new CLILibraryInstallCommandSite(argv, process.cwd());
+			const site = new CLILibraryInstallCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 			const cmd = new LibraryInstallCommand();
 			return site.run(cmd);
 		}

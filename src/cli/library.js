@@ -15,6 +15,15 @@ import {buildAPIClient} from './library_search';
 
 //const ui = require('../cli/ui');
 
+function api() {
+	if (!api._instance) {
+		api._instance = new ParticleApi(settings.apiUrl, {
+			accessToken: settings.access_token
+		}).api;
+	}
+	return api._instance;
+}
+
 export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	constructor(argv, apiClient) {
 		super();
@@ -49,18 +58,13 @@ export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 }
 
 export default ({root, factory}) => {
-	// todo - Julien - how come access token needs to be specified here...
-	let apiJS = new ParticleApi(settings.apiUrl, {
-		accessToken: settings.access_token
-	}).api;
-
 	const lib = factory.createCategory(root, 'library', 'Manages firmware libraries', { alias: 'libraries' });
 
 	libraryInit({root, lib, factory});
-	libraryInstall({lib, factory});
+	libraryInstall({lib, factory, apiJS: api()});
 	libraryMigrate({lib, factory});
-	librarySearch({lib, factory, apiJS});
-	libraryPublish({lib, factory, apiJS});
+	librarySearch({lib, factory, apiJS: api()});
+	libraryPublish({lib, factory, apiJS: api()});
 
 	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
 		options: {},
@@ -68,7 +72,7 @@ export default ({root, factory}) => {
 
 		handler: function libraryAddHandler(argv) {
 			// todo ... and here
-			const site = new CLILibraryAddCommandSite(argv, buildAPIClient(apiJS));
+			const site = new CLILibraryAddCommandSite(argv, buildAPIClient(api()));
 			const cmd = new LibraryAddCommand();
 			return site.run(cmd);
 		}

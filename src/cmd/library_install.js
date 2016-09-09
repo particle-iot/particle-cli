@@ -13,6 +13,9 @@ export class LibraryInstallCommandSite extends CommandSite {
 		super();
 	}
 
+	apiClient() {
+		throw new Error('not implemented');
+	}
 
 	// mdm - I'm not sure about having all these methods for accessing simple properties.
 	// It might be simpler to have a cmd args object with properties. It depends upon if the
@@ -35,10 +38,6 @@ export class LibraryInstallCommandSite extends CommandSite {
 	 * The target directory containing the project to install the library into.
 	 */
 	targetDirectory() {
-		throw Error('not implemented');
-	}
-
-	accessToken() {
 		throw Error('not implemented');
 	}
 
@@ -76,10 +75,10 @@ export class LibraryInstallCommand extends Command {
 	run(state, site) {
 		const targetDir = site.targetDirectory();
 		const libName = site.libraryName();
-		const auth = site.accessToken();
+		const client = site.apiClient();
 		let result;
 		const project = new ProjectProperties(targetDir);
-		const cloudRepo = new CloudLibraryRepository({auth});
+		const cloudRepo = new CloudLibraryRepository({client});
 
 		if (libName) {
 			result = this.installSingleLib(site, cloudRepo, site.isVendored(), libName, undefined, targetDir, project);
@@ -136,7 +135,7 @@ export class LibraryInstallCommand extends Command {
 										return fsrepo.addAdapters(() => {}, lib.name, path.join(libDir, 'src'));
 									}
 								})
-								.then(() => site.notifyInstalledLibrary(lib.metadata, projectDir))
+								.then(() => site.notifyInstalledLibrary(lib.metadata, projectDir));
 						})
 						.catch(err => site.error(err));
 				}

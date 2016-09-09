@@ -11,34 +11,39 @@ import settings from '../../settings';
 import ParticleApi from './api';
 import { platformsByName, notSourceExtensions, MAX_FILE_SIZE } from './constants';
 
-const api = new ParticleApi(settings.apiUrl, {
-	accessToken: settings.access_token
-});
+function api() {
+	if (!api._instance) {
+		api._instance = new ParticleApi(settings.apiUrl, {
+			accessToken: settings.access_token
+		}).api;
+	}
+	return api._instance;
+}
 
 export default {
 	login(user, pass) {
-		return api.login(user, pass);
+		return api().login(user, pass);
 	},
 
 	logout() {
-		return api.logout();
+		return api().logout();
 	},
 
 	removeAccessToken(user, pass, token) {
-		return api.removeAccessToken(user, pass, token);
+		return api().removeAccessToken(user, pass, token);
 	},
 
 	listDevices() {
-		return api.listDevices();
+		return api().listDevices();
 	},
 
 	listDevicesWithFunctionsAndVariables(filter) {
 		return pipeline([
-			api.listDevices.bind(api),
+			api().listDevices.bind(api()),
 			(devices) => {
 				return when.map(devices, d => {
 					if (d.connected) {
-						return api.getDeviceAttributes(d.id)
+						return api().getDeviceAttributes(d.id)
 							.then(attrs => Object.assign(d, attrs));
 					}
 					return d;
@@ -67,23 +72,23 @@ export default {
 	},
 
 	claimDevice(deviceId, requestTransfer) {
-		return api.claimDevice(deviceId, requestTransfer);
+		return api().claimDevice(deviceId, requestTransfer);
 	},
 
 	removeDevice(deviceIdOrName) {
-		return api.removeDevice(deviceIdOrName);
+		return api().removeDevice(deviceIdOrName);
 	},
 
 	renameDevice(deviceIdOrName, name) {
-		return api.renameDevice(deviceIdOrName, name);
+		return api().renameDevice(deviceIdOrName, name);
 	},
 
 	signalDevice(deviceIdOrName, onOff) {
-		return api.signalDevice(deviceIdOrName, onOff);
+		return api().signalDevice(deviceIdOrName, onOff);
 	},
 
 	listBuildTargets(onlyFeatured) {
-		return api.listBuildTargets(onlyFeatured);
+		return api().listBuildTargets(onlyFeatured);
 	},
 
 	compileCode({ deviceType, filesOrFolder, target }) {
@@ -122,13 +127,13 @@ export default {
 					log.info(`  ${f}`);
 					fileMap[path.basename(f)] = f;
 				});
-				return api.compileCode(fileMap, platformId, target);
+				return api().compileCode(fileMap, platformId, target);
 			}
 		]);
 	},
 
 	downloadFirmwareBinary(binaryId, downloadPath) {
-		return api.downloadFirmwareBinary(binaryId, downloadPath);
+		return api().downloadFirmwareBinary(binaryId, downloadPath);
 	},
 
 	_readTrimBlankLinesAndComments(file) {

@@ -1,5 +1,5 @@
 import {Command, CommandSite} from './command';
-import {LibraryPublisher, FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
+import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cli-library-manager';
 
 /**
  */
@@ -31,6 +31,7 @@ export class LibraryPublishCommandSite extends CommandSite {
 
 	/**
 	 * Notification that the library directory is being checked. The library is validated and then loaded.
+	 * @param {string} directory
 	 */
 	validatingLibrary(directory) {
 
@@ -39,6 +40,7 @@ export class LibraryPublishCommandSite extends CommandSite {
 	/**
 	 * Notification that library publishing is starting
 	 * @param {Library} library   The loaded library
+	 * @param {Promise} promise
 	 */
 	publishingLibrary(library, promise) {
 
