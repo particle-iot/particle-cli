@@ -41,22 +41,30 @@ class AbstractLibraryMigrateCommand extends Command {
 	 *  - err: any error that was produced.
 	 */
 	run(state, site) {
-		const libsPromise = when().then(() => site.getLibraries());
+		const libsPromise = Promise.resolve(site.getLibraries());
 		return when.map(libsPromise, libdir => {
-			// todo - should the notifications be promisable?
-			return Promise.resolve(site.notifyStart(libdir)).then(() => {
+			return Promise.resolve(site.notifyStart(libdir))
+			.then(() => {
 				const dir = path.resolve(libdir);
 				const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
 				return this.processLibrary(repo, '', state, site)
-					.then(([res, err]) => {
-						return Promise.resolve(site.notifyEnd(libdir, res, err)).then(() => {
-							return {libdir, res, err};
-						});
+				.then(([res, err]) => {
+					return Promise.resolve(site.notifyEnd(libdir, res, err))
+					.then(() => {
+						return {libdir, res, err};
 					});
+				});
 			});
 		});
 	}
 
+	/**
+	 * Handle migration of a single library.
+	 * @param repo          The filesystem repo containing the library.
+	 * @param libname       The identifier of the library
+	 * @param state         the current command state
+	 * @param site          the command site
+	 */
 	processLibrary(repo, libname, state, site) {}
 }
 
