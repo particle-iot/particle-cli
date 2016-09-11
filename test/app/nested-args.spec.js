@@ -155,6 +155,15 @@ describe('command-line parsing', () => {
 		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownArgumentError(['ftlspeed']));
 	});
 
+	it('returns an unknown command error before an unknown argument error', () => {
+		const app = cli.createAppCategory();
+		const one = cli.createCategory(app, 'one', 'you get');
+		const args = ['blah', '--frumpet'];
+		const argv = cli.parse(app, args);
+		expect(argv.clicommand).to.be.equal(undefined);
+		expect(argv.clierror).to.be.deep.equal(cli.errors.unknownCommandError(['blah'], app));
+	});
+
 	it('can accept options', () => {
 		// see '.choices()` https://www.npmjs.com/package/yargs
 		const app = cli.createAppCategory({ options: {
@@ -200,6 +209,7 @@ describe('command-line parsing', () => {
 			const result = cli.parse(app, ['cmd'].concat(args));
 			// only one of them set
 			expect(result.clicommand || result.clierror).to.be.ok;
+
 			expect(result.clicommand && result.clierror).to.be.not.ok;
 			if (result.clicommand) {
 				expect(result.clicommand).to.be.equal(cmd);

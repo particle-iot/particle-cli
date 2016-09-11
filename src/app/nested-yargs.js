@@ -269,17 +269,18 @@ class CLICommandCategory extends CLICommandItem {
 	 * @returns {boolean} the validity of the check.
 	 */
 	check(yargs, argv) {
+
+		// ensure common prefix
+		if (!this.matches(argv)) {
+			throw unknownCommandError(argv._, this);
+		}
+
 		// We can't use `yargs.strict()` because it is possible that
 		// `options.setup` changes the options during execution and this
 		// seems to interfere with the timing for strict mode.
 		// Additionally, `yargs.strict()` does not seem to handle pre-
 		// negated params like `--no-run`.
 		checkForUnknownArguments(yargs, argv, this);
-
-		// ensure common prefix
-		if (!this.matches(argv)) {
-			throw unknownCommandError(argv._, this);
-		}
 
 		return true;
 	}
