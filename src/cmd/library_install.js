@@ -62,6 +62,11 @@ export class LibraryInstallCommandSite extends CommandSite {
 	}
 }
 
+export function buildAdapters(libDir, libName) {
+	const fsrepo = new FileSystemLibraryRepository(libDir, FileSystemNamingStrategy.DIRECT);
+	return fsrepo.addAdapters(() => {}, libName, path.join(libDir, 'src'));
+}
+
 /**
  * Implements the library initialization command.
  */
@@ -131,8 +136,7 @@ export class LibraryInstallCommand extends Command {
 								.then(() => lib.copyTo(libDir))
 								.then(() => {
 									if (site.isAdaptersRequired()) {
-										const fsrepo = new FileSystemLibraryRepository(libDir, FileSystemNamingStrategy.DIRECT);
-										return fsrepo.addAdapters(() => {}, lib.name, path.join(libDir, 'src'));
+										return buildAdapters(libDir, lib.name);
 									}
 								})
 								.then(() => site.notifyInstalledLibrary(lib.metadata, projectDir));

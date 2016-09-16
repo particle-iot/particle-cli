@@ -4,6 +4,7 @@ import {FileSystemLibraryRepository, FileSystemNamingStrategy} from 'particle-cl
 import path from 'path';
 import when from 'when';
 import pipeline from 'when/pipeline';
+import {buildAdapters} from './library_install';
 
 export class LibraryMigrateCommandSite extends CommandSite {
 
@@ -26,6 +27,11 @@ export class LibraryMigrateCommandSite extends CommandSite {
 	 * @param {object}  err if defined, is the error that occurred migrating the library.
 	 */
 	notifyEnd(lib, result, err) {}
+
+	isAdaptersRequired() {
+		return false;
+	}
+
 }
 
 
@@ -47,7 +53,7 @@ class AbstractLibraryMigrateCommand extends Command {
 			.then(() => {
 				const dir = path.resolve(libdir);
 				const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
-				return this.processLibrary(repo, '', state, site)
+				return this.processLibrary(repo, '', state, site, libdir)
 				.then(([res, err]) => {
 					return Promise.resolve(site.notifyEnd(libdir, res, err))
 					.then(() => {
@@ -77,14 +83,14 @@ function resultError(promise) {
 
 export class LibraryMigrateTestCommand extends AbstractLibraryMigrateCommand {
 
-	processLibrary(repo, libname, state, site) {
+	processLibrary(repo, libname, state, site, libdir) {
 		return resultError(repo.getLibraryLayout(libname));
 	}
 }
 
 export class LibraryMigrateCommand extends AbstractLibraryMigrateCommand {
 
-	processLibrary(repo, libname, state, site) {
+	processLibrary(repo, libname, state, site, libdir) {
 		return resultError(pipeline([
 			() => repo.getLibraryLayout(libname),
 			(layout) => {
@@ -92,6 +98,11 @@ export class LibraryMigrateCommand extends AbstractLibraryMigrateCommand {
 					return false;
 				} else {
 					return repo.setLibraryLayout(libname, 2)
+						.then(() => {
+							if (site.isAdaptersRequired()) {
+								return buildAdapters(libdir, libname);
+							}
+						})
 						.then(() => true);
 				}
 			}

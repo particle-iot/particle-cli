@@ -70,10 +70,10 @@ export default ({lib, factory, apiJS}) => {
 				boolean: true,
 				description: 'install the library as the vendored library in the given directory.'
 			},
-			'adapter': {
+			'adapter': {        // hidden
 				required: false,
 				boolean: true,
-				description: 'add include file adapters to support v1-style includes "library/library.h"'
+				alias: 'a'
 			},
 			'confirm': {
 				required: false,

@@ -12,6 +12,10 @@ export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite 
 		this.result = null;
 	}
 
+	isAdaptersRequired() {
+		return this.argv.adapter;
+	}
+
 	getLibraries() {
 		return this.libraries;
 	}
@@ -85,7 +89,14 @@ export default ({lib, factory}) => {
 				alias: 'dryrun',
 				boolean: true,
 				description: 'test if the library can be migrated'
-			}
+			},
+			'adapter': {
+				required: false,
+				boolean: true,
+				default: true,
+				description: 'add include file adapters to support v1-style includes "library/library.h"'
+			},
+
 		},
 		params: '[library...]',
 

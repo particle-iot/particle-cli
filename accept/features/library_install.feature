@@ -1,6 +1,14 @@
 Feature: library install
 
 
+  Scenario: help does mention vendor
+    When I run particle "library install --help"
+    Then the output should not contain "--vendored"
+
+  Scenario: help does not mention adapter
+    When I run particle "library install --help"
+    Then the output should not contain "--adapter"
+
   Scenario: as a user I can install neopixel as a vendored library in an extended project
     Given an empty file named "project.properties"
     And an empty file named "src/hello.cpp"
