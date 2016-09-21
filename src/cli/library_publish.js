@@ -31,27 +31,15 @@ export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 		return this.argv.dryRun;
 	}
 
-	accessToken() {
-		return settings.access_token;
-	}
-
 	error(error) {
 		throw convertApiError(error);
 	}
 
-	fetchingLibrary(promise, name) {
-		return spin(promise, `Adding library ${chalk.green(name)}`);
-	}
-
-	addedLibrary(name, version) {
-		return Promise.resolve().then(() => log.success(`Added library ${chalk.green(name)} ${version} to project`));
-	}
-
-	validatingLibrary(directory, promise) {
+	validatingLibrary(promise, directory) {
 		return spin(promise, `Validating library at ${chalk.green(directory)}`);
 	}
 
-	publishingLibrary(library, promise) {
+	publishingLibrary(promise, library) {
 		return spin(promise, `Publishing library ${chalk.green(library.name)}`);
 	}
 

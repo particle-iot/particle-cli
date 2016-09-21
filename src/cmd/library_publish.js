@@ -21,10 +21,6 @@ export class LibraryPublishCommandSite extends CommandSite {
 		throw Error('not implemented');
 	}
 
-	accessToken() {
-		throw Error('not implemented');
-	}
-
 	error(err) {
 		throw err;
 	}
@@ -33,19 +29,23 @@ export class LibraryPublishCommandSite extends CommandSite {
 	 * Notification that the library directory is being checked. The library is validated and then loaded.
 	 * @param {string} directory
 	 */
-	validatingLibrary(directory) {
+	validatingLibrary(promise, directory) {
 
 	}
 
 	/**
 	 * Notification that library publishing is starting
-	 * @param {Library} library   The loaded library
 	 * @param {Promise} promise
+	 * @param {Library} library   The loaded library
 	 */
-	publishingLibrary(library, promise) {
+	publishingLibrary(promise, library) {
 
 	}
 
+	/**
+	 * Notification that the library has been successfully published.
+	 * @param {Library} library the library that was published.
+	 */
 	publishComplete(library) {
 
 	}
@@ -74,10 +74,10 @@ export class LibraryPublishCommand extends Command {
 		.then(dir => {
 			return Promise.resolve(site.dryRun())
 				.then(d => dryRun = d)
-				.then(() => site.accessToken())
-				.then(token => {
+				.then(() => site.apiClient())
+				.then(client => {
 					const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
-					return repo.publish(name, site.apiClient(), dryRun, events);
+					return repo.publish(name, client, dryRun, events);
 				});
 		});
 	}

@@ -12,6 +12,14 @@ Given(/^I run particle "([^"]*)" interactively$/) do |arg|
   step "I run `particle #{arg}` interactively"
 end
 
+Given(/^The particle library "([^"]*)" is removed$/) do |lib|
+  step "I delete the particle library \"#{lib}\""
+end
+
+When(/^I delete the particle library "([^"]*)"$/) do |lib|
+  step "I run particle \"library delete #{lib}\""
+end
+
 
 Given(/^I have installed the CLI$/) do
   # will take care of this later. For now, we assume the CLI has been installed locally using npm install
