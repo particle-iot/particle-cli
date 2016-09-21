@@ -11,6 +11,7 @@ import libraryMigrate from './library_migrate';
 import libraryInit from './library_init';
 import librarySearch from './library_search';
 import libraryPublish from './library_publish';
+import libraryDelete from './library_delete';
 import {buildAPIClient} from './library_search';
 
 //const ui = require('../cli/ui');
@@ -65,6 +66,7 @@ export default ({root, factory}) => {
 	libraryMigrate({lib, factory});
 	librarySearch({lib, factory, apiJS: api()});
 	libraryPublish({lib, factory, apiJS: api()});
+	libraryDelete({lib, factory, apiJS: api()});
 
 	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
 		options: {},
