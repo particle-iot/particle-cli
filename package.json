@@ -140,7 +140,9 @@
     "test": "mocha test/ test/oldcmd/ test/app test/cli test/integration --compilers js:babel-register",
     "compile": "babel src -d dist",
     "prepublish": "npm run compile",
-    "update-firmware-binaries": "node scripts/update-firmware-binaries.js"
+    "update-firmware-binaries": "node scripts/update-firmware-binaries.js",
+    "version": "npm run update-changelog",
+    "update-changelog": "VERSION=`node -p -e \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md"
   },
   "yargs": {
     "camel-case-expansion": false
