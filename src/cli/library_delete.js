@@ -1,4 +1,3 @@
-import settings from '../../settings';
 import {LibraryDeleteCommandSite, LibraryDeleteCommand} from '../cmd';
 import {spin} from '../app/ui';
 import log from '../app/log';
