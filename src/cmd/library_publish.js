@@ -21,6 +21,8 @@ export class LibraryPublishCommandSite extends CommandSite {
 		throw Error('not implemented');
 	}
 
+	// validationError(err) - optional method
+
 	error(err) {
 		throw err;
 	}
@@ -64,21 +66,31 @@ export class LibraryPublishCommand extends Command {
 	 */
 	run(state, site) {
 		const events = (event, ...args) => {
-			const fn = site[event] || (() => {});
+			const fn = site[event].bind(site) || (() => {});
 			fn(...args);
 		};
 
 		const name = '';
 		let dryRun = false;
+		let publishDir;
 		return Promise.resolve(site.libraryDirectory())
 		.then(dir => {
-			return Promise.resolve(site.dryRun())
-				.then(d => dryRun = d)
-				.then(() => site.apiClient())
-				.then(client => {
-					const repo = new FileSystemLibraryRepository(dir, FileSystemNamingStrategy.DIRECT);
-					return repo.publish(name, client, dryRun, events);
-				});
+			publishDir = dir;
+			return site.dryRun();
+		})
+		.then(d => dryRun = d)
+		.then(() => site.apiClient())
+		.then(client => {
+			const repo = new FileSystemLibraryRepository(publishDir, FileSystemNamingStrategy.DIRECT);
+			return repo.publish(name, client, dryRun, events);
+		})
+		.catch(err => {
+			if (err.validate && site.validationError) {
+				site.validationError(err);
+			}
+			else {
+				site.error(err);
+			}
 		});
 	}
 
