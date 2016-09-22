@@ -1092,8 +1092,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				continue;
 			}
 
-			if (filestats.size > settings.MAX_FILE_SIZE) {
-				console.log('Skipping ' + filename + " it's too big! " + stats.size);
+			if (!alwaysIncludeThisFile && filestats.size > settings.MAX_FILE_SIZE) {
+				console.log('Skipping ' + filename + " it's too big! " + filestats.size);
 				continue;
 			}
 			files.list.push(filename);
