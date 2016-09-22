@@ -44,7 +44,8 @@ describe('library init command', () => {
 			return expect(sut).to.be.ok;
 		});
 		
-		it('should configure and run the init generator', () => {
+		it('should configure and run the init generator', function doit() {
+			this.timeout(18*1000);
 			const site = {};
 			const args = ['args', 'args2'];
 			const options = { a:1, b:2, c:3 };
