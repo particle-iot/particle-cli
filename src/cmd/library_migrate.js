@@ -75,10 +75,9 @@ class AbstractLibraryMigrateCommand extends Command {
 }
 
 function resultError(promise) {
-	return promise.then(
-		result => [result, null],
-		err => [null, err]
-	);
+	return promise
+		.then(result => [result, null])
+		.catch(err => [null, err]);
 }
 
 export class LibraryMigrateTestCommand extends AbstractLibraryMigrateCommand {
