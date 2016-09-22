@@ -97,4 +97,25 @@ describe('project properties', () => {
 		});
 
 	});
+
+	describe('dependencies', () => {
+
+		it('retrieves an empty object when there are no dependencies', () => {
+			expect(sut.groups.dependencies).to.be.undefined;
+			expect(sut.dependencies()).to.be.deep.equal({});
+		});
+
+		it('retrieves the dependencies group when defined', () => {
+			sut.parse(
+				`
+				dependencies.lib1=0.1.2
+				dependencies.lib2=1.2.3
+			`);
+			const expected = {
+				lib1: '0.1.2',
+				lib2: '1.2.3'
+			};
+			expect(sut.dependencies()).to.be.deep.equal(expected);
+		});
+	});
 });
