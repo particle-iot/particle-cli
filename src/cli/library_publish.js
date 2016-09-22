@@ -1,10 +1,10 @@
-import {LibraryPublishCommand, LibraryPublishCommandSite} from '../cmd/library_publish';
+import {LibraryPublishCommand, LibraryPublishCommandSite} from '../cmd';
 import {convertApiError} from '../cmd/api';
-const settings = require('../../settings');
-
 import chalk from 'chalk';
 import log from '../app/log';
 import {spin} from '../app/ui';
+const settings = require('../../settings');
+
 
 export function buildAPIClient(apiJS) {
 	return apiJS.client({ auth: settings.access_token });

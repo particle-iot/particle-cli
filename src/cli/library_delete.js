@@ -1,5 +1,5 @@
 import settings from '../../settings';
-import {LibraryDeleteCommandSite, LibraryDeleteCommand} from '../cmd/library_delete';
+import {LibraryDeleteCommandSite, LibraryDeleteCommand} from '../cmd';
 import {spin} from '../app/ui';
 import log from '../app/log';
 import chalk from 'chalk';

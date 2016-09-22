@@ -1,4 +1,4 @@
-import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd/library_install';
+import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd';
 import {convertApiError} from '../cmd/api';
 const settings = require('../../settings');
 

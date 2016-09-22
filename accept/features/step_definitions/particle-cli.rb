@@ -20,6 +20,10 @@ When(/^I delete the particle library "([^"]*)"$/) do |lib|
   step "I run particle \"library delete #{lib}\""
 end
 
+Given(/^I copy the library resource "([^"]*)" to "([^"]*)"$/) do |resource, target|
+  step "I run `bash ../../bin/copyLibraryResource.sh #{resource} #{target}`"
+  step 'the exit status should be 0'
+end
 
 Given(/^I have installed the CLI$/) do
   # will take care of this later. For now, we assume the CLI has been installed locally using npm install

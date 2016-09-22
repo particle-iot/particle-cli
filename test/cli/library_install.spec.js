@@ -20,7 +20,7 @@
 import {expect} from '../test-setup';
 const path = require('path');
 import libraryInstall, {CLILibraryInstallCommandSite} from '../../src/cli/library_install';
-import {LibraryInstallCommand} from '../../src/cmd/library_install';
+import {LibraryInstallCommand} from '../../src/cmd';
 import * as cli from '../../src/app/nested-yargs';
 
 describe('library install command', () => {

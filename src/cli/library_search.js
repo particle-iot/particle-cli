@@ -1,5 +1,5 @@
 import settings from '../../settings';
-import {LibrarySearchCommandSite, LibrarySearchCommand} from '../cmd/library_search';
+import {LibrarySearchCommandSite, LibrarySearchCommand} from '../cmd';
 import {spin} from '../app/ui';
 import log from '../app/log';
 import chalk from 'chalk';

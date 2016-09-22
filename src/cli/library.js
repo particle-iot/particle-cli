@@ -1,4 +1,4 @@
-import {LibraryAddCommand, LibraryAddCommandSite} from '../cmd/library';
+import {LibraryAddCommand, LibraryAddCommandSite} from '../cmd';
 import ParticleApi from '../cmd/api';
 import settings from '../../settings';
 

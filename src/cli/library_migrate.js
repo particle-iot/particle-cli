@@ -1,4 +1,4 @@
-import {LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand} from '../cmd/library_migrate';
+import {LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand} from '../cmd';
 
 export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite {
 	constructor(argv, defaultDir) {

@@ -20,11 +20,12 @@
 
 import {expect} from '../test-setup';
 const path = require('path');
-const mockfs = require('mock-fs');
 const fs = require('fs');
+const mockfs = require('mock-fs');
 
 import * as cli from '../../src/app/nested-yargs';
 import libraryInit from '../../src/cli/library_init';
+import { LibraryInitCommand } from 'particle-commands';
 
 /**
  * Synchronously reads a directory from the real filesystem into the format as expected by mock-fs.
@@ -65,23 +66,22 @@ function getFiles (dir, files_){
 	return files_;
 }
 
-/**
- * The location of the generator resources. This is used to copy the resources to the mock fs
- * for the test.
- */
-const initResources = require.resolve('particle-cli-library-manager/dist/init');
-const initFixture = mirrorDir(path.join(initResources, '..', 'templates'));
 
 describe('library init', () => {
 
-	before(done => {
+	/**
+	 * The location of the generator resources. This is used to copy the resources to the mock fs
+	 * for the test.
+	 */
+	before(function doit() {
+		this.timeout(10*1000);
+		const initResources = new LibraryInitCommand().generatorClass().sources;
+		const initFixture = mirrorDir(initResources);
 		mockfs(initFixture);
-		done();
 	});
 
-	after(done => {
+	after(() => {
 		mockfs.restore();
-		done();
 	});
 
 	it('can run library init without prompts', function doit() {

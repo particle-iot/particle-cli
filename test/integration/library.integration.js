@@ -19,15 +19,13 @@
  */
 
 import {expect, sinon} from '../test-setup';
-import {LibraryAddCommand} from "../../src/cmd/library";
-import {LibraryAddCommandSite} from "../../src/cmd/library";
+import {LibraryAddCommand, LibraryAddCommandSite} from "../../src/cmd";
 import settings from "../../settings";
 import {it_has_access_token, fetch_access_token} from './access_token';
 const path = require('path');
 import createLibraryCommand from '../../src/cli/library';
 import * as factory from '../../src/app/nested-yargs';
 import { resourcesDir } from 'particle-cli-library-manager';
-
 import ParticleApi from '../../src/cmd/api';
 
 describe('library', () => {
