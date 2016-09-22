@@ -68,7 +68,7 @@
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.2.0",
     "particle-api-js": "^6.0.6",
-    "particle-commands": "^0.1.1",
+    "particle-commands": "^0.1.4",
     "request": "^2.46.0",
     "semver": "^5.1.0",
     "serialport": "^3.1.1",
