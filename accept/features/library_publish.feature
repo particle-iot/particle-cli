@@ -19,8 +19,7 @@ Feature: library publish
     Given I use the fixture named "library/publish/invalid/name"
     When I run particle "library publish"
     Then the output should contain "Library is not valid"
-# todo add specific validation error
-#    And the output should contain "name"
+    And the output should contain "name"
     And the exit status should not be 0
 
   Scenario: publishing in a directory that contains a valid library works first time
