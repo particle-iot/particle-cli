@@ -19,7 +19,7 @@
 
 import {sinon, expect} from '../test-setup';
 const path = require('path');
-import { LibraryInitGenerator } from 'particle-cli-library-manager';
+import { LibraryInitGenerator } from 'particle-library-manager';
 import { CLILibraryInitCommandSite } from '../../src/cli/library_init';
 import { LibraryInitCommand } from '../../src/cmd';
 

@@ -25,7 +25,7 @@ import {it_has_access_token, fetch_access_token} from './access_token';
 const path = require('path');
 import createLibraryCommand from '../../src/cli/library';
 import * as factory from '../../src/app/nested-yargs';
-import { resourcesDir } from 'particle-cli-library-manager';
+import { resourcesDir } from 'particle-library-manager';
 import ParticleApi from '../../src/cmd/api';
 
 describe('library', () => {

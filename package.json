@@ -68,7 +68,7 @@
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.2.0",
     "particle-api-js": "^6.0.6",
-    "particle-commands": "^0.1.4",
+    "particle-commands": "^0.1.5",
     "request": "^2.46.0",
     "semver": "^5.1.0",
     "serialport": "^3.1.1",
@@ -76,9 +76,7 @@
     "temp": "^0.8.3",
     "when": "^3.7.2",
     "xtend": "^4.0.0",
-    "yargs": "^5.0.0",
-    "yeoman-environment": "^1.6.3",
-    "yeoman-generator": "^0.24.1"
+    "yargs": "^5.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.10.1",
@@ -98,7 +96,6 @@
     "istanbul": "^0.3.22",
     "mocha": "^3.0.2",
     "mock-fs": "^3.11.0",
-    "particle-cli-library-manager": "0.0.4-develop.5",
     "proxyquire": "^1.6.0",
     "rimraf-promise": "^2.0.0",
     "should": "^7.0.2",

@@ -7,7 +7,7 @@ Feature: library publish
     And the exit status should not be 0
 
   Scenario: publishing a v1 library
-    Given I copy the directory "../../../node_modules/particle-cli-library-manager/resources/libraries" to "libraries"
+    Given I copy the directory "../../../node_modules/particle-library-manager/resources/libraries" to "libraries"
     And a directory named "libraries/library-v1" should exist
     When I cd to "libraries/library-v1"
     And I run particle "library publish"

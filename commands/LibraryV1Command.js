@@ -39,7 +39,7 @@ var inquirer = require('inquirer');
 var output = require('../oldlib/output.js');
 
 function libmgr(name) {
-	return 'particle-cli-library-manager';
+	return 'particle-library-manager';
 	// used for local development
 	//return '../../cli-library-manager/lib/src/'+name;
 }
