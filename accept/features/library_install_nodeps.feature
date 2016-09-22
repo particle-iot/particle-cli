@@ -51,3 +51,5 @@ Feature: library install
     And the file "lib/neopixel/src/neopixel.cpp" should exist
     And the file "lib/neopixel/src/neopixel.h" should exist
     And the exit status should be 0
+
+

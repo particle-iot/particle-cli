@@ -84,16 +84,17 @@ export class LibraryInstallCommand extends Command {
 		let result;
 		const project = new ProjectProperties(targetDir);
 		const cloudRepo = new CloudLibraryRepository({client});
-
+		const context = {};
 		if (libName) {
-			result = this.installSingleLib(site, cloudRepo, site.isVendored(), libName, undefined, targetDir, project);
+			result = this.installSingleLib(site, cloudRepo, site.isVendored(), libName, undefined, targetDir, project, context);
 		} else {
-			result = this.installProjectLibs(site, cloudRepo, site.isVendored(), targetDir, project);
+			result = this.installProjectLibs(site, cloudRepo, site.isVendored(), targetDir, project, context);
 		}
+		result = result .catch(err => site.error(err));
 		return result;
 	}
 
-	installProjectLibs(site, cloudRepo, vendored, projectDir, project) {
+	installProjectLibs(site, cloudRepo, vendored, projectDir, project, context) {
 		// read the project
 		return project.load()
 			.then(() => {
@@ -102,9 +103,59 @@ export class LibraryInstallCommand extends Command {
 				for (let d in deps) {
 					const libName = d;
 					const libVersion = deps[d];
-					install.push(this.installSingleLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project));
+					install.push(this.installSingleLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project, context));
 				}
 				return Promise.all(install);
+			});
+	}
+
+	_installLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project, context) {
+		context[libName] = libVersion || 'latest';
+
+		const libDir = project.libraryDirectory(vendored, libName);
+		return site.notifyCheckingLibrary(libName)
+			.then(() => {
+				// todo - this should use the correct version too
+				return cloudRepo.fetch(libName);
+			})
+			.then((lib) => {
+				return site.notifyFetchingLibrary(lib.metadata, projectDir)
+					.then(() => lib.copyTo(libDir))
+					.then(() => {
+						if (site.isAdaptersRequired()) {
+							return buildAdapters(libDir, lib.name);
+						}
+					})
+					.then(() => site.notifyInstalledLibrary(lib.metadata, projectDir))
+					.then(() => this._installDependents(site, cloudRepo, vendored, projectDir, project, context, libDir));
+			})
+	}
+
+	/**
+	 * Determines the dependent libraries of a given installed library and
+	 * @param site
+	 * @param cloudRepo
+	 * @param vendored
+	 * @param projectDir
+	 * @param project
+	 * @param context
+	 * @param libDir
+	 * @private
+	 */
+	_installDependents(site, cloudRepo, vendored, projectDir, project, context, libDir) {
+		const libraryProperties = new ProjectProperties(libDir, {filename:'library.properties'});
+		return libraryProperties.load()
+			.then(() => {
+				const resolve = [];
+				const dependencies = libraryProperties.dependencies();
+				for (let dependencyName in dependencies) {
+					const dependencyVersion = dependencies[dependencyName];
+					if (!context[dependencyName]) {
+						context[dependencyName] = dependencyVersion;
+						resolve.push(this._installLib(site, cloudRepo, vendored, dependencyName, dependencyVersion, projectDir, project, context))
+					}
+				}
+				return Promise.all(resolve);
 			});
 	}
 
@@ -120,28 +171,13 @@ export class LibraryInstallCommand extends Command {
 	 * @param {ProjectProperties}   project       the project to update
      * @returns {Promise} to install the library.
 	 */
-	installSingleLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project) {
-		const libDir = project.libraryDirectory(vendored, libName);
+	installSingleLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project, context) {
 		return project.projectLayout()
 			.then((layout) => {
 				if (layout!==extended) {
 					return site.notifyIncorrectLayout(layout, extended, libName, projectDir);
 				} else {
-					return site.notifyCheckingLibrary(libName)
-						.then(() => {
-							return cloudRepo.fetch(libName);
-						})
-						.then((lib) => {
-							return site.notifyFetchingLibrary(lib.metadata, projectDir)
-								.then(() => lib.copyTo(libDir))
-								.then(() => {
-									if (site.isAdaptersRequired()) {
-										return buildAdapters(libDir, lib.name);
-									}
-								})
-								.then(() => site.notifyInstalledLibrary(lib.metadata, projectDir));
-						})
-						.catch(err => site.error(err));
+					return this._installLib(site, cloudRepo, vendored, libName, libVersion, projectDir, project, context);
 				}
 			});
 	}
