@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased - 22 Sept 2016
+
+* Library commands. Try `particle library`
+
 ## 1.15.0 - 7 July 2016
 
 ### Updates
