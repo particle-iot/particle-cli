@@ -84,12 +84,13 @@ describe('library init', () => {
 		done();
 	});
 
-	it('can run library init without prompts', () => {
+	it('can run library init without prompts', function doit() {
+		this.timeout(10*1000);
 		const app = cli.createAppCategory();
 		const lib = cli.createCategory(app, 'library');
 		libraryInit({lib, factory:cli});
 		const argv = cli.parse(app, ['library', 'init', '--name', 'foobar',
-			'--version=123', '--author=mrbig']);
+			'--version=1.2.3', '--author=mrbig']);
 		expect(argv.clicommand).to.be.ok;
 
 		const result = argv.clicommand.exec(argv).then(() => {
