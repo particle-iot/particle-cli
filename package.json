@@ -106,7 +106,8 @@
     "sinon-chai": "^2.8.0",
     "testdouble": "^1.6.0",
     "testdouble-chai": "^0.2.2",
-    "tmp": "0.0.28"
+    "tmp": "0.0.28",
+    "yeoman-generator": "^0.24.1"
   },
   "engines": {
     "node": ">=0.10.40"
