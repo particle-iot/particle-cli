@@ -6,6 +6,10 @@
 
 * Include binaries for firmware 0.5.3
 
+### Fixes
+
+* Fix a crash at startup when running without a tty
+
 ## 1.16.0 - 5 August 2016
 
 ### Updates
