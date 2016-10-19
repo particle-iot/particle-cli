@@ -7,11 +7,11 @@ Feature: installation of libraries with dependencies
   Scenario: ensure libraries are published
     Given The particle library "test-library-transitive-1" is removed
 
-    Given I copy the library resource "publish/transitive" to "."
+    Given I copy the library resource "contribute/transitive" to "."
     And a directory named "transitive/trans1" should exist
     And I cd to "transitive/trans1"
-    And I run particle "library publish"
-    Then the output should contain "successfully published"
+    And I run particle "library contribute"
+    Then the output should contain "successfully contributed"
 
   Scenario: As a user, I can install a library with dependencies
     When I run particle "library install --vendored test-library-transitive-1"
