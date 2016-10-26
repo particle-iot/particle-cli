@@ -213,7 +213,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 								destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
 								break;
 							case 4:
-								destSegment = info.prefixInfo.moduleIndex === 1 ? 'systemFirmwareOne' : 'systemFirmwareTwo';
+								destSegment = self.systemModuleIndexToString[info.prefixInfo.moduleIndex];
 								break;
 							case 5:
 								// use existing destSegment for userFirmware/factoryReset
@@ -242,6 +242,12 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 			console.error('\nError writing firmware...' + err + '\n');
 			return when.reject();
 		});
+	},
+
+	systemModuleIndexToString: {
+		1: 'systemFirmwareOne',
+		2: 'systemFirmwareTwo',
+		3: 'systemFirmwareThree'
 	}
 });
 
