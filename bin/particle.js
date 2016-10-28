@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /* eslint no-var: 0 */
 global.verboseLevel = 1;
+require('babel-polyfill');
 var app = appForEnvironment();
 app.default.run(process.argv);
 

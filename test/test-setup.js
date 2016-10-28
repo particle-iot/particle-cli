@@ -1,7 +1,9 @@
 // Set up the Mocha test framework with the Chai assertion library and
 // the testdouble library for mocks and stubs (previously Sinon mock library)
 
-import 'babel-polyfill';
+if (!global._babelPolyfill) {
+	require('babel-polyfill');
+}
 import chai from 'chai';
 import td from 'testdouble';
 import tdChai  from "testdouble-chai";

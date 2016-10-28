@@ -114,7 +114,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		const lines = this.commandText(name, subcmd, command);
+		var lines = this.commandText(name, subcmd, command);
 		console.log(lines.join('\n'));
 	},
 

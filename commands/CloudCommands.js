@@ -679,7 +679,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			//prompt for creds
 			function () {
 				if (password) {
-					return {username, password};
+					return {username: username, password: password};
 				}
 				return prompts.getCredentials(username, password);
 			},
