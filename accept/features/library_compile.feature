@@ -25,3 +25,10 @@ Feature: compile supports libraries v2
     When I run particle "compile photon"
     Then the exit status should be 0
     And the output should contain "Memory use"
+
+  Scenario: simple library project
+    Given I use the fixture named "projects/compile/simple"
+    And I run particle "library add neopixel"
+    When I run particle "compile photon"
+    Then the exit status should be 0
+    And the output should contain "Memory use"
