@@ -50,7 +50,7 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 
 	notifyFetchingLibrary(lib, targetDir) {
-		return this.promiseLog(`Installing library '${lib.name} ${lib.version}' to '${targetDir}' ...`);
+		return this.promiseLog(`Installing library '${lib.name} ${lib.version}' to project '${targetDir}' ...`);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
@@ -62,13 +62,20 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 }
 
+function LibraryInstallHandler(argv, apiJS) {
+	const site = new CLILibraryInstallCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
+	const cmd = new LibraryInstallCommand();
+	return site.run(cmd);
+}
+
 export default ({lib, factory, apiJS}) => {
 	factory.createCommand(lib, 'install', 'installs a library', {
 		options: {
-			'vendored': {
+			'copy': {
 				required: false,
 				boolean: true,
-				description: 'install the library as the vendored library in the given directory.'
+				alias: 'vendored',
+				description: 'install the library by copying the library sources into the project\'s lib folder.'
 			},
 			'adapter': {        // hidden
 				required: false,
@@ -82,10 +89,17 @@ export default ({lib, factory, apiJS}) => {
 			}
 		},
 		params: '[name]',
-		handler: function LibraryInstallHandler(argv) {
-			const site = new CLILibraryInstallCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
-			const cmd = new LibraryInstallCommand();
-			return site.run(cmd);
+		handler: (argv) => LibraryInstallHandler(argv, apiJS),
+	});
+
+	factory.createCommand(lib, 'copy', 'copies a library to the current project', {
+		options: {},
+		params: '[name]',
+		handler: function LibraryCopyHandler(argv) {
+			argv.vendored = true;
+			argv.adapter = false;
+			argv.confirm = false;
+			return LibraryInstallHandler(argv, apiJS);
 		}
 	});
 };

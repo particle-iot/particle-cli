@@ -262,17 +262,17 @@
     },
 
     "library": {
-        "_commands": [ "add", "install", "migrate", "init" ],
+        "_commands": [ "add", "copy",  "init", "migrate"],
 
-        "install": {
-            "maps" : [ "library", "install" ],
-            "usage": "particle library install [--vendored] [name]",
-            "does": "Installs a vendored library to the project in the current directory"
-        },
         "add": {
             "maps" : [ "library", "add" ],
             "usage": "particle library add [name]",
             "does": "Adds a library to the project in the current directory"
+        },
+        "copy": {
+            "maps" : [ "library", "copy" ],
+            "usage": "particle library copy [name]",
+            "does": "Copies a library into the project in the current directory"
         },
         "init": {
             "maps" : [ "library", "init" ],

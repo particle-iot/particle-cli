@@ -14,7 +14,7 @@ Feature: installation of libraries with dependencies
     Then the output should contain "successfully contributed"
 
   Scenario: As a user, I can install a library with dependencies
-    When I run particle "library install --vendored test-library-transitive-1"
+    When I run particle "library copy test-library-transitive-1"
     Then the file "project.properties" should not contain "dependencies"
     And the file named "lib/test-library-transitive-1/src/test-library-transitive-1.cpp" should exist
     And the file named "lib/neopixel/src/neopixel.cpp" should exist
