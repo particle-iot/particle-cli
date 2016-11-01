@@ -41,7 +41,7 @@ export class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 
 
 export default ({lib, factory}) => {
-	factory.createCommand(lib, 'init', 'Initializes a new library in the specified or current directory..', {
+	factory.createCommand(lib, 'init', 'Initializes a new library in the specified or current directory.', {
 		options: {
 			'name': {
 				required: false,
