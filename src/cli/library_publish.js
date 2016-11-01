@@ -1,5 +1,4 @@
 import {LibraryPublishCommand, LibraryPublishCommandSite} from '../cmd';
-import {convertApiError} from '../cmd/api';
 import chalk from 'chalk';
 import log from '../app/log';
 import {spin} from '../app/ui';

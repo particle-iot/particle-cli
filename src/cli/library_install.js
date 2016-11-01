@@ -62,7 +62,7 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 }
 
-function LibraryInstallHandler(argv, apiJS) {
+function libraryInstallHandler(argv, apiJS) {
 	const site = new CLILibraryInstallCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryInstallCommand();
 	return site.run(cmd);
@@ -89,7 +89,7 @@ export default ({lib, factory, apiJS}) => {
 			}
 		},
 		params: '[name]',
-		handler: (argv) => LibraryInstallHandler(argv, apiJS),
+		handler: (argv) => libraryInstallHandler(argv, apiJS),
 	});
 
 	factory.createCommand(lib, 'copy', 'copies a library to the current project', {
@@ -99,7 +99,7 @@ export default ({lib, factory, apiJS}) => {
 			argv.vendored = true;
 			argv.adapter = false;
 			argv.confirm = false;
-			return LibraryInstallHandler(argv, apiJS);
+			return libraryInstallHandler(argv, apiJS);
 		}
 	});
 };
