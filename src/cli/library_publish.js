@@ -3,63 +3,45 @@ import {convertApiError} from '../cmd/api';
 import chalk from 'chalk';
 import log from '../app/log';
 import {spin} from '../app/ui';
-const settings = require('../../settings');
-
-
-export function buildAPIClient(apiJS) {
-	return apiJS.client({ auth: settings.access_token });
-}
+import {buildAPIClient} from './library_contribute';
 
 export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 
-	constructor(argv, dir, apiClient) {
+	constructor(argv, apiClient) {
 		super();
 		this.argv = argv;
-		this.dir = dir;
+		this.ident = argv.params.name;
 		this._apiClient = apiClient;
 	}
 
-	libraryDirectory() {
-		return this.dir;
+	libraryIdent() {
+		return this.ident;
 	}
 
 	apiClient() {
 		return this._apiClient;
 	}
 
-	dryRun() {
-		return this.argv.dryRun;
-	}
-
 	error(error) {
-		throw convertApiError(error);
+		throw error;
 	}
 
-	validatingLibrary(promise, directory) {
-		return spin(promise, `Validating library at ${chalk.green(directory)}`);
+	publishingLibrary(promise, ident) {
+		return spin(promise, `Publishing library ${chalk.green(ident)}`);
 	}
 
-	publishingLibrary(promise, library) {
-		return spin(promise, `Publishing library ${chalk.green(library.name)}`);
-	}
-
-	publishComplete(library) {
-		return log.success(`Library ${chalk.green(library.name)} was successfully published.\n` +
-		`Add it to your project with ${chalk.green('particle library add ' + library.name)}`);
+	publishLibraryComplete(library) {
+		return log.success(`Library ${chalk.green(library.name)} was successfully published.`);
 	}
 }
 
 export default ({lib, factory, apiJS}) => {
 	factory.createCommand(lib, 'publish', 'publishes a library', {
-		options: {
-			'dryRun': {
-				required: false,
-				boolean: true,
-				description: 'perform validation steps but don\'t actually publish the library.'
-			}
-		},
+		options: {},
+		params: '<name>',
+
 		handler: function LibraryPublishHandler(argv) {
-			const site = new CLILibraryPublishCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
+			const site = new CLILibraryPublishCommandSite(argv, buildAPIClient(apiJS));
 			const cmd = new LibraryPublishCommand();
 			return site.run(cmd);
 		}

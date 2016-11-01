@@ -74,7 +74,7 @@ describe('library init', () => {
 	 * for the test.
 	 */
 	before(function doit() {
-		this.timeout(10*1000);
+		this.timeout(20*1000);
 		const initResources = new LibraryInitCommand().generatorClass().sources;
 		const initFixture = mirrorDir(initResources);
 		mockfs(initFixture);
