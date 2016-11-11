@@ -56,6 +56,8 @@ var PLATFORMS = extend(utilities.knownPlatforms(), {
 	'c': 0,
 	'p': 6,
 	'e': 10,
+	'pi': 31,
+	'raspberry-pi': 31,
 	'o': 82,
 	'd': 88,
 	'b': 103,
@@ -958,6 +960,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						break;
 					case 10:
 						deviceType = ' (Electron)';
+						break;
+					case 31:
+						deviceType = ' (Raspberry Pi)';
 						break;
 				}
 
