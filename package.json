@@ -1,7 +1,7 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "1.17.0",
+  "version": "1.17.1",
   "author": "David Middlecamp",
   "repository": {
     "type": "git",
@@ -45,7 +45,6 @@
     "update-firmware-binaries": "node scripts/update-firmware-binaries.js",
     "version": "npm run update-changelog",
     "update-changelog": "VERSION=`node -p -e \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md"
-    
   },
   "contributors": [
     {

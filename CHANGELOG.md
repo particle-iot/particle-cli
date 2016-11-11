@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.17.1 - 11 November 2016
+
+* Add support for Raspberry Pi
+
 ## 1.17.0 - 30 September 2016
 
 ### Updates
