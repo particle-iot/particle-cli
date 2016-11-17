@@ -42,7 +42,7 @@ var settings = {
 	useSudoForDfu: false,
 	// TODO set to false once we give flags to control this
 	verboseOutput: true,
-	disableUpdateCheck: false,
+	disableUpdateCheck: envValueBoolean('PARTICLE_DISABLE_UPDATE', false),
 	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours
 	updateCheckTimeout: 3000,
 
@@ -99,6 +99,22 @@ var settings = {
 	},
 	commandMappings: path.join(__dirname, 'mappings.json')
 };
+
+function envValue(varName, defaultValue) {
+	var value = process.env[varName];
+	return (typeof value === 'undefined') ? defaultValue : value;
+}
+
+function envValueBoolean(varName, defaultValue) {
+	var value = envValue(varName);
+	if (value === 'true' || value === 'TRUE' || value === '1') {
+		return true;
+	} else if (value === 'false' || value === 'FALSE' || value === '0') {
+		return false;
+	} else {
+		return defaultValue;
+	}
+}
 
 //fix the paths on the known apps mappings
 Object.keys(specs).forEach(function (id) {
