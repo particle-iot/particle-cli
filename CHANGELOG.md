@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.17.2 - 17 November 2016
+
+* Disable update check through environment
+
 ## 1.17.1 - 11 November 2016
 
 * Add support for Raspberry Pi
