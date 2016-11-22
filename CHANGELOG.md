@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.18.0 - 22 November 2016
+
+* Include binaries for firmware 0.6.0
+
 ## 1.17.2 - 17 November 2016
 
 * Disable update check through environment
