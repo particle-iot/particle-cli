@@ -93,9 +93,10 @@ var settings = {
 			systemFirmwareTwo: 'system-part2-0.6.0-p1.bin'
 		},
 		'2b04:d00a': {
-			systemFirmwareOne:   'system-part1-0.6.0-electron.bin',
-			systemFirmwareTwo:   'system-part2-0.6.0-electron.bin',
-			systemFirmwareThree: 'system-part3-0.6.0-electron.bin'
+			// The bin files MUST be in this order to be flashed to the correct memory locations
+			systemFirmwareOne:   'system-part2-0.6.0-electron.bin',
+			systemFirmwareTwo:   'system-part3-0.6.0-electron.bin',
+			systemFirmwareThree: 'system-part1-0.6.0-electron.bin'
 		}
 	},
 	commandMappings: path.join(__dirname, 'mappings.json')
