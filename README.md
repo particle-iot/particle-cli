@@ -654,3 +654,36 @@ void handlerFunction(const char *name, const char *data) {
 }
 ```
 More examples and information about **webhooks** can be found here: https://docs.particle.io/guide/tools-and-features/webhooks/
+
+# Development
+
+## Releasing a new version
+
+- `npm version <major | minor | patch>`
+
+This increments the major, minor or patch version respectively. Before
+the command finishes, update `CHANGELOG.md`.
+
+- `git push && git push --tag`
+
+- `npm publish`
+
+- Create a release on GitHub with the notes from the `CHANGELOG.md`
+
+## Updating system firmware
+
+- `npm run update-firmware-binaries <version>`
+  where `<version>` is the newly released system firmware version like 0.6.0
+
+- Test on each platform by doing
+```
+# Check old firmware version
+bin/particle.js serial inspect
+# Flash new system firmware
+bin/particle.js update
+# Verify new firmware version
+bin/particle.js serial inspect
+```
+
+- Commit and release a new CLI version.
+
