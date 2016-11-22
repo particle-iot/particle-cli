@@ -46,8 +46,8 @@ var settings = {
 	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours
 	updateCheckTimeout: 3000,
 
-	//2 megs -- this constant here is arbitrary
-	MAX_FILE_SIZE: 1024 * 1024 * 2,
+	//10 megs -- this constant here is arbitrary
+	MAX_FILE_SIZE: 1024 * 1024 * 10,
 
 	overridesFile: null,
 	wirelessSetupFilter: /^Photon-.*$/,
