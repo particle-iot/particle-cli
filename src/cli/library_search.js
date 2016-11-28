@@ -1,13 +1,8 @@
-import settings from '../../settings';
 import {LibrarySearchCommandSite, LibrarySearchCommand} from '../cmd';
 import {spin} from '../app/ui';
 import log from '../app/log';
 import chalk from 'chalk';
-
-export function buildAPIClient(apiJS) {
-	return apiJS.client({ auth: settings.access_token });
-}
-
+import {buildAPIClient} from './apiclient';
 
 export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 

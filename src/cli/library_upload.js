@@ -3,12 +3,6 @@ import {convertApiError} from '../cmd/api';
 import chalk from 'chalk';
 import log from '../app/log';
 import {spin} from '../app/ui';
-const settings = require('../../settings');
-
-
-export function buildAPIClient(apiJS) {
-	return apiJS.client({ auth: settings.access_token });
-}
 
 export class CLILibraryContributeCommandSite extends LibraryContributeCommandSite {
 
