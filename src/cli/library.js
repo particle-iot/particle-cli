@@ -9,13 +9,12 @@ import {spin} from '../app/ui';
 import libraryInstall from './library_install';
 import libraryMigrate from './library_migrate';
 import libraryInit from './library_init';
+import libraryList from './library_list';
 import librarySearch from './library_search';
 import libraryContribute from './library_upload';
 import libraryPublish from './library_publish';
 import libraryDelete from './library_delete';
 import {buildAPIClient} from './library_search';
-
-//const ui = require('../cli/ui');
 
 function api() {
 	if (!api._instance) {
@@ -64,6 +63,7 @@ export default ({root, factory}) => {
 
 	libraryInit({root, lib, factory});
 	libraryInstall({lib, factory, apiJS: api()});
+	libraryList({lib, factory, apiJS: api()});
 	libraryMigrate({lib, factory});
 	librarySearch({lib, factory, apiJS: api()});
 	libraryContribute({lib, factory, apiJS: api()});
