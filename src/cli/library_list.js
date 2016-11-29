@@ -81,12 +81,11 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 			}
 		}
 		else {
-			console.log(chalk.grey('   No libraries to show in this section.'));
+			console.log(chalk.grey('No libraries to show in this section.'));
 		}
 	}
 
 	printLibrary(section, library) {
-		console.log(chalk.blue(library.name)+' '+chalk.grey(library.version));
 		let badges = [];
 		if (library.verified) {
 			badges.push(chalk.green('[verified] '));
@@ -96,7 +95,8 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		}
 		const badgesText = badges.join('');
 		const defaultSentence = 'no description given';
-		console.log(`   ${badgesText}${library.sentence || defaultSentence}`);
+		console.log(chalk.blue(library.name)+' '+chalk.grey(library.installs || 0)+' '+ `${badgesText}${library.sentence || defaultSentence}`);
+		//console.log(` `);
 	}
 }
 
