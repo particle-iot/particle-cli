@@ -6,6 +6,7 @@ import help from './help';
 
 import echo from './echo';
 import library from './library';
+import project from './project';
 
 /**
  * The default function export from this module registers all the available commands.
@@ -25,6 +26,7 @@ export default (context) => {
 	help(context);
 	echo(context);
 	library(context);
+	project(context);
 	// disable these for now until we have acceptance tests in place
 	// cloud(app, cli);
 	// keys(app, cli);
