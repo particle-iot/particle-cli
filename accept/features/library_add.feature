@@ -11,12 +11,12 @@ Feature: library add
     Then the file "project.properties" should match /dependencies.neopixel=((\d+)\.)?((\d+)\.)?(\d+)/
     And the exit status should be 0
 
-    # todo - should this really just go ahead and add project.properties?
   Scenario: adding a library to a legacy project
     Given I use the fixture named "projects/legacy"
     When I run particle "library add neopixel@0.0.10"
-    Then the file "project.properties" should exist
-    And the exit status should be 0
+    Then the file "project.properties" should not exist
+    And the output should contain "not found"
+    And the exit status should not be 0
 
   Scenario: adding a library to a non-writable project
     Given an empty file named "project.properties" with mode "0444"
@@ -34,3 +34,11 @@ Feature: library add
     When I run particle "library add"
     Then the output should contain "Usage: library add [options] <name>"
     # todo - also show command description "Add a library to a project"??
+
+  Scenario: adding a library to a library project
+    Given I use the fixture named "library/contribute/valid/0.0.1"
+    When I run particle "library add neopixel@0.0.10"
+    Then the file "library.properties" should exist
+    Then the file "library.properties" should match /dependencies.neopixel=((\d+)\.)?((\d+)\.)?(\d+)/
+    And the exit status should be 0
+
