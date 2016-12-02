@@ -10,7 +10,7 @@ import libraryInstall from './library_install';
 import libraryMigrate from './library_migrate';
 import libraryInit from './library_init';
 import librarySearch from './library_search';
-import libraryContribute from './library_contribute';
+import libraryContribute from './library_upload';
 import libraryPublish from './library_publish';
 import libraryDelete from './library_delete';
 import {buildAPIClient} from './library_search';
