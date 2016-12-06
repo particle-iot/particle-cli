@@ -37,6 +37,10 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 		return this.dir;
 	}
 
+	homePathOverride() {
+		return this.argv.dest;
+	}
+
 	error(error) {
 		throw convertApiError(error);
 	}
@@ -69,7 +73,7 @@ function libraryInstallHandler(argv, apiJS) {
 }
 
 export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'install', 'installs a library', {
+	factory.createCommand(lib, 'install', false, {
 		options: {
 			'copy': {
 				required: false,
@@ -86,6 +90,11 @@ export default ({lib, factory, apiJS}) => {
 				required: false,
 				boolean: true,
 				alias: 'y'
+			},
+			'dest': {
+				required: false,
+				boolean: false,
+				description: 'the directory to install to'
 			}
 		},
 		params: '[name]',
