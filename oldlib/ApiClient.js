@@ -505,17 +505,31 @@ ApiClient.prototype = {
 
 	_addFilesToCompile: function (r, files, targetVersion, platform_id) {
 		var form = r.form();
-		for (var i = 0, n = files.list.length; i < n; i++) {
-			var filename = files.list[i];
-			var name = "file" + (i ? i : "");
-			var relativeFilename;
-			if (files.basePath) {
-				// normalize relative paths for Windows
-				relativeFilename = path.relative(files.basePath, filename).replace(/\\/g, '/');
-			} else {
-				relativeFilename = path.basename(filename);
+		// mapping from logical filename to actual file
+		var map = files.map;
+		if (!map) {
+			// create an identity mapping
+			map = {};
+			var list = files.list;
+			for (var i = 0, n = list.length; i < n; i++) {
+				var filename = list[i];
+				var relativeFilename;
+				if (files.basePath) {
+					// normalize relative paths for Windows
+					relativeFilename = path.relative(files.basePath, relativeFilename).replace(/\\/g, '/');
+				} else {
+					relativeFilename = path.basename(relativeFilename);
+				}
+				map[relativeFilename] = filename;
 			}
-			form.append(name, fs.createReadStream(filename), {
+		}
+		var list = Object.keys(map);
+		for (var i = 0, n = list.length; i < n; i++) {
+			var relativeFilename = list[i];
+			var filename = map[relativeFilename];
+
+			var name = "file" + (i ? i : "");
+			form.append(name, fs.createReadStream(path.join(files.basePath, filename)), {
 				filename: relativeFilename,
 				includePath: true
 			});

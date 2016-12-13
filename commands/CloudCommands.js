@@ -51,6 +51,8 @@ var arrow = chalk.green('>');
 var alert = chalk.yellow('!');
 var cmd = path.basename(process.argv[1]);
 
+var libraryManager = require('particle-library-manager');
+
 // Use known platforms and add shortcuts
 var PLATFORMS = extend(utilities.knownPlatforms(), {
 	'c': 0,
@@ -453,7 +455,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		return filename;
 	},
 
-	// todo - move this into cli-library-manager and make async
+	// todo - move this into particle-library-manager and make async
 	enumVendoredLibs: function(dir) {
 		var src = path.join(dir, 'src');
 		var lib = path.join(dir, 'lib');
@@ -614,10 +616,30 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					return when.reject();
 				}
 
+				var result = { files: files, targetVersion:targetVersion };
+				if (files.list.length==1) {
+					var promise = libraryManager.isLibraryExample(files.list[0]);
+					if (promise) {
+						return promise.then((example) => {
+							if (example) {
+								return example.buildFiles(files);
+							}
+						}).then(() => {
+							return result;
+						})
+					}
+				}
+				return result;
+			},
+			function(result) {
+				var files = result.files;
+				var targetVersion = result.targetVersion;
+
 				if (settings.showIncludedSourceFiles) {
+					var list = files.map ? _.values(files.map) : files.list;
 					console.log('Including:');
-					for (var i = 0, n = files.list.length; i < n; i++) {
-						console.log('    ' + files.list[i]);
+					for (var i = 0, n = list.length; i < n; i++) {
+						console.log('    ' + list[i]);
 					}
 				}
 
@@ -905,8 +927,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 	},
 
-
-
 	listDevices: function (filter) {
 
 		var formatVariables = function (vars, lines) {
@@ -1033,7 +1053,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			files = utilities.compliment(files, ignoredFiles);
 		}
 		var subdirFiles = this._processSubdirIncludes(dirname);
-		return files.concat(subdirFiles);
+		files = files.concat(subdirFiles);
+		return files;
 	},
 
 	_processSubdirIncludes: function (dirname) {
@@ -1087,6 +1108,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 			if (filestats.isDirectory()) {
 				var dirfiles = this._processDirIncludes(filename);
+				dirfiles = dirfiles.map(function (p) {
+					return path.relative('', p);
+				});
 				filenames = filenames.concat(dirfiles);
 				files.basePath = this._updateBasePath(files.basePath, filename);
 				continue;
