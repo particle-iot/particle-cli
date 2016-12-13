@@ -2,7 +2,7 @@ import {LibraryPublishCommand, LibraryPublishCommandSite} from '../cmd';
 import chalk from 'chalk';
 import log from '../app/log';
 import {spin} from '../app/ui';
-import {buildAPIClient} from './library_contribute';
+import {buildAPIClient} from './library_upload';
 
 export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 
