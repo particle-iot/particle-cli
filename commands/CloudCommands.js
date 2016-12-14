@@ -282,18 +282,36 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.error('no files included?');
 			return when.reject();
 		}
-		if (settings.showIncludedSourceFiles) {
-			console.log('Including:');
-			for (var i = 0, n = files.list.length; i < n; i++) {
-				console.log('    ' + files.list[i]);
+
+		function expandFiles() {
+			if (files.list.length == 1) {
+				var promise = libraryManager.isLibraryExample(files.list[0]);
+				if (promise) {
+					return promise.then((example) => {
+						if (example) {
+							return example.buildFiles(files);
+						}
+					});
+				}
 			}
 		}
 
-		return this._doFlash(api, deviceid, files, version).catch(function(err) {
-			console.log('Flash device failed');
-			console.log(err);
-			return when.reject();
-		});
+		when(expandFiles())
+		.then(function outputAndCompile() {
+			if (settings.showIncludedSourceFiles) {
+				var list = files.map ? _.values(files.map) : files.list;
+				console.log('Including:');
+				for (var i = 0, n = list.length; i < n; i++) {
+					console.log('    ' + list[i]);
+				}
+			}
+
+			return this._doFlash(api, deviceid, files, version).catch(function(err) {
+				console.log('Flash device failed');
+				console.log(err);
+				return when.reject();
+			});
+		}.bind(this));
 	},
 
 	_promptForOta: function(api, attrs, files, targetVersion) {
@@ -608,6 +626,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					console.error("I couldn't find that: " + filePath);
 					return when.reject();
 				}
+
 
 				//make a copy of the arguments
 				var files = self._handleMultiFileArgs(args);
