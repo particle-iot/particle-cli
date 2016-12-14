@@ -3,6 +3,7 @@ import {convertApiError} from '../cmd/api';
 import chalk from 'chalk';
 import log from '../app/log';
 import {spin} from '../app/ui';
+import {buildAPIClient} from './apiclient';
 
 export class CLILibraryContributeCommandSite extends LibraryContributeCommandSite {
 

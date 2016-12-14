@@ -21,7 +21,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 			popular: 'Popular Libraries',
 			mine: 'My Libraries',
 			recent: 'Recently added/updated Libraries'
-		}
+		};
 	}
 
 	apiClient() {
@@ -38,7 +38,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 
 	/**
 	 * Use the default settings
-	 * @returns {{}}
+	 * @returns {Object} Empty object {}
 	 */
 	settings() {
 		return {};
@@ -57,7 +57,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 
 	notifyFetchLists(promise) {
-		return spin(promise, `Searching for libraries...`)
+		return spin(promise, 'Searching for libraries...')
 			.then((results) => {
 				const sections = this.argv.sections;
 				let separator = false;
@@ -82,8 +82,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 			for (let library of libraries) {
 				this.showLibrary(name, library);
 			}
-		}
-		else {
+		} else {
 			console.log(chalk.grey('No libraries to show in this section.'));
 		}
 	}
