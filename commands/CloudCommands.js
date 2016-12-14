@@ -1159,6 +1159,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	// this is surely flawed - the filenames might include paths without a common prefix
 	// so simply checking the length isn't sufficient.
 	_updateBasePath: function(basePath, path) {
+		// todo - this ends up showing the wrong filepaths to the user
+		// since the basePath isn't displayed, only the files relative to it, so
+		// the user doesn't see the containing directories in the output
+		return basePath;
 		if(basePath) {
 			return basePath.length < path.length ? basePath : path;
 		} else {
