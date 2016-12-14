@@ -3,7 +3,7 @@ import {convertApiError} from '../cmd/api';
 import {spin} from '../app/ui';
 import {buildAPIClient} from './apiclient';
 import chalk from 'chalk';
-
+import {formatLibrary} from './library_ui.js';
 
 export class CLILibraryListCommandSite extends LibraryListCommandSite {
 
@@ -12,7 +12,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		this._apiClient = apiClient;
 		this.argv = argv;
 		if (!argv.sections || !argv.sections.length) {
-			argv.sections = ['official', 'verified', 'popular', 'mine', 'recent'];
+			argv.sections = ['mine', 'official', 'popular', 'recent'];
 		}
 		// todo - since the text can be used by any app, this could be pushed down to the command layer so it's shared
 		this.headings = {
@@ -50,6 +50,9 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		for (let section of sections) {
 			result[section] = {};
 		}
+		if (result.mine) {
+			result.mine.excludeBadges = {mine:true};
+		}
 		return result;
 	}
 
@@ -77,7 +80,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		console.log(chalk.bold(heading));
 		if (libraries.length) {
 			for (let library of libraries) {
-				this.printLibrary(name, library);
+				this.showLibrary(name, library);
 			}
 		}
 		else {
@@ -85,18 +88,8 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		}
 	}
 
-	printLibrary(section, library) {
-		let badges = [];
-		if (library.verified) {
-			badges.push(chalk.green('[verified] '));
-		}
-		if (library.visibility==='private') {
-			badges.push(chalk.blue('[private] '));
-		}
-		const badgesText = badges.join('');
-		const defaultSentence = 'no description given';
-		console.log(chalk.blue(library.name)+' '+chalk.grey(library.installs || 0)+' '+ `${badgesText}${library.sentence || defaultSentence}`);
-		//console.log(` `);
+	showLibrary(section, library) {
+		console.log(formatLibrary(library, section.excludeBadges));
 	}
 }
 

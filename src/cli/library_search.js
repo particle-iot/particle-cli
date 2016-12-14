@@ -3,6 +3,8 @@ import {spin} from '../app/ui';
 import log from '../app/log';
 import chalk from 'chalk';
 import {buildAPIClient} from './apiclient';
+import {formatLibrary} from './library_ui.js';
+
 
 export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 
@@ -33,10 +35,7 @@ export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 			log.success(`Found ${count} ${library} matching ${chalk.green(filter)}`);
 			for (let idx in libraries) {
 				const lib = libraries[idx];
-
-				const suffix = global.verboseLevel>1 ? ` - ${lib.sentence}` : '';
-				const prefix = lib.visibility && lib.visibility==='private' ? '[private] ' : '';
-				log.success(`${prefix}${lib.name}@${lib.version}${suffix}`);
+				console.log(formatLibrary(lib));
 			}
 		}
 	}
