@@ -516,7 +516,7 @@ ApiClient.prototype = {
 				var relativeFilename;
 				if (files.basePath) {
 					// normalize relative paths for Windows
-					relativeFilename = path.relative(files.basePath, filename).replace(/\\/g, '/');
+					relativeFilename = filename.replace(/\\/g, '/');
 				} else {
 					relativeFilename = path.basename(filename);
 				}

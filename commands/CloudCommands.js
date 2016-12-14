@@ -285,7 +285,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		function expandFiles() {
 			if (files.list.length == 1) {
-				var promise = libraryManager.isLibraryExample(files.list[0]);
+				var promise = libraryManager.isLibraryExample(files.list[0], files.basePath);
 				if (promise) {
 					return promise.then((example) => {
 						if (example) {
@@ -637,7 +637,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 				var result = { files: files, targetVersion:targetVersion };
 				if (files.list.length==1) {
-					var promise = libraryManager.isLibraryExample(files.list[0]);
+					var promise = libraryManager.isLibraryExample(files.list[0], files.basePath);
 					if (promise) {
 						return promise.then((example) => {
 							if (example) {
@@ -1148,9 +1148,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			files.basePath = this._updateBasePath(files.basePath, path.dirname(filename));
 		}
 
+		// when checking the files above we assume relative to the cwd
+		// when adding to the files list, the files should be relative to the basePath
+		files.list = files.list.map(function(file) {
+			return path.relative(files.basePath, file);
+		});
 		return files;
 	},
 
+	// this is surely flawed - the filenames might include paths without a common prefix
+	// so simply checking the length isn't sufficient.
 	_updateBasePath: function(basePath, path) {
 		if(basePath) {
 			return basePath.length < path.length ? basePath : path;
