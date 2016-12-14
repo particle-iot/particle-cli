@@ -34,7 +34,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 * @param {Promise} promise   The promise to create the project in the given directory
 	 */
 	notifyCreatingProject(path, promise) {
-		log.info(`Creating project in directory '${chalk.bold(path)}'...`);
+		return log.info(`Initializing project in directory ${chalk.bold(path)}...`);
 	}
 
 	/**

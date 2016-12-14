@@ -33,6 +33,7 @@ export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 			log.success(`Found ${count} ${library} matching ${chalk.green(filter)}`);
 			for (let idx in libraries) {
 				const lib = libraries[idx];
+
 				const suffix = global.verboseLevel>1 ? ` - ${lib.sentence}` : '';
 				const prefix = lib.visibility && lib.visibility==='private' ? '[private] ' : '';
 				log.success(`${prefix}${lib.name}@${lib.version}${suffix}`);
