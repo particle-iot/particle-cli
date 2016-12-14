@@ -495,12 +495,41 @@ ApiClient.prototype = {
 			if (that.hasBadToken(body)) {
 				return dfd.reject('Invalid token');
 			}
+			if (body.errors) {
+				body.errors = that._mapFilenames(files, body.errors);
+			}
 			dfd.resolve(body);
 		});
 
 		this._addFilesToCompile(r, files, targetVersion, platform_id);
 
 		return dfd.promise;
+	},
+
+	_mapFilenames(files, messages) {
+
+		function regexEscape(s) {
+			return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+		};
+
+		var result = [];
+		var map = {};
+		// prepend each logical path with a slash (since the compile server does that.)
+		Object.keys(files.map).map(function addSlash(item) {
+			map[path.sep+item] = files.map[item];
+		});
+
+		// escape each filename to be regex-safe and create union recogniser
+		var re = new RegExp(Object.keys(map).map(regexEscape).join("|"),"gi");
+
+		for (var i = 0, n = messages.length; i < n; i++) {
+			var message = messages[i];
+			message = message.replace(re, function(matched){
+				return map[matched];
+			});
+			result.push(message);
+		}
+		return result;
 	},
 
 	_addFilesToCompile: function (r, files, targetVersion, platform_id) {
@@ -522,6 +551,7 @@ ApiClient.prototype = {
 				}
 				map[relativeFilename] = filename;
 			}
+			files.map = map;
 		}
 		var list = Object.keys(map);
 		for (var i = 0, n = list.length; i < n; i++) {
