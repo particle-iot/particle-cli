@@ -24,9 +24,8 @@ describe('LibraryAddCommand', () => {
 	});
 
 	it('adds a library to a project', () => {
-		//const dir = getProjectFixture('simple');
 		const dir = '.';
-		//fs.writeFileSync(path.join(dir, 'project.properties'), '');
+		fs.writeFileSync(path.join(dir, 'project.properties'), '');
 		console.log('created file');
 		const testSite = td.object(LibraryAddCommandSite);
 		const apiClient = td.object(['library']);
