@@ -1,17 +1,37 @@
 Feature: Cloud compile
 
-  Scenario: as a user, I can compile a simple project
-    Given I use the fixture named "projects/tinker/simple"
-    When I run particle "compile photon ."
+  Scenario: as a user, I can compile a legacy flat project
+    Given I use the fixture named "projects/legacy/flat"
+    When I run particle "compile photon"
     Then the stdout should contain "Compiling code for photon"
-    And the stdout should contain "tinker.cpp"
+    And the stdout should contain "app.ino"
+    And the stdout should contain "helper.h"
+    And the stdout should contain "helper.cpp"
+    And the stdout should contain "Compile succeeded"
+
+  Scenario: as a user, I can compile a legacy nested project
+    Given I use the fixture named "projects/legacy/nested"
+    When I run particle "compile photon"
+    Then the stdout should contain "Compiling code for photon"
+    And the stdout should contain "app.ino"
+    And the stdout should contain "helper/helper.h"
+    And the stdout should contain "helper/helper.cpp"
     And the stdout should contain "Compile succeeded"
 
   Scenario: as a user, I can compile a simple project
-    Given I use the fixture named "projects/tinker/extended"
-    When I run particle "compile photon src"
+    Given I use the fixture named "projects/simple"
+    When I run particle "compile photon"
     Then the stdout should contain "Compiling code for photon"
-    And the stdout should contain "tinker.cpp"
+    And the stdout should contain "app.ino"
+    And the stdout should contain "Compile succeeded"
+
+  Scenario: as a user, I can compile an extended project
+    Given I use the fixture named "projects/extended"
+    When I run particle "compile photon"
+    Then the stdout should contain "Compiling code for photon"
+    And the stdout should contain "src/app.ino"
+    And the stdout should contain "src/helper/helper.h"
+    And the stdout should contain "src/helper/helper.cpp"
     And the stdout should contain "Compile succeeded"
 
   Scenario: as a library developer I can compile a library example
@@ -19,7 +39,7 @@ Feature: Cloud compile
     When I run particle "compile photon examples/blink-an-led"
     Then the stdout should contain "Compiling code for photon"
     And the stdout should contain "library.properties"
-    And the stdout should contain "blink-an-led.cpp"
+    And the stdout should contain "examples/blink-an-led/blink-an-led.cpp"
     And the stdout should contain "src/test-library-publish.cpp"
     And the stdout should contain "src/test-library-publish.h"
     And the stdout should contain "Compile succeeded"

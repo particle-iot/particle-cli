@@ -252,8 +252,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!filePath) {
-			console.error('Please specify a binary file, source file, or source directory, or known app');
-			return when.reject();
+			filePath = '.';
 		}
 
 		var api = new ApiClient();

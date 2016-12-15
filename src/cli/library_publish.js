@@ -17,6 +17,10 @@ export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 		return this.ident;
 	}
 
+	libraryDirectory() {
+		return this.dir;
+	}
+
 	apiClient() {
 		return this._apiClient;
 	}
@@ -37,7 +41,7 @@ export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 export default ({lib, factory, apiJS}) => {
 	factory.createCommand(lib, 'publish', 'publishes a library', {
 		options: {},
-		params: '<name>',
+		params: '[name]',
 
 		handler: function LibraryPublishHandler(argv) {
 			const site = new CLILibraryPublishCommandSite(argv, buildAPIClient(apiJS));
