@@ -6,9 +6,11 @@ Feature: library init
     Then the output should contain:
     """
        create library.properties
+       create README.md
+       create LICENSE
        create src/uberlib2.cpp
        create src/uberlib2.h
-       create examples/doit/doit_example.cpp
+       create examples/usage/usage.ino
     """
     And the exit status should be 0
     And the file "library.properties" should exist
@@ -31,7 +33,7 @@ Feature: library init
     And I close the stdin stream
     Then the output should contain:
     """
-    >> name: must only contain letters, numbers, dashes and underscores
+    >> name: must only contain letters, numbers, dashes, underscores and plus signs.
     """
 
   Scenario: as a user, I can enter an empty name and be given advice on how to fix it
@@ -49,14 +51,14 @@ Feature: library init
     And I close the stdin stream
     Then the output should contain:
     """
-    >> name: must only contain letters, numbers, dashes and underscores
+    >> name: must only contain letters, numbers, dashes, underscores and plus signs.
     """
 
   Scenario: as a user, I can provide an invalid name and be given immediate advice on how to fix it
     When I run particle "library init --name=//"
     Then the output should contain:
     """
-    name: must only contain letters, numbers, dashes and underscores
+    name: must only contain letters, numbers, dashes, underscores and plus signs.
     """
 
   Scenario: as a user, I can provide an invalid version and be given immediate advice on how to fix it

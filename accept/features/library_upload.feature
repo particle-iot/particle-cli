@@ -31,7 +31,7 @@ Feature: library upload
   Scenario: the uploadd library is initially private
     When I run particle "library search test-library-publish"
     Then the output should contain "Found 1 library matching test-library-publish"
-    And the output should contain "[private] test-library-publish"
+    And the output should contain "test-library-publish 0.0.2 0 A simple library that illustrates"
 
   Scenario: contributing the same version of a private library is ok
     And I use the fixture named "library/upload/valid/0.0.1"

@@ -1,11 +1,7 @@
 import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd';
 import {convertApiError} from '../cmd/api';
 const settings = require('../../settings');
-
-
-export function buildAPIClient(apiJS) {
-	return apiJS.client({ auth: settings.access_token });
-}
+import {buildAPIClient} from './apiclient';
 
 export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 
@@ -54,7 +50,8 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 
 	notifyFetchingLibrary(lib, targetDir) {
-		return this.promiseLog(`Installing library '${lib.name} ${lib.version}' to project '${targetDir}' ...`);
+		const dest = ` to ${targetDir}`;
+		return this.promiseLog(`Installing library '${lib.name} ${lib.version}${dest}' ...`);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
