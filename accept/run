@@ -7,6 +7,11 @@ if [[ -n "$ACCESS_EMAIL"  &&  -n "$ACCESS_PWD" ]]; then
    particle login $ACCESS_EMAIL $ACCESS_PWD
 fi  
 
+FILES=$*
 
-cucumber features --expand --tags ~@wip $*
+if [ -z "$FILES" ]; then
+   FILES=features
+fi
+
+cucumber --expand --tags ~@wip $FILES
 popd
