@@ -557,6 +557,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				});
 			}
 		}
+		else {
+			return when(self.mapCommonPrefix(files));
+		}
 	},
 
 	compileCode: function (deviceType) {
