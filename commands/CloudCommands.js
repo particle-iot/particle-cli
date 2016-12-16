@@ -283,23 +283,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject();
 		}
 
-		function expandFiles() {
-			if (files.list.length == 1) {
-				var promise = libraryManager.isLibraryExample(files.list[0], files.basePath);
-				if (promise) {
-					return promise.then((example) => {
-						if (example) {
-							return example.buildFiles(files);
-						}
-					});
-				}
-			}
-		}
-
-		when(expandFiles())
+		when(this.expandFiles(files))
 		.then(function outputAndCompile() {
 			if (settings.showIncludedSourceFiles) {
-				var list = files.map ? _.values(files.map) : files.list;
+				var list = _.values(files.map);
 				console.log('Including:');
 				for (var i = 0, n = list.length; i < n; i++) {
 					console.log('    ' + list[i]);
@@ -545,6 +532,34 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		return this.launchAndWait("make", cmdargs, this.options.verbose);
 	},
 
+	mapCommonPrefix: function(files) {
+		var relative = [];
+		files.basePath = process.cwd();
+		libraryManager.pathsCommonPrefix(files.list, relative, files.basePath);
+		files.map = {};
+		for (var i=0; i<files.list.length; i++) {
+			// map from the relative (adjusted) path that is sent to the server, to the local path
+			files.map[relative[i]] = files.list[i];
+		}
+		return files;
+	},
+
+	expandFiles: function (files) {
+		var self = this;
+		if (files.list.length == 1) {
+			var promise = libraryManager.isLibraryExample(files.list[0], files.basePath);
+			if (promise) {
+				return promise.then((example) => {
+					if (example) {
+						return example.buildFiles(files);
+					} else {
+						return self.mapCommonPrefix(files);
+					}
+				});
+			}
+		}
+	},
+
 	compileCode: function (deviceType) {
 		var self = this;
 		this.checkArguments(arguments);
@@ -636,19 +651,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				}
 
 				var result = { files: files, targetVersion:targetVersion };
-				if (files.list.length==1) {
-					var promise = libraryManager.isLibraryExample(files.list[0], files.basePath);
-					if (promise) {
-						return promise.then((example) => {
-							if (example) {
-								return example.buildFiles(files);
-							}
-						}).then(() => {
-							return result;
-						})
-					}
-				}
-				return result;
+				return self.expandFiles(files).then((whatever) => result);
 			},
 			function(result) {
 				var files = result.files;
