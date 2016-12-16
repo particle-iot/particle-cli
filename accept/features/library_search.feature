@@ -8,8 +8,8 @@ Feature: searching for libraries
     When I run particle "library search neo"
     Then the output should contain "neopixel"
     And the stdout should match exactly once /Found [0-9]+ libraries matching neo/
-    And the output should not contain "- An Implementation of Adafruit's NeoPixel Library"
-    And the output should match /(neo.*@.*)+/
+    And the output should contain "An Implementation of Adafruit's NeoPixel Library"
+    And the output should match /(neo.* [0-9]\.[0-9]\.[0-9] [0-9]+)+/
 
   Scenario: the user can search for libraries a string and see there are no matching libraries
     When I run particle "library search thiswillnotexist"
@@ -24,5 +24,5 @@ Feature: searching for libraries
     When I run particle "library search neo -v"
     Then the output should contain "neopixel"
     And the stdout should match exactly once /Found [0-9]+ libraries matching neo/
-    And the output should contain "- An Implementation of Adafruit's NeoPixel Library"
-    And the output should match /(neo.*@.*)+/
+    And the output should contain "An Implementation of Adafruit's NeoPixel Library"
+    And the output should match /(neo.* [0-9]\.[0-9]\.[0-9] [0-9]+)+/

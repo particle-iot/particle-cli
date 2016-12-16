@@ -14,11 +14,13 @@ Feature: add library without a valid access token
     """
 
   Scenario: a user cannot add a library with an invalid access token
+    Given I use the fixture named "projects/simple"
     When I run particle "library add neopixel"
     Then the output should contain "invalid"
     And the output should not contain "invalid_token"
 
   Scenario: a user adding a library with an invalid access token can see a verbose description of the error
+    Given I use the fixture named "projects/simple"
     When I run particle "library add neopixel -v"
     Then the output should contain "invalid"
     And the output should contain "invalid_token"

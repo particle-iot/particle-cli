@@ -2,7 +2,7 @@ import {LibraryDeleteCommandSite, LibraryDeleteCommand} from '../cmd';
 import {spin} from '../app/ui';
 import log from '../app/log';
 import chalk from 'chalk';
-import {buildAPIClient} from './library_search';
+import {buildAPIClient} from './apiclient';
 
 export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 
@@ -26,7 +26,8 @@ export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 
 	notifyComplete(promise, library, error) {
 		if (error) {
-			log.error(error);
+	// this leads to the message being printed twice
+	//		log.error(error);
 		} else {
 			log.success(`Library ${chalk.green(library)} deleted.`);
 		}
