@@ -70,7 +70,7 @@
     "node-wifiscanner2": "^1.2.0",
     "particle-api-js": "^6.4.1",
     "particle-commands": "^0.2.1",
-    "particle-library-manager": "git://github.com/spark/particle-library-manager#feature/common_path_prefix",
+    "particle-library-manager": "https://github.com/spark/particle-library-manager/releases/download/v0.1.4-beta.1/particle-library-manager-0.1.4-beta.1.tgz",
     "request": "https://github.com/spark/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "semver": "^5.1.0",
     "serialport": "^3.1.1",

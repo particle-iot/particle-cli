@@ -313,7 +313,7 @@ var that = module.exports = {
 			if (basepath) {
 				line = path.join(basepath, line);
 			}
-			found = glob.sync(line, null);
+			found = glob.sync(line, { nodir: true });
 
 			if (found && (found.length > 0)) {
 				files = files.concat(found);

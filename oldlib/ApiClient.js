@@ -450,7 +450,7 @@ ApiClient.prototype = {
 	},
 
 	//PUT /v1/devices/{DEVICE_ID}
-	flashDevice: function (deviceId, files, targetVersion) {
+	flashDevice: function (deviceId, fileMap, targetVersion) {
 		console.log('attempting to flash firmware to your device ' + deviceId);
 
 		var that = this;
@@ -471,13 +471,13 @@ ApiClient.prototype = {
 			dfd.resolve(body);
 		});
 
-		this._addFilesToCompile(r, files, targetVersion);
+		this._addFilesToCompile(r, fileMap, targetVersion);
 
 
 		return dfd.promise;
 	},
 
-	compileCode: function(files, platform_id, targetVersion) {
+	compileCode: function(fileMap, platform_id, targetVersion) {
 		console.log('attempting to compile firmware ');
 
 		var that = this;
@@ -496,17 +496,17 @@ ApiClient.prototype = {
 				return dfd.reject('Invalid token');
 			}
 			if (body.errors) {
-				body.errors = that._mapFilenames(files, body.errors);
+				body.errors = that._mapFilenames(fileMap, body.errors);
 			}
 			dfd.resolve(body);
 		});
 
-		this._addFilesToCompile(r, files, targetVersion, platform_id);
+		this._addFilesToCompile(r, fileMap, targetVersion, platform_id);
 
 		return dfd.promise;
 	},
 
-	_mapFilenames(files, messages) {
+	_mapFilenames(fileMap, messages) {
 
 		function regexEscape(s) {
 			return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
@@ -515,8 +515,8 @@ ApiClient.prototype = {
 		var result = [];
 		var map = {};
 		// prepend each logical path with a slash (since the compile server does that.)
-		Object.keys(files.map).map(function addSlash(item) {
-			map[path.sep+item] = files.map[item];
+		Object.keys(fileMap).map(function addSlash(item) {
+			map[path.sep+item] = fileMap[item];
 		});
 
 		// escape each filename to be regex-safe and create union recogniser
@@ -532,34 +532,15 @@ ApiClient.prototype = {
 		return result;
 	},
 
-	_addFilesToCompile: function (r, files, targetVersion, platform_id) {
+	_addFilesToCompile: function (r, fileMap, targetVersion, platform_id) {
 		var form = r.form();
-		// mapping from logical filename to actual file
-		var map = files.map;
-		if (!map) {
-			// create an identity mapping
-			map = {};
-			var list = files.list;
-			for (var i = 0, n = list.length; i < n; i++) {
-				var filename = list[i];
-				var relativeFilename;
-				if (files.basePath) {
-					// normalize relative paths for Windows
-					relativeFilename = filename.replace(/\\/g, '/');
-				} else {
-					relativeFilename = path.basename(filename);
-				}
-				map[relativeFilename] = filename;
-			}
-			files.map = map;
-		}
-		var list = Object.keys(map);
+		var list = Object.keys(fileMap);
 		for (var i = 0, n = list.length; i < n; i++) {
 			var relativeFilename = list[i];
-			var filename = map[relativeFilename];
+			var filename = fileMap[relativeFilename];
 
 			var name = "file" + (i ? i : "");
-			form.append(name, fs.createReadStream(path.join(files.basePath, filename)), {
+			form.append(name, fs.createReadStream(filename), {
 				filename: relativeFilename,
 				includePath: true
 			});
