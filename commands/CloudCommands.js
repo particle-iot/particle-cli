@@ -1066,7 +1066,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				continue;
 			}
 
-			var relative = path.relative(fileMapping.basePath, filename);
+			var relative = path.basename(filename);
 			fileMapping.map[relative] = filename;
 		}
 

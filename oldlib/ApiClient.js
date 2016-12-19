@@ -540,7 +540,7 @@ ApiClient.prototype = {
 			var filename = fileMapping.map[relativeFilename];
 
 			var name = "file" + (i ? i : "");
-			form.append(name, fs.createReadStream(path.join(fileMapping.basePath, filename)), {
+			form.append(name, fs.createReadStream(path.resolve(fileMapping.basePath, filename)), {
 				filename: relativeFilename,
 				includePath: true
 			});
