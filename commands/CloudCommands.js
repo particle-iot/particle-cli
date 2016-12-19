@@ -234,52 +234,53 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	flashDevice: function (deviceid, filePath) {
+		var self = this;
+		this.checkArguments(arguments);
+
+		var args = Array.prototype.slice.call(arguments);
+
+		if (self.options.target) {
+			args = args.filter(function (f) {
+				return (f !== '--target' && f !== self.options.target);
+			});
+			deviceid = args[0];
+			filePath = args[1];
+		}
+
+		if (!deviceid) {
+			console.error('Please specify a device id');
+			return when.reject();
+		}
+
+		var api = new ApiClient();
+		if (!api.ready()) {
+			return when.reject('Not logged in');
+		}
+
+		if (filePath && !fs.existsSync(filePath)) {
+			return self._flashKnownApp(api, deviceid, filePath).catch(function (err) {
+				console.log('Flash device failed');
+				console.log(err);
+				return when.reject();
+			});
+		}
+
+		var version = self.options.target === 'latest' ? null : self.options.target;
+		if (version) {
+			console.log('Targeting version:', version);
+			console.log();
+		}
+
+		// make a copy of the arguments sans the 'deviceid'
+		args = args.slice(1);
+
+		if (args.length === 0) {
+			args.push('.'); // default to current directory
+		}
+
 		return pipeline([
 			function () {
-				var self = this;
-				this.checkArguments(arguments);
-
-				var args = Array.prototype.slice.call(arguments);
-				if (this.options.target) {
-					args = args.filter(function (f) {
-						return (f !== '--target' && f !== self.options.target);
-					});
-					deviceid = args[0];
-					filePath = args[1];
-				}
-
-				if (!deviceid) {
-					console.error('Please specify a device id');
-					return when.reject();
-				}
-
-				var api = new ApiClient();
-				if (!api.ready()) {
-					return when.reject('Not logged in');
-				}
-
-				if (filePath && !fs.existsSync(filePath)) {
-					return this._flashKnownApp(api, deviceid, filePath).catch(function (err) {
-						console.log('Flash device failed');
-						console.log(err);
-						return when.reject();
-					});
-				}
-
-				var version = this.options.target === 'latest' ? null : this.options.target;
-				if (version) {
-					console.log('Targeting version:', version);
-					console.log();
-				}
-
-				// make a copy of the arguments sans the 'deviceid'
-				args = args.slice(1);
-
-				if (args.length === 0) {
-					args.push('.'); // default to current directory
-				}
-
-				return this._handleMultiFileArgs(args);
+				return self._handleMultiFileArgs(args);
 			},
 			function (fileMap) {
 				if (Object.keys(fileMap).length == 0) {
@@ -295,13 +296,17 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					}
 				}
 
-				return this._doFlash(api, deviceid, fileMap, version).catch(function (err) {
-					console.log('Flash device failed');
-					console.log(err);
-					return when.reject();
-				});
+				return self._doFlash(api, deviceid, fileMap, version);
 			}
-		]);
+		]).catch(function(err) {
+			console.error('Flash device failed.');
+			if (_.isArray(err)) {
+				console.log(err.join('\n'));
+			} else {
+				console.error(err);
+			}
+			return when.reject();
+		});
 	},
 
 	_promptForOta: function(api, attrs, fileMap, targetVersion) {

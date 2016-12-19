@@ -108,3 +108,22 @@ RSpec::Matchers.define :have_interactive_stdout do |expected|
 
   description { "have output: #{description_of expected}" }
 end
+
+When(/^I wait until the device "([^"]*)" is online$/) do |device|
+  begin
+    Timeout.timeout(aruba.config.exit_timeout) do
+      loop do
+        begin
+          step %Q(I run `particle list #{device}`)
+          step %Q(the output should contain "is online")
+        rescue RSpec::Expectations::ExpectationNotMetError
+          sleep 0.1
+          retry
+        end
+        break
+      end
+    end
+  rescue TimeoutError
+    fail StandardError.new("Device #{device} is not online")
+  end
+end
