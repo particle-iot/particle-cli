@@ -282,21 +282,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function () {
 				return self._handleMultiFileArgs(args);
 			},
-			function (fileMap) {
-				if (Object.keys(fileMap).length == 0) {
+			function (fileMapping) {
+				if (Object.keys(fileMapping.map).length == 0) {
 					console.error('no files included?');
 					return when.reject();
 				}
 
 				if (settings.showIncludedSourceFiles) {
-					var list = _.values(fileMap);
+					var list = _.values(fileMapping.map);
 					console.log('Including:');
 					for (var i = 0, n = list.length; i < n; i++) {
 						console.log('    ' + list[i]);
 					}
 				}
 
-				return self._doFlash(api, deviceid, fileMap, version);
+				return self._doFlash(api, deviceid, fileMapping, version);
 			}
 		]).catch(function(err) {
 			console.error('Flash device failed.');
@@ -309,25 +309,28 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
-	_promptForOta: function(api, attrs, fileMap, targetVersion) {
+	_promptForOta: function(api, attrs, fileMapping, targetVersion) {
 		var self = this;
-		var newFileMap = {};
+		var newFileMapping = {
+			basePath: fileMapping.basePath,
+			map: {}
+		};
 		return pipeline([
 			function() {
 				var sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
-				var list = Object.values(fileMap);
+				var list = Object.values(fileMapping.map);
 				var isSourcey = _.some(list, function(file) {
 					return sourceExtensions.indexOf(path.extname(file)) >= 0;
 				});
 				if (!isSourcey) {
-					var binFile = fileMap[list[0]];
-					newFileMap[list[0]] = binFile;
+					var binFile = fileMapping.map[list[0]];
+					newFileMapping.map[list[0]] = binFile;
 					return binFile;
 				}
 
 				filename = temp.path({ suffix: '.bin' });
-				return self._compileAndDownload(api, fileMap, attrs.platform_id, filename, targetVersion).then(function() {
-					newFileMap['firmware.bin'] = filename;
+				return self._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(function() {
+					newFileMapping.map['firmware.bin'] = filename;
 					return filename;
 				});
 			},
@@ -353,14 +356,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						if (ans.confirmota !== dataUsage) {
 							return reject('User cancelled');
 						}
-						resolve(newFileMap);
+						resolve(newFileMapping);
 					});
 				});
 			}
 		]);
 	},
 
-	_doFlash: function(api, deviceid, fileMap, targetVersion) {
+	_doFlash: function(api, deviceid, fileMapping, targetVersion) {
 		var self = this;
 		var isCellular;
 		return pipeline([
@@ -370,10 +373,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function promptOTA(attrs) {
 				isCellular = attrs.cellular;
 				if (!isCellular) {
-					return fileMap;
+					return fileMapping;
 				}
 
-				return self._promptForOta(api, attrs, fileMap, targetVersion);
+				return self._promptForOta(api, attrs, fileMapping, targetVersion);
 			},
 			function flashyFlash(flashFiles) {
 				return api.flashDevice(deviceid, flashFiles, targetVersion);
@@ -628,14 +631,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 				return self._handleMultiFileArgs(args);
 			},
-			function(fileMap) {
-				if (Object.keys(fileMap).length == 0) {
+			function(fileMapping) {
+				var list = _.values(fileMapping.map);
+				if (list.length == 0) {
 					console.log('No source to compile!');
 					return when.reject();
 				}
 
 				if (settings.showIncludedSourceFiles) {
-					var list = _.values(fileMap);
 					console.log('Including:');
 					for (var i = 0, n = list.length; i < n; i++) {
 						console.log('    ' + list[i]);
@@ -643,7 +646,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				}
 
 				var filename = self._getDownloadPath(arguments, deviceType);
-				return self._compileAndDownload(api, fileMap, platform_id, filename, targetVersion);
+				return self._compileAndDownload(api, fileMapping, platform_id, filename, targetVersion);
 			}
 		]).catch(function(err) {
 			console.error('Compile failed. Exiting.');
@@ -656,11 +659,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
-	_compileAndDownload: function(api, fileMap, platform_id, filename, targetVersion) {
+	_compileAndDownload: function(api, fileMapping, platform_id, filename, targetVersion) {
 		return pipeline([
 			//compile
 			function () {
-				return api.compileCode(fileMap, platform_id, targetVersion);
+				return api.compileCode(fileMapping, platform_id, targetVersion);
 			},
 
 			//download
@@ -1025,7 +1028,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	 * compile File1 File2 File3 --saveTo anotherPlace.bin
 	 */
 	_handleMultiFileArgs: function (filenames) {
-		var fileMap = {};
+		var fileMapping = {
+			basePath: process.cwd(),
+			map: {}
+		};
 
 		for (var i = 0; i < filenames.length; i++) {
 			var filename = filenames[i];
@@ -1046,7 +1052,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			if (filestats.isDirectory()) {
-				this._processDirIncludes(fileMap, filename);
+				this._processDirIncludes(fileMapping, filename);
 				continue;
 			}
 
@@ -1060,13 +1066,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				continue;
 			}
 
-			var relative = path.relative('', filename);
-			fileMap[relative] = filename;
+			var relative = path.relative(fileMapping.basePath, filename);
+			fileMapping.map[relative] = filename;
 		}
 
-		return this._handleLibraryExample(fileMap)
+		return this._handleLibraryExample(fileMapping)
 			.then(function () {
-				return fileMap;
+				return fileMapping;
 			});
 	},
 
@@ -1074,12 +1080,13 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	 * helper function for getting the contents of a directory,
 	 * checks for '.include', and a '.ignore' files, and uses their contents
 	 * instead
-	 * @param {Object} fileMap Object mapping from filenames seen by the compile server to local relative filenames
+	 * @param {Object} fileMapping Object mapping from filenames seen by the compile server to local filenames,
+	 *                             relative to a base path
 	 * @param {String} dirname
 	 * @private
 	 * @returns {nothing} nothing
 	 */
-	_processDirIncludes: function (fileMap, dirname) {
+	_processDirIncludes: function (fileMapping, dirname) {
 		dirname = path.resolve(dirname);
 
 		var includesFile = path.join(dirname, settings.dirIncludeFilename),
@@ -1116,10 +1123,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			files = utilities.compliment(files, ignoredFiles);
 		}
 
-		// Add files to fileMap
+		// Add files to fileMapping
 		files.forEach(function (file) {
-			// source relative to the current directory
-			var source = path.relative('', file);
+			// source relative to the base directory of the fileMapping (current directory)
+			var source = path.relative(fileMapping.basePath, file);
+
 			// If using an include file, only base names are supported since people are using those to
 			// link across relative folders
 			var target;
@@ -1128,27 +1136,28 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			} else {
 				target = path.relative(dirname, file);
 			}
-			fileMap[target] = source;
+			fileMapping.map[target] = source;
 		});
 	},
 
 
 	/**
 	 * Perform special case logic when asking to compile a single example from a local library
-	 * @param {Object} fileMap Object mapping from filenames seen by the compile server to local relative filenames
+	 * @param {Object} fileMapping Object mapping from filenames seen by the compile server to local filenames,
+	 *                             relative to a base path
 	 * @returns {nothing} nothing
 	 */
-	_handleLibraryExample: function (fileMap) {
+	_handleLibraryExample: function (fileMapping) {
 		return pipeline([
 			function () {
-				var list = _.values(fileMap);
+				var list = _.values(fileMapping.map);
 				if (list.length == 1) {
 					return libraryManager.isLibraryExample(list[0]);
 				}
 			},
 			function (example) {
 				if (example) {
-					return example.buildFiles(fileMap);
+					return example.buildFiles(fileMapping);
 				}
 			}
 		]);

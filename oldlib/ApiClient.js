@@ -450,7 +450,7 @@ ApiClient.prototype = {
 	},
 
 	//PUT /v1/devices/{DEVICE_ID}
-	flashDevice: function (deviceId, fileMap, targetVersion) {
+	flashDevice: function (deviceId, fileMapping, targetVersion) {
 		console.log('attempting to flash firmware to your device ' + deviceId);
 
 		var that = this;
@@ -471,13 +471,13 @@ ApiClient.prototype = {
 			dfd.resolve(body);
 		});
 
-		this._addFilesToCompile(r, fileMap, targetVersion);
+		this._addFilesToCompile(r, fileMapping, targetVersion);
 
 
 		return dfd.promise;
 	},
 
-	compileCode: function(fileMap, platform_id, targetVersion) {
+	compileCode: function(fileMapping, platform_id, targetVersion) {
 		console.log('attempting to compile firmware ');
 
 		var that = this;
@@ -496,17 +496,17 @@ ApiClient.prototype = {
 				return dfd.reject('Invalid token');
 			}
 			if (body.errors) {
-				body.errors = that._mapFilenames(fileMap, body.errors);
+				body.errors = that._mapFilenames(fileMapping, body.errors);
 			}
 			dfd.resolve(body);
 		});
 
-		this._addFilesToCompile(r, fileMap, targetVersion, platform_id);
+		this._addFilesToCompile(r, fileMapping, targetVersion, platform_id);
 
 		return dfd.promise;
 	},
 
-	_mapFilenames(fileMap, messages) {
+	_mapFilenames(fileMapping, messages) {
 
 		function regexEscape(s) {
 			return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
@@ -515,8 +515,8 @@ ApiClient.prototype = {
 		var result = [];
 		var map = {};
 		// prepend each logical path with a slash (since the compile server does that.)
-		Object.keys(fileMap).map(function addSlash(item) {
-			map[path.sep+item] = fileMap[item];
+		Object.keys(fileMapping.map).map(function addSlash(item) {
+			map[path.sep+item] = fileMapping.map[item];
 		});
 
 		// escape each filename to be regex-safe and create union recogniser
@@ -532,15 +532,15 @@ ApiClient.prototype = {
 		return result;
 	},
 
-	_addFilesToCompile: function (r, fileMap, targetVersion, platform_id) {
+	_addFilesToCompile: function (r, fileMapping, targetVersion, platform_id) {
 		var form = r.form();
-		var list = Object.keys(fileMap);
+		var list = Object.keys(fileMapping.map);
 		for (var i = 0, n = list.length; i < n; i++) {
 			var relativeFilename = list[i];
-			var filename = fileMap[relativeFilename];
+			var filename = fileMapping.map[relativeFilename];
 
 			var name = "file" + (i ? i : "");
-			form.append(name, fs.createReadStream(filename), {
+			form.append(name, fs.createReadStream(path.join(fileMapping.basePath, filename)), {
 				filename: relativeFilename,
 				includePath: true
 			});
