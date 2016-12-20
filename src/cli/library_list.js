@@ -4,6 +4,7 @@ import {spin} from '../app/ui';
 import {buildAPIClient} from './apiclient';
 import chalk from 'chalk';
 import {formatLibrary} from './library_ui.js';
+import prompt from '../../oldlib/prompts';
 
 export class CLILibraryListCommandSite extends LibraryListCommandSite {
 
@@ -15,7 +16,9 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		if (!sections || !sections.length) {
 			sections = ['mine', 'community'];
 		}
-		this._sections = sections;
+		this._sectionNames = sections;
+		this._page = this.argv.page || 1;
+
 		// todo - since the text can be used by any app, this could be pushed down to the command layer so it's shared
 		this.headings = {
 			official: 'Official Libraries',
@@ -25,6 +28,8 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 			recent: 'Recently added/updated Libraries',
 			community: 'Community Libraries'
 		};
+
+		this._sections = this._buildSections();
 	}
 
 	apiClient() {
@@ -52,14 +57,18 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 
 	sectionNames() {
-		return this._sections;
+		return this._sectionNames;
 	}
 
 	sections() {
+		return this._sections;
+	}
+
+	_buildSections() {
 		const result = {};
 		const sections = this.sectionNames();
 		for (let section of sections) {
-			result[section] = {};
+			result[section] = {page:1};
 		}
 		if (result.mine) {
 			result.mine.excludeBadges = {mine:true};
@@ -67,8 +76,32 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		return result;
 	}
 
+	_nextPage() {
+		this._page ++;
+		for (let name of this.sectionNames()) {
+			const section = this._sections[name];
+			section.page += 1;
+		}
+	}
+
+	_removeEmptySections(results, sectionNames = this._sectionNames, sections = this._sections) {
+		for (let name of sectionNames) {
+			const section = results[name];
+			if (!section || !section.length) {
+				this._removeSection(name, sectionNames, sections);
+			}
+		}
+		return [sectionNames, sections];
+	}
+
+	_removeSection(name, sectionNames=this._sectionNames, sections=this._sections) {
+		sectionNames.splice(sectionNames.indexOf(name), 1);
+		delete sections[name];
+	}
+
 	notifyFetchLists(promise) {
-		return spin(promise, 'Searching for libraries...')
+		const msg = this._page==1 ? 'Searching for libraries...' : 'Retrieving libraries page '+this._page;
+		return spin(promise, msg)
 			.then((results) => {
 				const sections = this.sectionNames();
 				let separator = false;
@@ -78,16 +111,22 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 						if (separator) {
 							console.log();
 						}
-						this.printSection(name, list);
+						this.printSection(name, this._sections[name], list);
 						separator = true;
 					}
 				}
+				return results;
 			});
 	}
 
-	printSection(name, libraries) {
+	printSection(name, section, libraries) {
+		// omit the section if not on the first page and there are no results
+		if (!libraries.length && section.page)
+			return;
+
 		const heading = this.headings[name] || name;
-		console.log(chalk.bold(heading));
+		const page = section.page>1 ? chalk.grey(' page '+section.page) : '';
+		console.log(chalk.bold(heading)+page);
 		if (libraries.length) {
 			for (let library of libraries) {
 				this.showLibrary(name, library);
@@ -108,14 +147,45 @@ export default ({lib, factory, apiJS}) => {
 			'filter': {
 				required: false,
 				string: true,
-				description: 'filter out libraries not matching the text'
+				description: 'filters libraries not matching the text'
+			},
+			'non-interactive': {
+				required: false,
+				boolean: true,
+				description: 'Prints a single page of libraries without prompting'
 			}
 		},
 		params: '[sections...]',
 		handler: function libraryListHandler(argv) {
 			const site = new CLILibraryListCommandSite(argv, buildAPIClient(apiJS));
 			const cmd = new LibraryListCommand();
-			return site.run(cmd);
+			let count = 0;
+
+			function prompForNextPage() {
+				return prompt.enterToContinueControLCToExit();
+			}
+
+			function runPage() {
+				return site.run(cmd).then((results) => nextPage(results));
+			}
+
+			function nextPage(results) {
+				if (results) {
+					// only continue to show sections with results;
+					const [names,] = site._removeEmptySections(results);
+					if (!argv['non-interactive'] && names.length) {
+						site._nextPage();
+						return prompForNextPage()
+							.then(next => {
+								if (next) {
+									return runPage();
+								}
+							});
+					}
+				}
+			}
+
+			return runPage();
 		}
 	});
 };
