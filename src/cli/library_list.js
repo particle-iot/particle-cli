@@ -50,10 +50,15 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	 */
 	settings() {
 		const result = {};
-		if (this.argv.filter) {
-			result.filter = this.argv.filter;
-		}
+		this._add(result, 'filter');
+		this._add(result, 'limit');
 		return result;
+	}
+
+	_add(target, param) {
+		if (this.argv[param]) {
+			target[param] = this.argv[param];
+		}
 	}
 
 	sectionNames() {
@@ -153,6 +158,14 @@ export default ({lib, factory, apiJS}) => {
 				required: false,
 				boolean: true,
 				description: 'Prints a single page of libraries without prompting'
+			},
+			'page': {
+				required: false,
+				description: 'Start the listing at the given page number'
+			},
+			'limit': {
+				required: false,
+				description: 'The number of items to show per page'
 			}
 		},
 		params: '[sections...]',
