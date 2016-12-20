@@ -79,7 +79,8 @@
     "when": "^3.7.2",
     "xtend": "^4.0.0",
     "yargs": "^5.0.0",
-    "yeoman-environment": "^1.6.4"
+    "yeoman-environment": "^1.6.4",
+    "yeoman-generator": "^0.24.1"
   },
   "devDependencies": {
     "babel-cli": "^6.10.1",
@@ -105,8 +106,7 @@
     "sinon-chai": "^2.8.0",
     "testdouble": "^1.6.0",
     "testdouble-chai": "^0.2.2",
-    "tmp": "0.0.28",
-    "yeoman-generator": "^0.24.1"
+    "tmp": "0.0.28"
   },
   "engines": {
     "node": ">=0.10.40"
