@@ -3,19 +3,22 @@ import chalk from 'chalk';
 export function formatLibrary(library, excludeBadges=[]) {
 	let badges = [];
 
-	if (library.verified && !excludeBadges.verified) {
-		badges.push(chalk.green('[verified] '));
+	if (library.official && !excludeBadges.official) {
+		badges.push(chalk.green('[official] '));
+	}
+	else {
+		if (library.verified && !excludeBadges.verified) {
+			badges.push(chalk.green('[verified] '));
+		}
 	}
 
-	let privateBadge = false;
 	if (library.visibility==='private' && !excludeBadges.private) {
 		badges.push(chalk.blue('[private] '));
-		privateBadge = true;
 	}
-
-	// at present, a library that is private is implicitly mine
-	if (library.mine && !privateBadge && !excludeBadges.mine) {
-		badges.push(chalk.blue('[mine] '));
+	else {
+		if (library.mine && !excludeBadges.mine) {
+			badges.push(chalk.blue('[mine] '));
+		}
 	}
 
 	const badgesText = badges.join('');

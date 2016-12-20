@@ -11,16 +11,19 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		super();
 		this._apiClient = apiClient;
 		this.argv = argv;
-		if (!argv.sections || !argv.sections.length) {
-			argv.sections = ['mine', 'official', 'popular', 'recent'];
+		let sections = argv.params.sections;
+		if (!sections || !sections.length) {
+			sections = ['mine', 'community'];
 		}
+		this._sections = sections;
 		// todo - since the text can be used by any app, this could be pushed down to the command layer so it's shared
 		this.headings = {
 			official: 'Official Libraries',
 			verified: 'Verified Libraries',
 			popular: 'Popular Libraries',
 			mine: 'My Libraries',
-			recent: 'Recently added/updated Libraries'
+			recent: 'Recently added/updated Libraries',
+			community: 'Community Libraries'
 		};
 	}
 
@@ -41,12 +44,20 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	 * @returns {Object} Empty object {}
 	 */
 	settings() {
-		return {};
+		const result = {};
+		if (this.argv.filter) {
+			result.filter = this.argv.filter;
+		}
+		return result;
+	}
+
+	sectionNames() {
+		return this._sections;
 	}
 
 	sections() {
 		const result = {};
-		const sections = this.argv.sections;
+		const sections = this.sectionNames();
 		for (let section of sections) {
 			result[section] = {};
 		}
@@ -59,10 +70,9 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	notifyFetchLists(promise) {
 		return spin(promise, 'Searching for libraries...')
 			.then((results) => {
-				const sections = this.argv.sections;
+				const sections = this.sectionNames();
 				let separator = false;
-				for (let index in sections) {
-					const name = sections[index];
+				for (let name of sections) {
 					const list = results[name];
 					if (list) {
 						if (separator) {
@@ -94,8 +104,14 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 
 export default ({lib, factory, apiJS}) => {
 	factory.createCommand(lib, 'list', 'Lists libraries available', {
-		options: {},
-		params: '[sections]',
+		options: {
+			'filter': {
+				required: false,
+				string: true,
+				description: 'filter out libraries not matching the text'
+			}
+		},
+		params: '[sections...]',
 		handler: function libraryListHandler(argv) {
 			const site = new CLILibraryListCommandSite(argv, buildAPIClient(apiJS));
 			const cmd = new LibraryListCommand();
