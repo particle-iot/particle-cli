@@ -66,7 +66,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 						if (isYes(result)) {
 							return commonLocation;
 						} else {
-							return this.prompt(`Would you like to create your project in ${currentLocation}? Type “n” to cancel. [Y/n]`, 'Y', yesNoValidator())
+							return this.prompt(`Would you like to create your project in ${chalk.bold(currentLocation)}? Type “n” to cancel. [Y/n]`, 'Y', yesNoValidator())
 								.then((result) => {
 									return (isYes(result)) ? currentLocation : '';
 								});
@@ -157,7 +157,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 export default ({project, factory}) => {
 
 	// todo - move library add to its own module
-	factory.createCommand(project, 'init', 'Initialize a new project in the current or specified directory.', {
+	factory.createCommand(project, 'create', 'Create a new project in the current or specified directory.', {
 		options: {
 			'name' : {
 				required: false,
