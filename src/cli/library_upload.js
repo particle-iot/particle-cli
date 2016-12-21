@@ -45,7 +45,7 @@ export class CLILibraryContributeCommandSite extends LibraryContributeCommandSit
 }
 
 export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'upload', 'uploads a private version of a library', {
+	factory.createCommand(lib, 'upload', 'Uploads a private version of a library', {
 		options: {
 			'dryRun': {
 				required: false,

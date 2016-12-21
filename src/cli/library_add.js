@@ -41,7 +41,7 @@ export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 }
 
 export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
+	factory.createCommand(lib, 'add', 'Adds a library to the current project', {
 		options: {},
 		params: '<name>',
 

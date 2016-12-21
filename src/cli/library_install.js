@@ -98,7 +98,7 @@ export default ({lib, factory, apiJS}) => {
 		handler: (argv) => libraryInstallHandler(argv, apiJS),
 	});
 
-	factory.createCommand(lib, 'copy', 'copies a library to the current project', {
+	factory.createCommand(lib, 'copy', 'Copies a library to the current project', {
 		options: {},
 		params: '[name]',
 		handler: function LibraryCopyHandler(argv) {

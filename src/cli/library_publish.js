@@ -39,7 +39,7 @@ export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 }
 
 export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'publish', 'publishes a library', {
+	factory.createCommand(lib, 'publish', 'Publishes a private library, making it public', {
 		options: {},
 		params: '[name]',
 

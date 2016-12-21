@@ -43,7 +43,7 @@ export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 
 
 export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'search', 'searches available libraries', {
+	factory.createCommand(lib, 'search', 'Searches available libraries', {
 		options: {
 		},
 		params: '<name>',
