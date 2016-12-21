@@ -18,6 +18,9 @@ var that = {
 				input: process.stdin,
 				output: process.stdout
 			});
+			that._prompt.on("SIGINT", function () {
+				process.emit("SIGINT");
+			});
 		}
 		return that._prompt;
 	},
@@ -91,6 +94,24 @@ var that = {
 			stdin.removeListener('data', onStdinData);
 		});
 
+		return dfd.promise;
+	},
+
+	enterToContinueControLCToExit(message) {
+		if (!message) {
+			message = 'Press ENTER for next page, CTRL-C to exit.';
+		}
+		var dfd = when.defer();
+		var prompt = that.getPrompt();
+		prompt.question(message, function (value) {
+			that.closePrompt();
+			dfd.resolve(true);
+		});
+		process.on('SIGINT', function () {
+			that.closePrompt();
+			console.log();
+			dfd.resolve(false);
+		});
 		return dfd.promise;
 	},
 
