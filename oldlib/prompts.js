@@ -3,6 +3,7 @@ var when = require('when');
 var readline = require('readline');
 
 var inquirer = require('inquirer');
+var log = require('./log');
 
 var that = {
 
@@ -12,15 +13,17 @@ var that = {
 	 * Sets up our user input
 	 * @returns {Object} prompt object
 	 */
-	getPrompt: function () {
+	getPrompt: function (captureInterrupt) {
 		if (!that._prompt) {
 			that._prompt = readline.createInterface({
 				input: process.stdin,
 				output: process.stdout
 			});
-			that._prompt.on("SIGINT", function () {
-				process.emit("SIGINT");
-			});
+			if (captureInterrupt) {
+				that._prompt.on("SIGINT", function () {
+					process.emit("SIGINT");
+				});
+			}
 		}
 		return that._prompt;
 	},
@@ -97,12 +100,51 @@ var that = {
 		return dfd.promise;
 	},
 
+	/**
+	 * @param {string} message The message to prompt the user
+	 * @param {string} defaultValue The default value to use if the user simply hits return
+	 * @param {function(string)} validator function that returns an error message if the value is not valid.
+	 * @returns {Promise) to prompt and get the result. The result is undefined if the user hits ctrl-C.
+	 */
+	promptAndValidate(message, defaultValue, validator) {
+		var dfd = when.defer();
+		var prompt = that.getPrompt();
+		message += ': ';
+
+		function runPrompt() {
+			prompt.question(message, function (value) {
+				value = value || defaultValue;
+				var validateError;
+				if (validator) {
+					validateError = validator(value);
+				}
+
+				if (validateError) {
+					log.error(validateError);
+					runPrompt();
+				} else {
+					that.closePrompt();
+					dfd.resolve(value);
+				}
+			});
+		}
+
+		// process.on('SIGINT', function () {
+		// 	that.closePrompt();
+		// 	console.log();
+		// 	dfd.resolve(false);
+		// });
+
+		runPrompt();
+		return dfd.promise;
+	},
+
 	enterToContinueControlCToExit(message) {
 		if (!message) {
 			message = 'Press ENTER for next page, CTRL-C to exit.';
 		}
 		var dfd = when.defer();
-		var prompt = that.getPrompt();
+		var prompt = that.getPrompt(true);
 		prompt.question(message, function (value) {
 			that.closePrompt();
 			dfd.resolve(true);
