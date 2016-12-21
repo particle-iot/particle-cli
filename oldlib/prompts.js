@@ -97,7 +97,7 @@ var that = {
 		return dfd.promise;
 	},
 
-	enterToContinueControLCToExit(message) {
+	enterToContinueControlCToExit(message) {
 		if (!message) {
 			message = 'Press ENTER for next page, CTRL-C to exit.';
 		}

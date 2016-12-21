@@ -175,7 +175,7 @@ export default ({lib, factory, apiJS}) => {
 			let count = 0;
 
 			function prompForNextPage() {
-				return prompt.enterToContinueControLCToExit();
+				return prompt.enterToContinueControlCToExit();
 			}
 
 			function runPage() {
