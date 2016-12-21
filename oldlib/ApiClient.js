@@ -506,7 +506,7 @@ ApiClient.prototype = {
 		return dfd.promise;
 	},
 
-	_mapFilenames(fileMapping, messages) {
+	_mapFilenames: function(fileMapping, messages) {
 
 		function regexEscape(s) {
 			return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
