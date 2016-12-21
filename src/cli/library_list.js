@@ -134,7 +134,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		console.log(chalk.bold(heading)+page);
 		if (libraries.length) {
 			for (let library of libraries) {
-				this.showLibrary(name, library);
+				this.showLibrary(section, library);
 			}
 		} else {
 			console.log(chalk.grey('No libraries to show in this section.'));
