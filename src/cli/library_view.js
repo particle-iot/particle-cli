@@ -11,9 +11,7 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 	notifyFetchingLibrary(lib, targetDir) {
 		this.targetDir = targetDir;
 		this.targetExists = fs.existsSync(targetDir);
-		if (this.targetExists) {
-			return Promise.resolve();
-		}
+		return Promise.resolve(!this.targetExists);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
