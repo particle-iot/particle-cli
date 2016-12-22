@@ -318,7 +318,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		return pipeline([
 			function() {
 				var sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
-				var list = Object.values(fileMapping.map);
+				var list = Object.keys(fileMapping.map);
 				var isSourcey = _.some(list, function(file) {
 					return sourceExtensions.indexOf(path.extname(file)) >= 0;
 				});
