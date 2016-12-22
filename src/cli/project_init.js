@@ -65,12 +65,13 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 					.then(result => {
 						if (isYes(result)) {
 							return commonLocation;
-						} else {
-							return this.prompt(`Would you like to create your project in ${chalk.bold(currentLocation)}? Type “n” to cancel. [Y/n]`, 'Y', yesNoValidator())
-								.then((result) => {
-									return (isYes(result)) ? currentLocation : '';
-								});
 						}
+					})
+					.then(location => {
+						return location || this.prompt(`Would you like to create your project in ${chalk.bold(currentLocation)}? Type “n” to cancel. [Y/n]`, 'Y', yesNoValidator())
+							.then((result) => {
+								return (isYes(result)) ? currentLocation : '';
+							});
 					});
 		};
 
