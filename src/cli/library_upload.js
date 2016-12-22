@@ -31,7 +31,7 @@ export class CLILibraryContributeCommandSite extends LibraryContributeCommandSit
 	}
 
 	validatingLibrary(promise, directory) {
-		return spin(promise, `Validating library at ${chalk.green(directory)}`);
+		return spin(promise, `Validating library at ${chalk.bold(directory)}`);
 	}
 
 	contributingLibrary(promise, library) {
@@ -40,7 +40,7 @@ export class CLILibraryContributeCommandSite extends LibraryContributeCommandSit
 
 	contributeComplete(library) {
 		return log.success(`Library ${chalk.green(library.name)} was successfully uploaded.\n` +
-		`Add it to your project with ${chalk.green('particle library add ' + library.name)}`);
+		`Add it to your project with ${chalk.bold('particle library add ' + library.name)}`);
 	}
 }
 

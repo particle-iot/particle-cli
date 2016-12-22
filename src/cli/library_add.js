@@ -29,13 +29,13 @@ export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	}
 
 	fetchingLibrary(promise, name) {
-		return spin(promise, `Adding library ${chalk.green(name)}`);
+		return spin(promise, `Adding library ${chalk.blue(name)}`);
 	}
 
 	addedLibrary(name, version) {
 		return Promise.resolve().then(() => {
-			log.success(`Library ${chalk.green(name)} ${version} has been added to the project.`);
-//			log.success(`To get started using this library, run ${chalk.bold('particle library view '+name)} to see usage examples.`);
+			log.success(`Library ${chalk.blue(name)} ${version} has been added to the project.`);
+			log.success(`To get started using this library, run ${chalk.bold('particle library view '+name)} to view the library documentation and sources.`);
 		});
 	}
 }

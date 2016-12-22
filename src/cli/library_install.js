@@ -46,16 +46,16 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 
 	notifyCheckingLibrary(libName) {
-		return this.promiseLog(`Checking library '${libName}'...`);
+		return this.promiseLog(`Checking library ${chalk.green(libName)}...`);
 	}
 
 	notifyFetchingLibrary(lib, targetDir) {
 		const dest = ` to ${targetDir}`;
-		return this.promiseLog(`Installing library '${lib.name} ${lib.version}${dest}' ...`);
+		return this.promiseLog(`Installing library ${chalk.blue(lib.name)} ${lib.version}${dest} ...`);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
-		return this.promiseLog(`Library '${lib.name} ${lib.version}' installed.`);
+		return this.promiseLog(`Library ${chalk.blue(lib.name)} ${lib.version} installed.`);
 	}
 
 	promiseLog(msg) {
