@@ -63,49 +63,23 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 }
 
-function libraryInstallHandler(argv, apiJS) {
+function install(argv, apiJS) {
 	const site = new CLILibraryInstallCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryInstallCommand();
 	return site.run(cmd);
 }
 
-export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'install', false, {
-		options: {
-			'copy': {
-				required: false,
-				boolean: true,
-				alias: 'vendored',
-				description: 'install the library by copying the library sources into the project\'s lib folder.'
-			},
-			'adapter': {        // hidden
-				required: false,
-				boolean: true,
-				alias: 'a'
-			},
-			'confirm': {
-				required: false,
-				boolean: true,
-				alias: 'y'
-			},
-			'dest': {
-				required: false,
-				boolean: false,
-				description: 'the directory to install to'
-			}
-		},
-		params: '[name]',
-		handler: (argv) => libraryInstallHandler(argv, apiJS),
-	});
+function copy(argv, apiJS) {
+	argv.vendored = true;
+	argv.adapter = false;
+	argv.confirm = false;
+	return install(argv, apiJS);
+}
 
-	factory.createCommand(lib, 'copy', 'copies a library to the current project', {
-		options: {},
-		params: '[name]',
-		handler: function LibraryCopyHandler(argv) {
-			argv.vendored = true;
-			argv.adapter = false;
-			argv.confirm = false;
-			return libraryInstallHandler(argv, apiJS);
-		}
-	});
-};
+export function command(cmd, apiJS, argv) {
+	if (cmd==='copy') {
+		return copy(argv, apiJS);
+ 	} else {
+		return copy(argv, apiJS);
+	}
+}

@@ -4,7 +4,7 @@ import log from '../app/log';
 import {spin} from '../app/ui';
 import {buildAPIClient} from './apiclient';
 
-export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
+class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	constructor(argv, apiClient) {
 		super();
 		this._apiClient = apiClient;
@@ -40,16 +40,9 @@ export class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	}
 }
 
-export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
-		options: {},
-		params: '<name>',
 
-		handler: function libraryAddHandler(argv) {
-			// todo ... and here
-			const site = new CLILibraryAddCommandSite(argv, buildAPIClient(apiJS));
-			const cmd = new LibraryAddCommand();
-			return site.run(cmd);
-		}
-	});
-};
+export function command(apiJS, argv) {
+	const site = new CLILibraryAddCommandSite(argv, buildAPIClient(apiJS));
+	const cmd = new LibraryAddCommand();
+	return site.run(cmd);
+}

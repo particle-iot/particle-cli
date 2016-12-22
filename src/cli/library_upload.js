@@ -44,19 +44,8 @@ export class CLILibraryContributeCommandSite extends LibraryContributeCommandSit
 	}
 }
 
-export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'upload', 'uploads a private version of a library', {
-		options: {
-			'dryRun': {
-				required: false,
-				boolean: true,
-				description: 'perform validation steps but don\'t actually upload the library.'
-			}
-		},
-		handler: function LibraryUploadHandler(argv) {
-			const site = new CLILibraryContributeCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
-			const cmd = new LibraryContributeCommand();
-			return site.run(cmd);
-		}
-	});
-};
+export function command(apiJS, argv) {
+	const site = new CLILibraryContributeCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
+	const cmd = new LibraryContributeCommand();
+	return site.run(cmd);
+}

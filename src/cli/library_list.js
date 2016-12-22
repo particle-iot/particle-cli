@@ -146,59 +146,34 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 }
 
-export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'list', 'Lists libraries available', {
-		options: {
-			'filter': {
-				required: false,
-				string: true,
-				description: 'filters libraries not matching the text'
-			},
-			'non-interactive': {
-				required: false,
-				boolean: true,
-				description: 'Prints a single page of libraries without prompting'
-			},
-			'page': {
-				required: false,
-				description: 'Start the listing at the given page number'
-			},
-			'limit': {
-				required: false,
-				description: 'The number of items to show per page'
-			}
-		},
-		params: '[sections...]',
-		handler: function libraryListHandler(argv) {
-			const site = new CLILibraryListCommandSite(argv, buildAPIClient(apiJS));
-			const cmd = new LibraryListCommand();
-			let count = 0;
+export function command(apiJS, argv) {
+	const site = new CLILibraryListCommandSite(argv, buildAPIClient(apiJS));
+	const cmd = new LibraryListCommand();
+	let count = 0;
 
-			function prompForNextPage() {
-				return prompt.enterToContinueControlCToExit();
-			}
+	function prompForNextPage() {
+		return prompt.enterToContinueControlCToExit();
+	}
 
-			function runPage() {
-				return site.run(cmd).then((results) => nextPage(results));
-			}
+	function runPage() {
+		return site.run(cmd).then((results) => nextPage(results));
+	}
 
-			function nextPage(results) {
-				if (results) {
-					// only continue to show sections with results;
-					const [names,] = site._removeEmptySections(results);
-					if (!argv['non-interactive'] && names.length) {
-						site._nextPage();
-						return prompForNextPage()
-							.then(next => {
-								if (next) {
-									return runPage();
-								}
-							});
-					}
-				}
+	function nextPage(results) {
+		if (results) {
+			// only continue to show sections with results;
+			const [names,] = site._removeEmptySections(results);
+			if (!argv['non-interactive'] && names.length) {
+				site._nextPage();
+				return prompForNextPage()
+					.then(next => {
+						if (next) {
+							return runPage();
+						}
+					});
 			}
-
-			return runPage();
 		}
-	});
-};
+	}
+
+	return runPage();
+}

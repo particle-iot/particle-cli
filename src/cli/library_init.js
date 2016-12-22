@@ -39,29 +39,10 @@ export class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 	}
 }
 
-
-export default ({lib, factory}) => {
-	factory.createCommand(lib, 'init', 'Initializes a new library in the specified or current directory.', {
-		options: {
-			'name': {
-				required: false,
-				description: 'The name of the library to create.'
-			},
-			'version': {
-				required: false,
-				description: 'The initial version of the library to create.'
-			},
-			'author': {
-				required: false,
-				description: 'The author of the library.'
-			}
-		},
-		handler: function LibraryInitHandler(argv) {
-			// todo - can we avoid the global dependency on process.cwd()
-			// the cli itself should provide an environment, including cwd().
-			const site = new CLILibraryInitCommandSite(argv, process.cwd());
-			const cmd = new LibraryInitCommand();
-			return site.run(cmd);
-		}
-	});
-};
+export function command(argv) {
+	// todo - can we avoid the global dependency on process.cwd()
+	// the cli itself should provide an environment, including cwd().
+	const site = new CLILibraryInitCommandSite(argv, process.cwd());
+	const cmd = new LibraryInitCommand();
+	return site.run(cmd);
+}
