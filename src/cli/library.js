@@ -3,6 +3,7 @@ import settings from '../../settings';
 
 import libraryAdd from './library_add';
 import libraryInstall from './library_install';
+import libraryView from './library_view';
 import libraryMigrate from './library_migrate';
 import libraryInit from './library_init';
 import libraryList from './library_list';
@@ -26,6 +27,7 @@ export default ({root, factory}) => {
 	libraryAdd({lib, factory, apiJS: api()});
 	libraryInit({lib, factory});
 	libraryInstall({lib, factory, apiJS: api()});
+	libraryView({lib, factory, apiJS: api()});
 	libraryList({lib, factory, apiJS: api()});
 	libraryMigrate({lib, factory});
 	librarySearch({lib, factory, apiJS: api()});
