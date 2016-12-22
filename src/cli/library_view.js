@@ -21,7 +21,7 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 		}
 	}
 
-		view() {
+	view() {
 		if (this.argv.readme) {
 			this.showFile('No readme files found for the library.', ['README.md', 'README.txt']);
 		}
