@@ -7,7 +7,23 @@ import path from 'path';
 
 class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 
-	view() {
+
+	notifyFetchingLibrary(lib, targetDir) {
+		this.targetDir = targetDir;
+		this.targetExists = fs.existsSync(targetDir);
+		if (this.targetExists) {
+			return Promise.resolve();
+		}
+	}
+
+	notifyInstalledLibrary(lib, targetDir) {
+		this.metadata = lib;
+		if (!this.targetExists) {
+			return super.notifyInstalledLibrary(lib, targetDir);
+		}
+	}
+
+		view() {
 		if (this.argv.readme) {
 			this.showFile('No readme files found for the library.', ['README.md', 'README.txt']);
 		}

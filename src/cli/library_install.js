@@ -51,12 +51,10 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 
 	notifyFetchingLibrary(lib, targetDir) {
 		const dest = ` to ${targetDir}`;
-		this.targetDir = targetDir;
 		return this.promiseLog(`Installing library '${lib.name} ${lib.version}${dest}' ...`);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
-		this.metadata = lib;
 		return this.promiseLog(`Library '${lib.name} ${lib.version}' installed.`);
 	}
 
