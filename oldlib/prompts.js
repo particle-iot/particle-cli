@@ -106,7 +106,7 @@ var that = {
 	 * @param {function(string)} validator function that returns an error message if the value is not valid.
 	 * @returns {Promise) to prompt and get the result. The result is undefined if the user hits ctrl-C.
 	 */
-	promptAndValidate(message, defaultValue, validator) {
+	promptAndValidate: function(message, defaultValue, validator) {
 		var dfd = when.defer();
 		var prompt = that.getPrompt();
 		message += ': ';
@@ -139,7 +139,7 @@ var that = {
 		return dfd.promise;
 	},
 
-	enterToContinueControlCToExit(message) {
+	enterToContinueControlCToExit: function(message) {
 		if (!message) {
 			message = 'Press ENTER for next page, CTRL-C to exit.';
 		}
