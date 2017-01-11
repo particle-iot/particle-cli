@@ -105,7 +105,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 
 	notifyFetchLists(promise) {
-		const msg = this._page==1 ? 'Searching for libraries...' : 'Retrieving libraries page '+this._page;
+		const msg = this._page === 1 ? 'Searching for libraries...' : `Retrieving libraries page ${this._page}`;
 		return spin(promise, msg)
 			.then((results) => {
 				const sections = this.sectionNames();
@@ -126,11 +126,12 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 
 	printSection(name, section, libraries) {
 		// omit the section if not on the first page and there are no results
-		if (!libraries.length && section.page)
+		if (!libraries.length && section.page) {
 			return;
+		}
 
+		const page = section.page>1 ? chalk.grey(` page ${section.page}`) : '';
 		const heading = this.headings[name] || name;
-		const page = section.page>1 ? chalk.grey(' page '+section.page) : '';
 		console.log(chalk.bold(heading)+page);
 		if (libraries.length) {
 			for (let library of libraries) {
@@ -172,7 +173,6 @@ export default ({lib, factory, apiJS}) => {
 		handler: function libraryListHandler(argv) {
 			const site = new CLILibraryListCommandSite(argv, buildAPIClient(apiJS));
 			const cmd = new LibraryListCommand();
-			let count = 0;
 
 			function prompForNextPage() {
 				return prompt.enterToContinueControlCToExit();

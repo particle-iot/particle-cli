@@ -1,6 +1,6 @@
 import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd';
 import {convertApiError} from '../cmd/api';
-const settings = require('../../settings');
+import chalk from 'chalk';
 import {buildAPIClient} from './apiclient';
 
 export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {

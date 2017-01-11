@@ -68,7 +68,7 @@ export default ({lib, factory, apiJS}) => {
 	function libraryViewHandler(argv, apiJS) {
 		const site = new CLILibraryViewCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 		const cmd = new LibraryInstallCommand();
-		return site.run(cmd).then(() => site.view())
+		return site.run(cmd).then(() => site.view());
 	}
 
 	factory.createCommand(lib, 'view', 'View details about a library', {

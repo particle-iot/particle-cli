@@ -48,7 +48,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 If you answer N to the first question, the CLI asks, “Would you like to create your project in <current path>? Type “n” to cancel. (Y/n)
 	 If you answer Y, the project directory is created under <current path>/myproject
 	 If you answer anything else, the `project init` process is cancelled
-
+	 * @returns {Promise} promise
 	 */
 	dialog() {
 		const promptForName = () => {
@@ -94,6 +94,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 * @param {string} message       The message to prompt with
 	 * @param {string} value         The default value
      * @param {function(value)}         validator The validator that is used to validate the response.
+	 * @returns {Promise} promise
 	 */
 	prompt(message, value, validator) {
 		return prompt.promptAndValidate(message, value, validator);
