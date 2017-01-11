@@ -34,8 +34,7 @@ var prompt = require('inquirer').prompt;
 var when = require('when');
 var sequence = require('when/sequence');
 var extend = require('xtend');
-var SerialPortLib = require('serialport');
-var SerialPort = SerialPortLib.SerialPort;
+var SerialPort = require('serialport');
 var inquirer = require('inquirer');
 var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
@@ -80,7 +79,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	findDevices: function (callback) {
 		var devices = [];
-		SerialPortLib.list(function (err, ports) {
+		SerialPort.list(function (err, ports) {
 			if (err) {
 				console.error('Error listing serial ports: ', err);
 				return callback([]);
