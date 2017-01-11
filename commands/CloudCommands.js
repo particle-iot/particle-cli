@@ -1134,7 +1134,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			if (hasIncludeFile) {
 				target = path.basename(file);
 			} else {
-				target = path.relative(dirname, file);
+				target = path.relative(dirname, file).replace(/\\/g, '/');
 			}
 			fileMapping.map[target] = source;
 		});
