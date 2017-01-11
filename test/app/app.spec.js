@@ -36,4 +36,8 @@ describe('command parsing', () => {
 		expect(sut.isNewCommand(['library', 'asfdjklasdf'])).to.be.true;
 	});
 
+	it('detects a new command if there are too many arguments', () => {
+		expect(sut.isNewCommand(['library', 'upload', 'mylib'])).to.be.true;
+	});
+
 });

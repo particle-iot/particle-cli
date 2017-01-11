@@ -185,6 +185,7 @@ export class CLI {
 			&& (
 			argv.clierror.type === cliargs.errors.requiredParameterError
 			|| argv.clierror.type === cliargs.errors.unknownArgumentError
+			|| argv.clierror.type === cliargs.errors.unknownParametersError
 			|| (argv.clierror.type === cliargs.errors.unknownCommandError) && (argv.clierror.item.path.length > 0)));
 		return !!result;
 	}
