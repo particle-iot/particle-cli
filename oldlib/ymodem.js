@@ -82,7 +82,7 @@ YModem.prototype = {
 		]);
 
 		transferred.catch(function(err) {
-			this.errored = true;
+			self.errored = true;
 			return when.reject(err);
 		}).finally(function() {
 			self._close();
