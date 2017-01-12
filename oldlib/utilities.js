@@ -58,6 +58,17 @@ var that = module.exports = {
 
 		return -1;
 	},
+	// String.endsWith polyfill
+	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/endsWith#Polyfill
+	endsWith: function(subject, searchString, position) {
+		var subjectString = subject.toString();
+		if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+			position = subjectString.length;
+		}
+		position -= searchString.length;
+		var lastIndex = subjectString.lastIndexOf(searchString, position);
+		return lastIndex !== -1 && lastIndex === position;
+	},
 	pipeDeferred: function(left, right) {
 		return when(left).then(function() {
 			right.resolve.apply(right, arguments);

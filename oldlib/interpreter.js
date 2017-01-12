@@ -30,6 +30,7 @@ var fs = require('fs');
 var path = require('path');
 var when = require('when');
 var settings = require('../settings.js');
+var endsWith = require('./utilities').endsWith;
 
 var Interpreter = function () {
 
@@ -160,7 +161,7 @@ Interpreter.prototype = {
 		this.commandsByName = {};
 
 		var files = fs.readdirSync(settings.commandPath).filter(function (file) {
-			return file.indexOf('.') !== 0 && !file.endsWith('.map'); // Ignore hidden files (Such as .swp files)
+			return file.indexOf('.') !== 0 && !endsWith(file, '.map'); // Ignore hidden files (Such as .swp files)
 		});
 
 		for (var i = 0; i < files.length; i++) {
