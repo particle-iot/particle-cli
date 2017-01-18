@@ -239,9 +239,9 @@
     "library": {
         "_commands": [ "init", "copy", "migrate", "search", "upload", "publish", "add" ],
 
-        "init": {
-            "maps": [ "library", "init" ],
-            "usage": "particle library init [directory]",
+        "create": {
+            "maps": [ "library", "create" ],
+            "usage": "particle library create [directory]",
             "does": "Initializes a new library in the specified or current directory."
         },
         "copy": {
