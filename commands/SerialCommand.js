@@ -179,8 +179,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			//TODO: listen for interrupts, close gracefully?
 			var serialPort = new SerialPort(device.port, {
-				baudrate: 9600
-			}, false);
+				baudrate: 9600,
+				autoOpen: false
+			});
 			serialPort.on('data', function (data) {
 				process.stdout.write(data.toString());
 			});
@@ -387,8 +388,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					},
 					function() {
 						var serialPort = new SerialPort(device.port, {
-							baudrate: 28800
-						}, false);
+							baudrate: 28800,
+							autoOpen: false
+						});
 
 						function closePort() {
 							if (serialPort.isOpen()) {
@@ -655,8 +657,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		var serialPort = this.serialPort || new SerialPort(device.port, {
 			baudrate: 9600,
-			parser: SerialBoredParser.makeParser(250)
-		}, false);
+			parser: SerialBoredParser.makeParser(250),
+			autoOpen: false
+		});
 
 		var wifiDone = when.defer();
 		serialPort.on('error', function (err) {
@@ -834,8 +837,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		return when.promise(function (resolve, reject) {
 			serialPort = new SerialPort(device.port, {
 				baudrate: 9600,
-				parser: SerialBoredParser.makeParser(250)
-			}, false);
+				parser: SerialBoredParser.makeParser(250),
+				autoOpen: false
+			});
 
 			var failTimer = setTimeout(function () {
 				reject('Serial timed out');
