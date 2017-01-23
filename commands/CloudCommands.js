@@ -398,6 +398,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				return when.reject(resp.info);
 			} else if (resp.error) {
 				return when.reject(resp.error);
+			} else if (typeof resp === 'string') {
+				return when.reject('Server error');
 			}
 			return when.reject();
 		});
@@ -673,7 +675,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						return resp.sizeInfo;
 					});
 				} else {
-					return when.reject(resp.errors);
+					if (typeof resp === 'string') {
+						return when.reject('Server error');
+					} else {
+						return when.reject(resp.errors);
+					}
 				}
 			}
 		]).then(
