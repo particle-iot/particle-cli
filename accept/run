@@ -1,0 +1,17 @@
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+pushd $DIR > /dev/null
+
+PATH=$DIR:$PATH 
+if [[ -n "$ACCESS_EMAIL"  &&  -n "$ACCESS_PWD" ]]; then
+   particle login $ACCESS_EMAIL $ACCESS_PWD
+fi  
+
+FILES=$*
+
+if [ -z "$FILES" ]; then
+   FILES=features
+fi
+
+cucumber --expand --tags ~@wip $FILES
+popd

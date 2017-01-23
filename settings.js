@@ -30,11 +30,12 @@ var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
 var chalk = require('chalk');
-var specs = require('./lib/deviceSpecs');
+var _ = require('lodash');
 
 var settings = {
 	commandPath: './commands/',
 	apiUrl: 'https://api.particle.io',
+	buildUrl: 'https://build.particle.io',
 	clientId: 'CLI2',
 	access_token: null,
 	minimumApiDelay: 500,
@@ -118,16 +119,6 @@ function envValueBoolean(varName, defaultValue) {
 	}
 }
 
-//fix the paths on the known apps mappings
-Object.keys(specs).forEach(function (id) {
-	var deviceSpecs = specs[id];
-	var knownApps = deviceSpecs['knownApps'];
-	for (var appName in knownApps) {
-		knownApps[appName] = path.join(__dirname,'binaries', knownApps[appName]);
-	};
-});
-
-
 settings.commandPath = __dirname + '/commands/';
 
 settings.findHomePath = function() {
@@ -169,7 +160,9 @@ settings.loadOverrides = function (profile) {
 		var filename = settings.findOverridesFile(profile);
 		if (fs.existsSync(filename)) {
 			settings.overrides = JSON.parse(fs.readFileSync(filename));
-			settings = extend(settings, settings.overrides);
+			// need to do an in-situ extend since external clients may have already obtained the settings object
+			// settings = extend(settings, settings.overrides);
+			_.extend(settings, settings.overrides);
 		}
 	} catch (ex) {
 		console.error('There was an error reading ' + settings.overrides + ': ', ex);
@@ -228,7 +221,7 @@ function matchKey(needle, obj, caseInsensitive) {
 	}
 
 	return null;
-};
+}
 
 settings.override = function (profile, key, value) {
 	if (!settings.overrides) {
@@ -302,9 +295,5 @@ settings.transitionSparkProfiles = function() {
 		});
 	}
 };
-
-settings.transitionSparkProfiles();
-settings.whichProfile();
-settings.loadOverrides();
 
 module.exports = settings;

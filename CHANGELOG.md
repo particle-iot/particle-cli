@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 1.19.0 - 23 January 2017
+
+* Library commands. Try `particle library`
+
 ## 1.18.0 - 22 November 2016
 
 * Include binaries for firmware 0.6.0

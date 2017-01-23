@@ -34,11 +34,11 @@ var prompt = require('inquirer').prompt;
 var temp = require('temp').track();
 
 var settings = require('../settings.js');
-var specs = require('../lib/deviceSpecs');
+var specs = require('../oldlib/deviceSpecs');
 var BaseCommand = require('./BaseCommand.js');
-var prompts = require('../lib/prompts.js');
-var ApiClient = require('../lib/ApiClient.js');
-var utilities = require('../lib/utilities.js');
+var prompts = require('../oldlib/prompts.js');
+var ApiClient = require('../oldlib/ApiClient.js');
+var utilities = require('../oldlib/utilities.js');
 
 var fs = require('fs');
 var path = require('path');
@@ -50,6 +50,8 @@ var inquirer = require('inquirer');
 var arrow = chalk.green('>');
 var alert = chalk.yellow('!');
 var cmd = path.basename(process.argv[1]);
+
+var libraryManager = require('particle-library-manager');
 
 // Use known platforms and add shortcuts
 var PLATFORMS = extend(utilities.knownPlatforms(), {
@@ -100,7 +102,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			'particle cloud nyan my_device_id off',
 			'particle cloud nyan all on'
 		]
-
 	},
 
 
@@ -120,6 +121,16 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				'--target',
 				null
 			);
+		}
+		if (!this.options.local) {
+			// todo - move args parsing to a dedicated portion of the command interface (bound to I/O, and separate
+			// from the main command logic.)
+			var idx = utilities.indexOf(args, '--local');
+			this.options.local = idx>=0;
+		}
+		if (!this.options.verbose) {
+			var idx = utilities.indexOf(args, '--verbose')
+			this.options.verbose = idx>=0;
 		}
 	},
 
@@ -227,7 +238,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		var args = Array.prototype.slice.call(arguments);
-		if (this.options.target) {
+
+		if (self.options.target) {
 			args = args.filter(function (f) {
 				return (f !== '--target' && f !== self.options.target);
 			});
@@ -240,71 +252,89 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject();
 		}
 
-		if (!filePath) {
-			console.error('Please specify a binary file, source file, or source directory, or known app');
-			return when.reject();
-		}
-
 		var api = new ApiClient();
 		if (!api.ready()) {
 			return when.reject('Not logged in');
 		}
 
-		if (!fs.existsSync(filePath)) {
-			return this._flashKnownApp(api, deviceid, filePath).catch(function(err) {
+		if (filePath && !fs.existsSync(filePath)) {
+			return self._flashKnownApp(api, deviceid, filePath).catch(function (err) {
 				console.log('Flash device failed');
 				console.log(err);
 				return when.reject();
 			});
 		}
 
-		var version = this.options.target === 'latest' ? null : this.options.target;
+		var version = self.options.target === 'latest' ? null : self.options.target;
 		if (version) {
 			console.log('Targeting version:', version);
 			console.log();
 		}
 
-		//make a copy of the arguments sans the 'deviceid'
+		// make a copy of the arguments sans the 'deviceid'
 		args = args.slice(1);
-		var files = this._handleMultiFileArgs(args);
-		if (!files || files.list.length == 0) {
-			console.error('no files included?');
-			return when.reject();;
-		}
-		if (settings.showIncludedSourceFiles) {
-			console.log('Including:');
-			for (var i = 0, n = files.list.length; i < n; i++) {
-				console.log('    ' + files.list[i]);
-			}
+
+		if (args.length === 0) {
+			args.push('.'); // default to current directory
 		}
 
-		return this._doFlash(api, deviceid, files, version).catch(function(err) {
-			console.log('Flash device failed');
-			console.log(err);
+		return pipeline([
+			function () {
+				return self._handleMultiFileArgs(args);
+			},
+			function (fileMapping) {
+				if (Object.keys(fileMapping.map).length == 0) {
+					console.error('no files included?');
+					return when.reject();
+				}
+
+				if (settings.showIncludedSourceFiles) {
+					var list = _.values(fileMapping.map);
+					console.log('Including:');
+					for (var i = 0, n = list.length; i < n; i++) {
+						console.log('    ' + list[i]);
+					}
+				}
+
+				return self._doFlash(api, deviceid, fileMapping, version);
+			}
+		]).catch(function(err) {
+			console.error('Flash device failed.');
+			if (_.isArray(err)) {
+				console.log(err.join('\n'));
+			} else {
+				console.error(err);
+			}
 			return when.reject();
 		});
 	},
 
-	_promptForOta: function(api, attrs, files, targetVersion) {
+	_promptForOta: function(api, attrs, fileMapping, targetVersion) {
 		var self = this;
-		var filename;
+		var newFileMapping = {
+			basePath: fileMapping.basePath,
+			map: {}
+		};
 		return pipeline([
 			function() {
 				var sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
-				var isSourcey = _.some(files.list, function(file) {
+				var list = Object.keys(fileMapping.map);
+				var isSourcey = _.some(list, function(file) {
 					return sourceExtensions.indexOf(path.extname(file)) >= 0;
 				});
 				if (!isSourcey) {
-					return files.list[0];
+					var binFile = fileMapping.map[list[0]];
+					newFileMapping.map[list[0]] = binFile;
+					return binFile;
 				}
 
 				filename = temp.path({ suffix: '.bin' });
-				return self._compileAndDownload(api, files, attrs.platform_id, filename, targetVersion).then(function() {
+				return self._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(function() {
+					newFileMapping.map['firmware.bin'] = filename;
 					return filename;
 				});
 			},
 			function(file) {
-				filename = file;
 				return whenNode.lift(fs.stat)(file);
 			},
 			function(stats) {
@@ -326,14 +356,14 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						if (ans.confirmota !== dataUsage) {
 							return reject('User cancelled');
 						}
-						resolve({ list: [filename] });
+						resolve(newFileMapping);
 					});
 				});
 			}
 		]);
 	},
 
-	_doFlash: function(api, deviceid, files, targetVersion) {
+	_doFlash: function(api, deviceid, fileMapping, targetVersion) {
 		var self = this;
 		var isCellular;
 		return pipeline([
@@ -343,10 +373,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function promptOTA(attrs) {
 				isCellular = attrs.cellular;
 				if (!isCellular) {
-					return files;
+					return fileMapping;
 				}
 
-				return self._promptForOta(api, attrs, files, targetVersion);
+				return self._promptForOta(api, attrs, fileMapping, targetVersion);
 			},
 			function flashyFlash(flashFiles) {
 				return api.flashDevice(deviceid, flashFiles, targetVersion);
@@ -368,6 +398,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				return when.reject(resp.info);
 			} else if (resp.error) {
 				return when.reject(resp.error);
+			} else if (typeof resp === 'string') {
+				return when.reject('Server error');
 			}
 			return when.reject();
 		});
@@ -444,6 +476,78 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		return filename;
 	},
 
+	// todo - move this into particle-library-manager and make async
+	enumVendoredLibs: function(dir) {
+		var src = path.join(dir, 'src');
+		var lib = path.join(dir, 'lib');
+
+		// todo - validate each library
+		var libs = fs.readdirSync(lib);
+		var result = libs.map(function(name) {
+			return path.resolve(path.join(lib, name));
+		});
+		return result;
+	},
+
+	launchAndWait: function(cmd, args, verbose) {
+		var util  = require('util'),
+			spawn = require('child_process').spawn,
+			CondVar = require('condvar'),
+			proc    = spawn(cmd, args);
+
+//		console.log("launching "+cmd+' '+args);
+
+		// how can there not be a race condition between launching the process
+		// and hooking up the event handlers?
+
+		proc.stdout.on('data', function (data) {
+			if (verbose)
+				console.log('stdout: ' + data);
+		});
+
+		proc.stderr.on('data', function (data) {
+			if (verbose)
+				console.log('stderr: ' + data);
+		});
+
+		var exit_code_cv = new CondVar;
+
+		proc.on('exit', function (code) {
+			exit_code_cv.send(code);
+		});
+
+		var exit_code = exit_code_cv.recv();
+		if (exit_code) {
+			console.error("Womp womp. Compile job failed. See the output above for details.");
+		}
+		return exit_code;
+	},
+
+
+	localCompile: function(deviceType) {
+		var firmware = settings.profile_json.firmwareDir;
+		var libdirs = this.enumVendoredLibs('./');
+
+		var args = {
+			platform: deviceType,
+			cwd: path.join(firmware, 'main'),
+			appdir: path.resolve('./src'),
+			applibs: libdirs.join(' '),
+			target_dir: path.resolve('./target'),
+			target_name: deviceType,
+			target: path.resolve(deviceType+'.bin')
+		};
+		var cmdargs_template =  ['-C', '{{cwd}}', 'all', 'TARGET_DIR={{target_dir}}', 'TARGET_NAME={{target_name}}',
+			'PLATFORM={{platform}}', 'APPDIR={{appdir}}', 'APPLIBSV2={{applibs}}'];
+
+		var cmdargs = cmdargs_template.map(function(value) {
+			var template = require('hogan.js').compile(value);
+			return template.render(args);
+		});
+
+		return this.launchAndWait("make", cmdargs, this.options.verbose);
+	},
+
 	compileCode: function (deviceType) {
 		var self = this;
 		this.checkArguments(arguments);
@@ -460,14 +564,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
-		var api = new ApiClient();
-		if (!api.ready()) {
-			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
-			return -1;
-		}
-
-		//defaults to 0 for core
-		var platform_id = 0;
+		var platform_id;
 
 		if (deviceType in PLATFORMS) {
 			platform_id = PLATFORMS[deviceType];
@@ -478,11 +575,22 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
+		if (this.options.local) {
+			return this.localCompile(deviceType);
+		}
+
+		var api = new ApiClient();
+		if (!api.ready()) {
+			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
+			return -1;
+		}
+
 		console.log('\nCompiling code for ' + deviceType);
 
-		//  "Please specify a binary file, source file, or source directory");
+		// a copy of the arguments without the device type
 		var args = args.slice(1);
 		var self = this;
+		var targetVersion;
 
 		return pipeline([
 			function() {
@@ -502,18 +610,19 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						if (!validTarget.length) {
 							return when.reject(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')));
 						}
-						var version = validTarget[0].version;
-						console.log('Targeting version:', version);
-						return when.resolve(version);
+
+						targetVersion = validTarget[0].version;
+						console.log('Targeting version:', targetVersion);
+						return when.resolve();
 					});
 				}
 				return when.resolve();
 			},
-			function(targetVersion) {
+			function() {
 				console.log();
 
 				if (args.length === 0) {
-					args.push('.'); //default to current directory
+					args.push('.'); // default to current directory
 				}
 
 				var filePath = args[0];
@@ -522,22 +631,24 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					return when.reject();
 				}
 
-				//make a copy of the arguments
-				var files = self._handleMultiFileArgs(args);
-				if (!files) {
+				return self._handleMultiFileArgs(args);
+			},
+			function(fileMapping) {
+				var list = _.values(fileMapping.map);
+				if (list.length == 0) {
 					console.log('No source to compile!');
 					return when.reject();
 				}
 
 				if (settings.showIncludedSourceFiles) {
 					console.log('Including:');
-					for (var i = 0, n = files.list.length; i < n; i++) {
-						console.log('    ' + files.list[i]);
+					for (var i = 0, n = list.length; i < n; i++) {
+						console.log('    ' + list[i]);
 					}
 				}
 
 				var filename = self._getDownloadPath(arguments, deviceType);
-				return self._compileAndDownload(api, files, platform_id, filename, targetVersion);
+				return self._compileAndDownload(api, fileMapping, platform_id, filename, targetVersion);
 			}
 		]).catch(function(err) {
 			console.error('Compile failed. Exiting.');
@@ -550,11 +661,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
-	_compileAndDownload: function(api, files, platform_id, filename, targetVersion) {
+	_compileAndDownload: function(api, fileMapping, platform_id, filename, targetVersion) {
 		return pipeline([
 			//compile
 			function () {
-				return api.compileCode(files, platform_id, targetVersion);
+				return api.compileCode(fileMapping, platform_id, targetVersion);
 			},
 
 			//download
@@ -564,7 +675,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						return resp.sizeInfo;
 					});
 				} else {
-					return when.reject(resp.errors);
+					if (typeof resp === 'string') {
+						return when.reject('Server error');
+					} else {
+						return when.reject(resp.errors);
+					}
 				}
 			}
 		]).then(
@@ -578,10 +693,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			});
 	},
 
-	login: function (username) {
+	login: function (username, password) {
 		var self = this;
 
-		if (this.tries >= 3) {
+		if (this.tries >= (password ? 1 : 3)) {
 			console.log();
 			console.log(alert, "It seems we're having trouble with logging in.");
 			console.log(
@@ -595,7 +710,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		var allDone = pipeline([
 			//prompt for creds
 			function () {
-				return prompts.getCredentials(username);
+				if (password) {
+					return {username: username, password: password};
+				}
+				return prompts.getCredentials(username, password);
 			},
 
 			//login to the server
@@ -817,8 +935,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		}
 	},
 
-
-
 	listDevices: function (filter) {
 
 		var formatVariables = function (vars, lines) {
@@ -906,76 +1022,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	/**
-	 * helper function for getting the contents of a directory,
-	 * checks for '.include', and a '.ignore' files, and uses their contents
-	 * instead
-	 * @param {String} dirname
-	 * @private
-	 * @returns {Array} array of filenames to include
+	 * Recursively adds files to compile to an object mapping between relative path on the compile server and
+	 * path on the local filesystem
+	 * @param {Array<string>} filenames  Array of filenames or directory names to include
+	 * @returns {Object} Object mapping from filenames seen by the compile server to local relative filenames
+	 *
+	 * use cases:
+	 * compile someDir
+	 * compile someFile
+	 * compile File1 File2 File3 output.bin
+	 * compile File1 File2 File3 --saveTo anotherPlace.bin
 	 */
-	_processDirIncludes: function (dirname) {
-		dirname = path.resolve(dirname);
-
-		var includesFile = path.join(dirname, settings.dirIncludeFilename),
-			ignoreFile = path.join(dirname, settings.dirExcludeFilename);
-
-		var includes = [
-			'*.h',
-			'*.ino',
-			'*.cpp',
-			'*.c'
-		];
-
-		if (fs.existsSync(includesFile)) {
-			//grab and process all the files in the include file.
-
-			includes = utilities.trimBlankLinesAndComments(
-				utilities.readAndTrimLines(includesFile)
-			);
-		}
-
-		var files = utilities.globList(dirname, includes);
-		if (fs.existsSync(ignoreFile)) {
-			var ignores = utilities.trimBlankLinesAndComments(
-				utilities.readAndTrimLines(ignoreFile)
-			);
-
-			var ignoredFiles = utilities.globList(dirname, ignores);
-			files = utilities.compliment(files, ignoredFiles);
-		}
-		var subdirFiles = this._processSubdirIncludes(dirname);
-		return files.concat(subdirFiles);
-	},
-
-	_processSubdirIncludes: function (dirname) {
-		var subdirs = fs.readdirSync(dirname)
-		.map(function (file) {
-			return path.join(dirname, file);
-		})
-		.filter(function (filePath) {
-		return fs.statSync(filePath).isDirectory();
-		});
-
-		return subdirs.reduce(function (subdirFiles, subdir) {
-			return subdirFiles.concat(this._processDirIncludes(subdir));
-		}.bind(this), []);
-	},
-
-	_handleMultiFileArgs: function (arr) {
-		//use cases:
-		// compile someDir
-		// compile someFile
-		// compile File1 File2 File3 output.bin
-		// compile File1 File2 File3 --saveTo anotherPlace.bin
-
-		if (!arr || arr.length === 0) {
-			return null;
-		}
-
-		var filenames = arr;
-		var files = {
-			list: [],
-			basePath: ''
+	_handleMultiFileArgs: function (filenames) {
+		var fileMapping = {
+			basePath: process.cwd(),
+			map: {}
 		};
 
 		for (var i = 0; i < filenames.length; i++) {
@@ -997,9 +1058,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			if (filestats.isDirectory()) {
-				var dirfiles = this._processDirIncludes(filename);
-				filenames = filenames.concat(dirfiles);
-				files.basePath = this._updateBasePath(files.basePath, filename);
+				this._processDirIncludes(fileMapping, filename);
 				continue;
 			}
 
@@ -1008,23 +1067,106 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				continue;
 			}
 
-			if (filestats.size > settings.MAX_FILE_SIZE) {
+			if (!alwaysIncludeThisFile && filestats.size > settings.MAX_FILE_SIZE) {
 				console.log('Skipping ' + filename + " it's too big! " + filestats.size);
 				continue;
 			}
-			files.list.push(filename);
-			files.basePath = this._updateBasePath(files.basePath, path.dirname(filename));
+
+			var relative = path.basename(filename);
+			fileMapping.map[relative] = filename;
 		}
 
-		return files;
+		return this._handleLibraryExample(fileMapping)
+			.then(function () {
+				return fileMapping;
+			});
 	},
 
-	_updateBasePath: function(basePath, path) {
-		if(basePath) {
-			return basePath.length < path.length ? basePath : path;
-		} else {
-			return path;
+	/**
+	 * helper function for getting the contents of a directory,
+	 * checks for '.include', and a '.ignore' files, and uses their contents
+	 * instead
+	 * @param {Object} fileMapping Object mapping from filenames seen by the compile server to local filenames,
+	 *                             relative to a base path
+	 * @param {String} dirname
+	 * @private
+	 * @returns {nothing} nothing
+	 */
+	_processDirIncludes: function (fileMapping, dirname) {
+		dirname = path.resolve(dirname);
+
+		var includesFile = path.join(dirname, settings.dirIncludeFilename),
+			ignoreFile = path.join(dirname, settings.dirExcludeFilename);
+		var hasIncludeFile = false;
+
+		// Recursively find source files
+		var includes = [
+			'**/*.h',
+			'**/*.ino',
+			'**/*.cpp',
+			'**/*.c',
+			'project.properties'
+		];
+
+		if (fs.existsSync(includesFile)) {
+			//grab and process all the files in the include file.
+
+			includes = utilities.trimBlankLinesAndComments(
+				utilities.readAndTrimLines(includesFile)
+			);
+			hasIncludeFile = true;
+
 		}
+
+		var files = utilities.globList(dirname, includes);
+
+		if (fs.existsSync(ignoreFile)) {
+			var ignores = utilities.trimBlankLinesAndComments(
+				utilities.readAndTrimLines(ignoreFile)
+			);
+
+			var ignoredFiles = utilities.globList(dirname, ignores);
+			files = utilities.compliment(files, ignoredFiles);
+		}
+
+		// Add files to fileMapping
+		files.forEach(function (file) {
+			// source relative to the base directory of the fileMapping (current directory)
+			var source = path.relative(fileMapping.basePath, file);
+
+			// If using an include file, only base names are supported since people are using those to
+			// link across relative folders
+			var target;
+			if (hasIncludeFile) {
+				target = path.basename(file);
+			} else {
+				target = path.relative(dirname, file).replace(/\\/g, '/');
+			}
+			fileMapping.map[target] = source;
+		});
+	},
+
+
+	/**
+	 * Perform special case logic when asking to compile a single example from a local library
+	 * @param {Object} fileMapping Object mapping from filenames seen by the compile server to local filenames,
+	 *                             relative to a base path
+	 * @returns {nothing} nothing
+	 */
+	_handleLibraryExample: function (fileMapping) {
+		return pipeline([
+			function () {
+				var list = _.values(fileMapping.map);
+				if (list.length == 1) {
+					return libraryManager.isLibraryExample(list[0]);
+				}
+			},
+			function (example) {
+				if (example) {
+					return example.buildFiles(fileMapping);
+				}
+			}
+		]);
 	}
 });
 

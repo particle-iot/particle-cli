@@ -32,7 +32,7 @@ var chalk = require('chalk');
 var extend = require('xtend');
 var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand');
-var dfu = require('../lib/dfu');
+var dfu = require('../oldlib/dfu');
 var whenNode = require('when/node');
 var Spinner = require('cli-spinner').Spinner;
 

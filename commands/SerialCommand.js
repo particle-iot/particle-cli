@@ -34,21 +34,20 @@ var prompt = require('inquirer').prompt;
 var when = require('when');
 var sequence = require('when/sequence');
 var extend = require('xtend');
-var SerialPortLib = require('serialport');
-var SerialPort = SerialPortLib.SerialPort;
+var SerialPort = require('serialport');
 var inquirer = require('inquirer');
 var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
-var specs = require('../lib/deviceSpecs');
-var log = require('../lib/log');
+var specs = require('../oldlib/deviceSpecs');
+var log = require('../oldlib/log');
 var settings = require('../settings');
 var DescribeParser = require('binary-version-reader').HalDescribeParser;
-var YModem = require('../lib/ymodem');
+var YModem = require('../oldlib/ymodem');
 
 var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../lib/utilities.js');
-var SerialBoredParser = require('../lib/SerialBoredParser.js');
-var SerialTrigger = require('../lib/SerialTrigger');
+var utilities = require('../oldlib/utilities.js');
+var SerialBoredParser = require('../oldlib/SerialBoredParser.js');
+var SerialTrigger = require('../oldlib/SerialTrigger');
 
 var arrow = chalk.green('>');
 
@@ -80,7 +79,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	findDevices: function (callback) {
 		var devices = [];
-		SerialPortLib.list(function (err, ports) {
+		SerialPort.list(function (err, ports) {
 			if (err) {
 				console.error('Error listing serial ports: ', err);
 				return callback([]);
@@ -180,8 +179,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			//TODO: listen for interrupts, close gracefully?
 			var serialPort = new SerialPort(device.port, {
-				baudrate: 9600
-			}, false);
+				baudrate: 9600,
+				autoOpen: false
+			});
 			serialPort.on('data', function (data) {
 				process.stdout.write(data.toString());
 			});
@@ -388,8 +388,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					},
 					function() {
 						var serialPort = new SerialPort(device.port, {
-							baudrate: 28800
-						}, false);
+							baudrate: 28800,
+							autoOpen: false
+						});
 
 						function closePort() {
 							if (serialPort.isOpen()) {
@@ -656,8 +657,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		var serialPort = this.serialPort || new SerialPort(device.port, {
 			baudrate: 9600,
-			parser: SerialBoredParser.makeParser(250)
-		}, false);
+			parser: SerialBoredParser.makeParser(250),
+			autoOpen: false
+		});
 
 		var wifiDone = when.defer();
 		serialPort.on('error', function (err) {
@@ -835,8 +837,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		return when.promise(function (resolve, reject) {
 			serialPort = new SerialPort(device.port, {
 				baudrate: 9600,
-				parser: SerialBoredParser.makeParser(250)
-			}, false);
+				parser: SerialBoredParser.makeParser(250),
+				autoOpen: false
+			});
 
 			var failTimer = setTimeout(function () {
 				reject('Serial timed out');

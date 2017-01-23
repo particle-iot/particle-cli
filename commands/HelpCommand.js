@@ -29,7 +29,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../lib/utilities.js');
+var utilities = require('../oldlib/utilities.js');
 var package_json = require('../package.json');
 
 var HelpCommand = function (cli, options) {
@@ -114,6 +114,12 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			return -1;
 		}
 
+		var lines = this.commandText(name, subcmd, command);
+		console.log(lines.join('\n'));
+	},
+
+	commandText: function (name, subcmd, command) {
+
 		//make a pretty string showing how to use this command, optionally plus a sub-command
 		var cmdLine = 'particle ' + name;
 		if (subcmd) {
@@ -165,7 +171,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 		lines.push('');
 		lines.push('');
-		console.log(lines.join('\n'));
+		return lines;
 	},
 
 	listCommandsTable: function () {

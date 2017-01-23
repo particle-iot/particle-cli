@@ -31,7 +31,7 @@ var extend = require('xtend');
 var util = require('util');
 
 var BaseCommand = require('./BaseCommand.js');
-var ApiClient = require('../lib/ApiClient.js');
+var ApiClient = require('../oldlib/ApiClient.js');
 
 function SubscribeCommand(cli, options) {
 	SubscribeCommand.super_.call(this, cli, options);
