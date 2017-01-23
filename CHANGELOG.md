@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.19.1 - 23 January 2017
+
+* Tweak for Windows CLI installer
 
 ## 1.19.0 - 23 January 2017
 
