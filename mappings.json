@@ -12,7 +12,8 @@
         "monitor",
         "login",
         "logout",
-        "help"
+        "help",
+        "library"
     ],
 
     "call": {
@@ -234,6 +235,47 @@
             "Shows the current version of the CLI"
         ]
     },
+
+    "library": {
+        "_commands": [ "init", "copy", "migrate", "search", "upload", "publish", "add" ],
+
+        "create": {
+            "maps": [ "library", "create" ],
+            "usage": "particle library create [directory]",
+            "does": "Initializes a new library in the specified or current directory."
+        },
+        "copy": {
+            "maps": [ "library", "copy" ],
+            "usage": "particle library copy <name>",
+            "does": "copies a library to the current project"
+        },
+        "migrate": {
+            "maps": [ "library", "migrate" ],
+            "usage": "particle library migrate",
+            "does": "Migrates a local library from v1 to v2 format."
+        },
+        "search": {
+            "maps": [ "library", "search" ],
+            "usage": "particle library search <name>",
+            "does": "searches available libraries"
+        },
+        "upload": {
+            "maps": [ "library", "upload" ],
+            "usage": "particle library upload",
+            "does": "uploads a private version of a library"
+        },
+        "publish": {
+            "maps": [ "library", "publish" ],
+            "usage": "particle library publish <name>",
+            "does": "publishes a library"
+        },
+        "add": {
+            "maps": [ "library", "add" ],
+            "usage": "particle library add <name>",
+            "does": "Add a library to the current project."
+        }
+    },
+
 
     "_templates": {
         "help": null

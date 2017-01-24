@@ -32,7 +32,7 @@ var path = require('path');
 var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../lib/utilities.js');
+var utilities = require('../oldlib/utilities.js');
 
 var ConfigCommand = function (cli, options) {
 	ConfigCommand.super_.call(this, cli, options);

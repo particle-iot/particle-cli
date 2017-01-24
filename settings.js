@@ -30,11 +30,12 @@ var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
 var chalk = require('chalk');
-var specs = require('./lib/deviceSpecs');
+var _ = require('lodash');
 
 var settings = {
 	commandPath: './commands/',
 	apiUrl: 'https://api.particle.io',
+	buildUrl: 'https://build.particle.io',
 	clientId: 'CLI2',
 	access_token: null,
 	minimumApiDelay: 500,
@@ -46,8 +47,8 @@ var settings = {
 	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours
 	updateCheckTimeout: 3000,
 
-	//2 megs -- this constant here is arbitrary
-	MAX_FILE_SIZE: 1024 * 1024 * 2,
+	//10 megs -- this constant here is arbitrary
+	MAX_FILE_SIZE: 1024 * 1024 * 10,
 
 	overridesFile: null,
 	wirelessSetupFilter: /^Photon-.*$/,
@@ -85,16 +86,18 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'system-part1-0.5.3-photon.bin',
-			systemFirmwareTwo: 'system-part2-0.5.3-photon.bin'
+			systemFirmwareOne: 'system-part1-0.6.0-photon.bin',
+			systemFirmwareTwo: 'system-part2-0.6.0-photon.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'system-part1-0.5.3-p1.bin',
-			systemFirmwareTwo: 'system-part2-0.5.3-p1.bin'
+			systemFirmwareOne: 'system-part1-0.6.0-p1.bin',
+			systemFirmwareTwo: 'system-part2-0.6.0-p1.bin'
 		},
 		'2b04:d00a': {
-			systemFirmwareOne: 'system-part1-0.5.3-electron.bin',
-			systemFirmwareTwo: 'system-part2-0.5.3-electron.bin'
+			// The bin files MUST be in this order to be flashed to the correct memory locations
+			systemFirmwareOne:   'system-part2-0.6.0-electron.bin',
+			systemFirmwareTwo:   'system-part3-0.6.0-electron.bin',
+			systemFirmwareThree: 'system-part1-0.6.0-electron.bin'
 		}
 	},
 	commandMappings: path.join(__dirname, 'mappings.json')
@@ -115,16 +118,6 @@ function envValueBoolean(varName, defaultValue) {
 		return defaultValue;
 	}
 }
-
-//fix the paths on the known apps mappings
-Object.keys(specs).forEach(function (id) {
-	var deviceSpecs = specs[id];
-	var knownApps = deviceSpecs['knownApps'];
-	for (var appName in knownApps) {
-		knownApps[appName] = path.join(__dirname,'binaries', knownApps[appName]);
-	};
-});
-
 
 settings.commandPath = __dirname + '/commands/';
 
@@ -167,7 +160,9 @@ settings.loadOverrides = function (profile) {
 		var filename = settings.findOverridesFile(profile);
 		if (fs.existsSync(filename)) {
 			settings.overrides = JSON.parse(fs.readFileSync(filename));
-			settings = extend(settings, settings.overrides);
+			// need to do an in-situ extend since external clients may have already obtained the settings object
+			// settings = extend(settings, settings.overrides);
+			_.extend(settings, settings.overrides);
 		}
 	} catch (ex) {
 		console.error('There was an error reading ' + settings.overrides + ': ', ex);
@@ -226,7 +221,7 @@ function matchKey(needle, obj, caseInsensitive) {
 	}
 
 	return null;
-};
+}
 
 settings.override = function (profile, key, value) {
 	if (!settings.overrides) {
@@ -300,9 +295,5 @@ settings.transitionSparkProfiles = function() {
 		});
 	}
 };
-
-settings.transitionSparkProfiles();
-settings.whichProfile();
-settings.loadOverrides();
 
 module.exports = settings;

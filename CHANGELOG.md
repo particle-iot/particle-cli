@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.19.1 - 23 January 2017
+
+* Tweak for Windows CLI installer
+
+## 1.19.0 - 23 January 2017
+
+* Library commands. Try `particle library`
+
+## 1.18.0 - 22 November 2016
+
+* Include binaries for firmware 0.6.0
+
 ## 1.17.2 - 17 November 2016
 
 * Disable update check through environment
