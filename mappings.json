@@ -78,9 +78,15 @@
 
     "list": {
         "maps": [ "cloud", "list" ],
-        "usage": "particle list",
+        "usage": [
+            "particle list",
+            "particle list [ device_id / device_name ]",
+            "particle list [ platform_name ]",
+            "particle list [ 'online' / 'offline' ]"
+        ],
         "does": [
-            "Displays a list of your devices, as well as their variables and functions"
+                "Displays a list of your devices, as well as their variables and functions.",
+                "Possibility of filtering."
         ]
     },
 
