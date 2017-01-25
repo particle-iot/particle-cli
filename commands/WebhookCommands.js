@@ -28,11 +28,12 @@
 
 var when = require('when');
 
-var settings = require('../settings.js');
+var prompt = require('inquirer').prompt;
 var extend = require('xtend');
 var util = require('util');
 var fs = require('fs');
 
+var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand.js');
 var ApiClient = require('../oldlib/ApiClient.js');
 var utilities = require('../oldlib/utilities.js');
@@ -181,12 +182,41 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 		if (!hookID || (hookID === '')) {
 			console.log('Please specify a hook id');
 			return -1;
-		}
 
-		return api.deleteWebhook(hookID).catch(function(err) {
-			console.error('Error', err);
-			return when.reject(err);
-		});
+		} else if (hookID === 'all') {
+			// delete all hook using `particle webhook delete all`
+			prompt([{
+				type: 'confirm',
+				name: 'deleteAll',
+				message: 'Do you want to delete ALL your webhooks?',
+				default: false
+			}], function(answer) {
+				if (answer.deleteAll) {
+					api.listWebhooks().then(
+						function (hooks) {
+							console.log('Found ' + hooks.length + ' hooks registered\n');
+							for (var i=0;i < hooks.length;i++) {
+								console.log('deleting ' + hooks[i].id);
+								api.deleteWebhook(hooks[i].id).catch(function(err) {
+									console.error('Error', err);
+									return when.reject(err);
+								});
+							}
+						},
+						function (err) {
+							console.error('Problem retrieving webhook list ' + err);
+						});
+				} else {
+					return;
+				}
+			});
+		} else {
+			// delete a hook based on ID
+			return api.deleteWebhook(hookID).catch(function(err) {
+				console.error('Error', err);
+				return when.reject(err);
+			});
+		}
 	},
 
 	listHooks: function () {
