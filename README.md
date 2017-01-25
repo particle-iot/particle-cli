@@ -349,7 +349,7 @@ If you want to build a library that can be used for both Arduino and Particle, h
 
 #### compiling against a particular system firmware target
 
-You can specify a `--target` when compiling or flashing to target a particular system target. 
+You can specify a `--target` when compiling or flashing to target a particular system target.
 
 - `particle compile electron myapp.ino --target 0.5.1` would compile myapp.ino for an Electron running system firmware 0.5.1.
 - `particle flash <deviceid> myapp.ino --target 0.5.1` would compile and flash myapp.ino for device <deviceid> against system firmware 0.5.1.
@@ -632,10 +632,11 @@ file.bin
 Registers your webhook with the Particle Cloud. Creates a postback to the given url when your event is sent.
 
 ```sh
-$ particle webhook list
-$ particle webhook delete WEBHOOK_ID
 $ particle webhook create example.json #run this command in the directory containing example.json
 $ particle webhook GET <your_event_name> http://<website.you.are.trying.to.contact
+$ particle webhook list
+$ particle webhook delete WEBHOOK_ID
+$ particle webhook delete all #removes all webhooks from your account
 ```
 
 For `$ particle webhook GET <your_event_name> http://<website.you.are.trying.to.contact`, you can retrieve the response using:
@@ -649,7 +650,7 @@ void handlerFunction(const char *name, const char *data) {
   // Important note!  -- Right now the response comes in 512 byte chunks.  
   // This code assumes we're getting the response in large chunks, and this
   // assumption breaks down if a line happens to be split across response chunks
-  
+
   process the data received here....
 }
 ```
@@ -686,4 +687,3 @@ bin/particle.js serial inspect
 ```
 
 - Commit and release a new CLI version.
-
