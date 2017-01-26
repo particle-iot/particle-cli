@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.19.2 - 26 January 2017
+
+* Fix path for compiling library examples
+
 ## 1.19.1 - 23 January 2017
 
 * Tweak for Windows CLI installer
