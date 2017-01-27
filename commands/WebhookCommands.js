@@ -72,7 +72,7 @@ WebhookCommand.HookJsonTemplate = {
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: 'webhook',
-	description: 'Experimental Beta - helpers for reacting to device event streams',
+	description: 'Webhooks - helpers for reacting to device event streams',
 	usagesByName: {
 		'create': [
 			'particle webhook create hook.json',
