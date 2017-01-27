@@ -54,12 +54,15 @@ Feature: Cloud compile
 
   Scenario: as a user, I can compile an extended project
     Given I use the fixture named "projects/extended"
-    When I run particle "compile photon"
+    When I run particle "compile photon . --saveTo a.bin"
     Then the stdout should contain "Compiling code for photon"
     And the stdout should contain " src/app.ino"
     And the stdout should contain " src/helper/helper.h"
     And the stdout should contain " src/helper/helper.cpp"
     And the stdout should contain "Compile succeeded"
+    When I run particle "binary inspect a.bin"
+    Then the stdout should contain "CRC is ok"
+    And the stdout should contain "Compiled for photon"
 
   Scenario: as a library developer I can compile a library example
     Given I use the fixture named "library/upload/valid/0.0.2"
