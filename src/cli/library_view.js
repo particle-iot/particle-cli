@@ -9,16 +9,22 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 
 
 	notifyFetchingLibrary(lib, targetDir) {
-		this.targetDir = targetDir;
-		this.targetExists = fs.existsSync(targetDir);
-		return Promise.resolve(!this.targetExists);
+
+		const targetExists = fs.existsSync(targetDir);
+
+		if (!this.targetDir) {
+			this.targetDir = targetDir;
+			this.targetExists = targetExists;
+		}
+
+		return Promise.resolve(!targetExists);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
-		this.metadata = lib;
-		if (!this.targetExists) {
-			return super.notifyInstalledLibrary(lib, targetDir);
+		if (!this.metadata) {
+			this.metadata = lib;
 		}
+		return super.notifyInstalledLibrary(lib, targetDir);
 	}
 
 	view() {
