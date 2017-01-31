@@ -1,5 +1,7 @@
 Feature: installation of libraries to a central directory
 
+# the --dest parameter no longer works with particle-command, will need to revisit
+
   Scenario: I can install a library at a specific version
     When I run particle "library install neopixel@0.0.9 --dest=."
     Then a directory named "neopixel@0.0.9" should exist

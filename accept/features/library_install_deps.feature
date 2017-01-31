@@ -16,7 +16,7 @@ Feature: installation of libraries with dependencies
     Given I use the fixture named "projects/extended"
     When I run particle "library copy test-library-transitive-1"
     Then the file "project.properties" should not contain "dependencies"
-    And the output should contain "Library 'test-library-transitive-1 0.0.1' installed."
+    And the output should contain "Library test-library-transitive-1 0.0.1 installed."
     And the file named "lib/test-library-transitive-1/src/test-library-transitive-1.cpp" should exist
     And the file named "lib/neopixel/src/neopixel.cpp" should exist
 
