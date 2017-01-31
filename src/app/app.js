@@ -208,7 +208,12 @@ export class CLI {
 		settings.whichProfile();
 		settings.loadOverrides();
 
-		updateCheck().then(() => {
+		const index = args.indexOf('--no-update-check');
+		if (index >= 0) {
+			args.splice(index, 1);
+			settings.disableUpdateCheck = true
+		}
+		updateCheck(settings.disableUpdateCheck).then(() => {
 			const cmdargs = args.slice(2);       // remove executable and script
 			let promise;
 			if (this.isNewCommand(cmdargs)) {

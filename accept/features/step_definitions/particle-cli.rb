@@ -1,15 +1,15 @@
 require 'diff_dirs'
 
 Given(/^I run particle ([^"`].*)$/) do |arg|
-  step "I run `particle #{arg}`"
+  step "I run `particle --no-update-check #{arg}`"
 end
 
 Given(/^I run particle "([^"]*)"$/) do |arg|
-  step "I run `particle #{arg}`"
+  step "I run `particle --no-update-check #{arg}`"
 end
 
 Given(/^I run particle "([^"]*)" interactively$/) do |arg|
-  step "I run `particle #{arg}` interactively"
+  step "I run `particle --no-update-check #{arg}` interactively"
 end
 
 Given(/^The particle library "([^"]*)" is removed$/) do |lib|
