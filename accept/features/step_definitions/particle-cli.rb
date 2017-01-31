@@ -127,3 +127,9 @@ When(/^I wait until the device "([^"]*)" is online$/) do |device|
     fail StandardError.new("Device #{device} is not online")
   end
 end
+
+
+And(/^I respond to the prompt "([^"]*)" with environment variable "([^"]*)"$/) do |prompt, envvar|
+  response = ENV[envvar]
+  step "I respond to the prompt \"#{prompt}\" with \"#{response}\""
+end
