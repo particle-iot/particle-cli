@@ -51,7 +51,6 @@ var arrow = chalk.green('>');
 var alert = chalk.yellow('!');
 var cmd = path.basename(process.argv[1]);
 
-var libraryManager = require('particle-library-manager');
 
 // Use known platforms and add shortcuts
 var PLATFORMS = extend(utilities.knownPlatforms(), {
@@ -811,6 +810,29 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('not logged in!');
 		}
 
+		var filterFunc = null;
+
+		if (filter){
+			var platforms = utilities.knownPlatforms();
+			if (filter === 'online') {
+				filterFunc = function(d) {
+					return d.connected;
+				};
+			} else if (filter === 'offline') {
+				filterFunc = function(d) {
+					return !d.connected;
+				};
+			} else if (Object.keys(platforms).indexOf(filter) >= 0) {
+				filterFunc = function(d) {
+					return d.product_id === platforms[filter];
+				};
+			} else {
+				filterFunc = function(d) {
+					return d.id === filter || d.name === filter;
+				};
+			}
+		}
+
 		var lookupVariables = function (devices) {
 			if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
 				console.log('No devices found.');
@@ -818,7 +840,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				self.newSpin('Retrieving device functions and variables...').start();
 				var promises = [];
 				devices.forEach(function (device) {
-					if (!device.id) {
+					if (!device.id || (filter && !filterFunc(device))) {
+					// Don't request attributes from unnecessary devices...
 						return;
 					}
 
@@ -841,30 +864,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						return (a.name || '').localeCompare(b.name);
 					});
 					self.stopSpin();
-
-					if (filter && fullDevices) {
-						var filterFunc;
-						var platforms = utilities.knownPlatforms();
-						if (filter === 'online') {
-							filterFunc = function(d) {
-								return d.connected;
-							};
-						} else if (filter === 'offline') {
-							filterFunc = function(d) {
-								return !d.connected;
-							};
-						} else if (Object.keys(platforms).indexOf(filter) >= 0) {
-							filterFunc = function(d) {
-								return d.product_id === platforms[filter];
-							};
-						} else {
-							filterFunc = function(d) {
-								return d.id === filter || d.name === filter;
-							};
-						}
-
-						fullDevices = fullDevices.filter(filterFunc);
-					}
 					return fullDevices;
 				});
 			}
@@ -992,6 +991,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					case 31:
 						deviceType = ' (Raspberry Pi)';
 						break;
+					default:
+						deviceType = ' (Product ' + device.product_id + ')';
 				}
 
 				if (!device.name || device.name === 'null') {
@@ -1158,7 +1159,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function () {
 				var list = _.values(fileMapping.map);
 				if (list.length == 1) {
-					return libraryManager.isLibraryExample(list[0]);
+					return require('particle-library-manager').isLibraryExample(list[0]);
 				}
 			},
 			function (example) {

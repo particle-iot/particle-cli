@@ -1,15 +1,15 @@
 require 'diff_dirs'
 
 Given(/^I run particle ([^"`].*)$/) do |arg|
-  step "I run `particle #{arg}`"
+  step "I run `particle --no-update-check #{arg}`"
 end
 
 Given(/^I run particle "([^"]*)"$/) do |arg|
-  step "I run `particle #{arg}`"
+  step "I run `particle --no-update-check #{arg}`"
 end
 
 Given(/^I run particle "([^"]*)" interactively$/) do |arg|
-  step "I run `particle #{arg}` interactively"
+  step "I run `particle --no-update-check #{arg}` interactively"
 end
 
 Given(/^The particle library "([^"]*)" is removed$/) do |lib|
@@ -126,4 +126,10 @@ When(/^I wait until the device "([^"]*)" is online$/) do |device|
   rescue TimeoutError
     fail StandardError.new("Device #{device} is not online")
   end
+end
+
+
+And(/^I respond to the prompt "([^"]*)" with environment variable "([^"]*)"$/) do |prompt, envvar|
+  response = ENV[envvar]
+  step "I respond to the prompt \"#{prompt}\" with \"#{response}\""
 end

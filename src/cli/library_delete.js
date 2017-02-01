@@ -34,17 +34,8 @@ export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 	}
 }
 
-
-export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'delete', false, {
-		options: {
-		},
-		params: '<name>',
-		// todo - this is a common pattern for commands, perhaps build a factory for creating a command, a site and running it.
-		handler: function LibraryDeleteHandler(argv) {
-			const site = new CLILibraryDeleteCommandSite(argv, buildAPIClient(apiJS));
-			const cmd = new LibraryDeleteCommand();
-			return site.run(cmd);
-		}
-	});
-};
+export function command(apiJS, argv) {
+	const site = new CLILibraryDeleteCommandSite(argv, buildAPIClient(apiJS));
+	const cmd = new LibraryDeleteCommand();
+	return site.run(cmd);
+}

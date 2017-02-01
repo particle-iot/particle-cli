@@ -41,16 +41,8 @@ export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 	}
 }
 
-
-export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'search', 'Searches available libraries', {
-		options: {
-		},
-		params: '<name>',
-		handler: function LibrarySearchHandler(argv) {
-			const site = new CLILibrarySearchCommandSite(argv, buildAPIClient(apiJS));
-			const cmd = new LibrarySearchCommand();
-			return site.run(cmd);
-		}
-	});
-};
+export function command(apiJS, argv) {
+	const site = new CLILibrarySearchCommandSite(argv, buildAPIClient(apiJS));
+	const cmd = new LibrarySearchCommand();
+	return site.run(cmd);
+}

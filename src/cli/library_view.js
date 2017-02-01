@@ -9,16 +9,22 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 
 
 	notifyFetchingLibrary(lib, targetDir) {
-		this.targetDir = targetDir;
-		this.targetExists = fs.existsSync(targetDir);
-		return Promise.resolve(!this.targetExists);
+
+		const targetExists = fs.existsSync(targetDir);
+
+		if (!this.targetDir) {
+			this.targetDir = targetDir;
+			this.targetExists = targetExists;
+		}
+
+		return Promise.resolve(!targetExists);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
-		this.metadata = lib;
-		if (!this.targetExists) {
-			return super.notifyInstalledLibrary(lib, targetDir);
+		if (!this.metadata) {
+			this.metadata = lib;
 		}
+		return super.notifyInstalledLibrary(lib, targetDir);
 	}
 
 	view() {
@@ -63,35 +69,8 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 	}
 }
 
-export default ({lib, factory, apiJS}) => {
-
-	function libraryViewHandler(argv, apiJS) {
-		const site = new CLILibraryViewCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
-		const cmd = new LibraryInstallCommand();
-		return site.run(cmd).then(() => site.view());
-	}
-
-	factory.createCommand(lib, 'view', 'View details about a library', {
-		options: {
-			'readme': {
-				required:false,
-				boolean:true,
-				description: 'display the readme for the library'
-			},
-			'source': {
-				required:false,
-				boolean:true,
-				description: 'display the main source file for the library'
-			},
-			'header': {
-				required:false,
-				boolean:true,
-				description: 'display the main header file for the library'
-			}
-
-		},
-		params: '<name>',
-		handler: (argv) => libraryViewHandler(argv, apiJS),
-	});
-
-};
+export function command(apiJS, argv) {
+	const site = new CLILibraryViewCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
+	const cmd = new LibraryInstallCommand();
+	return site.run(cmd).then(() => site.view());
+}

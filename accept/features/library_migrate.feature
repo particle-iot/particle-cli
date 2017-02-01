@@ -2,6 +2,7 @@ Feature: library migrate
 
   Background: Example libraries are available
     # starts in accept/tmp/aruba
+    #When I copy the library resource "*" to "libraries"
     When I copy the directory "../../../node_modules/particle-library-manager/resources/libraries" to "libraries"
     Then a directory named "libraries" should exist
     And a directory named "libraries/library-v1" should exist

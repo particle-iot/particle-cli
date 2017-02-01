@@ -67,7 +67,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	init: function () {
 		this.addOption('list', this.listDevices.bind(this), 'Show devices connected via serial to your computer');
-		this.addOption('monitor', this.monitorPort.bind(this), 'Connect and display messages from a device');
+		this.addOption('monitor', this.monitorSwitch.bind(this), 'Connect and display messages from a device');
 		this.addOption('identify', this.identifyDevice.bind(this), 'Ask for and display device ID via serial');
 		this.addOption('wifi', this.configureWifi.bind(this), 'Configure Wi-Fi credentials over serial');
 		this.addOption('mac', this.deviceMac.bind(this), 'Ask for and display MAC address via serial');
@@ -168,38 +168,121 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		}
 	},
 
+	// TODO: Unfortunately we have to use this switch function in order to remove
+	// the "--follow" argument before passing on to monitorPort.
+	// This follows FlashCommand's precedent, but we should create a universal
+	// way to handle this properly.
+	monitorSwitch: function(comPort) {
+		this.checkArguments(arguments);
+
+		var args = Array.prototype.slice.call(arguments);
+		if (this.options.follow) {
+			//trim
+
+			var idx = utilities.indexOf(args, '--follow');
+			args.splice(idx, 1);
+		}
+
+		return this.monitorPort.apply(this, args);
+	},
+
 	monitorPort: function (comPort) {
+		var cleaningUp = false;
+		var selectedDevice;
+		var serialPort;
+
+		var displayError = function (err) {
+			if (err) {
+				console.error('Serial err: ' + err);
+				console.error('Serial problems, please reconnect the device.');
+			}
+		};
+
+		// Called when port closes
+		var handleClose = function () {
+			if (self.options.follow && !cleaningUp) {
+				console.log(
+					chalk.bold.white(
+						'Serial connection closed.  Attempting to reconnect...'));
+				reconnect();
+			} else {
+				console.log(chalk.bold.white('Serial connection closed.'));
+			}
+		};
+
+		// Handle interrupts and close the port gracefully
+		var handleInterrupt = function () {
+			if (!cleaningUp) {
+				console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
+				cleaningUp = true;
+				if (serialPort && serialPort.isOpen()) {
+					serialPort.flush(function () {
+						serialPort.close();
+					})
+				}
+			}
+		}
+
+		// Called only when the port opens successfully
+		var handleOpen = function () {
+			console.log(chalk.bold.white('Serial monitor opened successfully:'));
+		};
+
 		var handlePortFn = function (device) {
 			if (!device) {
-				console.error('No serial device identified');
+				if (self.options.follow) {
+					setTimeout(function () {
+						self.whatSerialPortDidYouMean(comPort, true, handlePortFn);
+					}, 5);
+					return;
+				} else {
+					console.error(chalk.bold.white('No serial device identified'));
 				return;
+			}
 			}
 
 			console.log('Opening serial monitor for com port: "' + device.port + '"');
+			selectedDevice = device;
+			openPort();
+		};
 
-			//TODO: listen for interrupts, close gracefully?
-			var serialPort = new SerialPort(device.port, {
+		var openPort = function () {
+			serialPort = new SerialPort(selectedDevice.port, {
 				baudrate: 9600,
 				autoOpen: false
 			});
+			serialPort.on('close', handleClose);
 			serialPort.on('data', function (data) {
 				process.stdout.write(data.toString());
 			});
+			serialPort.on('error', displayError);
 			serialPort.open(function (err) {
-				if (err) {
-					console.error('Serial err: ' + err);
-					console.error('Serial problems, please reconnect the device.');
+				if (err && self.options.follow) {
+					reconnect(selectedDevice);
+				} else if (err) {
+					displayError(err);
+				} else {
+					handleOpen();
 				}
 			});
 		};
 
-		this.checkArguments(arguments);
-
-		if (this.options.follow) {
-			//catch the serial port dying, and keep retrying forever
-			//TODO: needs serialPort error / close event / deferred
+		var reconnect = function () {
+			setTimeout(function () {
+				openPort(selectedDevice);
+			}, 5);
 		}
 
+		process.on('SIGINT', handleInterrupt);
+		process.on('SIGQUIT', handleInterrupt);
+		process.on('SIGTERM', handleInterrupt);
+		process.on('exit', handleInterrupt);
+
+		if (this.options.follow) {
+			console.log('Polling for available serial device...');
+		}
+
+		var self = this;
 		this.whatSerialPortDidYouMean(comPort, true, handlePortFn);
 	},
 
@@ -343,7 +426,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				{
 					type: 'input',
 					name: 'listening',
-					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE'),
+					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE')
 				}
 			], function() {
 				resolve();
@@ -463,36 +546,96 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	configureWifi: function (comPort) {
 		var self = this;
 		// TODO remove once we have verbose flag
-		settings.verboseOutput = false;
+		settings.verboseOutput = true;
 
 		var wifi = when.defer();
 		this.checkArguments(arguments);
+
+        // So we can read it inside the function
+        var args = arguments;
 
 		this.whatSerialPortDidYouMean(comPort, true, function (device) {
 			if (!device) {
 				return self.error('No serial port identified');
 			}
 
-			inquirer.prompt([
-				{
-					type: 'confirm',
-					name: 'scan',
-					message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
-					default: true
-				}
-			], function(ans) {
-				if (ans.scan) {
-					return self._scanNetworks(function (networks) {
-						self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
-					});
-				} else {
-					self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
-				}
-			});
+            // Lets track whether we found a json argument
+            var json = null;
+
+            Object.keys(args).forEach(function (key) {
+                if (args[key].indexOf(".json") != -1) {
+                    // Save it
+                    json = args[key];
+                }
+            });
+
+            /*
+            for (var i=0; i<args.length; i++) {
+                console.log(i, ":", arr[i]);
+                if (args[i].indexOf(".json") != -1) {
+                    // Save it
+                    json = args[i];
+                    break;
+                }
+            }
+            */
+
+            // Did we find it?
+            if (json){
+                console.log('Using Wi-Fi config file: ', json);
+
+                // Directly
+                var obj = JSON.parse(fs.readFileSync(json, "utf-8"));
+
+	            function parameterMissing(param) {
+		            return 'The "'+param+'" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}';
+	            }
+
+                if (!obj.hasOwnProperty('network') || obj.network.length < 2){
+                    _jsonErr(parameterMissing('network'));
+                } else {
+                    var ssid = obj.network;
+                }
+                if (!obj.hasOwnProperty('password') || obj.password.length < 2){
+	                _jsonErr(parameterMissing('password'));
+                } else {
+                    var password = obj.password;
+                }
+                if (!obj.hasOwnProperty('security') || obj.security.length < 2){
+	                _jsonErr(parameterMissing('security'));
+                }else {
+                    var security = obj.security;
+                }
+
+                // Configure it
+                self.serialWifiConfig(device, ssid, security, password).then(wifi.resolve, wifi.reject); //.then(self.wifiInfo.resolve, self.wifiInfo.reject);
+            } else {
+                inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'scan',
+                        message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
+                        default: true
+                    }
+                ], function (ans) {
+                    if (ans.scan) {
+                        return self._scanNetworks(function (networks) {
+                            self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
+                        });
+                    } else {
+                        self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
+                    }
+                });
+
+            }
 		});
 
 		return wifi.promise;
 	},
+
+    _jsonErr: function(err) {
+        return console.log(chalk.red('!'), 'An error occurred:', err);
+    },
 
 	_removePhotonNetworks: function(ssids) {
 		return ssids.filter(function (ap) {
@@ -648,7 +791,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	serialWifiConfig: function (device, ssid, securityType) {
+    serialWifiConfig: function (device, ssid, securityType, password) {
 		if (!device) {
 			return when.reject('No serial port available');
 		}
@@ -771,16 +914,23 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		st.addTrigger('Password:', function(cb) {
 			resetTimeout();
-			inquirer.prompt([{
-				type: 'input',
-				name: 'password',
-				message: 'Wi-Fi Password',
-				validate: function(val) {
-					return !!val;
-				}
-			}], function(ans) {
-				cb(ans.password + '\n', startTimeout.bind(self, 15000));
-			});
+            // Skip password prompt as appropriate
+            if (password){
+                //console.log('Password: ' + password);
+                cb(password + '\n', startTimeout.bind(self, 15000));
+
+            } else {
+                inquirer.prompt([{
+                    type: 'input',
+                    name: 'password',
+                    message: 'Wi-Fi Password',
+                    validate: function (val) {
+                        return !!val;
+                    }
+                }], function (ans) {
+                    cb(ans.password + '\n', startTimeout.bind(self, 15000));
+                });
+            }
 		});
 
 		st.addTrigger('Spark <3 you!', function() {
@@ -1009,7 +1159,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			if (!devices || devices.length === 0) {
-				return self.error('No devices available via serial');
+				return callback(undefined);
 			}
 
 			inquirer.prompt([

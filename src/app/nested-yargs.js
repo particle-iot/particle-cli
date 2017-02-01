@@ -641,12 +641,17 @@ function showHelp() {
 	Yargs.showHelp();
 }
 
+function invoke(module, ...args) {
+	return module.command(...args);
+}
+
 export {
 	parse,
 	createCommand,
 	createCategory,
 	createAppCategory,
 	createErrorHandler,
+	invoke,
 	showHelp,
 	errors,
 	test,

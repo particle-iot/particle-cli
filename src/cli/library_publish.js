@@ -38,15 +38,8 @@ export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 	}
 }
 
-export default ({lib, factory, apiJS}) => {
-	factory.createCommand(lib, 'publish', 'Publishes a private library, making it public', {
-		options: {},
-		params: '<name>',
-
-		handler: function LibraryPublishHandler(argv) {
-			const site = new CLILibraryPublishCommandSite(argv, buildAPIClient(apiJS));
-			const cmd = new LibraryPublishCommand();
-			return site.run(cmd);
-		}
-	});
-};
+export function command(apiJS, argv) {
+	const site = new CLILibraryPublishCommandSite(argv, buildAPIClient(apiJS));
+	const cmd = new LibraryPublishCommand();
+	return site.run(cmd);
+}
