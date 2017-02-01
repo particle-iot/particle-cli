@@ -216,6 +216,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 								destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
 								break;
 							case SYSTEM_MODULE:
+								destSegment = self.systemModuleIndexToString[info.prefixInfo.moduleIndex]
 								destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
 								break;
 							case APPLICATION_MODULE:
@@ -243,7 +244,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 					return when.reject('Unknown destination');
 				}
 				var alt = 0;
-				var leave = destSegment === 'userFirmware';
+				var leave = destSegment === 'userFirmware';  // todo - leave on factory firmware write too?
 				return dfu.writeDfu(alt, firmware, destAddress, leave);
 			}
 		]);
@@ -254,7 +255,13 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 			console.error('\nError writing firmware...' + err + '\n');
 			return when.reject();
 		});
+	},
+	systemModuleIndexToString: {
+		1: 'systemFirmwareOne',
+		2: 'systemFirmwareTwo',
+		3: 'systemFirmwareThree'
 	}
 });
+
 
 module.exports = FlashCommand;
