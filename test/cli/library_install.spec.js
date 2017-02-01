@@ -19,7 +19,8 @@
 
 import {expect} from '../test-setup';
 const path = require('path');
-import libraryInstall, {CLILibraryInstallCommandSite} from '../../src/cli/library_install';
+import {CLILibraryInstallCommandSite} from '../../src/cli/library_install';
+import libraryCommands from '../../src/cli/library.js';
 import {LibraryInstallCommand} from '../../src/cmd';
 import * as cli from '../../src/app/nested-yargs';
 
@@ -42,48 +43,48 @@ describe('library install command', () => {
 	});
 
 	describe('command line', () => {
-
-		const lib = cli.createAppCategory();
-		libraryInstall({lib, factory:cli});
+		let lib;
+		beforeEach(() => {
+			const root = cli.createAppCategory();
+			lib = libraryCommands({root, factory:cli});
+		});
 
 		it('recognizes the install command', () => {
-			const argv = lib.parse('install'.split(' '));
+			const argv = lib.parse('library install'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 		});
 
 		it('recognizes the install command with library', () => {
-			const argv = lib.parse('install neopixel'.split(' '));
+			const argv = lib.parse('library install neopixel'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv.params).to.be.deep.equal({name:'neopixel'});
 		});
 
 		it('recognizes the install vendored command', () => {
-			const argv = lib.parse('install --vendored'.split(' '));
+			const argv = lib.parse('library install --vendored'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 		});
 
 		it('recognizes the install vendored command with confirmation', () => {
-			const argv = lib.parse('install --vendored -y'.split(' '));
+			const argv = lib.parse('library install --vendored -y'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 			expect(argv).to.have.property('confirm').that.is.true;
 		});
 
-
 		it('recognizes the install vendored command with library', () => {
-			const argv = lib.parse('install neopixel --vendored'.split(' '));
+			const argv = lib.parse('library install neopixel --vendored'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 			expect(argv.params).to.be.deep.equal({name:'neopixel'});
 		});
 
 		it('recognizes the install vendored command with library name at end', () => {
-			const argv = lib.parse('install --vendored neopixel'.split(' '));
+			const argv = lib.parse('library install --vendored neopixel'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
 			expect(argv.params).to.be.deep.equal({name:'neopixel'});
 		});
-
 	})
 });

@@ -24,7 +24,7 @@ const fs = require('fs');
 const mockfs = require('mock-fs');
 
 import * as cli from '../../src/app/nested-yargs';
-import libraryInit from '../../src/cli/library_init';
+import libraryCommands from '../../src/cli/library';
 import { LibraryInitCommand } from 'particle-commands';
 
 /**
@@ -87,8 +87,7 @@ describe('library init', () => {
 	it('can run library init without prompts', function doit() {
 		this.timeout(10*1000);
 		const app = cli.createAppCategory();
-		const lib = cli.createCategory(app, 'library');
-		libraryInit({lib, factory:cli});
+		const lib = libraryCommands({root:app, factory:cli});
 		const argv = cli.parse(app, ['library', 'create', '--name', 'foobar',
 			'--version=1.2.3', '--author=mrbig']);
 		expect(argv.clicommand).to.be.ok;

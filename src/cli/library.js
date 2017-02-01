@@ -169,4 +169,6 @@ export default ({root, factory}) => {
 		params: '<name>',
 		handler: (...args) => factory.invoke(require('./library_delete'), api(), ...args)
 	});
+
+	return lib;
 };
