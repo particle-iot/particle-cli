@@ -451,6 +451,10 @@ $ particle subscribe eventName
 $ particle subscribe eventName mine
 $ particle subscribe eventName deviceName
 $ particle subscribe eventName 0123456789abcdef01234567
+
+# special case to subscribe to all events for a particular device
+$ particle subscribe mine deviceName
+$ particle subscribe mine 0123456789abcdef01234567
 ```
 
 ### particle publish
