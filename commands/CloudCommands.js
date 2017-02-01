@@ -51,7 +51,6 @@ var arrow = chalk.green('>');
 var alert = chalk.yellow('!');
 var cmd = path.basename(process.argv[1]);
 
-var libraryManager = require('particle-library-manager');
 
 // Use known platforms and add shortcuts
 var PLATFORMS = extend(utilities.knownPlatforms(), {
@@ -1160,7 +1159,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			function () {
 				var list = _.values(fileMapping.map);
 				if (list.length == 1) {
-					return libraryManager.isLibraryExample(list[0]);
+					return require('particle-library-manager').isLibraryExample(list[0]);
 				}
 			},
 			function (example) {

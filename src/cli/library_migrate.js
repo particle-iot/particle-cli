@@ -82,36 +82,17 @@ export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSi
 }
 
 
-export default ({lib, factory}) => {
-	factory.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format', {
-		options: {
-			test: {
-				alias: 'dryrun',
-				boolean: true,
-				description: 'test if the library can be migrated'
-			},
-			'adapter': {
-				required: false,
-				boolean: true,
-				default: true,
-				description: 'add include file adapters to support v1-style includes "library/library.h"'
-			},
 
-		},
-		params: '[library...]',
-
-		handler: function libraryMigrateHandler(argv) {
-			let Site, Cmd;
-			if (argv.test) {
-				Site = CLILibraryTestMigrateCommandSite;
-				Cmd = LibraryMigrateTestCommand;
-			} else {
-				Site = CLILibraryMigrateCommandSite;
-				Cmd = LibraryMigrateCommand;
-			}
-			const site = new Site(argv, process.cwd());
-			const cmd = new Cmd();
-			return site.run(cmd);
-		}
-	});
-};
+export function command(argv) {
+	let Site, Cmd;
+	if (argv.test) {
+		Site = CLILibraryTestMigrateCommandSite;
+		Cmd = LibraryMigrateTestCommand;
+	} else {
+		Site = CLILibraryMigrateCommandSite;
+		Cmd = LibraryMigrateCommand;
+	}
+	const site = new Site(argv, process.cwd());
+	const cmd = new Cmd();
+	return site.run(cmd);
+}

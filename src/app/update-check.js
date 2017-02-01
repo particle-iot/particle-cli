@@ -2,7 +2,10 @@ import when from 'when';
 import latestVersion from 'latest-version';
 import semver from 'semver';
 import chalk from 'chalk';
-import { spin } from './ui';
+
+function spin() {
+	return require('./ui').spin;
+}
 
 import info from '../../package';
 import settings from '../../settings';
@@ -32,7 +35,8 @@ function check(skip) {
 
 function checkVersion() {
 	const checkPromise = when(latestVersion(info.name)).timeout(settings.updateCheckTimeout);
-	return spin(checkPromise, 'Checking for updates...')
+
+	return spin()(checkPromise, 'Checking for updates...')
 		.then((version) => {
 			if (semver.gt(version, info.version)) {
 				settings.profile_json.newer_version = version;

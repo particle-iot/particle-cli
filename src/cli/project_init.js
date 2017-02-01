@@ -152,32 +152,16 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	notifyProjectCreated(directory) {
 		log.success(`A new project has been initialized in directory ${chalk.bold(directory)}`);
 	}
-
 }
 
-
-export default ({project, factory}) => {
-
-	// todo - move library add to its own module
-	factory.createCommand(project, 'create', 'Create a new project in the current or specified directory.', {
-		options: {
-			'name' : {
-				required: false,
-				description: 'provide a name for the project'
+export function command(argv) {
+	const dir = argv.params.dir || process.cwd();
+	const site = new CLIProjectInitCommandSite(dir);
+	const cmd = new ProjectInitCommand();
+	return site.dialog()
+		.then((ready) => {
+			if (ready) {
+				return site.run(cmd);
 			}
-		},
-		params: '[dir]',
-
-		handler: function projectInitandler(argv) {
-			const dir = argv.params.dir || process.cwd();
-			const site = new CLIProjectInitCommandSite(dir);
-			const cmd = new ProjectInitCommand();
-			return site.dialog()
-				.then((ready) => {
-					if (ready) {
-						return site.run(cmd);
-					}
-				});
-		}
-	});
-};
+		});
+}
