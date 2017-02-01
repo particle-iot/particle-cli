@@ -587,18 +587,22 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 // Directly
                 var obj = JSON.parse(fs.readFileSync(json, "utf-8"));
 
+	            function parameterMissing(param) {
+		            return 'The "'+param+'" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}';
+	            }
+
                 if (!obj.hasOwnProperty('network') || obj.network.length < 2){
-                    _jsonErr('The "network" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}');
+                    _jsonErr(parameterMissing('network'));
                 } else {
                     var ssid = obj.network;
                 }
                 if (!obj.hasOwnProperty('password') || obj.password.length < 2){
-                    _jsonErr('The "password" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}');
+	                _jsonErr(parameterMissing('password'));
                 } else {
                     var password = obj.password;
                 }
                 if (!obj.hasOwnProperty('security') || obj.security.length < 2){
-                    _jsonErr('The "security" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}');
+	                _jsonErr(parameterMissing('security'));
                 }else {
                     var security = obj.security;
                 }
@@ -912,7 +916,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			resetTimeout();
             // Skip password prompt as appropriate
             if (password){
-                console.log('Password: ' + password);
+                //console.log('Password: ' + password);
                 cb(password + '\n', startTimeout.bind(self, 15000));
 
             } else {
