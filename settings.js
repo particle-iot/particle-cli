@@ -1,3 +1,29 @@
+/**
+ ******************************************************************************
+ * @file    settings.js
+ * @author  David Middlecamp (david@particle.io)
+ * @company Particle ( https://www.particle.io/ )
+ * @source https://github.com/spark/particle-cli
+ * @version V1.0.0
+ * @date    14-February-2014
+ * @brief   Setting module
+ ******************************************************************************
+  Copyright (c) 2016 Particle Industries, Inc.  All rights reserved.
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation, either
+  version 3 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this program; if not, see <http://www.gnu.org/licenses/>.
+  ******************************************************************************
+ */
 'use strict';
 
 var fs = require('fs');
@@ -17,12 +43,12 @@ var settings = {
 	useSudoForDfu: false,
 	// TODO set to false once we give flags to control this
 	verboseOutput: true,
-	disableUpdateCheck: false,
+	disableUpdateCheck: envValueBoolean('PARTICLE_DISABLE_UPDATE', false),
 	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours
 	updateCheckTimeout: 3000,
 
-	//2 megs -- this constant here is arbitrary
-	MAX_FILE_SIZE: 1024 * 1024 * 2,
+	//10 megs -- this constant here is arbitrary
+	MAX_FILE_SIZE: 1024 * 1024 * 10,
 
 	overridesFile: null,
 	wirelessSetupFilter: /^Photon-.*$/,
@@ -60,20 +86,38 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'system-part1-0.5.3-photon.bin',
-			systemFirmwareTwo: 'system-part2-0.5.3-photon.bin'
+			systemFirmwareOne: 'system-part1-0.6.0-photon.bin',
+			systemFirmwareTwo: 'system-part2-0.6.0-photon.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'system-part1-0.5.3-p1.bin',
-			systemFirmwareTwo: 'system-part2-0.5.3-p1.bin'
+			systemFirmwareOne: 'system-part1-0.6.0-p1.bin',
+			systemFirmwareTwo: 'system-part2-0.6.0-p1.bin'
 		},
 		'2b04:d00a': {
-			systemFirmwareOne: 'system-part1-0.5.3-electron.bin',
-			systemFirmwareTwo: 'system-part2-0.5.3-electron.bin'
+			// The bin files MUST be in this order to be flashed to the correct memory locations
+			systemFirmwareOne:   'system-part2-0.6.0-electron.bin',
+			systemFirmwareTwo:   'system-part3-0.6.0-electron.bin',
+			systemFirmwareThree: 'system-part1-0.6.0-electron.bin'
 		}
 	},
 	commandMappings: path.join(__dirname, 'mappings.json')
 };
+
+function envValue(varName, defaultValue) {
+	var value = process.env[varName];
+	return (typeof value === 'undefined') ? defaultValue : value;
+}
+
+function envValueBoolean(varName, defaultValue) {
+	var value = envValue(varName);
+	if (value === 'true' || value === 'TRUE' || value === '1') {
+		return true;
+	} else if (value === 'false' || value === 'FALSE' || value === '0') {
+		return false;
+	} else {
+		return defaultValue;
+	}
+}
 
 settings.commandPath = __dirname + '/commands/';
 

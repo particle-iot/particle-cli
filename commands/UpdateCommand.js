@@ -70,7 +70,6 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 		function doUpdate(id) {
 			var updates = settings.updates[id] || null;
 			var steps = [ ];
-			var first = true;
 
 			if (!updates) {
 				console.log();
@@ -79,15 +78,15 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 					'There are currently no system firmware updates available for this device.'
 				);
 			}
-			Object.keys(updates).forEach(function (part) {
-				var leave = !first;
-				steps.push(function (cb) {
+			var parts = Object.keys(updates);
+			parts.forEach(function (part, partNumber) {
+				steps.push(function (next) {
 					var binary = path.resolve(__dirname, '..', 'updates', updates[part]);
+					var leave = partNumber === parts.length - 1;
 					whenNode.bindCallback(
 						dfu.write(binary, part, leave).delay(2000)
-					, cb);
+					, next);
 				});
-				first = false;
 			});
 
 			console.log();

@@ -38,6 +38,10 @@ var utilities = require('../oldlib/utilities.js');
 var ModuleParser = require('binary-version-reader').HalModuleParser;
 var deviceSpecs = require('../oldlib/deviceSpecs');
 
+var MONOLITHIC = 3;
+var SYSTEM_MODULE = 4;
+var APPLICATION_MODULE = 5;
+
 var FlashCommand = function (cli, options) {
 	FlashCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
@@ -150,7 +154,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 		var useFactory = this.options.useFactoryAddress;
 
 		var self = this;
-		var specs, destSegment;
+		var specs, destSegment, destAddress;
 		var flashingKnownApp = false;
 		var ready = sequence([
 			function() {
@@ -207,15 +211,15 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 						}
 
 						switch (info.prefixInfo.moduleFunction) {
-							case 3:
-								// monolithic
+							case MONOLITHIC:
 								// only override if modular capable
 								destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
 								break;
-							case 4:
-								destSegment = self.systemModuleIndexToString[info.prefixInfo.moduleIndex];
+							case SYSTEM_MODULE:
+								destSegment = self.systemModuleIndexToString[info.prefixInfo.moduleIndex]
+								destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
 								break;
-							case 5:
+							case APPLICATION_MODULE:
 								// use existing destSegment for userFirmware/factoryReset
 								break;
 							default:
@@ -229,10 +233,19 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				});
 			},
 			function() {
-				if (!destSegment) {
+				if (!destAddress && destSegment) {
+					var segment = dfu._validateSegmentSpecs(destSegment);
+					if (segment.error) {
+						return when.reject('dfu.write: ' + segment.error);
+					}
+					destAddress = segment.specs.address;
+				}
+				if (!destAddress) {
 					return when.reject('Unknown destination');
 				}
-				return dfu.write(firmware, destSegment, destSegment === 'userFirmware');
+				var alt = 0;
+				var leave = destSegment === 'userFirmware';  // todo - leave on factory firmware write too?
+				return dfu.writeDfu(alt, firmware, destAddress, leave);
 			}
 		]);
 
@@ -243,12 +256,12 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject();
 		});
 	},
-
 	systemModuleIndexToString: {
 		1: 'systemFirmwareOne',
 		2: 'systemFirmwareTwo',
 		3: 'systemFirmwareThree'
 	}
 });
+
 
 module.exports = FlashCommand;

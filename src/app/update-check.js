@@ -10,9 +10,9 @@ function spin() {
 import info from '../../package';
 import settings from '../../settings';
 
-function check() {
+function check(skip) {
 	return when.promise((resolve) => {
-		if (settings.disableUpdateCheck) {
+		if (skip) {
 			return resolve();
 		}
 

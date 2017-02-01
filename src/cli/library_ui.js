@@ -5,8 +5,7 @@ export function formatLibrary(library, excludeBadges=[]) {
 
 	if (library.official && !excludeBadges.official) {
 		badges.push(chalk.green('[official] '));
-	}
-	else {
+	} else {
 		if (library.verified && !excludeBadges.verified) {
 			badges.push(chalk.green('[verified] '));
 		}
@@ -14,8 +13,7 @@ export function formatLibrary(library, excludeBadges=[]) {
 
 	if (library.visibility==='private' && !excludeBadges.private) {
 		badges.push(chalk.blue('[private] '));
-	}
-	else {
+	} else {
 		if (library.mine && !excludeBadges.mine) {
 			badges.push(chalk.blue('[mine] '));
 		}

@@ -185,6 +185,7 @@ export class CLI {
 			&& (
 			argv.clierror.type === cliargs.errors.requiredParameterError
 			|| argv.clierror.type === cliargs.errors.unknownArgumentError
+			|| argv.clierror.type === cliargs.errors.unknownParametersError
 			|| (argv.clierror.type === cliargs.errors.unknownCommandError) && (argv.clierror.item.path.length > 0)));
 		return !!result;
 	}
@@ -207,7 +208,12 @@ export class CLI {
 		settings.whichProfile();
 		settings.loadOverrides();
 
-		updateCheck().then(() => {
+		const index = args.indexOf('--no-update-check');
+		if (index >= 0) {
+			args.splice(index, 1);
+			settings.disableUpdateCheck = true;
+		}
+		updateCheck(settings.disableUpdateCheck).then(() => {
 			const cmdargs = args.slice(2);       // remove executable and script
 			let promise;
 			if (this.isNewCommand(cmdargs)) {

@@ -1,7 +1,7 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "1.19.0-libraries.20",
+  "version": "1.19.2",
   "author": "David Middlecamp",
   "bin": {
     "particle": "./bin/particle.js"
@@ -69,11 +69,11 @@
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.2.0",
     "particle-api-js": "^6.4.1",
-    "particle-commands": "^0.2.4",
-    "particle-library-manager": "^0.1.4",
+    "particle-commands": "^0.2.9",
+    "particle-library-manager": "git://github.com/spark/particle-library-manager.git#develop",
     "request": "https://github.com/spark/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "semver": "^5.1.0",
-    "serialport": "^3.1.1",
+    "serialport": "^4.0.7",
     "softap-setup": "^1.1.4",
     "temp": "^0.8.3",
     "when": "^3.7.2",
@@ -122,7 +122,7 @@
     "spark"
   ],
   "license": "Apache-2.0",
-  "main": "./dist/app/invoke.js",
+  "main": "./bin/particle.js",
   "preferGlobal": true,
   "repository": {
     "type": "git",
@@ -136,6 +136,7 @@
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --compilers js:babel-register test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
     "lint": "eslint -f unix src/**/*.js",
+    "postinstall": "cd node_modules/particle-library-manager && npm run compile",
     "test": "mocha test/ test/oldcmd/ test/app test/cli test/integration --compilers js:babel-register",
     "compile": "babel src -d dist",
     "prepublish": "npm run compile",

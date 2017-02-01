@@ -15,13 +15,13 @@ function api() {
 export default ({root, factory}) => {
 	const lib = factory.createCategory(root, 'library', 'Manages firmware libraries', { alias: 'libraries' });
 
-	factory.createCommand(lib, 'add', 'Add a library to the current project.', {
+	factory.createCommand(lib, 'add', 'Adds a library to the current project.', {
 		options: {},
 		params: '<name>',
 		handler: (...args) => factory.invoke(require('./library_add'), api(), ...args)
 	});
 
-	factory.createCommand(lib, 'init', 'Initializes a new library in the specified or current directory.', {
+	factory.createCommand(lib, 'create', 'Creates a new library in the specified or current directory.', {
 		options: {
 			'name': {
 				required: false,
@@ -67,13 +67,13 @@ export default ({root, factory}) => {
 		handler: (...args) => factory.invoke(require('./library_install'), 'install', api(), ...args),
 	});
 
-	factory.createCommand(lib, 'copy', 'Copies a library to the current project', {
+	factory.createCommand(lib, 'copy', 'Copies a library to the current project.', {
 		options: {},
 		params: '[name]',
 		handler: (...args) => factory.invoke(require('./library_install'), 'copy', api(), ...args)
 	});
 
-	factory.createCommand(lib, 'list', 'Lists libraries available', {
+	factory.createCommand(lib, 'list', 'Lists libraries available.', {
 		options: {
 			'filter': {
 				required: false,
@@ -98,7 +98,7 @@ export default ({root, factory}) => {
 		handler: (...args) => factory.invoke(require('./library_list'), api(), ...args)
 	});
 
-	factory.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format', {
+	factory.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
 		options: {
 			test: {
 				alias: 'dryrun',
@@ -117,14 +117,14 @@ export default ({root, factory}) => {
 		handler: (...args) => factory.invoke(require('./library_migrate'), ...args)
 	});
 
-	factory.createCommand(lib, 'search', 'Searches available libraries', {
+	factory.createCommand(lib, 'search', 'Searches available libraries.', {
 		options: {
 		},
 		params: '<name>',
 		handler: (...args) => factory.invoke(require('./library_search'),api(), ...args)
 	});
 
-	factory.createCommand(lib, 'upload', 'uploads a private version of a library', {
+	factory.createCommand(lib, 'upload', 'Uploads a private version of a library.', {
 		options: {
 			'dryRun': {
 				required: false,
@@ -135,10 +135,33 @@ export default ({root, factory}) => {
 		handler: (...args) => factory.invoke(require('./library_upload'), api(), ...args)
 	});
 
-	factory.createCommand(lib, 'publish', 'publishes a library', {
+	factory.createCommand(lib, 'publish', 'Publishes a private library, making it public.', {
 		options: {},
 		params: '[name]',
 		handler: (...args) => factory.invoke(require('./library_publish'), api(), ...args)
+	});
+
+	factory.createCommand(lib, 'view', 'View details about a library', {
+		options: {
+			'readme': {
+				required: false,
+				boolean: true,
+				description: 'display the readme for the library'
+			},
+			'source': {
+				required: false,
+				boolean: true,
+				description: 'display the main source file for the library'
+			},
+			'header': {
+				required: false,
+				boolean: true,
+				description: 'display the main header file for the library'
+			}
+
+		},
+		params: '<name>',
+		handler: (...args) => factory.invoke(require('./library_view'), api(), ...args)
 	});
 
 	factory.createCommand(lib, 'delete', false, {

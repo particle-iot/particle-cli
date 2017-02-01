@@ -1,6 +1,6 @@
 import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd';
 import {convertApiError} from '../cmd/api';
-const settings = require('../../settings');
+import chalk from 'chalk';
 import {buildAPIClient} from './apiclient';
 
 export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
@@ -46,16 +46,16 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 
 	notifyCheckingLibrary(libName) {
-		return this.promiseLog(`Checking library '${libName}'...`);
+		return this.promiseLog(`Checking library ${chalk.green(libName)}...`);
 	}
 
 	notifyFetchingLibrary(lib, targetDir) {
 		const dest = ` to ${targetDir}`;
-		return this.promiseLog(`Installing library '${lib.name} ${lib.version}${dest}' ...`);
+		return this.promiseLog(`Installing library ${chalk.blue(lib.name)} ${lib.version}${dest} ...`);
 	}
 
 	notifyInstalledLibrary(lib, targetDir) {
-		return this.promiseLog(`Library '${lib.name} ${lib.version}' installed.`);
+		return this.promiseLog(`Library ${chalk.blue(lib.name)} ${lib.version} installed.`);
 	}
 
 	promiseLog(msg) {
@@ -79,7 +79,9 @@ function copy(argv, apiJS) {
 export function command(cmd, apiJS, argv) {
 	if (cmd==='copy') {
 		return copy(argv, apiJS);
- 	} else {
-		return copy(argv, apiJS);
+	} else if (cmd==='install') {
+		return install(argv, apiJS);
+	} else {
+		throw Error('uknown command '+cmd);
 	}
 }

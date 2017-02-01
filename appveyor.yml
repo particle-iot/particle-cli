@@ -9,7 +9,8 @@ environment:
   matrix:
   - nodejs_version: "4.2"
   - nodejs_version: "5.1"
-  - nodejs_version: "6.2"
+  - nodejs_version: "6.9"
+  - nodejs_version: "7.4"
 
 platform:
   - x86

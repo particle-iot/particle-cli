@@ -89,7 +89,7 @@ describe('library init', () => {
 		const app = cli.createAppCategory();
 		const lib = cli.createCategory(app, 'library');
 		libraryInit({lib, factory:cli});
-		const argv = cli.parse(app, ['library', 'init', '--name', 'foobar',
+		const argv = cli.parse(app, ['library', 'create', '--name', 'foobar',
 			'--version=1.2.3', '--author=mrbig']);
 		expect(argv.clicommand).to.be.ok;
 

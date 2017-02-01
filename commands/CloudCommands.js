@@ -317,7 +317,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		return pipeline([
 			function() {
 				var sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
-				var list = Object.values(fileMapping.map);
+				var list = Object.keys(fileMapping.map);
 				var isSourcey = _.some(list, function(file) {
 					return sourceExtensions.indexOf(path.extname(file)) >= 0;
 				});
@@ -397,6 +397,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				return when.reject(resp.info);
 			} else if (resp.error) {
 				return when.reject(resp.error);
+			} else if (typeof resp === 'string') {
+				return when.reject('Server error');
 			}
 			return when.reject();
 		});
@@ -672,7 +674,11 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						return resp.sizeInfo;
 					});
 				} else {
-					return when.reject(resp.errors);
+					if (typeof resp === 'string') {
+						return when.reject('Server error');
+					} else {
+						return when.reject(resp.errors);
+					}
 				}
 			}
 		]).then(
@@ -804,6 +810,29 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			return when.reject('not logged in!');
 		}
 
+		var filterFunc = null;
+
+		if (filter){
+			var platforms = utilities.knownPlatforms();
+			if (filter === 'online') {
+				filterFunc = function(d) {
+					return d.connected;
+				};
+			} else if (filter === 'offline') {
+				filterFunc = function(d) {
+					return !d.connected;
+				};
+			} else if (Object.keys(platforms).indexOf(filter) >= 0) {
+				filterFunc = function(d) {
+					return d.product_id === platforms[filter];
+				};
+			} else {
+				filterFunc = function(d) {
+					return d.id === filter || d.name === filter;
+				};
+			}
+		}
+
 		var lookupVariables = function (devices) {
 			if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
 				console.log('No devices found.');
@@ -811,7 +840,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				self.newSpin('Retrieving device functions and variables...').start();
 				var promises = [];
 				devices.forEach(function (device) {
-					if (!device.id) {
+					if (!device.id || (filter && !filterFunc(device))) {
+					// Don't request attributes from unnecessary devices...
 						return;
 					}
 
@@ -834,30 +864,6 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						return (a.name || '').localeCompare(b.name);
 					});
 					self.stopSpin();
-
-					if (filter && fullDevices) {
-						var filterFunc;
-						var platforms = utilities.knownPlatforms();
-						if (filter === 'online') {
-							filterFunc = function(d) {
-								return d.connected;
-							};
-						} else if (filter === 'offline') {
-							filterFunc = function(d) {
-								return !d.connected;
-							};
-						} else if (Object.keys(platforms).indexOf(filter) >= 0) {
-							filterFunc = function(d) {
-								return d.product_id === platforms[filter];
-							};
-						} else {
-							filterFunc = function(d) {
-								return d.id === filter || d.name === filter;
-							};
-						}
-
-						fullDevices = fullDevices.filter(filterFunc);
-					}
 					return fullDevices;
 				});
 			}
@@ -985,6 +991,8 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					case 31:
 						deviceType = ' (Raspberry Pi)';
 						break;
+					default:
+						deviceType = ' (Product ' + device.product_id + ')';
 				}
 
 				if (!device.name || device.name === 'null') {

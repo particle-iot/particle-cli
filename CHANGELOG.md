@@ -1,8 +1,28 @@
 # Changelog
 
-## Unreleased - 22 Sept 2016
+## 1.19.2 - 26 January 2017
+
+* Fix path for compiling library examples
+
+## 1.19.1 - 23 January 2017
+
+* Tweak for Windows CLI installer
+
+## 1.19.0 - 23 January 2017
 
 * Library commands. Try `particle library`
+
+## 1.18.0 - 22 November 2016
+
+* Include binaries for firmware 0.6.0
+
+## 1.17.2 - 17 November 2016
+
+* Disable update check through environment
+
+## 1.17.1 - 11 November 2016
+
+* Add support for Raspberry Pi
 
 ## 1.17.0 - 30 September 2016
 
