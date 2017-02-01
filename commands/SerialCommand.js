@@ -426,7 +426,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				{
 					type: 'input',
 					name: 'listening',
-					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE'),
+					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE')
 				}
 			], function() {
 				resolve();
@@ -546,36 +546,92 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	configureWifi: function (comPort) {
 		var self = this;
 		// TODO remove once we have verbose flag
-		settings.verboseOutput = false;
+		settings.verboseOutput = true;
 
 		var wifi = when.defer();
 		this.checkArguments(arguments);
+
+        // So we can read it inside the function
+        var args = arguments;
 
 		this.whatSerialPortDidYouMean(comPort, true, function (device) {
 			if (!device) {
 				return self.error('No serial port identified');
 			}
 
-			inquirer.prompt([
-				{
-					type: 'confirm',
-					name: 'scan',
-					message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
-					default: true
-				}
-			], function(ans) {
-				if (ans.scan) {
-					return self._scanNetworks(function (networks) {
-						self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
-					});
-				} else {
-					self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
-				}
-			});
+            // Lets track whether we found a json argument
+            var json = null;
+
+            Object.keys(args).forEach(function (key) {
+                if (args[key].indexOf(".json") != -1) {
+                    // Save it
+                    json = args[key];
+                }
+            });
+
+            /*
+            for (var i=0; i<args.length; i++) {
+                console.log(i, ":", arr[i]);
+                if (args[i].indexOf(".json") != -1) {
+                    // Save it
+                    json = args[i];
+                    break;
+                }
+            }
+            */
+
+            // Did we find it?
+            if (json){
+                console.log('Using Wi-Fi config file: ', json);
+
+                // Directly
+                var obj = JSON.parse(fs.readFileSync(json, "utf-8"));
+
+                if (!obj.hasOwnProperty('network') || obj.network.length < 2){
+                    _jsonErr('The "network" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}');
+                } else {
+                    var ssid = obj.network;
+                }
+                if (!obj.hasOwnProperty('password') || obj.password.length < 2){
+                    _jsonErr('The "password" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}');
+                } else {
+                    var password = obj.password;
+                }
+                if (!obj.hasOwnProperty('security') || obj.security.length < 2){
+                    _jsonErr('The "security" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}');
+                }else {
+                    var security = obj.security;
+                }
+
+                // Configure it
+                self.serialWifiConfig(device, ssid, security, password).then(wifi.resolve, wifi.reject); //.then(self.wifiInfo.resolve, self.wifiInfo.reject);
+            } else {
+                inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'scan',
+                        message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
+                        default: true
+                    }
+                ], function (ans) {
+                    if (ans.scan) {
+                        return self._scanNetworks(function (networks) {
+                            self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
+                        });
+                    } else {
+                        self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
+                    }
+                });
+
+            }
 		});
 
 		return wifi.promise;
 	},
+
+    _jsonErr: function(err) {
+        return console.log(chalk.red('!'), 'An error occurred:', err);
+    },
 
 	_removePhotonNetworks: function(ssids) {
 		return ssids.filter(function (ap) {
@@ -731,7 +787,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 
-	serialWifiConfig: function (device, ssid, securityType) {
+    serialWifiConfig: function (device, ssid, securityType, password) {
 		if (!device) {
 			return when.reject('No serial port available');
 		}
@@ -854,16 +910,23 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		st.addTrigger('Password:', function(cb) {
 			resetTimeout();
-			inquirer.prompt([{
-				type: 'input',
-				name: 'password',
-				message: 'Wi-Fi Password',
-				validate: function(val) {
-					return !!val;
-				}
-			}], function(ans) {
-				cb(ans.password + '\n', startTimeout.bind(self, 15000));
-			});
+            // Skip password prompt as appropriate
+            if (password){
+                console.log('Password: ' + password);
+                cb(password + '\n', startTimeout.bind(self, 15000));
+
+            } else {
+                inquirer.prompt([{
+                    type: 'input',
+                    name: 'password',
+                    message: 'Wi-Fi Password',
+                    validate: function (val) {
+                        return !!val;
+                    }
+                }], function (ans) {
+                    cb(ans.password + '\n', startTimeout.bind(self, 15000));
+                });
+            }
 		});
 
 		st.addTrigger('Spark <3 you!', function() {
