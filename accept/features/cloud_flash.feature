@@ -1,3 +1,4 @@
+@wip
 Feature: cloud flash
 
   Scenario: as a user, I can flash source to a device
