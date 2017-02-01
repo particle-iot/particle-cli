@@ -60,7 +60,7 @@
     "cli-table": "^0.3.1",
     "es6-promisify": "^4.1.0",
     "form-data": "https://github.com/spark/form-data/releases/download/v1.0.0-relativepath.2/form-data-1.0.0-relativepath.2.tgz",
-    "glob": "^4.2.1",
+    "glob": "^5.0.15",
     "handlebars": "^4.0.5",
     "hogan.js": "^2.0.0",
     "inquirer": "^0.11.2",
