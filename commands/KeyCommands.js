@@ -399,6 +399,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			console.log('Please provide your device id');
 			return -1;
 		}
+		deviceid = deviceid.toLowerCase();  // make lowercase so that it's case insensitive
 
 		this.checkArguments(arguments);
 
