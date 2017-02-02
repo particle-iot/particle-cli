@@ -450,6 +450,9 @@ ApiClient.prototype = {
 	},
 
 	//PUT /v1/devices/{DEVICE_ID}
+	// todo - this is used to both flash a binary and compile sources
+	// these are quite distinct operations, and even though they hit the same API should
+	// have different code paths here since there is little overlap in functionality
 	flashDevice: function (deviceId, fileMapping, targetVersion) {
 		console.log('attempting to flash firmware to your device ' + deviceId);
 
@@ -471,6 +474,7 @@ ApiClient.prototype = {
 			dfd.resolve(body);
 		});
 
+		// NB: fileMaping may be a singleton list of a binary file to flash
 		this._addFilesToCompile(r, fileMapping, targetVersion);
 
 
@@ -534,6 +538,16 @@ ApiClient.prototype = {
 
 	_addFilesToCompile: function (r, fileMapping, targetVersion, platform_id) {
 		var form = r.form();
+		if (!fileMapping.map) {
+			fileMapping.map = {}
+			if (fileMapping.list) {
+				for (var i = 0; i < fileMapping.list.length; i++) {
+					var item = fileMapping.list[i]
+					fileMapping.map[item] = item;
+				}
+			}
+		}
+
 		var list = Object.keys(fileMapping.map);
 		for (var i = 0, n = list.length; i < n; i++) {
 			var relativeFilename = list[i];
