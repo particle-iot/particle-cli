@@ -4,6 +4,14 @@ var dfu = require('../../oldlib/dfu');
 var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
+var specs = require('../../oldlib/deviceSpecs');
+var sinon = require('sinon');
+
+const chai = require('chai');
+const sinonChai = require('sinon-chai');
+chai.use(sinonChai);
+const expect = chai.expect;
+
 
 describe('DFU', function() {
 	it('finds Particle devices in dfu-util -l output', function() {
@@ -27,5 +35,21 @@ describe('DFU', function() {
 		var devices = dfu._deviceIdsFromDfuOutput(output);
 		assert.ok(devices);
 		assert.equal(devices.length, 0);
+	});
+
+	it('pads to 2 on the core', () => {
+		var specs = dfu.specsForPlatform(0);
+		var file = 'abcd';
+		dfu.appendToEvenBytes = sinon.spy();
+		dfu.checkBinaryAlignment(file, specs);
+		expect(dfu.appendToEvenBytes).to.have.been.calledWith(file)
+	});
+
+	it('does not pad on other platforms', () => {
+		var specs = dfu.specsForPlatform(6);
+		var file = 'abcd';
+		dfu.appendToEvenBytes = sinon.spy();
+		dfu.checkBinaryAlignment(file, specs);
+		expect(dfu.appendToEvenBytes).to.have.not.been.called;
 	});
 });

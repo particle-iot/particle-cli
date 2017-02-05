@@ -141,7 +141,8 @@ var that = module.exports = {
 			args.unshift('dfu-util');
 		}
 
-		that.checkBinaryAlignment('-D ' + binaryPath);
+		var deviceSpecs = specs[that.deviceID] || { };
+		that.checkBinaryAlignment(binaryPath, deviceSpecs);
 		return utilities.deferredSpawnProcess(cmd, args).then(function(output) {
 			return when.resolve(output.stdout.join('\n'));
 		}).catch(function(output) {
@@ -161,14 +162,9 @@ var that = module.exports = {
 		}
 	},
 
-	checkBinaryAlignment: function (cmdargs) {
-		var idx = cmdargs.indexOf('-D ');
-		if (idx >= 0) {
-			var filepath = cmdargs.substr(idx + 3);
-			log.verbose('checking file', filepath);
+	checkBinaryAlignment: function (filepath, specs) {
+		if (specs.writePadding===2) {
 			that.appendToEvenBytes(filepath);
-		} else {
-			console.log('uhh, args had no path.');
 		}
 	},
 
@@ -356,5 +352,16 @@ var that = module.exports = {
 		} else {
 			promise.reject(message);
 		}
+	},
+
+	specsForPlatform: function(platformID) {
+		var result = {}
+		Object.keys(specs).forEach(function(id) {
+			var deviceSpecs = specs[id];
+			if (deviceSpecs.productId===platformID) {
+				result = deviceSpecs;
+			}
+		});
+		return result;
 	}
 };

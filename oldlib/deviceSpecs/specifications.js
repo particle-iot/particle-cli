@@ -41,7 +41,8 @@ var specs = {
 			serialNumber: 'Spark_Core'
 		},
 		defaultProtocol: 'tcp',
-		productId: 0
+		productId: 0,
+		writePadding: 2
 	},
 	'2b04:d006': {
 		productName: 'Photon',
