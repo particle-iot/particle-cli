@@ -30,6 +30,7 @@ var _ = require('lodash');
 
 var fs = require('fs');
 var when = require('when');
+var whenNode = require('when/node');
 var utilities = require('./utilities.js');
 var child_process = require('child_process');
 var settings = require('../settings.js');
@@ -39,7 +40,7 @@ var log = require('./log');
 var inquirer = require('inquirer');
 var prompt = inquirer.prompt;
 var chalk = require('chalk');
-
+var temp = require('temp');
 var that = module.exports = {
 
 	_deviceIdsFromDfuOutput: function(stdout) {
@@ -274,6 +275,21 @@ var that = module.exports = {
 			leave
 		);
 	},
+	readBuffer: function(segmentName, leave) {
+		var filename = temp.path({ suffix: '.bin' });
+		return this.read(filename, segmentName, leave)
+			.then(function() {
+				return whenNode.lift(fs.readFile)(filename);
+			})
+			.then(function(buf) {
+				return buf;
+			})
+			.finally(function() {
+				fs.unlink(filename, function() {
+					// do nothing
+				});
+			});
+	},
 	write: function(binaryPath, segmentName, leave) {
 
 		var segment = that._validateSegmentSpecs(segmentName);
@@ -287,6 +303,19 @@ var that = module.exports = {
 			segment.specs.address,
 			leave
 		);
+	},
+	writeBuffer: function(buffer, segmentName, leave) {
+		var filename = temp.path({ suffix: '.bin' });
+		var self = this;
+		return whenNode.lift(fs.writeFile)(filename, buffer)
+			.then(function() {
+				return self.write(filename, segmentName, leave)
+					.finally(function() {
+						fs.unlink(filename, function() {
+							// do nothing
+						});
+					});
+			});
 	},
 
 	// UDEV rules on Linux allow regular user acess to devices that
