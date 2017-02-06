@@ -17,6 +17,10 @@ function runCommand(cmd, args, cb) {
 		stderr += data;
 	});
 
+	s.on('error', function(err) {
+		cb(err, stdout, stderr);
+	});
+
 	s.on('close', function (code) {
 		cb(code, stdout, stderr);
 	});
