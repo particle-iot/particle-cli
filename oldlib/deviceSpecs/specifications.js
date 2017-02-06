@@ -78,11 +78,6 @@ var specs = {
 			alt: '1',
 			alg: 'ec'
 		},
-		transport: {
-			address: 2977,
-			size: 1,
-			alt: '1'
-		},
 		factoryReset: {
 			address: '0x080E0000',
 			alt: '0'
@@ -142,11 +137,6 @@ var specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec'
-		},
-		transport: {
-			address: 2977,
-			size: 1,
-			alt: '1'
 		},
 		factoryReset: {
 			address: '0x080E0000',
@@ -245,6 +235,7 @@ var specs = {
 			serialNumber: 'Particle_Electron'
 		},
 		defaultProtocol: 'udp',
+		alternativeProtocol: 'tcp',
 		productId: 10
 	},
 	'2b04:d058': {
@@ -300,7 +291,7 @@ Object.keys(specs).forEach(function(id) {
 	var knownApps = deviceSpecs['knownApps'];
 	for (var appName in knownApps) {
 		knownApps[appName] = path.join(__dirname, '../../binaries', knownApps[appName]);
-	};
+	}
 });
 
 module.exports = specs;
