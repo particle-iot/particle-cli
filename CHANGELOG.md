@@ -1,6 +1,31 @@
 # Changelog
 
-## 1.19.2 - 26 January 2017
+## 1.19.3 - 7 February 2017
+
+## Features
+
+ * [#338](https://github.com/spark/particle-cli/pull/338) - `particle keys protocol` displays the currently configured protocol for the connected device
+ * [#205](https://github.com/spark/particle-cli/pull/205) - `webhook delete all` command. Thanks @kennethlimcp!
+ * [#240](https://github.com/spark/particle-cli/pull/240) - `particle serial monitor --follow' reconnects to the serial port when the device resets. Thanks @derekmpeterson!
+ * [#225](https://github.com/spark/particle-cli/pull/225) - ability to specify a .json file to skip the wifi prompts. Thanks @markterrill!
+ * `--no-update-check` to skip checks for updated versions
+ 
+## Fixes
+
+ * [#326](https://github.com/spark/particle-cli/issues/326) - unhandled rejection in `help`
+ * [#235](https://github.com/spark/particle-cli/issues/235) - Unhandled error in `particle setup`
+ * [#331](https://github.com/spark/particle-cli/issues/331) - Flashing a known app causes exception
+ * [#328](https://github.com/spark/particle-cli/issues/328) - ParticleCLISetup for Windows broken due to OpenSSL download problem
+ * [#326](https://github.com/spark/particle-cli/issues/326) - Unhandled rejection in help
+ * [#321](https://github.com/spark/particle-cli/issues/321) - keys doctor (device id) is case sensitive
+ * [#292](https://github.com/spark/particle-cli/issues/292) - this -> self
+ * [#280](https://github.com/spark/particle-cli/issues/280) - Incorrect key pulled for Electron using TCP
+ * [#279](https://github.com/spark/particle-cli/issues/279) - Server key address output incorrect for Electron using TCP
+ * [#231](https://github.com/spark/particle-cli/issues/231) -  max retry for wifi scan error 
+ * [#299](https://github.com/spark/particle-cli/pull/299) - update glob dependency to avoid warning about minimatch vulnerability. Thanks @snyk-bot.
+ 
+
+#r 1.19.2 - 26 January 2017
 
 * Fix path for compiling library examples
 
