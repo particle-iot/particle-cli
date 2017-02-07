@@ -42,21 +42,29 @@ var path = require('path');
 var dfu = require('../oldlib/dfu.js');
 var deviceSpecs = require('../oldlib/deviceSpecs');
 
+/**
+ * Commands for managing encryption keys.
+ * For devices that support a single protocol, the
+ * key type defaults to that. For devices that support multiple
+ * protcools, the `--protocol` flag can be used to
+ * specify the protocol. When omitted, the current configured
+ * protocol on the device is used.
+ * @constructor
+ */
 function KeyCommands(cli, options) {
 	KeyCommands.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
 	this.init();
-};
+}
 util.inherits(KeyCommands, BaseCommand);
 KeyCommands.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: 'keys',
 	description: 'tools to help you manage keys on your devices',
 
-
 	init: function () {
-
+		this.dfu = dfu;
 		this.addOption('new', this.makeNewKey.bind(this), 'Generate a new set of keys for your device');
 		this.addOption('load', this.writeKeyToDevice.bind(this), 'Load a saved key on disk onto your device');
 		this.addOption('save', this.saveKeyFromDevice.bind(this), 'Save a key from your device onto your disk');
@@ -64,13 +72,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		this.addOption('doctor', this.keyDoctor.bind(this), 'Creates and assigns a new key to your device, and uploads it to the cloud');
 		this.addOption('server', this.writeServerPublicKey.bind(this), 'Switch server public keys');
 		this.addOption('address', this.readServerAddress.bind(this), 'Read server configured in device server public key');
-		this.addOption('protocol', this.changeTransportProtocol.bind(this), 'Change transport protocol the device uses to communicate with the cloud');
-
-		//this.addArgument("get", "--time", "include a timestamp")
-		//this.addArgument("monitor", "--time", "include a timestamp")
-		//this.addArgument("get", "--all", "gets all variables from the specified deviceid")
-		//this.addArgument("monitor", "--all", "gets all variables from the specified deviceid")
-		//this.addOption(null, this.helpCommand.bind(this));
+		this.addOption('protocol', this.transportProtocol.bind(this), 'Retrieve or change transport protocol the device uses to communicate with the cloud');
 	},
 
 	checkArguments: function (args) {
@@ -99,14 +101,39 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		}
 	},
 
+	transportProtocol: function(protocol) {
+		return protocol ? this.changeTransportProtocol(protocol) : this.showTransportProtocol();
+	},
+
+	showTransportProtocol: function() {
+		var dfu = this.dfu;
+		var self = this;
+		var fetch = sequence([
+			function() {
+				return dfu.isDfuUtilInstalled();
+			},
+			function() {
+				//make sure our device is online and in dfu mode
+				return dfu.findCompatibleDFU();
+			},
+			function() {
+				return self.validateDeviceProtocol();
+			}
+		]);
+
+		return fetch.then(function(protocol) {
+			console.log('Device protocol is set to '+self.options.protocol);
+		}).catch(function(err) {
+			console.log('Error', err);
+		});
+	},
+
 	changeTransportProtocol: function(protocol) {
+		var dfu = this.dfu;
 		if (protocol !== 'udp' && protocol !== 'tcp') {
 			console.log('Invalid protocol');
 			return -1;
 		}
-
-		var specs;
-		var flagFile = temp.path({ suffix: '.bin' });
 
 		var changed = sequence([
 			function() {
@@ -117,25 +144,21 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function() {
-				specs = deviceSpecs[dfu.deviceID];
+				var specs = deviceSpecs[dfu.deviceID];
 				if (!specs.transport) {
 					return when.reject('No transport flag available');
 				}
 
 				var flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
-				fs.writeFileSync(flagFile, flagValue);
-				return dfu.write(flagFile, 'transport', false);
+				return dfu.writeBuffer(flagValue, 'transport', false);
 			}
 		]);
 
-		changed.catch(function(err) {
+		changed.then(function() {
+			console.log('Protocol changed to '+protocol);
+		}).catch(function(err) {
 			console.log('Error', err);
-		}).finally(function() {
-			fs.unlinkSync(flagFile, function() {
-				// do nothing
-			});
 		});
-
 		return changed;
 	},
 
@@ -148,7 +171,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			utilities.tryDelete(filename + '.der');
 		}
 
-		alg = alg || this._getPrivateKeyAlgorithm() || 'rsa';
+		alg = alg || this._getPrivateKeyAlgorithm();
 
 		return sequence([
 			function () {
@@ -187,7 +210,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return this._makeNewKey(filename);
 	},
 
+	keyAlgorithmForProtocol(protocol) {
+		return protocol === 'udp' ? 'ec' : 'rsa';
+	},
+
 	_makeNewKey: function(filename) {
+		var dfu = this.dfu;
 		var self = this;
 		var alg;
 		var showHelp = !self.options.protocol;
@@ -198,7 +226,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 					dfu.findCompatibleDFU.bind(dfu, showHelp)
 				]).catch(function(err) {
 					if (self.options.protocol) {
-						alg = self.options.protocol === 'udp' ? 'ec' : 'rsa';
+						alg = self.keyAlgorithmForProtocol(self.options.protocol);
 						return when.resolve();
 					}
 					return when.reject(err);
@@ -219,6 +247,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	writeKeyToDevice: function (filename, leave) {
+		var dfu = this.dfu;
 		this.checkArguments(arguments);
 
 		if (!filename) {
@@ -243,9 +272,12 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				//make sure our device is online and in dfu mode
 				return dfu.findCompatibleDFU();
 			},
+			function () {
+				return self.validateDeviceProtocol();
+			},
 			//backup their existing key so they don't lock themselves out.
 			function() {
-				var alg = self._getPrivateKeyAlgorithm() || 'rsa';
+				var alg = self._getPrivateKeyAlgorithm();
 				var prefilename = path.join(
 						path.dirname(filename),
 					'backup_' + alg + '_' + path.basename(filename)
@@ -271,9 +303,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return ready;
 	},
 
-
-
 	saveKeyFromDevice: function (filename) {
+		var dfu = this.dfu;
 		if (!filename) {
 			console.error('Please provide a filename to store this key.');
 			return when.reject('Please provide a filename to store this key.');
@@ -284,8 +315,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		this.checkArguments(arguments);
 
 		if ((!this.options.force) && (fs.existsSync(filename))) {
-			console.error('This file already exists, please specify a different file, or use the --force flag.');
-			return when.reject('This file already exists, please specify a different file, or use the --force flag.');
+			var msg = 'This file already exists, please specify a different file, or use the --force flag.';
+			// todo - surely exceptions are also logged too? do we need the console output?
+			console.error(msg);
+			return when.reject(msg);
 		} else if (fs.existsSync(filename)) {
 			utilities.tryDelete(filename);
 		}
@@ -302,6 +335,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function () {
+				return self.validateDeviceProtocol();
+			},
+			function () {
 				//if (self.options.force) { utilities.tryDelete(filename); }
 				var segment = self._getPrivateKeySegmentName();
 				return dfu.read(filename, segment, false);
@@ -311,7 +347,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				if (self.options.force) {
 					utilities.tryDelete(pubPemFilename);
 				}
-				var alg = self._getPrivateKeyAlgorithm() || 'rsa';
+				var alg = self._getPrivateKeyAlgorithm();
 				return utilities.deferredChildProcess('openssl ' + alg + ' -in ' + filename + ' -inform DER -pubout -out ' + pubPemFilename).catch(function (err) {
 					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
 				});
@@ -352,6 +388,8 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return when.reject("Couldn't find " + filename);
 			}
 		}
+
+		deviceid = deviceid.toLowerCase();
 
 		var api = new ApiClient();
 		if (!api.ready()) {
@@ -395,6 +433,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	keyDoctor: function (deviceid) {
+		var dfu = this.dfu;
 		if (!deviceid || (deviceid === '')) {
 			console.log('Please provide your device id');
 			return -1;
@@ -419,8 +458,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			function () {
 				return dfu.findCompatibleDFU();
 			},
+			function () {
+				return self.validateDeviceProtocol();
+			},
 			function() {
-				alg = self._getPrivateKeyAlgorithm() || 'rsa';
+				alg = self._getPrivateKeyAlgorithm();
 				filename = deviceid + '_' + alg + '_new';
 				return self._makeNewKey(filename);
 			},
@@ -435,7 +477,6 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		allDone.then(
 			function () {
 				console.log('Okay!  New keys in place, your device should restart.');
-
 			},
 			function (err) {
 				console.log('Make sure your device is in DFU mode (blinking yellow), and that your computer is online.');
@@ -470,6 +511,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	writeServerPublicKey: function (filename, ipOrDomain, port) {
+		var dfu = this.dfu;
 		if (filename === '--protocol') {
 			filename = null;
 			ipOrDomain = null;
@@ -491,6 +533,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return pipeline([
 			dfu.isDfuUtilInstalled,
 			dfu.findCompatibleDFU,
+			function() {
+				return self.validateDeviceProtocol();
+			},
 			function() {
 				return self._getDERPublicKey(filename);
 			},
@@ -517,6 +562,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	readServerAddress: function() {
+		var dfu = this.dfu;
 		var self = this;
 		this.checkArguments(arguments);
 
@@ -525,6 +571,9 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return pipeline([
 			dfu.isDfuUtilInstalled,
 			dfu.findCompatibleDFU,
+			function () {
+				return self.validateDeviceProtocol();
+			},
 			function() {
 				serverKeySeg = self._getServerKeySegment();
 				specs = deviceSpecs[dfu.deviceID];
@@ -533,37 +582,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				keyFilename = temp.path({ suffix: '.der' });
 				var segment = self._getServerKeySegmentName();
 				//if (self.options.force) { utilities.tryDelete(filename); }
-				return dfu.read(keyFilename, segment, false)
-					.then(function() {
-						return whenNode.lift(fs.readFile)(keyFilename);
-					})
+				return dfu.readBuffer(segment, false)
 					.then(function(buf) {
 						keyBuf = buf;
-					})
-					.finally(function() {
-						fs.unlink(keyFilename, function() {
-							// do nothing
-						});
 					});
-			},
-			function() {
-				if (!self.options.protocol && specs.transport && specs.defaultProtocol === 'udp') {
-					transportFilename = temp.path({ suffix: '.bin' });
-					return dfu.read(transportFilename, 'transport', false)
-						.then(function() {
-							return whenNode.lift(fs.readFile)(transportFilename);
-						})
-						.then(function(buf) {
-							transportFlag = buf;
-						})
-						.finally(function() {
-							fs.unlink(transportFilename, function() {
-								// do nothing
-							});
-						});
-				}
-				transportFlag = new Buffer([0xFF]);
-				return when.resolve();
 			},
 			function() {
 				var offset = serverKeySeg.addressOffset || 384;
@@ -573,14 +595,6 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				var data = keyBuf.slice(offset + 2, offset + 2 + len);
 
 				var protocol = self.options.protocol;
-				if (!protocol) {
-					if (specs.defaultProtocol === 'udp' && transportFlag[0] !== 0xFF) {
-						protocol = 'tcp';
-					} else {
-						protocol = specs.defaultProtocol;
-					}
-				}
-
 				var port = keyBuf[portOffset] << 8 | keyBuf[portOffset+1];
 				if (port === 0xFFFF) {
 					port = protocol === 'tcp' ? 5683 : 5684;
@@ -595,13 +609,15 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 					}
 				}
 
-				console.log();
-				console.log(url.format({
+				var result = {
 					hostname: host,
 					port: port,
 					protocol: protocol,
 					slashes: true
-				}));
+				};
+				console.log();
+				console.log(url.format(result));
+				return result;
 			}
 		]).catch(function (err) {
 			console.log('Make sure your device is in DFU mode (blinking yellow), and is connected to your computer');
@@ -610,7 +626,32 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
+	/**
+	 * Determines the protocol to use. If a protocol is set in options, that is used.
+	 * For single-protocol devices, the default protocol is used. For multi-protocol devices
+	 * the device is queried to find the current protocol, and that is used
+	 * @param specs The DFU device sepcs.
+	 * @returns {Promise.<String>}  The
+	 */
+	validateDeviceProtocol: function(specs) {
+		specs = specs || deviceSpecs[this.dfu.deviceID];
+		var protocol = this.options.protocol ? when.resolve(this.options.protocol) : this.fetchDeviceProtocol(specs);
+		var self = this;
+		return protocol.then(function (protocol) {
+			var supported = [ specs.defaultProtocol ];
+			if (specs.alternativeProtocol) {
+				supported.push(specs.alternativeProtocol);
+			}
+			if (supported.indexOf(protocol)<0) {
+				throw Error('The device does not support the protocol ' + protocol + '. It has support for '+supported.join(', ') );
+			}
+			self.options.protocol = protocol;
+			return protocol;
+		});
+	},
+
 	_getServerKeySegmentName: function() {
+		var dfu = this.dfu;
 		if (!dfu.deviceID) {
 			return;
 		}
@@ -624,7 +665,27 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return key;
 	},
 
+	/**
+	 * Retrieves the protocol that is presently configured
+	 * on the device.  When the device supports just one protocol, then
+	 * that protocol is returned. For multi-protocol devices, the device is quried
+	 * to determine the currently active protocol.
+	 * Assumes that the dfu device has already been established.
+	 * @param specs The DFU specs for the device
+	 * @returns {Promise.<String>} The protocol configured on the device.
+	 */
+	fetchDeviceProtocol: function(specs) {
+		if (specs.transport && specs.alternativeProtocol) {
+			return this.dfu.readBuffer('transport', false)
+				.then(function(buf) {
+					return buf[0]===0xFF ? specs.defaultProtocol : specs.alternativeProtocol;
+				});
+		}
+		return when.resolve(specs.defaultProtocol);
+	},
+
 	_getServerKeySegment: function() {
+		var dfu = this.dfu;
 		if (!dfu.deviceID) {
 			return;
 		}
@@ -645,6 +706,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_getPrivateKeySegmentName: function() {
+		var dfu = this.dfu;
 		if (!dfu.deviceID) {
 			return;
 		}
@@ -659,6 +721,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_getPrivateKeySegment: function() {
+		var dfu = this.dfu;
 		if (!dfu.deviceID) {
 			return;
 		}
@@ -672,10 +735,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	_getPrivateKeyAlgorithm: function() {
 		var segment = this._getPrivateKeySegment();
-		if (!segment) {
-			return;
-		}
-		return segment.alg || 'rsa';
+		return (segment && segment.alg) || 'rsa';
 	},
 
 	_getServerAddressOffset: function() {
@@ -693,7 +753,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!filename) {
-			filename = path.join(__dirname, '../keys/' + alg + '.pub.der');
+			filename = this.serverKeyFilename(alg);
 		}
 
 		if (utilities.getFilenameExt(filename).toLowerCase() !== '.der') {
@@ -713,6 +773,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 		return when.resolve(filename);
+	},
+
+	serverKeyFilename: function(alg) {
+		return path.join(__dirname, '../keys/' + alg + '.pub.der');
 	},
 
 	_formatPublicKey: function(filename, ipOrDomain, port) {

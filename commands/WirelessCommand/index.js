@@ -733,7 +733,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log();
 		console.log(arrow, 'Obtaining device information...');
 		sap.deviceInfo(pubKey);
-	};
+	}
 
 	function pubKey(err, dat) {
 		if (err) {
