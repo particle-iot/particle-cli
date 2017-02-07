@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.19.4 - 7 Febrary 2017
+
+ * Fix: Use release version of particle-library-manager
+
 ## 1.19.3 - 7 February 2017
 
 ## Features
