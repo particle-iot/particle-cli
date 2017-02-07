@@ -277,7 +277,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			//backup their existing key so they don't lock themselves out.
 			function() {
-				var alg = self._getPrivateKeyAlgorithm() || defaultKeyAlgorithm;
+				var alg = self._getPrivateKeyAlgorithm();
 				var prefilename = path.join(
 						path.dirname(filename),
 					'backup_' + alg + '_' + path.basename(filename)
@@ -347,7 +347,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				if (self.options.force) {
 					utilities.tryDelete(pubPemFilename);
 				}
-				var alg = self._getPrivateKeyAlgorithm() || defaultKeyAlgorithm;
+				var alg = self._getPrivateKeyAlgorithm();
 				return utilities.deferredChildProcess('openssl ' + alg + ' -in ' + filename + ' -inform DER -pubout -out ' + pubPemFilename).catch(function (err) {
 					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
 				});
