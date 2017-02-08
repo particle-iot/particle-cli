@@ -36,19 +36,10 @@ var UdpCommands = function (cli, options) {
 	UdpCommands.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('udp');
 };
 util.inherits(UdpCommands, BaseCommand);
 UdpCommands.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'udp',
-	description: 'helps repair devices, run patches, check Wi-Fi, and more!',
-
-	init: function () {
-		this.addOption('send', this.sendUdpPacket.bind(this), 'Sends a UDP packet to the specified host and port');
-		this.addOption("listen", this.listenUdp.bind(this), 'Listens for UDP packets on an optional port (default 5549)');
-		//this.addOption(null, this.helpCommand.bind(this));
-	},
 
 	sendUdpPacket: function(host, port, message) {
 		if (!host || !port || !message) {

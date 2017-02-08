@@ -37,19 +37,11 @@ function SubscribeCommand(cli, options) {
 	SubscribeCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('subscribe');
 };
 util.inherits(SubscribeCommand, BaseCommand);
 
 SubscribeCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'subscribe',
-	description: 'helpers for watching device event streams',
-
-	init: function () {
-		this.addOption('*', this.startListening.bind(this), 'Starts listening and parsing server sent events from the api to your console');
-	},
-
 
 	startListening: function (eventName, deviceId) {
 		var api = new ApiClient();

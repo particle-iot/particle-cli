@@ -1,5 +1,9 @@
 Feature: Cloud compile
 
+  Scenario: help
+    When I run particle "help compile"
+    Then the output should contain "particle compile device_type"
+
   Scenario: as a user, I can compile a legacy flat project
     Given I use the fixture named "projects/legacy/flat"
     When I run particle "compile photon"

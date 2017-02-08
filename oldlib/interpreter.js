@@ -31,19 +31,19 @@ var path = require('path');
 var when = require('when');
 var settings = require('../settings.js');
 var endsWith = require('./utilities').endsWith;
+var descriptor = require('../descriptor');
+var BaseCommand = require('../commands/BaseCommand');
 
 var Interpreter = function () {
 
 };
 Interpreter.prototype = {
-	_commands: null,
 	commandsByName: null,
 	_commandsMap: null,
 
 	startup: function () {
 		this.setupTerminal();
-		this.loadCommands();
-
+		this.commandsByName = {};
 		if (settings.commandMappings) {
 			this.loadMappings(settings.commandMappings);
 		}
@@ -93,7 +93,7 @@ Interpreter.prototype = {
 
 		//allowing passthrough for things not mapped
 		if (!c) {
-			c = this.commandsByName[name];
+			c = this.lookupCommand(name);
 		}
 
 
@@ -105,8 +105,20 @@ Interpreter.prototype = {
 		}
 	},
 
-	getCommands: function () {
-		return this._commands;
+	/**
+	 * This is only used for generating help, so we don't provide the
+	 * real commands, but just the metadata.
+	 * @returns {null}
+	 */
+	getCommandStubs: function () {
+		descriptor.allCommands();
+	},
+
+	commandStub: function (name) {
+		var base = new BaseCommand();
+		base.skipBindHandler = true;
+		var command = descriptor.apply(name, base);
+		return command;
 	},
 
 	/**
@@ -116,19 +128,8 @@ Interpreter.prototype = {
 	 * @returns {Object} command that matches
 	 */
 	getCommandModule: function (name) {
-		var commands = this._commands;
-		for (var i = 0; i < commands.length; i++) {
-			try {
-				var c = commands[i];
-				if (c.name === name) {
-					return c;
-				}
-			} catch (ex) {
-				console.error('Error loading command ' + ex);
-			}
-		}
+		return this.lookupCommand(name);
 	},
-
 
 	/**
 	 * finds a command using the mapped name, or the friendly name in the module
@@ -136,6 +137,14 @@ Interpreter.prototype = {
 	 * @returns {Object} command that matches
 	 */
 	findCommand: function (name) {
+		var cmd = this._mapCommandName(name);
+		if (!cmd && (name !== 'help')) {
+			return this.lookupCommand(name);
+		}
+		return cmd;
+	},
+
+	_mapCommandName: function (name) {
 		if (!name) {
 			name = 'help';
 		}
@@ -144,11 +153,6 @@ Interpreter.prototype = {
 		if (this.hasMappings()) {
 			cmd = this._commandsMap[name];
 		}
-
-		if (!cmd && (name !== 'help')) {
-			return this.getCommandModule(name);
-		}
-
 		return cmd;
 	},
 
@@ -157,7 +161,6 @@ Interpreter.prototype = {
 	 * of commands with lots of functionality
 	 */
 	loadCommands: function () {
-		this._commands = [];
 		this.commandsByName = {};
 
 		var files = fs.readdirSync(settings.commandPath).filter(function (file) {
@@ -166,17 +169,26 @@ Interpreter.prototype = {
 
 		for (var i = 0; i < files.length; i++) {
 			var cmdPath = path.join(settings.commandPath, files[i]);
-			try {
-				var Cmd = require(cmdPath);
-				var c = new Cmd(this);
+			this.loadCommandFromPath(cmdPath);
+		}
+	},
 
-				if (c.name != null) {
-					this._commands.push(c);
-					this.commandsByName[c.name] = c;
-				}
-			} catch (ex) {
-				console.error('Error loading command ' + cmdPath + ' ' + ex);
+	loadCommand: function(name) {
+		var desc = descriptor.find(name);
+		var file = desc.cmd;
+		this.loadCommandFromPath(path.join(settings.commandPath, file));
+	},
+
+	loadCommandFromPath: function(cmdPath) {
+		try {
+			var Cmd = require(cmdPath);
+			var c = new Cmd(this);
+
+			if (c.name != null) {
+				this.commandsByName[c.name] = c;
 			}
+		} catch (ex) {
+			console.error('Error loading command ' + cmdPath + ' ' + ex);
 		}
 	},
 
@@ -273,7 +285,7 @@ Interpreter.prototype = {
 				//what does that subcommand map to?
 				var maps = node[subCmd].maps;
 
-				var cmd = this.commandsByName[maps[0]];
+				var cmd = this.lookupCommand[maps[0]];
 
 				//cut off the alias from the args, and inject the true command
 				if (maps.length > 1) {
@@ -295,7 +307,7 @@ Interpreter.prototype = {
 		var cmdName = (node.maps) ? node.maps[0] : null;
 
 		//grab the command we're mapped to
-		return this.commandsByName[cmdName];
+		return this.lookupCommand(cmdName);
 	},
 	addMappedArgs: function (name, args) {
 		var node = this._commandsMap[name];
@@ -318,11 +330,9 @@ Interpreter.prototype = {
 	getUnmappedTopLevelCommands: function() {
 		var results = [];
 
-		var orig = this.commandsByName;
-		for (var key in orig) {
-			var obj = orig[key];
-
-			var name = obj.name;
+		var orig = this.allOriginalCommandNames();
+		for (var i=0; i<orig.length; i++) {
+			var name = orig[i];
 			if (!this._commandsMap[name]) {
 				results.push(name);
 			}
@@ -330,6 +340,17 @@ Interpreter.prototype = {
 
 		return results;
 	},
+
+	allOriginalCommandNames: function() {
+		return descriptor.names();
+	},
+
+	lookupCommand(name) {
+		if (!this.commandsByName[name]) {
+			this.loadCommand(name);
+		}
+		return this.commandsByName[name];
+	}
 
 //    getUnmappedCommands: function() {
 //        var results = [];

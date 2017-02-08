@@ -41,19 +41,10 @@ var AccessTokenCommands = function (cli, options) {
 	AccessTokenCommands.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('token');
 };
 util.inherits(AccessTokenCommands, BaseCommand);
 AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'token',
-	description: 'tools to manage access tokens (require username/password)',
-
-	init: function () {
-		this.addOption('list', this.listAccessTokens.bind(this), 'List all access tokens for your account');
-		this.addOption('revoke', this.revokeAccessToken.bind(this), 'Revoke an access token');
-		this.addOption('new', this.createAccessToken.bind(this), 'Create a new access token');
-	},
 
 	getCredentials: function() {
 		if (settings.username) {

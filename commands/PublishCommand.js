@@ -39,19 +39,10 @@ var PublishCommand = function (cli, options) {
 	PublishCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('publish');
 };
 util.inherits(PublishCommand, BaseCommand);
 PublishCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'publish',
-	description: 'Publishes an event to the cloud.',
-
-	init: function () {
-		this.addOption('*', this.publishEvent.bind(this), 'Publishes an event to the cloud');
-	},
-
-
 	publishEvent: function (eventName, data, setPrivate) {
 
 		var api = new ApiClient();

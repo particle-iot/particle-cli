@@ -55,27 +55,12 @@ var SerialCommand = function (cli, options) {
 	SerialCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('serial');
 };
 
 util.inherits(SerialCommand, BaseCommand);
 
 SerialCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'serial',
-	description: 'simple serial interface to your devices',
-
-	init: function () {
-		this.addOption('list', this.listDevices.bind(this), 'Show devices connected via serial to your computer');
-		this.addOption('monitor', this.monitorSwitch.bind(this), 'Connect and display messages from a device');
-		this.addOption('identify', this.identifyDevice.bind(this), 'Ask for and display device ID via serial');
-		this.addOption('wifi', this.configureWifi.bind(this), 'Configure Wi-Fi credentials over serial');
-		this.addOption('mac', this.deviceMac.bind(this), 'Ask for and display MAC address via serial');
-		this.addOption('inspect', this.inspectDevice.bind(this), 'Ask for and display device module information via serial');
-		this.addOption('flash', this.flashDevice.bind(this), 'Flash firmware over serial using YMODEM protocol');
-
-		//this.addOption(null, this.helpCommand.bind(this));
-	},
 
 	findDevices: function (callback) {
 		var devices = [];

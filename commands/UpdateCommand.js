@@ -43,19 +43,12 @@ var UpdateCommand = function (cli, options) {
 	UpdateCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('update');
 };
 
 util.inherits(UpdateCommand, BaseCommand);
 
 UpdateCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'update',
-	description: 'This command allows you to update the system firmware of your device via USB',
-
-	init: function () {
-		this.addOption('*', this.updateDevice.bind(this), "Update a device's system firmware via USB");
-	},
 
 	updateDevice: function updateDevice() {
 		// by default we don't want crazy DFU output
@@ -153,7 +146,7 @@ function dfuError(err) {
 		);
 	}
 	process.exit(1);
-};
+}
 
 function dfuInstall(noent) {
 
@@ -169,6 +162,6 @@ function dfuInstall(noent) {
 		chalk.bold.white('https://docs.particle.io/guide/tools-and-features/cli/#advanced-install')
 	);
 	console.log();
-};
+}
 
 module.exports = UpdateCommand;

@@ -70,39 +70,10 @@ var CloudCommand = function (cli, options) {
 	CloudCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('cloud');
 };
 util.inherits(CloudCommand, BaseCommand);
 CloudCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'cloud',
-	description: 'simple interface for common cloud functions',
-
-
-	init: function () {
-		this.addOption('claim', this.claimDevice.bind(this), 'Register a device with your user account with the cloud');
-		this.addOption('list', this.listDevices.bind(this), 'Displays a list of your devices, as well as their variables and functions');
-		this.addOption('remove', this.removeDevice.bind(this), 'Release a device from your account so that another user may claim it');
-		this.addOption('name', this.nameDevice.bind(this), 'Give a device a name!');
-		this.addOption('flash', this.flashDevice.bind(this), 'Pass a binary, source file, or source directory to a device!');
-		this.addOption('compile', this.compileCode.bind(this), 'Compile a source file, or directory using the cloud service');
-
-		this.addOption('nyan', this.nyanMode.bind(this), 'How long has this been here?');
-
-		this.addOption('login', this.login.bind(this), 'Lets you login to the cloud and stores an access token locally');
-		this.addOption('logout', this.logout.bind(this), 'Logs out your session and clears your saved access token');
-	},
-
-
-	usagesByName: {
-		nyan: [
-			'particle cloud nyan',
-			'particle cloud nyan my_device_id on',
-			'particle cloud nyan my_device_id off',
-			'particle cloud nyan all on'
-		]
-	},
-
 
 	checkArguments: function (args) {
 		this.options = this.options || {};
@@ -327,7 +298,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					return binFile;
 				}
 
-				filename = temp.path({ suffix: '.bin' });
+				var filename = temp.path({ suffix: '.bin' });
 				return self._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(function() {
 					newFileMapping.map['firmware.bin'] = filename;
 					return filename;

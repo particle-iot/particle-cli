@@ -40,17 +40,10 @@ var BinaryCommand = function (cli, options) {
 	BinaryCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('binary');
 };
 util.inherits(BinaryCommand, BaseCommand);
 BinaryCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'binary',
-	description: 'inspect binaries',
-
-	init: function () {
-		this.addOption('inspect', this.inspectBinary.bind(this), 'Describe binary contents');
-	},
 
 	inspectBinary: function inspectBinary(binaryFile) {
 		if (!binaryFile || !fs.existsSync(binaryFile)) {

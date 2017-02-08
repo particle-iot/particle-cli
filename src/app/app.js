@@ -102,7 +102,7 @@ export class CLI {
 			return yargs;
 		}
 
-		const commands = cli.getCommands();
+		const commands = cli.getCommandStubs();
 		for (let i = 0; i < commands.length; i++) {
 			try {
 				const c = commands[i];

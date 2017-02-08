@@ -31,6 +31,7 @@ var util = require('util');
 var readline = require('readline');
 var Spinner = require('cli-spinner').Spinner;
 var chalk = require('chalk');
+var descriptor = require('./../descriptor');
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]); // spinners spinners spinner spinner spinner!
 
@@ -48,6 +49,9 @@ BaseCommand.prototype = {
 	name: null,
 	description: null,
 
+	addDescription(name) {
+		descriptor.apply(name, this);
+	},
 
 	getPrompt: function () {
 		if (!this._prompt) {
@@ -80,6 +84,13 @@ BaseCommand.prototype = {
 	},
 
 	addOption: function (name, fn, desc) {
+		if (typeof fn === 'string' && !this.skipBindHandler) {
+			var call = this[fn];
+			if (!call) {
+				throw Error('Command '+name+' has no function called '+fn);
+			}
+			fn = call.bind(this);
+		}
 		this.optionsByName[name] = fn;
 		this.descriptionsByName[name] = desc;
 	},

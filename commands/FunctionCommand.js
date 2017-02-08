@@ -37,19 +37,10 @@ var FunctionCommand = function (cli, options) {
 	FunctionCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('function');
 };
 util.inherits(FunctionCommand, BaseCommand);
 FunctionCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'function',
-	description: 'call functions on your device',
-
-	init: function () {
-		this.addOption('list', this.listFunctions.bind(this), 'List functions provided by your device(s)');
-		this.addOption('call', this.callFunction.bind(this), 'Call a particular function on a device');
-	},
-
 
 	listFunctions: function (args) {
 		var api = new ApiClient();

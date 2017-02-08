@@ -54,27 +54,11 @@ var deviceSpecs = require('../oldlib/deviceSpecs');
 function KeyCommands(cli, options) {
 	KeyCommands.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
-
-	this.init();
+	this.dfu = dfu;
+	this.addDescription('keys');
 }
 util.inherits(KeyCommands, BaseCommand);
 KeyCommands.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'keys',
-	description: 'tools to help you manage keys on your devices',
-
-	init: function () {
-		this.dfu = dfu;
-		this.addOption('new', this.makeNewKey.bind(this), 'Generate a new set of keys for your device');
-		this.addOption('load', this.writeKeyToDevice.bind(this), 'Load a saved key on disk onto your device');
-		this.addOption('save', this.saveKeyFromDevice.bind(this), 'Save a key from your device onto your disk');
-		this.addOption('send', this.sendPublicKeyToServer.bind(this), "Tell a server which key you'd like to use by sending your public key");
-		this.addOption('doctor', this.keyDoctor.bind(this), 'Creates and assigns a new key to your device, and uploads it to the cloud');
-		this.addOption('server', this.writeServerPublicKey.bind(this), 'Switch server public keys');
-		this.addOption('address', this.readServerAddress.bind(this), 'Read server configured in device server public key');
-		this.addOption('protocol', this.transportProtocol.bind(this), 'Retrieve or change transport protocol the device uses to communicate with the cloud');
-	},
-
 	checkArguments: function (args) {
 		this.options = this.options || {};
 		args = Array.prototype.slice.call(args);

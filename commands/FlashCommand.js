@@ -46,23 +46,10 @@ var FlashCommand = function (cli, options) {
 	FlashCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('flash');
 };
 util.inherits(FlashCommand, BaseCommand);
 FlashCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'flash',
-	description: 'copies firmware and data to your device over usb',
-
-	init: function () {
-		//this.addAlias("firmware", this.flashDfu.bind(this), null);
-
-		this.addOption('firmware', this.flashDfu.bind(this), 'Flashes a local firmware binary to your device over USB');
-		this.addOption('cloud', this.flashCloud.bind(this), 'Flashes a binary to your device wirelessly ');
-
-		this.addOption('*', this.flashSwitch.bind(this));
-		//this.addOption(null, this.helpCommand.bind(this));
-	},
 
 	checkArguments: function (args) {
 		this.options = this.options || {};

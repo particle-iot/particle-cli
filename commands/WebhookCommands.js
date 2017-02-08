@@ -43,59 +43,11 @@ var WebhookCommand = function (cli, options) {
 	WebhookCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	//TODO: better way to render and insert this template
-	this.usagesByName.create = this.usagesByName.create.concat(
-		JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2).split('\n')
-	);
-
-	this.init();
+	this.addDescription('webhook');
 };
 util.inherits(WebhookCommand, BaseCommand);
 
-WebhookCommand.HookJsonTemplate = {
-	'event': 'my-event',
-	'url': 'https://my-website.com/fancy_things.php',
-	'deviceid': 'optionally filter by providing a device id',
-
-	'_': 'The following parameters are optional',
-	'mydevices': 'true/false',
-	'requestType': 'GET/POST/PUT/DELETE',
-	'form': null,
-	'headers': null,
-	'query': null,
-	'json': null,
-	'auth': null,
-	'responseTemplate': null,
-	'rejectUnauthorized': 'true/false'
-};
-
 WebhookCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'webhook',
-	description: 'Webhooks - helpers for reacting to device event streams',
-	usagesByName: {
-		'create': [
-			'particle webhook create hook.json',
-			'particle webhook create eventName url deviceID',
-			'',
-			'The url will receive a request with the event name and data whenever one of your devices ',
-			'publish an event starting with the provided name.  If you do optionally provide a json ',
-			'filename you can set lots of advanced properties when creating your hook',
-
-			'',
-			'Optional JSON Template:',
-			//JSON.stringify(WebhookCommand.HookJsonTemplate, null, 2),
-
-		]
-	},
-
-	init: function () {
-		this.addOption('create', this.createHook.bind(this), 'Creates a postback to the given url when your event is sent');
-		this.addOption('list', this.listHooks.bind(this), 'Show your current Webhooks');
-		this.addOption('delete', this.deleteHook.bind(this), 'Deletes a Webhook');
-		this.addOption('POST', this.createPOSTHook.bind(this), 'Create a new POST request hook');
-		this.addOption('GET', this.createGETHook.bind(this), 'Create a new GET request hook');
-	},
 
 	createPOSTHook: function(eventName, url, deviceID) {
 		return this.createHook(eventName, url, deviceID, 'POST');

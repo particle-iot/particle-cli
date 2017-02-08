@@ -38,41 +38,10 @@ var ConfigCommand = function (cli, options) {
 	ConfigCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('config');
 };
 util.inherits(ConfigCommand, BaseCommand);
 ConfigCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'config',
-	description: 'helps create and switch between groups of commands',
-
-	does: [
-		'The config command lets you create groups of settings. ',
-		'You can quickly switch to a profile by calling "particle config profile-name". ',
-		'This is especially useful for switching to your local server ',
-		'or when switching between other environments.  ',
-		'Call "particle config particle" to switch back to the normal api server',
-		'Use "particle config identify" to see the currently selected configuration profile',
-		'Use "particle config list" to see the list of available profiles'
-	],
-	usage: [
-		'particle config local',
-		'particle config particle',
-		'particle config local apiUrl http://localhost:8080',
-		'particle config useSudoForDfu true',
-		'particle config list',
-		'particle config identify'
-	],
-
-
-	init: function () {
-
-		this.addOption('*', this.configSwitch.bind(this));
-		this.addOption('identify', this.identifyServer.bind(this), 'Display the current server config information.');
-		this.addOption('list', this.listConfigs.bind(this), 'Display available configurations');
-		//this.addOption(null, this.helpCommand.bind(this));
-	},
-
 
 	configSwitch: function (group, name, value) {
 		if (!group && !name && !value) {

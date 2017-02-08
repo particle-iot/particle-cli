@@ -31,25 +31,16 @@ var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../oldlib/utilities.js');
 var package_json = require('../package.json');
+var descriptor = require('./../descriptor');
 
 var HelpCommand = function (cli, options) {
 	HelpCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('help');
 };
 util.inherits(HelpCommand, BaseCommand);
 HelpCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'help',
-	description: 'Help provides information on available commands in the cli',
-
-	init: function () {
-		//this.addOption("list", this.listCommandsSwitch.bind(this), "List commands available for that command");
-		this.addOption('version', this.showVersion.bind(this), 'Displays the CLI version');
-		this.addOption('*', this.helpCommand.bind(this), 'Provide extra information about the given command');
-	},
-
 
 	showVersion: function() {
 		console.log(package_json.version);
@@ -113,7 +104,6 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			this.listCommandsSwitch();
 			return -1;
 		}
-
 		var lines = this.commandText(name, subcmd, command);
 		console.log(lines.join('\n'));
 	},
@@ -185,7 +175,7 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 			leftPad = 2,
 			rightPad = 20;
 
-		var commands = this.cli.getCommands();
+		var commands = this.cli.getCommandStubs();
 
 		var results = [];
 		for (var i = 0; i < commands.length; i++) {

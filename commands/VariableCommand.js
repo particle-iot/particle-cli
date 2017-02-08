@@ -44,20 +44,10 @@ var VariableCommand = function (cli, options) {
 	VariableCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
 
-	this.init();
+	this.addDescription('variable');
 };
 util.inherits(VariableCommand, BaseCommand);
 VariableCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'variable',
-	description: 'retrieve and monitor variables on your device',
-
-
-	init: function () {
-		this.addOption('list', this.listVariables.bind(this), 'Show variables provided by your device(s)');
-		this.addOption('get', this.getValue.bind(this), 'Retrieve a value from your device');
-		this.addOption('monitor', this.monitorVariables.bind(this), 'Connect and display messages from a device');
-	},
 
 	checkArguments: function (args) {
 		this.options = this.options || {};
