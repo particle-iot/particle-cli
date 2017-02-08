@@ -1,6 +1,4 @@
 import when from 'when';
-import latestVersion from 'latest-version';
-import semver from 'semver';
 import chalk from 'chalk';
 
 function spin() {
@@ -9,6 +7,10 @@ function spin() {
 
 import info from '../../package';
 import settings from '../../settings';
+
+function semver() {
+	return require('semver');
+}
 
 function check(skip) {
 	return when.promise((resolve) => {
@@ -34,11 +36,12 @@ function check(skip) {
 }
 
 function checkVersion() {
+	const latestVersion = require('latest-version');
 	const checkPromise = when(latestVersion(info.name)).timeout(settings.updateCheckTimeout);
 
 	return spin()(checkPromise, 'Checking for updates...')
 		.then((version) => {
-			if (semver.gt(version, info.version)) {
+			if (semver().gt(version, info.version)) {
 				settings.profile_json.newer_version = version;
 			} else {
 				delete settings.profile_json.newer_version;
@@ -57,7 +60,7 @@ function displayVersionBanner(version) {
 
 function start() {
 	const storedVersion = settings.profile_json.newer_version;
-	if (storedVersion && semver.gt(storedVersion, info.version)) {
+	if (storedVersion && semver().gt(storedVersion, info.version)) {
 		displayVersionBanner(storedVersion);
 	}
 }
