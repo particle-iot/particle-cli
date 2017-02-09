@@ -343,7 +343,9 @@ module.exports = {
 		}
 		for (var key in desc) {
 			if (desc.hasOwnProperty(key)) {
-				command[key] = desc[key];
+				if (desc[key]!==null || command[key]===undefined) {
+					command[key] = desc[key];
+				}
 			}
 		}
 		command.init.bind(command)();
