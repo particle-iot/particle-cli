@@ -41,7 +41,7 @@ describe('Flash Command', function() {
 	var cli;
 	var flash;
 
-	before(function() {
+	beforeEach(function() {
 
 		cli = new Interpreter();
 		cli.startup();
