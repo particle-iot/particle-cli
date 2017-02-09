@@ -203,17 +203,24 @@ export class CLI {
 		cli.handle(args, true);
 	}
 
+	hasArg(name, args) {
+		const index = args.indexOf(name);
+		if (index >= 0) {
+			args.splice(index, 1);
+			return true;
+		}
+		return false;
+	}
+
 	run(args) {
 		settings.transitionSparkProfiles();
 		settings.whichProfile();
 		settings.loadOverrides();
 
-		const index = args.indexOf('--no-update-check');
-		if (index >= 0) {
-			args.splice(index, 1);
-			settings.disableUpdateCheck = true;
-		}
-		updateCheck(settings.disableUpdateCheck).then(() => {
+		settings.disableUpdateCheck = this.hasArg('--no-update-check', args);
+		const force = this.hasArg('--force-update-check', args);
+
+		updateCheck(settings.disableUpdateCheck, force).then(() => {
 			const cmdargs = args.slice(2);       // remove executable and script
 			let promise;
 			if (this.isNewCommand(cmdargs)) {

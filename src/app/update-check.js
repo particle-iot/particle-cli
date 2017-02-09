@@ -10,7 +10,7 @@ function spin() {
 import info from '../../package';
 import settings from '../../settings';
 
-function check(skip) {
+function check(skip, force) {
 	return when.promise((resolve) => {
 		if (skip) {
 			return resolve();
@@ -18,7 +18,7 @@ function check(skip) {
 
 		const now = Date.now();
 		const lastCheck = settings.profile_json.last_version_check || 0;
-		if (now - lastCheck >= settings.updateCheckInterval) {
+		if ((now - lastCheck >= settings.updateCheckInterval) || force) {
 			settings.profile_json.last_version_check = now;
 			checkVersion().then(() => {
 				settings.saveProfileData();
@@ -28,7 +28,6 @@ function check(skip) {
 			return;
 		}
 
-		start();
 		resolve();
 	});
 }
