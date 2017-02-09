@@ -186,6 +186,20 @@ function serial() {
 	};
 }
 
+function setup() {
+	var description = 'Helps guide you through the initial setup & claiming of your device';
+
+	return {
+		cmd: 'SetupCommand',
+		name: 'setup',
+		options: null,
+		description: description,
+		init: function () {
+			this.addOption('*', 'setup', description);
+		}
+	};
+}
+
 function subscribe() {
 	return {
 		cmd: 'SubscribeCommand',
@@ -306,6 +320,7 @@ var descriptors = [
 	keys,
 	publish,
 	serial,
+	setup,
 	subscribe,
 	udp,
 	update,

@@ -19,8 +19,6 @@ var extend = require('xtend');
 
 // this is mainly so we only break 80 columns in one place.
 var strings = {
-
-	'description': 'Helps guide you through the initial setup & claiming of your device',
 	'alreadyLoggedIn': 'It appears as though you are already logged in as %s',
 	'revokeAuthPrompt': 'Would you like to revoke the current authentication token?',
 	'signupSuccess': "Great success! You're now the owner of a brand new account!",
@@ -40,21 +38,10 @@ var SetupCommand = function (cli, options) {
 	this.__wasLoggedIn;
 	this.__api = new ApiClient2();
 	this.__oldapi = new ApiClient();
-	this.init();
+	this.addDescription('setup');
 };
 
 util.inherits(SetupCommand, BaseCommand);
-
-SetupCommand.prototype.name = 'setup';
-SetupCommand.prototype.options = null;
-SetupCommand.prototype.description = strings.description;
-SetupCommand.prototype.init = function init() {
-
-	this.addOption('*',
-		this.setup.bind(this),
-		this.description
-	);
-};
 
 SetupCommand.prototype.setup = function setup(shortcut) {
 
@@ -243,7 +230,6 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 				cb(null);
 			});
 		});
-
 	}
 };
 
