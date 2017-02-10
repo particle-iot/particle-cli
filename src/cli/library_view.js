@@ -64,7 +64,7 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 		try {
 			return fs.readFileSync(full, 'utf-8');
 		} catch (error) {
-
+			return undefined;
 		}
 	}
 }
