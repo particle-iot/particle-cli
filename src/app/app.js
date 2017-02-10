@@ -70,7 +70,7 @@ export class CLI {
 			 * @param {CLIRootCommandCategory} root The root command category to setup.
 			 */
 			setup(yargs, root) {
-				commands({root, factory: cliargs, app});
+				commands({ root, factory: cliargs, app });
 				if (includeOldCommands) {
 					app.addOldCommands(yargs);
 				}

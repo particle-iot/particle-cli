@@ -1,5 +1,5 @@
-import {ProjectInitCommand, ProjectInitCommandSite, Projects} from '../cmd';
-import {validateField} from 'particle-library-manager';
+import { ProjectInitCommand, ProjectInitCommandSite, Projects } from '../cmd';
+import { validateField } from 'particle-library-manager';
 import path from 'path';
 import log from '../app/log';
 import chalk from 'chalk';
@@ -32,7 +32,7 @@ function yesNoValidator() {
 
 
 class CLIProjectInitCommandSite extends ProjectInitCommandSite {
-	constructor({name, directory}) {
+	constructor({ name, directory }) {
 		super();
 		this._name = name;
 		this._dir = directory;

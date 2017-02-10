@@ -1,8 +1,8 @@
-import {LibraryPublishCommand, LibraryPublishCommandSite} from '../cmd';
+import { LibraryPublishCommand, LibraryPublishCommandSite } from '../cmd';
 import chalk from 'chalk';
 import log from '../app/log';
-import {spin} from '../app/ui';
-import {buildAPIClient} from './apiclient';
+import { spin } from '../app/ui';
+import { buildAPIClient } from './apiclient';
 
 export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 

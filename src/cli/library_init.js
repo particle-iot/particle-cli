@@ -1,4 +1,4 @@
-import {LibraryInitCommandSite, LibraryInitCommand} from '../cmd';
+import { LibraryInitCommandSite, LibraryInitCommand } from '../cmd';
 
 const TerminalAdapter = require('yeoman-environment/lib/adapter.js');
 

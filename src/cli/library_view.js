@@ -1,6 +1,6 @@
-import {CLILibraryInstallCommandSite} from './library_install';
-import {LibraryInstallCommand} from '../cmd';
-import {buildAPIClient} from './apiclient';
+import { CLILibraryInstallCommandSite } from './library_install';
+import { LibraryInstallCommand } from '../cmd';
+import { buildAPIClient } from './apiclient';
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
