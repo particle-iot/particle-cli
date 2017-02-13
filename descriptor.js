@@ -9,6 +9,7 @@ function token() {
 			this.addOption('list', 'listAccessTokens', 'List all access tokens for your account');
 			this.addOption('revoke', 'revokeAccessToken', 'Revoke an access token');
 			this.addOption('new', 'createAccessToken', 'Create a new access token');
+			this.addOption('create', 'createAccessToken');
 		}
 	};
 }
@@ -37,6 +38,7 @@ function cloud() {
 			this.addOption('claim', 'claimDevice', 'Register a device with your user account with the cloud');
 			this.addOption('list', 'listDevices', 'Displays a list of your devices, as well as their variables and functions');
 			this.addOption('remove', 'removeDevice', 'Release a device from your account so that another user may claim it');
+			this.addOption('delete', 'removeDevice');
 			this.addOption('name', 'nameDevice', 'Give a device a name!');
 			this.addOption('flash', 'flashDevice', 'Pass a binary, source file, or source directory to a device!');
 			this.addOption('compile', 'compileCode', 'Compile a source file, or directory using the cloud service');
@@ -143,6 +145,7 @@ function keys() {
 
 		init: function () {
 			this.addOption('new', 'makeNewKey', 'Generate a new set of keys for your device');
+			this.addOption('create', 'makeNewKey');
 			this.addOption('load', 'writeKeyToDevice', 'Load a saved key on disk onto your device');
 			this.addOption('save', 'saveKeyFromDevice', 'Save a key from your device onto your disk');
 			this.addOption('send', 'sendPublicKeyToServer', "Tell a server which key you'd like to use by sending your public key");
