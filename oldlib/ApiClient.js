@@ -536,18 +536,22 @@ ApiClient.prototype = {
 		return result;
 	},
 
-	_addFilesToCompile: function (r, fileMapping, targetVersion, platform_id) {
-		var form = r.form();
+	_populateFileMapping(fileMapping) {
 		if (!fileMapping.map) {
-			fileMapping.map = {}
+			fileMapping.map = {};
 			if (fileMapping.list) {
 				for (var i = 0; i < fileMapping.list.length; i++) {
-					var item = fileMapping.list[i]
+					var item = fileMapping.list[i];
 					fileMapping.map[item] = item;
 				}
 			}
 		}
+		return fileMapping;
+	},
 
+	_addFilesToCompile: function (r, fileMapping, targetVersion, platform_id) {
+		var form = r.form();
+		this._populateFileMapping(fileMapping);
 		var list = Object.keys(fileMapping.map);
 		for (var i = 0, n = list.length; i < n; i++) {
 			var relativeFilename = list[i];

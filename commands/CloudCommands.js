@@ -128,8 +128,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			this.options.local = idx>=0;
 		}
 		if (!this.options.verbose) {
-			var idx = utilities.indexOf(args, '--verbose')
+			var idx = utilities.indexOf(args, '--verbose');
 			this.options.verbose = idx>=0;
+		}
+		if (!this.options.noconfirm) {
+			var idx = utilities.indexOf(args, '--yes');
+			this.options.noconfirm = idx>=0;
 		}
 	},
 
@@ -279,7 +283,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 		return pipeline([
 			function () {
-				return self._handleMultiFileArgs(args);
+				var fileMapping = self._handleMultiFileArgs(args);
+				api._populateFileMapping(fileMapping);
+				return fileMapping;
 			},
 			function (fileMapping) {
 				if (Object.keys(fileMapping.map).length == 0) {
@@ -327,7 +333,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					return binFile;
 				}
 
-				filename = temp.path({ suffix: '.bin' });
+				var filename = temp.path({ suffix: '.bin' });
 				return self._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(function() {
 					newFileMapping.map['firmware.bin'] = filename;
 					return filename;
@@ -374,7 +380,10 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				if (!isCellular) {
 					return fileMapping;
 				}
-
+				else if (self.options.noconfirm) {
+					console.log('! Skipping Bandwidth Prompt !');
+					return fileMapping;
+				}
 				return self._promptForOta(api, attrs, fileMapping, targetVersion);
 			},
 			function flashyFlash(flashFiles) {
@@ -419,7 +428,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				var spec = _.find(specs, { productId: attrs.product_id });
 				if (spec) {
 					if (spec.knownApps[filePath]) {
-						return { list: [spec.knownApps[filePath]] };
+						return api._populateFileMapping( { list: [spec.knownApps[filePath]] } );
 					}
 
 					if (spec.productName) {
@@ -448,7 +457,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							return reject();
 						}
 
-						resolve({ list: [binary] });
+						resolve({ map: {binary: binary} });
 					});
 				});
 			},
