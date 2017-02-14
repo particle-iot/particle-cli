@@ -505,15 +505,15 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	prompt([{
 
 		type: 'confirm',
-		name: 'manual',
-		message: 'Would you like to manually enter your Wi-Fi network configuration?',
-		default: false
+		name: 'auto',
+		message: 'Shall I look for available Wi-Fi networks?',
+		default: true
 
 	}], scanChoice);
 
 	function scanChoice(ans) {
 
-		if (ans.manual) {
+		if (!ans.auto) {
 
 			return prompt([{
 
@@ -558,8 +558,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		self.newSpin('Asking the Photon to scan for nearby Wi-Fi networks...').start();
 		retry = setTimeout(start, 1000);
-
-	};
+	}
 
 	function manualChoices(ans) {
 
