@@ -22,7 +22,7 @@ var strings = {
 
 	'description': 'Helps guide you through the initial setup & claiming of your device',
 	'alreadyLoggedIn': 'It appears as though you are already logged in as %s',
-	'revokeAuthPrompt': 'Would you like to revoke the current authentication token?',
+	'revokeAuthPrompt': 'Would you like to use the current authentication token?',
 	'signupSuccess': "Great success! You're now the owner of a brand new account!",
 	'loginError': "There was an error logging you in! Let's try again.",
 	'helpForMoreInfo': 'Please try the `%s help` command for more information.'
@@ -96,16 +96,16 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 			type: 'confirm',
 			name: 'switch',
-			message: 'Would you like to log in with a different account?',
-			default: false
+			message: 'Would you like to use this account?',
+			default: true
 
 		}], switchChoice);
 	}
 
 	function switchChoice(ans) {
 		// user wants to logout
-		if (ans.switch) {
-			cloud.logout().then(function() {
+		if (!ans.switch) {
+			cloud.logout(true).then(function() {
 				self.__api.clearToken();
 				self.__oldapi.clearToken();
 				accountStatus(false);

@@ -748,11 +748,45 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
-	logout: function () {
+
+	doLogout: function(keep, password) {
+		var allDone = when.defer();
 		var api = new ApiClient();
+
+		pipeline([
+			function () {
+				if (!keep) {
+					return api.removeAccessToken(settings.username, password, settings.access_token);
+				} else {
+					console.log(arrow, 'Leaving your token intact.');
+				}
+			},
+			function () {
+				console.log(
+					arrow,
+					util.format('You have been logged out from %s.',
+						chalk.bold.cyan(settings.username))
+				);
+				settings.override(null, 'username', null);
+				settings.override(null, 'access_token', null);
+			}
+		]).then(function () {
+			allDone.resolve();
+		}, function (err) {
+			console.error('There was an error revoking the token', err);
+			allDone.reject(err);
+		});
+		return allDone.promise;
+	},
+
+	logout: function (noPrompt) {
 		if (!settings.access_token) {
 			console.log('You were already logged out.');
 			return when.resolve();
+		}
+		var self = this;
+		if (noPrompt) {
+			return self.doLogout(true);
 		}
 
 		var allDone = when.defer();
@@ -760,44 +794,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 		inquirer.prompt([
 			{
 				type: 'confirm',
-				name: 'wipe',
-				message: 'Would you like to revoke the current authentication token?',
-				default: false
+				name: 'keep',
+				message: 'Would you like to keep the current authentication token?',
+				default: true
 			},
 			{
 				type: 'password',
 				name: 'password',
 				message: 'Please enter your password',
 				when: function(ans) {
-					return ans.wipe;
+					return !ans.keep;
 				}
 			}
-		], function(answers) {
-			pipeline([
-				function() {
-					if (answers.wipe) {
-						return api.removeAccessToken(settings.username, answers.password, settings.access_token);
-					} else {
-						console.log(arrow, 'Leaving your token intact.');
-					}
-				},
-				function() {
-					console.log(
-						arrow,
-						util.format('You have been logged out from %s.',
-						chalk.bold.cyan(settings.username))
-					);
-					settings.override(null, 'username', null);
-					settings.override(null, 'access_token', null);
-				}
-			]).then(function() {
-				allDone.resolve();
-			}, function(err) {
-				console.error('There was an error revoking the token', err);
-				allDone.reject(err);
-			});
+		], function doit(ans) {
+			return allDone.resolve(self.doLogout(ans.keep, ans.password));
 		});
-
 		return allDone.promise;
 	},
 
