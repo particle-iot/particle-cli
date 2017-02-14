@@ -212,10 +212,32 @@ export class CLI {
 		return false;
 	}
 
+	loadNativeModules(modules) {
+		let errors = [];
+		for (let module of modules) {
+			try {
+				require(module);
+			} catch (err) {
+				errors.push(`Error loading module '${module}': ${err.message}`);
+			}
+		}
+		return errors;
+	}
+
 	run(args) {
 		settings.transitionSparkProfiles();
 		settings.whichProfile();
 		settings.loadOverrides();
+
+		const nativeErrors = this.loadNativeModules(settings.nativeModules);
+		if (nativeErrors.length) {
+			const log = require('./log');
+			for (let error of nativeErrors) {
+				log.error(error);
+			}
+			log.fatal('Please reinstall the CLI again to ensure the module is installed to match the version of node.');
+			return;
+		}
 
 		settings.disableUpdateCheck = this.hasArg('--no-update-check', args);
 		const force = this.hasArg('--force-update-check', args);
