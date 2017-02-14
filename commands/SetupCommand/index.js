@@ -316,6 +316,11 @@ SetupCommand.prototype.findDevice = function() {
 
 		console.log(arrow, 'No devices detected via USB.');
 
+		tryScan();
+	});
+
+	function tryScan() {
+		// TODO: check if Wi-Fi scanning is available (requires OS support and a wifi adapter.)
 		prompt([{
 
 			type: 'confirm',
@@ -372,8 +377,9 @@ SetupCommand.prototype.findDevice = function() {
 						return wireless.list(macAddress);
 					});
 					return;
+				} else {
+					tryScan();
 				}
-				console.log(arrow, 'Goodbye!');
 			});
 		} else if (device.type === 'Electron') {
 			detectedPrompt(device.type, function setupElectronChoice(ans) {
