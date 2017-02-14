@@ -28,6 +28,10 @@ var strings = {
 	'helpForMoreInfo': 'Please try the `%s help` command for more information.'
 };
 
+function goodbye() {
+	console.log(arrow, 'Goodbye!');
+}
+
 // TODO: DRY this up somehow
 var cmd = path.basename(process.argv[1]);
 var alert = chalk.yellow('!');
@@ -325,9 +329,9 @@ SetupCommand.prototype.findDevice = function() {
 			if (ans.scan) {
 				return wireless.list();
 			}
-			console.log(arrow, 'Goodbye!');
-		};
-	});
+			goodbye();
+		}
+	}
 
 	function inspect(device) {
 
@@ -339,7 +343,7 @@ SetupCommand.prototype.findDevice = function() {
 				if (ans.setup) {
 					return self.setupCore(device);
 				}
-				console.log(arrow, 'Goodbye!');
+				goodbye();
 			});
 		} else if (device.type === 'Photon' || device.type === 'P1') {
 
@@ -376,7 +380,7 @@ SetupCommand.prototype.findDevice = function() {
 				if (ans.setup) {
 					return self.setupElectron(device);
 				}
-				console.log(arrow, 'Goodbye!');
+				goodbye();
 			});
 		}
 	}
