@@ -100,7 +100,10 @@ var settings = {
 			systemFirmwareThree: 'system-part1-0.6.0-electron.bin'
 		}
 	},
-	commandMappings: path.join(__dirname, 'mappings.json')
+	commandMappings: path.join(__dirname, 'mappings.json'),
+	nativeModules: [
+		'serialport'
+	]
 };
 
 function envValue(varName, defaultValue) {
