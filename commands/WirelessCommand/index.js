@@ -105,32 +105,36 @@ WirelessCommand.prototype.init = function init() {
 	this.addOption('monitor', this.monitor.bind(this), 'Begin monitoring nearby Wi-Fi networks for Photons in setup mode.');
 };
 
-WirelessCommand.prototype.list = function list(macAddress) {
-
+WirelessCommand.prototype.list = function list(macAddress, manual) {
+	if (manual) {
+		this.__manual = true;
+	}
 	// if we get passed a MAC address from setup
 	if (macAddress && macAddress.length === 17) {
-
 		this.__macAddressFilter = macAddress;
-
 	} else {
 		this.__macAddressFilter = null;
 	}
 
 	console.log();
-	protip('Wireless setup of Photons works like a', chalk.cyan('wizard!'));
-	protip(
-		'We will',
-		chalk.cyan('automagically'),
-		'change the',
-		chalk.cyan('Wi-Fi'),
-		'network to which your computer is connected.'
-	);
-	protip('You will lose your connection to the internet periodically.');
-	console.log();
 
-	this.newSpin('%s ' + chalk.bold.white('Scanning Wi-Fi for nearby Photons in setup mode...')).start();
-	scan(this.__networks.bind(this));
+	if (manual) {
+		return this.setup(null, manualDone);
+	} else {
+		protip('Wireless setup of Photons works like a', chalk.cyan('wizard!'));
+		protip(
+			'We will',
+			chalk.cyan('automagically'),
+			'change the',
+			chalk.cyan('Wi-Fi'),
+			'network to which your computer is connected.'
+		);
+		protip('You will lose your connection to the internet periodically.');
+		console.log();
 
+		this.newSpin('%s ' + chalk.bold.white('Scanning Wi-Fi for nearby Photons in setup mode...')).start();
+		scan(this.__networks.bind(this));
+	}
 };
 
 function manualAsk(cb) {
@@ -142,6 +146,15 @@ function manualAsk(cb) {
 		default: true
 
 	}], cb);
+}
+
+function manualDone(err, dat) {
+	if (err) {
+		return console.log(chalk.read('!'), 'An error occurred:', err);
+	}
+	if (dat && dat.id) {
+		return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));
+	}
 }
 
 /**
@@ -311,18 +324,6 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			self.monitor();
 		} else {
 			self.exit();
-		}
-	}
-
-	function manualDone(err, dat) {
-
-		if (err) {
-
-			return console.log(chalk.read('!'), 'An error occurred:', err);
-		}
-		if (dat && dat.id) {
-
-			return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));
 		}
 	}
 };
@@ -518,7 +519,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		type: 'confirm',
 		name: 'auto',
-		message: 'Shall I look for available Wi-Fi networks?',
+		message: 'Shall I have the Photon scan for available Wi-Fi networks?',
 		default: true
 
 	}], scanChoice);
@@ -923,17 +924,22 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'What would you like to call your photon?'
 			}
 		], function(ans) {
+			// todo - retrieve existing name of the device?
 			var deviceName = ans.deviceName;
-			self.__oldapi.renameDevice(deviceId, deviceName).then(function () {
-				console.log();
-				console.log(arrow, 'Your Photon has been bestowed with the name', chalk.bold.cyan(deviceName));
-				console.log(arrow, "Congratulations! You've just won the internet!");
-				console.log();
-				self.exit();
-			}, function(err) {
-				console.error(alert, 'Error naming your photon: ', err);
-				namePhoton(deviceId);
-			});
+			if (deviceName) {
+				self.__oldapi.renameDevice(deviceId, deviceName).then(function () {
+					console.log();
+					console.log(arrow, 'Your Photon has been bestowed with the name', chalk.bold.cyan(deviceName));
+					console.log(arrow, "Congratulations! You've just won the internet!");
+					console.log();
+					self.exit();
+				}, function (err) {
+					console.error(alert, 'Error naming your photon: ', err);
+					namePhoton(deviceId);
+				});
+			} else {
+				console.log('Skipping device naming.');
+			}
 		});
 	}
 };

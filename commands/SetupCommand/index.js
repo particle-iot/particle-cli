@@ -332,7 +332,7 @@ SetupCommand.prototype.findDevice = function() {
 
 		function scanChoice(ans) {
 			if (ans.scan) {
-				return wireless.list();
+				return wireless.list(undefined, self.options.manual);
 			}
 			goodbye();
 		}
@@ -374,7 +374,7 @@ SetupCommand.prototype.findDevice = function() {
 							chalk.cyan('!'),
 							"The Photon supports secure Wi-Fi setup. We'll try that first."
 						);
-						return wireless.list(macAddress);
+						return wireless.list(macAddress, self.options.manual);
 					});
 					return;
 				} else {
@@ -537,12 +537,11 @@ SetupCommand.prototype.checkArguments = function(args) {
 
 	// TODO: tryParseArgs?
 	if (!this.options.scan) {
+		this.options.scan = utilities.tryParseArgs(args, '--scan', null);
+	}
 
-		this.options.scan = utilities.tryParseArgs(
-			args,
-			'--scan',
-			null
-		);
+	if (!this.options.manual) {
+		this.options.manual = utilities.tryParseArgs(args, '--manual', null);
 	}
 };
 
