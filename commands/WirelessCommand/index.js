@@ -144,6 +144,14 @@ function manualAsk(cb) {
 	}], cb);
 }
 
+/**
+ * Callback from scanning for wifi networks.
+ * @param err   Any error that happened during scanning
+ * @param dat   A list of APs that matched with these properties:
+ *  mac: MAC address for the AP
+ *  ssid: the SSID of the AP
+ * @private
+ */
 WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	var self = this;
@@ -398,16 +406,15 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 	function getClaim() {
 		self.newSpin('Obtaining magical secure claim code from the cloud...').start();
-		api.getClaimCode(undefined, next);
+		api.getClaimCode(undefined, afterClaim);
 	}
-	function next(err, dat) {
+	function afterClaim(err, dat) {
 
 		self.stopSpin();
-		console.log(arrow, 'Obtained magical secure claim code.');
-		console.log();
 		if (err) {
 
 			// TODO: Graceful recovery here
+			// How about retrying the claim code again
 			// console.log(arrow, arrow, err);
 			if (err.code === 'ENOTFOUND') {
 
@@ -421,7 +428,10 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 			return;
 		}
 
+		console.log(arrow, 'Obtained magical secure claim code.');
+		console.log();
 		self.__claimCode = dat.claim_code;
+		// todo - prompt for manual connection before getting the claim code since this exits the setup process
 		if (!self.__manual && !mgr.supported.connect) {
 			console.log();
 			console.log(alert, 'I am unable to automatically connect to Wi-Fi networks', chalk.magenta('(-___-)'));
@@ -484,6 +494,8 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	console.log();
+
+	// todo - distinguish Photon/P1
 	console.log(arrow, 'Now to configure our precious', chalk.cyan(ssid ? ssid : 'Photon'));
 	console.log();
 
@@ -499,7 +511,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	var security;
 
 	protip('If you want to skip scanning, or your network is configured as a');
-	protip(chalk.cyan('non-broadcast'), 'network, please enter manual mode to proceed...');
+	protip(chalk.cyan('non-broadcast'), 'network, please choose No to the next prompt to enter manual mode.');
 	console.log();
 
 	prompt([{
@@ -565,12 +577,12 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		if (!ans.network) {
 
 			console.log(alert, "We can't setup your Photon without a Wi-Fi network! Let's try again...");
-			return scanChoice({ manual: true });
+			return scanChoice({ auto: false });
 		}
 		if (!ans.password && ans.security !== 'None') {
 
 			console.log(alert, "You chose a security type that requires a password! Let's try again...");
-			return scanChoice({ manual: true });
+			return scanChoice({ auto: false });
 		}
 		networkChoices({
 
@@ -597,7 +609,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'Would you like to manually enter your Wi-Fi network configuration?',
 				default: true
 
-			}], scanChoice);
+			}], function manualAuto(ans) {
+				return scanChoice({auto:!ans.manual});
+			});
 			return;
 		}
 
@@ -654,7 +668,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			}
 
 			if (ans.network === strings.manualEntryLabel) {
-				scanChoice({ manual: true });
+				scanChoice({ auto: false });
 				return;
 			}
 
@@ -705,8 +719,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		prompt([{
 			type: 'confirm',
 			name: 'continue',
-			message: 'Would you like to continue with the information shown above?'
-
+			message: 'Would you like to continue with the information shown above?',
+			default: true,
 		}], continueChoice);
 	}
 
@@ -729,6 +743,10 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		console.log();
 		console.log(arrow, 'Obtaining device information...');
+
+
+		// todo - this is the first attempt to connect to the photon
+		// if the network hasn't switched then the connection process may hang
 		sap.deviceInfo(pubKey);
 	}
 
@@ -797,24 +815,10 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 
 		self.stopSpin();
-		console.log(arrow, chalk.bold.white('Configuration complete! You\'ve just won the internet!'));
+		//console.log(arrow, chalk.bold.white('Configuration complete! You\'ve just won the internet!'));
 
 		if (!self.__manual) {
-
-			prompt([{
-
-				name: 'revive',
-				type: 'confirm',
-				message: 'Would you like to return this computer to the wireless network you just configured?',
-				default: true
-
-			}], function(ans) {
-				if (!ans.revive) {
-					manualReconnectPrompt();
-					return;
-				}
-				reconnect(false);
-			});
+			reconnect(false);
 		} else {
 			manualReconnectPrompt();
 		}
@@ -822,21 +826,18 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 	function manualReconnectPrompt() {
 		prompt([{
-
 			name: 'reconnect',
 			type: 'input',
 			message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
-
 		}], manualPrompt);
 	}
 
 	function manualPrompt() {
 		reconnect(true);
-	};
+	}
+
 	function reconnect(manual) {
-
 		if (!manual) {
-
 			self.newSpin('Reconnecting your computer to your Wi-Fi network...').start();
 			mgr.connect({ ssid: self.__network, password: self.__password }, revived);
 		} else {
@@ -899,18 +900,16 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			name: 'recheck',
 			message: 'What would you like to do?',
 			choices: [
-				{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' },
-				{ name: 'Check again to see if the Photon has connected', value: 'recheck' }
+				{ name: 'Check again to see if the Photon has connected', value: 'recheck' },
+				{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' }
 			]
 
 		}], recheck);
 
 		function recheck(ans) {
 			if (ans.recheck === 'recheck') {
-
 				api.listDevices(checkDevices);
 			} else {
-
 				self.setup(self.__ssid);
 			}
 		}
