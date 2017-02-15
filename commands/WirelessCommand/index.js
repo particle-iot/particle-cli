@@ -627,6 +627,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		self.stopSpin();
 
 		if (err) {
+			console.error(err);
 			console.log(
 				arrow,
 				'Your Photon encountered an error while trying to scan for nearby Wi-Fi networks. Retrying...'
@@ -635,10 +636,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			retries++;
 			return;
 		}
+		var networks = dat;
 
-		var networks = dat.scans;
-
-		dat.scans.forEach(function save(ap) {
+		dat.forEach(function save(ap) {
 			list[ap.ssid] = ap;
 		});
 
@@ -939,6 +939,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				});
 			} else {
 				console.log('Skipping device naming.');
+				self.exit();
 			}
 		});
 	}
