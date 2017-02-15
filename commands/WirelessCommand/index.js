@@ -600,10 +600,13 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 
 		if (retries >= 9) { // scan has failed 10 times already
+			self.stopSpin();
+
 			console.log(
 				arrow,
 				'Your Photon failed to scan for nearby Wi-Fi networks.'
 			);
+			retries = 0;
 			self.prompt([{
 				type: 'confirm',
 				name: 'manual',
