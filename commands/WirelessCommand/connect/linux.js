@@ -81,7 +81,7 @@ function connect(opts, cb) {
 	}
 
 	reconnect();
-};
+}
 
 module.exports = {
 	connect: connect,

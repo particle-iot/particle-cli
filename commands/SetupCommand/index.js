@@ -554,7 +554,6 @@ SetupCommand.prototype.exit = function() {
 		chalk.bold.magenta('<3'))
 	);
 	process.exit(0);
-
 };
 
 module.exports = SetupCommand;

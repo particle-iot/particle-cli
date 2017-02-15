@@ -247,7 +247,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		console.log(alert, 'Try running', chalk.cyan(cmd + ' setup'), 'with Administrator privileges.');
 		console.log(alert, 'If the problem persists, please let us know:', chalk.cyan('https://community.particle.io/'));
 		console.log();
-	};
+	}
 
 	function multipleChoice(ans) {
 
@@ -266,7 +266,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			}], multipleAnswer);
 		}
 		self.exit();
-	};
+	}
 
 	function multipleAnswer(ans) {
 
@@ -275,7 +275,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			return self.setup(ans.selected);
 		}
 		self.exit();
-	};
+	}
 
 	function singleChoice(ans) {
 
@@ -293,7 +293,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 			}], monitorChoice);
 		}
-	};
+	}
 
 	function monitorChoice(ans) {
 
@@ -304,7 +304,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		} else {
 			self.exit();
 		}
-	};
+	}
 
 	function manualDone(err, dat) {
 
@@ -315,8 +315,8 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		if (dat && dat.id) {
 
 			return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));
-		};
-	};
+		}
+	}
 };
 
 
@@ -452,14 +452,14 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 
 			}], manualReady);
 		}
-	};
+	}
 
 	function manualReady() {
 		self.__configure(null, manualConfigure);
-	};
+	}
 	function manualConfigure(err, dat) {
 		cb(err, dat);
-	};
+	}
 
 	function connected(err, opts) {
 
@@ -478,7 +478,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 			chalk.bold.cyan(opts.ssid)
 		);
 		self.__configure(opts.ssid);
-	};
+	}
 };
 
 WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
@@ -579,7 +579,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			security: ans.security.toLowerCase().replace(' ', '_')
 
 		});
-	};
+	}
 
 	function start() {
 
@@ -602,7 +602,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}
 
 		sap.scan(results);
-	};
+	}
 
 	function results(err, dat) {
 		clearTimeout(retry);
@@ -676,7 +676,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 			networkChoices({ network: network, password: ans.password });
 		}
-	};
+	}
 
 	function networkChoices(ans) {
 
@@ -703,18 +703,16 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log();
 
 		prompt([{
-
 			type: 'confirm',
 			name: 'continue',
 			message: 'Would you like to continue with the information shown above?'
 
 		}], continueChoice);
-	};
+	}
 
 	function continueChoice(ans) {
 
 		if (!ans.continue) {
-
 			console.log(arrow, "Let's try again...");
 			console.log();
 			return self.__configure(ssid, cb);
@@ -723,7 +721,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		self.__password = password;
 
 		info();
-	};
+	}
 
 	function info() {
 
@@ -747,7 +745,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 		console.log(arrow, 'Requesting public key from the device...');
 		sap.publicKey(code);
-	};
+	}
 
 	function code(err) {
 		if (err) {
@@ -758,7 +756,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		clearTimeout(retry);
 		console.log(arrow, 'Setting the magical cloud claim code...');
 		sap.setClaimCode(self.__claimCode, configure);
-	};
+	}
 
 	function configure(err) {
 		if (err) {
@@ -767,17 +765,15 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}
 
 		var conf = {
-
 			ssid: network,
 			security: security,
 			password: password
-
 		};
 
 		clearTimeout(retry);
 		console.log(arrow, 'Telling the Photon to apply your Wi-Fi configuration...');
 		sap.configure(conf, connect);
-	};
+	}
 
 	function connect(err) {
 		if (err) {
@@ -789,7 +785,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log();
 		clearTimeout(retry);
 		sap.connect(done);
-	};
+	}
 
 	function done(err) {
 		if (err) {
@@ -822,7 +818,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		} else {
 			manualReconnectPrompt();
 		}
-	};
+	}
 
 	function manualReconnectPrompt() {
 		prompt([{
@@ -846,7 +842,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		} else {
 			revived();
 		}
-	};
+	}
+
 	function revived(err) {
 		if (err) {
 			manualReconnectPrompt();
@@ -862,14 +859,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		}, 2000);
 
-	};
+	}
 	function checkDevices(err, dat) {
 
 		self.stopSpin();
 		if (err) {
 
 			if (err.code === 'ENOTFOUND') {
-
+				// todo - limit the number of retries here.
 				console.log(alert, 'Network not ready yet, retrying...');
 				console.log();
 				return revived(null);
@@ -917,7 +914,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				self.setup(self.__ssid);
 			}
 		}
-	};
+	}
+
 	function namePhoton(deviceId) {
 		prompt([
 			{
@@ -949,7 +947,6 @@ WirelessCommand.prototype.exit = function() {
 		chalk.bold.magenta('<3'))
 	);
 	process.exit(0);
-
 };
 
 function filter(list, pattern, inverse) {
@@ -962,14 +959,14 @@ function filter(list, pattern, inverse) {
 		// return false
 		return inverse ? !ap.ssid.match(pattern) : ap.ssid.match(pattern);
 	});
-};
+}
 
 function ssids(list) {
 
 	return clean(list).map(function map(ap) {
 		return ap.ssid;
 	});
-};
+}
 
 function removePhotonNetworks(ssids) {
 	return ssids.filter(function (ap) {
@@ -978,7 +975,7 @@ function removePhotonNetworks(ssids) {
 		}
 		return true;
 	});
-};
+}
 
 function clean(list) {
 
