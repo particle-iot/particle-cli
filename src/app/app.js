@@ -7,6 +7,7 @@ import * as cliargs from './nested-yargs';
 import commands from '../cli';
 import * as settings from '../../settings';
 import when from 'when';
+import chalk from 'chalk';
 
 export class CLI {
 
@@ -235,7 +236,7 @@ export class CLI {
 			for (let error of nativeErrors) {
 				log.error(error);
 			}
-			log.fatal('Please reinstall the CLI again to ensure the module is installed to match the version of node.');
+			log.fatal(`Please reinstall the CLI again using ${chalk.bold("npm install -g particle-cli")}`);
 			return;
 		}
 
