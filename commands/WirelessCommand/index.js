@@ -105,6 +105,8 @@ WirelessCommand.prototype.init = function init() {
 	this.addOption('monitor', this.monitor.bind(this), 'Begin monitoring nearby Wi-Fi networks for Photons in setup mode.');
 };
 
+WirelessCommand.prototype.prompt = prompt;
+
 WirelessCommand.prototype.list = function list(macAddress, manual) {
 	if (manual) {
 		this.__manual = true;
@@ -137,8 +139,8 @@ WirelessCommand.prototype.list = function list(macAddress, manual) {
 	}
 };
 
-function manualAsk(cb) {
-	return prompt([{
+WirelessCommand.prototype.manualAsk = function manualAsk(cb) {
+	return this.prompt([{
 
 		type: 'confirm',
 		name: 'manual',
@@ -185,7 +187,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		console.log(alert, chalk.bold.white('OOPS:'), 'I was unable to scan for nearby Wi-Fi networks', chalk.magenta('(-___-)'));
 		console.log();
 
-		return manualAsk(manualChoice);
+		return this.manualAsk(manualChoice);
 	}
 
 	detectedDevices = dat;
@@ -208,7 +210,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 	if (detectedDevices.length > 1) {
 
 		// Multiple Photons detected
-		prompt([{
+		this.prompt([{
 
 			type: 'confirm',
 			name: 'setup',
@@ -219,7 +221,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 	} else if (detectedDevices.length === 1) {
 
 		// Perform wireless setup?
-		prompt([{
+		this.prompt([{
 
 			type: 'confirm',
 			name: 'setupSingle',
@@ -239,7 +241,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		);
 
 		// Monitor for new Photons?
-		prompt([{
+		this.prompt([{
 
 			type: 'confirm',
 			name: 'monitor',
@@ -277,7 +279,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			self.__batch = false;
 
 			// Select any/all Photons to setup
-			return prompt([{
+			return self.prompt([{
 
 				type: 'list',
 				name: 'selected',
@@ -303,9 +305,8 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 		if (ans.setupSingle) {
 			self.setup(detectedDevices[0]);
 		} else {
-
 			// Monitor for new Photons?
-			prompt([{
+			self.prompt([{
 
 				type: 'confirm',
 				name: 'monitor',
@@ -386,7 +387,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 					chalk.bold.white('You are still connected to your Photon\'s Wi-Fi network. Please reconnect to a Wi-Fi network with internet access.')
 				);
 				console.log();
-				prompt([{
+				self.prompt([{
 					type: 'confirm',
 					message: 'Have you reconnected to the internet?',
 					default: true,
@@ -438,7 +439,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 			console.log(alert, 'I am unable to automatically connect to Wi-Fi networks', chalk.magenta('(-___-)'));
 			console.log();
 
-			return manualAsk(function (ans) {
+			return self.manualAsk(function (ans) {
 				if (ans.manual) {
 					self.__manual = true;
 					return manualConnect();
@@ -455,7 +456,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		}
 
 		function manualConnect() {
-			return prompt([{
+			return self.prompt([{
 
 				type: 'input',
 				name: 'connect',
@@ -515,7 +516,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	protip(chalk.cyan('non-broadcast'), 'network, please choose No to the next prompt to enter manual mode.');
 	console.log();
 
-	prompt([{
+	self.prompt([{
 
 		type: 'confirm',
 		name: 'auto',
@@ -528,7 +529,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		if (!ans.auto) {
 
-			return prompt([{
+			return self.prompt([{
 
 				type: 'input',
 				name: 'network',
@@ -603,8 +604,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				arrow,
 				'Your Photon failed to scan for nearby Wi-Fi networks.'
 			);
-			prompt([{
-
+			self.prompt([{
 				type: 'confirm',
 				name: 'manual',
 				message: 'Would you like to manually enter your Wi-Fi network configuration?',
@@ -650,13 +650,11 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		}
 		networks.unshift(new inquirer.Separator());
 
-		prompt([{
-
+		self.prompt([{
 			type: 'list',
 			name: 'network',
 			message: 'Please select the network to which your Photon should connect:',
 			choices: networks
-
 		}], __networkChoice);
 
 		function __networkChoice(ans) {
@@ -679,7 +677,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				return networkChoices({ network: network });
 			}
 
-			prompt([{
+			self.prompt([{
 
 				type: 'input',
 				name: 'password',
@@ -688,7 +686,6 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			}], __passwordChoice);
 		}
 		function __passwordChoice(ans) {
-
 			networkChoices({ network: network, password: ans.password });
 		}
 	}
@@ -717,7 +714,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
 		console.log();
 
-		prompt([{
+		self.prompt([{
 			type: 'confirm',
 			name: 'continue',
 			message: 'Would you like to continue with the information shown above?',
@@ -826,7 +823,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	}
 
 	function manualReconnectPrompt() {
-		prompt([{
+		self.prompt([{
 			name: 'reconnect',
 			type: 'input',
 			message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
@@ -895,7 +892,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		console.log(alert, "It doesn't look like your Photon has made it to the cloud yet.");
 		console.log();
-		prompt([{
+		self.prompt([{
 
 			type: 'list',
 			name: 'recheck',
@@ -917,7 +914,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	}
 
 	function namePhoton(deviceId) {
-		prompt([
+		self.prompt([
 			{
 				type: 'input',
 				name: 'deviceName',

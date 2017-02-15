@@ -96,7 +96,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 			chalk.bold.cyan(settings.username))
 		);
 
-		prompt([{
+		self.prompt([{
 
 			type: 'confirm',
 			name: 'switch',
@@ -127,7 +127,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 		if (!alreadyLoggedIn) {
 			// New user or a fresh environment!
 			if (!self.__wasLoggedIn) {
-				prompt([
+				self.prompt([
 					{
 						type: 'list',
 						name: 'login',
@@ -171,7 +171,7 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 	var signupUsername = this.__signupUsername || undefined;
 	console.log(arrow, "Let's create your new account!");
 
-	prompt([{
+	self.prompt([{
 
 		type: 'input',
 		name: 'username',
@@ -271,6 +271,7 @@ SetupCommand.prototype.findDevice = function() {
 	var self = this;
 	var serial = this.cli.getCommandModule('serial');
 	var wireless = this.cli.getCommandModule('wireless');
+	wireless.prompt = this.prompt.bind(this);
 
 	console.log();
 	console.log(
@@ -321,7 +322,7 @@ SetupCommand.prototype.findDevice = function() {
 
 	function tryScan() {
 		// TODO: check if Wi-Fi scanning is available (requires OS support and a wifi adapter.)
-		prompt([{
+		self.prompt([{
 
 			type: 'confirm',
 			name: 'scan',
@@ -400,7 +401,7 @@ SetupCommand.prototype.findDevice = function() {
 			'connected via USB.'
 		);
 
-		prompt([{
+		self.prompt([{
 
 			type: 'confirm',
 			name: 'setup',
@@ -418,7 +419,7 @@ SetupCommand.prototype.setupCore = function(device) {
 
 	function promptForCyan() {
 		var online = when.defer();
-		prompt([
+		self.prompt([
 			{
 				type: 'input',
 				name: 'online',
@@ -432,7 +433,7 @@ SetupCommand.prototype.setupCore = function(device) {
 
 	function promptForListen() {
 		var listen = when.defer();
-		prompt([
+		self.prompt([
 			{
 				type: 'confirm',
 				name: 'listen',
@@ -479,7 +480,7 @@ SetupCommand.prototype.setupCore = function(device) {
 		},
 		function() {
 			var rainbow = when.defer();
-			prompt([
+			self.prompt([
 				{
 					type: 'input',
 					name: 'rainbows',
@@ -492,7 +493,7 @@ SetupCommand.prototype.setupCore = function(device) {
 		},
 		function() {
 			var naming = when.defer();
-			prompt([
+			self.prompt([
 				{
 					type: 'input',
 					name: 'coreName',
@@ -543,7 +544,37 @@ SetupCommand.prototype.checkArguments = function(args) {
 	if (!this.options.manual) {
 		this.options.manual = utilities.tryParseArgs(args, '--manual', null);
 	}
+
+	if (!this.options.yes) {
+		this.options.yes = utilities.tryParseArgs(args, '--yes', null);
+	}
+
 };
+
+SetupCommand.prototype.prompt = function(prompts, cb) {
+
+	if (this.options.yes) {
+		var newPrompts = [];
+		var answers = {};
+		for (var i=0; i<prompts.length; i++) {
+			var p = prompts[i];
+			if (p.type !== 'confirm' || p.default !== true) {
+				newPrompts.push(p);
+			} else {
+				answers[p.name] = true;
+			}
+		}
+		var cbOrg = cb;
+		cb = function(ans) {
+			ans = extend({}, ans, answers);
+			cbOrg(ans)
+		};
+		prompts = newPrompts;
+	}
+
+	prompt(prompts, cb);
+};
+
 
 SetupCommand.prototype.exit = function() {
 
