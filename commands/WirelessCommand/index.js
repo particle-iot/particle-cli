@@ -192,11 +192,8 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 
 	detectedDevices = dat;
 	if (this.__macAddressFilter) {
-
 		var macDevices = detectedDevices.filter(function (ap) {
-
-			return ap.mac.toLowerCase() === self.__macAddressFilter;
-
+			return ap.mac && (ap.mac.toLowerCase() === self.__macAddressFilter);
 		});
 		if (macDevices && macDevices.length === 1) {
 
