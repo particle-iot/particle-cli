@@ -1,6 +1,7 @@
 'use strict';
 
 var proxyquire = require('proxyquire');
+var MockSerial = require('../mocks/Serial.mock')
 
 require('should');
 var sinon = require('sinon');
@@ -10,7 +11,6 @@ var chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
 chai.use(sinonChai);
 var expect = chai.expect;
-var extend = require('extend');
 
 
 var Interpreter = require('../../oldlib/interpreter');
@@ -51,48 +51,6 @@ describe('Serial Command', function() {
 	it('can retrieve mac address', function() {
 		serial.optionsByName['mac'].should.be.an.instanceOf(Function);
 	});
-
-
-	function MockSerial() {
-		var self = this;
-		self.open = false;
-		self.listeners = {};
-		return extend(this, {
-			drain: function (next) {
-				next();
-			},
-			flush: function (next) {
-				next();
-			},
-			on: function(type, cb) {
-				self.listeners[type] = cb;
-			},
-			respond: function (data) {
-				if (self.listeners.data) {
-					self.listeners.data(data);
-				}
-			},
-			open: function (cb) {
-				self.open = true;
-				cb();
-			},
-			removeAllListeners(type) {
-				this.removeListener(type);
-			},
-			removeListener(type) {
-				delete self.listeners[type];
-			},
-			isOpen: function() {
-				return self.open;
-			},
-			close: function(cb) {
-				self.open = false;
-				if (cb) {
-					cb();
-				}
-			}
-		});
-	}
 
 	describe('supportsClaimCode', function () {
 		it('can check if a device supports claiming', function () {
