@@ -19,7 +19,7 @@ SerialTrigger.prototype.addTrigger = function(prompt, next) {
 	this.triggers[prompt] = next;
 };
 
-SerialTrigger.prototype.start = function() {
+SerialTrigger.prototype.start = function(noLogs) {
 	var serialDataCallback = function (data) {
 		data = data.toString();
 		var self = this;
@@ -31,9 +31,11 @@ SerialTrigger.prototype.start = function() {
 			triggerFn(function (response, cb) {
 				if (response) {
 					self.port.flush(function () {
-						self.port.write(response, function() {
+						self.port.write(response, function () {
 							self.port.drain(function () {
-								log.serialInput(response);
+								if (!noLogs) {
+									log.serialInput(response);
+								}
 								if (cb) {
 									cb();
 								}
