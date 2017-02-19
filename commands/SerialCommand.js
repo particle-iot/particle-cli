@@ -51,6 +51,8 @@ var SerialTrigger = require('../oldlib/SerialTrigger');
 
 var arrow = chalk.green('>');
 
+var timeoutError = 'Serial timed out';
+
 var SerialCommand = function (cli, options) {
 	SerialCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
@@ -64,7 +66,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: 'serial',
 	description: 'simple serial interface to your devices',
-
+	timeoutError: timeoutError,
 	init: function () {
 		this.addOption('list', this.listDevices.bind(this), 'Show devices connected via serial to your computer');
 		this.addOption('monitor', this.monitorSwitch.bind(this), 'Connect and display messages from a device');
@@ -73,7 +75,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption('mac', this.deviceMac.bind(this), 'Ask for and display MAC address via serial');
 		this.addOption('inspect', this.inspectDevice.bind(this), 'Ask for and display device module information via serial');
 		this.addOption('flash', this.flashDevice.bind(this), 'Flash firmware over serial using YMODEM protocol');
-
+		this.addOption('claim', this.claimDevice.bind(this), 'Claim a device with the given claim code');
 		//this.addOption(null, this.helpCommand.bind(this));
 	},
 
@@ -105,10 +107,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					var pnpMatches = !!(port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
 					var serialNumberMatches = port.serialNumber && port.serialNumber.indexOf(serialNumber) >= 0;
 
-					if (usbMatches || pnpMatches || serialNumberMatches) {
-						return true;
-					}
-					return false;
+					return !!(usbMatches || pnpMatches || serialNumberMatches);
+
 				});
 				if (serialDeviceSpec) {
 					device = {
@@ -221,7 +221,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					})
 				}
 			}
-		}
+		};
 
 		// Called only when the port opens successfully
 		var handleOpen = function () {
@@ -271,7 +271,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			setTimeout(function () {
 				openPort(selectedDevice);
 			}, 5);
-		}
+		};
 
 		process.on('SIGINT', handleInterrupt);
 		process.on('SIGQUIT', handleInterrupt);
@@ -790,6 +790,170 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		return dfd.promise;
 	},
 
+	supportsClaimCode: function(device) {
+		if (!device) {
+			return when.reject('No serial port available');
+		}
+		return this._issueSerialCommand(device, 'c', 500).then(function (data) {
+			var matches = data.match(/Device claimed: (\w+)/);
+			return !!matches;
+		}).catch(function(err) {
+			if (err!==timeoutError) {
+				throw err;
+			}
+			return false;
+		});
+	},
+
+	setDeviceClaimCode: function (device, claimCode) {
+		return this.supportsClaimCode(device).then(function (supported) {
+			if (!supported) {
+				return when.reject('device does not support claiming over USB');
+			}
+
+			return that.sendClaimCode(device, claimCode);
+		});
+	},
+
+	claimDevice: function (comPort, claimCode) {
+		var self = this;
+		if (!claimCode) {
+			// todo - why do we need to duplicate exceptions?
+			log.error('claimCode required');
+			return when.reject('claimCode required');
+		}
+
+		return this.whatSerialPortDidYouMean(comPort, true, function (device) {
+			return self.sendClaimCode(device, claimCode)
+				.then(function () {
+					console.log('Claim code set.');
+					return true;
+				});
+		});
+	},
+
+	sendClaimCode: function (device, claimCode, withLogging) {
+		var prompt = 'Enter 63-digit claim code: ';
+		var confirmation = 'Claim code set to: '+claimCode;
+		return this.doSerialInteraction(device, 'C', [
+			[ prompt, 2000, function(promise, next) {
+				next(claimCode+'\n');
+			}],
+			[ confirmation, 2000, function(promise, next) {
+				next();
+				promise.resolve();
+			}]
+		], !withLogging);
+	},
+
+	/**
+	 *
+	 * @param {Device} device        The device to interact with
+	 * @param {String} command      The initial command to send to the device
+	 * @param {Array} interactions  an array of interactions. Each interaction is
+	 *  an array, with these elements:
+	 *  [0] - the prompt text to interact with
+	 *  [1] - the timeout to wait for this prompt
+	 *  [2] - the callback when the prompt has been received. The callback takes
+	 *      these arguments:
+	 *          promise: the deferred result (call resolve/reject)
+	 *          next: the response callback, should be called with (response) to send a response.
+	 *              Response can be undefined
+	 *
+	 * @returns {Promise}
+	 */
+	doSerialInteraction: function(device, command, interactions, noLogging) {
+		if (!device) {
+			return when.reject('No serial port available');
+		}
+
+		if (!interactions.length) {
+			return when.resolve();
+		}
+
+		var serialPort = this.serialPort || new SerialPort(device.port, {
+				baudrate: 9600,
+				parser: SerialBoredParser.makeParser(250),
+				autoOpen: false
+			});
+
+		var done = when.defer();
+		serialPort.on('error', function (err) {
+			done.reject(err);
+		});
+		function serialClosedEarly() {
+			done.reject('Serial port closed early');
+		}
+		serialPort.on('close', serialClosedEarly);
+
+		var self = this;
+		function startTimeout(to) {
+			self._serialTimeout = setTimeout(function () {
+				done.reject('Serial timed out');
+			}, to);
+		}
+		function resetTimeout() {
+			clearTimeout(self._serialTimeout);
+			self._serialTimeout = null;
+		}
+
+		var st = new SerialTrigger(serialPort);
+
+		var addTrigger = function (prompt, timeout, callback) {
+			st.addTrigger(prompt, function (cb) {
+				resetTimeout();
+				function next(response) {
+					cb(response, timeout ? startTimeout.bind(self, timeout) : undefined);
+				}
+				callback(done, next);
+			});
+		};
+
+		var prompt = interactions[0][0];
+		var callback = interactions[0][2];
+		for (var i=1; i<interactions.length; i++) {
+			var timeout = interactions[i][1];
+			addTrigger(prompt, timeout, callback);
+			prompt = interactions[i][0];
+			callback = interactions[i][2];
+		}
+		// the last interaction completes without a timeout
+		addTrigger(prompt, undefined, callback);
+
+		serialPort.open(function (err) {
+			if (err) {
+				return done.reject(err);
+			}
+
+			serialPort.flush(function() {
+				serialPort.on('data', function(data) {
+					if (!noLogging) {
+						log.serialOutput(data.toString());
+					}
+				});
+
+				st.start(noLogging);
+				var next = function () {
+					startTimeout(interactions[0][1]);
+				};
+				if (command) {
+					serialPort.write(command, function () {
+						serialPort.drain(next);
+					});
+				} else {
+					next();
+				}
+			});
+		});
+
+		when(done.promise).ensure(function () {
+			resetTimeout();
+			serialPort.removeListener('close', serialClosedEarly);
+			serialPort.close();
+		});
+
+		return done.promise;
+	},
 
     serialWifiConfig: function (device, ssid, securityType, password) {
 		if (!device) {
@@ -984,15 +1148,16 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		var failDelay = timeout || 5000;
 
 		var serialPort;
+		var self = this;
 		return when.promise(function (resolve, reject) {
-			serialPort = new SerialPort(device.port, {
+			serialPort = self.serialPort || new SerialPort(device.port, {
 				baudrate: 9600,
 				parser: SerialBoredParser.makeParser(250),
 				autoOpen: false
 			});
 
 			var failTimer = setTimeout(function () {
-				reject('Serial timed out');
+				reject(timeoutError);
 			}, failDelay);
 
 			serialPort.on('data', function (data) {
