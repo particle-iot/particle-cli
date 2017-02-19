@@ -1,7 +1,11 @@
 'use strict';
 
+/**
+ * A parser that waits for a given length of time for a response, or for a given terminator.
+ * @type {{makeParser: module.exports.makeParser}}
+ */
 module.exports = {
-	makeParser: function (boredDelay) {
+	makeParser: function (boredDelay, terminator) {
 		var boredTimer,
 			chunks = [];
 
@@ -17,10 +21,14 @@ module.exports = {
 			}, boredDelay);
 		};
 
-
 		return function (emitter, buffer) {
-			chunks.push(buffer.toString());
-			updateTimer(emitter);
+			var s = buffer.toString();
+			chunks.push(s);
+			if (terminator!==undefined && s.indexOf(terminator)>=0) {
+				whenBored(emitter);
+			} else {
+				updateTimer(emitter);
+			}
 		};
 	}
 };
