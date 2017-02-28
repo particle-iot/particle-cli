@@ -955,7 +955,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				if (deviceName) {
 					__oldapi.renameDevice(deviceId, deviceName).then(function () {
 						console.log();
-						console.log(arrow, 'Your Photon has been bestowed with the name', chalk.bold.cyan(deviceName));
+						console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
 						console.log(arrow, "Congratulations! You've just won the internet!");
 						console.log();
 						self.exit();
