@@ -42,7 +42,6 @@ var SAP = require('softap-setup');
 var path = require('path');
 
 var strings = {
-
 	'monitorPrompt': 'Would you like to wait and monitor for Photons entering setup mode?',
 	'scanError': 'Unable to scan for Wi-Fi networks. Do you have permission to do that on this computer?',
 	'credentialsNeeded': 'You will need to know the password for your Wi-Fi network (if any) to proceed.',
@@ -148,7 +147,7 @@ WirelessCommand.prototype.manualAsk = function manualAsk(cb) {
 		default: true
 
 	}], cb);
-}
+};
 
 function manualDone(err, dat) {
 	if (err) {
@@ -416,10 +415,8 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 			// How about retrying the claim code again
 			// console.log(arrow, arrow, err);
 			if (err.code === 'ENOTFOUND') {
-
 				protip("Your computer couldn't find the cloud...");
 			} else {
-
 				protip('There was a network error while connecting to the cloud...');
 			}
 			protip('We need an active internet connection to successfully complete setup.');

@@ -26,6 +26,7 @@ function WiFiManager(opts) {
 WiFiManager.prototype.getCurrentNetwork = function(cb) {
 	if (!this.supported.getCurrentNetwork) {
 		// default to nothing
+		// todo - why not raise an error?
 		return cb();
 	}
 	this.osConnect.getCurrentNetwork(cb);
