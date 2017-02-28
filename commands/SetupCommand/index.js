@@ -357,27 +357,38 @@ SetupCommand.prototype.findDevice = function() {
 			detectedPrompt(device.type, function setupPhotonChoice(ans) {
 
 				if (ans.setup) {
-
 					var macAddress;
 					self.newSpin('Getting device information...').start();
-					serial.getDeviceMacAddress(device).then(function(mac) {
 
-						macAddress = mac;
+					serial.supportsClaimCode(device).then(function (supported) {
+						if (supported) {
+							self.stopSpin();
+							console.log(
+								chalk.cyan('!'),
+								"The device supports setup via serial."
+							);
+							return serial.setup(device);
+						}
 
-					}, function() {
+						serial.getDeviceMacAddress(device).then(function(mac) {
 
-						// do nothing on rejection
+							macAddress = mac;
 
-					}).finally(function () {
+						}, function() {
 
-						self.stopSpin();
-						console.log(
-							chalk.cyan('!'),
-							"The Photon supports secure Wi-Fi setup. We'll try that first."
-						);
-						return wireless.list(macAddress, self.options.manual);
+							// do nothing on rejection
+
+						}).finally(function () {
+
+							self.stopSpin();
+							console.log(
+								chalk.cyan('!'),
+								"The Photon supports secure Wi-Fi setup. We'll try that."
+							);
+							return wireless.list(macAddress, self.options.manual);
+						});
+
 					});
-					return;
 				} else {
 					tryScan();
 				}
@@ -575,7 +586,7 @@ SetupCommand.prototype.prompt = function(prompts, cb) {
 	prompt(prompts, cb);
 };
 
-
+// todo - this is also duplicated in the WiFiCommand too...
 SetupCommand.prototype.exit = function() {
 
 	console.log();

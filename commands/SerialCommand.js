@@ -31,6 +31,7 @@ var _ = require('lodash');
 var fs = require('fs');
 var prompt = require('inquirer').prompt;
 
+var path = require('path');
 var when = require('when');
 var sequence = require('when/sequence');
 var extend = require('xtend');
@@ -39,6 +40,8 @@ var inquirer = require('inquirer');
 var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
 var specs = require('../oldlib/deviceSpecs');
+var ApiClient = require('../oldlib/ApiClient2');
+var OldApiClient = require('../oldlib/ApiClient');
 var log = require('../oldlib/log');
 var settings = require('../settings');
 var DescribeParser = require('binary-version-reader').HalDescribeParser;
@@ -49,7 +52,17 @@ var utilities = require('../oldlib/utilities.js');
 var SerialBoredParser = require('../oldlib/SerialBoredParser.js');
 var SerialTrigger = require('../oldlib/SerialTrigger');
 
+// TODO: DRY this up somehow
+// The categories of output will be handled via the log class, and similar for protip.
+var cmd = path.basename(process.argv[1]);
 var arrow = chalk.green('>');
+var alert = chalk.yellow('!');
+var protip = function() {
+	var args = Array.prototype.slice.call(arguments);
+	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
+	console.log.apply(null, args);
+};
+
 
 var timeoutError = 'Serial timed out';
 
@@ -610,27 +623,31 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 // Configure it
                 self.serialWifiConfig(device, ssid, security, password).then(wifi.resolve, wifi.reject); //.then(self.wifiInfo.resolve, self.wifiInfo.reject);
             } else {
-                inquirer.prompt([
-                    {
-                        type: 'confirm',
-                        name: 'scan',
-                        message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
-                        default: true
-                    }
-                ], function (ans) {
-                    if (ans.scan) {
-                        return self._scanNetworks(function (networks) {
-                            self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
-                        });
-                    } else {
-                        self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
-                    }
-                });
-
+            	self._promptWifiScan(wifi, device);
             }
 		});
 
 		return wifi.promise;
+	},
+
+	_promptWifiScan(wifi, device) {
+		var self = this;
+		inquirer.prompt([
+			{
+				type: 'confirm',
+				name: 'scan',
+				message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
+				default: true
+			}
+		], function (ans) {
+			if (ans.scan) {
+				return self._scanNetworks(function (networks) {
+					self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
+				});
+			} else {
+				self._getWifiInformation(device).then(wifi.resolve, wifi.reject);
+			}
+		});
 	},
 
     _jsonErr: function(err) {
@@ -805,13 +822,175 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
+	/**
+	 * Performs device setup via serial. The device should already be in listening mode.
+	 * Setup comprises these steps:
+	 * - fetching the claim code from the API
+	 * - setting the claim code on the device
+	 * - configuring
+	 * @param device
+	 */
+	setup: function(device) {
+		var self = this;
+		var _deviceID = '';
+		var api = new ApiClient();
+
+		// todo - factor this out from here and also the WiFiCommand
+		function getClaim() {
+			self.newSpin('Obtaining magical secure claim code from the cloud...').start();
+			api.getClaimCode(undefined, afterClaim);
+		}
+		function afterClaim(err, dat) {
+			self.stopSpin();
+			if (err) {
+				// TODO: Graceful recovery here
+				// How about retrying the claim code again
+				// console.log(arrow, arrow, err);
+				if (err.code === 'ENOTFOUND') {
+					protip("Your computer couldn't find the cloud...");
+				} else {
+					protip('There was a network error while connecting to the cloud...');
+				}
+				protip('We need an active internet connection to successfully complete setup.');
+				protip('Are you currently connected to the internet? Please double-check and try again.');
+				return;
+			}
+
+			console.log(arrow, 'Obtained magical secure claim code.');
+			console.log();
+			return self.sendClaimCode(device, dat.claim_code, true)
+				.then(function() {
+					console.log('Claim code set. Now setting up Wi-Fi');
+					// todo - add additional commands over USB to have the device scan for Wi-Fi
+					var wifi = when.defer();
+					self._promptWifiScan(wifi, device);
+					return wifi.promise;
+				})
+				.then(revived);
+		}
+
+		function revived() {
+			// if (err) {
+			// 	manualReconnectPrompt();
+			// 	return;
+			// }
+
+			self.stopSpin();
+			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
+
+			setTimeout(function () {
+				api.listDevices(checkDevices);
+			}, 2000);
+		}
+
+		function updateWarning() {
+
+		}
+
+		function checkDevices(err, dat) {
+			self.stopSpin();
+			if (err) {
+				if (err.code === 'ENOTFOUND') {
+					// todo - limit the number of retries here.
+					console.log(alert, 'Network not ready yet, retrying...');
+					console.log();
+					return revived(null);
+				}
+				console.log(alert, 'Unable to verify your Photon\'s connection.');
+				console.log(alert, "Please make sure you're connected to the internet.");
+				console.log(alert, 'Then try', chalk.bold.cyan(cmd + ' list'), "to verify it's connected.");
+				updateWarning();
+				self.exit();
+			}
+
+			// self.__deviceID -> _deviceID
+			var onlinePhoton = _.find(dat, function (device) {
+				return (device.id.toUpperCase() === _deviceID.toUpperCase()) && device.connected === true;
+			});
+
+			if (onlinePhoton) {
+				console.log(arrow, 'It looks like your Photon has made it happily to the cloud!');
+				console.log();
+				updateWarning();
+				namePhoton(onlinePhoton.id);
+				return;
+			}
+
+			console.log(alert, "It doesn't look like your Photon has made it to the cloud yet.");
+			console.log();
+			self.prompt([{
+
+				type: 'list',
+				name: 'recheck',
+				message: 'What would you like to do?',
+				choices: [
+					{ name: 'Check again to see if the Photon has connected', value: 'recheck' },
+					{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' }
+				]
+
+			}], recheck);
+
+			function recheck(ans) {
+				if (ans.recheck === 'recheck') {
+					api.listDevices(checkDevices);
+				} else {
+					self._promptForListeningMode()
+					self.setup(device);
+				}
+			}
+		}
+
+		function namePhoton(deviceId) {
+			var __oldapi = new OldApiClient();
+
+			self.prompt([
+				{
+					type: 'input',
+					name: 'deviceName',
+					message: 'What would you like to call your photon?'
+				}
+			], function(ans) {
+				// todo - retrieve existing name of the device?
+				var deviceName = ans.deviceName;
+				if (deviceName) {
+					__oldapi.renameDevice(deviceId, deviceName).then(function () {
+						console.log();
+						console.log(arrow, 'Your Photon has been bestowed with the name', chalk.bold.cyan(deviceName));
+						console.log(arrow, "Congratulations! You've just won the internet!");
+						console.log();
+						self.exit();
+					}, function (err) {
+						console.error(alert, 'Error naming your photon: ', err);
+						namePhoton(deviceId);
+					});
+				} else {
+					console.log('Skipping device naming.');
+					self.exit();
+				}
+			});
+		}
+
+		return self.askForDeviceID(device).
+			then(function (deviceID) {
+				_deviceID = deviceID;
+				console.log('setting up device', deviceID);
+				return getClaim();
+			})
+			.catch(function (err) {
+				self.stopSpin();
+				console.log(err);
+				throw err;
+			});
+	},
+
 	setDeviceClaimCode: function (device, claimCode) {
+		var self = this;
 		return this.supportsClaimCode(device).then(function (supported) {
 			if (!supported) {
 				return when.reject('device does not support claiming over USB');
 			}
 
-			return that.sendClaimCode(device, claimCode);
+			return self.sendClaimCode(device, claimCode);
 		});
 	},
 
@@ -1141,6 +1320,15 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		return wifiDone.promise;
 	},
 
+	/**
+	 * Sends a command to the device and retrieves the response.
+	 * @param device    The device to send the command to
+	 * @param command   The command text
+	 * @param timeout   How long in milliseconds to wait for a response
+	 * @returns {Promise} to send the command.
+	 * The serial port should not be open, and is closed after the command is sent.
+	 * @private
+	 */
 	_issueSerialCommand: function(device, command, timeout) {
 		if (!device) {
 			return when.reject('no serial port provided');
@@ -1343,7 +1531,21 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				callback(answers.port);
 			});
 		});
-	}
+	},
+
+	// todo - any reason not to move this down to BaseCommand, or better still to a set of utility functions
+	exit: function() {
+		console.log();
+		console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
+			chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
+			chalk.bold.magenta('<3'))
+		);
+		process.exit(0);
+	},
+
+	prompt: prompt
 });
+
+
 
 module.exports = SerialCommand;
