@@ -272,6 +272,7 @@ SetupCommand.prototype.findDevice = function() {
 	var serial = this.cli.getCommandModule('serial');
 	var wireless = this.cli.getCommandModule('wireless');
 	wireless.prompt = this.prompt.bind(this);
+	serial.prompt = this.prompt.bind(this);
 
 	console.log();
 	console.log(

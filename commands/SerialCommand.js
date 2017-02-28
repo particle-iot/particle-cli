@@ -632,7 +632,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 	_promptWifiScan(wifi, device) {
 		var self = this;
-		inquirer.prompt([
+		self.prompt([
 			{
 				type: 'confirm',
 				name: 'scan',
@@ -674,7 +674,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		var ssids = _.pluck(networks, 'ssid');
 		ssids = this._removePhotonNetworks(ssids);
 
-		inquirer.prompt([
+		self.prompt([
 			{
 				type: 'list',
 				name: 'ap',
@@ -858,7 +858,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			console.log(arrow, 'Obtained magical secure claim code.');
 			console.log();
-			return self.sendClaimCode(device, dat.claim_code, true)
+			return self.sendClaimCode(device, dat.claim_code)
 				.then(function() {
 					console.log('Claim code set. Now setting up Wi-Fi');
 					// todo - add additional commands over USB to have the device scan for Wi-Fi
@@ -1038,7 +1038,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	 *          promise: the deferred result (call resolve/reject)
 	 *          next: the response callback, should be called with (response) to send a response.
 	 *              Response can be undefined
-	 *
+	 * $param {Boolean} nologging   when truthy, logging is disabled.
 	 * @returns {Promise}
 	 */
 	doSerialInteraction: function(device, command, interactions, noLogging) {
@@ -1293,10 +1293,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 			serialPort.flush(function() {
 				serialPort.on('data', function(data) {
-					log.serialOutput(data.toString());
+					//log.serialOutput(data.toString());
 				});
 
-				st.start();
+				st.start(true);
 				serialPort.write('w', function() {
 					serialPort.drain();
 				});
