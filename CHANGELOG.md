@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.20.0 - 1 March 2017
+
+* Include binaries for firmware 0.6.1
+
 ## 1.19.4 - 7 Febrary 2017
 
  * Fix: Use release version of particle-library-manager
