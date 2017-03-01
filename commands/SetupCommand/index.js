@@ -68,9 +68,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 	this.checkArguments(arguments);
 
-	if (shortcut === 'wifi') {
-		return serial.configureWifi();
-	}
+	this.forceWiFi = !!(shortcut === 'wifi');
 
 	console.log(chalk.bold.cyan(utilities.banner()));
 	console.log(arrow, "Setup is easy! Let's get started...");
@@ -362,7 +360,7 @@ SetupCommand.prototype.findDevice = function() {
 					self.newSpin('Getting device information...').start();
 
 					serial.supportsClaimCode(device).then(function (supported) {
-						if (supported) {
+						if (supported && !self.forceWiFi) {
 							self.stopSpin();
 							console.log(
 								chalk.cyan('!'),
