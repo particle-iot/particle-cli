@@ -327,7 +327,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					return binFile;
 				}
 
-				filename = temp.path({ suffix: '.bin' });
+				var filename = temp.path({ suffix: '.bin' });
 				return self._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(function() {
 					newFileMapping.map['firmware.bin'] = filename;
 					return filename;
