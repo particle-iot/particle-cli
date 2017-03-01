@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.20.0 - 1 March 2017
+## 1.20.1 - 1 March 2017
 
 * Include binaries for firmware 0.6.1
 
