@@ -522,8 +522,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return self.error('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?');
 			}
 
+			// todo - if the prompt is auto answering, then only auto answer once, to prevent
+			// never ending loops
 			if (networkList.length === 0) {
-				inquirer.prompt([{
+				self.prompt([{
 					type: 'confirm',
 					name: 'rescan',
 					message: 'Uh oh, no networks found. Try again?',
