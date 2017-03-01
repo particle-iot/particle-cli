@@ -20,3 +20,5 @@ dist
 es6
 accept/tmp
 *.tgz
+
+.env

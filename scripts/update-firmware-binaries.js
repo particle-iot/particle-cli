@@ -1,4 +1,8 @@
-var GitHubApi = require("github");
+// If you want to update to a draft release, you need to add a token
+// from https://github.com/settings/tokens with the repo scope to ../.env as
+// GITHUB_API_TOKEN=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+require("dotenv").config();
+var GitHub = require("github-api");
 var request = require('request');
 var fs = require('fs');
 var rimraf = require('rimraf-promise');
@@ -19,13 +23,20 @@ if (versionTag[0] != 'v') {
 	versionTag = 'v' + versionTag;
 }
 
-var gh = new GitHubApi();
+var gh = new GitHub({ token: process.env.GITHUB_API_TOKEN });
 
 var downloadedBinaries = [];
 var settingsBinaries = [];
 
-gh.repos.getReleaseByTag({ user: 'spark', repo: 'firmware', tag: versionTag })
-.then(function (release) {
+var repo = gh.getRepo(githubUser, githubRepo);
+repo.listReleases()
+.then(function (result) {
+	var releases = result.data;
+	var releaseId = releaseById(releases, versionTag);
+	return repo.getRelease(releaseId);
+})
+.then(function (result) {
+	var release = result.data;
 	return cleanBinariesDirectory()
 	.then(function () {
 		return downloadFirmwareBinaries(release.assets);
@@ -40,6 +51,20 @@ gh.repos.getReleaseByTag({ user: 'spark', repo: 'firmware', tag: versionTag })
 	if(err.message) exitWithMessage(err.message);
 	exitWithJSON(err);
 });
+
+function releaseById(releases, tag) {
+	var releaseId = null;
+	releases.forEach(function (release) {
+		if (release.tag_name === tag) {
+			releaseId = release.id;
+		}
+	});
+
+	if (!releaseId) {
+		throw new Error('Version ' + tag + ' not found');
+	}
+	return releaseId;
+}
 
 function cleanBinariesDirectory() {
 	return rimraf(binariesDirectory + "/*");
