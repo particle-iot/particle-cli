@@ -32,37 +32,75 @@ describe('the update firmware binaries are all valid', function() {
 		expect(getUpdateFiles()).to.have.property('length').greaterThan(0);
 	});
 
-	for (var updateFiles = getUpdateFiles(), i=0; i<updateFiles.length; i++) {
-		var updateFile = path.join(updateDir, updateFiles[i]);
-		(function (updateFile, fileName) {
-			describe('binary file '+fileName, function() {
-				it('is non-zero in size', function() {
-					expect(getFilesizeInBytes(updateFile)).to.be.greaterThan(0);
+	describe('update files validity check', function () {
+		for (var updateFiles = getUpdateFiles(), i=0; i<updateFiles.length; i++) {
+			var updateFile = path.join(updateDir, updateFiles[i]);
+			(function (updateFile, fileName) {
+				describe('binary file '+fileName, function() {
+					it('is non-zero in size', function() {
+						expect(getFilesizeInBytes(updateFile)).to.be.greaterThan(0);
+					});
+
+					it('has a valid crc ', function() {
+						var dfd = when.defer();
+						var parser = new Parser();
+						parser.parseFile(updateFile, function parsed(fileInfo, err) {
+							if (err) {
+								return dfd.reject(err);
+							}
+
+							if (fileInfo.suffixInfo.suffixSize === 65535) {
+								return dfd.reject(binaryFile + ' does not contain inspection information');
+							}
+
+							if (!fileInfo.crc.ok) {
+								dfd.reject('CRC failed (should be '
+									+ (fileInfo.crc.storedCrc) + ' but is '
+									+ (fileInfo.crc.actualCrc) + ')');
+							}
+							dfd.resolve();
+						}.bind(this));
+						return dfd.promise;
+					});
 				});
+			})(updateFile, updateFiles[i]);
+		}
+	});
 
-				it('has a valid crc ', function() {
-					var dfd = when.defer();
-					var parser = new Parser();
-					parser.parseFile(updateFile, function parsed(fileInfo, err) {
-						if (err) {
-							return dfd.reject(err);
-						}
+	describe('update files version check', function () {
+		var firmwareVersion = null;
+		var platformFiles = {};
+		var updateFileFormat = /.*-(.*)-(.*).bin$/;
+		for (var updateFiles = getUpdateFiles(), i=0; i<updateFiles.length; i++) {
+			var updateFile = path.join(updateDir, updateFiles[i]);
+			var parts = updateFileFormat.exec(updateFile);
+			var version = parts[1];
+			var platform = parts[2];
 
-						if (fileInfo.suffixInfo.suffixSize === 65535) {
-							return dfd.reject(binaryFile + ' does not contain inspection information');
-						}
+			if (firmwareVersion === null) {
+				firmwareVersion = version;
+			}
 
-						if (!fileInfo.crc.ok) {
-							dfd.reject('CRC failed (should be '
-								+ (fileInfo.crc.storedCrc) + ' but is '
-								+ (fileInfo.crc.actualCrc) + ')');
-						}
-						dfd.resolve();
-					}.bind(this));
-					return dfd.promise;
+			platformFiles[platform] = platformFiles[platform] || [];
+			platformFiles[platform].push(updateFile);
+		}
+
+		for (var platform in platformFiles) {
+			(function (platform, files, version) {
+				describe(platform + ' update files', function() {
+					it('match firmware version ' + version, function() {
+						var found = false;
+						var systemFirmwareString = Buffer.from('system firmware version: ' + version);
+						files.forEach(function (file) {
+							var contents = fs.readFileSync(file);
+							if (contents.indexOf(systemFirmwareString) !== -1) {
+								found = true;
+							}
+						});
+						expect(found).to.eq(true);
+					});
 				});
-			});
-		})(updateFile, updateFiles[i]);
-
-	}
+			})(platform, platformFiles[platform], firmwareVersion);
+		}
+	});
 });
