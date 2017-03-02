@@ -13,8 +13,6 @@ var Parser = require('binary-version-reader').HalModuleParser;
 var when = require('when');
 
 
-var firmware_version = '0.6.1';
-
 describe('the update firmware binaries are all valid', function() {
 
 	var updateDir = path.resolve(__dirname, '..', 'updates');
