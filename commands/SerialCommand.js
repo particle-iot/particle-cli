@@ -555,6 +555,10 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
         var args = arguments;
 
 		this.whatSerialPortDidYouMean(comPort, true, function (device) {
+			function parameterMissing(param) {
+				return 'The "'+param+'" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}';
+			}
+
 			if (!device) {
 				return self.error('No serial port identified');
 			}
@@ -587,9 +591,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 // Directly
                 var obj = JSON.parse(fs.readFileSync(json, "utf-8"));
 
-	            function parameterMissing(param) {
-		            return 'The "'+param+'" parameter was missing. Please specify a filename of a valid JSON object, ie {"network":"myNetwork","security":"WPA_AES","channel":2,"password":"mySecret!"}';
-	            }
+
 
                 if (!obj.hasOwnProperty('network') || obj.network.length < 2){
                     _jsonErr(parameterMissing('network'));

@@ -210,7 +210,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 		return this._makeNewKey(filename);
 	},
 
-	keyAlgorithmForProtocol(protocol) {
+	keyAlgorithmForProtocol: function(protocol) {
 		return protocol === 'udp' ? 'ec' : 'rsa';
 	},
 
