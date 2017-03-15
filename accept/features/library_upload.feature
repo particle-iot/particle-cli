@@ -56,6 +56,16 @@ Feature: library upload
     And the output should contain "test-library-publish"
     And the output should not contain "[private]"
 
+  Scenario: can publish and upload a library in one step from the library directory
+    Given The particle library "test-library-publish" is removed
+    And I use the fixture named "library/upload/valid/0.0.2"
+    When I run particle "library publish"
+    # seems that the spinner output is not captured
+    # Then the output should contain "Uploading library test-library-publish"
+    Then the output should not contain "Library test-library-publish was successfully uploaded"
+    And the output should contain "Library test-library-publish was successfully published"
+    And the exit status should be 0
+
   Scenario: cleanup
     Given The particle library "test-library-publish" is removed
     When I run particle "library search test-library-publish"
