@@ -236,7 +236,7 @@ export class CLI {
 			for (let error of nativeErrors) {
 				log.error(error);
 			}
-			log.fatal(`Please reinstall the CLI again using ${chalk.bold("npm install -g particle-cli")}`);
+			log.fatal(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
 			return;
 		}
 
