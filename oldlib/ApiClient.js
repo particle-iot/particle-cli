@@ -55,6 +55,11 @@ var chalk = require('chalk');
 
 /**
  * Provides a framework for interacting with and testing the API
+ * - apiUrl and access_token can be set, otherwise default to those in global settings
+ * - accessors/mutators for access token
+ * - returns promises
+ * - most functions generate console output on error, but not for success
+ * - tests for specific known errors such as invalid access token.
  *
  */
 
@@ -89,8 +94,8 @@ ApiClient.prototype = {
 		this._access_token = token;
 	},
 
-
-	createUser: function (user, pass) {
+	// doesn't appear to be used (renamed)
+	_createUser: function (user, pass) {
 		var dfd = when.defer();
 
 		//todo; if !user, make random?
@@ -136,7 +141,10 @@ ApiClient.prototype = {
 		return dfd.promise;
 	},
 
-	//GET /oauth/token
+	/**
+	 * Login and update the access token on this instance. Doesn't update the global settings.
+	 * Outputs failure to the console.
+	 */
 	login: function (client_id, user, pass) {
 		var that = this;
 
@@ -151,7 +159,13 @@ ApiClient.prototype = {
 			});
 	},
 
-	//GET /oauth/token
+	/**
+	 * Creates an access token but doesn't change the CLI state/global token etc..
+	 * @param client_id The OAuth client ID to identify the client
+	 * @param username  The username
+	 * @param password  The password
+	 * @returns {Promise} to create the token
+	 */
 	createAccessToken: function (client_id, username, password) {
 		var that = this;
 		return when.promise(function (resolve, reject) {
@@ -180,6 +194,10 @@ ApiClient.prototype = {
 	},
 
 	//DELETE /v1/access_tokens/{ACCESS_TOKEN}
+	/**
+	 * Removes the given access token, outputting any errors to the console.
+	 * @returns {Promise}   To retrieve the API response body
+	 */
 	removeAccessToken: function (username, password, access_token) {
 		var dfd = when.defer();
 		this.request({
@@ -843,7 +861,8 @@ ApiClient.prototype = {
 		return dfd.promise;
 	},
 
-	createWebhook: function (event, url, deviceId, requestType, headers, json, query, auth, mydevices, rejectUnauthorized) {
+	// not used
+	_createWebhook: function (event, url, deviceId, requestType, headers, json, query, auth, mydevices, rejectUnauthorized) {
 		var that = this;
 		var dfd = when.defer();
 
