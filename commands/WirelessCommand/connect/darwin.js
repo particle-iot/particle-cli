@@ -1,36 +1,10 @@
 var spawn = require('child_process').spawn;
-
-function runCommand(cmd, args, cb) {
-	var argArray = args.split(' ');
-
-	var s = spawn(cmd, argArray, {
-		stdio: ['ignore', 'pipe', 'pipe']
-	});
-
-	var stdout = '';
-	s.stdout.on('data', function (data) {
-		stdout += data;
-	});
-
-	var stderr = '';
-	s.stderr.on('data', function (data) {
-		stderr += data;
-	});
-
-	s.on('error', function(err) {
-		cb(err, stdout, stderr);
-	});
-
-	s.on('close', function (code) {
-		cb(code, stdout, stderr);
-	});
-}
-
+var runCommand = require('./executor').runCommand;
 
 function getFirstWifiPort(cb) {
-	runCommand('networksetup', '-listnetworkserviceorder', function (err, stdout, stderr) {
-		if (err || stderr) {
-			return cb(err || stderr);
+	runCommand('networksetup', '-listnetworkserviceorder', function (err, code, stdout, stderr) {
+		if (err || stderr || code) {
+			return cb(err || stderr || code);
 		}
 		var device;
 		var useNextDevice = false;
@@ -71,9 +45,9 @@ function getCurrentNetwork(cb) {
 			return cb(new Error('Unable to find a Wi-Fi network interface'));
 		}
 
-		runCommand('networksetup', '-getairportnetwork ' + device, function (err, stdout, stderr) {
-			if (err || stderr) {
-				return cb(err || stderr);
+		runCommand('networksetup', '-getairportnetwork ' + device, function (err, code, stdout, stderr) {
+			if (err || stderr || code) {
+				return cb(err || stderr || code);
 			}
 
 			var lines = stdout.split('\n');
@@ -102,10 +76,10 @@ function connect(opts, cb) {
 		if (opts.password) { params += ' ' + opts.password; }
 
 		// TODO: something with opts & interfaces?
-		runCommand('networksetup', params, function results(err, stdout, stderr) {
-			if (err || stderr) {
+		runCommand('networksetup', params, function results(err, code, stdout, stderr) {
+			if (err || stderr || code) {
 				// TODO: more research into failure modes of this command
-				return cb(err || stderr);
+				return cb(err || stderr || code);
 			}
 			cb(null, opts);
 		});
