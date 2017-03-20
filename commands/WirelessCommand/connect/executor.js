@@ -1,3 +1,6 @@
+
+var extend = require('xtend');
+
 /***
  * Executes a command, collecting the output from stdout and stderr.
  * @param cmd
@@ -5,6 +8,10 @@
  * @param cb callback that receives (error, exitCode, stdout, stderr)
  */
 function runCommand(cmd, args, cb) {
+
+	// set locale so we can be sure of consistency of command execution
+	var env = extend(process.env, { LANG: "en", LC_ALL: "en", LC_MESSAGES: "en"});
+
 	var argArray = Array.isArray(args) ? args : args.split(' ');
 
 	var s = spawn(cmd, argArray, {
