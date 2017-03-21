@@ -5,7 +5,7 @@ var os = require('os');
 var connect = {
 	'darwin': require('./connect/darwin'),
 	'linux': require('./connect/linux'),
-	'windows': require('./connect/windows')
+	'win32': require('./connect/windows')
 };
 
 function WiFiManager(opts) {

@@ -12,7 +12,7 @@ function systemExecutor(cmdArgs) {
 	runCommand(cmdArgs[0], cmdArgs.splice(1), function handler(err, code, stdout, stderr) {
 		var fail = err || stderr || code;
 		if (fail) {
-			dfd.reject(fail);
+			dfd.reject({err:err, stderr:stderr, stdout:stdout, code:code});
 		}
 		else {
 			dfd.resolve(stdout);
@@ -42,13 +42,15 @@ Connect.prototype = extend(Object.prototype, {
 
 	/**
 	 * Retrieves the profile name of the currently connected network.
-	 * @returns {Promise.<String>}  The profile name of the currently connected network, or undefined if no connection.
+	 * @returns {Promise.<String>}  The profile name of the currently connected network, or undefined if no
+
+	 connection.
 	 */
 	current: function() {
 		return this.currentInterface()
-		.then(function(iface) {
-			return iface ? iface.profile : undefined;
-		});
+			.then(function(iface) {
+				return iface ? iface.profile : undefined;
+			});
 	},
 
 	/**
@@ -58,14 +60,14 @@ Connect.prototype = extend(Object.prototype, {
 	currentInterface: function() {
 		var self = this;
 		return this._execWiFiCommand(['show', 'interfaces'])
-		.then(function(output) {
-			var lines = self._stringToLines(output);
-			var iface = self._currentFromInterfaces(lines);
-			if (iface && !iface['profile']) {
-				iface = null;
-			}
-			return iface;
-		});
+			.then(function(output) {
+				var lines = self._stringToLines(output);
+				var iface = self._currentFromInterfaces(lines);
+				if (iface && !iface['profile']) {
+					iface = null;
+				}
+				return iface;
+			});
 	},
 
 	/**
@@ -76,13 +78,13 @@ Connect.prototype = extend(Object.prototype, {
 		var self = this;
 		var interfaceName;
 		return pipeline([
-			this.currentInterface,      		// find the current interface
-			this._checkHasInterface,            // fail if no interfaces
+			this.currentInterface.bind(this),      		// find the current interface
+			this._checkHasInterface.bind(this),            // fail if no interfaces
 			function (ifaceName) {              // save the interface name
 				interfaceName = ifaceName;
 				return ifaceName;
 			},
-			this.listProfiles,                  // fetch the profiles for the interface
+			this.listProfiles.bind(this),                  // fetch the profiles for the interface
 			function (profiles) {
 				return self._createProfileIfNeeded(profile, interfaceName, profiles);
 			},
@@ -93,8 +95,36 @@ Connect.prototype = extend(Object.prototype, {
 	},
 
 	_connectProfile(profile, interfaceName) {
-		var args = ['connect', 'name="'+profile+'"', 'interface="'+interfaceName+'"'];
-		return this._execWiFiCommand(args);
+		var self = this;
+		var args = ['connect', 'name='+profile, 'interface='+interfaceName];
+		return this._execWiFiCommand(args)
+		.then(function() {
+			return self.waitForConnected(profile, interfaceName, 20, 500);
+		})
+		.then(function() {
+			return { ssid: profile };
+		});
+	},
+
+	waitForConnected(profile, interfaceName, count, retryPeriod) {
+		var self = this;
+		return this.current()
+			.then(function(ssid) {
+				if (ssid!==profile) {
+					var dfd = when.defer();
+					if (--count <= 0) {
+						return dfd.reject(new Error('timeout waiting for network to connect'));
+					}
+
+					setTimeout(retry, retryPeriod);
+					function retry() {
+						dfd.resolve(self.waitForConnected(profile, interfaceName,
+
+							count, retryPeriod));
+					}
+					return dfd.promise;
+				}
+			});
 	},
 
 	/**
@@ -125,15 +155,16 @@ Connect.prototype = extend(Object.prototype, {
 	 * @private
 	 */
 	_createProfile(profile, interfaceName, fs) {
-		if (!fs)
+		if (!fs) {
 			fs = require('fs');
+		}
 		var filename = '_wifi_profile.xml';
 		var content = this._buildProfile(profile);
 		var self = this;
 		fs.writeFileSync(filename, content);
-		var args = ['add', 'profile', 'filename="'+filename+'"'];
+		var args = ['add', 'profile', 'filename='+filename+''];
 		if (interfaceName) {
-			args.push('interface="'+interfaceName+'"');
+			args.push('interface='+interfaceName);
 		}
 		return pipeline([function() {
 			return self._execWiFiCommand(args)
@@ -166,13 +197,13 @@ Connect.prototype = extend(Object.prototype, {
 		var self = this;
 		var cmd = ['show', 'profiles'];
 		if (ifaceName) {
-			cmd.push('interface="'+ifaceName+'"');
+			cmd.push('interface='+ifaceName);
 		}
 		return this._execWiFiCommand(cmd)
-		.then(function(output) {
-			var lines = self._stringToLines(output);
-			return self._parseProfiles(lines);
-		});
+			.then(function(output) {
+				var lines = self._stringToLines(output);
+				return self._parseProfiles(lines);
+			});
 	},
 
 	/**

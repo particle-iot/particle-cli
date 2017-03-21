@@ -348,11 +348,11 @@ describe('Windows wifi', function() {
 
 	describe('_connectProfile', function() {
 		it('runs netsh wlan connect', function() {
-			sut._execWiFiCommand = sinon.stub();
+			sut._execWiFiCommand = sinon.stub().resolves('');
 			var profile = 'blah';
 			var iface = 'may contain spaces';
 			sut._connectProfile(profile, iface);
-			expect(sut._execWiFiCommand).to.be.calledWith(['connect', 'name="blah"', 'interface="may contain spaces"']);
+			expect(sut._execWiFiCommand).to.be.calledWith(['connect', 'name=blah', 'interface=may contain spaces']);
 		});
 	});
 
@@ -403,7 +403,7 @@ describe('Windows wifi', function() {
 			return sut._createProfile(profile, undefined, fs).then(function() {
 				expect(sut._buildProfile).to.have.been.calledWith(profile);
 				expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
-				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename="_wifi_profile.xml"']);
+				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml']);
 				expect(fs.unlinkSync).to.have.been.calledWith(filename);
 			});
 		});
@@ -426,7 +426,7 @@ describe('Windows wifi', function() {
 				.then(function() {
 				expect(sut._buildProfile).to.have.been.calledWith(profile);
 				expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
-				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename="_wifi_profile.xml"']);
+				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml']);
 				expect(fs.unlinkSync).to.have.been.calledWith(filename);
 				expect(errorRaised).to.be.eql(true);
 			});
@@ -439,7 +439,7 @@ describe('Windows wifi', function() {
 			return sut._createProfile(profile, ifaceName, fs).then(function() {
 				expect(sut._buildProfile).to.have.been.calledWith(profile);
 				expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
-				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename="_wifi_profile.xml"', 'interface="'+ifaceName+'"']);
+				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml', 'interface='+ifaceName]);
 				expect(fs.unlinkSync).to.have.been.calledWith(filename);
 			});
 		});
@@ -453,7 +453,7 @@ describe('Windows wifi', function() {
 			sut._execWiFiCommand = sinon.stub().resolves('');
 			return sut.listProfiles("abcd").
 			then(function () {
-				expect(sut._execWiFiCommand).to.have.been.calledWith(['show', 'profiles', 'interface="abcd"']);
+				expect(sut._execWiFiCommand).to.have.been.calledWith(['show', 'profiles', 'interface=abcd']);
 			});
 		});
 

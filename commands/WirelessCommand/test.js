@@ -96,13 +96,13 @@ TestWiFi.prototype.selectNetwork = function() {
 TestWiFi.prototype.connect = function(ssid) {
 	var self = this;
 	console.log('Connecting to network', ssid);
-	self.mgr.connect({ssid:ssid}, function(err) {
+	self.mgr.connect({ssid:ssid}, function(err, opts) {
 		if (err) {
 			console.error('Unable to connect to network', ssid, ':', err);
 			return;
 		}
 
-		console.log('connected to network ', ssid);
+		console.log('connected to network ', opts.ssid);
 		self.mgr.getCurrentNetwork(function(err, current) {
 			if (err) {
 				console.error('Unable to detect current network:', err);
