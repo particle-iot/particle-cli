@@ -25,6 +25,9 @@ import { LibraryInitCommand } from '../../src/cmd';
 
 describe('library init command', () => {
 
+	require('yeoman-environment');      // ensure these dynamically loaded modules are loaded before the mock-fs is installed
+	require('yeoman-generator');
+
 	describe('site', () => {
 		const sut = new CLILibraryInitCommandSite({});
 
