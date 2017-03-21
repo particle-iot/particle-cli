@@ -110,7 +110,7 @@ function connect(opts, cb) {
 			cb(null, opts);
 		});
 	});
-};
+}
 
 module.exports = {
 	connect: connect,

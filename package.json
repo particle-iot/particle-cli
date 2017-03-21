@@ -74,7 +74,7 @@
     "request": "https://github.com/spark/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "semver": "^5.1.0",
     "serialport": "^4.0.7",
-    "softap-setup": "^1.1.4",
+    "softap-setup": "^4.0.3",
     "temp": "^0.8.3",
     "when": "^3.7.2",
     "xtend": "^4.0.0",

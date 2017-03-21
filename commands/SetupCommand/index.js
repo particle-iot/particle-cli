@@ -22,11 +22,15 @@ var strings = {
 
 	'description': 'Helps guide you through the initial setup & claiming of your device',
 	'alreadyLoggedIn': 'It appears as though you are already logged in as %s',
-	'revokeAuthPrompt': 'Would you like to revoke the current authentication token?',
+	'revokeAuthPrompt': 'Would you like to use the current authentication token?',
 	'signupSuccess': "Great success! You're now the owner of a brand new account!",
 	'loginError': "There was an error logging you in! Let's try again.",
 	'helpForMoreInfo': 'Please try the `%s help` command for more information.'
 };
+
+function goodbye() {
+	console.log(arrow, 'Goodbye!');
+}
 
 // TODO: DRY this up somehow
 var cmd = path.basename(process.argv[1]);
@@ -64,9 +68,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 
 	this.checkArguments(arguments);
 
-	if (shortcut === 'wifi') {
-		return serial.configureWifi();
-	}
+	this.forceWiFi = !!(shortcut === 'wifi');
 
 	console.log(chalk.bold.cyan(utilities.banner()));
 	console.log(arrow, "Setup is easy! Let's get started...");
@@ -92,20 +94,20 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 			chalk.bold.cyan(settings.username))
 		);
 
-		prompt([{
+		self.prompt([{
 
 			type: 'confirm',
 			name: 'switch',
-			message: 'Would you like to log in with a different account?',
-			default: false
+			message: 'Would you like to use this account?',
+			default: true
 
 		}], switchChoice);
 	}
 
 	function switchChoice(ans) {
 		// user wants to logout
-		if (ans.switch) {
-			cloud.logout().then(function() {
+		if (!ans.switch) {
+			cloud.logout(true).then(function() {
 				self.__api.clearToken();
 				self.__oldapi.clearToken();
 				accountStatus(false);
@@ -123,7 +125,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 		if (!alreadyLoggedIn) {
 			// New user or a fresh environment!
 			if (!self.__wasLoggedIn) {
-				prompt([
+				self.prompt([
 					{
 						type: 'list',
 						name: 'login',
@@ -167,7 +169,7 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 	var signupUsername = this.__signupUsername || undefined;
 	console.log(arrow, "Let's create your new account!");
 
-	prompt([{
+	self.prompt([{
 
 		type: 'input',
 		name: 'username',
@@ -267,6 +269,8 @@ SetupCommand.prototype.findDevice = function() {
 	var self = this;
 	var serial = this.cli.getCommandModule('serial');
 	var wireless = this.cli.getCommandModule('wireless');
+	wireless.prompt = this.prompt.bind(this);
+	serial.prompt = this.prompt.bind(this);
 
 	console.log();
 	console.log(
@@ -312,7 +316,12 @@ SetupCommand.prototype.findDevice = function() {
 
 		console.log(arrow, 'No devices detected via USB.');
 
-		prompt([{
+		tryScan();
+	});
+
+	function tryScan() {
+		// TODO: check if Wi-Fi scanning is available (requires OS support and a wifi adapter.)
+		self.prompt([{
 
 			type: 'confirm',
 			name: 'scan',
@@ -323,11 +332,11 @@ SetupCommand.prototype.findDevice = function() {
 
 		function scanChoice(ans) {
 			if (ans.scan) {
-				return wireless.list();
+				return wireless.list(undefined, self.options.manual);
 			}
-			console.log(arrow, 'Goodbye!');
-		};
-	});
+			goodbye();
+		}
+	}
 
 	function inspect(device) {
 
@@ -339,7 +348,7 @@ SetupCommand.prototype.findDevice = function() {
 				if (ans.setup) {
 					return self.setupCore(device);
 				}
-				console.log(arrow, 'Goodbye!');
+				goodbye();
 			});
 		} else if (device.type === 'Photon' || device.type === 'P1') {
 
@@ -347,36 +356,48 @@ SetupCommand.prototype.findDevice = function() {
 			detectedPrompt(device.type, function setupPhotonChoice(ans) {
 
 				if (ans.setup) {
-
 					var macAddress;
 					self.newSpin('Getting device information...').start();
-					serial.getDeviceMacAddress(device).then(function(mac) {
 
-						macAddress = mac;
+					serial.supportsClaimCode(device).then(function (supported) {
+						if (supported && !self.forceWiFi) {
+							self.stopSpin();
+							console.log(
+								chalk.cyan('!'),
+								"The device supports setup via serial."
+							);
+							return serial.setup(device);
+						}
 
-					}, function() {
+						serial.getDeviceMacAddress(device).then(function(mac) {
 
-						// do nothing on rejection
+							macAddress = mac;
 
-					}).finally(function () {
+						}, function() {
 
-						self.stopSpin();
-						console.log(
-							chalk.cyan('!'),
-							"The Photon supports secure Wi-Fi setup. We'll try that first."
-						);
-						return wireless.list(macAddress);
+							// do nothing on rejection
+
+						}).finally(function () {
+
+							self.stopSpin();
+							console.log(
+								chalk.cyan('!'),
+								"The Photon supports secure Wi-Fi setup. We'll try that."
+							);
+							return wireless.list(macAddress, self.options.manual);
+						});
+
 					});
-					return;
+				} else {
+					tryScan();
 				}
-				console.log(arrow, 'Goodbye!');
 			});
 		} else if (device.type === 'Electron') {
 			detectedPrompt(device.type, function setupElectronChoice(ans) {
 				if (ans.setup) {
 					return self.setupElectron(device);
 				}
-				console.log(arrow, 'Goodbye!');
+				goodbye();
 			});
 		}
 	}
@@ -390,7 +411,7 @@ SetupCommand.prototype.findDevice = function() {
 			'connected via USB.'
 		);
 
-		prompt([{
+		self.prompt([{
 
 			type: 'confirm',
 			name: 'setup',
@@ -408,7 +429,7 @@ SetupCommand.prototype.setupCore = function(device) {
 
 	function promptForCyan() {
 		var online = when.defer();
-		prompt([
+		self.prompt([
 			{
 				type: 'input',
 				name: 'online',
@@ -422,7 +443,7 @@ SetupCommand.prototype.setupCore = function(device) {
 
 	function promptForListen() {
 		var listen = when.defer();
-		prompt([
+		self.prompt([
 			{
 				type: 'confirm',
 				name: 'listen',
@@ -469,7 +490,7 @@ SetupCommand.prototype.setupCore = function(device) {
 		},
 		function() {
 			var rainbow = when.defer();
-			prompt([
+			self.prompt([
 				{
 					type: 'input',
 					name: 'rainbows',
@@ -482,7 +503,7 @@ SetupCommand.prototype.setupCore = function(device) {
 		},
 		function() {
 			var naming = when.defer();
-			prompt([
+			self.prompt([
 				{
 					type: 'input',
 					name: 'coreName',
@@ -527,15 +548,44 @@ SetupCommand.prototype.checkArguments = function(args) {
 
 	// TODO: tryParseArgs?
 	if (!this.options.scan) {
-
-		this.options.scan = utilities.tryParseArgs(
-			args,
-			'--scan',
-			null
-		);
+		this.options.scan = utilities.tryParseArgs(args, '--scan', null);
 	}
+
+	if (!this.options.manual) {
+		this.options.manual = utilities.tryParseArgs(args, '--manual', null);
+	}
+
+	if (!this.options.yes) {
+		this.options.yes = utilities.tryParseArgs(args, '--yes', null);
+	}
+
 };
 
+SetupCommand.prototype.prompt = function(prompts, cb) {
+
+	if (this.options.yes) {
+		var newPrompts = [];
+		var answers = {};
+		for (var i=0; i<prompts.length; i++) {
+			var p = prompts[i];
+			if (p.type !== 'confirm' || p.default !== true) {
+				newPrompts.push(p);
+			} else {
+				answers[p.name] = true;
+			}
+		}
+		var cbOrg = cb;
+		cb = function(ans) {
+			ans = extend({}, ans, answers);
+			cbOrg(ans)
+		};
+		prompts = newPrompts;
+	}
+
+	prompt(prompts, cb);
+};
+
+// todo - this is also duplicated in the WiFiCommand too...
 SetupCommand.prototype.exit = function() {
 
 	console.log();
@@ -544,7 +594,6 @@ SetupCommand.prototype.exit = function() {
 		chalk.bold.magenta('<3'))
 	);
 	process.exit(0);
-
 };
 
 module.exports = SetupCommand;
