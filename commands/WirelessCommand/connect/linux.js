@@ -1,4 +1,3 @@
-var spawn = require('child_process').spawn;
 var wifiCli = '/usr/bin/nmcli';
 
 var runCommand = require('./executor').runCommand;

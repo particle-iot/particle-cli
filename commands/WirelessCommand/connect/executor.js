@@ -1,4 +1,4 @@
-
+var spawn = require('child_process').spawn;
 var extend = require('xtend');
 
 /***

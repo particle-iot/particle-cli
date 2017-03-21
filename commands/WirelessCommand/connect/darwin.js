@@ -1,4 +1,3 @@
-var spawn = require('child_process').spawn;
 var runCommand = require('./executor').runCommand;
 
 function getFirstWifiPort(cb) {

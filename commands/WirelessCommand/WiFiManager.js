@@ -4,7 +4,8 @@ var _ = require('lodash');
 var os = require('os');
 var connect = {
 	'darwin': require('./connect/darwin'),
-	'linux': require('./connect/linux')
+	'linux': require('./connect/linux'),
+	'windows': require('./connect/windows')
 };
 
 function WiFiManager(opts) {
