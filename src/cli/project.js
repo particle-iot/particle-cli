@@ -1,6 +1,6 @@
 
 
-export default ({root, factory}) => {
+export default ({ root, factory }) => {
 	const project = factory.createCategory(root, 'project', 'Manages application projects');
 
 	factory.createCommand(project, 'create', 'Create a new project in the current or specified directory.', {

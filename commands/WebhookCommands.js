@@ -123,7 +123,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 		if (eventName && !url && !deviceID) {
 			var filename = eventName;
 
-			if (utilities.getFilenameExt(filename) === '.json') {
+			if (utilities.getFilenameExt(filename).toLowerCase() === '.json') {
 				if (!fs.existsSync(filename)) {
 					console.log(filename + ' is not found.');
 					return -1;

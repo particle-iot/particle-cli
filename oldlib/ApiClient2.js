@@ -4,6 +4,12 @@ var request = require('request');
 var utilities = require('./utilities');
 var settings = require('../settings');
 
+/*
+ * This variant of APIClient uses callbacks rather than promises, to satisfy the needs of the setup command, which
+ * also uses callbacks. Login alters global state, setting the access token on the settings instance, but otheriwse
+ * the commands do not introduce side effects (e.g. no console output.)
+ */
+
 function APIClient2(baseUrl, token) {
 	this.__token = token || settings.access_token;
 	this.request = request.defaults({
@@ -20,6 +26,9 @@ APIClient2.prototype.clearToken = function() {
 	this.__token = null;
 };
 
+/**
+ * Used in setup command.
+ */
 APIClient2.prototype.login = function(clientId, user, pass, cb) {
 	this.createAccessToken(clientId, user, pass, function tokenResponse(err, dat) {
 		if (err) {
@@ -30,6 +39,7 @@ APIClient2.prototype.login = function(clientId, user, pass, cb) {
 	});
 };
 
+// used in setup process to create a new account
 APIClient2.prototype.createUser = function(user, pass, cb) {
 	if (!user || (user === '')
 		|| (!utilities.contains(user, '@'))
@@ -58,6 +68,11 @@ APIClient2.prototype.createUser = function(user, pass, cb) {
 	});
 };
 
+/**
+ * Creates an access token, updates the global settings with the new token, and the token in this instance.
+ * Used only by login above.
+ * todo - updating the token should probably be moved to login()
+ */
 APIClient2.prototype.createAccessToken = function(clientId, user, pass, cb) {
 
 	var self = this;
@@ -83,7 +98,7 @@ APIClient2.prototype.createAccessToken = function(clientId, user, pass, cb) {
 			cb(new Error(err || body.error));
 
 		} else {
-
+			// todo factor this out creating and updating should be separate
 			// update the token
 			if (body.access_token) {
 

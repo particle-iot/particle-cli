@@ -4,7 +4,8 @@ var _ = require('lodash');
 var os = require('os');
 var connect = {
 	'darwin': require('./connect/darwin'),
-	'linux': require('./connect/linux')
+	'linux': require('./connect/linux'),
+	'win32': require('./connect/windows')
 };
 
 function WiFiManager(opts) {
@@ -15,17 +16,19 @@ function WiFiManager(opts) {
 
 	this.platform = os.platform();
 	this.osConnect = connect[this.platform];
+	// todo - allow the connector to actively check for preconditions, specific OS version support etc
 	this.supported = {
 		getCurrentNetwork: !!(this.osConnect && this.osConnect.getCurrentNetwork),
 		connect: !!(this.osConnect && this.osConnect.connect)
 	};
 
 	this.__cache = undefined;
-};
+}
 
 WiFiManager.prototype.getCurrentNetwork = function(cb) {
 	if (!this.supported.getCurrentNetwork) {
 		// default to nothing
+		// todo - why not raise an error?
 		return cb();
 	}
 	this.osConnect.getCurrentNetwork(cb);
@@ -39,7 +42,6 @@ WiFiManager.prototype.scan = function scan(opts, cb) {
 			return cb(err);
 		}
 		if (dat.length) {
-
 			self.__cache = dat;
 			return cb(null, dat);
 		}
@@ -80,7 +82,7 @@ WiFiManager.prototype.connect = function(opts, cb) {
 		}
 		opts.ssid = ap.ssid;
 		return self.__connect(opts, cb);
-	};
+	}
 };
 
 

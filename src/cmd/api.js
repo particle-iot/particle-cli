@@ -6,7 +6,7 @@ import _ from 'lodash';
 import url from 'url';
 import chalk from 'chalk';
 
-export {convertApiError} from 'particle-commands';
+export { convertApiError } from 'particle-commands';
 
 class UnauthorizedError extends Error {
 	constructor(message) {

@@ -7,6 +7,7 @@ import * as cliargs from './nested-yargs';
 import commands from '../cli';
 import * as settings from '../../settings';
 import when from 'when';
+import chalk from 'chalk';
 
 export class CLI {
 
@@ -70,7 +71,7 @@ export class CLI {
 			 * @param {CLIRootCommandCategory} root The root command category to setup.
 			 */
 			setup(yargs, root) {
-				commands({root, factory: cliargs, app});
+				commands({ root, factory: cliargs, app });
 				if (includeOldCommands) {
 					app.addOldCommands(yargs);
 				}
@@ -203,17 +204,46 @@ export class CLI {
 		cli.handle(args, true);
 	}
 
+	hasArg(name, args) {
+		const index = args.indexOf(name);
+		if (index >= 0) {
+			args.splice(index, 1);
+			return true;
+		}
+		return false;
+	}
+
+	loadNativeModules(modules) {
+		let errors = [];
+		for (let module of modules) {
+			try {
+				require(module);
+			} catch (err) {
+				errors.push(`Error loading module '${module}': ${err.message}`);
+			}
+		}
+		return errors;
+	}
+
 	run(args) {
 		settings.transitionSparkProfiles();
 		settings.whichProfile();
 		settings.loadOverrides();
 
-		const index = args.indexOf('--no-update-check');
-		if (index >= 0) {
-			args.splice(index, 1);
-			settings.disableUpdateCheck = true;
+		const nativeErrors = this.loadNativeModules(settings.nativeModules);
+		if (nativeErrors.length) {
+			const log = require('./log');
+			for (let error of nativeErrors) {
+				log.error(error);
+			}
+			log.fatal(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
+			return;
 		}
-		updateCheck(settings.disableUpdateCheck).then(() => {
+
+		settings.disableUpdateCheck = this.hasArg('--no-update-check', args);
+		const force = this.hasArg('--force-update-check', args);
+
+		updateCheck(settings.disableUpdateCheck, force).then(() => {
 			const cmdargs = args.slice(2);       // remove executable and script
 			let promise;
 			if (this.isNewCommand(cmdargs)) {

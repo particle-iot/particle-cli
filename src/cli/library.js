@@ -12,7 +12,7 @@ function api() {
 	return api._instance;
 }
 
-export default ({root, factory}) => {
+export default ({ root, factory }) => {
 	const lib = factory.createCategory(root, 'library', 'Manages firmware libraries', { alias: 'libraries' });
 
 	factory.createCommand(lib, 'add', 'Adds a library to the current project.', {

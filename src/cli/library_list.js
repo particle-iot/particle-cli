@@ -1,9 +1,9 @@
-import {LibraryListCommand, LibraryListCommandSite} from '../cmd';
-import {convertApiError} from '../cmd/api';
-import {spin} from '../app/ui';
-import {buildAPIClient} from './apiclient';
+import { LibraryListCommand, LibraryListCommandSite } from '../cmd';
+import { convertApiError } from '../cmd/api';
+import { spin } from '../app/ui';
+import { buildAPIClient } from './apiclient';
 import chalk from 'chalk';
-import {formatLibrary} from './library_ui.js';
+import { formatLibrary } from './library_ui.js';
 import prompt from '../../oldlib/prompts';
 
 export class CLILibraryListCommandSite extends LibraryListCommandSite {
@@ -73,10 +73,10 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 		const result = {};
 		const sections = this.sectionNames();
 		for (let section of sections) {
-			result[section] = {page:1};
+			result[section] = { page:1 };
 		}
 		if (result.mine) {
-			result.mine.excludeBadges = {mine:true};
+			result.mine.excludeBadges = { mine:true };
 		}
 		return result;
 	}

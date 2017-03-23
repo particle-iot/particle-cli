@@ -100,7 +100,7 @@ class CLICommandItem {
 	 * @param {function} version    A function to retrieve the version
 	 * @param {string} epilogue     Printed at the end of the command block.
 	 */
-	configure(yargs, {options, setup, examples, version, epilogue}=this.buildOptions()) {
+	configure(yargs, { options, setup, examples, version, epilogue }=this.buildOptions()) {
 		if (options) {
 			this.fetchAliases(options);
 			yargs.options(options);
@@ -292,7 +292,7 @@ class CLICommandCategory extends CLICommandItem {
 		// add the subcommands of this category
 		_.forEach(this.commands, (command) => {
 			const builder = (yargs) => {
-				return { argv: command.parse(args, yargs)};
+				return { argv: command.parse(args, yargs) };
 			};
 
 			// const handler = (yargs) => {

@@ -1,8 +1,8 @@
-import {LibraryDeleteCommandSite, LibraryDeleteCommand} from '../cmd';
-import {spin} from '../app/ui';
+import { LibraryDeleteCommandSite, LibraryDeleteCommand } from '../cmd';
+import { spin } from '../app/ui';
 import log from '../app/log';
 import chalk from 'chalk';
-import {buildAPIClient} from './apiclient';
+import { buildAPIClient } from './apiclient';
 
 export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 

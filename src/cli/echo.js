@@ -2,7 +2,7 @@
  * A simple command to echo the passed in options and parameters.
  */
 
-export default ({root, factory}) => {
+export default ({ root, factory }) => {
 	factory.createCommand(root, 'echo', false, {
 		options: {
 			f: {

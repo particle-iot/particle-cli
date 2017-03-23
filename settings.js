@@ -100,7 +100,10 @@ var settings = {
 			systemFirmwareThree: 'system-part1-0.6.1-electron.bin'
 		}
 	},
-	commandMappings: path.join(__dirname, 'mappings.json')
+	commandMappings: path.join(__dirname, 'mappings.json'),
+	nativeModules: [
+		'serialport'
+	]
 };
 
 function envValue(varName, defaultValue) {
@@ -191,10 +194,13 @@ settings.readProfileData = function() {
 	var particleDir = settings.ensureFolder();
 	var proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
 	if (fs.existsSync(proFile)) {
-		var data = JSON.parse(fs.readFileSync(proFile));
-
-		settings.profile = (data) ? data.name : 'particle';
-		settings.profile_json = data;
+		try {
+			var data = JSON.parse(fs.readFileSync(proFile));
+			settings.profile = (data) ? data.name : 'particle';
+			settings.profile_json = data;
+		} catch (err) {
+			throw new Error('Error parsing file '+proFile+': '+err);
+		}
 	} else {
 		settings.profile = 'particle';
 		settings.profile_json = {};

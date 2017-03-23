@@ -1,5 +1,5 @@
 
-export default ({root, factory, app}) => {
+export default ({ root, factory, app }) => {
 	factory.createCommand(root, 'help', 'Provides extra details and options for a given command', {
 		options: {},
 		params: '[command] [subcommand...]',

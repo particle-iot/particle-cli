@@ -118,15 +118,12 @@ Interpreter.prototype = {
 	getCommandModule: function (name) {
 		var commands = this._commands;
 		for (var i = 0; i < commands.length; i++) {
-			try {
-				var c = commands[i];
-				if (c.name === name) {
-					return c;
-				}
-			} catch (ex) {
-				console.error('Error loading command ' + ex);
+			var c = commands[i];
+			if (c.name === name) {
+				return c;
 			}
 		}
+		throw Error('no command called '+name);
 	},
 
 

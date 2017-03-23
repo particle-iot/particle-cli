@@ -178,6 +178,11 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
+	/**
+	 * Creates an access token using the given client name.
+	 * @param clientName    The client name to use
+	 * @returns {Promise} Will print the access token to the console, along with the expiration date.
+	 */
 	createAccessToken: function (clientName) {
 
 		if (!clientName) {

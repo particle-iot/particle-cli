@@ -114,7 +114,6 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 				console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
 				console.log();
 				console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
-				console.log(chalk.cyan('>'), 'You may need to re-flash your application to the device.');
 				console.log();
 			};
 

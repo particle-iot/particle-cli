@@ -74,7 +74,7 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		if (!deviceId) {
-			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) ');
+			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) and my personal stream (my devices)');
 		} else if (deviceId === 'mine') {
 			console.log('Subscribing to ' + eventLabel + ' from my personal stream (my devices only) ');
 		} else {

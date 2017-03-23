@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.21.0 - 23 March 2017
+
+## Features
+
+* [#353](https://github.com/spark/particle-cli/pull/353) Wi-Fi switching on Windows
+* [#351](https://github.com/spark/particle-cli/pull/351) Library publish without a name
+
 ## 1.20.1 - 1 March 2017
 
 * Include binaries for firmware 0.6.1

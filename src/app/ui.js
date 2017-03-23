@@ -55,10 +55,10 @@ function retry(fToRetry, times, handler, finalHandler) {
 				handler(err);
 			}
 			return fToRetry.apply(fContext, args).catch(fAttempt);
-		};
+		}
 		return fAttempt();
 	};
-};
+}
 
 function render(templateName, data, supportingData) {
 	if (global.outputJson) {

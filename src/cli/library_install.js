@@ -1,7 +1,7 @@
-import {LibraryInstallCommand, LibraryInstallCommandSite} from '../cmd';
-import {convertApiError} from '../cmd/api';
+import { LibraryInstallCommand, LibraryInstallCommandSite } from '../cmd';
+import { convertApiError } from '../cmd/api';
 import chalk from 'chalk';
-import {buildAPIClient} from './apiclient';
+import { buildAPIClient } from './apiclient';
 
 export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 

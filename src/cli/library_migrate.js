@@ -1,4 +1,4 @@
-import {LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand} from '../cmd';
+import { LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand } from '../cmd';
 
 export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite {
 	constructor(argv, defaultDir) {
@@ -21,7 +21,7 @@ export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite 
 	}
 
 	notifyEnd(lib, data, err) {
-		this.result = {lib, data, err};
+		this.result = { lib, data, err };
 	}
 
 	handleError(lib, err) {

@@ -154,8 +154,10 @@ HelpCommand.prototype = extend(BaseCommand.prototype, {
 
 				lines = lines.concat(cmds.map(function (subcmdname) {
 					var subcmdObj = command[subcmdname];
-					var line = '   particle ' + name + ' ' + subcmdname;
-					return utilities.padRight(line, ' ', 25) + ' - ' + subcmdObj.does;
+					if (subcmdObj.does) {
+						var line = '   particle ' + name + ' ' + subcmdname;
+						return utilities.padRight(line, ' ', 25) + ' - ' + subcmdObj.does;
+					}
 				}));
 			} else if (command.optionsByName) {
 				lines.push('');

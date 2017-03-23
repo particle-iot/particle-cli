@@ -258,5 +258,14 @@ describe('Key Command', function() {
 		});
 	});
 
+	describe('keyAlgorithmForProtocol', function() {
+		it('returns rsa for TCP protocol', function() {
+			expect(key.keyAlgorithmForProtocol('tcp')).eql('rsa');
+		});
+
+		it('returns ec for UDP protocol', function() {
+			expect(key.keyAlgorithmForProtocol('udp')).eql('ec');
+		});
+	});
 
 });

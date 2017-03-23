@@ -1,8 +1,8 @@
-import {LibraryAddCommand, LibraryAddCommandSite} from '../cmd';
+import { LibraryAddCommand, LibraryAddCommandSite } from '../cmd';
 import chalk from 'chalk';
 import log from '../app/log';
-import {spin} from '../app/ui';
-import {buildAPIClient} from './apiclient';
+import { spin } from '../app/ui';
+import { buildAPIClient } from './apiclient';
 
 class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	constructor(argv, apiClient) {
