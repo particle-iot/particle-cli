@@ -953,7 +953,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				{
 					type: 'input',
 					name: 'deviceName',
-					message: 'What would you like to call your photon?'
+					message: 'What would you like to call your Photon (Enter to skip)?'
 				}
 			], function(ans) {
 				// todo - retrieve existing name of the device?
@@ -966,7 +966,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 						console.log();
 						self.exit();
 					}, function (err) {
-						console.error(alert, 'Error naming your photon: ', err);
+						console.error(alert, 'Error naming your Photon: ', err);
 						namePhoton(deviceId);
 					});
 				} else {
@@ -1131,10 +1131,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			});
 		});
 
-		when(done.promise).ensure(function () {
+		when(done.promise).finally(function () {
 			resetTimeout();
 			serialPort.removeListener('close', serialClosedEarly);
-			serialPort.close();
+			return when.promise(function (resolve) {
+				serialPort.close(resolve);
+			});
 		});
 
 		return done.promise;
@@ -1317,10 +1319,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				log.error('Something went wrong:', err);
 			});
 
-		when(wifiDone.promise).ensure(function () {
+		when(wifiDone.promise).finally(function () {
 			resetTimeout();
 			serialPort.removeListener('close', serialClosedEarly);
-			serialPort.close();
+			return when.promise(function (resolve) {
+				serialPort.close(resolve);
+			});
 		});
 
 		return wifiDone.promise;
@@ -1378,7 +1382,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				serialPort.removeAllListeners('open');
 				serialPort.removeAllListeners('data');
 				if (serialPort.isOpen()) {
-					serialPort.close();
+					return when.promise(function (resolve) {
+						serialPort.close(resolve);
+					});
 				}
 			}
 		});
