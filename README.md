@@ -660,6 +660,62 @@ void handlerFunction(const char *name, const char *data) {
 ```
 More examples and information about **webhooks** can be found here: https://docs.particle.io/guide/tools-and-features/webhooks/
 
+### particle token
+
+#### list
+Retrieve all the access token under your Particle account.
+
+```sh
+$ particle token list
+Checking with the cloud...
+? Using account cli@particle.io
+Please enter your password: *******
+
+spark-ide
+ Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
+ Expires at: null
+
+cloud-compile
+ Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
+ Expires at: null
+
+spark-cli
+ Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
+ Expires at: null
+
+__PASSWORD_ONLY__
+ Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
+ Expires at: 2017-06-12T13:42:46.308Z
+
+__PASSWORD_ONLY__
+ Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
+ Expires at: 2017-06-12T09:03:45.797Z
+
+__PASSWORD_ONLY__ (active)
+ Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
+ Expires at: 2017-06-12T08:44:16.371Z
+```
+
+#### new
+Create a new access token under your Particle account.
+
+```sh
+$ particle token new
+? Using account cli@particle.io
+Please enter your password: *******
+New access token expires on Fri Jun 23 2017 23:09:24 GMT+0800 (SGT)
+		da39a3ee5e6b4b0d3255bfef95601890afd80709
+
+#### revoke
+Revoke an access token under your Particle account.
+
+```sh
+$ particle token revoke ACCESS_TOKEN
+? Using account cli@particle.io
+Please enter your password: *******
+successfully deleted ACCESS_TOKEN
+```
+
 # Development
 
 ## Releasing a new version
