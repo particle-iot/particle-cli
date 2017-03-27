@@ -916,7 +916,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			{
 				type: 'input',
 				name: 'deviceName',
-				message: 'What would you like to call your photon?'
+				message: 'What would you like to call your Photon (Enter to skip)?'
 			}
 		], function(ans) {
 			// todo - retrieve existing name of the device?
