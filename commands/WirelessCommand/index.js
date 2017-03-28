@@ -325,7 +325,6 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 	}
 };
 
-
 WirelessCommand.prototype.monitor = function(args) {
 
 	var self = this;
@@ -406,6 +405,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 		self.newSpin('Obtaining magical secure claim code from the cloud...').start();
 		api.getClaimCode(undefined, afterClaim);
 	}
+
 	function afterClaim(err, dat) {
 
 		self.stopSpin();
@@ -463,6 +463,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 	function manualReady() {
 		self.__configure(null, manualConfigure);
 	}
+
 	function manualConfigure(err, dat) {
 		cb(err, dat);
 	}
@@ -566,6 +567,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		self.newSpin('Asking the Photon to scan for nearby Wi-Fi networks...').start();
 		retry = setTimeout(start, 1000);
+
 	}
 
 	function manualChoices(ans) {
@@ -860,7 +862,6 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 
 		self.stopSpin();
 		if (err) {
-
 			if (err.code === 'ENOTFOUND') {
 				// todo - limit the number of retries here.
 				console.log(alert, 'Network not ready yet, retrying...');

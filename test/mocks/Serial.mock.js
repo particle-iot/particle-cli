@@ -1,4 +1,4 @@
-var extend = require('extend');
+var extend = require('xtend');
 
 
 function MockSerial() {
