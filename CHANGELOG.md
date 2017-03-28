@@ -6,6 +6,7 @@
 
 * [#353](https://github.com/spark/particle-cli/pull/353) Wi-Fi switching on Windows
 * [#351](https://github.com/spark/particle-cli/pull/351) Library publish without a name
+* White list files when uploading library to avoid publishing unnecessary files
 
 ## 1.20.1 - 1 March 2017
 
