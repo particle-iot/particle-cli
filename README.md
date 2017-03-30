@@ -41,56 +41,10 @@ node bin/particle help
   - [Updating Firmware](#updating-firmware)
     - [Photon/P1/Electron](#photonp1electron)
       - [particle update](#particle-update)
-    - [Core](#core)
-      - [Apply the CC3000 patch](#apply-the-cc3000-patch)
-      - [Performing a "Deep update"](#performing-a-deep-update)
   - [Command Reference](#command-reference)
-    - [particle setup wifi](#particle-setup-wifi)
-    - [particle login](#particle-login)
-    - [particle logout](#particle-logout)
-    - [particle list](#particle-list)
-    - [particle device add](#particle-device-add)
-    - [particle device rename](#particle-device-rename)
-    - [particle device remove](#particle-device-remove)
-    - [particle flash](#particle-flash)
-      - [Flashing a directory](#flashing-a-directory)
-      - [Flashing one or more source files](#flashing-one-or-more-source-files)
-      - [Flashing a known app](#flashing-a-known-app)
-      - [Compiling remotely and Flashing locally](#compiling-remotely-and-flashing-locally)
-    - [particle compile](#particle-compile)
-      - [compiling against a particular system firmware target](#compiling-against-a-particular-system-firmware-target)
-      - [compiling a directory](#compiling-a-directory)
-      - [example particle.include](#example-particleinclude)
-      - [example particle.ignore](#example-particleignore)
-      - [Compiling one or more source files](#compiling-one-or-more-source-files)
-      - [Compiling in a directory containing project files](#compiling-in-a-directory-containing-project-files)
-    - [particle call](#particle-call)
-    - [particle get](#particle-get)
-    - [particle monitor](#particle-monitor)
-    - [particle identify](#particle-identify)
-    - [particle subscribe](#particle-subscribe)
-    - [particle publish](#particle-publish)
-    - [particle serial list](#particle-serial-list)
-    - [particle serial monitor](#particle-serial-monitor)
-    - [particle serial flash](#particle-serial-flash)
-    - [particle keys doctor](#particle-keys-doctor)
-    - [particle keys new](#particle-keys-new)
-    - [particle keys load](#particle-keys-load)
-    - [particle keys save](#particle-keys-save)
-    - [particle keys send](#particle-keys-send)
-    - [particle keys server](#particle-keys-server)
-      - [Encoding a server address and port](#encoding-a-server-address-and-port)
-    - [particle keys address](#particle-keys-address)
-    - [particle keys protocol](#particle-keys-protocol)
-    - [particle config](#particle-config)
-    - [particle binary inspect file.bin](#particle-binary-inspect-filebin)
-    - [particle webhook](#particle-webhook)
-    - [particle token](#particle-token)
-      - [list](#list)
-      - [new](#new)
-- [Check old firmware version](#check-old-firmware-version)
-- [Flash new system firmware](#flash-new-system-firmware)
-- [Verify new firmware version](#verify-new-firmware-version)
+- [Development](#development)
+  - [Releasing a new version](#releasing-a-new-version)
+  - [Updating system firmware](#updating-system-firmware)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -128,61 +82,10 @@ If you wish to easily update the system firmware running on your device to a lat
 1. Run `particle update`.
 
 
-### particle token
+## Command Reference
 
-#### list
-Retrieve all the access token under your Particle account.
+For the full list of commands, please see the [CLI command reference](https://docs.particle.io/reference/cli/).
 
-```sh
-$ particle token list
-Checking with the cloud...
-? Using account cli@particle.io
-Please enter your password: *******
-
-spark-ide
- Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
- Expires at: null
-
-cloud-compile
- Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
- Expires at: null
-
-spark-cli
- Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
- Expires at: null
-
-__PASSWORD_ONLY__
- Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
- Expires at: 2017-06-12T13:42:46.308Z
-
-__PASSWORD_ONLY__
- Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
- Expires at: 2017-06-12T09:03:45.797Z
-
-__PASSWORD_ONLY__ (active)
- Token:      da39a3ee5e6b4b0d3255bfef95601890afd80709
- Expires at: 2017-06-12T08:44:16.371Z
-```
-
-#### new
-Create a new access token under your Particle account.
-
-```sh
-$ particle token new
-? Using account cli@particle.io
-Please enter your password: *******
-New access token expires on Fri Jun 23 2017 23:09:24 GMT+0800 (SGT)
-		da39a3ee5e6b4b0d3255bfef95601890afd80709
-
-#### revoke
-Revoke an access token under your Particle account.
-
-```sh
-$ particle token revoke ACCESS_TOKEN
-? Using account cli@particle.io
-Please enter your password: *******
-successfully deleted ACCESS_TOKEN
-```
 
 # Development
 
