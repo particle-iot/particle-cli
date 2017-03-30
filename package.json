@@ -85,6 +85,7 @@
   "devDependencies": {
     "babel-cli": "^6.10.1",
     "babel-eslint": "^7.1.1",
+    "babel-istanbul": "^0.12.2",
     "babel-plugin-add-module-exports": "^0.1.2",
     "babel-preset-es2015": "^6.5.0",
     "babel-register": "^6.5.2",
@@ -132,7 +133,7 @@
     "all": "npm run lint && npm run test && npm run accept",
     "accept": "npm run compile && accept/run",
     "babel-watch": "babel src -d dist --watch --source-maps",
-    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec test/ --compilers js:babel-register",
+    "coverage": "babel-node node_modules/.bin/babel-istanbul cover _mocha test/app test/cli test/integration test/oldcmd test/oldcmd/WirelessCommand/connect test/oldlib  --report html -- -R spec",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec --compilers js:babel-register test/ && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
     "lint": "eslint -f unix src/**/*.js",

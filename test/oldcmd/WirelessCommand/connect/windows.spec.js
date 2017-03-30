@@ -12,8 +12,8 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 require('sinon-as-promised');
 
-const connector = require('../../../../commands/WirelessCommand/connect/windows.js');
-var Connector = connector.Connector;
+const windowsWiFi = require('../../../../commands/WirelessCommand/connect/windows.js');
+var Connector = windowsWiFi.Connector;
 
 describe('Windows wifi', function() {
 	var sut;
@@ -31,7 +31,7 @@ describe('Windows wifi', function() {
 				expect(data).to.be.eql(value);
 				expect(err).to.be.not.ok;
 			}
-			return connector.asCallback(Promise.resolve(value), handler);
+			return windowsWiFi.asCallback(Promise.resolve(value), handler);
 		});
 
 		it('handles rejection', function() {
@@ -41,7 +41,7 @@ describe('Windows wifi', function() {
 				expect(err).to.be.eql(rejection);
 				expect(data).to.be.undefined;
 			}
-			return connector.asCallback(Promise.reject(rejection), handler);
+			return windowsWiFi.asCallback(Promise.reject(rejection), handler);
 		});
 	});
 
@@ -472,6 +472,101 @@ describe('Windows wifi', function() {
 				expect(profiles).to.eql(['profile 1', 'profile 2']);
 			});
 		});
+	});
 
+	describe('_checkHasInterface', function() {
+		var msg = 'no Wi-Fi interface detected';
+		it('raises an error when the interface is falsey', function() {
+			function fn() {
+				return sut._checkHasInterface();
+			}
+			expect(fn).to.throw(Error, msg);
+		});
+
+		it('raises an error when the interface has no name', function() {
+			function fn() {
+				return sut._checkHasInterface( { ssid: 'abcd' });
+			}
+			expect(fn).to.throw(Error, msg);
+		});
+
+		it('returns the interface name on success', function() {
+			expect(sut._checkHasInterface( { ssid: 'abcd', name: 'foo' })).to.eql('foo');
+		});
+	});
+
+	describe('module connect', function() {
+		it('retrieves the ssid from the options and calls connect', function(done) {
+			sut.connect = sinon.stub().resolves({ssid:'abcd2'});
+			function cb(err, iface) {
+				expect(err).to.be.eql(null);
+				expect(iface).to.be.eql({ssid:'abcd2'});
+				expect(sut.connect).to.have.been.calledWith('abcd');
+				done();
+			}
+			windowsWiFi.connect({ssid:'abcd'}, cb, sut);
+		});
+
+		it('calls the handler with error', function(done) {
+			var error = new Error('I do like Mondays');
+			sut.connect = sinon.stub().rejects(error);
+			function cb(err, iface) {
+				expect(err).to.be.eql(error);
+				expect(iface).to.be.eql(undefined);
+				expect(sut.connect).to.have.been.calledWith('abcd');
+				done();
+			}
+			windowsWiFi.connect({ssid:'abcd'}, cb, sut);
+		});
+	});
+
+	describe('module getCurrentNetwork', function() {
+		it('retrieves the current network via current()', function(done) {
+			sut.current = sinon.stub().resolves('abcd2');
+			function cb(err, ssid) {
+				expect(err).to.be.eql(null);
+				expect(ssid).to.be.eql('abcd2');
+				expect(sut.current).to.have.been.calledWith();
+				done();
+			}
+			windowsWiFi.getCurrentNetwork(cb, sut);
+		});
+
+		it('calls the handler with error', function(done) {
+			var error = new Error('I do like Mondays');
+			sut.current = sinon.stub().rejects(error);
+			function cb(err, ssid) {
+				expect(err).to.be.eql(error);
+				expect(ssid).to.be.eql(undefined);
+				expect(sut.current).to.have.been.calledWith();
+				done();
+			}
+			windowsWiFi.getCurrentNetwork(cb, sut);
+		});
+	});
+
+	describe('_connectProfile', function() {
+		it('returns the ssid', function() {
+			sut._execWiFiCommand = sinon.stub().resolves();
+			sut.waitForConnected = sinon.stub().resolves();
+			return sut._connectProfile('abcd', 'iface')
+				.then(function (result) {
+					expect(result).to.eql({ssid:'abcd'});
+					expect(sut._execWiFiCommand).to.have.been.calledWith(['connect', 'name=abcd', 'interface=iface']);
+					expect(sut.waitForConnected).to.have.been.calledWith('abcd', 'iface', 20, 500);
+				});
+		});
+	});
+	
+	describe('waitForConnected', () => {
+		it('timees out when the network never reaches the given value', () => {
+			sut.current = sinon.stub().resolves(undefined);
+			return expect(sut.waitForConnected('abcd', 'iface', 2, 1)).to.eventually.be.rejectedWith(Error, /timeout/);
+		});
+
+		it('returns the ssid when the network  reaches the given value', () => {
+			sut.current = sinon.stub().resolves('abcd');
+			return expect(sut.waitForConnected('abcd', 'iface', 2, 1)).to.eventually.be.equal('abcd');
+		});
 	});
 });
