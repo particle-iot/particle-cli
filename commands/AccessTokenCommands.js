@@ -65,7 +65,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 					name: 'password',
 					message: 'Using account ' + settings.username + '\nPlease enter your password:'
 				}
-			], function (answers) {
+			]).then(function (answers) {
 				creds.resolve({
 					username: settings.username,
 					password: answers.password

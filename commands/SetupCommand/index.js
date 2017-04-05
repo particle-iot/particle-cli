@@ -101,7 +101,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 			message: 'Would you like to use this account?',
 			default: true
 
-		}], switchChoice);
+		}]).then(switchChoice);
 	}
 
 	function switchChoice(ans) {
@@ -135,7 +135,7 @@ SetupCommand.prototype.setup = function setup(shortcut) {
 							{ name: 'Login', value: true }
 						]
 					}
-				], function(answers) {
+				]).then(function(answers) {
 					if (answers.login) {
 						return self.login(nextFn);
 					}
@@ -206,7 +206,7 @@ SetupCommand.prototype.signup = function signup(cb, tries) {
 			return true;
 		}
 
-	}], signupInput);
+	}]).then(signupInput);
 
 	function signupInput(ans) {
 		if (ans.confirm !== ans.password) {
@@ -328,7 +328,7 @@ SetupCommand.prototype.findDevice = function() {
 			message: 'Would you like to scan for nearby Photons in Wi-Fi setup mode?',
 			default: true
 
-		}], scanChoice);
+		}]).then(scanChoice);
 
 		function scanChoice(ans) {
 			if (ans.scan) {
@@ -418,7 +418,7 @@ SetupCommand.prototype.findDevice = function() {
 			message: 'Would you like to continue with this one?',
 			default: true
 
-		}], cb);
+		}]).then(cb);
 
 	}
 };
@@ -435,7 +435,7 @@ SetupCommand.prototype.setupCore = function(device) {
 				name: 'online',
 				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is breathing ' + chalk.bold.cyan('CYAN'),
 			}
-		], function() {
+		]).then(function() {
 			online.resolve();
 		});
 		return online.promise;
@@ -450,7 +450,7 @@ SetupCommand.prototype.setupCore = function(device) {
 				message: 'Is your core blinking ' + chalk.bold.blue('BLUE'),
 				default: true
 			}
-		], function(answer) {
+		]).then(function(answer) {
 			if (answer.listen) {
 				console.log('Great! Lets give this another try...');
 			} else {
@@ -496,7 +496,7 @@ SetupCommand.prototype.setupCore = function(device) {
 					name: 'rainbows',
 					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is excitedly shouting rainbows',
 				}
-			], function() {
+			]).then(function() {
 				rainbow.resolve();
 			});
 			return rainbow.promise;
@@ -509,7 +509,7 @@ SetupCommand.prototype.setupCore = function(device) {
 					name: 'coreName',
 					message: 'What would you like to call your core?'
 				}
-			], function(ans) {
+			]).then(function(ans) {
 				deviceName = ans.coreName;
 				sequence([
 					function() {
@@ -561,8 +561,12 @@ SetupCommand.prototype.checkArguments = function(args) {
 
 };
 
-SetupCommand.prototype.prompt = function(prompts, cb) {
-
+SetupCommand.prototype.prompt = function(prompts) {
+	var cb = function(result) {
+		return new Promise((resolve, reject) => {
+			resolve(result);
+		});
+	};
 	if (this.options.yes) {
 		var newPrompts = [];
 		var answers = {};
@@ -574,15 +578,16 @@ SetupCommand.prototype.prompt = function(prompts, cb) {
 				answers[p.name] = true;
 			}
 		}
-		var cbOrg = cb;
 		cb = function(ans) {
 			ans = extend({}, ans, answers);
-			cbOrg(ans)
+			return new Promise((resolve, reject) => {
+				resolve(ans);
+			});
 		};
 		prompts = newPrompts;
 	}
 
-	prompt(prompts, cb);
+	return prompt(prompts).then(cb);
 };
 
 // todo - this is also duplicated in the WiFiCommand too...

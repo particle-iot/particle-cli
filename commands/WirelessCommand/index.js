@@ -146,7 +146,7 @@ WirelessCommand.prototype.manualAsk = function manualAsk(cb) {
 		message: "We can still proceed in 'manual' mode. Would you like to continue?",
 		default: true
 
-	}], cb);
+	}]).then(cb);
 };
 
 function manualDone(err, dat) {
@@ -213,7 +213,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			message: 'Multiple Photons detected nearby. Would you like to select one to setup now?',
 			default: true,
 
-		}], multipleChoice);
+		}]).then(multipleChoice);
 	} else if (detectedDevices.length === 1) {
 
 		// Perform wireless setup?
@@ -227,7 +227,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			),
 			default: true,
 
-		}], singleChoice);
+		}]).then(singleChoice);
 	} else {
 
 		console.log(
@@ -244,7 +244,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 			message: strings.monitorPrompt,
 			default: true
 
-		}], monitorChoice);
+		}]).then(monitorChoice);
 	}
 
 	function manualChoice(ans) {
@@ -282,7 +282,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 				message: 'Please select which Photon you would like to setup at this time.',
 				choices: detectedDevices
 
-			}], multipleAnswer);
+			}]).then(multipleAnswer);
 		}
 		self.exit();
 	}
@@ -309,7 +309,7 @@ WirelessCommand.prototype.__networks = function networks(err, dat) {
 				message: strings.monitorPrompt,
 				default: true
 
-			}], monitorChoice);
+			}]).then(monitorChoice);
 		}
 	}
 
@@ -387,7 +387,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 					message: 'Have you reconnected to the internet?',
 					default: true,
 					name: 'reconnected'
-				}], function (ans) {
+				}]).then(function (ans) {
 					if (ans.reconnected) {
 						return getClaim();
 					}
@@ -456,7 +456,7 @@ WirelessCommand.prototype.setup = function setup(photon, cb) {
 				name: 'connect',
 				message: util.format('Please connect to the %s network now. Press enter when ready.', photon || 'Photon\'s Wi-Fi')
 
-			}], manualReady);
+			}]).then(manualReady);
 		}
 	}
 
@@ -506,6 +506,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 	var retry;
 	var retries = 0;
 	var security;
+	var params = {};
+	var isEnterprise = false;
 
 	protip('If you want to skip scanning, or your network is configured as a');
 	protip(chalk.cyan('non-broadcast'), 'network, please choose No to the next prompt to enter manual mode.');
@@ -518,7 +520,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		message: 'Shall I have the Photon scan for available Wi-Fi networks?',
 		default: true
 
-	}], scanChoice);
+	}]).then(scanChoice);
 
 	function scanChoice(ans) {
 
@@ -544,7 +546,13 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 					'WPA2 AES',
 					'WPA2 TKIP',
 					'WPA2 Mixed',
-					'WPA2'
+					'WPA2',
+					'WPA2 Enterprise',
+					'WPA2 Enterprise AES',
+					'WPA2 Enterprise TKIP',
+					'WPA2 Enterprise Mixed',
+					'WPA Enterprise AES',
+					'WPA Enterprise TKIP'
 				]
 
 			}, {
@@ -553,7 +561,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				name: 'password',
 				message: 'Please enter your Wi-Fi network password:',
 				when: function(ans) {
-					return ans.security !== 'None';
+					return ans.security !== 'None' && ans.security.indexOf('Enterprise') < 0;
 				},
 				validate: function(input) {
 					if (input && input.trim()) {
@@ -562,13 +570,97 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 					return "You must enter a password. Let's try again...";
 				}
 
-			}], manualChoices);
+			}]).then(manualChoices);
 		}
 
 		self.newSpin('Asking the Photon to scan for nearby Wi-Fi networks...').start();
 		retry = setTimeout(start, 1000);
 
 	}
+
+	function enterpriseChoices(ans) {
+		self.prompt([
+			{
+				type: 'list',
+				name: 'eap',
+				message: 'EAP Type',
+				choices: [
+					'PEAP/MSCHAPv2',
+					'EAP-TLS'
+				]
+			},
+			{
+				type: 'input',
+                name: 'username',
+                message: 'Username',
+                when: function(ans) {
+                	return ans.eap == 'PEAP/MSCHAPv2';
+                },
+                validate: function (val) {
+                    return !!val;
+                }
+        	},
+        	{
+				type: 'input',
+                name: 'password',
+                message: 'Password',
+                when: function(ans) {
+                	return ans.eap == 'PEAP/MSCHAPv2';
+                },
+                validate: function (val) {
+                    return !!val;
+                }
+        	},
+        	{
+        		type: 'editor',
+                name: 'client_certificate',
+                message: 'Client certificate in PEM format',
+                when: function(ans) {
+                	return ans.eap == 'EAP-TLS';
+                },
+                validate: function (val) {
+                    return !!val;
+                }
+        	},
+        	{
+        		type: 'editor',
+                name: 'private_key',
+                message: 'Private key in PEM format',
+                when: function(ans) {
+                	return ans.eap == 'EAP-TLS';
+                },
+                validate: function (val) {
+                    return !!val;
+                }
+        	},
+        	{
+        		type: 'input',
+                name: 'outer_identity',
+                message: 'Outer identity (optional)'
+        	},
+        	{
+        		type: 'confirm',
+        		name: 'provide_root_ca',
+        		message: 'Would you like to provide CA certificate?',
+        		default: true
+        	},
+        	{
+				type: 'editor',
+                name: 'root_ca',
+                message: 'CA certificate in PEM format',
+                when: function(answers) {
+                	return answers.provide_root_ca;
+                },
+                validate: function (val) {
+                    return !!val;
+                },
+                default: null
+        	}
+		]).then(function(res) {
+			res = _.merge(ans, res);
+			networkChoices(res);
+		});
+	};
 
 	function manualChoices(ans) {
 
@@ -577,17 +669,21 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log(alert, "We can't setup your Photon without a Wi-Fi network! Let's try again...");
 			return scanChoice({ auto: false });
 		}
-		if (!ans.password && ans.security !== 'None') {
+		if (!ans.password && ans.security !== 'None' && ans.security.indexOf('Enterprise') < 0) {
 
 			console.log(alert, "You chose a security type that requires a password! Let's try again...");
 			return scanChoice({ auto: false });
 		}
+		if (ans.security.indexOf('Enterprise') >= 0) {
+			return enterpriseChoices({
+				network: ans.network,
+				security: ans.security.toLowerCase().replace(' ', '_')
+			});
+		}
 		networkChoices({
-
 			network: ans.network,
 			password: ans.password,
 			security: ans.security.toLowerCase().replace(' ', '_')
-
 		});
 	}
 
@@ -609,7 +705,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				message: 'Would you like to manually enter your Wi-Fi network configuration?',
 				default: true
 
-			}], function manualAuto(ans) {
+			}]).then(function manualAuto(ans) {
 				return scanChoice({auto:!ans.manual});
 			});
 			return;
@@ -654,10 +750,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			name: 'network',
 			message: 'Please select the network to which your Photon should connect:',
 			choices: networks
-		}], __networkChoice);
+		}]).then(__networkChoice);
 
 		function __networkChoice(ans) {
-
 			if (ans.network === strings.rescanLabel) {
 
 				console.log();
@@ -676,13 +771,17 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				return networkChoices({ network: network });
 			}
 
-			self.prompt([{
+			if (list[network].sec & self.__sap.securityValue('enterprise')) {
+				enterpriseChoices({network: network, security: list[network].sec});
+			} else {
+				self.prompt([{
 
-				type: 'input',
-				name: 'password',
-				message: 'Please enter your network password:'
+					type: 'input',
+					name: 'password',
+					message: 'Please enter your network password:'
 
-			}], __passwordChoice);
+				}]).then(__passwordChoice);
+			}
 		}
 		function __passwordChoice(ans) {
 			networkChoices({ network: network, password: ans.password });
@@ -710,15 +809,33 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			'Security:',
 			chalk.bold.cyan(visibleSecurity)
 		);
-		console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
+		if (visibleSecurity.toLowerCase().indexOf('enterprise') < 0) {
+			console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
+		} else {
+			isEnterprise = true;
+			console.log(arrow, 'EAP Type: ', chalk.bold.cyan(ans.eap.toUpperCase()));
+			if (ans.eap.toLowerCase() == 'peap/mschapv2') {
+				console.log(arrow, 'Username: ', chalk.bold.cyan(ans.username));
+				console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
+			} else {
+				// EAP-TLS
+				console.log(arrow, 'Client certificate: ', chalk.bold.cyan(ans.client_certificate ? '[present]' : '[empty]'));
+				console.log(arrow, 'Private key: ', chalk.bold.cyan(ans.private_key ? '[present]' : '[empty]'));
+			}
+			console.log(arrow, 'Outer identity:', chalk.bold.cyan(ans.outer_identity || '(default - anonymous)'));
+			console.log(arrow, 'CA certificate: ', chalk.bold.cyan(ans.root_ca ? '[present]' : '[empty]'));
+		}
 		console.log();
+
+		params = ans;
+		params.visibleSecurity = visibleSecurity;
 
 		self.prompt([{
 			type: 'confirm',
 			name: 'continue',
 			message: 'Would you like to continue with the information shown above?',
 			default: true,
-		}], continueChoice);
+		}]).then(continueChoice);
 	}
 
 	function continueChoice(ans) {
@@ -729,7 +846,9 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			return self.__configure(ssid, cb);
 		}
 		self.__network = network;
-		self.__password = password;
+		if (!isEnterprise) {
+			self.__password = password;
+		}
 
 		info();
 	}
@@ -782,7 +901,14 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		var conf = {
 			ssid: network,
 			security: security,
-			password: password
+			password: password,
+
+			eap: params.eap,
+			username: params.username,
+			client_certificate: params.client_certificate,
+			private_key: params.private_key,
+			outer_identity: params.outer_identity,
+			root_ca: params.root_ca
 		};
 
 		clearTimeout(retry);
@@ -814,7 +940,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 		self.stopSpin();
 		//console.log(arrow, chalk.bold.white('Configuration complete! You\'ve just won the internet!'));
 
-		if (!self.__manual) {
+		if (!self.__manual && !isEnterprise) {
 			reconnect(false);
 		} else {
 			manualReconnectPrompt();
@@ -826,7 +952,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			name: 'reconnect',
 			type: 'input',
 			message: 'Please re-connect your computer to your Wi-Fi network now. Press enter when ready.'
-		}], manualPrompt);
+		}]).then(manualPrompt);
 	}
 
 	function manualPrompt() {
@@ -900,7 +1026,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' }
 			]
 
-		}], recheck);
+		}]).then(recheck);
 
 		function recheck(ans) {
 			if (ans.recheck === 'recheck') {
@@ -918,7 +1044,7 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 				name: 'deviceName',
 				message: 'What would you like to call your Photon (Enter to skip)?'
 			}
-		], function(ans) {
+		]).then(function(ans) {
 			// todo - retrieve existing name of the device?
 			var deviceName = ans.deviceName;
 			if (deviceName) {

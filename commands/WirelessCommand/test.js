@@ -76,7 +76,7 @@ TestWiFi.prototype.selectNetwork = function() {
 				name: 'selected',
 				message: 'Please select which Photon network you would like to switch to:',
 				choices: photons
-			}], function(ans) {
+			}]).then(function(ans) {
 				if (ans.selected) {
 					self.setNext(function() {
 						console.log('Restoring to original network', self.originalNetwork);
@@ -119,7 +119,7 @@ TestWiFi.prototype.connect = function(ssid) {
 				message: 'Is that correct? (Please verify your computer is connected to this network.)',
 				default: true,
 				name: 'correct'
-			}], function (ans) {
+			}]).then(function (ans) {
 				if (ans.correct) {
 					self.next();
 					return;

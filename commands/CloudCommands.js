@@ -158,7 +158,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						name: 'transfer',
 						message: 'That device belongs to someone else. Would you like to request a transfer?',
 						default: true
-					}], function(ans) {
+					}]).then(function(ans) {
 						if (ans.transfer) {
 							return api.claimDevice(deviceid, true).then(function(body) {
 								console.log('Transfer #' + body.transfer_id + ' requested. You will receive an email if your transfer is approved or denied.');
@@ -357,7 +357,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 						name: 'confirmota',
 						type: 'input',
 						message: 'Confirm the amount of data usage in MB:'
-					}], function(ans) {
+					}]).then(function(ans) {
 						if (ans.confirmota !== dataUsage) {
 							return reject('User cancelled');
 						}
@@ -448,7 +448,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 							'P1',
 							'Electron'
 						]
-					}], function(ans) {
+					}]).then(function(ans) {
 						var spec = _.find(specs, { productName: ans.type });
 						var binary = spec && spec.knownApps[filePath];
 
@@ -815,7 +815,7 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 					return !ans.keep;
 				}
 			}
-		], function doit(ans) {
+		]).then(function doit(ans) {
 			return allDone.resolve(self.doLogout(ans.keep, ans.password));
 		});
 		return allDone.promise;

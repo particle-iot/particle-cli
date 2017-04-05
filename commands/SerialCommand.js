@@ -441,7 +441,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					name: 'listening',
 					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE')
 				}
-			], function() {
+			]).then(function() {
 				resolve();
 			});
 		});
@@ -530,7 +530,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					name: 'rescan',
 					message: 'Uh oh, no networks found. Try again?',
 					default: true
-				}], function(answers) {
+				}]).then(function(answers) {
 					if (answers.rescan) {
 						return self._scanNetworks(next);
 					}
@@ -645,7 +645,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
 				default: true
 			}
-		], function (ans) {
+		]).then(function (ans) {
 			if (ans.scan) {
 				return self._scanNetworks(function (networks) {
 					self._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
@@ -706,7 +706,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				},
 				default: true
 			}
-		], function (answers) {
+		]).then(function (answers) {
 			if (answers.ap === rescanLabel) {
 				return self._scanNetworks(function (networks) {
 					self._getWifiInformation(device, networks).then(wifiInfo.resolve, wifiInfo.reject);
@@ -934,7 +934,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' }
 				]
 
-			}], recheck);
+			}]).then(recheck);
 
 			function recheck(ans) {
 				if (ans.recheck === 'recheck') {
@@ -955,7 +955,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					name: 'deviceName',
 					message: 'What would you like to call your Photon (Enter to skip)?'
 				}
-			], function(ans) {
+			]).then(function(ans) {
 				// todo - retrieve existing name of the device?
 				var deviceName = ans.deviceName;
 				if (deviceName) {
@@ -1142,10 +1142,16 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		return done.promise;
 	},
 
-    serialWifiConfig: function (device, ssid, securityType, password) {
+    serialWifiConfig: function (device, ssid, securityType, password, opts) {
 		if (!device) {
 			return when.reject('No serial port available');
 		}
+
+		if (!opts) {
+			opts = {};
+		}
+
+		var isEnterprise = false;
 
 		log.verbose('Attempting to configure Wi-Fi on ' + device.port);
 
@@ -1197,16 +1203,22 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				filter: function(input) {
 					return input.trim();
 				}
-			}], function(ans) {
+			}]).then(function(ans) {
 				cb(ans.ssid + '\n', startTimeout.bind(self, 5000));
 			});
 		});
 
-		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', function(cb) {
+		function parseSecurityType(ent, cb) {
 			resetTimeout();
 			if (securityType) {
 				var security = 3;
-				if (securityType.indexOf('WPA2') >= 0) {
+				if (securityType.indexOf('WPA2') >= 0 && securityType.indexOf('802.1x') >= 0) {
+					security = 5;
+					isEnterprise = true;
+				} else if (securityType.indexOf('WPA') >= 0 && securityType.indexOf('802.1x') >= 0) {
+					security = 4;
+					isEnterprise = true;
+				} else if (securityType.indexOf('WPA2') >= 0) {
 					security = 3;
 				} else if (securityType.indexOf('WPA') >= 0) {
 					security = 2;
@@ -1219,20 +1231,33 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return cb(security + '\n', startTimeout.bind(self, 10000));
 			}
 
+			var choices = [
+				{ name: 'WPA2', value: 3 },
+				{ name: 'WPA', value: 2 },
+				{ name: 'WEP', value: 1 },
+				{ name: 'Unsecured', value: 0 }
+			];
+
+			if (ent) {
+				choices.push({name: 'WPA Enterprise', value: 4});
+				choices.push({name: 'WPA2 Enterprise', value: 5});
+			}
+
 			inquirer.prompt([{
 				type: 'list',
 				name: 'security',
 				message: 'Security Type',
-				choices: [
-					{ name: 'WPA2', value: 3 },
-					{ name: 'WPA', value: 2 },
-					{ name: 'WEP', value: 1 },
-					{ name: 'Unsecured', value: 0 }
-				]
-			}], function(ans) {
+				choices: choices
+			}]).then(function(ans) {
+				if (ans.security > 3) {
+					isEnterprise = true;
+				}
 				cb(ans.security + '\n', startTimeout.bind(self, 10000));
 			});
-		});
+		}
+
+		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', parseSecurityType.bind(null));
+		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2, 4=WPA Enterprise, 5=WPA2 Enterprise:', parseSecurityType.bind(true));
 
 		st.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', function(cb) {
 			resetTimeout();
@@ -1258,10 +1283,146 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					{ name: 'TKIP', value: 2 },
 					{ name: 'AES', value: 1 }
 				]
-			}], function(ans) {
+			}]).then(function(ans) {
 				cb(ans.cipher + '\n', startTimeout.bind(self, 5000));
 			});
 		});
+
+		st.addTrigger('EAP Type 0=PEAP/MSCHAPv2, 1=EAP-TLS:', function(cb) {
+			resetTimeout();
+
+			isEnterprise = true;
+
+			if (opts.eap !== undefined) {
+				var eapType = 0;
+				if (opts.eap.toLowerCase().indexOf('peap') >= 0) {
+					eapType = 0;
+				} else if (opts.eap.toLowerCase().indexOf('tls')) {
+					eapType = 1;
+				}
+				return cb(eapType + '\n', startTimeout.bind(self, 5000));
+			}
+
+			inquirer.prompt([{
+				type: 'list',
+				name: 'eap',
+				message: 'EAP Type',
+				choices: [
+					{ name: 'PEAP/MSCHAPv2', value: 0 },
+					{ name: 'EAP-TLS', value: 1 }
+				]
+			}]).then(function(ans) {
+				cb(ans.eap + '\n', startTimeout.bind(self, 5000));
+			});
+		});
+
+		st.addTrigger('Username:', function(cb) {
+			resetTimeout();
+
+            if (opts.username) {
+                cb(opts.username + '\n', startTimeout.bind(self, 15000));
+            } else {
+                inquirer.prompt([{
+                    type: 'input',
+                    name: 'username',
+                    message: 'Username',
+                    validate: function (val) {
+                        return !!val;
+                    }
+                }]).then(function (ans) {
+                    cb(ans.username + '\n', startTimeout.bind(self, 15000));
+                });
+            }
+		});
+
+		st.addTrigger('Outer identity (optional):', function(cb) {
+			resetTimeout();
+
+            if (opts.outer_identity) {
+                cb(opts.outer_identity.trim + '\n', startTimeout.bind(self, 15000));
+            } else {
+                inquirer.prompt([{
+                    type: 'input',
+                    name: 'outer_identity',
+                    message: 'Outer identity (optional)'
+                }]).then(function (ans) {
+                    cb(ans.outer_identity + '\n', startTimeout.bind(self, 15000));
+                });
+            }
+		});
+
+		st.addTrigger('Client certificate in PEM format:', function(cb) {
+			resetTimeout();
+
+            if (opts.client_certificate) {
+                cb(opts.client_certificate.trim() + '\n\n', startTimeout.bind(self, 15000));
+            } else {
+                inquirer.prompt([{
+                    type: 'editor',
+                    name: 'client_certificate',
+                    message: 'Client certificate in PEM format',
+                    validate: function (val) {
+                        return !!val;
+                    }
+                }]).then(function (ans) {
+                    cb(ans.client_certificate.trim() + '\n\n', startTimeout.bind(self, 15000));
+                });
+            }
+		});
+
+		st.addTrigger('Private key in PEM format:', function(cb) {
+			resetTimeout();
+
+            if (opts.private_key) {
+                cb(opts.private_key.trim() + '\n\n', startTimeout.bind(self, 15000));
+            } else {
+                inquirer.prompt([{
+                    type: 'editor',
+                    name: 'private_key',
+                    message: 'Private key in PEM format',
+                    validate: function (val) {
+                        return !!val;
+                    }
+                }]).then(function (ans) {
+                    cb(ans.private_key.trim() + '\n\n', startTimeout.bind(self, 15000));
+                });
+            }
+		});
+
+		st.addTrigger('Root CA in PEM format (optional):', function(cb) {
+			resetTimeout();
+
+            if (opts.root_ca) {
+                cb(opts.root_ca.trim() + '\n\n', startTimeout.bind(self, 15000));
+            } else {
+            	inquirer.prompt([
+            	{
+            		type: 'confirm',
+            		name: 'provide_root_ca',
+            		message: 'Would you like to provide CA certificate?',
+            		default: true
+            	},
+            	{
+					type: 'editor',
+                    name: 'root_ca',
+                    message: 'CA certificate in PEM format',
+                    when: function(answers) {
+                    	return answers.provide_root_ca;
+                    },
+                    validate: function (val) {
+                        return !!val;
+                    },
+                    default: ''
+            	}
+            	]).then(function (ans) {
+            		if (ans.root_ca === undefined) {
+            			ans.root_ca = '';
+            		}
+                    cb(ans.root_ca.trim() + '\n\n', startTimeout.bind(self, 15000));
+            	});
+            }
+		});
+
 
 		st.addTrigger('Password:', function(cb) {
 			resetTimeout();
@@ -1274,11 +1435,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
                 inquirer.prompt([{
                     type: 'input',
                     name: 'password',
-                    message: 'Wi-Fi Password',
+                    message: !isEnterprise ? 'Wi-Fi Password' : 'Password',
                     validate: function (val) {
                         return !!val;
                     }
-                }], function (ans) {
+                }]).then(function (ans) {
                     cb(ans.password + '\n', startTimeout.bind(self, 15000));
                 });
             }
@@ -1539,7 +1700,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 						};
 					})
 				}
-			], function (answers) {
+			]).then(function (answers) {
 				callback(answers.port);
 			});
 		});
