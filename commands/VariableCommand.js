@@ -52,6 +52,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 	name: 'variable',
 	description: 'retrieve and monitor variables on your device',
 
+	maxNameLength: 12,
 
 	init: function () {
 		this.addOption('list', this.listVariables.bind(this), 'Show variables provided by your device(s)');
@@ -123,6 +124,11 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		var that = this;
 		if (!_.isArray(deviceId)) {
 			deviceId = [ deviceId ];
+		}
+
+		if(variableName.length > this.maxNameLength) {
+			console.log('Variable name is too long (maximum ' + this.maxNameLength + ' characters)');
+			return when.reject();
 		}
 
 		var api = new ApiClient();
@@ -272,6 +278,11 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 		}
 		this.checkArguments(arguments);
 
+		if(variableName && variableName.length > this.maxNameLength) {
+			console.log('Variable name is too long (maximum ' + this.maxNameLength + ' characters)');
+			return when.reject();
+		}
+
 		function disambiguate() {
 			if (deviceId === 'all') {
 				deviceId = null;
@@ -292,7 +303,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 			function checkVariable() {
 				self._getValue(result.deviceIds, result.variableName).ensure(function () {
 					setTimeout(checkVariable, delay);
-				});
+				}).catch(function() {});
 			}
 			checkVariable();
 		}).catch(function (err) {
