@@ -34,8 +34,8 @@ export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+export function command(executor, apiJS, argv) {
 	const site = new CLILibraryDeleteCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryDeleteCommand();
-	return site.run(cmd);
+	return executor.run(site, cmd);
 }

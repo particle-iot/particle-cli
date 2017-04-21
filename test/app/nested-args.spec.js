@@ -362,8 +362,6 @@ describe('command-line parsing', () => {
 			cli.test.consoleErrorLogger(console,  yargs, false, error);
 			expect(console.log).to.have.been.calledWithMatch('hey').and.calledOnce;
 		});
-
-
 	});
 
 
@@ -381,7 +379,29 @@ describe('command-line parsing', () => {
 		it('can have a string description', () => {
 			assertCanSetDescription('123');
 		});
+	});
 
-	})
+	describe('invoke', () => {
+		it('calls the command function with the arguments and an executor with a run method', () => {
+			const module = { command: sinon.stub().returns(4) };
+			expect(cli.invoke(module, 1, 2, 3)).to.eql(4);
+			expect(module.command).to.be.calledWith(sinon.match({run: sinon.match.func}), 1, 2, 3);
+		});
+
+		it('the executor run method invokes the command with context', () => {
+			const site = { run: sinon.stub() };
+			const cmd = {};
+			const module = { command: (executor, arg) => {
+				return executor.run(site, cmd);
+			}};
+			return cli.invoke(module, 'arg').then(() => {
+				expect(site.run).to.have.been.calledOnce;
+
+				const context = site.run.getCall(0).args[1];
+				expect(context).to.be.ok;
+				expect(context).to.have.property('user').to.have.property('id');
+			});
+		});
+	});
 });
 

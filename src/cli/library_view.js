@@ -69,8 +69,8 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+export function command(executor, apiJS, argv) {
 	const site = new CLILibraryViewCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryInstallCommand();
-	return site.run(cmd).then(() => site.view());
+	return executor.run(site, cmd).then(() => site.view());
 }

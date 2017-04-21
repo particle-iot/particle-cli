@@ -55,7 +55,7 @@ class CLILibraryPublishContributeCommandSite extends CLILibraryContributeCommand
 }
 
 
-export function command(apiJS, argv) {
+export function command(executor, apiJS, argv) {
 	const site = new CLILibraryPublishCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryPublishCommand();
 	let promise = Promise.resolve();
@@ -68,5 +68,5 @@ export function command(apiJS, argv) {
 			site.ident = contributeSite.contributedLibrary.name;
 		});
 	}
-	return promise.then(() => site.run(cmd));
+	return promise.then(() => executor.run(site, cmd));
 }

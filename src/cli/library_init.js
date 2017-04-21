@@ -39,10 +39,10 @@ export class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 	}
 }
 
-export function command(argv) {
+export function command(executor, argv) {
 	// todo - can we avoid the global dependency on process.cwd()
 	// the cli itself should provide an environment, including cwd().
 	const site = new CLILibraryInitCommandSite(argv, process.cwd());
 	const cmd = new LibraryInitCommand();
-	return site.run(cmd);
+	return executor.run(site, cmd);
 }
