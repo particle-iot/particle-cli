@@ -591,71 +591,71 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			},
 			{
 				type: 'input',
-                name: 'username',
-                message: 'Username',
-                when: function(ans) {
-                	return ans.eap == 'PEAP/MSCHAPv2';
-                },
-                validate: function (val) {
-                    return !!val;
-                }
-        	},
-        	{
+				name: 'username',
+				message: 'Username',
+				when: function(ans) {
+					return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('peap');
+				},
+				validate: function (val) {
+					return !!val;
+				}
+			},
+			{
 				type: 'input',
-                name: 'password',
-                message: 'Password',
-                when: function(ans) {
-                	return ans.eap == 'PEAP/MSCHAPv2';
-                },
-                validate: function (val) {
-                    return !!val;
-                }
-        	},
-        	{
-        		type: 'editor',
-                name: 'client_certificate',
-                message: 'Client certificate in PEM format',
-                when: function(ans) {
-                	return ans.eap == 'EAP-TLS';
-                },
-                validate: function (val) {
-                    return !!val;
-                }
-        	},
-        	{
-        		type: 'editor',
-                name: 'private_key',
-                message: 'Private key in PEM format',
-                when: function(ans) {
-                	return ans.eap == 'EAP-TLS';
-                },
-                validate: function (val) {
-                    return !!val;
-                }
-        	},
-        	{
-        		type: 'input',
-                name: 'outer_identity',
-                message: 'Outer identity (optional)'
-        	},
-        	{
-        		type: 'confirm',
-        		name: 'provide_root_ca',
-        		message: 'Would you like to provide CA certificate?',
-        		default: true
-        	},
-        	{
+				name: 'password',
+				message: 'Password',
+				when: function(ans) {
+					return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('peap');
+				},
+				validate: function (val) {
+					return !!val;
+				}
+			},
+			{
 				type: 'editor',
-                name: 'root_ca',
-                message: 'CA certificate in PEM format',
-                when: function(answers) {
-                	return answers.provide_root_ca;
-                },
-                validate: function (val) {
-                    return !!val;
-                },
-                default: null
-        	}
+				name: 'client_certificate',
+				message: 'Client certificate in PEM format',
+				when: function(ans) {
+					return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('tls');
+				},
+				validate: function (val) {
+					return !!val;
+				}
+			},
+			{
+				type: 'editor',
+				name: 'private_key',
+				message: 'Private key in PEM format',
+				when: function(ans) {
+					return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('tls');
+				},
+				validate: function (val) {
+					return !!val;
+				}
+			},
+			{
+				type: 'input',
+				name: 'outer_identity',
+				message: 'Outer identity (optional)'
+			},
+			{
+				type: 'confirm',
+				name: 'provide_root_ca',
+				message: 'Would you like to provide CA certificate?',
+				default: true
+			},
+			{
+				type: 'editor',
+				name: 'root_ca',
+				message: 'CA certificate in PEM format',
+				when: function(answers) {
+					return answers.provide_root_ca;
+				},
+				validate: function (val) {
+					return !!val;
+				},
+				default: null
+			}
 		]).then(function(res) {
 			res = _.merge(ans, res);
 			networkChoices(res);
@@ -813,8 +813,8 @@ WirelessCommand.prototype.__configure = function __configure(ssid, cb) {
 			console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
 		} else {
 			isEnterprise = true;
-			console.log(arrow, 'EAP Type: ', chalk.bold.cyan(ans.eap.toUpperCase()));
-			if (ans.eap.toLowerCase() == 'peap/mschapv2') {
+			console.log(arrow, 'EAP Type: ', chalk.bold.cyan(ans.eap));
+			if (SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('peap')) {
 				console.log(arrow, 'Username: ', chalk.bold.cyan(ans.username));
 				console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
 			} else {
@@ -1080,8 +1080,8 @@ function filter(list, pattern, inverse) {
 	// var returnedOne = false;
 	return list.filter(function filter(ap) {
 		// if(!returnedOne && ap.ssid.match(pattern)) {
-		// 	returnedOne = true
-		// 	return true
+		//  returnedOne = true
+		//  return true
 		// }
 		// return false
 		return inverse ? !ap.ssid.match(pattern) : ap.ssid.match(pattern);
