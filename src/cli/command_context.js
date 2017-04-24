@@ -1,34 +1,67 @@
 const pipeline = require('when/pipeline');
-import pkg from '../../package.json';
 
-/**
- * Creates the context object for command execution.
- */
+class CommandContext {
 
-/**
- * Retrieves the unique ID for the current logged in user.
- */
-function trackingUser() {
-	// todo - fetch from `v1/user` endpoint
-	return Promise.resolve({id: 'cli-test-user'});
+	identifyUser(ApiClient = new require('../../oldlib/ApiClient'), api = new ApiClient()) {
+		if (api.ready()) {
+			return api.identifyUser();
+		} else {
+			return Promise.reject();
+		}
+	}
+
+	isIdentity(user) {
+		return Boolean(user && user.id && user.email);
+	}
+
+	/**
+	 * Retrieves the tracking details for the current logged in user.
+	 */
+	trackingUser(settings = require('../../settings')) {
+		if (this.isIdentity(settings.identity)) {
+			return Promise.resolve(settings.identity);
+		} else {
+			return this.identifyUser()
+				.then(user => {
+					if (this.isIdentity(user)) {
+						settings.override(null, 'identity', user);
+						return user;
+					} else {
+						return null;
+					}
+				});
+		}
+	}
+
+	/**
+	 * Creates the context object for command execution.
+	 */
+
+	context(pkg = require('../../package.json'), settings=require('../../settings')) {
+		// todo - allow the API key to be overridden in the environment so that CLI use during development/testing
+		// is tracked against a distinct source
+		return pipeline([
+			() => this.trackingUser(settings),
+			(user) => {
+				return {
+					user,
+					tool: {name: 'cli', version: pkg.version},
+					api: {key: 'p8DuwER9oRds1CTfL6FJrbYETYA1grCw'}
+				}
+			}
+		]);
+	}
 }
+
+const test = {
+	CommandContext
+};
 
 function commandContext() {
-	// todo - allow the API key to be overridden in the environment so that CLI use during development/testing
-	// is tracked against a distinct source
-	return pipeline([
-		trackingUser,
-		(user) => {
-			return {
-				user,
-				tool: { name: 'cli', version: pkg.version },
-				api: { key: 'p8DuwER9oRds1CTfL6FJrbYETYA1grCw' }
-			}
-		}
-	]);
+	return new CommandContext().context()
 }
 
-
 export {
-	commandContext
+	commandContext,
+	test
 };
