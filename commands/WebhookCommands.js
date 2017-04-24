@@ -32,6 +32,7 @@ var prompt = require('inquirer').prompt;
 var extend = require('xtend');
 var util = require('util');
 var fs = require('fs');
+var analytics = require('../oldlib/analytics');
 
 var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand.js');
@@ -132,7 +133,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 				data = utilities.tryParse(fs.readFileSync(filename));
 				if (!data) {
 					console.log('Please check your .json file for syntax error.');
-					return -1;
+					return analytics.track(this, 'webhook create failed', { error: 'invalid json' });
 				}
 				console.log('Using settings from the file ' + filename);
 				//only override these when we didn't get them from the command line
