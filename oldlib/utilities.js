@@ -31,8 +31,8 @@ var fs = require('fs');
 var path = require('path');
 var when = require('when');
 var child_process = require('child_process');
-var glob = require('glob');
 var log = require('./log');
+var utilities = require('particle-commands').utilities;
 
 var that = module.exports = {
 	contains: function(arr, obj) {
@@ -317,21 +317,7 @@ var that = module.exports = {
 		return result;
 	},
 
-	globList: function(basepath, arr) {
-		var line, found, files = [];
-		for (var i=0;i<arr.length;i++) {
-			line = arr[i];
-			if (basepath) {
-				line = path.join(basepath, line);
-			}
-			found = glob.sync(line, { nodir: true });
-
-			if (found && (found.length > 0)) {
-				files = files.concat(found);
-			}
-		}
-		return files;
-	},
+	globList: utilities.globList,
 
 	trimBlankLines: function (arr) {
 		if (arr && (arr.length !== 0)) {
@@ -558,7 +544,7 @@ var that = module.exports = {
 		return this.__banner;
 	},
 
-	// todo - factor from/to constants.js
+	// todo - factor from/to constants.js, also in settings.js
 	knownPlatforms: function knownPlatforms() {
 		return {
 			'core': 0,
