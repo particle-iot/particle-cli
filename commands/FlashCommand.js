@@ -251,7 +251,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 			},
 			function() {
 				var app = flashingKnownApp && firmware;
-				return analytics.track(this, 'flash', { interface: 'dfu', destSegment: destSegment,  app: app });
+				return analytics.track(this, 'device flashed', { interface: 'dfu', destSegment: destSegment,  app: app, dfuId: dfu.deviceID });
 			}
 		]);
 

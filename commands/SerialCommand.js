@@ -510,7 +510,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 				return complete.then(function() {
 					console.log('\nFlash success!');
-					return analytics.track(this, 'flash', { interface: 'serial', knownApp:knownApp, firmware:orgFirmware });
+					return analytics.track(this, 'device flashed', { interface: 'serial', knownApp:knownApp, firmware:orgFirmware });
 				}, function(err) {
 					self.error('\nError writing firmware...' + err + '\n' + err.stack, true);
 				});
