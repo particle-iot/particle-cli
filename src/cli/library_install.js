@@ -63,24 +63,24 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 }
 
-function install(argv, apiJS) {
+function install(executor, argv, apiJS) {
 	const site = new CLILibraryInstallCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryInstallCommand();
-	return site.run(cmd);
+	return executor.run(site, cmd);
 }
 
-function copy(argv, apiJS) {
+function copy(executor, argv, apiJS) {
 	argv.vendored = true;
 	argv.adapter = false;
 	argv.confirm = false;
-	return install(argv, apiJS);
+	return install(executor, argv, apiJS);
 }
 
-export function command(cmd, apiJS, argv) {
+export function command(executor, cmd, apiJS, argv) {
 	if (cmd==='copy') {
-		return copy(argv, apiJS);
+		return copy(executor, argv, apiJS);
 	} else if (cmd==='install') {
-		return install(argv, apiJS);
+		return install(executor, argv, apiJS);
 	} else {
 		throw Error('uknown command '+cmd);
 	}

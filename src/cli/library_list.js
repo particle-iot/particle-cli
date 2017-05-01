@@ -147,7 +147,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+export function command(executor, apiJS, argv) {
 	const site = new CLILibraryListCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryListCommand();
 
@@ -156,7 +156,7 @@ export function command(apiJS, argv) {
 	}
 
 	function runPage() {
-		return site.run(cmd).then((results) => nextPage(results));
+		return executor.run(site, cmd).then((results) => nextPage(results));
 	}
 
 	function nextPage(results) {

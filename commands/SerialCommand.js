@@ -47,6 +47,10 @@ var settings = require('../settings');
 var DescribeParser = require('binary-version-reader').HalDescribeParser;
 var YModem = require('../oldlib/ymodem');
 
+var commandContext = require('../dist/cli/command_context').commandContext;
+var analytics = require('particle-commands/dist/lib/analytics');
+
+
 var BaseCommand = require('./BaseCommand.js');
 var utilities = require('../oldlib/utilities.js');
 var SerialBoredParser = require('../oldlib/SerialBoredParser.js');
@@ -450,7 +454,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 	flashDevice: function(firmware) {
 		var self = this;
 		settings.verboseOutput = false;
-
+		var knownApp;
+		var orgFirmware = firmware;
 		this._promptForListeningMode().then(function() {
 			self.whatSerialPortDidYouMean(null, true, function(device) {
 				if (!device) {
@@ -474,6 +479,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 							if (firmware === undefined) {
 								return when.reject('file does not exist and no known app found.');
 							} else {
+								knownApp = orgFirmware;
 								return;
 							}
 						}
@@ -504,6 +510,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 				return complete.then(function() {
 					console.log('\nFlash success!');
+					return analytics.track(this, 'device flashed', { interface: 'serial', knownApp:knownApp, firmware:orgFirmware });
 				}, function(err) {
 					self.error('\nError writing firmware...' + err + '\n' + err.stack, true);
 				});

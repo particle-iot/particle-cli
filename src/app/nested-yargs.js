@@ -21,6 +21,7 @@ import chalk from 'chalk';
 import Yargs from 'yargs';
 import util from 'util';
 import _ from 'lodash';
+import { commandContext } from '../cli/command_context';
 
 class CLICommandItem {
 
@@ -641,8 +642,20 @@ function showHelp() {
 	Yargs.showHelp();
 }
 
+/**
+ * Centralizes command execution.
+ */
+class Executor {
+	run(site, cmd) {
+		return commandContext().then(
+			(context) => site.run(cmd, context)
+		);
+	}
+}
+
 function invoke(module, ...args) {
-	return module.command(...args);
+	const executor = new Executor();
+	return module.command(executor, ...args);
 }
 
 export {

@@ -38,6 +38,8 @@ var utilities = require('../oldlib/utilities.js');
 var ModuleParser = require('binary-version-reader').HalModuleParser;
 var deviceSpecs = require('../oldlib/deviceSpecs');
 
+var analytics = require('../oldlib/analytics');
+
 var MONOLITHIC = 3;
 var SYSTEM_MODULE = 4;
 var APPLICATION_MODULE = 5;
@@ -246,6 +248,10 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 				var alt = 0;
 				var leave = destSegment === 'userFirmware';  // todo - leave on factory firmware write too?
 				return dfu.writeDfu(alt, firmware, destAddress, leave);
+			},
+			function() {
+				var app = flashingKnownApp && firmware;
+				return analytics.track(this, 'device flashed', { interface: 'dfu', destSegment: destSegment,  app: app, dfuId: dfu.deviceID });
 			}
 		]);
 

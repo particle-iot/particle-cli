@@ -1,16 +1,5 @@
 
-function api() {
-
-	const ParticleApi = require('../cmd/api').default;
-	const settings = require('../../settings');
-
-	if (!api._instance) {
-		api._instance = new ParticleApi(settings.apiUrl, {
-			accessToken: settings.access_token
-		}).api;
-	}
-	return api._instance;
-}
+import {api} from './apiclient';
 
 export default ({ root, factory }) => {
 	const lib = factory.createCategory(root, 'library', 'Manages firmware libraries', { alias: 'libraries' });

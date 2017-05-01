@@ -41,8 +41,8 @@ export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+export function command(executor, apiJS, argv) {
 	const site = new CLILibrarySearchCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibrarySearchCommand();
-	return site.run(cmd);
+	return executor.run(site, cmd);
 }

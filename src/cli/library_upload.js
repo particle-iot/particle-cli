@@ -44,8 +44,8 @@ export class CLILibraryContributeCommandSite extends LibraryContributeCommandSit
 	}
 }
 
-export function command(apiJS, argv) {
+export function command(executor, apiJS, argv) {
 	const site = new CLILibraryContributeCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryContributeCommand();
-	return site.run(cmd);
+	return executor.run(site, cmd);
 }
