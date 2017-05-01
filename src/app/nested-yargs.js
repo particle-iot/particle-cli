@@ -21,7 +21,7 @@ import chalk from 'chalk';
 import Yargs from 'yargs';
 import util from 'util';
 import _ from 'lodash';
-import {commandContext} from '../cli/command_context';
+import { commandContext } from '../cli/command_context';
 
 class CLICommandItem {
 
