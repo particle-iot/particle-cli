@@ -83,7 +83,7 @@ export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSi
 
 
 
-export function command(argv) {
+export function command(executor, argv) {
 	let Site, Cmd;
 	if (argv.test) {
 		Site = CLILibraryTestMigrateCommandSite;
@@ -94,5 +94,5 @@ export function command(argv) {
 	}
 	const site = new Site(argv, process.cwd());
 	const cmd = new Cmd();
-	return site.run(cmd);
+	return executor.run(site, cmd);
 }

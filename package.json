@@ -52,6 +52,7 @@
     }
   ],
   "dependencies": {
+    "analytics-node": "^2.4.0",
     "babel-polyfill": "^6.9.1",
     "babel-runtime": "^6.9.2",
     "binary-version-reader": "^0.4.0",
@@ -68,8 +69,8 @@
     "lodash": "^3.10.1",
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.2.0",
-    "particle-api-js": "^6.4.1",
-    "particle-commands": "0.2.11",
+    "particle-api-js": "https://github.com/spark/particle-api-js.git#feature/metrics",
+    "particle-commands": "https://github.com/spark/particle-commands.git#feature/metrics",
     "particle-library-manager": "0.1.12",
     "request": "https://github.com/spark/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "semver": "^5.1.0",

@@ -113,22 +113,11 @@ ConfigCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	listConfigs: function() {
-		var particleDir = settings.ensureFolder();
-		var files = utilities.globList(null, [
-			path.join(particleDir, '*.config.json')
-		]);
-
-		if (files.length > 0) {
+		var configs = settings.listConfigs();
+		if (configs.length) {
 			console.log('Available config files: ');
-			for (var i = 0; i < files.length; i++) {
-
-				//strip the path
-				var filename = path.basename(files[i]);
-
-				//strip the extension
-				var name = filename.replace('.config.json', '');
-
-				console.log((i + 1) + '.) ' + name);
+			for (var i = 0; i < configs.length; i++) {
+				console.log((i + 1) + '.) ' + configs[i]);
 			}
 		} else {
 			console.log('No configuration files found.');

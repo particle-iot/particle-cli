@@ -5,7 +5,7 @@ import updateCheck from './update-check';
 import pkg from '../../package.json';
 import * as cliargs from './nested-yargs';
 import commands from '../cli';
-import * as settings from '../../settings';
+import settings from '../../settings';
 import when from 'when';
 import chalk from 'chalk';
 
@@ -226,10 +226,6 @@ export class CLI {
 	}
 
 	run(args) {
-		settings.transitionSparkProfiles();
-		settings.whichProfile();
-		settings.loadOverrides();
-
 		const nativeErrors = this.loadNativeModules(settings.nativeModules);
 		if (nativeErrors.length) {
 			const log = require('./log');

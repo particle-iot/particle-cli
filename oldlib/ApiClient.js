@@ -141,6 +141,28 @@ ApiClient.prototype = {
 		return dfd.promise;
 	},
 
+	identifyUser: function () {
+		var that = this;
+		return when.promise(function (resolve, reject) {
+			that.request({
+				uri: '/v1/user/identify?access_token=' + that._access_token,
+				method: 'GET',
+				json: true,
+
+			}, function (error, response, body) {
+				if (error) {
+					return reject(error);
+				}
+				if (body.error) {
+					reject(body.error_description);
+				} else {
+					resolve(body);
+				}
+			});
+		});
+
+	},
+
 	/**
 	 * Login and update the access token on this instance. Doesn't update the global settings.
 	 * Outputs failure to the console.
