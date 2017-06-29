@@ -1,6 +1,24 @@
 var spawn = require('child_process').spawn;
 var extend = require('xtend');
 
+function systemExecutor(cmdArgs) {
+
+	var dfd = when.defer();
+
+	runCommand(cmdArgs[0], cmdArgs.splice(1), function handler(err, code, stdout, stderr) {
+		var fail = err || stderr || code;
+		if (fail) {
+			dfd.reject({err:err, stderr:stderr, stdout:stdout, code:code});
+		}
+		else {
+			dfd.resolve(stdout);
+		}
+	});
+
+	return dfd.promise;
+}
+
+
 /***
  * Executes a command, collecting the output from stdout and stderr.
  * @param cmd
@@ -38,5 +56,6 @@ function runCommand(cmd, args, cb) {
 }
 
 module.exports = {
-	runCommand: runCommand
+	runCommand: runCommand,
+	systemExecutor: systemExecutor
 };

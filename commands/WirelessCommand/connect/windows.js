@@ -1,26 +1,10 @@
 
 var extend = require('xtend');
-var runCommand = require('./executor').runCommand;
+var systemExecutor = require('./executor').systemExecutor;
 var when = require('when');
 var pipeline = require('when/pipeline');
 var fs = require('fs');
 
-function systemExecutor(cmdArgs) {
-
-	var dfd = when.defer();
-
-	runCommand(cmdArgs[0], cmdArgs.splice(1), function handler(err, code, stdout, stderr) {
-		var fail = err || stderr || code;
-		if (fail) {
-			dfd.reject({err:err, stderr:stderr, stdout:stdout, code:code});
-		}
-		else {
-			dfd.resolve(stdout);
-		}
-	});
-
-	return dfd.promise;
-}
 
 /**
  * @param commandExecutor   A function that returns a promise to execute a given command.
@@ -106,24 +90,25 @@ Connect.prototype = extend(Object.prototype, {
 		});
 	},
 
-	waitForConnected(profile, interfaceName, count, retryPeriod) {
+	waitForConnected(profile, interfaceName, count, retryPeriod, dfd) {
 		var self = this;
+		dfd = dfd || when.defer();
 		return this.current()
 			.then(function(ssid) {
 				if (ssid!==profile) {
-					var dfd = when.defer();
 					if (--count <= 0) {
-						return dfd.reject(new Error('timeout waiting for network to connect'));
+						dfd.reject(new Error('timeout waiting for network to connect'));
 					}
-
-					setTimeout(retry, retryPeriod);
-					function retry() {
-						dfd.resolve(self.waitForConnected(profile, interfaceName,
-
-							count, retryPeriod));
+					else {
+						setTimeout(retry, retryPeriod);
+						function retry() {
+							self.waitForConnected(profile, interfaceName, count, retryPeriod, dfd);
+						}
 					}
-					return dfd.promise;
+				} else {
+					dfd.resolve(ssid);
 				}
+				return dfd.promise;
 			});
 	},
 
@@ -155,9 +140,7 @@ Connect.prototype = extend(Object.prototype, {
 	 * @private
 	 */
 	_createProfile(profile, interfaceName, fs) {
-		if (!fs) {
-			fs = require('fs');
-		}
+		fs = fs || require('fs');
 		var filename = '_wifi_profile.xml';
 		var content = this._buildProfile(profile);
 		var self = this;
@@ -317,15 +300,22 @@ Connect.prototype = extend(Object.prototype, {
 });
 
 function asCallback(promise, cb) {
-	return promise.then(function success(arg) {
-		cb(null, arg);
+	var result = promise.then(function success(arg) {
+		try {
+			cb(null, arg);
+		}
+		catch (err) {
+			// what do to with this?
+		}
 	}).catch(function fail(error) {
 		cb(error);
 	});
+	return result;
 }
 
-function getCurrentNetwork(cb) {
-	asCallback(new Connect().current(), cb);
+function getCurrentNetwork(cb, connect) {
+	connect = connect || new Connect();
+	asCallback(connect.current(), cb);
 }
 
 /**
@@ -334,9 +324,11 @@ function getCurrentNetwork(cb) {
  *  - ssid property is the SSID of the network to connect to.
  *  - profileName is the name of the network profile to connect to. Defaults to ssid if not defined.
  * @param cb
+ * @param connect   The Connector() instance to use. If not defined a new Connector instance will be provided.
  */
-function connect(opts, cb) {
-	asCallback(new Connect().connect(opts.ssid), cb);
+function connect(opts, cb, connect) {
+	connect = connect || new Connect();
+	asCallback(connect.connect(opts.ssid), cb);
 }
 
 module.exports = {
