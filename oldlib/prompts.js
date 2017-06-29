@@ -167,7 +167,7 @@ var that = {
 		inquirer.prompt([
 			that.getUsername(username),
 			that.getPassword()
-		], function(answers) {
+		]).then(function(answers) {
 			creds.resolve(answers);
 		});
 

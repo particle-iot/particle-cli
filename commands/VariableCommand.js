@@ -103,7 +103,7 @@ VariableCommand.prototype = extend(BaseCommand.prototype, {
 								};
 							});
 						}
-					}], function (answers) {
+					}]).then(function (answers) {
 						resolve({ deviceIds: [deviceId], variableName: answers.variableName });
 					});
 				});

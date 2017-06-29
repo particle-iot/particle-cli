@@ -94,7 +94,7 @@ var that = module.exports = {
 							};
 						});
 					}
-				}], function (ans) {
+				}]).then(function (ans) {
 					that.deviceID = ans.device;
 					return temp.resolve(that.deviceID);
 				});
@@ -351,7 +351,7 @@ var that = module.exports = {
 				name: 'install',
 				message: 'Would you like to install a UDEV rules file to get access?',
 				default: true
-			}], function(ans) {
+			}]).then(function(ans) {
 				that._installUdevChoice(ans, temp);
 			});
 		}

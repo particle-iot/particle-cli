@@ -190,7 +190,7 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 				name: 'deleteAll',
 				message: 'Do you want to delete ALL your webhooks?',
 				default: false
-			}], function(answer) {
+			}]).then(function(answer) {
 				if (answer.deleteAll) {
 					api.listWebhooks().then(
 						function (hooks) {
