@@ -2,7 +2,7 @@
 
 ## 1.23.0 - 30 June 2017
 
-## Support for WPA Enterprise Wi-Fi setup
+- Support for WPA Enterprise Wi-Fi setup
 
 ## 1.22.0 - 3 May 2017
 
