@@ -426,9 +426,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			console.log('Error sending public key to server: ' + err);
 			return when.reject();
 		}).finally(function() {
-			fs.unlink(pubKey, function() {
-				// do nothing
-			});
+			fs.unlinkSync(pubKey);
 		});
 	},
 
