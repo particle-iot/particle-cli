@@ -130,7 +130,8 @@ describe('Key Command', function() {
 	});
 
 	describe('send key to server', function () {
-		it('lowercases the device ID', function () {
+		it('lowercases the device ID and removes the file argument', function () {
+			// todo - this is a gnarly test because the SUT needs refactoring into smaller pieces.
 			filename = key.serverKeyFilename('rsa');
 			var deviceID = 'deadBEEF';
 			var tempfile;
