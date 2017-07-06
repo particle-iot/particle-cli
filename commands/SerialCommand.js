@@ -1256,8 +1256,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			});
 		}
 
-		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', parseSecurityType.bind(null));
-		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2, 4=WPA Enterprise, 5=WPA2 Enterprise:', parseSecurityType.bind(true));
+		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', parseSecurityType.bind(null, false));
+		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2, 4=WPA Enterprise, 5=WPA2 Enterprise:', parseSecurityType.bind(null, true));
 
 		st.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', function(cb) {
 			resetTimeout();
