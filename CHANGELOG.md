@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.23.1 - 6 July 2017
+
+- [#375](https://github.com/spark/particle-cli/issues/375) Fix for `particle setup wifi`.
+
 ## 1.23.0 - 30 June 2017
 
 - Support for WPA Enterprise Wi-Fi setup
