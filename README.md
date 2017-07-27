@@ -18,7 +18,11 @@ The Particle CLI is a powerful tool for interacting with your IoT devices and th
 
 For the most up-to-date installation instructions, including Windows installer, see [CLI - Installation](https://docs.particle.io/guide/tools-and-features/cli/photon/#installing) on our documentation site.
 
+## Updating
 
+To make sure you are running the latest version of particle-cli, type the following command:
+
+```npm update -g particle-cli```
 
 ## Running from source (advanced)
 
