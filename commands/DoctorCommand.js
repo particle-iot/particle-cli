@@ -32,6 +32,8 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			this._flashTinker.bind(this),
 			this._getDeviceId.bind(this),
 			this._resetKeys.bind(this),
+			this._clearCredentials.bind(this),
+			this._setupCredentials.bind(this),
 			this._showDoctorGoodbye.bind(this)
 		])
 			.catch(this._showDoctorError.bind(this));
@@ -55,15 +57,16 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 
 	_enterDfuMode: function() {
 		console.log('Put the device in ' + chalk.bold.yellow('DFU mode'));
-		console.log('Press ' + chalk.bold.cyan('RESET/RST') + ' while holding ' + chalk.bold.cyan('MODE/SETUP') +
+		console.log('Tap ' + chalk.bold.cyan('RESET/RST') + ' while holding ' + chalk.bold.cyan('MODE/SETUP') +
 			' until the device blinks ' + chalk.bold.yellow('yellow.'));
 		return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
 	},
 
 	_enterListenMode: function() {
 		console.log('Put the device in ' + chalk.bold.blue('Listen mode'));
-		console.log('Press ' + chalk.bold.cyan('MODE/SETUP') +
+		console.log('Tap ' + chalk.bold.cyan('MODE/SETUP') +
 			' until the device blinks ' + chalk.bold.blue('blue.'));
+		console.log('If the device is already blinking ' + chalk.bold.blue('blue.') + " you're good to go!");
 		return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
 
 		console.log('Put the device in Listen mode by holding SETUP/MODE until the device blinks blue.');
@@ -123,17 +126,33 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 				// keys servers doesn't cause the device to reset so it is still in DFU mode
 			}.bind(this))
 			.then(function () {
-				return this.cli.runCommand('keys', ['doctor', deviceId]);
+				return this.cli.runCommand('keys', ['doctor', deviceId, '--force']);
 			}.bind(this));
+	},
+
+	_clearCredentials: function() {
+		this._displayStepTitle('Clearing Wi-Fi settings');
+		console.log('Hold ' + chalk.bold.cyan('MODE/SETUP') +
+			' untils the device blinks ' + chalk.bold.blue('blue rapidly') + ' to clear Wi-Fi settings');
+		return this.promptDfd(chalk.cyan('>') + ' Press ENTER when done');
+	},
+
+	_setupCredentials: function() {
+		this._displayStepTitle('Setting up Wi-Fi');
+		return this.cli.runCommand('serial', ['wifi']);
 	},
 
 	_showDoctorGoodbye: function() {
 		this._displayStepTitle('The Doctor has restored your device!');
+		console.log(chalk.cyan('>'), "Please visit our community forums if you device still can't connect to the Particle cloud");
+		console.log(chalk.bold.white('https://community.particle.io/'));
 	},
 
 	_showDoctorError: function(e) {
 		console.log("The Doctor didn't complete sucesfully. " + e.message);
-	}
+		console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
+		console.log(chalk.bold.white('https://community.particle.io/'));
+	},
 });
 
 module.exports = DoctorCommand;
