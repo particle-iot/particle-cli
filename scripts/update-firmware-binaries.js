@@ -10,7 +10,8 @@ var _ = require('lodash');
 
 var githubUser = 'spark';
 var githubRepo = 'firmware';
-var binariesDirectory = 'updates';
+var updatesDirectory = 'updates';
+var binariesDirectory = 'binaries';
 var settingsFile = 'settings.js';
 
 if (process.argv.length != 3) {
@@ -37,7 +38,7 @@ repo.listReleases()
 })
 .then(function (result) {
 	var release = result.data;
-	return cleanBinariesDirectory()
+	return cleanUpdatesDirectory()
 	.then(function () {
 		return downloadFirmwareBinaries(release.assets);
 	}).then(function () {
@@ -66,24 +67,27 @@ function releaseById(releases, tag) {
 	return releaseId;
 }
 
-function cleanBinariesDirectory() {
-	return rimraf(binariesDirectory + "/*");
+function cleanUpdatesDirectory() {
+	return rimraf(updatesDirectory + "/*");
 };
 
 function downloadFirmwareBinaries(assets) {
 	return Promise.all(assets.map(function (asset) {
 		if (asset.name.match(/^system-part/)) {
-			return downloadFile(asset.browser_download_url);
+			return downloadFile(asset.browser_download_url, updatesDirectory);
+		}
+		if (asset.name.match(/^tinker.*core/)) {
+			return downloadFile(asset.browser_download_url, binariesDirectory, 'core_tinker.bin');
 		}
 	}));
 }
 
-function downloadFile(url) {
+function downloadFile(url, directory, filename) {
 	return new Promise(function (fulfill) {
-		var filename = url.match(/.*\/(.*)/)[1];
+		filename = filename || url.match(/.*\/(.*)/)[1];
 		console.log("Downloading " + filename + "...");
 		downloadedBinaries.push(filename);
-		var file = fs.createWriteStream(binariesDirectory + "/" + filename);
+		var file = fs.createWriteStream(directory + "/" + filename);
 		file.on('finish', function () {
 			file.close(function () {
 				fulfill();
@@ -110,6 +114,9 @@ function updateSettings() {
 
 	fs.writeFileSync(settingsFile, settings, 'utf8');
 	console.log("Updated settings.js");
+
+	// Add the core tinker binary to the expected list
+	settingsBinaries.push('core_tinker.bin');
 }
 
 function verifyBinariesMatch() {
