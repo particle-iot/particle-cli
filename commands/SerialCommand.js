@@ -126,7 +126,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				if (serialDeviceSpec) {
 					device = {
 						port: port.comName,
-						type: serialDeviceSpec.productName
+						type: serialDeviceSpec.productName,
+						deviceId: serialDeviceSpec.serial.deviceId && serialDeviceSpec.serial.deviceId(port.serialNumber),
+						specs: serialDeviceSpec
 					};
 				}
 

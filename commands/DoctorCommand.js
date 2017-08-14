@@ -8,6 +8,10 @@ var chalk = require('chalk');
 var prompts = require('../oldlib/prompts');
 var BaseCommand = require('./BaseCommand');
 
+var EarlyReturnError = function() {
+	this.isEarlyReturn = true;
+};
+
 var DoctorCommand = function (cli, options) {
 	DoctorCommand.super_.call(this, cli, options);
 	this.options = extend({}, this.options, options);
@@ -24,13 +28,13 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		this.addOption('*', this.deviceDoctor.bind(this), 'Puts your device back into a healthy state');
 	},
 
-
 	deviceDoctor: function () {
 		return pipeline([
 			this._showDoctorWelcome.bind(this),
+			this._findDevice.bind(this),
+			this._nameDevice.bind(this),
 			this._updateSystemFirmware.bind(this),
 			this._flashTinker.bind(this),
-			this._getDeviceId.bind(this),
 			this._resetKeys.bind(this),
 			this._clearCredentials.bind(this),
 			this._setupCredentials.bind(this),
@@ -40,7 +44,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_showDoctorWelcome: function() {
-		console.log(chalk.bold.white('The Device Doctor will puts your device back into a healthy state'));
+		console.log(chalk.bold.white('The Device Doctor will put your device back into a healthy state'));
 		console.log('It will:');
 		_.map([
 			'Upgrade system firmware',
@@ -50,9 +54,37 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		], function (line) {
 			console.log('  - ' + line);
 		});
+	},
+
+	_findDevice: function() {
+		var serialCommand = this.cli.getCommandModule('serial');
+		return when.promise(function (resolve) {
+			serialCommand.findDevices(function (devices) {
+				this.device = devices && devices[0];
+				resolve(devices);
+			}.bind(this));
+		}.bind(this));
+	},
+
+	_nameDevice: function(devices) {
+		// TODO: doesn't work if device is in DFU mode already!
+
+		if (devices.length == 0) {
+			console.log('');
+			console.log(chalk.cyan('>'), 'Connect a Particle device to a USB port and run the command again.');
+			throw new EarlyReturnError();
+		}
+
+		if (devices.length > 1) {
+			console.log('');
+			console.log(chalk.cyan('!'), 'You have ' + devices.length + ' devices connected to USB ports.');
+			console.log(chalk.cyan('!'), 'To avoid confusion, disconnect all but the one device and run the command again.');
+			throw new EarlyReturnError();
+		}
+
+		var deviceName = this.device.type || 'Device';
 		console.log('');
-		console.log('Start by connecting your Particle device to a USB port');
-		console.log('');
+		console.log('The Doctor will operate on your ' + deviceName + ' on port ' + this.device.port);
 	},
 
 	_enterDfuMode: function() {
@@ -62,22 +94,15 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
 	},
 
-	_enterListenMode: function() {
-		console.log('Put the device in ' + chalk.bold.blue('Listen mode'));
-		console.log('Tap ' + chalk.bold.cyan('MODE/SETUP') +
-			' until the device blinks ' + chalk.bold.blue('blue.'));
-		console.log('If the device is already blinking ' + chalk.bold.blue('blue.') + " you're good to go!");
-		return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
-
-		console.log('Put the device in Listen mode by holding SETUP/MODE until the device blinks blue.');
-		return this.promptDfd('Press ENTER when ready');
-	},
-
 	_displayStepTitle: function(title) {
 		console.log(chalk.bold.white('\n' + title + '\n'));
 	},
 
 	_updateSystemFirmware: function() {
+		if (!this._deviceHasFeature('system-firmware')) {
+			return;
+		}
+
 		this._displayStepTitle('Updating system firmware');
 		return this._enterDfuMode()
 			.then(function() {
@@ -93,44 +118,51 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			}.bind(this));
 	},
 
-	_getDeviceId: function() {
-		this._displayStepTitle('Reading the device ID');
-		var serialCommand = this.cli.getCommandModule('serial');
-		return this._enterListenMode()
-			.then(function() {
-				return when.promise(function (resolve) {
-					serialCommand.whatSerialPortDidYouMean(null, true, resolve);
-				});
-			})
-			.then(function (device) {
-				if (!device) {
-					return serialCommand.error('No serial port identified');
-				}
-
-				return serialCommand.askForDeviceID(device);
-			})
-			.then(function (data) {
-				if (_.isObject(data)) {
-					return data.id;
-				} else {
-					return data;
-				}
-			});
-	},
-
-	_resetKeys: function(deviceId) {
+	_resetKeys: function() {
 		this._displayStepTitle('Reseting server and device keys');
-		return this._enterDfuMode()
+
+		// do this again to refresh the device data with latest firmware
+		return this._waitForSerialDevice(3000)
+			.then(this._enterDfuMode.bind(this))
 			.then(function() {
 				return this.cli.runCommand('keys', ['server']);
 				// keys servers doesn't cause the device to reset so it is still in DFU mode
 			}.bind(this))
 			.then(function () {
-				return this.cli.runCommand('keys', ['doctor', deviceId, '--force']);
+				if (!this.device || !this.device.deviceId) {
+					console.log(chalk.red('!'), 'Skipping device key because the device ID is not known');
+					return;
+				}
+				return this.cli.runCommand('keys', ['doctor', this.device.deviceId, '--force']);
 			}.bind(this));
 	},
 
+	_waitForSerialDevice: function(timeout) {
+		var timeoutReached = false;
+		when().delay(timeout).then(function() {
+			timeoutReached = true;
+		});
+
+		var tryFindDevice = function() {
+			return this._findDevice().then(function (devices) {
+				if (devices.length > 0) {
+					return devices;
+				} else if (timeoutReached) {
+					return null;
+				} else {
+					return when().delay(250).then(tryFindDevice);
+				}
+			});
+		}.bind(this);
+
+		return tryFindDevice();
+	},
+
 	_clearCredentials: function() {
+		if (!this._deviceHasFeature('wifi')) {
+			return;
+		}
+
 		this._displayStepTitle('Clearing Wi-Fi settings');
 		console.log('Hold ' + chalk.bold.cyan('MODE/SETUP') +
 			' untils the device blinks ' + chalk.bold.blue('blue rapidly') + ' to clear Wi-Fi settings');
@@ -138,8 +170,17 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_setupCredentials: function() {
+		if (!this._deviceHasFeature('wifi')) {
+			return;
+		}
+
 		this._displayStepTitle('Setting up Wi-Fi');
 		return this.cli.runCommand('serial', ['wifi']);
+	},
+
+	_deviceHasFeature: function(feature) {
+	 var features = (this.device && this.device.specs && this.device.specs.features) || [];
+	 return _.includes(features, feature);
 	},
 
 	_showDoctorGoodbye: function() {
@@ -149,6 +190,9 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_showDoctorError: function(e) {
+		if (e.isEarlyReturn) {
+			return;
+		}
 		console.log("The Doctor didn't complete sucesfully. " + e.message);
 		console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
 		console.log(chalk.bold.white('https://community.particle.io/'));
