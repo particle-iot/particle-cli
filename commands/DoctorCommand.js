@@ -10,9 +10,9 @@ var prompt = inquirer.prompt;
 var dfu = require('../oldlib/dfu.js');
 var BaseCommand = require('./BaseCommand');
 
-var EarlyReturnError = function() {
+var EarlyReturnError = function () {
 };
-var SkipStepError = function() {
+var SkipStepError = function () {
 };
 
 var DoctorCommand = function (cli, options) {
@@ -42,8 +42,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			this._resetKeys.bind(this),
 			this._setupWiFi.bind(this),
 			this._showDoctorGoodbye.bind(this)
-		])
-			.catch(this._showDoctorError.bind(this));
+		]).catch(this._showDoctorError.bind(this));
 	},
 
 	_showDoctorWelcome: function() {
@@ -65,7 +64,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			// Try to find a "normal" mode device through the serial port
 			serialCommand.findDevices(resolve);
 		}).then(function (devices) {
-			if (devices.length == 0) {
+			if (devices.length === 0) {
 				// Try to find a "DFU" mode device through dfu-util
 				return dfu.listDFUDevices();
 			} else {
@@ -78,7 +77,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_nameDevice: function(devices) {
-		if (devices.length == 0) {
+		if (devices.length === 0) {
 			console.log('');
 			console.log(chalk.cyan('>'), 'Connect a Particle device to a USB port and run the command again.');
 			throw new EarlyReturnError();
@@ -223,8 +222,8 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_deviceHasFeature: function(feature) {
-	 var features = (this.device && this.device.specs && this.device.specs.features) || [];
-	 return _.includes(features, feature);
+		var features = (this.device && this.device.specs && this.device.specs.features) || [];
+		return _.includes(features, feature);
 	},
 
 	_showDoctorGoodbye: function() {
