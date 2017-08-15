@@ -215,7 +215,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 
 		this._displayStepTitle('Clearing and setting up Wi-Fi settings');
 		console.log('Tap ' + chalk.bold.cyan('RESET/RST') + ' then hold ' + chalk.bold.cyan('MODE/SETUP') +
-			' untils the device blinks ' + chalk.bold.blue('blue rapidly') + ' then release to clear Wi-Fi settings');
+			' for about 10 seconds untils the device blinks ' + chalk.bold.blue('blue rapidly') + ' then release to clear Wi-Fi settings');
 		return this._promptReady().then(function() {
 			return this.cli.runCommand('serial', ['wifi']);
 		}.bind(this)).catch(this._catchSkipStep);
