@@ -53,6 +53,7 @@ var specs = {
 		writePadding: 2,
 		features: [
 			'wifi',
+			'cc3000',
 		],
 	},
 	'2b04:d006': {

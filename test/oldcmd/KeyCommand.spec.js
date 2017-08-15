@@ -57,7 +57,7 @@ describe('Key Command', function() {
 	function setupDfuTransport() {
 		transport = [];
 		key.options.protocol = undefined;
-		dfu.deviceID = '2b04:d00a'; // usbIDForPlatform('electron')
+		dfu.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
 		dfu.readBuffer = sinon.stub().withArgs('transport', false).returns(when.resolve(transport));
 		dfu.read = sinon.stub();
 		dfu.write = sinon.stub();
@@ -78,7 +78,7 @@ describe('Key Command', function() {
 		key.dfu = dfu = {};
 		dfu.isDfuUtilInstalled = sinon.stub();
 		dfu.findCompatibleDFU = sinon.stub();
-		dfu.deviceID = "2b04:d006";
+		dfu.dfuId = "2b04:d006";
 
 		api = {};
 		api.sendPublicKey = sinon.stub();
@@ -250,7 +250,7 @@ describe('Key Command', function() {
 		});
 
 		it('raises an error if the device does not support multiple protocols', function() {
-			dfu.deviceID = '2b04:d006';
+			dfu.dfuId = '2b04:d006';
 			return key.changeTransportProtocol('udp').then(function() {
 				throw Error('expected error');
 			}).catch(function (err) {

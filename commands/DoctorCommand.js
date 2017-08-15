@@ -5,11 +5,14 @@ var when = require('when');
 var pipeline = require('when/pipeline');
 var _ = require('lodash');
 var chalk = require('chalk');
-var prompts = require('../oldlib/prompts');
+var inquirer = require('inquirer');
+var prompt = inquirer.prompt;
+var dfu = require('../oldlib/dfu.js');
 var BaseCommand = require('./BaseCommand');
 
 var EarlyReturnError = function() {
-	this.isEarlyReturn = true;
+};
+var SkipStepError = function() {
 };
 
 var DoctorCommand = function (cli, options) {
@@ -34,10 +37,10 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			this._findDevice.bind(this),
 			this._nameDevice.bind(this),
 			this._updateSystemFirmware.bind(this),
+			this._updateCC3000.bind(this),
 			this._flashTinker.bind(this),
 			this._resetKeys.bind(this),
-			this._clearCredentials.bind(this),
-			this._setupCredentials.bind(this),
+			this._setupWiFi.bind(this),
 			this._showDoctorGoodbye.bind(this)
 		])
 			.catch(this._showDoctorError.bind(this));
@@ -50,7 +53,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			'Upgrade system firmware',
 			'Flash the default Tinker app',
 			'Reset the device and server keys',
-			'Clear the Wi-Fi settings (credentials, antenna, IP address)',
+			'Clear the Wi-Fi settings',
 		], function (line) {
 			console.log('  - ' + line);
 		});
@@ -59,16 +62,22 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	_findDevice: function() {
 		var serialCommand = this.cli.getCommandModule('serial');
 		return when.promise(function (resolve) {
-			serialCommand.findDevices(function (devices) {
-				this.device = devices && devices[0];
-				resolve(devices);
-			}.bind(this));
+			// Try to find a "normal" mode device through the serial port
+			serialCommand.findDevices(resolve);
+		}).then(function (devices) {
+			if (devices.length == 0) {
+				// Try to find a "DFU" mode device through dfu-util
+				return dfu.listDFUDevices();
+			} else {
+				return devices;
+			}
+		}).then(function (devices) {
+			this.device = devices && devices[0];
+			return devices;
 		}.bind(this));
 	},
 
 	_nameDevice: function(devices) {
-		// TODO: doesn't work if device is in DFU mode already!
-
 		if (devices.length == 0) {
 			console.log('');
 			console.log(chalk.cyan('>'), 'Connect a Particle device to a USB port and run the command again.');
@@ -84,14 +93,40 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 
 		var deviceName = this.device.type || 'Device';
 		console.log('');
-		console.log('The Doctor will operate on your ' + deviceName + ' on port ' + this.device.port);
+		console.log('The Doctor will operate on your ' + deviceName + ' connected over USB');
 	},
 
 	_enterDfuMode: function() {
 		console.log('Put the device in ' + chalk.bold.yellow('DFU mode'));
 		console.log('Tap ' + chalk.bold.cyan('RESET/RST') + ' while holding ' + chalk.bold.cyan('MODE/SETUP') +
 			' until the device blinks ' + chalk.bold.yellow('yellow.'));
-		return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
+		return this._promptReady();
+	},
+
+	_promptReady: function() {
+		return prompt([{
+			type: 'list',
+			name: 'choice',
+			message: 'Select Continue when ready',
+			choices: ['Continue', 'Skip step', 'Exit']
+		}]).then(function (ans) {
+			switch (ans.choice) {
+				case 'Skip step':
+					throw new SkipStepError();
+				case 'Exit':
+					throw new EarlyReturnError();
+				default:
+					return;
+			}
+		});
+	},
+
+	_catchSkipStep: function(e) {
+		if (e instanceof SkipStepError) {
+			return;
+		} else {
+			throw e;
+		}
 	},
 
 	_displayStepTitle: function(title) {
@@ -107,7 +142,23 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		return this._enterDfuMode()
 			.then(function() {
 				return this.cli.runCommand('update');
-			}.bind(this));
+			}.bind(this)).catch(this._catchSkipStep);
+	},
+
+	_updateCC3000: function() {
+		if (!this._deviceHasFeature('cc3000')) {
+			return;
+		}
+
+		this._displayStepTitle('Updating CC3000 firmware');
+		return this._enterDfuMode()
+			.then(function() {
+				return this.cli.runCommand('flash', ['--usb', 'cc3000']);
+			}.bind(this)).then(function() {
+				console.log('Applying update...');
+				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
+				return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
+			}.bind(this)).catch(this._catchSkipStep);
 	},
 
 	_flashTinker: function() {
@@ -115,7 +166,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		return this._enterDfuMode()
 			.then(function() {
 				return this.cli.runCommand('flash', ['--usb', 'tinker']);
-			}.bind(this));
+			}.bind(this)).catch(this._catchSkipStep);
 	},
 
 	_resetKeys: function() {
@@ -130,11 +181,11 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			}.bind(this))
 			.then(function () {
 				if (!this.device || !this.device.deviceId) {
-					console.log(chalk.red('!'), 'Skipping device key because the device ID is not known');
+					console.log(chalk.red('!'), 'Skipping device key because it does not report its device ID over USB');
 					return;
 				}
 				return this.cli.runCommand('keys', ['doctor', this.device.deviceId, '--force']);
-			}.bind(this));
+			}.bind(this)).catch(this._catchSkipStep);
 	},
 
 	_waitForSerialDevice: function(timeout) {
@@ -144,38 +195,31 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		});
 
 		var tryFindDevice = function() {
-			return this._findDevice().then(function (devices) {
-				if (devices.length > 0) {
-					return devices;
+			return this._findDevice().then(function () {
+				if (this.device && this.device.deviceId) {
+					return this.device;
 				} else if (timeoutReached) {
 					return null;
 				} else {
 					return when().delay(250).then(tryFindDevice);
 				}
-			});
+			}.bind(this));
 		}.bind(this);
 
 		return tryFindDevice();
 	},
 
-	_clearCredentials: function() {
+	_setupWiFi: function() {
 		if (!this._deviceHasFeature('wifi')) {
 			return;
 		}
 
-		this._displayStepTitle('Clearing Wi-Fi settings');
-		console.log('Hold ' + chalk.bold.cyan('MODE/SETUP') +
-			' untils the device blinks ' + chalk.bold.blue('blue rapidly') + ' to clear Wi-Fi settings');
-		return this.promptDfd(chalk.cyan('>') + ' Press ENTER when done');
-	},
-
-	_setupCredentials: function() {
-		if (!this._deviceHasFeature('wifi')) {
-			return;
-		}
-
-		this._displayStepTitle('Setting up Wi-Fi');
-		return this.cli.runCommand('serial', ['wifi']);
+		this._displayStepTitle('Clearing and setting up Wi-Fi settings');
+		console.log('Tap ' + chalk.bold.cyan('RESET/RST') + ' then hold ' + chalk.bold.cyan('MODE/SETUP') +
+			' untils the device blinks ' + chalk.bold.blue('blue rapidly') + ' then release to clear Wi-Fi settings');
+		return this._promptReady().then(function() {
+			return this.cli.runCommand('serial', ['wifi']);
+		}.bind(this)).catch(this._catchSkipStep);
 	},
 
 	_deviceHasFeature: function(feature) {
@@ -185,12 +229,12 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 
 	_showDoctorGoodbye: function() {
 		this._displayStepTitle('The Doctor has restored your device!');
-		console.log(chalk.cyan('>'), "Please visit our community forums if you device still can't connect to the Particle cloud");
+		console.log(chalk.cyan('>'), "Please visit our community forums if your device still can't connect to the Particle cloud");
 		console.log(chalk.bold.white('https://community.particle.io/'));
 	},
 
 	_showDoctorError: function(e) {
-		if (e.isEarlyReturn) {
+		if (e instanceof EarlyReturnError) {
 			return;
 		}
 		console.log("The Doctor didn't complete sucesfully. " + e.message);

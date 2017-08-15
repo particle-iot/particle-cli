@@ -43,9 +43,9 @@ var chalk = require('chalk');
 var temp = require('temp');
 var that = module.exports = {
 
-	_deviceIdsFromDfuOutput: function(stdout) {
+	_dfuIdsFromDfuOutput: function(stdout) {
 		// find DFU devices that match specs
-		var deviceIds =
+		var dfuIds =
 			stdout
 				.split('\n')
 				.filter(function (line) {
@@ -57,15 +57,14 @@ var that = module.exports = {
 				.filter(function (dfuId) {
 					return dfuId && specs[dfuId];
 				});
-		return _.unique(deviceIds);
+		return _.unique(dfuIds);
 	},
 
-	deviceID: undefined,
-	findCompatibleDFU: function (showHelp) {
+	dfuId: undefined,
+	listDFUDevices: function() {
 		var temp = when.defer();
-		showHelp = showHelp !== undefined ? showHelp : true;
 
-		var failTimer = utilities.timeoutGenerator('findCompatibleDFU timed out', temp, 6000);
+		var failTimer = utilities.timeoutGenerator('listDFUDevices timed out', temp, 6000);
 		var cmd = that.getCommand() + ' -l';
 		child_process.exec(cmd, function (error, stdout, stderr) {
 			clearTimeout(failTimer);
@@ -80,37 +79,52 @@ var that = module.exports = {
 
 			// find DFU devices that match specs
 			stdout = stdout || '';
-			var deviceIds = that._deviceIdsFromDfuOutput(stdout);
-			if (deviceIds.length > 1) {
-				prompt([{
-					type: 'list',
-					name: 'device',
-					message: 'Which device would you like to select?',
-					choices: function () {
-						return deviceIds.map(function (d) {
-							return {
-								name: specs[d].productName,
-								value: d
-							};
-						});
-					}
-				}]).then(function (ans) {
-					that.deviceID = ans.device;
-					return temp.resolve(that.deviceID);
-				});
-			} else if (deviceIds.length === 1) {
-				that.deviceID = deviceIds[0];
-				log.verbose('Found DFU device %s', that.deviceID);
-				return temp.resolve(that.deviceID);
-			} else {
-				if (showHelp) {
-					that.showDfuModeHelp();
-				}
-				return temp.reject('No DFU device found');
-			}
+			var dfuIds = that._dfuIdsFromDfuOutput(stdout);
+			var dfuDevices = dfuIds.map(function (d) {
+				return {
+					type: specs[d].productName,
+					dfuId: d,
+					specs: specs[d]
+				};
+			});
+			temp.resolve(dfuDevices);
 		});
 
 		return temp.promise;
+	},
+
+	findCompatibleDFU: function (showHelp) {
+		showHelp = showHelp !== undefined ? showHelp : true;
+		return that.listDFUDevices()
+			.then(function (dfuDevices) {
+				if (dfuDevices.length > 1) {
+					return prompt([{
+						type: 'list',
+						name: 'device',
+						message: 'Which device would you like to select?',
+						choices: function () {
+							return dfuDevices.map(function (d) {
+								return {
+									name: d.type,
+									value: d.dfuId
+								};
+							});
+						}
+					}]).then(function (ans) {
+						that.dfuId = ans.device;
+						return that.dfuId;
+					});
+				} else if (dfuDevices.length === 1) {
+					that.dfuId = dfuDevices[0].dfuId;
+					log.verbose('Found DFU device %s', that.dfuId);
+					return that.dfuId;
+				} else {
+					if (showHelp) {
+						that.showDfuModeHelp();
+					}
+					return when.reject('No DFU device found');
+				}
+			});
 	},
 
 	isDfuUtilInstalled: function() {
@@ -120,7 +134,7 @@ var that = module.exports = {
 	},
 
 	readDfu: function (memoryInterface, destination, firmwareAddress, leave) {
-		var prefix = that.getCommand() + ' -d ' + that.deviceID;
+		var prefix = that.getCommand() + ' -d ' + that.dfuId;
 		var leaveStr = (leave) ? ':leave' : '';
 		var cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -U ' + destination;
 
@@ -130,7 +144,7 @@ var that = module.exports = {
 	writeDfu: function (memoryInterface, binaryPath, firmwareAddress, leave) {
 		var leaveStr = (leave) ? ':leave' : '';
 		var args = [
-			'-d', that.deviceID,
+			'-d', that.dfuId,
 			'-a', memoryInterface,
 			'-i', '0',
 			'-s', firmwareAddress + leaveStr,
@@ -142,7 +156,7 @@ var that = module.exports = {
 			args.unshift('dfu-util');
 		}
 
-		var deviceSpecs = specs[that.deviceID] || { };
+		var deviceSpecs = specs[that.dfuId] || { };
 		that.checkBinaryAlignment(binaryPath, deviceSpecs);
 		return utilities.deferredSpawnProcess(cmd, args).then(function(output) {
 			return when.resolve(output.stdout.join('\n'));
@@ -240,12 +254,12 @@ var that = module.exports = {
 
 	_validateSegmentSpecs: function(segmentName) {
 		var err = null;
-		var deviceSpecs = specs[that.deviceID] || { };
+		var deviceSpecs = specs[that.dfuId] || { };
 		var params = deviceSpecs[segmentName] || undefined;
 		if (!segmentName) {
 			err = "segmentName required. Don't know where to read/write.";
 		} else if (!deviceSpecs) {
-			err = "deviceID has no specification. Don't know how to read/write.";
+			err = "dfuId has no specification. Don't know how to read/write.";
 		} else if (!params) {
 			err = 'segment ' + segmentName + ' has no specs. Not aware of this segment.';
 		}

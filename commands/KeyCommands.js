@@ -144,7 +144,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 				return dfu.findCompatibleDFU();
 			},
 			function() {
-				var specs = deviceSpecs[dfu.deviceID];
+				var specs = deviceSpecs[dfu.dfuId];
 				if (!specs.transport) {
 					return when.reject('No transport flag available');
 				}
@@ -574,7 +574,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 			},
 			function() {
 				serverKeySeg = self._getServerKeySegment();
-				specs = deviceSpecs[dfu.deviceID];
+				specs = deviceSpecs[dfu.dfuId];
 			},
 			function() {
 				keyFilename = temp.path({ suffix: '.der' });
@@ -632,7 +632,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	 * @returns {Promise.<String>}  The
 	 */
 	validateDeviceProtocol: function(specs) {
-		specs = specs || deviceSpecs[this.dfu.deviceID];
+		specs = specs || deviceSpecs[this.dfu.dfuId];
 		var protocol = this.options.protocol ? when.resolve(this.options.protocol) : this.fetchDeviceProtocol(specs);
 		var self = this;
 		return protocol.then(function (protocol) {
@@ -650,11 +650,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	_getServerKeySegmentName: function() {
 		var dfu = this.dfu;
-		if (!dfu.deviceID) {
+		if (!dfu.dfuId) {
 			return;
 		}
 
-		var specs = deviceSpecs[dfu.deviceID];
+		var specs = deviceSpecs[dfu.dfuId];
 		if (!specs) {
 			return;
 		}
@@ -684,10 +684,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	_getServerKeySegment: function() {
 		var dfu = this.dfu;
-		if (!dfu.deviceID) {
+		if (!dfu.dfuId) {
 			return;
 		}
-		var specs = deviceSpecs[dfu.deviceID];
+		var specs = deviceSpecs[dfu.dfuId];
 		var segmentName = this._getServerKeySegmentName();
 		if (!specs || !segmentName) {
 			return;
@@ -705,11 +705,11 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	_getPrivateKeySegmentName: function() {
 		var dfu = this.dfu;
-		if (!dfu.deviceID) {
+		if (!dfu.dfuId) {
 			return;
 		}
 
-		var specs = deviceSpecs[dfu.deviceID];
+		var specs = deviceSpecs[dfu.dfuId];
 		if (!specs) {
 			return;
 		}
@@ -720,10 +720,10 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 
 	_getPrivateKeySegment: function() {
 		var dfu = this.dfu;
-		if (!dfu.deviceID) {
+		if (!dfu.dfuId) {
 			return;
 		}
-		var specs = deviceSpecs[dfu.deviceID];
+		var specs = deviceSpecs[dfu.dfuId];
 		var segmentName = this._getPrivateKeySegmentName();
 		if (!specs || !segmentName) {
 			return;

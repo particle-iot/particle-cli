@@ -75,6 +75,9 @@ describe('Flash Command', function() {
 		flash.checkArguments([ '--known', 'test' ]);
 		flash.options.knownApp.should.equal('test');
 
+		flash.checkArguments([ '--known', 'tinker' ]);
+		flash.options.knownApp.should.equal('tinker');
+
 		flash.checkArguments([ '--cloud' ]);
 		flash.options.useCloud.should.equal(true);
 

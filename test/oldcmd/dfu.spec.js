@@ -16,7 +16,7 @@ const expect = chai.expect;
 describe('DFU', function() {
 	it('finds Particle devices in dfu-util -l output', function() {
 		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/only_particle.txt')).toString();
-		var devices = dfu._deviceIdsFromDfuOutput(output);
+		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
 		assert.equal(devices.length, 1);
 		assert.equal(devices[0], '2b04:d006');
@@ -24,7 +24,7 @@ describe('DFU', function() {
 
 	it('filters out non-Particle devices in dfu-util -l output', function() {
 		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/mixed.txt')).toString();
-		var devices = dfu._deviceIdsFromDfuOutput(output);
+		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
 		assert.equal(devices.length, 1);
 		assert.equal(devices[0], '2b04:d00a');
@@ -32,7 +32,7 @@ describe('DFU', function() {
 
 	it('handles no devices output', function() {
 		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/none.txt')).toString();
-		var devices = dfu._deviceIdsFromDfuOutput(output);
+		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
 		assert.equal(devices.length, 0);
 	});
