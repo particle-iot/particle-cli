@@ -127,7 +127,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					device = {
 						port: port.comName,
 						type: serialDeviceSpec.productName,
-						deviceId: serialDeviceSpec.serial.deviceId && serialDeviceSpec.serial.deviceId(port.serialNumber),
+						deviceId: serialDeviceSpec.serial.deviceId && serialDeviceSpec.serial.deviceId(port.serialNumber || port.pnpId),
 						specs: serialDeviceSpec
 					};
 				}
