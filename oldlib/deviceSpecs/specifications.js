@@ -37,6 +37,7 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'core_tinker.bin',
+			'doctor': 'core_doctor.bin',
 			'cc3000': 'cc3000-patch-programmer.bin',
 			'cc3000_1_14': 'cc3000-patch-programmer_1_14.bin',
 			'voodoo': 'voodoospark.bin',
@@ -108,6 +109,7 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'photon_tinker.bin',
+			'doctor': 'photon_doctor.bin',
 			'voodoo': 'voodoospark.bin'
 		},
 		serial: {
@@ -173,6 +175,7 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'p1_tinker.bin',
+			'doctor': 'p1_doctor.bin',
 			'voodoo': 'voodoospark.bin'
 		},
 		serial: {
@@ -249,6 +252,7 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'electron_tinker.bin',
+			'doctor': 'electron_doctor.bin',
 			'tinker-usb-debugging': 'tinker-usb-debugging-v0.4.8-rc.6-electron.bin'
 		},
 		serial: {
