@@ -44,6 +44,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			this._selectAntenna.bind(this),
 			this._selectIP.bind(this),
 			this._resetSoftAPPrefix.bind(this),
+			this._clearEEPROM.bind(this),
 			this._setupWiFi.bind(this),
 			this._resetKeys.bind(this),
 			this._flashTinker.bind(this),
@@ -279,6 +280,18 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			.then(function () {
 				var serialCommand = this.cli.getCommandModule('serial');
 				return serialCommand.sendDoctorSoftAPPrefix(this.device, '', this.serialTimeout);
+			}.bind(this)).then(function (message) {
+				console.log(message);
+			}).catch(this._catchSkipStep);
+	},
+
+	_clearEEPROM: function() {
+		this._displayStepTitle('Clear all data in EEPROM storage');
+
+		return this._promptReady()
+			.then(function () {
+				var serialCommand = this.cli.getCommandModule('serial');
+				return serialCommand.sendDoctorClearEEPROM(this.device, this.serialTimeout);
 			}.bind(this)).then(function (message) {
 				console.log(message);
 			}).catch(this._catchSkipStep);

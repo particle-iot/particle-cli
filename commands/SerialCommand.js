@@ -1689,6 +1689,18 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		});
 	},
 
+	sendDoctorClearEEPROM: function(device, timeout) {
+		if (!device) {
+			return when.reject('sendDoctorClearEEPROM - no serial port provided');
+		}
+
+		var command = 'e';
+
+		return this._issueSerialCommand(device, command, timeout).then(function (data) {
+			return data;
+		});
+	},
+
 	sendDoctorClearWiFi: function(device, timeout) {
 		if (!device) {
 			return when.reject('sendDoctorClearWiFi - no serial port provided');

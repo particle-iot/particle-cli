@@ -24,6 +24,7 @@ void setupUSB() {
 // a for antenna selection
 // i for IP configuration
 // p for SSID prefix
+// e for clear EEPROM
 void performUSBCommands(Stream& stream) {
   switch (stream.read()) {
     case 'l': performListenModeCommand(stream); break;
@@ -32,6 +33,7 @@ void performUSBCommands(Stream& stream) {
     case 'i': performIPCommand(stream); break;
     case 'p': performSoftAPPrefixCommand(stream); break;
     case 'c': performClearCredentialsCommand(stream); break;
+    case 'e': performClearEEPROMCommand(stream); break;
     default: break; // ignore unknown characters
   }
 }
@@ -125,6 +127,12 @@ void performClearCredentialsCommand(Stream& stream) {
   stream.printlnf("Cleared Wi-Fi credentials");
 }
 
+// Clear all the data stored in EEPROM
+void performClearEEPROMCommand(Stream& stream) {
+  clearEEPROM();
+  stream.printlnf("Cleared EEPROM data");
+}
+
 /** Commands implementation **/
 
 void enterListenMode() {
@@ -163,9 +171,13 @@ void setSoftAPPrefix(const char* prefix) {
   System.set(SYSTEM_CONFIG_SOFTAP_PREFIX, prefix);
 #endif
 }
-  
+
 void clearCredentials() {
 #if Wiring_WiFi
   WiFi.clearCredentials();
 #endif
+}
+
+void clearEEPROM() {
+  EEPROM.clear();
 }
