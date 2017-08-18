@@ -23,14 +23,28 @@ void setupUSB() {
 // d for DFU mode
 // a for antenna selection
 // i for IP configuration
+// p for SSID prefix
 void performUSBCommands(Stream& stream) {
   switch (stream.read()) {
-    case 'l': enterListenMode(); break;
-    case 'd': enterDFUMode(); break;
+    case 'l': performListenModeCommand(stream); break;
+    case 'd': performDFUModeCommand(stream); break;
     case 'a': performAntennaCommand(stream); break;
     case 'i': performIPCommand(stream); break;
+    case 'p': performSoftAPPrefixCommand(stream); break;
+    case 'c': performClearCredentialsCommand(stream); break;
     default: break; // ignore unknown characters
   }
+}
+
+// Goes straight to Listen mode
+void performListenModeCommand(Stream& stream) {
+  enterListenMode();
+  stream.println("Entering listen mode");
+}
+// Goes straight to DFU mode
+void performDFUModeCommand(Stream& stream) {
+  enterDFUMode();
+  stream.println("Entering DFU mode");
 }
 
 // Reads one character to select which antenna to use
@@ -40,11 +54,21 @@ void performAntennaCommand(Stream& stream) {
   char mode;
   if (stream.readBytes(&mode, 1)) {
     WLanSelectAntenna_TypeDef antenna;
+    const char *message;
     switch (mode) {
-      case 'i': antenna = ANT_INTERNAL; break;
-      case 'e': antenna = ANT_EXTERNAL; break;
+      case 'i':
+        antenna = ANT_INTERNAL;
+        message = "Internal";
+        break;
+      case 'e':
+        antenna = ANT_EXTERNAL;
+        message = "External";
+        break;
+      default:
+        return;
     }
     selectAntenna(antenna);
+    stream.printlnf("Switched antenna to %s", message);
   }
 }
 
@@ -55,8 +79,15 @@ void performIPCommand(Stream& stream) {
   char mode;
   if (stream.readBytes(&mode, 1)) {
     switch (mode) {
-      case 'd': useDynamicIP(); break;
-      case 's': performStaticIPCommand(stream); break;
+      case 'd':
+        useDynamicIP();
+        stream.println("Switched to dynamic IP");
+        break;
+      case 's':
+        if (performStaticIPCommand(stream)) {
+          stream.println("Switched to static IP");
+        }
+        break;
     }
   }
 }
@@ -64,13 +95,34 @@ void performIPCommand(Stream& stream) {
 // For static IP configuration, reads four integers in sequence that
 // represent the device IP address, netmask, gateway and DNS IP address.
 // See https://docs.particle.io/reference/firmware/photon/#ipaddress
-void performStaticIPCommand(Stream& stream) {
+bool performStaticIPCommand(Stream& stream) {
   IPAddress myAddress((uint32_t) stream.parseInt());
   IPAddress netmask((uint32_t) stream.parseInt());
   IPAddress gateway((uint32_t) stream.parseInt());
   IPAddress dns((uint32_t) stream.parseInt());
 
-  useStaticIP(myAddress, netmask, gateway, dns);
+  if (myAddress && netmask && gateway && dns) {
+    useStaticIP(myAddress, netmask, gateway, dns);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// For Wi-Fi devices with SoftAP prefix, change or reset the prefix for
+// the SSID name
+// Reads a string until the end of line.
+// If the string is empty, the default prefix will be reset
+void performSoftAPPrefixCommand(Stream& stream) {
+  String prefix = stream.readStringUntil('\n').trim();
+  setSoftAPPrefix(prefix.c_str());
+  stream.printlnf("Switched SoftAP prefix to %s", prefix.length() ? prefix.c_str() : "default");
+}
+
+// Clear the Wi-Fi networks
+void performClearCredentialsCommand(Stream& stream) {
+  clearCredentials();
+  stream.printlnf("Cleared Wi-Fi credentials");
 }
 
 /** Commands implementation **/
@@ -106,3 +158,14 @@ void useStaticIP(IPAddress myAddress, IPAddress netmask, IPAddress gateway, IPAd
 #endif
 }
 
+void setSoftAPPrefix(const char* prefix) {
+#if Wiring_WiFi && PLATFORM_ID != 0
+  System.set(SYSTEM_CONFIG_SOFTAP_PREFIX, prefix);
+#endif
+}
+  
+void clearCredentials() {
+#if Wiring_WiFi
+  WiFi.clearCredentials();
+#endif
+}

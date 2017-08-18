@@ -123,6 +123,8 @@ var specs = {
 		features: [
 			'wifi',
 			'system-firmware',
+			'antenna-selection',
+			'softap',
 		],
 	},
 	'2b04:d008': {

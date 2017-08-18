@@ -26,6 +26,8 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	options: null,
 	name: 'doctor',
 	description: 'Puts your device back into a healthy state.',
+	deviceTimeout: 3000,
+	serialTimeout: 1000,
 
 	init: function () {
 		this.addOption('*', this.deviceDoctor.bind(this), 'Puts your device back into a healthy state');
@@ -38,9 +40,13 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			this._nameDevice.bind(this),
 			this._updateSystemFirmware.bind(this),
 			this._updateCC3000.bind(this),
-			this._flashTinker.bind(this),
-			this._resetKeys.bind(this),
+			this._flashDoctor.bind(this),
+			this._selectAntenna.bind(this),
+			this._selectIP.bind(this),
+			this._resetSoftAPPrefix.bind(this),
 			this._setupWiFi.bind(this),
+			this._resetKeys.bind(this),
+			this._flashTinker.bind(this),
 			this._showDoctorGoodbye.bind(this)
 		]).catch(this._showDoctorError.bind(this));
 	},
@@ -160,6 +166,124 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 			}.bind(this)).catch(this._catchSkipStep);
 	},
 
+	_flashDoctor: function() {
+		this._displayStepTitle('Flashing the Device Doctor app');
+		console.log('This app allows changing more settings on your device\n');
+		return this._enterDfuMode()
+			.then(function() {
+				return this.cli.runCommand('flash', ['--usb', 'doctor']);
+			}.bind(this))
+			.then(this._waitForSerialDevice.bind(this, this.deviceTimeout))
+			.then(function (device) {
+				if (!device) {
+					throw new Error('Could not find serial device. Ensure the Device Doctor app was flashed');
+				}
+			}).catch(this._catchSkipStep);
+	},
+
+	_selectAntenna: function() {
+		if (!this._deviceHasFeature('antenna-selection')) {
+			return;
+		}
+
+		this._displayStepTitle('Select antenna');
+		return prompt([{
+			type: 'list',
+			name: 'choice',
+			message: 'Select the antenna to use to connect to Wi-Fi',
+			choices: ['Internal', 'External', 'Skip step', 'Exit']
+		}])
+			.then(function (ans) {
+				switch (ans.choice) {
+					case 'Skip step':
+						throw new SkipStepError();
+					case 'Exit':
+						throw new EarlyReturnError();
+					default:
+						return ans.choice;
+				}
+			}).then(function (antenna) {
+				var serialCommand = this.cli.getCommandModule('serial');
+				return serialCommand.sendDoctorAntenna(this.device, antenna, this.serialTimeout);
+			}.bind(this)).then(function (message) {
+				console.log(message);
+			}).catch(this._catchSkipStep);
+	},
+
+	_selectIP: function() {
+		if (!this._deviceHasFeature('wifi')) {
+			return;
+		}
+
+		this._displayStepTitle('Configure IP address');
+		var mode;
+		return prompt([{
+			type: 'list',
+			name: 'choice',
+			message: 'Select how the device will be assigned an IP address',
+			choices: ['Dynamic IP', 'Static IP', 'Skip step', 'Exit']
+		}])
+			.then(function (ans) {
+				switch (ans.choice) {
+					case 'Skip step':
+						throw new SkipStepError();
+					case 'Exit':
+						throw new EarlyReturnError();
+					default:
+						mode = ans.choice;
+				}
+			}).then(function () {
+				if (mode === 'Static IP') {
+					return this._promptIPAddresses({
+						device_ip: 'Device IP',
+						netmask: 'Netmask',
+						gateway: 'Gateway',
+						dns: 'DNS'
+					});
+				}
+			}.bind(this)).then(function (ipAddresses) {
+				var serialCommand = this.cli.getCommandModule('serial');
+				return serialCommand.sendDoctorIP(this.device, mode, ipAddresses, this.serialTimeout);
+			}.bind(this)).then(function (message) {
+				console.log(message);
+			}).catch(this._catchSkipStep);
+	},
+
+	_promptIPAddresses: function(ips) {
+		return prompt(_.map(ips, function (label, key) {
+			return {
+				type: 'input',
+				name: key,
+				message: label,
+				validate: function (val) {
+					var parts = val.split('.');
+					var allNumbers = _.every(parts, function (n) { return (+n).toString() === n });
+					return parts.length === 4 && allNumbers;
+				}
+			}
+		})).then(function (ans) {
+			return _.mapValues(ips, function (label, key) {
+				return ans[key];
+			});
+		});
+	},
+
+	_resetSoftAPPrefix: function() {
+		if (!this._deviceHasFeature('softap')) {
+			return;
+		}
+
+		this._displayStepTitle('Reset Wi-Fi hotspot name in listening mode');
+
+		return this._promptReady()
+			.then(function () {
+				var serialCommand = this.cli.getCommandModule('serial');
+				return serialCommand.sendDoctorSoftAPPrefix(this.device, '', this.serialTimeout);
+			}.bind(this)).then(function (message) {
+				console.log(message);
+			}).catch(this._catchSkipStep);
+	},
+
 	_flashTinker: function() {
 		this._displayStepTitle('Flashing the default Particle Tinker app');
 		return this._enterDfuMode()
@@ -172,7 +296,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		this._displayStepTitle('Reseting server and device keys');
 
 		// do this again to refresh the device data with latest firmware
-		return this._waitForSerialDevice(3000)
+		return this._waitForSerialDevice(this.deviceTimeout)
 			.then(this._enterDfuMode.bind(this))
 			.then(function() {
 				return this.cli.runCommand('keys', ['server']);
@@ -195,7 +319,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 
 		var tryFindDevice = function() {
 			return this._findDevice().then(function () {
-				if (this.device && this.device.deviceId) {
+				if (this.device && this.device.port) {
 					return this.device;
 				} else if (timeoutReached) {
 					return null;
@@ -212,13 +336,21 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		if (!this._deviceHasFeature('wifi')) {
 			return;
 		}
+		var serialCommand = this.cli.getCommandModule('serial');
 
 		this._displayStepTitle('Clearing and setting up Wi-Fi settings');
-		console.log('Tap ' + chalk.bold.cyan('RESET/RST') + ' then hold ' + chalk.bold.cyan('MODE/SETUP') +
-			' for about 10 seconds untils the device blinks ' + chalk.bold.blue('blue rapidly') + ' then release to clear Wi-Fi settings');
-		return this._promptReady().then(function() {
-			return this.cli.runCommand('serial', ['wifi']);
-		}.bind(this)).catch(this._catchSkipStep);
+		return this._promptReady()
+			.then(function () {
+				return serialCommand.sendDoctorClearWiFi(this.device, this.serialTimeout);
+			}.bind(this)).then(function (message) {
+				console.log(message);
+			}).then(function () {
+				return serialCommand.sendDoctorListenMode(this.device, this.serialTimeout);
+			}.bind(this)).then(function (message) {
+				console.log(message);
+			}).then(function() {
+				return this.cli.runCommand('serial', ['wifi']);
+			}.bind(this)).catch(this._catchSkipStep);
 	},
 
 	_deviceHasFeature: function(feature) {
