@@ -126,7 +126,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				if (serialDeviceSpec) {
 					device = {
 						port: port.comName,
-						type: serialDeviceSpec.productName
+						type: serialDeviceSpec.productName,
+						deviceId: serialDeviceSpec.serial.deviceId && serialDeviceSpec.serial.deviceId(port.serialNumber || port.pnpId),
+						specs: serialDeviceSpec
 					};
 				}
 
@@ -1635,6 +1637,101 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return matches[1];
 			}
 		});
+	},
+
+	sendDoctorAntenna: function(device, antenna, timeout) {
+		if (!device) {
+			return when.reject('sendDoctorAntenna - no serial port provided');
+		}
+
+		var antennaValues = {
+			'Internal': 'i',
+			'External': 'e'
+		};
+		var command = 'a' + antennaValues[antenna];
+
+		return this._issueSerialCommand(device, command, timeout).then(function (data) {
+			return data;
+		});
+	},
+
+	sendDoctorIP: function(device, mode, ipAddresses, timeout) {
+		if (!device) {
+			return when.reject('sendDoctorIP - no serial port provided');
+		}
+
+		var modeValues = {
+			'Dynamic IP': 'd',
+			'Static IP': 's'
+		};
+		var command = 'i' + modeValues[mode];
+
+		if (mode === 'Static IP') {
+			var ipAddressValues = [ipAddresses.device_ip, ipAddresses.netmask, ipAddresses.gateway, ipAddresses.dns];
+			var ipAddressesInt = _.map(ipAddressValues, this._ipToInteger);
+			command += ipAddressesInt.join(' ') + '\n';
+		}
+
+		return this._issueSerialCommand(device, command, timeout).then(function (data) {
+			return data;
+		});
+	},
+
+	sendDoctorSoftAPPrefix: function(device, prefix, timeout) {
+		if (!device) {
+			return when.reject('sendDoctorSoftAPPrefix - no serial port provided');
+		}
+
+		var command = 'p' + prefix + '\n';
+
+		return this._issueSerialCommand(device, command, timeout).then(function (data) {
+			return data;
+		});
+	},
+
+	sendDoctorClearEEPROM: function(device, timeout) {
+		if (!device) {
+			return when.reject('sendDoctorClearEEPROM - no serial port provided');
+		}
+
+		var command = 'e';
+
+		return this._issueSerialCommand(device, command, timeout).then(function (data) {
+			return data;
+		});
+	},
+
+	sendDoctorClearWiFi: function(device, timeout) {
+		if (!device) {
+			return when.reject('sendDoctorClearWiFi - no serial port provided');
+		}
+
+		var command = 'c';
+
+		return this._issueSerialCommand(device, command, timeout).then(function (data) {
+			return data;
+		});
+	},
+
+	sendDoctorListenMode: function(device, timeout) {
+		if (!device) {
+			return when.reject('sendDoctorListenMode - no serial port provided');
+		}
+
+		var command = 'l';
+
+		return this._issueSerialCommand(device, command, timeout).then(function (data) {
+			return data;
+		});
+	},
+
+	_ipToInteger: function (ip) {
+		var parts = ip.split('.');
+		if (parts.length !== 4) {
+			return 0;
+		}
+
+		return (((parts[0] * 256) + parts[1]) * 256 + parts[2]) * 256 + parts[3];
 	},
 
 	_parsePort: function(devices, comPort) {

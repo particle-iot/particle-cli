@@ -33,6 +33,7 @@ var extend = require('xtend');
 var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand');
 var dfu = require('../oldlib/dfu');
+var when = require('when');
 var whenNode = require('when/node');
 var Spinner = require('cli-spinner').Spinner;
 
@@ -61,8 +62,8 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 		// by default we don't want crazy DFU output
 		settings.verboseOutput = false;
 
-		dfu.findCompatibleDFU().then(function (deviceId) {
-			doUpdate(deviceId);
+		return dfu.findCompatibleDFU().then(function (deviceId) {
+			return doUpdate(deviceId);
 		}).catch(function (err) {
 			return dfuError(err);
 		});
@@ -91,43 +92,47 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 
 			console.log();
 			console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
-			console.log(chalk.cyan('>'), 'This process should take about 30 seconds. Here goes!');
+			console.log(chalk.cyan('>'), 'This process should take about 30 seconds. Here it goes!');
 			console.log();
 
 			if (!settings.verboseOutput) {
 				spin.start();
 			}
 
-			flash();
-			function flash(err) {
-				if (err) {
-					return failure(err);
-				}
-				if (steps.length > 0) {
-					return steps.shift()(flash);
-				}
-				success();
-			};
+			return when.promise(function (resolve, reject) {
+				flash();
+				function flash(err) {
+					if (err) {
+						return failure(err);
+					}
+					if (steps.length > 0) {
+						return steps.shift()(flash);
+					}
+					success();
+				};
 
-			function success() {
-				spin.stop(true);
-				console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
-				console.log();
-				console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
-				console.log();
-			};
+				function success() {
+					spin.stop(true);
+					console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
+					console.log();
+					console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
+					console.log();
+					resolve();
+				};
 
-			function failure(err) {
-				spin.stop(true);
-				console.log();
-				console.log(chalk.red('!'), 'An error occurred while attempting to update the system firmware of your device:');
-				console.log();
-				console.log(chalk.bold.white(err.toString()));
-				console.log();
-				console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
-				console.log(chalk.bold.white('https://community.particle.io/'));
-			};
-		};
+				function failure(err) {
+					spin.stop(true);
+					console.log();
+					console.log(chalk.red('!'), 'An error occurred while attempting to update the system firmware of your device:');
+					console.log();
+					console.log(chalk.bold.white(err.toString()));
+					console.log();
+					console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
+					console.log(chalk.bold.white('https://community.particle.io/'));
+					reject();
+				};
+			});
+		}
 	}
 });
 

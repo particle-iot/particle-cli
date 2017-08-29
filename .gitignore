@@ -22,3 +22,5 @@ accept/tmp
 *.tgz
 
 .env
+*.pem
+*.der

@@ -2,6 +2,13 @@
 
 var path = require('path');
 
+function deviceIdFromSerialNumber(serialNumber) {
+	const found = /[0-9A-Fa-f]{24}/.exec(serialNumber);
+	if (found) {
+		return found[0].toLowerCase();
+	}
+}
+
 var specs = {
 
 	'1d50:607f': {
@@ -30,6 +37,7 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'core_tinker.bin',
+			'doctor': 'core_doctor.bin',
 			'cc3000': 'cc3000-patch-programmer.bin',
 			'cc3000_1_14': 'cc3000-patch-programmer_1_14.bin',
 			'voodoo': 'voodoospark.bin',
@@ -38,11 +46,16 @@ var specs = {
 		serial: {
 			vid: '1d50',
 			pid: '607d',
-			serialNumber: 'Spark_Core'
+			serialNumber: 'Spark_Core',
+			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'tcp',
 		productId: 0,
-		writePadding: 2
+		writePadding: 2,
+		features: [
+			'wifi',
+			'cc3000',
+		],
 	},
 	'2b04:d006': {
 		productName: 'Photon',
@@ -96,15 +109,23 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'photon_tinker.bin',
+			'doctor': 'photon_doctor.bin',
 			'voodoo': 'voodoospark.bin'
 		},
 		serial: {
 			vid: '2b04',
 			pid: 'c006',
-			serialNumber: 'Particle_Photon'
+			serialNumber: 'Particle_Photon',
+			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'tcp',
-		productId: 6
+		productId: 6,
+		features: [
+			'wifi',
+			'system-firmware',
+			'antenna-selection',
+			'softap',
+		],
 	},
 	'2b04:d008': {
 		productName: 'P1',
@@ -156,15 +177,21 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'p1_tinker.bin',
+			'doctor': 'p1_doctor.bin',
 			'voodoo': 'voodoospark.bin'
 		},
 		serial: {
 			vid: '2b04',
 			pid: 'c008',
-			serialNumber: 'Particle_P1'
+			serialNumber: 'Particle_P1',
+			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'tcp',
-		productId: 8
+		productId: 8,
+		features: [
+			'wifi',
+			'system-firmware',
+		],
 	},
 	'2b04:d00a': {
 		productName: 'Electron',
@@ -227,16 +254,22 @@ var specs = {
 		},
 		knownApps: {
 			'tinker': 'electron_tinker.bin',
+			'doctor': 'electron_doctor.bin',
 			'tinker-usb-debugging': 'tinker-usb-debugging-v0.4.8-rc.6-electron.bin'
 		},
 		serial: {
 			vid: '2b04',
 			pid: 'c00a',
-			serialNumber: 'Particle_Electron'
+			serialNumber: 'Particle_Electron',
+			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'udp',
 		alternativeProtocol: 'tcp',
-		productId: 10
+		productId: 10,
+		features: [
+			'cellular',
+			'system-firmware',
+		],
 	},
 	'2b04:d058': {
 		productName: 'Duo',
@@ -281,7 +314,10 @@ var specs = {
 			serialNumber: 'RedBear_Duo'
 		},
 		defaultProtocol: 'tcp',
-		productId: 88
+		productId: 88,
+		features: [
+			'wifi',
+		],
 	}
 };
 

@@ -111,7 +111,7 @@
     },
 
     "device": {
-        "_commands": [ "add", "remove", "rename" ],
+        "_commands": [ "add", "remove", "rename", "doctor" ],
 
         "add": {
             "maps": [ "cloud", "claim" ],
@@ -127,6 +127,11 @@
             "maps": [ "cloud", "name" ],
             "usage": "particle device rename device_id name",
             "does": "changes the friendly name of your device"
+        },
+        "doctor": {
+            "maps": [ "doctor" ],
+            "usage": "particle device doctor",
+            "does": "puts your device back into a healthy state"
         }
     },
 

@@ -67,43 +67,31 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 	checkArguments: function (args) {
 		this.options = this.options || {};
 
-		if (!this.options.knownApp) {
-			this.options.knownApp = utilities.tryParseArgs(args,
-				'--known',
-				'Please specify an app name for --known'
-			);
-		}
-		if (!this.options.useCloud) {
-			this.options.useCloud = utilities.tryParseArgs(args,
-				'--cloud',
-				null
-			);
-		}
-		if (!this.options.useDfu) {
-			this.options.useDfu = utilities.tryParseArgs(args,
-				'--usb',
-				null
-			);
-		}
-		if (!this.options.serial) {
-			this.options.serial = utilities.tryParseArgs(args,
-				'--serial',
-				null
-			);
-		}
-		if (!this.options.useFactoryAddress) {
-			//assume DFU if doing factory
-			this.options.useFactoryAddress = utilities.tryParseArgs(args,
-				'--factory',
-				null
-			);
-		}
-		if (!this.options.force) {
-			this.options.force = utilities.tryParseArgs(args,
-				'--force',
-				null
-			);
-		}
+		this.options.knownApp = utilities.tryParseArgs(args,
+			'--known',
+			'Please specify an app name for --known'
+		);
+		this.options.useCloud = utilities.tryParseArgs(args,
+			'--cloud',
+			null
+		);
+		this.options.useDfu = utilities.tryParseArgs(args,
+			'--usb',
+			null
+		);
+		this.options.serial = utilities.tryParseArgs(args,
+			'--serial',
+			null
+		);
+		//assume DFU if doing factory
+		this.options.useFactoryAddress = utilities.tryParseArgs(args,
+			'--factory',
+			null
+		);
+		this.options.force = utilities.tryParseArgs(args,
+			'--force',
+			null
+		);
 	},
 
 
@@ -205,7 +193,7 @@ FlashCommand.prototype = extend(BaseCommand.prototype, {
 							return reject('CRC is invalid, use --force to override');
 						}
 
-						specs = deviceSpecs[dfu.deviceID];
+						specs = deviceSpecs[dfu.dfuId];
 						if (info.prefixInfo.platformID !== specs.productId && !self.options.force) {
 							return reject(util.format('Incorrect platform id (expected %d, parsed %d), use --force to override', specs.productId, info.prefixInfo.platformID));
 						}
