@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.24.0 - 29 August 2017
+
+- [#379](https://github.com/spark/particle-cli/pull/379) Add `particle device doctor`
+
 ## 1.23.1 - 6 July 2017
 
 - [#375](https://github.com/spark/particle-cli/issues/375) Fix for `particle setup wifi`.
