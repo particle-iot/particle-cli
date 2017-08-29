@@ -109,6 +109,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		var deviceName = this.device.type || 'Device';
 		console.log('');
 		console.log('The Doctor will operate on your ' + deviceName + ' connected over USB');
+		console.log("You'll be asked to put your device in DFU mode several times to reset different settings.");
 	},
 
 	_enterDfuMode: function() {
