@@ -8,6 +8,7 @@ var chalk = require('chalk');
 var inquirer = require('inquirer');
 var prompt = inquirer.prompt;
 var dfu = require('../oldlib/dfu.js');
+var ApiClient = require('../oldlib/ApiClient.js');
 var BaseCommand = require('./BaseCommand');
 
 var EarlyReturnError = function () {
@@ -36,6 +37,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	deviceDoctor: function () {
 		return pipeline([
 			this._showDoctorWelcome.bind(this),
+			this._setupApi.bind(this),
 			this._findDevice.bind(this),
 			this._nameDevice.bind(this),
 			this._updateSystemFirmware.bind(this),
@@ -63,6 +65,13 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		], function (line) {
 			console.log('  - ' + line);
 		});
+	},
+
+	_setupApi: function() {
+		this.api = new ApiClient();
+		if (!this.api.ready()) {
+			throw new EarlyReturnError();
+		}
 	},
 
 	_findDevice: function() {
@@ -310,6 +319,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 
 		// do this again to refresh the device data with latest firmware
 		return this._waitForSerialDevice(this.deviceTimeout)
+			.then(this._verifyDeviceOwnership.bind(this))
 			.then(this._enterDfuMode.bind(this))
 			.then(function() {
 				return this.cli.runCommand('keys', ['server']);
@@ -343,6 +353,39 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		}.bind(this);
 
 		return tryFindDevice();
+	},
+
+	_verifyDeviceOwnership: function() {
+		return when().then(function() {
+			if (!this.device || !this.device.deviceId) {
+				return false;
+			}
+
+			return this.api.getAttributes(this.device.deviceId).then(function (attributes) {
+				if (attributes.error === 'Permission Denied') {
+					return false;
+				}
+				return true;
+			}, function (error) {
+				return false;
+			});
+		}.bind(this)).then(function (ownsDevice) {
+			if (ownsDevice) {
+				return;
+			}
+			console.log(chalk.red('!'), "This device is not claimed to your Particle account.");
+			console.log(chalk.red('!'), 'Resetting keys for a device you do not own may permanently prevent it from connecting to the Particle cloud.');
+			return prompt([{
+				type: 'confirm',
+				name: 'choice',
+				message: 'Skip resetting keys?',
+				default: true
+			}]).then(function (ans) {
+				if (ans.choice) {
+					throw new SkipStepError();
+				}
+			});
+		});
 	},
 
 	_setupWiFi: function() {
