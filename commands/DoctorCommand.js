@@ -182,6 +182,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 		console.log('This app allows changing more settings on your device\n');
 		return this._enterDfuMode()
 			.then(function() {
+				// See the source code of the doctor app in binaries/doctor.ino
 				return this.cli.runCommand('flash', ['--usb', 'doctor']);
 			}.bind(this))
 			.then(this._waitForSerialDevice.bind(this, this.deviceTimeout))
