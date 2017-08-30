@@ -317,7 +317,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	},
 
 	_resetKeys: function() {
-		this._displayStepTitle('Reseting server and device keys');
+		this._displayStepTitle('Resetting server and device keys');
 
 		// do this again to refresh the device data with latest firmware
 		return this._waitForSerialDevice(this.deviceTimeout)
