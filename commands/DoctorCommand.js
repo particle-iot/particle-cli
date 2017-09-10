@@ -28,7 +28,7 @@ DoctorCommand.prototype = extend(BaseCommand.prototype, {
 	name: 'doctor',
 	description: 'Puts your device back into a healthy state.',
 	deviceTimeout: 3000,
-	serialTimeout: 1000,
+	serialTimeout: 3000,
 
 	init: function () {
 		this.addOption('*', this.deviceDoctor.bind(this), 'Puts your device back into a healthy state');
