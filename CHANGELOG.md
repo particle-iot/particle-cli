@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.24.1 - 12 September 2017
+
+- [#386](https://github.com/spark/particle-cli/issues/386) Increase Device Doctor timeout for clearing EEPROM
+
 ## 1.24.0 - 29 August 2017
 
 - [#379](https://github.com/spark/particle-cli/pull/379) Add `particle device doctor`
