@@ -124,35 +124,20 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				null
 			);
 		}
-		if (!this.options.local) {
-			// todo - move args parsing to a dedicated portion of the command interface (bound to I/O, and separate
-			// from the main command logic.)
-			var idx = utilities.indexOf(args, '--local');
+
+		var chomp = function(arg) {
+			var idx = utilities.indexOf(args, arg);
 			if (idx >= 0) {
-				this.options.local = true;
 				args.splice(idx, 1);
+				return true;
 			} else {
-				this.options.local = false;
+				return false;
 			}
 		}
-		if (!this.options.verbose) {
-			var idx = utilities.indexOf(args, '--verbose');
-			if (idx >= 0) {
-				this.options.verbose = true;
-				args.splice(idx, 1);
-			} else {
-				this.options.verbose = false;
-			}
-		}
-		if (!this.options.noconfirm) {
-			var idx = utilities.indexOf(args, '--yes');
-			if (idx >= 0) {
-				this.options.noconfirm = true;
-				args.splice(idx, 1);
-			} else {
-				this.options.noconfirm = false;
-			}
-		}
+
+		this.options.local = chomp('--local');
+		this.options.verbose = chomp('--verbose');
+		this.options.noconfirm = chomp('--yes');
 
 		return args;
 	},
