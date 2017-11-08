@@ -58,12 +58,12 @@ WebhookCommand.HookJsonTemplate = {
 	'deviceid': 'optionally filter by providing a device id',
 
 	'_': 'The following parameters are optional',
-	'mydevices': 'true/false',
 	'requestType': 'GET/POST/PUT/DELETE',
 	'form': null,
+	'json': null,
+	'body': null,
 	'headers': null,
 	'query': null,
-	'json': null,
 	'auth': null,
 	'responseTemplate': null,
 	'rejectUnauthorized': 'true/false'
@@ -160,7 +160,6 @@ WebhookCommand.prototype = extend(BaseCommand.prototype, {
 			url: url,
 			deviceid: deviceID,
 			requestType: requestType || data.requestType,
-			mydevices: data.mydevices === undefined ? true : data.mydevices
 		};
 
 		if (data) {
