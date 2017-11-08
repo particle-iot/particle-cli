@@ -86,18 +86,18 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'system-part1-0.6.2-photon.bin',
-			systemFirmwareTwo: 'system-part2-0.6.2-photon.bin'
+			systemFirmwareOne: 'system-part1-0.6.3-photon.bin',
+			systemFirmwareTwo: 'system-part2-0.6.3-photon.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'system-part1-0.6.2-p1.bin',
-			systemFirmwareTwo: 'system-part2-0.6.2-p1.bin'
+			systemFirmwareOne: 'system-part1-0.6.3-p1.bin',
+			systemFirmwareTwo: 'system-part2-0.6.3-p1.bin'
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
-			systemFirmwareOne:   'system-part2-0.6.2-electron.bin',
-			systemFirmwareTwo:   'system-part3-0.6.2-electron.bin',
-			systemFirmwareThree: 'system-part1-0.6.2-electron.bin'
+			systemFirmwareOne:   'system-part2-0.6.3-electron.bin',
+			systemFirmwareTwo:   'system-part3-0.6.3-electron.bin',
+			systemFirmwareThree: 'system-part1-0.6.3-electron.bin'
 		}
 	},
 	commandMappings: path.join(__dirname, 'mappings.json'),
