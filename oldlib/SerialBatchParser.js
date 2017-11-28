@@ -6,23 +6,22 @@ var Buffer = require('safe-buffer').Buffer;
 var _ = require('lodash');
 
 /**
- * A parser that waits for a given length of time for a response and emits the chunk of
+ * A parser that waits for a given length of time for a response and emits the batch of
  * data that was received within that time.
- * @type {{makeParser: module.exports.makeParser}}
  */
-function SerialChunkParser(options) {
+function SerialBatchParser(options) {
 	options = options || {};
-	this.chunkDelay = options.timeout || 250;
-	this.chunkTimer = null;
+	this.batchTimeout = options.timeout || 250;
+	this.batchTimer = null;
 	this.buffer = Buffer.alloc(0);
 	this.setTimeoutFunctions(global.setTimeout, global.clearTimeout);
 
 	Transform.call(this);
 }
 
-util.inherits(SerialChunkParser, Transform);
+util.inherits(SerialBatchParser, Transform);
 
-_.extend(SerialChunkParser.prototype, {
+_.extend(SerialBatchParser.prototype, {
 	setTimeoutFunctions: function setTimeoutFunctions(setTimeout, clearTimeout) {
 		this.setTimeout = setTimeout;
 		this.clearTimeout = clearTimeout;
@@ -35,18 +34,22 @@ _.extend(SerialChunkParser.prototype, {
 	},
 
 	_flush: function _flush(cb) {
-		this.push(this.buffer);
-		this.buffer = Buffer.alloc(0);
+		this.pushBatch();
 		cb();
 	},
 
+	pushBatch() {
+		this.push(this.buffer);
+		this.buffer = Buffer.alloc(0);
+	},
+
 	updateTimer: function updateTimer() {
-		this.clearTimeout(this.chunkTimer);
-		this.chunkTimer = this.setTimeout(function () {
-			this.push(this.buffer);
-			this.buffer = Buffer.alloc(0);
-		}.bind(this), this.chunkDelay);
+		this.clearTimeout(this.batchTimer);
+		this.batchTimer = this.setTimeout(
+			this.pushBatch.bind(this),
+			this.batchTimeout
+		);
 	},
 });
 
-module.exports = SerialChunkParser;
+module.exports = SerialBatchParser;

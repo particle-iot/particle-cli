@@ -49,7 +49,7 @@ var YModem = require('../oldlib/ymodem');
 
 var BaseCommand = require('./BaseCommand');
 var utilities = require('../oldlib/utilities');
-var SerialChunkParser = require('../oldlib/SerialChunkParser');
+var SerialBatchParser = require('../oldlib/SerialBatchParser');
 var SerialTrigger = require('../oldlib/SerialTrigger');
 
 // TODO: DRY this up somehow
@@ -975,7 +975,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			baudRate: 9600,
 			autoOpen: false
 		});
-		var parser = new SerialChunkParser({ timeout: 250 });
+		var parser = new SerialBatchParser({ timeout: 250 });
 		serialPort.pipe(parser);
 
 		var done = when.defer();
@@ -1074,7 +1074,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			baudRate: 9600,
 			autoOpen: false
 		});
-		var parser = new SerialChunkParser({ timeout: 250 });
+		var parser = new SerialBatchParser({ timeout: 250 });
 		serialPort.pipe(parser);
 
 		var wifiDone = when.defer();
@@ -1415,7 +1415,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		if (!device) {
 			return when.reject('no serial port provided');
 		}
-		var failDelay = 50000 // FIXME!!!!!!!!!! timeout || 5000;
+		var failDelay = timeout || 5000;
 
 		var serialPort;
 		var self = this;
@@ -1424,7 +1424,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				baudRate: 9600,
 				autoOpen: false
 			});
-			var parser = new SerialChunkParser({ timeout: 250 });
+			var parser = new SerialBatchParser({ timeout: 250 });
 			serialPort.pipe(parser);
 
 			var failTimer = setTimeout(function () {

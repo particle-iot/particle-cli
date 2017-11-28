@@ -58,7 +58,7 @@ describe('Serial Command', function() {
 			var mockSerial = new MockSerial();
 			mockSerial.write = function (data, cb) {
 				if (data==='c') {
-					mockSerial.respond('Device claimed: no');
+					mockSerial.push('Device claimed: no');
 				}
 				cb();
 			};
@@ -85,14 +85,16 @@ describe('Serial Command', function() {
 			mockSerial.write = function (data, cb) {
 				if (data==='C') {
 					mockSerial.expectingClaimCode = true;
-					mockSerial.respond('Enter 63-digit claim code: ');
+					mockSerial.push('Enter 63-digit claim code: ');
 				}
 				else if (this.expectingClaimCode) {
 					mockSerial.expectingClaimCode = false;
 					mockSerial.claimCodeSet = data.split('\n')[0];
-					mockSerial.respond('Claim code set to: '+data);
+					mockSerial.push('Claim code set to: '+data);
 				}
-				cb();
+				if (cb) {
+					cb();
+				}
 			};
 			serial.serialPort = mockSerial;
 			return serial.sendClaimCode(device, code, false).

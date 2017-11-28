@@ -1,51 +1,41 @@
-class MockSerial {
-	constructor()
-	{
-		this._open = false;
-		this.listeners = {};
-	}
+var util = require('util');
+var Duplex = require('stream').Duplex;
 
-	drain(next) {
-		next();
-	}
-
-	flush(next) {
-		next();
-	}
-
-	on(type, cb) {
-		this.listeners[type] = cb;
-	}
-
-	respond(data) {
-		if (this.listeners.data) {
-			this.listeners.data(data);
-		}
-	}
-
-	open(cb) {
-		this._open = true;
-		cb();
-	}
-
-	removeAllListeners(type) {
-		this.removeListener(type);
-	}
-
-	removeListener(type) {
-		delete self.listeners[type];
-	}
-
-	get isOpen() {
-		return self._open;
-	}
-
-	close(cb) {
-		self._open = false;
-		if (cb) {
-			cb();
-		}
-	}
+function MockSerial() {
+	Duplex.call(this);
+	this.isOpen = false;
+	this.data = '';
 }
+util.inherits(MockSerial, Duplex);
+
+MockSerial.prototype._read = function() {
+};
+
+MockSerial.prototype.write = function(chunk) {
+	this.data += chunk;
+};
+
+MockSerial.prototype.drain = function(cb) {
+	this.emit('drain');
+	process.nextTick(cb);
+};
+
+MockSerial.prototype.flush = function(cb) {
+	this.emit('flush');
+	process.nextTick(cb);
+};
+
+MockSerial.prototype.open = function(cb) {
+	this.isOpen = true;
+	process.nextTick(cb);
+};
+
+
+MockSerial.prototype.close = function(cb) {
+	this.isOpen = false;
+	if (cb) {
+		process.nextTick(cb);
+	}
+};
 
 module.exports = MockSerial;

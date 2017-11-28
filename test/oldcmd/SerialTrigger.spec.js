@@ -1,41 +1,43 @@
 'use strict';
 
 var util = require('util');
-var EventEmitter = require('events').EventEmitter;
+var MockSerial = require('../mocks/Serial.mock')
+var Transform = require('stream').Transform;
 
 var SerialTrigger = require('../../oldlib/SerialTrigger');
 
-function MockPort() {
+function PassthroughStream() {
+	Transform.call(this);
 }
-util.inherits(MockPort, EventEmitter);
-MockPort.prototype.write = function(data, cb) {
-	this.data = data;
+util.inherits(PassthroughStream, Transform);
+PassthroughStream.prototype._transform = function(chunk, encoding, cb) {
+	this.push(chunk);
 	process.nextTick(cb);
 };
-MockPort.prototype.drain = function(cb) {
-	this.emit('drain');
-	process.nextTick(cb);
-};
-MockPort.prototype.flush = function(cb) {
-	this.emit('flush');
+
+PassthroughStream.prototype._flush = function(cb) {
 	process.nextTick(cb);
 };
 
 describe('SerialTrigger', function() {
 	it('should trigger when prompt is at beginning of line', function(done) {
-		var port = new MockPort();
-		var st = new SerialTrigger(port);
+		var port = new MockSerial();
+		var stream = new PassthroughStream();
+		port.pipe(stream);
+		var st = new SerialTrigger(port, stream);
 		st.addTrigger('SSID: ', function() {
 			st.stop();
 			done();
 		});
 		st.start();
-		port.emit('data', 'SSID: ');
+		port.push('SSID: ');
 	});
 
 	it('should not trigger when data does not match', function(done) {
-		var port = new MockPort();
-		var st = new SerialTrigger(port);
+		var port = new MockSerial();
+		var stream = new PassthroughStream();
+		port.pipe(stream);
+		var st = new SerialTrigger(port, stream);
 		var to = setTimeout(function () {
 			done();
 		}, 100);
@@ -45,12 +47,14 @@ describe('SerialTrigger', function() {
 			done(new Error('triggered when it should not'));
 		});
 		st.start();
-		port.emit('data', 'ASDF: ');
+		port.push('ASDF: ');
 	});
 
 	it('should write the response from the trigger', function(done) {
-		var port = new MockPort();
-		var st = new SerialTrigger(port);
+		var port = new MockSerial();
+		var stream = new PassthroughStream();
+		port.pipe(stream);
+		var st = new SerialTrigger(port, stream);
 		port.on('drain', function() {
 			if (port.data !== 'particle') {
 				return done(new Error('Response data does not match'));
@@ -62,7 +66,7 @@ describe('SerialTrigger', function() {
 		st.addTrigger('SSID: ', function(cb) {
 			cb('particle');
 		});
-		st.start();
-		port.emit('data', 'SSID: ');
+		st.start(true);
+		port.push('SSID: ');
 	});
 });
