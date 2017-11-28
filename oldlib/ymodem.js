@@ -41,19 +41,6 @@ function YModem(serialPort, options) {
 	}
 
 	serialPort.once('close', this._close.bind(this));
-
-	serialPort.once('open', function() {
-		serialPort.on('data', function(data) {
-			if (data.length <= 2) {
-				for (var i=0; i < data.length; i++) {
-					var chr = data[i];
-					log.verbose(ymodemLookup[chr] || chr);
-				}
-				return;
-			}
-			log.verbose(data, data.toString());
-		});
-	});
 }
 
 YModem.prototype = {
@@ -91,6 +78,17 @@ YModem.prototype = {
 		return transferred;
 	},
 
+	_logData: function(data) {
+		if (data.length <= 2) {
+			for (var i=0; i < data.length; i++) {
+				var chr = data[i];
+				log.verbose(ymodemLookup[chr] || chr);
+			}
+			return;
+		}
+		log.verbose(data, data.toString());
+	},
+
 	_close: function() {
 		if (this.port.isOpen) {
 			if (this.errored) {
@@ -115,16 +113,18 @@ YModem.prototype = {
 
 				// wait for initial response
 				var line = '';
-				function cmdResponse(data) {
+				function cmdResponse() {
+					var data = self.port.read();
+					self._logData(data);
 					line += data.toString();
 					// if not in listening mode, we get CRC16 back
 					// if in listening mode, we get this string
 					if (data[0] === ymodem.CRC16 || line.trim() === "Waiting for the binary file to be sent ... (press 'a' to abort)") {
-						self.port.removeListener('data', cmdResponse);
+						self.port.removeListener('readable', cmdResponse);
 						return resolve();
 					}
 				}
-				self.port.on('data', cmdResponse);
+				self.port.on('readable', cmdResponse);
 				self.port.write('f');
 			});
 		}).timeout(5000).catch(when.TimeoutError, function() {
@@ -194,8 +194,9 @@ YModem.prototype = {
 		var self = this;
 		var response = when.promise(function(resolve, reject) {
 			var resp = new Buffer([]);
-			function writeResponse(data) {
-				log.verbose('response', data);
+			function writeResponse() {
+                var data = self.port.read();
+                self._logData(data);
 				resp = Buffer.concat([resp, data]);
 				switch (resp[0]) {
 					case ymodem.ACK:
@@ -204,7 +205,7 @@ YModem.prototype = {
 							return;
 						}
 						self.seq += 1;
-						self.port.removeListener('data', writeResponse);
+						self.port.removeListener('readable', writeResponse);
 						resolve(resp[0]);
 						break;
 					case ymodem.CA:
@@ -214,20 +215,19 @@ YModem.prototype = {
 						}
 						// fallthrough on purpose
 					case ymodem.NAK:
-						self.port.removeListener('data', writeResponse);
+						self.port.removeListener('readable', writeResponse);
 						reject('Transfer cancelled');
 						break;
 					default:
-						self.port.removeListener('data', writeResponse);
+						self.port.removeListener('readable', writeResponse);
 						reject('unknown message');
 						break;
 				}
 			}
-			self.port.on('data', writeResponse);
+			self.port.on('readable', writeResponse);
 		});
 
 		return pipeline([
-			whenNode.lift(self.port.flush.bind(self.port)),
 			function() {
 				return whenNode.lift(self.port.write.bind(self.port))(packet);
 			},

@@ -39,8 +39,9 @@ _.extend(SerialBatchParser.prototype, {
 	},
 
 	pushBatch() {
-		this.push(this.buffer);
+		var batch = this.buffer;
 		this.buffer = Buffer.alloc(0);
+		this.push(batch);
 	},
 
 	updateTimer: function updateTimer() {

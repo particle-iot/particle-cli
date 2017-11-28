@@ -67,16 +67,14 @@ SerialTrigger.prototype.start = function(noLogs) {
 			if (triggerFn) {
 				triggerFn(function (response, cb) {
 					if (response) {
-						self.port.flush(function () {
-							self.port.write(response);
-							self.port.drain(function () {
-								if (!noLogs) {
-									log.serialInput(response);
-								}
-								if (cb) {
-									cb();
-								}
-							});
+						self.port.write(response);
+						self.port.drain(function () {
+							if (!noLogs) {
+								log.serialInput(response);
+							}
+							if (cb) {
+								cb();
+							}
 						});
 					}
 				});

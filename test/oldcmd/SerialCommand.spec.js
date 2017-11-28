@@ -69,9 +69,6 @@ describe('Serial Command', function() {
 		it('supports a device that does not recognise the claim command', function () {
 			var device = { port: 'vintage' };
 			var mockSerial = new MockSerial();
-			mockSerial.write = function (data, cb) {
-				cb();
-			};
 			serial.serialPort = mockSerial;
 			return expect(serial.supportsClaimCode(device)).to.eventually.equal(false);
 		});
@@ -92,16 +89,11 @@ describe('Serial Command', function() {
 					mockSerial.claimCodeSet = data.split('\n')[0];
 					mockSerial.push('Claim code set to: '+data);
 				}
-				if (cb) {
-					cb();
-				}
 			};
 			serial.serialPort = mockSerial;
-			return serial.sendClaimCode(device, code, false).
-			then(function () {
+			return serial.sendClaimCode(device, code, false).then(function () {
 				expect(mockSerial.claimCodeSet).to.be.eql(code);
 			});
 		});
 	});
-
 });

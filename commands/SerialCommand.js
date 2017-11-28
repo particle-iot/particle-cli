@@ -231,9 +231,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
 				cleaningUp = true;
 				if (serialPort && serialPort.isOpen) {
-					serialPort.flush(function () {
-						serialPort.close();
-					})
+					serialPort.close();
 				}
 			}
 		};
@@ -1026,24 +1024,22 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return done.reject(err);
 			}
 
-			serialPort.flush(function() {
-				parser.on('data', function(data) {
-					if (!noLogging) {
-						log.serialOutput(datatoString());
-					}
-				});
-
-				st.start(noLogging);
-				var next = function () {
-					startTimeout(interactions[0][1]);
-				};
-				if (command) {
-					serialPort.write(command);
-					serialPort.drain(next);
-				} else {
-					next();
+			parser.on('data', function(data) {
+				if (!noLogging) {
+					log.serialOutput(datatoString());
 				}
 			});
+
+			st.start(noLogging);
+			var next = function () {
+				startTimeout(interactions[0][1]);
+			};
+			if (command) {
+				serialPort.write(command);
+				serialPort.drain(next);
+			} else {
+				next();
+			}
 		});
 
 		when(done.promise).finally(function () {
@@ -1376,11 +1372,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				return wifiDone.reject(err);
 			}
 
-			serialPort.flush(function() {
-				st.start(true);
-				serialPort.write('w');
-				serialPort.drain();
-			});
+			st.start(true);
+			serialPort.write('w');
+			serialPort.drain();
 		});
 
 		when(wifiDone.promise).then(
