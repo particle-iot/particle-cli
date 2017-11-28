@@ -92,7 +92,7 @@ YModem.prototype = {
 	},
 
 	_close: function() {
-		if (this.port.isOpen()) {
+		if (this.port.isOpen) {
 			if (this.errored) {
 				// ignore error here
 				this.port.write([ymodem.ABORT2], function() {});

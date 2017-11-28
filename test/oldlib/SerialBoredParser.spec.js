@@ -9,7 +9,7 @@ chai.use(chaiAsPromised);
 chai.use(sinonChai);
 var expect = chai.expect;
 
-var serialBoredParser = require('../../oldlib/SerialBoredParser');
+var serialBoredParser = require('../../oldlib/SerialChunkParser');
 
 describe('SerialBoredParser', function() {
 	var setTimeout, clearTimeout;

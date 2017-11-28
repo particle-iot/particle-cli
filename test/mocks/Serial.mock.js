@@ -1,45 +1,51 @@
-var extend = require('xtend');
+class MockSerial {
+	constructor()
+	{
+		this._open = false;
+		this.listeners = {};
+	}
 
+	drain(next) {
+		next();
+	}
 
-function MockSerial() {
-	var self = this;
-	self.open = false;
-	self.listeners = {};
-	return extend(this, {
-		drain: function (next) {
-			next();
-		},
-		flush: function (next) {
-			next();
-		},
-		on: function(type, cb) {
-			self.listeners[type] = cb;
-		},
-		respond: function (data) {
-			if (self.listeners.data) {
-				self.listeners.data(data);
-			}
-		},
-		open: function (cb) {
-			self.open = true;
-			cb();
-		},
-		removeAllListeners(type) {
-			this.removeListener(type);
-		},
-		removeListener(type) {
-			delete self.listeners[type];
-		},
-		isOpen: function() {
-			return self.open;
-		},
-		close: function(cb) {
-			self.open = false;
-			if (cb) {
-				cb();
-			}
+	flush(next) {
+		next();
+	}
+
+	on(type, cb) {
+		this.listeners[type] = cb;
+	}
+
+	respond(data) {
+		if (this.listeners.data) {
+			this.listeners.data(data);
 		}
-	});
+	}
+
+	open(cb) {
+		this._open = true;
+		cb();
+	}
+
+	removeAllListeners(type) {
+		this.removeListener(type);
+	}
+
+	removeListener(type) {
+		delete self.listeners[type];
+	}
+
+	get isOpen() {
+		return self._open;
+	}
+
+	close(cb) {
+		self._open = false;
+		if (cb) {
+			cb();
+		}
+	}
 }
 
 module.exports = MockSerial;

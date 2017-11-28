@@ -47,9 +47,9 @@ var settings = require('../settings');
 var DescribeParser = require('binary-version-reader').HalDescribeParser;
 var YModem = require('../oldlib/ymodem');
 
-var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../oldlib/utilities.js');
-var SerialBoredParser = require('../oldlib/SerialBoredParser.js');
+var BaseCommand = require('./BaseCommand');
+var utilities = require('../oldlib/utilities');
+var SerialChunkParser = require('../oldlib/SerialChunkParser');
 var SerialTrigger = require('../oldlib/SerialTrigger');
 
 // TODO: DRY this up somehow
@@ -116,7 +116,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					var pid = deviceSpec.serial.pid;
 					var serialNumber = deviceSpec.serial.serialNumber;
 
-					var usbMatches = (port.vendorId === '0x' + vid.toLowerCase() && port.productId === '0x' + pid.toLowerCase());
+					var usbMatches = (port.vendorId === vid.toLowerCase() && port.productId === pid.toLowerCase());
 					var pnpMatches = !!(port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
 					var serialNumberMatches = port.serialNumber && port.serialNumber.indexOf(serialNumber) >= 0;
 
@@ -230,7 +230,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			if (!cleaningUp) {
 				console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
 				cleaningUp = true;
-				if (serialPort && serialPort.isOpen()) {
+				if (serialPort && serialPort.isOpen) {
 					serialPort.flush(function () {
 						serialPort.close();
 					})
@@ -263,12 +263,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 
 		var openPort = function () {
 			serialPort = new SerialPort(selectedDevice.port, {
-				baudrate: 9600,
+				baudRate: 9600,
 				autoOpen: false
 			});
 			serialPort.on('close', handleClose);
-			serialPort.on('data', function (data) {
-				process.stdout.write(data.toString());
+			serialPort.on('readable', function () {
+				process.stdout.write(port.read().toString());
 			});
 			serialPort.on('error', displayError);
 			serialPort.open(function (err) {
@@ -486,12 +486,12 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					},
 					function() {
 						var serialPort = new SerialPort(device.port, {
-							baudrate: 28800,
+							baudRate: 28800,
 							autoOpen: false
 						});
 
 						function closePort() {
-							if (serialPort.isOpen()) {
+							if (serialPort.isOpen) {
 								serialPort.close();
 							}
 							process.exit(0);
@@ -726,93 +726,6 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		});
 
 		return wifiInfo.promise;
-	},
-
-	//spark firmware version 1:
-
-	//SSID: Test
-	//Password: Test
-	//Thanks! Wait about 7 seconds while I save those credentials...
-
-
-	/**
-	 * wait for a prompt, optionally write back and answer, and optionally time out if the prompt doesn't appear in time.
-	 * @param  {Object} serialPort
-	 * @param  {String} prompt
-	 * @param  {String} answer
-	 * @param  {Number} timeout
-	 * @param  {Boolean} alwaysResolve
-	 * @return {Promise} promise that resolves if successful.
-	 */
-	serialPromptDfd: function (serialPort, prompt, answer, timeout, alwaysResolve) {
-		//console.log("waiting on " + prompt + " answer will be " + answer);
-
-		var dfd = when.defer(),
-			failTimer,
-			showTraffic = true;
-
-		var writeAndDrain = function (data, callback) {
-			serialPort.write(data, function () {
-				serialPort.drain(callback);
-			});
-		};
-
-		if (timeout) {
-			failTimer = setTimeout(function () {
-				if (showTraffic) {
-					console.log('timed out on ' + prompt);
-				}
-				if (alwaysResolve) {
-					dfd.resolve(null);
-				} else {
-					dfd.reject('Serial prompt timed out - Please try restarting your device');
-				}
-			}, timeout);
-		}
-
-
-		if (prompt) {
-			var onMessage = function (data) {
-				data = data.toString();
-
-				if (showTraffic) {
-					console.log('Serial said: ' + data);
-				}
-				if (data && data.indexOf(prompt) >= 0) {
-					if (answer) {
-						serialPort.flush(function() {});
-
-						writeAndDrain(answer, function () {
-							if (showTraffic) {
-								console.log('I said: ' + answer);
-							}
-							//serialPort.pause();     //lets not miss anything
-							dfd.resolve(true);
-						});
-					} else {
-						dfd.resolve(true);
-					}
-				}
-			};
-
-			serialPort.on('data', onMessage);
-
-			when(dfd.promise).ensure(function () {
-				clearTimeout(failTimer);
-				serialPort.removeListener('data', onMessage);
-			});
-		} else if (answer) {
-			clearTimeout(failTimer);
-
-			if (showTraffic) {
-				console.log('I said: ' + answer);
-			}
-			writeAndDrain(answer, function () {
-				//serialPort.pause();     //lets not miss anything
-				dfd.resolve(true);
-			});
-		}
-		return dfd.promise;
 	},
 
 	supportsClaimCode: function(device) {
@@ -1059,10 +972,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		}
 
 		var serialPort = this.serialPort || new SerialPort(device.port, {
-				baudrate: 9600,
-				parser: SerialBoredParser.makeParser(250),
-				autoOpen: false
-			});
+			baudRate: 9600,
+			autoOpen: false
+		});
+		var parser = new SerialChunkParser({ timeout: 250 });
+		serialPort.pipe(parser);
 
 		var done = when.defer();
 		serialPort.on('error', function (err) {
@@ -1084,7 +998,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			self._serialTimeout = null;
 		}
 
-		var st = new SerialTrigger(serialPort);
+		var st = new SerialTrigger(serialPort, parser);
 
 		var addTrigger = function (prompt, timeout, callback) {
 			st.addTrigger(prompt, function (cb) {
@@ -1113,9 +1027,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			serialPort.flush(function() {
-				serialPort.on('data', function(data) {
+				parser.on('data', function(data) {
 					if (!noLogging) {
-						log.serialOutput(data.toString());
+						log.serialOutput(datatoString());
 					}
 				});
 
@@ -1124,9 +1038,8 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 					startTimeout(interactions[0][1]);
 				};
 				if (command) {
-					serialPort.write(command, function () {
-						serialPort.drain(next);
-					});
+					serialPort.write(command);
+					serialPort.drain(next);
 				} else {
 					next();
 				}
@@ -1144,7 +1057,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		return done.promise;
 	},
 
-    serialWifiConfig: function (device, ssid, securityType, password, opts) {
+	serialWifiConfig: function (device, ssid, securityType, password, opts) {
 		if (!device) {
 			return when.reject('No serial port available');
 		}
@@ -1158,10 +1071,11 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		log.verbose('Attempting to configure Wi-Fi on ' + device.port);
 
 		var serialPort = this.serialPort || new SerialPort(device.port, {
-			baudrate: 9600,
-			parser: SerialBoredParser.makeParser(250),
+			baudRate: 9600,
 			autoOpen: false
 		});
+		var parser = new SerialChunkParser({ timeout: 250 });
+		serialPort.pipe(parser);
 
 		var wifiDone = when.defer();
 		serialPort.on('error', function (err) {
@@ -1183,7 +1097,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			self._serialTimeout = null;
 		}
 
-		var st = new SerialTrigger(serialPort);
+		var st = new SerialTrigger(serialPort, parser);
 
 		st.addTrigger('SSID:', function(cb) {
 			resetTimeout();
@@ -1463,14 +1377,9 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			}
 
 			serialPort.flush(function() {
-				serialPort.on('data', function(data) {
-					//log.serialOutput(data.toString());
-				});
-
 				st.start(true);
-				serialPort.write('w', function() {
-					serialPort.drain();
-				});
+				serialPort.write('w');
+				serialPort.drain();
 			});
 		});
 
@@ -1506,24 +1415,25 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		if (!device) {
 			return when.reject('no serial port provided');
 		}
-		var failDelay = timeout || 5000;
+		var failDelay = 50000 // FIXME!!!!!!!!!! timeout || 5000;
 
 		var serialPort;
 		var self = this;
 		return when.promise(function (resolve, reject) {
 			serialPort = self.serialPort || new SerialPort(device.port, {
-				baudrate: 9600,
-				parser: SerialBoredParser.makeParser(250),
+				baudRate: 9600,
 				autoOpen: false
 			});
+			var parser = new SerialChunkParser({ timeout: 250 });
+			serialPort.pipe(parser);
 
 			var failTimer = setTimeout(function () {
 				reject(timeoutError);
 			}, failDelay);
 
-			serialPort.on('data', function (data) {
+			parser.on('data', function (data) {
 				clearTimeout(failTimer);
-				resolve(data);
+				resolve(data.toString());
 			});
 
 			serialPort.open(function (err) {
@@ -1543,8 +1453,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 		}).finally(function () {
 			if (serialPort) {
 				serialPort.removeAllListeners('open');
-				serialPort.removeAllListeners('data');
-				if (serialPort.isOpen()) {
+				if (serialPort.isOpen) {
 					return when.promise(function (resolve) {
 						serialPort.close(resolve);
 					});
