@@ -4,7 +4,7 @@ import { spin } from '../app/ui';
 import { buildAPIClient } from './apiclient';
 import chalk from 'chalk';
 import { formatLibrary } from './library_ui.js';
-import prompt from '../../oldlib/prompts';
+import prompt from '../../dist/lib/prompts';
 
 export class CLILibraryListCommandSite extends LibraryListCommandSite {
 

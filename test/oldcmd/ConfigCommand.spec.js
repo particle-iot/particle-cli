@@ -1,7 +1,7 @@
 'use strict';
 
 var Spinner = require('./../mocks/Spinner.mock.js');
-var Interpreter = require('../../oldlib/interpreter');
+var Interpreter = require('../../dist/lib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 

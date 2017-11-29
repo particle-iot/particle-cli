@@ -10,8 +10,8 @@ var _ = require('lodash');
 
 var githubUser = 'spark';
 var githubRepo = 'firmware';
-var updatesDirectory = 'updates';
-var binariesDirectory = 'binaries';
+var updatesDirectory = 'assets/updates';
+var binariesDirectory = 'assets/binaries';
 var settingsFile = 'settings.js';
 
 if (process.argv.length != 3) {

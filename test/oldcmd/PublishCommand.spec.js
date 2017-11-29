@@ -2,13 +2,13 @@
 
 var when = require('when');
 var Spinner = require('./../mocks/Spinner.mock.js');
-var Interpreter = require('../../oldlib/interpreter');
+var Interpreter = require('../../dist/lib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 
 var PublishCommand = proxyquire('../../commands/PublishCommand', {
 	'cli-spinner': Spinner,
-	'../oldlib/ApiClient.js': apiClient
+	'../dist/lib/ApiClient.js': apiClient
 });
 
 var hasPublished = false;

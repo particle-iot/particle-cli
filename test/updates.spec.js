@@ -10,12 +10,13 @@ var expect = chai.expect;
 var fs = require('fs');
 var path = require('path');
 var Parser = require('binary-version-reader').HalModuleParser;
+var Buffer = require('safe-buffer').Buffer;
 var when = require('when');
 
 
 describe('the update firmware binaries are all valid', function() {
 
-	var updateDir = path.resolve(__dirname, '..', 'updates');
+	var updateDir = path.resolve(__dirname, '../assets/updates');
 	var binaryExtension = '.bin';
 
 	function getUpdateFiles() {

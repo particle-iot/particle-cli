@@ -33,10 +33,10 @@ var extend = require('xtend');
 var util = require('util');
 var BaseCommand = require('./BaseCommand.js');
 var fs = require('fs');
-var dfu = require('../oldlib/dfu.js');
-var utilities = require('../oldlib/utilities.js');
+var dfu = require('../dist/lib/dfu.js');
+var utilities = require('../dist/lib/utilities.js');
 var ModuleParser = require('binary-version-reader').HalModuleParser;
-var deviceSpecs = require('../oldlib/deviceSpecs');
+var deviceSpecs = require('../dist/lib/deviceSpecs');
 
 var MONOLITHIC = 3;
 var SYSTEM_MODULE = 4;

@@ -13,7 +13,7 @@ chai.use(sinonChai);
 var expect = chai.expect;
 
 
-var Interpreter = require('../../oldlib/interpreter');
+var Interpreter = require('../../dist/lib/interpreter');
 
 var SerialCommand = proxyquire('../../commands/SerialCommand.js', {
 

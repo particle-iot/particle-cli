@@ -35,8 +35,8 @@ var fs = require('fs');
 
 var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand.js');
-var ApiClient = require('../oldlib/ApiClient.js');
-var utilities = require('../oldlib/utilities.js');
+var ApiClient = require('../dist/lib/ApiClient.js');
+var utilities = require('../dist/lib/utilities.js');
 
 
 var WebhookCommand = function (cli, options) {

@@ -326,7 +326,7 @@ Object.keys(specs).forEach(function(id) {
 	var deviceSpecs = specs[id];
 	var knownApps = deviceSpecs['knownApps'];
 	for (var appName in knownApps) {
-		knownApps[appName] = path.join(__dirname, '../../binaries', knownApps[appName]);
+		knownApps[appName] = path.join(__dirname, '../../../assets/binaries', knownApps[appName]);
 	}
 });
 

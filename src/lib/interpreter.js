@@ -29,7 +29,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 var fs = require('fs');
 var path = require('path');
 var when = require('when');
-var settings = require('../settings.js');
+var settings = require('../../settings.js');
 var endsWith = require('./utilities').endsWith;
 
 var Interpreter = function () {

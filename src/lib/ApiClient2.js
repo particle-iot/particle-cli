@@ -2,7 +2,7 @@
 
 var request = require('request');
 var utilities = require('./utilities');
-var settings = require('../settings');
+var settings = require('../../settings');
 
 /*
  * This variant of APIClient uses callbacks rather than promises, to satisfy the needs of the setup command, which

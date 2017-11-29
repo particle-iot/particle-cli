@@ -79,7 +79,7 @@ $ particle help keys
 
 #### particle update
 
-If you wish to easily update the system firmware running on your device to a later version, you can use the `particle update` command. For the exact version it will update to, check the version of the files in the [updates folder](https://github.com/spark/particle-cli/tree/master/updates).
+If you wish to easily update the system firmware running on your device to a later version, you can use the `particle update` command. For the exact version it will update to, check the version of the files in the [updates folder](/assets/updates).
 
 1. Make sure you have [DFU-util](http://dfu-util.sourceforge.net/) installed.
 1. Connect your device via USB, and put it into [DFU mode](https://docs.particle.io/guide/getting-started/modes/#dfu-mode-device-firmware-upgrade-).

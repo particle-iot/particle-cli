@@ -4,7 +4,7 @@ var stream = require('stream');
 var util = require('util');
 var chalk = require('chalk');
 
-var settings = require('../settings');
+var settings = require('../../settings');
 
 function FilteredLogStream() {
 	stream.Transform.call(this);

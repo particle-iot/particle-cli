@@ -2,12 +2,12 @@
 
 var chalk = require('chalk');
 var prompt = require('inquirer').prompt;
-var ApiClient2 = require('../../oldlib/ApiClient2');
+var ApiClient2 = require('../../dist/lib/ApiClient2');
 
 var settings = require('../../settings.js');
 var BaseCommand = require('../BaseCommand.js');
-var ApiClient = require('../../oldlib/ApiClient.js');
-var utilities = require('../../oldlib/utilities.js');
+var ApiClient = require('../../dist/lib/ApiClient.js');
+var utilities = require('../../dist/lib/utilities.js');
 
 var when = require('when');
 var sequence = require('when/sequence');

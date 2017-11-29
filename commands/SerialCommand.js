@@ -39,18 +39,18 @@ var SerialPort = require('serialport');
 var inquirer = require('inquirer');
 var chalk = require('chalk');
 var wifiScan = require('node-wifiscanner2').scan;
-var specs = require('../oldlib/deviceSpecs');
-var ApiClient = require('../oldlib/ApiClient2');
-var OldApiClient = require('../oldlib/ApiClient');
-var log = require('../oldlib/log');
+var specs = require('../dist/lib/deviceSpecs');
+var ApiClient = require('../dist/lib/ApiClient2');
+var OldApiClient = require('../dist/lib/ApiClient');
+var log = require('../dist/lib/log');
 var settings = require('../settings');
 var DescribeParser = require('binary-version-reader').HalDescribeParser;
-var YModem = require('../oldlib/ymodem');
+var YModem = require('../dist/lib/ymodem');
 
 var BaseCommand = require('./BaseCommand');
-var utilities = require('../oldlib/utilities');
-var SerialBatchParser = require('../oldlib/SerialBatchParser');
-var SerialTrigger = require('../oldlib/SerialTrigger');
+var utilities = require('../dist/lib/utilities');
+var SerialBatchParser = require('../dist/lib/SerialBatchParser');
+var SerialTrigger = require('../dist/lib/SerialTrigger');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.

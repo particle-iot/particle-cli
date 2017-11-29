@@ -1,10 +1,10 @@
 'use strict';
 
-var dfu = require('../../oldlib/dfu');
+var dfu = require('../../dist/lib/dfu');
 var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
-var specs = require('../../oldlib/deviceSpecs');
+var specs = require('../../dist/lib/deviceSpecs');
 var sinon = require('sinon');
 
 const chai = require('chai');

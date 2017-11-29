@@ -32,7 +32,7 @@ var chalk = require('chalk');
 var extend = require('xtend');
 var settings = require('../settings.js');
 var BaseCommand = require('./BaseCommand');
-var dfu = require('../oldlib/dfu');
+var dfu = require('../dist/lib/dfu');
 var when = require('when');
 var whenNode = require('when/node');
 var Spinner = require('cli-spinner').Spinner;
@@ -82,7 +82,7 @@ UpdateCommand.prototype = extend(BaseCommand.prototype, {
 			var parts = Object.keys(updates);
 			parts.forEach(function (part, partNumber) {
 				steps.push(function (next) {
-					var binary = path.resolve(__dirname, '..', 'updates', updates[part]);
+					var binary = path.resolve(__dirname, '../assets/updates', updates[part]);
 					var leave = partNumber === parts.length - 1;
 					whenNode.bindCallback(
 						dfu.write(binary, part, leave).delay(2000)

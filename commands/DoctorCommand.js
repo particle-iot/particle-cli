@@ -7,8 +7,8 @@ var _ = require('lodash');
 var chalk = require('chalk');
 var inquirer = require('inquirer');
 var prompt = inquirer.prompt;
-var dfu = require('../oldlib/dfu.js');
-var ApiClient = require('../oldlib/ApiClient.js');
+var dfu = require('../dist/lib/dfu.js');
+var ApiClient = require('../dist/lib/ApiClient.js');
 var BaseCommand = require('./BaseCommand');
 
 var EarlyReturnError = function () {

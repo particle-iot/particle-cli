@@ -1,7 +1,7 @@
 'use strict';
 
 var Spinner = require('./../mocks/Spinner.mock.js');
-var Interpreter = require('../../oldlib/interpreter');
+var Interpreter = require('../../dist/lib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 var sinon = require('sinon');
@@ -38,8 +38,8 @@ var KeyCommand = proxyquire('../../commands/KeyCommands', {
 	'cli-spinner': Spinner,
 	'../settings.js': settings,
 	'when': when,
-	'../oldlib/utilities.js': utilities,
-	'../oldlib/ApiClient.js': ApiClient
+	'../dist/lib/utilities.js': utilities,
+	'../dist/lib/ApiClient.js': ApiClient
 });
 
 function utilities() { }

@@ -547,7 +547,7 @@ var that = module.exports = {
 	__banner: undefined,
 
 	banner: function() {
-		var bannerFile = path.join(__dirname, 'banner.txt');
+		var bannerFile = path.join(__dirname, '../../assets/banner.txt');
 		if (this.__banner===undefined) {
 			try {
 				this.__banner = fs.readFileSync(bannerFile, 'utf8');

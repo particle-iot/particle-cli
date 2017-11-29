@@ -33,7 +33,7 @@ var when = require('when');
 var whenNode = require('when/node');
 var utilities = require('./utilities.js');
 var child_process = require('child_process');
-var settings = require('../settings.js');
+var settings = require('../../settings.js');
 var specs = require('./deviceSpecs');
 var log = require('./log');
 
@@ -376,7 +376,7 @@ var that = module.exports = {
 	_installUdevChoice: function(ans, promise) {
 		var message = 'Missing permissions to use DFU';
 		if (ans.install) {
-			var rules = __dirname + '/' + that._udevRulesFile;
+			var rules = __dirname + '/../assets/' + that._udevRulesFile;
 			var cmd = "sudo cp '" + rules + "' '" + that._udevRulesDir + "'";
 			console.log(cmd);
 			child_process.exec(cmd, function(error, stdout, stderr) {

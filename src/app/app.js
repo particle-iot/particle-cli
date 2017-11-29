@@ -192,7 +192,7 @@ export class CLI {
 	}
 
 	oldInterpreter() {
-		const Interpreter = require('../../oldlib/interpreter');
+		const Interpreter = require('../lib/interpreter');
 		const cli = new Interpreter();
 		cli.supressWarmupMessages = true;
 		cli.startup();
@@ -226,7 +226,6 @@ export class CLI {
 	}
 
 	run(args) {
-		settings.transitionSparkProfiles();
 		settings.whichProfile();
 		settings.loadOverrides();
 

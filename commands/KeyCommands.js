@@ -34,13 +34,13 @@ var pipeline = require('when/pipeline');
 var temp = require('temp').track();
 var extend = require('xtend');
 var util = require('util');
-var utilities = require('../oldlib/utilities.js');
+var utilities = require('../dist/lib/utilities.js');
 var BaseCommand = require('./BaseCommand.js');
-var ApiClient = require('../oldlib/ApiClient.js');
+var ApiClient = require('../dist/lib/ApiClient.js');
 var fs = require('fs');
 var path = require('path');
-var dfu = require('../oldlib/dfu.js');
-var deviceSpecs = require('../oldlib/deviceSpecs');
+var dfu = require('../dist/lib/dfu.js');
+var deviceSpecs = require('../dist/lib/deviceSpecs');
 
 /**
  * Commands for managing encryption keys.
@@ -774,7 +774,7 @@ KeyCommands.prototype = extend(BaseCommand.prototype, {
 	},
 
 	serverKeyFilename: function(alg) {
-		return path.join(__dirname, '../keys/' + alg + '.pub.der');
+		return path.join(__dirname, '../assets/keys/' + alg + '.pub.der');
 	},
 
 	_formatPublicKey: function(filename, ipOrDomain, port) {

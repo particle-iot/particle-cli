@@ -32,7 +32,7 @@ var extend = require('xtend');
 var util = require('util');
 
 var BaseCommand = require('./BaseCommand.js');
-var ApiClient = require('../oldlib/ApiClient.js');
+var ApiClient = require('../dist/lib/ApiClient.js');
 
 
 var PublishCommand = function (cli, options) {

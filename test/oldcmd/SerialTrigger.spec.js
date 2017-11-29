@@ -4,7 +4,7 @@ var util = require('util');
 var MockSerial = require('../mocks/Serial.mock')
 var Transform = require('stream').Transform;
 
-var SerialTrigger = require('../../oldlib/SerialTrigger');
+var SerialTrigger = require('../../dist/lib/SerialTrigger');
 
 function PassthroughStream() {
 	Transform.call(this);

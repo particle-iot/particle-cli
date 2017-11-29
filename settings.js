@@ -29,7 +29,6 @@
 var fs = require('fs');
 var path = require('path');
 var extend = require('xtend');
-var chalk = require('chalk');
 var _ = require('lodash');
 
 var settings = {
@@ -257,48 +256,6 @@ settings.override = function (profile, key, value) {
 		fs.writeFileSync(filename, JSON.stringify(settings.overrides, null, 2), { mode: '600' });
 	} catch (ex) {
 		console.error('There was an error writing ' + settings.overrides + ': ', ex);
-	}
-};
-
-settings.transitionSparkProfiles = function() {
-	var sparkDir = path.join(settings.findHomePath(), '.spark');
-	var particleDir = path.join(settings.findHomePath(), '.particle');
-	if (fs.existsSync(sparkDir) && !fs.existsSync(particleDir)) {
-		fs.mkdirSync(particleDir);
-
-		console.log();
-		console.log(chalk.yellow('!!!'), 'I detected a Spark profile directory, and will now migrate your settings.');
-		console.log(chalk.yellow('!!!'), 'This will only happen once, since you previously used our Spark-CLI tools.');
-		console.log();
-
-		var files = fs.readdirSync(sparkDir);
-		files.forEach(function (filename) {
-			var data = fs.readFileSync(path.join(sparkDir, filename));
-			var jsonData;
-			try {
-				jsonData = JSON.parse(data);
-			} catch (ex) {
-				// invalid JSON, don't transition
-				return;
-			}
-
-			if (filename === 'profile.json') {
-				if (jsonData.name === 'spark') {
-					jsonData.name = 'particle';
-				}
-			}
-
-			if (filename === 'spark.config.json') {
-				filename = 'particle.config.json';
-			}
-
-			if (jsonData.apiUrl && jsonData.apiUrl.indexOf('.spark.io') > 0) {
-				jsonData.apiUrl = jsonData.apiUrl.replace('.spark.io', '.particle.io');
-			}
-
-			data = JSON.stringify(jsonData, null, 2);
-			fs.writeFileSync(path.join(particleDir, filename), data, { mode: '600' });
-		});
 	}
 };
 

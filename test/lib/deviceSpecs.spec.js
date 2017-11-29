@@ -1,5 +1,5 @@
 import {expect, sinon} from '../test-setup';
-import deviceSpecs from '../../oldlib/deviceSpecs';
+import deviceSpecs from '../../dist/lib/deviceSpecs';
 
 describe('deviceSpecs', function() {
 	describe('deviceId', function() {

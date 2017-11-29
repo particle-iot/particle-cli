@@ -9,7 +9,7 @@ var expect = chai.expect;
 
 var util = require('util');
 var Readable = require('stream').Readable;
-var SerialBatchParser = require('../../oldlib/SerialBatchParser');
+var SerialBatchParser = require('../../dist/lib/SerialBatchParser');
 
 
 function MockStream() {
