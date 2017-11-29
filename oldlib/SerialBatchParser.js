@@ -10,13 +10,12 @@ var _ = require('lodash');
  * data that was received within that time.
  */
 function SerialBatchParser(options) {
+	Transform.call(this);
 	options = options || {};
 	this.batchTimeout = options.timeout || 250;
 	this.batchTimer = null;
 	this.buffer = Buffer.alloc(0);
 	this.setTimeoutFunctions(global.setTimeout, global.clearTimeout);
-
-	Transform.call(this);
 }
 
 util.inherits(SerialBatchParser, Transform);
