@@ -113,7 +113,7 @@
     "tmp": "0.0.28"
   },
   "engines": {
-    "node": ">=0.10.40"
+    "node": ">=4.4"
   },
   "homepage": "https://github.com/spark/particle-cli/",
   "keywords": [
