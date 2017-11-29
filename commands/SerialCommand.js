@@ -266,7 +266,7 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 			});
 			serialPort.on('close', handleClose);
 			serialPort.on('readable', function () {
-				process.stdout.write(port.read().toString());
+				process.stdout.write(serialPort.read().toString());
 			});
 			serialPort.on('error', displayError);
 			serialPort.open(function (err) {
