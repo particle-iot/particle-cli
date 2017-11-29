@@ -6,8 +6,9 @@ var EventEmitter = require('events').EventEmitter;
 var _ = require('lodash');
 var log = require('./log');
 
-function SerialTrigger(port) {
+function SerialTrigger(port, stream) {
 	this.port = port;
+	this.stream = stream;
 	this.triggers = {};
 }
 util.inherits(SerialTrigger, EventEmitter);
@@ -27,9 +28,10 @@ SerialTrigger.prototype.addTrigger = function(prompt, next) {
  */
 SerialTrigger.prototype.start = function(noLogs) {
 
-	var serialDataCallback = function (data) {
+	var serialDataCallback = function (dataBuffer) {
 		var self = this;
-		this.data += data.toString();
+		var data = dataBuffer.toString();
+		this.data += data;
 		var substring = this.data;
 		var substringMatch = '';
 		var matchPrompt = '';
@@ -65,17 +67,14 @@ SerialTrigger.prototype.start = function(noLogs) {
 			if (triggerFn) {
 				triggerFn(function (response, cb) {
 					if (response) {
-						self.port.flush(function () {
-							self.port.write(response, function () {
-								self.port.drain(function () {
-									if (!noLogs) {
-										log.serialInput(response);
-									}
-									if (cb) {
-										cb();
-									}
-								});
-							});
+						self.port.write(response);
+						self.port.drain(function () {
+							if (!noLogs) {
+								log.serialInput(response);
+							}
+							if (cb) {
+								cb();
+							}
 						});
 					}
 				});
@@ -83,12 +82,12 @@ SerialTrigger.prototype.start = function(noLogs) {
 		}
 	};
 	this.dataCallback = serialDataCallback.bind(this);
-	this.port.on('data', this.dataCallback);
+	this.stream.on('data', this.dataCallback);
 };
 
 SerialTrigger.prototype.stop = function() {
 	if (this.dataCallback) {
-		this.port.removeListener('data', this.dataCallback);
+		this.stream.removeListener('data', this.dataCallback);
 		this.dataCallback = null;
 	}
 };
