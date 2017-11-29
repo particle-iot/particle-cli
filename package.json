@@ -52,8 +52,6 @@
     }
   ],
   "dependencies": {
-    "babel-polyfill": "^6.9.1",
-    "babel-runtime": "^6.9.2",
     "binary-version-reader": "^0.4.0",
     "chalk": "^1.0.0",
     "cli-spinner": "^0.2.1",
