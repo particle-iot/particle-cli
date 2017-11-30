@@ -95,9 +95,9 @@ var settings = {
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
-			systemFirmwareOne:   'system-part2-0.6.3-electron.bin',
-			systemFirmwareTwo:   'system-part3-0.6.3-electron.bin',
-			systemFirmwareThree: 'system-part1-0.6.3-electron.bin'
+			systemFirmwareOne:   'system-part2-0.6.4-electron.bin',
+			systemFirmwareTwo:   'system-part3-0.6.4-electron.bin',
+			systemFirmwareThree: 'system-part1-0.6.4-electron.bin'
 		}
 	},
 	commandMappings: path.join(__dirname, 'mappings.json'),
