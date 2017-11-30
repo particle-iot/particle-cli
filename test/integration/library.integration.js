@@ -24,7 +24,7 @@ import settings from "../../settings";
 import {it_has_access_token, fetch_access_token} from './access_token';
 const path = require('path');
 import createLibraryCommand from '../../src/cli/library';
-import * as factory from '../../src/app/nested-yargs';
+import * as commandProcessor from '../../src/app/command-processor';
 import { resourcesDir } from 'particle-library-manager';
 import ParticleApi from '../../src/cmd/api';
 
@@ -36,31 +36,31 @@ describe('library', () => {
 	});
 
 	const libraryDir = path.join(resourcesDir(), 'libraries');
-	const root = factory.createAppCategory();
-	createLibraryCommand({root, factory});
+	const root = commandProcessor.createAppCategory();
+	createLibraryCommand({ commandProcessor, root });
 
 	describe('migrate', () => {
 		it('supports --dryrun flag', () => {
-			const argv = factory.parse(root, ['library', 'migrate', '--dryrun']);
+			const argv = commandProcessor.parse(root, ['library', 'migrate', '--dryrun']);
 			expect(argv).to.have.property('dryrun').equal(true);
 			expect(argv).to.have.property('clicommand');
 		});
 
 		it('can execute --test flag', () => {
-			const argv = factory.parse(root, ['library', 'migrate', '--dryrun', path.join(libraryDir, 'libraries-v1')]);
+			const argv = commandProcessor.parse(root, ['library', 'migrate', '--dryrun', path.join(libraryDir, 'libraries-v1')]);
 			return argv.clicommand.exec(argv);
 		});
 	});
 
 	describe('add', () => {
 		it('populates the library name', () => {
-			const argv = factory.parse(root, ['library', 'add', 'assettracker']);
+			const argv = commandProcessor.parse(root, ['library', 'add', 'assettracker']);
 			expect(argv.params).to.have.property('name').equal('assettracker');
 		});
 
 		it('requires the library name', () => {
-			const argv = factory.parse(root, ['library', 'add']);
-			const expectedError = factory.errors.requiredParameterError('name');
+			const argv = commandProcessor.parse(root, ['library', 'add']);
+			const expectedError = commandProcessor.errors.requiredParameterError('name');
 			expect(argv.clierror).to.eql(expectedError);
 		});
 

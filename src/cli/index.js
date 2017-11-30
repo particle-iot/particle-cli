@@ -13,15 +13,15 @@ import project from './project';
  * Each command is contained in it's own module, for..er...modularity.
  *
  * The command modules take an object as the argument with these properties:
+ *  commandProcessor: the command processor service that provides factories for creating
+ *      new commands and command categories and for invoking commands.
  *  root: the root command which is used to register top-level commands.
- *  factory:  the command factory service that provides factories for creating
- *      new commands and command categories.
  *  app: the executing CLI instance. This can be used to modify the command line and re-execute
  *   the new command line by calling `app.runCommand(cmdarray)`.
  *
  * @param {object} context  The context for configuring the command.
  */
-export default (context) => {
+export default function registerAllCommands(context) {
 	// help must come first
 	help(context);
 	echo(context);
@@ -32,4 +32,4 @@ export default (context) => {
 	// keys(app, cli);
 	// event(app, cli);
 	// alias(app, cli);
-};
+}

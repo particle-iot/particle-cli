@@ -18,9 +18,9 @@
  */
 
 import {expect} from '../test-setup';
-import * as cli from '../../src/app/nested-yargs';
+import * as commandProcessor from '../../src/app/command-processor';
 
-import {CLI} from '../../src/app/app';
+import CLI from '../../src/app/cli';
 
 describe('command line parsing', () => {
 
@@ -40,26 +40,25 @@ describe('command line parsing', () => {
 			}
 
 			it('is 1 by default', () => {
-				const argv = cli.parse(rootCategory, []);
+				const argv = commandProcessor.parse(rootCategory, []);
 				assertVerbosity(argv, 1);
 			});
 
 			it('is 2 for a single v flag', () => {
-				const argv = cli.parse(rootCategory, ['-v']);
+				const argv = commandProcessor.parse(rootCategory, ['-v']);
 				assertVerbosity(argv, 2);
 			});
 
 			it('is 3 for a double v flag', () => {
-				const argv = cli.parse(rootCategory, ['-vv']);
+				const argv = commandProcessor.parse(rootCategory, ['-vv']);
 				assertVerbosity(argv, 3);
 			});
 
 			it('is 0 with one quiet', () => {
-				const argv = cli.parse(rootCategory, ['-q']);
+				const argv = commandProcessor.parse(rootCategory, ['-q']);
 				assertVerbosity(argv, 0);
 			});
 
 		});
 	});
-
 });

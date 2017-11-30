@@ -19,7 +19,7 @@
 
 import {expect} from '../test-setup';
 
-import {CLI} from '../../src/app/app.js';
+import CLI from '../../src/app/cli';
 
 describe('command parsing', () => {
 	const sut = new CLI();

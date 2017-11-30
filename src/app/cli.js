@@ -3,21 +3,21 @@ import _ from 'lodash';
 
 import updateCheck from './update-check';
 import pkg from '../../package.json';
-import * as cliargs from './nested-yargs';
-import commands from '../cli';
+import * as commandProcessor from './command-processor';
+import registerAllCommands from '../cli';
 import * as settings from '../../settings';
 import when from 'when';
 import chalk from 'chalk';
 
 export default class CLI {
 	constructor() {
-		this.rootCategory = this.createRootCategory();
+		this.rootCategory = this.setupCommandProcessor();
 	}
 
-	createRootCategory(includeOldCommands=false) {
+	setupCommandProcessor(includeOldCommands = false) {
 		const app = this;
 
-		return cliargs.createAppCategory({
+		return commandProcessor.createAppCategory({
 			// options for yargs
 			inherited: {
 				options: {
@@ -70,7 +70,7 @@ export default class CLI {
 			 * @param {CLIRootCommandCategory} root The root command category to setup.
 			 */
 			setup(yargs, root) {
-				commands({ root, factory: cliargs, app });
+				registerAllCommands({ commandProcessor, root, app });
 				if (includeOldCommands) {
 					app.addOldCommands(yargs);
 				}
@@ -144,14 +144,14 @@ export default class CLI {
 	}
 
 	runCommand(args, includeOldCommands) {
-		const errors = cliargs.createErrorHandler();
-		this.rootCategory = this.createRootCategory(includeOldCommands);
-		const argv = cliargs.parse(this.rootCategory, args);
+		const errors = commandProcessor.createErrorHandler();
+		this.rootCategory = this.setupCommandProcessor(includeOldCommands);
+		const argv = commandProcessor.parse(this.rootCategory, args);
 		// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
 		// this also gives us more control.
 		// todo - handle root command passing --version
 		if (argv.help) {
-			cliargs.showHelp();
+			commandProcessor.showHelp();
 		} else if (argv.clierror) {
 			errors(argv.clierror);
 		} else if (argv.clicommand) {
@@ -164,7 +164,7 @@ export default class CLI {
 			// use old help
 			return false;
 		}
-		const argv = cliargs.parse(this.rootCategory, args);
+		const argv = commandProcessor.parse(this.rootCategory, args);
 		return this.checkNewCommand(argv);
 	}
 
@@ -183,10 +183,10 @@ export default class CLI {
 			|| (argv.clierror
 			&& argv.clierror.type   // has an parsing error
 			&& (
-			argv.clierror.type === cliargs.errors.requiredParameterError
-			|| argv.clierror.type === cliargs.errors.unknownArgumentError
-			|| argv.clierror.type === cliargs.errors.unknownParametersError
-			|| (argv.clierror.type === cliargs.errors.unknownCommandError) && (argv.clierror.item.path.length > 0)));
+			argv.clierror.type === commandProcessor.errors.requiredParameterError
+			|| argv.clierror.type === commandProcessor.errors.unknownArgumentError
+			|| argv.clierror.type === commandProcessor.errors.unknownParametersError
+			|| (argv.clierror.type === commandProcessor.errors.unknownCommandError) && (argv.clierror.item.path.length > 0)));
 		return !!result;
 	}
 

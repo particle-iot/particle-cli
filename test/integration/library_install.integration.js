@@ -24,7 +24,7 @@ const path = require('path');
 const mockfs = require('mock-fs');
 const when = require('when');
 
-import * as cli from '../../src/app/nested-yargs';
+import * as commandProcessor from '../../src/app/command-processor';
 
 
 
@@ -56,10 +56,10 @@ describe('library install', () => {
 
 		const libraryInstall = require('../../src/cli/library_install').default;
 
-		const app = cli.createAppCategory();
-		const lib = cli.createCategory(app, 'library');
-		libraryInstall({lib, factory:cli});
-		const argv = cli.parse(app, ['library', 'install', '--vendored', 'neopixel']);
+		const root = commandProcessor.createAppCategory();
+		const lib = commandProcessor.createCategory(root, 'library');
+		libraryInstall({commandProcessor, lib });
+		const argv = commandProcessor.parse(root, ['library', 'install', '--vendored', 'neopixel']);
 		expect(argv.clicommand).to.be.ok;
 
 		var _getAllFilesFromFolder = function(dir) {

@@ -1,6 +1,6 @@
 
-export default ({ root, factory, app }) => {
-	factory.createCommand(root, 'help', 'Provides extra details and options for a given command', {
+export default ({ commandProcessor, root, app }) => {
+	commandProcessor.createCommand(root, 'help', 'Provides extra details and options for a given command', {
 		options: {},
 		params: '[command] [subcommand...]',
 		handler: function helpHandler(argv) {
