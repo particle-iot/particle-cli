@@ -87,6 +87,10 @@ describe('the update firmware binaries are all valid', function() {
 
 		for (var platform in platformFiles) {
 			(function (platform, files, version) {
+				// FIXME: Electron was update to 0.6.4 when other platforms were still at 0.6.3
+				if (platform === 'electron' && version === '0.6.3') {
+					version = '0.6.4';
+				}
 				describe(platform + ' update files', function() {
 					it('match firmware version ' + version, function() {
 						var found = false;

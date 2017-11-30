@@ -6,6 +6,7 @@ lib-cov
 *.out
 *.pid
 *.gz
+*.tgz
 
 pids
 logs
@@ -19,7 +20,6 @@ node_modules
 dist
 es6
 accept/tmp
-*.tgz
 
 .env
 *.pem
