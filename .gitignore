@@ -22,5 +22,3 @@ es6
 accept/tmp
 
 .env
-*.pem
-*.der

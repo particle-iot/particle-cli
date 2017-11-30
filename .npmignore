@@ -23,5 +23,5 @@ es6
 accept/tmp
 
 .env
-*.pem
-*.der
+.idea
+*.sw?
