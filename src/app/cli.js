@@ -9,8 +9,7 @@ import * as settings from '../../settings';
 import when from 'when';
 import chalk from 'chalk';
 
-export class CLI {
-
+export default class CLI {
 	constructor() {
 		this.rootCategory = this.createRootCategory();
 	}
@@ -254,11 +253,5 @@ export class CLI {
 		});
 	}
 }
-
-export default {
-	run(args) {
-		return new CLI().run(args);
-	}
-};
 
 
