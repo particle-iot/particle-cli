@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.26.2 - 30 November 2017
+
+* Include binaries for firmware 0.6.4 [Electron only]
+
 ## 1.26.1 - 29 November 2017
 
 * [#392](https://github.com/spark/particle-cli/pull/392) Migrate from serialport v4 to v6
