@@ -1,9 +1,9 @@
 
 module.exports = {
 
-	formatItems: function(items, formatter, lines) {
-		items.forEach(function (item, index, array) {
-			var output = formatter(item, index, array);
+	formatItems(items, formatter, lines) {
+		items.forEach((item, index, array) => {
+			let output = formatter(item, index, array);
 			if (Array.isArray(output)) {
 				lines.push.apply(lines, output);
 			} else {
@@ -13,11 +13,11 @@ module.exports = {
 		});
 	},
 
-	stringFormatter: function(item) {
+	stringFormatter(item) {
 		return ''+item;
 	},
 
-	print: function(lines) {
+	print(lines) {
 		console.log(lines.join('\n'));
 	}
 

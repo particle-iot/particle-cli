@@ -1,11 +1,10 @@
 
-var when = require('when');
-var readline = require('readline');
+const when = require('when');
+const readline = require('readline');
+const inquirer = require('inquirer');
+const log = require('./log');
 
-var inquirer = require('inquirer');
-var log = require('./log');
-
-var that = {
+const prompts = {
 
 	_prompt: null,
 
@@ -13,42 +12,42 @@ var that = {
 	 * Sets up our user input
 	 * @returns {Object} prompt object
 	 */
-	getPrompt: function (captureInterrupt) {
-		if (!that._prompt) {
-			that._prompt = readline.createInterface({
+	getPrompt(captureInterrupt) {
+		if (!prompts._prompt) {
+			prompts._prompt = readline.createInterface({
 				input: process.stdin,
 				output: process.stdout
 			});
 			if (captureInterrupt) {
-				that._prompt.on("SIGINT", function () {
-					process.emit("SIGINT");
+				prompts._prompt.on('SIGINT', () => {
+					process.emit('SIGINT');
 				});
 			}
 		}
-		return that._prompt;
+		return prompts._prompt;
 	},
 
-	closePrompt: function() {
-		if (that._prompt) {
-			that._prompt.close();
-			that._prompt = null;
+	closePrompt() {
+		if (prompts._prompt) {
+			prompts._prompt.close();
+			prompts._prompt = null;
 		}
 	},
 
-	promptDfd: function (message) {
-		var dfd = when.defer();
-		var prompt = that.getPrompt();
-		prompt.question(message, function (value) {
+	promptDfd(message) {
+		let dfd = when.defer();
+		let prompt = prompts.getPrompt();
+		prompt.question(message, (value) => {
 			dfd.resolve(value);
 		});
 		return dfd.promise;
 	},
-	askYesNoQuestion: function (message, alwaysResolve) {
-		var dfd = when.defer();
-		var prompt = that.getPrompt();
-		prompt.question(message, function (value) {
+	askYesNoQuestion(message, alwaysResolve) {
+		let dfd = when.defer();
+		let prompt = prompts.getPrompt();
+		prompt.question(message, (value) => {
 			value = (value || '').toLowerCase();
-			var saidYes = ((value === 'yes') || (value === 'y'));
+			let saidYes = ((value === 'yes') || (value === 'y'));
 
 			if (alwaysResolve) {
 				dfd.resolve(saidYes);
@@ -61,19 +60,19 @@ var that = {
 		return dfd.promise;
 	},
 
-	passPromptDfd: function (message) {
-		var dfd = when.defer();
+	passPromptDfd(message) {
+		let dfd = when.defer();
 
 		//kill the existing prompt
-		that.closePrompt();
+		prompts.closePrompt();
 
-		var stdin = process.openStdin();
+		let stdin = process.openStdin();
 		stdin.setRawMode(true);
 		process.stdin.setRawMode(true);
 		process.stdout.write(message);
 
-		var arr = [];
-		var onStdinData = function(chunk) {
+		let arr = [];
+		let onStdinData = (chunk) => {
 			if ((chunk[0] === 8) || (chunk[0] === 127)) {
 				if (arr.length > 0) {
 					arr.pop();
@@ -92,7 +91,7 @@ var that = {
 		};
 		stdin.on('data', onStdinData);
 
-		when(dfd.promise).ensure(function() {
+		when(dfd.promise).ensure(() => {
 			process.stdin.setRawMode(false);
 			stdin.removeListener('data', onStdinData);
 		});
@@ -103,18 +102,18 @@ var that = {
 	/**
 	 * @param {string} message The message to prompt the user
 	 * @param {string} defaultValue The default value to use if the user simply hits return
-	 * @param {function(string)} validator function that returns an error message if the value is not valid.
+	 * @param {Function} validator function that returns an error message if the value is not valid.
 	 * @returns {Promise) to prompt and get the result. The result is undefined if the user hits ctrl-C.
 	 */
-	promptAndValidate: function(message, defaultValue, validator) {
-		var dfd = when.defer();
-		var prompt = that.getPrompt();
+	promptAndValidate(message, defaultValue, validator) {
+		let dfd = when.defer();
+		let prompt = prompts.getPrompt();
 		message += ': ';
 
 		function runPrompt() {
-			prompt.question(message, function (value) {
+			prompt.question(message, (value) => {
 				value = value || defaultValue;
-				var validateError;
+				let validateError;
 				if (validator) {
 					validateError = validator(value);
 				}
@@ -123,63 +122,57 @@ var that = {
 					log.error(validateError);
 					runPrompt();
 				} else {
-					that.closePrompt();
+					prompts.closePrompt();
 					dfd.resolve(value);
 				}
 			});
 		}
 
-		// process.on('SIGINT', function () {
-		// 	that.closePrompt();
-		// 	console.log();
-		// 	dfd.resolve(false);
-		// });
-
 		runPrompt();
 		return dfd.promise;
 	},
 
-	enterToContinueControlCToExit: function(message) {
+	enterToContinueControlCToExit(message) {
 		if (!message) {
 			message = 'Press ENTER for next page, CTRL-C to exit.';
 		}
-		var dfd = when.defer();
-		var prompt = that.getPrompt(true);
-		prompt.question(message, function (value) {
-			that.closePrompt();
+		let dfd = when.defer();
+		let prompt = prompts.getPrompt(true);
+		prompt.question(message, (value) => {
+			prompts.closePrompt();
 			dfd.resolve(true);
 		});
-		process.on('SIGINT', function () {
-			that.closePrompt();
+		process.on('SIGINT', () => {
+			prompts.closePrompt();
 			console.log();
 			dfd.resolve(false);
 		});
 		return dfd.promise;
 	},
 
-	areYouSure: function() {
-		return that.askYesNoQuestion('Are you sure?  Please Type yes to continue: ');
+	areYouSure() {
+		return prompts.askYesNoQuestion('Are you sure?  Please Type yes to continue: ');
 	},
 
-	getCredentials: function (username) {
-		var creds = when.defer();
+	getCredentials(username) {
+		let creds = when.defer();
 
 		inquirer.prompt([
-			that.getUsername(username),
-			that.getPassword()
-		]).then(function(answers) {
+			prompts.getUsername(username),
+			prompts.getPassword()
+		]).then((answers) => {
 			creds.resolve(answers);
 		});
 
 		return creds.promise;
 	},
-	getUsername: function (username) {
+	getUsername(username) {
 		return {
 			type: 'input',
 			name: 'username',
 			message: 'Please enter your email address',
 			default: username,
-			validate: function(value) {
+			validate(value) {
 				if (!value) {
 					return 'You need an email address to log in, silly!';
 				}
@@ -187,12 +180,12 @@ var that = {
 			}
 		};
 	},
-	getPassword: function (msg) {
+	getPassword(msg) {
 		return {
 			type: 'password',
 			name: 'password',
 			message: msg || 'Please enter your password',
-			validate: function(value) {
+			validate(value) {
 				if (!value) {
 					return 'You need a password to log in, silly!';
 				}
@@ -200,36 +193,37 @@ var that = {
 			}
 		};
 	},
-	confirmPassword: function () {
-		return that.passPromptDfd('confirm password  ');
+	confirmPassword() {
+		return prompts.passPromptDfd('confirm password  ');
 	},
 
-	getNewCoreName: function () {
-		return that.promptDfd('How shall your device be known? (name?):\t');
+	getNewCoreName() {
+		return prompts.promptDfd('How shall your device be known? (name?):\t');
 	},
 
-	hitEnterWhenReadyPrompt: function () {
+	hitEnterWhenReadyPrompt() {
 		console.log('');
 		console.log('');
 		console.log('');
-		return that.promptDfd("If it isn't too much trouble, would you mind hitting ENTER when you'd like me to start?");
+		return prompts.promptDfd("If it isn't too much trouble, would you mind hitting ENTER when you'd like me to start?");
 	},
 
-	hitEnterWhenCyanPrompt: function () {
+	hitEnterWhenCyanPrompt() {
 		console.log('');
 		console.log('');
-		return that.promptDfd('Sorry to bother you again, could you wait until the light is CYAN and then press ENTER?');
+		return prompts.promptDfd('Sorry to bother you again, could you wait until the light is CYAN and then press ENTER?');
 	},
 
 
-	waitFor: function (delay) {
-		var temp = when.defer();
+	waitFor(delay) {
+		let temp = when.defer();
 
 		console.log('...(pausing for effect:' + delay + ').');
-		setTimeout(function () {
+		setTimeout(() => {
 			temp.resolve();
 		}, delay);
 		return temp.promise;
 	}
 };
-module.exports = that;
+
+module.exports = prompts;

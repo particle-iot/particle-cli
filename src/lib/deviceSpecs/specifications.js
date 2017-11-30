@@ -1,6 +1,6 @@
 'use strict';
 
-var path = require('path');
+const path = require('path');
 
 function deviceIdFromSerialNumber(serialNumber) {
 	const found = /[0-9A-Fa-f]{24}/.exec(serialNumber);
@@ -9,7 +9,7 @@ function deviceIdFromSerialNumber(serialNumber) {
 	}
 }
 
-var specs = {
+const specs = {
 
 	'1d50:607f': {
 		productName: 'Core',
@@ -323,9 +323,9 @@ var specs = {
 
 //fix the paths on the known apps mappings
 Object.keys(specs).forEach(function(id) {
-	var deviceSpecs = specs[id];
-	var knownApps = deviceSpecs['knownApps'];
-	for (var appName in knownApps) {
+	const deviceSpecs = specs[id];
+	const knownApps = deviceSpecs['knownApps'];
+	for (let appName in knownApps) {
 		knownApps[appName] = path.join(__dirname, '../../../assets/binaries', knownApps[appName]);
 	}
 });

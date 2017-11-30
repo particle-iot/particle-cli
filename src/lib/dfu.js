@@ -24,63 +24,64 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
-'use strict';
 
-var _ = require('lodash');
 
-var fs = require('fs');
-var when = require('when');
-var whenNode = require('when/node');
-var utilities = require('./utilities.js');
-var child_process = require('child_process');
-var settings = require('../../settings.js');
-var specs = require('./deviceSpecs');
-var log = require('./log');
+const _ = require('lodash');
 
-var inquirer = require('inquirer');
-var prompt = inquirer.prompt;
-var chalk = require('chalk');
-var temp = require('temp');
-var that = module.exports = {
+const fs = require('fs');
+const when = require('when');
+const whenNode = require('when/node');
+const utilities = require('./utilities.js');
+const childProcess = require('child_process');
+const settings = require('../../settings.js');
+const specs = require('./deviceSpecs');
+const log = require('./log');
 
-	_dfuIdsFromDfuOutput: function(stdout) {
+const inquirer = require('inquirer');
+const prompt = inquirer.prompt;
+const chalk = require('chalk');
+const temp = require('temp');
+
+const dfu = {
+
+	_dfuIdsFromDfuOutput(stdout) {
 		// find DFU devices that match specs
-		var dfuIds =
+		let dfuIds =
 			stdout
 				.split('\n')
-				.filter(function (line) {
+				.filter((line) => {
 					return (line.indexOf('Found DFU') >= 0);
 				})
-				.map(function (foundLine) {
+				.map((foundLine) => {
 					return foundLine.match(/\[(.*:.*)\]/)[1];
 				})
-				.filter(function (dfuId) {
+				.filter((dfuId) => {
 					return dfuId && specs[dfuId];
 				});
 		return _.unique(dfuIds);
 	},
 
 	dfuId: undefined,
-	listDFUDevices: function() {
-		var temp = when.defer();
+	listDFUDevices() {
+		let temp = when.defer();
 
-		var failTimer = utilities.timeoutGenerator('listDFUDevices timed out', temp, 6000);
-		var cmd = that.getCommand() + ' -l';
-		child_process.exec(cmd, function (error, stdout, stderr) {
+		let failTimer = utilities.timeoutGenerator('listDFUDevices timed out', temp, 6000);
+		let cmd = dfu.getCommand() + ' -l';
+		childProcess.exec(cmd, (error, stdout, stderr) => {
 			clearTimeout(failTimer);
 			if (error) {
 				return temp.reject(error);
 			}
 			if (stderr) {
-				if (that._missingDevicePermissions(stderr) && that._systemSupportsUdev()) {
-					return that._promptInstallUdevRules().then(temp.reject, temp.reject);
+				if (dfu._missingDevicePermissions(stderr) && dfu._systemSupportsUdev()) {
+					return dfu._promptInstallUdevRules().then(temp.reject, temp.reject);
 				}
 			}
 
 			// find DFU devices that match specs
 			stdout = stdout || '';
-			var dfuIds = that._dfuIdsFromDfuOutput(stdout);
-			var dfuDevices = dfuIds.map(function (d) {
+			let dfuIds = dfu._dfuIdsFromDfuOutput(stdout);
+			let dfuDevices = dfuIds.map((d) => {
 				return {
 					type: specs[d].productName,
 					dfuId: d,
@@ -93,74 +94,74 @@ var that = module.exports = {
 		return temp.promise;
 	},
 
-	findCompatibleDFU: function (showHelp) {
+	findCompatibleDFU(showHelp) {
 		showHelp = showHelp !== undefined ? showHelp : true;
-		return that.listDFUDevices()
-			.then(function (dfuDevices) {
+		return dfu.listDFUDevices()
+			.then((dfuDevices) => {
 				if (dfuDevices.length > 1) {
 					return prompt([{
 						type: 'list',
 						name: 'device',
 						message: 'Which device would you like to select?',
-						choices: function () {
-							return dfuDevices.map(function (d) {
+						choices() {
+							return dfuDevices.map((d) => {
 								return {
 									name: d.type,
 									value: d.dfuId
 								};
 							});
 						}
-					}]).then(function (ans) {
-						that.dfuId = ans.device;
-						return that.dfuId;
+					}]).then((ans) => {
+						dfu.dfuId = ans.device;
+						return dfu.dfuId;
 					});
 				} else if (dfuDevices.length === 1) {
-					that.dfuId = dfuDevices[0].dfuId;
-					log.verbose('Found DFU device %s', that.dfuId);
-					return that.dfuId;
+					dfu.dfuId = dfuDevices[0].dfuId;
+					log.verbose('Found DFU device %s', dfu.dfuId);
+					return dfu.dfuId;
 				} else {
 					if (showHelp) {
-						that.showDfuModeHelp();
+						dfu.showDfuModeHelp();
 					}
 					return when.reject('No DFU device found');
 				}
 			});
 	},
 
-	isDfuUtilInstalled: function() {
-		var cmd = that.getCommand() + ' -l';
-		var installCheck = utilities.deferredChildProcess(cmd);
+	isDfuUtilInstalled() {
+		let cmd = dfu.getCommand() + ' -l';
+		let installCheck = utilities.deferredChildProcess(cmd);
 		return utilities.replaceDfdResults(installCheck, 'Installed', 'dfu-util is not installed');
 	},
 
-	readDfu: function (memoryInterface, destination, firmwareAddress, leave) {
-		var prefix = that.getCommand() + ' -d ' + that.dfuId;
-		var leaveStr = (leave) ? ':leave' : '';
-		var cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -U ' + destination;
+	readDfu(memoryInterface, destination, firmwareAddress, leave) {
+		let prefix = dfu.getCommand() + ' -d ' + dfu.dfuId;
+		let leaveStr = (leave) ? ':leave' : '';
+		let cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -U ' + destination;
 
 		return utilities.deferredChildProcess(cmd);
 	},
 
-	writeDfu: function (memoryInterface, binaryPath, firmwareAddress, leave) {
-		var leaveStr = (leave) ? ':leave' : '';
-		var args = [
-			'-d', that.dfuId,
+	writeDfu(memoryInterface, binaryPath, firmwareAddress, leave) {
+		let leaveStr = (leave) ? ':leave' : '';
+		let args = [
+			'-d', dfu.dfuId,
 			'-a', memoryInterface,
 			'-i', '0',
 			'-s', firmwareAddress + leaveStr,
 			'-D', binaryPath
 		];
-		var cmd = 'dfu-util';
+		let cmd = 'dfu-util';
 		if (settings.useSudoForDfu) {
 			cmd = 'sudo';
 			args.unshift('dfu-util');
 		}
 
-		var deviceSpecs = specs[that.dfuId] || { };
-		that.checkBinaryAlignment(binaryPath, deviceSpecs);
-		return utilities.deferredSpawnProcess(cmd, args).then(function(output) {
+		let deviceSpecs = specs[dfu.dfuId] || { };
+		dfu.checkBinaryAlignment(binaryPath, deviceSpecs);
+		return utilities.deferredSpawnProcess(cmd, args).then((output) => {
 			return when.resolve(output.stdout.join('\n'));
-		}).catch(function(output) {
+		}).catch((output) => {
 			// If this line is printed, it actually worked. Ignore other errors.
 			if (output.stdout.indexOf('File downloaded successfully') >= 0) {
 				return when.resolve(output.stdout.join('\n'));
@@ -169,7 +170,7 @@ var that = module.exports = {
 		});
 	},
 
-	getCommand: function () {
+	getCommand() {
 		if (settings.useSudoForDfu) {
 			return 'sudo dfu-util';
 		} else {
@@ -177,9 +178,9 @@ var that = module.exports = {
 		}
 	},
 
-	checkBinaryAlignment: function (filepath, specs) {
+	checkBinaryAlignment(filepath, specs) {
 		if (specs.writePadding===2) {
-			that.appendToEvenBytes(filepath);
+			dfu.appendToEvenBytes(filepath);
 		}
 	},
 
@@ -187,14 +188,14 @@ var that = module.exports = {
 	 * Append to the file until it has an even size
 	 * @param  {String} filepath
 	 */
-	appendToEvenBytes: function (filepath) {
+	appendToEvenBytes(filepath) {
 		if (fs.existsSync(filepath)) {
-			var stats = fs.statSync(filepath);
+			let stats = fs.statSync(filepath);
 
 			//is the filesize even?
 			//console.log(filepath, ' stats are ', stats);
 			if ((stats.size % 2) !== 0) {
-				var buf = new Buffer(1);
+				let buf = new Buffer(1);
 				buf[0] = 0;
 
 				fs.appendFileSync(filepath, buf);
@@ -202,15 +203,15 @@ var that = module.exports = {
 		}
 	},
 
-	checkKnownApp: function(appName) {
-		if (typeof that._validateKnownApp(appName, 'knownApps') !== 'undefined') {
-			return that._validateKnownApp(appName, 'knownApps');
+	checkKnownApp(appName) {
+		if (typeof dfu._validateKnownApp(appName, 'knownApps') !== 'undefined') {
+			return dfu._validateKnownApp(appName, 'knownApps');
 		} else {
 			return;
 		}
 	},
 
-	showDfuModeHelp: function() {
+	showDfuModeHelp() {
 		console.log();
 		console.log(chalk.red('!!!'), 'I was unable to detect any devices in DFU mode...');
 		console.log();
@@ -244,18 +245,18 @@ var that = module.exports = {
 		console.log();
 	},
 
-	_validateKnownApp: function(appName, segmentName) {
-		var segment = that._validateSegmentSpecs(segmentName);
+	_validateKnownApp(appName, segmentName) {
+		let segment = dfu._validateSegmentSpecs(segmentName);
 		if (segment.error) {
 			throw new Error('App is unknown: ' + segment.error);
 		}
 		return segment.specs[appName];
 	},
 
-	_validateSegmentSpecs: function(segmentName) {
-		var err = null;
-		var deviceSpecs = specs[that.dfuId] || { };
-		var params = deviceSpecs[segmentName] || undefined;
+	_validateSegmentSpecs(segmentName) {
+		let err = null;
+		let deviceSpecs = specs[dfu.dfuId] || { };
+		let params = deviceSpecs[segmentName] || undefined;
 		if (!segmentName) {
 			err = "segmentName required. Don't know where to read/write.";
 		} else if (!deviceSpecs) {
@@ -269,10 +270,10 @@ var that = module.exports = {
 		}
 		return { error: null, specs: params };
 	},
-	read: function(destination, segmentName, leave) {
+	read(destination, segmentName, leave) {
 
-		var address;
-		var segment = that._validateSegmentSpecs(segmentName);
+		let address;
+		let segment = dfu._validateSegmentSpecs(segmentName);
 		if (segment.error) {
 			throw new Error('dfu.read: ' + segment.error);
 		}
@@ -282,50 +283,50 @@ var that = module.exports = {
 			address = segment.specs.address;
 		}
 
-		return that.readDfu(
+		return dfu.readDfu(
 			segment.specs.alt,
 			destination,
 			address,
 			leave
 		);
 	},
-	readBuffer: function(segmentName, leave) {
-		var filename = temp.path({ suffix: '.bin' });
+	readBuffer(segmentName, leave) {
+		let filename = temp.path({ suffix: '.bin' });
 		return this.read(filename, segmentName, leave)
-			.then(function() {
+			.then(() => {
 				return whenNode.lift(fs.readFile)(filename);
 			})
-			.then(function(buf) {
+			.then((buf) => {
 				return buf;
 			})
-			.finally(function() {
-				fs.unlink(filename, function() {
+			.finally(() => {
+				fs.unlink(filename, () => {
 					// do nothing
 				});
 			});
 	},
-	write: function(binaryPath, segmentName, leave) {
+	write(binaryPath, segmentName, leave) {
 
-		var segment = that._validateSegmentSpecs(segmentName);
+		let segment = dfu._validateSegmentSpecs(segmentName);
 		if (segment.error) {
 			throw new Error('dfu.write: ' + segment.error);
 		}
 
-		return that.writeDfu(
+		return dfu.writeDfu(
 			segment.specs.alt,
 			binaryPath,
 			segment.specs.address,
 			leave
 		);
 	},
-	writeBuffer: function(buffer, segmentName, leave) {
-		var filename = temp.path({ suffix: '.bin' });
-		var self = this;
+	writeBuffer(buffer, segmentName, leave) {
+		let filename = temp.path({ suffix: '.bin' });
+		let self = this;
 		return whenNode.lift(fs.writeFile)(filename, buffer)
-			.then(function() {
+			.then(() => {
 				return self.write(filename, segmentName, leave)
-					.finally(function() {
-						fs.unlink(filename, function() {
+					.finally(() => {
+						fs.unlink(filename, () => {
 							// do nothing
 						});
 					});
@@ -339,21 +340,21 @@ var that = module.exports = {
 	_udevRulesDir: '/etc/udev/rules.d/',
 	_udevRulesFile: '50-particle.rules',
 
-	_missingDevicePermissions: function (stderr) {
+	_missingDevicePermissions(stderr) {
 		return stderr && stderr.indexOf('Cannot open DFU device') >= 0;
 	},
 
-	_systemSupportsUdev: function() {
-		return fs.existsSync(that._udevRulesDir);
+	_systemSupportsUdev() {
+		return fs.existsSync(dfu._udevRulesDir);
 	},
 
-	_udevRulesInstalled: function() {
-		return fs.existsSync(that._udevRulesDir + '/' + that._udevRulesFile);
+	_udevRulesInstalled() {
+		return fs.existsSync(dfu._udevRulesDir + '/' + dfu._udevRulesFile);
 	},
 
-	_promptInstallUdevRules: function() {
-		var temp = when.defer();
-		if (that._udevRulesInstalled()) {
+	_promptInstallUdevRules() {
+		let temp = when.defer();
+		if (dfu._udevRulesInstalled()) {
 			console.log(chalk.bold.red(
 				'Physically unplug and reconnect the Particle device and try again.'
 			));
@@ -365,21 +366,21 @@ var that = module.exports = {
 				name: 'install',
 				message: 'Would you like to install a UDEV rules file to get access?',
 				default: true
-			}]).then(function(ans) {
-				that._installUdevChoice(ans, temp);
+			}]).then((ans) => {
+				dfu._installUdevChoice(ans, temp);
 			});
 		}
 
 		return temp.promise;
 	},
 
-	_installUdevChoice: function(ans, promise) {
-		var message = 'Missing permissions to use DFU';
+	_installUdevChoice(ans, promise) {
+		let message = 'Missing permissions to use DFU';
 		if (ans.install) {
-			var rules = __dirname + '/../assets/' + that._udevRulesFile;
-			var cmd = "sudo cp '" + rules + "' '" + that._udevRulesDir + "'";
+			let rules = __dirname + '/../assets/' + dfu._udevRulesFile;
+			let cmd = "sudo cp '" + rules + "' '" + dfu._udevRulesDir + "'";
 			console.log(cmd);
-			child_process.exec(cmd, function(error, stdout, stderr) {
+			childProcess.exec(cmd, (error, stdout, stderr) => {
 				if (error) {
 					console.error('Could not install UDEV rules');
 					promise.reject(message);
@@ -397,10 +398,10 @@ var that = module.exports = {
 		}
 	},
 
-	specsForPlatform: function(platformID) {
-		var result = {}
-		Object.keys(specs).forEach(function(id) {
-			var deviceSpecs = specs[id];
+	specsForPlatform(platformID) {
+		let result = {};
+		Object.keys(specs).forEach((id) => {
+			let deviceSpecs = specs[id];
 			if (deviceSpecs.productId===platformID) {
 				result = deviceSpecs;
 			}
@@ -408,3 +409,5 @@ var that = module.exports = {
 		return result;
 	}
 };
+
+module.exports = dfu;

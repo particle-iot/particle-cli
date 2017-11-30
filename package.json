@@ -102,7 +102,6 @@
     "mock-fs": "^4.2.0",
     "proxyquire": "^1.6.0",
     "rimraf-promise": "^2.0.0",
-    "safe-buffer": "^5.1.1",
     "should": "^7.0.2",
     "sinon": "^1.15.4",
     "sinon-as-promised": "^4.0.2",

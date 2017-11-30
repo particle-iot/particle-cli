@@ -24,32 +24,34 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
-'use strict';
 
-var fs = require('fs');
-var path = require('path');
-var when = require('when');
-var settings = require('../../settings.js');
-var endsWith = require('./utilities').endsWith;
 
-var Interpreter = function () {
+const fs = require('fs');
+const path = require('path');
+const when = require('when');
+const settings = require('../../settings.js');
+const endsWith = require('./utilities').endsWith;
 
-};
-Interpreter.prototype = {
-	_commands: null,
-	commandsByName: null,
-	_commandsMap: null,
+class Interpreter {
 
-	startup: function () {
+	constructor() {
+		this._commands = null;
+		this.commandsByName = null;
+		this._commandsMap = null;
+	}
+
+
+	startup() {
 		this.setupTerminal();
 		this.loadCommands();
 
 		if (settings.commandMappings) {
 			this.loadMappings(settings.commandMappings);
 		}
-	},
-	handle: function (args, shouldExit) {
-		var result;
+	}
+
+	handle(args, shouldExit) {
+		let result;
 
 		if (!args || args.length === 2) {
 			result = this.runCommand('help');
@@ -58,9 +60,9 @@ Interpreter.prototype = {
 		}
 
 		if (when.isPromiseLike(result)) {
-			result.done(function(res) {
+			result.done((res) => {
 				process.exit(+res || 0);
-			}, function() {
+			}, () => {
 				if (shouldExit) {
 					process.exit(1);
 				}
@@ -71,21 +73,21 @@ Interpreter.prototype = {
 				return;
 			}
 		}
-	},
+	}
 
-	setupTerminal: function () {
-		if(process.stdout._handle && process.stdout._handle.setBlocking) {
+	setupTerminal() {
+		if (process.stdout._handle && process.stdout._handle.setBlocking) {
 			process.stdout._handle.setBlocking(true);
 		}
-	},
+	}
 
-	runCommand: function (name, args) {
+	runCommand(name, args) {
 		//console.log('looking for command ' + name);
 
-		var c = null;
+		let c = null;
 		if (this.hasMappings()) {
 			c = this.getMappedCommand(name, args);
-			var newargs = this.addMappedArgs(name, args);
+			let newargs = this.addMappedArgs(name, args);
 			if (c) {
 				args = newargs;
 			}
@@ -103,11 +105,11 @@ Interpreter.prototype = {
 			console.log('particle: Unknown command: "' + name + '"');
 			return -1;
 		}
-	},
+	}
 
-	getCommands: function () {
+	getCommands() {
 		return this._commands;
-	},
+	}
 
 	/**
 	 * ignores mappings, just uses the name in the original classfile,
@@ -115,29 +117,28 @@ Interpreter.prototype = {
 	 * @param {String} name
 	 * @returns {Object} command that matches
 	 */
-	getCommandModule: function (name) {
-		var commands = this._commands;
-		for (var i = 0; i < commands.length; i++) {
-			var c = commands[i];
+	getCommandModule(name) {
+		let commands = this._commands;
+		for (let i = 0; i < commands.length; i++) {
+			let c = commands[i];
 			if (c.name === name) {
 				return c;
 			}
 		}
 		throw Error('no command called '+name);
-	},
-
+	}
 
 	/**
 	 * finds a command using the mapped name, or the friendly name in the module
 	 * @param {String} name
 	 * @returns {Object} command that matches
 	 */
-	findCommand: function (name) {
+	findCommand(name) {
 		if (!name) {
 			name = 'help';
 		}
 
-		var cmd;
+		let cmd;
 		if (this.hasMappings()) {
 			cmd = this._commandsMap[name];
 		}
@@ -147,25 +148,25 @@ Interpreter.prototype = {
 		}
 
 		return cmd;
-	},
+	}
 
 	/**
 	 * We could make this more efficient, but this is good for a small number
 	 * of commands with lots of functionality
 	 */
-	loadCommands: function () {
+	loadCommands() {
 		this._commands = [];
 		this.commandsByName = {};
 
-		var files = fs.readdirSync(settings.commandPath).filter(function (file) {
+		let files = fs.readdirSync(settings.commandPath).filter((file) => {
 			return file.indexOf('.') !== 0 && !endsWith(file, '.map'); // Ignore hidden files (Such as .swp files)
 		});
 
-		for (var i = 0; i < files.length; i++) {
-			var cmdPath = path.join(settings.commandPath, files[i]);
+		for (let i = 0; i < files.length; i++) {
+			let cmdPath = path.join(settings.commandPath, files[i]);
 			try {
-				var Cmd = require(cmdPath);
-				var c = new Cmd(this);
+				let Cmd = require(cmdPath);
+				let c = new Cmd(this);
 
 				if (c.name != null) {
 					this._commands.push(c);
@@ -175,87 +176,39 @@ Interpreter.prototype = {
 				console.error('Error loading command ' + cmdPath + ' ' + ex);
 			}
 		}
-	},
+	}
 
-	tryReadMappings: function (filename) {
+	tryReadMappings(filename) {
 		if (!filename || (filename === '')) {
 			return null;
 		}
 
 		try {
-			var contents = fs.readFileSync(filename);
+			let contents = fs.readFileSync(filename);
 			return JSON.parse(contents);
 		} catch (ex) {
 			console.error('Error parsing mappings file ' + filename, ex);
 		}
 
 		return null;
-	},
+	}
 
 	/**
 	 * open our command mappings file, and override our stock commands
 	 * @param {String} filename
 	 */
-	loadMappings: function (filename) {
-		var data = this.tryReadMappings(filename);
+	loadMappings(filename) {
+		let data = this.tryReadMappings(filename);
 		if (!data || !data._commands) {
 			console.log('Mappings filename was ' + filename + ' but no mappings were present');
 			return;
 		}
 
 		this._commandsMap = data;
+	}
 
-		//tree recursive
-//        this.addMappedList(data._commands, data, this._commandsMap);
-
-		//TODO: DAVE HERE
-		//optional?
-		//make a list of all overridden / mapped commands, so we know not to list them?
-
-		//
-		//[ ] we should show a list of all missed commands under common commands, so that they can be found.
-		//[ ] help should work for mappings containing children
-		//e.g. core
-
-
-	},
-//
-//    /**
-//     * recur down the command tree, building our structure
-//     * @param arr
-//     * @param tree
-//     * @param commands
-//     */
-//    addMappedList: function (arr, tree, commands) {
-//        var names = [];
-//        for (var i = 0; i < arr.length; i++) {
-//            var name = arr[i];
-//            var node = tree[name];
-//
-//            names.push(name);
-//            this.addMapping(name, node, commands);
-//            commands._commands = names;
-//        }
-//    },
-//
-//
-//    addMapping: function (name, node, commands) {
-//        if (!node) {
-//            return;
-//        }
-//
-//        node.name = name;
-//        commands[name] = node;
-//
-//        if (node._commands) {
-//            var subcommands = { };
-//            this.addMappedList(node._commands, node, subcommands);
-//            commands[name]._commands = subcommands;
-//        }
-//    },
-
-	getMappedCommand: function (name, args) {
-		var node = this._commandsMap[name];
+	getMappedCommand(name, args) {
+		let node = this._commandsMap[name];
 		if (!node) {
 			return null;
 		}
@@ -263,14 +216,14 @@ Interpreter.prototype = {
 		//we don't map to anything, but there are more args?
 		//maybe we're a root element.
 		if (!node.maps && args && (args.length > 0)) {
-			var subCmd = args[0];       //e.g. core add
+			let subCmd = args[0];       //e.g. core add
 
 			//does this root item have a subcommand with that name?
 			if (node[subCmd]) {
 				//what does that subcommand map to?
-				var maps = node[subCmd].maps;
+				let maps = node[subCmd].maps;
 
-				var cmd = this.commandsByName[maps[0]];
+				let cmd = this.commandsByName[maps[0]];
 
 				//cut off the alias from the args, and inject the true command
 				if (maps.length > 1) {
@@ -285,65 +238,50 @@ Interpreter.prototype = {
 		if (!node.maps) {
 			//doesn't map exactly to one command, so lets call help.
 			//updating the maps property will let it trim the arguments later so we get the proper help command
-			node.maps = [ 'help', name ];
+			node.maps = ['help', name];
 		}
 
 
-		var cmdName = (node.maps) ? node.maps[0] : null;
+		let cmdName = (node.maps) ? node.maps[0] : null;
 
 		//grab the command we're mapped to
 		return this.commandsByName[cmdName];
-	},
-	addMappedArgs: function (name, args) {
-		var node = this._commandsMap[name];
+	}
+
+	addMappedArgs(name, args) {
+		let node = this._commandsMap[name];
 		if (!node) {
 			return null;
 		}
 
 		//append any remaining chunks of the mapping to the arguments list
 		if (node.maps && (node.maps.length > 1)) {
-			var arr = node.maps.slice(1);
+			let arr = node.maps.slice(1);
 			args = arr.concat(args);
 		}
 		return args;
-	},
+	}
 
-	hasMappings: function() {
+	hasMappings() {
 		return !!this._commandsMap;
-	},
+	}
 
-	getUnmappedTopLevelCommands: function() {
-		var results = [];
+	getUnmappedTopLevelCommands() {
+		let results = [];
 
-		var orig = this.commandsByName;
-		for (var key in orig) {
-			var obj = orig[key];
+		let orig = this.commandsByName;
+		for (let key in orig) {
+			let obj = orig[key];
 
-			var name = obj.name;
+			let name = obj.name;
 			if (!this._commandsMap[name]) {
 				results.push(name);
 			}
 		}
 
 		return results;
-	},
+	}
+}
 
-//    getUnmappedCommands: function() {
-//        var results = [];
-//
-//        var orig = this.cli.commandsByName;
-//        for(var i=0;i<orig.length;i++) {
-//            var name = orig[i].name;
-//
-//            if (!this._commandsMap[name]) {
-//                results.push(name);
-//            }
-//        }
-//
-//        //what do I do about nested commands?
-//
-//        return results;
-//    },
-};
 module.exports = Interpreter;
 

@@ -1,18 +1,18 @@
 /**
  * Created by middleca on 1/23/15.
  */
-'use strict';
-
-var when = require('when');
-var pipeline = require('when/pipeline');
-var wifiscanner = require('node-wifiscanner2');
 
 
-var WifiUtilities = {
+const when = require('when');
+const pipeline = require('when/pipeline');
+const wifiscanner = require('node-wifiscanner2');
 
-	scan: function() {
-		var dfd = when.defer();
-		wifiscanner.scan(function(err, data) {
+
+const WifiUtilities = {
+
+	scan() {
+		let dfd = when.defer();
+		wifiscanner.scan((err, data) => {
 			if (err) {
 				dfd.reject(err);
 			} else {
@@ -22,9 +22,9 @@ var WifiUtilities = {
 		return dfd.promise;
 	},
 
-	objToArr: function(obj) {
-		var arr = [];
-		for (var key in obj) {
+	objToArr(obj) {
+		let arr = [];
+		for (let key in obj) {
 			if (obj.hasOwnProperty(key)) {
 				arr.push(obj[key]);
 			}
@@ -37,8 +37,8 @@ var WifiUtilities = {
 	 * @param {Array} list
 	 * @returns {Promise} promise that resolves with the list
 	 */
-	cleanApList: function(list) {
-		list = list.sort(function(a, b) {
+	cleanApList(list) {
+		list = list.sort((a, b) => {
 			if (a.ssid && !b.ssid) {
 				return 1;
 			} else if (b.ssid && !a.ssid) {
@@ -48,8 +48,8 @@ var WifiUtilities = {
 			return a.ssid.localeCompare(b.ssid);
 		});
 
-		var names = {};
-		list.map(function(a) {
+		let names = {};
+		list.map((a) => {
 			names[a.ssid] = names[a.ssid] || a;
 			if (a.signal_level > names[a.ssid].signal_level) {
 				names[a.ssid] = a;
@@ -61,10 +61,10 @@ var WifiUtilities = {
 		return when.resolve(list);
 	},
 
-	displayAPList: function(list) {
+	displayAPList(list) {
 		console.log('I found these Wi-Fi Access Points:');
 
-		var formatLine = function(ap, idx) {
+		let lines = list.map((ap, idx) => {
 			if (!ap) {
 				return '';
 			}
@@ -74,7 +74,7 @@ var WifiUtilities = {
 				ap.ssid = '"' + ap.ssid + '"';
 			}
 
-			var arr = [
+			let arr = [
 				idx + 1,
 				'.)\t',
 				ap.ssid
@@ -86,14 +86,13 @@ var WifiUtilities = {
 			}
 
 			return arr.join('');
-		};
+		});
 
-		var lines = list.map(formatLine);
 		console.log(lines.join('\n'));
 		return when.resolve();
 	},
 
-	scanAndListAPs: function() {
+	scanAndListAPs() {
 		return pipeline([
 			WifiUtilities.scan,
 			WifiUtilities.cleanApList,

@@ -1,15 +1,13 @@
-'use strict';
+const fs = require('fs');
+const _ = require('lodash');
+const when = require('when');
+const whenNode = require('when/node');
+const sequence = require('when/sequence');
+const pipeline = require('when/pipeline');
+const poll = require('when/poll');
+const log = require('./log');
 
-var fs = require('fs');
-var _ = require('lodash');
-var when = require('when');
-var whenNode = require('when/node');
-var sequence = require('when/sequence');
-var pipeline = require('when/pipeline');
-var poll = require('when/poll');
-var log = require('./log');
-
-var ymodem = {
+const ymodem = {
 	// 128 byte blocks
 	SOH: 0x01,
 	// 1024 byte blocks
@@ -22,44 +20,44 @@ var ymodem = {
 	ABORT1: 0x41,
 	ABORT2: 0x61
 };
-var ymodemLookup = _.invert(ymodem);
+const ymodemLookup = _.invert(ymodem);
 
-function YModem(serialPort, options) {
-	this.options = _.defaults(options, {
-		packetLength: 128,
-		debug: false,
-		inListeningMode: true
-	});
-	this.port = serialPort;
+class YModem {
+	constructor(serialPort, options) {
+		this.options = _.defaults(options, {
+			packetLength: 128,
+			debug: false,
+			inListeningMode: true
+		});
+		this.port = serialPort;
 
-	if (this.options.packetLength === 128) {
-		this.mark = ymodem.SOH;
-	} else if (this.options.packetLength === 1024) {
-		this.mark = ymodem.STX;
-	} else {
-		throw new Error('invalid packet length');
+		if (this.options.packetLength === 128) {
+			this.mark = ymodem.SOH;
+		} else if (this.options.packetLength === 1024) {
+			this.mark = ymodem.STX;
+		} else {
+			throw new Error('invalid packet length');
+		}
+
+		serialPort.once('close', this._close.bind(this));
 	}
 
-	serialPort.once('close', this._close.bind(this));
-}
-
-YModem.prototype = {
-	send: function(filenames) {
-		var self = this;
+	send(filenames) {
+		let self = this;
 		if (!_.isArray(filenames)) {
 			filenames = [filenames];
 		}
 
-		var transferred = sequence([
-			function() {
+		let transferred = sequence([
+			() => {
 				return self._open(self.options.inListeningMode);
 			},
-			function() {
-				return sequence(filenames.map(function (filename) {
+			() => {
+				return sequence(filenames.map((filename) => {
 					// return task function
-					return function() {
+					return () => {
 						console.log('sending file:', filename);
-						return whenNode.lift(fs.readFile)(filename).then(function(buffer) {
+						return whenNode.lift(fs.readFile)(filename).then((buffer) => {
 							return self._sendFile(buffer);
 						});
 					};
@@ -68,53 +66,53 @@ YModem.prototype = {
 			this._endTransfer.bind(this)
 		]);
 
-		transferred.catch(function(err) {
+		transferred.catch((err) => {
 			self.errored = true;
 			return when.reject(err);
-		}).finally(function() {
+		}).finally(() => {
 			self._close();
 		});
 
 		return transferred;
-	},
+	}
 
-	_logData: function(data) {
+	_logData(data) {
 		if (data.length <= 2) {
-			for (var i=0; i < data.length; i++) {
-				var chr = data[i];
+			for (let i=0; i < data.length; i++) {
+				let chr = data[i];
 				log.verbose(ymodemLookup[chr] || chr);
 			}
 			return;
 		}
 		log.verbose(data, data.toString());
-	},
+	}
 
-	_close: function() {
+	_close() {
 		if (this.port.isOpen) {
 			if (this.errored) {
 				// ignore error here
-				this.port.write([ymodem.ABORT2], function() {});
+				this.port.write([ymodem.ABORT2], () => {});
 			}
 			this.port.close();
 		}
-	},
+	}
 
-	_open: function(inListeningMode) {
-		var self = this;
+	_open(inListeningMode) {
+		let self = this;
 		if (inListeningMode === undefined) {
 			inListeningMode = true;
 		}
 
-		return when.promise(function(resolve, reject) {
-			self.port.open(function(err) {
+		return when.promise((resolve, reject) => {
+			self.port.open((err) => {
 				if (err) {
 					return reject(err);
 				}
 
 				// wait for initial response
-				var line = '';
+				let line = '';
 				function cmdResponse() {
-					var data = self.port.read();
+					let data = self.port.read();
 					self._logData(data);
 					line += data.toString();
 					// if not in listening mode, we get CRC16 back
@@ -127,76 +125,76 @@ YModem.prototype = {
 				self.port.on('readable', cmdResponse);
 				self.port.write('f');
 			});
-		}).timeout(5000).catch(when.TimeoutError, function() {
+		}).timeout(5000).catch(when.TimeoutError, () => {
 			return when.reject('Timed out waiting for initial response from device');
 		});
-	},
+	}
 
-	_endTransfer: function() {
+	_endTransfer() {
 		this.seq = 0;
 		this.ending = true;
 		return this._sendFileHeader('', 0);
-	},
+	}
 
-	_sendFile: function(buffer) {
-		var self = this;
+	_sendFile(buffer) {
+		let self = this;
 		this.seq = 0;
 		return pipeline([
-			function() {
+			() => {
 				log.verbose('send file header');
 				return self._sendFileHeader('binary', buffer.length);
 			},
-			function(fileResponse) {
+			(fileResponse) => {
 				if (fileResponse !== ymodem.ACK) {
 					return when.reject('file header not acknowledged');
 				}
 
 				// keep sending packets until we are done
-				return poll(function() {
-					var start = (self.seq - 1) * self.options.packetLength;
-					var buf = buffer.slice(start, start + self.options.packetLength);
+				return poll(() => {
+					let start = (self.seq - 1) * self.options.packetLength;
+					let buf = buffer.slice(start, start + self.options.packetLength);
 					return self._sendPacket(buf);
-				}, 1, function() {
+				}, 1, () => {
 					return ((self.seq - 1) * self.options.packetLength) >= buffer.length;
 				});
 			},
-			function() {
-				var buf = new Buffer([ymodem.EOT]);
+			() => {
+				let buf = new Buffer([ymodem.EOT]);
 				log.verbose('write', self.seq, buf, buf.length);
 				return self._sendRawPacket(buf);
 			}
 		]);
-	},
+	}
 
-	_sendFileHeader: function(name, length) {
-		var buf = new Buffer(name + '\0' + length + ' ');
+	_sendFileHeader(name, length) {
+		let buf = new Buffer(name + '\0' + length + ' ');
 		return this._sendPacket(buf);
-	},
+	}
 
-	_sendPacket: function(packet) {
+	_sendPacket(packet) {
 		if (packet.length < this.options.packetLength) {
-			var filler = new Buffer(this.options.packetLength - packet.length);
+			let filler = new Buffer(this.options.packetLength - packet.length);
 			filler.fill(0);
 			packet = Buffer.concat([packet, filler], this.options.packetLength);
 		}
 
-		var seqchr = this.seq & 0xFF;
-		var seqchr_neg = (-this.seq - 1) & 0xFF;
-		var header = new Buffer([this.mark, seqchr, seqchr_neg]);
-		var crc16 = new Buffer([0, 0]);
+		let seqchr = this.seq & 0xFF;
+		let seqchrNeg = (-this.seq - 1) & 0xFF;
+		let header = new Buffer([this.mark, seqchr, seqchrNeg]);
+		let crc16 = new Buffer([0, 0]);
 		packet = Buffer.concat([header, packet, crc16]);
 		log.verbose('write', this.seq, header, packet.length);
 
 		return this._sendRawPacket(packet);
-	},
+	}
 
-	_sendRawPacket: function(packet) {
-		var self = this;
-		var response = when.promise(function(resolve, reject) {
-			var resp = new Buffer([]);
+	_sendRawPacket(packet) {
+		let self = this;
+		let response = when.promise((resolve, reject) => {
+			let resp = new Buffer([]);
 			function writeResponse() {
-                var data = self.port.read();
-                self._logData(data);
+				let data = self.port.read();
+				self._logData(data);
 				resp = Buffer.concat([resp, data]);
 				switch (resp[0]) {
 					case ymodem.ACK:
@@ -228,14 +226,14 @@ YModem.prototype = {
 		});
 
 		return pipeline([
-			function() {
+			() => {
 				return whenNode.lift(self.port.write.bind(self.port))(packet);
 			},
-			function() {
+			() => {
 				return response.timeout(10000);
 			}
 		]);
 	}
-};
+}
 
 module.exports = YModem;

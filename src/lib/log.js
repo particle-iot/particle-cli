@@ -1,44 +1,43 @@
-'use strict';
 
-var stream = require('stream');
-var util = require('util');
-var chalk = require('chalk');
 
-var settings = require('../../settings');
+const Transform = require('stream').Transform;
+const chalk = require('chalk');
+const settings = require('../../settings');
 
-function FilteredLogStream() {
-	stream.Transform.call(this);
-}
-util.inherits(FilteredLogStream, stream.Transform);
-
-FilteredLogStream.prototype._transform = function(data, encoding, callback) {
-	if (!settings.verboseOutput) {
-		return callback();
+class FilteredLogStream extends Transform {
+	constructor() {
+		super();
 	}
-	this.push(data, encoding);
-	callback();
-};
+
+	_transform(data, encoding, callback) {
+		if (!settings.verboseOutput) {
+			return callback();
+		}
+		this.push(data, encoding);
+		callback();
+	}
+}
 
 module.exports = {
-	verbose: function() {
+	verbose() {
 		if (!settings.verboseOutput) {
 			return;
 		}
 		console.log.apply(null, arguments);
 	},
 
-	error: function() {
-		var args = Array.prototype.slice.call(arguments);
+	error() {
+		let args = Array.prototype.slice.call(arguments);
 		args.unshift(chalk.red('!'));
 		console.error.apply(null, args);
 	},
 
-	serialInput: function(data) {
+	serialInput(data) {
 		if (!settings.verboseOutput) {
 			return;
 		}
-		var lines = data.split('\n');
-		lines.forEach(function (l) {
+		let lines = data.split('\n');
+		lines.forEach((l) => {
 			if (!l) {
 				return;
 			}
@@ -46,12 +45,12 @@ module.exports = {
 		});
 	},
 
-	serialOutput: function(data) {
+	serialOutput(data) {
 		if (!settings.verboseOutput) {
 			return;
 		}
-		var lines = data.split('\n');
-		lines.forEach(function (l) {
+		let lines = data.split('\n');
+		lines.forEach((l) => {
 			if (!l) {
 				return;
 			}
@@ -59,13 +58,14 @@ module.exports = {
 		});
 	},
 
-	stdout: function () {
-		var outStream = new FilteredLogStream();
+	stdout() {
+		let outStream = new FilteredLogStream();
 		outStream.pipe(process.stdout);
 		return outStream;
 	},
-	stderr: function () {
-		var errStream = new FilteredLogStream();
+
+	stderr() {
+		let errStream = new FilteredLogStream();
 		errStream.pipe(process.stderr);
 		return errStream;
 	}

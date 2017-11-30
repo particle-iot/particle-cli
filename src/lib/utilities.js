@@ -15,7 +15,7 @@ modify it under the terms of the GNU Lesser General Public
 License as published by the Free Software Foundation, either
 version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
+This program is distributed in the hope utilities it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 Lesser General Public License for more details.
@@ -24,33 +24,33 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
-'use strict';
 
-var os = require('os');
-var fs = require('fs');
-var path = require('path');
-var when = require('when');
-var child_process = require('child_process');
-var glob = require('glob');
-var log = require('./log');
 
-var that = module.exports = {
-	contains: function(arr, obj) {
-		return (that.indexOf(arr, obj) >= 0);
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
+const when = require('when');
+const childProcess = require('child_process');
+const glob = require('glob');
+const log = require('./log');
+
+const utilities = {
+	contains(arr, obj) {
+		return (utilities.indexOf(arr, obj) >= 0);
 	},
-	containsKey: function(arr, obj) {
+	containsKey(arr, obj) {
 		if (!arr) {
 			return false;
 		}
 
-		return that.contains(Object.keys(arr), obj);
+		return utilities.contains(Object.keys(arr), obj);
 	},
-	indexOf: function(arr, obj) {
+	indexOf(arr, obj) {
 		if (!arr || (arr.length === 0)) {
 			return -1;
 		}
 
-		for (var i=0;i<arr.length;i++) {
+		for (let i=0;i<arr.length;i++) {
 			if (arr[i] === obj) {
 				return i;
 			}
@@ -60,27 +60,27 @@ var that = module.exports = {
 	},
 	// String.endsWith polyfill
 	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/endsWith#Polyfill
-	endsWith: function(subject, searchString, position) {
-		var subjectString = subject.toString();
+	endsWith(subject, searchString, position) {
+		let subjectString = subject.toString();
 		if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
 			position = subjectString.length;
 		}
 		position -= searchString.length;
-		var lastIndex = subjectString.lastIndexOf(searchString, position);
+		let lastIndex = subjectString.lastIndexOf(searchString, position);
 		return lastIndex !== -1 && lastIndex === position;
 	},
-	pipeDeferred: function(left, right) {
-		return when(left).then(function() {
+	pipeDeferred(left, right) {
+		return when(left).then(() => {
 			right.resolve.apply(right, arguments);
-		}, function() {
+		}, () => {
 			right.reject.apply(right, arguments);
 		});
 	},
 
-	deferredChildProcess: function(exec) {
-		var tmp = when.defer();
+	deferredChildProcess(exec) {
+		let tmp = when.defer();
 
-		child_process.exec(exec, function(error, stdout) {
+		childProcess.exec(exec, (error, stdout) => {
 			if (error) {
 				tmp.reject(error);
 			} else {
@@ -91,35 +91,35 @@ var that = module.exports = {
 		return tmp.promise;
 	},
 
-	deferredSpawnProcess: function(exec, args) {
-		var tmp = when.defer();
+	deferredSpawnProcess(exec, args) {
+		let tmp = when.defer();
 		try {
 			log.verbose('spawning ' + exec + ' ' + args.join(' '));
 
-			var options = {
+			let options = {
 				stdio: ['ignore', 'pipe', 'pipe']
 			};
 
-			var child = child_process.spawn(exec, args, options);
-			var stdout = [],
+			let child = childProcess.spawn(exec, args, options);
+			let stdout = [],
 				errors = [];
 
 			if (child.stdout) {
 				child.stdout.pipe(log.stdout());
-				child.stdout.on('data', function (data) {
+				child.stdout.on('data', (data) => {
 					stdout.push(data);
 				});
 			}
 
 			if (child.stderr) {
 				child.stderr.pipe(log.stderr());
-				child.stderr.on('data', function (data) {
+				child.stderr.on('data', (data) => {
 					errors.push(data);
 				});
 			}
 
-			child.on('close', function (code) {
-				var output = { stdout: stdout, stderr: errors };
+			child.on('close', (code) => {
+				let output = { stdout: stdout, stderr: errors };
 				if (!code) {
 					tmp.resolve(output);
 				} else {
@@ -133,24 +133,24 @@ var that = module.exports = {
 		return tmp.promise;
 	},
 
-	filenameNoExt: function (filename) {
+	filenameNoExt(filename) {
 		if (!filename || (filename.length === 0)) {
 			return filename;
 		}
 
-		var idx = filename.lastIndexOf('.');
+		let idx = filename.lastIndexOf('.');
 		if (idx >= 0) {
 			return filename.substr(0, idx);
 		} else {
 			return filename;
 		}
 	},
-	getFilenameExt: function (filename) {
+	getFilenameExt(filename) {
 		if (!filename || (filename.length === 0)) {
 			return filename;
 		}
 
-		var idx = filename.lastIndexOf('.');
+		let idx = filename.lastIndexOf('.');
 		if (idx >= 0) {
 			return filename.substr(idx);
 		} else {
@@ -158,24 +158,24 @@ var that = module.exports = {
 		}
 	},
 
-	timeoutGenerator: function (msg, defer, delay) {
-		return setTimeout(function () {
+	timeoutGenerator(msg, defer, delay) {
+		return setTimeout(() => {
 			defer.reject(msg);
 		}, delay);
 	},
 
-	indentLeft: function(str, char, len) {
-		var extra = [];
-		for (var i=0;i<len;i++) {
+	indentLeft(str, char, len) {
+		let extra = [];
+		for (let i=0;i<len;i++) {
 			extra.push(char);
 		}
 		return extra.join('') + str;
 	},
 
-	indentLines: function (arr, char, len) {
-		var extra = [];
-		for (var i = 0; i < arr.length; i++) {
-			extra.push(that.indentLeft(arr[i], char, len));
+	indentLines(arr, char, len) {
+		let extra = [];
+		for (let i = 0; i < arr.length; i++) {
+			extra.push(utilities.indentLeft(arr[i], char, len));
 		}
 		return extra.join('\n');
 	},
@@ -187,32 +187,32 @@ var that = module.exports = {
 	 * @param {Number} len
 	 * @returns {String} string padded with char
 	 */
-	padLeft: function(str, char, len) {
-		var delta = len - str.length;
-		var extra = [];
-		for (var i=0;i<delta;i++) {
+	padLeft(str, char, len) {
+		let delta = len - str.length;
+		let extra = [];
+		for (let i=0;i<delta;i++) {
 			extra.push(char);
 		}
 		return extra.join('') + str;
 	},
 
-	padRight: function(str, char, len) {
-		var delta = len - str.length;
-		var extra = [];
-		for (var i=0;i<delta;i++) {
+	padRight(str, char, len) {
+		let delta = len - str.length;
+		let extra = [];
+		for (let i=0;i<delta;i++) {
 			extra.push(char);
 		}
 		return str + extra.join('');
 	},
 
-	wrapArrayText: function(arr, maxLength, delim) {
-		var lines = [];
-		var line = '';
+	wrapArrayText(arr, maxLength, delim) {
+		let lines = [];
+		let line = '';
 		delim = delim || ', ';
 
-		for (var i=0;i<arr.length;i++) {
-			var str = arr[i];
-			var newLength = line.length + str.length + delim.length;
+		for (let i=0;i<arr.length;i++) {
+			let str = arr[i];
+			let newLength = line.length + str.length + delim.length;
 
 			if (newLength >= maxLength) {
 				lines.push(line);
@@ -233,27 +233,27 @@ var that = module.exports = {
 	},
 
 
-	retryDeferred: function (testFn, numTries, recoveryFn) {
+	retryDeferred(testFn, numTries, recoveryFn) {
 		if (!testFn) {
 			console.error('retryDeferred - comon, pass me a real function.');
 			return when.reject('not a function!');
 		}
 
-		var defer = when.defer(),
-			lastError = null,
-			tryTestFn = function () {
-				numTries--;
-				if (numTries < 0) {
-					defer.reject('Out of tries ' + lastError);
-					return;
-				}
+		let defer = when.defer();
+		let lastError = null;
+		let tryTestFn = () => {
+			numTries--;
+			if (numTries < 0) {
+				defer.reject('Out of tries ' + lastError);
+				return;
+			}
 
-				try {
-					when(testFn()).then(
-						function (value) {
+			try {
+				when(testFn()).then(
+						(value) => {
 							defer.resolve(value);
 						},
-						function (msg) {
+						(msg) => {
 							lastError = msg;
 
 							if (recoveryFn) {
@@ -262,29 +262,29 @@ var that = module.exports = {
 								tryTestFn();
 							}
 						});
-				} catch (ex) {
-					lastError = ex;
-				}
-			};
+			} catch (ex) {
+				lastError = ex;
+			}
+		};
 
 		tryTestFn();
 		return defer.promise;
 	},
 
-	isDirectory: function(somepath) {
+	isDirectory(somepath) {
 		if (fs.existsSync(somepath)) {
 			return fs.statSync(somepath).isDirectory();
 		}
 		return false;
 	},
 
-	fixRelativePaths: function (dirname, files) {
+	fixRelativePaths(dirname, files) {
 		if (!files || (files.length === 0)) {
 			return null;
 		}
 
 		//convert to absolute paths, and return!
-		return files.map(function (obj) {
+		return files.map((obj) => {
 			return path.join(dirname, obj);
 		});
 	},
@@ -295,20 +295,20 @@ var that = module.exports = {
 	 * @param {Array} files
 	 * @returns {Array} array of files contained within subdirectories
 	 */
-	expandSubdirectories: function(files) {
+	expandSubdirectories(files) {
 		if (!files || (files.length === 0)) {
 			return files;
 		}
 
-		var result = [];
+		let result = [];
 
-		for (var i=0;i<files.length;i++) {
-			var filename = files[0];
-			var stats = fs.statSync(filename);
+		for (let i=0;i<files.length;i++) {
+			let filename = files[0];
+			let stats = fs.statSync(filename);
 			if (!stats.isDirectory()) {
 				result.push(filename);
 			} else {
-				var arr = that.recursiveListFiles(filename);
+				let arr = utilities.recursiveListFiles(filename);
 				if (arr) {
 					result = result.concat(arr);
 				}
@@ -317,9 +317,9 @@ var that = module.exports = {
 		return result;
 	},
 
-	globList: function(basepath, arr) {
-		var line, found, files = [];
-		for (var i=0;i<arr.length;i++) {
+	globList(basepath, arr) {
+		let line, found, files = [];
+		for (let i=0;i<arr.length;i++) {
 			line = arr[i];
 			if (basepath) {
 				line = path.join(basepath, line);
@@ -333,27 +333,27 @@ var that = module.exports = {
 		return files;
 	},
 
-	trimBlankLines: function (arr) {
+	trimBlankLines(arr) {
 		if (arr && (arr.length !== 0)) {
-			return arr.filter(function (obj) {
+			return arr.filter((obj) => {
 				return obj && (obj !== '');
 			});
 		}
 		return arr;
 	},
 
-	trimBlankLinesAndComments: function (arr) {
+	trimBlankLinesAndComments(arr) {
 		if (arr && (arr.length !== 0)) {
-			return arr.filter(function (obj) {
+			return arr.filter((obj) => {
 				return obj && (obj !== '') && (obj.indexOf('#') !== 0);
 			});
 		}
 		return arr;
 	},
 
-	readLines: function(file) {
+	readLines(file) {
 		if (fs.existsSync(file)) {
-			var str = fs.readFileSync(file).toString();
+			let str = fs.readFileSync(file).toString();
 			if (str) {
 				return str.split('\n');
 			}
@@ -362,29 +362,29 @@ var that = module.exports = {
 		return null;
 	},
 
-	readAndTrimLines: function(file) {
+	readAndTrimLines(file) {
 		if (!fs.existsSync(file)) {
 			return null;
 		}
 
-		var str = fs.readFileSync(file).toString();
+		let str = fs.readFileSync(file).toString();
 		if (!str) {
 			return null;
 		}
 
-		var arr = str.split('\n');
+		let arr = str.split('\n');
 		if (arr && (arr.length > 0)) {
-			for (var i = 0; i < arr.length; i++) {
+			for (let i = 0; i < arr.length; i++) {
 				arr[i] = arr[i].trim();
 			}
 		}
 		return arr;
 	},
 
-	arrayToHashSet: function (arr) {
-		var h = {};
+	arrayToHashSet(arr) {
+		let h = {};
 		if (arr) {
-			for (var i = 0; i < arr.length; i++) {
+			for (let i = 0; i < arr.length; i++) {
 				h[arr[i]] = true;
 			}
 		}
@@ -398,17 +398,17 @@ var that = module.exports = {
 	 * @param {Array} excludedDirs
 	 * @returns {Array} array of all filenames
 	 */
-	recursiveListFiles: function (dir, excludedDirs) {
+	recursiveListFiles(dir, excludedDirs) {
 		excludedDirs = excludedDirs || [];
 
-		var result = [];
-		var files = fs.readdirSync(dir);
-		for (var i = 0; i < files.length; i++) {
-			var fullpath = path.join(dir, files[i]);
-			var stat = fs.statSync(fullpath);
+		let result = [];
+		let files = fs.readdirSync(dir);
+		for (let i = 0; i < files.length; i++) {
+			let fullpath = path.join(dir, files[i]);
+			let stat = fs.statSync(fullpath);
 			if (stat.isDirectory()) {
 				if (!excludedDirs.contains(fullpath)) {
-					result = result.concat(that.recursiveListFiles(fullpath, excludedDirs));
+					result = result.concat(utilities.recursiveListFiles(fullpath, excludedDirs));
 				}
 			} else {
 				result.push(fullpath);
@@ -417,9 +417,9 @@ var that = module.exports = {
 		return result;
 	},
 
-	tryParseArgs: function (args, name, errText) {
-		var idx = that.indexOf(args, name);
-		var result;
+	tryParseArgs(args, name, errText) {
+		let idx = utilities.indexOf(args, name);
+		let result;
 		if (idx >= 0) {
 			result = true;
 			if ((idx + 1) < args.length) {
@@ -431,35 +431,35 @@ var that = module.exports = {
 		return result;
 	},
 
-	copyArray: function(arr) {
-		var result = [];
-		for (var i=0;i<arr.length;i++) {
+	copyArray(arr) {
+		let result = [];
+		for (let i=0;i<arr.length;i++) {
 			result.push(arr[i]);
 		}
 		return result;
 	},
 
-	countHashItems: function(hash) {
-		var count = 0;
+	countHashItems(hash) {
+		let count = 0;
 		if (hash) {
 			return Object.keys(hash).length;
 		}
 		return count;
 	},
-	replaceAll: function(str, src, dest) {
+	replaceAll(str, src, dest) {
 		return str.split(src).join(dest);
 	},
 
-	getIPAddresses: function () {
+	getIPAddresses() {
 		//adapter = adapter || "eth0";
-		var results = [];
-		var nics = os.networkInterfaces();
+		let results = [];
+		let nics = os.networkInterfaces();
 
-		for (var name in nics) {
-			var nic = nics[name];
+		for (let name in nics) {
+			let nic = nics[name];
 
-			for (var i = 0; i < nic.length; i++) {
-				var addy = nic[i];
+			for (let i = 0; i < nic.length; i++) {
+				let addy = nic[i];
 
 				if ((addy.family !== 'IPv4') || (addy.address === '127.0.0.1')) {
 					continue;
@@ -472,7 +472,7 @@ var that = module.exports = {
 		return results;
 	},
 
-	tryStringify: function(obj) {
+	tryStringify(obj) {
 		try {
 			if (obj) {
 				return JSON.stringify(obj);
@@ -482,7 +482,7 @@ var that = module.exports = {
 		}
 	},
 
-	tryParse: function(str) {
+	tryParse(str) {
 		try {
 			if (str) {
 				return JSON.parse(str);
@@ -500,24 +500,24 @@ var that = module.exports = {
 	 * @param {*} err
 	 * @returns {Promise} promise, resolving with res, or rejecting with err
 	 */
-	replaceDfdResults: function(promise, res, err) {
-		var dfd = when.defer();
+	replaceDfdResults(promise, res, err) {
+		let dfd = when.defer();
 
-		when(promise).then(function() {
+		when(promise).then(() => {
 			dfd.resolve(res);
-		}, function() {
+		}, () => {
 			dfd.reject(err);
 		});
 
 		return dfd.promise;
 	},
 
-	compliment: function(arr, excluded) {
-		var hash = that.arrayToHashSet(excluded);
+	compliment(arr, excluded) {
+		let hash = utilities.arrayToHashSet(excluded);
 
-		var result = [];
-		for (var i=0;i<arr.length;i++) {
-			var key = arr[i];
+		let result = [];
+		for (let i=0;i<arr.length;i++) {
+			let key = arr[i];
 			if (!hash[key]) {
 				result.push(key);
 			}
@@ -525,7 +525,7 @@ var that = module.exports = {
 		return result;
 	},
 
-	tryDelete: function(filename) {
+	tryDelete(filename) {
 		try {
 			if (fs.existsSync(filename)) {
 				fs.unlinkSync(filename);
@@ -537,8 +537,8 @@ var that = module.exports = {
 		return false;
 	},
 
-	resolvePaths: function(basepath, files) {
-		for (var i=0;i<files.length;i++) {
+	resolvePaths(basepath, files) {
+		for (let i=0;i<files.length;i++) {
 			files[i] = path.join(basepath, files[i]);
 		}
 		return files;
@@ -546,8 +546,8 @@ var that = module.exports = {
 
 	__banner: undefined,
 
-	banner: function() {
-		var bannerFile = path.join(__dirname, '../../assets/banner.txt');
+	banner() {
+		let bannerFile = path.join(__dirname, '../../assets/banner.txt');
 		if (this.__banner===undefined) {
 			try {
 				this.__banner = fs.readFileSync(bannerFile, 'utf8');
@@ -559,7 +559,7 @@ var that = module.exports = {
 	},
 
 	// todo - factor from/to constants.js
-	knownPlatforms: function knownPlatforms() {
+	knownPlatforms() {
 		return {
 			'core': 0,
 			'photon': 6,
@@ -575,12 +575,13 @@ var that = module.exports = {
 	},
 
 
-	cellularOtaUsage: function(fileSize) {
-		var numChunks = Math.ceil(fileSize / 512);
-		var perChunkOverhead = (16+29+28);
-		var controlOverhead = 48 + (6*(29+28));
-		var totalBytes = (numChunks * perChunkOverhead) + controlOverhead + fileSize;
+	cellularOtaUsage(fileSize) {
+		let numChunks = Math.ceil(fileSize / 512);
+		let perChunkOverhead = (16+29+28);
+		let controlOverhead = 48 + (6*(29+28));
+		let totalBytes = (numChunks * perChunkOverhead) + controlOverhead + fileSize;
 
 		return (totalBytes / 1E6).toFixed(3);
 	}
 };
+module.exports = utilities;
