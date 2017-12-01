@@ -1,5 +1,7 @@
 ## Releasing a new version
 
+- Checkout the `master` branch
+
 - `npm version <major | minor | patch>`
 
 This builds the distribution files.  Before the command finishes, update
@@ -7,11 +9,13 @@ This builds the distribution files.  Before the command finishes, update
 
 - `git push && git push --tag`
 
-- `npm publish`
+- Travis will publish to npm when the build succeeds.
 
 - Create a release on GitHub with the notes from the `CHANGELOG.md`
 
 ## Create a pre-release
+
+- Switch to a feature branch (if on `master` the prerelease will be published to npm)
 
 - `npm version x.y.z-beta.n` where x.y.z is a version not released yet
 and beta.n is a name for this prerelease.
