@@ -1,32 +1,34 @@
 language: node_js
 node_js:
-- '4'
-- '5'
-- '6'
-- '7'
+  - 4
+  - 6
+  - 8
+cache:
+  directories:
+    - node_modules
 sudo: false
-script:
-  - npm run lint
-  - npm test
-after_success:
-  - npm run coveralls
-  - cd accept && ./install.sh && source .profile && ./run
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    packages:
-    - g++-4.8
-env: CXX=g++-4.8
+jobs:
+  include:
+    - stage: test
+      script:
+        - npm run lint
+        - npm test
+        # Acceptance tests failed but didn't break the build
+        # after_success:
+        #   - npm run coveralls
+        #   - cd accept && ./install.sh && source .profile && ./run
+    - stage: npm release
+      node_js: 8
+      script: echo "Deploying to npm..."
+      deploy:
+        provider: npm
+        email: engineering+npm@particle.io
+        api_key:
+          secure: aEFFTMYTsEAejlzTdEuMXrIgwYfITYMg051E5uBeXRh4hq4wH7bpH/RfIrVRrW/KD2S87rKVkRl5H8pfXMiBoPt5l5y05CCoXs/ZE2KsGYc1o8R/XWDKPwQuvd1FvqPHnqlZrv2rjSixvoqizM4YGHd63g5bw9oFRTQwpmc7/iJ8nYu72IdIqpVW6pV4x/VRjASGSb0sHUOP39SlEqQLCc8nhH3NHuZPhrRmJaJrlTe98511JmZ903sYT2mnAbIaiGIFszGPsy/wh34mDDfM0QVaHQAYEsaLr0HtdI6HT30uSpB9tbym102Px88n6ix/LTUNxCn9srA4vCEeLqtuof6b2xJt2zcZI2eQ22SlduWnJ1YUiVTS4AofQISN2ejO1Jb8VlT56kckVco+W+iRbhIevgBAPxYPMbW1zuS18703amhm0zO4bcKglGjIhrI/V2GmQCkJ1j0FvzQ1NOKrmt1u4C4yUsTJ/Y0QnhEymYKn1pEz5wGIUCc/1Jm7jyI5gF8syJiGcmhbWMdkWbVzu0QEorTak9i10YNFrQP3N/Kazt12+YdOhWjPBBFMnW2CluduZkzLPOXFyE9x1ZgfpKaJkCcJRTv9Cu1qssXFhMIyZiUOLTl3SOHty52jydF9AOMNG9WZM0vcHounqUBdlxwYVEigxvA3jG1NGJG4f1I=
+        on:
+          tags: true
+          branch: master
+          repo: spark/particle-cli
 notifications:
   slack:
     secure: D1UYT6DvXsvRhzYVOwPDNeVPmq19jAx8QMmAR7b2uAF1+coQNn/CIToKIjgdnlaEPCKElNG4MqxYg4v3BFA5r+gXsHE6lBsKtZFJk1OAQ8hiL1At6pNxOFNlR+P3lmH9N+Y7hKQNxi5MHP+qTV9GE/we/1oMyoGoBEVEmT7I/YndCcdQihQVhFnvBkVdOfyFUIwJBwlNyFa29WT9da282wouli74f0pbU/pKl7hQwCld6/76gW0nnQ2ZrsQqyk8RYKVI8tcGw0BzgmFR9xYvg94uKJ2dy9Dt2aYwq6pHtYyXPhEKNzMDGB4IpJynEPXPId7GrxIAIZu68IWUuG6Im1kqfm2wk9P4TIZECensqcRG2STdlPzt+b9UJF6DsmlL4Xfrn7ZZEppP8mni7uAI1WjNa/WMJ09VsMQ0Rpd6SPfDPR37d0TqhOefq01OI5wOBTsimLycx6cq8JIYG03FAZ/UzaFnvOlmsLI322u1dSsmbYpgjch62n+J27gAgHsn5rk4H3h9LDeutixQtZWClHDS27BRbllinhifdfC6NqseDAsF9tH1oOhR493unfPEjRy0O0bxSpvP1mK8Sfqz9UdtGjeIDyMylXiNtzfiKpsXtEomvltQFToF+LnDXCjyH7lUN/HAkZQiOA24INUmKUZHufectio63rVds9xX/2E=
-deploy:
-  provider: npm
-  email: engineering+npm@particle.io
-  api_key:
-    secure: aEFFTMYTsEAejlzTdEuMXrIgwYfITYMg051E5uBeXRh4hq4wH7bpH/RfIrVRrW/KD2S87rKVkRl5H8pfXMiBoPt5l5y05CCoXs/ZE2KsGYc1o8R/XWDKPwQuvd1FvqPHnqlZrv2rjSixvoqizM4YGHd63g5bw9oFRTQwpmc7/iJ8nYu72IdIqpVW6pV4x/VRjASGSb0sHUOP39SlEqQLCc8nhH3NHuZPhrRmJaJrlTe98511JmZ903sYT2mnAbIaiGIFszGPsy/wh34mDDfM0QVaHQAYEsaLr0HtdI6HT30uSpB9tbym102Px88n6ix/LTUNxCn9srA4vCEeLqtuof6b2xJt2zcZI2eQ22SlduWnJ1YUiVTS4AofQISN2ejO1Jb8VlT56kckVco+W+iRbhIevgBAPxYPMbW1zuS18703amhm0zO4bcKglGjIhrI/V2GmQCkJ1j0FvzQ1NOKrmt1u4C4yUsTJ/Y0QnhEymYKn1pEz5wGIUCc/1Jm7jyI5gF8syJiGcmhbWMdkWbVzu0QEorTak9i10YNFrQP3N/Kazt12+YdOhWjPBBFMnW2CluduZkzLPOXFyE9x1ZgfpKaJkCcJRTv9Cu1qssXFhMIyZiUOLTl3SOHty52jydF9AOMNG9WZM0vcHounqUBdlxwYVEigxvA3jG1NGJG4f1I=
-  on:
-    tags: true
-    branch: master
-    repo: spark/particle-cli
