@@ -10,17 +10,15 @@ sudo: false
 jobs:
   include:
     - stage: test
-      script:
-        - npm run lint
-        - npm test
-        # Acceptance tests failed but didn't break the build
-        # after_success:
-        #   - npm run coveralls
-        #   - cd accept && ./install.sh && source .profile && ./run
+      script: "npm run lint && npm test"
+      # Acceptance tests failed but didn't break the build
+      # after_success:
+      #   - npm run coveralls
+      #   - cd accept && ./install.sh && source .profile && ./run
     - stage: npm release
       script: echo "Deploying to npm..."
       node_js: 8
-      if: branch = master AND tag IS present AND repo = spark/particle-cli
+      if: branch = master AND tag IS present
       deploy:
         provider: npm
         email: engineering+npm@particle.io
