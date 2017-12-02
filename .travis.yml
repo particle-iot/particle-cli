@@ -25,6 +25,7 @@ jobs:
         email: engineering+npm@particle.io
         api_key:
           secure: aEFFTMYTsEAejlzTdEuMXrIgwYfITYMg051E5uBeXRh4hq4wH7bpH/RfIrVRrW/KD2S87rKVkRl5H8pfXMiBoPt5l5y05CCoXs/ZE2KsGYc1o8R/XWDKPwQuvd1FvqPHnqlZrv2rjSixvoqizM4YGHd63g5bw9oFRTQwpmc7/iJ8nYu72IdIqpVW6pV4x/VRjASGSb0sHUOP39SlEqQLCc8nhH3NHuZPhrRmJaJrlTe98511JmZ903sYT2mnAbIaiGIFszGPsy/wh34mDDfM0QVaHQAYEsaLr0HtdI6HT30uSpB9tbym102Px88n6ix/LTUNxCn9srA4vCEeLqtuof6b2xJt2zcZI2eQ22SlduWnJ1YUiVTS4AofQISN2ejO1Jb8VlT56kckVco+W+iRbhIevgBAPxYPMbW1zuS18703amhm0zO4bcKglGjIhrI/V2GmQCkJ1j0FvzQ1NOKrmt1u4C4yUsTJ/Y0QnhEymYKn1pEz5wGIUCc/1Jm7jyI5gF8syJiGcmhbWMdkWbVzu0QEorTak9i10YNFrQP3N/Kazt12+YdOhWjPBBFMnW2CluduZkzLPOXFyE9x1ZgfpKaJkCcJRTv9Cu1qssXFhMIyZiUOLTl3SOHty52jydF9AOMNG9WZM0vcHounqUBdlxwYVEigxvA3jG1NGJG4f1I=
+        skip_cleanup: true
         on:
           tags: true
           branch: master
