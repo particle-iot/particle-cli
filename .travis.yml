@@ -7,14 +7,16 @@ cache:
   directories:
     - node_modules
 sudo: false
+script:
+  - npm run lint
+  - npm test
+# Acceptance tests failed but didn't break the build
+# after_success:
+#   - npm run coveralls
+#   - cd accept && ./install.sh && source .profile && ./run
 jobs:
   include:
-    - stage: test
-      script: "npm run lint && npm test"
-      # Acceptance tests failed but didn't break the build
-      # after_success:
-      #   - npm run coveralls
-      #   - cd accept && ./install.sh && source .profile && ./run
+    # stage: test runs automatically first
     - stage: npm release
       script: echo "Deploying to npm..."
       node_js: 8
