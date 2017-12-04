@@ -105,12 +105,15 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 
 
 	checkArguments: function (args) {
+		args = Array.prototype.slice.call(args);
+
 		this.options = this.options || {};
 
 		if (!this.options.saveBinaryPath && (utilities.contains(args, '--saveTo'))) {
 			var idx = utilities.indexOf(args, '--saveTo');
 			if ((idx + 1) < args.length) {
 				this.options.saveBinaryPath = args[idx + 1];
+				args.splice(idx, 2);
 			} else {
 				console.log('Please specify a file path when using --saveTo');
 			}
@@ -121,20 +124,22 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 				null
 			);
 		}
-		if (!this.options.local) {
-			// todo - move args parsing to a dedicated portion of the command interface (bound to I/O, and separate
-			// from the main command logic.)
-			var idx = utilities.indexOf(args, '--local');
-			this.options.local = idx>=0;
+
+		var chomp = function(arg) {
+			var idx = utilities.indexOf(args, arg);
+			if (idx >= 0) {
+				args.splice(idx, 1);
+				return true;
+			} else {
+				return false;
+			}
 		}
-		if (!this.options.verbose) {
-			var idx = utilities.indexOf(args, '--verbose');
-			this.options.verbose = idx>=0;
-		}
-		if (!this.options.noconfirm) {
-			var idx = utilities.indexOf(args, '--yes');
-			this.options.noconfirm = idx>=0;
-		}
+
+		this.options.local = chomp('--local');
+		this.options.verbose = chomp('--verbose');
+		this.options.noconfirm = chomp('--yes');
+
+		return args;
 	},
 
 	claimDevice: function (deviceid) {
@@ -236,19 +241,12 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			});
 	},
 
-	flashDevice: function (deviceid, filePath) {
+	flashDevice: function () {
 		var self = this;
-		this.checkArguments(arguments);
-
-		var args = Array.prototype.slice.call(arguments);
-
-		if (self.options.target) {
-			args = args.filter(function (f) {
-				return (f !== '--target' && f !== self.options.target);
-			});
-			deviceid = args[0];
-			filePath = args[1];
-		}
+		var args = this.checkArguments(arguments);
+		
+		var deviceid = args[0];
+		var filePath = args.length > 1 ? args[1] : ".";
 
 		if (!deviceid) {
 			console.error('Please specify a device id');
@@ -274,16 +272,9 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.log();
 		}
 
-		// make a copy of the arguments sans the 'deviceid'
-		args = args.slice(1);
-
-		if (args.length === 0) {
-			args.push('.'); // default to current directory
-		}
-
 		return pipeline([
 			function () {
-				var fileMapping = self._handleMultiFileArgs(args);
+				var fileMapping = self._handleMultiFileArgs([ filePath ]);
 				api._populateFileMapping(fileMapping);
 				return fileMapping;
 			},
