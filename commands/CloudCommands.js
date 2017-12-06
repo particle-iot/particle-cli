@@ -274,16 +274,21 @@ CloudCommand.prototype = extend(BaseCommand.prototype, {
 			console.log();
 		}
 
-		// make a copy of the arguments sans the 'deviceid'
-		args = args.slice(1);
+		// make a copy of the arguments sans the 'deviceid' and the flags
+		var files = [];
+		for (var i = 1; i < args.length; i++) {
+			if (args[i].indexOf('--') !== 0) {
+				files.push(args[i]);
+			}
+		}
 
-		if (args.length === 0) {
-			args.push('.'); // default to current directory
+		if (files.length === 0) {
+			files.push('.'); // default to current directory
 		}
 
 		return pipeline([
 			function () {
-				var fileMapping = self._handleMultiFileArgs(args);
+				var fileMapping = self._handleMultiFileArgs(files);
 				api._populateFileMapping(fileMapping);
 				return fileMapping;
 			},
