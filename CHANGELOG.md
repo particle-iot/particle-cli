@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.27.0 - 5 December 2017
+
+* Fix --yes for flash with binary
+
 ## 1.26.2 - 30 November 2017
 
 * Include binaries for firmware 0.6.4 [Electron only]
