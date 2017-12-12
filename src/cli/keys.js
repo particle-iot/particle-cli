@@ -1,16 +1,18 @@
-export default (app, cli) => {
-	const keys = cli.createCategory(app, 'keys', 'Manage your device\'s keypair and server public key');
-	cli.createCommand(keys, 'save', 'Save your keys', {
+export default ({ commandProcessor, root }) => {
+	const keys = commandProcessor.createCategory(root, 'keys', "Commands to manage your device's keypair and server public key");
+
+	commandProcessor.createCommand(keys, 'save', 'Save a key from your device to a file', {
 		params: '<filename>',
 		options: {
 			'force': {
 				boolean: true,
 				default: false,
-				description: 'Force overwriting of <filename> if it exists'
+				description: 'Force overwriting of <filename> if it exists',
 			}
 		},
-		handler: (argv) => {
-			console.log(argv);
+		handler: (args) => {
+			const KeyCommands = require('../cmd/keys');
+			return new KeyCommands(args).saveKeyFromDevice();
 		}
 	});
 };

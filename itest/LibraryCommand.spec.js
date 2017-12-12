@@ -4,7 +4,7 @@ var proxyquire = require('proxyquire');
 require('should');
 require('temp');
 
-/// This is old-style command implementation. No point maintaining this. 
+/// This is old-style command implementation. No point maintaining this.
 
 var LibraryCommand = require('../commands/LibraryCommand');
 
@@ -15,7 +15,7 @@ function InternalInvoker()
 }
 
 InternalInvoker.prototype.invoke = function() {
-	var Interpreter = require('../lib/interpreter.js');
+	var Interpreter = require('../dist/lib/interpreter.js');
 	var cli = new Interpreter();
 	cli.supressWarmupMessages = true;
 	cli.startup();

@@ -7,6 +7,7 @@ import help from './help';
 import echo from './echo';
 import library from './library';
 import project from './project';
+import keys from './keys';
 
 /**
  * The default function export from this module registers all the available commands.
@@ -27,6 +28,7 @@ export default function registerAllCommands(context) {
 	echo(context);
 	library(context);
 	project(context);
+	keys(context);
 	// disable these for now until we have acceptance tests in place
 	// cloud(app, cli);
 	// keys(app, cli);

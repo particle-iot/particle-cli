@@ -11,7 +11,7 @@ export default ({ commandProcessor, root }) => {
 			}
 		},
 		params: '[dir]',
-		handler: (...args) => commandProcessor.invoke(require('./project_init'), ...args)
+		handler: (...args) => require('./project_init').command(...args)
 	});
 
 	return project;

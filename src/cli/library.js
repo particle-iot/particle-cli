@@ -18,7 +18,7 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'add', 'Adds a library to the current project.', {
 		options: {},
 		params: '<name>',
-		handler: (...args) => commandProcessor.invoke(require('./library_add'), api(), ...args)
+		handler: (...args) => require('./library_add').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'create', 'Creates a new library in the specified or current directory.', {
@@ -36,7 +36,7 @@ export default ({ commandProcessor, root }) => {
 				description: 'The author of the library.'
 			}
 		},
-		handler: (...args) => commandProcessor.invoke(require('./library_init'), ...args)
+		handler: (...args) => require('./library_init').command(...args)
 	});
 
 	commandProcessor.createCommand(lib, 'install', false, {
@@ -64,13 +64,13 @@ export default ({ commandProcessor, root }) => {
 			}
 		},
 		params: '[name]',
-		handler: (...args) => commandProcessor.invoke(require('./library_install'), 'install', api(), ...args),
+		handler: (...args) => require('./library_install').command('install', api(), ...args),
 	});
 
 	commandProcessor.createCommand(lib, 'copy', 'Copies a library to the current project.', {
 		options: {},
 		params: '[name]',
-		handler: (...args) => commandProcessor.invoke(require('./library_install'), 'copy', api(), ...args)
+		handler: (...args) => require('./library_install').command('copy', api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'list', 'Lists libraries available.', {
@@ -95,7 +95,7 @@ export default ({ commandProcessor, root }) => {
 			}
 		},
 		params: '[sections...]',
-		handler: (...args) => commandProcessor.invoke(require('./library_list'), api(), ...args)
+		handler: (...args) => require('./library_list').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
@@ -114,14 +114,14 @@ export default ({ commandProcessor, root }) => {
 		},
 		params: '[library...]',
 
-		handler: (...args) => commandProcessor.invoke(require('./library_migrate'), ...args)
+		handler: (...args) => require('./library_migrate').command(...args)
 	});
 
 	commandProcessor.createCommand(lib, 'search', 'Searches available libraries.', {
 		options: {
 		},
 		params: '<name>',
-		handler: (...args) => commandProcessor.invoke(require('./library_search'),api(), ...args)
+		handler: (...args) => require('./library_search').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'upload', 'Uploads a private version of a library.', {
@@ -132,13 +132,13 @@ export default ({ commandProcessor, root }) => {
 				description: 'perform validation steps but don\'t actually upload the library.'
 			}
 		},
-		handler: (...args) => commandProcessor.invoke(require('./library_upload'), api(), ...args)
+		handler: (...args) => require('./library_upload').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'publish', 'Publishes a private library, making it public.', {
 		options: {},
 		params: '[name]',
-		handler: (...args) => commandProcessor.invoke(require('./library_publish'), api(), ...args)
+		handler: (...args) => require('./library_publish').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'view', 'View details about a library', {
@@ -161,13 +161,13 @@ export default ({ commandProcessor, root }) => {
 
 		},
 		params: '<name>',
-		handler: (...args) => commandProcessor.invoke(require('./library_view'), api(), ...args)
+		handler: (...args) => require('./library_view').command(api(), ...args)
 	});
 
 	commandProcessor.createCommand(lib, 'delete', false, {
 		options: {},
 		params: '<name>',
-		handler: (...args) => commandProcessor.invoke(require('./library_delete'), api(), ...args)
+		handler: (...args) => require('./library_delete').command(api(), ...args)
 	});
 
 	return lib;

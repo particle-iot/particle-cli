@@ -210,15 +210,13 @@ class CLICommandItem {
 	 * @returns {Promise} to run the comand
 	 */
 	exec(argv) {
-		let promise;
 		if (this.options.handler) {
-			promise = this.options.handler.bind(this, argv);
+			return Promise.resolve().then(() => this.options.handler(argv));
 		} else if (argv.version && this.version) {
-			promise = Promise.resolve(this.version(argv));
+			return Promise.resolve(this.version(argv));
 		} else {
-			promise = this.showHelp;
+			return this.showHelp();
 		}
-		return Promise.resolve().then(() => promise());
 	}
 
 	showHelp() {
@@ -307,7 +305,8 @@ class CLICommandCategory extends CLICommandItem {
 		});
 
 		yargs
-			.usage('Usage: ' + this.path.join(' ') + ' <command>')
+			.usage((this.description ? this.description + '\n' : '')
+				+ 'Usage: $0 ' + this.path.join(' ') + ' <command>')
 			.check((argv) => this.check(yargs, argv));
 
 		return yargs;
@@ -359,8 +358,8 @@ class CLICommand extends CLICommandItem {
 
 				return true;
 			})
-			.usage('Usage: ' + this.path.join(' ')
-				+ ' [options]'
+			.usage((this.description ? this.description + '\n' : '')
+				+ 'Usage: $0 ' + this.path.join(' ') + ' [options]'
 				+ (this.options.params ? ' ' + this.options.params : ''));
 
 		return yargs;
@@ -381,7 +380,7 @@ function createErrorHandler(yargs) {
 }
 
 function stringify(err) {
-	return util.inspect(err);
+	return _.isString(err) ? err : util.inspect(err);
 }
 
 /**
@@ -641,17 +640,12 @@ function showHelp() {
 	Yargs.showHelp();
 }
 
-function invoke(module, ...args) {
-	return module.command(...args);
-}
-
 export {
 	parse,
 	createCommand,
 	createCategory,
 	createAppCategory,
 	createErrorHandler,
-	invoke,
 	showHelp,
 	errors,
 	test,

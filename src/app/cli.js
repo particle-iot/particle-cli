@@ -8,10 +8,18 @@ import registerAllCommands from '../cli';
 import * as settings from '../../settings';
 import when from 'when';
 import chalk from 'chalk';
+import log from './log';
+import process from 'process';
 
 export default class CLI {
 	constructor() {
+		process.on('unhandledRejection', this.globalRejectionHandler.bind(this));
 		this.rootCategory = this.setupCommandProcessor();
+	}
+
+	globalRejectionHandler(reason, promise) {
+		log.fatal(reason);
+		process.exit(-1);
 	}
 
 	setupCommandProcessor(includeOldCommands = false) {
@@ -74,9 +82,8 @@ export default class CLI {
 				if (includeOldCommands) {
 					app.addOldCommands(yargs);
 				}
-				app.addGlobalOptions.bind(app)(yargs);
-				const globalSetup = app.addGlobalSetup.bind(app);
-				_.each(root.commands, globalSetup);
+				app.addGlobalOptions(yargs);
+				_.each(root.commands, command => app.addGlobalSetup(command));
 			},
 
 			/**
@@ -125,22 +132,20 @@ export default class CLI {
 				this.addGlobalSetup(yargs);
 			};
 		}
-		_.each(cat.commands, this.addGlobalSetup.bind(this));
+		_.each(cat.commands, command => this.addGlobalSetup(command));
 	}
 
 	addGlobalOptions(yargs) {
 		// the options are added by each subcommand, so we just
 		// todo - if a command overrides an option, then it should not be set as a global option.
 		// This is probably best moved into the yargs-parser.js module
-		_.each(this.rootCategory.options.inherited.options, function addGlobalOption(opt, name) {
+		_.each(this.rootCategory.options.inherited.options, (opt, name) => {
 			yargs.group(name, 'Global Options:');
 		});
 	}
 
 	newrun(args) {
-		return Promise.resolve().then(() => {
-			this.runCommand(args, false);
-		});
+		return this.runCommand(args, false);
 	}
 
 	runCommand(args, includeOldCommands) {
@@ -161,7 +166,7 @@ export default class CLI {
 
 	isNewCommand(args) {
 		if (args.length === 0 || args[0] === 'help') {
-			// use old help
+			// FIXME: use old help
 			return false;
 		}
 		const argv = commandProcessor.parse(this.rootCategory, args);
@@ -230,7 +235,6 @@ export default class CLI {
 
 		const nativeErrors = this.loadNativeModules(settings.nativeModules);
 		if (nativeErrors.length) {
-			const log = require('./log');
 			for (let error of nativeErrors) {
 				log.error(error);
 			}
@@ -241,7 +245,7 @@ export default class CLI {
 		settings.disableUpdateCheck = this.hasArg('--no-update-check', args);
 		const force = this.hasArg('--force-update-check', args);
 
-		updateCheck(settings.disableUpdateCheck, force).then(() => {
+		return updateCheck(settings.disableUpdateCheck, force).then(() => {
 			const cmdargs = args.slice(2);       // remove executable and script
 			let promise;
 			if (this.isNewCommand(cmdargs)) {
@@ -250,7 +254,7 @@ export default class CLI {
 				promise = this.oldrun(args);
 			}
 			return promise;
-		});
+		}).catch(commandProcessor.createErrorHandler());
 	}
 }
 
