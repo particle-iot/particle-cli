@@ -94,8 +94,7 @@ const dfu = {
 		return temp.promise;
 	},
 
-	findCompatibleDFU(showHelp) {
-		showHelp = showHelp !== undefined ? showHelp : true;
+	findCompatibleDFU(showHelp = true) {
 		return dfu.listDFUDevices()
 			.then((dfuDevices) => {
 				if (dfuDevices.length > 1) {

@@ -114,21 +114,12 @@ class KeyCommands {
 		]);
 	}
 
-	makeNewKey(filename) {
-		// FIXME!
-		// this.checkArguments(arguments);
-		// if (!filename || filename === '--protocol') {
-		// 	filename = 'device';
-		// }
-
-		return this._makeNewKey(filename);
-	}
-
 	keyAlgorithmForProtocol(protocol) {
 		return protocol === 'udp' ? 'ec' : 'rsa';
 	}
 
-	_makeNewKey(filename) {
+	makeNewKey() {
+		const filename = this.options.params.filename || 'device';
 		let alg;
 		let showHelp = !this.options.protocol;
 		return sequence([
