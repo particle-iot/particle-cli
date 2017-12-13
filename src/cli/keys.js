@@ -61,4 +61,37 @@ export default ({ commandProcessor, root }) => {
 			return new KeyCommands(args).keyDoctor();
 		}
 	});
+
+	commandProcessor.createCommand(keys, 'server', 'Switch server public keys.', {
+		epilogue: 'Defaults to the Particle public cloud or you can provide another key in DER format and the server hostname or IP and port',
+		params: '[filename]',
+		options: Object.assign({}, protocolOption, {
+			'host': {
+				description: 'Hostname or IP address of the server to add to the key'
+			},
+			'port': {
+				description: 'Port number of the server to add to the key'
+			}
+		}),
+		handler: (args) => {
+			const KeyCommands = require('../cmd/keys');
+			return new KeyCommands(args).writeServerPublicKey();
+		}
+	});
+
+	commandProcessor.createCommand(keys, 'address', 'Read server configured in device server public key', {
+		options: protocolOption,
+		handler: (args) => {
+			const KeyCommands = require('../cmd/keys');
+			return new KeyCommands(args).readServerAddress();
+		}
+	});
+
+	commandProcessor.createCommand(keys, 'protocol', 'Retrieve or change transport protocol the device uses to communicate with the cloud', {
+		options: protocolOption,
+		handler: (args) => {
+			const KeyCommands = require('../cmd/keys');
+			return new KeyCommands(args).transportProtocol();
+		}
+	});
 };

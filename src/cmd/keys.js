@@ -26,16 +26,13 @@ class KeyCommands {
 		this.options = args;
 	}
 
-
-	// FIXME!
-	// remove all calls to checkArguments
-
-	transportProtocol(protocol) {
+	transportProtocol() {
+		const protocol = this.options.protocol;
 		return protocol ? this.changeTransportProtocol(protocol) : this.showTransportProtocol();
 	}
 
 	showTransportProtocol() {
-		let fetch = sequence([
+		return sequence([
 			() => {
 				return this.dfu.isDfuUtilInstalled();
 			},
@@ -46,19 +43,16 @@ class KeyCommands {
 			() => {
 				return this.validateDeviceProtocol();
 			}
-		]);
-
-		return fetch.then((protocol) => {
+		]).then((protocol) => {
 			console.log(`Device protocol is set to ${this.options.protocol}`);
 		}).catch((err) => {
-			console.log('Error', err);
+			return when.reject(`Error ${err.message || err}`);
 		});
 	}
 
 	changeTransportProtocol(protocol) {
 		if (protocol !== 'udp' && protocol !== 'tcp') {
-			console.log('Invalid protocol');
-			return -1;
+			return when.reject('Invalid protocol');
 		}
 
 		return sequence([
@@ -72,7 +66,7 @@ class KeyCommands {
 			() => {
 				let specs = deviceSpecs[this.dfu.dfuId];
 				if (!specs.transport) {
-					return when.reject('No transport flag available');
+					return when.reject('Protocol cannot be changed for this device');
 				}
 
 				let flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
@@ -81,7 +75,7 @@ class KeyCommands {
 		]).then(() => {
 			console.log(`Protocol changed to ${protocol}`);
 		}).catch((err) => {
-			console.log('Error', err);
+			return when.reject(`Error ${err.message || err}`);
 		});
 	}
 
@@ -119,10 +113,10 @@ class KeyCommands {
 
 	makeNewKey() {
 		const filename = this.options.params.filename || 'device';
-		this._makeNewKey(filename);
+		this._makeNewKey({ filename });
 	}
 
-	_makeNewKey(filename) {
+	_makeNewKey({ filename }) {
 		let alg;
 		let showHelp = !this.options.protocol;
 		return sequence([
@@ -154,10 +148,10 @@ class KeyCommands {
 
 	writeKeyToDevice() {
 		const filename = this.options.params.filename;
-		this._writeKeyToDevice(filename);
+		this._writeKeyToDevice({ filename });
 	}
 
-	_writeKeyToDevice(filename, leave = false) {
+	_writeKeyToDevice({ filename, leave = false }) {
 		filename = utilities.filenameNoExt(filename) + '.der';
 		if (!fs.existsSync(filename)) {
 			return when.reject("I couldn't find the file: " + filename);
@@ -170,7 +164,7 @@ class KeyCommands {
 				return this.dfu.isDfuUtilInstalled();
 			},
 			() => {
-				//make sure our device is online and in this.dfu mode
+				//make sure our device is online and in DFU mode
 				return this.dfu.findCompatibleDFU();
 			},
 			() => {
@@ -183,7 +177,7 @@ class KeyCommands {
 						path.dirname(filename),
 					'backup_' + alg + '_' + path.basename(filename)
 				);
-				return this._saveKeyFromDevice(prefilename, true);
+				return this._saveKeyFromDevice({ filename: prefilename, force: true });
 			},
 			() => {
 				let segment = this._getPrivateKeySegmentName();
@@ -198,7 +192,8 @@ class KeyCommands {
 
 	saveKeyFromDevice() {
 		const filename = utilities.filenameNoExt(this.options.params.filename) + '.der';
-		this._saveKeyFromDevice(filename, this.options.force);
+		const force = this.options.force;
+		this._saveKeyFromDevice({ filename, force });
 	}
 
 	_saveKeyFromDevice(filename, force) {
@@ -248,10 +243,10 @@ class KeyCommands {
 		const filename = this.options.params.filename;
 		const productId = this.options.product_id;
 
-		return this._sendPublicKeyToServer(deviceId, filename, productId, 'rsa');
+		return this._sendPublicKeyToServer({ deviceId, filename, productId, algorithm: 'rsa' });
 	}
 
-	_sendPublicKeyToServer(deviceId, filename, productId, algorithm) {
+	_sendPublicKeyToServer({ deviceId, filename, productId, algorithm }) {
 		if (!fs.existsSync(filename)) {
 			filename = utilities.filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)) {
@@ -301,10 +296,10 @@ class KeyCommands {
 
 	keyDoctor() {
 		const deviceId = this.options.params.device;
-		this._keyDoctor(deviceId);
+		this._keyDoctor({ deviceId });
 	}
 
-	_keyDoctor(deviceId) {
+	_keyDoctor({ deviceId }) {
 		deviceId = deviceId.toLowerCase();  // make lowercase so that it's case insensitive
 
 		if (deviceId.length < 24) {
@@ -314,7 +309,7 @@ class KeyCommands {
 			console.log('***************************************************************');
 		}
 
-		let alg, filename;
+		let algorithm, filename;
 		return sequence([
 			() => {
 				return this.dfu.isDfuUtilInstalled();
@@ -326,23 +321,25 @@ class KeyCommands {
 				return this.validateDeviceProtocol();
 			},
 			() => {
-				alg = this._getPrivateKeyAlgorithm();
-				filename = deviceId + '_' + alg + '_new';
-				return this._makeNewKey(filename);
+				algorithm = this._getPrivateKeyAlgorithm();
+				filename = deviceId + '_' + algorithm + '_new';
+				return this._makeNewKey({ filename });
 			},
 			() => {
-				return this._writeKeyToDevice(filename, true);
+				return this._writeKeyToDevice({ filename, leave: true });
 			},
 			() => {
-				return this._sendPublicKeyToServer(deviceId, filename, alg);
+				return this._sendPublicKeyToServer({ deviceId, filename, algorithm });
 			}
 		]).then(
 			() => {
 				console.log('Okay!  New keys in place, your device should restart.');
 			},
 			(err) => {
-				console.log('Make sure your device is in this.dfu mode (blinking yellow), and that your computer is online.');
-				console.error('Error', err);
+				return when.reject(
+					'Make sure your device is in DFU mode (blinking yellow), and that your computer is online.\n' +
+					`Error: ${err.message || err}`
+				);
 			});
 	}
 
@@ -370,27 +367,27 @@ class KeyCommands {
 		return addressBuf;
 	}
 
-	writeServerPublicKey(filename, ipOrDomain, port) {
-		if (filename === '--protocol') {
-			filename = null;
-			ipOrDomain = null;
-		}
+	writeServerPublicKey() {
+		const filename = this.options.params.filename;
+		const hostname = this.options.host;
+		const port = this.options.port;
+		const protocol = this.options.protocol;
+
+		this._writeServerPublicKey({ filename, hostname, port, protocol });
+	}
+
+	_writeServerPublicKey({ filename, hostname, port, protocol }) {
 		if (filename && !fs.existsSync(filename)) {
-			console.log('Please specify a server key in DER format.');
-			return -1;
+			return when.reject('Please specify a server key in DER format.');
 		}
-		if (port === '--protocol') {
-			port = null;
-		}
-		if (ipOrDomain === '--protocol') {
-			ipOrDomain = null;
-			port = null;
-		}
-		this.checkArguments(arguments);
 
 		return pipeline([
-			this.dfu.isDfuUtilInstalled,
-			this.dfu.findCompatibleDFU,
+			() => {
+				return this.dfu.isDfuUtilInstalled();
+			},
+			() => {
+				return this.dfu.findCompatibleDFU();
+			},
 			() => {
 				return this.validateDeviceProtocol();
 			},
@@ -399,7 +396,7 @@ class KeyCommands {
 			},
 			(derFile) => {
 				filename = derFile;
-				return this._getIpAddress(ipOrDomain);
+				return this._getIpAddress(hostname);
 			},
 			(ip) => {
 				return this._formatPublicKey(filename, ip, port);
@@ -413,15 +410,14 @@ class KeyCommands {
 				console.log('Okay!  New keys in place, your device will not restart.');
 			},
 			(err) => {
-				console.log('Make sure your device is in this.dfu mode (blinking yellow), and is connected to your computer');
-				console.error('Error', err);
-				throw err;
+				return when.reject(
+					'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.\n' +
+					`Error: ${err.message || err}`
+				);
 			});
 	}
 
 	readServerAddress() {
-		this.checkArguments(arguments);
-
 		let keyBuf, serverKeySeg;
 
 		return pipeline([
@@ -439,7 +435,6 @@ class KeyCommands {
 			},
 			() => {
 				let segment = this._getServerKeySegmentName();
-				//if (this.options.force) { utilities.tryDelete(filename); }
 				return this.dfu.readBuffer(segment, false)
 					.then((buf) => {
 						keyBuf = buf;
@@ -478,9 +473,10 @@ class KeyCommands {
 				return result;
 			}
 		]).catch((err) => {
-			console.log('Make sure your device is in this.dfu mode (blinking yellow), and is connected to your computer');
-			console.error('Error', err);
-			throw err;
+			return when.reject(
+				'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.\n' +
+				`Error: ${err.message || err}`
+			);
 		});
 	}
 
@@ -628,7 +624,7 @@ class KeyCommands {
 	}
 
 	serverKeyFilename(alg) {
-		return path.join(__dirname, '../assets/keys/' + alg + '.pub.der');
+		return path.join(__dirname, '../../assets/keys/' + alg + '.pub.der');
 	}
 
 	_formatPublicKey(filename, ipOrDomain, port) {

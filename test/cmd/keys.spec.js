@@ -34,7 +34,7 @@ when.prototype.then = function() {
 
 
 
-var KeyCommand = proxyquire('../../commands/KeyCommands', {
+var KeyCommand = proxyquire('../../src/cmd/keys', {
 	'cli-spinner': Spinner,
 	'../settings.js': settings,
 	'when': when,
