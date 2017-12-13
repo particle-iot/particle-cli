@@ -18,9 +18,14 @@
  */
 
 import chalk from 'chalk';
-import Yargs from 'yargs';
+import yargsFactory from 'yargs/yargs';
 import util from 'util';
 import _ from 'lodash';
+import path from 'path';
+
+// It's important to run yargs in the directory of the script so it picks up options from package.json
+const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
+Yargs.$0 = 'particle';
 
 class CLICommandItem {
 
@@ -103,7 +108,9 @@ class CLICommandItem {
 	configure(yargs, { options, setup, examples, version, epilogue }=this.buildOptions()) {
 		if (options) {
 			this.fetchAliases(options);
-			yargs.options(options);
+			// avoid converting positional arguments to numbers by default
+			const optionsWithDefaults = Object.assign({ '_': { string: true	} }, options);
+			yargs.options(optionsWithDefaults);
 		}
 
 		if (setup) {
@@ -329,9 +336,8 @@ class CLICommand extends CLICommandItem {
 	 * @param {string} name The invocation name of the command on the command line
 	 * @param {string} description Description of the command. Used to produce help text.
 	 * @param {object} options  In addition to attributes defined by the base class:
-	 * <ol><li>
-	 *     handler: the function that is invoked with `this` and the parsed commandline.
-	 *  </li></ul>
+ 	 *  - params: the positional arguments in this format: <required> [optional] <rest...>
+	 *  - handler: the function that is invoked with `this` and the parsed commandline.
 	 */
 	constructor(name, description, options) {
 		super(name, description, _.defaultsDeep(options || {}, {

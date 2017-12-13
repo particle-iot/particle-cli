@@ -305,6 +305,11 @@ describe('command-line parsing', () => {
 			expect(commandProcessor.parse(app, ['cmd', 'stragglers', 'here'])).to.have.property('clierror')
 				.deep.equal(commandProcessor.errors.unknownParametersError(['stragglers', 'here']));
 		});
+
+		it('keeps device ids as strings', () => {
+			const result = paramsCommand('<deviceid>', ['500000000000000000000000']).params;
+			expect(result).to.have.property('deviceid').equal('500000000000000000000000');
+		});
 	});
 
 	describe('consoleErrorHandler', () => {

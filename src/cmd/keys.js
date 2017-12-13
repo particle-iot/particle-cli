@@ -4,7 +4,6 @@ const whenNode = require('when/node');
 const sequence = require('when/sequence');
 const pipeline = require('when/pipeline');
 const temp = require('temp').track();
-const extend = require('xtend');
 const utilities = require('../lib/utilities.js');
 const ApiClient = require('../lib/ApiClient.js');
 const fs = require('fs');
@@ -73,7 +72,7 @@ class KeyCommands {
 			() => {
 				let specs = deviceSpecs[this.dfu.dfuId];
 				if (!specs.transport) {
-					throw 'No transport flag available';
+					return when.reject('No transport flag available');
 				}
 
 				let flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
@@ -120,13 +119,17 @@ class KeyCommands {
 
 	makeNewKey() {
 		const filename = this.options.params.filename || 'device';
+		this._makeNewKey(filename);
+	}
+
+	_makeNewKey(filename) {
 		let alg;
 		let showHelp = !this.options.protocol;
 		return sequence([
 			() => {
 				return sequence([
 					() => {
-						return this.dfu.isDfuUtilInstalled()
+						return this.dfu.isDfuUtilInstalled();
 					},
 					() => {
 						return this.dfu.findCompatibleDFU(showHelp);
@@ -136,7 +139,7 @@ class KeyCommands {
 						alg = this.keyAlgorithmForProtocol(this.options.protocol);
 						return;
 					}
-					throw err;
+					return when.reject(err);
 				});
 			},
 			() => {
@@ -149,17 +152,14 @@ class KeyCommands {
 		});
 	}
 
-	writeKeyToDevice(filename, leave) {
-		this.checkArguments(arguments);
+	writeKeyToDevice() {
+		const filename = this.options.params.filename;
+		this._writeKeyToDevice(filename);
+	}
 
-		if (!filename) {
-			console.error('Please provide a DER format key filename to load to your device');
-			return when.reject('Please provide a DER format key filename to load to your device');
-		}
-
+	_writeKeyToDevice(filename, leave = false) {
 		filename = utilities.filenameNoExt(filename) + '.der';
 		if (!fs.existsSync(filename)) {
-			console.error("I couldn't find the file: " + filename);
 			return when.reject("I couldn't find the file: " + filename);
 		}
 
@@ -183,10 +183,7 @@ class KeyCommands {
 						path.dirname(filename),
 					'backup_' + alg + '_' + path.basename(filename)
 				);
-				return this.saveKeyFromDevice(prefilename).catch(() => {
-					console.log('Continuing...');
-					// we shouldn't stop this process just because we can't backup the key
-				});
+				return this._saveKeyFromDevice(prefilename, true);
 			},
 			() => {
 				let segment = this._getPrivateKeySegmentName();
@@ -201,10 +198,13 @@ class KeyCommands {
 
 	saveKeyFromDevice() {
 		const filename = utilities.filenameNoExt(this.options.params.filename) + '.der';
+		this._saveKeyFromDevice(filename, this.options.force);
+	}
 
-		if ((!this.options.force) && (fs.existsSync(filename))) {
+	_saveKeyFromDevice(filename, force) {
+		if (!force && fs.existsSync(filename)) {
 			const msg = 'This file already exists, please specify a different file, or use the --force flag.';
-			throw msg;
+			return when.reject(msg);
 		} else if (fs.existsSync(filename)) {
 			utilities.tryDelete(filename);
 		}
@@ -241,37 +241,25 @@ class KeyCommands {
 		}, (err) => {
 			console.error('Error saving key from device...', err);
 		});
-
-		return ready;
 	}
 
-	sendPublicKeyToServer(deviceid, filename) {
-		// FIXME: remove
-		if (!deviceid || filename === '--product_id') {
-			console.log('Please provide a device id');
-			return when.reject('Please provide a device id');
-		}
+	sendPublicKeyToServer() {
+		const deviceId = this.options.params.device;
+		const filename = this.options.params.filename;
+		const productId = this.options.product_id;
 
-		if (!filename || filename === '--product_id') {
-			console.log("Please provide a filename for your device's public key ending in .pub.pem");
-			return when.reject("Please provide a filename for your device's public key ending in .pub.pem");
-		}
-
-		this.checkArguments(arguments);
-
-		return this._sendPublicKeyToServer(deviceid, filename, 'rsa');
+		return this._sendPublicKeyToServer(deviceId, filename, productId, 'rsa');
 	}
 
-	_sendPublicKeyToServer(deviceid, filename, algorithm) {
+	_sendPublicKeyToServer(deviceId, filename, productId, algorithm) {
 		if (!fs.existsSync(filename)) {
 			filename = utilities.filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)) {
-				console.error("Couldn't find " + filename);
 				return when.reject("Couldn't find " + filename);
 			}
 		}
 
-		deviceid = deviceid.toLowerCase();
+		deviceId = deviceId.toLowerCase();
 
 		let api = new ApiClient();
 		if (!api.ready()) {
@@ -285,15 +273,15 @@ class KeyCommands {
 			() => {
 				// try both private and public versions and both algorithms
 				return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey)
-					.catch((err) => {
+					.catch(() => {
 						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
 					})
-					.catch((err) => {
+					.catch(() => {
 						// try other algorithm next
 						algorithm = algorithm === 'rsa' ? 'ec' : 'rsa';
 						return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
 					})
-					.catch((err) => {
+					.catch(() => {
 						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
 					});
 			},
@@ -302,26 +290,24 @@ class KeyCommands {
 			},
 			(keyBuf) => {
 				let apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
-				return api.sendPublicKey(deviceid, keyBuf, apiAlg, this.options.productId);
+				return api.sendPublicKey(deviceId, keyBuf, apiAlg, productId);
 			}
 		]).catch((err) => {
-			console.log('Error sending public key to server:', err);
-			throw undefined;
+			return when.reject(`Error sending public key to server: ${err.message || err}`);
 		}).finally(() => {
 			fs.unlinkSync(pubKey);
 		});
 	}
 
-	keyDoctor(deviceid) {
-		if (!deviceid || (deviceid === '')) {
-			console.log('Please provide your device id');
-			return -1;
-		}
-		deviceid = deviceid.toLowerCase();  // make lowercase so that it's case insensitive
+	keyDoctor() {
+		const deviceId = this.options.params.device;
+		this._keyDoctor(deviceId);
+	}
 
-		this.checkArguments(arguments);
+	_keyDoctor(deviceId) {
+		deviceId = deviceId.toLowerCase();  // make lowercase so that it's case insensitive
 
-		if (deviceid.length < 24) {
+		if (deviceId.length < 24) {
 			console.log('***************************************************************');
 			console.log('   Warning! - device id was shorter than 24 characters - did you use something other than an id?');
 			console.log('   use particle identify to find your device id');
@@ -341,14 +327,14 @@ class KeyCommands {
 			},
 			() => {
 				alg = this._getPrivateKeyAlgorithm();
-				filename = deviceid + '_' + alg + '_new';
+				filename = deviceId + '_' + alg + '_new';
 				return this._makeNewKey(filename);
 			},
 			() => {
-				return this.writeKeyToDevice(filename, true);
+				return this._writeKeyToDevice(filename, true);
 			},
 			() => {
-				return this._sendPublicKeyToServer(deviceid, filename, alg);
+				return this._sendPublicKeyToServer(deviceId, filename, alg);
 			}
 		]).then(
 			() => {
@@ -436,7 +422,7 @@ class KeyCommands {
 	readServerAddress() {
 		this.checkArguments(arguments);
 
-		let keyBuf, keyFilename, serverKeySeg, specs, transportFilename, transportFlag;
+		let keyBuf, serverKeySeg;
 
 		return pipeline([
 			() => {
@@ -450,10 +436,8 @@ class KeyCommands {
 			},
 			() => {
 				serverKeySeg = this._getServerKeySegment();
-				specs = deviceSpecs[this.dfu.dfuId];
 			},
 			() => {
-				keyFilename = temp.path({ suffix: '.der' });
 				let segment = this._getServerKeySegmentName();
 				//if (this.options.force) { utilities.tryDelete(filename); }
 				return this.dfu.readBuffer(segment, false)
@@ -656,8 +640,8 @@ class KeyCommands {
 		let buf, fileBuf;
 		if (ipOrDomain) {
 			let alg = segment.alg || 'rsa';
-			let file_with_address = util.format('%s-%s-%s.der', utilities.filenameNoExt(filename), utilities.replaceAll(ipOrDomain, '.', '_'), alg);
-			if (!fs.existsSync(file_with_address)) {
+			let fileWithAddress = `${utilities.filenameNoExt(filename)}-${utilities.replaceAll(ipOrDomain, '.', '_')}-${alg}.der`;
+			if (!fs.existsSync(fileWithAddress)) {
 				let addressBuf = this._createAddressBuffer(ipOrDomain);
 
 				// To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
@@ -686,14 +670,14 @@ class KeyCommands {
 				//console.log("address chunk is now: " + addressBuf.toString('hex'));
 				//console.log("Key chunk is now: " + buf.toString('hex'));
 
-				fs.writeFileSync(file_with_address, buf);
+				fs.writeFileSync(fileWithAddress, buf);
 			}
-			return file_with_address;
+			return fileWithAddress;
 		}
 
 		let stats = fs.statSync(filename);
 		if (stats.size < segment.size) {
-			let fileWithSize = util.format('%s-padded.der', utilities.filenameNoExt(filename));
+			let fileWithSize = `${utilities.filenameNoExt(filename)}-padded.der`;
 			if (!fs.existsSync(fileWithSize)) {
 				buf = new Buffer(segment.size);
 
