@@ -82,6 +82,7 @@ class KeyCommands {
 	makeKeyOpenSSL(filename, alg) {
 		filename = utilities.filenameNoExt(filename);
 
+		// FIXME: unused
 		if (this.options.force) {
 			utilities.tryDelete(filename + '.pem');
 			utilities.tryDelete(filename + '.pub.pem');
@@ -113,7 +114,7 @@ class KeyCommands {
 
 	makeNewKey() {
 		const filename = this.options.params.filename || 'device';
-		this._makeNewKey({ filename });
+		return this._makeNewKey({ filename });
 	}
 
 	_makeNewKey({ filename }) {
@@ -142,13 +143,13 @@ class KeyCommands {
 		]).then(() => {
 			console.log('New Key Created!');
 		}, (err) => {
-			console.error('Error creating keys... ' + err);
+			return when.reject(`Error creating keys... ${err.message || err}`);
 		});
 	}
 
 	writeKeyToDevice() {
 		const filename = this.options.params.filename;
-		this._writeKeyToDevice({ filename });
+		return this._writeKeyToDevice({ filename });
 	}
 
 	_writeKeyToDevice({ filename, leave = false }) {
@@ -186,17 +187,17 @@ class KeyCommands {
 		]).then(() => {
 			console.log('Saved!');
 		}, (err) => {
-			console.error('Error saving key to device... ' + err);
+			return when.reject(`Error writing key to device... ${err.message || err}`);
 		});
 	}
 
 	saveKeyFromDevice() {
 		const filename = utilities.filenameNoExt(this.options.params.filename) + '.der';
 		const force = this.options.force;
-		this._saveKeyFromDevice({ filename, force });
+		return this._saveKeyFromDevice({ filename, force });
 	}
 
-	_saveKeyFromDevice(filename, force) {
+	_saveKeyFromDevice({ filename, force }) {
 		if (!force && fs.existsSync(filename)) {
 			const msg = 'This file already exists, please specify a different file, or use the --force flag.';
 			return when.reject(msg);
@@ -228,13 +229,13 @@ class KeyCommands {
 				}
 				let alg = this._getPrivateKeyAlgorithm();
 				return utilities.deferredChildProcess(`openssl ${alg} -in ${filename} -inform DER -pubout -out ${pubPemFilename}`).catch((err) => {
-					console.error('Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ', err);
+					return when.reject(`Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ${err.message || err}`);
 				});
 			}
 		]).then(() => {
 			console.log('Saved!');
 		}, (err) => {
-			console.error('Error saving key from device...', err);
+			return when.reject(`Error saving key from device... ${err.message || err}`);
 		});
 	}
 
@@ -296,7 +297,7 @@ class KeyCommands {
 
 	keyDoctor() {
 		const deviceId = this.options.params.device;
-		this._keyDoctor({ deviceId });
+		return this._keyDoctor({ deviceId });
 	}
 
 	_keyDoctor({ deviceId }) {
@@ -373,7 +374,7 @@ class KeyCommands {
 		const port = this.options.port;
 		const protocol = this.options.protocol;
 
-		this._writeServerPublicKey({ filename, hostname, port, protocol });
+		return this._writeServerPublicKey({ filename, hostname, port, protocol });
 	}
 
 	_writeServerPublicKey({ filename, hostname, port, protocol }) {
@@ -527,7 +528,7 @@ class KeyCommands {
 	 */
 	fetchDeviceProtocol(specs) {
 		if (specs.transport && specs.alternativeProtocol) {
-			return this.this.dfu.readBuffer('transport', false)
+			return this.dfu.readBuffer('transport', false)
 				.then((buf) => {
 					return buf[0]===0xFF ? specs.defaultProtocol : specs.alternativeProtocol;
 				});
@@ -613,8 +614,7 @@ class KeyCommands {
 				return when(derFilePromise).then(() => {
 					return derFile;
 				}, (err) => {
-					console.error('Error creating a DER formatted version of that key.  Make sure you specified the public key: ' + err);
-					return when.reject(err);
+					return when.reject(`Error creating a DER formatted version of that key.  Make sure you specified the public key: ${err.message || err}`);
 				});
 			} else {
 				return when.resolve(derFile);

@@ -1,6 +1,5 @@
 'use strict';
 
-var Spinner = require('./../mocks/Spinner.mock.js');
 var Interpreter = require('../../dist/lib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
@@ -11,6 +10,7 @@ const sinonChai = require('sinon-chai');
 chai.use(sinonChai);
 const expect = chai.expect;
 const fs = require('fs');
+const when = require('when');
 
 var settings = {
 	username: 'test'
@@ -21,32 +21,16 @@ function ApiClient() {
 	return api;
 }
 
-/* eslint new-cap: 0 */
-function when() {
-	if (!(this instanceof when)) {
-		return new when();
-	}
-	return this;
-}
-when.prototype.then = function() {
-	return true;
-};
-
-
-
-var KeyCommand = proxyquire('../../src/cmd/keys', {
-	'cli-spinner': Spinner,
+var KeyCommand = proxyquire('../../src/cmd/key', {
 	'../settings.js': settings,
-	'when': when,
-	'../dist/lib/utilities.js': utilities,
-	'../dist/lib/ApiClient.js': ApiClient
+	'../lib/utilities.js': utilities,
+	'../lib/ApiClient.js': ApiClient
 });
 
 function utilities() { }
 
 describe('Key Command', function() {
 
-	var cli;
 	var key;
 	var dfu;
 
@@ -65,14 +49,11 @@ describe('Key Command', function() {
 		keyFilename = 'abc.der';
 	}
 
-	beforeEach(function () {
+	function setupCommand(options = {}) {
 		utilities.deferredChildProcess = sinon.stub().returns(when.resolve());
 
-
-		cli = new Interpreter();
-		cli.startup();
-
-		key = new KeyCommand(cli);
+		options = Object.assign({ params: {} }, options);
+		key = new KeyCommand(options);
 		key.madeSSL = false;
 
 		key.dfu = dfu = {};
@@ -83,57 +64,50 @@ describe('Key Command', function() {
 		api = {};
 		api.sendPublicKey = sinon.stub();
 		api.ready = sinon.stub().returns(true);
-
-	});
+	}
 
 	it('Can create device key', function () {
-		key.optionsByName['new'].should.be.instanceOf(Function);
-		key.makeNewKey();
-		process.nextTick(function () {
+		setupCommand();
+		return key.makeNewKey().then(() => {
 			utilities.deferredChildProcess.callCount.should.equal(3);
 		});
 	});
 
-	it('Can load device key', function () {
-		key.optionsByName['load'].should.be.instanceOf(Function);
+	it.skip('Can load device key', function () {
 	});
 
-	it('Can save device key', function () {
-		key.optionsByName['save'].should.be.instanceOf(Function);
+	it.skip('Can save device key', function () {
 	});
 
-	it('Can send device key', function () {
-		key.optionsByName['send'].should.be.instanceOf(Function);
+	it.skip('Can send device key', function () {
 	});
 
-	it('Can switch server key', function () {
-		key.optionsByName['new'].should.be.instanceOf(Function);
+	it.skip('Can switch server key', function () {
 	});
 
-	it('Can read server address from key', function () {
-		key.optionsByName['address'].should.be.instanceOf(Function);
-	});
-
-	it('Can check arguments', function () {
-		key.checkArguments(['--force']);
-		key.options.force.should.equal(true);
-		key.checkArguments(['--protocol', 'tcp']);
-		key.options.protocol.should.equal('tcp');
+	it.skip('Can read server address from key', function () {
 	});
 
 	it('key doctor deviceID is case-insensitive', function () {
+		setupCommand({ params: { device: 'ABcd' } });
+		key._makeNewKey = sinon.stub();
+		key._writeKeyToDevice = sinon.stub();
 		key._sendPublicKeyToServer = sinon.stub();
-		key.writeKeyToDevice = sinon.stub();
-		return key.keyDoctor("ABcd").then(function () {
-			expect(key._sendPublicKeyToServer).to.be.calledWith('abcd', 'abcd_rsa_new', 'rsa')
+		return key.keyDoctor().then(function () {
+			expect(key._sendPublicKeyToServer).to.be.calledWith({
+				deviceId: 'abcd', filename: 'abcd_rsa_new', algorithm: 'rsa'
+			});
 		})
 	});
 
 	describe('send key to server', function () {
 		it('lowercases the device ID and removes the file argument', function () {
+			var deviceID = 'deadBEEF';
+			setupCommand({ params: { device: deviceID } });
+
 			// todo - this is a gnarly test because the SUT needs refactoring into smaller pieces.
 			filename = key.serverKeyFilename('rsa');
-			var deviceID = 'deadBEEF';
+			key.options.params.filename = filename;
 			var tempfile;
 
 			utilities.deferredChildProcess = sinon.spy(function (cmd) {
@@ -142,7 +116,7 @@ describe('Key Command', function() {
 				fs.writeFileSync(tempfile, '');
 				return when.resolve();
 			});
-			return key.sendPublicKeyToServer(deviceID, filename).then(function () {
+			return key.sendPublicKeyToServer().then(function () {
 				expect(api.sendPublicKey).has.been.calledWith(deviceID.toLowerCase(), new Buffer([]), 'rsa');
 			}).finally(function () {
 				if (tempfile) {
@@ -154,7 +128,10 @@ describe('Key Command', function() {
 	});
 
 	describe('address', function () {
-		beforeEach(setupDfuTransport);
+		beforeEach(() => {
+			setupCommand();
+			setupDfuTransport();
+		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', function() {
 			transport.push(0x00);
@@ -177,27 +154,36 @@ describe('Key Command', function() {
 	});
 
 	describe('load', function () {
-		beforeEach(setupDfuTransport);
+		beforeEach(() => {
+			setupCommand();
+			setupDfuTransport();
+		});
 
 		it('calls validateDeviceProtocol to setup the default protocol', function() {
 			dfu.write = sinon.stub();
 			key.options.protocol = 'tcp';
 			key.validateDeviceProtocol = sinon.stub();
 			filename = key.serverKeyFilename('rsa');
-			return key.writeKeyToDevice(filename, true)
+			key.options.params.filename = filename;
+			return key.writeKeyToDevice()
 				.then(function () {
 					expect(key.validateDeviceProtocol).to.have.been.called;
-					expect(dfu.write).to.have.been.calledWith(filename, 'tcpPrivateKey', true);
+					expect(dfu.write).to.have.been.calledWith(filename, 'tcpPrivateKey', false);
 				});
 		});
 	});
 
 	describe('save', function () {
-		beforeEach(setupDfuTransport);
+		beforeEach(() => {
+			setupCommand();
+			setupDfuTransport();
+		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', function() {
 			transport.push(0x00);
-			return key.saveKeyFromDevice(filename)
+			key.options.params.filename = filename;
+
+			return key.saveKeyFromDevice()
 				.then(function () {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);
@@ -206,7 +192,9 @@ describe('Key Command', function() {
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', function() {
 			transport.push(0xFF);
-			return key.saveKeyFromDevice(filename)
+			key.options.params.filename = filename;
+
+			return key.saveKeyFromDevice()
 				.then(function () {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'udpPrivateKey', false);
@@ -215,16 +203,20 @@ describe('Key Command', function() {
 
 		it('raises an error when the protocol is not recognized', function() {
 			key.options.protocol = 'zip';
-			return key.saveKeyFromDevice(filename)
+			key.options.params.filename = filename;
+
+			return key.saveKeyFromDevice()
 				.catch(function (err) {
-					expect(err.message).to.equal('The device does not support the protocol zip. It has support for udp, tcp');
+					expect(err).to.equal('Error saving key from device... The device does not support the protocol zip. It has support for udp, tcp');
 				});
 		});
 
 		it('does not read the device protocol the protocol is given', function() {
 			key.options.protocol = 'tcp';
 			key.fetchDeviceProtocol = sinon.stub();
-			return key.saveKeyFromDevice(filename)
+			key.options.params.filename = filename;
+
+			return key.saveKeyFromDevice()
 				.then(function () {
 					expect(key.fetchDeviceProtocol).to.not.have.been.called;
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);
@@ -254,7 +246,7 @@ describe('Key Command', function() {
 			return key.changeTransportProtocol('udp').then(function() {
 				throw Error('expected error');
 			}).catch(function (err) {
-				expect(err).to.be.eql('No transport flag available');
+				expect(err).to.be.eql('Error Protocol cannot be changed for this device');
 			});
 		});
 	});

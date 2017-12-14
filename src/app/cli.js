@@ -13,7 +13,7 @@ import process from 'process';
 
 export default class CLI {
 	constructor() {
-		process.on('unhandledRejection', this.globalRejectionHandler.bind(this));
+		//process.on('unhandledRejection', this.globalRejectionHandler.bind(this));
 		this.rootCategory = this.setupCommandProcessor();
 	}
 
