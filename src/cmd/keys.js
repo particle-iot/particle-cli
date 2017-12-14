@@ -20,7 +20,7 @@ const deviceSpecs = require('../lib/deviceSpecs');
  * protocol on the device is used.
  * @constructor
  */
-class KeyCommands {
+class KeysCommand {
 	constructor(args) {
 		this.dfu = dfu;
 		this.options = args;
@@ -705,4 +705,4 @@ class KeyCommands {
 	}
 }
 
-module.exports = KeyCommands;
+module.exports = KeysCommand;

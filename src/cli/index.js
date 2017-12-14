@@ -8,6 +8,7 @@ import echo from './echo';
 import library from './library';
 import project from './project';
 import keys from './keys';
+import webhook from './webhook';
 
 /**
  * The default function export from this module registers all the available commands.
@@ -25,13 +26,14 @@ import keys from './keys';
 export default function registerAllCommands(context) {
 	// help must come first
 	help(context);
+
 	echo(context);
 	library(context);
 	project(context);
 	keys(context);
+	webhook(context);
 	// disable these for now until we have acceptance tests in place
 	// cloud(app, cli);
-	// keys(app, cli);
 	// event(app, cli);
 	// alias(app, cli);
 }

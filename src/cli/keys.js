@@ -11,16 +11,16 @@ export default ({ commandProcessor, root }) => {
 		params: '[filename]',
 		options: protocolOption,
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).makeNewKey();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).makeNewKey();
 		}
 	});
 
 	commandProcessor.createCommand(keys, 'load', 'Load a key saved in a file onto your device', {
 		params: '<filename>',
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).writeKeyToDevice();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).writeKeyToDevice();
 		}
 	});
 
@@ -34,8 +34,8 @@ export default ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).saveKeyFromDevice();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).saveKeyFromDevice();
 		}
 	});
 
@@ -48,8 +48,8 @@ export default ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).sendPublicKeyToServer();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).sendPublicKeyToServer();
 		}
 	});
 
@@ -57,8 +57,8 @@ export default ({ commandProcessor, root }) => {
 		params: '<device>',
 		options: protocolOption,
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).keyDoctor();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).keyDoctor();
 		}
 	});
 
@@ -74,24 +74,24 @@ export default ({ commandProcessor, root }) => {
 			}
 		}),
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).writeServerPublicKey();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).writeServerPublicKey();
 		}
 	});
 
 	commandProcessor.createCommand(keys, 'address', 'Read server configured in device server public key', {
 		options: protocolOption,
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).readServerAddress();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).readServerAddress();
 		}
 	});
 
 	commandProcessor.createCommand(keys, 'protocol', 'Retrieve or change transport protocol the device uses to communicate with the cloud', {
 		options: protocolOption,
 		handler: (args) => {
-			const KeyCommands = require('../cmd/key');
-			return new KeyCommands(args).transportProtocol();
+			const KeysCommand = require('../cmd/keys');
+			return new KeysCommand(args).transportProtocol();
 		}
 	});
 };

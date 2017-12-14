@@ -21,7 +21,7 @@ function ApiClient() {
 	return api;
 }
 
-var KeyCommand = proxyquire('../../src/cmd/key', {
+var KeysCommand = proxyquire('../../src/cmd/keys', {
 	'../settings.js': settings,
 	'../lib/utilities.js': utilities,
 	'../lib/ApiClient.js': ApiClient
@@ -53,7 +53,7 @@ describe('Key Command', function() {
 		utilities.deferredChildProcess = sinon.stub().returns(when.resolve());
 
 		options = Object.assign({ params: {} }, options);
-		key = new KeyCommand(options);
+		key = new KeysCommand(options);
 		key.madeSSL = false;
 
 		key.dfu = dfu = {};

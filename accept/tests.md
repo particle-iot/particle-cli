@@ -1,3 +1,21 @@
+keys 8
+webhook 5
+
+token 3
+binary 1
+cloud 9
+config 6
+doctor 1
+flash 3
+function 2
+publish 1
+serial 8
+subscribe 1
+udp 2
+update 1
+variable 3
+
+
 particle keys save <file>
 particle keys save <file> --force
 particle keys new
