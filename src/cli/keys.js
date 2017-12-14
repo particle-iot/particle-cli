@@ -94,4 +94,6 @@ export default ({ commandProcessor, root }) => {
 			return new KeysCommand(args).transportProtocol();
 		}
 	});
+
+	return keys;
 };

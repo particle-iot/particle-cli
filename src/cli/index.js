@@ -8,6 +8,7 @@ import echo from './echo';
 import library from './library';
 import project from './project';
 import keys from './keys';
+import variable from './variable';
 import webhook from './webhook';
 
 /**
@@ -31,6 +32,7 @@ export default function registerAllCommands(context) {
 	library(context);
 	project(context);
 	keys(context);
+	variable(context);
 	webhook(context);
 	// disable these for now until we have acceptance tests in place
 	// cloud(app, cli);

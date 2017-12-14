@@ -1,5 +1,6 @@
 keys 8
 webhook 5
+variable 3
 
 token 3
 binary 1
@@ -13,7 +14,6 @@ serial 8
 subscribe 1
 udp 2
 update 1
-variable 3
 
 
 particle keys save <file>
@@ -32,3 +32,8 @@ particle keys address
 particle keys protocol
 particle keys protocol --protocol udp
   ==> needs electron
+particle variable list
+particle variable get <device> <variable>
+particle variable get <device>
+particle variable get <variable>
+particle variable monitor <device> <variable> --time
