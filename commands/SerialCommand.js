@@ -767,11 +767,13 @@ SerialCommand.prototype = extend(BaseCommand.prototype, {
 				// console.log(arrow, arrow, err);
 				if (err.code === 'ENOTFOUND') {
 					protip("Your computer couldn't find the cloud...");
+				} if (!err.code && err.message) {
+					protip(err.message);
 				} else {
 					protip('There was a network error while connecting to the cloud...');
+					protip('We need an active internet connection to successfully complete setup.');
+					protip('Are you currently connected to the internet? Please double-check and try again.');
 				}
-				protip('We need an active internet connection to successfully complete setup.');
-				protip('Are you currently connected to the internet? Please double-check and try again.');
 				return;
 			}
 
