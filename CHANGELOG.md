@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.27.0 - 22 January 2018
+
+* Handle API errors when fetching the claim code
+
 ## 1.27.0 - 5 December 2017
 
 * Fix --yes for flash with binary
