@@ -140,8 +140,7 @@ APIClient2.prototype.getClaimCode = function(data, cb) {
 			return cb(err);
 		}
 		if ((!body) || !body.claim_code) {
-
-			return cb(new Error('Unable to obtain claim code'));
+			return cb(new Error(body.err || 'Unable to obtain claim code'));
 		}
 		cb(null, body);
 	});
