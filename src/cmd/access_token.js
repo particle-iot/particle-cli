@@ -23,41 +23,24 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
-'use strict';
 
-var when = require('when');
-var pipeline = require('when/pipeline');
+const when = require('when');
+const pipeline = require('when/pipeline');
 
-var extend = require('xtend');
-var util = require('util');
-var inquirer = require('inquirer');
+const inquirer = require('inquirer');
 
-var ApiClient = require('../dist/lib/ApiClient.js');
-var BaseCommand = require('./BaseCommand.js');
-var prompts = require('../dist/lib/prompts.js');
-var settings = require('../settings.js');
+const ApiClient = require('../lib/ApiClient.js');
+const prompts = require('../lib/prompts.js');
+const settings = require('../../settings.js');
 
-var AccessTokenCommands = function (cli, options) {
-	AccessTokenCommands.super_.call(this, cli, options);
-	this.options = extend({}, this.options, options);
+class AccessTokenCommands {
+	constructor(options) {
+		this.options = options;
+	}
 
-	this.init();
-};
-util.inherits(AccessTokenCommands, BaseCommand);
-AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'token',
-	description: 'tools to manage access tokens (require username/password)',
-
-	init: function () {
-		this.addOption('list', this.listAccessTokens.bind(this), 'List all access tokens for your account');
-		this.addOption('revoke', this.revokeAccessToken.bind(this), 'Revoke an access token');
-		this.addOption('new', this.createAccessToken.bind(this), 'Create a new access token');
-	},
-
-	getCredentials: function() {
+	getCredentials() {
 		if (settings.username) {
-			var creds = when.defer();
+			const creds = when.defer();
 
 			inquirer.prompt([
 				{
@@ -65,7 +48,7 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 					name: 'password',
 					message: 'Using account ' + settings.username + '\nPlease enter your password:'
 				}
-			]).then(function (answers) {
+			]).then((answers) => {
 				creds.resolve({
 					username: settings.username,
 					password: answers.password
@@ -76,74 +59,60 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 		} else {
 			return prompts.getCredentials();
 		}
-	},
+	}
 
-	checkArguments: function (args) {
-		this.options = this.options || {};
-
-		if (!this.options.force) {
-			var idx = args.indexOf('--force');
-			if (idx >= 0) {
-				this.options.force = true;
-				args.splice(idx, 1);
-			}
-		}
-	},
-
-	getAccessTokens: function () {
+	getAccessTokens () {
 		console.error('Checking with the cloud...');
 
-		var sort_tokens = function (tokens) {
-			return tokens.sort(function (a, b) {
+		const sortTokens = (tokens) => {
+			return tokens.sort((a, b) => {
 				return (b.expires_at || '').localeCompare(a.expires_at);
 			});
 		};
 
 		return pipeline([
 			this.getCredentials,
-			function (creds) {
-				var api = new ApiClient();
+			(creds) => {
+				const api = new ApiClient();
 				return api.listTokens(creds.username, creds.password);
 			},
-			sort_tokens
-		]).catch(function(err) {
+			sortTokens
+		]).catch((err) => {
 			console.error('Error listing access tokens', err);
 			return when.reject(err);
 		});
-	},
+	}
 
-	listAccessTokens: function () {
-		return this.getAccessTokens().then(function (tokens) {
-			var lines = [];
-			for (var i = 0; i < tokens.length; i++) {
-				var token = tokens[i];
+	listAccessTokens () {
+		return this.getAccessTokens().then((tokens) => {
+			const lines = [];
+			for (let i = 0; i < tokens.length; i++) {
+				const token = tokens[i];
 
-				var first_line = token.client || token.client_id;
+				let firstLine = token.client || token.client_id;
 				if (token.token === settings.access_token) {
-					first_line += ' (active)';
+					firstLine += ' (active)';
 				}
-				var now = (new Date()).toISOString();
+				const now = (new Date()).toISOString();
 				if (now > token.expires_at) {
-					first_line += ' (expired)';
+					firstLine += ' (expired)';
 				}
 
-				lines.push(first_line);
+				lines.push(firstLine);
 				lines.push(' Token:      ' + token.token);
 				lines.push(' Expires at: ' + token.expires_at || 'unknown');
 				lines.push('');
 			}
 			console.log(lines.join('\n'));
-		}).catch(function(err) {
+		}).catch((err) => {
 			console.log("Please make sure you're online and logged in.");
 			console.log(err);
 			return when.reject(err);
 		});
-	},
+	}
 
-	revokeAccessToken: function () {
-		var args = Array.prototype.slice.call(arguments);
-		this.checkArguments(args);
-		var tokens = args;
+	revokeAccessToken () {
+		const tokens = this.options.params.tokens;
 
 		if (tokens.length === 0) {
 			console.error('You must provide at least one access token to revoke');
@@ -160,55 +129,51 @@ AccessTokenCommands.prototype = extend(BaseCommand.prototype, {
 			}
 		}
 
-		var api = new ApiClient();
+		const api = new ApiClient();
 
-		return this.getCredentials().then(function (creds) {
-			return when.map(tokens, function (x) {
+		return this.getCredentials().then((creds) => {
+			return when.map(tokens, (x) => {
 				return api.removeAccessToken(creds.username, creds.password, x)
-					.then(function () {
+					.then(() => {
 						console.log('successfully deleted ' + x);
 						if (x === settings.access_token) {
 							settings.override(null, 'access_token', null);
 						}
-					}, function(err) {
+					}, (err) => {
 						console.log('error revoking ' + x + ': ' + JSON.stringify(err).replace(/\"/g, ''));
 						return when.reject(err);
 					});
 			});
 		});
-	},
+	}
 
 	/**
 	 * Creates an access token using the given client name.
-	 * @param clientName    The client name to use
 	 * @returns {Promise} Will print the access token to the console, along with the expiration date.
 	 */
-	createAccessToken: function (clientName) {
+	createAccessToken () {
+		const clientName = 'user';
 
-		if (!clientName) {
-			clientName = 'user';
-		}
-
-		var allDone = pipeline([
+		const allDone = pipeline([
 			this.getCredentials,
-			function (creds) {
-				var api = new ApiClient();
+			(creds) => {
+				const api = new ApiClient();
 				return api.createAccessToken(clientName, creds.username, creds.password);
 			}
 		]);
 
 		return allDone.then(
-			function (result) {
-				var now_unix = Date.now();
-				var expires_unix = now_unix + (result.expires_in * 1000);
-				var expires_date = new Date(expires_unix);
-				console.log('New access token expires on ' + expires_date);
+			(result) => {
+				const nowUnix = Date.now();
+				const expiresUnix = nowUnix + (result.expires_in * 1000);
+				const expiresDate = new Date(expiresUnix);
+				console.log('New access token expires on ' + expiresDate);
 				console.log('    ' + result.access_token);
-			}).catch(function (err) {
+			}).catch((err) => {
 				console.log('there was an error creating a new access token: ' + err);
 				return when.reject(err);
 			});
 	}
-});
+}
 
 module.exports = AccessTokenCommands;

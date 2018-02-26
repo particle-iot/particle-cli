@@ -5,6 +5,7 @@ import help from './help';
 // import alias from './alias';
 
 import echo from './echo';
+import accessTokens from './access_tokens';
 import library from './library';
 import project from './project';
 import keys from './keys';
@@ -29,6 +30,7 @@ export default function registerAllCommands(context) {
 	help(context);
 
 	echo(context);
+	accessTokens(context);
 	library(context);
 	project(context);
 	keys(context);

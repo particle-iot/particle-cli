@@ -37,3 +37,6 @@ particle variable get <device> <variable>
 particle variable get <device>
 particle variable get <variable>
 particle variable monitor <device> <variable> --time
+particle token list
+particle token revoke
+particle token create
