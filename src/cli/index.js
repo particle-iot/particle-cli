@@ -7,6 +7,7 @@ import help from './help';
 import echo from './echo';
 import accessTokens from './access_tokens';
 import binary from './binary';
+import cloud from './cloud';
 import library from './library';
 import project from './project';
 import keys from './keys';
@@ -33,6 +34,7 @@ export default function registerAllCommands(context) {
 	echo(context);
 	accessTokens(context);
 	binary(context);
+	cloud(context);
 	library(context);
 	project(context);
 	keys(context);

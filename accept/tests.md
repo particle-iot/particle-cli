@@ -1,10 +1,10 @@
 keys 8
 webhook 5
 variable 3
-
 token 3
 binary 1
 cloud 9
+
 config 6
 doctor 1
 flash 3
@@ -40,3 +40,19 @@ particle variable monitor <device> <variable> --time
 particle token list
 particle token revoke
 particle token create
+particle binary inspect assets/binaries/photon_tinker.bin
+
+particle cloud login
+particle cloud logout
+particle cloud list
+particle cloud list photon
+particle cloud list 54ff70066667515105351367
+particle cloud list online
+particle cloud claim 25001e000347353137323334
+particle cloud remove 25001e000347353137323334
+particle cloud name 25001e000347353137323334 foo
+
+particle cloud flash device tinker
+particle cloud flash device app.ino
+particle cloud flash device
+particle cloud flash device app.ino --target 0.6.3
