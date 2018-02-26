@@ -24,42 +24,29 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
-'use strict';
 
-var extend = require('xtend');
-var util = require('util');
-var when = require('when');
-var fs = require('fs');
-var path = require('path');
-var chalk = require('chalk');
-var Parser = require('binary-version-reader').HalModuleParser;
-var BaseCommand = require('./BaseCommand.js');
-var utilities = require('../dist/lib/utilities.js');
+const when = require('when');
+const fs = require('fs');
+const path = require('path');
+const chalk = require('chalk');
+const Parser = require('binary-version-reader').HalModuleParser;
+const utilities = require('../lib/utilities.js');
 
-var BinaryCommand = function (cli, options) {
-	BinaryCommand.super_.call(this, cli, options);
-	this.options = extend({}, this.options, options);
+class BinaryCommand {
+	constructor(options) {
+		this.options = options;
+	}
 
-	this.init();
-};
-util.inherits(BinaryCommand, BaseCommand);
-BinaryCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'binary',
-	description: 'inspect binaries',
+	inspectBinary() {
+		const binaryFile = this.options.params.filename;
 
-	init: function () {
-		this.addOption('inspect', this.inspectBinary.bind(this), 'Describe binary contents');
-	},
-
-	inspectBinary: function inspectBinary(binaryFile) {
 		if (!binaryFile || !fs.existsSync(binaryFile)) {
 			console.error('Please specify a binary file');
 			return when.reject();
 		}
-		var dfd = when.defer();
-		var parser = new Parser();
-		parser.parseFile(binaryFile, function parsed(fileInfo, err) {
+		const dfd = when.defer();
+		const parser = new Parser();
+		parser.parseFile(binaryFile, (fileInfo, err) => {
 			if (err) {
 				console.error(err);
 				return dfd.reject();
@@ -77,11 +64,11 @@ BinaryCommand.prototype = extend(BaseCommand.prototype, {
 			this._showModuleInfo(fileInfo);
 
 			dfd.resolve();
-		}.bind(this));
+		});
 		return dfd.promise;
-	},
+	}
 
-	_showCrc: function _showCrc(fileInfo) {
+	_showCrc(fileInfo) {
 		if (fileInfo.crc.ok) {
 			console.log(chalk.green(' CRC is ok (' + fileInfo.crc.actualCrc + ')'));
 		} else {
@@ -89,12 +76,12 @@ BinaryCommand.prototype = extend(BaseCommand.prototype, {
 				+ chalk.bold(fileInfo.crc.storedCrc) + ' but is '
 				+ chalk.bold(fileInfo.crc.actualCrc) + ')'));
 		}
-	},
+	}
 
-	_showPlatform: function _showPlatform(fileInfo) {
-		var platforms = utilities.knownPlatforms();
-		var platformName;
-		for (var k in platforms) {
+	_showPlatform(fileInfo) {
+		const platforms = utilities.knownPlatforms();
+		let platformName;
+		for (const k in platforms) {
 			if (platforms[k] === fileInfo.prefixInfo.platformID) {
 				platformName = k;
 			}
@@ -105,10 +92,10 @@ BinaryCommand.prototype = extend(BaseCommand.prototype, {
 			console.log(' Compiled for unknown platform (ID: '
 				+ chalk.bold(fileInfo.prefixInfo.platformID) + ')');
 		}
-	},
+	}
 
-	_showModuleInfo: function _showModuleInfo(fileInfo) {
-		var functions = [
+	_showModuleInfo(fileInfo) {
+		const functions = [
 			'an unknown module',
 			'a reserved module',
 			'a bootloader',
@@ -117,7 +104,7 @@ BinaryCommand.prototype = extend(BaseCommand.prototype, {
 			'an application module',
 			'a settings module'
 		];
-		var moduleFunction = fileInfo.prefixInfo.moduleFunction;
+		let moduleFunction = fileInfo.prefixInfo.moduleFunction;
 		if (moduleFunction >= functions.length) {
 			moduleFunction = 0;
 		}
@@ -134,6 +121,6 @@ BinaryCommand.prototype = extend(BaseCommand.prototype, {
 				+ chalk.bold(fileInfo.prefixInfo.depModuleVersion.toString()));
 		}
 	}
-});
+}
 
 module.exports = BinaryCommand;
