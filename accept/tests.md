@@ -64,4 +64,5 @@ particle flash device app.ino
 particle flash device directory
 particle flash --usb firmware.bin
 particle flash --serial firmware.bin
-
+particle function list
+particle function call device digtalWrite D7=HIGH

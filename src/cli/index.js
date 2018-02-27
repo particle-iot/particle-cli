@@ -10,6 +10,7 @@ import binary from './binary';
 import cloud from './cloud';
 import config from './config';
 import flash from './flash';
+import func from './function';
 import library from './library';
 import project from './project';
 import keys from './keys';
@@ -39,6 +40,7 @@ export default function registerAllCommands(context) {
 	cloud(context);
 	config(context);
 	flash(context);
+	func(context);
 	library(context);
 	project(context);
 	keys(context);

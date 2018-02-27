@@ -9,7 +9,6 @@ export default ({ commandProcessor, root }) => {
 	};
 
 	commandProcessor.createCommand(variable, 'list', 'Show variables provided by your device(s)', {
-		params: '[filename]',
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
 			return new VariableCommand(args).listVariables();
