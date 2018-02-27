@@ -15,7 +15,7 @@ const deviceSpecs = require('../lib/deviceSpecs');
  * Commands for managing encryption keys.
  * For devices that support a single protocol, the
  * key type defaults to that. For devices that support multiple
- * protcools, the `--protocol` flag can be used to
+ * protocols, the `--protocol` flag can be used to
  * specify the protocol. When omitted, the current configured
  * protocol on the device is used.
  * @constructor

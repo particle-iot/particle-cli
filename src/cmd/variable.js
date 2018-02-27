@@ -1,30 +1,3 @@
-/**
- ******************************************************************************
- * @file    commands/VariableCommand.js
- * @author  David Middlecamp (david@particle.io)
- * @company Particle ( https://www.particle.io/ )
- * @source https://github.com/spark/particle-cli
- * @version V1.0.0
- * @date    14-February-2014
- * @brief   Cloud variables command module
- ******************************************************************************
-Copyright (c) 2016 Particle Industries, Inc.  All rights reserved.
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation, either
-version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************
- */
-
 const when = require('when');
 const pipeline = require('when/pipeline');
 const _ = require('lodash');
@@ -197,9 +170,8 @@ class VariableCommand {
 	}
 
 
-	listVariables(args = null) {
-		// TODO: what is args
-		return this.getAllVariables(args).then((devices) => {
+	listVariables() {
+		return this.getAllVariables().then((devices) => {
 			let lines = [];
 			for (let i = 0; i < devices.length; i++) {
 				const device = devices[i];
