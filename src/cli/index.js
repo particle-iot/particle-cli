@@ -13,6 +13,7 @@ import flash from './flash';
 import func from './function';
 import library from './library';
 import project from './project';
+import publish from './publish';
 import keys from './keys';
 import variable from './variable';
 import webhook from './webhook';
@@ -43,6 +44,7 @@ export default function registerAllCommands(context) {
 	func(context);
 	library(context);
 	project(context);
+	publish(context);
 	keys(context);
 	variable(context);
 	webhook(context);
