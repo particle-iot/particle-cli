@@ -1,5 +1,4 @@
 export default ({ commandProcessor, root }) => {
-
 	commandProcessor.createCommand(root, 'config', 'Configure and switch between multiple accounts', {
 		params: '[profile] [setting] [value]',
 		options: {

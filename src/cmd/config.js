@@ -44,7 +44,7 @@ class ConfigCommand {
 		if (list) {
 			this.listProfiles();
 		} else if (setting) {
-			this.changeSetting(profile, setting, value);
+			this.changeSetting(profile === 'set' ? settings.profile : profile, setting, value);
 		} else if (profile) {
 			this.switchProfile(profile);
 		} else {

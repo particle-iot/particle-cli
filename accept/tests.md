@@ -41,7 +41,6 @@ particle token list
 particle token revoke
 particle token create
 particle binary inspect assets/binaries/photon_tinker.bin
-
 particle cloud login
 particle cloud logout
 particle cloud list
@@ -51,8 +50,18 @@ particle cloud list online
 particle cloud claim 25001e000347353137323334
 particle cloud remove 25001e000347353137323334
 particle cloud name 25001e000347353137323334 foo
-
 particle cloud flash device tinker
 particle cloud flash device app.ino
 particle cloud flash device
 particle cloud flash device app.ino --target 0.6.3
+particle config
+particle config personal
+particle config set apiUrl https://api.staging.particle.io
+particle config --list
+particle flash device
+particle flash device tinker
+particle flash device app.ino
+particle flash device directory
+particle flash --usb firmware.bin
+particle flash --serial firmware.bin
+
