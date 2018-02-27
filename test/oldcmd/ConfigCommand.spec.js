@@ -48,7 +48,7 @@ describe('Config Command', function() {
 	});
 	it('Can switch profiles', function() {
 
-		config.switchGroup('test');
+		config.switchProfile('test');
 		settings.switched.should.equal(true);
 	});
 	it('Can change settings', function() {
