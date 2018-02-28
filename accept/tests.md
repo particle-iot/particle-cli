@@ -4,16 +4,16 @@ variable 3
 token 3
 binary 1
 cloud 9
-
 config 6
-doctor 1
 flash 3
 function 2
 publish 1
-serial 8
-subscribe 1
 udp 2
 update 1
+
+doctor 1
+serial 8
+subscribe 1
 
 
 particle keys save <file>
@@ -66,3 +66,18 @@ particle flash --usb firmware.bin
 particle flash --serial firmware.bin
 particle function list
 particle function call device digtalWrite D7=HIGH
+particle publish event data
+particle publish event data --private
+particle udp listen
+particle udp send localhost 5369 foo
+particle update
+particle serial list
+particle serial monitor
+particle serial monitor --port /dev/ttyACM0
+particle serial monitor --follow
+particle serial identify
+particle serial wifi
+particle serial mac
+particle serial flash tinker
+particle serial flash firmware.bin
+particle serial claim GxYd6wi9Q9EyK1Kt3j7yO4M43ZQBSMqrZCzt4U6MO4gKil30HiM7AGF9vGIVlji

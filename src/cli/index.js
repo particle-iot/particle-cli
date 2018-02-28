@@ -15,6 +15,7 @@ import library from './library';
 import project from './project';
 import publish from './publish';
 import keys from './keys';
+import serial from './serial';
 import udp from './udp';
 import update from './update';
 import variable from './variable';
@@ -48,6 +49,7 @@ export default function registerAllCommands(context) {
 	project(context);
 	publish(context);
 	keys(context);
+	serial(context);
 	udp(context);
 	update(context);
 	variable(context);

@@ -53,7 +53,7 @@ class FlashCommand {
 	flashYModem() {
 		const args = {
 			params: {
-				files: [this.options.params.device]
+				binary: this.options.params.device
 			}
 		};
 		const SerialCommands = require('../cmd/serial');
