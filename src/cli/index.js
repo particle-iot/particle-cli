@@ -16,6 +16,7 @@ import project from './project';
 import publish from './publish';
 import keys from './keys';
 import udp from './udp';
+import update from './update';
 import variable from './variable';
 import webhook from './webhook';
 
@@ -48,6 +49,7 @@ export default function registerAllCommands(context) {
 	publish(context);
 	keys(context);
 	udp(context);
+	update(context);
 	variable(context);
 	webhook(context);
 	// disable these for now until we have acceptance tests in place
