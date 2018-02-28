@@ -1,6 +1,6 @@
 export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'flash', 'Send firmware to your device', {
-		params: '[device] [files...]',
+		params: '[device|binary] [files...]',
 		options: {
 			'cloud': {
 				boolean: true,

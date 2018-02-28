@@ -53,7 +53,7 @@ class FlashCommand {
 	flashYModem() {
 		const args = {
 			params: {
-				binary: this.options.params.device
+				binary: this.options.params.binary
 			}
 		};
 		const SerialCommands = require('../cmd/serial');
@@ -62,7 +62,7 @@ class FlashCommand {
 
 	flashDfu() {
 		const useFactory = this.options.useFactoryAddress;
-		let firmware = this.options.params.device;
+		let firmware = this.options.params.binary;
 
 		let specs, destSegment, destAddress;
 		let flashingKnownApp = false;

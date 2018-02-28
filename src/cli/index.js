@@ -9,6 +9,7 @@ import accessTokens from './access_tokens';
 import binary from './binary';
 import cloud from './cloud';
 import config from './config';
+import doctor from './doctor';
 import flash from './flash';
 import func from './function';
 import library from './library';
@@ -43,6 +44,7 @@ export default function registerAllCommands(context) {
 	binary(context);
 	cloud(context);
 	config(context);
+	doctor(context);
 	flash(context);
 	func(context);
 	library(context);
