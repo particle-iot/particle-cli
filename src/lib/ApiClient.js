@@ -761,7 +761,7 @@ class ApiClient {
 		}
 
 		if (eventName) {
-			url += '/' + eventName;
+			url += '/' + encodeURIComponent(eventName);
 		}
 
 		console.log('Listening to: ' + url);

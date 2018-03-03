@@ -1,76 +1,35 @@
-/**
- ******************************************************************************
- * @file    commands/SubscribeCommand.js
- * @author  David Middlecamp (david@particle.io)
- * @company Particle ( https://www.particle.io/ )
- * @source https://github.com/spark/particle-cli
- * @version V1.0.0
- * @date    14-February-2014
- * @brief   Subscribe commands module
- ******************************************************************************
-Copyright (c) 2016 Particle Industries, Inc.  All rights reserved.
+const when = require('when');
+const ApiClient = require('../lib/ApiClient.js');
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation, either
-version 3 of the License, or (at your option) any later version.
+class SubscribeCommand {
+	constructor(options)	{
+		this.options = options;
+	}
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this program; if not, see <http://www.gnu.org/licenses/>.
- ******************************************************************************
- */
-'use strict';
-
-var when = require('when');
-var extend = require('xtend');
-var util = require('util');
-
-var BaseCommand = require('./BaseCommand.js');
-var ApiClient = require('../dist/lib/ApiClient.js');
-
-function SubscribeCommand(cli, options) {
-	SubscribeCommand.super_.call(this, cli, options);
-	this.options = extend({}, this.options, options);
-
-	this.init();
-};
-util.inherits(SubscribeCommand, BaseCommand);
-
-SubscribeCommand.prototype = extend(BaseCommand.prototype, {
-	options: null,
-	name: 'subscribe',
-	description: 'helpers for watching device event streams',
-
-	init: function () {
-		this.addOption('*', this.startListening.bind(this), 'Starts listening and parsing server sent events from the api to your console');
-	},
-
-
-	startListening: function (eventName, deviceId) {
-		var api = new ApiClient();
+	startListening() {
+		const api = new ApiClient();
 		if (!api.ready()) {
 			return -1;
 		}
 
+		// legacy argument order
+		let eventName = this.options.params.event[0];
+		let deviceId = this.options.params.event[1] || this.options.device;
+
 		// if they typed: "particle subscribe mine"
-		if ((!deviceId || (deviceId === '')) && (eventName === 'mine')) {
+		if (eventName === 'mine') {
 			eventName = null;
-			deviceId = 'mine';
-		} else if (eventName === 'mine' && deviceId) {
-			eventName = null;
-			//okay, listen to all events from this device.
 		}
 
-		var eventLabel = eventName;
+		let eventLabel = eventName;
 		if (eventLabel) {
 			eventLabel = '"' + eventLabel + '"';
 		} else {
 			eventLabel = 'all events';
+		}
+
+		if (!deviceId && !this.options.all) {
+			deviceId = 'mine';
 		}
 
 		if (!deviceId) {
@@ -81,10 +40,10 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 			console.log('Subscribing to ' + eventLabel + ' from ' + deviceId + "'s stream");
 		}
 
-		var chunks = [];
+		let chunks = [];
 		function appendToQueue(arr) {
-			for (var i = 0; i < arr.length; i++) {
-				var line = (arr[i] || '').trim();
+			for (let i = 0; i < arr.length; i++) {
+				const line = (arr[i] || '').trim();
 				if (!line) {
 					continue;
 				}
@@ -94,32 +53,32 @@ SubscribeCommand.prototype = extend(BaseCommand.prototype, {
 					chunks = [];
 				}
 			}
-		};
+		}
 
 		function processItem(arr) {
-			var obj = {};
-			for (var i=0;i<arr.length;i++) {
-				var line = arr[i];
+			const obj = {};
+			for (let i=0;i<arr.length;i++) {
+				let line = arr[i];
 
 				if (line.indexOf('event:') === 0) {
 					obj.name = line.replace('event:', '').trim();
 				} else if (line.indexOf('data:') === 0) {
 					line = line.replace('data:', '');
-					obj = extend(obj, JSON.parse(line));
+					Object.assign(obj, JSON.parse(line));
 				}
 			}
 
 			console.log(JSON.stringify(obj));
-		};
+		}
 
-		return api.getEventStream(eventName, deviceId, function(event) {
-			var chunk = event.toString();
+		return api.getEventStream(eventName, deviceId, (event) => {
+			const chunk = event.toString();
 			appendToQueue(chunk.split('\n'));
-		}).catch(function(err) {
+		}).catch((err) => {
 			console.error('Error', err);
 			return when.reject(err);
 		});
 	}
-});
+}
 
 module.exports = SubscribeCommand;
