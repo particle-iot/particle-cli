@@ -17,6 +17,7 @@ import project from './project';
 import publish from './publish';
 import keys from './keys';
 import serial from './serial';
+import setup from './setup';
 import subscribe from './subscribe';
 import udp from './udp';
 import update from './update';
@@ -53,6 +54,7 @@ export default function registerAllCommands(context) {
 	publish(context);
 	keys(context);
 	serial(context);
+	setup(context);
 	subscribe(context);
 	udp(context);
 	update(context);
