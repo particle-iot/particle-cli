@@ -1,6 +1,5 @@
 'use strict';
 
-var Interpreter = require('../../dist/lib/interpreter');
 var proxyquire = require('proxyquire');
 require('should');
 var sinon = require('sinon');

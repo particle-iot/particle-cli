@@ -1,7 +1,4 @@
 import help from './help';
-// import cloud from './cloud';
-// import keys from './keys';
-// import event from './event';
 // import alias from './alias';
 
 import echo from './echo';
@@ -60,8 +57,5 @@ export default function registerAllCommands(context) {
 	update(context);
 	variable(context);
 	webhook(context);
-	// disable these for now until we have acceptance tests in place
-	// cloud(app, cli);
-	// event(app, cli);
 	// alias(app, cli);
 }

@@ -13,43 +13,15 @@ chai.use(sinonChai);
 var expect = chai.expect;
 
 
-var Interpreter = require('../../dist/lib/interpreter');
-
 var SerialCommand = proxyquire('../../commands/SerialCommand.js', {
 
 });
 
 describe('Serial Command', function() {
-
-	var cli, serial;
-	before(function() {
-
-		cli = new Interpreter();
-		cli.startup();
-	});
+	let serial;
 
 	beforeEach(function () {
-		serial = new SerialCommand(cli, { });
-	});
-
-	it('Can list devices', function() {
-		serial.optionsByName['list'].should.be.an.instanceOf(Function);
-	});
-
-	it('Can monitor a device', function() {
-		serial.optionsByName['monitor'].should.be.an.instanceOf(Function);
-	});
-
-	it('Can identify a device', function() {
-		serial.optionsByName['identify'].should.be.an.instanceOf(Function);
-	});
-
-	it('Can setup Wi-Fi over serial', function() {
-		serial.optionsByName['wifi'].should.be.an.instanceOf(Function);
-	});
-
-	it('can retrieve mac address', function() {
-		serial.optionsByName['mac'].should.be.an.instanceOf(Function);
+		serial = new SerialCommand({ params: {} });
 	});
 
 	describe('supportsClaimCode', function () {

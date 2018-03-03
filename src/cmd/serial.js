@@ -1,13 +1,17 @@
 const _ = require('lodash');
 const fs = require('fs');
 const prompt = require('inquirer').prompt;
-
 const path = require('path');
 const when = require('when');
 const sequence = require('when/sequence');
-const SerialPort = require('serialport');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
+let SerialPort;
+try {
+	SerialPort = require('serialport');
+} catch(err) {
+	log.fatal(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
+}
 const wifiScan = require('node-wifiscanner2').scan;
 const specs = require('../lib/deviceSpecs');
 const ApiClient = require('../lib/ApiClient2');
