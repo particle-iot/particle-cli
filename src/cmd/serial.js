@@ -657,7 +657,7 @@ class SerialCommand {
 
 			setTimeout(() => {
 				api.listDevices(checkDevices);
-			}, 2000);
+			}, 6000);
 		}
 
 		function checkDevices(err, dat) {

@@ -8,7 +8,7 @@ import registerAllCommands from '../cli';
 import * as settings from '../../settings';
 import when from 'when';
 import chalk from 'chalk';
-import log from './log';
+import log from '../lib/log';
 import process from 'process';
 
 export default class CLI {

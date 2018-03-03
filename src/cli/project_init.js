@@ -1,7 +1,7 @@
 import { ProjectInitCommand, ProjectInitCommandSite, Projects } from '../cmd';
 import { validateField } from 'particle-library-manager';
 import path from 'path';
-import log from '../app/log';
+import log from '../lib/log';
 import chalk from 'chalk';
 import prompt from '../../dist/lib/prompts';
 

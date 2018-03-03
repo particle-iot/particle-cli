@@ -11,6 +11,7 @@ const sequence = require('when/sequence');
 const pipeline = require('when/pipeline');
 const util = require('util');
 const path = require('path');
+const spinnerMixin = require('../lib/spinnerMixin');
 
 // this is mainly so we only break 80 columns in one place.
 const strings = {
@@ -33,6 +34,7 @@ function goodbye() {
 class SetupCommand {
 
 	constructor(options) {
+		spinnerMixin(this);
 		this.options = options;
 		this.__wasLoggedIn;
 		this.__api = new ApiClient2();

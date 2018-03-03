@@ -1,16 +1,13 @@
+import stream from 'stream';
+import chalk from 'chalk';
 
-
-const Transform = require('stream').Transform;
-const chalk = require('chalk');
-const settings = require('../../settings');
-
-class FilteredLogStream extends Transform {
+class FilteredLogStream extends stream.Transform {
 	constructor() {
 		super();
 	}
 
 	_transform(data, encoding, callback) {
-		if (!settings.verboseOutput) {
+		if (global.verboseLevel < 2) {
 			return callback();
 		}
 		this.push(data, encoding);
@@ -18,54 +15,96 @@ class FilteredLogStream extends Transform {
 	}
 }
 
-module.exports = {
-	verbose() {
-		if (!settings.verboseOutput) {
+export default {
+	silly() {
+		if (global.verboseLevel < 4) {
 			return;
 		}
-		console.log.apply(null, arguments);
+		console.log(...arguments);
+	},
+
+	verbose() {
+		if (global.verboseLevel < 3) {
+			return;
+		}
+		console.log(...arguments);
+	},
+
+	debug() {
+		if (global.verboseLevel < 2) {
+			return;
+		}
+		console.log(...arguments);
+	},
+
+	info() {
+		if (global.verboseLevel < 1) {
+			return;
+		}
+		console.log(...arguments);
+	},
+
+	warn() {
+		if (global.verboseLevel < 1) {
+			return;
+		}
+		console.error(chalk.yellow('!'), ...arguments);
+	},
+
+	success() {
+		if (global.verboseLevel < 1) {
+			return;
+		}
+		console.log(chalk.green('>'), ...arguments);
 	},
 
 	error() {
-		let args = Array.prototype.slice.call(arguments);
-		args.unshift(chalk.red('!'));
-		console.error.apply(null, args);
+		if (global.verboseLevel < 1) {
+			return;
+		}
+		console.error(chalk.red('!'), ...arguments);
+	},
+
+	fatal() {
+		if (global.verboseLevel < 1) {
+			return;
+		}
+		console.error(chalk.red(...arguments));
 	},
 
 	serialInput(data) {
-		if (!settings.verboseOutput) {
+		if (global.verboseLevel < 3) {
 			return;
 		}
-		let lines = data.split('\n');
-		lines.forEach((l) => {
+		const lines = data.split('\n');
+		lines.forEach(l => {
 			if (!l) {
 				return;
 			}
-			console.log(chalk.gray('Serial <-'), l);
+			console.log(chalk.gray('Serial In <-'), l);
 		});
 	},
 
 	serialOutput(data) {
-		if (!settings.verboseOutput) {
+		if (global.verboseLevel < 3) {
 			return;
 		}
-		let lines = data.split('\n');
-		lines.forEach((l) => {
+		const lines = data.split('\n');
+		lines.forEach(l => {
 			if (!l) {
 				return;
 			}
-			console.log(chalk.gray('Serial ->'), l);
+			console.log(chalk.gray('Serial Out ->'), l);
 		});
 	},
 
 	stdout() {
-		let outStream = new FilteredLogStream();
+		const outStream = new FilteredLogStream();
 		outStream.pipe(process.stdout);
 		return outStream;
 	},
-
 	stderr() {
-		let errStream = new FilteredLogStream();
+		const errStream = new FilteredLogStream();
 		errStream.pipe(process.stderr);
 		return errStream;
 	}

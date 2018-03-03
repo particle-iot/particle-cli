@@ -11,7 +11,7 @@ import chalk from 'chalk';
 import prompts from './prompts';
 import cloudLib from '../cmd/cloud';
 import { UnauthorizedError } from '../cmd/api';
-import log from './log';
+import log from '../lib/log';
 import settings from '../../settings';
 import { platformsById } from '../cmd/constants';
 

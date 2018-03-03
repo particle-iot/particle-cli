@@ -1,7 +1,7 @@
 import when from 'when';
 import eventLib from '../cmd/event';
 import * as ui from './ui';
-import log from './log';
+import log from '../lib/log';
 
 const event = {
 	subscribe(opts) {
