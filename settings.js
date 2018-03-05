@@ -99,7 +99,6 @@ var settings = {
 			systemFirmwareThree: 'system-part1-0.6.4-electron.bin'
 		}
 	},
-	commandMappings: path.join(__dirname, 'mappings.json')
 };
 
 function envValue(varName, defaultValue) {

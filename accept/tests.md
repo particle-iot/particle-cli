@@ -81,3 +81,22 @@ particle serial mac
 particle serial flash tinker
 particle serial flash firmware.bin
 particle serial claim GxYd6wi9Q9EyK1Kt3j7yO4M43ZQBSMqrZCzt4U6MO4gKil30HiM7AGF9vGIVlji
+particle doctor
+particle
+particle help
+particle help keys
+particle help keys server
+particle publish event data
+particle publish event data --private
+particle setup
+particle setup --wifi
+particle setup --scan
+particle setup --manual
+particle setup --yes
+particle subscribe event
+particle subscribe event --device foo
+particle subscribe event --all
+particle webhook list
+particle webhook delete
+particle webhook create hook.json
+particle webhook create event http://example.com

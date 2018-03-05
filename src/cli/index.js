@@ -1,7 +1,6 @@
 import help from './help';
-// import alias from './alias';
+import alias from './alias';
 
-import echo from './echo';
 import accessTokens from './access_tokens';
 import binary from './binary';
 import cloud from './cloud';
@@ -38,7 +37,6 @@ export default function registerAllCommands(context) {
 	// help must come first
 	help(context);
 
-	echo(context);
 	accessTokens(context);
 	binary(context);
 	cloud(context);
@@ -57,5 +55,5 @@ export default function registerAllCommands(context) {
 	update(context);
 	variable(context);
 	webhook(context);
-	// alias(app, cli);
+	alias(context);
 }
