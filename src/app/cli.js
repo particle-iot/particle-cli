@@ -7,7 +7,6 @@ import * as commandProcessor from './command-processor';
 import registerAllCommands from '../cli';
 import * as settings from '../../settings';
 import when from 'when';
-import chalk from 'chalk';
 import log from '../lib/log';
 import process from 'process';
 

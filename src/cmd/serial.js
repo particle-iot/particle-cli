@@ -5,18 +5,18 @@ const path = require('path');
 const when = require('when');
 const sequence = require('when/sequence');
 const inquirer = require('inquirer');
+const log = require('../lib/log');
 const chalk = require('chalk');
 let SerialPort;
 try {
 	SerialPort = require('serialport');
-} catch(err) {
+} catch (err) {
 	log.fatal(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
 }
 const wifiScan = require('node-wifiscanner2').scan;
 const specs = require('../lib/deviceSpecs');
 const ApiClient = require('../lib/ApiClient2');
 const OldApiClient = require('../lib/ApiClient');
-const log = require('../lib/log');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
 const YModem = require('../lib/ymodem');

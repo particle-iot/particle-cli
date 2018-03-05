@@ -12,7 +12,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 require('sinon-as-promised');
 
-const windowsWiFi = require('../../../../commands/WirelessCommand/connect/windows.js');
+const windowsWiFi = require('../../../src/lib/connect/windows.js');
 var Connector = windowsWiFi.Connector;
 
 describe('Windows wifi', function() {
@@ -557,7 +557,7 @@ describe('Windows wifi', function() {
 				});
 		});
 	});
-	
+
 	describe('waitForConnected', () => {
 		it('timees out when the network never reaches the given value', () => {
 			sut.current = sinon.stub().resolves(undefined);
