@@ -119,7 +119,7 @@ class CLICommandItem {
 
 		if (examples) {
 			_.forEach(examples, e => {
-				yargs.example(e);
+				yargs.example(e.cmd, e.description);
 			});
 		}
 
@@ -313,7 +313,8 @@ class CLICommandCategory extends CLICommandItem {
 
 		yargs
 			.usage((this.description ? this.description + '\n' : '')
-				+ 'Usage: $0 ' + this.path.join(' ') + ' <command>')
+				+ ['Usage: $0', ...this.path, '<command>'].join(' ') + '\n'
+		    + ['Help:  $0 help', ...this.path, '<command>'].join(' '))
 			.check((argv) => this.check(yargs, argv));
 
 		return yargs;
@@ -322,7 +323,7 @@ class CLICommandCategory extends CLICommandItem {
 
 class CLIRootCategory extends CLICommandCategory {
 	constructor(options) {
-		super('$0', '', options);
+		super('$0', options.description, options);
 	}
 
 	get path() {

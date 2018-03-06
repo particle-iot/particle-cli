@@ -25,6 +25,13 @@ export default class CLI {
 		const app = this;
 
 		return commandProcessor.createAppCategory({
+			description: [
+				'Welcome to the Particle Command Line Interface!',
+				`Version ${pkg.version}`,
+				'https://github.com/particle-iot/particle-cli',
+				'',
+			].join('\n'),
+
 			// options for yargs
 			inherited: {
 				options: {
@@ -67,7 +74,26 @@ export default class CLI {
 				}
 			},
 
-			epilogue: 'For more information, visit our documentation at https://docs.particle.io\n\nparticle-cli ' + pkg.version,
+			examples: [
+				{
+					cmd: '$0 setup',
+					description: 'Set up your Particle account and your device'
+				},
+				{
+					cmd: '$0 list',
+					description: 'Show all your devices and their functions and variables'
+				},
+				{
+					cmd: '$0 flash my_device tinker',
+					description: 'Remotely update your device to run the default Tinker app'
+				},
+				{
+					cmd: '$0 call my_device_name digitalwrite D7=HIGH',
+					description: 'Call a function on your device running Tinker to toggle the onboard LED'
+				},
+			],
+
+			epilogue: 'For more information, visit our documentation at https://docs.particle.io',
 
 			version: app.showVersion,
 
