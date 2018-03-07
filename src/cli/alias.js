@@ -16,14 +16,9 @@ export default ({ commandProcessor, root }) => {
 
 	alias(root, 'compile', ['cloud', 'compile']);
 
-	const device = commandProcessor.createCategory(root, 'device', 'Commands to manipulate a device');
+	const device = commandProcessor.createCategory(root, 'device', 'Manipulate a device');
 	alias(device, 'add', ['cloud', 'claim']);
 	alias(device, 'remove', ['cloud', 'remove']);
 	alias(device, 'rename', ['cloud', 'name']);
 	alias(device, 'doctor', ['doctor']);
-
-	const core = commandProcessor.createCategory(root, 'core', false);
-	alias(core, 'add', ['cloud', 'claim']);
-	alias(core, 'remove', ['cloud', 'remove']);
-	alias(core, 'rename', ['cloud', 'name']);
 };

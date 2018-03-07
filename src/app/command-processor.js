@@ -291,19 +291,21 @@ class CLICommandCategory extends CLICommandItem {
 		return true;
 	}
 
+	get commandNames() {
+		return Object.keys(this.commands);
+	}
+
 	configureParser(args, yargs) {
 
 		this.configure(yargs);
 
 		// add the subcommands of this category
-		_.forEach(this.commands, (command) => {
+		this.commandNames.forEach((commandName) => {
+			const command = this.commands[commandName];
+
 			const builder = (yargs) => {
 				return { argv: command.parse(args, yargs) };
 			};
-
-			// const handler = (yargs) => {
-			// 	yargs.showHelp();
-			// };
 
 			yargs.command(command.name, command.description, builder);
 			if (command.options && command.options.alias) {
@@ -329,6 +331,10 @@ class CLIRootCategory extends CLICommandCategory {
 
 	get path() {
 		return [];
+	}
+
+	get commandNames() {
+		return super.commandNames.sort();
 	}
 
 }

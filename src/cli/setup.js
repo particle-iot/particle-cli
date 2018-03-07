@@ -1,5 +1,5 @@
 export default ({ commandProcessor, root }) => {
-	commandProcessor.createCommand(root, 'setup', 'Guides you through the initial setup & claiming of your device', {
+	commandProcessor.createCommand(root, 'setup', 'Do the initial setup & claiming of your device', {
 		options: {
 			'wifi': {
 				boolean: true,

@@ -18,7 +18,7 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(cloud, 'list', 'Displays a list of your devices, as well as their variables and functions', {
+	commandProcessor.createCommand(cloud, 'list', 'Display a list of your devices, as well as their variables and functions', {
 		params: '[filter]',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
@@ -91,14 +91,14 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(cloud, 'login', 'Lets you login to the cloud and stores an access token locally', {
+	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).login();
 		}
 	});
 
-	commandProcessor.createCommand(cloud, 'logout', 'Logs out your session and clears your saved access token', {
+	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).logout();

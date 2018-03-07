@@ -1,5 +1,5 @@
 export default ({ commandProcessor, root }) => {
-	commandProcessor.createCommand(root, 'publish', 'Publishes an event to the cloud', {
+	commandProcessor.createCommand(root, 'publish', 'Publish an event to the cloud', {
 		params: '<event> [data]',
 		options: {
 			'private': {

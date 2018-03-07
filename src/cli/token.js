@@ -1,9 +1,9 @@
 export default ({ commandProcessor, root }) => {
-	const token = commandProcessor.createCategory(root, 'token', 'Tools to manage access tokens (require username/password)');
+	const token = commandProcessor.createCategory(root, 'token', 'Manage access tokens (require username/password)');
 
 	commandProcessor.createCommand(token, 'list', 'List all access tokens for your account', {
 		handler: (args) => {
-			const AccessTokenCommands = require('../cmd/access_token');
+			const AccessTokenCommands = require('../cmd/token');
 			return new AccessTokenCommands(args).listAccessTokens();
 		}
 	});
@@ -17,14 +17,14 @@ export default ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const AccessTokenCommands = require('../cmd/access_token');
+			const AccessTokenCommands = require('../cmd/token');
 			return new AccessTokenCommands(args).revokeAccessToken();
 		}
 	});
 
 	commandProcessor.createCommand(token, 'create', 'Create a new access token', {
 		handler: (args) => {
-			const AccessTokenCommands = require('../cmd/access_token');
+			const AccessTokenCommands = require('../cmd/token');
 			return new AccessTokenCommands(args).createAccessToken();
 		}
 	});

@@ -13,9 +13,9 @@ function api() {
 }
 
 export default ({ commandProcessor, root }) => {
-	const lib = commandProcessor.createCategory(root, 'library', 'Manages firmware libraries', { alias: 'libraries' });
+	const lib = commandProcessor.createCategory(root, 'library', 'Manage firmware libraries', { alias: 'libraries' });
 
-	commandProcessor.createCommand(lib, 'add', 'Adds a library to the current project.', {
+	commandProcessor.createCommand(lib, 'add', 'Add a library to the current project.', {
 		options: {},
 		params: '<name>',
 		handler: (...args) => require('./library_add').command(api(), ...args),
@@ -24,7 +24,7 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(lib, 'create', 'Creates a new library in the specified or current directory.', {
+	commandProcessor.createCommand(lib, 'create', 'Create a new library in the specified or current directory', {
 		options: {
 			'name': {
 				required: false,
@@ -48,7 +48,7 @@ export default ({ commandProcessor, root }) => {
 				required: false,
 				boolean: true,
 				alias: 'vendored',
-				description: 'install the library by copying the library sources into the project\'s lib folder.'
+				description: 'install the library by copying the library sources into the project\'s lib folder'
 			},
 			'adapter': {        // hidden
 				required: false,
@@ -70,13 +70,13 @@ export default ({ commandProcessor, root }) => {
 		handler: (...args) => require('./library_install').command('install', api(), ...args),
 	});
 
-	commandProcessor.createCommand(lib, 'copy', 'Copies a library to the current project.', {
+	commandProcessor.createCommand(lib, 'copy', 'Copy a library to the current project', {
 		options: {},
 		params: '[name]',
 		handler: (...args) => require('./library_install').command('copy', api(), ...args)
 	});
 
-	commandProcessor.createCommand(lib, 'list', 'Lists libraries available.', {
+	commandProcessor.createCommand(lib, 'list', 'List libraries available', {
 		options: {
 			'filter': {
 				required: false,
@@ -101,7 +101,7 @@ export default ({ commandProcessor, root }) => {
 		handler: (...args) => require('./library_list').command(api(), ...args)
 	});
 
-	commandProcessor.createCommand(lib, 'migrate', 'Migrates a local library from v1 to v2 format.', {
+	commandProcessor.createCommand(lib, 'migrate', 'Migrate a local library from v1 to v2 format', {
 		options: {
 			test: {
 				alias: 'dryrun',
@@ -120,7 +120,7 @@ export default ({ commandProcessor, root }) => {
 		handler: (...args) => require('./library_migrate').command(...args)
 	});
 
-	commandProcessor.createCommand(lib, 'search', 'Searches available libraries.', {
+	commandProcessor.createCommand(lib, 'search', 'Search available libraries', {
 		options: {
 		},
 		params: '<name>',
@@ -138,7 +138,7 @@ export default ({ commandProcessor, root }) => {
 		handler: (...args) => require('./library_upload').command(api(), ...args)
 	});
 
-	commandProcessor.createCommand(lib, 'publish', 'Publishes a private library, making it public.', {
+	commandProcessor.createCommand(lib, 'publish', 'Publish a private library, making it public', {
 		options: {},
 		params: '[name]',
 		handler: (...args) => require('./library_publish').command(api(), ...args)

@@ -1,5 +1,5 @@
 export default ({ commandProcessor, root }) => {
-	const keys = commandProcessor.createCategory(root, 'keys', "Commands to manage your device's keypair and server public key");
+	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key");
 
 	const protocolOption = {
 		'protocol': {

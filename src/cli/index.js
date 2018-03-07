@@ -1,7 +1,6 @@
 import help from './help';
 import alias from './alias';
 
-import accessTokens from './access_tokens';
 import binary from './binary';
 import cloud from './cloud';
 import config from './config';
@@ -15,6 +14,7 @@ import keys from './keys';
 import serial from './serial';
 import setup from './setup';
 import subscribe from './subscribe';
+import token from './token';
 import udp from './udp';
 import update from './update';
 import variable from './variable';
@@ -37,7 +37,6 @@ export default function registerAllCommands(context) {
 	// help must come first
 	help(context);
 
-	accessTokens(context);
 	binary(context);
 	cloud(context);
 	config(context);
@@ -51,6 +50,7 @@ export default function registerAllCommands(context) {
 	serial(context);
 	setup(context);
 	subscribe(context);
+	token(context);
 	udp(context);
 	update(context);
 	variable(context);
