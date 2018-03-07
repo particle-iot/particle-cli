@@ -267,6 +267,12 @@ describe('command-line parsing', () => {
 			expect(paramsCommand('<a>', ['hey']).params).to.have.property('a').equal('hey');
 		});
 
+		it('allows commands with multiple parameter names', () => {
+			const args = paramsCommand('<a|b>', ['hey']).params;
+			expect(args).to.have.property('a').equal('hey');
+			expect(args).to.have.property('b').equal('hey');
+		});
+
 		it('rejects commands with unfilled required parameters', () => {
 			expect(paramsCommand('<a> <b>', ['1'])).to.have.property('clierror')
 				.deep.equal(commandProcessor.errors.requiredParameterError('b'));

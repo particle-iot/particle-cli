@@ -523,7 +523,10 @@ function parseParams(yargs, argv, path, params) {
 				}
 			}
 
-			argv.params[param] = value;
+			const params = param.split('|');
+			params.forEach(p => {
+				argv.params[p] = value;
+			});
 		});
 
 	if (!variadic && required+optional < extra.length) {
