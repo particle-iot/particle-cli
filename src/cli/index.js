@@ -18,6 +18,7 @@ import token from './token';
 import udp from './udp';
 import update from './update';
 import variable from './variable';
+import version from './version';
 import webhook from './webhook';
 
 /**
@@ -54,6 +55,7 @@ export default function registerAllCommands(context) {
 	udp(context);
 	update(context);
 	variable(context);
+	version(context);
 	webhook(context);
 	alias(context);
 }

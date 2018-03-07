@@ -5,5 +5,5 @@ export default function unindent(string) {
 	}
 
 	const re = new RegExp(`^${match[1]}`, 'gm');
-	return string.replace(re, '').replace(/^\n/, '').replace(/\n\s*$/, '');
+	return string.replace(re, '').replace(/^\n/, '').replace(/\n[ \t]*$/, '');
 }

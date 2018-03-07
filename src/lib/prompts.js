@@ -103,7 +103,7 @@ const prompts = {
 	 * @param {string} message The message to prompt the user
 	 * @param {string} defaultValue The default value to use if the user simply hits return
 	 * @param {Function} validator function that returns an error message if the value is not valid.
-	 * @returns {Promise) to prompt and get the result. The result is undefined if the user hits ctrl-C.
+	 * @returns {Promise} to prompt and get the result. The result is undefined if the user hits ctrl-C.
 	 */
 	promptAndValidate(message, defaultValue, validator) {
 		let dfd = when.defer();

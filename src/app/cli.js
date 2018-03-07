@@ -9,6 +9,7 @@ import * as settings from '../../settings';
 import when from 'when';
 import log from '../lib/log';
 import process from 'process';
+import unindent from '../lib/unindent';
 
 export default class CLI {
 	constructor() {
@@ -25,12 +26,12 @@ export default class CLI {
 		const app = this;
 
 		return commandProcessor.createAppCategory({
-			description: [
-				'Welcome to the Particle Command Line Interface!',
-				`Version ${pkg.version}`,
-				'https://github.com/particle-iot/particle-cli',
-				'',
-			].join('\n'),
+			description: unindent(`
+				Welcome to the Particle Command Line Interface!
+				Version ${pkg.version}
+				https://github.com/particle-iot/particle-cli
+				
+			`),
 
 			// options for yargs
 			inherited: {

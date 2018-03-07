@@ -1,9 +1,8 @@
 
 export default ({ commandProcessor, root, app }) => {
 	commandProcessor.createCommand(root, 'help', false, {
-		options: {},
 		params: '[command...]',
-		handler: function helpHandler(argv) {
+		handler: (argv) => {
 			let cmd = argv.params.command;
 			cmd.push('--help');
 
