@@ -13,16 +13,10 @@ Feature: help and default command
       Given I run particle "help"
       Then stderr should not contain "Error"
       And the output should show the help page
-      And the output should not contain "echo"
-
-    Scenario: Running the CLI with "help"
-      Given I run particle "help"
-      Then stderr should not contain "Error"
-      And the output should show the help page
 
     Scenario: Running the CLI with "--help"
       Given I run particle "--help"
       Then stderr should not contain "Error"
-      And the output should show the new help page
+      And the output should show the help page
 
 

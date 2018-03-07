@@ -30,26 +30,12 @@ Given(/^I have installed the CLI$/) do
 end
 
 And(/^the (stderr|stdout|output) should show the help page$/) do |out|
-  step "the #{out} should show the old help page"
-end
-
-And(/^the (stderr|stdout|output) should show the old help page$/) do |out|
-  step "the #{out} should contain \"Usage: particle <command_name> <arguments>\""
-  step "the #{out} should contain \"Common Commands:\""
-  step "the #{out} should contain \"library\""
-  step "the #{out} should contain \"help\""
-  step "the #{out} should contain \"setup\""
-  step "the #{out} should contain \"device\""
-end
-
-And(/^the (stderr|stdout|output) should show the new help page$/) do |out|
+  step "the #{out} should contain \"Welcome to the Particle Command Line Interface\""
+  step "the #{out} should contain \"Usage: particle <command>\""
   step "the #{out} should contain \"Commands:\""
-  step "the #{out} should contain \"help\""
   step "the #{out} should contain \"library\""
-  step "the #{out} should contain \"Usage:  <command>\""
   step "the #{out} should contain \"Options\""
   step "the #{out} should contain \"--verbose\""
-  step "the #{out} should match exactly once /help\\s+Provides extra details and options for a given command/"
 end
 
 
