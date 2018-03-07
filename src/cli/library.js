@@ -18,7 +18,10 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'add', 'Adds a library to the current project.', {
 		options: {},
 		params: '<name>',
-		handler: (...args) => require('./library_add').command(api(), ...args)
+		handler: (...args) => require('./library_add').command(api(), ...args),
+		examples: {
+			'$0 $command InternetButton': 'Add the InternetButton library to your project. Create a project with the project init command'
+		}
 	});
 
 	commandProcessor.createCommand(lib, 'create', 'Creates a new library in the specified or current directory.', {

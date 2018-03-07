@@ -1,5 +1,5 @@
 export default ({ commandProcessor, root }) => {
-	const token = commandProcessor.createCategory(root, 'token', 'tools to manage access tokens (require username/password)');
+	const token = commandProcessor.createCategory(root, 'token', 'Tools to manage access tokens (require username/password)');
 
 	commandProcessor.createCommand(token, 'list', 'List all access tokens for your account', {
 		handler: (args) => {

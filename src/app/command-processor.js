@@ -36,7 +36,7 @@ class CLICommandItem {
 	 * @param {object} options - options for yargs processing. it has these defined attributes:
 	 *  - options: the options to pass to yargs
 	 *  - setup: a function called with yargs to allow additional setup of the command line parsing
-	 *  - examples: an array of examples to add to yargs
+	 *  - examples: an object of examples to add to yargs (key is the command, value is the description)
 	 *  - version: the version function to pass to yargs
 	 */
 	constructor(name, description = '', options = {}) {
@@ -118,8 +118,9 @@ class CLICommandItem {
 		}
 
 		if (examples) {
-			_.forEach(examples, e => {
-				yargs.example(e.cmd, e.description);
+			const command = this.path.join(' ');
+			Object.keys(examples).forEach(cmd => {
+				yargs.example(cmd.replace(/\$command/, command), examples[cmd]);
 			});
 		}
 
@@ -314,7 +315,7 @@ class CLICommandCategory extends CLICommandItem {
 		yargs
 			.usage((this.description ? this.description + '\n' : '')
 				+ ['Usage: $0', ...this.path, '<command>'].join(' ') + '\n'
-		    + ['Help:  $0 help', ...this.path, '<command>'].join(' '))
+				+ ['Help:  $0 help', ...this.path, '<command>'].join(' '))
 			.check((argv) => this.check(yargs, argv));
 
 		return yargs;
@@ -323,7 +324,7 @@ class CLICommandCategory extends CLICommandItem {
 
 class CLIRootCategory extends CLICommandCategory {
 	constructor(options) {
-		super('$0', options.description, options);
+		super('$0', options && options.description, options);
 	}
 
 	get path() {
@@ -570,6 +571,7 @@ function createCommand(category, name, description, options) {
  */
 function parse(command, args) {
 	Yargs.reset();
+	Yargs.wrap(Yargs.terminalWidth());
 	return command.parse(args, Yargs);
 }
 
