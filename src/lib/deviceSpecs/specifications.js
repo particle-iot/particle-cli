@@ -1,5 +1,3 @@
-'use strict';
-
 const path = require('path');
 
 function deviceIdFromSerialNumber(serialNumber) {
@@ -322,7 +320,7 @@ const specs = {
 };
 
 //fix the paths on the known apps mappings
-Object.keys(specs).forEach(function(id) {
+Object.keys(specs).forEach((id) => {
 	const deviceSpecs = specs[id];
 	const knownApps = deviceSpecs['knownApps'];
 	for (let appName in knownApps) {

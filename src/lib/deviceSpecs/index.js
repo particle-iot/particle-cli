@@ -1,5 +1,3 @@
-'use strict';
-
-var specs = require('./specifications');
+const specs = require('./specifications');
 
 module.exports = specs;

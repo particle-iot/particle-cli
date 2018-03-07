@@ -1,22 +1,22 @@
-var wifiCli = '/usr/bin/nmcli';
+const wifiCli = '/usr/bin/nmcli';
 
-var runCommand = require('./executor').runCommand;
+const runCommand = require('./executor').runCommand;
 
 function getCurrentNetwork(cb) {
-	var currentNetworkParams = "--terse --fields NAME,TYPE connection show --active";
+	const currentNetworkParams = '--terse --fields NAME,TYPE connection show --active';
 
-	runCommand(wifiCli, currentNetworkParams, function (err, code, stdout, stderr) {
-		if(err || stderr || code) {
+	runCommand(wifiCli, currentNetworkParams, (err, code, stdout, stderr) => {
+		if (err || stderr || code) {
 			return cb(err || stderr || code);
 		}
 
-		var wifiType = "802-11-wireless";
-		var lines = stdout.split('\n');
-		for(var i = 0; i < lines.length; i++) {
-			var fields = lines[i].split(":");
-			var ssid = fields[0];
-			var type = fields[1];
-			if(type === wifiType) {
+		const wifiType = '802-11-wireless';
+		const lines = stdout.split('\n');
+		for (let i = 0; i < lines.length; i++) {
+			const fields = lines[i].split(':');
+			const ssid = fields[0];
+			const type = fields[1];
+			if (type === wifiType) {
 				return cb(null, ssid);
 			}
 		}
@@ -27,12 +27,12 @@ function getCurrentNetwork(cb) {
 
 function connect(opts, cb) {
 	function reconnect() {
-		var connectionDoesNotExistError = 10;
-		var reconnectParams = 'connection up id ' + opts.ssid;
-		runCommand(wifiCli, reconnectParams, function (err, code, stdout, stderr) {
-			if(code == connectionDoesNotExistError) {
+		const connectionDoesNotExistError = 10;
+		const reconnectParams = 'connection up id ' + opts.ssid;
+		runCommand(wifiCli, reconnectParams, (err, code, stdout, stderr) => {
+			if (code === connectionDoesNotExistError) {
 				return newConnect();
-			} else if(err || stderr) {
+			} else if (err || stderr) {
 				return cb(err || stderr);
 			}
 
@@ -41,13 +41,13 @@ function connect(opts, cb) {
 	}
 
 	function newConnect() {
-		var newConnectParams = 'device wifi connect ' + opts.ssid;
-		if(opts.password) {
+		let newConnectParams = 'device wifi connect ' + opts.ssid;
+		if (opts.password) {
 			newConnectParams += ' password ' + opts.password;
 		}
 
-		runCommand(wifiCli, newConnectParams, function (err, code, stdout, stderr) {
-			if(err || stderr || code) {
+		runCommand(wifiCli, newConnectParams, (err, code, stdout, stderr) => {
+			if (err || stderr || code) {
 				return cb(err || stderr || code);
 			}
 

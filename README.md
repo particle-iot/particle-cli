@@ -90,6 +90,18 @@ For the full list of commands, please see the [CLI command reference](https://do
 
 # Development
 
+Clone the repository and run `npm install`.
+
+To ensure compatibility with versions of Node 4 and later, the code in
+`src` is transpiled using Babel and output to `dist`. This means you
+must run `npm run compile` to have changes in `src` be taken into account.
+
+To run in development mode using the files from `src` directly, run
+
+```
+PARTICLE_CLI_DEVELOPMENT=1 bin/particle.js
+```
+
 ## Releasing a new version
 
 See [RELEASE.md](RELEASE.md).

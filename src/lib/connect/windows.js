@@ -1,28 +1,24 @@
-
-var extend = require('xtend');
-var systemExecutor = require('./executor').systemExecutor;
-var when = require('when');
-var pipeline = require('when/pipeline');
-var fs = require('fs');
+const systemExecutor = require('./executor').systemExecutor;
+const when = require('when');
+const pipeline = require('when/pipeline');
 
 
 /**
  * @param commandExecutor   A function that returns a promise to execute a given command.
  * @constructor
  */
-function Connect(commandExecutor) {
-	this.commandExecutor = commandExecutor || systemExecutor;
-}
+class Connect {
+	constructor(commandExecutor) {
+		this.commandExecutor = commandExecutor || systemExecutor;
+	}
 
-Connect.prototype = extend(Object.prototype, {
-
-	_execWiFiCommand: function(cmdArgs) {
+	_execWiFiCommand(cmdArgs) {
 		return this._exec(['netsh', 'wlan'].concat(cmdArgs));
-	},
+	}
 
-	_exec: function(cmdArgs) {
+	_exec(cmdArgs) {
 		return this.commandExecutor(cmdArgs);
-	},
+	}
 
 	/**
 	 * Retrieves the profile name of the currently connected network.
@@ -30,87 +26,85 @@ Connect.prototype = extend(Object.prototype, {
 
 	 connection.
 	 */
-	current: function() {
+	current() {
 		return this.currentInterface()
-			.then(function(iface) {
+			.then((iface) => {
 				return iface ? iface.profile : undefined;
 			});
-	},
+	}
 
 	/**
 	 * Determine the current network interface.
 	 * @return {Promise.<Object>} the current network interface object
 	 */
-	currentInterface: function() {
-		var self = this;
+	currentInterface() {
+		const self = this;
 		return this._execWiFiCommand(['show', 'interfaces'])
-			.then(function(output) {
-				var lines = self._stringToLines(output);
-				var iface = self._currentFromInterfaces(lines);
+			.then((output) => {
+				const lines = self._stringToLines(output);
+				let iface = self._currentFromInterfaces(lines);
 				if (iface && !iface['profile']) {
 					iface = null;
 				}
 				return iface;
 			});
-	},
+	}
 
 	/**
 	 * Connect the wifi interface to the given access point with the named profile.
 	 * If the profile already exists, it is used. Otherwise a new profile for an open AP is created.
 	 */
-	connect: function(profile) {
-		var self = this;
-		var interfaceName;
+	connect(profile) {
+		const self = this;
+		let interfaceName;
 		return pipeline([
 			this.currentInterface.bind(this),      		// find the current interface
 			this._checkHasInterface.bind(this),            // fail if no interfaces
-			function (ifaceName) {              // save the interface name
+			(ifaceName) => {              // save the interface name
 				interfaceName = ifaceName;
 				return ifaceName;
 			},
 			this.listProfiles.bind(this),                  // fetch the profiles for the interface
-			function (profiles) {
+			(profiles) => {
 				return self._createProfileIfNeeded(profile, interfaceName, profiles);
 			},
-			function () {
+			() => {
 				return self._connectProfile(profile, interfaceName);
 			}
 		]);
-	},
+	}
 
 	_connectProfile(profile, interfaceName) {
-		var self = this;
-		var args = ['connect', 'name='+profile, 'interface='+interfaceName];
+		const self = this;
+		const args = ['connect', 'name='+profile, 'interface='+interfaceName];
 		return this._execWiFiCommand(args)
-		.then(function() {
+		.then(() => {
 			return self.waitForConnected(profile, interfaceName, 20, 500);
 		})
-		.then(function() {
+		.then(() => {
 			return { ssid: profile };
 		});
-	},
+	}
 
 	waitForConnected(profile, interfaceName, count, retryPeriod, dfd) {
-		var self = this;
+		const self = this;
 		dfd = dfd || when.defer();
 		return this.current()
-			.then(function(ssid) {
+			.then((ssid) => {
 				if (ssid!==profile) {
 					if (--count <= 0) {
 						dfd.reject(new Error('timeout waiting for network to connect'));
-					}
-					else {
-						setTimeout(retry, retryPeriod);
-						function retry() {
+					}	else {
+						setTimeout(() => {
 							self.waitForConnected(profile, interfaceName, count, retryPeriod, dfd);
-						}
+						}, retryPeriod);
 					}
 				} else {
 					dfd.resolve(ssid);
 				}
 				return dfd.promise;
 			});
-	},
+	}
 
 	/**
 	 * Create the profile if it doesn't already exist.
@@ -125,11 +119,11 @@ Connect.prototype = extend(Object.prototype, {
 			return this._createProfile(profile, interfaceName);
 		}
 		return profile;
-	},
+	}
 
 	_profileExists(profile, profiles) {
 		return profiles.indexOf(profile)>=0;
-	},
+	}
 
 	/**
 	 * Creates a open AP profile so that the AP can be subsequently connected to.
@@ -141,21 +135,21 @@ Connect.prototype = extend(Object.prototype, {
 	 */
 	_createProfile(profile, interfaceName, fs) {
 		fs = fs || require('fs');
-		var filename = '_wifi_profile.xml';
-		var content = this._buildProfile(profile);
-		var self = this;
+		const filename = '_wifi_profile.xml';
+		const content = this._buildProfile(profile);
+		const self = this;
 		fs.writeFileSync(filename, content);
-		var args = ['add', 'profile', 'filename='+filename+''];
+		const args = ['add', 'profile', 'filename='+filename+''];
 		if (interfaceName) {
 			args.push('interface='+interfaceName);
 		}
-		return pipeline([function() {
-			return self._execWiFiCommand(args)
+		return pipeline([() => {
+			return self._execWiFiCommand(args);
 		}])
-		.finally(function() {
+		.finally(() => {
 			fs.unlinkSync(filename);
 		});
-	},
+	}
 
 	/**
 	 * Validates that the given interface object is properly defined.
@@ -163,31 +157,31 @@ Connect.prototype = extend(Object.prototype, {
 	 * @throws Error if the interface is not valid
 	 * @private
 	 */
-	_checkHasInterface: function(iface) {
+	_checkHasInterface(iface) {
 		// todo - make this a programmatically identifiable error
 		if (!iface || !iface.name) {
 			throw Error('no Wi-Fi interface detected');
 		}
 		return iface.name;
-	},
+	}
 
 	/**
 	 * Lists all the profiles registered, either for all interfaces or for a specific interface.
 	 * @param {string} ifaceName    The name of the interface to list profiles for.
 	 * @returns {Promise.<Array.<string>>}  An array of profile names
 	 */
-	listProfiles: function(ifaceName) {
-		var self = this;
-		var cmd = ['show', 'profiles'];
+	listProfiles(ifaceName) {
+		const self = this;
+		const cmd = ['show', 'profiles'];
 		if (ifaceName) {
 			cmd.push('interface='+ifaceName);
 		}
 		return this._execWiFiCommand(cmd)
-			.then(function(output) {
-				var lines = self._stringToLines(output);
+			.then((output) => {
+				const lines = self._stringToLines(output);
 				return self._parseProfiles(lines);
 			});
-	},
+	}
 
 	/**
 	 * Parses the output of the "show profiles" command. Profiles are "type : name"-style key-value.
@@ -195,32 +189,32 @@ Connect.prototype = extend(Object.prototype, {
 	 * @returns {Array}
 	 * @private
 	 */
-	_parseProfiles: function(lines) {
-		var profiles = [];
-		for (var i=0; i<lines.length; i++) {
-			var kv = this._keyValue(lines[i]);
+	_parseProfiles(lines) {
+		const profiles = [];
+		for (let i=0; i<lines.length; i++) {
+			const kv = this._keyValue(lines[i]);
 			if (kv && kv.key && kv.value) {
 				profiles.push(kv.value);
 			}
 		}
 		return profiles;
-	},
+	}
 
 	/**
 	 * Extracts the current interface from the list of interfaces.
 	 * @param {Array.<string>} lines    The lines from the command output.
 	 * @private
 	 */
-	_currentFromInterfaces: function(lines) {
-		var idx = 0;
-		var iface;
+	_currentFromInterfaces(lines) {
+		let idx = 0;
+		let iface;
 		while (idx < lines.length && (!iface || !iface['profile'])) {
-			var data = this._extractInterface(lines, idx);
+			const data = this._extractInterface(lines, idx);
 			iface = data.iface;
 			idx = data.range.end;
 		}
 		return iface;
-	},
+	}
 
 	/**
 	 * Reads all the lines of info up until the end, or the next 'name', collecting the property keys and values into
@@ -230,11 +224,11 @@ Connect.prototype = extend(Object.prototype, {
 	 * @param index
 	 * @private
 	 */
-	_extractInterface: function(lines, index) {
+	_extractInterface(lines, index) {
 		index = index || 0;
-		var result = { iface: {}, range: {} };
-		var name = 'name';
-		var kv;
+		const result = { iface: {}, range: {} };
+		const name = 'name';
+		let kv;
 		for (;index<lines.length;index++) {
 			kv = this._keyValue(lines[index]);
 			if (kv && kv.key===name) {
@@ -248,8 +242,9 @@ Connect.prototype = extend(Object.prototype, {
 
 		for (;index<lines.length;index++) {
 			kv = this._keyValue(lines[index]);
-			if (!kv)
+			if (!kv)				{
 				continue;
+			}
 
 			if (kv.key===name) {
 				// we have the end
@@ -262,27 +257,27 @@ Connect.prototype = extend(Object.prototype, {
 		}
 		result.range.end = index;
 		return result;
-	},
+	}
 
 	/**
 	 * Extract a key and value from a string like ':'
 	 * @param line
 	 * @private
 	 */
-	_keyValue: function(line) {
-		var colonIndex = line.indexOf(':');
-		var result;
+	_keyValue(line) {
+		const colonIndex = line.indexOf(':');
+		let result;
 		if (colonIndex>0) {
-			var key = line.slice(0, colonIndex).trim().toLowerCase();
-			var value = line.slice(colonIndex+1).trim();
+			const key = line.slice(0, colonIndex).trim().toLowerCase();
+			const value = line.slice(colonIndex+1).trim();
 			result = { key: key, value: value };
 		}
 		return result;
-	},
+	}
 
-	_stringToLines: function(s) {
+	_stringToLines(s) {
 		return s.match(/[^\r\n]+/g) || [];
-	},
+	}
 
 	/**
 	 * Creates a new open profile using the given ssid.
@@ -292,22 +287,21 @@ Connect.prototype = extend(Object.prototype, {
 	 */
 	_buildProfile(ssid) {
 		// todo - xml encode profile name
-		var result = '<?xml version="1.0"?> <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1"> <name>' + ssid + '</name> <SSIDConfig> <SSID> <name>' + ssid + '</name> </SSID> </SSIDConfig>';
+		let result = '<?xml version="1.0"?> <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1"> <name>' + ssid + '</name> <SSIDConfig> <SSID> <name>' + ssid + '</name> </SSID> </SSIDConfig>';
 		result += ' <connectionType>ESS</connectionType> <connectionMode>manual</connectionMode> <MSM> <security> <authEncryption> <authentication>open</authentication> <encryption>none</encryption> <useOneX>false</useOneX> </authEncryption> </security> </MSM>';
-		result += " </WLANProfile>";
+		result += ' </WLANProfile>';
 		return result;
 	}
-});
+}
 
 function asCallback(promise, cb) {
-	var result = promise.then(function success(arg) {
+	const result = promise.then((arg) => {
 		try {
 			cb(null, arg);
-		}
-		catch (err) {
+		} catch (err) {
 			// what do to with this?
 		}
-	}).catch(function fail(error) {
+	}).catch((error) => {
 		cb(error);
 	});
 	return result;

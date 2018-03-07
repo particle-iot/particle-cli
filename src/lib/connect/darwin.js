@@ -1,24 +1,24 @@
-var runCommand = require('./executor').runCommand;
+const runCommand = require('./executor').runCommand;
 
 function getFirstWifiPort(cb) {
-	runCommand('networksetup', '-listnetworkserviceorder', function (err, code, stdout, stderr) {
+	runCommand('networksetup', '-listnetworkserviceorder', (err, code, stdout, stderr) => {
 		if (err || stderr || code) {
 			return cb(err || stderr || code);
 		}
-		var device;
-		var useNextDevice = false;
-		var lines = stdout.split('\n');
-		for (var i=0; i < lines.length; i++) {
-			var line = lines[i];
+		let device;
+		let useNextDevice = false;
+		const lines = stdout.split('\n');
+		for (let i=0; i < lines.length; i++) {
+			const line = lines[i];
 			if (!line) {
 				continue;
 			}
 
 			if (useNextDevice) {
-				var searchString = 'Device: ';
-				var idx = line.indexOf(searchString);
+				const searchString = 'Device: ';
+				const idx = line.indexOf(searchString);
 				if (idx > 0) {
-					var lastIndex = line.lastIndexOf(')');
+					const lastIndex = line.lastIndexOf(')');
 					device = line.slice(idx + searchString.length, lastIndex).trim();
 					break;
 				} else {
@@ -35,7 +35,7 @@ function getFirstWifiPort(cb) {
 }
 
 function getCurrentNetwork(cb) {
-	getFirstWifiPort(function (err, device) {
+	getFirstWifiPort((err, device) => {
 		if (err) {
 			return cb(err);
 		}
@@ -44,15 +44,15 @@ function getCurrentNetwork(cb) {
 			return cb(new Error('Unable to find a Wi-Fi network interface'));
 		}
 
-		runCommand('networksetup', '-getairportnetwork ' + device, function (err, code, stdout, stderr) {
+		runCommand('networksetup', '-getairportnetwork ' + device, (err, code, stdout, stderr) => {
 			if (err || stderr || code) {
 				return cb(err || stderr || code);
 			}
 
-			var lines = stdout.split('\n');
-			var currentString = 'Current Wi-Fi Network: ';
+			const lines = stdout.split('\n');
+			const currentString = 'Current Wi-Fi Network: ';
 			if (lines.length && lines[0].indexOf(currentString) === 0) {
-				var network = lines[0].slice(currentString.length).trim();
+				const network = lines[0].slice(currentString.length).trim();
 				return cb(null, network);
 			}
 
@@ -62,7 +62,7 @@ function getCurrentNetwork(cb) {
 }
 
 function connect(opts, cb) {
-	getFirstWifiPort(function (err, device) {
+	getFirstWifiPort((err, device) => {
 		if (err) {
 			return cb(err);
 		}
@@ -71,8 +71,10 @@ function connect(opts, cb) {
 			return cb(new Error('Unable to find a Wi-Fi network interface'));
 		}
 
-		var params = '-setairportnetwork ' + device + ' ' + opts.ssid;
-		if (opts.password) { params += ' ' + opts.password; }
+		let params = '-setairportnetwork ' + device + ' ' + opts.ssid;
+		if (opts.password) {
+			params += ' ' + opts.password;
+		}
 
 		// TODO: something with opts & interfaces?
 		runCommand('networksetup', params, function results(err, code, stdout, stderr) {

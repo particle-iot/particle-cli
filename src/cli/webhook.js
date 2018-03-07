@@ -4,7 +4,7 @@ export default ({ commandProcessor, root }) => {
 	const webhook = commandProcessor.createCategory(root, 'webhook', 'Manage webhooks that react to device event streams');
 
 	commandProcessor.createCommand(webhook, 'create', 'Creates a postback to the given url when your event is sent', {
-		params: '[eventName] [url] [device] [requestType]',
+		params: '<eventName|filename> [url] [device] [requestType]',
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
 			return new WebhookCommand(args).createHook();
