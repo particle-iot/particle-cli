@@ -7,7 +7,7 @@
     "particle": "./bin/particle.js"
   },
   "bugs": {
-    "url": "https://github.com/spark/particle-cli/issues"
+    "url": "https://github.com/particle-iot/particle-cli/issues"
   },
   "contributors": [
     {
@@ -57,7 +57,7 @@
     "cli-spinner": "^0.2.1",
     "cli-table": "^0.3.1",
     "es6-promisify": "^4.1.0",
-    "form-data": "https://github.com/spark/form-data/releases/download/v1.0.0-relativepath.2/form-data-1.0.0-relativepath.2.tgz",
+    "form-data": "https://github.com/particle-iot/form-data/releases/download/v1.0.0-relativepath.2/form-data-1.0.0-relativepath.2.tgz",
     "glob": "^5.0.15",
     "handlebars": "^4.0.5",
     "hogan.js": "^2.0.0",
@@ -69,7 +69,7 @@
     "particle-api-js": "^6.4.1",
     "particle-commands": "0.2.11",
     "particle-library-manager": "0.1.12",
-    "request": "https://github.com/spark/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
+    "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.1.1",
     "semver": "^5.1.0",
     "serialport": "^6.0.4",
@@ -116,7 +116,7 @@
   "engines": {
     "node": ">=4.4"
   },
-  "homepage": "https://github.com/spark/particle-cli/",
+  "homepage": "https://github.com/particle-iot/particle-cli/",
   "keywords": [
     "cli",
     "core",
@@ -131,7 +131,7 @@
   "preferGlobal": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/spark/particle-cli"
+    "url": "https://github.com/particle-iot/particle-cli"
   },
   "scripts": {
     "all": "npm run lint && npm run test && npm run accept",

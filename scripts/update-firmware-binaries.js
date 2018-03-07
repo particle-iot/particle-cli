@@ -8,7 +8,7 @@ var fs = require('fs');
 var rimraf = require('rimraf-promise');
 var _ = require('lodash');
 
-var githubUser = 'spark';
+var githubUser = 'particle-iot';
 var githubRepo = 'firmware';
 var updatesDirectory = 'assets/updates';
 var binariesDirectory = 'assets/binaries';

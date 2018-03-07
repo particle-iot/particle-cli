@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli)[![Build Status](https://img.shields.io/travis/spark/particle-cli.svg?style=flat-square)](https://travis-ci.org/spark/particle-cli)[![Code Coverage](https://img.shields.io/coveralls/spark/particle-cli.svg?style=flat-square)](https://coveralls.io/github/spark/particle-cli)[![License](https://img.shields.io/badge/license-LGPL-blue.svg?style=flat-square)](https://github.com/spark/particle-cli/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli)[![Build Status](https://img.shields.io/travis/particle-iot/particle-cli.svg?style=flat-square)](https://travis-ci.org/particle-iot/particle-cli)[![Code Coverage](https://img.shields.io/coveralls/particle-iot/particle-cli.svg?style=flat-square)](https://coveralls.io/github/particle-iot/particle-cli)[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square)](https://github.com/particle-iot/particle-cli/blob/master/LICENSE)
 
 Particle's full-stack Internet of Things (IoT) device platform
 gives you everything you need to securely and reliably connect
@@ -6,15 +6,12 @@ your IoT devices to the web. For more details please visit [www.particle.io](htt
 
 # Particle CLI
 
-The Particle CLI is a powerful tool for interacting with your IoT devices and the Particle Cloud.  The CLI uses [node.js](http://nodejs.org/) and can run on Windows, Mac OS X, and Linux.  It's also [open source](https://github.com/spark/particle-cli) so you can edit and change it, and even send in your changes as [pull requests](https://help.github.com/articles/using-pull-requests) if you want to share!
+The Particle CLI is a powerful tool for interacting with your IoT devices and the Particle Cloud.  The CLI uses [node.js](http://nodejs.org/) and can run on Windows, Mac OS X, and Linux.  It's also [open source](https://github.com/particle-iot/particle-cli) so you can edit and change it, and even send in your changes as [pull requests](https://help.github.com/articles/using-pull-requests) if you want to share!
 
 ## Known Issues
 * The Wireless Photon Setup Wizard will only automatically switch networks on OS X. Users of other operating systems will need to manually connect their computer to the Photon's Wi-Fi. You will be prompted during the wizard when this is required.
 
 ## Installing
-
-#### If you've previously installed the old version of this package,```spark-cli```, please uninstall it before continuing.
-#### Simply type: ```npm uninstall -g spark-cli``` into the command line.
 
 For the most up-to-date installation instructions, including Windows installer, see [CLI - Installation](https://docs.particle.io/guide/tools-and-features/cli/photon/#installing) on our documentation site.
 
@@ -29,7 +26,7 @@ To make sure you are running the latest version of particle-cli, type the follow
 To grab the CLI source and play with it locally
 
 ```sh
-git clone git@github.com:spark/particle-cli.git
+git clone git@github.com:particle-iot/particle-cli.git
 cd particle-cli
 npm install
 node bin/particle help
@@ -95,16 +92,7 @@ For the full list of commands, please see the [CLI command reference](https://do
 
 ## Releasing a new version
 
-- `npm version <major | minor | patch>`
-
-This increments the major, minor or patch version respectively. Before
-the command finishes, update `CHANGELOG.md`.
-
-- `git push && git push --tag`
-
-- `npm publish`
-
-- Create a release on GitHub with the notes from the `CHANGELOG.md`
+See [RELEASE.md](RELEASE.md).
 
 ## Updating system firmware
 
