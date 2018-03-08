@@ -1,16 +1,5 @@
 'use strict';
-
-const sinon = require('sinon');
-const chai = require('chai');
-const sinonChai = require('sinon-chai');
-const chaiAsPromised = require('chai-as-promised');
-const when = require('when');
-
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-
-const expect = chai.expect;
-require('sinon-as-promised');
+import { sinon, expect } from '../../test-setup';
 
 const windowsWiFi = require('../../../src/lib/connect/windows.js');
 var Connector = windowsWiFi.Connector;

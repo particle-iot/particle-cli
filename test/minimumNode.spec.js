@@ -1,10 +1,6 @@
-var sinon = require('sinon');
-const chai = require('chai');
-var sinonChai = require('sinon-chai');
-chai.use(sinonChai);
-const expect = chai.expect;
+import { expect, sinon } from './test-setup';
 
-const minimumNode = require('../minimumNode');
+import minimumNode from '../minimumNode';
 
 describe('minimumNode', () => {
 	let exit, console;
