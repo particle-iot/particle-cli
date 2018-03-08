@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.28.1 - 8 March 2018
+
+* Add missing alias `particle identify` => `particle serial identify`
+
 ## 1.28.0 - 8 March 2018
 
 * [#403](https://github.com/particle-iot/particle-cli/pull/403) Move all commands to the new argument parser and rework the help
