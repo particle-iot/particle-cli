@@ -32,7 +32,7 @@ Feature: library add
 
   Scenario: a user may get help when running particle library add with no additinoal parameters
     When I run particle "library add"
-    Then the output should contain "Usage: library add [options] <name>"
+    Then the output should contain "Usage: particle library add [options] <name>"
     # todo - also show command description "Add a library to a project"??
 
   Scenario: adding a library to a library project

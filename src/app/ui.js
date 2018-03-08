@@ -3,7 +3,7 @@ import when from 'when';
 import { Spinner } from 'cli-spinner';
 import './templates';
 import Handlebars from 'handlebars';
-import log from './log';
+import log from '../lib/log';
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 

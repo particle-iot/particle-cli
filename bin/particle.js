@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /* eslint no-var: 0 */
 global.verboseLevel = 1;
-require('babel-polyfill');
-var app = appForEnvironment();
-app.default.run(process.argv);
+require('../minimumNode')();
+const CLI = cliForEnvironment();
+new CLI().run(process.argv);
 
-function appForEnvironment() {
+function cliForEnvironment() {
 	if (process.env.PARTICLE_CLI_DEVELOPMENT) {
 		require('babel-register');
-		return require('../src/app/app');
+		return require('../src/app/cli');
 	} else {
-		return require('../dist/app/app');
+		return require('../dist/app/cli');
 	}
 }

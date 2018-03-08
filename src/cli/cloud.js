@@ -1,149 +1,109 @@
-import cloudCli from '../app/cloud';
+export default ({ commandProcessor, root }) => {
+	const cloud = commandProcessor.createCategory(root, 'cloud', 'Access Particle cloud functionality');
 
-export default (app, cli) => {
-	const cloud = cli.createCategory(app, 'cloud', 'Commands to interact with the Particle Cloud');
+	const compileOptions = {
+		'target': {
+			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
+		}
+	};
 
-	cli.createCommand(cloud, 'login', 'Login and save an access token for interacting with your account on the Particle Cloud', {
-		options: {
-			u: {
-				alias: 'username',
-				string: true,
-				description: 'Username',
-				required: !global.isInteractive
-			},
-			p: {
-				alias: 'password',
-				string: true,
-				description: 'Password',
-				required: !global.isInteractive
-			}
+	commandProcessor.createCommand(cloud, 'claim', 'Register a device with your user account with the cloud', {
+		params: '<device>',
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).claimDevice();
 		},
-		handler: cloudCli.login
-	});
-
-	cli.createCommand(cloud, 'logout', 'Logout from the Particle Cloud', {
-		options: {
-			revoke: {
-				boolean: true,
-				description: 'Revoke the current access token'
-			},
-			p: {
-				alias: 'password',
-				string: true,
-				description: 'Password'
-			}
-		},
-		handler: cloudCli.logout,
-		setup(yargs) {
-			if (!global.isInteractive && yargs.argv.revoke) {
-				yargs.demand('password');
-			}
+		examples: {
+			'$0 $command 123456789': 'Claim device by id to your account'
 		}
 	});
 
-	cli.createCommand(cloud, 'list', 'Displays a list of your devices, along with their variables and functions', {
+	commandProcessor.createCommand(cloud, 'list', 'Display a list of your devices, as well as their variables and functions', {
 		params: '[filter]',
-		handler(argv) {
-			argv.filter = argv.params.filter;
-			return cloudCli.listDevices(argv);
-		}
-	});
-
-	cli.createCommand(cloud, 'claim', 'Claim a device to your account', {
-		params: '<deviceId>',
-		options: {
-			t: {
-				alias: 'request-transfer',
-				boolean: true,
-				description: 'Automatically request transfer if necessary'
-			}
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).listDevices();
 		},
-		handler(argv) {
-			argv.deviceId = argv.params.deviceId;
-			return cloudCli.claimDevice(argv);
-		}
+		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
 	});
 
-	cli.createCommand(cloud, 'remove', 'Release a device from your account', {
-		params: '<deviceIdOrName>',
-		options: {
-			f: {
-				alias: 'force',
-				boolean: true,
-				description: 'Remove device without confirmation'
-			}
+	commandProcessor.createCommand(cloud, 'remove', 'Release a device from your account so that another user may claim it', {
+		params: '<device>',
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).removeDevice();
 		},
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			return cloudCli.removeDevice(argv);
+		examples: {
+			'$0 $command 0123456789ABCDEFGHI': 'Remove device by id from your account'
 		}
 	});
 
-	cli.createCommand(cloud, 'name', 'Change the friendly name of a device', {
-		params: '<deviceIdOrName> <name...>',
-		options: {
-			f: {
-				alias: 'force',
-				boolean: true,
-				description: 'Rename device without confirmation'
-			}
+	commandProcessor.createCommand(cloud, 'name', 'Give a device a name!', {
+		params: '<device> <name>',
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).nameDevice();
 		},
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			argv.name = argv.params.name.join('-');
-			return cloudCli.renameDevice(argv);
+		examples: {
+			'$0 $command red green': 'Rename red device to green'
 		}
 	});
 
-	cli.createCommand(cloud, 'flash', 'Flash a binary, source file, or source directory to a device over the air', {
-		params: '<deviceIdOrName> <filesOrFolder...>',
-		options: {
-			t: {
-				alias: 'target',
-				type: 'string',
-				description: 'System firmware version you wish to compile against'
-			}
+	commandProcessor.createCommand(cloud, 'flash', 'Pass a binary, source file, or source directory to a device!', {
+		params: '<device> [files...]',
+		options: compileOptions,
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).flashDevice();
 		},
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			argv.filesOrFolder = argv.params.filesOrFolder;
-			return cloudCli.flashDevice(argv);
+		examples: {
+			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device blue',
+			'$0 $command green tinker': 'Flash the default Tinker app to device green',
+			'$0 $command red blink.ino': 'Compile blink.ino in the cloud and flash to device red',
+			'$0 $command orange firmware.bin': 'Flash the pre-compiled binary to device orange',
 		}
 	});
 
-	cli.createCommand(cloud, 'compile', 'Compiles one or more source files or a directory of source to a firmware binary for your device', {
-		params: '<deviceType> <filesOrFolder...>',
-		options: {
-			t: {
-				alias: 'target',
-				type: 'string',
-				description: 'System firmware version you wish to compile against'
-			},
-			saveTo: {
-				type: 'string',
-				description: 'File path where you want to save the compiled firmware binary'
+	commandProcessor.createCommand(cloud, 'compile', 'Compile a source file, or directory using the cloud compiler', {
+		params: '<deviceType> [files...]',
+		options: Object.assign({}, compileOptions, {
+			'saveTo': {
+				description: 'Filename for the compiled binary'
 			}
+		}),
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).compileCode();
 		},
-		handler(argv) {
-			argv.deviceType = argv.params.deviceType;
-			argv.filesOrFolder = argv.params.filesOrFolder;
-			return cloudCli.compileCode(argv);
+		examples: {
+			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a Photon',
+			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
+		},
+		// TODO: get the platforms from config and document in epilogue
+		epilogue: 'Param deviceType can be: core, photon, p1, electron, etc'
+	});
+
+	commandProcessor.createCommand(cloud, 'nyan', 'Make your device shout rainbows', {
+		params: '<device> [onOff]',
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).nyanMode();
 		}
 	});
 
-	cli.createCommand(cloud, 'nyan', 'Commands your device to start/stop shouting rainbows', {
-		params: '[deviceIdOrName] [onOff]',
-		examples: [
-			'$0 cloud nyan my_device_id on',
-			'$0 cloud nyan my_device_id off',
-			'$0 cloud nyan all on',
-			'$0 cloud nyan on',
-			'$0 cloud nyan off',
-		],
-		handler(argv) {
-			argv.deviceIdOrName = argv.params.deviceIdOrName;
-			argv.onOff = argv.params.onOff;
-			return cloudCli.signal(argv);
+	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).login();
 		}
 	});
+
+	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands(args).logout();
+		}
+	});
+
+	return cloud;
 };

@@ -1,6 +1,6 @@
 import { LibraryAddCommand, LibraryAddCommandSite } from '../cmd';
 import chalk from 'chalk';
-import log from '../app/log';
+import log from '../lib/log';
 import { spin } from '../app/ui';
 import { buildAPIClient } from './apiclient';
 

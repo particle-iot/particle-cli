@@ -1,9 +1,9 @@
 
 
-export default ({ root, factory }) => {
-	const project = factory.createCategory(root, 'project', 'Manages application projects');
+export default ({ commandProcessor, root }) => {
+	const project = commandProcessor.createCategory(root, 'project', 'Manage application projects');
 
-	factory.createCommand(project, 'create', 'Create a new project in the current or specified directory.', {
+	commandProcessor.createCommand(project, 'create', 'Create a new project in the current or specified directory', {
 		options: {
 			'name' : {
 				required: false,
@@ -11,7 +11,7 @@ export default ({ root, factory }) => {
 			}
 		},
 		params: '[dir]',
-		handler: (...args) => factory.invoke(require('./project_init'), ...args)
+		handler: (...args) => require('./project_init').command(...args)
 	});
 
 	return project;

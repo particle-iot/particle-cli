@@ -1,6 +1,6 @@
 import { LibraryDeleteCommandSite, LibraryDeleteCommand } from '../cmd';
 import { spin } from '../app/ui';
-import log from '../app/log';
+import log from '../lib/log';
 import chalk from 'chalk';
 import { buildAPIClient } from './apiclient';
 

@@ -22,7 +22,7 @@ const path = require('path');
 import {CLILibraryInstallCommandSite} from '../../src/cli/library_install';
 import libraryCommands from '../../src/cli/library.js';
 import {LibraryInstallCommand} from '../../src/cmd';
-import * as cli from '../../src/app/nested-yargs';
+import * as commandProcessor from '../../src/app/command-processor';
 
 describe('library install command', () => {
 
@@ -45,8 +45,8 @@ describe('library install command', () => {
 	describe('command line', () => {
 		let lib;
 		beforeEach(() => {
-			const root = cli.createAppCategory();
-			lib = libraryCommands({root, factory:cli});
+			const root = commandProcessor.createAppCategory();
+			lib = libraryCommands({ commandProcessor, root });
 		});
 
 		it('recognizes the install command', () => {

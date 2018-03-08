@@ -27,5 +27,5 @@ and beta.n is a name for this prerelease.
 - Create a pre-release on Github and attach the packed tarball.
 
 - Tell beta users to install with
-`npm install -g https://github.com/spark/particle-cli/releases/download/vx.y.z-beta.n/particle-cli-x.y.z-beta.n.tgz`
+`npm install -g https://github.com/particle-iot/particle-cli/releases/download/vx.y.z-beta.n/particle-cli-x.y.z-beta.n.tgz`
 

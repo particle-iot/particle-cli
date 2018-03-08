@@ -1,9 +1,9 @@
 import { ProjectInitCommand, ProjectInitCommandSite, Projects } from '../cmd';
 import { validateField } from 'particle-library-manager';
 import path from 'path';
-import log from '../app/log';
+import log from '../lib/log';
 import chalk from 'chalk';
-import prompt from '../../oldlib/prompts';
+import prompt from '../../dist/lib/prompts';
 
 
 // todo - this is pulled from validating_editor in particle-dev-libraries. Please refactor/DRY.

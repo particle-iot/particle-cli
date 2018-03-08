@@ -1,8 +1,8 @@
-export default (root, factory, app) => {
+export default ({ commandProcessor, root }) => {
 	function alias(category, aliasName, path) {
 		const cmd = root.find(path);
 		if (cmd) {
-			factory.createCommand(category, aliasName, cmd.description, cmd.options);
+			commandProcessor.createCommand(category, aliasName, cmd.description, cmd.options);
 		}
 	}
 
@@ -10,17 +10,15 @@ export default (root, factory, app) => {
 	alias(root, 'logout', ['cloud', 'logout']);
 	alias(root, 'list', ['cloud', 'list']);
 	alias(root, 'nyan', ['cloud', 'nyan']);
-	alias(root, 'compile', ['cloud', 'compile']);
-	alias(root, 'publish', ['event', 'publish']);
-	alias(root, 'subscribe', ['event', 'subscribe']);
+	alias(root, 'call', ['function', 'call']);
+	alias(root, 'get', ['variable', 'get']);
+	alias(root, 'monitor', ['variable', 'monitor']);
 
-	const device = factory.createCategory(root, 'device', 'Commands to manipulate a device');
+	alias(root, 'compile', ['cloud', 'compile']);
+
+	const device = commandProcessor.createCategory(root, 'device', 'Manipulate a device');
 	alias(device, 'add', ['cloud', 'claim']);
 	alias(device, 'remove', ['cloud', 'remove']);
 	alias(device, 'rename', ['cloud', 'name']);
-
-	const core = factory.createCategory(root, 'core', false);
-	alias(core, 'add', ['cloud', 'claim']);
-	alias(core, 'remove', ['cloud', 'remove']);
-	alias(core, 'rename', ['cloud', 'name']);
+	alias(device, 'doctor', ['doctor']);
 };

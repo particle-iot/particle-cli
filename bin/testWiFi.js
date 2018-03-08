@@ -1,4 +1,4 @@
-var TestWiFi = require('../commands/WirelessCommand/test');
+var TestWiFi = require('../dist/lib/TestWifi');
 
 var test = new TestWiFi();
 test.run();
