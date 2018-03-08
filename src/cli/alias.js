@@ -16,6 +16,8 @@ export default ({ commandProcessor, root }) => {
 
 	alias(root, 'compile', ['cloud', 'compile']);
 
+	alias(root, 'identify', ['serial', 'identify']);
+
 	const device = commandProcessor.createCategory(root, 'device', 'Manipulate a device');
 	alias(device, 'add', ['cloud', 'claim']);
 	alias(device, 'remove', ['cloud', 'remove']);
