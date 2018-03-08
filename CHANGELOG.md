@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.28.0 - 8 March 2018
+
+* [#403](https://github.com/particle-iot/particle-cli/pull/403) Move all commands to the new argument parser and rework the help
+
 ## 1.27.0 - 22 January 2018
 
 * Handle API errors when fetching the claim code
