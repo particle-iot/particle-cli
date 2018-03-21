@@ -48,8 +48,8 @@ export default ({ commandProcessor, root }) => {
 			return new CloudCommands(args).configureWifi();
 		},
 		examples: {
-			'$0 $command': 'Prompt for Wi-Fi credentials and send them to device connected over serial',
-			'$0 $command --file credentials.json': 'Read Wi-Fi credentials from credentials.json and send them to device connected over serial'
+			'$0 $command': 'Prompt for Wi-Fi credentials and send them to a device over serial',
+			'$0 $command --file credentials.json': 'Read Wi-Fi credentials from credentials.json and send them to a device over serial'
 		},
 		epilogue: unindent(`
 			The JSON file for passing Wi-Fi credentials should look like this:
