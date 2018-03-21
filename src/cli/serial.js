@@ -1,3 +1,5 @@
+const unindent = require('../lib/unindent');
+
 export default ({ commandProcessor, root }) => {
 	const serial = commandProcessor.createCategory(root, 'serial', 'Simple serial interface to your devices');
 
@@ -36,11 +38,30 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(serial, 'wifi', 'Configure Wi-Fi credentials over serial', {
-		options: portOption,
+		options: Object.assign({
+			'file': {
+				description: 'Take the credentials from a JSON file instead of prompting for them'
+			}
+		}, portOption),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/serial');
 			return new CloudCommands(args).configureWifi();
-		}
+		},
+		examples: {
+			'$0 $command': 'Prompt for Wi-Fi credentials and send them to device connected over serial',
+			'$0 $command --file credentials.json': 'Read Wi-Fi credentials from credentials.json and send them to device connected over serial'
+		},
+		epilogue: unindent(`
+			The JSON file for passing Wi-Fi credentials should look like this:
+			{
+			  "network": "my_ssid",
+			  "security": "WPA2_AES",
+			  "password": "my_password"
+			}
+			
+			The security property can be NONE, WEP, WPA2_AES, WPA2_TKIP, WPA2_AES+TKIP, WPA_AES, WPA_TKIP, WPA_AES+TKIP.
+			For enterprise Wi-Fi, set security to WPA_802.1x or WPA2_802.1x and provide the eap, username, outer_identity, client_certificate, private_key and root_ca properties.
+		`)
 	});
 
 	commandProcessor.createCommand(serial, 'mac', 'Ask for and display MAC address via serial', {

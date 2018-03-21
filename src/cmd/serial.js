@@ -485,6 +485,7 @@ class SerialCommand {
 
 	configureWifi() {
 		const comPort = this.options.port;
+		const credentialsFile = this.options.file;
 
 		// TODO remove once we have verbose flag
 		settings.verboseOutput = true;
@@ -496,10 +497,31 @@ class SerialCommand {
 				return this.error('No serial port identified');
 			}
 
-			this._promptWifiScan(wifi, device);
+			if (credentialsFile) {
+				this._configWifiFromFile(wifi, device, credentialsFile);
+			} else {
+				this._promptWifiScan(wifi, device);
+			}
 		});
 
 		return wifi.promise;
+	}
+
+	_configWifiFromFile(wifi, device, filename) {
+		fs.readFile(filename, 'utf-8', (err, content) => {
+			if (err) {
+				return wifi.reject(err);
+			}
+
+			let opts;
+			try {
+				opts = JSON.parse(content);
+			} catch (err) {
+				return wifi.reject(err);
+			}
+
+			this.serialWifiConfig(device, opts).then(wifi.resolve, wifi.reject);
+		});
 	}
 
 	_promptWifiScan(wifi, device) {
@@ -577,14 +599,14 @@ class SerialCommand {
 				});
 			}
 
-			const ssid = answers.ap;
-			const ap = networkMap[ssid];
+			const network = answers.ap;
+			const ap = networkMap[network];
 			const security = answers.detectSecurity && ap && ap.security;
 			if (security) {
 				console.log(arrow, 'Detected', security, 'security');
 			}
 
-			this.serialWifiConfig(device, ssid, security).then(wifiInfo.resolve, wifiInfo.reject);
+			this.serialWifiConfig(device, { network, security }).then(wifiInfo.resolve, wifiInfo.reject);
 		});
 
 		return wifiInfo.promise;
@@ -897,13 +919,9 @@ class SerialCommand {
 	}
 
 	/* eslint-disable max-statements */
-	serialWifiConfig(device, ssid, securityType, password, opts) {
+	serialWifiConfig(device, opts = {}) {
 		if (!device) {
 			return when.reject('No serial port available');
-		}
-
-		if (!opts) {
-			opts = {};
 		}
 
 		let isEnterprise = false;
@@ -943,8 +961,8 @@ class SerialCommand {
 
 		st.addTrigger('SSID:', (cb) => {
 			resetTimeout();
-			if (ssid) {
-				return cb(ssid + '\n');
+			if (opts.network) {
+				return cb(opts.network + '\n');
 			}
 
 			prompt([{
@@ -966,23 +984,23 @@ class SerialCommand {
 			});
 		});
 
-		const parseSecurityType = (ent, cb) => {
+		const parsesecurity = (ent, cb) => {
 			resetTimeout();
-			if (securityType) {
+			if (opts.security) {
 				let security = 3;
-				if (securityType.indexOf('WPA2') >= 0 && securityType.indexOf('802.1x') >= 0) {
+				if (opts.security.indexOf('WPA2') >= 0 && opts.security.indexOf('802.1x') >= 0) {
 					security = 5;
 					isEnterprise = true;
-				} else if (securityType.indexOf('WPA') >= 0 && securityType.indexOf('802.1x') >= 0) {
+				} else if (opts.security.indexOf('WPA') >= 0 && opts.security.indexOf('802.1x') >= 0) {
 					security = 4;
 					isEnterprise = true;
-				} else if (securityType.indexOf('WPA2') >= 0) {
+				} else if (opts.security.indexOf('WPA2') >= 0) {
 					security = 3;
-				} else if (securityType.indexOf('WPA') >= 0) {
+				} else if (opts.security.indexOf('WPA') >= 0) {
 					security = 2;
-				} else if (securityType.indexOf('WEP') >= 0) {
+				} else if (opts.security.indexOf('WEP') >= 0) {
 					security = 1;
-				} else if (securityType.indexOf('NONE') >= 0) {
+				} else if (opts.security.indexOf('NONE') >= 0) {
 					security = 0;
 				}
 
@@ -1014,18 +1032,18 @@ class SerialCommand {
 			});
 		};
 
-		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', parseSecurityType.bind(null, false));
-		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2, 4=WPA Enterprise, 5=WPA2 Enterprise:', parseSecurityType.bind(null, true));
+		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', parsesecurity.bind(null, false));
+		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2, 4=WPA Enterprise, 5=WPA2 Enterprise:', parsesecurity.bind(null, true));
 
 		st.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', (cb) => {
 			resetTimeout();
-			if (securityType !== undefined) {
+			if (opts.security !== undefined) {
 				let cipherType = 1;
-				if (securityType.indexOf('AES') >= 0 && securityType.indexOf('TKIP') >= 0) {
+				if (opts.security.indexOf('AES') >= 0 && opts.security.indexOf('TKIP') >= 0) {
 					cipherType = 3;
-				} else if (securityType.indexOf('TKIP') >= 0) {
+				} else if (opts.security.indexOf('TKIP') >= 0) {
 					cipherType = 2;
-				} else if (securityType.indexOf('AES') >= 0) {
+				} else if (opts.security.indexOf('AES') >= 0) {
 					cipherType = 1;
 				}
 
@@ -1185,9 +1203,8 @@ class SerialCommand {
 		st.addTrigger('Password:', (cb) => {
 			resetTimeout();
 			// Skip password prompt as appropriate
-			if (password) {
-				//console.log('Password: ' + password);
-				cb(password + '\n', startTimeout.bind(this, 15000));
+			if (opts.password) {
+				cb(opts.password + '\n', startTimeout.bind(this, 15000));
 
 			} else {
 				prompt([{
