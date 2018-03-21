@@ -89,7 +89,7 @@ class SetupCommand {
 		function switchChoice(ans) {
 			// user wants to logout
 			if (!ans.switch) {
-				this.command('cloud').logout(true).then(() => {
+				return self.command('cloud').logout(true).then(() => {
 					self.__api.clearToken();
 					self.__oldapi.clearToken();
 					accountStatus(false);
