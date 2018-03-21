@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.28.2 - 21 March 2018
+
+* [#405](https://github.com/particle-iot/particle-cli/pull/405) Add back capability to configure Wi-Fi over serial using a JSON file
+* Fix crash when changing account in `particle setup`
+
 ## 1.28.1 - 8 March 2018
 
 * Add missing alias `particle identify` => `particle serial identify`
