@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.29.0 - 26 March 2018
+
+* Include binaries for firmware 0.7.0
+
 ## 1.28.2 - 21 March 2018
 
 * [#405](https://github.com/particle-iot/particle-cli/pull/405) Add back capability to configure Wi-Fi over serial using a JSON file
