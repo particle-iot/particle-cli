@@ -2,12 +2,17 @@
 
 - Checkout the `master` branch
 
+	- Files have been updated and committed prior to this step.
+
 - `npm version <major | minor | patch>`
 
-This builds the distribution files.  Before the command finishes, update
-`CHANGELOG.md`.
+	- This will bump the version in `package.json`, build the distribution files, prompt you to update the `CHANGELOG.md`, and make a "vX.Y.Z" commit for you.
+	- e.g. going from 1.28.1 to 1.28.2 use `npm version patch`
+	- e.g. going from 1.28.2 to 1.29.0 use `npm version minor`
 
 - `git push && git push --tag`
+
+	- This will push the commits and tag created in the previous steps.
 
 - Travis will publish to npm when the build succeeds.
 

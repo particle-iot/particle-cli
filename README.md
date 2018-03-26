@@ -102,23 +102,27 @@ To run in development mode using the files from `src` directly, run
 PARTICLE_CLI_DEVELOPMENT=1 bin/particle.js
 ```
 
-## Releasing a new version
-
-See [RELEASE.md](RELEASE.md).
-
 ## Updating system firmware
 
 - `npm run update-firmware-binaries <version>`
-  where `<version>` is the newly released system firmware version like 0.6.0
+  where `<version>` is the newly released system firmware version like 0.7.0
 
 - Test on each platform by doing
-```
-# Check old firmware version
-bin/particle.js serial inspect
-# Flash new system firmware
-bin/particle.js update
-# Verify new firmware version
-bin/particle.js serial inspect
-```
 
-- Commit and release a new CLI version.
+  ```
+  # Check old firmware version
+  bin/particle.js serial inspect
+
+  # Flash new system firmware
+  bin/particle.js update
+
+  # Verify new firmware version
+  bin/particle.js serial inspect
+  ```
+
+- Do not update the versions or CHANGELOG.md just yet!
+- Commit as something like "adds firmware binaries for 0.7.0" and preceed to release a new CLI version (below).
+
+## Releasing a new version
+
+See [RELEASE.md](RELEASE.md).
