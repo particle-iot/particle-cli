@@ -25,47 +25,39 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
 
-const when = require('when');
 const fs = require('fs');
 const path = require('path');
+const VError = require('verror');
 const chalk = require('chalk');
 const Parser = require('binary-version-reader').HalModuleParser;
 const utilities = require('../lib/utilities.js');
+const ensureError = utilities.ensureError;
 
 class BinaryCommand {
-	constructor(options) {
-		this.options = options;
-	}
+	inspectBinary(binaryFile) {
+        return new Promise((fulfill, reject) => {
+          if (!fs.existsSync(binaryFile)) {
+              throw new VError(`Binary file not found ${binaryFile}`);
+          }
+          const parser = new Parser();
+          parser.parseFile(binaryFile, (fileInfo, err) => {
+              if (err) {
+                  return reject(new VError(ensureError(err), `Could not parse ${binaryFile}`));
+              }
 
-	inspectBinary() {
-		const binaryFile = this.options.params.filename;
+              if (fileInfo.suffixInfo.suffixSize === 65535) {
+                  return reject(new VError(`${binaryFile} does not contain inspection information`));
+              }
 
-		if (!binaryFile || !fs.existsSync(binaryFile)) {
-			console.error('Please specify a binary file');
-			return when.reject();
-		}
-		const dfd = when.defer();
-		const parser = new Parser();
-		parser.parseFile(binaryFile, (fileInfo, err) => {
-			if (err) {
-				console.error(err);
-				return dfd.reject();
-			}
+              console.log(chalk.bold(path.basename(binaryFile)));
 
-			if (fileInfo.suffixInfo.suffixSize === 65535) {
-				console.error(binaryFile + ' does not contain inspection information');
-				return dfd.reject();
-			}
+              this._showCrc(fileInfo);
+              this._showPlatform(fileInfo);
+              this._showModuleInfo(fileInfo);
 
-			console.log(chalk.bold(path.basename(binaryFile)));
-
-			this._showCrc(fileInfo);
-			this._showPlatform(fileInfo);
-			this._showModuleInfo(fileInfo);
-
-			dfd.resolve();
-		});
-		return dfd.promise;
+              fulfill();
+          });
+        });
 	}
 
 	_showCrc(fileInfo) {

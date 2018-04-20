@@ -32,6 +32,7 @@ const path = require('path');
 const when = require('when');
 const childProcess = require('child_process');
 const glob = require('glob');
+const _ = require('lodash');
 const log = require('./log');
 
 const utilities = {
@@ -582,6 +583,13 @@ const utilities = {
 		let totalBytes = (numChunks * perChunkOverhead) + controlOverhead + fileSize;
 
 		return (totalBytes / 1E6).toFixed(3);
+	},
+
+	ensureError(err) {
+		if (!_.isError(err)) {
+			return new Error(err);
+		}
+		return err;
 	}
 };
 module.exports = utilities;

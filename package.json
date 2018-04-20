@@ -75,6 +75,7 @@
     "serialport": "^6.0.4",
     "softap-setup": "^4.1.0",
     "temp": "^0.8.3",
+    "verror": "^1.10.0",
     "when": "^3.7.2",
     "xtend": "^4.0.0",
     "yargs": "^5.0.0",
