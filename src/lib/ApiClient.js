@@ -50,6 +50,7 @@ const settings = require('../../settings');
 const request = require('request');
 const fs = require('fs');
 const path = require('path');
+const VError = require('verror');
 const Spinner = require('cli-spinner').Spinner;
 const chalk = require('chalk');
 
@@ -79,6 +80,13 @@ class ApiClient {
 		}
 
 		return hasToken;
+	}
+
+	ensureToken() {
+		if (!this._access_token) {
+			throw new VError("You're not logged in. Please login using", chalk.bold.cyan('particle cloud login'), 'before using this command');
+		}
+
 	}
 
 	clearToken() {

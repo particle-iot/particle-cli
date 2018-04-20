@@ -35,29 +35,29 @@ const ensureError = utilities.ensureError;
 
 class BinaryCommand {
 	inspectBinary(binaryFile) {
-        return new Promise((fulfill, reject) => {
-          if (!fs.existsSync(binaryFile)) {
-              throw new VError(`Binary file not found ${binaryFile}`);
-          }
-          const parser = new Parser();
-          parser.parseFile(binaryFile, (fileInfo, err) => {
-              if (err) {
-                  return reject(new VError(ensureError(err), `Could not parse ${binaryFile}`));
-              }
+		return new Promise((fulfill, reject) => {
+			if (!fs.existsSync(binaryFile)) {
+				throw new VError(`Binary file not found ${binaryFile}`);
+			}
+			const parser = new Parser();
+			parser.parseFile(binaryFile, (fileInfo, err) => {
+				if (err) {
+					return reject(new VError(ensureError(err), `Could not parse ${binaryFile}`));
+				}
 
-              if (fileInfo.suffixInfo.suffixSize === 65535) {
-                  return reject(new VError(`${binaryFile} does not contain inspection information`));
-              }
+				if (fileInfo.suffixInfo.suffixSize === 65535) {
+					return reject(new VError(`${binaryFile} does not contain inspection information`));
+				}
 
-              console.log(chalk.bold(path.basename(binaryFile)));
+				console.log(chalk.bold(path.basename(binaryFile)));
 
-              this._showCrc(fileInfo);
-              this._showPlatform(fileInfo);
-              this._showModuleInfo(fileInfo);
+				this._showCrc(fileInfo);
+				this._showPlatform(fileInfo);
+				this._showModuleInfo(fileInfo);
 
-              fulfill();
-          });
-        });
+				fulfill();
+			});
+		});
 	}
 
 	_showCrc(fileInfo) {

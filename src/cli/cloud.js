@@ -11,7 +11,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<device>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).claimDevice();
+			return new CloudCommands().claimDevice(args.params.device);
 		},
 		examples: {
 			'$0 $command 123456789': 'Claim device by id to your account'
@@ -29,9 +29,15 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'remove', 'Release a device from your account so that another user may claim it', {
 		params: '<device>',
+		options: {
+			'yes': {
+				boolean: true,
+				description: 'Accept the prompt to release the device'
+			}
+		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).removeDevice();
+			return new CloudCommands().removeDevice(args.params.device, args);
 		},
 		examples: {
 			'$0 $command 0123456789ABCDEFGHI': 'Remove device by id from your account'
@@ -42,7 +48,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<device> <name>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).nameDevice();
+			return new CloudCommands().renameDevice(args.params.device, args.params.name);
 		},
 		examples: {
 			'$0 $command red green': 'Rename red device to green'
@@ -54,7 +60,7 @@ export default ({ commandProcessor, root }) => {
 		options: compileOptions,
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).flashDevice();
+			return new CloudCommands().flashDevice(args.params.device, args.params.files, args);
 		},
 		examples: {
 			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device blue',
