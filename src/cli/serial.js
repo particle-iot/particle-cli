@@ -11,8 +11,8 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(serial, 'list', 'Show devices connected via serial to your computer', {
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).listDevices();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).listDevices();
 		}
 	});
 
@@ -24,16 +24,16 @@ export default ({ commandProcessor, root }) => {
 			}
 		}, portOption),
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).monitorPort();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).monitorPort();
 		}
 	});
 
 	commandProcessor.createCommand(serial, 'identify', 'Ask for and display device ID via serial', {
 		options: portOption,
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).identifyDevice();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).identifyDevice();
 		}
 	});
 
@@ -44,8 +44,8 @@ export default ({ commandProcessor, root }) => {
 			}
 		}, portOption),
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).configureWifi();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).configureWifi();
 		},
 		examples: {
 			'$0 $command': 'Prompt for Wi-Fi credentials and send them to a device over serial',
@@ -67,16 +67,16 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(serial, 'mac', 'Ask for and display MAC address via serial', {
 		options: portOption,
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).deviceMac();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).deviceMac();
 		}
 	});
 
 	commandProcessor.createCommand(serial, 'inspect', 'Ask for and display device module information via serial', {
 		options: portOption,
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).inspectDevice();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).inspectDevice();
 		}
 	});
 
@@ -84,8 +84,8 @@ export default ({ commandProcessor, root }) => {
 		params: '<binary>',
 		options: portOption,
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).flashDevice();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).flashDevice();
 		}
 	});
 
@@ -93,8 +93,8 @@ export default ({ commandProcessor, root }) => {
 		params: '<claimCode>',
 		options: portOption,
 		handler: (args) => {
-			const CloudCommands = require('../cmd/serial');
-			return new CloudCommands(args).claimDevice();
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands(args).claimDevice();
 		}
 	});
 
