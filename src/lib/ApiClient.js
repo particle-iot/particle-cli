@@ -999,6 +999,24 @@ class ApiClient {
 		}
 		return false;
 	}
+
+	normalizedApiError(response) {
+		let reason = 'Server error';
+		if (response.errors) {
+			reason = response.errors.map((err) => {
+				if (err.error) {
+					return err.error;
+				} else {
+					return err;
+				}
+			}).join('\n');
+		} else if (response.info) {
+			reason = response.info;
+		} else if (response.error) {
+			reason = response.error;
+		}
+		return new VError(reason);
+	}
 }
 
 module.exports = ApiClient;

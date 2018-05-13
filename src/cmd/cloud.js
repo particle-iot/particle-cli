@@ -1,8 +1,6 @@
 const _ = require('lodash');
-const when = require('when');
 const VError = require('verror');
 const whenNode = require('when/node');
-const pipeline = require('when/pipeline');
 const prompt = require('inquirer').prompt;
 const temp = require('temp').track();
 
@@ -19,12 +17,18 @@ const path = require('path');
 const extend = require('xtend');
 const util = require('util');
 const chalk = require('chalk');
-const inquirer = require('inquirer');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
 const cmd = path.basename(process.argv[1]);
 
+class EarlyReturnError extends VError {
+	constructor(...args) {
+		super(...args);
+		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
+	}
+}
 
 // Use known platforms and add shortcuts
 const PLATFORMS = extend(utilities.knownPlatforms(), {
@@ -113,7 +117,7 @@ class CloudCommand {
 			});
 	}
 
-	flashDevice(deviceId, files, { target }) {
+	flashDevice(deviceId, files, { target, yes }) {
 		return Promise.resolve().then(() => {
 			if (files.length === 0) {
 				// default to current directory
@@ -153,6 +157,11 @@ class CloudCommand {
 				return this._doFlash(api, deviceId, fileMapping, version);
 			});
 		}).catch((err) => {
+			if (VError.hasCauseWithName(err, EarlyReturnError.name)) {
+				console.log(err.message);
+				return;
+			}
+
 			throw new VError(ensureError(err), 'Flash device failed');
 		});
 	}
@@ -197,16 +206,16 @@ class CloudCommand {
 				message: 'Confirm the amount of data usage in MB:'
 			}]).then((ans) => {
 				if (ans.confirmota !== dataUsage) {
-					throw new VError('User cancelled');
+					throw new EarlyReturnError('User cancelled');
 				}
 				return newFileMapping;
 			});
 		});
 	}
 
-	_doFlash(api, deviceid, fileMapping, targetVersion) {
+	_doFlash(api, deviceId, fileMapping, targetVersion) {
 		let isCellular;
-		return api.getAttributes(deviceid).then((attrs) => {
+		return api.getAttributes(deviceId).then((attrs) => {
 			isCellular = attrs.cellular;
 			if (!isCellular) {
 				return fileMapping;
@@ -216,27 +225,12 @@ class CloudCommand {
 			}
 			return this._promptForOta(api, attrs, fileMapping, targetVersion);
 		}).then((flashFiles) => {
-			return api.flashDevice(deviceid, flashFiles, targetVersion);
+			return api.flashDevice(deviceId, flashFiles, targetVersion);
 		}).then((resp) => {
 			if (resp.status || resp.message) {
 				console.log('Flash device OK: ', resp.status || resp.message);
 			} else {
-				// This error normalization code makes me sad
-				let reason = 'Server error';
-				if (resp.errors) {
-					reason = resp.errors.map((err) => {
-						if (err.error) {
-							return err.error;
-						} else {
-							return err;
-						}
-					}).join('\n');
-				} else if (resp.info) {
-					reason = resp.info;
-				} else if (resp.error) {
-					reason = resp.error;
-				}
-				throw new VError(reason);
+				throw api.normalizedApiError(resp);
 			}
 		});
 	}
@@ -330,7 +324,7 @@ class CloudCommand {
 						return t.version === this.options.target;
 					});
 					if (!validTarget.length) {
-						return when.reject(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')));
+						throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')).join('\n'));
 					}
 
 					targetVersion = validTarget[0].version;
@@ -342,8 +336,7 @@ class CloudCommand {
 
 			const filePath = files[0];
 			if (!fs.existsSync(filePath)) {
-				console.error(`I couldn't find that: ${filePath}`);
-				return when.reject();
+				throw new VError(`I couldn't find that: ${filePath}`);
 			}
 
 			return this._handleMultiFileArgs(files);
@@ -354,8 +347,7 @@ class CloudCommand {
 
 			const list = _.values(fileMapping.map);
 			if (list.length === 0) {
-				console.log('No source to compile!');
-				return when.reject();
+				throw new VError('No source to compile!');
 			}
 
 			if (settings.showIncludedSourceFiles) {
@@ -368,91 +360,61 @@ class CloudCommand {
 			const filename = this._getDownloadPath(deviceType);
 			return this._compileAndDownload(api, fileMapping, platformId, filename, targetVersion);
 		}).catch((err) => {
-			// normalize error from API
-			if (!err.message) {
-				err = new Error(_.isArray(err) ? err.join('\n') : err);
-			}
-			throw new VError(err, 'Compile failed');
+			throw new VError(api.normalizedApiError(err), 'Compile failed');
 		});
 	}
 
 	_compileAndDownload(api, fileMapping, platformId, filename, targetVersion) {
-		return pipeline([
-			//compile
-			() => {
-				return api.compileCode(fileMapping, platformId, targetVersion);
-			},
-
+		return Promise.resolve().then(() => {
+			// compile
+			return api.compileCode(fileMapping, platformId, targetVersion);
+		}).then(resp => {
 			//download
-			(resp) => {
-				if (resp && resp.binary_url) {
-					return api.downloadBinary(resp.binary_url, filename).then(() => {
-						return resp.sizeInfo;
-					});
-				} else {
-					if (typeof resp === 'string') {
-						return when.reject('Server error');
-					} else {
-						return when.reject(resp.errors);
-					}
-				}
+			if (resp && resp.binary_url) {
+				return api.downloadBinary(resp.binary_url, filename).then(() => {
+					return resp.sizeInfo;
+				});
+			} else {
+				throw api.normalizedApiError(resp);
 			}
-		]).then(
-			(sizeInfo) => {
-				if (sizeInfo) {
-					console.log('Memory use: ');
-					console.log(sizeInfo);
-				}
-				console.log('Compile succeeded.');
-				console.log('Saved firmware to:', path.resolve(filename));
-			});
+		}).then((sizeInfo) => {
+			if (sizeInfo) {
+				console.log('Memory use: ');
+				console.log(sizeInfo);
+			}
+			console.log('Compile succeeded.');
+			console.log('Saved firmware to:', path.resolve(filename));
+		});
 	}
 
 	login(username, password) {
 		if (this.tries >= (password ? 1 : 3)) {
-			console.log();
-			console.log(alert, "It seems we're having trouble with logging in.");
-			console.log(
-				alert,
-				util.format('Please try the `%s help` command for more information.',
-					chalk.bold.cyan(cmd))
-			);
-			return when.reject();
+			throw new VError("It seems we're having trouble with logging in.");
 		}
 
-		const allDone = pipeline([
+		return Promise.resolve().then(() => {
 			//prompt for creds
-			() => {
-				if (password) {
-					return { username: username, password: password };
-				}
-				return prompts.getCredentials(username, password);
-			},
-
-			//login to the server
-			(creds) => {
-
-				const api = new ApiClient();
-				username = creds.username;
-				this.newSpin('Sending login details...').start();
-				return api.login(settings.clientId, creds.username, creds.password);
-			},
-
-			(accessToken) => {
-
-				this.stopSpin();
-				console.log(arrow, 'Successfully completed login!');
-				settings.override(null, 'access_token', accessToken);
-				if (username) {
-					settings.override(null, 'username', username);
-				}
-				this.tries = 0;
-				return when.resolve(accessToken);
+			if (password) {
+				return { username: username, password: password };
 			}
-		]);
+			return prompts.getCredentials(username, password);
+		}).then(creds => {
+			//login to the server
+			const api = new ApiClient();
+			username = creds.username;
+			this.newSpin('Sending login details...').start();
+			return api.login(settings.clientId, creds.username, creds.password);
+		}).then(accessToken => {
 
-		return allDone.catch((err) => {
-
+			this.stopSpin();
+			console.log(arrow, 'Successfully completed login!');
+			settings.override(null, 'access_token', accessToken);
+			if (username) {
+				settings.override(null, 'username', username);
+			}
+			this.tries = 0;
+			return accessToken;
+		}).catch((err) => {
 			this.stopSpin();
 			console.log(alert, "There was an error logging you in! Let's try again.");
 			console.error(alert, err);
@@ -464,47 +426,37 @@ class CloudCommand {
 
 
 	doLogout(keep, password) {
-		const allDone = when.defer();
 		const api = new ApiClient();
 
-		pipeline([
-			() => {
-				if (!keep) {
-					return api.removeAccessToken(settings.username, password, settings.access_token);
-				} else {
-					console.log(arrow, 'Leaving your token intact.');
-				}
-			},
-			() => {
-				console.log(
-					arrow,
-					util.format('You have been logged out from %s.',
-						chalk.bold.cyan(settings.username))
-				);
-				settings.override(null, 'username', null);
-				settings.override(null, 'access_token', null);
+		return Promise.resolve().then(() => {
+			if (!keep) {
+				return api.removeAccessToken(settings.username, password, settings.access_token);
+			} else {
+				console.log(arrow, 'Leaving your token intact.');
 			}
-		]).then(() => {
-			allDone.resolve();
-		}, (err) => {
-			console.error('There was an error revoking the token', err);
-			allDone.reject(err);
+		}).then(() => {
+			console.log(
+				arrow,
+				util.format('You have been logged out from %s.',
+					chalk.bold.cyan(settings.username))
+			);
+			settings.override(null, 'username', null);
+			settings.override(null, 'access_token', null);
+		}).catch(err => {
+			throw new VError(ensureError(err), 'There was an error revoking the token');
 		});
-		return allDone.promise;
 	}
 
 	logout(noPrompt) {
 		if (!settings.access_token) {
 			console.log('You were already logged out.');
-			return when.resolve();
+			return;
 		}
 		if (noPrompt) {
 			return this.doLogout(true);
 		}
 
-		const allDone = when.defer();
-
-		inquirer.prompt([
+		return prompt([
 			{
 				type: 'confirm',
 				name: 'keep',
@@ -520,17 +472,14 @@ class CloudCommand {
 				}
 			}
 		]).then((ans) => {
-			return allDone.resolve(this.doLogout(ans.keep, ans.password));
+			return this.doLogout(ans.keep, ans.password);
 		});
-		return allDone.promise;
 	}
 
 
 	getAllDeviceAttributes(filter) {
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('not logged in!');
-		}
+		api.ensureToken();
 
 		let filterFunc = null;
 
@@ -555,55 +504,53 @@ class CloudCommand {
 			}
 		}
 
-		return pipeline([
-			() => api.listDevices(),
-			(devices) => {
-				if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
-					console.log('No devices found.');
-				} else {
-					this.newSpin('Retrieving device functions and variables...').start();
-					const promises = [];
-					devices.forEach((device) => {
-						if (!device.id || (filter && !filterFunc(device))) {
-							// Don't request attributes from unnecessary devices...
-							return;
+		return Promise.resolve().then(() => {
+			return api.listDevices();
+		}).then(devices => {
+			if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
+				console.log('No devices found.');
+			} else {
+				this.newSpin('Retrieving device functions and variables...').start();
+				const promises = [];
+				devices.forEach((device) => {
+					if (!device.id || (filter && !filterFunc(device))) {
+						// Don't request attributes from unnecessary devices...
+						return;
+					}
+
+					if (device.connected) {
+						promises.push(api.getAttributes(device.id).then((attrs) => {
+							return extend(device, attrs);
+						}));
+					} else {
+						promises.push(Promise.resolve(device));
+					}
+				});
+
+				return Promise.all(promises).then(fullDevices => {
+					//sort alphabetically
+					fullDevices = fullDevices.sort((a, b) => {
+						if (a.connected && !b.connected) {
+							return 1;
 						}
 
-						if (device.connected) {
-							promises.push(api.getAttributes(device.id).then((attrs) => {
-								return extend(device, attrs);
-							}));
-						} else {
-							promises.push(when.resolve(device));
-						}
+						return (a.name || '').localeCompare(b.name);
 					});
-
-					return when.all(promises).then((fullDevices) => {
-						//sort alphabetically
-						fullDevices = fullDevices.sort((a, b) => {
-							if (a.connected && !b.connected) {
-								return 1;
-							}
-
-							return (a.name || '').localeCompare(b.name);
-						});
-						this.stopSpin();
-						return fullDevices;
-					});
-				}
+					this.stopSpin();
+					return fullDevices;
+				});
 			}
-		]);
+		}).catch(err => {
+			throw api.normalizedApiError(err);
+		});
 	}
 
-
 	nyanMode() {
-		let deviceid = this.options.params.device;
+		let deviceId = this.options.params.device;
 		let onOff = this.options.params.onOff;
 
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('not logged in!');
-		}
+		api.ensureToken();
 
 		if (!onOff || (onOff === '') || (onOff === 'on')) {
 			onOff = true;
@@ -611,43 +558,40 @@ class CloudCommand {
 			onOff = false;
 		}
 
-		if ((deviceid === '') || (deviceid === 'all')) {
-			deviceid = null;
-		} else if (deviceid === 'on') {
-			deviceid = null;
+		if ((deviceId === '') || (deviceId === 'all')) {
+			deviceId = null;
+		} else if (deviceId === 'on') {
+			deviceId = null;
 			onOff = true;
-		} else if (deviceid === 'off') {
-			deviceid = null;
+		} else if (deviceId === 'off') {
+			deviceId = null;
 			onOff = false;
 		}
 
-		if (deviceid) {
-			return api.signalDevice(deviceid, onOff).catch((err) => {
-				console.error('Error', err);
-				return when.reject(err);
+		if (deviceId) {
+			return api.signalDevice(deviceId, onOff).catch((err) => {
+				throw api.normalizedApiError(err);
 			});
 		} else {
-			return pipeline([
-				() => api.listDevices(),
-				(devices) => {
-					if (!devices || (devices.length === 0)) {
-						console.log('No devices found.');
-						return when.resolve();
-					} else {
-						const promises = [];
-						devices.forEach((device) => {
-							if (!device.connected) {
-								promises.push(when.resolve(device));
-								return;
-							}
-							promises.push(api.signalDevice(device.id, onOff));
-						});
-						return when.all(promises);
-					}
+			return Promise.resolve(() => {
+				return api.listDevices();
+			}).then(devices => {
+				if (!devices || (devices.length === 0)) {
+					console.log('No devices found.');
+					return;
+				} else {
+					const promises = [];
+					devices.forEach((device) => {
+						if (!device.connected) {
+							promises.push(Promise.resolve(device));
+							return;
+						}
+						promises.push(api.signalDevice(device.id, onOff));
+					});
+					return Promise.all(promises);
 				}
-			]).catch((err) => {
-				console.error('Error', err);
-				return when.reject(err);
+			}).catch(err => {
+				throw api.normalizedApiError(err);
 			});
 		}
 	}
@@ -664,7 +608,6 @@ class CloudCommand {
 				}
 
 				if (arr.length > 0) {
-					//TODO: better way to accomplish this?
 					lines.push('  variables:');
 					for (let i=0;i<arr.length;i++) {
 						lines.push(arr[i]);
@@ -734,9 +677,6 @@ class CloudCommand {
 			}
 
 			console.log(lines.join('\n'));
-		}).catch((err) => {
-			console.log('Error', err);
-			return when.reject(err);
 		});
 	}
 
@@ -796,10 +736,9 @@ class CloudCommand {
 			fileMapping.map[relative] = filename;
 		}
 
-		return this._handleLibraryExample(fileMapping)
-			.then(() => {
-				return fileMapping;
-			});
+		return this._handleLibraryExample(fileMapping).then(() => {
+			return fileMapping;
+		});
 	}
 
 	/**
@@ -873,19 +812,16 @@ class CloudCommand {
 	 *                             relative to a base path
 	 */
 	_handleLibraryExample(fileMapping) {
-		return pipeline([
-			() => {
-				const list = _.values(fileMapping.map);
-				if (list.length === 1) {
-					return require('particle-library-manager').isLibraryExample(list[0]);
-				}
-			},
-			(example) => {
-				if (example) {
-					return example.buildFiles(fileMapping);
-				}
+		return Promise.resolve(() => {
+			const list = _.values(fileMapping.map);
+			if (list.length === 1) {
+				return require('particle-library-manager').isLibraryExample(list[0]);
 			}
-		]);
+		}).then(example => {
+			if (example) {
+				return example.buildFiles(fileMapping);
+			}
+		});
 	}
 }
 

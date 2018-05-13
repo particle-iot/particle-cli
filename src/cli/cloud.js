@@ -32,7 +32,7 @@ export default ({ commandProcessor, root }) => {
 		options: {
 			'yes': {
 				boolean: true,
-				description: 'Accept the prompt to release the device'
+				description: 'Answer yes to all questions'
 			}
 		},
 		handler: (args) => {
@@ -57,7 +57,12 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'flash', 'Pass a binary, source file, or source directory to a device!', {
 		params: '<device> [files...]',
-		options: compileOptions,
+		options: Object.assign({}, compileOptions, {
+			'yes': {
+				boolean: true,
+				description: 'Answer yes to all questions'
+			}
+		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands().flashDevice(args.params.device, args.params.files, args);
