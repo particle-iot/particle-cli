@@ -1,5 +1,6 @@
-const when = require('when');
+const VError = require('verror');
 const ApiClient = require('../lib/ApiClient.js');
+const ensureError = require('../lib/utilities').ensureError;
 
 class PublishCommand {
 	constructor(options) {
@@ -12,13 +13,10 @@ class PublishCommand {
 		const setPrivate = this.options.private;
 
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return -1;
-		}
+		api.ensureToken();
 
 		return api.publishEvent(eventName, data, setPrivate).catch((err) => {
-			console.error('Error', err);
-			return when.reject(err);
+			throw new VError(ensureError(err), 'Could not publish event');
 		});
 	}
 }
