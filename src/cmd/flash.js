@@ -1,5 +1,3 @@
-const when = require('when');
-
 const fs = require('fs');
 const VError = require('verror');
 const dfu = require('../lib/dfu.js');
@@ -21,7 +19,8 @@ class FlashCommand {
 	flash(device, binary, files, { usb, serial, factory, force, target }) {
 		if (!device && !binary) {
 			// if no device nor files are passed, show help
-			return when.reject();
+			// TODO: Replace by UsageError
+			return Promise.reject();
 		}
 
 		let result;

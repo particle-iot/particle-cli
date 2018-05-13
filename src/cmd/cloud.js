@@ -20,7 +20,6 @@ const chalk = require('chalk');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
-const cmd = path.basename(process.argv[1]);
 
 class EarlyReturnError extends VError {
 	constructor(...args) {

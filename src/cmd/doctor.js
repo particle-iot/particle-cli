@@ -2,8 +2,7 @@ const when = require('when');
 const pipeline = require('when/pipeline');
 const _ = require('lodash');
 const chalk = require('chalk');
-const inquirer = require('inquirer');
-const prompt = inquirer.prompt;
+const prompt = require('inquirer').prompt;
 const dfu = require('../lib/dfu.js');
 const ApiClient = require('../lib/ApiClient.js');
 
