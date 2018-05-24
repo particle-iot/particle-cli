@@ -22,6 +22,7 @@ import yargsFactory from 'yargs/yargs';
 import util from 'util';
 import _ from 'lodash';
 import path from 'path';
+import VError from 'verror';
 
 // It's important to run yargs in the directory of the script so it picks up options from package.json
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
@@ -416,7 +417,7 @@ function consoleErrorLogger(console, yargs, exit, err) {
 		console.log(chalk.red(err.message || stringify(err)));
 	}
 	if (!usage && (err.stack && ((global.verboseLevel || 0)>1))) {
-		console.log(err, err.stack.split('\n'));
+		console.log(VError.fullStack(err));
 	}
 	// todo - try to find a more controllable way to singal an error - this isn't easily testable.
 	if (exit) {

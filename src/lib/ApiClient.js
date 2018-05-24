@@ -50,7 +50,7 @@ const settings = require('../../settings');
 const request = require('request');
 const fs = require('fs');
 const path = require('path');
-const VError = require('verror');
+const _ = require('lodash');
 const Spinner = require('cli-spinner').Spinner;
 const chalk = require('chalk');
 
@@ -84,9 +84,8 @@ class ApiClient {
 
 	ensureToken() {
 		if (!this._access_token) {
-			throw new VError("You're not logged in. Please login using", chalk.bold.cyan('particle cloud login'), 'before using this command');
+			throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
 		}
-
 	}
 
 	clearToken() {
@@ -1001,11 +1000,21 @@ class ApiClient {
 	}
 
 	normalizedApiError(response) {
+		if (_.isError(response)) {
+			return response;
+		}
+
 		let reason = 'Server error';
-		if (response.errors) {
+		if (typeof response === 'string') {
+			reason = response;
+		} else if (response.errors) {
 			reason = response.errors.map((err) => {
 				if (err.error) {
-					return err.error;
+					if (err.error.status) {
+						return err.error.status;
+					} else {
+						return err.error;
+					}
 				} else {
 					return err;
 				}
@@ -1015,7 +1024,7 @@ class ApiClient {
 		} else if (response.error) {
 			reason = response.error;
 		}
-		return new VError(reason);
+		return new Error(reason);
 	}
 }
 

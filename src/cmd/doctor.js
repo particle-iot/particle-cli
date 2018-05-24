@@ -66,10 +66,8 @@ class DoctorCommand {
 	}
 
 	_findDevice() {
-		return when.promise((resolve) => {
-			// Try to find a "normal" mode device through the serial port
-			this.command('serial').findDevices(resolve);
-		}).then((devices) => {
+		// Try to find a "normal" mode device through the serial port
+		return this.command('serial').findDevices().then(devices => {
 			if (devices.length === 0) {
 				// Try to find a "DFU" mode device through dfu-util
 				return dfu.listDFUDevices();

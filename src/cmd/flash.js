@@ -16,7 +16,7 @@ const systemModuleIndexToString = {
 };
 
 class FlashCommand {
-	flash(device, binary, files, { usb, serial, factory, force, target }) {
+	flash(device, binary, files, { usb, serial, factory, force, target, yes }) {
 		if (!device && !binary) {
 			// if no device nor files are passed, show help
 			// TODO: Replace by UsageError
@@ -29,15 +29,15 @@ class FlashCommand {
 		} else if (serial) {
 			result = this.flashYModem({ binary });
 		} else {
-			result = this.flashCloud({ device, files, target });
+			result = this.flashCloud({ device, files, target, yes });
 		}
 
 		return result;
 	}
 
-	flashCloud({ device, files, target }) {
+	flashCloud({ device, files, target, yes }) {
 		const CloudCommands = require('../cmd/cloud');
-		return new CloudCommands().flashDevice(device, files, { target });
+		return new CloudCommands().flashDevice(device, files, { target, yes });
 	}
 
 	flashYModem({ binary }) {

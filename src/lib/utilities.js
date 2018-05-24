@@ -33,6 +33,7 @@ const when = require('when');
 const childProcess = require('child_process');
 const glob = require('glob');
 const _ = require('lodash');
+const VError = require('verror');
 const log = require('./log');
 
 const utilities = {
@@ -586,7 +587,7 @@ const utilities = {
 	},
 
 	ensureError(err) {
-		if (!_.isError(err)) {
+		if (!_.isError(err) && !err instanceof VError) {
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}
 		return err;

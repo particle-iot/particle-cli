@@ -22,6 +22,10 @@ export default ({ commandProcessor, root }) => {
 				boolean: true,
 				describe: 'Flash even when binary does not pass pre-flash checks'
 			},
+			'yes': {
+				boolean: true,
+				description: 'Answer yes to all questions'
+			},
 			'target': {
 				description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
 			},

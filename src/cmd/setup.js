@@ -272,7 +272,7 @@ class SetupCommand {
 
 		this.newSpin('Now to find your device(s)...').start();
 
-		serial.findDevices(function found(devices) {
+		return serial.findDevices().then(devices => {
 
 			self.stopSpin();
 

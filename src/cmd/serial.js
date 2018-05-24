@@ -1,3 +1,4 @@
+const VError = require('verror');
 const _ = require('lodash');
 const fs = require('fs');
 const prompt = require('inquirer').prompt;
@@ -24,6 +25,7 @@ const YModem = require('../lib/ymodem');
 const SerialBatchParser = require('../lib/SerialBatchParser');
 const SerialTrigger = require('../lib/SerialTrigger');
 const spinnerMixin = require('../lib/spinnerMixin');
+const ensureError = require('../lib/utilities').ensureError;
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -44,13 +46,9 @@ class SerialCommand {
 		this.options = options;
 	}
 
-	findDevices(callback) {
-		const devices = [];
-		SerialPort.list((err, ports) => {
-			if (err) {
-				console.error('Error listing serial ports: ', err);
-				return callback([]);
-			}
+	findDevices() {
+		return SerialPort.list().then(ports => {
+			const devices = [];
 
 			ports.forEach((port) => {
 				// manufacturer value
@@ -106,12 +104,14 @@ class SerialCommand {
 				});
 			}
 
-			callback(devices);
+			return devices;
+		}).catch(err => {
+			throw new VError(err, 'Error listing serial ports');
 		});
 	}
 
 	listDevices() {
-		this.findDevices((devices) => {
+		return this.findDevices().then(devices => {
 			if (devices.length === 0) {
 				console.log(chalk.bold.white('No devices available via serial'));
 				return;
@@ -228,58 +228,51 @@ class SerialCommand {
 	identifyDevice() {
 		const comPort = this.options.port;
 
-		this.whatSerialPortDidYouMean(comPort, true, (device) => {
+		return this.whatSerialPortDidYouMean(comPort, true).then(device => {
 			if (!device) {
-				return this.error('No serial port identified');
+				throw new VError('No serial port identified');
 			}
 
-			this.askForDeviceID(device)
-				.then((data) => {
-					if (_.isObject(data)) {
-						console.log();
-						console.log('Your device id is', chalk.bold.cyan(data.id));
-						if (data.imei) {
-							console.log('Your IMEI is', chalk.bold.cyan(data.imei));
-						}
-						if (data.iccid) {
-							console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
-						}
-					} else {
-						console.log();
-						console.log('Your device id is', chalk.bold.cyan(data));
-					}
+			return this.askForDeviceID(device);
+		}).then(data => {
+			if (_.isObject(data)) {
+				console.log();
+				console.log('Your device id is', chalk.bold.cyan(data.id));
+				if (data.imei) {
+					console.log('Your IMEI is', chalk.bold.cyan(data.imei));
+				}
+				if (data.iccid) {
+					console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
+				}
+			} else {
+				console.log();
+				console.log('Your device id is', chalk.bold.cyan(data));
+			}
 
-					return this.askForSystemFirmwareVersion(device, 2000)
-						.then((version) => {
-							console.log('Your system firmware version is', chalk.bold.cyan(version));
-						})
-						.catch(() => {
-							console.log('Unable to determine system firmware version');
-							return when.resolve();
-						});
-				})
-				.catch((err) => {
-					this.error(err, false);
-				});
+			return this.askForSystemFirmwareVersion(device, 2000).then(version => {
+				console.log('Your system firmware version is', chalk.bold.cyan(version));
+			}).catch(() => {
+				console.log('Unable to determine system firmware version');
+			});
+		}).catch((err) => {
+			throw new VError(err, 'Could not identify device');
 		});
 	}
 
 	deviceMac() {
 		const comPort = this.options.port;
 
-		this.whatSerialPortDidYouMean(comPort, true, (device) => {
+		return this.whatSerialPortDidYouMean(comPort, true).then(device => {
 			if (!device) {
-				return this.error('No serial port identified');
+				throw new VError('No serial port identified');
 			}
 
-			this.getDeviceMacAddress(device)
-				.then((data) => {
-					console.log();
-					console.log('Your device MAC address is', chalk.bold.cyan(data));
-				})
-				.catch((err) => {
-					this.error(err, false);
-				});
+			return this.getDeviceMacAddress(device);
+		}).then(data => {
+			console.log();
+			console.log('Your device MAC address is', chalk.bold.cyan(data));
+		}).catch((err) => {
+			throw new VError(err, 'Could not get MAC address');
 		});
 	}
 
@@ -1538,17 +1531,17 @@ class SerialCommand {
 	}
 
 	whatSerialPortDidYouMean(comPort, shouldPrompt, callback) {
-		this.findDevices((devices) => {
+		const promise = this.findDevices().then(devices => {
 			const port = this._parsePort(devices, comPort);
 			if (port) {
-				return callback(port);
+				return port;
 			}
 
 			if (!devices || devices.length === 0) {
-				return callback(undefined);
+				return;
 			}
 
-			prompt([
+			return prompt([
 				{
 					name: 'port',
 					type: 'list',
@@ -1561,9 +1554,15 @@ class SerialCommand {
 					})
 				}
 			]).then((answers) => {
-				callback(answers.port);
+				return answers.port;
 			});
 		});
+
+		if (typeof cb === 'function') {
+			promise.then(port => callback(port));
+		}
+
+		return promise;
 	}
 
 	exit() {

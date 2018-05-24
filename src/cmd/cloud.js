@@ -6,11 +6,11 @@ const temp = require('temp').track();
 
 const settings = require('../../settings.js');
 const specs = require('../lib/deviceSpecs');
-const prompts = require('../lib/prompts.js');
 const ApiClient = require('../lib/ApiClient.js');
 const utilities = require('../lib/utilities.js');
 const spinnerMixin = require('../lib/spinnerMixin');
 const ensureError = require('../lib/utilities').ensureError;
+const platformsById = require('./constants').platformsById;
 
 const fs = require('fs');
 const path = require('path');
@@ -44,9 +44,8 @@ const PLATFORMS = extend(utilities.knownPlatforms(), {
 });
 
 class CloudCommand {
-	constructor(options) {
+	constructor() {
 		spinnerMixin(this);
-		this.options = options;
 	}
 
 	claimDevice(deviceId) {
@@ -57,7 +56,7 @@ class CloudCommand {
 		return api.claimDevice(deviceId).then(() => {
 			console.log('Successfully claimed device ' + deviceId);
 		}, (err) => {
-			if (err && typeof error === 'string' && err.indexOf('That belongs to someone else.') >= 0) {
+			if (err && typeof err === 'string' && err.indexOf('That belongs to someone else.') >= 0) {
 				return prompt([{
 					type: 'confirm',
 					name: 'transfer',
@@ -66,7 +65,7 @@ class CloudCommand {
 				}]).then((ans) => {
 					if (ans.transfer) {
 						return api.claimDevice(deviceId, true).then((body) => {
-							console.log('Transfer #' + body.transfer_id + ' requested. You will receive an email if your transfer is approved or denied.');
+							console.log('Transfer requested. You will receive an email if your transfer is approved or denied.');
 						});
 					}
 					throw new Error('You cannot claim a device owned by someone else');
@@ -85,13 +84,21 @@ class CloudCommand {
 
 		return Promise.resolve().then(() => {
 			if (yes) {
-				return;
+				return true;
 			}
-			return prompts.areYouSure();
+			return prompt([{
+				type: 'confirm',
+				name: 'remove',
+				message: 'Are you sure you want to release ownership of this device?',
+				default: true
+			}]).then(ans => ans.remove);
+		}).then(doit => {
+			if (!doit) {
+				throw new Error('Not confirmed');
+			}
+			return api.removeDevice(deviceId);
 		}).then(() => {
-			return api.removeDevice(deviceId).then(() => {
-				console.log('Okay!');
-			});
+			console.log('Okay!');
 		}).catch((err) => {
 			throw new VError(ensureError(err), "Didn't remove the device");
 		});
@@ -103,17 +110,18 @@ class CloudCommand {
 
 		console.log('Renaming device ' + deviceId);
 
-		return api.renameDevice(deviceId, name)
-			.then(() => {
-				console.log('Successfully renamed device ' + deviceId + ' to: ' + name);
-			},
-			(err) => {
-				if (err.info && err.info.indexOf('I didn\'t recognize that device name or ID') >= 0) {
-					throw new VError(`Device ${deviceId} not found`);
-				} else {
-					throw new VError(ensureError(err), `Failed to rename ${deviceId}`);
-				}
-			});
+		return  Promise.resolve().then(() => {
+			return api.renameDevice(deviceId, name);
+		}).catch(err => {
+			if (err.info && err.info.indexOf('I didn\'t recognize that device name or ID') >= 0) {
+				throw new Error('Device not found');
+			}
+			throw err;
+		}).then(() => {
+			console.log('Successfully renamed device ' + deviceId + ' to: ' + name);
+		}).catch(err => {
+			throw new VError(ensureError(err), `Failed to rename ${deviceId}`);
+		});
 	}
 
 	flashDevice(deviceId, files, { target, yes }) {
@@ -127,7 +135,7 @@ class CloudCommand {
 			api.ensureToken();
 
 			if (!fs.existsSync(files[0])) {
-				return this._flashKnownApp(api, deviceId, files[0]);
+				return this._flashKnownApp({ api, deviceId, filePath: files[0], yes });
 			}
 
 			const version = target === 'latest' ? null : target;
@@ -142,7 +150,7 @@ class CloudCommand {
 				return fileMapping;
 			}).then((fileMapping) => {
 				if (Object.keys(fileMapping.map).length === 0) {
-					throw new VError('no files included');
+					throw new Error('no files included');
 				}
 
 				if (settings.showIncludedSourceFiles) {
@@ -153,7 +161,7 @@ class CloudCommand {
 					}
 				}
 
-				return this._doFlash(api, deviceId, fileMapping, version);
+				return this._doFlash({ api, deviceId, fileMapping, version, yes });
 			});
 		}).catch((err) => {
 			if (VError.hasCauseWithName(err, EarlyReturnError.name)) {
@@ -212,13 +220,13 @@ class CloudCommand {
 		});
 	}
 
-	_doFlash(api, deviceId, fileMapping, targetVersion) {
+	_doFlash({ api, deviceId, fileMapping, targetVersion, yes }) {
 		let isCellular;
 		return api.getAttributes(deviceId).then((attrs) => {
 			isCellular = attrs.cellular;
 			if (!isCellular) {
 				return fileMapping;
-			} else if (this.options.noconfirm) {
+			} else if (yes) {
 				console.log('! Skipping Bandwidth Prompt !');
 				return fileMapping;
 			}
@@ -231,15 +239,17 @@ class CloudCommand {
 			} else {
 				throw api.normalizedApiError(resp);
 			}
+		}).catch(err => {
+			throw api.normalizedApiError(err);
 		});
 	}
 
-	_flashKnownApp(api, deviceid, filePath) {
+	_flashKnownApp({ api, deviceId, filePath, yes }) {
 		if (!settings.knownApps[filePath]) {
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 
-		return api.getAttributes(deviceid).then((attrs) => {
+		return api.getAttributes(deviceId).then((attrs) => {
 			const spec = _.find(specs, { productId: attrs.product_id });
 			if (spec) {
 				if (spec.knownApps[filePath]) {
@@ -251,6 +261,8 @@ class CloudCommand {
 				}
 			}
 
+			// TODO: this shouldn't be necessary. Just look at the attrs.platform_id instead of
+			// product_id above
 			return prompt([{
 				name: 'type',
 				type: 'list',
@@ -271,22 +283,20 @@ class CloudCommand {
 
 				return { map: { binary: binary } };
 			});
-		}).then((file) => {
-			return this._doFlash(api, deviceid, file);
+		}).then((fileMapping) => {
+			return this._doFlash({ api, deviceId, fileMapping, yes });
 		});
 	}
 
-	_getDownloadPath(deviceType) {
-		if (this.options.saveTo) {
-			return this.options.saveTo;
+	_getDownloadPath(deviceType, saveTo) {
+		if (saveTo) {
+			return saveTo;
 		}
 
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	compileCode() {
-		const deviceType = this.options.params.deviceType;
-		const files = this.options.params.files;
+	compileCode(deviceType, files,  { target, saveTo }) {
 		let api;
 		let platformId;
 		let targetVersion;
@@ -299,10 +309,11 @@ class CloudCommand {
 			if (deviceType in PLATFORMS) {
 				platformId = PLATFORMS[deviceType];
 			} else {
-				console.error('\nTarget device ' + deviceType + ' is not valid');
-				console.error('	eg. particle compile core xxx');
-				console.error('	eg. particle compile photon xxx\n');
-				return -1;
+				throw new Error([
+					'Target device ' + deviceType + ' is not valid',
+					'	eg. particle compile core xxx',
+					'	eg. particle compile photon xxx'
+				].join('\n'));
 			}
 
 			api = new ApiClient();
@@ -310,17 +321,19 @@ class CloudCommand {
 
 			console.log('\nCompiling code for ' + deviceType);
 
-			if (this.options.target) {
-				if (this.options.target === 'latest') {
+			if (target) {
+				if (target === 'latest') {
 					return;
 				}
 
-				return api.getBuildTargets().then((data) => {
+				return api.getBuildTargets().catch(err => {
+					throw api.normalizedApiError(err);
+				}).then((data) => {
 					const validTargets = data.targets.filter((t) => {
 						return t.platforms.indexOf(platformId) >= 0;
 					});
 					const validTarget = validTargets.filter((t) => {
-						return t.version === this.options.target;
+						return t.version === target;
 					});
 					if (!validTarget.length) {
 						throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')).join('\n'));
@@ -356,10 +369,10 @@ class CloudCommand {
 				}
 			}
 
-			const filename = this._getDownloadPath(deviceType);
+			const filename = this._getDownloadPath(deviceType, saveTo);
 			return this._compileAndDownload(api, fileMapping, platformId, filename, targetVersion);
 		}).catch((err) => {
-			throw new VError(api.normalizedApiError(err), 'Compile failed');
+			throw new VError(ensureError(err), 'Compile failed');
 		});
 	}
 
@@ -373,9 +386,14 @@ class CloudCommand {
 				return api.downloadBinary(resp.binary_url, filename).then(() => {
 					return resp.sizeInfo;
 				});
+			} else if (resp && resp.output === 'Compiler timed out or encountered an error') {
+				console.log('\n' + (resp && resp.errors && resp.errors[0]));
+				throw new Error('Compiler encountered an error');
 			} else {
 				throw api.normalizedApiError(resp);
 			}
+		}).catch(err => {
+			throw api.normalizedApiError(err);
 		}).then((sizeInfo) => {
 			if (sizeInfo) {
 				console.log('Memory use: ');
@@ -544,10 +562,7 @@ class CloudCommand {
 		});
 	}
 
-	nyanMode() {
-		let deviceId = this.options.params.device;
-		let onOff = this.options.params.onOff;
-
+	nyanMode(deviceId, onOff) {
 		const api = new ApiClient();
 		api.ensureToken();
 
@@ -595,9 +610,7 @@ class CloudCommand {
 		}
 	}
 
-	listDevices() {
-		const filter = this.options.params.filter;
-
+	listDevices(filter) {
 		const formatVariables = (vars, lines) => {
 			if (vars) {
 				const arr = [];
@@ -634,26 +647,8 @@ class CloudCommand {
 			for (let i = 0; i < devices.length; i++) {
 				let name;
 				const device = devices[i];
-				let deviceType = '';
-				switch (device.product_id) {
-					case 0:
-						deviceType = ' (Core)';
-						break;
-					case 6:
-						deviceType = ' (Photon)';
-						break;
-					case 8:
-						deviceType = ' (P1)';
-						break;
-					case 10:
-						deviceType = ' (Electron)';
-						break;
-					case 31:
-						deviceType = ' (Raspberry Pi)';
-						break;
-					default:
-						deviceType = ' (Product ' + device.product_id + ')';
-				}
+				const deviceType = platformsById[device.product_id] || `Product ${device.product_id}`;
+				const connectedState = device.connected ? 'online' : 'offline';
 
 				if (!device.name || device.name === 'null') {
 					name = '<no name>';
@@ -667,8 +662,7 @@ class CloudCommand {
 					name = chalk.cyan.dim(name);
 				}
 
-				let status = name + ' [' + device.id + ']' + deviceType + ' is ';
-				status += (device.connected) ? 'online' : 'offline';
+				const status = `${name} [${device.id}] (${deviceType}) is ${connectedState}`;
 				lines.push(status);
 
 				formatVariables(device.variables, lines);
@@ -676,6 +670,8 @@ class CloudCommand {
 			}
 
 			console.log(lines.join('\n'));
+		}).catch((err) => {
+			throw new VError(ensureError(err), 'Failed to list device');
 		});
 	}
 
@@ -811,7 +807,7 @@ class CloudCommand {
 	 *                             relative to a base path
 	 */
 	_handleLibraryExample(fileMapping) {
-		return Promise.resolve(() => {
+		return Promise.resolve().then(() => {
 			const list = _.values(fileMapping.map);
 			if (list.length === 1) {
 				return require('particle-library-manager').isLibraryExample(list[0]);

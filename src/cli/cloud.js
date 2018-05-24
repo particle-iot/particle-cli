@@ -22,7 +22,7 @@ export default ({ commandProcessor, root }) => {
 		params: '[filter]',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).listDevices();
+			return new CloudCommands().listDevices(args.params.filter);
 		},
 		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
 	});
@@ -84,7 +84,7 @@ export default ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).compileCode();
+			return new CloudCommands().compileCode(args.params.deviceType, args.params.files, args);
 		},
 		examples: {
 			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a Photon',
@@ -98,21 +98,21 @@ export default ({ commandProcessor, root }) => {
 		params: '<device> [onOff]',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).nyanMode();
+			return new CloudCommands().nyanMode(args.params.device, args.params.onOff);
 		}
 	});
 
 	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).login();
+			return new CloudCommands().login();
 		}
 	});
 
 	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).logout();
+			return new CloudCommands().logout();
 		}
 	});
 
