@@ -111,7 +111,8 @@
     "tmp": "0.0.28"
   },
   "engines": {
-    "node": ">=4.4"
+    "node": ">=4.4",
+    "npm": ">=3.3"
   },
   "homepage": "https://github.com/particle-iot/particle-cli/",
   "keywords": [
