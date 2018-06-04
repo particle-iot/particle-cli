@@ -5,6 +5,8 @@ const dfu = require('../lib/dfu');
 const when = require('when');
 const whenNode = require('when/node');
 const Spinner = require('cli-spinner').Spinner;
+const fs = require('fs');
+const deviceSpecs = require('../lib/deviceSpecs');
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 const spin = new Spinner('Updating system firmware on the device...');
@@ -34,6 +36,31 @@ function doUpdate(id) {
 		);
 	}
 	const parts = Object.keys(updates);
+	const specs = deviceSpecs[id];
+    /**
+	 * Some firmwares also require updating the system bootloader.
+     */
+	if (specs.requiresBootloaderAscenderApp) {
+		const filename = 'user_firmware_backup.bin';
+
+		steps.push((next) => {
+			if (fs.existsSync(path)) {
+				fs.unlinkSync(filename);
+			}
+
+			// save the current user firmware
+			whenNode.bindCallback(
+                dfu.read(filename, 'userFirmware', false)
+                , next);
+		});
+
+		steps.push((next) => {
+			whenNode.bindCallback(
+                dfu.write(filename, 'otaRegion', false)
+                , next);
+		});
+	}
+
 	parts.forEach((part, partNumber) => {
 		steps.push((next) => {
 			const binary = path.resolve(__dirname, '../../assets/updates', updates[part]);

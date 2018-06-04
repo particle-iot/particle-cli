@@ -57,6 +57,7 @@ const specs = {
 	},
 	'2b04:d006': {
 		productName: 'Photon',
+		requiresBootloaderAscenderApp: true,
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -95,6 +96,11 @@ const specs = {
 		},
 		userFirmware: {
 			address: '0x080A0000',
+			alt: '0',
+			size: 128*1024
+		},
+		otaRegion: {
+			address: '0x080C0000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -127,6 +133,7 @@ const specs = {
 	},
 	'2b04:d008': {
 		productName: 'P1',
+        requiresBootloaderAscenderApp: true,
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -157,13 +164,18 @@ const specs = {
 			alt: '1',
 			alg: 'ec'
 		},
+		otaRegion: {
+			address: '0x080C0000',
+			alt: '0'
+		},
 		factoryReset: {
 			address: '0x080E0000',
 			alt: '0'
 		},
 		userFirmware: {
 			address: '0x080A0000',
-			alt: '0'
+			alt: '0',
+			size: 128*1024
 		},
 		systemFirmwareOne: {
 			address: '0x08020000',
