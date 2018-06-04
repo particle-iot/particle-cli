@@ -5,7 +5,6 @@ const dfu = require('../lib/dfu');
 const when = require('when');
 const whenNode = require('when/node');
 const Spinner = require('cli-spinner').Spinner;
-const fs = require('fs');
 const deviceSpecs = require('../lib/deviceSpecs');
 const utilities = require('../lib/utilities.js');
 

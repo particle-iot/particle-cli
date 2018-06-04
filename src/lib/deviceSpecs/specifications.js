@@ -133,7 +133,7 @@ const specs = {
 	},
 	'2b04:d008': {
 		productName: 'P1',
-        requiresBootloaderAscenderApp: true,
+		requiresBootloaderAscenderApp: true,
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
