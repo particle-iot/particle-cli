@@ -85,12 +85,14 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'system-part1-0.7.0-photon.bin',
-			systemFirmwareTwo: 'system-part2-0.7.0-photon.bin'
+			systemFirmwareOne: 'system-part1-0.7.0-photon-no-boot-dep.bin',
+			systemFirmwareTwo: 'system-part2-0.7.0-photon-no-boot-dep.bin',
+			userFirmware: 'ascender-0.7.0-photon.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'system-part1-0.7.0-p1.bin',
-			systemFirmwareTwo: 'system-part2-0.7.0-p1.bin'
+			systemFirmwareOne: 'system-part1-0.7.0-p1-no-boot-dep.bin',
+			systemFirmwareTwo: 'system-part2-0.7.0-p1-no-boot-dep.bin',
+			userFirmware: 'ascender-0.7.0-p1.bin'
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
@@ -102,12 +104,12 @@ var settings = {
 };
 
 function envValue(varName, defaultValue) {
-	var value = process.env[varName];
+	let value = process.env[varName];
 	return (typeof value === 'undefined') ? defaultValue : value;
 }
 
 function envValueBoolean(varName, defaultValue) {
-	var value = envValue(varName);
+	let value = envValue(varName);
 	if (value === 'true' || value === 'TRUE' || value === '1') {
 		return true;
 	} else if (value === 'false' || value === 'FALSE' || value === '0') {
@@ -120,15 +122,15 @@ function envValueBoolean(varName, defaultValue) {
 settings.commandPath = __dirname + '/commands/';
 
 settings.findHomePath = function() {
-	var envVars = [
+	let envVars = [
 		'home',
 		'HOME',
 		'HOMEPATH',
 		'USERPROFILE'
 	];
 
-	for (var i=0;i<envVars.length;i++) {
-		var dir = process.env[envVars[i]];
+	for (let i=0;i<envVars.length;i++) {
+		let dir = process.env[envVars[i]];
 		if (dir && fs.existsSync(dir)) {
 			return dir;
 		}
@@ -137,7 +139,7 @@ settings.findHomePath = function() {
 };
 
 settings.ensureFolder = function() {
-	var particleDir = path.join(settings.findHomePath(), '.particle');
+	let particleDir = path.join(settings.findHomePath(), '.particle');
 	if (!fs.existsSync(particleDir)) {
 		fs.mkdirSync(particleDir);
 	}
@@ -147,7 +149,7 @@ settings.ensureFolder = function() {
 settings.findOverridesFile = function(profile) {
 	profile = profile || settings.profile || 'particle';
 
-	var particleDir = settings.ensureFolder();
+	let particleDir = settings.ensureFolder();
 	return path.join(particleDir, profile + '.config.json');
 };
 
@@ -155,7 +157,7 @@ settings.loadOverrides = function (profile) {
 	profile = profile || settings.profile || 'particle';
 
 	try {
-		var filename = settings.findOverridesFile(profile);
+		let filename = settings.findOverridesFile(profile);
 		if (fs.existsSync(filename)) {
 			settings.overrides = JSON.parse(fs.readFileSync(filename));
 			// need to do an in-situ extend since external clients may have already obtained the settings object
@@ -186,11 +188,11 @@ settings.switchProfile = function(profileName) {
 };
 
 settings.readProfileData = function() {
-	var particleDir = settings.ensureFolder();
-	var proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
+	let particleDir = settings.ensureFolder();
+	let proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
 	if (fs.existsSync(proFile)) {
 		try {
-			var data = JSON.parse(fs.readFileSync(proFile));
+			let data = JSON.parse(fs.readFileSync(proFile));
 			settings.profile = (data) ? data.name : 'particle';
 			settings.profile_json = data;
 		} catch (err) {
@@ -203,8 +205,8 @@ settings.readProfileData = function() {
 };
 
 settings.saveProfileData = function() {
-	var particleDir = settings.ensureFolder();
-	var proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
+	let particleDir = settings.ensureFolder();
+	let proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
 	fs.writeFileSync(proFile, JSON.stringify(settings.profile_json, null, 2), { mode: '600' });
 };
 
@@ -212,8 +214,8 @@ settings.saveProfileData = function() {
 // when files that utilties requires need settings
 function matchKey(needle, obj, caseInsensitive) {
 	needle = (caseInsensitive) ? needle.toLowerCase() : needle;
-	for (var key in obj) {
-		var keyCopy = (caseInsensitive) ? key.toLowerCase() : key;
+	for (let key in obj) {
+		let keyCopy = (caseInsensitive) ? key.toLowerCase() : key;
 
 		if (keyCopy === needle) {
 			//return the original
@@ -231,7 +233,7 @@ settings.override = function (profile, key, value) {
 
 	if (!settings[key]) {
 		// find any key that matches our key, regardless of case
-		var realKey = matchKey(key, settings, true);
+		let realKey = matchKey(key, settings, true);
 		if (realKey) {
 			//console.log("Using the setting \"" + realKey + "\" instead ");
 			key = realKey;
@@ -248,7 +250,7 @@ settings.override = function (profile, key, value) {
 	settings = extend(settings, settings.overrides);
 
 	try {
-		var filename = settings.findOverridesFile(profile);
+		let filename = settings.findOverridesFile(profile);
 		fs.writeFileSync(filename, JSON.stringify(settings.overrides, null, 2), { mode: '600' });
 	} catch (ex) {
 		console.error('There was an error writing ' + settings.overrides + ': ', ex);
