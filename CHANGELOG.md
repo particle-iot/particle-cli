@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.30.0 - 4 June 2018
+
+* Include binaries for firmware 0.7.0 (with bootloader updater "ascender" app for Photon/P1)[#408](https://github.com/particle-iot/particle-cli/pull/418)
+
 ## 1.29.0 - 26 March 2018
 
 * Include binaries for firmware 0.7.0
