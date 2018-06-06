@@ -771,7 +771,7 @@ class SerialCommand {
 		}
 
 		if (!interactions.length) {
-			return when.resolve();
+			return;
 		}
 
 		const serialPort = this.serialPort || new SerialPort(device.port, {

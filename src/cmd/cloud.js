@@ -10,6 +10,7 @@ const ApiClient = require('../lib/ApiClient.js');
 const utilities = require('../lib/utilities.js');
 const spinnerMixin = require('../lib/spinnerMixin');
 const ensureError = require('../lib/utilities').ensureError;
+const prompts = require('../lib/prompts');
 const platformsById = require('./constants').platformsById;
 
 const fs = require('fs');
@@ -110,7 +111,7 @@ class CloudCommand {
 
 		console.log('Renaming device ' + deviceId);
 
-		return  Promise.resolve().then(() => {
+		return Promise.resolve().then(() => {
 			return api.renameDevice(deviceId, name);
 		}).catch(err => {
 			if (err.info && err.info.indexOf('I didn\'t recognize that device name or ID') >= 0) {
@@ -296,7 +297,7 @@ class CloudCommand {
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	compileCode(deviceType, files,  { target, saveTo }) {
+	compileCode(deviceType, files, { target, saveTo }) {
 		let api;
 		let platformId;
 		let targetVersion;
