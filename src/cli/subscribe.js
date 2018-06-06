@@ -13,7 +13,7 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const SubscribeCommand = require('../cmd/subscribe');
-			return new SubscribeCommand(args).startListening();
+			return new SubscribeCommand().startListening(args.params.event, args);
 		},
 		examples: {
 			'$0 $command': 'Subscribe to all event published by my devices',

@@ -43,6 +43,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  *
  **/
 const when = require('when');
+const VError = require('verror');
 const pipeline = require('when/pipeline');
 const utilities = require('./utilities.js');
 const settings = require('../../settings');
@@ -771,6 +772,7 @@ class ApiClient {
 			url += '/' + encodeURIComponent(eventName);
 		}
 
+		let failed = false;
 		console.log('Listening to: ' + url);
 		return when.promise((resolve, reject) => {
 			self.request
@@ -784,10 +786,18 @@ class ApiClient {
 					if (self.isUnauthorized(response)) {
 						reject('Invalid access token');
 					}
+					if (response.statusCode >= 300) {
+						failed = true;
+					}
 				})
 				.on('error', reject)
 				.on('close', resolve)
-				.on('data', onDataHandler);
+				.on('data', data => {
+					if (failed) {
+						return reject(JSON.parse(data));
+					}
+					onDataHandler(data);
+				});
 		});
 	}
 
@@ -1000,7 +1010,7 @@ class ApiClient {
 	}
 
 	normalizedApiError(response) {
-		if (_.isError(response)) {
+		if (_.isError(response) || response instanceof VError) {
 			return response;
 		}
 
