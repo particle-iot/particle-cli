@@ -3,7 +3,13 @@ export default ({ commandProcessor, root }) => {
 		params: '<event> [data]',
 		options: {
 			'private': {
-				description: 'Publish to the private stream instead of the public stream'
+				boolean: true,
+				default: true,
+				description: 'Publish to the private stream'
+			},
+			'public': {
+				boolean: true,
+				description: 'Publish to the public stream'
 			}
 		},
 		handler: (args) => {
@@ -11,7 +17,7 @@ export default ({ commandProcessor, root }) => {
 			return new PublishCommand(args).publishEvent();
 		},
 		examples: {
-			'$0 $command temperature 25.0 --private': 'Publish a temperature event to your private event stream'
+			'$0 $command temperature 25.0': 'Publish a temperature event to your private event stream'
 		}
 	});
 };

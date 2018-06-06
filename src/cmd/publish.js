@@ -10,7 +10,9 @@ class PublishCommand {
 	publishEvent() {
 		const eventName = this.options.params.event;
 		const data = this.options.params.data;
-		const setPrivate = this.options.private;
+		const publicFlag = this.options.public;
+		const privateFlag = this.options.private;
+		const setPrivate = publicFlag ? false : privateFlag;
 
 		const api = new ApiClient();
 		api.ensureToken();
