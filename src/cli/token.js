@@ -4,7 +4,7 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(token, 'list', 'List all access tokens for your account', {
 		handler: (args) => {
 			const AccessTokenCommands = require('../cmd/token');
-			return new AccessTokenCommands(args).listAccessTokens();
+			return new AccessTokenCommands().listAccessTokens();
 		}
 	});
 
@@ -18,14 +18,14 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const AccessTokenCommands = require('../cmd/token');
-			return new AccessTokenCommands(args).revokeAccessToken();
+			return new AccessTokenCommands().revokeAccessToken(args.params.tokens, args);
 		}
 	});
 
 	commandProcessor.createCommand(token, 'create', 'Create a new access token', {
 		handler: (args) => {
 			const AccessTokenCommands = require('../cmd/token');
-			return new AccessTokenCommands(args).createAccessToken();
+			return new AccessTokenCommands().createAccessToken();
 		}
 	});
 

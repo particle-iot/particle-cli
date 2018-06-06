@@ -1,5 +1,5 @@
+const VError = require('verror');
 const when = require('when');
-const pipeline = require('when/pipeline');
 
 const inquirer = require('inquirer');
 
@@ -8,10 +8,6 @@ const prompts = require('../lib/prompts.js');
 const settings = require('../../settings.js');
 
 class AccessTokenCommands {
-	constructor(options) {
-		this.options = options;
-	}
-
 	getCredentials() {
 		if (settings.username) {
 			const creds = when.defer();
@@ -35,7 +31,7 @@ class AccessTokenCommands {
 		}
 	}
 
-	getAccessTokens () {
+	getAccessTokens (api) {
 		console.error('Checking with the cloud...');
 
 		const sortTokens = (tokens) => {
@@ -44,21 +40,18 @@ class AccessTokenCommands {
 			});
 		};
 
-		return pipeline([
-			this.getCredentials,
-			(creds) => {
-				const api = new ApiClient();
-				return api.listTokens(creds.username, creds.password);
-			},
-			sortTokens
-		]).catch((err) => {
-			console.error('Error listing access tokens', err);
-			return when.reject(err);
+		return Promise.resolve().then(() => {
+			return this.getCredentials();
+		}).then(creds => {
+			return api.listTokens(creds.username, creds.password);
+		}).then(tokens => {
+			return sortTokens(tokens);
 		});
 	}
 
 	listAccessTokens () {
-		return this.getAccessTokens().then((tokens) => {
+		const api = new ApiClient();
+		return this.getAccessTokens(api).then((tokens) => {
 			const lines = [];
 			for (let i = 0; i < tokens.length; i++) {
 				const token = tokens[i];
@@ -78,16 +71,12 @@ class AccessTokenCommands {
 				lines.push('');
 			}
 			console.log(lines.join('\n'));
-		}).catch((err) => {
-			console.log("Please make sure you're online and logged in.");
-			console.log(err);
-			return when.reject(err);
+		}).catch(err => {
+			throw new VError(api.normalizedApiError(err), 'Error while listing tokens');
 		});
 	}
 
-	revokeAccessToken () {
-		const tokens = this.options.params.tokens;
-
+	revokeAccessToken (tokens, { force }) {
 		if (tokens.length === 0) {
 			console.error('You must provide at least one access token to revoke');
 			return -1;
@@ -95,7 +84,7 @@ class AccessTokenCommands {
 
 		if (tokens.indexOf(settings.access_token) >= 0) {
 			console.log('WARNING: ' + settings.access_token + " is this CLI's access token");
-			if (this.options.force) {
+			if (force) {
 				console.log('**forcing**');
 			} else {
 				console.log('use --force to delete it');
@@ -107,17 +96,15 @@ class AccessTokenCommands {
 
 		return this.getCredentials().then((creds) => {
 			return when.map(tokens, (x) => {
-				return api.removeAccessToken(creds.username, creds.password, x)
-					.then(() => {
-						console.log('successfully deleted ' + x);
-						if (x === settings.access_token) {
-							settings.override(null, 'access_token', null);
-						}
-					}, (err) => {
-						console.log('error revoking ' + x + ': ' + JSON.stringify(err).replace(/\"/g, ''));
-						return when.reject(err);
-					});
+				return api.removeAccessToken(creds.username, creds.password, x).then(() => {
+					console.log('successfully deleted ' + x);
+					if (x === settings.access_token) {
+						settings.override(null, 'access_token', null);
+					}
+				});
 			});
+		}).catch(err => {
+			throw new VError(api.normalizedApiError(err), 'Error while revoking tokens');
 		});
 	}
 
@@ -128,25 +115,21 @@ class AccessTokenCommands {
 	createAccessToken () {
 		const clientName = 'user';
 
-		const allDone = pipeline([
-			this.getCredentials,
-			(creds) => {
-				const api = new ApiClient();
-				return api.createAccessToken(clientName, creds.username, creds.password);
-			}
-		]);
+		const api = new ApiClient();
 
-		return allDone.then(
-			(result) => {
-				const nowUnix = Date.now();
-				const expiresUnix = nowUnix + (result.expires_in * 1000);
-				const expiresDate = new Date(expiresUnix);
-				console.log('New access token expires on ' + expiresDate);
-				console.log('    ' + result.access_token);
-			}).catch((err) => {
-				console.log('there was an error creating a new access token: ' + err);
-				return when.reject(err);
-			});
+		return Promise.resolve().then(() => {
+			return this.getCredentials();
+		}).then(creds => {
+			return api.createAccessToken(clientName, creds.username, creds.password);
+		}).then(result => {
+			const nowUnix = Date.now();
+			const expiresUnix = nowUnix + (result.expires_in * 1000);
+			const expiresDate = new Date(expiresUnix);
+			console.log('New access token expires on ' + expiresDate);
+			console.log('    ' + result.access_token);
+		}).catch(err => {
+			throw new VError(api.normalizedApiError(err), 'Error while creating a new access token');
+		});
 	}
 }
 
