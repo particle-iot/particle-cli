@@ -587,7 +587,7 @@ const utilities = {
 	},
 
 	ensureError(err) {
-		if (!_.isError(err) && !err instanceof VError) {
+		if (!_.isError(err) && !(err instanceof VError)) {
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}
 		return err;

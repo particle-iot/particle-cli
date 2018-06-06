@@ -33,6 +33,7 @@ export default ({ commandProcessor, root }) => {
 			'delay': {
 				number: true,
 				description: 'Interval in milliseconds between variable fetches',
+				nargs: 1
 			}
 		}),
 		handler: (args) => {

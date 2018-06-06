@@ -27,16 +27,16 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'create', 'Create a new library in the specified or current directory', {
 		options: {
 			'name': {
-				required: false,
-				description: 'The name of the library to create.'
+				description: 'The name of the library to create.',
+				nargs: 1
 			},
 			'version': {
-				required: false,
-				description: 'The initial version of the library to create.'
+				description: 'The initial version of the library to create.',
+				nargs: 1
 			},
 			'author': {
-				required: false,
-				description: 'The author of the library.'
+				description: 'The author of the library.',
+				nargs: 1
 			}
 		},
 		handler: (...args) => require('./library_init').command(...args)
@@ -45,23 +45,19 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'install', false, {
 		options: {
 			'copy': {
-				required: false,
 				boolean: true,
 				alias: 'vendored',
 				description: 'install the library by copying the library sources into the project\'s lib folder'
 			},
 			'adapter': {        // hidden
-				required: false,
 				boolean: true,
 				alias: 'a'
 			},
 			'confirm': {
-				required: false,
 				boolean: true,
 				alias: 'y'
 			},
 			'dest': {
-				required: false,
 				boolean: false,
 				description: 'the directory to install to'
 			}
@@ -71,7 +67,6 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(lib, 'copy', 'Copy a library to the current project', {
-		options: {},
 		params: '[name]',
 		handler: (...args) => require('./library_install').command('copy', api(), ...args)
 	});
@@ -79,22 +74,20 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'list', 'List libraries available', {
 		options: {
 			'filter': {
-				required: false,
-				string: true,
-				description: 'filters libraries not matching the text'
+				description: 'filters libraries not matching the text',
+				nargs: 1
 			},
 			'non-interactive': {
-				required: false,
 				boolean: true,
 				description: 'Prints a single page of libraries without prompting'
 			},
 			'page': {
-				required: false,
-				description: 'Start the listing at the given page number'
+				description: 'Start the listing at the given page number',
+				nargs: 1
 			},
 			'limit': {
-				required: false,
-				description: 'The number of items to show per page'
+				description: 'The number of items to show per page',
+				nargs: 1
 			}
 		},
 		params: '[sections...]',
@@ -109,7 +102,6 @@ export default ({ commandProcessor, root }) => {
 				description: 'test if the library can be migrated'
 			},
 			'adapter': {
-				required: false,
 				boolean: true,
 				default: true,
 				description: 'add include file adapters to support v1-style includes "library/library.h"'
@@ -121,8 +113,6 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(lib, 'search', 'Search available libraries', {
-		options: {
-		},
 		params: '<name>',
 		handler: (...args) => require('./library_search').command(api(), ...args)
 	});
@@ -130,7 +120,6 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'upload', 'Uploads a private version of a library.', {
 		options: {
 			'dryRun': {
-				required: false,
 				boolean: true,
 				description: 'perform validation steps but don\'t actually upload the library.'
 			}
@@ -147,17 +136,14 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'view', 'View details about a library', {
 		options: {
 			'readme': {
-				required: false,
 				boolean: true,
 				description: 'display the readme for the library'
 			},
 			'source': {
-				required: false,
 				boolean: true,
 				description: 'display the main source file for the library'
 			},
 			'header': {
-				required: false,
 				boolean: true,
 				description: 'display the main header file for the library'
 			}
@@ -168,7 +154,6 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(lib, 'delete', false, {
-		options: {},
 		params: '<name>',
 		handler: (...args) => require('./library_delete').command(api(), ...args)
 	});

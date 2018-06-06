@@ -3,7 +3,8 @@ export default ({ commandProcessor, root }) => {
 
 	const compileOptions = {
 		'target': {
-			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
+			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.',
+			nargs: 1
 		}
 	};
 
@@ -79,7 +80,8 @@ export default ({ commandProcessor, root }) => {
 		params: '<deviceType> [files...]',
 		options: Object.assign({}, compileOptions, {
 			'saveTo': {
-				description: 'Filename for the compiled binary'
+				description: 'Filename for the compiled binary',
+				nargs: 1
 			}
 		}),
 		handler: (args) => {

@@ -27,7 +27,8 @@ export default ({ commandProcessor, root }) => {
 				description: 'Answer yes to all questions'
 			},
 			'target': {
-				description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
+				description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.',
+				nargs: 1
 			},
 		},
 		handler: (args) => {
