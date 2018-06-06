@@ -134,7 +134,13 @@ export default class CLI {
 	runCommand(args) {
 		const errors = commandProcessor.createErrorHandler();
 		this.rootCategory = this.setupCommandProcessor();
-		const argv = commandProcessor.parse(this.rootCategory, args);
+		let argv;
+		try {
+			argv = commandProcessor.parse(this.rootCategory, args);
+		} catch (error) {
+			error.isUsageError = true;
+			errors(error);
+		}
 		// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
 		// this also gives us more control.
 		// todo - handle root command passing --version
