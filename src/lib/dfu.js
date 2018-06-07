@@ -376,7 +376,7 @@ const dfu = {
 	_installUdevChoice(ans, promise) {
 		let message = 'Missing permissions to use DFU';
 		if (ans.install) {
-			let rules = __dirname + '/../assets/' + dfu._udevRulesFile;
+			let rules = __dirname + '/../../assets/' + dfu._udevRulesFile;
 			let cmd = "sudo cp '" + rules + "' '" + dfu._udevRulesDir + "'";
 			console.log(cmd);
 			childProcess.exec(cmd, (error, stdout, stderr) => {
