@@ -11,7 +11,7 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(variable, 'list', 'Show variables provided by your device(s)', {
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand(args).listVariables();
+			return new VariableCommand().listVariables();
 		}
 	});
 
@@ -20,10 +20,11 @@ export default ({ commandProcessor, root }) => {
 		options: timeOption,
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand(args).getValue();
+			return new VariableCommand().getValue(args.params.device, args.params.variableName, args);
 		},
 		examples: {
-			'$0 $command basement temperature': 'Read the temperature variable from the device basement'
+			'$0 $command basement temperature': 'Read the temperature variable from the device basement',
+			'$0 $command all temperature': 'Read the temperature variable from all my devices',
 		}
 	});
 
@@ -38,7 +39,7 @@ export default ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand(args).monitorVariables();
+			return new VariableCommand().monitorVariables(args.params.device, args.params.variableName, args);
 		},
 		examples: {
 			'$0 $command up temp --delay 2000': 'Read the temp variable from the device up every 2 seconds'
