@@ -5,7 +5,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<host> <port> <message>',
 		handler: (args) => {
 			const UdpCommand = require('../cmd/udp');
-			return new UdpCommand(args).sendUdpPacket();
+			return new UdpCommand().sendUdpPacket({ host: args.params.host, port: args.params.port, message: args.params.message });
 		}
 	});
 
@@ -13,7 +13,7 @@ export default ({ commandProcessor, root }) => {
 		params: '[port]',
 		handler: (args) => {
 			const UdpCommand = require('../cmd/udp');
-			return new UdpCommand(args).listenUdp();
+			return new UdpCommand(args).listenUdp({ port: args.params.port });
 		}
 	});
 
