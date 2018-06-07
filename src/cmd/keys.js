@@ -82,7 +82,7 @@ class KeysCommand {
 
 		alg = alg || this._getPrivateKeyAlgorithm();
 
-		return Promise.resolve.then(() => {
+		return Promise.resolve().then(() => {
 			if (alg === 'rsa') {
 				return utilities.deferredChildProcess(`openssl genrsa -out ${filename}.pem 1024`);
 			} else if (alg === 'ec') {

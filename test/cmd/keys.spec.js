@@ -61,6 +61,7 @@ describe('Key Command', function() {
 		dfu.dfuId = "2b04:d006";
 
 		api = {};
+		api.ensureToken = sinon.stub();
 		api.sendPublicKey = sinon.stub();
 		api.ready = sinon.stub().returns(true);
 	}
@@ -243,9 +244,9 @@ describe('Key Command', function() {
 		it('raises an error if the device does not support multiple protocols', function() {
 			dfu.dfuId = '2b04:d006';
 			return key.changeTransportProtocol('udp').then(function() {
-				throw Error('expected error');
+				throw new Error('expected error');
 			}).catch(function (err) {
-				expect(err).to.be.eql('Error Protocol cannot be changed for this device');
+				expect(err.message).to.be.eql('Could not change device transport protocol: Protocol cannot be changed for this device');
 			});
 		});
 	});
