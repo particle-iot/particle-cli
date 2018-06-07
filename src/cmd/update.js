@@ -13,9 +13,6 @@ const spin = new Spinner('Updating system firmware on the device...');
 
 class UpdateCommand {
 	updateDevice() {
-		// by default we don't want crazy DFU output
-		settings.verboseOutput = false;
-
 		return dfu.findCompatibleDFU().then((deviceId) => {
 			return doUpdate(deviceId);
 		}).catch((err) => {
@@ -80,7 +77,7 @@ function doUpdate(id) {
 	console.log(chalk.cyan('>'), 'This process should take about ' + (specs.requiresBootloaderAscenderApp?50:30) + ' seconds. Here it goes!');
 	console.log();
 
-	if (!settings.verboseOutput) {
+	if (global.verboseLevel > 0) {
 		spin.start();
 	}
 

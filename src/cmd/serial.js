@@ -461,9 +461,6 @@ class SerialCommand {
 	configureWifi({ port, file }) {
 		const credentialsFile = file;
 
-		// TODO remove once we have verbose flag
-		settings.verboseOutput = true;
-
 		return this.whatSerialPortDidYouMean(port, true).then(device => {
 			if (!device) {
 				throw new VError('No serial port identified');

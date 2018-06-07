@@ -41,7 +41,6 @@ var settings = {
 	//useOpenSSL: true,
 	useSudoForDfu: false,
 	// TODO set to false once we give flags to control this
-	verboseOutput: true,
 	disableUpdateCheck: envValueBoolean('PARTICLE_DISABLE_UPDATE', false),
 	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours
 	updateCheckTimeout: 3000,
