@@ -43,25 +43,18 @@ describe('the update firmware binaries are all valid', function() {
 					});
 
 					it('has a valid crc ', function() {
-						var dfd = when.defer();
 						var parser = new Parser();
-						parser.parseFile(updateFile, function parsed(fileInfo, err) {
-							if (err) {
-								return dfd.reject(err);
-							}
-
+						return parser.parseFile(updateFile).then(fileInfo => {
 							if (fileInfo.suffixInfo.suffixSize === 65535) {
-								return dfd.reject(binaryFile + ' does not contain inspection information');
+								throw new Error(binaryFile + ' does not contain inspection information');
 							}
 
 							if (!fileInfo.crc.ok) {
-								dfd.reject('CRC failed (should be '
+								throw new Error('CRC failed (should be '
 									+ (fileInfo.crc.storedCrc) + ' but is '
 									+ (fileInfo.crc.actualCrc) + ')');
 							}
-							dfd.resolve();
-						}.bind(this));
-						return dfd.promise;
+						});
 					});
 				});
 			})(updateFile, updateFiles[i]);

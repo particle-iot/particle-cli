@@ -35,18 +35,16 @@ const ensureError = utilities.ensureError;
 
 class BinaryCommand {
 	inspectBinary(binaryFile) {
-		return new Promise((fulfill, reject) => {
+		return Promise.resolve().then(() => {
 			if (!fs.existsSync(binaryFile)) {
 				throw new VError(`Binary file not found ${binaryFile}`);
 			}
 			const parser = new Parser();
-			parser.parseFile(binaryFile, (fileInfo, err) => {
-				if (err) {
-					return reject(new VError(ensureError(err), `Could not parse ${binaryFile}`));
-				}
-
+			return parser.parseFile(binaryFile).catch(err => {
+				throw new VError(ensureError(err), `Could not parse ${binaryFile}`);
+			}).then(fileInfo => {
 				if (fileInfo.suffixInfo.suffixSize === 65535) {
-					return reject(new VError(`${binaryFile} does not contain inspection information`));
+					throw new VError(`${binaryFile} does not contain inspection information`);
 				}
 
 				console.log(chalk.bold(path.basename(binaryFile)));
@@ -54,8 +52,6 @@ class BinaryCommand {
 				this._showCrc(fileInfo);
 				this._showPlatform(fileInfo);
 				this._showModuleInfo(fileInfo);
-
-				fulfill();
 			});
 		});
 	}

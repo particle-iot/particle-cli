@@ -161,7 +161,13 @@ class DoctorCommand {
 			}).then(() => {
 				console.log('Applying update...');
 				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
-				return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
+
+				return this.prompt([{
+					type: 'list',
+					name: 'choice',
+					message: 'Press ENTER when ready',
+					choices: ['Continue']
+				}]);
 			}).catch(this._catchSkipStep);
 	}
 

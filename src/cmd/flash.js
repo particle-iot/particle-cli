@@ -82,14 +82,9 @@ class FlashCommand {
 				return;
 			}
 
-			return new Promise((resolve, reject) => {
-				const parser = new ModuleParser();
-				parser.parseFile(binary, (info, err) => {
-					if (err) {
-						reject(new VError(ensureError(err), `Could not parse ${binary}`));
-					}
-					resolve(info);
-				});
+			const parser = new ModuleParser();
+			return parser.parseFile(binary).catch(err => {
+				throw new VError(ensureError(err), `Could not parse ${binary}`);
 			}).then(info => {
 				if (info.suffixInfo.suffixSize === 65535) {
 					console.log('warn: unable to verify binary info');

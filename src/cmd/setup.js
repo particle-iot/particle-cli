@@ -521,11 +521,7 @@ class SetupCommand {
 	}
 
 	prompt(prompts) {
-		let cb = (result) => {
-			return new Promise((resolve, reject) => {
-				resolve(result);
-			});
-		};
+		let handler = (result) => result;
 		if (this.options.yes) {
 			const newPrompts = [];
 			const answers = {};
@@ -537,16 +533,14 @@ class SetupCommand {
 					answers[p.name] = true;
 				}
 			}
-			cb = (ans) => {
+			handler = (ans) => {
 				ans = Object.assign({}, ans, answers);
-				return new Promise((resolve, reject) => {
-					resolve(ans);
-				});
+				return ans;
 			};
 			prompts = newPrompts;
 		}
 
-		return prompt(prompts).then(cb);
+		return prompt(prompts).then(handler);
 	}
 
 	exit() {
