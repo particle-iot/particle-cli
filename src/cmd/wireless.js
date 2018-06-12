@@ -528,7 +528,7 @@ class WirelessCommand {
 					name: 'username',
 					message: 'Username',
 					when: (ans) => {
-						return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('peap');
+						return sap.eapTypeValue(ans.eap) === sap.eapTypeValue('peap');
 					},
 					validate: (val) => {
 						return !!val;
@@ -539,7 +539,7 @@ class WirelessCommand {
 					name: 'password',
 					message: 'Password',
 					when: (ans) => {
-						return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('peap');
+						return sap.eapTypeValue(ans.eap) === sap.eapTypeValue('peap');
 					},
 					validate: (val) => {
 						return !!val;
@@ -550,7 +550,7 @@ class WirelessCommand {
 					name: 'client_certificate',
 					message: 'Client certificate in PEM format',
 					when: (ans) => {
-						return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('tls');
+						return sap.eapTypeValue(ans.eap) === sap.eapTypeValue('tls');
 					},
 					validate: (val) => {
 						return !!val;
@@ -561,7 +561,7 @@ class WirelessCommand {
 					name: 'private_key',
 					message: 'Private key in PEM format',
 					when: (ans) => {
-						return SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('tls');
+						return sap.eapTypeValue(ans.eap) === sap.eapTypeValue('tls');
 					},
 					validate: (val) => {
 						return !!val;
@@ -749,7 +749,7 @@ class WirelessCommand {
 			} else {
 				isEnterprise = true;
 				console.log(arrow, 'EAP Type: ', chalk.bold.cyan(ans.eap));
-				if (SAP.eapTypeValue(ans.eap) === SAP.eapTypeValue('peap')) {
+				if (sap.eapTypeValue(ans.eap) === sap.eapTypeValue('peap')) {
 					console.log(arrow, 'Username: ', chalk.bold.cyan(ans.username));
 					console.log(arrow, 'Password:', chalk.bold.cyan(password || '[none]'));
 				} else {
