@@ -237,6 +237,9 @@ class CloudCommand {
 		}).then((resp) => {
 			if (resp.status || resp.message) {
 				console.log('Flash device OK: ', resp.status || resp.message);
+			} else if (resp.output === 'Compiler timed out or encountered an error') {
+				console.log('\n' + (resp.errors && resp.errors[0]));
+				throw new Error('Compiler encountered an error');
 			} else {
 				throw api.normalizedApiError(resp);
 			}

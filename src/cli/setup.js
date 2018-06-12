@@ -20,7 +20,7 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const SetupCommand = require('../cmd/setup');
-			return new SetupCommand(args).setup();
+			return new SetupCommand().setup(args);
 		}
 	});
 };

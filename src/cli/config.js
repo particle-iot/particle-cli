@@ -8,7 +8,7 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const ConfigCommands = require('../cmd/config');
-			return new ConfigCommands(args).configSwitch();
+			return new ConfigCommands().configSwitch(args.params.profile, args.params.setting, args.params.value, args);
 		},
 		examples: {
 			'$0 $command company': 'Switch to a profile called company',

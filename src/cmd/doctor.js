@@ -15,8 +15,7 @@ const deviceTimeout = 3000;
 const serialTimeout = 3000;
 
 class DoctorCommand {
-	constructor(options) {
-		this.options = options;
+	constructor() {
 		this._commands = {};
 	}
 
@@ -157,7 +156,7 @@ class DoctorCommand {
 		this._displayStepTitle('Updating CC3000 firmware');
 		return this._enterDfuMode()
 			.then(() => {
-				return this.command('flash', { params: { binary: 'cc3000' } }).flashDfu();
+				return this.command('flash').flashDfu({ binary: 'cc3000' });
 			}).then(() => {
 				console.log('Applying update...');
 				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
@@ -177,7 +176,7 @@ class DoctorCommand {
 		return this._enterDfuMode()
 			.then(() => {
 				// See the source code of the doctor app in binaries/doctor.ino
-				return this.command('flash', { params: { binary: 'doctor' } }).flashDfu();
+				return this.command('flash').flashDfu({ binary: 'doctor' });
 			})
 			.then(() => {
 				return this._waitForSerialDevice(deviceTimeout);
@@ -306,7 +305,7 @@ class DoctorCommand {
 		this._displayStepTitle('Flashing the default Particle Tinker app');
 		return this._enterDfuMode()
 			.then(() => {
-				return this.command('flash', { params: { binary: 'tinker' } }).flashDfu();
+				return this.command('flash').flashDfu({ binary: 'tinker' });
 			}).catch(this._catchSkipStep);
 	}
 
@@ -326,7 +325,7 @@ class DoctorCommand {
 					console.log(chalk.red('!'), 'Skipping device key because it does not report its device ID over USB');
 					return;
 				}
-				return this.command('keys', { params: { device: this.device.deviceId }, force: true }).keyDoctor();
+				return this.command('keys').keyDoctor(this.device.deviceId);
 			}).catch(this._catchSkipStep);
 	}
 

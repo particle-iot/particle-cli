@@ -33,9 +33,8 @@ function goodbye() {
 
 class SetupCommand {
 
-	constructor(options) {
+	constructor() {
 		spinnerMixin(this);
-		this.options = options;
 		this.__wasLoggedIn;
 		this.__api = new ApiClient2();
 		this.__oldapi = new ApiClient();
@@ -46,11 +45,12 @@ class SetupCommand {
 		return new Command(options);
 	}
 
-	setup() {
+	setup({ wifi, scan, manual, yes }) {
+		this.options = { scan, manual, yes };
 
 		const self = this;
 
-		this.forceWiFi = this.options.wifi;
+		this.forceWiFi = wifi;
 
 		console.log(chalk.bold.cyan(utilities.banner()));
 		console.log(arrow, "Setup is easy! Let's get started...");

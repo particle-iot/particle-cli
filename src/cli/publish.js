@@ -14,7 +14,7 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const PublishCommand = require('../cmd/publish');
-			return new PublishCommand(args).publishEvent();
+			return new PublishCommand().publishEvent(args.params.event, args.params.data, args);
 		},
 		examples: {
 			'$0 $command temperature 25.0': 'Publish a temperature event to your private event stream'

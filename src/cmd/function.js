@@ -37,11 +37,7 @@ class FunctionCommand {
 		});
 	}
 
-	callFunction() {
-		const deviceId = this.options.params.device;
-		const functionName = this.options.params['function'];
-		const funcParam = this.options.params.argument || '';
-
+	callFunction(deviceId, functionName, funcParam) {
 		const api = new ApiClient();
 		api.ensureToken();
 

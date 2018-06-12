@@ -13,7 +13,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).makeNewKey();
+			return new KeysCommand().makeNewKey(args.params.filename, args);
 		}
 	});
 
@@ -21,7 +21,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<filename>',
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).writeKeyToDevice();
+			return new KeysCommand().writeKeyToDevice(args.params.filename);
 		}
 	});
 
@@ -36,7 +36,7 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).saveKeyFromDevice();
+			return new KeysCommand().saveKeyFromDevice(args.params.filename, args);
 		}
 	});
 
@@ -51,7 +51,7 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).sendPublicKeyToServer();
+			return new KeysCommand().sendPublicKeyToServer(args.params.device, args.params.filename, args);
 		}
 	});
 
@@ -60,7 +60,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).keyDoctor();
+			return new KeysCommand().keyDoctor(args.params.device, args);
 		}
 	});
 
@@ -79,7 +79,7 @@ export default ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).writeServerPublicKey();
+			return new KeysCommand().writeServerPublicKey(args.params.filename, args);
 		}
 	});
 
@@ -87,7 +87,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).readServerAddress();
+			return new KeysCommand().readServerAddress(args);
 		}
 	});
 
@@ -95,7 +95,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).transportProtocol();
+			return new KeysCommand().transportProtocol(args);
 		}
 	});
 

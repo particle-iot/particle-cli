@@ -7,11 +7,8 @@ class PublishCommand {
 		this.options = options;
 	}
 
-	publishEvent() {
-		const eventName = this.options.params.event;
-		const data = this.options.params.data;
-		const publicFlag = this.options.public;
-		const privateFlag = this.options.private;
+	publishEvent(eventName, data, { 'public': publicFlag, 'private': privateFlag }) {
+		// Cannot use usual destructuring since public and private are reserved keywords
 		const setPrivate = publicFlag ? false : privateFlag;
 
 		const api = new ApiClient();

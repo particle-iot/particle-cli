@@ -1313,7 +1313,7 @@ class SerialCommand {
 
 	askForSystemFirmwareVersion(device, timeout) {
 		return this._issueSerialCommand(device, 'v', timeout).then((data) => {
-			const matches = data.match(/system firmware version:\s+([\w.]+)/);
+			const matches = data.match(/system firmware version:\s+([\w.-]+)/);
 			if (matches && matches.length === 2) {
 				return matches[1];
 			}
