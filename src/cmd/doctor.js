@@ -1,3 +1,5 @@
+import VError from "verror";
+
 const when = require('when');
 const pipeline = require('when/pipeline');
 const _ = require('lodash');
@@ -396,7 +398,7 @@ class DoctorCommand {
 			}).then((message) => {
 				console.log(message);
 			}).then(() => {
-				return this.command('serial').configureWifi();
+				return this.command('serial').promptWifiScan(this.device);
 			}).catch(this._catchSkipStep);
 	}
 
@@ -416,6 +418,9 @@ class DoctorCommand {
 			return;
 		}
 		console.log("The Doctor didn't complete sucesfully. " + e.message);
+		if (global.verboseLevel > 1) {
+			console.log(VError.fullStack(e));
+		}
 		console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
 		console.log(chalk.bold.white('https://community.particle.io/'));
 	}

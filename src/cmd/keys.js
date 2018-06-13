@@ -248,7 +248,7 @@ class KeysCommand {
 		});
 	}
 
-	keyDoctor(deviceId, { protocol }) {
+	keyDoctor(deviceId, { protocol } = {}) {
 		deviceId = deviceId.toLowerCase();  // make lowercase so that it's case insensitive
 
 		if (deviceId.length < 24) {
@@ -319,7 +319,7 @@ class KeysCommand {
 			return this.validateDeviceProtocol({ protocol });
 		}).then(_protocol => {
 			protocol = _protocol;
-			return this._getDERPublicKey(filename);
+			return this._getDERPublicKey(filename, { protocol });
 		}).then(derFile => {
 			return this._formatPublicKey(derFile, host, port, { protocol });
 		}).then(bufferFile => {
@@ -488,8 +488,8 @@ class KeysCommand {
 		return (segment && segment.alg) || 'rsa';
 	}
 
-	_getDERPublicKey(filename) {
-		let alg = this._getServerKeyAlgorithm();
+	_getDERPublicKey(filename, { protocol }) {
+		let alg = this._getServerKeyAlgorithm({ protocol });
 		if (!alg) {
 			throw new VError('No device specs');
 		}
@@ -530,37 +530,35 @@ class KeysCommand {
 		if (ipOrDomain) {
 			let alg = segment.alg || 'rsa';
 			let fileWithAddress = `${utilities.filenameNoExt(filename)}-${utilities.replaceAll(ipOrDomain, '.', '_')}-${alg}.der`;
-			if (!fs.existsSync(fileWithAddress)) {
-				let addressBuf = this._createAddressBuffer(ipOrDomain);
+			let addressBuf = this._createAddressBuffer(ipOrDomain);
 
-				// To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
-				// Everything between the end of the key and the beginning of the address should be 0xFF.
-				// The first byte representing "type" is 0x00 for 4-byte IP address or 0x01 for domain name—anything else is considered invalid and uses the fallback domain.
-				// The second byte is 0x04 for an IP address or the length of the string for a domain name.
-				// The remaining bytes are the IP or domain name. If the length of the domain name is odd, add a zero byte to get the file length to be even as usual.
+			// To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
+			// Everything between the end of the key and the beginning of the address should be 0xFF.
+			// The first byte representing "type" is 0x00 for 4-byte IP address or 0x01 for domain name—anything else is considered invalid and uses the fallback domain.
+			// The second byte is 0x04 for an IP address or the length of the string for a domain name.
+			// The remaining bytes are the IP or domain name. If the length of the domain name is odd, add a zero byte to get the file length to be even as usual.
 
-				buf = new Buffer(segment.size);
+			buf = new Buffer(segment.size);
 
-				//copy in the key
-				fileBuf = fs.readFileSync(filename);
-				fileBuf.copy(buf, 0, 0, fileBuf.length);
+			//copy in the key
+			fileBuf = fs.readFileSync(filename);
+			fileBuf.copy(buf, 0, 0, fileBuf.length);
 
-				//fill the rest with "FF"
-				buf.fill(255, fileBuf.length);
+			//fill the rest with "FF"
+			buf.fill(255, fileBuf.length);
 
+			let offset = segment.addressOffset || 384;
+			addressBuf.copy(buf, offset, 0, addressBuf.length);
 
-				let offset = segment.addressOffset || 384;
-				addressBuf.copy(buf, offset, 0, addressBuf.length);
-
-				if (port && segment.portOffset) {
-					buf.writeUInt16BE(port, segment.portOffset);
-				}
-
-				//console.log("address chunk is now: " + addressBuf.toString('hex'));
-				//console.log("Key chunk is now: " + buf.toString('hex'));
-
-				fs.writeFileSync(fileWithAddress, buf);
+			if (port && segment.portOffset) {
+				buf.writeUInt16BE(port, segment.portOffset);
 			}
+
+			//console.log("address chunk is now: " + addressBuf.toString('hex'));
+			//console.log("Key chunk is now: " + buf.toString('hex'));
+
+			fs.writeFileSync(fileWithAddress, buf);
+
 			return fileWithAddress;
 		}
 

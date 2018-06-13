@@ -469,7 +469,7 @@ class SerialCommand {
 			if (credentialsFile) {
 				return this._configWifiFromFile(device, credentialsFile);
 			} else {
-				return this._promptWifiScan(device);
+				return this.promptWifiScan(device);
 			}
 		}).catch(err =>	{
 			throw new VError(ensureError(err), 'Error configuring Wi-Fi');
@@ -483,7 +483,7 @@ class SerialCommand {
 		});
 	}
 
-	_promptWifiScan(device) {
+	promptWifiScan(device) {
 		return prompt([
 			{
 				type: 'confirm',
@@ -613,7 +613,7 @@ class SerialCommand {
 			return self.sendClaimCode(device, dat.claim_code).then(() => {
 				console.log('Claim code set. Now setting up Wi-Fi');
 				// todo - add additional commands over USB to have the device scan for Wi-Fi
-				return self._promptWifiScan(device);
+				return self.promptWifiScan(device);
 			}).then(revived);
 		}
 
