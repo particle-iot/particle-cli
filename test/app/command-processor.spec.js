@@ -353,9 +353,9 @@ describe('command-line parsing', () => {
 			expect(console.log).to.have.been.calledWithMatch('{ bass: \'ice ice baby\' }');
 		});
 
-		it('splits the stack string and logs that to the console when verbose mode is enabled', () => {
+		it('logs the stack trace to the console when verbose mode is enabled', () => {
 			const console = { log: sinon.stub() };
-			const error = { stack: '1\n2\n3' };
+			const error = new Error('hey');
 			try {
 				global.verboseLevel = 2;
 				commandProcessor.test.consoleErrorLogger(console, undefined /*yargs*/, false, error);
@@ -363,7 +363,9 @@ describe('command-line parsing', () => {
 			finally {
 				delete global.verboseLevel;
 			}
-			expect(console.log).to.have.been.calledWith(error, ['1', '2', '3']);
+			expect(console.log).to.have.been.calledWithMatch('hey');
+			expect(console.log).to.have.been.calledWithMatch('Error: hey\n' +
+				'    at Context.');
 		});
 
 		it('does not log the stack for usage errors.', () => {

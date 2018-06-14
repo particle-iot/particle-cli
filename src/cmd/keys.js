@@ -1,8 +1,6 @@
+const VError = require('verror');
 const url = require('url');
-const when = require('when');
 const whenNode = require('when/node');
-const sequence = require('when/sequence');
-const pipeline = require('when/pipeline');
 const temp = require('temp').track();
 const utilities = require('../lib/utilities.js');
 const ApiClient = require('../lib/ApiClient.js');
@@ -10,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const dfu = require('../lib/dfu.js');
 const deviceSpecs = require('../lib/deviceSpecs');
+const ensureError = require('../lib/utilities').ensureError;
 
 /**
  * Commands for managing encryption keys.
@@ -23,184 +22,150 @@ const deviceSpecs = require('../lib/deviceSpecs');
 class KeysCommand {
 	constructor(args) {
 		this.dfu = dfu;
-		this.options = args;
 	}
 
-	transportProtocol() {
-		const protocol = this.options.protocol;
+	transportProtocol({ protocol }) {
 		return protocol ? this.changeTransportProtocol(protocol) : this.showTransportProtocol();
 	}
 
 	showTransportProtocol() {
-		return sequence([
-			() => {
-				return this.dfu.isDfuUtilInstalled();
-			},
-			() => {
-				//make sure our device is online and in dfu mode
-				return this.dfu.findCompatibleDFU();
-			},
-			() => {
-				return this.validateDeviceProtocol();
-			}
-		]).then((protocol) => {
-			console.log(`Device protocol is set to ${this.options.protocol}`);
-		}).catch((err) => {
-			return when.reject(`Error ${err.message || err}`);
+		return Promise.resolve().then(() => {
+			return this.dfu.isDfuUtilInstalled();
+		}).then(() => {
+			//make sure our device is online and in dfu mode
+			return this.dfu.findCompatibleDFU();
+		}).then(() => {
+			return this.validateDeviceProtocol();
+		}).then(protocol => {
+			console.log(`Device protocol is set to ${protocol}`);
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Could not fetch device transport protocol');
 		});
 	}
 
 	changeTransportProtocol(protocol) {
 		if (protocol !== 'udp' && protocol !== 'tcp') {
-			return when.reject('Invalid protocol');
+			return new VError('Invalid protocol');
 		}
 
-		return sequence([
-			() => {
-				return this.dfu.isDfuUtilInstalled();
-			},
-			() => {
-				//make sure our device is online and in dfu mode
-				return this.dfu.findCompatibleDFU();
-			},
-			() => {
-				let specs = deviceSpecs[this.dfu.dfuId];
-				if (!specs.transport) {
-					return when.reject('Protocol cannot be changed for this device');
-				}
-
-				let flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
-				return this.dfu.writeBuffer(flagValue, 'transport', false);
+		return Promise.resolve().then(() => {
+			return this.dfu.isDfuUtilInstalled();
+		}).then(() => {
+			//make sure our device is online and in dfu mode
+			return this.dfu.findCompatibleDFU();
+		}).then(() => {
+			let specs = deviceSpecs[this.dfu.dfuId];
+			if (!specs.transport) {
+				throw new VError('Protocol cannot be changed for this device');
 			}
-		]).then(() => {
+
+			let flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
+			return this.dfu.writeBuffer(flagValue, 'transport', false);
+		}).then(() => {
 			console.log(`Protocol changed to ${protocol}`);
-		}).catch((err) => {
-			return when.reject(`Error ${err.message || err}`);
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Could not change device transport protocol');
 		});
 	}
 
-	makeKeyOpenSSL(filename, alg) {
+	makeKeyOpenSSL(filename, alg, { protocol }) {
 		filename = utilities.filenameNoExt(filename);
 
-		// FIXME: unused
-		if (this.options.force) {
-			utilities.tryDelete(filename + '.pem');
-			utilities.tryDelete(filename + '.pub.pem');
-			utilities.tryDelete(filename + '.der');
-		}
+		alg = alg || this._getPrivateKeyAlgorithm({ protocol });
 
-		alg = alg || this._getPrivateKeyAlgorithm();
-
-		return sequence([
-			() => {
-				if (alg === 'rsa') {
-					return utilities.deferredChildProcess(`openssl genrsa -out ${filename}.pem 1024`);
-				} else if (alg === 'ec') {
-					return utilities.deferredChildProcess(`openssl ecparam -name prime256v1 -genkey -out ${filename}.pem`);
-				}
-			},
-			() => {
-				return utilities.deferredChildProcess(`openssl ${alg} -in ${filename}.pem -pubout -out ${filename}.pub.pem`);
-			},
-			() => {
-				return utilities.deferredChildProcess(`openssl ${alg} -in ${filename}.pem -outform DER -out ${filename}.der`);
+		return Promise.resolve().then(() => {
+			if (alg === 'rsa') {
+				return utilities.deferredChildProcess(`openssl genrsa -out ${filename}.pem 1024`);
+			} else if (alg === 'ec') {
+				return utilities.deferredChildProcess(`openssl ecparam -name prime256v1 -genkey -out ${filename}.pem`);
 			}
-		]);
+		}).then(() => {
+			return utilities.deferredChildProcess(`openssl ${alg} -in ${filename}.pem -pubout -out ${filename}.pub.pem`);
+		}).then(() => {
+			return utilities.deferredChildProcess(`openssl ${alg} -in ${filename}.pem -outform DER -out ${filename}.der`);
+		});
 	}
 
 	keyAlgorithmForProtocol(protocol) {
 		return protocol === 'udp' ? 'ec' : 'rsa';
 	}
 
-	makeNewKey() {
-		const filename = this.options.params.filename || 'device';
-		return this._makeNewKey({ filename });
+	makeNewKey(filename, { protocol }) {
+		return this._makeNewKey({ filename: filename || 'device', protocol });
 	}
 
-	_makeNewKey({ filename }) {
+	_makeNewKey({ filename, protocol }) {
 		let alg;
-		let showHelp = !this.options.protocol;
-		return sequence([
-			() => {
-				return sequence([
-					() => {
-						return this.dfu.isDfuUtilInstalled();
-					},
-					() => {
-						return this.dfu.findCompatibleDFU(showHelp);
-					}
-				]).catch((err) => {
-					if (this.options.protocol) {
-						alg = this.keyAlgorithmForProtocol(this.options.protocol);
-						return;
-					}
-					return when.reject(err);
-				});
-			},
-			() => {
-				return this.makeKeyOpenSSL(filename, alg);
-			}
-		]).then(() => {
+		let showHelp = !protocol;
+		return Promise.resolve().then(() => {
+			return Promise.resolve().then(() => {
+				return this.dfu.isDfuUtilInstalled();
+			}).then(() => {
+				return this.dfu.findCompatibleDFU(showHelp);
+			}).catch((err) => {
+				if (protocol) {
+					alg = this.keyAlgorithmForProtocol(protocol);
+					return;
+				}
+				throw err;
+			});
+		}).then(() => {
+			return this.makeKeyOpenSSL(filename, alg, { protocol });
+		}).then(() => {
 			console.log('New Key Created!');
-		}, (err) => {
-			return when.reject(`Error creating keys... ${err.message || err}`);
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Error creating keys');
 		});
 	}
 
-	writeKeyToDevice() {
-		const filename = this.options.params.filename;
+	writeKeyToDevice(filename) {
 		return this._writeKeyToDevice({ filename });
 	}
 
 	_writeKeyToDevice({ filename, leave = false }) {
+		let protocol;
 		filename = utilities.filenameNoExt(filename) + '.der';
 		if (!fs.existsSync(filename)) {
-			return when.reject("I couldn't find the file: " + filename);
+			throw new VError("I couldn't find the file: " + filename);
 		}
 
 		//TODO: give the user a warning before doing this, since it'll bump their device offline.
 
-		return sequence([
-			() => {
-				return this.dfu.isDfuUtilInstalled();
-			},
-			() => {
-				//make sure our device is online and in DFU mode
-				return this.dfu.findCompatibleDFU();
-			},
-			() => {
-				return this.validateDeviceProtocol();
-			},
+		return Promise.resolve().then(() => {
+			return this.dfu.isDfuUtilInstalled();
+		}).then(() => {
+			//make sure our device is online and in DFU mode
+			return this.dfu.findCompatibleDFU();
+		}).then(() => {
+			return this.validateDeviceProtocol();
+		}).then(_protocol => {
+			protocol = _protocol;
 			//backup their existing key so they don't lock themselves out.
-			() => {
-				let alg = this._getPrivateKeyAlgorithm();
-				let prefilename = path.join(
-						path.dirname(filename),
-					'backup_' + alg + '_' + path.basename(filename)
-				);
-				return this._saveKeyFromDevice({ filename: prefilename, force: true });
-			},
-			() => {
-				let segment = this._getPrivateKeySegmentName();
-				return this.dfu.write(filename, segment, leave);
-			}
-		]).then(() => {
+			let alg = this._getPrivateKeyAlgorithm({ protocol });
+			let prefilename = path.join(
+					path.dirname(filename),
+				'backup_' + alg + '_' + path.basename(filename)
+			);
+			return this._saveKeyFromDevice({ filename: prefilename, force: true });
+		}).then(() => {
+			let segment = this._getPrivateKeySegmentName({ protocol });
+			return this.dfu.write(filename, segment, leave);
+		}).then(() => {
 			console.log('Saved!');
-		}, (err) => {
-			return when.reject(`Error writing key to device... ${err.message || err}`);
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Error writing key to device.');
 		});
 	}
 
-	saveKeyFromDevice() {
-		const filename = utilities.filenameNoExt(this.options.params.filename) + '.der';
-		const force = this.options.force;
+	saveKeyFromDevice(filename, { force }) {
+		filename = utilities.filenameNoExt(filename) + '.der';
 		return this._saveKeyFromDevice({ filename, force });
 	}
 
 	_saveKeyFromDevice({ filename, force }) {
+		let protocol;
 		if (!force && fs.existsSync(filename)) {
-			const msg = 'This file already exists, please specify a different file, or use the --force flag.';
-			return when.reject(msg);
+			throw new VError('This file already exists, please specify a different file, or use the --force flag.');
 		} else if (fs.existsSync(filename)) {
 			utilities.tryDelete(filename);
 		}
@@ -208,42 +173,33 @@ class KeysCommand {
 		//find this.dfu devices, make sure a device is connected
 		//pull the key down and save it there
 
-		return sequence([
-			() => {
-				return this.dfu.isDfuUtilInstalled();
-			},
-			() => {
-				return this.dfu.findCompatibleDFU();
-			},
-			() => {
-				return this.validateDeviceProtocol();
-			},
-			() => {
-				let segment = this._getPrivateKeySegmentName();
-				return this.dfu.read(filename, segment, false);
-			},
-			() => {
-				let pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
-				if (this.options.force) {
-					utilities.tryDelete(pubPemFilename);
-				}
-				let alg = this._getPrivateKeyAlgorithm();
-				return utilities.deferredChildProcess(`openssl ${alg} -in ${filename} -inform DER -pubout -out ${pubPemFilename}`).catch((err) => {
-					return when.reject(`Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device. Error: ${err.message || err}`);
-				});
+		return Promise.resolve().then(() => {
+			return this.dfu.isDfuUtilInstalled();
+		}).then(() => {
+			return this.dfu.findCompatibleDFU();
+		}).then(() => {
+			return this.validateDeviceProtocol();
+		}).then(_protocol => {
+			protocol = _protocol;
+			let segment = this._getPrivateKeySegmentName({ protocol });
+			return this.dfu.read(filename, segment, false);
+		}).then(() => {
+			let pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
+			if (force) {
+				utilities.tryDelete(pubPemFilename);
 			}
-		]).then(() => {
+			let alg = this._getPrivateKeyAlgorithm({ protocol });
+			return utilities.deferredChildProcess(`openssl ${alg} -in ${filename} -inform DER -pubout -out ${pubPemFilename}`).catch((err) => {
+				throw new VError(err, 'Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device.');
+			});
+		}).then(() => {
 			console.log('Saved!');
-		}, (err) => {
-			return when.reject(`Error saving key from device... ${err.message || err}`);
+		}).catch(err => {
+			return new VError(ensureError(err), 'Error saving key from device');
 		});
 	}
 
-	sendPublicKeyToServer() {
-		const deviceId = this.options.params.device;
-		const filename = this.options.params.filename;
-		const productId = this.options.product_id;
-
+	sendPublicKeyToServer(deviceId, filename, { product_id: productId }) {
 		return this._sendPublicKeyToServer({ deviceId, filename, productId, algorithm: 'rsa' });
 	}
 
@@ -251,56 +207,48 @@ class KeysCommand {
 		if (!fs.existsSync(filename)) {
 			filename = utilities.filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)) {
-				return when.reject("Couldn't find " + filename);
+				throw new VError("Couldn't find " + filename);
 			}
 		}
 
 		deviceId = deviceId.toLowerCase();
 
 		let api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('Not logged in');
-		}
+		api.ensureToken();
 
 		let pubKey = temp.path({ suffix: '.pub.pem' });
 		let inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';
 
-		return pipeline([
-			() => {
-				// try both private and public versions and both algorithms
-				return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey)
-					.catch(() => {
-						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
-					})
-					.catch(() => {
-						// try other algorithm next
-						algorithm = algorithm === 'rsa' ? 'ec' : 'rsa';
-						return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
-					})
-					.catch(() => {
-						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
-					});
-			},
-			() => {
-				return whenNode.lift(fs.readFile)(pubKey);
-			},
-			(keyBuf) => {
-				let apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
-				return api.sendPublicKey(deviceId, keyBuf, apiAlg, productId);
-			}
-		]).catch((err) => {
-			return when.reject(`Error sending public key to server: ${err.message || err}`);
-		}).finally(() => {
-			fs.unlinkSync(pubKey);
+		const cleanup = () => fs.unlinkSync(pubKey);
+
+		return Promise.resolve().then(() => {
+			// try both private and public versions and both algorithms
+			return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey)
+				.catch(() => {
+					return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+				})
+				.catch(() => {
+					// try other algorithm next
+					algorithm = algorithm === 'rsa' ? 'ec' : 'rsa';
+					return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+				})
+				.catch(() => {
+					return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+				});
+		}).then(() => {
+			return whenNode.lift(fs.readFile)(pubKey);
+		}).then(keyBuf => {
+			let apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
+			return api.sendPublicKey(deviceId, keyBuf, apiAlg, productId);
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Error sending public key to server');
+		}).then(cleanup, err => {
+			cleanup();
+			throw err;
 		});
 	}
 
-	keyDoctor() {
-		const deviceId = this.options.params.device;
-		return this._keyDoctor({ deviceId });
-	}
-
-	_keyDoctor({ deviceId }) {
+	keyDoctor(deviceId, { protocol } = {}) {
 		deviceId = deviceId.toLowerCase();  // make lowercase so that it's case insensitive
 
 		if (deviceId.length < 24) {
@@ -311,49 +259,38 @@ class KeysCommand {
 		}
 
 		let algorithm, filename;
-		return sequence([
-			() => {
-				return this.dfu.isDfuUtilInstalled();
-			},
-			() => {
-				return this.dfu.findCompatibleDFU();
-			},
-			() => {
-				return this.validateDeviceProtocol();
-			},
-			() => {
-				algorithm = this._getPrivateKeyAlgorithm();
-				filename = deviceId + '_' + algorithm + '_new';
-				return this._makeNewKey({ filename });
-			},
-			() => {
-				return this._writeKeyToDevice({ filename, leave: true });
-			},
-			() => {
-				return this._sendPublicKeyToServer({ deviceId, filename, algorithm });
-			}
-		]).then(
-			() => {
-				console.log('Okay!  New keys in place, your device should restart.');
-			},
-			(err) => {
-				return when.reject(
-					'Make sure your device is in DFU mode (blinking yellow), and that your computer is online.\n' +
-					`Error: ${err.message || err}`
-				);
-			});
+		return Promise.resolve().then(() => {
+			return this.dfu.isDfuUtilInstalled();
+		}).then(() => {
+			return this.dfu.findCompatibleDFU();
+		}).then(() => {
+			return this.validateDeviceProtocol({ protocol });
+		}).then(_protocol => {
+			protocol = _protocol;
+			algorithm = this._getPrivateKeyAlgorithm({ protocol });
+			filename = deviceId + '_' + algorithm + '_new';
+			return this._makeNewKey({ filename });
+		}).then(() => {
+			return this._writeKeyToDevice({ filename, leave: true });
+		}).then(() => {
+			return this._sendPublicKeyToServer({ deviceId, filename, algorithm });
+		}).then(() => {
+			console.log('Okay!  New keys in place, your device should restart.');
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and that your computer is online.');
+		});
 	}
 
 	_createAddressBuffer(ipOrDomain) {
-		let isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
+		const isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
 
 		// create a version of this key that points to a particular server or domain
-		let addressBuf = new Buffer(ipOrDomain.length + 2);
+		const addressBuf = new Buffer(ipOrDomain.length + 2);
 		addressBuf[0] = (isIpAddress) ? 0 : 1;
 		addressBuf[1] = (isIpAddress) ? 4 : ipOrDomain.length;
 
 		if (isIpAddress) {
-			let parts = ipOrDomain.split('.').map((obj) => {
+			const parts = ipOrDomain.split('.').map((obj) => {
 				return parseInt(obj);
 			});
 			addressBuf[2] = parts[0];
@@ -368,116 +305,83 @@ class KeysCommand {
 		return addressBuf;
 	}
 
-	writeServerPublicKey() {
-		const filename = this.options.params.filename;
-		const hostname = this.options.host;
-		const port = this.options.port;
-		const protocol = this.options.protocol;
-
-		return this._writeServerPublicKey({ filename, hostname, port, protocol });
-	}
-
-	_writeServerPublicKey({ filename, hostname, port, protocol }) {
+	writeServerPublicKey(filename, { host, port, protocol } = {}) {
 		if (filename && !fs.existsSync(filename)) {
-			return when.reject('Please specify a server key in DER format.');
+			// TODO UsageError
+			throw new VError('Please specify a server key in DER format.');
 		}
 
-		return pipeline([
-			() => {
-				return this.dfu.isDfuUtilInstalled();
-			},
-			() => {
-				return this.dfu.findCompatibleDFU();
-			},
-			() => {
-				return this.validateDeviceProtocol();
-			},
-			() => {
-				return this._getDERPublicKey(filename);
-			},
-			(derFile) => {
-				filename = derFile;
-				return this._getIpAddress(hostname);
-			},
-			(ip) => {
-				return this._formatPublicKey(filename, ip, port);
-			},
-			(bufferFile) => {
-				let segment = this._getServerKeySegmentName();
-				return this.dfu.write(bufferFile, segment, false);
-			}
-		]).then(
-			() => {
-				console.log('Okay!  New keys in place, your device will not restart.');
-			},
-			(err) => {
-				return when.reject(
-					'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.\n' +
-					`Error: ${err.message || err}`
-				);
-			});
+		return Promise.resolve().then(() => {
+			return this.dfu.isDfuUtilInstalled();
+		}).then(() => {
+			return this.dfu.findCompatibleDFU();
+		}).then(() => {
+			return this.validateDeviceProtocol({ protocol });
+		}).then(_protocol => {
+			protocol = _protocol;
+			return this._getDERPublicKey(filename, { protocol });
+		}).then(derFile => {
+			return this._formatPublicKey(derFile, host, port, { protocol });
+		}).then(bufferFile => {
+			let segment = this._getServerKeySegmentName({ protocol });
+			return this.dfu.write(bufferFile, segment, false);
+		}).then(() => {
+			console.log('Okay!  New keys in place, your device will not restart.');
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
+		});
 	}
 
-	readServerAddress() {
+	readServerAddress({ protocol }) {
 		let keyBuf, serverKeySeg;
 
-		return pipeline([
-			() => {
-				return this.dfu.isDfuUtilInstalled();
-			},
-			() => {
-				return this.dfu.findCompatibleDFU();
-			},
-			() => {
-				return this.validateDeviceProtocol();
-			},
-			() => {
-				serverKeySeg = this._getServerKeySegment();
-			},
-			() => {
-				let segment = this._getServerKeySegmentName();
-				return this.dfu.readBuffer(segment, false)
-					.then((buf) => {
-						keyBuf = buf;
-					});
-			},
-			() => {
-				let offset = serverKeySeg.addressOffset || 384;
-				let portOffset = serverKeySeg.portOffset || 450;
-				let type = keyBuf[offset];
-				let len = keyBuf[offset+1];
-				let data = keyBuf.slice(offset + 2, offset + 2 + len);
+		return Promise.resolve().then(() => {
+			return this.dfu.isDfuUtilInstalled();
+		}).then(() => {
+			return this.dfu.findCompatibleDFU();
+		}).then(() => {
+			return this.validateDeviceProtocol({ protocol });
+		}).then(_protocol => {
+			protocol = _protocol;
+			serverKeySeg = this._getServerKeySegment({ protocol });
+		}).then(() => {
+			let segment = this._getServerKeySegmentName({ protocol });
+			return this.dfu.readBuffer(segment, false)
+				.then((buf) => {
+					keyBuf = buf;
+				});
+		}).then(() => {
+			let offset = serverKeySeg.addressOffset || 384;
+			let portOffset = serverKeySeg.portOffset || 450;
+			let type = keyBuf[offset];
+			let len = keyBuf[offset+1];
+			let data = keyBuf.slice(offset + 2, offset + 2 + len);
 
-				let protocol = this.options.protocol;
-				let port = keyBuf[portOffset] << 8 | keyBuf[portOffset+1];
-				if (port === 0xFFFF) {
-					port = protocol === 'tcp' ? 5683 : 5684;
-				}
-
-				let host = protocol === 'tcp' ? 'device.spark.io' : 'udp.particle.io';
-				if (len > 0) {
-					if (type === 0) {
-						host = Array.prototype.slice.call(data).join('.');
-					} else if (type === 1) {
-						host = data.toString('utf8');
-					}
-				}
-
-				let result = {
-					hostname: host,
-					port: port,
-					protocol: protocol,
-					slashes: true
-				};
-				console.log();
-				console.log(url.format(result));
-				return result;
+			let port = keyBuf[portOffset] << 8 | keyBuf[portOffset+1];
+			if (port === 0xFFFF) {
+				port = protocol === 'tcp' ? 5683 : 5684;
 			}
-		]).catch((err) => {
-			return when.reject(
-				'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.\n' +
-				`Error: ${err.message || err}`
-			);
+
+			let host = protocol === 'tcp' ? 'device.spark.io' : 'udp.particle.io';
+			if (len > 0) {
+				if (type === 0) {
+					host = Array.prototype.slice.call(data).join('.');
+				} else if (type === 1) {
+					host = data.toString('utf8');
+				}
+			}
+
+			let result = {
+				hostname: host,
+				port: port,
+				protocol: protocol,
+				slashes: true
+			};
+			console.log();
+			console.log(url.format(result));
+			return result;
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
 		});
 	}
 
@@ -488,23 +392,22 @@ class KeysCommand {
 	 * @param specs The this.dfu device sepcs.
 	 * @returns {Promise.<String>}  The
 	 */
-	validateDeviceProtocol(specs) {
+	validateDeviceProtocol({ specs, protocol } = {}) {
 		specs = specs || deviceSpecs[this.dfu.dfuId];
-		let protocol = this.options.protocol ? when.resolve(this.options.protocol) : this.fetchDeviceProtocol(specs);
-		return protocol.then((protocol) => {
+		let protocolPromise = protocol ? Promise.resolve(protocol) : this.fetchDeviceProtocol(specs);
+		return protocolPromise.then(detectedProtocol => {
 			let supported = [specs.defaultProtocol];
 			if (specs.alternativeProtocol) {
 				supported.push(specs.alternativeProtocol);
 			}
-			if (supported.indexOf(protocol)<0) {
-				throw Error('The device does not support the protocol ' + protocol + '. It has support for '+supported.join(', ') );
+			if (supported.indexOf(detectedProtocol)<0) {
+				throw new VError(`The device does not support the protocol ${detectedProtocol}. It has support for ${supported.join(', ')}`);
 			}
-			this.options.protocol = protocol;
-			return protocol;
+			return detectedProtocol;
 		});
 	}
 
-	_getServerKeySegmentName() {
+	_getServerKeySegmentName({ protocol }) {
 		if (!this.dfu.dfuId) {
 			return;
 		}
@@ -513,7 +416,7 @@ class KeysCommand {
 		if (!specs) {
 			return;
 		}
-		let protocol = this.options.protocol || specs.defaultProtocol || 'tcp';
+		protocol = protocol || specs.defaultProtocol || 'tcp';
 		return protocol + 'ServerKey';
 	}
 
@@ -528,35 +431,34 @@ class KeysCommand {
 	 */
 	fetchDeviceProtocol(specs) {
 		if (specs.transport && specs.alternativeProtocol) {
-			return this.dfu.readBuffer('transport', false)
-				.then((buf) => {
-					return buf[0]===0xFF ? specs.defaultProtocol : specs.alternativeProtocol;
-				});
+			return this.dfu.readBuffer('transport', false).then(buf => {
+				return buf[0]===0xFF ? specs.defaultProtocol : specs.alternativeProtocol;
+			});
 		}
-		return when.resolve(specs.defaultProtocol);
+		return Promise.resolve(specs.defaultProtocol);
 	}
 
-	_getServerKeySegment() {
+	_getServerKeySegment({ protocol }) {
 		if (!this.dfu.dfuId) {
 			return;
 		}
 		let specs = deviceSpecs[this.dfu.dfuId];
-		let segmentName = this._getServerKeySegmentName();
+		let segmentName = this._getServerKeySegmentName({ protocol });
 		if (!specs || !segmentName) {
 			return;
 		}
 		return specs[segmentName];
 	}
 
-	_getServerKeyAlgorithm() {
-		let segment = this._getServerKeySegment();
+	_getServerKeyAlgorithm({ protocol }) {
+		let segment = this._getServerKeySegment({ protocol });
 		if (!segment) {
 			return;
 		}
 		return segment.alg || 'rsa';
 	}
 
-	_getPrivateKeySegmentName() {
+	_getPrivateKeySegmentName({ protocol }) {
 		if (!this.dfu.dfuId) {
 			return;
 		}
@@ -565,40 +467,31 @@ class KeysCommand {
 		if (!specs) {
 			return;
 		}
-		let protocol = this.options.protocol || specs.defaultProtocol || 'tcp';
-		let key = protocol + 'PrivateKey';
-		return key;
+		protocol = protocol || specs.defaultProtocol || 'tcp';
+		return protocol + 'PrivateKey';
 	}
 
-	_getPrivateKeySegment() {
+	_getPrivateKeySegment({ protocol }) {
 		if (!this.dfu.dfuId) {
 			return;
 		}
 		let specs = deviceSpecs[this.dfu.dfuId];
-		let segmentName = this._getPrivateKeySegmentName();
+		let segmentName = this._getPrivateKeySegmentName({ protocol });
 		if (!specs || !segmentName) {
 			return;
 		}
 		return specs[segmentName];
 	}
 
-	_getPrivateKeyAlgorithm() {
-		let segment = this._getPrivateKeySegment();
+	_getPrivateKeyAlgorithm({ protocol }) {
+		let segment = this._getPrivateKeySegment({ protocol });
 		return (segment && segment.alg) || 'rsa';
 	}
 
-	_getServerAddressOffset() {
-		let segment = this._getServerKeySegment();
-		if (!segment) {
-			return;
-		}
-		return segment.addressOffset;
-	}
-
-	_getDERPublicKey(filename) {
-		let alg = this._getServerKeyAlgorithm();
+	_getDERPublicKey(filename, { protocol }) {
+		let alg = this._getServerKeyAlgorithm({ protocol });
 		if (!alg) {
-			return when.reject('No device specs');
+			throw new VError('No device specs');
 		}
 
 		if (!filename) {
@@ -611,63 +504,61 @@ class KeysCommand {
 			if (!fs.existsSync(derFile)) {
 				console.log('Creating DER format file');
 				let derFilePromise = utilities.deferredChildProcess('openssl ' + alg + ' -in  ' + filename + ' -pubin -pubout -outform DER -out ' + derFile);
-				return when(derFilePromise).then(() => {
+				return derFilePromise.then(() => {
 					return derFile;
-				}, (err) => {
-					return when.reject(`Error creating a DER formatted version of that key.  Make sure you specified the public key: ${err.message || err}`);
+				}).catch(err => {
+					throw new VError(ensureError(err), 'Error creating a DER formatted version of that key.  Make sure you specified the public key');
 				});
 			} else {
-				return when.resolve(derFile);
+				return Promise.resolve(derFile);
 			}
 		}
-		return when.resolve(filename);
+		return Promise.resolve(filename);
 	}
 
 	serverKeyFilename(alg) {
 		return path.join(__dirname, '../../assets/keys/' + alg + '.pub.der');
 	}
 
-	_formatPublicKey(filename, ipOrDomain, port) {
-		let segment = this._getServerKeySegment();
+	_formatPublicKey(filename, ipOrDomain, port, { protocol }) {
+		let segment = this._getServerKeySegment({ protocol });
 		if (!segment) {
-			return when.reject('No device specs');
+			throw new VError('No device specs');
 		}
 
 		let buf, fileBuf;
 		if (ipOrDomain) {
 			let alg = segment.alg || 'rsa';
 			let fileWithAddress = `${utilities.filenameNoExt(filename)}-${utilities.replaceAll(ipOrDomain, '.', '_')}-${alg}.der`;
-			if (!fs.existsSync(fileWithAddress)) {
-				let addressBuf = this._createAddressBuffer(ipOrDomain);
+			let addressBuf = this._createAddressBuffer(ipOrDomain);
 
-				// To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
-				// Everything between the end of the key and the beginning of the address should be 0xFF.
-				// The first byte representing "type" is 0x00 for 4-byte IP address or 0x01 for domain name—anything else is considered invalid and uses the fallback domain.
-				// The second byte is 0x04 for an IP address or the length of the string for a domain name.
-				// The remaining bytes are the IP or domain name. If the length of the domain name is odd, add a zero byte to get the file length to be even as usual.
+			// To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
+			// Everything between the end of the key and the beginning of the address should be 0xFF.
+			// The first byte representing "type" is 0x00 for 4-byte IP address or 0x01 for domain name—anything else is considered invalid and uses the fallback domain.
+			// The second byte is 0x04 for an IP address or the length of the string for a domain name.
+			// The remaining bytes are the IP or domain name. If the length of the domain name is odd, add a zero byte to get the file length to be even as usual.
 
-				buf = new Buffer(segment.size);
+			buf = new Buffer(segment.size);
 
-				//copy in the key
-				fileBuf = fs.readFileSync(filename);
-				fileBuf.copy(buf, 0, 0, fileBuf.length);
+			//copy in the key
+			fileBuf = fs.readFileSync(filename);
+			fileBuf.copy(buf, 0, 0, fileBuf.length);
 
-				//fill the rest with "FF"
-				buf.fill(255, fileBuf.length);
+			//fill the rest with "FF"
+			buf.fill(255, fileBuf.length);
 
+			let offset = segment.addressOffset || 384;
+			addressBuf.copy(buf, offset, 0, addressBuf.length);
 
-				let offset = segment.addressOffset || 384;
-				addressBuf.copy(buf, offset, 0, addressBuf.length);
-
-				if (port && segment.portOffset) {
-					buf.writeUInt16BE(port, segment.portOffset);
-				}
-
-				//console.log("address chunk is now: " + addressBuf.toString('hex'));
-				//console.log("Key chunk is now: " + buf.toString('hex'));
-
-				fs.writeFileSync(fileWithAddress, buf);
+			if (port && segment.portOffset) {
+				buf.writeUInt16BE(port, segment.portOffset);
 			}
+
+			//console.log("address chunk is now: " + addressBuf.toString('hex'));
+			//console.log("Key chunk is now: " + buf.toString('hex'));
+
+			fs.writeFileSync(fileWithAddress, buf);
+
 			return fileWithAddress;
 		}
 
@@ -687,21 +578,6 @@ class KeysCommand {
 			return fileWithSize;
 		}
 		return filename;
-	}
-
-	_getIpAddress(ipOrDomain) {
-		if (ipOrDomain === 'mine') {
-			let ips = utilities.getIPAddresses();
-			if (ips.length === 1) {
-				return ips[0];
-			} else if (ips.length > 0) {
-				// TODO show selector?
-				return when.reject('Multiple valid ip addresses');
-			} else {
-				return when.reject('No IP addresses');
-			}
-		}
-		return ipOrDomain;
 	}
 }
 

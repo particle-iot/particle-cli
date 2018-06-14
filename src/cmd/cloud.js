@@ -1,28 +1,34 @@
 const _ = require('lodash');
-const when = require('when');
+const VError = require('verror');
 const whenNode = require('when/node');
-const pipeline = require('when/pipeline');
 const prompt = require('inquirer').prompt;
 const temp = require('temp').track();
 
 const settings = require('../../settings.js');
 const specs = require('../lib/deviceSpecs');
-const prompts = require('../lib/prompts.js');
 const ApiClient = require('../lib/ApiClient.js');
 const utilities = require('../lib/utilities.js');
 const spinnerMixin = require('../lib/spinnerMixin');
+const ensureError = require('../lib/utilities').ensureError;
+const prompts = require('../lib/prompts');
+const platformsById = require('./constants').platformsById;
 
 const fs = require('fs');
 const path = require('path');
 const extend = require('xtend');
 const util = require('util');
 const chalk = require('chalk');
-const inquirer = require('inquirer');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
-const cmd = path.basename(process.argv[1]);
 
+class EarlyReturnError extends VError {
+	constructor(...args) {
+		super(...args);
+		Error.captureStackTrace(this, this.constructor);
+		this.name = this.constructor.name;
+	}
+}
 
 // Use known platforms and add shortcuts
 const PLATFORMS = extend(utilities.knownPlatforms(), {
@@ -39,129 +45,113 @@ const PLATFORMS = extend(utilities.knownPlatforms(), {
 });
 
 class CloudCommand {
-	constructor(options) {
+	constructor() {
 		spinnerMixin(this);
-		this.options = options;
 	}
 
-	claimDevice() {
-		const deviceid = this.options.params.device;
-
+	claimDevice(deviceId) {
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return -1;
-		}
-		console.log('Claiming device ' + deviceid);
-		return api.claimDevice(deviceid).then(() => {
-			console.log('Successfully claimed device ' + deviceid);
+		api.ensureToken();
+
+		console.log('Claiming device ' + deviceId);
+		return api.claimDevice(deviceId).then(() => {
+			console.log('Successfully claimed device ' + deviceId);
 		}, (err) => {
-			if (err && err.indexOf('That belongs to someone else.') >= 0) {
-				return when.promise((resolve, reject) => {
-					prompt([{
-						type: 'confirm',
-						name: 'transfer',
-						message: 'That device belongs to someone else. Would you like to request a transfer?',
-						default: true
-					}]).then((ans) => {
-						if (ans.transfer) {
-							return api.claimDevice(deviceid, true).then((body) => {
-								console.log('Transfer #' + body.transfer_id + ' requested. You will receive an email if your transfer is approved or denied.');
-								resolve();
-							}, reject);
-						}
-						reject('You cannot claim a device owned by someone else');
-					});
+			if (err && typeof err === 'string' && err.indexOf('That belongs to someone else.') >= 0) {
+				return prompt([{
+					type: 'confirm',
+					name: 'transfer',
+					message: 'That device belongs to someone else. Would you like to request a transfer?',
+					default: true
+				}]).then((ans) => {
+					if (ans.transfer) {
+						return api.claimDevice(deviceId, true).then((body) => {
+							console.log('Transfer requested. You will receive an email if your transfer is approved or denied.');
+						});
+					}
+					throw new Error('You cannot claim a device owned by someone else');
 				});
 			}
-			return when.reject(err);
+
+			throw ensureError(err);
 		}).catch((err) => {
-			console.log('Failed to claim device, server said:', err);
-			return when.reject(err);
+			throw new VError(ensureError(err), 'Failed to claim device');
 		});
 	}
 
-	removeDevice() {
-		const deviceid = this.options.params.device;
-
+	removeDevice(deviceId, { yes }) {
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return -1;
-		}
+		api.ensureToken();
 
-		return prompts.areYouSure()
-			.then(() => {
-				return api.removeDevice(deviceid).then(() => {
-					console.log('Okay!');
-				});
-			}).catch((err) => {
-				console.log("Didn't remove the device " + err);
-				return when.reject();
-			});
+		return Promise.resolve().then(() => {
+			if (yes) {
+				return true;
+			}
+			return prompt([{
+				type: 'confirm',
+				name: 'remove',
+				message: 'Are you sure you want to release ownership of this device?',
+				default: true
+			}]).then(ans => ans.remove);
+		}).then(doit => {
+			if (!doit) {
+				throw new Error('Not confirmed');
+			}
+			return api.removeDevice(deviceId);
+		}).then(() => {
+			console.log('Okay!');
+		}).catch((err) => {
+			throw new VError(ensureError(err), "Didn't remove the device");
+		});
 	}
 
-	nameDevice() {
-		const deviceid = this.options.params.device;
-		const name = this.options.params.name;
-
+	renameDevice(deviceId, name) {
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return -1;
-		}
+		api.ensureToken();
 
-		console.log('Renaming device ' + deviceid);
+		console.log('Renaming device ' + deviceId);
 
-		const allDone = api.renameDevice(deviceid, name);
-
-		when(allDone).then(
-			() => {
-				console.log('Successfully renamed device ' + deviceid + ' to: ' + name);
-			},
-			(err) => {
-				if (err.info && err.info.indexOf('I didn\'t recognize that device name or ID') >= 0) {
-					console.error('Device ' + deviceid + ' not found.');
-				} else {
-					console.error('Failed to rename ' + deviceid + ', server said', err);
-				}
-			});
+		return Promise.resolve().then(() => {
+			return api.renameDevice(deviceId, name);
+		}).catch(err => {
+			if (err.info && err.info.indexOf('I didn\'t recognize that device name or ID') >= 0) {
+				throw new Error('Device not found');
+			}
+			throw err;
+		}).then(() => {
+			console.log('Successfully renamed device ' + deviceId + ' to: ' + name);
+		}).catch(err => {
+			throw new VError(ensureError(err), `Failed to rename ${deviceId}`);
+		});
 	}
 
-	flashDevice() {
-		const deviceid = this.options.params.device;
-		const files = this.options.params.files;
-		if (files.length === 0) {
-			// default to current directory
-			files.push('.');
-		}
+	flashDevice(deviceId, files, { target, yes }) {
+		return Promise.resolve().then(() => {
+			if (files.length === 0) {
+				// default to current directory
+				files.push('.');
+			}
 
-		const api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('Not logged in');
-		}
+			const api = new ApiClient();
+			api.ensureToken();
 
-		if (!fs.existsSync(files[0])) {
-			return this._flashKnownApp(api, deviceid, files[0]).catch((err) => {
-				console.log('Flash device failed');
-				console.log(err);
-				return when.reject();
-			});
-		}
+			if (!fs.existsSync(files[0])) {
+				return this._flashKnownApp({ api, deviceId, filePath: files[0], yes });
+			}
 
-		const version = this.options.target === 'latest' ? null : this.options.target;
-		if (version) {
-			console.log('Targeting version:', version);
-			console.log();
-		}
+			const version = target === 'latest' ? null : target;
+			if (version) {
+				console.log('Targeting version: ', version);
+				console.log();
+			}
 
-		return pipeline([
-			() => {
+			return Promise.resolve().then(() => {
 				const fileMapping = this._handleMultiFileArgs(files);
 				api._populateFileMapping(fileMapping);
 				return fileMapping;
-			},
-			(fileMapping) => {
+			}).then((fileMapping) => {
 				if (Object.keys(fileMapping.map).length === 0) {
-					console.error('no files included?');
-					return when.reject();
+					throw new Error('no files included');
 				}
 
 				if (settings.showIncludedSourceFiles) {
@@ -172,16 +162,15 @@ class CloudCommand {
 					}
 				}
 
-				return this._doFlash(api, deviceid, fileMapping, version);
+				return this._doFlash({ api, deviceId, fileMapping, version, yes });
+			});
+		}).catch((err) => {
+			if (VError.hasCauseWithName(err, EarlyReturnError.name)) {
+				console.log(err.message);
+				return;
 			}
-		]).catch((err) => {
-			console.error('Flash device failed.');
-			if (_.isArray(err)) {
-				console.log(err.join('\n'));
-			} else {
-				console.error(err);
-			}
-			return when.reject();
+
+			throw new VError(ensureError(err), 'Flash device failed');
 		});
 	}
 
@@ -190,331 +179,263 @@ class CloudCommand {
 			basePath: fileMapping.basePath,
 			map: {}
 		};
-		return pipeline([
-			() => {
-				const sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
-				const list = Object.keys(fileMapping.map);
-				const isSourcey = _.some(list, (file) => {
-					return sourceExtensions.indexOf(path.extname(file)) >= 0;
-				});
-				if (!isSourcey) {
-					const binFile = fileMapping.map[list[0]];
-					newFileMapping.map[list[0]] = binFile;
-					return binFile;
+		return Promise.resolve().then(() => {
+			const sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
+			const list = Object.keys(fileMapping.map);
+			const isSourcey = _.some(list, (file) => {
+				return sourceExtensions.indexOf(path.extname(file)) >= 0;
+			});
+			if (!isSourcey) {
+				const binFile = fileMapping.map[list[0]];
+				newFileMapping.map[list[0]] = binFile;
+				return binFile;
+			}
+
+			const filename = temp.path({ suffix: '.bin' });
+			return this._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(() => {
+				newFileMapping.map['firmware.bin'] = filename;
+				return filename;
+			});
+		}).then((file) => {
+			return whenNode.lift(fs.stat)(file);
+		}).then((stats) => {
+			const dataUsage = utilities.cellularOtaUsage(stats.size);
+
+			console.log();
+			console.log(alert, 'Flashing firmware Over The Air (OTA) uses cellular data, which may cause you to incur usage charges.');
+			console.log(alert, 'This flash is estimated to use at least ' + chalk.bold(dataUsage + ' MB') + ', but may use more depending on network conditions.');
+			console.log();
+			console.log(alert, 'Please type ' + chalk.bold(dataUsage) + ' below to confirm you wish to proceed with the OTA flash.');
+			console.log(alert, 'Any other input will cancel.');
+
+			return prompt([{
+				name: 'confirmota',
+				type: 'input',
+				message: 'Confirm the amount of data usage in MB:'
+			}]).then((ans) => {
+				if (ans.confirmota !== dataUsage) {
+					throw new EarlyReturnError('User cancelled');
 				}
-
-				const filename = temp.path({ suffix: '.bin' });
-				return this._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(() => {
-					newFileMapping.map['firmware.bin'] = filename;
-					return filename;
-				});
-			},
-			(file) => {
-				return whenNode.lift(fs.stat)(file);
-			},
-			(stats) => {
-				const dataUsage = utilities.cellularOtaUsage(stats.size);
-
-				return when.promise((resolve, reject) => {
-					console.log();
-					console.log(alert, 'Flashing firmware Over The Air (OTA) uses cellular data, which may cause you to incur usage charges.');
-					console.log(alert, 'This flash is estimated to use at least ' + chalk.bold(dataUsage + ' MB') + ', but may use more depending on network conditions.');
-					console.log();
-					console.log(alert, 'Please type ' + chalk.bold(dataUsage) + ' below to confirm you wish to proceed with the OTA flash.');
-					console.log(alert, 'Any other input will cancel.');
-
-					inquirer.prompt([{
-						name: 'confirmota',
-						type: 'input',
-						message: 'Confirm the amount of data usage in MB:'
-					}]).then((ans) => {
-						if (ans.confirmota !== dataUsage) {
-							return reject('User cancelled');
-						}
-						resolve(newFileMapping);
-					});
-				});
-			}
-		]);
-	}
-
-	_doFlash(api, deviceid, fileMapping, targetVersion) {
-		let isCellular;
-		return pipeline([
-			() => {
-				return api.getAttributes(deviceid);
-			},
-			(attrs) => {
-				isCellular = attrs.cellular;
-				if (!isCellular) {
-					return fileMapping;
-				}				else if (this.options.noconfirm) {
-					console.log('! Skipping Bandwidth Prompt !');
-					return fileMapping;
-				}
-				return this._promptForOta(api, attrs, fileMapping, targetVersion);
-			},
-			(flashFiles) => {
-				return api.flashDevice(deviceid, flashFiles, targetVersion);
-			}
-		]).then((resp) => {
-			if (resp.status || resp.message) {
-				console.log('Flash device OK: ', resp.status || resp.message);
-				return when.resolve();
-			} else if (resp.errors) {
-				const errors = resp.errors.map((err) => {
-					if (err.error) {
-						return err.error;
-					} else {
-						return err;
-					}
-				});
-				return when.reject(errors.join('\n'));
-			} else if (resp.info) {
-				return when.reject(resp.info);
-			} else if (resp.error) {
-				return when.reject(resp.error);
-			} else if (typeof resp === 'string') {
-				return when.reject('Server error');
-			}
-			return when.reject();
+				return newFileMapping;
+			});
 		});
 	}
 
-	_flashKnownApp(api, deviceid, filePath) {
-		if (!settings.knownApps[filePath]) {
-			console.error("I couldn't find that file: " + filePath);
-			return when.reject();
-		}
-
-		return pipeline([
-			() => {
-				return api.getAttributes(deviceid);
-			},
-			(attrs) => {
-				const spec = _.find(specs, { productId: attrs.product_id });
-				if (spec) {
-					if (spec.knownApps[filePath]) {
-						return api._populateFileMapping( { list: [spec.knownApps[filePath]] } );
-					}
-
-					if (spec.productName) {
-						console.log("I don't have a %s binary for %s.", filePath, spec.productName);
-						return when.reject();
-					}
-				}
-
-				return when.promise((resolve, reject) => {
-					inquirer.prompt([{
-						name: 'type',
-						type: 'list',
-						message: 'Which type of device?',
-						choices: [
-							'Photon',
-							'Core',
-							'P1',
-							'Electron'
-						]
-					}]).then((ans) => {
-						const spec = _.find(specs, { productName: ans.type });
-						const binary = spec && spec.knownApps[filePath];
-
-						if (!binary) {
-							console.log("I don't have a %s binary for %s.", filePath, ans.type);
-							return reject();
-						}
-
-						resolve({ map: { binary: binary } });
-					});
-				});
-			},
-			(file) => {
-				return this._doFlash(api, deviceid, file);
+	_doFlash({ api, deviceId, fileMapping, targetVersion, yes }) {
+		let isCellular;
+		return api.getAttributes(deviceId).then((attrs) => {
+			isCellular = attrs.cellular;
+			if (!isCellular) {
+				return fileMapping;
+			} else if (yes) {
+				console.log('! Skipping Bandwidth Prompt !');
+				return fileMapping;
 			}
-		]);
+			return this._promptForOta(api, attrs, fileMapping, targetVersion);
+		}).then((flashFiles) => {
+			return api.flashDevice(deviceId, flashFiles, targetVersion);
+		}).then((resp) => {
+			if (resp.status || resp.message) {
+				console.log('Flash device OK: ', resp.status || resp.message);
+			} else if (resp.output === 'Compiler timed out or encountered an error') {
+				console.log('\n' + (resp.errors && resp.errors[0]));
+				throw new Error('Compiler encountered an error');
+			} else {
+				throw api.normalizedApiError(resp);
+			}
+		}).catch(err => {
+			throw api.normalizedApiError(err);
+		});
 	}
 
-	_getDownloadPath(deviceType) {
-		if (this.options.saveTo) {
-			return this.options.saveTo;
+	_flashKnownApp({ api, deviceId, filePath, yes }) {
+		if (!settings.knownApps[filePath]) {
+			throw new VError(`I couldn't find that file: ${filePath}`);
+		}
+
+		return api.getAttributes(deviceId).then((attrs) => {
+			const spec = _.find(specs, { productId: attrs.product_id });
+			if (spec) {
+				if (spec.knownApps[filePath]) {
+					return api._populateFileMapping( { list: [spec.knownApps[filePath]] } );
+				}
+
+				if (spec.productName) {
+					throw new VError(`I don't have a ${filePath} binary for ${spec.productName}.`);
+				}
+			}
+
+			// TODO: this shouldn't be necessary. Just look at the attrs.platform_id instead of
+			// product_id above
+			return prompt([{
+				name: 'type',
+				type: 'list',
+				message: 'Which type of device?',
+				choices: [
+					'Photon',
+					'Core',
+					'P1',
+					'Electron'
+				]
+			}]).then((ans) => {
+				const spec = _.find(specs, { productName: ans.type });
+				const binary = spec && spec.knownApps[filePath];
+
+				if (!binary) {
+					throw new VError(`I don't have a ${filePath} binary for ${ans.type}.`);
+				}
+
+				return { map: { binary: binary } };
+			});
+		}).then((fileMapping) => {
+			return this._doFlash({ api, deviceId, fileMapping, yes });
+		});
+	}
+
+	_getDownloadPath(deviceType, saveTo) {
+		if (saveTo) {
+			return saveTo;
 		}
 
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	compileCode() {
-		const deviceType = this.options.params.deviceType;
-		const files = this.options.params.files;
-		if (files.length === 0) {
-			files.push('.'); // default to current directory
-		}
-
+	compileCode(deviceType, files, { target, saveTo }) {
+		let api;
 		let platformId;
-
-		if (deviceType in PLATFORMS) {
-			platformId = PLATFORMS[deviceType];
-		} else {
-			console.error('\nTarget device ' + deviceType + ' is not valid');
-			console.error('	eg. particle compile core xxx');
-			console.error('	eg. particle compile photon xxx\n');
-			return -1;
-		}
-
-		const api = new ApiClient();
-		if (!api.ready()) {
-			console.log('Unable to cloud compile. Please make sure you\'re logged in!');
-			return -1;
-		}
-
-		console.log('\nCompiling code for ' + deviceType);
-
 		let targetVersion;
 
-		return pipeline([
-			() => {
-				if (this.options.target) {
-					if (this.options.target === 'latest') {
-						return when.resolve();
-					}
+		return Promise.resolve().then(() => {
+			if (files.length === 0) {
+				files.push('.'); // default to current directory
+			}
 
-					return api.getBuildTargets().then((data) => {
-						const validTargets = data.targets.filter((t) => {
-							return t.platforms.indexOf(platformId) >= 0;
-						});
-						const validTarget = validTargets.filter((t) => {
-							return t.version === this.options.target;
-						});
-						if (!validTarget.length) {
-							return when.reject(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')));
-						}
+			if (deviceType in PLATFORMS) {
+				platformId = PLATFORMS[deviceType];
+			} else {
+				throw new Error([
+					'Target device ' + deviceType + ' is not valid',
+					'	eg. particle compile core xxx',
+					'	eg. particle compile photon xxx'
+				].join('\n'));
+			}
 
-						targetVersion = validTarget[0].version;
-						console.log('Targeting version:', targetVersion);
-						return when.resolve();
-					});
-				}
-				return when.resolve();
-			},
-			() => {
-				console.log();
+			api = new ApiClient();
+			api.ensureToken();
 
-				const filePath = files[0];
-				if (!fs.existsSync(filePath)) {
-					console.error(`I couldn't find that: ${filePath}`);
-					return when.reject();
-				}
+			console.log('\nCompiling code for ' + deviceType);
 
-				return this._handleMultiFileArgs(files);
-			},
-			(fileMapping) => {
-				if (!fileMapping) {
+			if (target) {
+				if (target === 'latest') {
 					return;
 				}
 
-				const list = _.values(fileMapping.map);
-				if (list.length === 0) {
-					console.log('No source to compile!');
-					return when.reject();
-				}
-
-				if (settings.showIncludedSourceFiles) {
-					console.log('Including:');
-					for (let i = 0, n = list.length; i < n; i++) {
-						console.log('    ' + list[i]);
+				return api.getBuildTargets().catch(err => {
+					throw api.normalizedApiError(err);
+				}).then((data) => {
+					const validTargets = data.targets.filter((t) => {
+						return t.platforms.indexOf(platformId) >= 0;
+					});
+					const validTarget = validTargets.filter((t) => {
+						return t.version === target;
+					});
+					if (!validTarget.length) {
+						throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')).join('\n'));
 					}
-				}
 
-				const filename = this._getDownloadPath(deviceType);
-				return this._compileAndDownload(api, fileMapping, platformId, filename, targetVersion);
+					targetVersion = validTarget[0].version;
+					console.log('Targeting version:', targetVersion);
+				});
 			}
-		]).catch((err) => {
-			console.error('Compile failed. Exiting.');
-			if (_.isArray(err)) {
-				console.log(err.join('\n'));
-			} else {
-				console.error(err);
+		}).then(() => {
+			console.log();
+
+			const filePath = files[0];
+			if (!fs.existsSync(filePath)) {
+				throw new VError(`I couldn't find that: ${filePath}`);
 			}
-			return when.reject();
+
+			return this._handleMultiFileArgs(files);
+		}).then((fileMapping) => {
+			if (!fileMapping) {
+				return;
+			}
+
+			const list = _.values(fileMapping.map);
+			if (list.length === 0) {
+				throw new VError('No source to compile!');
+			}
+
+			if (settings.showIncludedSourceFiles) {
+				console.log('Including:');
+				for (let i = 0, n = list.length; i < n; i++) {
+					console.log('    ' + list[i]);
+				}
+			}
+
+			const filename = this._getDownloadPath(deviceType, saveTo);
+			return this._compileAndDownload(api, fileMapping, platformId, filename, targetVersion);
+		}).catch((err) => {
+			throw new VError(ensureError(err), 'Compile failed');
 		});
 	}
 
 	_compileAndDownload(api, fileMapping, platformId, filename, targetVersion) {
-		return pipeline([
-			//compile
-			() => {
-				return api.compileCode(fileMapping, platformId, targetVersion);
-			},
-
+		return Promise.resolve().then(() => {
+			// compile
+			return api.compileCode(fileMapping, platformId, targetVersion);
+		}).then(resp => {
 			//download
-			(resp) => {
-				if (resp && resp.binary_url) {
-					return api.downloadBinary(resp.binary_url, filename).then(() => {
-						return resp.sizeInfo;
-					});
-				} else {
-					if (typeof resp === 'string') {
-						return when.reject('Server error');
-					} else {
-						return when.reject(resp.errors);
-					}
-				}
+			if (resp && resp.binary_url) {
+				return api.downloadBinary(resp.binary_url, filename).then(() => {
+					return resp.sizeInfo;
+				});
+			} else if (resp && resp.output === 'Compiler timed out or encountered an error') {
+				console.log('\n' + (resp && resp.errors && resp.errors[0]));
+				throw new Error('Compiler encountered an error');
+			} else {
+				throw api.normalizedApiError(resp);
 			}
-		]).then(
-			(sizeInfo) => {
-				if (sizeInfo) {
-					console.log('Memory use: ');
-					console.log(sizeInfo);
-				}
-				console.log('Compile succeeded.');
-				console.log('Saved firmware to:', path.resolve(filename));
-			});
+		}).catch(err => {
+			throw api.normalizedApiError(err);
+		}).then((sizeInfo) => {
+			if (sizeInfo) {
+				console.log('Memory use: ');
+				console.log(sizeInfo);
+			}
+			console.log('Compile succeeded.');
+			console.log('Saved firmware to:', path.resolve(filename));
+		});
 	}
 
 	login(username, password) {
 		if (this.tries >= (password ? 1 : 3)) {
-			console.log();
-			console.log(alert, "It seems we're having trouble with logging in.");
-			console.log(
-				alert,
-				util.format('Please try the `%s help` command for more information.',
-					chalk.bold.cyan(cmd))
-			);
-			return when.reject();
+			throw new VError("It seems we're having trouble with logging in.");
 		}
 
-		const allDone = pipeline([
+		return Promise.resolve().then(() => {
 			//prompt for creds
-			() => {
-				if (password) {
-					return { username: username, password: password };
-				}
-				return prompts.getCredentials(username, password);
-			},
-
-			//login to the server
-			(creds) => {
-
-				const api = new ApiClient();
-				username = creds.username;
-				this.newSpin('Sending login details...').start();
-				return api.login(settings.clientId, creds.username, creds.password);
-			},
-
-			(accessToken) => {
-
-				this.stopSpin();
-				console.log(arrow, 'Successfully completed login!');
-				settings.override(null, 'access_token', accessToken);
-				if (username) {
-					settings.override(null, 'username', username);
-				}
-				this.tries = 0;
-				return when.resolve(accessToken);
+			if (password) {
+				return { username: username, password: password };
 			}
-		]);
+			return prompts.getCredentials(username, password);
+		}).then(creds => {
+			//login to the server
+			const api = new ApiClient();
+			username = creds.username;
+			this.newSpin('Sending login details...').start();
+			return api.login(settings.clientId, creds.username, creds.password);
+		}).then(accessToken => {
 
-		return allDone.catch((err) => {
-
+			this.stopSpin();
+			console.log(arrow, 'Successfully completed login!');
+			settings.override(null, 'access_token', accessToken);
+			if (username) {
+				settings.override(null, 'username', username);
+			}
+			this.tries = 0;
+			return accessToken;
+		}).catch((err) => {
 			this.stopSpin();
 			console.log(alert, "There was an error logging you in! Let's try again.");
 			console.error(alert, err);
@@ -526,47 +447,37 @@ class CloudCommand {
 
 
 	doLogout(keep, password) {
-		const allDone = when.defer();
 		const api = new ApiClient();
 
-		pipeline([
-			() => {
-				if (!keep) {
-					return api.removeAccessToken(settings.username, password, settings.access_token);
-				} else {
-					console.log(arrow, 'Leaving your token intact.');
-				}
-			},
-			() => {
-				console.log(
-					arrow,
-					util.format('You have been logged out from %s.',
-						chalk.bold.cyan(settings.username))
-				);
-				settings.override(null, 'username', null);
-				settings.override(null, 'access_token', null);
+		return Promise.resolve().then(() => {
+			if (!keep) {
+				return api.removeAccessToken(settings.username, password, settings.access_token);
+			} else {
+				console.log(arrow, 'Leaving your token intact.');
 			}
-		]).then(() => {
-			allDone.resolve();
-		}, (err) => {
-			console.error('There was an error revoking the token', err);
-			allDone.reject(err);
+		}).then(() => {
+			console.log(
+				arrow,
+				util.format('You have been logged out from %s.',
+					chalk.bold.cyan(settings.username))
+			);
+			settings.override(null, 'username', null);
+			settings.override(null, 'access_token', null);
+		}).catch(err => {
+			throw new VError(ensureError(err), 'There was an error revoking the token');
 		});
-		return allDone.promise;
 	}
 
 	logout(noPrompt) {
 		if (!settings.access_token) {
 			console.log('You were already logged out.');
-			return when.resolve();
+			return;
 		}
 		if (noPrompt) {
 			return this.doLogout(true);
 		}
 
-		const allDone = when.defer();
-
-		inquirer.prompt([
+		return prompt([
 			{
 				type: 'confirm',
 				name: 'keep',
@@ -582,17 +493,14 @@ class CloudCommand {
 				}
 			}
 		]).then((ans) => {
-			return allDone.resolve(this.doLogout(ans.keep, ans.password));
+			return this.doLogout(ans.keep, ans.password);
 		});
-		return allDone.promise;
 	}
 
 
 	getAllDeviceAttributes(filter) {
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('not logged in!');
-		}
+		api.ensureToken();
 
 		let filterFunc = null;
 
@@ -617,55 +525,50 @@ class CloudCommand {
 			}
 		}
 
-		return pipeline([
-			() => api.listDevices(),
-			(devices) => {
-				if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
-					console.log('No devices found.');
-				} else {
-					this.newSpin('Retrieving device functions and variables...').start();
-					const promises = [];
-					devices.forEach((device) => {
-						if (!device.id || (filter && !filterFunc(device))) {
-							// Don't request attributes from unnecessary devices...
-							return;
+		return Promise.resolve().then(() => {
+			return api.listDevices();
+		}).then(devices => {
+			if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
+				console.log('No devices found.');
+			} else {
+				this.newSpin('Retrieving device functions and variables...').start();
+				const promises = [];
+				devices.forEach((device) => {
+					if (!device.id || (filter && !filterFunc(device))) {
+						// Don't request attributes from unnecessary devices...
+						return;
+					}
+
+					if (device.connected) {
+						promises.push(api.getAttributes(device.id).then((attrs) => {
+							return extend(device, attrs);
+						}));
+					} else {
+						promises.push(Promise.resolve(device));
+					}
+				});
+
+				return Promise.all(promises).then(fullDevices => {
+					//sort alphabetically
+					fullDevices = fullDevices.sort((a, b) => {
+						if (a.connected && !b.connected) {
+							return 1;
 						}
 
-						if (device.connected) {
-							promises.push(api.getAttributes(device.id).then((attrs) => {
-								return extend(device, attrs);
-							}));
-						} else {
-							promises.push(when.resolve(device));
-						}
+						return (a.name || '').localeCompare(b.name);
 					});
-
-					return when.all(promises).then((fullDevices) => {
-						//sort alphabetically
-						fullDevices = fullDevices.sort((a, b) => {
-							if (a.connected && !b.connected) {
-								return 1;
-							}
-
-							return (a.name || '').localeCompare(b.name);
-						});
-						this.stopSpin();
-						return fullDevices;
-					});
-				}
+					this.stopSpin();
+					return fullDevices;
+				});
 			}
-		]);
+		}).catch(err => {
+			throw api.normalizedApiError(err);
+		});
 	}
 
-
-	nyanMode() {
-		let deviceid = this.options.params.device;
-		let onOff = this.options.params.onOff;
-
+	nyanMode(deviceId, onOff) {
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('not logged in!');
-		}
+		api.ensureToken();
 
 		if (!onOff || (onOff === '') || (onOff === 'on')) {
 			onOff = true;
@@ -673,50 +576,45 @@ class CloudCommand {
 			onOff = false;
 		}
 
-		if ((deviceid === '') || (deviceid === 'all')) {
-			deviceid = null;
-		} else if (deviceid === 'on') {
-			deviceid = null;
+		if ((deviceId === '') || (deviceId === 'all')) {
+			deviceId = null;
+		} else if (deviceId === 'on') {
+			deviceId = null;
 			onOff = true;
-		} else if (deviceid === 'off') {
-			deviceid = null;
+		} else if (deviceId === 'off') {
+			deviceId = null;
 			onOff = false;
 		}
 
-		if (deviceid) {
-			return api.signalDevice(deviceid, onOff).catch((err) => {
-				console.error('Error', err);
-				return when.reject(err);
+		if (deviceId) {
+			return api.signalDevice(deviceId, onOff).catch((err) => {
+				throw api.normalizedApiError(err);
 			});
 		} else {
-			return pipeline([
-				() => api.listDevices(),
-				(devices) => {
-					if (!devices || (devices.length === 0)) {
-						console.log('No devices found.');
-						return when.resolve();
-					} else {
-						const promises = [];
-						devices.forEach((device) => {
-							if (!device.connected) {
-								promises.push(when.resolve(device));
-								return;
-							}
-							promises.push(api.signalDevice(device.id, onOff));
-						});
-						return when.all(promises);
-					}
+			return Promise.resolve(() => {
+				return api.listDevices();
+			}).then(devices => {
+				if (!devices || (devices.length === 0)) {
+					console.log('No devices found.');
+					return;
+				} else {
+					const promises = [];
+					devices.forEach((device) => {
+						if (!device.connected) {
+							promises.push(Promise.resolve(device));
+							return;
+						}
+						promises.push(api.signalDevice(device.id, onOff));
+					});
+					return Promise.all(promises);
 				}
-			]).catch((err) => {
-				console.error('Error', err);
-				return when.reject(err);
+			}).catch(err => {
+				throw api.normalizedApiError(err);
 			});
 		}
 	}
 
-	listDevices() {
-		const filter = this.options.params.filter;
-
+	listDevices(filter) {
 		const formatVariables = (vars, lines) => {
 			if (vars) {
 				const arr = [];
@@ -726,7 +624,6 @@ class CloudCommand {
 				}
 
 				if (arr.length > 0) {
-					//TODO: better way to accomplish this?
 					lines.push('  variables:');
 					for (let i=0;i<arr.length;i++) {
 						lines.push(arr[i]);
@@ -754,26 +651,8 @@ class CloudCommand {
 			for (let i = 0; i < devices.length; i++) {
 				let name;
 				const device = devices[i];
-				let deviceType = '';
-				switch (device.product_id) {
-					case 0:
-						deviceType = ' (Core)';
-						break;
-					case 6:
-						deviceType = ' (Photon)';
-						break;
-					case 8:
-						deviceType = ' (P1)';
-						break;
-					case 10:
-						deviceType = ' (Electron)';
-						break;
-					case 31:
-						deviceType = ' (Raspberry Pi)';
-						break;
-					default:
-						deviceType = ' (Product ' + device.product_id + ')';
-				}
+				const deviceType = platformsById[device.product_id] || `Product ${device.product_id}`;
+				const connectedState = device.connected ? 'online' : 'offline';
 
 				if (!device.name || device.name === 'null') {
 					name = '<no name>';
@@ -787,8 +666,7 @@ class CloudCommand {
 					name = chalk.cyan.dim(name);
 				}
 
-				let status = name + ' [' + device.id + ']' + deviceType + ' is ';
-				status += (device.connected) ? 'online' : 'offline';
+				const status = `${name} [${device.id}] (${deviceType}) is ${connectedState}`;
 				lines.push(status);
 
 				formatVariables(device.variables, lines);
@@ -797,8 +675,7 @@ class CloudCommand {
 
 			console.log(lines.join('\n'));
 		}).catch((err) => {
-			console.log('Error', err);
-			return when.reject(err);
+			throw new VError(ensureError(err), 'Failed to list device');
 		});
 	}
 
@@ -858,10 +735,9 @@ class CloudCommand {
 			fileMapping.map[relative] = filename;
 		}
 
-		return this._handleLibraryExample(fileMapping)
-			.then(() => {
-				return fileMapping;
-			});
+		return this._handleLibraryExample(fileMapping).then(() => {
+			return fileMapping;
+		});
 	}
 
 	/**
@@ -935,19 +811,16 @@ class CloudCommand {
 	 *                             relative to a base path
 	 */
 	_handleLibraryExample(fileMapping) {
-		return pipeline([
-			() => {
-				const list = _.values(fileMapping.map);
-				if (list.length === 1) {
-					return require('particle-library-manager').isLibraryExample(list[0]);
-				}
-			},
-			(example) => {
-				if (example) {
-					return example.buildFiles(fileMapping);
-				}
+		return Promise.resolve().then(() => {
+			const list = _.values(fileMapping.map);
+			if (list.length === 1) {
+				return require('particle-library-manager').isLibraryExample(list[0]);
 			}
-		]);
+		}).then(example => {
+			if (example) {
+				return example.buildFiles(fileMapping);
+			}
+		});
 	}
 }
 

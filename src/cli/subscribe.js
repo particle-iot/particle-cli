@@ -7,12 +7,13 @@ export default ({ commandProcessor, root }) => {
 				description: 'Listen to all events instead of just those from my devices'
 			},
 			'device': {
-				describe: 'Listen to events from this device only'
+				describe: 'Listen to events from this device only',
+				nargs: 1
 			}
 		},
 		handler: (args) => {
 			const SubscribeCommand = require('../cmd/subscribe');
-			return new SubscribeCommand(args).startListening();
+			return new SubscribeCommand().startListening(args.params.event, args);
 		},
 		examples: {
 			'$0 $command': 'Subscribe to all event published by my devices',

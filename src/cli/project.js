@@ -6,8 +6,8 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(project, 'create', 'Create a new project in the current or specified directory', {
 		options: {
 			'name' : {
-				required: false,
-				description: 'provide a name for the project'
+				description: 'provide a name for the project',
+				nargs: 1
 			}
 		},
 		params: '[dir]',

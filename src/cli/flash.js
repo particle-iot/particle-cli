@@ -22,10 +22,22 @@ export default ({ commandProcessor, root }) => {
 				boolean: true,
 				describe: 'Flash even when binary does not pass pre-flash checks'
 			},
+			'yes': {
+				boolean: true,
+				description: 'Answer yes to all questions'
+			},
+			'target': {
+				description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.',
+				nargs: 1
+			},
+			'port': {
+				describe: 'Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial',
+				nargs: 1
+			}
 		},
 		handler: (args) => {
 			const FlashCommand = require('../cmd/flash');
-			return new FlashCommand(args).flash();
+			return new FlashCommand().flash(args.params.device, args.params.binary, args.params.files, args);
 		},
 		examples: {
 			'$0 $command red': 'Compile the source code in the current directory in the cloud and flash to device red',

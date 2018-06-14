@@ -43,6 +43,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  *
  **/
 const when = require('when');
+const VError = require('verror');
 const pipeline = require('when/pipeline');
 const utilities = require('./utilities.js');
 const settings = require('../../settings');
@@ -50,6 +51,7 @@ const settings = require('../../settings');
 const request = require('request');
 const fs = require('fs');
 const path = require('path');
+const _ = require('lodash');
 const Spinner = require('cli-spinner').Spinner;
 const chalk = require('chalk');
 
@@ -79,6 +81,12 @@ class ApiClient {
 		}
 
 		return hasToken;
+	}
+
+	ensureToken() {
+		if (!this._access_token) {
+			throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
+		}
 	}
 
 	clearToken() {
@@ -764,6 +772,7 @@ class ApiClient {
 			url += '/' + encodeURIComponent(eventName);
 		}
 
+		let failed = false;
 		console.log('Listening to: ' + url);
 		return when.promise((resolve, reject) => {
 			self.request
@@ -777,10 +786,18 @@ class ApiClient {
 					if (self.isUnauthorized(response)) {
 						reject('Invalid access token');
 					}
+					if (response.statusCode >= 300) {
+						failed = true;
+					}
 				})
 				.on('error', reject)
 				.on('close', resolve)
-				.on('data', onDataHandler);
+				.on('data', data => {
+					if (failed) {
+						return reject(JSON.parse(data));
+					}
+					onDataHandler(data);
+				});
 		});
 	}
 
@@ -990,6 +1007,34 @@ class ApiClient {
 			return true;
 		}
 		return false;
+	}
+
+	normalizedApiError(response) {
+		if (_.isError(response) || response instanceof VError) {
+			return response;
+		}
+
+		let reason = 'Server error';
+		if (typeof response === 'string') {
+			reason = response;
+		} else if (response.errors) {
+			reason = response.errors.map((err) => {
+				if (err.error) {
+					if (err.error.status) {
+						return err.error.status;
+					} else {
+						return err.error;
+					}
+				} else {
+					return err;
+				}
+			}).join('\n');
+		} else if (response.info) {
+			reason = response.info;
+		} else if (response.error) {
+			reason = response.error;
+		}
+		return new Error(reason);
 	}
 }
 

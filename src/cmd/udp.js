@@ -2,15 +2,7 @@ const when = require('when');
 const dgram = require('dgram');
 
 class UdpCommands {
-	constructor(options) {
-		this.options = options;
-	}
-
-	sendUdpPacket() {
-		const host = this.options.params.host;
-		const port = this.options.params.port;
-		const message = this.options.params.message;
-
+	sendUdpPacket({ host, port, message }) {
 		const client = dgram.createSocket('udp4');
 		const buf = new Buffer(message);
 
@@ -29,8 +21,8 @@ class UdpCommands {
 		});
 	}
 
-	listenUdp() {
-		const port = this.options.params.port || 5549;
+	listenUdp({ port }) {
+		port = port || 5549;
 
 		const udpSocket = dgram.createSocket('udp4');
 

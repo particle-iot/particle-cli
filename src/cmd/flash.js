@@ -1,10 +1,9 @@
-const when = require('when');
-const sequence = require('when/sequence');
-
 const fs = require('fs');
+const VError = require('verror');
 const dfu = require('../lib/dfu.js');
 const ModuleParser = require('binary-version-reader').HalModuleParser;
 const deviceSpecs = require('../lib/deviceSpecs');
+const ensureError = require('../lib/utilities').ensureError;
 
 const MONOLITHIC = 3;
 const SYSTEM_MODULE = 4;
@@ -17,153 +16,122 @@ const systemModuleIndexToString = {
 };
 
 class FlashCommand {
-	constructor(options) {
-		this.options = options;
-	}
-
-	flash() {
-		if (!this.options.params.device) {
+	flash(device, binary, files, { usb, serial, factory, force, target, port, yes }) {
+		if (!device && !binary) {
 			// if no device nor files are passed, show help
-			return when.reject();
+			// TODO: Replace by UsageError
+			return Promise.reject();
 		}
 
 		let result;
-		if (this.options.usb) {
-			result = this.flashDfu();
-		} else if (this.options.serial) {
-			result = this.flashYModem();
+		if (usb) {
+			result = this.flashDfu({ binary, factory, force });
+		} else if (serial) {
+			result = this.flashYModem({ binary, port });
 		} else {
-			result = this.flashCloud();
+			result = this.flashCloud({ device, files, target, yes });
 		}
 
 		return result;
 	}
 
-	flashCloud() {
-		const args = {
-			params: {
-				device: this.options.params.device,
-				files: this.options.params.files,
-			}
-		};
+	flashCloud({ device, files, target, yes }) {
 		const CloudCommands = require('../cmd/cloud');
-		return new CloudCommands(args).flashDevice();
+		return new CloudCommands().flashDevice(device, files, { target, yes });
 	}
 
-	flashYModem() {
-		const args = {
-			params: {
-				binary: this.options.params.binary
-			}
-		};
+	flashYModem({ binary, port }) {
 		const SerialCommands = require('../cmd/serial');
-		return new SerialCommands(args).flashDevice();
+		return new SerialCommands().flashDevice(binary, { port });
 	}
 
-	flashDfu() {
-		const useFactory = this.options.useFactoryAddress;
-		let firmware = this.options.params.binary;
-
+	flashDfu({ binary, factory, force }) {
 		let specs, destSegment, destAddress;
 		let flashingKnownApp = false;
-		const ready = sequence([
-			() => {
-				return dfu.isDfuUtilInstalled();
-			},
-			() => {
-				return dfu.findCompatibleDFU();
-			},
-			() => {
-				//only match against knownApp if file is not found
-				let stats;
-				try {
-					stats = fs.statSync(firmware);
-				} catch (ex) {
-					// file does not exist
-					firmware = dfu.checkKnownApp(firmware);
-					if (firmware === undefined) {
-						return when.reject('file does not exist and no known app found.');
-					} else {
-						flashingKnownApp = true;
-						return firmware;
-					}
+		return Promise.resolve().then(() => {
+			return dfu.isDfuUtilInstalled();
+		}).then(() => {
+			return dfu.findCompatibleDFU();
+		}).then(() => {
+			//only match against knownApp if file is not found
+			let stats;
+			try {
+				stats = fs.statSync(binary);
+			} catch (ex) {
+				// file does not exist
+				binary = dfu.checkKnownApp(binary);
+				if (binary === undefined) {
+					throw new Error('file does not exist and no known app found.');
+				} else {
+					flashingKnownApp = true;
+					return binary;
 				}
-
-				if (!stats.isFile()){
-					return when.reject('You cannot flash a directory over USB');
-				}
-			},
-			() => {
-				destSegment = useFactory ? 'factoryReset' : 'userFirmware';
-				if (flashingKnownApp) {
-					return when.resolve();
-				}
-
-				return when.promise((resolve, reject) => {
-					const parser = new ModuleParser();
-					parser.parseFile(firmware, (info, err) => {
-						if (err) {
-							return reject(err);
-						}
-
-						if (info.suffixInfo.suffixSize === 65535) {
-							console.log('warn: unable to verify binary info');
-							return resolve();
-						}
-
-						if (!info.crc.ok && !this.options.force) {
-							return reject('CRC is invalid, use --force to override');
-						}
-
-						specs = deviceSpecs[dfu.dfuId];
-						if (info.prefixInfo.platformID !== specs.productId && !this.options.force) {
-							return reject(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
-						}
-
-						switch (info.prefixInfo.moduleFunction) {
-							case MONOLITHIC:
-								// only override if modular capable
-								destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
-								break;
-							case SYSTEM_MODULE:
-								destSegment = systemModuleIndexToString[info.prefixInfo.moduleIndex];
-								destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
-								break;
-							case APPLICATION_MODULE:
-								// use existing destSegment for userFirmware/factoryReset
-								break;
-							default:
-								if (!this.options.force) {
-									return reject('unknown module function ' + info.prefixInfo.moduleFunction + ', use --force to override');
-								}
-								break;
-						}
-						resolve();
-					});
-				});
-			},
-			() => {
-				if (!destAddress && destSegment) {
-					const segment = dfu._validateSegmentSpecs(destSegment);
-					if (segment.error) {
-						return when.reject('dfu.write: ' + segment.error);
-					}
-					destAddress = segment.specs.address;
-				}
-				if (!destAddress) {
-					return when.reject('Unknown destination');
-				}
-				const alt = 0;
-				const leave = destSegment === 'userFirmware';  // todo - leave on factory firmware write too?
-				return dfu.writeDfu(alt, firmware, destAddress, leave);
 			}
-		]);
 
-		return ready.then(() => {
+			if (!stats.isFile()){
+				throw new Error('You cannot flash a directory over USB');
+			}
+		}).then(() => {
+			destSegment = factory ? 'factoryReset' : 'userFirmware';
+			if (flashingKnownApp) {
+				return;
+			}
+
+			const parser = new ModuleParser();
+			return parser.parseFile(binary).catch(err => {
+				throw new VError(ensureError(err), `Could not parse ${binary}`);
+			}).then(info => {
+				if (info.suffixInfo.suffixSize === 65535) {
+					console.log('warn: unable to verify binary info');
+					return;
+				}
+
+				if (!info.crc.ok && !force) {
+					throw new Error('CRC is invalid, use --force to override');
+				}
+
+				specs = deviceSpecs[dfu.dfuId];
+				if (info.prefixInfo.platformID !== specs.productId && !force) {
+					throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
+				}
+
+				switch (info.prefixInfo.moduleFunction) {
+					case MONOLITHIC:
+						// only override if modular capable
+						destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
+						break;
+					case SYSTEM_MODULE:
+						destSegment = systemModuleIndexToString[info.prefixInfo.moduleIndex];
+						destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
+						break;
+					case APPLICATION_MODULE:
+						// use existing destSegment for userFirmware/factoryReset
+						break;
+					default:
+						if (!force) {
+							throw new Error('unknown module function ' + info.prefixInfo.moduleFunction + ', use --force to override');
+						}
+						break;
+				}
+			});
+		}).then(() => {
+			if (!destAddress && destSegment) {
+				const segment = dfu._validateSegmentSpecs(destSegment);
+				if (segment.error) {
+					throw new Error('dfu.write: ' + segment.error);
+				}
+				destAddress = segment.specs.address;
+			}
+			if (!destAddress) {
+				throw new Error('Unknown destination');
+			}
+			const alt = 0;
+			const leave = destSegment === 'userFirmware';  // todo - leave on factory firmware write too?
+			return dfu.writeDfu(alt, binary, destAddress, leave);
+		}).then(() => {
 			console.log ('\nFlash success!');
-		}, (err) => {
-			console.error('\nError writing firmware...' + err + '\n');
-			return when.reject();
+		}).catch((err) => {
+			throw new VError(ensureError(err), 'Error writing firmware');
 		});
 	}
 }

@@ -1,9 +1,10 @@
+const VError = require('verror');
 const _ = require('lodash');
 const fs = require('fs');
 const prompt = require('inquirer').prompt;
 const path = require('path');
 const when = require('when');
-const sequence = require('when/sequence');
+const whenNode = require('when/node');
 const inquirer = require('inquirer');
 const log = require('../lib/log');
 const chalk = require('chalk');
@@ -24,6 +25,7 @@ const YModem = require('../lib/ymodem');
 const SerialBatchParser = require('../lib/SerialBatchParser');
 const SerialTrigger = require('../lib/SerialTrigger');
 const spinnerMixin = require('../lib/spinnerMixin');
+const ensureError = require('../lib/utilities').ensureError;
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -39,18 +41,13 @@ const protip = () => {
 const timeoutError = 'Serial timed out';
 
 class SerialCommand {
-	constructor(options) {
+	constructor() {
 		spinnerMixin(this);
-		this.options = options;
 	}
 
-	findDevices(callback) {
-		const devices = [];
-		SerialPort.list((err, ports) => {
-			if (err) {
-				console.error('Error listing serial ports: ', err);
-				return callback([]);
-			}
+	findDevices() {
+		return SerialPort.list().then(ports => {
+			const devices = [];
 
 			ports.forEach((port) => {
 				// manufacturer value
@@ -106,12 +103,14 @@ class SerialCommand {
 				});
 			}
 
-			callback(devices);
+			return devices;
+		}).catch(err => {
+			throw new VError(ensureError(err), 'Error listing serial ports');
 		});
 	}
 
 	listDevices() {
-		this.findDevices((devices) => {
+		return this.findDevices().then(devices => {
 			if (devices.length === 0) {
 				console.log(chalk.bold.white('No devices available via serial'));
 				return;
@@ -124,12 +123,10 @@ class SerialCommand {
 		});
 	}
 
-	monitorPort() {
-		const comPort = this.options.port;
+	monitorPort({ port, follow }) {
 		let cleaningUp = false;
 		let selectedDevice;
 		let serialPort;
-		const follow = this.options.follow;
 
 		const displayError = (err) => {
 			if (err) {
@@ -149,9 +146,11 @@ class SerialCommand {
 		};
 
 		// Handle interrupts and close the port gracefully
-		const handleInterrupt = () => {
+		const handleInterrupt = (silent) => {
 			if (!cleaningUp) {
-				console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
+				if (!silent) {
+					console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
+				}
 				cleaningUp = true;
 				if (serialPort && serialPort.isOpen) {
 					serialPort.close();
@@ -168,12 +167,11 @@ class SerialCommand {
 			if (!device) {
 				if (follow) {
 					setTimeout(() => {
-						this.whatSerialPortDidYouMean(comPort, true, handlePortFn);
+						this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
 					}, 5);
 					return;
 				} else {
-					console.error(chalk.bold.white('No serial device identified'));
-					return;
+					throw new VError('No serial port identified');
 				}
 			}
 
@@ -212,85 +210,76 @@ class SerialCommand {
 		process.on('SIGINT', handleInterrupt);
 		process.on('SIGQUIT', handleInterrupt);
 		process.on('SIGTERM', handleInterrupt);
-		process.on('exit', handleInterrupt);
+		process.on('exit', () => handleInterrupt(true));
 
 		if (follow) {
 			console.log('Polling for available serial device...');
 		}
 
-		this.whatSerialPortDidYouMean(comPort, true, handlePortFn);
+		return this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
 	}
 
 	/**
 	 * Check to see if the device is in listening mode, try to get the device ID via serial
 	 * @param {Number|String} comPort
 	 */
-	identifyDevice() {
-		const comPort = this.options.port;
-
-		this.whatSerialPortDidYouMean(comPort, true, (device) => {
+	identifyDevice({ port }) {
+		let device;
+		return this.whatSerialPortDidYouMean(port, true).then(_device => {
+			device = _device;
 			if (!device) {
-				return this.error('No serial port identified');
+				throw new VError('No serial port identified');
 			}
 
-			this.askForDeviceID(device)
-				.then((data) => {
-					if (_.isObject(data)) {
-						console.log();
-						console.log('Your device id is', chalk.bold.cyan(data.id));
-						if (data.imei) {
-							console.log('Your IMEI is', chalk.bold.cyan(data.imei));
-						}
-						if (data.iccid) {
-							console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
-						}
-					} else {
-						console.log();
-						console.log('Your device id is', chalk.bold.cyan(data));
-					}
+			return this.askForDeviceID(device);
+		}).then(data => {
+			if (_.isObject(data)) {
+				console.log();
+				console.log('Your device id is', chalk.bold.cyan(data.id));
+				if (data.imei) {
+					console.log('Your IMEI is', chalk.bold.cyan(data.imei));
+				}
+				if (data.iccid) {
+					console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
+				}
+			} else {
+				console.log();
+				console.log('Your device id is', chalk.bold.cyan(data));
+			}
 
-					return this.askForSystemFirmwareVersion(device, 2000)
-						.then((version) => {
-							console.log('Your system firmware version is', chalk.bold.cyan(version));
-						})
-						.catch(() => {
-							console.log('Unable to determine system firmware version');
-							return when.resolve();
-						});
-				})
-				.catch((err) => {
-					this.error(err, false);
-				});
+			return this.askForSystemFirmwareVersion(device, 2000).then(version => {
+				console.log('Your system firmware version is', chalk.bold.cyan(version));
+			}).catch(() => {
+				console.log('Unable to determine system firmware version');
+			});
+		}).catch((err) => {
+			throw new VError(err, 'Could not identify device');
 		});
 	}
 
-	deviceMac() {
-		const comPort = this.options.port;
-
-		this.whatSerialPortDidYouMean(comPort, true, (device) => {
+	deviceMac({ port }) {
+		return this.whatSerialPortDidYouMean(port, true).then(device => {
 			if (!device) {
-				return this.error('No serial port identified');
+				throw new VError('No serial port identified');
 			}
 
-			this.getDeviceMacAddress(device)
-				.then((data) => {
-					console.log();
-					console.log('Your device MAC address is', chalk.bold.cyan(data));
-				})
-				.catch((err) => {
-					this.error(err, false);
-				});
+			return this.getDeviceMacAddress(device);
+		}).then(data => {
+			console.log();
+			console.log('Your device MAC address is', chalk.bold.cyan(data));
+		}).catch((err) => {
+			throw new VError(ensureError(err), 'Could not get MAC address');
 		});
 	}
 
-	inspectDevice() {
-		const comPort = this.options.port;
-
-		this.whatSerialPortDidYouMean(comPort, true, (device) => {
+	inspectDevice({ port }) {
+		return this.whatSerialPortDidYouMean(port, true).then(device => {
 			if (!device) {
-				return this.error('No serial port identified');
+				throw new VError('No serial port identified');
 			}
 
+			return this.getSystemInformation(device);
+		}).then((data) => {
 			const functionMap = {
 				s: 'System',
 				u: 'User',
@@ -305,163 +294,148 @@ class SerialCommand {
 				t: 'temp'
 			};
 
-			this.getSystemInformation(device)
-				.then((data) => {
-					const d = JSON.parse(data);
-					const parser = new DescribeParser();
-					const modules = parser.getModules(d);
+			const d = JSON.parse(data);
+			const parser = new DescribeParser();
+			const modules = parser.getModules(d);
 
-					if (d.p !== undefined) {
-						const platformName = settings.knownPlatforms[d.p];
-						console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
+			if (d.p !== undefined) {
+				const platformName = settings.knownPlatforms[d.p];
+				console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
+			}
+			if (modules && modules.length > 0) {
+				console.log(chalk.underline('Modules'));
+				modules.forEach((m) => {
+					const func = functionMap[m.func];
+					if (!func) {
+						console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+						return;
 					}
-					if (modules && modules.length > 0) {
-						console.log(chalk.underline('Modules'));
-						modules.forEach((m) => {
-							const func = functionMap[m.func];
-							if (!func) {
-								console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-								return;
-							}
 
-							console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+					console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
 
-							if (m.isUserModule() && m.uuid) {
-								console.log('    UUID:', m.uuid);
-							}
+					if (m.isUserModule() && m.uuid) {
+						console.log('    UUID:', m.uuid);
+					}
 
-							console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
-							console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
-							console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-							console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-							if (m.dependencies.length > 0) {
-								m.dependencies.forEach((dep) => {
-									const df = functionMap[dep.func];
-									console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
-								});
-							}
+					console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
+					console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
+					console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+					console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+					if (m.dependencies.length > 0) {
+						m.dependencies.forEach((dep) => {
+							const df = functionMap[dep.func];
+							console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
 						});
 					}
-				})
-				.catch((err) => {
-					this.error(err, false);
 				});
+			}
+		}).catch((err) => {
+			throw new VError(ensureError(err), 'Could not get inspect device');
 		});
 	}
 
 	_promptForListeningMode() {
-		return when.promise((resolve, reject) => {
-			console.log(
-				chalk.cyan('!'),
-				'PROTIP:',
-				chalk.white('Hold the'),
-				chalk.cyan('SETUP'),
-				chalk.white('button on your device until it'),
-				chalk.cyan('blinks blue!')
-			);
+		console.log(
+			chalk.cyan('!'),
+			'PROTIP:',
+			chalk.white('Hold the'),
+			chalk.cyan('SETUP'),
+			chalk.white('button on your device until it'),
+			chalk.cyan('blinks blue!')
+		);
 
-			prompt([
-				{
-					type: 'input',
-					name: 'listening',
-					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE')
-				}
-			]).then(() => {
-				resolve();
-			});
-		});
+		return prompt([
+			{
+				type: 'input',
+				name: 'listening',
+				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE')
+			}
+		]);
 	}
 
-	flashDevice() {
-		const comPort = this.options.port;
-		let firmware = this.options.params.binary;
-		settings.verboseOutput = false;
-
-		this._promptForListeningMode().then(() => {
-			this.whatSerialPortDidYouMean(comPort, true, (device) => {
-				if (!device) {
-					return this.error('No serial port identified');
-				}
-				if (device.type === 'Core') {
-					return this.error('serial flashing is not supported on the Core');
-				}
-
-				const complete = sequence([
-					() => {
-						//only match against knownApp if file is not found
-						let stats;
-						try {
-							stats = fs.statSync(firmware);
-						} catch (ex) {
-							// file does not exist
-							const specsByProduct = _.indexBy(specs, 'productName');
-							const productSpecs = specsByProduct[device.type];
-							firmware = productSpecs && productSpecs.knownApps[firmware];
-							if (firmware === undefined) {
-								return when.reject('file does not exist and no known app found.');
-							} else {
-								return;
-							}
-						}
-
-						if (!stats.isFile()) {
-							return when.reject('You cannot flash a directory over USB');
-						}
-					},
-					() => {
-						const serialPort = new SerialPort(device.port, {
-							baudRate: 28800,
-							autoOpen: false
-						});
-
-						const closePort = () => {
-							if (serialPort.isOpen) {
-								serialPort.close();
-							}
-							process.exit(0);
-						};
-						process.on('SIGINT', closePort);
-						process.on('SIGTERM', closePort);
-
-						const ymodem = new YModem(serialPort, { debug: true });
-						return ymodem.send(firmware);
-					}
-				]);
-
-				return complete.then(() => {
-					console.log('\nFlash success!');
-				}, (err) =>	{
-					this.error('\nError writing firmware...' + err + '\n' + err.stack, true);
-				});
-			});
-		});
-	}
-
-	_scanNetworks(next) {
-		this.newSpin('Scanning for nearby Wi-Fi networks...').start();
-
-		wifiScan((err, networkList) => {
-			this.stopSpin();
-
-			if (err) {
-				return this.error('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?');
+	flashDevice(binary, { port }) {
+		let device;
+		return this._promptForListeningMode().then(() => {
+			return this.whatSerialPortDidYouMean(port, true);
+		}).then(_device => {
+			device = _device;
+			if (!device) {
+				throw new VError('No serial port identified');
+			}
+			if (device.type === 'Core') {
+				throw new VError('Serial flashing is not supported on the Core');
 			}
 
+			//only match against knownApp if file is not found
+			let stats;
+			try {
+				stats = fs.statSync(binary);
+			} catch (ex) {
+				// file does not exist
+				const specsByProduct = _.indexBy(specs, 'productName');
+				const productSpecs = specsByProduct[device.type];
+				binary = productSpecs && productSpecs.knownApps[binary];
+				if (binary === undefined) {
+					throw new VError('File does not exist and no known app found');
+				} else {
+					return;
+				}
+			}
+
+			if (!stats.isFile()) {
+				throw new VError('You cannot flash a directory over USB');
+			}
+		}).then(() => {
+			const serialPort = new SerialPort(device.port, {
+				baudRate: 28800,
+				autoOpen: false
+			});
+
+			const closePort = () => {
+				if (serialPort.isOpen) {
+					serialPort.close();
+				}
+				process.exit(0);
+			};
+			process.on('SIGINT', closePort);
+			process.on('SIGTERM', closePort);
+
+			const ymodem = new YModem(serialPort, { debug: true });
+			return ymodem.send(binary);
+		}).then(() => {
+			console.log('\nFlash success!');
+		}).catch(err =>	{
+			throw new VError(ensureError(err), 'Error writing firmware');
+		});
+	}
+
+	_scanNetworks() {
+		return new Promise(resolve => {
+			this.newSpin('Scanning for nearby Wi-Fi networks...').start();
+
+			wifiScan((err, networkList) => {
+				this.stopSpin();
+
+				if (err) {
+					throw new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?');
+				}
+				resolve(networkList);
+			});
+		}).then(networkList => {
 			// todo - if the prompt is auto answering, then only auto answer once, to prevent
 			// never ending loops
 			if (networkList.length === 0) {
-				prompt([{
+				return prompt([{
 					type: 'confirm',
 					name: 'rescan',
 					message: 'Uh oh, no networks found. Try again?',
 					default: true
 				}]).then((answers) => {
 					if (answers.rescan) {
-						return this._scanNetworks(next);
+						return this._scanNetworks();
 					}
-					return next([]);
+					return [];
 				});
-				return;
 			}
 
 			networkList = networkList.filter((ap) => {
@@ -479,53 +453,38 @@ class SerialCommand {
 			networkList.sort((a, b) => {
 				return a.ssid.toLowerCase().localeCompare(b.ssid.toLowerCase());
 			});
-			next(networkList);
+
+			return networkList;
 		});
 	}
 
-	configureWifi() {
-		const comPort = this.options.port;
-		const credentialsFile = this.options.file;
+	configureWifi({ port, file }) {
+		const credentialsFile = file;
 
-		// TODO remove once we have verbose flag
-		settings.verboseOutput = true;
-
-		const wifi = when.defer();
-
-		this.whatSerialPortDidYouMean(comPort, true, (device) => {
+		return this.whatSerialPortDidYouMean(port, true).then(device => {
 			if (!device) {
-				return this.error('No serial port identified');
+				throw new VError('No serial port identified');
 			}
 
 			if (credentialsFile) {
-				this._configWifiFromFile(wifi, device, credentialsFile);
+				return this._configWifiFromFile(device, credentialsFile);
 			} else {
-				this._promptWifiScan(wifi, device);
+				return this.promptWifiScan(device);
 			}
-		});
-
-		return wifi.promise;
-	}
-
-	_configWifiFromFile(wifi, device, filename) {
-		fs.readFile(filename, 'utf-8', (err, content) => {
-			if (err) {
-				return wifi.reject(err);
-			}
-
-			let opts;
-			try {
-				opts = JSON.parse(content);
-			} catch (err) {
-				return wifi.reject(err);
-			}
-
-			this.serialWifiConfig(device, opts).then(wifi.resolve, wifi.reject);
+		}).catch(err =>	{
+			throw new VError(ensureError(err), 'Error configuring Wi-Fi');
 		});
 	}
 
-	_promptWifiScan(wifi, device) {
-		prompt([
+	_configWifiFromFile(device, filename) {
+		return whenNode.lift(fs.readFile)(filename, 'utf-8').then(content => {
+			const opts = JSON.parse(content);
+			return this.serialWifiConfig(device, opts);
+		});
+	}
+
+	promptWifiScan(device) {
+		return prompt([
 			{
 				type: 'confirm',
 				name: 'scan',
@@ -534,17 +493,13 @@ class SerialCommand {
 			}
 		]).then((ans) => {
 			if (ans.scan) {
-				return this._scanNetworks((networks) => {
-					this._getWifiInformation(device, networks).then(wifi.resolve, wifi.reject);
+				return this._scanNetworks().then(networks => {
+					return this._getWifiInformation(device, networks);
 				});
 			} else {
-				this._getWifiInformation(device).then(wifi.resolve, wifi.reject);
+				return this._getWifiInformation(device);
 			}
 		});
-	}
-
-	_jsonErr(err) {
-		return console.log(chalk.red('!'), 'An error occurred:', err);
 	}
 
 	_removePhotonNetworks(ssids) {
@@ -557,7 +512,6 @@ class SerialCommand {
 	}
 
 	_getWifiInformation(device, networks) {
-		const wifiInfo = when.defer();
 		const rescanLabel = '[rescan networks]';
 
 		networks = networks || [];
@@ -566,7 +520,7 @@ class SerialCommand {
 		let ssids = _.pluck(networks, 'ssid');
 		ssids = this._removePhotonNetworks(ssids);
 
-		prompt([
+		return prompt([
 			{
 				type: 'list',
 				name: 'ap',
@@ -592,10 +546,10 @@ class SerialCommand {
 				},
 				default: true
 			}
-		]).then((answers) => {
+		]).then(answers => {
 			if (answers.ap === rescanLabel) {
-				return this._scanNetworks((networks) => {
-					this._getWifiInformation(device, networks).then(wifiInfo.resolve, wifiInfo.reject);
+				return this._scanNetworks().then(networks => {
+					return this._getWifiInformation(device, networks);
 				});
 			}
 
@@ -606,16 +560,11 @@ class SerialCommand {
 				console.log(arrow, 'Detected', security, 'security');
 			}
 
-			this.serialWifiConfig(device, { network, security }).then(wifiInfo.resolve, wifiInfo.reject);
+			return this.serialWifiConfig(device, { network, security });
 		});
-
-		return wifiInfo.promise;
 	}
 
 	supportsClaimCode(device) {
-		if (!device) {
-			return when.reject('No serial port available');
-		}
 		return this._issueSerialCommand(device, 'c', 500).then((data) => {
 			const matches = data.match(/Device claimed: (\w+)/);
 			return !!matches;
@@ -661,15 +610,11 @@ class SerialCommand {
 
 			console.log(arrow, 'Obtained magical secure claim code.');
 			console.log();
-			return self.sendClaimCode(device, dat.claim_code)
-				.then(() => {
-					console.log('Claim code set. Now setting up Wi-Fi');
-					// todo - add additional commands over USB to have the device scan for Wi-Fi
-					const wifi = when.defer();
-					self._promptWifiScan(wifi, device);
-					return wifi.promise;
-				})
-				.then(revived);
+			return self.sendClaimCode(device, dat.claim_code).then(() => {
+				console.log('Claim code set. Now setting up Wi-Fi');
+				// todo - add additional commands over USB to have the device scan for Wi-Fi
+				return self.promptWifiScan(device);
+			}).then(revived);
 		}
 
 		function getClaim() {
@@ -771,34 +716,20 @@ class SerialCommand {
 			_deviceID = deviceID;
 			console.log('setting up device', deviceID);
 			return getClaim();
-		})
-			.catch((err) => {
-				this.stopSpin();
-				console.log(err);
-				throw err;
-			});
-	}
-
-	setDeviceClaimCode(device, claimCode) {
-		return this.supportsClaimCode(device).then((supported) => {
-			if (!supported) {
-				return when.reject('device does not support claiming over USB');
-			}
-
-			return this.sendClaimCode(device, claimCode);
+		}).catch((err) => {
+			this.stopSpin();
+			throw new VError(ensureError(err), 'Error during setup');
 		});
 	}
 
-	claimDevice() {
-		const comPort = this.options.port;
-		const claimCode = this.options.params.claimCode;
-
-		return this.whatSerialPortDidYouMean(comPort, true, (device) => {
-			return this.sendClaimCode(device, claimCode)
-				.then(() => {
-					console.log('Claim code set.');
-					return true;
-				});
+	claimDevice({ port, claimCode }) {
+		return this.whatSerialPortDidYouMean(port, true).then(device => {
+			if (!device) {
+				throw new VError('No serial port identified');
+			}
+			return this.sendClaimCode(device, claimCode);
+		}).then(() => {
+			console.log('Claim code set.');
 		});
 	}
 
@@ -833,11 +764,11 @@ class SerialCommand {
 	 */
 	doSerialInteraction(device, command, interactions) {
 		if (!device) {
-			return when.reject('No serial port available');
+			throw new VError('No serial port identified');
 		}
 
 		if (!interactions.length) {
-			return when.resolve();
+			return;
 		}
 
 		const serialPort = this.serialPort || new SerialPort(device.port, {
@@ -1270,7 +1201,7 @@ class SerialCommand {
 	 */
 	_issueSerialCommand(device, command, timeout) {
 		if (!device) {
-			return when.reject('no serial port provided');
+			throw new VError('No serial port identified');
 		}
 		const failDelay = timeout || 5000;
 
@@ -1319,11 +1250,8 @@ class SerialCommand {
 	}
 
 	getDeviceMacAddress(device) {
-		if (!device) {
-			return when.reject('getDeviceMacAddress - no serial port provided');
-		}
 		if (device.type === 'Core') {
-			return when.reject('Unable to get MAC address of a Core');
+			throw new VError('Unable to get MAC address of a Core');
 		}
 
 		return this._issueSerialCommand(device, 'm').then((data) => {
@@ -1352,23 +1280,15 @@ class SerialCommand {
 				}
 				return mac;
 			}
-			throw new Error('Unable to find mac address in response');
+			throw new VError('Unable to find mac address in response');
 		});
 	}
 
 	getSystemInformation(device) {
-		if (!device) {
-			return when.reject('getSystemInformation - no serial port provided');
-		}
-
 		return this._issueSerialCommand(device, 's');
 	}
 
 	askForDeviceID(device) {
-		if (!device) {
-			return when.reject('askForDeviceID - no serial port provided');
-		}
-
 		return this._issueSerialCommand(device, 'i').then((data) => {
 			const matches = data.match(/Your (core|device) id is\s+(\w+)/);
 			if (matches && matches.length === 3) {
@@ -1392,12 +1312,8 @@ class SerialCommand {
 	}
 
 	askForSystemFirmwareVersion(device, timeout) {
-		if (!device) {
-			return when.reject('askForSystemFirmwareVersion - no serial port provided');
-		}
-
 		return this._issueSerialCommand(device, 'v', timeout).then((data) => {
-			const matches = data.match(/system firmware version:\s+([\w.]+)/);
+			const matches = data.match(/system firmware version:\s+([\w.-]+)/);
 			if (matches && matches.length === 2) {
 				return matches[1];
 			}
@@ -1405,10 +1321,6 @@ class SerialCommand {
 	}
 
 	sendDoctorAntenna(device, antenna, timeout) {
-		if (!device) {
-			return when.reject('sendDoctorAntenna - no serial port provided');
-		}
-
 		const antennaValues = {
 			'Internal': 'i',
 			'External': 'e'
@@ -1421,10 +1333,6 @@ class SerialCommand {
 	}
 
 	sendDoctorIP(device, mode, ipAddresses, timeout) {
-		if (!device) {
-			return when.reject('sendDoctorIP - no serial port provided');
-		}
-
 		const modeValues = {
 			'Dynamic IP': 'd',
 			'Static IP': 's'
@@ -1443,10 +1351,6 @@ class SerialCommand {
 	}
 
 	sendDoctorSoftAPPrefix(device, prefix, timeout) {
-		if (!device) {
-			return when.reject('sendDoctorSoftAPPrefix - no serial port provided');
-		}
-
 		const command = 'p' + prefix + '\n';
 
 		return this._issueSerialCommand(device, command, timeout).then((data) => {
@@ -1455,10 +1359,6 @@ class SerialCommand {
 	}
 
 	sendDoctorClearEEPROM(device, timeout) {
-		if (!device) {
-			return when.reject('sendDoctorClearEEPROM - no serial port provided');
-		}
-
 		const command = 'e';
 
 		return this._issueSerialCommand(device, command, timeout).then((data) => {
@@ -1467,10 +1367,6 @@ class SerialCommand {
 	}
 
 	sendDoctorClearWiFi(device, timeout) {
-		if (!device) {
-			return when.reject('sendDoctorClearWiFi - no serial port provided');
-		}
-
 		const command = 'c';
 
 		return this._issueSerialCommand(device, command, timeout).then((data) => {
@@ -1479,10 +1375,6 @@ class SerialCommand {
 	}
 
 	sendDoctorListenMode(device, timeout) {
-		if (!device) {
-			return when.reject('sendDoctorListenMode - no serial port provided');
-		}
-
 		const command = 'l';
 
 		return this._issueSerialCommand(device, command, timeout).then((data) => {
@@ -1537,18 +1429,18 @@ class SerialCommand {
 		return null;
 	}
 
-	whatSerialPortDidYouMean(comPort, shouldPrompt, callback) {
-		this.findDevices((devices) => {
+	whatSerialPortDidYouMean(comPort, shouldPrompt) {
+		return this.findDevices().then(devices => {
 			const port = this._parsePort(devices, comPort);
 			if (port) {
-				return callback(port);
+				return port;
 			}
 
 			if (!devices || devices.length === 0) {
-				return callback(undefined);
+				return;
 			}
 
-			prompt([
+			return prompt([
 				{
 					name: 'port',
 					type: 'list',
@@ -1560,8 +1452,8 @@ class SerialCommand {
 						};
 					})
 				}
-			]).then((answers) => {
-				callback(answers.port);
+			]).then(answers => {
+				return answers.port;
 			});
 		});
 	}
@@ -1573,19 +1465,6 @@ class SerialCommand {
 			chalk.bold.magenta('<3'))
 		);
 		process.exit(0);
-	}
-
-	error(str, exit) {
-		if (!str) {
-			str = 'Unknown error';
-		}
-		str = 'serial: ' + str;
-
-		console.log();
-		console.log(chalk.bold.red('!'), chalk.bold.white(str));
-		if (exit || exit === undefined) {
-			process.exit(1);
-		}
 	}
 }
 

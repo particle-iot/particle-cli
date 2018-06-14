@@ -12,7 +12,8 @@ export default ({ commandProcessor, root }) => {
 		params: '<device> <function> [argument]',
 		handler: (args) => {
 			const FunctionCommand = require('../cmd/function');
-			return new FunctionCommand(args).callFunction();
+			return new FunctionCommand().callFunction(args.params.device, args.params['function'], args.params.argument);
+
 		},
 		examples: {
 			'$0 $command coffee brew': 'Call the brew function on the coffee device',

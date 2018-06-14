@@ -1,9 +1,10 @@
+import VError from 'verror';
+
 const when = require('when');
 const pipeline = require('when/pipeline');
 const _ = require('lodash');
 const chalk = require('chalk');
-const inquirer = require('inquirer');
-const prompt = inquirer.prompt;
+const prompt = require('inquirer').prompt;
 const dfu = require('../lib/dfu.js');
 const ApiClient = require('../lib/ApiClient.js');
 
@@ -16,8 +17,7 @@ const deviceTimeout = 3000;
 const serialTimeout = 3000;
 
 class DoctorCommand {
-	constructor(options) {
-		this.options = options;
+	constructor() {
 		this._commands = {};
 	}
 
@@ -67,10 +67,8 @@ class DoctorCommand {
 	}
 
 	_findDevice() {
-		return when.promise((resolve) => {
-			// Try to find a "normal" mode device through the serial port
-			this.command('serial').findDevices(resolve);
-		}).then((devices) => {
+		// Try to find a "normal" mode device through the serial port
+		return this.command('serial').findDevices().then(devices => {
 			if (devices.length === 0) {
 				// Try to find a "DFU" mode device through dfu-util
 				return dfu.listDFUDevices();
@@ -160,11 +158,17 @@ class DoctorCommand {
 		this._displayStepTitle('Updating CC3000 firmware');
 		return this._enterDfuMode()
 			.then(() => {
-				return this.command('flash', { params: { binary: 'cc3000' } }).flashDfu();
+				return this.command('flash').flashDfu({ binary: 'cc3000' });
 			}).then(() => {
 				console.log('Applying update...');
 				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
-				return this.promptDfd(chalk.cyan('>') + ' Press ENTER when ready');
+
+				return this.prompt([{
+					type: 'list',
+					name: 'choice',
+					message: 'Press ENTER when ready',
+					choices: ['Continue']
+				}]);
 			}).catch(this._catchSkipStep);
 	}
 
@@ -174,7 +178,7 @@ class DoctorCommand {
 		return this._enterDfuMode()
 			.then(() => {
 				// See the source code of the doctor app in binaries/doctor.ino
-				return this.command('flash', { params: { binary: 'doctor' } }).flashDfu();
+				return this.command('flash').flashDfu({ binary: 'doctor' });
 			})
 			.then(() => {
 				return this._waitForSerialDevice(deviceTimeout);
@@ -303,7 +307,7 @@ class DoctorCommand {
 		this._displayStepTitle('Flashing the default Particle Tinker app');
 		return this._enterDfuMode()
 			.then(() => {
-				return this.command('flash', { params: { binary: 'tinker' } }).flashDfu();
+				return this.command('flash').flashDfu({ binary: 'tinker' });
 			}).catch(this._catchSkipStep);
 	}
 
@@ -323,7 +327,7 @@ class DoctorCommand {
 					console.log(chalk.red('!'), 'Skipping device key because it does not report its device ID over USB');
 					return;
 				}
-				return this.command('keys', { params: { device: this.device.deviceId }, force: true }).keyDoctor();
+				return this.command('keys').keyDoctor(this.device.deviceId);
 			}).catch(this._catchSkipStep);
 	}
 
@@ -394,7 +398,7 @@ class DoctorCommand {
 			}).then((message) => {
 				console.log(message);
 			}).then(() => {
-				return this.command('serial').configureWifi();
+				return this.command('serial').promptWifiScan(this.device);
 			}).catch(this._catchSkipStep);
 	}
 
@@ -414,6 +418,9 @@ class DoctorCommand {
 			return;
 		}
 		console.log("The Doctor didn't complete sucesfully. " + e.message);
+		if (global.verboseLevel > 1) {
+			console.log(VError.fullStack(e));
+		}
 		console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
 		console.log(chalk.bold.white('https://community.particle.io/'));
 	}

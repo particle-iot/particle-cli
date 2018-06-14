@@ -3,7 +3,8 @@ export default ({ commandProcessor, root }) => {
 
 	const protocolOption = {
 		'protocol': {
-			description: 'Communication protocol for the device using the key. tcp or udp'
+			description: 'Communication protocol for the device using the key. tcp or udp',
+			nargs: 1
 		}
 	};
 
@@ -12,7 +13,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).makeNewKey();
+			return new KeysCommand().makeNewKey(args.params.filename, args);
 		}
 	});
 
@@ -20,7 +21,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<filename>',
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).writeKeyToDevice();
+			return new KeysCommand().writeKeyToDevice(args.params.filename);
 		}
 	});
 
@@ -35,7 +36,7 @@ export default ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).saveKeyFromDevice();
+			return new KeysCommand().saveKeyFromDevice(args.params.filename, args);
 		}
 	});
 
@@ -44,12 +45,13 @@ export default ({ commandProcessor, root }) => {
 		options: {
 			'product_id': {
 				number: true,
-				description: 'The product ID to use when provisioning a new device'
+				description: 'The product ID to use when provisioning a new device',
+				nargs: 1
 			}
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).sendPublicKeyToServer();
+			return new KeysCommand().sendPublicKeyToServer(args.params.device, args.params.filename, args);
 		}
 	});
 
@@ -58,7 +60,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).keyDoctor();
+			return new KeysCommand().keyDoctor(args.params.device, args);
 		}
 	});
 
@@ -67,15 +69,17 @@ export default ({ commandProcessor, root }) => {
 		params: '[filename]',
 		options: Object.assign({}, protocolOption, {
 			'host': {
-				description: 'Hostname or IP address of the server to add to the key'
+				description: 'Hostname or IP address of the server to add to the key',
+				nargs: 1
 			},
 			'port': {
-				description: 'Port number of the server to add to the key'
+				description: 'Port number of the server to add to the key',
+				nargs: 1
 			}
 		}),
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).writeServerPublicKey();
+			return new KeysCommand().writeServerPublicKey(args.params.filename, args);
 		}
 	});
 
@@ -83,7 +87,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).readServerAddress();
+			return new KeysCommand().readServerAddress(args);
 		}
 	});
 
@@ -91,7 +95,7 @@ export default ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand(args).transportProtocol();
+			return new KeysCommand().transportProtocol(args);
 		}
 	});
 

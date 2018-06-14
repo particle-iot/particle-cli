@@ -3,7 +3,8 @@ export default ({ commandProcessor, root }) => {
 
 	const compileOptions = {
 		'target': {
-			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
+			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.',
+			nargs: 1
 		}
 	};
 
@@ -11,7 +12,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<device>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).claimDevice();
+			return new CloudCommands().claimDevice(args.params.device);
 		},
 		examples: {
 			'$0 $command 123456789': 'Claim device by id to your account'
@@ -22,16 +23,22 @@ export default ({ commandProcessor, root }) => {
 		params: '[filter]',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).listDevices();
+			return new CloudCommands().listDevices(args.params.filter);
 		},
 		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
 	});
 
 	commandProcessor.createCommand(cloud, 'remove', 'Release a device from your account so that another user may claim it', {
 		params: '<device>',
+		options: {
+			'yes': {
+				boolean: true,
+				description: 'Answer yes to all questions'
+			}
+		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).removeDevice();
+			return new CloudCommands().removeDevice(args.params.device, args);
 		},
 		examples: {
 			'$0 $command 0123456789ABCDEFGHI': 'Remove device by id from your account'
@@ -42,7 +49,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<device> <name>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).nameDevice();
+			return new CloudCommands().renameDevice(args.params.device, args.params.name);
 		},
 		examples: {
 			'$0 $command red green': 'Rename red device to green'
@@ -51,10 +58,15 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'flash', 'Pass a binary, source file, or source directory to a device!', {
 		params: '<device> [files...]',
-		options: compileOptions,
+		options: Object.assign({}, compileOptions, {
+			'yes': {
+				boolean: true,
+				description: 'Answer yes to all questions'
+			}
+		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).flashDevice();
+			return new CloudCommands().flashDevice(args.params.device, args.params.files, args);
 		},
 		examples: {
 			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device blue',
@@ -68,12 +80,13 @@ export default ({ commandProcessor, root }) => {
 		params: '<deviceType> [files...]',
 		options: Object.assign({}, compileOptions, {
 			'saveTo': {
-				description: 'Filename for the compiled binary'
+				description: 'Filename for the compiled binary',
+				nargs: 1
 			}
 		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).compileCode();
+			return new CloudCommands().compileCode(args.params.deviceType, args.params.files, args);
 		},
 		examples: {
 			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a Photon',
@@ -87,21 +100,21 @@ export default ({ commandProcessor, root }) => {
 		params: '<device> [onOff]',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).nyanMode();
+			return new CloudCommands().nyanMode(args.params.device, args.params.onOff);
 		}
 	});
 
 	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).login();
+			return new CloudCommands().login();
 		}
 	});
 
 	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands(args).logout();
+			return new CloudCommands().logout();
 		}
 	});
 

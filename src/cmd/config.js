@@ -8,12 +8,7 @@ class ConfigCommand {
 		this.options = options;
 	}
 
-	configSwitch() {
-		const profile = this.options.params.profile;
-		const setting = this.options.params.setting;
-		const value = this.options.params.value;
-		const list = this.options.list;
-
+	configSwitch(profile, setting, value, { list }) {
 		if (list) {
 			this.listProfiles();
 		} else if (setting) {

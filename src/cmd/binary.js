@@ -25,47 +25,35 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
 
-const when = require('when');
 const fs = require('fs');
 const path = require('path');
+const VError = require('verror');
 const chalk = require('chalk');
 const Parser = require('binary-version-reader').HalModuleParser;
 const utilities = require('../lib/utilities.js');
+const ensureError = utilities.ensureError;
 
 class BinaryCommand {
-	constructor(options) {
-		this.options = options;
-	}
-
-	inspectBinary() {
-		const binaryFile = this.options.params.filename;
-
-		if (!binaryFile || !fs.existsSync(binaryFile)) {
-			console.error('Please specify a binary file');
-			return when.reject();
-		}
-		const dfd = when.defer();
-		const parser = new Parser();
-		parser.parseFile(binaryFile, (fileInfo, err) => {
-			if (err) {
-				console.error(err);
-				return dfd.reject();
+	inspectBinary(binaryFile) {
+		return Promise.resolve().then(() => {
+			if (!fs.existsSync(binaryFile)) {
+				throw new VError(`Binary file not found ${binaryFile}`);
 			}
+			const parser = new Parser();
+			return parser.parseFile(binaryFile).catch(err => {
+				throw new VError(ensureError(err), `Could not parse ${binaryFile}`);
+			}).then(fileInfo => {
+				if (fileInfo.suffixInfo.suffixSize === 65535) {
+					throw new VError(`${binaryFile} does not contain inspection information`);
+				}
 
-			if (fileInfo.suffixInfo.suffixSize === 65535) {
-				console.error(binaryFile + ' does not contain inspection information');
-				return dfd.reject();
-			}
+				console.log(chalk.bold(path.basename(binaryFile)));
 
-			console.log(chalk.bold(path.basename(binaryFile)));
-
-			this._showCrc(fileInfo);
-			this._showPlatform(fileInfo);
-			this._showModuleInfo(fileInfo);
-
-			dfd.resolve();
+				this._showCrc(fileInfo);
+				this._showPlatform(fileInfo);
+				this._showModuleInfo(fileInfo);
+			});
 		});
-		return dfd.promise;
 	}
 
 	_showCrc(fileInfo) {

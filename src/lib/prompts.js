@@ -42,23 +42,6 @@ const prompts = {
 		});
 		return dfd.promise;
 	},
-	askYesNoQuestion(message, alwaysResolve) {
-		let dfd = when.defer();
-		let prompt = prompts.getPrompt();
-		prompt.question(message, (value) => {
-			value = (value || '').toLowerCase();
-			let saidYes = ((value === 'yes') || (value === 'y'));
-
-			if (alwaysResolve) {
-				dfd.resolve(saidYes);
-			} else if (saidYes) {
-				dfd.resolve(value);
-			} else {
-				dfd.reject(value);
-			}
-		});
-		return dfd.promise;
-	},
 
 	passPromptDfd(message) {
 		let dfd = when.defer();
@@ -150,10 +133,6 @@ const prompts = {
 		return dfd.promise;
 	},
 
-	areYouSure() {
-		return prompts.askYesNoQuestion('Are you sure?  Please Type yes to continue: ');
-	},
-
 	getCredentials(username) {
 		let creds = when.defer();
 
@@ -195,34 +174,6 @@ const prompts = {
 	},
 	confirmPassword() {
 		return prompts.passPromptDfd('confirm password  ');
-	},
-
-	getNewCoreName() {
-		return prompts.promptDfd('How shall your device be known? (name?):\t');
-	},
-
-	hitEnterWhenReadyPrompt() {
-		console.log('');
-		console.log('');
-		console.log('');
-		return prompts.promptDfd("If it isn't too much trouble, would you mind hitting ENTER when you'd like me to start?");
-	},
-
-	hitEnterWhenCyanPrompt() {
-		console.log('');
-		console.log('');
-		return prompts.promptDfd('Sorry to bother you again, could you wait until the light is CYAN and then press ENTER?');
-	},
-
-
-	waitFor(delay) {
-		let temp = when.defer();
-
-		console.log('...(pausing for effect:' + delay + ').');
-		setTimeout(() => {
-			temp.resolve();
-		}, delay);
-		return temp.promise;
 	}
 };
 

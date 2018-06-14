@@ -33,9 +33,8 @@ function goodbye() {
 
 class SetupCommand {
 
-	constructor(options) {
+	constructor() {
 		spinnerMixin(this);
-		this.options = options;
 		this.__wasLoggedIn;
 		this.__api = new ApiClient2();
 		this.__oldapi = new ApiClient();
@@ -46,11 +45,12 @@ class SetupCommand {
 		return new Command(options);
 	}
 
-	setup() {
+	setup({ wifi, scan, manual, yes }) {
+		this.options = { scan, manual, yes };
 
 		const self = this;
 
-		this.forceWiFi = this.options.wifi;
+		this.forceWiFi = wifi;
 
 		console.log(chalk.bold.cyan(utilities.banner()));
 		console.log(arrow, "Setup is easy! Let's get started...");
@@ -272,7 +272,7 @@ class SetupCommand {
 
 		this.newSpin('Now to find your device(s)...').start();
 
-		serial.findDevices(function found(devices) {
+		return serial.findDevices().then(devices => {
 
 			self.stopSpin();
 
@@ -521,11 +521,7 @@ class SetupCommand {
 	}
 
 	prompt(prompts) {
-		let cb = (result) => {
-			return new Promise((resolve, reject) => {
-				resolve(result);
-			});
-		};
+		let handler = (result) => result;
 		if (this.options.yes) {
 			const newPrompts = [];
 			const answers = {};
@@ -537,16 +533,14 @@ class SetupCommand {
 					answers[p.name] = true;
 				}
 			}
-			cb = (ans) => {
+			handler = (ans) => {
 				ans = Object.assign({}, ans, answers);
-				return new Promise((resolve, reject) => {
-					resolve(ans);
-				});
+				return ans;
 			};
 			prompts = newPrompts;
 		}
 
-		return prompt(prompts).then(cb);
+		return prompt(prompts).then(handler);
 	}
 
 	exit() {

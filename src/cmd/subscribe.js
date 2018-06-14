@@ -1,20 +1,14 @@
-const when = require('when');
+const VError = require('verror');
 const ApiClient = require('../lib/ApiClient.js');
 
 class SubscribeCommand {
-	constructor(options)	{
-		this.options = options;
-	}
-
-	startListening() {
+	startListening(event, { device, all }) {
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return -1;
-		}
+		api.ensureToken();
 
 		// legacy argument order
-		let eventName = this.options.params.event[0];
-		let deviceId = this.options.params.event[1] || this.options.device;
+		let eventName = event[0];
+		let deviceId = event[1] || device;
 
 		// if they typed: "particle subscribe mine"
 		if (eventName === 'mine') {
@@ -28,7 +22,7 @@ class SubscribeCommand {
 			eventLabel = 'all events';
 		}
 
-		if (!deviceId && !this.options.all) {
+		if (!deviceId && !all) {
 			deviceId = 'mine';
 		}
 
@@ -74,9 +68,8 @@ class SubscribeCommand {
 		return api.getEventStream(eventName, deviceId, (event) => {
 			const chunk = event.toString();
 			appendToQueue(chunk.split('\n'));
-		}).catch((err) => {
-			console.error('Error', err);
-			return when.reject(err);
+		}).catch(err => {
+			throw new VError(api.normalizedApiError(err), 'Error subscribing to event stream');
 		});
 	}
 }

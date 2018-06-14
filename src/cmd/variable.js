@@ -1,5 +1,5 @@
+const VError = require('verror');
 const when = require('when');
-const pipeline = require('when/pipeline');
 const _ = require('lodash');
 
 const settings = require('../../settings.js');
@@ -8,10 +8,6 @@ const moment = require('moment');
 const prompt = require('inquirer').prompt;
 
 class VariableCommand {
-	constructor(options) {
-		this.options = options;
-	}
-
 	disambiguateGetValue({ deviceId, variableName }) {
 		//if their deviceId actually matches a device, list those variables.
 		//if their deviceId is null, get that var from the relevant devices
@@ -29,7 +25,7 @@ class VariableCommand {
 						return _.has(c.variables, variableName);
 					}), 'id');
 					if (maybeDeviceIds.length === 0) {
-						return when.reject('No matching device');
+						throw new VError('No matching device');
 					}
 					return { deviceIds: maybeDeviceIds, variableName: variableName };
 				}
@@ -58,15 +54,13 @@ class VariableCommand {
 		});
 	}
 
-	_getValue(deviceId, variableName) {
+	_getValue(deviceId, variableName, { time }) {
 		if (!_.isArray(deviceId)) {
 			deviceId = [deviceId];
 		}
 
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('Not logged in');
-		}
+		api.ensureToken();
 
 		const multipleCores = deviceId.length > 1;
 
@@ -87,7 +81,7 @@ class VariableCommand {
 				if (multipleCores) {
 					parts.push(result.coreInfo.deviceID);
 				}
-				if (this.options.time) {
+				if (time) {
 					parts.push(time);
 				}
 				parts.push(result.result);
@@ -95,78 +89,73 @@ class VariableCommand {
 				console.log(parts.join(', '));
 			}
 			if (hasErrors) {
-				return when.reject();
+				throw new VError('Some variables could not be read');
 			}
-			return when.resolve(results);
-		}, (err) => {
-			return when.reject(`Error reading value: ${err.message || err}`);
+			return results;
 		});
 	}
 
-	getValue() {
-		const deviceId = this.options.params.device;
-		const variableName = this.options.params.variableName;
+	getValue(deviceId, variableName, { time }) {
+		return Promise.resolve().then(() => {
+			if (!deviceId && !variableName) {
+				//they just didn't provide any args...
+				return this.listVariables();
+			} else if (deviceId && !variableName) {
+				//try to figure out if they left off a variable name, or if they want to pull a var from all devices.
+				return this.disambiguateGetValue({ deviceId }).then(({ deviceIds, variableName }) => {
+					return this._getValue(deviceIds, variableName, { time });
+				});
+			} else if (deviceId === 'all' && variableName) {
+				return this.disambiguateGetValue({ variableName }).then(({ deviceIds, variableName }) => {
+					return this._getValue(deviceIds, variableName, { time });
+				});
+			}
 
-		if (!deviceId && !variableName) {
-			//they just didn't provide any args...
-			return this.listVariables();
-		} else if (deviceId && !variableName) {
-			//try to figure out if they left off a variable name, or if they want to pull a var from all devices.
-			return this.disambiguateGetValue({ deviceId }).then(({ deviceIds, variableName }) => {
-				return this._getValue(deviceIds, variableName);
-			});
-		} else if (deviceId === 'all' && variableName) {
-			return this.disambiguateGetValue({ variableName }).then(({ deviceIds, variableName }) => {
-				return this._getValue(deviceIds, variableName);
-			});
-		}
-
-		return this._getValue(deviceId, variableName);
+			return this._getValue(deviceId, variableName, { time });
+		}).catch(err => {
+			const api = new ApiClient();
+			throw new VError(api.normalizedApiError(err), 'Error while reading value');
+		});
 	}
 
 	getAllVariables() {
 		if (this._cachedVariableList) {
-			return when.resolve(this._cachedVariableList);
+			return Promise.resolve(this._cachedVariableList);
 		}
 
 		console.error('polling server to see what devices are online, and what variables are available');
 
 		const api = new ApiClient();
-		if (!api.ready()) {
-			return when.reject('Not logged in');
-		}
+		api.ensureToken();
 
-		return pipeline([
-			() => {
-				return api.listDevices();
-			},
-			(devices) => {
-				if (!devices || (devices.length === 0)) {
-					console.log('No devices found.');
-					this._cachedVariableList = null;
-				} else {
-					const promises = [];
-					for (let i = 0; i < devices.length; i++) {
-						const deviceid = devices[i].id;
-						if (devices[i].connected) {
-							promises.push(api.getAttributes(deviceid));
-						} else {
-							promises.push(when.resolve(devices[i]));
-						}
+		return Promise.resolve().then(() => {
+			return api.listDevices();
+		}).then(devices => {
+			if (!devices || (devices.length === 0)) {
+				console.log('No devices found.');
+				this._cachedVariableList = null;
+			} else {
+				const promises = [];
+				for (let i = 0; i < devices.length; i++) {
+					const deviceid = devices[i].id;
+					if (devices[i].connected) {
+						promises.push(api.getAttributes(deviceid));
+					} else {
+						promises.push(Promise.resolve(devices[i]));
 					}
-
-					return when.all(promises).then((devices) => {
-						//sort alphabetically
-						devices = devices.sort((a, b) => {
-							return (a.name || '').localeCompare(b.name);
-						});
-
-						this._cachedVariableList = devices;
-						return devices;
-					});
 				}
+
+				return Promise.all(promises).then((devices) => {
+					//sort alphabetically
+					devices = devices.sort((a, b) => {
+						return (a.name || '').localeCompare(b.name);
+					});
+
+					this._cachedVariableList = devices;
+					return devices;
+				});
 			}
-		]);
+		});
 	}
 
 
@@ -192,39 +181,37 @@ class VariableCommand {
 				lines = lines.concat(available);
 			}
 			console.log(lines.join('\n'));
+		}).catch(err => {
+			const api = new ApiClient();
+			throw new VError(api.normalizedApiError(err), 'Error while listing variables');
 		});
 	}
 
-	monitorVariables() {
-		const deviceId = this.options.params.device;
-		const variableName = this.options.params.variableName;
-		const delay = this.options.delay;
-
-		return this._monitorVariables({ deviceId, variableName, delay });
-	}
-
-	_monitorVariables({ deviceId, variableName, delay = settings.minimumApiDelay }) {
-		return when.resolve().then(() => {
+	monitorVariables(deviceId, variableName, { delay = settings.minimumApiDelay, time }) {
+		return Promise.resolve().then(() => {
 			if (deviceId === 'all') {
 				deviceId = null;
 			}
 			if (!deviceId || !variableName) {
 				return this.disambiguateGetValue({ deviceId, variableName });
 			}
-			return when.resolve({ deviceIds: [deviceId], variableName: variableName });
+			return { deviceIds: [deviceId], variableName: variableName };
 		}).then(({ deviceIds, variableName }) => {
 			if (delay < settings.minimumApiDelay) {
 				delay = settings.minimumApiDelay;
-				console.error('Delay was too short, resetting to %dms', settings.minimumApiDelay);
+				console.error(`Delay was too short, resetting to ${settings.minimumApiDelay}ms`);
 			}
 			console.error('Hit CTRL-C to stop!');
 
 			const checkVariable = () => {
-				this._getValue(deviceIds, variableName).ensure(() => {
+				when(this._getValue(deviceIds, variableName, { time })).ensure(() => {
 					setTimeout(checkVariable, delay);
 				});
 			};
 			checkVariable();
+		}).catch(err => {
+			const api = new ApiClient();
+			throw new VError(api.normalizedApiError(err), 'Error while monitoring variable');
 		});
 	}
 }

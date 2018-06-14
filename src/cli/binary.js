@@ -5,7 +5,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<filename>',
 		handler: (args) => {
 			const BinaryCommand = require('../cmd/binary');
-			return new BinaryCommand(args).inspectBinary();
+			return new BinaryCommand().inspectBinary(args.params.filename);
 		},
 		examples: {
 			'$0 $command firmware.bin': 'Describe contents of firmware.bin'

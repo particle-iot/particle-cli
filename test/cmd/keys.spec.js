@@ -39,7 +39,6 @@ describe('Key Command', function() {
 
 	function setupDfuTransport() {
 		transport = [];
-		key.options.protocol = undefined;
 		dfu.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
 		dfu.readBuffer = sinon.stub().withArgs('transport', false).returns(when.resolve(transport));
 		dfu.read = sinon.stub();
@@ -61,13 +60,14 @@ describe('Key Command', function() {
 		dfu.dfuId = "2b04:d006";
 
 		api = {};
+		api.ensureToken = sinon.stub();
 		api.sendPublicKey = sinon.stub();
 		api.ready = sinon.stub().returns(true);
 	}
 
 	it('Can create device key', function () {
 		setupCommand();
-		return key.makeNewKey().then(() => {
+		return key.makeNewKey('', {}).then(() => {
 			utilities.deferredChildProcess.callCount.should.equal(3);
 		});
 	});
@@ -88,11 +88,11 @@ describe('Key Command', function() {
 	});
 
 	it('key doctor deviceID is case-insensitive', function () {
-		setupCommand({ params: { device: 'ABcd' } });
+		setupCommand();
 		key._makeNewKey = sinon.stub();
 		key._writeKeyToDevice = sinon.stub();
 		key._sendPublicKeyToServer = sinon.stub();
-		return key.keyDoctor().then(function () {
+		return key.keyDoctor('ABcd', {}).then(function () {
 			expect(key._sendPublicKeyToServer).to.be.calledWith({
 				deviceId: 'abcd', filename: 'abcd_rsa_new', algorithm: 'rsa'
 			});
@@ -102,11 +102,9 @@ describe('Key Command', function() {
 	describe('send key to server', function () {
 		it('lowercases the device ID and removes the file argument', function () {
 			var deviceID = 'deadBEEF';
-			setupCommand({ params: { device: deviceID } });
+			setupCommand();
 
-			// todo - this is a gnarly test because the SUT needs refactoring into smaller pieces.
 			filename = key.serverKeyFilename('rsa');
-			key.options.params.filename = filename;
 			var tempfile;
 
 			utilities.deferredChildProcess = sinon.spy(function (cmd) {
@@ -115,7 +113,7 @@ describe('Key Command', function() {
 				fs.writeFileSync(tempfile, '');
 				return when.resolve();
 			});
-			return key.sendPublicKeyToServer().then(function () {
+			return when(key.sendPublicKeyToServer(deviceID, filename, {})).then(function () {
 				expect(api.sendPublicKey).has.been.calledWith(deviceID.toLowerCase(), new Buffer([]), 'rsa');
 			}).finally(function () {
 				if (tempfile) {
@@ -134,7 +132,7 @@ describe('Key Command', function() {
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', function() {
 			transport.push(0x00);
-			return key.readServerAddress()
+			return key.readServerAddress({})
 				.then(function (result) {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.readBuffer).to.have.been.calledWith('tcpServerKey', false);
@@ -143,7 +141,7 @@ describe('Key Command', function() {
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', function() {
 			transport.push(0xFF);
-			return key.readServerAddress()
+			return key.readServerAddress({})
 				.then(function (result) {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.readBuffer).to.have.been.calledWith('udpServerKey', false);
@@ -160,11 +158,9 @@ describe('Key Command', function() {
 
 		it('calls validateDeviceProtocol to setup the default protocol', function() {
 			dfu.write = sinon.stub();
-			key.options.protocol = 'tcp';
-			key.validateDeviceProtocol = sinon.stub();
+			key.validateDeviceProtocol = sinon.stub().returns('tcp');
 			filename = key.serverKeyFilename('rsa');
-			key.options.params.filename = filename;
-			return key.writeKeyToDevice()
+			return key.writeKeyToDevice(filename)
 				.then(function () {
 					expect(key.validateDeviceProtocol).to.have.been.called;
 					expect(dfu.write).to.have.been.calledWith(filename, 'tcpPrivateKey', false);
@@ -180,9 +176,7 @@ describe('Key Command', function() {
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', function() {
 			transport.push(0x00);
-			key.options.params.filename = filename;
-
-			return key.saveKeyFromDevice()
+			return key.saveKeyFromDevice(filename, {})
 				.then(function () {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);
@@ -191,9 +185,8 @@ describe('Key Command', function() {
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', function() {
 			transport.push(0xFF);
-			key.options.params.filename = filename;
 
-			return key.saveKeyFromDevice()
+			return key.saveKeyFromDevice(filename, {})
 				.then(function () {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'udpPrivateKey', false);
@@ -201,21 +194,19 @@ describe('Key Command', function() {
 		});
 
 		it('raises an error when the protocol is not recognized', function() {
-			key.options.protocol = 'zip';
-			key.options.params.filename = filename;
+			key.validateDeviceProtocol = sinon.stub().returns('zip');
 
-			return key.saveKeyFromDevice()
+			return key.saveKeyFromDevice(filename, {})
 				.catch(function (err) {
 					expect(err).to.equal('Error saving key from device... The device does not support the protocol zip. It has support for udp, tcp');
 				});
 		});
 
 		it('does not read the device protocol the protocol is given', function() {
-			key.options.protocol = 'tcp';
+			key.validateDeviceProtocol = sinon.stub().returns('tcp');
 			key.fetchDeviceProtocol = sinon.stub();
-			key.options.params.filename = filename;
 
-			return key.saveKeyFromDevice()
+			return key.saveKeyFromDevice(filename, {})
 				.then(function () {
 					expect(key.fetchDeviceProtocol).to.not.have.been.called;
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);
@@ -243,9 +234,9 @@ describe('Key Command', function() {
 		it('raises an error if the device does not support multiple protocols', function() {
 			dfu.dfuId = '2b04:d006';
 			return key.changeTransportProtocol('udp').then(function() {
-				throw Error('expected error');
+				throw new Error('expected error');
 			}).catch(function (err) {
-				expect(err).to.be.eql('Error Protocol cannot be changed for this device');
+				expect(err.message).to.be.eql('Could not change device transport protocol: Protocol cannot be changed for this device');
 			});
 		});
 	});

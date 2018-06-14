@@ -7,7 +7,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<eventName|filename> [url] [device] [requestType]',
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand(args).createHook();
+			return new WebhookCommand().createHook(args.params);
 		},
 		examples: {
 			'$0 $command temp https://xyz.com': 'Make POST requests to xyz.com every time a temp event is received',
@@ -38,7 +38,7 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(webhook, 'list', 'Show your current Webhooks', {
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand(args).listHooks();
+			return new WebhookCommand().listHooks();
 		}
 	});
 
@@ -46,7 +46,11 @@ export default ({ commandProcessor, root }) => {
 		params: '<hookId>',
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand(args).deleteHook();
+			return new WebhookCommand().deleteHook(args.params);
+		},
+		examples: {
+			'$0 $command 5a8ef38cb85f8720edce631a': 'Delete webhook with this ID. Find the ID from the list webhook command',
+			'$0 $command all': 'Delete all my webhooks',
 		}
 	});
 
@@ -54,7 +58,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<eventName> <url> [device]',
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand(args).createPOSTHook();
+			return new WebhookCommand().createPOSTHook(args.params);
 		}
 	});
 
@@ -62,7 +66,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<eventName> <url> [device]',
 		handler: (args) => {
 			const WebhookCommand = require('../cmd/webhook');
-			return new WebhookCommand(args).createGETHook();
+			return new WebhookCommand().createGETHook(args.params);
 		}
 	});
 
