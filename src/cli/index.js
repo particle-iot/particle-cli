@@ -17,6 +17,7 @@ import subscribe from './subscribe';
 import token from './token';
 import udp from './udp';
 import update from './update';
+import updateCli from './update-cli';
 import variable from './variable';
 import version from './version';
 import webhook from './webhook';
@@ -54,6 +55,7 @@ export default function registerAllCommands(context) {
 	token(context);
 	udp(context);
 	update(context);
+	updateCli(context);
 	variable(context);
 	version(context);
 	webhook(context);
