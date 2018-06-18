@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.31.0 - 18 June 2018
+
+* Improve error handling [#422](https://github.com/particle-iot/particle-cli/pull/422)
+* Document the update-cli command [#425](https://github.com/particle-iot/particle-cli/pull/425)
+* Remove Electron flash data warning [#426](https://github.com/particle-iot/particle-cli/pull/426)
+
 ## 1.30.0 - 4 June 2018
 
 * Include binaries for firmware 0.7.0 (with bootloader updater "ascender" app for Photon/P1)[#408](https://github.com/particle-iot/particle-cli/pull/418)
