@@ -125,7 +125,7 @@ class CloudCommand {
 		});
 	}
 
-	flashDevice(deviceId, files, { target, yes }) {
+	flashDevice(deviceId, files, { target }) {
 		return Promise.resolve().then(() => {
 			if (files.length === 0) {
 				// default to current directory
@@ -136,7 +136,7 @@ class CloudCommand {
 			api.ensureToken();
 
 			if (!fs.existsSync(files[0])) {
-				return this._flashKnownApp({ api, deviceId, filePath: files[0], yes });
+				return this._flashKnownApp({ api, deviceId, filePath: files[0] });
 			}
 
 			const version = target === 'latest' ? null : target;
@@ -162,7 +162,7 @@ class CloudCommand {
 					}
 				}
 
-				return this._doFlash({ api, deviceId, fileMapping, version, yes });
+				return this._doFlash({ api, deviceId, fileMapping, version });
 			});
 		}).catch((err) => {
 			if (VError.hasCauseWithName(err, EarlyReturnError.name)) {
@@ -174,66 +174,9 @@ class CloudCommand {
 		});
 	}
 
-	_promptForOta(api, attrs, fileMapping, targetVersion) {
-		const newFileMapping = {
-			basePath: fileMapping.basePath,
-			map: {}
-		};
+	_doFlash({ api, deviceId, fileMapping, targetVersion }) {
 		return Promise.resolve().then(() => {
-			const sourceExtensions = ['.h', '.cpp', '.ino', '.c'];
-			const list = Object.keys(fileMapping.map);
-			const isSourcey = _.some(list, (file) => {
-				return sourceExtensions.indexOf(path.extname(file)) >= 0;
-			});
-			if (!isSourcey) {
-				const binFile = fileMapping.map[list[0]];
-				newFileMapping.map[list[0]] = binFile;
-				return binFile;
-			}
-
-			const filename = temp.path({ suffix: '.bin' });
-			return this._compileAndDownload(api, fileMapping, attrs.platform_id, filename, targetVersion).then(() => {
-				newFileMapping.map['firmware.bin'] = filename;
-				return filename;
-			});
-		}).then((file) => {
-			return whenNode.lift(fs.stat)(file);
-		}).then((stats) => {
-			const dataUsage = utilities.cellularOtaUsage(stats.size);
-
-			console.log();
-			console.log(alert, 'Flashing firmware Over The Air (OTA) uses cellular data, which may cause you to incur usage charges.');
-			console.log(alert, 'This flash is estimated to use at least ' + chalk.bold(dataUsage + ' MB') + ', but may use more depending on network conditions.');
-			console.log();
-			console.log(alert, 'Please type ' + chalk.bold(dataUsage) + ' below to confirm you wish to proceed with the OTA flash.');
-			console.log(alert, 'Any other input will cancel.');
-
-			return prompt([{
-				name: 'confirmota',
-				type: 'input',
-				message: 'Confirm the amount of data usage in MB:'
-			}]).then((ans) => {
-				if (ans.confirmota !== dataUsage) {
-					throw new EarlyReturnError('User cancelled');
-				}
-				return newFileMapping;
-			});
-		});
-	}
-
-	_doFlash({ api, deviceId, fileMapping, targetVersion, yes }) {
-		let isCellular;
-		return api.getAttributes(deviceId).then((attrs) => {
-			isCellular = attrs.cellular;
-			if (!isCellular) {
-				return fileMapping;
-			} else if (yes) {
-				console.log('! Skipping Bandwidth Prompt !');
-				return fileMapping;
-			}
-			return this._promptForOta(api, attrs, fileMapping, targetVersion);
-		}).then((flashFiles) => {
-			return api.flashDevice(deviceId, flashFiles, targetVersion);
+			return api.flashDevice(deviceId, fileMapping, targetVersion);
 		}).then((resp) => {
 			if (resp.status || resp.message) {
 				console.log('Flash device OK: ', resp.status || resp.message);
@@ -248,7 +191,7 @@ class CloudCommand {
 		});
 	}
 
-	_flashKnownApp({ api, deviceId, filePath, yes }) {
+	_flashKnownApp({ api, deviceId, filePath }) {
 		if (!settings.knownApps[filePath]) {
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
@@ -288,7 +231,7 @@ class CloudCommand {
 				return { map: { binary: binary } };
 			});
 		}).then((fileMapping) => {
-			return this._doFlash({ api, deviceId, fileMapping, yes });
+			return this._doFlash({ api, deviceId, fileMapping });
 		});
 	}
 
