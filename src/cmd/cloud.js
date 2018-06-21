@@ -352,24 +352,19 @@ class CloudCommand {
 	}
 
 	login(username, password) {
-		if (this.tries >= (password ? 1 : 3)) {
-			throw new VError("It seems we're having trouble with logging in.");
-		}
+		const shouldRetry = !(username && password && !this.tries);
 
 		return Promise.resolve().then(() => {
-			//prompt for creds
-			if (password) {
+			if (username && password) {
 				return { username: username, password: password };
 			}
 			return prompts.getCredentials(username, password);
 		}).then(creds => {
-			//login to the server
 			const api = new ApiClient();
 			username = creds.username;
 			this.newSpin('Sending login details...').start();
 			return api.login(settings.clientId, creds.username, creds.password);
 		}).then(accessToken => {
-
 			this.stopSpin();
 			console.log(arrow, 'Successfully completed login!');
 			settings.override(null, 'access_token', accessToken);
@@ -380,14 +375,16 @@ class CloudCommand {
 			return accessToken;
 		}).catch((err) => {
 			this.stopSpin();
-			console.log(alert, "There was an error logging you in! Let's try again.");
+			console.log(alert, `There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}`);
 			console.error(alert, err);
 			this.tries = (this.tries || 0) + 1;
 
-			return this.login(username);
+			if (shouldRetry && this.tries < 3){
+				return this.login(username);
+			}
+			throw new VError("It seems we're having trouble with logging in.");
 		});
 	}
-
 
 	doLogout(keep, password) {
 		const api = new ApiClient();
