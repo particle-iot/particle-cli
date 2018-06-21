@@ -4,7 +4,8 @@ const sandbox = require('sinon').createSandbox();
 
 const stubs = {
 	api: {
-		login: () => {}
+		login: () => {},
+		getUser: () => {}
 	},
 	utils: {},
 	prompts: {
@@ -29,21 +30,56 @@ const CloudCommands = proxyquire('../../src/cmd/cloud', {
 
 
 describe('Cloud Commands', () => {
-	let fakeToken, fakeCredentials;
+	let fakeToken, fakeTokenPromise, fakeCredentials, fakeUser, fakeUserPromise;
 
 	beforeEach(() => {
 		fakeToken = 'FAKE-ACCESS-TOKEN';
+		fakeTokenPromise = Promise.resolve(fakeToken);
 		fakeCredentials = { username: 'test@example.com', password: 'fake-pw' };
+		fakeUser = {};
+		fakeUserPromise = Promise.resolve(fakeUser);
 	});
 
 	afterEach(() => {
 		sandbox.restore();
 	});
 
+	it('accepts token arg', withConsoleStubs(() => {
+		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
+		api.getUser.returns(fakeUserPromise);
+
+		return cloud.login(null, null, fakeToken)
+			.then(t => {
+				expect(t).to.equal(fakeToken);
+				expect(api.login).to.have.property('callCount', 0);
+				expect(api.getUser).to.have.property('callCount', 1);
+				expect(api.getUser.firstCall.args).to.eql([fakeToken]);
+				expect(settings.override).to.have.property('callCount', 1);
+				expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
+			});
+	}));
+
+	it('accepts token and username args', withConsoleStubs(() => {
+		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
+		const { username } = fakeCredentials;
+		api.getUser.returns(fakeUserPromise);
+
+		return cloud.login(username, null, fakeToken)
+			.then(t => {
+				expect(t).to.equal(fakeToken);
+				expect(api.login).to.have.property('callCount', 0);
+				expect(api.getUser).to.have.property('callCount', 1);
+				expect(api.getUser.firstCall.args).to.eql([fakeToken]);
+				expect(settings.override).to.have.property('callCount', 2);
+				expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
+				expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+			});
+	}));
+
 	it('accepts username and password args', withConsoleStubs(() => {
 		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 		const { username, password } = fakeCredentials;
-		api.login.returns(fakeToken);
+		api.login.returns(fakeTokenPromise);
 
 		return cloud.login(username, password)
 			.then(t => {
@@ -63,7 +99,7 @@ describe('Cloud Commands', () => {
 		const { cloud, api, prompts, settings } = stubForLogin(new CloudCommands(), stubs);
 		const { username, password } = fakeCredentials;
 		prompts.getCredentials.returns(fakeCredentials);
-		api.login.returns(fakeToken);
+		api.login.returns(fakeTokenPromise);
 
 		return cloud.login()
 			.then(t => {
@@ -130,6 +166,7 @@ describe('Cloud Commands', () => {
 		sandbox.stub(cloud, 'stopSpin');
 		cloud.newSpin.returns({ start: sandbox.stub() });
 		sandbox.stub(api, 'login');
+		sandbox.stub(api, 'getUser');
 		sandbox.stub(prompts, 'getCredentials');
 		sandbox.stub(settings, 'override');
 		return { cloud, api, prompts, settings };

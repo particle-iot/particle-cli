@@ -351,39 +351,60 @@ class CloudCommand {
 		});
 	}
 
-	login(username, password) {
-		const shouldRetry = !(username && password && !this.tries);
+	login(username, password, token) {
+		const shouldRetry = !((username && password) || token && !this.tries);
 
-		return Promise.resolve().then(() => {
-			if (username && password) {
-				return { username: username, password: password };
-			}
-			return prompts.getCredentials(username, password);
-		}).then(creds => {
-			const api = new ApiClient();
-			username = creds.username;
-			this.newSpin('Sending login details...').start();
-			return api.login(settings.clientId, creds.username, creds.password);
-		}).then(accessToken => {
-			this.stopSpin();
-			console.log(arrow, 'Successfully completed login!');
-			settings.override(null, 'access_token', accessToken);
-			if (username) {
-				settings.override(null, 'username', username);
-			}
-			this.tries = 0;
-			return accessToken;
-		}).catch((err) => {
-			this.stopSpin();
-			console.log(alert, `There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}`);
-			console.error(alert, err);
-			this.tries = (this.tries || 0) + 1;
+		return Promise.resolve()
+			.then(() => {
+				if (token){
+					return { token, username, password };
+				}
+				if (username && password){
+					return { username, password };
+				}
+				return prompts.getCredentials(username, password);
+			})
+			.then(credentials => {
+				const { token, username, password } = credentials;
+				const api = new ApiClient();
 
-			if (shouldRetry && this.tries < 3){
-				return this.login(username);
-			}
-			throw new VError("It seems we're having trouble with logging in.");
-		});
+				this.newSpin('Sending login details...').start();
+				this._usernameProvided = username;
+
+				if (token){
+					return api.getUser(token).then(() => ({ token, username, password }));
+				}
+				return api.login(settings.clientId, username, password)
+					.then(token => ({ token, username, password }));
+			})
+			.then(credentials => {
+				const { token, username } = credentials;
+
+				this.stopSpin();
+				console.log(arrow, 'Successfully completed login!');
+
+				settings.override(null, 'access_token', token);
+
+				if (username) {
+					settings.override(null, 'username', username);
+				}
+
+				this._usernameProvided = null;
+				this.tries = 0;
+
+				return token;
+			})
+			.catch(error => {
+				this.stopSpin();
+				console.log(alert, `There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}`);
+				console.error(alert, error);
+				this.tries = (this.tries || 0) + 1;
+
+				if (shouldRetry && this.tries < 3){
+					return this.login(this._usernameProvided);
+				}
+				throw new VError("It seems we're having trouble with logging in.");
+			});
 	}
 
 	doLogout(keep, password) {
