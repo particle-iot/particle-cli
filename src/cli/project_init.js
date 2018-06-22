@@ -155,9 +155,11 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 }
 
 export function command(argv) {
-	const dir = argv.params.dir || process.cwd();
-	const site = new CLIProjectInitCommandSite(dir);
 	const cmd = new ProjectInitCommand();
+	const site = new CLIProjectInitCommandSite({
+		directory: argv.params.dir,
+		name: argv.name
+	});
 	return site.dialog()
 		.then((ready) => {
 			if (ready) {
