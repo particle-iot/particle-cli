@@ -22,14 +22,6 @@ const chalk = require('chalk');
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
 
-class EarlyReturnError extends VError {
-	constructor(...args) {
-		super(...args);
-		Error.captureStackTrace(this, this.constructor);
-		this.name = this.constructor.name;
-	}
-}
-
 // Use known platforms and add shortcuts
 const PLATFORMS = extend(utilities.knownPlatforms(), {
 	'c': 0,
@@ -165,11 +157,6 @@ class CloudCommand {
 				return this._doFlash({ api, deviceId, fileMapping, version });
 			});
 		}).catch((err) => {
-			if (VError.hasCauseWithName(err, EarlyReturnError.name)) {
-				console.log(err.message);
-				return;
-			}
-
 			throw new VError(ensureError(err), 'Flash device failed');
 		});
 	}
