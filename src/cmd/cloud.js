@@ -1,8 +1,6 @@
 const _ = require('lodash');
 const VError = require('verror');
-const whenNode = require('when/node');
 const prompt = require('inquirer').prompt;
-const temp = require('temp').track();
 
 const settings = require('../../settings.js');
 const specs = require('../lib/deviceSpecs');
