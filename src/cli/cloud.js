@@ -105,9 +105,33 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
+		examples: {
+			'$0 $command': 'prompt for credentials and log in',
+			'$0 $command --username user@example.com --password test': 'log in with credentials provided on the command line',
+			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line',
+			'$0 $command --token <my-api-token> --username user@example.com': 'log in with an access token provided on the command line and set your username'
+		},
+		options: {
+			u: {
+				description: 'your username',
+				alias: 'username',
+				nargs: 1
+			},
+			p: {
+				description: 'your password',
+				alias: 'password',
+				nargs: 1
+			},
+			t: {
+				description: '',
+				alias: 'token',
+				nargs: 1
+			}
+		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().login();
+			const { username, password, token } = args;
+			return new CloudCommands().login(username, password, token);
 		}
 	});
 

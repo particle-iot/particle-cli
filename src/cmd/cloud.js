@@ -22,14 +22,6 @@ const chalk = require('chalk');
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
 
-class EarlyReturnError extends VError {
-	constructor(...args) {
-		super(...args);
-		Error.captureStackTrace(this, this.constructor);
-		this.name = this.constructor.name;
-	}
-}
-
 // Use known platforms and add shortcuts
 const PLATFORMS = extend(utilities.knownPlatforms(), {
 	'c': 0,
@@ -165,11 +157,6 @@ class CloudCommand {
 				return this._doFlash({ api, deviceId, fileMapping, version });
 			});
 		}).catch((err) => {
-			if (VError.hasCauseWithName(err, EarlyReturnError.name)) {
-				console.log(err.message);
-				return;
-			}
-
 			throw new VError(ensureError(err), 'Flash device failed');
 		});
 	}
@@ -351,43 +338,61 @@ class CloudCommand {
 		});
 	}
 
-	login(username, password) {
-		if (this.tries >= (password ? 1 : 3)) {
-			throw new VError("It seems we're having trouble with logging in.");
-		}
+	login(username, password, token) {
+		const shouldRetry = !((username && password) || token && !this.tries);
 
-		return Promise.resolve().then(() => {
-			//prompt for creds
-			if (password) {
-				return { username: username, password: password };
-			}
-			return prompts.getCredentials(username, password);
-		}).then(creds => {
-			//login to the server
-			const api = new ApiClient();
-			username = creds.username;
-			this.newSpin('Sending login details...').start();
-			return api.login(settings.clientId, creds.username, creds.password);
-		}).then(accessToken => {
+		return Promise.resolve()
+			.then(() => {
+				if (token){
+					return { token, username, password };
+				}
+				if (username && password){
+					return { username, password };
+				}
+				return prompts.getCredentials(username, password);
+			})
+			.then(credentials => {
+				const { token, username, password } = credentials;
+				const api = new ApiClient();
 
-			this.stopSpin();
-			console.log(arrow, 'Successfully completed login!');
-			settings.override(null, 'access_token', accessToken);
-			if (username) {
-				settings.override(null, 'username', username);
-			}
-			this.tries = 0;
-			return accessToken;
-		}).catch((err) => {
-			this.stopSpin();
-			console.log(alert, "There was an error logging you in! Let's try again.");
-			console.error(alert, err);
-			this.tries = (this.tries || 0) + 1;
+				this.newSpin('Sending login details...').start();
+				this._usernameProvided = username;
 
-			return this.login(username);
-		});
+				if (token){
+					return api.getUser(token).then(() => ({ token, username, password }));
+				}
+				return api.login(settings.clientId, username, password)
+					.then(token => ({ token, username, password }));
+			})
+			.then(credentials => {
+				const { token, username } = credentials;
+
+				this.stopSpin();
+				console.log(arrow, 'Successfully completed login!');
+
+				settings.override(null, 'access_token', token);
+
+				if (username) {
+					settings.override(null, 'username', username);
+				}
+
+				this._usernameProvided = null;
+				this.tries = 0;
+
+				return token;
+			})
+			.catch(error => {
+				this.stopSpin();
+				console.log(alert, `There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}`);
+				console.error(alert, error);
+				this.tries = (this.tries || 0) + 1;
+
+				if (shouldRetry && this.tries < 3){
+					return this.login(this._usernameProvided);
+				}
+				throw new VError("It seems we're having trouble with logging in.");
+			});
 	}
-
 
 	doLogout(keep, password) {
 		const api = new ApiClient();

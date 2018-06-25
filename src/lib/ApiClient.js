@@ -75,7 +75,8 @@ class ApiClient {
 		});
 	}
 	ready() {
-		let hasToken = !!this._access_token;
+		let hasToken = this.hasToken();
+
 		if (!hasToken) {
 			console.log("You're not logged in. Please login using", chalk.bold.cyan('particle cloud login'), 'before using this command');
 		}
@@ -87,6 +88,10 @@ class ApiClient {
 		if (!this._access_token) {
 			throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
 		}
+	}
+
+	hasToken() {
+		return !!this._access_token;
 	}
 
 	clearToken() {
@@ -146,6 +151,32 @@ class ApiClient {
 		});
 
 		return dfd.promise;
+	}
+
+	getUser(token){
+		const { request, hasBadToken } = this;
+		token = token || this._access_token;
+
+		return when.promise((resolve, reject) => {
+			request({
+				uri: '/v1/user',
+				method: 'GET',
+				json: true,
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			}, (error, response, body) => {
+				if (error) {
+					return reject(error);
+				}
+				if (hasBadToken(body)) {
+					// TODO (mirande): throw a real error and supress the logging
+					// done within hasBadToken();
+					return reject('Invalid token');
+				}
+				return resolve(body);
+			});
+		});
 	}
 
 	/**
@@ -1039,3 +1070,4 @@ class ApiClient {
 }
 
 module.exports = ApiClient;
+
