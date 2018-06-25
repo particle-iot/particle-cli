@@ -3,10 +3,6 @@ const VError = require('verror');
 const ensureError = require('../lib/utilities').ensureError;
 
 class FunctionCommand {
-	constructor(options) {
-		this.options = options;
-	}
-
 	listFunctions() {
 		const api = new ApiClient();
 		api.ensureToken();
@@ -42,7 +38,7 @@ class FunctionCommand {
 		api.ensureToken();
 
 		return api.callFunction(deviceId, functionName, funcParam).then(result => {
-			if (result && result.return_value) {
+			if (result && result.hasOwnProperty('return_value')) {
 				console.log(result.return_value);
 			} else {
 				throw api.normalizedApiError(result);
