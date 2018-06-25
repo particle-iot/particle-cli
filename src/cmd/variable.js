@@ -67,7 +67,7 @@ class VariableCommand {
 		return when.map(deviceId, (deviceId) => {
 			return api.getVariable(deviceId, variableName);
 		}).then((results) => {
-			const time = moment().format();
+			const now = moment().format();
 			let hasErrors = false;
 			for (let i = 0; i < results.length; i++) {
 				const parts = [];
@@ -82,7 +82,7 @@ class VariableCommand {
 					parts.push(result.coreInfo.deviceID);
 				}
 				if (time) {
-					parts.push(time);
+					parts.push(now);
 				}
 				parts.push(result.result);
 
