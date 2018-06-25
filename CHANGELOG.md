@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.32.0 - 25 June 2018
+
+* fix server error when particle function returns `0`, only show time for variable when `--time` flag is set [#431](https://github.com/particle-iot/particle-cli/pull/431)
+* fix handling of `dir` param and `--name` flag in `project create` command [#429](https://github.com/particle-iot/particle-cli/pull/429)
+* handle `--username`, `--password`, and `--token` flags in `login` command [#428](https://github.com/particle-iot/particle-cli/pull/428)
+* add `whoami` command to see currently signed-in username [#430](https://github.com/particle-iot/particle-cli/pull/430)
+
 ## 1.31.0 - 18 June 2018
 
 * Improve error handling [#422](https://github.com/particle-iot/particle-cli/pull/422)
