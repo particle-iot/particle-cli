@@ -11,7 +11,7 @@ before_install:
   - npm install -g npm@5
 script:
   - npm run lint
-  - npm test
+  - MOCHA_OPTIONS=--forbid-only npm test
 # Acceptance tests failed but didn't break the build
 # after_success:
 #   - npm run coveralls

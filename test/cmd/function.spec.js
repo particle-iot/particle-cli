@@ -18,7 +18,7 @@ const FunctionCommand = proxyquire('../../src/cmd/function', {
 });
 
 
-describe('Function Command', () => {
+describe.only('Function Command', () => {
 
 	let deviceId, functionName, functionParam;
 
