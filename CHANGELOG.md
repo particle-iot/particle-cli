@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.32.1 - 25 June 2018
+
+* fix "Cannot read property 'stop' of undefined" in whoami command [#433](https://github.com/particle-iot/particle-cli/pull/433)
+
 ## 1.32.0 - 25 June 2018
 
 * fix server error when particle function returns `0`, only show time for variable when `--time` flag is set [#431](https://github.com/particle-iot/particle-cli/pull/431)
