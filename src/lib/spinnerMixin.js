@@ -7,9 +7,15 @@ module.exports = function spinnerMixin(obj) {
 			return this.__spin;
 		},
 		startSpin() {
+			if (!this.__spin){
+				return;
+			}
 			this.__spin.start();
 		},
 		stopSpin() {
+			if (!this.__spin){
+				return;
+			}
 			this.__spin.stop(true);
 		}
 	});
