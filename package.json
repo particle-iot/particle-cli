@@ -72,7 +72,7 @@
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.1.1",
     "semver": "^5.1.0",
-    "serialport": "^6.0.4",
+    "serialport": "6.2.0",
     "softap-setup": "^4.1.0",
     "temp": "^0.8.3",
     "verror": "^1.10.0",
