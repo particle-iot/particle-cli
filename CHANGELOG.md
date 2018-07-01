@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.32.2 - 1 July 2018
+
+* pin `serialport` to 6.2.0 to avoid installation issues on Windows [#435](https://github.com/particle-iot/particle-cli/pull/435)
+
 ## 1.32.1 - 25 June 2018
 
 * fix "Cannot read property 'stop' of undefined" in whoami command [#433](https://github.com/particle-iot/particle-cli/pull/433)
