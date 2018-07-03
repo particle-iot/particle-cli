@@ -2,6 +2,10 @@
 
 ## 1.32.3 - 3 July 2018
 
+* REVERT switch from `package-lock.json` to `npm-shrinkwrap.json` [#437](https://github.com/particle-iot/particle-cli/pull/437)
+
+## 1.32.3 - 3 July 2018
+
 * switch from `package-lock.json` to `npm-shrinkwrap.json` [#436](https://github.com/particle-iot/particle-cli/pull/436)
 
 ## 1.32.2 - 1 July 2018
