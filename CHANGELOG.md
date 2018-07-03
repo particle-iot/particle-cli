@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.32.3 - 3 July 2018
+
+* switch from `package-lock.json` to `npm-shrinkwrap.json` [#436](https://github.com/particle-iot/particle-cli/pull/436)
+
 ## 1.32.2 - 1 July 2018
 
 * pin `serialport` to 6.2.0 to avoid installation issues on Windows [#435](https://github.com/particle-iot/particle-cli/pull/435)
