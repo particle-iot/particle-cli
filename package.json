@@ -147,9 +147,18 @@
     "prepublish": "npm run compile",
     "update-firmware-binaries": "node scripts/update-firmware-binaries.js",
     "version": "npm run update-changelog",
-    "update-changelog": "VERSION=`node -p -e \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md"
+    "update-changelog": "VERSION=`node -p -e \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md",
+    "pkg": "pkg package.json --out-path ./exes"
   },
   "yargs": {
     "camel-case-expansion": false
+  },
+  "pkg": {
+    "scripts": [
+      "dist/**/*.js"
+    ],
+    "assets": [
+      "node_modules/node-wifiscanner2/locales/*.json"
+    ]
   }
 }

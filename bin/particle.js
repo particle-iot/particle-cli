@@ -6,10 +6,5 @@ const CLI = cliForEnvironment();
 new CLI().run(process.argv);
 
 function cliForEnvironment() {
-	if (process.env.PARTICLE_CLI_DEVELOPMENT) {
-		require('babel-register');
-		return require('../src/app/cli');
-	} else {
-		return require('../dist/app/cli');
-	}
+	return require('../dist/app/cli');
 }
