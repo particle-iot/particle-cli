@@ -1,8 +1,7 @@
 const _ = require('lodash');
 const util = require('util');
 const WiFiManager = require('../lib/WiFiManager');
-const OldApiClient = require('../lib/ApiClient.js');
-const APIClient = require('../lib/ApiClient2');
+const ApiClient = require('../lib/ApiClient.js');
 const settings = require('../../settings.js');
 const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
@@ -51,23 +50,21 @@ class WirelessCommand {
 		this.options = options;
 		this.deviceFilterPattern = settings.wirelessSetupFilter;
 
-		this.__sap = new SAP();
-		this.__manual = false;
-		this.__completed = 0;
-		this.__apiClient = new APIClient();
-		this.__oldapi = new OldApiClient();
+		this.sap = new SAP();
+		this.manual = false;
+		this.api = new ApiClient();
 		this.prompt = prompt;
 	}
 
 	list(macAddress, manual) {
 		if (manual) {
-			this.__manual = true;
+			this.manual = true;
 		}
 		// if we get passed a MAC address from setup
 		if (macAddress && macAddress.length === 17) {
-			this.__macAddressFilter = macAddress;
+			this.macAddressFilter = macAddress;
 		} else {
-			this.__macAddressFilter = null;
+			this.macAddressFilter = null;
 		}
 
 		console.log();
@@ -87,7 +84,7 @@ class WirelessCommand {
 			console.log();
 
 			this.newSpin('%s ' + chalk.bold.white('Scanning Wi-Fi for nearby Photons in setup mode...')).start();
-			scan(this.__networks.bind(this));
+			scan(this.networks.bind(this));
 		}
 	}
 
@@ -100,7 +97,7 @@ class WirelessCommand {
 	 *  ssid: the SSID of the AP
 	 * @private
 	 */
-	__networks(err, dat) {
+	networks(err, dat) {
 
 		const self = this;
 		let detectedDevices = [];
@@ -124,9 +121,9 @@ class WirelessCommand {
 		}
 
 		detectedDevices = dat;
-		if (this.__macAddressFilter) {
+		if (this.macAddressFilter) {
 			const macDevices = detectedDevices.filter((ap) => {
-				return ap.mac && (ap.mac.toLowerCase() === self.__macAddressFilter);
+				return ap.mac && (ap.mac.toLowerCase() === self.macAddressFilter);
 			});
 			if (macDevices && macDevices.length === 1) {
 
@@ -192,7 +189,7 @@ class WirelessCommand {
 				protip("Your Photon will appear in your computer's list of Wi-Fi networks with a name like,", chalk.cyan('Photon-XXXX'));
 				protip('Where', chalk.cyan('XXXX'), 'is a string of random letters and/or numbers', chalk.cyan('unique'), 'to that specific Photon.');
 
-				self.__manual = true;
+				self.manual = true;
 				return self.setup(null, manualDone);
 			}
 
@@ -206,7 +203,7 @@ class WirelessCommand {
 
 			if (ans.setup) {
 
-				self.__batch = false;
+				self.batch = false;
 
 				// Select any/all Photons to setup
 				return self.prompt([{
@@ -275,7 +272,7 @@ class WirelessCommand {
 				const foundPhotons = filter(dat, args || settings.wirelessSetupFilter);
 				if (foundPhotons.length > 0) {
 
-					self.__networks(null, foundPhotons);
+					self.networks(null, foundPhotons);
 				} else {
 
 					setTimeout(wildPhotons, 5000);
@@ -285,15 +282,13 @@ class WirelessCommand {
 	}
 
 	setup(photon, cb) {
-
-		const api = this.__apiClient;
 		const mgr = new WiFiManager();
 
 		const self = this;
-		this.__ssid = photon;
+		this.ssid = photon;
 
 		console.log();
-		if (!photon && !self.__manual) {
+		if (!photon && !self.manual) {
 
 			console.log(alert, 'No Photons selected for setup!');
 			return self.exit();
@@ -336,7 +331,11 @@ class WirelessCommand {
 
 		function getClaim() {
 			self.newSpin('Obtaining magical secure claim code from the cloud...').start();
-			api.getClaimCode(undefined, afterClaim);
+			self.api.getClaimCode().then((response) => {
+				afterClaim(null, response);
+			}, (error) => {
+				afterClaim(error);
+			});
 		}
 
 		function afterClaim(err, dat) {
@@ -359,23 +358,23 @@ class WirelessCommand {
 
 			console.log(arrow, 'Obtained magical secure claim code.');
 			console.log();
-			self.__claimCode = dat.claim_code;
+			self.claimCode = dat.claim_code;
 			// todo - prompt for manual connection before getting the claim code since this exits the setup process
-			if (!self.__manual && !mgr.supported.connect) {
+			if (!self.manual && !mgr.supported.connect) {
 				console.log();
 				console.log(alert, 'I am unable to automatically connect to Wi-Fi networks', chalk.magenta('(-___-)'));
 				console.log();
 
 				return self.manualAsk((ans) => {
 					if (ans.manual) {
-						self.__manual = true;
+						self.manual = true;
 						return manualConnect();
 					}
 					console.log(arrow, 'Goodbye!');
 				});
 			}
 
-			if (!self.__manual) {
+			if (!self.manual) {
 				self.newSpin('Attempting to connect to ' + photon + '...').start();
 				mgr.connect({ ssid: photon }, connected);
 			} else {
@@ -394,7 +393,7 @@ class WirelessCommand {
 		}
 
 		function manualReady() {
-			self.__configure(null, manualConfigure);
+			self.configure(null, manualConfigure);
 		}
 
 		function manualConfigure(err, dat) {
@@ -417,12 +416,12 @@ class WirelessCommand {
 				'Hey! We successfully connected to',
 				chalk.bold.cyan(opts.ssid)
 			);
-			self.__configure(opts.ssid);
+			self.configure(opts.ssid);
 		}
 	}
 
 	/* eslint-disable max-statements */
-	__configure(ssid, cb) {
+	configure(ssid, cb) {
 
 		console.log();
 
@@ -431,8 +430,7 @@ class WirelessCommand {
 		console.log();
 
 		const self = this;
-		const sap = this.__sap;
-		const api = self.__apiClient;
+		const sap = this.sap;
 		const mgr = new WiFiManager();
 		const list = [];
 		let password;
@@ -684,9 +682,9 @@ class WirelessCommand {
 				name: 'network',
 				message: 'Please select the network to which your Photon should connect:',
 				choices: networks
-			}]).then(__networkChoice);
+			}]).then(networkChoice);
 
-			function __networkChoice(ans) {
+			function networkChoice(ans) {
 				if (ans.network === strings.rescanLabel) {
 
 					console.log();
@@ -705,7 +703,7 @@ class WirelessCommand {
 					return networkChoices({ network: network });
 				}
 
-				if (list[network].sec & self.__sap.securityValue('enterprise')) {
+				if (list[network].sec & self.sap.securityValue('enterprise')) {
 					enterpriseChoices({ network: network, security: list[network].sec });
 				} else {
 					self.prompt([{
@@ -714,11 +712,11 @@ class WirelessCommand {
 						name: 'password',
 						message: 'Please enter your network password:'
 
-					}]).then(__passwordChoice);
+					}]).then(passwordChoice);
 				}
 			}
 
-			function __passwordChoice(ans) {
+			function passwordChoice(ans) {
 				networkChoices({ network: network, password: ans.password });
 			}
 		}
@@ -730,8 +728,8 @@ class WirelessCommand {
 			security = ans.security || list[network].sec;
 
 			let visibleSecurity;
-			if (self.__sap.securityLookup(security)) {
-				visibleSecurity = self.__sap.securityLookup(security).toUpperCase().replace('_', ' ');
+			if (self.sap.securityLookup(security)) {
+				visibleSecurity = self.sap.securityLookup(security).toUpperCase().replace('_', ' ');
 			} else {
 				visibleSecurity = security.toUpperCase().replace('_', ' ');
 			}
@@ -778,11 +776,11 @@ class WirelessCommand {
 			if (!ans.continue) {
 				console.log(arrow, "Let's try again...");
 				console.log();
-				return self.__configure(ssid, cb);
+				return self.configure(ssid, cb);
 			}
-			self.__network = network;
+			self.network = network;
 			if (!isEnterprise) {
-				self.__password = password;
+				self.password = password;
 			}
 
 			info();
@@ -808,7 +806,7 @@ class WirelessCommand {
 			}
 
 			if (dat && dat.id) {
-				self.__deviceID = dat.id;
+				self.deviceID = dat.id;
 				console.log(arrow, 'Setting up device id', chalk.bold.cyan(dat.id.toLowerCase()));
 			}
 			clearTimeout(retry);
@@ -824,7 +822,7 @@ class WirelessCommand {
 
 			clearTimeout(retry);
 			console.log(arrow, 'Setting the magical cloud claim code...');
-			sap.setClaimCode(self.__claimCode, configure);
+			sap.setClaimCode(self.claimCode, configure);
 		}
 
 		function configure(err) {
@@ -875,7 +873,7 @@ class WirelessCommand {
 			self.stopSpin();
 			//console.log(arrow, chalk.bold.white('Configuration complete! You\'ve just won the internet!'));
 
-			if (!self.__manual && !isEnterprise) {
+			if (!self.manual && !isEnterprise) {
 				reconnect(false);
 			} else {
 				manualReconnectPrompt();
@@ -897,7 +895,7 @@ class WirelessCommand {
 		function reconnect(manual) {
 			if (!manual) {
 				self.newSpin('Reconnecting your computer to your Wi-Fi network...').start();
-				mgr.connect({ ssid: self.__network, password: self.__password }, revived);
+				mgr.connect({ ssid: self.network, password: self.password }, revived);
 			} else {
 				revived();
 			}
@@ -913,9 +911,11 @@ class WirelessCommand {
 			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
 
 			setTimeout(() => {
-
-				api.listDevices(checkDevices);
-
+				self.api.listDevices({ silent: true }).then((body) => {
+					checkDevices(null, body);
+				}, (error) => {
+					checkDevices(error);
+				});
 			}, 2000);
 
 		}
@@ -939,7 +939,7 @@ class WirelessCommand {
 			}
 
 			const onlinePhoton = _.find(dat, (device) => {
-				return (device.id.toUpperCase() === self.__deviceID.toUpperCase()) && device.connected === true;
+				return (device.id.toUpperCase() === self.deviceID.toUpperCase()) && device.connected === true;
 			});
 
 			if (onlinePhoton) {
@@ -966,9 +966,13 @@ class WirelessCommand {
 
 			function recheck(ans) {
 				if (ans.recheck === 'recheck') {
-					api.listDevices(checkDevices);
+					self.api.listDevices({ silent: true }).then((body) => {
+						checkDevices(null, body);
+					}, (error) => {
+						checkDevices(error);
+					});
 				} else {
-					self.setup(self.__ssid);
+					self.setup(self.ssid);
 				}
 			}
 		}
@@ -984,7 +988,7 @@ class WirelessCommand {
 				// todo - retrieve existing name of the device?
 				const deviceName = ans.deviceName;
 				if (deviceName) {
-					self.__oldapi.renameDevice(deviceId, deviceName).then(() => {
+					self.api.renameDevice(deviceId, deviceName).then(() => {
 						console.log();
 						console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
 						console.log(arrow, "Congratulations! You've just won the internet!");

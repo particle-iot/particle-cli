@@ -336,7 +336,7 @@ class CloudCommand {
 		});
 	}
 
-	login({ username, password, token, otp }) {
+	login({ username, password, token, otp } = {}) {
 		const shouldRetry = !((username && password) || token && !this.tries);
 
 		return Promise.resolve()
@@ -431,7 +431,7 @@ class CloudCommand {
 			if (shouldRetry && this.tries < 3){
 				return this.enterOtp({ mfaToken, shouldRetry });
 			}
-			throw new VError("Recover your account at https://login.particle.io/account-info");
+			throw new VError('Recover your account at https://login.particle.io/account-info');
 		});
 	}
 

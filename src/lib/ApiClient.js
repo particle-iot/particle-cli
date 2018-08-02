@@ -106,8 +106,7 @@ class ApiClient {
 		this._access_token = token;
 	}
 
-	// doesn't appear to be used (renamed)
-	_createUser (user, pass) {
+	createUser(user, pass) {
 		let dfd = when.defer();
 
 		//todo; if !user, make random?
@@ -121,8 +120,6 @@ class ApiClient {
 			return when.reject('Username must be an email address.');
 		}
 
-
-		console.log('creating user: ', user);
 		let that = this;
 
 		this.request({
@@ -138,13 +135,10 @@ class ApiClient {
 				return dfd.reject(error);
 			}
 			if (body && body.ok) {
-				console.log('user creation succeeded!');
 				that._user = user;
 				that._pass = pass;
 			} else if (body && !body.ok && body.errors) {
-				console.log('User creation ran into an issue: ', body.errors);
-			} else {
-				console.log('createUser got ', body + '');
+				return dfd.reject(body.errors);
 			}
 
 			dfd.resolve(body);
@@ -327,9 +321,11 @@ class ApiClient {
 
 
 	//GET /v1/devices
-	listDevices () {
+	listDevices ({ silent = false } = {}) {
 		let spinner = new Spinner('Retrieving devices...');
-		spinner.start();
+		if (!silent) {
+			spinner.start();
+		}
 
 		let that = this;
 		let prom = when.promise((resolve, reject) => {
@@ -345,7 +341,9 @@ class ApiClient {
 					return reject('Invalid token');
 				}
 				if (body.error) {
-					console.error('listDevices got error: ', body.error);
+					if (!silent) {
+						console.error('listDevices got error: ', body.error);
+					}
 					reject(body.error);
 				} else {
 					that._devices = body;
@@ -1035,6 +1033,31 @@ class ApiClient {
 			}
 			if (that.hasBadToken(body)) {
 				return dfd.reject('Invalid token');
+			}
+			dfd.resolve(body);
+		});
+
+		return dfd.promise;
+	}
+
+	getClaimCode() {
+		let dfd = when.defer();
+		this.request({
+			uri: '/v1/device_claims',
+			method: 'POST',
+			qs: {
+				access_token: this._access_token,
+			},
+			json: true
+		}, (error, response, body) => {
+			if (error) {
+				return dfd.reject(error);
+			}
+			if (this.hasBadToken(body)) {
+				return dfd.reject('Invalid token');
+			}
+			if (!body || !body.claim_code) {
+				return dfd.reject(new Error('Unable to obtain claim code'));
 			}
 			dfd.resolve(body);
 		});

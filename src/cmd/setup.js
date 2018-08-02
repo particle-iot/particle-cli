@@ -1,6 +1,5 @@
 const chalk = require('chalk');
 const prompt = require('inquirer').prompt;
-const ApiClient2 = require('../lib/ApiClient2');
 
 const settings = require('../../settings');
 const ApiClient = require('../lib/ApiClient');
@@ -35,9 +34,7 @@ class SetupCommand {
 
 	constructor() {
 		spinnerMixin(this);
-		this.__wasLoggedIn;
-		this.__api = new ApiClient2();
-		this.__oldapi = new ApiClient();
+		this.api = new ApiClient();
 	}
 
 	command(name, options = { params: {} }) {
@@ -58,7 +55,7 @@ class SetupCommand {
 		loginCheck();
 
 		function loginCheck() {
-			self.__wasLoggedIn = !!settings.username;
+			self.wasLoggedIn = !!settings.username;
 
 			if (settings.access_token) {
 				return promptSwitch();
@@ -90,8 +87,7 @@ class SetupCommand {
 			// user wants to logout
 			if (!ans.switch) {
 				return self.command('cloud').logout(true).then(() => {
-					self.__api.clearToken();
-					self.__oldapi.clearToken();
+					self.api.clearToken();
 					accountStatus(false);
 				});
 			} else {
@@ -106,7 +102,7 @@ class SetupCommand {
 
 			if (!alreadyLoggedIn) {
 				// New user or a fresh environment!
-				if (!self.__wasLoggedIn) {
+				if (!self.wasLoggedIn) {
 					self.prompt([
 						{
 							type: 'list',
@@ -147,7 +143,7 @@ class SetupCommand {
 			);
 		}
 		const self = this;
-		const signupUsername = this.__signupUsername || undefined;
+		const signupUsername = this.signupUsername || undefined;
 		console.log(arrow, "Let's create your new account!");
 
 		self.prompt([{
@@ -194,7 +190,7 @@ class SetupCommand {
 
 				// try to remember username to save them some frustration
 				if (ans.username) {
-					self.__signupUsername = ans.username;
+					self.signupUsername = ans.username;
 				}
 				console.log(
 					arrow,
@@ -203,30 +199,19 @@ class SetupCommand {
 				return self.signup(cb, ++tries);
 			}
 
-			self.__api.createUser(ans.username, ans.password, (signupErr) => {
-				if (signupErr) {
-					console.error(signupErr);
-					console.error(alert, "Oops, that didn't seem to work. Let's try that again");
-					return self.signup(cb, ++tries);
-				}
-
+			self.api.createUser(ans.username, ans.password).then(() => {
 				// Login the new user automatically
-				self.__api.login(settings.clientId, ans.username, ans.password, (loginErr, body) => {
-					// if just the login fails, reset to the login part of the setup flow
-					if (loginErr) {
-						console.error(loginErr);
-						console.error(alert, 'We had a problem logging you in :(');
-						return self.login(cb);
-					}
-
-					self.__oldapi.updateToken(body.access_token);
-
-					settings.override(null, 'username', ans.username);
-					console.log(arrow, strings.signupSuccess);
-					cb(null);
-				});
+				return self.api.login(settings.clientId, ans.username, ans.password);
+			}).then((token) => {
+				settings.override(null, 'access_token', token);
+				settings.override(null, 'username', ans.username);
+				console.log(arrow, strings.signupSuccess);
+				cb(null);
+			}).catch((signupErr) => {
+				console.error(signupErr);
+				console.error(alert, "Oops, that didn't seem to work. Let's try that again");
+				return self.signup(cb, ++tries);
 			});
-
 		}
 	}
 
@@ -236,14 +221,12 @@ class SetupCommand {
 		console.log(arrow, "Let's get you logged in!");
 
 		this.command('cloud').login().then((accessToken) => {
-			self.__api.updateToken(accessToken);
-			self.__oldapi.updateToken(accessToken);
+			self.api.updateToken(accessToken);
 			cb();
 		}).catch(() => {});
 	}
 
 	findDevice() {
-
 		const self = this;
 		const serial = this.command('serial');
 		const wireless = this.command('wireless');
@@ -459,12 +442,12 @@ class SetupCommand {
 			() => {
 				self.newSpin('Claiming the core to your account').start();
 				return utilities.retryDeferred(() => {
-					return self.__oldapi.claimDevice(deviceId);
+					return self.api.claimDevice(deviceId);
 				}, 3, promptForCyan);
 			},
 			() => {
 				self.stopSpin();
-				return self.__oldapi.signalDevice(deviceId, true);
+				return self.api.signalDevice(deviceId, true);
 			},
 			() => {
 				const rainbow = when.defer();
@@ -491,10 +474,10 @@ class SetupCommand {
 					deviceName = ans.coreName;
 					sequence([
 						() => {
-							return self.__oldapi.signalDevice(deviceId, false);
+							return self.api.signalDevice(deviceId, false);
 						},
 						() => {
-							return self.__oldapi.renameDevice(deviceId, deviceName);
+							return self.api.renameDevice(deviceId, deviceName);
 						}
 					]).then(naming.resolve, naming.reject);
 				});

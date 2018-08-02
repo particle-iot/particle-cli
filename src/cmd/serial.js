@@ -16,8 +16,7 @@ try {
 }
 const wifiScan = require('node-wifiscanner2').scan;
 const specs = require('../lib/deviceSpecs');
-const ApiClient = require('../lib/ApiClient2');
-const OldApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/ApiClient');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
 const YModem = require('../lib/ymodem');
@@ -619,7 +618,11 @@ class SerialCommand {
 
 		function getClaim() {
 			self.newSpin('Obtaining magical secure claim code from the cloud...').start();
-			api.getClaimCode(undefined, afterClaim);
+			api.getClaimCode().then((response) => {
+				afterClaim(null, response);
+			}, (error) => {
+				afterClaim(error);
+			});
 		}
 
 		function revived() {
@@ -627,7 +630,11 @@ class SerialCommand {
 			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
 
 			setTimeout(() => {
-				api.listDevices(checkDevices);
+				api.listDevices({ silent: true }).then((body) => {
+					checkDevices(null, body);
+				}, (error) => {
+					checkDevices(error);
+				});
 			}, 6000);
 		}
 
@@ -646,7 +653,7 @@ class SerialCommand {
 				self.exit();
 			}
 
-			// self.__deviceID -> _deviceID
+			// self.deviceID -> _deviceID
 			const onlinePhoton = _.find(dat, (device) => {
 				return (device.id.toUpperCase() === _deviceID.toUpperCase()) && device.connected === true;
 			});
@@ -674,7 +681,11 @@ class SerialCommand {
 
 			function recheck(ans) {
 				if (ans.recheck === 'recheck') {
-					api.listDevices(checkDevices);
+					api.listDevices({ silent: true }).then((body) => {
+						checkDevices(null, body);
+					}, (error) => {
+						checkDevices(error);
+					});
 				} else {
 					self._promptForListeningMode();
 					self.setup(device);
@@ -683,8 +694,6 @@ class SerialCommand {
 		}
 
 		function namePhoton(deviceId) {
-			const __oldapi = new OldApiClient();
-
 			prompt([
 				{
 					type: 'input',
@@ -695,7 +704,7 @@ class SerialCommand {
 				// todo - retrieve existing name of the device?
 				const deviceName = ans.deviceName;
 				if (deviceName) {
-					__oldapi.renameDevice(deviceId, deviceName).then(() => {
+					api.renameDevice(deviceId, deviceName).then(() => {
 						console.log();
 						console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
 						console.log(arrow, "Congratulations! You've just won the internet!");
