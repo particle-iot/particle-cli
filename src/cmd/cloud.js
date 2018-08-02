@@ -336,7 +336,7 @@ class CloudCommand {
 		});
 	}
 
-	login(username, password, token) {
+	login({ username, password, token, otp }) {
 		const shouldRetry = !((username && password) || token && !this.tries);
 
 		return Promise.resolve()
@@ -356,11 +356,24 @@ class CloudCommand {
 				this.newSpin('Sending login details...').start();
 				this._usernameProvided = username;
 
-				if (token){
-					return api.getUser(token).then(() => ({ token, username, password }));
+				if (token) {
+					return api.getUser(token).then((response) => {
+						return {
+							token,
+							username: response.username
+						};
+					});
 				}
 				return api.login(settings.clientId, username, password)
-					.then(token => ({ token, username, password }));
+					.catch((error) => {
+						if (error.error === 'mfa_required') {
+							this.stopSpin();
+
+							this.tries = 0;
+							return this.enterOtp({ otp, mfaToken: error.mfa_token, shouldRetry });
+						}
+						throw error;
+					}).then(token => ({ token, username }));
 			})
 			.then(credentials => {
 				const { token, username } = credentials;
@@ -382,14 +395,44 @@ class CloudCommand {
 			.catch(error => {
 				this.stopSpin();
 				console.log(alert, `There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}`);
-				console.error(alert, error);
+				console.error(alert, error.message || error.error_description);
 				this.tries = (this.tries || 0) + 1;
 
 				if (shouldRetry && this.tries < 3){
-					return this.login(this._usernameProvided);
+					return this.login({ username: this._usernameProvided });
 				}
 				throw new VError("It seems we're having trouble with logging in.");
 			});
+	}
+
+	enterOtp({ otp, mfaToken, shouldRetry }) {
+		return Promise.resolve().then(() => {
+			if (!this.tries) {
+				console.log('Use your authenticator app on your mobile device to get a login code.');
+				console.log('Lost access to your phone? Visit https://login.particle.io/account-info');
+			}
+
+			if (otp) {
+				return otp;
+			}
+			return prompts.getOtp();
+		}).then(_otp => {
+			otp = _otp;
+			this.newSpin('Sending login code...').start();
+
+			const api = new ApiClient();
+			return api.sendOtp(settings.clientId, mfaToken, otp);
+		}).catch(error => {
+			this.stopSpin();
+			console.log(alert, `This login code didn't work. ${shouldRetry ? "Let's try again." : ''}`);
+			console.error(alert, error.message || error.error_description);
+			this.tries = (this.tries || 0) + 1;
+
+			if (shouldRetry && this.tries < 3){
+				return this.enterOtp({ mfaToken, shouldRetry });
+			}
+			throw new VError("Recover your account at https://login.particle.io/account-info");
+		});
 	}
 
 	doLogout(keep, password) {

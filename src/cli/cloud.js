@@ -108,8 +108,7 @@ export default ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command': 'prompt for credentials and log in',
 			'$0 $command --username user@example.com --password test': 'log in with credentials provided on the command line',
-			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line',
-			'$0 $command --token <my-api-token> --username user@example.com': 'log in with an access token provided on the command line and set your username'
+			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line'
 		},
 		options: {
 			u: {
@@ -123,15 +122,18 @@ export default ({ commandProcessor, root }) => {
 				nargs: 1
 			},
 			t: {
-				description: '',
+				description: 'an existing Particle access token to use',
 				alias: 'token',
+				nargs: 1
+			},
+			otp: {
+				description: 'the login code if two-step authentication is enabled',
 				nargs: 1
 			}
 		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			const { username, password, token } = args;
-			return new CloudCommands().login(username, password, token);
+			return new CloudCommands().login(args);
 		}
 	});
 

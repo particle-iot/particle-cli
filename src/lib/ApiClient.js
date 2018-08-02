@@ -191,9 +191,6 @@ class ApiClient {
 				that._access_token = resp.access_token;
 
 				return when.resolve(that._access_token);
-			},
-			err => {
-				return when.reject('Login Failed: ' + err);
 			});
 	}
 
@@ -223,9 +220,36 @@ class ApiClient {
 					return reject(error);
 				}
 				if (body.error) {
-					reject(body.error_description);
+					reject(body);
 				} else {
 					resolve(body);
+				}
+			});
+		});
+	}
+
+	sendOtp (clientId, mfaToken, otp) {
+		return when.promise((resolve, reject) => {
+			this.request({
+				uri: '/oauth/token',
+				method: 'POST',
+				form: {
+					mfa_token: mfaToken,
+					otp,
+					grant_type: 'urn:custom:mfa-otp',
+					client_id: clientId,
+					client_secret: 'client_secret_here'
+				},
+				json: true
+			}, (error, response, body) => {
+				if (error) {
+					return reject(error);
+				}
+				if (body.error) {
+					reject(body);
+				} else {
+					this._access_token = body.access_token;
+					resolve(this._access_token);
 				}
 			});
 		});
@@ -1064,6 +1088,8 @@ class ApiClient {
 			reason = response.info;
 		} else if (response.error) {
 			reason = response.error;
+		} else if (response.error_description) {
+			reason = response.error_description;
 		}
 		return new Error(reason);
 	}

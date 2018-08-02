@@ -174,6 +174,15 @@ const prompts = {
 	},
 	confirmPassword() {
 		return prompts.passPromptDfd('confirm password  ');
+	},
+	getOtp() {
+		return inquirer.prompt([
+			{
+				type: 'input',
+				name: 'otp',
+				message: 'Please enter a login code'
+			}
+		]).then((ans) => ans.otp);
 	}
 };
 

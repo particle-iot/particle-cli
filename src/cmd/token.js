@@ -121,6 +121,7 @@ class AccessTokenCommands {
 			return this.getCredentials();
 		}).then(creds => {
 			return api.createAccessToken(clientName, creds.username, creds.password);
+			// TODO: add support for MFA here
 		}).then(result => {
 			const nowUnix = Date.now();
 			const expiresUnix = nowUnix + (result.expires_in * 1000);
