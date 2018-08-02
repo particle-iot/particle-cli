@@ -1,10 +1,10 @@
 const chalk = require('chalk');
 const prompt = require('inquirer').prompt;
-const ApiClient2 = require('../../dist/lib/ApiClient2');
+const ApiClient2 = require('../lib/ApiClient2');
 
-const settings = require('../../settings.js');
-const ApiClient = require('../../dist/lib/ApiClient.js');
-const utilities = require('../../dist/lib/utilities.js');
+const settings = require('../../settings');
+const ApiClient = require('../lib/ApiClient');
+const utilities = require('../lib/utilities');
 
 const when = require('when');
 const sequence = require('when/sequence');
