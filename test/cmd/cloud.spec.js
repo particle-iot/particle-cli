@@ -1,15 +1,18 @@
 const proxyquire = require('proxyquire');
-const expect = require('chai').expect;
+const { expect, sinon } = require('../test-setup');
 const sandbox = require('sinon').createSandbox();
+const _ = require('lodash');
 
 const stubs = {
 	api: {
 		login: () => {},
+		sendOtp: () => {},
 		getUser: () => {}
 	},
 	utils: {},
 	prompts: {
-		getCredentials: () => {}
+		getCredentials: () => {},
+		getOtp: () => {}
 	},
 	settings: {
 		clientId: 'CLITESTS',
@@ -30,14 +33,16 @@ const CloudCommands = proxyquire('../../src/cmd/cloud', {
 
 
 describe('Cloud Commands', () => {
-	let fakeToken, fakeTokenPromise, fakeCredentials, fakeUser, fakeUserPromise;
+	let fakeToken, fakeCredentials, fakeUser;
+	let fakeMfaToken, fakeOtp, fakeOtpError;
 
 	beforeEach(() => {
 		fakeToken = 'FAKE-ACCESS-TOKEN';
-		fakeTokenPromise = Promise.resolve(fakeToken);
 		fakeCredentials = { username: 'test@example.com', password: 'fake-pw' };
-		fakeUser = {};
-		fakeUserPromise = Promise.resolve(fakeUser);
+		fakeUser = { username: 'test@example.com' };
+		fakeMfaToken = 'abc1234';
+		fakeOtp = '123456';
+		fakeOtpError = { error: 'mfa_required', mfa_token: fakeMfaToken };
 	});
 
 	afterEach(() => {
@@ -46,25 +51,10 @@ describe('Cloud Commands', () => {
 
 	it('accepts token arg', withConsoleStubs(() => {
 		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
-		api.getUser.returns(fakeUserPromise);
-
-		return cloud.login(null, null, fakeToken)
-			.then(t => {
-				expect(t).to.equal(fakeToken);
-				expect(api.login).to.have.property('callCount', 0);
-				expect(api.getUser).to.have.property('callCount', 1);
-				expect(api.getUser.firstCall.args).to.eql([fakeToken]);
-				expect(settings.override).to.have.property('callCount', 1);
-				expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
-			});
-	}));
-
-	it('accepts token and username args', withConsoleStubs(() => {
-		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 		const { username } = fakeCredentials;
-		api.getUser.returns(fakeUserPromise);
+		api.getUser.resolves(fakeUser);
 
-		return cloud.login(username, null, fakeToken)
+		return cloud.login({ token: fakeToken })
 			.then(t => {
 				expect(t).to.equal(fakeToken);
 				expect(api.login).to.have.property('callCount', 0);
@@ -79,9 +69,9 @@ describe('Cloud Commands', () => {
 	it('accepts username and password args', withConsoleStubs(() => {
 		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 		const { username, password } = fakeCredentials;
-		api.login.returns(fakeTokenPromise);
+		api.login.resolves(fakeToken);
 
-		return cloud.login(username, password)
+		return cloud.login({ username, password })
 			.then(t => {
 				expect(t).to.equal(fakeToken);
 				expect(api.login).to.have.property('callCount', 1);
@@ -99,7 +89,7 @@ describe('Cloud Commands', () => {
 		const { cloud, api, prompts, settings } = stubForLogin(new CloudCommands(), stubs);
 		const { username, password } = fakeCredentials;
 		prompts.getCredentials.returns(fakeCredentials);
-		api.login.returns(fakeTokenPromise);
+		api.login.resolves(fakeToken);
 
 		return cloud.login()
 			.then(t => {
@@ -143,7 +133,7 @@ describe('Cloud Commands', () => {
 		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 		api.login.throws();
 
-		return cloud.login('username', 'password')
+		return cloud.login({ username: 'username', password: 'password' })
 			.then(() => {
 				throw new Error('expected promise to be rejected');
 			})
@@ -159,15 +149,101 @@ describe('Cloud Commands', () => {
 			});
 	}));
 
+	describe('with mfa', () => {
+		it('accepts username, password and otp args', withConsoleStubs(() => {
+			const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
+			const { username, password } = fakeCredentials;
+			api.login.rejects(fakeOtpError);
+			api.sendOtp.resolves(fakeToken);
+
+			return cloud.login({ username, password, otp: fakeOtp })
+				.then(t => {
+					expect(t).to.equal(fakeToken);
+					expect(api.login).to.have.property('callCount', 1);
+					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
+					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
+					expect(api.login.firstCall.args[1]).to.equal(username);
+					expect(api.login.firstCall.args[2]).to.equal(password);
+					expect(api.sendOtp).to.have.property('callCount', 1);
+					expect(api.sendOtp.firstCall).to.have.property('args').lengthOf(3);
+					expect(api.sendOtp.firstCall.args[0]).to.equal(stubs.settings.clientId);
+					expect(api.sendOtp.firstCall.args[1]).to.equal(fakeMfaToken);
+					expect(api.sendOtp.firstCall.args[2]).to.equal(fakeOtp);
+					expect(settings.override).to.have.property('callCount', 2);
+					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
+					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+				});
+		}));
+
+		it('prompts for username, password and otp when they are not provided', withConsoleStubs(() => {
+			const { cloud, api, prompts, settings } = stubForLogin(new CloudCommands(), stubs);
+			const { username, password } = fakeCredentials;
+			prompts.getCredentials.returns(fakeCredentials);
+			prompts.getOtp.returns(fakeOtp);
+			api.login.rejects(fakeOtpError);
+			api.sendOtp.resolves(fakeToken);
+
+			return cloud.login()
+				.then(t => {
+					expect(t).to.equal(fakeToken);
+					expect(prompts.getCredentials).to.have.property('callCount', 1);
+					expect(prompts.getOtp).to.have.property('callCount', 1);
+					expect(cloud.newSpin).to.have.property('callCount', 2);
+					expect(cloud.stopSpin).to.have.property('callCount', 2);
+					expect(api.login).to.have.property('callCount', 1);
+					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
+					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
+					expect(api.login.firstCall.args[1]).to.equal(username);
+					expect(api.login.firstCall.args[2]).to.equal(password);
+					expect(api.sendOtp).to.have.property('callCount', 1);
+					expect(api.sendOtp.firstCall).to.have.property('args').lengthOf(3);
+					expect(api.sendOtp.firstCall.args[0]).to.equal(stubs.settings.clientId);
+					expect(api.sendOtp.firstCall.args[1]).to.equal(fakeMfaToken);
+					expect(api.sendOtp.firstCall.args[2]).to.equal(fakeOtp);
+					expect(settings.override).to.have.property('callCount', 2);
+					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
+					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
+				});
+		}));
+
+		it('does not retry after 3 attemps', withConsoleStubs(() => {
+			const { cloud, api, prompts, settings } = stubForLogin(new CloudCommands(), stubs);
+			prompts.getCredentials.returns(fakeCredentials);
+			prompts.getOtp.returns(fakeOtp);
+			api.login.rejects(fakeOtpError);
+			api.sendOtp.throws();
+
+			return cloud.login()
+				.then(() => {
+					throw new Error('expected promise to be rejected');
+				})
+				.catch(error => {
+					const stdoutArgs = process.stdout.write.args;
+					const lastLog = stdoutArgs[stdoutArgs.length - 1];
+
+					expect(cloud.login).to.have.property('callCount', 1);
+					expect(cloud.enterOtp).to.have.property('callCount', 3);
+					expect(settings.override).to.have.property('callCount', 0);
+					expect(lastLog[0]).to.match(/There was an error logging you in! Let's try again.\n$/);
+					expect(process.stderr.write).to.have.property('callCount', 4);
+					expect(error).to.have.property('message', 'It seems we\'re having trouble with logging in.');
+				});
+		}));
+	});
+
+
 	function stubForLogin(cloud, stubs){
 		const { api, prompts, settings } = stubs;
 		sandbox.spy(cloud, 'login');
+		sandbox.spy(cloud, 'enterOtp');
 		sandbox.stub(cloud, 'newSpin');
 		sandbox.stub(cloud, 'stopSpin');
 		cloud.newSpin.returns({ start: sandbox.stub() });
 		sandbox.stub(api, 'login');
+		sandbox.stub(api, 'sendOtp');
 		sandbox.stub(api, 'getUser');
 		sandbox.stub(prompts, 'getCredentials');
+		sandbox.stub(prompts, 'getOtp');
 		sandbox.stub(settings, 'override');
 		return { cloud, api, prompts, settings };
 	}
