@@ -6,6 +6,7 @@ const inquirer = require('inquirer');
 const ApiClient = require('../lib/ApiClient.js');
 const prompts = require('../lib/prompts.js');
 const settings = require('../../settings.js');
+const CloudCommand = require('./cloud');
 
 class AccessTokenCommands {
 	getCredentials() {
@@ -120,8 +121,13 @@ class AccessTokenCommands {
 		return Promise.resolve().then(() => {
 			return this.getCredentials();
 		}).then(creds => {
-			return api.createAccessToken(clientName, creds.username, creds.password);
-			// TODO: add support for MFA here
+			return api.createAccessToken(clientName, creds.username, creds.password).catch((error) => {
+				if (error.error === 'mfa_required') {
+					const cloud = new CloudCommand();
+					return cloud.enterOtp({ mfaToken: error.mfa_token });
+				}
+				throw error;
+			});
 		}).then(result => {
 			const nowUnix = Date.now();
 			const expiresUnix = nowUnix + (result.expires_in * 1000);

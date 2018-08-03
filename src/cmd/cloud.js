@@ -364,21 +364,18 @@ class CloudCommand {
 						};
 					});
 				}
-				return api.login(settings.clientId, username, password)
+				return this.stopSpinAfterPromise(api.login(settings.clientId, username, password))
 					.catch((error) => {
 						if (error.error === 'mfa_required') {
-							this.stopSpin();
-
 							this.tries = 0;
 							return this.enterOtp({ otp, mfaToken: error.mfa_token, shouldRetry });
 						}
 						throw error;
-					}).then(token => ({ token, username }));
+					}).then(body => ({ token: body.access_token, username }));
 			})
 			.then(credentials => {
 				const { token, username } = credentials;
 
-				this.stopSpin();
 				console.log(arrow, 'Successfully completed login!');
 
 				settings.override(null, 'access_token', token);
@@ -393,7 +390,6 @@ class CloudCommand {
 				return token;
 			})
 			.catch(error => {
-				this.stopSpin();
 				console.log(alert, `There was an error logging you in! ${shouldRetry ? "Let's try again." : ''}`);
 				console.error(alert, error.message || error.error_description);
 				this.tries = (this.tries || 0) + 1;
@@ -405,7 +401,7 @@ class CloudCommand {
 			});
 	}
 
-	enterOtp({ otp, mfaToken, shouldRetry }) {
+	enterOtp({ otp, mfaToken, shouldRetry = true }) {
 		return Promise.resolve().then(() => {
 			if (!this.tries) {
 				console.log('Use your authenticator app on your mobile device to get a login code.');
@@ -421,9 +417,8 @@ class CloudCommand {
 			this.newSpin('Sending login code...').start();
 
 			const api = new ApiClient();
-			return api.sendOtp(settings.clientId, mfaToken, otp);
+			return this.stopSpinAfterPromise(api.sendOtp(settings.clientId, mfaToken, otp));
 		}).catch(error => {
-			this.stopSpin();
 			console.log(alert, `This login code didn't work. ${shouldRetry ? "Let's try again." : ''}`);
 			console.error(alert, error.message || error.error_description);
 			this.tries = (this.tries || 0) + 1;
@@ -537,7 +532,7 @@ class CloudCommand {
 					}
 				});
 
-				return Promise.all(promises).then(fullDevices => {
+				return this.stopSpinAfterPromise(Promise.all(promises).then(fullDevices => {
 					//sort alphabetically
 					fullDevices = fullDevices.sort((a, b) => {
 						if (a.connected && !b.connected) {
@@ -546,9 +541,8 @@ class CloudCommand {
 
 						return (a.name || '').localeCompare(b.name);
 					});
-					this.stopSpin();
 					return fullDevices;
-				});
+				}));
 			}
 		}).catch(err => {
 			throw api.normalizedApiError(err);

@@ -33,11 +33,12 @@ const CloudCommands = proxyquire('../../src/cmd/cloud', {
 
 
 describe('Cloud Commands', () => {
-	let fakeToken, fakeCredentials, fakeUser;
+	let fakeToken, fakeTokenResponse, fakeCredentials, fakeUser;
 	let fakeMfaToken, fakeOtp, fakeOtpError;
 
 	beforeEach(() => {
 		fakeToken = 'FAKE-ACCESS-TOKEN';
+		fakeTokenResponse = { access_token: fakeToken };
 		fakeCredentials = { username: 'test@example.com', password: 'fake-pw' };
 		fakeUser = { username: 'test@example.com' };
 		fakeMfaToken = 'abc1234';
@@ -69,7 +70,7 @@ describe('Cloud Commands', () => {
 	it('accepts username and password args', withConsoleStubs(() => {
 		const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 		const { username, password } = fakeCredentials;
-		api.login.resolves(fakeToken);
+		api.login.resolves(fakeTokenResponse);
 
 		return cloud.login({ username, password })
 			.then(t => {
@@ -89,7 +90,7 @@ describe('Cloud Commands', () => {
 		const { cloud, api, prompts, settings } = stubForLogin(new CloudCommands(), stubs);
 		const { username, password } = fakeCredentials;
 		prompts.getCredentials.returns(fakeCredentials);
-		api.login.resolves(fakeToken);
+		api.login.resolves(fakeTokenResponse);
 
 		return cloud.login()
 			.then(t => {
@@ -154,7 +155,7 @@ describe('Cloud Commands', () => {
 			const { cloud, api, settings } = stubForLogin(new CloudCommands(), stubs);
 			const { username, password } = fakeCredentials;
 			api.login.rejects(fakeOtpError);
-			api.sendOtp.resolves(fakeToken);
+			api.sendOtp.resolves(fakeTokenResponse);
 
 			return cloud.login({ username, password, otp: fakeOtp })
 				.then(t => {
@@ -181,7 +182,7 @@ describe('Cloud Commands', () => {
 			prompts.getCredentials.returns(fakeCredentials);
 			prompts.getOtp.returns(fakeOtp);
 			api.login.rejects(fakeOtpError);
-			api.sendOtp.resolves(fakeToken);
+			api.sendOtp.resolves(fakeTokenResponse);
 
 			return cloud.login()
 				.then(t => {
