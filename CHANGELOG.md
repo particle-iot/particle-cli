@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.33.0 - 6 August 2018
+
+* Add support for two-step authentication in CLI [#441](https://github.com/particle-iot/particle-cli/pull/441) [#442](https://github.com/particle-iot/particle-cli/pull/442)
+
 ## 1.32.3 - 3 July 2018
 
 * REVERT switch from `package-lock.json` to `npm-shrinkwrap.json` [#437](https://github.com/particle-iot/particle-cli/pull/437)
