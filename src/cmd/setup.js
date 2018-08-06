@@ -202,7 +202,8 @@ class SetupCommand {
 			self.api.createUser(ans.username, ans.password).then(() => {
 				// Login the new user automatically
 				return self.api.login(settings.clientId, ans.username, ans.password);
-			}).then((token) => {
+			}).then((response) => {
+				const token = response.access_token;
 				settings.override(null, 'access_token', token);
 				settings.override(null, 'username', ans.username);
 				console.log(arrow, strings.signupSuccess);

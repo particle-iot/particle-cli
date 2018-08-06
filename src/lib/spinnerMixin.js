@@ -17,6 +17,15 @@ module.exports = function spinnerMixin(obj) {
 				return;
 			}
 			this.__spin.stop(true);
+		},
+		stopSpinAfterPromise(promise) {
+			return promise.then((value) => {
+				this.stopSpin();
+				return value;
+			}, (error) => {
+				this.stopSpin();
+				throw error;
+			});
 		}
 	});
 };

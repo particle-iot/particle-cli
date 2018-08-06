@@ -409,14 +409,14 @@ class SerialCommand {
 	}
 
 	_scanNetworks() {
-		return new Promise(resolve => {
+		return new Promise((resolve, reject) => {
 			this.newSpin('Scanning for nearby Wi-Fi networks...').start();
 
 			wifiScan((err, networkList) => {
 				this.stopSpin();
 
 				if (err) {
-					throw new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?');
+					reject(new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?'));
 				}
 				resolve(networkList);
 			});

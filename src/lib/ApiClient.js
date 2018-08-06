@@ -180,12 +180,10 @@ class ApiClient {
 	login(clientId, user, pass) {
 		let that = this;
 
-		return this.createAccessToken(clientId, user, pass)
-			.then(resp => {
-				that._access_token = resp.access_token;
-
-				return when.resolve(that._access_token);
-			});
+		return this.createAccessToken(clientId, user, pass).then((body) => {
+			that._access_token = body.access_token;
+			return body;
+		});
 	}
 
 	/**
@@ -243,7 +241,7 @@ class ApiClient {
 					reject(body);
 				} else {
 					this._access_token = body.access_token;
-					resolve(this._access_token);
+					resolve(body);
 				}
 			});
 		});
