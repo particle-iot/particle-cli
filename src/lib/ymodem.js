@@ -125,7 +125,7 @@ class YModem {
 				self.port.on('readable', cmdResponse);
 				self.port.write('f');
 			});
-		}).timeout(5000).catch(when.TimeoutError, () => {
+		}).timeout(10000).catch(when.TimeoutError, () => {
 			return when.reject('Timed out waiting for initial response from device');
 		});
 	}

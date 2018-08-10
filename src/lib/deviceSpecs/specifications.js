@@ -328,6 +328,39 @@ const specs = {
 		features: [
 			'wifi',
 		],
+	},
+	'2b04:d00e': {
+		productName: 'Xenon',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		knownApps: {
+
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c00e',
+			serialNumber: 'Particle_Xenon'
+		},
+		defaultProtocol: 'tcp',
+		productId: 14,
 	}
 };
 
