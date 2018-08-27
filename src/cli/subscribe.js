@@ -8,6 +8,7 @@ export default ({ commandProcessor, root }) => {
 			},
 			'device': {
 				describe: 'Listen to events from this device only',
+				string: true,
 				nargs: 1
 			}
 		},
