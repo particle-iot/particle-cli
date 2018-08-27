@@ -5,8 +5,7 @@ export default ({ commandProcessor, root }) => {
 
 	const portOption = {
 		'port': {
-			describe: 'Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device',
-			nargs: 1
+			describe: 'Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device'
 		}
 	};
 
@@ -41,8 +40,7 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(serial, 'wifi', 'Configure Wi-Fi credentials over serial', {
 		options: Object.assign({
 			'file': {
-				description: 'Take the credentials from a JSON file instead of prompting for them',
-				nargs: 1
+				description: 'Take the credentials from a JSON file instead of prompting for them'
 			}
 		}, portOption),
 		handler: (args) => {

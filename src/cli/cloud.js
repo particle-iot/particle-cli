@@ -3,8 +3,7 @@ export default ({ commandProcessor, root }) => {
 
 	const compileOptions = {
 		'target': {
-			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.',
-			nargs: 1
+			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
 		}
 	};
 
@@ -80,8 +79,7 @@ export default ({ commandProcessor, root }) => {
 		params: '<deviceType> [files...]',
 		options: Object.assign({}, compileOptions, {
 			'saveTo': {
-				description: 'Filename for the compiled binary',
-				nargs: 1
+				description: 'Filename for the compiled binary'
 			}
 		}),
 		handler: (args) => {
@@ -113,22 +111,18 @@ export default ({ commandProcessor, root }) => {
 		options: {
 			u: {
 				description: 'your username',
-				alias: 'username',
-				nargs: 1
+				alias: 'username'
 			},
 			p: {
 				description: 'your password',
-				alias: 'password',
-				nargs: 1
+				alias: 'password'
 			},
 			t: {
 				description: 'an existing Particle access token to use',
-				alias: 'token',
-				nargs: 1
+				alias: 'token'
 			},
 			otp: {
-				description: 'the login code if two-step authentication is enabled',
-				nargs: 1
+				description: 'the login code if two-step authentication is enabled'
 			}
 		},
 		handler: (args) => {

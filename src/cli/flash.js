@@ -27,12 +27,10 @@ export default ({ commandProcessor, root }) => {
 				description: 'Answer yes to all questions'
 			},
 			'target': {
-				description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.',
-				nargs: 1
+				description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
 			},
 			'port': {
-				describe: 'Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial',
-				nargs: 1
+				describe: 'Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial'
 			}
 		},
 		handler: (args) => {

@@ -3,6 +3,7 @@ export default ({ commandProcessor, root }) => {
 		params: '[profile] [setting] [value]',
 		options: {
 			'list': {
+				boolean: true,
 				description: 'Display available configurations'
 			}
 		},

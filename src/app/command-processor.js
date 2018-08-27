@@ -109,6 +109,7 @@ class CLICommandItem {
 	configure(yargs, { options, setup, examples, version, epilogue }=this.buildOptions()) {
 		if (options) {
 			this.fetchAliases(options);
+			this.configureOptions(options);
 			// avoid converting positional arguments to numbers by default
 			const optionsWithDefaults = Object.assign({ '_': { string: true	} }, options);
 			yargs.options(optionsWithDefaults);
@@ -142,6 +143,26 @@ class CLICommandItem {
 			const alias = option.alias;
 			if (alias) {
 				this.aliases[alias] = key;
+			}
+		});
+	}
+
+	configureOptions(options) {
+		Object.keys(options).forEach((key) => {
+			const option = options[key];
+			if (!option.hasOwnProperty('nargs') &&
+				!option.boolean &&
+				!option.count &&
+				!option.array) {
+				option.nargs = 1;
+			}
+
+			if (!option.hasOwnProperty('number') &&
+				!option.hasOwnProperty('boolean') &&
+				!option.hasOwnProperty('string') &&
+				!option.hasOwnProperty('count') &&
+				!option.hasOwnProperty('array')) {
+				option.string = true;
 			}
 		});
 	}
@@ -428,7 +449,7 @@ function consoleErrorLogger(console, yargs, exit, err) {
 // Adapted from: https://github.com/bcoe/yargs/blob/master/lib/validation.js#L83-L110
 function checkForUnknownArguments(yargs, argv, command) {
 	const aliasLookup = {};
-	const descriptions = yargs.getUsageInstance().getDescriptions();
+	const flags = yargs.getOptions().key;
 	const demanded = yargs.getDemanded();
 	const unknown = [];
 
@@ -440,8 +461,8 @@ function checkForUnknownArguments(yargs, argv, command) {
 
 	function isUnknown(key) {
 		return (key !== '$0' && key !== '_' && key !== 'params' &&
-			!descriptions.hasOwnProperty(key) &&
 			!demanded.hasOwnProperty(key) &&
+			!flags.hasOwnProperty(key) &&
 			!aliasLookup.hasOwnProperty('no-' + key) &&
 			!aliasLookup.hasOwnProperty(key));
 	}
