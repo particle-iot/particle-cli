@@ -163,7 +163,7 @@ class DoctorCommand {
 				console.log('Applying update...');
 				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
 
-				return this.prompt([{
+				return prompt([{
 					type: 'list',
 					name: 'choice',
 					message: 'Press ENTER when ready',
