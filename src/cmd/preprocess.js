@@ -22,7 +22,10 @@ class PreprocessCommand {
 			const chunks = [];
 			inputStream.on('readable', () => {
 				try {
-					chunks.push(inputStream.read().toString('utf8'));
+					let data;
+					while (data = inputStream.read()) {
+						chunks.push(data.toString('utf8'));
+					}
 				} catch (error) {
 					reject(error);
 				}
