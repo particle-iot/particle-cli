@@ -14,4 +14,4 @@ Feature: the user can login
     And I respond to the prompt "password" with "blahblahblah"
     And I close the stdin stream
     Then the output should contain "credentials are invalid"
-    And the exit status should be 0
+    And the exit status should be 130

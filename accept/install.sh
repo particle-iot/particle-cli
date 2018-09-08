@@ -1,4 +1,4 @@
-gem install rvm
-rvm use ruby 2.2.3
-gem install bundler
-bundler install
+#!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
+bundle install
