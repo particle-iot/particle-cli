@@ -6,9 +6,9 @@ export default ({ commandProcessor, root }) => {
 				description: 'Filename for the preprocessed file'
 			}
 		},
-		handler: () => {
+		handler: (args) => {
 			const PreprocessCommand = require('../cmd/preprocess');
-			return new PreprocessCommand().preprocess();
+			return new PreprocessCommand().preprocess(args.params.file, args);
 		},
 		examples: {
 			'$0 $command app.ino': 'Preprocess app.ino and save it to app.cpp',
