@@ -12,40 +12,34 @@ class PreprocessCommand {
 	}
 
 	preprocess(file, { saveTo } = {}) {
-		return new Promise((fulfill, reject) => {
-			saveTo = saveTo || this.outputFilename(file);
+		const inoFilename = this.getInoFilename(file);
+		const inputStream = this.getInputStream(file);
+		const outputStream = this.getOutputStream(saveTo || this.outputFilename(file));
 
-			const inputFilename = file === STANDARD_STREAM ? 'stdin' : file;
-			const inputStream = file === STANDARD_STREAM ? this.stdin : fs.createReadStream(file);
-			const outputStream = saveTo === STANDARD_STREAM ? this.stdout : fs.createWriteStream(saveTo);
-
-			const chunks = [];
-			inputStream.on('readable', () => {
-				try {
-					let data;
-					while (data = inputStream.read()) {
-						chunks.push(data.toString('utf8'));
-					}
-				} catch (error) {
-					reject(error);
-				}
-			});
-
-			inputStream.on('end', () => {
-				try {
-					const content = chunks.join();
-
-					const processed = this.preprocessor.processFile(inputFilename, content);
-					outputStream.end(processed);
-				} catch (error) {
-					reject(error);
-				}
-			});
-
-			inputStream.on('error', reject);
-			outputStream.on('error', reject);
-			outputStream.on('finish', fulfill);
+		return this.readTransformWrite(inputStream, outputStream, (content) => {
+			return this.preprocessor.processFile(inoFilename, content);
 		});
+	}
+
+	getInoFilename(file) {
+		if (file === STANDARD_STREAM) {
+			return 'stdin';
+		}
+		return file;
+	}
+
+	getInputStream(file) {
+		if (file === STANDARD_STREAM) {
+			return this.stdin;
+		}
+		return fs.createReadStream(file);
+	}
+
+	getOutputStream(file) {
+		if (file === STANDARD_STREAM) {
+			return this.stdout;
+		}
+		return fs.createWriteStream(file);
 	}
 
 	outputFilename(file) {
@@ -57,6 +51,37 @@ class PreprocessCommand {
 		parsed.ext = '.cpp';
 		delete parsed.base;
 		return path.format(parsed);
+	}
+
+	readTransformWrite(inputStream, outputStream, transform) {
+		return new Promise((fulfill, reject) => {
+			const chunks = [];
+			inputStream.on('readable', () => {
+				try {
+					let data;
+					// eslint-disable-next-line no-cond-assign
+					while (data = inputStream.read()) {
+						chunks.push(data.toString('utf8'));
+					}
+				} catch (error) {
+					reject(error);
+				}
+			});
+
+			inputStream.on('end', () => {
+				try {
+					const content = chunks.join();
+					const transformed = transform(content);
+					outputStream.end(transformed);
+				} catch (error) {
+					reject(error);
+				}
+			});
+
+			inputStream.on('error', reject);
+			outputStream.on('error', reject);
+			outputStream.on('finish', fulfill);
+		});
 	}
 }
 
