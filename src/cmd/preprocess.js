@@ -51,8 +51,7 @@ class PreprocessCommand {
 		}
 
 		const parsed = path.parse(file);
-		parsed.ext = '.cpp';
-		delete parsed.base;
+		parsed.base = parsed.name + '.cpp';
 		return path.format(parsed);
 	}
 
