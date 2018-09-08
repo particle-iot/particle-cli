@@ -11,8 +11,8 @@ class PreprocessCommand {
 		this.stdout = stdout;
 	}
 
-	preprocess(file, { saveTo } = {}) {
-		const inoFilename = this.getInoFilename(file);
+	preprocess(file, { saveTo, name } = {}) {
+		const inoFilename = this.getInoFilename(file, name);
 		const inputStream = this.getInputStream(file);
 		const outputStream = this.getOutputStream(saveTo || this.outputFilename(file));
 
@@ -21,7 +21,10 @@ class PreprocessCommand {
 		});
 	}
 
-	getInoFilename(file) {
+	getInoFilename(file, name) {
+		if (name) {
+			return name;
+		}
 		if (file === STANDARD_STREAM) {
 			return 'stdin';
 		}
