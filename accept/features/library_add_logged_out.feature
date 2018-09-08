@@ -16,14 +16,14 @@ Feature: add library without a valid access token
   Scenario: a user cannot add a library with an invalid access token
     Given I use the fixture named "projects/simple"
     When I run particle "library add neopixel"
-    Then the output should contain "invalid"
-    And the output should not contain "invalid_token"
+    Then the output should contain "The access token provided is invalid."
+    And the output should not contain "node_modules"
 
   Scenario: a user adding a library with an invalid access token can see a verbose description of the error
     Given I use the fixture named "projects/simple"
     When I run particle "library add neopixel -v"
-    Then the output should contain "invalid"
-    And the output should contain "invalid_token"
+    Then the output should contain "The access token provided is invalid."
+    And the output should contain "node_modules"
 
   Scenario: tear down the test access token
     And I copy the file "~/.particle/profile.json.bak" to "~/.particle/profile.json"
