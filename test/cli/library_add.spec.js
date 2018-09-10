@@ -2,15 +2,13 @@
 import {expect, sinon} from '../test-setup';
 import fs from 'fs';
 import path from 'path';
+import mockfs from 'mock-fs';
 
 import {LibraryAddCommand} from '../../src/cmd';
 import {LibraryAddCommandSite} from '../../src/cmd';
 
 describe('LibraryAddCommand', () => {
-
-	let mockfs;
 	beforeEach((done) => {
-		mockfs = require('mock-fs');
 		mockfs({});
 		done();
 	});
