@@ -655,8 +655,8 @@ const test = {
 	consoleErrorLogger
 };
 
-function showHelp() {
-	Yargs.showHelp();
+function showHelp(cb) {
+	Yargs.showHelp(cb);
 }
 
 export {

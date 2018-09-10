@@ -4,7 +4,7 @@ pushd $DIR > /dev/null
 
 PATH=$DIR:$PATH 
 if [[ -n "$ACCESS_EMAIL"  &&  -n "$ACCESS_PWD" ]]; then
-   particle login $ACCESS_EMAIL $ACCESS_PWD
+   particle login --username $ACCESS_EMAIL --password $ACCESS_PWD
 fi  
 
 FILES=$*
@@ -16,4 +16,4 @@ fi
 cucumber --expand --tags ~@wip $FILES
 result=$?
 popd
-exit $?
+exit $result

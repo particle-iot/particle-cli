@@ -2,7 +2,7 @@ language: node_js
 node_js:
 - 4
 - 6
-- 8
+- 10
 cache:
   directories:
   - node_modules
@@ -12,6 +12,7 @@ before_install:
 script:
 - npm run lint
 - MOCHA_OPTIONS=--forbid-only npm test
+- accept/install.sh && source accept/.profile && npm run accept
 jobs:
   include:
   - stage: npm release
