@@ -16,7 +16,6 @@ export default ({ commandProcessor, root }) => {
 	const lib = commandProcessor.createCategory(root, 'library', 'Manage firmware libraries', { alias: 'libraries' });
 
 	commandProcessor.createCommand(lib, 'add', 'Add a library to the current project.', {
-		options: {},
 		params: '<name>',
 		handler: (...args) => require('./library_add').command(api(), ...args),
 		examples: {
@@ -27,16 +26,13 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'create', 'Create a new library in the specified or current directory', {
 		options: {
 			'name': {
-				description: 'The name of the library to create.',
-				nargs: 1
+				description: 'The name of the library to create.'
 			},
 			'version': {
-				description: 'The initial version of the library to create.',
-				nargs: 1
+				description: 'The initial version of the library to create.'
 			},
 			'author': {
-				description: 'The author of the library.',
-				nargs: 1
+				description: 'The author of the library.'
 			}
 		},
 		handler: (...args) => require('./library_init').command(...args)
@@ -58,7 +54,6 @@ export default ({ commandProcessor, root }) => {
 				alias: 'y'
 			},
 			'dest': {
-				boolean: false,
 				description: 'the directory to install to'
 			}
 		},
@@ -74,20 +69,19 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(lib, 'list', 'List libraries available', {
 		options: {
 			'filter': {
-				description: 'filters libraries not matching the text',
-				nargs: 1
+				description: 'filters libraries not matching the text'
 			},
 			'non-interactive': {
 				boolean: true,
 				description: 'Prints a single page of libraries without prompting'
 			},
 			'page': {
-				description: 'Start the listing at the given page number',
-				nargs: 1
+				number: true,
+				description: 'Start the listing at the given page number'
 			},
 			'limit': {
-				description: 'The number of items to show per page',
-				nargs: 1
+				number: true,
+				description: 'The number of items to show per page'
 			}
 		},
 		params: '[sections...]',
@@ -128,7 +122,6 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(lib, 'publish', 'Publish a private library, making it public', {
-		options: {},
 		params: '[name]',
 		handler: (...args) => require('./library_publish').command(api(), ...args)
 	});

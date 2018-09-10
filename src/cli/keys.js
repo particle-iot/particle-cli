@@ -3,8 +3,7 @@ export default ({ commandProcessor, root }) => {
 
 	const protocolOption = {
 		'protocol': {
-			description: 'Communication protocol for the device using the key. tcp or udp',
-			nargs: 1
+			description: 'Communication protocol for the device using the key. tcp or udp'
 		}
 	};
 
@@ -45,8 +44,7 @@ export default ({ commandProcessor, root }) => {
 		options: {
 			'product_id': {
 				number: true,
-				description: 'The product ID to use when provisioning a new device',
-				nargs: 1
+				description: 'The product ID to use when provisioning a new device'
 			}
 		},
 		handler: (args) => {
@@ -69,12 +67,11 @@ export default ({ commandProcessor, root }) => {
 		params: '[filename]',
 		options: Object.assign({}, protocolOption, {
 			'host': {
-				description: 'Hostname or IP address of the server to add to the key',
-				nargs: 1
+				description: 'Hostname or IP address of the server to add to the key'
 			},
 			'port': {
-				description: 'Port number of the server to add to the key',
-				nargs: 1
+				number: true,
+				description: 'Port number of the server to add to the key'
 			}
 		}),
 		handler: (args) => {

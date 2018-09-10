@@ -167,7 +167,7 @@ describe('command-line parsing', () => {
 	it('can accept options', () => {
 		// see '.choices()` https://www.npmjs.com/package/yargs
 		const app = commandProcessor.createAppCategory({ options: {
-			cm: { alias: 'chundermonkey' }
+			cm: { alias: 'chundermonkey', boolean: true }
 		}});
 
 		expect(commandProcessor.parse(app, ['--cm'])).to.have.property('cm').equal(true);
@@ -177,10 +177,10 @@ describe('command-line parsing', () => {
 	it('refuses options meant for other commands', () => {
 		const app = commandProcessor.createAppCategory();
 		const one = commandProcessor.createCommand(app, 'one', 'first', { options: {
-			one: { alias: '1', description: ''}
+			one: { alias: '1', description: '', boolean: true }
 		}});
 		const two = commandProcessor.createCommand(app, 'two', 'second', { options: {
-			two: { alias: '2', description: ''}
+			two: { alias: '2', description: '', boolean: true }
 		}});
 
 		// sanity test
@@ -203,6 +203,17 @@ describe('command-line parsing', () => {
 					test: {
 						alias: 'flag',
 						boolean: true
+					},
+					string: {
+					},
+					multipleStrings: {
+						nargs: 2
+					},
+					number: {
+						number: true,
+					},
+					count: {
+						count: true
 					}
 				}
 			});
@@ -310,6 +321,30 @@ describe('command-line parsing', () => {
 
 			expect(commandProcessor.parse(app, ['cmd', 'stragglers', 'here'])).to.have.property('clierror')
 				.deep.equal(commandProcessor.errors.unknownParametersError(['stragglers', 'here']));
+		});
+
+		it('flags default to strings', () => {
+			const result = paramsCommand('', ['--string', '42']);
+			expect(result).to.have.property('string').equal('42');
+		});
+
+		it('flags require one argument by default', () => {
+			expect(() => paramsCommand('', ['--string'])).to.throw(/Not enough arguments following: string/);
+		});
+
+		it('flags can require multiple arguments', () => {
+			const result = paramsCommand('', ['--multipleStrings', '1', '2']);
+			expect(result).to.have.property('multipleStrings').deep.equal(['1', '2']);
+		});
+
+		it('number flag get converted', () => {
+			const result = paramsCommand('', ['--number', '42']);
+			expect(result).to.have.property('number').equal(42);
+		});
+
+		it('count flag get counted', () => {
+			const result = paramsCommand('', ['--count', '--count']);
+			expect(result).to.have.property('count').equal(2);
 		});
 
 		it('keeps device ids as strings', () => {
