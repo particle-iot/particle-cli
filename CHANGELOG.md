@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.34.0 - 10 September 2018
+
+* Default arguments to strings [#449](https://github.com/particle-iot/particle-cli/pull/449)
+* Add command to preprocess ino file [#450](https://github.com/particle-iot/particle-cli/pull/450)
+
 ## 1.33.0 - 6 August 2018
 
 * Add support for two-step authentication in CLI [#441](https://github.com/particle-iot/particle-cli/pull/441) [#442](https://github.com/particle-iot/particle-cli/pull/442)
