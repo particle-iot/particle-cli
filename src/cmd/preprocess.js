@@ -5,8 +5,7 @@ const fs = require('fs');
 const STANDARD_STREAM = '-';
 
 class PreprocessCommand {
-	constructor({ preprocessor = wiringPreprocessor, stdin = process.stdin, stdout = process.stdout } = {}) {
-		this.preprocessor = preprocessor;
+	constructor({ stdin = process.stdin, stdout = process.stdout } = {}) {
 		this.stdin = stdin;
 		this.stdout = stdout;
 	}
@@ -17,7 +16,7 @@ class PreprocessCommand {
 		const outputStream = this.getOutputStream(saveTo || this.outputFilename(file));
 
 		return this.readTransformWrite(inputStream, outputStream, (content) => {
-			return this.preprocessor.processFile(inoFilename, content);
+			return wiringPreprocessor.processFile(inoFilename, content);
 		});
 	}
 
