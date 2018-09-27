@@ -27,9 +27,12 @@ const PLATFORMS = extend(utilities.knownPlatforms(), {
 	'e': 10,
 	'pi': 31,
 	'raspberry-pi': 31,
+	'a': 12,
+	'b': 13,
+	'x': 14,
 	'o': 82,
 	'd': 88,
-	'b': 103,
+	'bl': 103,
 	'bg': 269,
 	'bb': 270
 });
