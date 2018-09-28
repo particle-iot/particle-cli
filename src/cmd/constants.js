@@ -17,6 +17,9 @@ const platformsById = {
 	6: 'Photon',
 	8: 'P1',
 	10: 'Electron',
+	12: 'Argon',
+	13: 'Boron',
+	14: 'Xenon',
 	31: 'Raspberry Pi',
 	88: 'Duo',
 	103: 'Bluz'
