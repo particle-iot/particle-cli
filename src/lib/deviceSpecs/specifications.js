@@ -329,6 +329,72 @@ const specs = {
 			'wifi',
 		],
 	},
+	'2b04:d00c': {
+		productName: 'Argon',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		knownApps: {
+
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c00c',
+			serialNumber: 'Particle_Argon'
+		},
+		defaultProtocol: 'tcp',
+		productId: 12,
+	},
+	'2b04:d00d': {
+		productName: 'Boron',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		knownApps: {
+
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c00d',
+			serialNumber: 'Particle_Boron'
+		},
+		defaultProtocol: 'tcp',
+		productId: 13,
+	},
 	'2b04:d00e': {
 		productName: 'Xenon',
 		tcpServerKey: {
