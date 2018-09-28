@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.35.0 - 28 September 2018
+
+* Support mesh devices in cloud flash and DFU [#451](https://github.com/particle-iot/particle-cli/pull/451)
+
 ## 1.34.0 - 10 September 2018
 
 * Default arguments to strings [#449](https://github.com/particle-iot/particle-cli/pull/449)
