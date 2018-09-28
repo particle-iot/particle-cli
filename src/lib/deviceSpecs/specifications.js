@@ -347,6 +347,10 @@ const specs = {
 			alt: '1',
 			alg: 'rsa'
 		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
+		},
 		systemFirmwareOne: {
 			address: '0x00030000',
 			alt: '0'
@@ -380,6 +384,10 @@ const specs = {
 			alt: '1',
 			alg: 'rsa'
 		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
+		},
 		systemFirmwareOne: {
 			address: '0x00030000',
 			alt: '0'
@@ -412,6 +420,10 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'rsa'
+		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
 		},
 		systemFirmwareOne: {
 			address: '0x00030000',
