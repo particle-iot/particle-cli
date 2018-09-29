@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.35.1 - 29 September 2018
+
+* Fix mesh device key addresses [#452](https://github.com/particle-iot/particle-cli/pull/452)
+
 ## 1.35.0 - 28 September 2018
 
 * Support mesh devices in cloud flash and DFU [#451](https://github.com/particle-iot/particle-cli/pull/451)
@@ -128,7 +132,7 @@
  * [#240](https://github.com/spark/particle-cli/pull/240) - `particle serial monitor --follow' reconnects to the serial port when the device resets. Thanks @derekmpeterson!
  * [#225](https://github.com/spark/particle-cli/pull/225) - ability to specify a .json file to skip the wifi prompts. Thanks @markterrill!
  * `--no-update-check` to skip checks for updated versions
- 
+
 ## Fixes
 
  * [#326](https://github.com/spark/particle-cli/issues/326) - unhandled rejection in `help`
@@ -140,9 +144,9 @@
  * [#292](https://github.com/spark/particle-cli/issues/292) - this -> self
  * [#280](https://github.com/spark/particle-cli/issues/280) - Incorrect key pulled for Electron using TCP
  * [#279](https://github.com/spark/particle-cli/issues/279) - Server key address output incorrect for Electron using TCP
- * [#231](https://github.com/spark/particle-cli/issues/231) -  max retry for wifi scan error 
+ * [#231](https://github.com/spark/particle-cli/issues/231) -  max retry for wifi scan error
  * [#299](https://github.com/spark/particle-cli/pull/299) - update glob dependency to avoid warning about minimatch vulnerability. Thanks @snyk-bot.
- 
+
 
 #r 1.19.2 - 26 January 2017
 
