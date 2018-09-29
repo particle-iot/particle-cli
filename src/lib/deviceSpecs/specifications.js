@@ -340,12 +340,28 @@ const specs = {
 			addressOffset: 384,
 			portOffset: 450
 		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			addressOffset: 192,
+			portOffset: 258
+		},
 		tcpPrivateKey: {
 			address: '34',
 			size: 612,
 			format: 'der',
 			alt: '1',
 			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
 		},
 		userFirmware: {
 			address: '0x000D4000',
@@ -363,7 +379,7 @@ const specs = {
 			pid: 'c00c',
 			serialNumber: 'Particle_Argon'
 		},
-		defaultProtocol: 'tcp',
+		defaultProtocol: 'udp',
 		productId: 12,
 	},
 	'2b04:d00d': {
@@ -377,12 +393,28 @@ const specs = {
 			addressOffset: 384,
 			portOffset: 450
 		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			addressOffset: 192,
+			portOffset: 258
+		},
 		tcpPrivateKey: {
 			address: '34',
 			size: 612,
 			format: 'der',
 			alt: '1',
 			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
 		},
 		userFirmware: {
 			address: '0x000D4000',
@@ -400,7 +432,7 @@ const specs = {
 			pid: 'c00d',
 			serialNumber: 'Particle_Boron'
 		},
-		defaultProtocol: 'tcp',
+		defaultProtocol: 'udp',
 		productId: 13,
 	},
 	'2b04:d00e': {
@@ -414,12 +446,28 @@ const specs = {
 			addressOffset: 384,
 			portOffset: 450
 		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			addressOffset: 192,
+			portOffset: 258
+		},
 		tcpPrivateKey: {
 			address: '34',
 			size: 612,
 			format: 'der',
 			alt: '1',
 			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
 		},
 		userFirmware: {
 			address: '0x000D4000',
@@ -437,7 +485,7 @@ const specs = {
 			pid: 'c00e',
 			serialNumber: 'Particle_Xenon'
 		},
-		defaultProtocol: 'tcp',
+		defaultProtocol: 'udp',
 		productId: 14,
 	}
 };
