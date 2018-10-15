@@ -132,9 +132,10 @@ class CloudCommand {
 				return this._flashKnownApp({ api, deviceId, filePath: files[0] });
 			}
 
-			const version = target === 'latest' ? null : target;
-			if (version) {
-				console.log('Targeting version: ', version);
+			const targetVersion = target === 'latest' ? null : target;
+
+			if (targetVersion) {
+				console.log('Targeting version: ', targetVersion);
 				console.log();
 			}
 
@@ -155,7 +156,7 @@ class CloudCommand {
 					}
 				}
 
-				return this._doFlash({ api, deviceId, fileMapping, version });
+				return this._doFlash({ api, deviceId, fileMapping, targetVersion });
 			});
 		}).catch((err) => {
 			throw new VError(ensureError(err), 'Flash device failed');
