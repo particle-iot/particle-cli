@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.35.2 - 16 October 2018
+
+* Fix cloud flash --target option handling [#453](https://github.com/particle-iot/particle-cli/pull/453)
+
 ## 1.35.1 - 29 September 2018
 
 * Fix mesh device key addresses [#452](https://github.com/particle-iot/particle-cli/pull/452)
