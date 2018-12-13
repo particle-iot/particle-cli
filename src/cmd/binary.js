@@ -90,7 +90,8 @@ class BinaryCommand {
 			'a monolithic firmware',
 			'a system module',
 			'an application module',
-			'a settings module'
+			'a settings module',
+			'a network coprocessor (NCP) module'
 		];
 		let moduleFunction = fileInfo.prefixInfo.moduleFunction;
 		if (moduleFunction >= functions.length) {
