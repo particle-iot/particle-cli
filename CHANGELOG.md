@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.36.0 - 13 December 2018
+
+* Add support for Gen 3 bootloader and NCP to `particle binary inspect` [#461](https://github.com/particle-iot/particle-cli/pull/461)
+
 ## 1.35.2 - 16 October 2018
 
 * Fix cloud flash --target option handling [#453](https://github.com/particle-iot/particle-cli/pull/453)
