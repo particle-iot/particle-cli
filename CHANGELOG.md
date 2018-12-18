@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.36.1 - 18 December 2018
+
+* Fix to stop spinner after running `particle login --token XXXX` [#464](https://github.com/particle-iot/particle-cli/pull/464)
+
 ## 1.36.0 - 13 December 2018
 
 * Add support for Gen 3 bootloader and NCP to `particle binary inspect` [#461](https://github.com/particle-iot/particle-cli/pull/461)
