@@ -361,12 +361,12 @@ class CloudCommand {
 				this._usernameProvided = username;
 
 				if (token) {
-					return api.getUser(token).then((response) => {
+					return this.stopSpinAfterPromise(api.getUser(token).then((response) => {
 						return {
 							token,
 							username: response.username
 						};
-					});
+					}));
 				}
 				return this.stopSpinAfterPromise(api.login(settings.clientId, username, password))
 					.catch((error) => {
