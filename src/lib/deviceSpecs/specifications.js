@@ -112,7 +112,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
-			'tinker': 'photon_tinker.bin',
+			'tinker': 'tinker-0.4.5-photon.bin',
 			'doctor': 'photon_doctor.bin',
 			'voodoo': 'voodoospark.bin'
 		},
@@ -186,7 +186,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
-			'tinker': 'p1_tinker.bin',
+			'tinker': 'tinker-0.4.5-p1.bin',
 			'doctor': 'p1_doctor.bin',
 			'voodoo': 'voodoospark.bin'
 		},
