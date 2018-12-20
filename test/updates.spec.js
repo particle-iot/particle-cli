@@ -60,45 +60,4 @@ describe('the update firmware binaries are all valid', function() {
 			})(updateFile, updateFiles[i]);
 		}
 	});
-
-	describe('update files version check', function () {
-		var firmwareVersion = null;
-		var platformFiles = {};
-		var updateFileFormat = /.*-(.*)-(.*).bin$/;
-		for (var updateFiles = getUpdateFiles(), i=0; i<updateFiles.length; i++) {
-			var updateFile = path.join(updateDir, updateFiles[i]);
-			var parts = updateFileFormat.exec(updateFile);
-			var version = parts[1];
-			var platform = parts[2];
-
-			if (firmwareVersion === null) {
-				firmwareVersion = version;
-			}
-
-			platformFiles[platform] = platformFiles[platform] || [];
-			platformFiles[platform].push(updateFile);
-		}
-
-		for (var platform in platformFiles) {
-			(function (platform, files, version) {
-				// FIXME: Electron was update to 0.6.4 when other platforms were still at 0.6.3
-				if (platform === 'electron' && version === '0.6.3') {
-					version = '0.6.4';
-				}
-				describe(platform + ' update files', function() {
-					it('match firmware version ' + version, function() {
-						var found = false;
-						var systemFirmwareString = Buffer.from('system firmware version: ' + version);
-						files.forEach(function (file) {
-							var contents = fs.readFileSync(file);
-							if (contents.indexOf(systemFirmwareString) !== -1) {
-								found = true;
-							}
-						});
-						expect(found).to.eq(true);
-					});
-				});
-			})(platform, platformFiles[platform], firmwareVersion);
-		}
-	});
 });
