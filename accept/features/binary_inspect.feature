@@ -21,29 +21,29 @@ Feature: binary inspect
 
   @smoketest
   Scenario: Smoke test Photon tinker app binary
-    Given I run particle "binary inspect photon_tinker.bin"
+    Given I run particle "binary inspect tinker-0.4.5-photon.bin"
     Then the stdout should not contain "monolithic"
 
   Scenario: Detailed test Photon tinker app binary
-    Given I run particle "binary inspect photon_tinker.bin"
+    Given I run particle "binary inspect tinker-0.4.5-photon.bin"
     Then the stdout should contain:
     """
-    photon_tinker.bin
-     CRC is ok (ba4f59ab)
+    tinker-0.4.5-photon.bin
+     CRC is ok (4a738441)
      Compiled for photon
-     This is an application module number 1 at version 2
-     It depends on a system module number 2 at version 1
+     This is an application module number 1 at version 3
+     It depends on a system module number 2 at version 6
     """
 
   Scenario: Detailed test P1 tinker app binary
-    Given I run particle "binary inspect p1_tinker.bin"
+    Given I run particle "binary inspect tinker-0.4.5-p1.bin"
     Then the stdout should contain:
     """
-    p1_tinker.bin
-     CRC is ok (61972e4d)
+    tinker-0.4.5-p1.bin
+     CRC is ok (70e7c48c)
      Compiled for p1
-     This is an application module number 1 at version 2
-     It depends on a system module number 2 at version 3
+     This is an application module number 1 at version 3
+     It depends on a system module number 2 at version 6
      """
 
   Scenario: Detailed test Electron tinker app binary
