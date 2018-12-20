@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.36.2 - 19 December 2018
+
+* Fix tinker for Photon, P1, Argon, Boron, Xenon [#465](https://github.com/particle-iot/particle-cli/pull/465)
+* Support Argon, Boron, Xenon in `particle update` [#465](https://github.com/particle-iot/particle-cli/pull/465)
+* Fix timeout when flashing Argon NCP firmware over serial [#465](https://github.com/particle-iot/particle-cli/pull/465)
+
 ## 1.36.1 - 18 December 2018
 
 * Fix to stop spinner after running `particle login --token XXXX` [#464](https://github.com/particle-iot/particle-cli/pull/464)
