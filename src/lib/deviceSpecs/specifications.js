@@ -371,6 +371,10 @@ const specs = {
 			address: '0x00030000',
 			alt: '0'
 		},
+		ncpFirmware: {
+			address: '0x80200000',
+			alt: '2'
+		},
 		knownApps: {
 			'tinker': 'tinker-0.8.0-rc.27-argon.bin'
 		},

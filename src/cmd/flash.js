@@ -8,6 +8,7 @@ const ensureError = require('../lib/utilities').ensureError;
 const MONOLITHIC = 3;
 const SYSTEM_MODULE = 4;
 const APPLICATION_MODULE = 5;
+const NCP_FIRMWARE = 7;
 
 const systemModuleIndexToString = {
 	1: 'systemFirmwareOne',
@@ -47,6 +48,7 @@ class FlashCommand {
 
 	flashDfu({ binary, factory, force }) {
 		let specs, destSegment, destAddress;
+		let alt = 0;
 		let flashingKnownApp = false;
 		return Promise.resolve().then(() => {
 			return dfu.isDfuUtilInstalled();
@@ -104,6 +106,9 @@ class FlashCommand {
 						destSegment = systemModuleIndexToString[info.prefixInfo.moduleIndex];
 						destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
 						break;
+					case NCP_FIRMWARE:
+						destSegment = 'ncpFirmware';
+						break;
 					case APPLICATION_MODULE:
 						// use existing destSegment for userFirmware/factoryReset
 						break;
@@ -121,11 +126,11 @@ class FlashCommand {
 					throw new Error('dfu.write: ' + segment.error);
 				}
 				destAddress = segment.specs.address;
+				alt = segment.specs.alt;
 			}
 			if (!destAddress) {
 				throw new Error('Unknown destination');
 			}
-			const alt = 0;
 			const leave = destSegment === 'userFirmware';  // todo - leave on factory firmware write too?
 			return dfu.writeDfu(alt, binary, destAddress, leave);
 		}).then(() => {
