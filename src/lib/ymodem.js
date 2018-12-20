@@ -230,7 +230,7 @@ class YModem {
 				return whenNode.lift(self.port.write.bind(self.port))(packet);
 			},
 			() => {
-				return response.timeout(10000);
+				return response.timeout(70000);
 			}
 		]);
 	}
