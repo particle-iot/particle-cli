@@ -98,7 +98,16 @@ var settings = {
 			systemFirmwareOne:   'system-part2-0.7.0-electron.bin',
 			systemFirmwareTwo:   'system-part3-0.7.0-electron.bin',
 			systemFirmwareThree: 'system-part1-0.7.0-electron.bin'
-		}
+		},
+		'2b04:d00c': {
+			systemFirmwareOne: 'system-part1-0.8.0-rc.27-argon.bin'
+		},
+		'2b04:d00d': {
+			systemFirmwareOne: 'system-part1-0.8.0-rc.27-boron.bin'
+		},
+		'2b04:d00e': {
+			systemFirmwareOne: 'system-part1-0.8.0-rc.27-xenon.bin'
+		},
 	},
 };
 
