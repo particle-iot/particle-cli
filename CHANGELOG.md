@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.36.3 - 19 December 2018
+
+* Revert support Argon, Boron, Xenon in `particle update` [#467](https://github.com/particle-iot/particle-cli/pull/467)
+
 ## 1.36.2 - 19 December 2018
 
 * Fix tinker for Photon, P1, Argon, Boron, Xenon [#465](https://github.com/particle-iot/particle-cli/pull/465)
