@@ -71,7 +71,7 @@ class PreprocessCommand {
 
 			inputStream.on('end', () => {
 				try {
-					const content = chunks.join();
+					const content = chunks.join('');
 					const transformed = transform(content);
 					outputStream.end(transformed);
 				} catch (error) {
