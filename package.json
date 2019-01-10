@@ -143,6 +143,7 @@
     "lint": "eslint -f unix src/**",
     "lint:fix": "eslint --fix -f unix src/**",
     "test": "mocha $MOCHA_OPTIONS test/ test/app test/cli test/cmd test/integration --compilers js:babel-register",
+    "test:unit:inspect": "npm test -- --inspect-brk",
     "compile": "babel src -d dist",
     "prepublish": "npm run compile",
     "update-firmware-binaries": "node scripts/update-firmware-binaries.js",
