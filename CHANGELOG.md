@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.37.0 - 10 January 2018
+
+* Add Device OS 1.0 [#469](https://github.com/particle-iot/particle-cli/pull/469)
+* Fix comma insertion in preprocess command [#468](https://github.com/particle-iot/particle-cli/pull/468)
+
 ## 1.36.3 - 19 December 2018
 
 * Revert support Argon, Boron, Xenon in `particle update` [#467](https://github.com/particle-iot/particle-cli/pull/467)
