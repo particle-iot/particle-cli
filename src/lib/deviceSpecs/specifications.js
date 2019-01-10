@@ -265,7 +265,7 @@ const specs = {
 		knownApps: {
 			'tinker': 'electron_tinker.bin',
 			'doctor': 'electron_doctor.bin',
-			'tinker-usb-debugging': 'tinker-usb-debugging-v0.4.8-rc.6-electron.bin'
+			'tinker-usb-debugging': 'tinker-usb-debugging-0.6.0-electron.bin'
 		},
 		serial: {
 			vid: '2b04',
