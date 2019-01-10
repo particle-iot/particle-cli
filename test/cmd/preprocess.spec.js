@@ -67,13 +67,26 @@ describe('Preprocess Command', () => {
 		});
 
 		it('preprocesses from a file and write to another file', () => {
-			process.chdir(path.join(__dirname, '..', 'fixtures', 'wiring'));
+			process.chdir(path.join(__dirname, '..', 'fixtures', 'wiring', 'one'));
 
 			const mock = sandbox.mock(wiringPreprocessor).expects('processFile').withExactArgs('app.ino', 'ino file\n').returns('cpp file\n');
 
 			return command.preprocess('input.ino', { saveTo: 'output.cpp', name: 'app.ino' }).then(() => {
 				const output = fs.readFileSync('output.cpp', 'utf8');
 				expect(output).to.eql('cpp file\n');
+
+				mock.verify();
+			});
+		});
+
+		it('preprocesses large files', () => {
+			process.chdir(path.join(__dirname, '..', 'fixtures', 'wiring', 'two'));
+			const input = fs.readFileSync('input.ino', 'utf8');
+			const mock = sandbox.mock(wiringPreprocessor).expects('processFile').withExactArgs('app.ino', input).returns('ok\n');
+
+			return command.preprocess('input.ino', { saveTo: 'output.cpp', name: 'app.ino' }).then(() => {
+				const output = fs.readFileSync('output.cpp', 'utf8');
+				expect(output).to.eql('ok\n');
 
 				mock.verify();
 			});
