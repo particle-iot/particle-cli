@@ -346,6 +346,7 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
+			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -399,6 +400,7 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
+			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -452,6 +454,7 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
+			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
