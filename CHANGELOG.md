@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.38.0 - 24 January 2018
+
+* Use different server key variant for Gen 3 devices in particle keys server [#470](https://github.com/particle-iot/particle-cli/pull/470)
+* Support Gen 3 SoMs in compile, DFU mode and serial mode [#470](https://github.com/particle-iot/particle-cli/pull/470)
+
 ## 1.37.0 - 10 January 2018
 
 * Add Device OS 1.0 [#469](https://github.com/particle-iot/particle-cli/pull/469)
