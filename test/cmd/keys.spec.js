@@ -245,7 +245,7 @@ describe('Key Command', function() {
 
 	describe('keyAlgorithmForProtocol', function() {
 		before(setupCommand);
-		
+
 		it('returns rsa for TCP protocol', function() {
 			expect(key.keyAlgorithmForProtocol('tcp')).eql('rsa');
 		});
