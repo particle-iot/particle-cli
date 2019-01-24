@@ -91,7 +91,7 @@ export default ({ commandProcessor, root }) => {
 			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
 		},
 		// TODO: get the platforms from config and document in epilogue
-		epilogue: 'Param deviceType can be: core, photon, p1, electron, etc'
+		epilogue: 'Param deviceType can be: core, photon, p1, electron, argon, boron, xenon, aseries, bseries, xseries, etc'
 	});
 
 	commandProcessor.createCommand(cloud, 'nyan', 'Make your device shout rainbows', {
