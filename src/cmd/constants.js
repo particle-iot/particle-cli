@@ -1,17 +1,3 @@
-const platformsByName = {
-	core: 0,
-	c: 0,
-	photon: 6,
-	p: 6,
-	p1: 8,
-	electron: 10,
-	e: 10,
-	duo: 88,
-	d: 88,
-	bluz: 103,
-	b: 103
-};
-
 const platformsById = {
 	0: 'Core',
 	6: 'Photon',
@@ -20,6 +6,9 @@ const platformsById = {
 	12: 'Argon',
 	13: 'Boron',
 	14: 'Xenon',
+	22: 'A Series',
+	23: 'B Series',
+	24: 'X Series',
 	31: 'Raspberry Pi',
 	88: 'Duo',
 	103: 'Bluz'
@@ -39,7 +28,6 @@ const notSourceExtensions = [
 const MAX_FILE_SIZE = 1024 * 1024 * 2;
 
 module.exports = {
-	platformsByName,
 	platformsById,
 	notSourceExtensions,
 	MAX_FILE_SIZE

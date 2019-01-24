@@ -458,6 +458,14 @@ class KeysCommand {
 		return segment.alg || 'rsa';
 	}
 
+	_getServerKeyVariant({ protocol }) {
+		let segment = this._getServerKeySegment({ protocol });
+		if (!segment) {
+			return;
+		}
+		return segment.variant;
+	}
+
 	_getPrivateKeySegmentName({ protocol }) {
 		if (!this.dfu.dfuId) {
 			return;
@@ -493,9 +501,10 @@ class KeysCommand {
 		if (!alg) {
 			throw new VError('No device specs');
 		}
+		let variant = this._getServerKeyVariant({ protocol });
 
 		if (!filename) {
-			filename = this.serverKeyFilename(alg);
+			filename = this.serverKeyFilename({ alg, variant });
 		}
 
 		if (utilities.getFilenameExt(filename).toLowerCase() !== '.der') {
@@ -516,8 +525,9 @@ class KeysCommand {
 		return Promise.resolve(filename);
 	}
 
-	serverKeyFilename(alg) {
-		return path.join(__dirname, '../../assets/keys/' + alg + '.pub.der');
+	serverKeyFilename({ alg, variant }) {
+		const basename = variant ? `${alg}-${variant}` : alg;
+		return path.join(__dirname, `../../assets/keys/${basename}.pub.der`);
 	}
 
 	_formatPublicKey(filename, ipOrDomain, port, { protocol }) {

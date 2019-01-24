@@ -106,7 +106,7 @@ describe('Key Command', function() {
 			var deviceID = 'deadBEEF';
 			setupCommand();
 
-			filename = key.serverKeyFilename('rsa');
+			filename = key.serverKeyFilename({ alg: 'rsa' });
 			var tempfile;
 
 			utilities.deferredChildProcess = sinon.spy(function (cmd) {
@@ -161,7 +161,7 @@ describe('Key Command', function() {
 		it('calls validateDeviceProtocol to setup the default protocol', function() {
 			dfu.write = sinon.stub();
 			key.validateDeviceProtocol = sinon.stub().returns('tcp');
-			filename = key.serverKeyFilename('rsa');
+			filename = key.serverKeyFilename({ alg: 'rsa' });
 			return key.writeKeyToDevice(filename)
 				.then(function () {
 					expect(key.validateDeviceProtocol).to.have.been.called;
@@ -244,6 +244,8 @@ describe('Key Command', function() {
 	});
 
 	describe('keyAlgorithmForProtocol', function() {
+		before(setupCommand);
+
 		it('returns rsa for TCP protocol', function() {
 			expect(key.keyAlgorithmForProtocol('tcp')).eql('rsa');
 		});
@@ -253,4 +255,14 @@ describe('Key Command', function() {
 		});
 	});
 
+	describe('serverKeyFilename', function() {
+		before(setupCommand);
+
+		it('returns name with algorithm only when no variant is provided', function() {
+			expect(key.serverKeyFilename({ alg: 'ec' })).to.match(/ec.pub.der$/);
+		});
+		it('returns name with algorithm and variant when variant is provided', function() {
+			expect(key.serverKeyFilename({ alg: 'ec', variant: 'gen3' })).to.match(/ec-gen3.pub.der$/);
+		});
+	});
 });

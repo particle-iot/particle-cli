@@ -8,7 +8,7 @@ function deviceIdFromSerialNumber(serialNumber) {
 }
 
 const specs = {
-
+	// key is DFU id shown in dfu-util -l
 	'1d50:607f': {
 		productName: 'Core',
 		tcpServerKey: {
@@ -346,6 +346,7 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
+			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -382,6 +383,59 @@ const specs = {
 		defaultProtocol: 'udp',
 		productId: 12,
 	},
+	'2b04:d016': {
+		productName: 'A Series',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			variant: 'gen3',
+			addressOffset: 192,
+			portOffset: 258
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
+		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		knownApps: {
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c016',
+			serialNumber: 'Particle_Argon'
+		},
+		defaultProtocol: 'udp',
+		productId: 22,
+	},
 	'2b04:d00d': {
 		productName: 'Boron',
 		tcpServerKey: {
@@ -399,6 +453,7 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
+			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -435,6 +490,59 @@ const specs = {
 		defaultProtocol: 'udp',
 		productId: 13,
 	},
+	'2b04:d017': {
+		productName: 'B Series',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			variant: 'gen3',
+			addressOffset: 192,
+			portOffset: 258
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
+		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		knownApps: {
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c017',
+			serialNumber: 'Particle_Boron'
+		},
+		defaultProtocol: 'udp',
+		productId: 23,
+	},
 	'2b04:d00e': {
 		productName: 'Xenon',
 		tcpServerKey: {
@@ -452,6 +560,7 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
+			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -487,6 +596,60 @@ const specs = {
 		},
 		defaultProtocol: 'udp',
 		productId: 14,
+	},
+
+	'2b04:d018': {
+		productName: 'X Series',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			variant: 'gen3',
+			addressOffset: 192,
+			portOffset: 258
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
+		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		knownApps: {
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c018',
+			serialNumber: 'Particle_Xenon'
+		},
+		defaultProtocol: 'udp',
+		productId: 24,
 	}
 };
 
