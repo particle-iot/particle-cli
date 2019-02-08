@@ -27,7 +27,7 @@ class FlashCommand {
 		if (usb) {
 			result = this.flashDfu({ binary, factory, force });
 		} else if (serial) {
-			result = this.flashYModem({ binary, port });
+			result = this.flashYModem({ binary, port, yes });
 		} else {
 			result = this.flashCloud({ device, files, target, yes });
 		}
@@ -40,10 +40,11 @@ class FlashCommand {
 		return new CloudCommands().flashDevice(device, files, { target, yes });
 	}
 
-	flashYModem({ binary, port }) {
+	flashYModem({ binary, port, yes }) {
 		const SerialCommands = require('../cmd/serial');
-		return new SerialCommands().flashDevice(binary, { port });
+		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
+
 
 	flashDfu({ binary, factory, force }) {
 		let specs, destSegment, destAddress;

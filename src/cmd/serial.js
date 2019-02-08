@@ -352,9 +352,14 @@ class SerialCommand {
 		]);
 	}
 
-	flashDevice(binary, { port }) {
+	flashDevice(binary, { port, yes }) {
 		let device;
-		return this._promptForListeningMode().then(() => {
+
+		return Promise.resolve().then(() => {
+			if (!yes) {
+				return this._promptForListeningMode();
+			}
+		}).then(() => {
 			return this.whatSerialPortDidYouMean(port, true);
 		}).then(_device => {
 			device = _device;
