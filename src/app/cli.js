@@ -102,7 +102,7 @@ export default class CLI {
 			 * @param {*} argv The parsed command line arguments.
 			 */
 			parsed(argv) {
-				global.isInteractive = argv.interactive === true || (tty.isatty(process.stdin) && !argv.nonInteractive);
+				global.isInteractive = argv.interactive === true || (process.stdin.isTTY && !argv.nonInteractive);
 				global.verboseLevel = argv.verbose+1-argv.quiet;
 				global.outputJson = argv.json;
 			}
