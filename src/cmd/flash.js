@@ -40,7 +40,7 @@ class FlashCommand {
 		return new CloudCommands().flashDevice(device, files, { target, yes });
 	}
 
-	flashYModem({ binary, port }) {
+	flashYModem({ binary, port, yes }) {
 		const SerialCommands = require('../cmd/serial');
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
