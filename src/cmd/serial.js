@@ -355,17 +355,13 @@ class SerialCommand {
 	flashDevice(binary, { port, yes }) {
 		let device;
 
-		let promiseSwitch;
-
-		if (yes){
-			promiseSwitch = this.whatSerialPortDidYouMean(port, true);
-		} else {
-			promiseSwitch = this._promptForListeningMode().then(() => {
-				return this.whatSerialPortDidYouMean(port, true);
-			});
-		}
-
-		return promiseSwitch.then(_device => {
+		return Promise.resolve().then(() => {
+			if (!yes) {
+				return this._promptForListeningMode();
+			}
+		}).then(() => {
+			return this.whatSerialPortDidYouMean(port, true);
+		}).then(_device => {
 			device = _device;
 			if (!device) {
 				throw new VError('No serial port identified');

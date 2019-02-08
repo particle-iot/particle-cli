@@ -82,7 +82,12 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(serial, 'flash', 'Flash firmware over serial using YMODEM protocol', {
 		params: '<binary>',
-		options: portOption,
+		options: Object.assign({
+			'yes': {
+				boolean: true,
+				description: 'Answer yes to all questions'
+			},
+		}, portOption),
 		handler: (args) => {
 			const SerialCommands = require('../cmd/serial');
 			return new SerialCommands().flashDevice(args.params.binary, args);
