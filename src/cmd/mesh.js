@@ -20,8 +20,10 @@ export class MeshCommand {
     try {
       const deviceIdOrName = args.params.device;
       const device = await this._getDevice(deviceIdOrName);
+      // Make sure the device is connected to the host via USB
       usbDevice = await this._openUsbDevice(device.id, deviceIdOrName);
-      if (device.network && device.network.id) {
+      const hasNetwork = await this._checkMembership(device);
+      if (hasNetwork) {
         if (!args.yes) {
           const r = await prompt({
             name: 'remove',
@@ -138,7 +140,8 @@ export class MeshCommand {
     try {
       const deviceIdOrName = args.params.device;
       const device = await this._getDevice(deviceIdOrName);
-      if (!device.network || !device.network.id) {
+      const hasNetwork = await this._checkMembership(device);
+      if (!hasNetwork) {
         throw new Error('The device is not a member of a mesh network');
       }
       usbDevice = await this._openUsbDevice(device.id, deviceIdOrName);
@@ -232,6 +235,31 @@ export class MeshCommand {
         await usbDevice.close();
       }
     }
+  }
+
+  async _checkMembership(device) {
+    const network = device.network;
+    if (!network || !network.id) {
+      return false;
+    }
+    if (network.role && network.role.state == 'confirmed') {
+      return true;
+    }
+    // FIXME: The API service considers a device, which role within a network is not confirmed,
+    // a legit member of that network if the network itself is confirmed, and an attempt to add
+    // such a device to another network without removing it from the current network will fail.
+    // The API service doesn't expose information about pending networks, and the only way to
+    // check if a network is confirmed is to try to query its info
+    try {
+      await spin(this._api.getMeshNetwork({ networkId: network.id, auth: this._apiToken }),
+          'Getting network information...');
+    } catch (e) {
+      if (e.statusCode == 404) {
+        return false; // The device is a member of a pending network
+      }
+      throw e;
+    }
+    return true; // The device is a member of a confirmed network
   }
 
   async _removeDevice(usbDevice, networkId) {
