@@ -29,9 +29,10 @@ export class UsbCommand {
 						'Getting device information...');
 				device.name = r.body.name;
 			} catch (e) {
-				if (e.statusCode != 404) {
+				if (e.statusCode != 403 && e.statusCode != 404) {
 					throw e;
 				}
+				device.name = '';
 			} finally {
 				await usbDevice.close();
 			}
