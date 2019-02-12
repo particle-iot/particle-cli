@@ -82,7 +82,7 @@ export class MeshCommand {
 			joinerUsbDevice = await this._openUsbDevice(joinerIdOrName);
 			// Keep the joiner device in the listening mode
 			await joinerUsbDevice.enterListeningMode();
-			const joinerNetwork = await assistUsbDevice.getMeshNetworkInfo();
+			const joinerNetwork = await joinerUsbDevice.getMeshNetworkInfo();
 			if (joinerNetwork) {
 				if (joinerNetwork.id == network.id) {
 					console.log('The device is already a member of the network.');
@@ -111,9 +111,9 @@ export class MeshCommand {
 			// FIXME: Normally, this should be done via `particle setup`, but it doesn't support mesh devices yet
 			let joinerDevice = null;
 			try {
-				joinerDevice = this._api.getDevice({ deviceId: joinerUsbDevice.id, auth: this._apiToken });
+				joinerDevice = await this._api.getDevice({ deviceId: joinerUsbDevice.id, auth: this._apiToken });
 			} catch (e) {
-				if (e.statusCode != 404) {
+				if (e.statusCode != 403 && e.statusCode != 404) {
 					throw e;
 				}
 			}
