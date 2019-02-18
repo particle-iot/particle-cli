@@ -187,7 +187,7 @@ export class MeshCommand {
 				const r = await spin(this._api.listMeshNetworkDevices({ networkId: network.id, auth: this._apiToken }),
 						'Retrieving network devices...');
 				// Sort devices by name
-				network.devices = r.body.sort((a, b) => (a.name || '').localeCompare(b.name));
+				network.devices = r.body.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 			}
 		}
 		for (let network of networks) {

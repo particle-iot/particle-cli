@@ -20,23 +20,22 @@ export class UsbCommand {
 		// Get device info
 		let devices = [];
 		for (let usbDevice of usbDevices) {
-			const device = {};
 			try {
 				await usbDevice.open();
-				device.id = usbDevice.id;
-				device.type = usbDevice.type;
-				const r = await spin(this._api.getDevice({ deviceId: device.id, auth: this._apiToken }),
+				const r = await spin(this._api.getDevice({ deviceId: usbDevice.id, auth: this._apiToken }),
 						'Getting device information...');
-				device.name = r.body.name;
+				devices.push({
+					id: usbDevice.id,
+					type: usbDevice.type,
+					name: r.body.name || ''
+				});
 			} catch (e) {
 				if (e.statusCode != 403 && e.statusCode != 404) {
 					throw e;
 				}
-				device.name = '';
 			} finally {
 				await usbDevice.close();
 			}
-			devices.push(device);
 		}
 		devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
 		for (let device of devices) {
