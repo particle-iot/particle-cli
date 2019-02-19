@@ -1,11 +1,16 @@
 # Changelog
 
-## 1.38.0 - 24 January 2018
+## 1.39.0 - 19 February 2019
+
+* Add a flag to force serial flash without prompt [#471](https://github.com/particle-iot/particle-cli/pull/471)
+* Add binaries for Device OS 1.0.1 [#476](https://github.com/particle-iot/particle-cli/pull/476)
+
+## 1.38.0 - 24 January 2019
 
 * Use different server key variant for Gen 3 devices in particle keys server [#470](https://github.com/particle-iot/particle-cli/pull/470)
 * Support Gen 3 SoMs in compile, DFU mode and serial mode [#470](https://github.com/particle-iot/particle-cli/pull/470)
 
-## 1.37.0 - 10 January 2018
+## 1.37.0 - 10 January 2019
 
 * Add Device OS 1.0 [#469](https://github.com/particle-iot/particle-cli/pull/469)
 * Fix comma insertion in preprocess command [#468](https://github.com/particle-iot/particle-cli/pull/468)
