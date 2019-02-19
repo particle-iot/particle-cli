@@ -17,5 +17,12 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(usb, 'dfu', 'Put a device into DFU mode', {
+		params: '[device]',
+		handler: (args) => {
+			return usbCommand().dfu(args);
+		}
+	});
+
 	return usb;
 };

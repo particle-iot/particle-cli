@@ -1,18 +1,13 @@
 import ParticleApi from './api';
+import { getDevice, openUsbDevice } from './device-util';
 import { formatDeviceInfo } from './formatting';
 import { platformsById } from './constants';
 import { prompt, spin } from '../app/ui';
 
-import { openDeviceById, NotFoundError } from 'particle-usb';
-
-function canBeDeviceId(name) {
-	return /^[0-9a-f]{24}$/i.test(name);
-}
-
 export class MeshCommand {
 	constructor(settings) {
-		this._apiToken = settings.access_token;
-		this._api = new ParticleApi(settings.apiUrl, { accessToken: this._apiToken }).api;
+		this._auth = settings.access_token;
+		this._api = new ParticleApi(settings.apiUrl, { accessToken: this._auth }).api;
 	}
 
 	async create(args) {
@@ -54,7 +49,7 @@ export class MeshCommand {
 				password = r.password;
 			}
 			const networkName = args.params['network name'];
-			const r = await spin(this._api.createMeshNetwork({ name: networkName, deviceId: device.id, auth: this._apiToken }),
+			const r = await spin(this._api.createMeshNetwork({ name: networkName, deviceId: device.id, auth: this._auth }),
 					'Registering the network with the cloud...');
 			const networkId = r.body.network.id;
 			await spin(usbDevice.createMeshNetwork({ id: networkId, name: networkName, password, channel: args.channel }),
@@ -101,7 +96,7 @@ export class MeshCommand {
 				}
 				await this._removeDevice(joinerUsbDevice, joinerNetwork.id);
 			}
-			await spin(this._api.addMeshNetworkDevice({ networkId: network.id, deviceId: joinerUsbDevice.id, auth: this._apiToken}),
+			await spin(this._api.addMeshNetworkDevice({ networkId: network.id, deviceId: joinerUsbDevice.id, auth: this._auth}),
 					'Registering the device in the network...');
 			const p = assistUsbDevice.startCommissioner()
 					.then(() => joinerUsbDevice.joinMeshNetwork(assistUsbDevice))
@@ -109,16 +104,9 @@ export class MeshCommand {
 			await spin(p, 'Adding the device to the network...');
 			// Make sure the joiner device is claimed
 			// FIXME: Normally, this should be done via `particle setup`, but it doesn't support mesh devices yet
-			let joinerDevice = null;
-			try {
-				joinerDevice = await this._api.getDevice({ deviceId: joinerUsbDevice.id, auth: this._apiToken });
-			} catch (e) {
-				if (e.statusCode != 403 && e.statusCode != 404) {
-					throw e;
-				}
-			}
+			const joinerDevice = await getDevice({ id: joinerUsbDevice.id, api: this._api, auth: this._auth, dontThrow: true });
 			if (!joinerDevice) {
-				const r = await spin(this._api.getClaimCode({ auth: this._apiToken }),
+				const r = await spin(this._api.getClaimCode({ auth: this._auth }),
 						'Claiming the device to your account...');
 				await joinerUsbDevice.setClaimCode(r.body.claim_code);
 				await joinerUsbDevice.setSetupDone();
@@ -171,7 +159,7 @@ export class MeshCommand {
 			const network = await this._getNetwork(args.params.network);
 			networks = [ network ];
 		} else {
-			const r = await spin(this._api.listMeshNetworks({ auth: this._apiToken }),
+			const r = await spin(this._api.listMeshNetworks({ auth: this._auth }),
 					'Retrieving networks...');
 			networks = r.body;
 			if (networks.length == 0) {
@@ -184,7 +172,7 @@ export class MeshCommand {
 		const listDevices = !args['networks-only'];
 		if (listDevices) {
 			for (let network of networks) {
-				const r = await spin(this._api.listMeshNetworkDevices({ networkId: network.id, auth: this._apiToken }),
+				const r = await spin(this._api.listMeshNetworkDevices({ networkId: network.id, auth: this._auth }),
 						'Retrieving network devices...');
 				// Sort devices by name
 				network.devices = r.body.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -251,7 +239,7 @@ export class MeshCommand {
 		// The API service doesn't expose information about pending networks, and the only way to
 		// check if a network is confirmed is to try to query its info
 		try {
-			await spin(this._api.getMeshNetwork({ networkId: network.id, auth: this._apiToken }),
+			await spin(this._api.getMeshNetwork({ networkId: network.id, auth: this._auth }),
 					'Getting network information...');
 		} catch (e) {
 			if (e.statusCode == 404) {
@@ -263,71 +251,27 @@ export class MeshCommand {
 	}
 
 	async _removeDevice(usbDevice, networkId) {
-		await spin(this._api.removeMeshNetworkDevice({ networkId: networkId, deviceId: usbDevice.id, auth: this._apiToken }),
+		await spin(this._api.removeMeshNetworkDevice({ networkId: networkId, deviceId: usbDevice.id, auth: this._auth }),
 				'Removing the device from the network...');
 		await spin(usbDevice.leaveMeshNetwork(), 'Clearing the network credentials...');
 	}
 
 	async _openUsbDevice(idOrName, displayName) {
-		if (!displayName) {
-			displayName = idOrName;
-		}
-		let usbDevice = null
-		if (canBeDeviceId(idOrName)) {
-			// Try to open the device straight away
-			try {
-				usbDevice = await openDeviceById(idOrName);
-			} catch (e) {
-				if (!(e instanceof NotFoundError)) {
-					throw e;
-				}
-			}
-		}
-		if (!usbDevice) {
-			// Get the device ID
-			const device = await this._getDevice(idOrName);
-			try {
-				if (device.id == idOrName) {
-					throw new NotFoundError();
-				}
-				usbDevice = await openDeviceById(device.id);
-			} catch (e) {
-				if (e instanceof NotFoundError) {
-					throw new Error(`Unable to connect to the device ${displayName}. Make sure the device is connected to the host computer via USB`);
-				}
-				throw e;
-			}
-		}
-		try {
-			if (!usbDevice.isMeshDevice) {
-				throw new Error('The device does not support mesh networking');
-			}
-			if (usbDevice.isInDfuMode) {
-				throw new Error('The device should not be in DFU mode');
-			}
-		} catch (e) {
+		const usbDevice = await openUsbDevice({ id: idOrName, displayName, api: this._api, auth: this._auth });
+		if (!usbDevice.isMeshDevice) {
 			await usbDevice.close();
-			throw e;
+			throw new Error('The device does not support mesh networking');
 		}
 		return usbDevice;
 	}
 
 	async _getDevice(idOrName) {
-		try {
-			const r = await spin(this._api.getDevice({ deviceId: idOrName, auth: this._apiToken }),
-					'Getting device information...');
-			return r.body;
-		} catch (e) {
-			if (e.statusCode == 404) {
-				throw new Error(`Device not found: ${idOrName}`);
-			}
-			throw e;
-		}
+		return getDevice({ id: idOrName, api: this._api, auth: this._auth });
 	}
 
 	async _getNetwork(idOrName) {
 		try {
-			const r = await spin(this._api.getMeshNetwork({ networkId: idOrName, auth: this._apiToken }),
+			const r = await spin(this._api.getMeshNetwork({ networkId: idOrName, auth: this._auth }),
 					'Getting network information...');
 			return r.body;
 		} catch (e) {
