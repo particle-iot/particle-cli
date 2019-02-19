@@ -84,20 +84,20 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'system-part1-1.0.0-photon-no-boot-dep.bin',
-			systemFirmwareTwo: 'system-part2-1.0.0-photon-no-boot-dep.bin',
-			userFirmware: 'ascender-1.0.0-photon.bin'
+			systemFirmwareOne: 'system-part1-1.0.1-photon-no-boot-dep.bin',
+			systemFirmwareTwo: 'system-part2-1.0.1-photon-no-boot-dep.bin',
+			userFirmware: 'ascender-1.0.1-photon.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'system-part1-1.0.0-p1-no-boot-dep.bin',
-			systemFirmwareTwo: 'system-part2-1.0.0-p1-no-boot-dep.bin',
-			userFirmware: 'ascender-1.0.0-p1.bin'
+			systemFirmwareOne: 'system-part1-1.0.1-p1-no-boot-dep.bin',
+			systemFirmwareTwo: 'system-part2-1.0.1-p1-no-boot-dep.bin',
+			userFirmware: 'ascender-1.0.1-p1.bin'
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
-			systemFirmwareOne:   'system-part2-1.0.0-electron.bin',
-			systemFirmwareTwo:   'system-part3-1.0.0-electron.bin',
-			systemFirmwareThree: 'system-part1-1.0.0-electron.bin'
+			systemFirmwareOne:   'system-part2-1.0.1-electron.bin',
+			systemFirmwareTwo:   'system-part3-1.0.1-electron.bin',
+			systemFirmwareThree: 'system-part1-1.0.1-electron.bin'
 		}
 	},
 };
