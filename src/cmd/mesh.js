@@ -37,7 +37,7 @@ export class MeshCommand {
 				p = p.then(() => prompt({
 					name: 'remove',
 					type: 'confirm',
-					message: `This device is already a member of a mesh network. Do you want to remove it from that network and proceed?`,
+					message: `This device is already a member of another network. Do you want to remove it from that network and proceed?`,
 					default: false
 				}))
 				.then(r => {
@@ -104,7 +104,12 @@ export class MeshCommand {
 		// Get the assisting device
 		return this._getDevice(args.params.assisting_device).then(d => {
 			assistDevice = d;
-			// Get the network ID
+			// Get the joiner device. Do not fail if the device is not claimed
+			return this._getDevice(args.params.new_device, true);
+		})
+		.then(d => {
+			joinerDevice = d; // Can be null
+			// Get the ID of the assisting device's network
 			return this._getDeviceNetworkId(assistDevice);
 		})
 		.then(id => {
@@ -117,11 +122,6 @@ export class MeshCommand {
 		})
 		.then(d => {
 			assistUsbDevice = d;
-			// Get the joiner device. Do not fail if the device is not claimed
-			return this._getDevice(args.params.new_device, true);
-		})
-		.then(d => {
-			joinerDevice = d; // Can be null
 			// Open the joiner device
 			return this._openUsbDevice(args.params.new_device);
 		})
