@@ -71,8 +71,14 @@ export class MeshCommand {
 		})
 		.then(password => {
 			networkPassword = password;
+			// Get the ICCID of the active SIM card if the gateway is a cellular device
+			if (device.isCellular) {
+				return usbDevice.getIccid();
+			}
+		})
+		.then(iccid => {
 			// Register the network with the cloud and get the network ID
-			const p = this._api.createMeshNetwork({ name: args.params.network_name, deviceId: device.id, auth: this._auth })
+			const p = this._api.createMeshNetwork({ name: args.params.network_name, deviceId: device.id, iccid, auth: this._auth })
 				.then(r => r.body.network.id);
 			return spin(p, 'Registering the network with the cloud...');
 		})
