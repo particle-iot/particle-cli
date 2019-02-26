@@ -71,9 +71,10 @@ export class MeshCommand {
 		})
 		.then(password => {
 			networkPassword = password;
-			// Get the ICCID of the active SIM card if the gateway is a cellular device
-			if (device.isCellular) {
-				return usbDevice.getIccid();
+			if (usbDevice.isCellularDevice) {
+				// Get the ICCID of the active SIM card
+				const p = usbDevice.getIccid();
+				return spin(p, 'Getting the ICCID...');
 			}
 		})
 		.then(iccid => {
