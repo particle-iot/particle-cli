@@ -12,6 +12,12 @@ export default ({ commandProcessor, root }) => {
 	const usb = commandProcessor.createCategory(root, 'usb', 'Control USB devices');
 
 	commandProcessor.createCommand(usb, 'list', 'List the devices connected to the host computer', {
+		options: {
+			'ids': {
+				description: 'Print only device IDs',
+				boolean: true
+			}
+		},
 		handler: (args) => {
 			return usbCommand().list(args);
 		}

@@ -14,6 +14,7 @@ export class UsbCommand {
 
 	list(args) {
 		// Enumerate USB devices
+		const idsOnly = args['ids'];
 		return getUsbDevices().then(usbDevices => {
 			if (usbDevices.length == 0) {
 				return [];
@@ -21,7 +22,9 @@ export class UsbCommand {
 			// Get device info
 			return sequence(usbDevices.map(usbDevice => () => {
 				return usbDevice.open().then(() => {
-					return getDevice({ id: usbDevice.id, api: this._api, auth: this._auth, dontThrow: true })
+					if (!idsOnly) {
+						return getDevice({ id: usbDevice.id, api: this._api, auth: this._auth, dontThrow: true })
+					}
 				})
 				.then(device => ({
 					id: usbDevice.id,
@@ -32,13 +35,17 @@ export class UsbCommand {
 			}));
 		})
 		.then(devices => {
-			if (devices.length == 0) {
-				console.log('No devices found.');
+			if (idsOnly) {
+				devices.forEach(device => console.log(device.id));
 			} else {
-				devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
-				devices.forEach(device => {
-					console.log(formatDeviceInfo(device));
-				});
+				if (devices.length == 0) {
+					console.log('No devices found.');
+				} else {
+					devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
+					devices.forEach(device => {
+						console.log(formatDeviceInfo(device));
+					});
+				}
 			}
 		});
 	}
