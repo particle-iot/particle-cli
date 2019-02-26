@@ -55,15 +55,7 @@ export class UsbCommand {
 			if (args.params.device) {
 				return openUsbDevice({ id: args.params.device, dfuMode: true, api: this._api, auth: this._auth });
 			}
-			// Device ID is optional if there's a single device attached to the host
-			return getUsbDevices().then(usbDevices => {
-				if (usbDevices.length > 1) {
-					throw new Error('Device ID or name is missing');
-				} else if (usbDevices.length == 0) {
-					throw new Error('No devices found');
-				}
-				return usbDevices[0].open();
-			})
+			return this._openSingleDevice();
 		})
 		.then(usbDevice => {
 			let p = when.resolve();
@@ -75,5 +67,32 @@ export class UsbCommand {
 		.then(() => {
 			console.log('Done.');
 		});
+	}
+
+	reset(args) {
+		return when.resolve().then(() => {
+			if (args.params.device) {
+				return openUsbDevice({ id: args.params.device, api: this._api, auth: this._auth });
+			}
+			return this._openSingleDevice();
+		})
+		.then(usbDevice => {
+			// Reset the device
+			return usbDevice.reset().finally(() => usbDevice.close());
+		})
+		.then(() => {
+			console.log('Done.');
+		});
+	}
+
+	_openSingleDevice() {
+		return getUsbDevices().then(usbDevices => {
+			if (usbDevices.length > 1) {
+				throw new Error('Device ID or name is missing');
+			} else if (usbDevices.length == 0) {
+				throw new Error('No devices found');
+			}
+			return usbDevices[0].open();
+		})
 	}
 }

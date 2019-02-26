@@ -30,5 +30,12 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(usb, 'reset', 'Reset a device', {
+		params: '[device]',
+		handler: (args) => {
+			return usbCommand().reset(args);
+		}
+	});
+
 	return usb;
 };
