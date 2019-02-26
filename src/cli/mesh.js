@@ -13,7 +13,7 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(mesh, 'create', 'Create a new network', {
 		// TODO: Provide descriptions for positional arguments?
-		params: '<network name> <device>',
+		params: '<network_name> <device>',
 		options: {
 			'password': {
 				description: 'Network password. The minimum password length is 6 characters',
@@ -35,7 +35,7 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(mesh, 'add', 'Add a device to a network', {
-		params: '<new device> <assisting device>',
+		params: '<new_device> <assisting_device>',
 		options: {
 			'yes': {
 				description: 'Answer yes to all questions',
