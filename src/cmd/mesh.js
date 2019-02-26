@@ -129,7 +129,11 @@ export class MeshCommand {
 		.then(d => {
 			assistUsbDevice = d;
 			// Open the joiner device
-			return this._openUsbDevice(args.params.new_device);
+			let idOrName = args.params.new_device;
+			if (joinerDevice) {
+				idOrName = joinerDevice.id; // Saves an API call
+			}
+			return this._openUsbDevice(idOrName, args.params.new_device);
 		})
 		.then(d => {
 			joinerUsbDevice = d;
@@ -162,15 +166,30 @@ export class MeshCommand {
 				p = p.then(() => this._removeDevice(joinerUsbDevice, joinerNetworkId));
 			}
 			return p.then(() => {
+				if (args.password) {
+					return args.password;
+				}
+				// Ask for the network password
+				return prompt({
+					name: 'password',
+					type: 'password',
+					message: 'Enter the network password'
+				})
+				.then(r => r.password);
+			})
+			.then(password => {
+				// Start the commissioner role
+				const p = assistUsbDevice.meshAuth(password).then(() => assistUsbDevice.startCommissioner());
+				return spin(p, 'Preparing the assisting device...');
+			})
+			.then(() => {
 				// Register the joiner device with the cloud
 				const p = this._api.addMeshNetworkDevice({ networkId, deviceId: joinerUsbDevice.id, auth: this._auth });
-				return spin(p, 'Registering the device in the network...');
+				return spin(p, 'Registering the device with the cloud...');
 			})
 			.then(() => {
 				// Add the joiner device to the network
-				const p = assistUsbDevice.startCommissioner()
-						.then(() => joinerUsbDevice.joinMeshNetwork(assistUsbDevice))
-						.then(() => assistUsbDevice.startCommissioner());
+				const p = joinerUsbDevice.joinMeshNetwork(assistUsbDevice).then(() => assistUsbDevice.stopCommissioner());
 				return spin(p, 'Adding the device to the network...');
 			})
 			.then(() => {

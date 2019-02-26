@@ -37,6 +37,10 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(mesh, 'add', 'Add a device to a network', {
 		params: '<new_device> <assisting_device>',
 		options: {
+			'password': {
+				description: 'Network password',
+				string: true,
+			},
 			'yes': {
 				description: 'Answer yes to all questions',
 				boolean: true,
@@ -55,7 +59,7 @@ export default ({ commandProcessor, root }) => {
 				description: 'Answer yes to all questions',
 				boolean: true,
 				alias: 'y'
-			},
+			}
 		},
 		handler: (args) => {
 			return meshCommand().remove(args);
