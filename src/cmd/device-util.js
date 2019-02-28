@@ -38,7 +38,7 @@ export function getDevice({ id, api, auth, displayName = null, dontThrow = false
 	const p = api.getDevice({ deviceId: id, auth })
 		.then(r => r.body)
 		.catch(e => {
-			if (e.statusCode == 403 || e.statusCode == 404) {
+			if (e.statusCode === 403 || e.statusCode === 404) {
 				if (dontThrow) {
 					return null;
 				}

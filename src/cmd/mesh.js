@@ -37,7 +37,7 @@ export class MeshCommand {
 				p = p.then(() => prompt({
 					name: 'remove',
 					type: 'confirm',
-					message: `This device is already a member of another network. Do you want to remove it from that network and proceed?`,
+					message: 'This device is already a member of another network. Do you want to remove it from that network and proceed?',
 					default: false
 				}))
 				.then(r => {
@@ -63,11 +63,11 @@ export class MeshCommand {
 				message: 'Confirm the password'
 			}])
 			.then(r => {
-				if (r.password != r.confirm) {
+				if (r.password !== r.confirm) {
 					throw new Error('The entered passwords do not match');
 				}
 				return r.password;
-			})
+			});
 		})
 		.then(password => {
 			networkPassword = password;
@@ -147,7 +147,7 @@ export class MeshCommand {
 		.then(joinerNetworkId => {
 			let p = when.resolve();
 			if (joinerNetworkId) {
-				if (joinerNetworkId == networkId) {
+				if (joinerNetworkId === networkId) {
 					console.log('The device is already a member of the network.');
 					return p; // Done
 				}
@@ -155,14 +155,14 @@ export class MeshCommand {
 					p = p.then(() => prompt({
 						name: 'remove',
 						type: 'confirm',
-						message: `The device is already a member of another network. Do you want to remove it from that network and proceed?`,
+						message: 'The device is already a member of another network. Do you want to remove it from that network and proceed?',
 						default: false
 					}))
 					.then(r => {
 						if (!r.remove) {
 							throw new Error('Cancelled');
 						}
-					})
+					});
 				}
 				p = p.then(() => this._removeDevice(joinerUsbDevice, joinerNetworkId));
 			}
@@ -245,7 +245,7 @@ export class MeshCommand {
 				p = p.then(() => prompt({
 					name: 'remove',
 					type: 'confirm',
-					message: `Are you sure you want to remove this device from the network?`,
+					message: 'Are you sure you want to remove this device from the network?',
 					default: false
 				}))
 				.then(r => {
@@ -278,7 +278,7 @@ export class MeshCommand {
 		return when.resolve().then(() => {
 			if (args.params.network) {
 				// Get the network
-				return this._getNetwork(args.params.network).then(network => [ network ]);
+				return this._getNetwork(args.params.network).then(network => [network]);
 			}
 			// Get all networks
 			const p = this._api.listMeshNetworks({ auth: this._auth }).then(r => {
@@ -288,7 +288,7 @@ export class MeshCommand {
 		})
 		.then(networks => {
 			let p = when.resolve();
-			if (networks.length == 0) {
+			if (networks.length === 0) {
 				console.log('No networks found.');
 				return p; // Done
 			}
@@ -349,7 +349,7 @@ export class MeshCommand {
 			return spin(p, 'Scanning for networks...');
 		})
 		.then(networks => {
-			if (networks.length == 0) {
+			if (networks.length === 0) {
 				console.log('No networks found.');
 			} else {
 				networks = networks.sort((a, b) => a.name.localeCompare(b.name)); // Sort networks by name
@@ -371,7 +371,7 @@ export class MeshCommand {
 		// FIXME: The API service shows that a device is a member of a network even if the network is
 		// pending, so we have to check the network status explicitly:
 		// https://github.com/particle-iot/api-service/pull/601
-		if (network.role && network.role.state == 'confirmed') {
+		if (network.role && network.role.state === 'confirmed') {
 			return when.resolve(network.id);
 		}
 		return when.resolve().then(() => {
@@ -379,7 +379,7 @@ export class MeshCommand {
 				return network.id; // The device is a member of a confirmed network
 			})
 			.catch(e => {
-				if (e.statusCode == 404) {
+				if (e.statusCode === 404) {
 					return null; // The device is a member of a pending network
 				}
 				throw e;
@@ -391,8 +391,8 @@ export class MeshCommand {
 	_removeDevice(usbDevice, networkId) {
 		return spin(this._api.removeMeshNetworkDevice({ networkId, deviceId: usbDevice.id, auth: this._auth }),
 				'Removing the device from the network...').then(() => {
-			return spin(usbDevice.leaveMeshNetwork(), 'Clearing the network credentials...');
-		});
+					return spin(usbDevice.leaveMeshNetwork(), 'Clearing the network credentials...');
+				});
 	}
 
 	_openUsbDeviceById(deviceId, displayName = null) {
@@ -414,7 +414,7 @@ export class MeshCommand {
 		const p = this._api.getMeshNetwork({ networkId, auth: this._auth }).then(r => {
 			return r.body;
 		}).catch(e => {
-			if (e.statusCode == 404) {
+			if (e.statusCode === 404) {
 				throw new Error(`Network not found: ${networkId}`);
 			}
 			throw e;

@@ -1,4 +1,3 @@
-import tty from 'tty';
 import _ from 'lodash';
 
 import updateCheck from './update-check';

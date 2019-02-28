@@ -18,14 +18,14 @@ export class UsbCommand {
 		const excludeDfu = args['exclude-dfu'];
 		// Enumerate USB devices
 		return getUsbDevices({ dfuMode: !excludeDfu }).then(usbDevices => {
-			if (usbDevices.length == 0) {
+			if (usbDevices.length === 0) {
 				return [];
 			}
 			// Get device info
 			return sequence(usbDevices.map(usbDevice => () => {
 				return openUsbDevice(usbDevice, { dfuMode: true }).then(() => {
 					if (!idsOnly) {
-						return getDevice({ id: usbDevice.id, api: this._api, auth: this._auth, dontThrow: true })
+						return getDevice({ id: usbDevice.id, api: this._api, auth: this._auth, dontThrow: true });
 					}
 				})
 				.then(device => ({
@@ -40,7 +40,7 @@ export class UsbCommand {
 			if (idsOnly) {
 				devices.forEach(device => console.log(device.id));
 			} else {
-				if (devices.length == 0) {
+				if (devices.length === 0) {
 					console.log('No devices found.');
 				} else {
 					devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
@@ -101,7 +101,7 @@ export class UsbCommand {
 
 	configure(args) {
 		if (!systemSupportsUdev()) {
-			console.log('The system does not require configuration.')
+			console.log('The system does not require configuration.');
 			return when.resolve();
 		}
 		if (udevRulesInstalled()) {
@@ -122,18 +122,18 @@ export class UsbCommand {
 			if (args.one) {
 				// Get a single device. Fail if multiple devices are detected
 				return getUsbDevices().then(usbDevices => {
-					if (usbDevices.length == 0) {
+					if (usbDevices.length === 0) {
 						throw new Error('No devices found');
 					}
 					if (usbDevices.length > 1) {
 						throw new Error('Found multiple devices. Please specify the ID or name of one of them');
 					}
-					return [ usbDevices[0] ];
+					return [usbDevices[0]];
 				});
 			}
 			// Open specific devices
 			const deviceIds = args.params.devices;
-			if (!deviceIds || deviceIds.length == 0) {
+			if (!deviceIds || deviceIds.length === 0) {
 				throw new Error('Device ID or name is missing');
 			}
 			const usbDevices = [];
