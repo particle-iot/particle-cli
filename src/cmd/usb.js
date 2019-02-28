@@ -1,6 +1,8 @@
 import ParticleApi from './api';
 import { getDevice, formatDeviceInfo } from './device-util';
-import { getUsbDevices, openUsbDevice, openUsbDeviceById } from './usb-util';
+import { getUsbDevices, openUsbDevice, openUsbDeviceById, systemSupportsUdev, udevRulesInstalled,
+		installUdevRules } from './usb-util';
+import { spin } from '../app/ui';
 
 import when from 'when';
 import sequence from 'when/sequence';
@@ -50,49 +52,116 @@ export class UsbCommand {
 		});
 	}
 
+	startListening(args) {
+		return this._forEachUsbDevice(args, usbDevice => {
+			return usbDevice.enterListeningMode();
+		})
+		.then(() => {
+			console.log('Done.');
+		});
+	}
+
+	stopListening(args) {
+		return this._forEachUsbDevice(args, usbDevice => {
+			return usbDevice.leaveListeningMode();
+		})
+		.then(() => {
+			console.log('Done.');
+		});
+	}
+
+	safeMode(args) {
+		return this._forEachUsbDevice(args, usbDevice => {
+			return usbDevice.enterSafeMode();
+		})
+		.then(() => {
+			console.log('Done.');
+		});
+	}
+
 	dfu(args) {
-		return when.resolve().then(() => {
-			if (args.params.device) {
-				return openUsbDeviceById({ id: args.params.device, dfuMode: true, api: this._api, auth: this._auth });
-			}
-			return this._openSingleDevice();
-		})
-		.then(usbDevice => {
-			let p = when.resolve();
+		return this._forEachUsbDevice(args, usbDevice => {
 			if (!usbDevice.isInDfuMode) {
-				p = p.then(() => usbDevice.enterDfuMode());
+				return usbDevice.enterDfuMode();
 			}
-			return p.finally(() => usbDevice.close());
-		})
+		}, { dfuMode: true })
 		.then(() => {
 			console.log('Done.');
 		});
 	}
 
 	reset(args) {
-		return when.resolve().then(() => {
-			if (args.params.device) {
-				return openUsbDevice({ id: args.params.device, api: this._api, auth: this._auth });
-			}
-			return this._openSingleDevice();
-		})
-		.then(usbDevice => {
-			// Reset the device
-			return usbDevice.reset().finally(() => usbDevice.close());
+		return this._forEachUsbDevice(args, usbDevice => {
+			return usbDevice.reset();
 		})
 		.then(() => {
 			console.log('Done.');
 		});
 	}
 
-	_openSingleDevice() {
-		return getUsbDevices().then(usbDevices => {
-			if (usbDevices.length > 1) {
-				throw new Error('Device ID or name is missing');
-			} else if (usbDevices.length == 0) {
-				throw new Error('No devices found');
+	configure(args) {
+		if (!systemSupportsUdev()) {
+			console.log('The system does not require configuration.')
+			return when.resolve();
+		}
+		if (udevRulesInstalled()) {
+			console.log('The system is already configured.');
+			return when.resolve();
+		}
+		return installUdevRules()
+			.then(() => console.log('Done.'));
+	}
+
+	_forEachUsbDevice(args, func, { dfuMode = false } = {}) {
+		let lastError = null;
+		return when.resolve().then(() => {
+			if (args.all) {
+				// Get all devices
+				return getUsbDevices();
 			}
-			return openUsbDevice(usbDevices[0], { dfuMode: true });
+			if (args.one) {
+				// Get a single device. Fail if multiple devices are detected
+				return getUsbDevices().then(usbDevices => {
+					if (usbDevices.length == 0) {
+						throw new Error('No devices found');
+					}
+					if (usbDevices.length > 1) {
+						throw new Error('Found multiple devices. Please specify the ID or name of one of them');
+					}
+					return [ usbDevices[0] ];
+				});
+			}
+			// Open specific devices
+			const deviceIds = args.params.devices;
+			if (!deviceIds || deviceIds.length == 0) {
+				throw new Error('Device ID or name is missing');
+			}
+			const usbDevices = [];
+			return sequence(deviceIds.map(id => () => {
+				return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
+					.then(usbDevice => usbDevices.push(usbDevice))
+					.catch(e => lastError = e); // Skip the device and remember the error
+			}))
+			.then(() => usbDevices);
 		})
+		.then(usbDevices => {
+			// Send the command to each device
+			const p = usbDevices.map(usbDevice => {
+				// The device is not necessarily open at this point
+				let p = when.resolve();
+				if (!usbDevice.isOpen) {
+					p = p.then(() => openUsbDevice(usbDevice, { dfuMode }));
+				}
+				return p.then(() => func(usbDevice))
+					.catch(e => lastError = e)
+					.finally(() => usbDevice.close());
+			});
+			return spin(when.all(p), 'Sending a command to the device...');
+		})
+		.then(() => {
+			if (lastError) {
+				throw lastError;
+			}
+		});
 	}
 }

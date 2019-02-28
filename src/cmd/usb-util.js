@@ -128,7 +128,7 @@ export function promptAndInstallUdevRules(err = null) {
     return installUdevRules();
   })
   .then(() => {
-    console.log('udev rules installed.')
+    console.log('udev rules installed.');
     if (err) {
       console.log(chalk.bold.red('Physically unplug and reconnect your Particle devices and try again.'));
       throw err;

@@ -13,12 +13,12 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(usb, 'list', 'List the devices connected to the host computer', {
 		options: {
-			'ids-only': {
-				description: 'Print only device IDs',
-				boolean: true
-			},
 			'exclude-dfu': {
 				description: 'Do not list devices which are in DFU mode',
+				boolean: true
+			},
+			'ids-only': {
+				description: 'Print only device IDs',
 				boolean: true
 			}
 		},
@@ -27,17 +27,61 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 
+	// Common options for start-listening, stop-listening, safe-mode, dfu and reset
+	const commonOptions = {
+		'all': {
+			description: 'Send the command to all devices connected to the host computer',
+			boolean: true
+		},
+		'one': {
+			description: 'Send the command to a single device connected to the host computer',
+			boolean: true
+		}
+	};
+
+	commandProcessor.createCommand(usb, 'start-listening', 'Put a device into listening mode', {
+		params: '[devices...]',
+		options: commonOptions,
+		handler: (args) => {
+			return usbCommand().startListening(args);
+		}
+	});
+
+	commandProcessor.createCommand(usb, 'stop-listening', 'Exit listening mode', {
+		params: '[devices...]',
+		options: commonOptions,
+		handler: (args) => {
+			return usbCommand().stopListening(args);
+		}
+	});
+
+	commandProcessor.createCommand(usb, 'safe-mode', 'Put a device into safe mode', {
+		params: '[devices...]',
+		options: commonOptions,
+		handler: (args) => {
+			return usbCommand().safeMode(args);
+		}
+	});
+
 	commandProcessor.createCommand(usb, 'dfu', 'Put a device into DFU mode', {
-		params: '[device]',
+		params: '[devices...]',
+		options: commonOptions,
 		handler: (args) => {
 			return usbCommand().dfu(args);
 		}
 	});
 
 	commandProcessor.createCommand(usb, 'reset', 'Reset a device', {
-		params: '[device]',
+		params: '[devices...]',
+		options: commonOptions,
 		handler: (args) => {
 			return usbCommand().reset(args);
+		}
+	});
+
+	commandProcessor.createCommand(usb, 'configure', 'Update the system USB configuration', {
+		handler: (args) => {
+			return usbCommand().configure(args);
 		}
 	});
 
