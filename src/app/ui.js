@@ -9,7 +9,7 @@ Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 
 function prompt(qs) {
 	if (!global.isInteractive) {
-		return Promise.reject(new Error('Prompts are not allowed in non-interactive mode'));
+		return when.reject(new Error('Prompts are not allowed in non-interactive mode'));
 	}
 	return inquirer.prompt(qs);
 }

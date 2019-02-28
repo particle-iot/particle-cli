@@ -1,8 +1,7 @@
 import ParticleApi from './api';
-import { getDevice, openUsbDevice } from './device-util';
-import { formatDeviceInfo } from './formatting';
+import { getDevice, formatDeviceInfo } from './device-util';
+import { getUsbDevices, openUsbDevice, openUsbDeviceById } from './usb-util';
 
-import { getDevices as getUsbDevices } from 'particle-usb';
 import when from 'when';
 import sequence from 'when/sequence';
 
@@ -13,22 +12,23 @@ export class UsbCommand {
 	}
 
 	list(args) {
+		const idsOnly = args['ids-only'];
+		const excludeDfu = args['exclude-dfu'];
 		// Enumerate USB devices
-		const idsOnly = args['ids'];
-		return getUsbDevices().then(usbDevices => {
+		return getUsbDevices({ dfuMode: !excludeDfu }).then(usbDevices => {
 			if (usbDevices.length == 0) {
 				return [];
 			}
 			// Get device info
 			return sequence(usbDevices.map(usbDevice => () => {
-				return usbDevice.open().then(() => {
+				return openUsbDevice(usbDevice, { dfuMode: true }).then(() => {
 					if (!idsOnly) {
 						return getDevice({ id: usbDevice.id, api: this._api, auth: this._auth, dontThrow: true })
 					}
 				})
 				.then(device => ({
 					id: usbDevice.id,
-					type: usbDevice.type,
+					type: usbDevice.isInDfuMode ? `${usbDevice.type}, DFU` : usbDevice.type,
 					name: (device && device.name) ? device.name : ''
 				}))
 				.finally(() => usbDevice.close());
@@ -53,7 +53,7 @@ export class UsbCommand {
 	dfu(args) {
 		return when.resolve().then(() => {
 			if (args.params.device) {
-				return openUsbDevice({ id: args.params.device, dfuMode: true, api: this._api, auth: this._auth });
+				return openUsbDeviceById({ id: args.params.device, dfuMode: true, api: this._api, auth: this._auth });
 			}
 			return this._openSingleDevice();
 		})
@@ -92,7 +92,7 @@ export class UsbCommand {
 			} else if (usbDevices.length == 0) {
 				throw new Error('No devices found');
 			}
-			return usbDevices[0].open();
+			return openUsbDevice(usbDevices[0], { dfuMode: true });
 		})
 	}
 }

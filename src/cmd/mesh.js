@@ -1,6 +1,6 @@
 import ParticleApi from './api';
-import { getDevice, openUsbDevice } from './device-util';
-import { formatDeviceInfo } from './formatting';
+import { getDevice, formatDeviceInfo } from './device-util';
+import { openUsbDeviceById } from './usb-util';
 import { platformsById } from './constants';
 import { prompt, spin } from '../app/ui';
 
@@ -20,7 +20,7 @@ export class MeshCommand {
 		return this._getDevice(args.params.device).then(d => {
 			device = d;
 			// Open the device
-			return this._openUsbDevice(device.id, args.params.device);
+			return this._openUsbDeviceById(device.id, args.params.device);
 		})
 		.then(d => {
 			usbDevice = d;
@@ -125,7 +125,7 @@ export class MeshCommand {
 				throw new Error('The assisting device is not a member of any mesh network');
 			}
 			// Open the assisting device
-			return this._openUsbDevice(assistDevice.id, args.params.assisting_device);
+			return this._openUsbDeviceById(assistDevice.id, args.params.assisting_device);
 		})
 		.then(d => {
 			assistUsbDevice = d;
@@ -134,7 +134,7 @@ export class MeshCommand {
 			if (joinerDevice) {
 				idOrName = joinerDevice.id; // Saves an API call
 			}
-			return this._openUsbDevice(idOrName, args.params.new_device);
+			return this._openUsbDeviceById(idOrName, args.params.new_device);
 		})
 		.then(d => {
 			joinerUsbDevice = d;
@@ -256,7 +256,7 @@ export class MeshCommand {
 			}
 			return p.then(() => {
 				// Open the device
-				return this._openUsbDevice(device.id, args.params.device);
+				return this._openUsbDeviceById(device.id, args.params.device);
 			})
 			.then(d => {
 				usbDevice = d;
@@ -320,7 +320,7 @@ export class MeshCommand {
 	info(args) {
 		let usbDevice = null;
 		// Open the device
-		return this._openUsbDevice(args.params.device).then(d => {
+		return this._openUsbDeviceById(args.params.device).then(d => {
 			usbDevice = d;
 			// Get the network info
 			return usbDevice.getMeshNetworkInfo();
@@ -342,7 +342,7 @@ export class MeshCommand {
 	scan(args) {
 		let usbDevice = null;
 		// Open the device
-		return this._openUsbDevice(args.params.device).then(d => {
+		return this._openUsbDeviceById(args.params.device).then(d => {
 			usbDevice = d;
 			// Scan for networks
 			const p = usbDevice.scanMeshNetworks();
@@ -395,8 +395,8 @@ export class MeshCommand {
 		});
 	}
 
-	_openUsbDevice(deviceId, displayName = null) {
-		return openUsbDevice({ id: deviceId, displayName, api: this._api, auth: this._auth }).then(usbDevice => {
+	_openUsbDeviceById(deviceId, displayName = null) {
+		return openUsbDeviceById({ id: deviceId, displayName, api: this._api, auth: this._auth }).then(usbDevice => {
 			if (!usbDevice.isMeshDevice) {
 				return usbDevice.close().then(() => {
 					throw new Error('The device does not support mesh networking');

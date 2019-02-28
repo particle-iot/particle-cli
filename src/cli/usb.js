@@ -13,8 +13,12 @@ export default ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(usb, 'list', 'List the devices connected to the host computer', {
 		options: {
-			'ids': {
+			'ids-only': {
 				description: 'Print only device IDs',
+				boolean: true
+			},
+			'exclude-dfu': {
+				description: 'Do not list devices which are in DFU mode',
 				boolean: true
 			}
 		},
