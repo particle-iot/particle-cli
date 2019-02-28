@@ -12,7 +12,6 @@ export default ({ commandProcessor, root }) => {
 	const mesh = commandProcessor.createCategory(root, 'mesh', 'Manage mesh networks');
 
 	commandProcessor.createCommand(mesh, 'create', 'Create a new network', {
-		// TODO: Provide descriptions for positional arguments?
 		params: '<network_name> <device>',
 		options: {
 			'password': {
@@ -28,6 +27,9 @@ export default ({ commandProcessor, root }) => {
 				boolean: true,
 				alias: 'y'
 			}
+		},
+		examples: {
+			'$0 $command my_network my_argon': 'Create a network named "my_network" using a device named "my_argon"'
 		},
 		handler: (args) => {
 			return meshCommand().create(args);
@@ -47,6 +49,9 @@ export default ({ commandProcessor, root }) => {
 				alias: 'y'
 			}
 		},
+		examples: {
+			'$0 $command my_xenon my_argon': 'Add a device named "my_xenon" to the current network of a device named "my_argon"'
+		},
 		handler: (args) => {
 			return meshCommand().add(args);
 		}
@@ -61,12 +66,15 @@ export default ({ commandProcessor, root }) => {
 				alias: 'y'
 			}
 		},
+		examples: {
+			'$0 $command my_xenon': 'Remove a device named "my_xenon" from its current network'
+		},
 		handler: (args) => {
 			return meshCommand().remove(args);
 		}
 	});
 
-	commandProcessor.createCommand(mesh, 'list', 'List networks and their member devices', {
+	commandProcessor.createCommand(mesh, 'list', 'List all networks and their member devices', {
 		params: '[network]',
 		options: {
 			'networks-only': {

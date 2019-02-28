@@ -39,33 +39,49 @@ export default ({ commandProcessor, root }) => {
 		}
 	};
 
-	commandProcessor.createCommand(usb, 'start-listening', 'Put a device into listening mode', {
+	commandProcessor.createCommand(usb, 'start-listening', 'Put a device into the listening mode', {
 		params: '[devices...]',
 		options: commonOptions,
+		examples: {
+			'$0 $command my_device': 'Put a device named "my_device" into the listening mode',
+			'$0 $command --all': 'Put all devices connected to the host computer into the listening mode'
+		},
 		handler: (args) => {
 			return usbCommand().startListening(args);
 		}
 	});
 
-	commandProcessor.createCommand(usb, 'stop-listening', 'Exit listening mode', {
+	commandProcessor.createCommand(usb, 'stop-listening', 'Make a device exit the listening mode', {
 		params: '[devices...]',
 		options: commonOptions,
+		examples: {
+			'$0 $command my_device': 'Make a device named "my_device" exit the listening mode',
+			'$0 $command --all': 'Make all devices connected to the host computer exit the listening mode'
+		},
 		handler: (args) => {
 			return usbCommand().stopListening(args);
 		}
 	});
 
-	commandProcessor.createCommand(usb, 'safe-mode', 'Put a device into safe mode', {
+	commandProcessor.createCommand(usb, 'safe-mode', 'Put a device into the safe mode', {
 		params: '[devices...]',
 		options: commonOptions,
+		examples: {
+			'$0 $command my_device': 'Put a device named "my_device" into the safe mode',
+			'$0 $command --all': 'Put all devices connected to the host computer into the safe mode'
+		},
 		handler: (args) => {
 			return usbCommand().safeMode(args);
 		}
 	});
 
-	commandProcessor.createCommand(usb, 'dfu', 'Put a device into DFU mode', {
+	commandProcessor.createCommand(usb, 'dfu', 'Put a device into the DFU mode', {
 		params: '[devices...]',
 		options: commonOptions,
+		examples: {
+			'$0 $command my_device': 'Put a device named "my_device" into the DFU mode',
+			'$0 $command --all': 'Put all devices connected to the host computer into the DFU mode'
+		},
 		handler: (args) => {
 			return usbCommand().dfu(args);
 		}
@@ -74,6 +90,10 @@ export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(usb, 'reset', 'Reset a device', {
 		params: '[devices...]',
 		options: commonOptions,
+		examples: {
+			'$0 $command my_device': 'Reset a device named "my_device"',
+			'$0 $command --all': 'Reset all devices connected to the host computer'
+		},
 		handler: (args) => {
 			return usbCommand().reset(args);
 		}
