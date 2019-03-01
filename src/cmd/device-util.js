@@ -35,7 +35,7 @@ export function formatDeviceInfo({ id, type, name = null }) {
  * @param {Promise<Object>}
  */
 export function getDevice({ id, api, auth, displayName = null, dontThrow = false }) {
-	const p = api.getDevice({ deviceId: id, auth })
+	const p = when.resolve().then(() => api.getDevice({ deviceId: id, auth }))
 		.then(r => r.body)
 		.catch(e => {
 			if (e.statusCode === 403 || e.statusCode === 404) {

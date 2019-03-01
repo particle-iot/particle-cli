@@ -151,7 +151,8 @@ export function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
 	if (!dfuMode && usbDevice.isInDfuMode) {
 		return when.reject(new Error('The device should not be in DFU mode'));
 	}
-	return usbDevice.open().catch(e => handleDeviceOpenError(e));
+	return when.resolve().then(() => usbDevice.open())
+		.catch(e => handleDeviceOpenError(e));
 }
 
 /**
@@ -214,5 +215,5 @@ export function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName 
  * @return {Promise}
  */
 export function getUsbDevices({ dfuMode = true } = {}) {
-	return getDevices({ includeDfu: dfuMode });
+	return when.resolve().then(() => getDevices({ includeDfu: dfuMode }));
 }

@@ -374,18 +374,16 @@ export class MeshCommand {
 		if (network.role && network.role.state === 'confirmed') {
 			return when.resolve(network.id);
 		}
-		return when.resolve().then(() => {
-			const p = this._api.getMeshNetwork({ networkId: network.id, auth: this._auth }).then(r => {
-				return network.id; // The device is a member of a confirmed network
-			})
-			.catch(e => {
-				if (e.statusCode === 404) {
-					return null; // The device is a member of a pending network
-				}
-				throw e;
-			});
-			return spin(p, 'Getting network information...');
+		const p = when.resolve().then(() => this._api.getMeshNetwork({ networkId: network.id, auth: this._auth })).then(r => {
+			return network.id; // The device is a member of a confirmed network
+		})
+		.catch(e => {
+			if (e.statusCode === 404) {
+				return null; // The device is a member of a pending network
+			}
+			throw e;
 		});
+		return spin(p, 'Getting network information...');
 	}
 
 	_removeDevice(usbDevice, networkId) {
@@ -411,7 +409,7 @@ export class MeshCommand {
 	}
 
 	_getNetwork(networkId) {
-		const p = this._api.getMeshNetwork({ networkId, auth: this._auth }).then(r => {
+		const p = when.resolve().then(() => this._api.getMeshNetwork({ networkId, auth: this._auth })).then(r => {
 			return r.body;
 		}).catch(e => {
 			if (e.statusCode === 404) {
