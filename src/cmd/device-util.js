@@ -1,5 +1,7 @@
 import { spin } from '../app/ui';
 
+import when from 'when';
+
 /**
  * Check if the string can represent a valid device ID.
  *
