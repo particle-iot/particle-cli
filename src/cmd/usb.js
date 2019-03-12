@@ -1,13 +1,13 @@
-import ParticleApi from './api';
-import { getDevice, formatDeviceInfo } from './device-util';
-import { getUsbDevices, openUsbDevice, openUsbDeviceById, systemSupportsUdev, udevRulesInstalled,
-		installUdevRules } from './usb-util';
-import { spin } from '../app/ui';
+const ParticleApi = require('./api').default;
+const { getDevice, formatDeviceInfo } = require('./device-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceById, systemSupportsUdev, udevRulesInstalled,
+		installUdevRules } = require('./usb-util');
+const { spin } = require('../app/ui');
 
-import when from 'when';
-import sequence from 'when/sequence';
+const when = require('when');
+const sequence = require('when/sequence');
 
-export class UsbCommand {
+module.exports = class UsbCommand {
 	constructor(settings) {
 		this._auth = settings.access_token;
 		this._api = new ParticleApi(settings.apiUrl, { accessToken: this._auth }).api;
@@ -164,4 +164,4 @@ export class UsbCommand {
 			}
 		});
 	}
-}
+};

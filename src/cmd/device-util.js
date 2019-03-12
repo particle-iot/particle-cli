@@ -1,6 +1,6 @@
-import { spin } from '../app/ui';
+const { spin } = require('../app/ui');
 
-import when from 'when';
+const when = require('when');
 
 /**
  * Check if the string can represent a valid device ID.
@@ -8,7 +8,7 @@ import when from 'when';
  * @param {String} str A string.
  * @return {Boolean}
  */
-export function isDeviceId(str) {
+function isDeviceId(str) {
 	return /^[0-9a-f]{24}$/i.test(str);
 }
 
@@ -21,7 +21,7 @@ export function isDeviceId(str) {
  * @param {String} [device.name] Device name.
  * @return {String}
  */
-export function formatDeviceInfo({ id, type, name = null }) {
+function formatDeviceInfo({ id, type, name = null }) {
 	return `${name || '<no name>'} [${id}] (${type})`;
 }
 
@@ -36,7 +36,7 @@ export function formatDeviceInfo({ id, type, name = null }) {
  * @param {Boolean} [options.dontThrow] Return 'null' instead of throwing an error if the device cannot be found.
  * @param {Promise<Object>}
  */
-export function getDevice({ id, api, auth, displayName = null, dontThrow = false }) {
+function getDevice({ id, api, auth, displayName = null, dontThrow = false }) {
 	const p = when.resolve().then(() => api.getDevice({ deviceId: id, auth }))
 		.then(r => r.body)
 		.catch(e => {
@@ -50,3 +50,9 @@ export function getDevice({ id, api, auth, displayName = null, dontThrow = false
 		});
 	return spin(p, 'Getting device information...');
 }
+
+module.exports = {
+	isDeviceId,
+	formatDeviceInfo,
+	getDevice
+};

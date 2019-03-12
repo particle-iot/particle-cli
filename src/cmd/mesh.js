@@ -1,13 +1,13 @@
-import ParticleApi from './api';
-import { getDevice, formatDeviceInfo } from './device-util';
-import { openUsbDeviceById } from './usb-util';
-import { platformsById } from './constants';
-import { prompt, spin } from '../app/ui';
+const ParticleApi = require('./api').default;
+const { getDevice, formatDeviceInfo } = require('./device-util');
+const { openUsbDeviceById } = require('./usb-util');
+const { platformsById } = require('./constants');
+const { prompt, spin } = require('../app/ui');
 
-import when from 'when';
-import sequence from 'when/sequence';
+const when = require('when');
+const sequence = require('when/sequence');
 
-export class MeshCommand {
+module.exports = class MeshCommand {
 	constructor(settings) {
 		this._auth = settings.access_token;
 		this._api = new ParticleApi(settings.apiUrl, { accessToken: this._auth }).api;
@@ -419,4 +419,4 @@ export class MeshCommand {
 		});
 		return spin(p, 'Getting network information...');
 	}
-}
+};

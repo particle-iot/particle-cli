@@ -1,13 +1,13 @@
-import { prompt } from '../app/ui';
-import { getDevice, isDeviceId } from './device-util';
+const { prompt } = require('../app/ui');
+const { getDevice, isDeviceId } = require('./device-util');
 
-import { getDevices, openDeviceById, NotFoundError, NotAllowedError } from 'particle-usb';
+const { getDevices, openDeviceById, NotFoundError, NotAllowedError } = require('particle-usb');
 
-import chalk from 'chalk';
-import when from 'when';
-import VError from 'verror';
-import * as fs from 'fs';
-import * as childProcess from 'child_process';
+const chalk = require('chalk');
+const when = require('when');
+const VError = require('verror');
+const fs = require('fs');
+const childProcess = require('child_process');
 
 const UDEV_RULES_SYSTEM_PATH = '/etc/udev/rules.d';
 const UDEV_RULES_FILE_NAME = '50-particle.rules';
@@ -33,7 +33,7 @@ function handleDeviceOpenError(err) {
  *
  * @return {Boolean}
  */
-export function systemSupportsUdev() {
+function systemSupportsUdev() {
 	if (_systemSupportsUdev === undefined) {
 		try {
 			_systemSupportsUdev = fs.existsSync(UDEV_RULES_SYSTEM_PATH);
@@ -49,7 +49,7 @@ export function systemSupportsUdev() {
  *
  * @return {Boolean}
  */
-export function udevRulesInstalled() {
+function udevRulesInstalled() {
 	if (_udevRulesInstalled !== undefined) {
 		return _udevRulesInstalled;
 	}
@@ -76,7 +76,7 @@ export function udevRulesInstalled() {
  *
  * @return {Promise}
  */
-export function installUdevRules() {
+function installUdevRules() {
 	if (!systemSupportsUdev()) {
 		return when.reject(new Error('Not supported'));
 	}
@@ -100,7 +100,7 @@ export function installUdevRules() {
  * @param {Error} [err] Original error that led to this prompt.
  * @return {Promise}
  */
-export function promptAndInstallUdevRules(err = null) {
+function promptAndInstallUdevRules(err = null) {
 	if (!systemSupportsUdev()) {
 		return when.reject(new Error('Not supported'));
 	}
@@ -147,7 +147,7 @@ export function promptAndInstallUdevRules(err = null) {
  * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
  * @return {Promise}
  */
-export function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
+function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
 	if (!dfuMode && usbDevice.isInDfuMode) {
 		return when.reject(new Error('The device should not be in DFU mode'));
 	}
@@ -169,7 +169,7 @@ export function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
  * @param {String} [options.displayName] Device name as shown to the user.
  * @return {Promise}
  */
-export function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null }) {
+function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null }) {
 	return when.resolve().then(() => {
 		if (isDeviceId(id)) {
 			// Try to open the device straight away
@@ -214,6 +214,16 @@ export function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName 
  * @param {Boolean} [options.dfuMode] Set to `false` to exclude devices in DFU mode.
  * @return {Promise}
  */
-export function getUsbDevices({ dfuMode = true } = {}) {
+function getUsbDevices({ dfuMode = true } = {}) {
 	return when.resolve().then(() => getDevices({ includeDfu: dfuMode }));
 }
+
+module.exports = {
+	systemSupportsUdev,
+	udevRulesInstalled,
+	installUdevRules,
+	promptAndInstallUdevRules,
+	openUsbDevice,
+	openUsbDeviceById,
+	getUsbDevices
+};

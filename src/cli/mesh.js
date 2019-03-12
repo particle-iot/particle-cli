@@ -1,14 +1,14 @@
-import settings from '../../settings';
+const settings = require('../../settings');
 
 function meshCommand() {
 	if (!meshCommand._instance) {
-		const MeshCommand = require('../cmd/mesh').MeshCommand;
+		const MeshCommand = require('../cmd/mesh');
 		meshCommand._instance = new MeshCommand(settings);
 	}
 	return meshCommand._instance;
 }
 
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const mesh = commandProcessor.createCategory(root, 'mesh', 'Manage mesh networks');
 
 	commandProcessor.createCommand(mesh, 'create', 'Create a new network', {
