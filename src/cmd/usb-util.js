@@ -1,13 +1,21 @@
 const { prompt } = require('../app/ui');
 const { getDevice, isDeviceId } = require('./device-util');
-
-const { getDevices, openDeviceById, NotFoundError, NotAllowedError } = require('particle-usb');
+const log = require('../lib/log');
 
 const chalk = require('chalk');
 const when = require('when');
 const VError = require('verror');
 const fs = require('fs');
 const childProcess = require('child_process');
+
+let particleUsb = null;
+try {
+	particleUsb = require('particle-usb');
+} catch (e) {
+	log.error(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
+	throw e;
+}
+const { getDevices, openDeviceById, NotFoundError, NotAllowedError } = particleUsb;
 
 const UDEV_RULES_SYSTEM_PATH = '/etc/udev/rules.d';
 const UDEV_RULES_FILE_NAME = '50-particle.rules';
