@@ -69,7 +69,6 @@
     "particle-api-js": "^7.4.0",
     "particle-commands": "0.3.0",
     "particle-library-manager": "0.1.13",
-    "particle-usb": "^0.4.1",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.1.1",
     "semver": "^5.1.0",
@@ -112,6 +111,9 @@
     "sinon": "^4.4.2",
     "sinon-chai": "^2.14.0",
     "tmp": "0.0.28"
+  },
+  "optionalDependencies": {
+    "particle-usb": "^0.4.1"
   },
   "engines": {
     "node": ">=4.4",

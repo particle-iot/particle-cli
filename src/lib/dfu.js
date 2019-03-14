@@ -36,7 +36,7 @@ const childProcess = require('child_process');
 const settings = require('../../settings.js');
 const specs = require('./deviceSpecs');
 const log = require('./log');
-const usb = require('../cmd/usb-util');
+const { systemSupportsUdev, promptAndInstallUdevRules } = require('../cmd/udev');
 
 const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
@@ -74,9 +74,9 @@ const dfu = {
 				return temp.reject(error);
 			}
 			if (stderr) {
-				if (dfu._missingDevicePermissions(stderr) && usb.systemSupportsUdev()) {
+				if (dfu._missingDevicePermissions(stderr) && systemSupportsUdev()) {
 					const error = new Error('Missing permissions to use DFU');
-					return usb.promptAndInstallUdevRules(error).then(() => temp.reject(error), e => temp.reject(e));
+					return promptAndInstallUdevRules(error).then(() => temp.reject(error), e => temp.reject(e));
 				}
 			}
 

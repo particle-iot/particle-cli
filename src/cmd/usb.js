@@ -1,8 +1,9 @@
 const ParticleApi = require('./api').default;
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceById, systemSupportsUdev, udevRulesInstalled,
-		installUdevRules } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceById } = require('./usb-util');
+const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { spin } = require('../app/ui');
+const { platformsById } = require('./constants');
 
 const when = require('when');
 const sequence = require('when/sequence');
@@ -28,11 +29,14 @@ module.exports = class UsbCommand {
 						return getDevice({ id: usbDevice.id, api: this._api, auth: this._auth, dontThrow: true });
 					}
 				})
-				.then(device => ({
-					id: usbDevice.id,
-					type: usbDevice.isInDfuMode ? `${usbDevice.type}, DFU` : usbDevice.type,
-					name: (device && device.name) ? device.name : ''
-				}))
+				.then(device => {
+					const type = platformsById[usbDevice.platformId];
+					return {
+						id: usbDevice.id,
+						type: usbDevice.isInDfuMode ? `${type}, DFU` : type,
+						name: (device && device.name) ? device.name : ''
+					};
+				})
 				.finally(() => usbDevice.close());
 			}));
 		})
