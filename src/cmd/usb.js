@@ -119,44 +119,49 @@ module.exports = class UsbCommand {
 	_forEachUsbDevice(args, func, { dfuMode = false } = {}) {
 		let lastError = null;
 		return when.resolve().then(() => {
+			const openUsbDevices = [];
+			let p = null;
 			if (args.all) {
-				// Get all devices
-				return getUsbDevices();
-			}
-			if (args.one) {
-				// Get a single device. Fail if multiple devices are detected
-				return getUsbDevices().then(usbDevices => {
+				// Open all attached devices
+				p = getUsbDevices().then(usbDevices => {
+					return sequence(usbDevices.map(usbDevice => () => {
+						return openUsbDevice(usbDevice, { dfuMode })
+							.then(() => openUsbDevices.push(usbDevice))
+							.catch(e => lastError = e); // Skip the device and remember the error
+					}));
+				});
+			} else if (args.one) {
+				// Open a single device. Fail if multiple devices are detected
+				p = getUsbDevices().then(usbDevices => {
 					if (usbDevices.length === 0) {
 						throw new Error('No devices found');
 					}
 					if (usbDevices.length > 1) {
 						throw new Error('Found multiple devices. Please specify the ID or name of one of them');
 					}
-					return [usbDevices[0]];
+					const usbDevice = usbDevices[0];
+					return openUsbDevice(usbDevice, { dfuMode })
+						.then(() => openUsbDevices.push(usbDevice));
 				});
+			} else {
+				// Open specific devices
+				const deviceIds = args.params.devices;
+				if (!deviceIds || deviceIds.length === 0) {
+					throw new Error('Device ID or name is missing');
+				}
+				p = sequence(deviceIds.map(id => () => {
+					return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
+						.then(usbDevice => openUsbDevices.push(usbDevice))
+						.catch(e => lastError = e);
+				}));
 			}
-			// Open specific devices
-			const deviceIds = args.params.devices;
-			if (!deviceIds || deviceIds.length === 0) {
-				throw new Error('Device ID or name is missing');
-			}
-			const usbDevices = [];
-			return sequence(deviceIds.map(id => () => {
-				return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
-					.then(usbDevice => usbDevices.push(usbDevice))
-					.catch(e => lastError = e); // Skip the device and remember the error
-			}))
-			.then(() => usbDevices);
+			return p.then(() => openUsbDevices);
 		})
 		.then(usbDevices => {
 			// Send the command to each device
 			const p = usbDevices.map(usbDevice => {
-				// The device is not necessarily open at this point
-				let p = when.resolve();
-				if (!usbDevice.isOpen) {
-					p = p.then(() => openUsbDevice(usbDevice, { dfuMode }));
-				}
-				return p.then(() => func(usbDevice))
+				return when.resolve()
+					.then(() => func(usbDevice))
 					.catch(e => lastError = e)
 					.finally(() => usbDevice.close());
 			});
