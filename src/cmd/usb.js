@@ -117,6 +117,7 @@ module.exports = class UsbCommand {
 	}
 
 	_forEachUsbDevice(args, func, { dfuMode = false } = {}) {
+		const deviceIds = args.params.devices;
 		let lastError = null;
 		return when.resolve().then(() => {
 			const openUsbDevices = [];
@@ -130,7 +131,7 @@ module.exports = class UsbCommand {
 							.catch(e => lastError = e); // Skip the device and remember the error
 					}));
 				});
-			} else if (args.one) {
+			} else if (deviceIds.length === 0) {
 				// Open a single device. Fail if multiple devices are detected
 				p = getUsbDevices().then(usbDevices => {
 					if (usbDevices.length === 0) {
@@ -145,10 +146,6 @@ module.exports = class UsbCommand {
 				});
 			} else {
 				// Open specific devices
-				const deviceIds = args.params.devices;
-				if (!deviceIds || deviceIds.length === 0) {
-					throw new Error('Device ID or name is missing');
-				}
 				p = sequence(deviceIds.map(id => () => {
 					return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
 						.then(usbDevice => openUsbDevices.push(usbDevice))

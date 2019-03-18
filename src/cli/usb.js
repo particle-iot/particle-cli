@@ -32,10 +32,6 @@ module.exports = ({ commandProcessor, root }) => {
 		'all': {
 			description: 'Send the command to all devices connected to the host computer',
 			boolean: true
-		},
-		'one': {
-			description: 'Send the command to a single device connected to the host computer',
-			boolean: true
 		}
 	};
 
