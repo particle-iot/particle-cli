@@ -116,8 +116,8 @@
     "particle-usb": "^0.4.2"
   },
   "engines": {
-    "node": ">=4.4",
-    "npm": ">=3.3"
+    "node": ">=6",
+    "npm": ">=3.8.6"
   },
   "homepage": "https://github.com/particle-iot/particle-cli/",
   "keywords": [
