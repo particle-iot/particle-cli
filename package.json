@@ -66,7 +66,7 @@
     "lodash": "^3.10.1",
     "moment": "^2.9.0",
     "node-wifiscanner2": "^1.2.0",
-    "particle-api-js": "^6.4.1",
+    "particle-api-js": "^7.4.0",
     "particle-commands": "0.3.0",
     "particle-library-manager": "0.1.13",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
@@ -112,9 +112,12 @@
     "sinon-chai": "^2.14.0",
     "tmp": "0.0.28"
   },
+  "optionalDependencies": {
+    "particle-usb": "^0.4.2"
+  },
   "engines": {
-    "node": ">=4.4",
-    "npm": ">=3.3"
+    "node": ">=6",
+    "npm": ">=3.8.6"
   },
   "homepage": "https://github.com/particle-iot/particle-cli/",
   "keywords": [

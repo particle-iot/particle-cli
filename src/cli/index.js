@@ -23,6 +23,8 @@ import variable from './variable';
 import version from './version';
 import webhook from './webhook';
 import whoami from './whoami';
+import mesh from './mesh';
+import usb from './usb';
 
 /**
  * The default function export from this module registers all the available commands.
@@ -63,5 +65,7 @@ export default function registerAllCommands(context) {
 	version(context);
 	webhook(context);
 	whoami(context);
+	mesh(context);
+	usb(context);
 	alias(context);
 }

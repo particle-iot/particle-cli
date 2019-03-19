@@ -36,6 +36,7 @@ const childProcess = require('child_process');
 const settings = require('../../settings.js');
 const specs = require('./deviceSpecs');
 const log = require('./log');
+const { systemSupportsUdev, promptAndInstallUdevRules } = require('../cmd/udev');
 
 const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
@@ -73,8 +74,9 @@ const dfu = {
 				return temp.reject(error);
 			}
 			if (stderr) {
-				if (dfu._missingDevicePermissions(stderr) && dfu._systemSupportsUdev()) {
-					return dfu._promptInstallUdevRules().then(temp.reject, temp.reject);
+				if (dfu._missingDevicePermissions(stderr) && systemSupportsUdev()) {
+					const error = new Error('Missing permissions to use DFU');
+					return promptAndInstallUdevRules(error).then(() => temp.reject(error), e => temp.reject(e));
 				}
 			}
 
@@ -332,69 +334,8 @@ const dfu = {
 			});
 	},
 
-	// UDEV rules on Linux allow regular user acess to devices that
-	// normally need superuser permissions. Install some UDEV rules for
-	// the Particle devices if necessary.
-
-	_udevRulesDir: '/etc/udev/rules.d/',
-	_udevRulesFile: '50-particle.rules',
-
 	_missingDevicePermissions(stderr) {
 		return stderr && stderr.indexOf('Cannot open DFU device') >= 0;
-	},
-
-	_systemSupportsUdev() {
-		return fs.existsSync(dfu._udevRulesDir);
-	},
-
-	_udevRulesInstalled() {
-		return fs.existsSync(dfu._udevRulesDir + '/' + dfu._udevRulesFile);
-	},
-
-	_promptInstallUdevRules() {
-		let temp = when.defer();
-		if (dfu._udevRulesInstalled()) {
-			console.log(chalk.bold.red(
-				'Physically unplug and reconnect the Particle device and try again.'
-			));
-			temp.reject('Missing permissions to use DFU');
-		} else {
-			console.log(chalk.yellow('You are missing the permissions to use DFU without root.'));
-			prompt([{
-				type: 'confirm',
-				name: 'install',
-				message: 'Would you like to install a UDEV rules file to get access?',
-				default: true
-			}]).then((ans) => {
-				dfu._installUdevChoice(ans, temp);
-			});
-		}
-
-		return temp.promise;
-	},
-
-	_installUdevChoice(ans, promise) {
-		let message = 'Missing permissions to use DFU';
-		if (ans.install) {
-			let rules = __dirname + '/../../assets/' + dfu._udevRulesFile;
-			let cmd = "sudo cp '" + rules + "' '" + dfu._udevRulesDir + "'";
-			console.log(cmd);
-			childProcess.exec(cmd, (error, stdout, stderr) => {
-				if (error) {
-					console.error('Could not install UDEV rules');
-					promise.reject(message);
-				} else {
-					console.log('UDEV rules for DFU installed.');
-					console.log(chalk.bold.red(
-						'Physically unplug and reconnect the Particle device.\n' +
-						'Then run the particle command again.'
-					));
-					promise.resolve(message);
-				}
-			});
-		} else {
-			promise.reject(message);
-		}
 	},
 
 	specsForPlatform(platformID) {

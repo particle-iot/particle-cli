@@ -8,15 +8,10 @@ import log from '../lib/log';
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 
 function prompt(qs) {
-	return when.promise(function promptPromise(resolve, reject) {
-		if (!global.isInteractive) {
-			return reject('prompts are not allowed in non-interactive mode');
-		}
-
-		inquirer.prompt(qs, function promptAnswers(answers) {
-			resolve(answers);
-		});
-	});
+	if (!global.isInteractive) {
+		return when.reject(new Error('Prompts are not allowed in non-interactive mode'));
+	}
+	return inquirer.prompt(qs);
 }
 
 function spin(promise, str) {
