@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.40.0 - 20 March 2019
+
+* Add mesh commands (`particle mesh`) [#473](https://github.com/particle-iot/particle-cli/pull/473)
+* Add USB utility commands (`particle usb`) [#473](https://github.com/particle-iot/particle-cli/pull/473)
+* Add Gen 3 devices and Particle debuggers to the udev rules file [#473](https://github.com/particle-iot/particle-cli/pull/473)
+* Detect if the installed udev rules file needs to be updated [#473](https://github.com/particle-iot/particle-cli/pull/473)
+
 ## 1.39.0 - 19 February 2019
 
 * Add a flag to force serial flash without prompt [#471](https://github.com/particle-iot/particle-cli/pull/471)
