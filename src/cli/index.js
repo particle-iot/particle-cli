@@ -24,6 +24,7 @@ const webhook = require('./webhook');
 const whoami = require('./whoami');
 const mesh = require('./mesh');
 const usb = require('./usb');
+const log = require('./log');
 
 /**
  * The default function export from this module registers all the available commands.
@@ -66,5 +67,6 @@ module.exports = function registerAllCommands(context) {
 	whoami(context);
 	mesh(context);
 	usb(context);
+	log(context);
 	alias(context);
 };
