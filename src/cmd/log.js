@@ -257,7 +257,7 @@ module.exports = class LogCommand {
 		.then(portName => {
 			// Open serial port
 			return when.promise((resolve, reject) => {
-				console.log(`Opening serial port: ${portName}`);
+				console.error(`Opening serial port: ${portName}`);
 				const port = new SerialPort(portName, { baudRate }, err => {
 					if (err) {
 						return reject(err);
@@ -273,11 +273,23 @@ module.exports = class LogCommand {
 				serialPort.on('error', err => reject(err));
 				serialPort.on('close', err => err ? reject(err) : resolve());
 			});
-			// Close the serial port on exit
-			process.on('SIGINT', () => serialPort.close());
-			process.on('SIGTERM', () => serialPort.close());
+			// Close the serial port on Ctrl-C
+			let closing = false;
+			const signalHandler = () => {
+				if (!closing) {
+					closing = true;
+					console.error('\nClosing the device...');
+					serialPort.close();
+				} else {
+					// Terminate the process on second Ctrl-C
+					console.error('\nAborted.');
+					process.exit(1);
+				}
+			};
+			process.on('SIGINT', signalHandler);
+			process.on('SIGTERM', signalHandler);
 			// Start reading the logging output
-			console.log('Press Ctrl-C to exit.');
+			console.error('Press Ctrl-C to exit.');
 			let log = serialPort;
 			if (!args.raw) {
 				log = new PrettyFormatter();
@@ -308,6 +320,9 @@ module.exports = class LogCommand {
 				return usbDevice.close()
 					.catch(e => {}); // Ignore errors
 			}
+		})
+		.then(() => {
+			console.error('Done.');
 		});
 	}
 
