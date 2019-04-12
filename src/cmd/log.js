@@ -32,7 +32,7 @@ const LOG_LEVELS = [ 'all', 'trace', 'info', 'warn', 'error', 'none' ];
 
 const DEFAULT_STREAM = 'Serial';
 const DEFAULT_BAUD_RATE = 115200;
-const DEFAULT_LOG_LEVEL = 'trace';
+const DEFAULT_LOG_LEVEL = 'all';
 
 const CATEGORY_FIELD_WIDTH = 14;
 
@@ -69,7 +69,7 @@ class PrettyFormatter extends EventEmitter {
   }
 
   _formatMessage(msg) {
-    let m = msg.m;
+    let m = this._formatText(msg.m);
     switch (msg.l) {
       case 't': // Trace
         m = chalk.dim(m);
@@ -84,6 +84,11 @@ class PrettyFormatter extends EventEmitter {
     const t = this._formatTimestamp(msg.t);
     const c = this._formatCategory(msg.c);
     return `${chalk.dim(t)} ${chalk.dim(':')} ${chalk.dim(c)} ${chalk.dim(':')} ${m}\n`;
+  }
+
+  _formatText(m) {
+    // TODO: Split long messages into multiple lines depending on the terminal width
+    return m;
   }
 
   _formatTimestamp(t) {
@@ -124,38 +129,38 @@ class PrettyFormatter extends EventEmitter {
         if (c === '{') {
           br.push(c);
           if (start === null) {
-            start = i;
+            start = i; // Beginning of a JSON object
           }
-        } if (start !== null) {
+        } if (start !== null) { // Keep skipping characters until the first '{' is found
           if (c === '[') {
             br.push(c);
           } else if (c === '}' || c === ']') {
             const c1 = br.pop();
             if ((c === '}' && c1 !== '{') || (c === ']' && c1 !== '[')) {
-              return { valid: false };
+              return { valid: false }; // Invalid closing bracket
             }
             if (br.length === 0) {
-              break; // Done
+              break; // End of the JSON object
             }
           } else if (c === '"') {
-            str = true;
+            str = true; // Beginning of a string
           }
         }
       } else if (esc) {
-        esc = false;
-      } else if (c === '"') {
-        str = false;
+        esc = false; // Ignore the escaped character
       } else if (c === '\\') {
-        esc = true;
+        esc = true; // Beginning of an escaped character
+      } else if (c === '"') {
+        str = false; // End of the string
       }
     }
     if (i === srcStr.length) {
       if (start === null) {
-        return { valid: false };
+        return { valid: false }; // The string doesn't contain a '{' character
       }
       return {
         valid: true,
-        complete: false,
+        complete: false, // Found an incomplete JSON object
         startIndex: start
       };
     }
@@ -181,7 +186,7 @@ function parseLogLevel(levelStr) {
   const str = levelStr.toLowerCase();
   const level = LOG_LEVELS.find(l => l.startsWith(str));
   if (!level) {
-    throw new Error(`Invalid logging level: ${levelStr}`);
+    throw new Error(`Invalid log level: ${levelStr}`);
   }
   return level;
 }
@@ -209,34 +214,35 @@ module.exports = class LogCommand {
     let defaultLevel = null;
     let filters = null;
     let baudRate = null;
-    let rawFormat = null;
     let usbDevice = null;
+    let serialPort = null;
     let deviceId = null;
     let handlerId = null;
+    let handlerEnabled = false;
 		return when.resolve().then(() => {
       // Parse arguments
       streamType = findStreamType(args.params.stream || DEFAULT_STREAM);
       defaultLevel = args.level ? parseLogLevel(args.level) : DEFAULT_LOG_LEVEL;
       filters = this._parseFilters(args);
       baudRate = args.baud || DEFAULT_BAUD_RATE;
-      rawFormat = args.raw;
       // Open the device
       return openUsbDeviceById({ id: args.params.device, api: this._api, auth: this._auth });
     })
     .then(dev => {
-      // Configure logging
+      // Enable logging
       usbDevice = dev;
       deviceId = usbDevice.id;
       handlerId = handlerIdForStreamType(streamType);
       const p = usbDevice.addLogHandler({
         id: handlerId,
-        format: rawFormat ? 'default' : 'json',
+        format: args.raw ? 'default' : 'json',
         stream: streamType.name,
         level: defaultLevel,
         filters: filters,
         baudRate: baudRate
       })
       .then(() => {
+        handlerEnabled = true;
         return usbDevice.close();
       });
       return spin(p, 'Configuring the device...');
@@ -261,37 +267,46 @@ module.exports = class LogCommand {
       });
     })
     .then(port => {
-      // Unregister the log handler on exit
-      const onExit = () => {
-        let error = null;
-        openUsbDevice(usbDevice).then(() => {
-          return usbDevice.removeLogHandler({ id: handlerId });
-        })
-        .then(() => {
-          return usbDevice.close();
-        })
-        .catch(e => {
-          error = e;
-        })
-        .finally(() => {
-          process.stdout.write('\n');
-          process.exit(error ? 1 : 0);
-        });
-      };
-      process.on('SIGINT', onExit);
-      process.on('SIGTERM', onExit);
+      serialPort = port;
+      // TODO: Try to reopen the serial port and re-register the log handler on USB/serial port errors
+      const p = when.promise((resolve, reject) => {
+        serialPort.on('error', err => reject(err));
+        serialPort.on('close', err => err ? reject(err) : resolve());
+      });
+      // Close the serial port on exit
+      process.on('SIGINT', () => serialPort.close());
+      process.on('SIGTERM', () => serialPort.close());
       // Start reading the logging output
       console.log('Press Ctrl-C to exit.');
-      let log = port;
-      if (!rawFormat) {
+      let log = serialPort;
+      if (!args.raw) {
         log = new PrettyFormatter();
-        port.on('data', d => log.update(d));
+        serialPort.on('data', d => log.update(d));
       }
       log.on('data', d => process.stdout.write(d));
+      return p;
+    })
+    .finally(() => {
+      if (serialPort) {
+        // Close the serial port
+        return when.promise((resolve, reject) => {
+          serialPort.close(() => resolve()); // Ignore errors
+        });
+      }
+    })
+    .finally(() => {
+      if (usbDevice && handlerEnabled) {
+        // Unregister the log handler
+        return openUsbDevice(usbDevice)
+          .then(() => usbDevice.removeLogHandler({ id: handlerId }))
+          .catch(e => {}); // Ignore errors
+      }
     })
     .finally(() => {
       if (usbDevice) {
-        return usbDevice.close();
+        // Close the USB device
+        return usbDevice.close()
+          .catch(e => {}); // Ignore errors
       }
     });
 	}
@@ -302,10 +317,12 @@ module.exports = class LogCommand {
     })
     .then(ports => {
       if (streamType.isUsbSerial) {
-        // Get all ports with a matching serial number
+        // Get all USB serial ports with a matching serial number
+        // TODO: Check the interface index to identify ports assigned to Serial and USBSerial1
         ports = ports.filter(p => p.serialNumber && p.serialNumber.toLowerCase() === deviceId);
       } else {
-        // Filter out all Particle and system TTY devices
+        // Filter out all Particle and non-USB serial ports
+        // FIXME: This will likely filter out built-in UARTs on Raspberry Pi
         ports = ports.filter(p => p.vendorId && p.productId && !isParticleSerialPort(p));
       }
       if (ports.length == 0) {
@@ -314,6 +331,7 @@ module.exports = class LogCommand {
       if (ports.length == 1) {
         return ports[0].comName;
       }
+      // Let the user identify the serial port
       return prompt({
         name: 'port',
         type: 'list',
@@ -343,7 +361,7 @@ module.exports = class LogCommand {
       if (s.length == 2) {
         f.level = parseLogLevel(s[1]);
       } else {
-        f.level = 'all';
+        f.level = DEFAULT_LOG_LEVEL;
       }
       return f;
     });
