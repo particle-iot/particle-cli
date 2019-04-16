@@ -52,7 +52,7 @@
     }
   ],
   "dependencies": {
-    "binary-version-reader": "^0.6.3",
+    "binary-version-reader": "^0.6.4",
     "chalk": "^1.0.0",
     "cli-spinner": "^0.2.1",
     "cli-table": "^0.3.1",
