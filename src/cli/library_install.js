@@ -54,7 +54,7 @@ export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 		return this.promiseLog(`Installing library ${chalk.blue(lib.name)} ${lib.version}${dest} ...`);
 	}
 
-	notifyInstalledLibrary(lib, targetDir) {
+	notifyInstalledLibrary(lib) {
 		return this.promiseLog(`Library ${chalk.blue(lib.name)} ${lib.version} installed.`);
 	}
 

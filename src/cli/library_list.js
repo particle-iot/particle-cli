@@ -82,7 +82,7 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 
 	_nextPage() {
-		this._page ++;
+		this._page++;
 		for (let name of this.sectionNames()) {
 			const section = this._sections[name];
 			section.page += 1;

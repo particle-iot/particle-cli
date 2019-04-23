@@ -132,7 +132,7 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
-		handler: (args) => {
+		handler: () => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands().logout();
 		}

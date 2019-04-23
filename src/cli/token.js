@@ -2,7 +2,7 @@ export default ({ commandProcessor, root }) => {
 	const token = commandProcessor.createCategory(root, 'token', 'Manage access tokens (require username/password)');
 
 	commandProcessor.createCommand(token, 'list', 'List all access tokens for your account', {
-		handler: (args) => {
+		handler: () => {
 			const AccessTokenCommands = require('../cmd/token');
 			return new AccessTokenCommands().listAccessTokens();
 		}
@@ -23,7 +23,7 @@ export default ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(token, 'create', 'Create a new access token', {
-		handler: (args) => {
+		handler: () => {
 			const AccessTokenCommands = require('../cmd/token');
 			return new AccessTokenCommands().createAccessToken();
 		}

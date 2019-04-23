@@ -26,8 +26,8 @@ export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 
 	notifyComplete(promise, library, error) {
 		if (error) {
-	// this leads to the message being printed twice
-	//		log.error(error);
+			// this leads to the message being printed twice
+			//		log.error(error);
 		} else {
 			log.success(`Library ${chalk.green(library)} deleted.`);
 		}

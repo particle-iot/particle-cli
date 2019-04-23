@@ -31,13 +31,14 @@ const ensureError = require('../lib/utilities').ensureError;
 const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
-const protip = () => {
+const timeoutError = 'Serial timed out';
+
+function protip(){
 	const args = Array.prototype.slice.call(arguments);
 	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
 	console.log.apply(null, args);
-};
+}
 
-const timeoutError = 'Serial timed out';
 
 class SerialCommand {
 	constructor() {
@@ -1189,8 +1190,8 @@ class SerialCommand {
 			() => {
 				console.log('Done! Your device should now restart.');
 			}, (err) => {
-			log.error('Something went wrong:', err);
-		});
+				log.error('Something went wrong:', err);
+			});
 
 		when(wifiDone.promise).finally(() => {
 			resetTimeout();
@@ -1443,7 +1444,7 @@ class SerialCommand {
 		return null;
 	}
 
-	whatSerialPortDidYouMean(comPort, shouldPrompt) {
+	whatSerialPortDidYouMean(comPort) {
 		return this.findDevices().then(devices => {
 			const port = this._parsePort(devices, comPort);
 			if (port) {
@@ -1476,7 +1477,7 @@ class SerialCommand {
 		console.log();
 		console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
 			chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
-			chalk.bold.magenta('<3'))
+		chalk.bold.magenta('<3'))
 		);
 		process.exit(0);
 	}

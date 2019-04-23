@@ -127,7 +127,7 @@ class FlashCommand {
 				throw new Error('Unknown destination');
 			}
 			const alt = 0;
-			const leave = destSegment === 'userFirmware';  // todo - leave on factory firmware write too?
+			const leave = destSegment === 'userFirmware'; // todo - leave on factory firmware write too?
 			return dfu.writeDfu(alt, binary, destAddress, leave);
 		}).then(() => {
 			console.log ('\nFlash success!');

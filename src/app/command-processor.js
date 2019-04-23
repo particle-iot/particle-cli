@@ -523,7 +523,7 @@ function parseParams(yargs, argv, path, params) {
 			}
 
 			if (variadic) {
-				variadic = param;   // save the name
+				variadic = param; // save the name
 				value = extra.slice(-1 + required + optional).map(String);
 
 				if (isRequired && !value.length) {

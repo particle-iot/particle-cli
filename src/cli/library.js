@@ -45,7 +45,7 @@ export default ({ commandProcessor, root }) => {
 				alias: 'vendored',
 				description: 'install the library by copying the library sources into the project\'s lib folder'
 			},
-			'adapter': {        // hidden
+			'adapter': { // hidden
 				boolean: true,
 				alias: 'a'
 			},

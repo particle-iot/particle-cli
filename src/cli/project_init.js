@@ -85,7 +85,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 			})
 			.then(directory => {
 				this._dir = directory;
-				return this._dir && this._name;   // are we ready?
+				return this._dir && this._name; // are we ready?
 			});
 	}
 
@@ -118,7 +118,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 * @returns {boolean} true to continue with project creation
 	 * The response can be a direct value or a promise. If the promise is falsey then the process is stopped.
 	 */
-	notifyDirectoryExists(dir) {
+	notifyDirectoryExists() {
 		// creating a new project is non-destructive so we allow it always
 		return true;
 	}
@@ -129,7 +129,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 * @param {Promise} promise   The promise to create the project in the given directory
 	 * @returns {Promise} Promise
 	 */
-	notifyCreatingProject(path, promise) {
+	notifyCreatingProject(path) {
 		return log.info(`Initializing project in directory ${chalk.bold(path)}...`);
 	}
 
@@ -145,7 +145,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	}
 
 
-	notifyProjectNotCreated(directory) {
+	notifyProjectNotCreated() {
 		log.warn('Project initialization was cancelled.');
 	}
 

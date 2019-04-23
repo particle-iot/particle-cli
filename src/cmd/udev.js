@@ -105,22 +105,22 @@ function promptAndInstallUdevRules(err = null) {
 		message: 'Would you like to install a udev rules file to get access?',
 		default: true
 	})
-	.then(r => {
-		if (!r.install) {
+		.then(r => {
+			if (!r.install) {
+				if (err) {
+					throw err;
+				}
+				throw new Error('Cancelled');
+			}
+			return installUdevRules();
+		})
+		.then(() => {
+			console.log('udev rules installed.');
 			if (err) {
+				console.log(chalk.bold.red('Physically unplug and reconnect your Particle devices and try again.'));
 				throw err;
 			}
-			throw new Error('Cancelled');
-		}
-		return installUdevRules();
-	})
-	.then(() => {
-		console.log('udev rules installed.');
-		if (err) {
-			console.log(chalk.bold.red('Physically unplug and reconnect your Particle devices and try again.'));
-			throw err;
-		}
-	});
+		});
 }
 
 module.exports = {

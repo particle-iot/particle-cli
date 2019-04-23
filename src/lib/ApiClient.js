@@ -589,7 +589,7 @@ class ApiClient {
 	_mapFilenames(fileMapping, messages) {
 
 		function regexEscape(s) {
-			return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+			return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 		}
 
 		let result = [];

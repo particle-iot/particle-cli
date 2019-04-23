@@ -10,7 +10,7 @@ export default ({ commandProcessor, root }) => {
 	};
 
 	commandProcessor.createCommand(serial, 'list', 'Show devices connected via serial to your computer', {
-		handler: (args) => {
+		handler: () => {
 			const SerialCommands = require('../cmd/serial');
 			return new SerialCommands().listDevices();
 		}

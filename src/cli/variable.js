@@ -9,7 +9,7 @@ export default ({ commandProcessor, root }) => {
 	};
 
 	commandProcessor.createCommand(variable, 'list', 'Show variables provided by your device(s)', {
-		handler: (args) => {
+		handler: () => {
 			const VariableCommand = require('../cmd/variable');
 			return new VariableCommand().listVariables();
 		}

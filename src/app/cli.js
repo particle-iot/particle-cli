@@ -16,7 +16,7 @@ export default class CLI {
 		this.rootCategory = this.setupCommandProcessor();
 	}
 
-	globalRejectionHandler(reason, promise) {
+	globalRejectionHandler(reason) {
 		log.fatal(reason);
 		process.exit(-1);
 	}
@@ -152,7 +152,7 @@ export default class CLI {
 		}
 	}
 
-	showVersion(exit=true) {
+	showVersion() {
 		console.log(pkg.version);
 		process.exit();
 	}
@@ -174,7 +174,7 @@ export default class CLI {
 		const force = this.hasArg('--force-update-check', args);
 
 		return updateCheck(settings.disableUpdateCheck, force).then(() => {
-			const cmdargs = args.slice(2);       // remove executable and script
+			const cmdargs = args.slice(2); // remove executable and script
 			return this.runCommand(cmdargs);
 		}).catch(commandProcessor.createErrorHandler());
 	}

@@ -1,6 +1,6 @@
-export default ({ commandProcessor, root, app }) => {
+export default ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'whoami', 'prints signed-in username', {
-		handler: (args) => {
+		handler: () => {
 			const WhoAmICommand = require('../cmd/whoami');
 			return new WhoAmICommand().getUsername();
 		}
