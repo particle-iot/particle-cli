@@ -8,30 +8,30 @@ function MockSerial() {
 }
 util.inherits(MockSerial, Duplex);
 
-MockSerial.prototype._read = function() {
+MockSerial.prototype._read = function _read() {
 };
 
-MockSerial.prototype.write = function(chunk) {
+MockSerial.prototype.write = function write(chunk) {
 	this.data += chunk;
 };
 
-MockSerial.prototype.drain = function(cb) {
+MockSerial.prototype.drain = function drain(cb) {
 	this.emit('drain');
 	process.nextTick(cb);
 };
 
-MockSerial.prototype.flush = function(cb) {
+MockSerial.prototype.flush = function flush(cb) {
 	this.emit('flush');
 	process.nextTick(cb);
 };
 
-MockSerial.prototype.open = function(cb) {
+MockSerial.prototype.open = function open(cb) {
 	this.isOpen = true;
 	process.nextTick(cb);
 };
 
 
-MockSerial.prototype.close = function(cb) {
+MockSerial.prototype.close = function close(cb) {
 	this.isOpen = false;
 	if (cb) {
 		process.nextTick(cb);

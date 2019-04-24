@@ -18,10 +18,10 @@
  ******************************************************************************
  */
 
-import {expect, sinon} from '../test-setup';
-import {LibraryAddCommand, LibraryAddCommandSite} from "../../src/cmd";
-import settings from "../../settings";
-import {it_has_access_token, fetch_access_token} from './access_token';
+import { expect, sinon } from '../test-setup';
+import { LibraryAddCommand, LibraryAddCommandSite } from '../../src/cmd';
+import settings from '../../settings';
+import { itHasAccessToken, fetchAccessToken } from './access_token';
 const path = require('path');
 import createLibraryCommand from '../../src/cli/library';
 import * as commandProcessor from '../../src/app/command-processor';
@@ -64,14 +64,14 @@ describe('library', () => {
 			expect(argv.clierror).to.eql(expectedError);
 		});
 
-		it_has_access_token('can fetch a list of libraries with a filter', () => {
+		itHasAccessToken('can fetch a list of libraries with a filter', () => {
 			// todo - I copied this from the libraryAdd command - why do we need to specify access token twice? --mdma
 			const apiJS = new ParticleApi(settings.apiUrl, {
-				accessToken: fetch_access_token()
+				accessToken: fetchAccessToken()
 			}).api;
 
 			const apiClient = apiJS.client({ auth: settings.access_token });
-			const sut = new LibraryAddCommand({apiClient});
+			const sut = new LibraryAddCommand({ apiClient });
 			const site = new LibraryAddCommandSite();
 			site.notifyListLibrariesStart = sinon.spy(site.notifyListLibrariesStart);
 			site.notifyListLibrariesComplete = sinon.spy(site.notifyListLibrariesComplete);
@@ -92,7 +92,7 @@ describe('library', () => {
 
 		it('adds a library to an existing project', () => {
 			// TODO!
-		})
+		});
 	});
 
 

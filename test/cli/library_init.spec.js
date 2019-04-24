@@ -17,15 +17,14 @@
  ******************************************************************************
  */
 
-import {sinon, expect} from '../test-setup';
-const path = require('path');
+import { sinon, expect } from '../test-setup';
 import { LibraryInitGenerator } from 'particle-library-manager';
 import { CLILibraryInitCommandSite } from '../../src/cli/library_init';
 import { LibraryInitCommand } from '../../src/cmd';
 
 describe('library init command', () => {
 
-	require('yeoman-environment');      // ensure these dynamically loaded modules are loaded before the mock-fs is installed
+	require('yeoman-environment'); // ensure these dynamically loaded modules are loaded before the mock-fs is installed
 	require('yeoman-generator');
 
 	describe('site', () => {
@@ -37,7 +36,7 @@ describe('library init command', () => {
 
 		it('can retrieve the yeoman adapter', () => {
 			return expect(sut.yeomanAdapter()).to.be.ok;
-		})
+		});
 	});
 
 	describe('command', () => {
@@ -56,22 +55,22 @@ describe('library init command', () => {
 			const adapter = 'adapter';
 			const run = sinon.stub();
 			env.registerStub = sinon.stub();
-			env.run = function(name, options, callback) {
+			env.run = (name, options, callback) => {
 				run(name, options);
 				callback(null); // no error
 			};
 			site.yeomanAdapter = sinon.stub().returns(adapter);
 			site.args = sinon.stub().returns(args);
 			site.options = sinon.stub().returns(options);
-			site.yeomanEnvironment = sinon.stub().returns({ createEnv: sinon.stub().returns(env)});
+			site.yeomanEnvironment = sinon.stub().returns({ createEnv: sinon.stub().returns(env) });
 			// when
 			sut.run(null, site)
-			.then((result) => {
-				expect(result).to.be.equal('result');
-				expect(env.registerStub).to.have.been.calledWith(LibraryInitGenerator, 'library:init');
-				expect(run).to.have.been.calledWith('library:init');
-				expect(site.yeomanEnvironment.createEnv).to.have.been.calledWith(args, options, site.yeomanAdapter);
-			});
+				.then((result) => {
+					expect(result).to.be.equal('result');
+					expect(env.registerStub).to.have.been.calledWith(LibraryInitGenerator, 'library:init');
+					expect(run).to.have.been.calledWith('library:init');
+					expect(site.yeomanEnvironment.createEnv).to.have.been.calledWith(args, options, site.yeomanAdapter);
+				});
 		});
 	});
 

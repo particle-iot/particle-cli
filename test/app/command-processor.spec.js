@@ -17,9 +17,9 @@
  ******************************************************************************
  */
 
-import {expect, sinon} from '../test-setup';
+import { expect, sinon } from '../test-setup';
 
-import * as commandProcessor from '../../src/app/command-processor'
+import * as commandProcessor from '../../src/app/command-processor';
 
 describe('command-line parsing', () => {
 
@@ -105,11 +105,11 @@ describe('command-line parsing', () => {
 
 	it('returns an error for an unknown command', () => {
 		const app = commandProcessor.createAppCategory();
-		const unknown_command = ['funkwomble', 'farcenugget'];
-		const argv = commandProcessor.parse(app, unknown_command);
+		const unknownCommand = ['funkwomble', 'farcenugget'];
+		const argv = commandProcessor.parse(app, unknownCommand);
 		expect(argv.clicommand).to.be.undefined;
 		expect(argv.clierror).to.not.be.undefined;
-		expect(argv.clierror).to.be.deep.equal(commandProcessor.errors.unknownCommandError(unknown_command, app));
+		expect(argv.clierror).to.be.deep.equal(commandProcessor.errors.unknownCommandError(unknownCommand, app));
 	});
 
 	it('returns the command when the command line matches', () => {
@@ -144,7 +144,7 @@ describe('command-line parsing', () => {
 		const argv = commandProcessor.parse(app, args);
 		expect(argv.clicommand).to.be.equal(undefined);
 		expect(argv.clierror).to.be.deep.equal(commandProcessor.errors.unknownCommandError(args, one));
-		expect(one.path)
+		expect(one.path);
 	});
 
 	it('returns an error when an unknown option is present', () => {
@@ -157,7 +157,9 @@ describe('command-line parsing', () => {
 
 	it('returns an unknown command error before an unknown argument error', () => {
 		const app = commandProcessor.createAppCategory();
-		const one = commandProcessor.createCategory(app, 'one', 'you get');
+
+		commandProcessor.createCategory(app, 'one', 'you get');
+
 		const args = ['blah', '--frumpet'];
 		const argv = commandProcessor.parse(app, args);
 		expect(argv.clicommand).to.be.equal(undefined);
@@ -168,7 +170,7 @@ describe('command-line parsing', () => {
 		// see '.choices()` https://www.npmjs.com/package/yargs
 		const app = commandProcessor.createAppCategory({ options: {
 			cm: { alias: 'chundermonkey', boolean: true }
-		}});
+		} });
 
 		expect(commandProcessor.parse(app, ['--cm'])).to.have.property('cm').equal(true);
 		expect(commandProcessor.parse(app, ['--chundermonkey'])).to.have.property('cm').equal(true);
@@ -176,12 +178,17 @@ describe('command-line parsing', () => {
 
 	it('refuses options meant for other commands', () => {
 		const app = commandProcessor.createAppCategory();
-		const one = commandProcessor.createCommand(app, 'one', 'first', { options: {
-			one: { alias: '1', description: '', boolean: true }
-		}});
-		const two = commandProcessor.createCommand(app, 'two', 'second', { options: {
-			two: { alias: '2', description: '', boolean: true }
-		}});
+		const one = commandProcessor.createCommand(app, 'one', 'first', {
+			options: {
+				one: { alias: '1', description: '', boolean: true }
+			}
+		});
+
+		commandProcessor.createCommand(app, 'two', 'second', {
+			options: {
+				two: { alias: '2', description: '', boolean: true }
+			}
+		});
 
 		// sanity test
 		expect(commandProcessor.parse(app, ['one', '--one'])).to.not.have.property('clierror');
@@ -230,40 +237,40 @@ describe('command-line parsing', () => {
 
 		it('accepts parameters before flags', () => {
 			const result = paramsCommand('[a]', ['1', '--flag']);
-			expect(result.params).to.deep.equal({a:'1'});
+			expect(result.params).to.deep.equal({ a:'1' });
 			expect(result).to.have.property('flag').that.is.true;
 		});
 
 		it('accepts parameters after flags', () => {
 			const result = paramsCommand('[a]', ['--flag', '1']);
-			expect(result.params).to.deep.equal({a:'1'});
+			expect(result.params).to.deep.equal({ a:'1' });
 			expect(result).to.have.property('flag').that.is.true;
 		});
 
 		it('accepts parameters before and after flags', () => {
 			const result = paramsCommand('[a...]', ['1', '--flag', '2']);
-			expect(result.params).to.deep.equal({a:['1','2']});
+			expect(result.params).to.deep.equal({ a:['1','2'] });
 			expect(result).to.have.property('flag').that.is.true;
 		});
 
-		it("rejects varadic parameters not in final position", () => {
+		it('rejects varadic parameters not in final position', () => {
 			expect(paramsCommand('[a] [b...] [c]', ['1','2', '3']).clierror).
-			to.deep.equal(commandProcessor.errors.variadicParameterPositionError('b'));
+				to.deep.equal(commandProcessor.errors.variadicParameterPositionError('b'));
 		});
 
-		it("rejects omitted required varadic parameters", () => {
+		it('rejects omitted required varadic parameters', () => {
 			expect(paramsCommand('[a] <b...>', ['1']).clierror).
-			to.deep.equal(commandProcessor.errors.variadicParameterRequiredError('b'));
+				to.deep.equal(commandProcessor.errors.variadicParameterRequiredError('b'));
 		});
 
-		it("rejects omitted required parameters", () => {
+		it('rejects omitted required parameters', () => {
 			expect(paramsCommand('<a> <b>', ['1']).clierror).
-			to.deep.equal(commandProcessor.errors.requiredParameterError('b'));
+				to.deep.equal(commandProcessor.errors.requiredParameterError('b'));
 		});
 
-		it("rejects required parameters after optional parameters", () => {
+		it('rejects required parameters after optional parameters', () => {
 			expect(paramsCommand('[a] <b>', ['1']).clierror).
-			to.deep.equal(commandProcessor.errors.requiredParameterPositionError('b'));
+				to.deep.equal(commandProcessor.errors.requiredParameterPositionError('b'));
 		});
 
 		it('allows commands with unfilled optional parameters', () => {
@@ -317,7 +324,8 @@ describe('command-line parsing', () => {
 
 		it('rejects parameters to non-parameterized command', () => {
 			const app = commandProcessor.createAppCategory();
-			const cmd = commandProcessor.createCommand(app, 'cmd', 'do summat');
+
+			commandProcessor.createCommand(app, 'cmd', 'do summat');
 
 			expect(commandProcessor.parse(app, ['cmd', 'stragglers', 'here'])).to.have.property('clierror')
 				.deep.equal(commandProcessor.errors.unknownParametersError(['stragglers', 'here']));
@@ -394,8 +402,7 @@ describe('command-line parsing', () => {
 			try {
 				global.verboseLevel = 2;
 				commandProcessor.test.consoleErrorLogger(console, undefined /*yargs*/, false, error);
-			}
-			finally {
+			} finally {
 				delete global.verboseLevel;
 			}
 			expect(console.log).to.have.been.calledWithMatch('hey');
@@ -407,7 +414,7 @@ describe('command-line parsing', () => {
 			const console = { log: sinon.stub() };
 			const error = { stack: '1\n2\n3', isUsageError:true, message: 'hey' };
 			const yargs = { showHelp: sinon.stub() };
-			commandProcessor.test.consoleErrorLogger(console,  yargs, false, error);
+			commandProcessor.test.consoleErrorLogger(console, yargs, false, error);
 			expect(console.log).to.have.been.calledWithMatch('hey').and.calledOnce;
 		});
 
@@ -430,6 +437,6 @@ describe('command-line parsing', () => {
 			assertCanSetDescription('123');
 		});
 
-	})
+	});
 });
 

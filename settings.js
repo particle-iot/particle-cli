@@ -24,7 +24,7 @@
   License along with this program; if not, see <http://www.gnu.org/licenses/>.
   ******************************************************************************
  */
-'use strict';
+
 
 var fs = require('fs');
 var path = require('path');
@@ -120,7 +120,7 @@ function envValueBoolean(varName, defaultValue) {
 
 settings.commandPath = __dirname + '/commands/';
 
-settings.findHomePath = function() {
+settings.findHomePath = () => {
 	let envVars = [
 		'home',
 		'HOME',
@@ -137,7 +137,7 @@ settings.findHomePath = function() {
 	return __dirname;
 };
 
-settings.ensureFolder = function() {
+settings.ensureFolder = () => {
 	let particleDir = path.join(settings.findHomePath(), '.particle');
 	if (!fs.existsSync(particleDir)) {
 		fs.mkdirSync(particleDir);
@@ -145,14 +145,14 @@ settings.ensureFolder = function() {
 	return particleDir;
 };
 
-settings.findOverridesFile = function(profile) {
+settings.findOverridesFile = (profile) => {
 	profile = profile || settings.profile || 'particle';
 
 	let particleDir = settings.ensureFolder();
 	return path.join(particleDir, profile + '.config.json');
 };
 
-settings.loadOverrides = function (profile) {
+settings.loadOverrides = (profile) => {
 	profile = profile || settings.profile || 'particle';
 
 	try {
@@ -169,7 +169,7 @@ settings.loadOverrides = function (profile) {
 	return settings;
 };
 
-settings.whichProfile = function() {
+settings.whichProfile = () => {
 	settings.profile = 'particle';
 	settings.readProfileData();
 };
@@ -177,7 +177,7 @@ settings.whichProfile = function() {
 /**
  * in another file in our user dir, we store a profile name that switches between setting override files
  */
-settings.switchProfile = function(profileName) {
+settings.switchProfile = (profileName) => {
 	if (!settings.profile_json) {
 		settings.profile_json = {};
 	}
@@ -186,9 +186,9 @@ settings.switchProfile = function(profileName) {
 	settings.saveProfileData();
 };
 
-settings.readProfileData = function() {
+settings.readProfileData = () => {
 	let particleDir = settings.ensureFolder();
-	let proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
+	let proFile = path.join(particleDir, 'profile.json'); //proFile, get it?
 	if (fs.existsSync(proFile)) {
 		try {
 			let data = JSON.parse(fs.readFileSync(proFile));
@@ -203,9 +203,9 @@ settings.readProfileData = function() {
 	}
 };
 
-settings.saveProfileData = function() {
+settings.saveProfileData = () => {
 	let particleDir = settings.ensureFolder();
-	let proFile = path.join(particleDir, 'profile.json');      //proFile, get it?
+	let proFile = path.join(particleDir, 'profile.json'); //proFile, get it?
 	fs.writeFileSync(proFile, JSON.stringify(settings.profile_json, null, 2), { mode: '600' });
 };
 
@@ -225,7 +225,7 @@ function matchKey(needle, obj, caseInsensitive) {
 	return null;
 }
 
-settings.override = function (profile, key, value) {
+settings.override = (profile, key, value) => {
 	if (!settings.overrides) {
 		settings.overrides = {};
 	}

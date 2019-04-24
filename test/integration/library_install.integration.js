@@ -17,12 +17,10 @@
  ******************************************************************************
  */
 
-import {chai, sinon, expect} from '../test-setup';
-import {it_has_access_token, fetch_access_token} from './access_token';
+import { expect } from '../test-setup';
+import { itHasAccessToken, fetchAccessToken } from './access_token';
 const settings = require('../../settings');
-const path = require('path');
 const mockfs = require('mock-fs');
-const when = require('when');
 
 import * as commandProcessor from '../../src/app/command-processor';
 
@@ -34,7 +32,7 @@ describe('library install', () => {
 
 	beforeEach(() => {
 		token = settings.access_token;
-		settings.access_token = fetch_access_token();
+		settings.access_token = fetchAccessToken();
 		mockfs();
 	});
 
@@ -45,7 +43,7 @@ describe('library install', () => {
 		done();
 	});
 
-	it_has_access_token('can install a vendored library in an extended application project', function test() {
+	itHasAccessToken('can install a vendored library in an extended application project', function test() {
 		this.timeout(20*1000);
 		const fs = require('fs');
 		fs.mkdirSync('project');
@@ -58,35 +56,16 @@ describe('library install', () => {
 
 		const root = commandProcessor.createAppCategory();
 		const lib = commandProcessor.createCategory(root, 'library');
-		libraryInstall({commandProcessor, lib });
+		libraryInstall({ commandProcessor, lib });
 		const argv = commandProcessor.parse(root, ['library', 'install', '--vendored', 'neopixel']);
 		expect(argv.clicommand).to.be.ok;
 
-		var _getAllFilesFromFolder = function(dir) {
-
-			var filesystem = require("fs");
-			var results = [];
-
-			filesystem.readdirSync(dir).forEach(function(file) {
-
-				file = dir+'/'+file;
-				var stat = filesystem.statSync(file);
-
-				if (stat && stat.isDirectory()) {
-					results = results.concat(_getAllFilesFromFolder(file))
-				} else results.push(file);
-
-			});
-
-			return results;
-		};
-
 		const result = argv.clicommand.exec(argv).then(() => {
 			[
-			'lib/neopixel/library.properties',
-			'lib/neopixel/src/neopixel.cpp',
-			'lib/neopixel/src/neopixel.h',
-			'./lib/neopixel/examples/rgbw-strandtest/rgbw-strandtest.cpp'
+				'lib/neopixel/library.properties',
+				'lib/neopixel/src/neopixel.cpp',
+				'lib/neopixel/src/neopixel.h',
+				'./lib/neopixel/examples/rgbw-strandtest/rgbw-strandtest.cpp'
 			].forEach(filename => {
 				expect(fs.statSync(filename).isFile()).to.be.true;
 			});

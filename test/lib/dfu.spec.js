@@ -1,10 +1,9 @@
-'use strict';
+
 
 var dfu = require('../../src/lib/dfu');
 var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
-var specs = require('../../src/lib/deviceSpecs');
 var sinon = require('sinon');
 
 const chai = require('chai');
@@ -13,8 +12,8 @@ chai.use(sinonChai);
 const expect = chai.expect;
 
 
-describe('DFU', function() {
-	it('finds Particle devices in dfu-util -l output', function() {
+describe('DFU', () => {
+	it('finds Particle devices in dfu-util -l output', () => {
 		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/only_particle.txt')).toString();
 		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
@@ -22,7 +21,7 @@ describe('DFU', function() {
 		assert.equal(devices[0], '2b04:d006');
 	});
 
-	it('filters out non-Particle devices in dfu-util -l output', function() {
+	it('filters out non-Particle devices in dfu-util -l output', () => {
 		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/mixed.txt')).toString();
 		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
@@ -30,7 +29,7 @@ describe('DFU', function() {
 		assert.equal(devices[0], '2b04:d00a');
 	});
 
-	it('handles no devices output', function() {
+	it('handles no devices output', () => {
 		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/none.txt')).toString();
 		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
@@ -42,7 +41,7 @@ describe('DFU', function() {
 		var file = 'abcd';
 		dfu.appendToEvenBytes = sinon.spy();
 		dfu.checkBinaryAlignment(file, specs);
-		expect(dfu.appendToEvenBytes).to.have.been.calledWith(file)
+		expect(dfu.appendToEvenBytes).to.have.been.calledWith(file);
 	});
 
 	it('does not pad on other platforms', () => {

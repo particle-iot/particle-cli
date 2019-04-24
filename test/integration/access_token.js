@@ -1,6 +1,6 @@
 
 
-function access_token_from_settings() {
+function accessTokenFromSettings() {
 	const settings = require('../../settings');
 	settings.whichProfile();
 	settings.loadOverrides();
@@ -8,13 +8,13 @@ function access_token_from_settings() {
 }
 
 let token = undefined;
-export function fetch_access_token() {
+export function fetchAccessToken() {
 	if (token===undefined) {
-		token = process.env.ACCESS_TOKEN || access_token_from_settings() || null;
+		token = process.env.ACCESS_TOKEN || accessTokenFromSettings() || null;
 	}
 	return token;
 }
 
-export function it_has_access_token() {
-	return fetch_access_token() ? it : xit;
+export function itHasAccessToken() {
+	return fetchAccessToken() ? it : xit;
 }

@@ -13,5 +13,5 @@ module.exports = function minimumNode(options) {
 		_console.error('The Particle CLI requires Node ' + requirement);
 		exit(1);
 	}
-}
+};
 

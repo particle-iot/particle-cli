@@ -14,7 +14,7 @@ describe('Preprocess Command', () => {
 		sandbox = sinon.createSandbox();
 		stdin = new stream.Readable();
 		stdout = new stream.Writable({
-			write: function (chunk, encoding, callback) {
+			write: function write(chunk, encoding, callback){
 				this.content = (this.content || '') + chunk;
 				callback();
 			}
