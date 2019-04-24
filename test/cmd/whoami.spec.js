@@ -129,7 +129,6 @@ describe('Whoami Commands', () => {
 	// log output without supressing mocha's success / error messages but is a
 	// bit awkward
 	function withConsoleStubs(fn){
-
 		return () => {
 			let result;
 
