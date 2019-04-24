@@ -1,7 +1,6 @@
 
 
 var proxyquire = require('proxyquire');
-require('should');
 var sinon = require('sinon');
 
 const chai = require('chai');
@@ -68,7 +67,7 @@ describe('Key Command', () => {
 	it('Can create device key', () => {
 		setupCommand();
 		return key.makeNewKey('', {}).then(() => {
-			utilities.deferredChildProcess.callCount.should.equal(3);
+			expect(utilities.deferredChildProcess).to.have.property('callCount', 3);
 		});
 	});
 

@@ -3,7 +3,6 @@
 var proxyquire = require('proxyquire');
 var MockSerial = require('../mocks/Serial.mock');
 
-require('should');
 var chai = require('chai');
 var sinonChai = require('sinon-chai');
 var chaiAsPromised = require('chai-as-promised');
