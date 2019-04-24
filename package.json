@@ -93,7 +93,7 @@
     "babel-plugin-transform-es2015-parameters": "^6.24.1",
     "babel-plugin-transform-es2015-spread": "^6.22.0",
     "babel-register": "^6.5.2",
-    "chai": "^3.5.0",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "coveralls": "^2.11.4",
     "doctoc": "^0.15.0",

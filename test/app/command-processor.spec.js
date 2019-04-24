@@ -107,9 +107,10 @@ describe('command-line parsing', () => {
 		const app = commandProcessor.createAppCategory();
 		const unknownCommand = ['funkwomble', 'farcenugget'];
 		const argv = commandProcessor.parse(app, unknownCommand);
-		expect(argv.clicommand).to.be.undefined;
-		expect(argv.clierror).to.not.be.undefined;
-		expect(argv.clierror).to.be.deep.equal(commandProcessor.errors.unknownCommandError(unknownCommand, app));
+		const error = commandProcessor.errors.unknownCommandError(unknownCommand, app);
+
+		expect(argv.clicommand).to.equal(undefined);
+		expectCLIError(argv.clierror, error);
 	});
 
 	it('returns the command when the command line matches', () => {
@@ -142,17 +143,20 @@ describe('command-line parsing', () => {
 		const one = commandProcessor.createCategory(app, 'one', 'you get');
 		const args = ['one', 'frumpet'];
 		const argv = commandProcessor.parse(app, args);
+		const error = commandProcessor.errors.unknownCommandError(args, one);
+
 		expect(argv.clicommand).to.be.equal(undefined);
-		expect(argv.clierror).to.be.deep.equal(commandProcessor.errors.unknownCommandError(args, one));
-		expect(one.path);
+		expectCLIError(argv.clierror, error);
+		expect(one.path).to.eql(['one']);
 	});
 
 	it('returns an error when an unknown option is present', () => {
 		const app = commandProcessor.createAppCategory();
-		const args = ['--ftlspeed'];
-		const argv = commandProcessor.parse(app, args);
-		expect(argv.clicommand).to.be.equal(undefined);
-		expect(argv.clierror).to.be.deep.equal(commandProcessor.errors.unknownArgumentError(['ftlspeed']));
+		const argv = commandProcessor.parse(app, ['--ftlspeed']);
+		const error = commandProcessor.errors.unknownArgumentError(['ftlspeed']);
+
+		expect(argv.clicommand).to.equal(undefined);
+		expectCLIError(argv.clierror, error);
 	});
 
 	it('returns an unknown command error before an unknown argument error', () => {
@@ -162,8 +166,10 @@ describe('command-line parsing', () => {
 
 		const args = ['blah', '--frumpet'];
 		const argv = commandProcessor.parse(app, args);
+		const error = commandProcessor.errors.unknownCommandError(['blah'], app);
+
 		expect(argv.clicommand).to.be.equal(undefined);
-		expect(argv.clierror).to.be.deep.equal(commandProcessor.errors.unknownCommandError(['blah'], app));
+		expectCLIError(argv.clierror, error);
 	});
 
 	it('can accept options', () => {
@@ -190,15 +196,21 @@ describe('command-line parsing', () => {
 			}
 		});
 
+		let argv, error;
+
 		// sanity test
-		expect(commandProcessor.parse(app, ['one', '--one'])).to.not.have.property('clierror');
-		expect(commandProcessor.parse(app, ['one', '--one'])).to.have.property('clicommand').equal(one);
-		expect(commandProcessor.parse(app, ['one', '--one'])).to.have.property('one').equal(true);
+		argv = commandProcessor.parse(app, ['one', '--one']);
+
+		expect(argv).to.not.have.property('clierror');
+		expect(argv).to.have.property('clicommand').equal(one);
+		expect(argv).to.have.property('one').equal(true);
 
 		// the real test
-		expect(commandProcessor.parse(app, ['two', '--one'])).to.not.have.property('clicommand');
-		expect(commandProcessor.parse(app, ['two', '--one'])).to.have.property('clierror').deep.equal(
-			commandProcessor.errors.unknownArgumentError(['one']));
+		argv = commandProcessor.parse(app, ['two', '--one']);
+		error = commandProcessor.errors.unknownArgumentError(['one']);
+
+		expect(argv.clicommand).to.equal(undefined);
+		expectCLIError(argv.clierror, error);
 	});
 
 	describe('parameters', () => {
@@ -254,23 +266,35 @@ describe('command-line parsing', () => {
 		});
 
 		it('rejects varadic parameters not in final position', () => {
-			expect(paramsCommand('[a] [b...] [c]', ['1','2', '3']).clierror).
-				to.deep.equal(commandProcessor.errors.variadicParameterPositionError('b'));
+			const argv = paramsCommand('[a] [b...] [c]', ['1','2', '3']);
+			const error = commandProcessor.errors.variadicParameterPositionError('b');
+
+			expect(argv.clicommand).to.equal(undefined);
+			expectCLIError(argv.clierror, error);
 		});
 
 		it('rejects omitted required varadic parameters', () => {
-			expect(paramsCommand('[a] <b...>', ['1']).clierror).
-				to.deep.equal(commandProcessor.errors.variadicParameterRequiredError('b'));
+			const argv = paramsCommand('[a] <b...>', ['1']);
+			const error = commandProcessor.errors.variadicParameterRequiredError('b');
+
+			expect(argv.clicommand).to.equal(undefined);
+			expectCLIError(argv.clierror, error);
 		});
 
 		it('rejects omitted required parameters', () => {
-			expect(paramsCommand('<a> <b>', ['1']).clierror).
-				to.deep.equal(commandProcessor.errors.requiredParameterError('b'));
+			const argv = paramsCommand('<a> <b>', ['1']);
+			const error = commandProcessor.errors.requiredParameterError('b');
+
+			expect(argv.clicommand).to.equal(undefined);
+			expectCLIError(argv.clierror, error);
 		});
 
 		it('rejects required parameters after optional parameters', () => {
-			expect(paramsCommand('[a] <b>', ['1']).clierror).
-				to.deep.equal(commandProcessor.errors.requiredParameterPositionError('b'));
+			const argv = paramsCommand('[a] <b>', ['1']);
+			const error = commandProcessor.errors.requiredParameterPositionError('b');
+
+			expect(argv.clicommand).to.equal(undefined);
+			expectCLIError(argv.clierror, error);
 		});
 
 		it('allows commands with unfilled optional parameters', () => {
@@ -292,8 +316,11 @@ describe('command-line parsing', () => {
 		});
 
 		it('rejects commands with unfilled required parameters', () => {
-			expect(paramsCommand('<a> <b>', ['1'])).to.have.property('clierror')
-				.deep.equal(commandProcessor.errors.requiredParameterError('b'));
+			const argv = paramsCommand('<a> <b>', ['1']);
+			const error = commandProcessor.errors.requiredParameterError('b');
+
+			expect(argv.clicommand).to.equal(undefined);
+			expectCLIError(argv.clierror, error);
 		});
 
 		it('allows commands with mixed optional and required parameters', () => {
@@ -318,8 +345,11 @@ describe('command-line parsing', () => {
 		});
 
 		it('rejects parameterized command with surplus arguments', () => {
-			expect(paramsCommand('[a]', ['hey', 'there', 'you'])).to.have.property('clierror')
-				.deep.equal(commandProcessor.errors.unknownParametersError(['there', 'you']));
+			const argv = paramsCommand('[a]', ['hey', 'there', 'you']);
+			const error = commandProcessor.errors.unknownParametersError(['there', 'you']);
+
+			expect(argv.clicommand).to.equal(undefined);
+			expectCLIError(argv.clierror, error);
 		});
 
 		it('rejects parameters to non-parameterized command', () => {
@@ -327,8 +357,11 @@ describe('command-line parsing', () => {
 
 			commandProcessor.createCommand(app, 'cmd', 'do summat');
 
-			expect(commandProcessor.parse(app, ['cmd', 'stragglers', 'here'])).to.have.property('clierror')
-				.deep.equal(commandProcessor.errors.unknownParametersError(['stragglers', 'here']));
+			const argv = commandProcessor.parse(app, ['cmd', 'stragglers', 'here']);
+			const error = commandProcessor.errors.unknownParametersError(['stragglers', 'here']);
+
+			expect(argv.clicommand).to.equal(undefined);
+			expectCLIError(argv.clierror, error);
 		});
 
 		it('flags default to strings', () => {
@@ -417,8 +450,6 @@ describe('command-line parsing', () => {
 			commandProcessor.test.consoleErrorLogger(console, yargs, false, error);
 			expect(console.log).to.have.been.calledWithMatch('hey').and.calledOnce;
 		});
-
-
 	});
 
 
@@ -436,7 +467,17 @@ describe('command-line parsing', () => {
 		it('can have a string description', () => {
 			assertCanSetDescription('123');
 		});
-
 	});
+
+	function expectCLIError(actual, expected){
+		expect(actual).to.not.be.undefined;
+		expect(actual).to.have.keys(Object.keys(expected));
+		expect(actual.stack).to.be.a('string').with.lengthOf.above(100);
+		expect(actual.isUsageError).to.equal(expected.isUsageError);
+		expect(actual.message).to.equal(expected.message);
+		expect(actual.type).to.eql(expected.type);
+		expect(actual.data).to.eql(expected.data);
+		expect(actual.item).to.eql(expected.item);
+	}
 });
 

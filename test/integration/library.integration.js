@@ -60,8 +60,16 @@ describe('library', () => {
 
 		it('requires the library name', () => {
 			const argv = commandProcessor.parse(root, ['library', 'add']);
-			const expectedError = commandProcessor.errors.requiredParameterError('name');
-			expect(argv.clierror).to.eql(expectedError);
+			const error = commandProcessor.errors.requiredParameterError('name');
+
+			expect(argv.clierror).to.not.be.undefined;
+			expect(argv.clierror).to.have.keys(Object.keys(error));
+			expect(argv.clierror.stack).to.be.a('string').with.lengthOf.above(100);
+			expect(argv.clierror.isUsageError).to.equal(error.isUsageError);
+			expect(argv.clierror.message).to.equal(error.message);
+			expect(argv.clierror.type).to.eql(error.type);
+			expect(argv.clierror.data).to.eql(error.data);
+			expect(argv.clierror.item).to.eql(error.item);
 		});
 
 		itHasAccessToken('can fetch a list of libraries with a filter', () => {
