@@ -12,9 +12,8 @@ module.exports = {
 		worker: true
 	},
 	rules: {
-		'no-var': 2,
-		'no-console': 0,
-		'valid-jsdoc': 0
+		'no-console': 'off',
+		'valid-jsdoc': 'off'
 	}
 };
 
