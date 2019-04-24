@@ -108,7 +108,7 @@
     "proxyquire": "^1.6.0",
     "rimraf-promise": "^2.0.0",
     "sinon": "^4.4.2",
-    "sinon-chai": "^2.14.0",
+    "sinon-chai": "^3.3.0",
     "tmp": "0.0.28"
   },
   "optionalDependencies": {
