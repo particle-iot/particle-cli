@@ -4,8 +4,7 @@
 require('dotenv').config();
 var GitHub = require('github-api');
 var request = require('request');
-var fs = require('fs');
-var rimraf = require('rimraf-promise');
+var fs = require('fs-extra');
 var _ = require('lodash');
 
 var githubUser = 'particle-iot';
@@ -70,7 +69,7 @@ function releaseById(releases, tag) {
 }
 
 function cleanUpdatesDirectory() {
-	return rimraf(updatesDirectory + '/*');
+	return fs.emptyDir(updatesDirectory);
 }
 
 function downloadFirmwareBinaries(assets) {

@@ -106,7 +106,6 @@
     "mocha": "^6.1.4",
     "mock-fs": "^4.9.0",
     "proxyquire": "^2.1.0",
-    "rimraf-promise": "^2.0.0",
     "sinon": "^7.3.2",
     "sinon-chai": "^3.3.0",
     "tmp": "0.0.28"
