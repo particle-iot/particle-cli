@@ -1,39 +1,39 @@
-'use strict';
+
 var defaultSpinnerString = 0;
 var defaultSpinnerDelay = 60;
 
-var Spinner = function(textToShow){
+function Spinner(textToShow){
 	this.text = textToShow || '';
 	this.setSpinnerString(defaultSpinnerString);
 	this.setSpinnerDelay(defaultSpinnerDelay);
 	this.running = false;
-};
+}
 
 Spinner.spinners = [
 	'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x'
 ];
 
-Spinner.setDefaultSpinnerString = function(value) {
+Spinner.setDefaultSpinnerString = (value) => {
 	defaultSpinnerString = value;
 };
 
-Spinner.setDefaultSpinnerDelay = function(value) {
+Spinner.setDefaultSpinnerDelay = (value) => {
 	defaultSpinnerDelay = value;
 };
 
-Spinner.prototype.start = function() {
+Spinner.prototype.start = function start() {
 	this.running = true;
 };
 
-Spinner.prototype.setSpinnerDelay = function(n) {
+Spinner.prototype.setSpinnerDelay = function setSpinnerDelay(n) {
 	this.delay = n;
 };
 
-Spinner.prototype.setSpinnerString = function(str) {
+Spinner.prototype.setSpinnerString = function setSpinnerString(str) {
 	this.chars = mapToSpinner(str, this.spinners).split('');
 };
 
-Spinner.prototype.stop = function() {
+Spinner.prototype.stop = function stop() {
 	this.running = false;
 };
 

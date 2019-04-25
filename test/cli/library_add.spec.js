@@ -1,11 +1,11 @@
 
-import {expect, sinon} from '../test-setup';
+import { expect, sinon } from '../test-setup';
 import fs from 'fs';
 import path from 'path';
 import mockfs from 'mock-fs';
 
-import {LibraryAddCommand} from '../../src/cmd';
-import {LibraryAddCommandSite} from '../../src/cmd';
+import { LibraryAddCommand } from '../../src/cmd';
+import { LibraryAddCommandSite } from '../../src/cmd';
 
 describe('LibraryAddCommand', () => {
 	beforeEach((done) => {
@@ -43,6 +43,6 @@ describe('LibraryAddCommand', () => {
 				const expectedDependency = /dependencies.neopixel=1\.0\.0/;
 				const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
 				expect(savedProperties).to.match(expectedDependency);
-			})
+			});
 	});
 });

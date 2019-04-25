@@ -68,31 +68,31 @@ function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null 
 			});
 		}
 	})
-	.then(usbDevice => {
-		if (!usbDevice) {
-			return getDevice({ id, api, auth, displayName }).then(device => {
-				if (device.id === id) {
-					throw new NotFoundError();
-				}
-				return openDeviceById(device.id).catch(e => handleDeviceOpenError(e));
-			})
-			.catch(e => {
-				if (e instanceof NotFoundError) {
-					throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);
-				}
-				throw e;
-			});
-		}
-		return usbDevice;
-	})
-	.then(usbDevice => {
-		if (!dfuMode && usbDevice.isInDfuMode) {
-			return usbDevice.close().then(() => {
-				throw new Error('The device should not be in DFU mode');
-			});
-		}
-		return usbDevice;
-	});
+		.then(usbDevice => {
+			if (!usbDevice) {
+				return getDevice({ id, api, auth, displayName }).then(device => {
+					if (device.id === id) {
+						throw new NotFoundError();
+					}
+					return openDeviceById(device.id).catch(e => handleDeviceOpenError(e));
+				})
+					.catch(e => {
+						if (e instanceof NotFoundError) {
+							throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);
+						}
+						throw e;
+					});
+			}
+			return usbDevice;
+		})
+		.then(usbDevice => {
+			if (!dfuMode && usbDevice.isInDfuMode) {
+				return usbDevice.close().then(() => {
+					throw new Error('The device should not be in DFU mode');
+				});
+			}
+			return usbDevice;
+		});
 }
 
 /**

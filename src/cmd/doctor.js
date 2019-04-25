@@ -360,7 +360,7 @@ class DoctorCommand {
 
 			return this.api.getAttributes(this.device.deviceId).then((attributes) => {
 				return attributes.error !== 'Permission Denied';
-			}, (error) => {
+			}, () => {
 				return false;
 			});
 		}).then((ownsDevice) => {

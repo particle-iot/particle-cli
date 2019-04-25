@@ -58,13 +58,13 @@ class Connect {
 		const self = this;
 		let interfaceName;
 		return pipeline([
-			this.currentInterface.bind(this),      		// find the current interface
-			this._checkHasInterface.bind(this),            // fail if no interfaces
-			(ifaceName) => {              // save the interface name
+			this.currentInterface.bind(this), // find the current interface
+			this._checkHasInterface.bind(this), // fail if no interfaces
+			(ifaceName) => { // save the interface name
 				interfaceName = ifaceName;
 				return ifaceName;
 			},
-			this.listProfiles.bind(this),                  // fetch the profiles for the interface
+			this.listProfiles.bind(this), // fetch the profiles for the interface
 			(profiles) => {
 				return self._createProfileIfNeeded(profile, interfaceName, profiles);
 			},
@@ -78,12 +78,12 @@ class Connect {
 		const self = this;
 		const args = ['connect', 'name='+profile, 'interface='+interfaceName];
 		return this._execWiFiCommand(args)
-		.then(() => {
-			return self.waitForConnected(profile, interfaceName, 20, 500);
-		})
-		.then(() => {
-			return { ssid: profile };
-		});
+			.then(() => {
+				return self.waitForConnected(profile, interfaceName, 20, 500);
+			})
+			.then(() => {
+				return { ssid: profile };
+			});
 	}
 
 	waitForConnected(profile, interfaceName, count, retryPeriod, dfd) {
@@ -146,9 +146,9 @@ class Connect {
 		return pipeline([() => {
 			return self._execWiFiCommand(args);
 		}])
-		.finally(() => {
-			fs.unlinkSync(filename);
-		});
+			.finally(() => {
+				fs.unlinkSync(filename);
+			});
 	}
 
 	/**

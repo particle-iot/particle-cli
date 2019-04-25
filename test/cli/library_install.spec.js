@@ -17,11 +17,10 @@
  ******************************************************************************
  */
 
-import {expect} from '../test-setup';
-const path = require('path');
-import {CLILibraryInstallCommandSite} from '../../src/cli/library_install';
+import { expect } from '../test-setup';
+import { CLILibraryInstallCommandSite } from '../../src/cli/library_install';
 import libraryCommands from '../../src/cli/library.js';
-import {LibraryInstallCommand} from '../../src/cmd';
+import { LibraryInstallCommand } from '../../src/cmd';
 import * as commandProcessor from '../../src/app/command-processor';
 
 describe('library install command', () => {
@@ -57,7 +56,7 @@ describe('library install command', () => {
 		it('recognizes the install command with library', () => {
 			const argv = lib.parse('library install neopixel'.split(' '));
 			expect(argv.clicommand).to.be.ok;
-			expect(argv.params).to.be.deep.equal({name:'neopixel'});
+			expect(argv.params).to.be.deep.equal({ name:'neopixel' });
 		});
 
 		it('recognizes the install vendored command', () => {
@@ -77,14 +76,14 @@ describe('library install command', () => {
 			const argv = lib.parse('library install neopixel --vendored'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
-			expect(argv.params).to.be.deep.equal({name:'neopixel'});
+			expect(argv.params).to.be.deep.equal({ name:'neopixel' });
 		});
 
 		it('recognizes the install vendored command with library name at end', () => {
 			const argv = lib.parse('library install --vendored neopixel'.split(' '));
 			expect(argv.clicommand).to.be.ok;
 			expect(argv).to.have.property('vendored').that.is.true;
-			expect(argv.params).to.be.deep.equal({name:'neopixel'});
+			expect(argv.params).to.be.deep.equal({ name:'neopixel' });
 		});
-	})
+	});
 });

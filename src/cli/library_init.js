@@ -8,7 +8,7 @@ const TerminalAdapter = require('yeoman-environment/lib/adapter.js');
  */
 class YeomanAdapter extends TerminalAdapter {
 
-	constructor(owner) {
+	constructor() {
 		super();
 		this.owner = this;
 	}
@@ -16,7 +16,7 @@ class YeomanAdapter extends TerminalAdapter {
 
 
 export class CLILibraryInitCommandSite extends LibraryInitCommandSite {
-	constructor(argv, cwd) {
+	constructor(argv) {
 		super();
 		this.argv = argv;
 		this.adapter = new YeomanAdapter(this);

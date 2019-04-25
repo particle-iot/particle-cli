@@ -16,23 +16,23 @@ function MockStream() {
 	Readable.call(this);
 }
 util.inherits(MockStream, Readable);
-MockStream.prototype._read = function() {};
+MockStream.prototype._read = () => {};
 
-describe('SerialBatchParser', function() {
-	it('waits for the timeout and returns the batch of output.', function() {
+describe('SerialBatchParser', () => {
+	it('waits for the timeout and returns the batch of output.', () => {
 		var timeout = 50;
 		var stream = new MockStream();
 		var setTimeout = sinon.stub();
 		var clearTimeout = sinon.stub();
 		var timer = 'timer';
-		var parser = new SerialBatchParser({timeout});
+		var parser = new SerialBatchParser({ timeout });
 		parser.setTimeoutFunctions(setTimeout, clearTimeout);
 		stream.pipe(parser);
 
-		return Promise.resolve().then(function() {
+		return Promise.resolve().then(() => {
 			setTimeout.returns(timer);
 			stream.push('abc');
-		}).then(function() {
+		}).then(() => {
 			expect(clearTimeout).to.have.been.calledWith(null);
 			expect(setTimeout).has.been.calledWith(sinon.match.func, timeout);
 			expect(parser.read()).to.eq(null);
@@ -41,7 +41,7 @@ describe('SerialBatchParser', function() {
 			clearTimeout.reset();
 
 			stream.push('def');
-		}).then(function () {
+		}).then(() => {
 			expect(clearTimeout).to.have.been.calledWith(timer);
 			expect(setTimeout).has.been.calledWith(sinon.match.func, timeout);
 			expect(parser.read()).to.eq(null);
@@ -52,7 +52,7 @@ describe('SerialBatchParser', function() {
 			clearTimeout.reset();
 
 			timeoutFunction();
-		}).then(function() {
+		}).then(() => {
 			expect(clearTimeout).to.have.not.been.called;
 			expect(setTimeout).has.not.been.called;
 			expect(parser.read().toString()).to.eq('abcdef');

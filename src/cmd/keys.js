@@ -20,7 +20,7 @@ const ensureError = require('../lib/utilities').ensureError;
  * @constructor
  */
 class KeysCommand {
-	constructor(args) {
+	constructor() {
 		this.dfu = dfu;
 	}
 
@@ -143,7 +143,7 @@ class KeysCommand {
 			//backup their existing key so they don't lock themselves out.
 			let alg = this._getPrivateKeyAlgorithm({ protocol });
 			let prefilename = path.join(
-					path.dirname(filename),
+				path.dirname(filename),
 				'backup_' + alg + '_' + path.basename(filename)
 			);
 			return this._saveKeyFromDevice({ filename: prefilename, force: true });
@@ -249,7 +249,7 @@ class KeysCommand {
 	}
 
 	keyDoctor(deviceId, { protocol } = {}) {
-		deviceId = deviceId.toLowerCase();  // make lowercase so that it's case insensitive
+		deviceId = deviceId.toLowerCase(); // make lowercase so that it's case insensitive
 
 		if (deviceId.length < 24) {
 			console.log('***************************************************************');

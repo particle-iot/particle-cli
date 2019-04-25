@@ -18,7 +18,7 @@
  ******************************************************************************
  */
 
-import {expect} from '../test-setup';
+import { expect } from '../test-setup';
 const path = require('path');
 const fs = require('fs');
 const mockfs = require('mock-fs');
@@ -52,20 +52,6 @@ function mirrorDir(dir, mock) {
 	return mock;
 }
 
-function getFiles (dir, files_){
-	files_ = files_ || [];
-	var files = fs.readdirSync(dir);
-	for (var i in files){
-		var name = path.join(dir, files[i]);
-		if (fs.statSync(name).isDirectory()){
-			getFiles(name, files_);
-		} else {
-			files_.push(name);
-		}
-	}
-	return files_;
-}
-
 
 describe('library init', () => {
 
@@ -88,9 +74,12 @@ describe('library init', () => {
 	xit('can run library init without prompts', function doit() {
 		this.timeout(10*1000);
 		const root = commandProcessor.createAppCategory();
-		const lib = libraryCommands({ commandProcessor, root });
+
+		libraryCommands({ commandProcessor, root });
+
 		const argv = commandProcessor.parse(root, ['library', 'create', '--name', 'foobar',
 			'--version=1.2.3', '--author=mrbig']);
+
 		expect(argv.clicommand).to.be.ok;
 
 		const result = argv.clicommand.exec(argv).then(() => {

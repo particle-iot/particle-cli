@@ -17,7 +17,7 @@
  ******************************************************************************
  */
 
-import {expect} from '../test-setup';
+import { expect } from '../test-setup';
 import * as commandProcessor from '../../src/app/command-processor';
 
 import CLI from '../../src/app/cli';

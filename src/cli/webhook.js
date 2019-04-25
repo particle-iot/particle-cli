@@ -36,7 +36,7 @@ export default ({ commandProcessor, root }) => {
 
 
 	commandProcessor.createCommand(webhook, 'list', 'Show your current Webhooks', {
-		handler: (args) => {
+		handler: () => {
 			const WebhookCommand = require('../cmd/webhook');
 			return new WebhookCommand().listHooks();
 		}

@@ -1,7 +1,6 @@
 const proxyquire = require('proxyquire');
-const { expect, sinon } = require('../test-setup');
+const { expect } = require('../test-setup');
 const sandbox = require('sinon').createSandbox();
-const _ = require('lodash');
 
 const stubs = {
 	api: {

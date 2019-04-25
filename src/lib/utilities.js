@@ -252,18 +252,18 @@ const utilities = {
 
 			try {
 				when(testFn()).then(
-						(value) => {
-							defer.resolve(value);
-						},
-						(msg) => {
-							lastError = msg;
+					(value) => {
+						defer.resolve(value);
+					},
+					(msg) => {
+						lastError = msg;
 
-							if (recoveryFn) {
-								when(recoveryFn()).then(tryTestFn);
-							} else {
-								tryTestFn();
-							}
-						});
+						if (recoveryFn) {
+							when(recoveryFn()).then(tryTestFn);
+						} else {
+							tryTestFn();
+						}
+					});
 			} catch (ex) {
 				lastError = ex;
 			}

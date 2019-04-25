@@ -29,58 +29,58 @@ module.exports = class UsbCommand {
 						return getDevice({ id: usbDevice.id, api: this._api, auth: this._auth, dontThrow: true });
 					}
 				})
-				.then(device => {
-					const type = platformsById[usbDevice.platformId];
-					return {
-						id: usbDevice.id,
-						type: usbDevice.isInDfuMode ? `${type}, DFU` : type,
-						name: (device && device.name) ? device.name : ''
-					};
-				})
-				.finally(() => usbDevice.close());
+					.then(device => {
+						const type = platformsById[usbDevice.platformId];
+						return {
+							id: usbDevice.id,
+							type: usbDevice.isInDfuMode ? `${type}, DFU` : type,
+							name: (device && device.name) ? device.name : ''
+						};
+					})
+					.finally(() => usbDevice.close());
 			}));
 		})
-		.then(devices => {
-			if (idsOnly) {
-				devices.forEach(device => console.log(device.id));
-			} else {
-				if (devices.length === 0) {
-					console.log('No devices found.');
+			.then(devices => {
+				if (idsOnly) {
+					devices.forEach(device => console.log(device.id));
 				} else {
-					devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
-					devices.forEach(device => {
-						console.log(formatDeviceInfo(device));
-					});
+					if (devices.length === 0) {
+						console.log('No devices found.');
+					} else {
+						devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
+						devices.forEach(device => {
+							console.log(formatDeviceInfo(device));
+						});
+					}
 				}
-			}
-		});
+			});
 	}
 
 	startListening(args) {
 		return this._forEachUsbDevice(args, usbDevice => {
 			return usbDevice.enterListeningMode();
 		})
-		.then(() => {
-			console.log('Done.');
-		});
+			.then(() => {
+				console.log('Done.');
+			});
 	}
 
 	stopListening(args) {
 		return this._forEachUsbDevice(args, usbDevice => {
 			return usbDevice.leaveListeningMode();
 		})
-		.then(() => {
-			console.log('Done.');
-		});
+			.then(() => {
+				console.log('Done.');
+			});
 	}
 
 	safeMode(args) {
 		return this._forEachUsbDevice(args, usbDevice => {
 			return usbDevice.enterSafeMode();
 		})
-		.then(() => {
-			console.log('Done.');
-		});
+			.then(() => {
+				console.log('Done.');
+			});
 	}
 
 	dfu(args) {
@@ -89,21 +89,21 @@ module.exports = class UsbCommand {
 				return usbDevice.enterDfuMode();
 			}
 		}, { dfuMode: true })
-		.then(() => {
-			console.log('Done.');
-		});
+			.then(() => {
+				console.log('Done.');
+			});
 	}
 
 	reset(args) {
 		return this._forEachUsbDevice(args, usbDevice => {
 			return usbDevice.reset();
 		})
-		.then(() => {
-			console.log('Done.');
-		});
+			.then(() => {
+				console.log('Done.');
+			});
 	}
 
-	configure(args) {
+	configure() {
 		if (!systemSupportsUdev()) {
 			console.log('The system does not require configuration.');
 			return when.resolve();
@@ -154,20 +154,20 @@ module.exports = class UsbCommand {
 			}
 			return p.then(() => openUsbDevices);
 		})
-		.then(usbDevices => {
+			.then(usbDevices => {
 			// Send the command to each device
-			const p = usbDevices.map(usbDevice => {
-				return when.resolve()
-					.then(() => func(usbDevice))
-					.catch(e => lastError = e)
-					.finally(() => usbDevice.close());
+				const p = usbDevices.map(usbDevice => {
+					return when.resolve()
+						.then(() => func(usbDevice))
+						.catch(e => lastError = e)
+						.finally(() => usbDevice.close());
+				});
+				return spin(when.all(p), 'Sending a command to the device...');
+			})
+			.then(() => {
+				if (lastError) {
+					throw lastError;
+				}
 			});
-			return spin(when.all(p), 'Sending a command to the device...');
-		})
-		.then(() => {
-			if (lastError) {
-				throw lastError;
-			}
-		});
 	}
 };

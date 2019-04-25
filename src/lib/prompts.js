@@ -121,7 +121,7 @@ const prompts = {
 		}
 		let dfd = when.defer();
 		let prompt = prompts.getPrompt(true);
-		prompt.question(message, (value) => {
+		prompt.question(message, () => {
 			prompts.closePrompt();
 			dfd.resolve(true);
 		});

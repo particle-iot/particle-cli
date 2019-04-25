@@ -61,7 +61,7 @@ class CloudCommand {
 					default: true
 				}]).then((ans) => {
 					if (ans.transfer) {
-						return api.claimDevice(deviceId, true).then((body) => {
+						return api.claimDevice(deviceId, true).then(() => {
 							console.log('Transfer requested. You will receive an email if your transfer is approved or denied.');
 						});
 					}

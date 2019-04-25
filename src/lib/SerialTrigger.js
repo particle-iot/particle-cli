@@ -38,7 +38,7 @@ class SerialTrigger extends EventEmitter {
 						if (substring.length > prompt.length) {
 							if (substring.startsWith(prompt)) {
 								matchPrompt = prompt;
-								return false;   // quit iteration
+								return false; // quit iteration
 							}
 						} else {
 							if (prompt.startsWith(substring)) {
