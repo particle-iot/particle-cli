@@ -60,7 +60,6 @@
     "form-data": "https://github.com/particle-iot/form-data/releases/download/v1.0.0-relativepath.2/form-data-1.0.0-relativepath.2.tgz",
     "glob": "^5.0.15",
     "handlebars": "^4.0.5",
-    "hogan.js": "^2.0.0",
     "inquirer": "^3.0.6",
     "latest-version": "^2.0.0",
     "lodash": "^3.10.1",
