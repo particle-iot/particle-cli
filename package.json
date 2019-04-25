@@ -95,7 +95,7 @@
     "babel-register": "^6.5.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "coveralls": "^2.11.4",
+    "coveralls": "^3.0.3",
     "doctoc": "^1.4.0",
     "dotenv": "^7.0.0",
     "eslint": "^5.16.0",
