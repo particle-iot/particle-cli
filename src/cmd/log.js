@@ -123,6 +123,7 @@ class PrettyFormatter extends EventEmitter {
 		let esc = false;
 		let str = false;
 		let i = 0;
+		/* eslint-disable max-depth */
 		for (; i < srcStr.length; ++i) {
 			const c = srcStr.charAt(i);
 			if (!str) {
@@ -154,6 +155,7 @@ class PrettyFormatter extends EventEmitter {
 				str = false; // End of the string
 			}
 		}
+		/* eslint-enable max-depth */
 		if (i === srcStr.length) {
 			if (start === null) {
 				return { valid: false }; // The string doesn't contain a '{' character
@@ -228,133 +230,133 @@ module.exports = class LogCommand {
 			// Open the device
 			return openUsbDeviceById({ id: args.params.device, api: this._api, auth: this._auth });
 		})
-		.then(dev => {
+			.then(dev => {
 			// Enable logging
-			usbDevice = dev;
-			deviceId = usbDevice.id;
-			handlerId = handlerIdForStreamType(streamType);
-			const p = usbDevice.addLogHandler({
-				id: handlerId,
-				format: args.raw ? 'default' : 'json',
-				stream: streamType.name,
-				level: defaultLevel,
-				filters: filters,
-				baudRate: baudRate
+				usbDevice = dev;
+				deviceId = usbDevice.id;
+				handlerId = handlerIdForStreamType(streamType);
+				const p = usbDevice.addLogHandler({
+					id: handlerId,
+					format: args.raw ? 'default' : 'json',
+					stream: streamType.name,
+					level: defaultLevel,
+					filters: filters,
+					baudRate: baudRate
+				})
+					.then(() => {
+						handlerEnabled = true;
+						return usbDevice.close();
+					});
+				return spin(p, 'Configuring the device...');
 			})
 			.then(() => {
-				handlerEnabled = true;
-				return usbDevice.close();
-			});
-			return spin(p, 'Configuring the device...');
-		})
-		.then(() => {
 			// Get the serial port assigned to the device
-			if (args.params.serial_port) {
-				return args.params.serial_port;
-			}
-			return this._findSerialPort(streamType, deviceId);
-		})
-		.then(portName => {
-			// Open serial port
-			return when.promise((resolve, reject) => {
-				console.error(`Opening serial port: ${portName}`);
-				const port = new SerialPort(portName, { baudRate }, err => {
-					if (err) {
-						return reject(err);
-					}
-					resolve(port);
-				});
-			});
-		})
-		.then(port => {
-			serialPort = port;
-			// TODO: Try to reopen the serial port and re-register the log handler on USB/serial port errors
-			const p = when.promise((resolve, reject) => {
-				serialPort.on('error', err => reject(err));
-				serialPort.on('close', err => err ? reject(err) : resolve());
-			});
-			// Close the serial port on Ctrl-C
-			let closing = false;
-			const signalHandler = () => {
-				if (!closing) {
-					closing = true;
-					console.error('\nClosing the device...');
-					serialPort.close();
-				} else {
-					// Terminate the process on second Ctrl-C
-					console.error('\nAborted.');
-					process.exit(1);
+				if (args.params.serial_port) {
+					return args.params.serial_port;
 				}
-			};
-			process.on('SIGINT', signalHandler);
-			process.on('SIGTERM', signalHandler);
-			// Start reading the logging output
-			console.error('Press Ctrl-C to exit.');
-			let log = serialPort;
-			if (!args.raw) {
-				log = new PrettyFormatter();
-				serialPort.on('data', d => log.update(d));
-			}
-			log.on('data', d => process.stdout.write(d));
-			return p;
-		})
-		.finally(() => {
-			if (serialPort) {
-				// Close the serial port
+				return this._findSerialPort(streamType, deviceId);
+			})
+			.then(portName => {
+			// Open serial port
 				return when.promise((resolve, reject) => {
-					serialPort.close(() => resolve()); // Ignore errors
+					console.error(`Opening serial port: ${portName}`);
+					const port = new SerialPort(portName, { baudRate }, err => {
+						if (err) {
+							return reject(err);
+						}
+						resolve(port);
+					});
 				});
-			}
-		})
-		.finally(() => {
-			if (usbDevice && handlerEnabled) {
+			})
+			.then(port => {
+				serialPort = port;
+				// TODO: Try to reopen the serial port and re-register the log handler on USB/serial port errors
+				const p = when.promise((resolve, reject) => {
+					serialPort.on('error', err => reject(err));
+					serialPort.on('close', err => err ? reject(err) : resolve());
+				});
+				// Close the serial port on Ctrl-C
+				let closing = false;
+				const signalHandler = () => {
+					if (!closing) {
+						closing = true;
+						console.error('\nClosing the device...');
+						serialPort.close();
+					} else {
+					// Terminate the process on second Ctrl-C
+						console.error('\nAborted.');
+						process.exit(1);
+					}
+				};
+				process.on('SIGINT', signalHandler);
+				process.on('SIGTERM', signalHandler);
+				// Start reading the logging output
+				console.error('Press Ctrl-C to exit.');
+				let log = serialPort;
+				if (!args.raw) {
+					log = new PrettyFormatter();
+					serialPort.on('data', d => log.update(d));
+				}
+				log.on('data', d => process.stdout.write(d));
+				return p;
+			})
+			.finally(() => {
+				if (serialPort) {
+				// Close the serial port
+					return when.promise((resolve) => {
+						serialPort.close(() => resolve()); // Ignore errors
+					});
+				}
+			})
+			.finally(() => {
+				if (usbDevice && handlerEnabled) {
 				// Unregister the log handler
-				return openUsbDevice(usbDevice)
-					.then(() => usbDevice.removeLogHandler({ id: handlerId }))
-					.catch(e => {}); // Ignore errors
-			}
-		})
-		.finally(() => {
-			if (usbDevice) {
+					return openUsbDevice(usbDevice)
+						.then(() => usbDevice.removeLogHandler({ id: handlerId }))
+						.catch(() => {}); // Ignore errors
+				}
+			})
+			.finally(() => {
+				if (usbDevice) {
 				// Close the USB device
-				return usbDevice.close()
-					.catch(e => {}); // Ignore errors
-			}
-		})
-		.then(() => {
-			console.error('Done.');
-		});
+					return usbDevice.close()
+						.catch(() => {}); // Ignore errors
+				}
+			})
+			.then(() => {
+				console.error('Done.');
+			});
 	}
 
 	_findSerialPort(streamType, deviceId) {
 		return when.resolve().then(() => {
 			return SerialPort.list();
 		})
-		.then(ports => {
-			if (streamType.isUsbSerial) {
+			.then(ports => {
+				if (streamType.isUsbSerial) {
 				// Get all USB serial ports with a matching serial number
 				// TODO: Check the interface index to identify ports assigned to Serial and USBSerial1
-				ports = ports.filter(p => p.serialNumber && p.serialNumber.toLowerCase() === deviceId);
-			} else {
+					ports = ports.filter(p => p.serialNumber && p.serialNumber.toLowerCase() === deviceId);
+				} else {
 				// Filter out all Particle and non-USB serial ports
 				// FIXME: This will likely filter out built-in UARTs on Raspberry Pi
-				ports = ports.filter(p => p.vendorId && p.productId && !isParticleSerialPort(p));
-			}
-			if (ports.length === 0) {
-				throw new Error('Serial port is not found');
-			}
-			if (ports.length === 1) {
-				return ports[0].comName;
-			}
-			// Let the user identify the serial port
-			return prompt({
-				name: 'port',
-				type: 'list',
-				message: `Please specify the serial port assigned to ${streamType.name}`,
-				choices: ports.map(p => p.comName)
-			})
-			.then(r => r.port);
-		});
+					ports = ports.filter(p => p.vendorId && p.productId && !isParticleSerialPort(p));
+				}
+				if (ports.length === 0) {
+					throw new Error('Serial port is not found');
+				}
+				if (ports.length === 1) {
+					return ports[0].comName;
+				}
+				// Let the user identify the serial port
+				return prompt({
+					name: 'port',
+					type: 'list',
+					message: `Please specify the serial port assigned to ${streamType.name}`,
+					choices: ports.map(p => p.comName)
+				})
+					.then(r => r.port);
+			});
 	}
 
 	_parseFilters(args) {
