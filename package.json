@@ -54,7 +54,7 @@
   "dependencies": {
     "binary-version-reader": "^0.6.4",
     "chalk": "^2.4.2",
-    "cli-spinner": "^0.2.1",
+    "cli-spinner": "^0.2.10",
     "cli-table": "^0.3.1",
     "form-data": "https://github.com/particle-iot/form-data/releases/download/v1.0.0-relativepath.2/form-data-1.0.0-relativepath.2.tgz",
     "glob": "^7.1.3",
