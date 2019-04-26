@@ -377,7 +377,7 @@ class SerialCommand {
 				stats = fs.statSync(binary);
 			} catch (ex) {
 				// file does not exist
-				const specsByProduct = _.indexBy(specs, 'productName');
+				const specsByProduct = _.keyBy(specs, 'productName');
 				const productSpecs = specsByProduct[device.type];
 				binary = productSpecs && productSpecs.knownApps[binary];
 				if (binary === undefined) {
@@ -520,9 +520,9 @@ class SerialCommand {
 		const rescanLabel = '[rescan networks]';
 
 		networks = networks || [];
-		const networkMap = _.indexBy(networks, 'ssid');
+		const networkMap = _.keyBy(networks, 'ssid');
 
-		let ssids = _.pluck(networks, 'ssid');
+		let ssids = _.map(networks, 'ssid');
 		ssids = this._removePhotonNetworks(ssids);
 
 		return prompt([

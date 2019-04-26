@@ -59,7 +59,7 @@ const dfu = {
 				.filter((dfuId) => {
 					return dfuId && specs[dfuId];
 				});
-		return _.unique(dfuIds);
+		return _.uniq(dfuIds);
 	},
 
 	dfuId: undefined,
