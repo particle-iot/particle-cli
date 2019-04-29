@@ -127,6 +127,7 @@
     "url": "https://github.com/particle-iot/particle-cli"
   },
   "scripts": {
+    "start": "PARTICLE_CLI_DEVELOPMENT=1 node --require @babel/register bin/particle.js",
     "all": "npm run lint && npm run test && npm run accept",
     "accept": "npm run compile && accept/run",
     "babel-watch": "babel src -d dist --watch --source-maps",
@@ -137,9 +138,9 @@
     "lint": "eslint . --ext .js --ignore-path .gitignore -f unix",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
-    "test:unit": "mocha $MOCHA_OPTIONS test/ test/app test/cli test/cmd --require babel-core/register",
+    "test:unit": "mocha $MOCHA_OPTIONS test/ test/app test/cli test/cmd --require @babel/register",
     "test:unit:inspect": "npm test:unit -- --inspect-brk",
-    "test:integration": "mocha $MOCHA_OPTIONS test/integration --require babel-core/register",
+    "test:integration": "mocha $MOCHA_OPTIONS test/integration --require @babel/register",
     "test:integration:inspect": "npm test:integration -- --inspect-brk",
     "compile": "babel src -d dist",
     "prepublish": "npm run compile",
