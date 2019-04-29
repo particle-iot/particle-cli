@@ -1,4 +1,4 @@
-const TerminalAdapter = require('yeoman-environment/lib/adapter.js');
+const TerminalAdapter = require('yeoman-environment/lib/adapter');
 const { LibraryInitCommandSite, LibraryInitCommand } = require('../cmd');
 
 /**

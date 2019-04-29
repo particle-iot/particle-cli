@@ -30,7 +30,7 @@ const path = require('path');
 const VError = require('verror');
 const chalk = require('chalk');
 const Parser = require('binary-version-reader').HalModuleParser;
-const utilities = require('../lib/utilities.js');
+const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
 
 class BinaryCommand {

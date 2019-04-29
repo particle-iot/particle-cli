@@ -19,7 +19,7 @@
 
 const { expect } = require('../test-setup');
 const { LibraryInstallCommand } = require('../../src/cmd');
-const libraryCommands = require('../../src/cli/library.js');
+const libraryCommands = require('../../src/cli/library');
 const commandProcessor = require('../../src/app/command-processor');
 const { CLILibraryInstallCommandSite } = require('../../src/cli/library_install');
 

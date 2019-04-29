@@ -2,8 +2,8 @@ const VError = require('verror');
 const when = require('when');
 const _ = require('lodash');
 
-const settings = require('../../settings.js');
-const ApiClient = require('../lib/ApiClient.js');
+const settings = require('../../settings');
+const ApiClient = require('../lib/ApiClient');
 const moment = require('moment');
 const prompt = require('inquirer').prompt;
 

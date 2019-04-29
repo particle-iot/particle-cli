@@ -1,7 +1,7 @@
-const settings = require('../../settings.js');
+const settings = require('../../settings');
 const path = require('path');
 
-const utilities = require('../lib/utilities.js');
+const utilities = require('../lib/utilities');
 
 class ConfigCommand {
 	constructor(options) {

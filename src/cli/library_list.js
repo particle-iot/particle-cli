@@ -3,7 +3,7 @@ const { spin } = require('../app/ui');
 const prompt = require('../lib/prompts');
 const { convertApiError } = require('../cmd/api');
 const { buildAPIClient } = require('./apiclient');
-const { formatLibrary } = require('./library_ui.js');
+const { formatLibrary } = require('./library_ui');
 const { LibraryListCommand, LibraryListCommandSite } = require('../cmd');
 
 

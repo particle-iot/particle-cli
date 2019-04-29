@@ -11,7 +11,7 @@ chai.use(sinonChai);
 var expect = chai.expect;
 
 
-var SerialCommand = proxyquire('../../src/cmd/serial.js', {
+var SerialCommand = proxyquire('../../src/cmd/serial', {
 
 });
 

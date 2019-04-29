@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const log = require('../lib/log');
 const { spin } = require('../app/ui');
 const { buildAPIClient } = require('./apiclient');
-const { formatLibrary } = require('./library_ui.js');
+const { formatLibrary } = require('./library_ui');
 const { LibrarySearchCommandSite, LibrarySearchCommand } = require('../cmd');
 
 

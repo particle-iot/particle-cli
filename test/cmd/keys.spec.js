@@ -20,9 +20,9 @@ function ApiClient() {
 }
 
 var KeysCommand = proxyquire('../../src/cmd/keys', {
-	'../../settings.js': settings,
-	'../lib/utilities.js': utilities,
-	'../lib/ApiClient.js': ApiClient
+	'../../settings': settings,
+	'../lib/utilities': utilities,
+	'../lib/ApiClient': ApiClient
 });
 
 function utilities() { }

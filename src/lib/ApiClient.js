@@ -45,7 +45,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 const when = require('when');
 const VError = require('verror');
 const pipeline = require('when/pipeline');
-const utilities = require('./utilities.js');
+const utilities = require('./utilities');
 const settings = require('../../settings');
 
 const request = require('request');
