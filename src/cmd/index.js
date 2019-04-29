@@ -1,2 +1,4 @@
-export * from 'particle-commands';
+const ParticleCmds = require('particle-commands');
+
+module.exports = ParticleCmds;
 

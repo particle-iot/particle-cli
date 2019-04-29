@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'update-cli', 'Update the Particle CLI to the latest version', {
 		handler: () => {
 			const UpdateCliCommand = require('../cmd/update-cli');
@@ -6,3 +6,4 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 };
+

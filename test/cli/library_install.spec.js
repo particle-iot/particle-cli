@@ -17,14 +17,14 @@
  ******************************************************************************
  */
 
-import { expect } from '../test-setup';
-import { CLILibraryInstallCommandSite } from '../../src/cli/library_install';
-import libraryCommands from '../../src/cli/library.js';
-import { LibraryInstallCommand } from '../../src/cmd';
-import * as commandProcessor from '../../src/app/command-processor';
+const { expect } = require('../test-setup');
+const { LibraryInstallCommand } = require('../../src/cmd');
+const libraryCommands = require('../../src/cli/library.js');
+const commandProcessor = require('../../src/app/command-processor');
+const { CLILibraryInstallCommandSite } = require('../../src/cli/library_install');
+
 
 describe('library install command', () => {
-
 	describe('site', () => {
 		const sut = new CLILibraryInstallCommandSite({});
 		it('can instantiate the site', () => {
@@ -38,7 +38,6 @@ describe('library install command', () => {
 		it('can instantiate the command', () => {
 			return expect(sut).to.be.ok;
 		});
-
 	});
 
 	describe('command line', () => {
@@ -87,3 +86,4 @@ describe('library install command', () => {
 		});
 	});
 });
+

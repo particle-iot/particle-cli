@@ -1,6 +1,4 @@
-
 module.exports = {
-
 	formatItems(items, formatter, lines) {
 		items.forEach((item, index, array) => {
 			let output = formatter(item, index, array);
@@ -20,5 +18,5 @@ module.exports = {
 	print(lines) {
 		console.log(lines.join('\n'));
 	}
-
 };
+

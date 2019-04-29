@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'publish', 'Publish an event to the cloud', {
 		params: '<event> [data]',
 		options: {
@@ -21,3 +21,4 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 };
+

@@ -1,5 +1,3 @@
-
-
 function accessTokenFromSettings() {
 	const settings = require('../../settings');
 	settings.whichProfile();
@@ -8,13 +6,17 @@ function accessTokenFromSettings() {
 }
 
 let token = undefined;
-export function fetchAccessToken() {
+function fetchAccessToken(){
 	if (token===undefined) {
 		token = process.env.ACCESS_TOKEN || accessTokenFromSettings() || null;
 	}
 	return token;
 }
 
-export function itHasAccessToken() {
+function itHasAccessToken(){
 	return fetchAccessToken() ? it : xit;
 }
+
+
+module.exports.fetchAccessToken = fetchAccessToken;
+module.exports.itHasAccessToken = itHasAccessToken;

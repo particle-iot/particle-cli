@@ -1,4 +1,4 @@
-import VError from 'verror';
+const VError = require('verror');
 
 const when = require('when');
 const pipeline = require('when/pipeline');

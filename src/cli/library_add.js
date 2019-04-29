@@ -1,8 +1,9 @@
-import { LibraryAddCommand, LibraryAddCommandSite } from '../cmd';
-import chalk from 'chalk';
-import log from '../lib/log';
-import { spin } from '../app/ui';
-import { buildAPIClient } from './apiclient';
+const chalk = require('chalk');
+const log = require('../lib/log');
+const { spin } = require('../app/ui');
+const { buildAPIClient } = require('./apiclient');
+const { LibraryAddCommand, LibraryAddCommandSite } = require('../cmd');
+
 
 class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	constructor(argv, apiClient) {
@@ -41,8 +42,9 @@ class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 }
 
 
-export function command(apiJS, argv) {
+module.exports.command = (apiJS, argv) => {
 	const site = new CLILibraryAddCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryAddCommand();
 	return site.run(cmd);
-}
+};
+

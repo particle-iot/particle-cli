@@ -1,9 +1,9 @@
-import { ProjectInitCommand, ProjectInitCommandSite, Projects } from '../cmd';
-import { validateField } from 'particle-library-manager';
-import path from 'path';
-import log from '../lib/log';
-import chalk from 'chalk';
-import prompt from '../../dist/lib/prompts';
+const path = require('path');
+const chalk = require('chalk');
+const log = require('../lib/log');
+const prompt = require('../lib/prompts');
+const { validateField } = require('particle-library-manager');
+const { ProjectInitCommand, ProjectInitCommandSite, Projects } = require('../cmd');
 
 
 // todo - this is pulled from validating_editor in particle-dev-libraries. Please refactor/DRY.
@@ -154,7 +154,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	}
 }
 
-export function command(argv) {
+module.exports.command = (argv) => {
 	const cmd = new ProjectInitCommand();
 	const site = new CLIProjectInitCommandSite({
 		directory: argv.params.dir,
@@ -166,4 +166,5 @@ export function command(argv) {
 				return site.run(cmd);
 			}
 		});
-}
+};
+

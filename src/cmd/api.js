@@ -1,12 +1,12 @@
-import fs from 'fs';
-import when from 'when';
-import Particle from 'particle-api-js';
-import log from '../lib/log';
-import _ from 'lodash';
-import url from 'url';
-import chalk from 'chalk';
+const fs = require('fs');
+const url = require('url');
+const _ = require('lodash');
+const when = require('when');
+const chalk = require('chalk');
+const Particle = require('particle-api-js');
+const ParticleCmds = require('particle-commands');
+const log = require('../lib/log');
 
-export { convertApiError } from 'particle-commands';
 
 class UnauthorizedError extends Error {
 	constructor(message) {
@@ -160,7 +160,8 @@ class ParticleApi {
 	}
 }
 
-export default ParticleApi;
-export {
-	UnauthorizedError
-};
+
+module.exports = ParticleApi;
+module.exports.convertApiError = ParticleCmds.convertApiError;
+module.exports.UnauthorizedError = UnauthorizedError;
+

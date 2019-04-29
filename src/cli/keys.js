@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key");
 
 	const protocolOption = {
@@ -98,3 +98,4 @@ export default ({ commandProcessor, root }) => {
 
 	return keys;
 };
+

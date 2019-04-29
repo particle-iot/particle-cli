@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'setup', 'Do the initial setup & claiming of your device', {
 		options: {
 			'wifi': {
@@ -24,3 +24,4 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 };
+

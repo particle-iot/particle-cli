@@ -1,6 +1,7 @@
 const unindent = require('../lib/unindent');
 
-export default ({ commandProcessor, root }) => {
+
+module.exports = ({ commandProcessor, root }) => {
 	const serial = commandProcessor.createCategory(root, 'serial', 'Simple serial interface to your devices');
 
 	const portOption = {
@@ -105,3 +106,4 @@ export default ({ commandProcessor, root }) => {
 
 	return serial;
 };
+

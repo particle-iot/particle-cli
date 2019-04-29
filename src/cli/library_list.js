@@ -1,13 +1,13 @@
-import { LibraryListCommand, LibraryListCommandSite } from '../cmd';
-import { convertApiError } from '../cmd/api';
-import { spin } from '../app/ui';
-import { buildAPIClient } from './apiclient';
-import chalk from 'chalk';
-import { formatLibrary } from './library_ui.js';
-import prompt from '../../dist/lib/prompts';
+const chalk = require('chalk');
+const { spin } = require('../app/ui');
+const prompt = require('../lib/prompts');
+const { convertApiError } = require('../cmd/api');
+const { buildAPIClient } = require('./apiclient');
+const { formatLibrary } = require('./library_ui.js');
+const { LibraryListCommand, LibraryListCommandSite } = require('../cmd');
 
-export class CLILibraryListCommandSite extends LibraryListCommandSite {
 
+class CLILibraryListCommandSite extends LibraryListCommandSite {
 	constructor(argv, apiClient) {
 		super();
 		this._apiClient = apiClient;
@@ -147,7 +147,9 @@ export class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+
+module.exports.CLILibraryListCommandSite = CLILibraryListCommandSite;
+module.exports.command = (apiJS, argv) => {
 	const site = new CLILibraryListCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryListCommand();
 
@@ -176,4 +178,5 @@ export function command(apiJS, argv) {
 	}
 
 	return runPage();
-}
+};
+

@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'flash', 'Send firmware to your device', {
 		params: '[device|binary] [files...]',
 		options: {

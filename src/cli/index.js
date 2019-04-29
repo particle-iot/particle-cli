@@ -1,30 +1,29 @@
-import help from './help';
-import alias from './alias';
-
-import binary from './binary';
-import cloud from './cloud';
-import config from './config';
-import doctor from './doctor';
-import flash from './flash';
-import func from './function';
-import keys from './keys';
-import library from './library';
-import preprocess from './preprocess';
-import project from './project';
-import publish from './publish';
-import serial from './serial';
-import setup from './setup';
-import subscribe from './subscribe';
-import token from './token';
-import udp from './udp';
-import updateCli from './update-cli';
-import update from './update';
-import variable from './variable';
-import version from './version';
-import webhook from './webhook';
-import whoami from './whoami';
-import mesh from './mesh';
-import usb from './usb';
+const help = require('./help');
+const alias = require('./alias');
+const binary = require('./binary');
+const cloud = require('./cloud');
+const config = require('./config');
+const doctor = require('./doctor');
+const flash = require('./flash');
+const func = require('./function');
+const keys = require('./keys');
+const library = require('./library');
+const preprocess = require('./preprocess');
+const project = require('./project');
+const publish = require('./publish');
+const serial = require('./serial');
+const setup = require('./setup');
+const subscribe = require('./subscribe');
+const token = require('./token');
+const udp = require('./udp');
+const updateCli = require('./update-cli');
+const update = require('./update');
+const variable = require('./variable');
+const version = require('./version');
+const webhook = require('./webhook');
+const whoami = require('./whoami');
+const mesh = require('./mesh');
+const usb = require('./usb');
 
 /**
  * The default function export from this module registers all the available commands.
@@ -39,7 +38,7 @@ import usb from './usb';
  *
  * @param {object} context  The context for configuring the command.
  */
-export default function registerAllCommands(context) {
+module.exports = function registerAllCommands(context) {
 	// help must come first
 	help(context);
 
@@ -68,4 +67,4 @@ export default function registerAllCommands(context) {
 	mesh(context);
 	usb(context);
 	alias(context);
-}
+};

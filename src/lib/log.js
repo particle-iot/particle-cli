@@ -1,5 +1,5 @@
-import stream from 'stream';
-import chalk from 'chalk';
+const chalk = require('chalk');
+const stream = require('stream');
 
 class FilteredLogStream extends stream.Transform {
 	constructor() {
@@ -15,7 +15,7 @@ class FilteredLogStream extends stream.Transform {
 	}
 }
 
-export default {
+module.exports = {
 	silly() {
 		if (global.verboseLevel < 4) {
 			return;
@@ -109,3 +109,4 @@ export default {
 		return errStream;
 	}
 };
+

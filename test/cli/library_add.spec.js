@@ -1,11 +1,9 @@
+const fs = require('fs');
+const path = require('path');
+const mockfs = require('mock-fs');
+const { expect, sinon } = require('../test-setup');
+const { LibraryAddCommand, LibraryAddCommandSite } = require('../../src/cmd');
 
-import { expect, sinon } from '../test-setup';
-import fs from 'fs';
-import path from 'path';
-import mockfs from 'mock-fs';
-
-import { LibraryAddCommand } from '../../src/cmd';
-import { LibraryAddCommandSite } from '../../src/cmd';
 
 describe('LibraryAddCommand', () => {
 	beforeEach((done) => {
@@ -46,3 +44,4 @@ describe('LibraryAddCommand', () => {
 			});
 	});
 });
+

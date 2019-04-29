@@ -18,18 +18,18 @@
  ******************************************************************************
  */
 
-import { expect, sinon } from '../test-setup';
-import { LibraryAddCommand, LibraryAddCommandSite } from '../../src/cmd';
-import settings from '../../settings';
-import { itHasAccessToken, fetchAccessToken } from './access_token';
 const path = require('path');
-import createLibraryCommand from '../../src/cli/library';
-import * as commandProcessor from '../../src/app/command-processor';
-import { resourcesDir } from 'particle-library-manager';
-import ParticleApi from '../../src/cmd/api';
+const settings = require('../../settings');
+const { expect, sinon } = require('../test-setup');
+const { itHasAccessToken, fetchAccessToken } = require('./access_token');
+const { LibraryAddCommand, LibraryAddCommandSite } = require('../../src/cmd');
+const commandProcessor = require('../../src/app/command-processor');
+const createLibraryCommand = require('../../src/cli/library');
+const { resourcesDir } = require('particle-library-manager');
+const ParticleApi = require('../../src/cmd/api');
+
 
 describe('library', () => {
-
 	before(()=> {
 		settings.whichProfile();
 		settings.loadOverrides();
@@ -102,8 +102,6 @@ describe('library', () => {
 			// TODO!
 		});
 	});
-
-
 	// todo - exit codes for the command? or command response.
-
 });
+

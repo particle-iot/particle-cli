@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const variable = commandProcessor.createCategory(root, 'variable', 'Retrieve and monitor variables on your device');
 
 	const timeOption = {
@@ -48,3 +48,4 @@ export default ({ commandProcessor, root }) => {
 
 	return variable;
 };
+

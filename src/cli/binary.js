@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const binary = commandProcessor.createCategory(root, 'binary', 'Inspect binaries');
 
 	commandProcessor.createCommand(binary, 'inspect', 'Describe binary contents', {

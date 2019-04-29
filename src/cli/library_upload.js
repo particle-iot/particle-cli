@@ -1,12 +1,12 @@
-import { LibraryContributeCommand, LibraryContributeCommandSite } from '../cmd';
-import { convertApiError } from '../cmd/api';
-import chalk from 'chalk';
-import log from '../lib/log';
-import { spin } from '../app/ui';
-import { buildAPIClient } from './apiclient';
+const chalk = require('chalk');
+const log = require('../lib/log');
+const { spin } = require('../app/ui');
+const { convertApiError } = require('../cmd/api');
+const { buildAPIClient } = require('./apiclient');
+const { LibraryContributeCommand, LibraryContributeCommandSite } = require('../cmd');
 
-export class CLILibraryContributeCommandSite extends LibraryContributeCommandSite {
 
+class CLILibraryContributeCommandSite extends LibraryContributeCommandSite {
 	constructor(argv, dir, apiClient) {
 		super();
 		this.argv = argv;
@@ -44,8 +44,11 @@ export class CLILibraryContributeCommandSite extends LibraryContributeCommandSit
 	}
 }
 
-export function command(apiJS, argv) {
+
+module.exports.CLILibraryContributeCommandSite = CLILibraryContributeCommandSite;
+module.exports.command = (apiJS, argv) => {
 	const site = new CLILibraryContributeCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryContributeCommand();
 	return site.run(cmd);
-}
+};
+

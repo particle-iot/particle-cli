@@ -1,4 +1,4 @@
-const ParticleApi = require('./api').default;
+const ParticleApi = require('./api');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { openUsbDeviceById } = require('./usb-util');
 const { platformsById } = require('./constants');

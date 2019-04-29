@@ -1,20 +1,15 @@
 // Set up the Mocha test framework with the Chai assertion library and
 // the testdouble library for mocks and stubs (previously Sinon mock library)
-
-if (!global._babelPolyfill) {
-	require('babel-polyfill');
-}
-import chai from 'chai';
-
-import sinon from 'sinon';
-import sinonChai from 'sinon-chai';
-import chaiAsPromised from 'chai-as-promised';
+const chai = require('chai');
+const sinon = require('sinon');
+const sinonChai = require('sinon-chai');
+const chaiAsPromised = require('chai-as-promised');
 
 chai.use(sinonChai);
 chai.use(chaiAsPromised);
 const expect = chai.expect;
 
-export {
+module.exports = {
 	chai,
 	sinon,
 	expect

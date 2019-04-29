@@ -1,6 +1,6 @@
-import { expect, sinon } from './test-setup';
+const { expect, sinon } = require('./test-setup');
+const minimumNode = require('../minimumNode');
 
-import minimumNode from '../minimumNode';
 
 describe('minimumNode', () => {
 	let exit, console;
@@ -42,3 +42,4 @@ describe('minimumNode', () => {
 		expect(console.error).to.have.been.called;
 	});
 });
+

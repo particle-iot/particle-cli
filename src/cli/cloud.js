@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const cloud = commandProcessor.createCategory(root, 'cloud', 'Access Particle cloud functionality');
 
 	const compileOptions = {
@@ -140,3 +140,4 @@ export default ({ commandProcessor, root }) => {
 
 	return cloud;
 };
+

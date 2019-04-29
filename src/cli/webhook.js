@@ -1,6 +1,6 @@
 const unindent = require('../lib/unindent');
 
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const webhook = commandProcessor.createCategory(root, 'webhook', 'Manage webhooks that react to device event streams');
 
 	commandProcessor.createCommand(webhook, 'create', 'Creates a postback to the given url when your event is sent', {
@@ -33,7 +33,6 @@ export default ({ commandProcessor, root }) => {
 			}
 		`)
 	});
-
 
 	commandProcessor.createCommand(webhook, 'list', 'Show your current Webhooks', {
 		handler: () => {

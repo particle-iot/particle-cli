@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const func = commandProcessor.createCategory(root, 'function', 'Call functions on your device');
 
 	commandProcessor.createCommand(func, 'list', 'Show functions provided by your device(s)', {

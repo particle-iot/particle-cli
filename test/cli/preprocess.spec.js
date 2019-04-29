@@ -1,6 +1,7 @@
-import { expect } from '../test-setup';
-import * as commandProcessor from '../../src/app/command-processor';
-import preprocess from '../../src/cli/preprocess';
+const { expect } = require('../test-setup');
+const commandProcessor = require('../../src/app/command-processor');
+const preprocess = require('../../src/cli/preprocess');
+
 
 describe('preprocess command-line interface', () => {
 	let root;
@@ -49,3 +50,4 @@ describe('preprocess command-line interface', () => {
 		});
 	});
 });
+

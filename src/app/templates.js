@@ -1,6 +1,7 @@
-import Handlebars from 'handlebars';
-import chalklib from 'chalk';
-import momentjs from 'moment';
+const chalklib = require('chalk');
+const momentjs = require('moment');
+const Handlebars = require('handlebars');
+
 
 Handlebars.registerHelper({
 	lookup(hash, key) {
@@ -22,3 +23,4 @@ Handlebars.registerHelper({
 		return new Handlebars.SafeString('\t');
 	}
 });
+

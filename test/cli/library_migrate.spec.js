@@ -17,13 +17,12 @@
  ******************************************************************************
  */
 
-import { expect, sinon } from '../test-setup';
-import { CLILibraryTestMigrateCommandSite } from '../../src/cli/library_migrate';
+const { expect, sinon } = require('../test-setup');
+const { CLILibraryTestMigrateCommandSite } = require('../../src/cli/library_migrate');
+
 
 describe('library command', () => {
-
 	describe('CLILibraryTestMigrateCommandSite', () => {
-
 		const argv = { params: {} };
 		const sut = new CLILibraryTestMigrateCommandSite(argv, __dirname);
 
@@ -36,3 +35,4 @@ describe('library command', () => {
 		});
 	});
 });
+

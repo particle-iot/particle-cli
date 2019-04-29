@@ -1,10 +1,11 @@
-import { LibraryDeleteCommandSite, LibraryDeleteCommand } from '../cmd';
-import { spin } from '../app/ui';
-import log from '../lib/log';
-import chalk from 'chalk';
-import { buildAPIClient } from './apiclient';
+const chalk = require('chalk');
+const { spin } = require('../app/ui');
+const log = require('../lib/log');
+const { buildAPIClient } = require('./apiclient');
+const { LibraryDeleteCommandSite, LibraryDeleteCommand } = require('../cmd');
 
-export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
+
+class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 
 	constructor(argv, apiClient) {
 		super();
@@ -34,8 +35,10 @@ export class CLILibraryDeleteCommandSite extends LibraryDeleteCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+module.exports.CLILibraryDeleteCommandSite = CLILibraryDeleteCommandSite;
+module.exports.command = (apiJS, argv) => {
 	const site = new CLILibraryDeleteCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryDeleteCommand();
 	return site.run(cmd);
-}
+};
+

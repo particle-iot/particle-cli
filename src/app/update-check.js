@@ -1,14 +1,14 @@
-import when from 'when';
-import latestVersion from 'latest-version';
-import semver from 'semver';
-import chalk from 'chalk';
+const when = require('when');
+const chalk = require('chalk');
+const semver = require('semver');
+const latestVersion = require('latest-version');
+const pkg = require('../../package');
+const settings = require('../../settings');
+
 
 function spin() {
 	return require('./ui').spin;
 }
-
-import info from '../../package';
-import settings from '../../settings';
 
 function check(skip, force) {
 	return when.promise((resolve) => {
@@ -33,11 +33,11 @@ function check(skip, force) {
 }
 
 function checkVersion() {
-	const checkPromise = when(latestVersion(info.name)).timeout(settings.updateCheckTimeout);
+	const checkPromise = when(latestVersion(pkg.name)).timeout(settings.updateCheckTimeout);
 
 	return spin()(checkPromise, 'Checking for updates...')
 		.then((version) => {
-			if (semver.gt(version, info.version)) {
+			if (semver.gt(version, pkg.version)) {
 				settings.profile_json.newer_version = version;
 			} else {
 				delete settings.profile_json.newer_version;
@@ -47,7 +47,7 @@ function checkVersion() {
 }
 
 function displayVersionBanner(version) {
-	console.error('particle-cli v' + info.version);
+	console.error('particle-cli v' + pkg.version);
 	console.error();
 	console.error(chalk.yellow('!'), 'A newer version (' + chalk.cyan(version) + ') of', chalk.bold.white('particle-cli'), 'is available.');
 	console.error(chalk.yellow('!'), 'Upgrade now by running:', chalk.bold.white('npm install -g particle-cli'));
@@ -56,9 +56,9 @@ function displayVersionBanner(version) {
 
 function start() {
 	const storedVersion = settings.profile_json.newer_version;
-	if (storedVersion && semver.gt(storedVersion, info.version)) {
+	if (storedVersion && semver.gt(storedVersion, pkg.version)) {
 		displayVersionBanner(storedVersion);
 	}
 }
 
-export default check;
+module.exports = check;

@@ -1,6 +1,7 @@
-import { LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand } from '../cmd';
+const { LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand } = require('../cmd');
 
-export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite {
+
+class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite {
 	constructor(argv, defaultDir) {
 		super();
 		this.argv = argv;
@@ -41,9 +42,7 @@ export class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite 
 	}
 }
 
-
-export class CLILibraryTestMigrateCommandSite extends CLIBaseLibraryMigrateCommandSite {
-
+class CLILibraryTestMigrateCommandSite extends CLIBaseLibraryMigrateCommandSite {
 	notifyEnd(lib, result, err) {
 		super.notifyEnd(lib, result, err);
 		if (err) {
@@ -66,8 +65,7 @@ export class CLILibraryTestMigrateCommandSite extends CLIBaseLibraryMigrateComma
 	}
 }
 
-
-export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSite {
+class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSite {
 	notifyEnd(lib, result, err) {
 		if (err) {
 			this.handleError(lib, err);
@@ -82,8 +80,10 @@ export class CLILibraryMigrateCommandSite extends CLIBaseLibraryMigrateCommandSi
 }
 
 
-
-export function command(argv) {
+module.exports.CLIBaseLibraryMigrateCommandSite = CLIBaseLibraryMigrateCommandSite;
+module.exports.CLILibraryTestMigrateCommandSite = CLILibraryTestMigrateCommandSite;
+module.exports.CLILibraryMigrateCommandSite = CLILibraryMigrateCommandSite;
+module.exports.command = (argv) => {
 	let Site, Cmd;
 	if (argv.test) {
 		Site = CLILibraryTestMigrateCommandSite;
@@ -95,4 +95,5 @@ export function command(argv) {
 	const site = new Site(argv, process.cwd());
 	const cmd = new Cmd();
 	return site.run(cmd);
-}
+};
+

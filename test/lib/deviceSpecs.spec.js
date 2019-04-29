@@ -1,5 +1,6 @@
-import { expect } from '../test-setup';
-import deviceSpecs from '../../src/lib/deviceSpecs';
+const { expect } = require('../test-setup');
+const deviceSpecs = require('../../src/lib/deviceSpecs');
+
 
 describe('deviceSpecs', () => {
 	describe('deviceId', () => {
@@ -26,3 +27,4 @@ describe('deviceSpecs', () => {
 		});
 	});
 });
+
