@@ -87,6 +87,7 @@
     "@babel/register": "^7.4.4",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
+    "core-js": "^3.0.1",
     "coveralls": "^3.0.3",
     "doctoc": "^1.4.0",
     "dotenv": "^7.0.0",
