@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint no-var: 0 */
 global.verboseLevel = 1;
-require('../minimumNode')();
+require('./minimum-node')();
 
 initCLI().run(process.argv);
 

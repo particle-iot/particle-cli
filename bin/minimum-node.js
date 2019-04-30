@@ -1,6 +1,6 @@
-const semver = require('semver');
-const packageJson = require('./package.json');
 const _ = require('lodash');
+const semver = require('semver');
+const packageJson = require('../package.json');
 
 module.exports = function minimumNode(options) {
 	options = options || {};

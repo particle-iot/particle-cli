@@ -1,9 +1,10 @@
 const { expect, sinon } = require('./test-setup');
-const minimumNode = require('../minimumNode');
+const minimumNode = require('../bin/minimum-node');
 
 
 describe('minimumNode', () => {
 	let exit, console;
+
 	beforeEach(() => {
 		exit = sinon.stub();
 		console = {
