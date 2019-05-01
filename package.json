@@ -4,7 +4,7 @@
   "version": "1.40.0",
   "author": "David Middlecamp",
   "bin": {
-    "particle": "./bin/particle.js"
+    "particle": "./dist/index.js"
   },
   "bugs": {
     "url": "https://github.com/particle-iot/particle-cli/issues"
@@ -120,14 +120,14 @@
     "spark"
   ],
   "license": "Apache-2.0",
-  "main": "./bin/particle.js",
+  "main": "./src/index.js",
   "preferGlobal": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/particle-iot/particle-cli"
   },
   "scripts": {
-    "start": "PARTICLE_CLI_DEVELOPMENT=1 node --require @babel/register bin/particle.js",
+    "start": "node --require @babel/register ./src/index.js",
     "version": "npm run update-changelog",
     "prepublish": "npm run compile",
     "lint": "eslint . --ext .js --ignore-path .gitignore --format unix",
