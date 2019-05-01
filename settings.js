@@ -32,13 +32,10 @@ var extend = require('xtend');
 var _ = require('lodash');
 
 var settings = {
-	commandPath: './commands/',
 	apiUrl: 'https://api.particle.io',
-	buildUrl: 'https://build.particle.io',
 	clientId: 'CLI2',
 	access_token: null,
 	minimumApiDelay: 500,
-	//useOpenSSL: true,
 	useSudoForDfu: false,
 	// TODO set to false once we give flags to control this
 	disableUpdateCheck: envValueBoolean('PARTICLE_DISABLE_UPDATE', false),
@@ -48,7 +45,6 @@ var settings = {
 	//10 megs -- this constant here is arbitrary
 	MAX_FILE_SIZE: 1024 * 1024 * 10,
 
-	overridesFile: null,
 	wirelessSetupFilter: /^Photon-.*$/,
 
 	notSourceExtensions: [
@@ -117,8 +113,6 @@ function envValueBoolean(varName, defaultValue) {
 		return defaultValue;
 	}
 }
-
-settings.commandPath = __dirname + '/commands/';
 
 settings.findHomePath = () => {
 	let envVars = [
