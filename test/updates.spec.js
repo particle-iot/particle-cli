@@ -1,56 +1,58 @@
-var chai = require('chai');
-var sinonChai = require('sinon-chai');
-var chaiAsPromised = require('chai-as-promised');
-chai.use(sinonChai);
-chai.use(chaiAsPromised);
-var expect = chai.expect;
 var fs = require('fs');
 var path = require('path');
+const { expect } = require('./test-setup');
 var Parser = require('binary-version-reader').HalModuleParser;
 
 
 describe('the update firmware binaries are all valid', () => {
 	var updateDir = path.resolve(__dirname, '../assets/updates');
 
-	function getUpdateFiles() {
-		return fs.readdirSync(updateDir);
+	it('has update files', () => {
+		expect(getUpdateFiles(updateDir)).to.have.property('length').greaterThan(0);
+	});
+
+	describe('update files validity check', () => {
+		const updateFiles = getUpdateFiles(updateDir);
+
+		updateFiles.forEach(file => {
+			const filename = path.join(updateDir, file);
+
+			describe(`binary file: ${file}`, () => {
+				it('is non-zero in size', () => {
+					const size = getFilesizeInBytes(filename);
+					expect(size).to.be.greaterThan(0);
+				});
+
+				it('has a valid crc ', () => {
+					return new Parser().parseFile(filename).then(fileInfo => {
+						if (fileInfo.suffixInfo.suffixSize === 65535) {
+							throw new Error(fileInfo.filename + ' does not contain inspection information');
+						}
+
+						if (!fileInfo.crc.ok) {
+							throw new Error('CRC failed (should be '
+								+ (fileInfo.crc.storedCrc) + ' but is '
+								+ (fileInfo.crc.actualCrc) + ')');
+						}
+					});
+				});
+			});
+		});
+	});
+
+	function getUpdateFiles(dir){
+		const files = fs.readdirSync(dir);
+
+		if (!files || !files.length){
+			throw new Error(`Could not load update files from: ${dir}`);
+		}
+
+		return files.filter(f => f.endsWith('.bin'));
 	}
 
-	function getFilesizeInBytes(filename) {
+	function getFilesizeInBytes(filename){
 		var stats = fs.statSync(filename);
 		var fileSizeInBytes = stats.size;
 		return fileSizeInBytes;
 	}
-
-	it('has update files', () => {
-		expect(getUpdateFiles()).to.have.property('length').greaterThan(0);
-	});
-
-	describe('update files validity check', () => {
-		for (var updateFiles = getUpdateFiles(), i=0; i<updateFiles.length; i++) {
-			var updateFile = path.join(updateDir, updateFiles[i]);
-			((updateFile, fileName) => {
-				describe('binary file '+fileName, () => {
-					it('is non-zero in size', () => {
-						expect(getFilesizeInBytes(updateFile)).to.be.greaterThan(0);
-					});
-
-					it('has a valid crc ', () => {
-						var parser = new Parser();
-						return parser.parseFile(updateFile).then(fileInfo => {
-							if (fileInfo.suffixInfo.suffixSize === 65535) {
-								throw new Error(fileInfo.filename + ' does not contain inspection information');
-							}
-
-							if (!fileInfo.crc.ok) {
-								throw new Error('CRC failed (should be '
-									+ (fileInfo.crc.storedCrc) + ' but is '
-									+ (fileInfo.crc.actualCrc) + ')');
-							}
-						});
-					});
-				});
-			})(updateFile, updateFiles[i]);
-		}
-	});
 });
