@@ -129,7 +129,7 @@
   "scripts": {
     "start": "node --require @babel/register ./src/index.js",
     "version": "npm run update-changelog",
-    "prepublish": "npm run compile",
+    "prepare": "npm run compile",
     "lint": "eslint . --ext .js --ignore-path .gitignore --format unix",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm run lint && npm run test:unit && npm run test:integration",
