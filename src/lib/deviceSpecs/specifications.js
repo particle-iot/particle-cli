@@ -384,7 +384,7 @@ const specs = {
 		productId: 12,
 	},
 	'2b04:d016': {
-		productName: 'A Series',
+		productName: 'A SoM',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -491,7 +491,7 @@ const specs = {
 		productId: 13,
 	},
 	'2b04:d017': {
-		productName: 'B Series',
+		productName: 'B SoM',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -599,7 +599,7 @@ const specs = {
 	},
 
 	'2b04:d018': {
-		productName: 'X Series',
+		productName: 'X SoM',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,

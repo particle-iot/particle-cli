@@ -571,18 +571,9 @@ const utilities = {
 			'argon': 12,
 			'boron': 13,
 			'xenon': 14,
-			'argon-som': 22,
-			'boron-som': 23,
-			'xenon-som': 24,
-
-			///////////////////////////////////////////////////////////////////
-			// TODO (mirande): legacy names - remove after a reasonable
-			// transition period
-			'aseries': 22,
-			'bseries': 23,
-			'xseries': 24,
-			///////////////////////////////////////////////////////////////////
-
+			'asom': 22,
+			'bsom': 23,
+			'xsom': 24,
 			'oak': 82,
 			'duo': 88,
 			'bluz': 103,
