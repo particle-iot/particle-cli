@@ -52,7 +52,13 @@ node_bin=${node_dir}/bin/node
 npm_bin=${node_dir}/lib/node_modules/npm/bin/npm-cli.js
 
 cd ${particle_dir}
-${node_bin} ${npm_bin} install ${pkg} --loglevel=verbose
+npm_install_log=$(${node_bin} ${npm_bin} install ${pkg} --loglevel=verbose --color=always 2>&1 | tee /dev/tty)
+
+if (echo $npm_install_log | grep --silent "No prebuilt binaries found")
+then
+	echo ":::: Error: It appears prebuild binaries for native modules are not available!"
+	exit 1
+fi
 
 echo
 echo ":::: done!"
