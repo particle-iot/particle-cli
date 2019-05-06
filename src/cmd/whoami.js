@@ -1,7 +1,7 @@
 const chalk = require('chalk');
 const VError = require('verror');
-const settings = require('../../settings.js');
-const ApiClient = require('../lib/ApiClient.js');
+const settings = require('../../settings');
+const ApiClient = require('../lib/ApiClient');
 const spinnerMixin = require('../lib/spinnerMixin');
 
 const arrow = chalk.green('>');

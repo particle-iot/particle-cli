@@ -17,12 +17,11 @@
  ******************************************************************************
  */
 
-import { expect, sinon } from '../test-setup';
+const { expect, sinon } = require('../test-setup');
+const commandProcessor = require('../../src/app/command-processor');
 
-import * as commandProcessor from '../../src/app/command-processor';
 
 describe('command-line parsing', () => {
-
 	describe('errors', () => {
 		it('unknown command', () => {
 			const args = ['a', 'b'];

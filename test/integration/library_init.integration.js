@@ -18,14 +18,13 @@
  ******************************************************************************
  */
 
-import { expect } from '../test-setup';
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 const mockfs = require('mock-fs');
-
-import * as commandProcessor from '../../src/app/command-processor';
-import libraryCommands from '../../src/cli/library';
-import { LibraryInitCommand } from 'particle-commands';
+const { expect } = require('../test-setup');
+const libraryCommands = require('../../src/cli/library');
+const { LibraryInitCommand } = require('particle-commands');
+const commandProcessor = require('../../src/app/command-processor');
 
 /**
  * Synchronously reads a directory from the real filesystem into the format as expected by mock-fs.
@@ -52,9 +51,7 @@ function mirrorDir(dir, mock) {
 	return mock;
 }
 
-
 describe('library init', () => {
-
 	/**
 	 * The location of the generator resources. This is used to copy the resources to the mock fs
 	 * for the test.
@@ -89,5 +86,5 @@ describe('library init', () => {
 		});
 		return result;
 	});
-
 });
+

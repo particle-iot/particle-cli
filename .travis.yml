@@ -11,9 +11,8 @@ sudo: false
 before_install:
 - npm install -g npm@5
 script:
-- npm run lint
 - MOCHA_OPTIONS=--forbid-only npm test
-- accept/install.sh && source accept/.profile && npm run accept
+- accept/install.sh && source accept/.profile && npm run test:accept
 jobs:
   include:
   - stage: npm release

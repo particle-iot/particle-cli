@@ -24,9 +24,9 @@ const stubs = {
 };
 
 const CloudCommands = proxyquire('../../src/cmd/cloud', {
-	'../../settings.js': stubs.settings,
-	'../lib/utilities.js': stubs.utils,
-	'../lib/ApiClient.js': stubs.ApiClient,
+	'../../settings': stubs.settings,
+	'../lib/utilities': stubs.utils,
+	'../lib/ApiClient': stubs.ApiClient,
 	'../lib/prompts': stubs.prompts
 });
 

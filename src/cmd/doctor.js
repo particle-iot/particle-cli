@@ -1,12 +1,12 @@
-import VError from 'verror';
+const VError = require('verror');
 
 const when = require('when');
 const pipeline = require('when/pipeline');
 const _ = require('lodash');
 const chalk = require('chalk');
 const prompt = require('inquirer').prompt;
-const dfu = require('../lib/dfu.js');
-const ApiClient = require('../lib/ApiClient.js');
+const dfu = require('../lib/dfu');
+const ApiClient = require('../lib/ApiClient');
 
 function EarlyReturnError() {
 }

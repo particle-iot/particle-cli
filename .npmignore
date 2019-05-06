@@ -14,14 +14,22 @@ pids
 logs
 results
 coverage
+scripts
+accept
+test
 
 npm-debug.log
 node_modules
 
 .DS_Store
 es6
-accept/tmp
 
 .env
 .idea
 *.sw?
+
+.babelrc.js
+.eslintrc.js
+.travis.yml
+appveyor.yml
+development.md

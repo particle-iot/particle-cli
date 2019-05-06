@@ -1,4 +1,4 @@
-const ParticleApi = require('./api').default;
+const ParticleApi = require('./api');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { getUsbDevices, openUsbDevice, openUsbDeviceById } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');

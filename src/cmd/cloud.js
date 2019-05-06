@@ -2,10 +2,10 @@ const _ = require('lodash');
 const VError = require('verror');
 const prompt = require('inquirer').prompt;
 
-const settings = require('../../settings.js');
+const settings = require('../../settings');
 const specs = require('../lib/deviceSpecs');
-const ApiClient = require('../lib/ApiClient.js');
-const utilities = require('../lib/utilities.js');
+const ApiClient = require('../lib/ApiClient');
+const utilities = require('../lib/utilities');
 const spinnerMixin = require('../lib/spinnerMixin');
 const ensureError = require('../lib/utilities').ensureError;
 const prompts = require('../lib/prompts');

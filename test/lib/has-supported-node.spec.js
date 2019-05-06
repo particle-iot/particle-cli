@@ -1,9 +1,10 @@
-import { expect, sinon } from './test-setup';
+const { expect, sinon } = require('../test-setup');
+const hasSupportedNode = require('../../src/lib/has-supported-node');
 
-import minimumNode from '../minimumNode';
 
-describe('minimumNode', () => {
+describe('NodeJS Support Check', () => {
 	let exit, console;
+
 	beforeEach(() => {
 		exit = sinon.stub();
 		console = {
@@ -12,7 +13,7 @@ describe('minimumNode', () => {
 	});
 
 	it('does not exit for this test', () => {
-		minimumNode({ exit, console });
+		hasSupportedNode({ exit, console });
 
 		expect(exit).not.to.have.been.called;
 		expect(console.error).not.to.have.been.called;
@@ -24,7 +25,7 @@ describe('minimumNode', () => {
 				node: '>= 4.4'
 			}
 		};
-		minimumNode({ version: '8.4.0', json, exit, console });
+		hasSupportedNode({ version: '8.4.0', json, exit, console });
 
 		expect(exit).not.to.have.been.called;
 		expect(console.error).not.to.have.been.called;
@@ -36,9 +37,10 @@ describe('minimumNode', () => {
 				node: '>= 4.4'
 			}
 		};
-		minimumNode({ version: '0.12.0', json, exit, console });
+		hasSupportedNode({ version: '0.12.0', json, exit, console });
 
 		expect(exit).to.have.been.calledWith(1);
 		expect(console.error).to.have.been.called;
 	});
 });
+

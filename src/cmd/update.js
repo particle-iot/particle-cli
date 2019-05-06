@@ -1,12 +1,12 @@
 const path = require('path');
 const chalk = require('chalk');
-const settings = require('../../settings.js');
+const settings = require('../../settings');
 const dfu = require('../lib/dfu');
 const when = require('when');
 const whenNode = require('when/node');
 const Spinner = require('cli-spinner').Spinner;
 const deviceSpecs = require('../lib/deviceSpecs');
-const utilities = require('../lib/utilities.js');
+const utilities = require('../lib/utilities');
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 const spin = new Spinner('Updating system firmware on the device...');

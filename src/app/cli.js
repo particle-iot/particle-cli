@@ -1,16 +1,15 @@
-import _ from 'lodash';
+const _ = require('lodash');
+const when = require('when');
+const log = require('../lib/log');
+const pkg = require('../../package.json');
+const settings = require('../../settings');
+const unindent = require('../lib/unindent');
+const registerAllCommands = require('../cli');
+const updateCheck = require('./update-check');
+const commandProcessor = require('./command-processor');
 
-import updateCheck from './update-check';
-import pkg from '../../package.json';
-import * as commandProcessor from './command-processor';
-import registerAllCommands from '../cli';
-import * as settings from '../../settings';
-import when from 'when';
-import log from '../lib/log';
-import process from 'process';
-import unindent from '../lib/unindent';
 
-export default class CLI {
+module.exports = class CLI {
 	constructor() {
 		//process.on('unhandledRejection', this.globalRejectionHandler.bind(this));
 		this.rootCategory = this.setupCommandProcessor();
@@ -178,6 +177,5 @@ export default class CLI {
 			return this.runCommand(cmdargs);
 		}).catch(commandProcessor.createErrorHandler());
 	}
-}
-
+};
 

@@ -1,15 +1,16 @@
-import { sinon, expect } from '../test-setup';
-const stream = require('stream');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
+const stream = require('stream');
+const { sinon, expect } = require('../test-setup');
 const wiringPreprocessor = require('wiring-preprocessor');
-
 const PreprocessCommand = require('../../src/cmd/preprocess');
+
 
 describe('Preprocess Command', () => {
 	let sandbox;
 	let command;
 	let stdin, stdout;
+
 	beforeEach(() => {
 		sandbox = sinon.createSandbox();
 		stdin = new stream.Readable();
@@ -46,9 +47,11 @@ describe('Preprocess Command', () => {
 
 	describe('preprocess', () => {
 		let cwd;
+
 		beforeEach(() => {
 			cwd = process.cwd();
 		});
+
 		afterEach(() => {
 			process.chdir(cwd);
 		});
@@ -93,3 +96,4 @@ describe('Preprocess Command', () => {
 		});
 	});
 });
+

@@ -1,13 +1,12 @@
-import { LibrarySearchCommandSite, LibrarySearchCommand } from '../cmd';
-import { spin } from '../app/ui';
-import log from '../lib/log';
-import chalk from 'chalk';
-import { buildAPIClient } from './apiclient';
-import { formatLibrary } from './library_ui.js';
+const chalk = require('chalk');
+const log = require('../lib/log');
+const { spin } = require('../app/ui');
+const { buildAPIClient } = require('./apiclient');
+const { formatLibrary } = require('./library_ui');
+const { LibrarySearchCommandSite, LibrarySearchCommand } = require('../cmd');
 
 
-export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
-
+class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 	constructor(argv, apiClient) {
 		super();
 		this._apiClient = apiClient;
@@ -41,8 +40,11 @@ export class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+
+module.exports.CLILibrarySearchCommandSite = CLILibrarySearchCommandSite;
+module.exports.command = (apiJS, argv) => {
 	const site = new CLILibrarySearchCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibrarySearchCommand();
 	return site.run(cmd);
-}
+};
+

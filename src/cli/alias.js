@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	function alias(category, aliasName, path) {
 		const cmd = root.find(path);
 		if (cmd) {

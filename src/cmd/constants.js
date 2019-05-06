@@ -6,9 +6,9 @@ const platformsById = {
 	12: 'Argon',
 	13: 'Boron',
 	14: 'Xenon',
-	22: 'A Series',
-	23: 'B Series',
-	24: 'X Series',
+	22: 'A SoM',
+	23: 'B SoM',
+	24: 'X SoM',
 	31: 'Raspberry Pi',
 	88: 'Duo',
 	103: 'Bluz'

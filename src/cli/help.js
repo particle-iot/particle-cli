@@ -1,5 +1,4 @@
-
-export default ({ commandProcessor, root, app }) => {
+module.exports = ({ commandProcessor, root, app }) => {
 	commandProcessor.createCommand(root, 'help', false, {
 		params: '[command...]',
 		handler: (argv) => {

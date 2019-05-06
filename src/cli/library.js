@@ -1,7 +1,6 @@
 
 function api() {
-
-	const ParticleApi = require('../cmd/api').default;
+	const ParticleApi = require('../cmd/api');
 	const settings = require('../../settings');
 
 	if (!api._instance) {
@@ -12,7 +11,7 @@ function api() {
 	return api._instance;
 }
 
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const lib = commandProcessor.createCategory(root, 'library', 'Manage firmware libraries', { alias: 'libraries' });
 
 	commandProcessor.createCommand(lib, 'add', 'Add a library to the current project.', {
@@ -153,3 +152,4 @@ export default ({ commandProcessor, root }) => {
 
 	return lib;
 };
+

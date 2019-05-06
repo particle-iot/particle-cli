@@ -1,4 +1,4 @@
-export default {
+module.exports = {
 	username(username) {
 		return {
 			type: 'input',

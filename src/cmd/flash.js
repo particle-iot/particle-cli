@@ -1,6 +1,6 @@
 const fs = require('fs');
 const VError = require('verror');
-const dfu = require('../lib/dfu.js');
+const dfu = require('../lib/dfu');
 const ModuleParser = require('binary-version-reader').HalModuleParser;
 const deviceSpecs = require('../lib/deviceSpecs');
 const ensureError = require('../lib/utilities').ensureError;

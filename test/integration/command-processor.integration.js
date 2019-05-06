@@ -17,13 +17,12 @@
  ******************************************************************************
  */
 
-import { expect } from '../test-setup';
-import * as commandProcessor from '../../src/app/command-processor';
+const { expect } = require('../test-setup');
+const CLI = require('../../src/app/cli');
+const commandProcessor = require('../../src/app/command-processor');
 
-import CLI from '../../src/app/cli';
 
 describe('command line parsing', () => {
-
 	describe('global flags', () => {
 		describe('verbosity', () => {
 			const rootCategory = new CLI().rootCategory;

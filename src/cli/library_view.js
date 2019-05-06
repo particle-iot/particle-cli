@@ -1,22 +1,19 @@
-import { CLILibraryInstallCommandSite } from './library_install';
-import { LibraryInstallCommand } from '../cmd';
-import { buildAPIClient } from './apiclient';
-import chalk from 'chalk';
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
+const chalk = require('chalk');
+const { buildAPIClient } = require('./apiclient');
+const { LibraryInstallCommand } = require('../cmd');
+const { CLILibraryInstallCommandSite } = require('./library_install');
+
 
 class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
-
-
 	notifyFetchingLibrary(lib, targetDir) {
-
 		const targetExists = fs.existsSync(targetDir);
 
 		if (!this.targetDir) {
 			this.targetDir = targetDir;
 			this.targetExists = targetExists;
 		}
-
 		return Promise.resolve(!targetExists);
 	}
 
@@ -69,8 +66,10 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 	}
 }
 
-export function command(apiJS, argv) {
+
+module.exports.command = (apiJS, argv) => {
 	const site = new CLILibraryViewCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryInstallCommand();
 	return site.run(cmd).then(() => site.view());
-}
+};
+

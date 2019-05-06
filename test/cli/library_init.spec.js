@@ -17,13 +17,13 @@
  ******************************************************************************
  */
 
-import { sinon, expect } from '../test-setup';
-import { LibraryInitGenerator } from 'particle-library-manager';
-import { CLILibraryInitCommandSite } from '../../src/cli/library_init';
-import { LibraryInitCommand } from '../../src/cmd';
+const { sinon, expect } = require('../test-setup');
+const { LibraryInitGenerator } = require('particle-library-manager');
+const { CLILibraryInitCommandSite } = require('../../src/cli/library_init');
+const { LibraryInitCommand } = require('../../src/cmd');
+
 
 describe('library init command', () => {
-
 	require('yeoman-environment'); // ensure these dynamically loaded modules are loaded before the mock-fs is installed
 	require('yeoman-generator');
 
@@ -73,5 +73,5 @@ describe('library init command', () => {
 				});
 		});
 	});
-
 });
+

@@ -1,13 +1,13 @@
-import { LibraryPublishCommand, LibraryPublishCommandSite } from '../cmd';
-import { LibraryContributeCommand } from '../cmd';
+const chalk = require('chalk');
+const log = require('../lib/log');
+const { spin } = require('../app/ui');
+const { buildAPIClient } = require('./apiclient');
+const { LibraryContributeCommand } = require('../cmd');
+const { CLILibraryContributeCommandSite } = require('./library_upload');
+const { LibraryPublishCommand, LibraryPublishCommandSite } = require('../cmd');
 
-import chalk from 'chalk';
-import log from '../lib/log';
-import { spin } from '../app/ui';
-import { buildAPIClient } from './apiclient';
-import { CLILibraryContributeCommandSite } from './library_upload';
 
-export class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
+class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 
 	constructor(argv, apiClient) {
 		super();
@@ -55,7 +55,8 @@ class CLILibraryPublishContributeCommandSite extends CLILibraryContributeCommand
 }
 
 
-export function command(apiJS, argv) {
+module.exports.CLILibraryPublishCommandSite = CLILibraryPublishCommandSite;
+module.exports.command = (apiJS, argv) => {
 	const site = new CLILibraryPublishCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryPublishCommand();
 	let promise = Promise.resolve();
@@ -69,4 +70,5 @@ export function command(apiJS, argv) {
 		});
 	}
 	return promise.then(() => site.run(cmd));
-}
+};
+

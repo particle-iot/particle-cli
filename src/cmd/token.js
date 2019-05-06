@@ -3,9 +3,9 @@ const when = require('when');
 
 const inquirer = require('inquirer');
 
-const ApiClient = require('../lib/ApiClient.js');
-const prompts = require('../lib/prompts.js');
-const settings = require('../../settings.js');
+const ApiClient = require('../lib/ApiClient');
+const prompts = require('../lib/prompts');
+const settings = require('../../settings');
 const CloudCommand = require('./cloud');
 
 class AccessTokenCommands {

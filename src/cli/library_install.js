@@ -1,10 +1,10 @@
-import { LibraryInstallCommand, LibraryInstallCommandSite } from '../cmd';
-import { convertApiError } from '../cmd/api';
-import chalk from 'chalk';
-import { buildAPIClient } from './apiclient';
+const chalk = require('chalk');
+const { buildAPIClient } = require('./apiclient');
+const { convertApiError } = require('../cmd/api');
+const { LibraryInstallCommand, LibraryInstallCommandSite } = require('../cmd');
 
-export class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 
+class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	constructor(argv, dir, apiClient) {
 		super();
 		this._apiClient = apiClient;
@@ -76,7 +76,9 @@ function copy(argv, apiJS) {
 	return install(argv, apiJS);
 }
 
-export function command(cmd, apiJS, argv) {
+
+module.exports.CLILibraryInstallCommandSite = CLILibraryInstallCommandSite;
+module.exports.command = (cmd, apiJS, argv) => {
 	if (cmd==='copy') {
 		return copy(argv, apiJS);
 	} else if (cmd==='install') {
@@ -84,4 +86,5 @@ export function command(cmd, apiJS, argv) {
 	} else {
 		throw Error('uknown command '+cmd);
 	}
-}
+};
+

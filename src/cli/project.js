@@ -1,6 +1,4 @@
-
-
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const project = commandProcessor.createCategory(root, 'project', 'Manage application projects');
 
 	commandProcessor.createCommand(project, 'create', 'Create a new project in the current or specified directory', {

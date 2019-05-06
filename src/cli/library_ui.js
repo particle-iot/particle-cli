@@ -1,6 +1,7 @@
-import chalk from 'chalk';
+const chalk = require('chalk');
 
-export function formatLibrary(library, excludeBadges=[]) {
+
+module.exports.formatLibrary = (library, excludeBadges=[]) => {
 	let badges = [];
 
 	if (library.official && !excludeBadges.official) {
@@ -24,4 +25,5 @@ export function formatLibrary(library, excludeBadges=[]) {
 	const defaultSentence = '';
 	const formatted = chalk.blue(library.name)+' '+version+' '+badgesText+chalk.grey(library.installs || 0)+' '+ `${library.sentence || defaultSentence}`;
 	return formatted;
-}
+};
+

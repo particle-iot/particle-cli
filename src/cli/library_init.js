@@ -1,21 +1,18 @@
-import { LibraryInitCommandSite, LibraryInitCommand } from '../cmd';
-
-const TerminalAdapter = require('yeoman-environment/lib/adapter.js');
+const TerminalAdapter = require('yeoman-environment/lib/adapter');
+const { LibraryInitCommandSite, LibraryInitCommand } = require('../cmd');
 
 /**
  * Provides the UI delegations required by yeoman. For now, we just use the
  * built-in one, but later we may delegate to our own implementation of prompts.
  */
 class YeomanAdapter extends TerminalAdapter {
-
 	constructor() {
 		super();
 		this.owner = this;
 	}
 }
 
-
-export class CLILibraryInitCommandSite extends LibraryInitCommandSite {
+class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 	constructor(argv) {
 		super();
 		this.argv = argv;
@@ -39,10 +36,13 @@ export class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 	}
 }
 
-export function command(argv) {
+
+module.exports.CLILibraryInitCommandSite = CLILibraryInitCommandSite;
+module.exports.command = (argv) => {
 	// todo - can we avoid the global dependency on process.cwd()
 	// the cli itself should provide an environment, including cwd().
 	const site = new CLILibraryInitCommandSite(argv, process.cwd());
 	const cmd = new LibraryInitCommand();
 	return site.run(cmd);
-}
+};
+

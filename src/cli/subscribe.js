@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'subscribe', 'Listen to device event stream', {
 		params: '[event...]',
 		options: {
@@ -22,3 +22,4 @@ export default ({ commandProcessor, root }) => {
 		}
 	});
 };
+

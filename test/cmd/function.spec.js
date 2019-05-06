@@ -14,7 +14,7 @@ const stubs = {
 };
 
 const FunctionCommand = proxyquire('../../src/cmd/function', {
-	'../lib/ApiClient.js': stubs.ApiClient
+	'../lib/ApiClient': stubs.ApiClient
 });
 
 

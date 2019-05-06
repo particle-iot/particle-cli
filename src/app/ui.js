@@ -1,9 +1,10 @@
-import inquirer from 'inquirer';
-import when from 'when';
-import { Spinner } from 'cli-spinner';
-import './templates';
-import Handlebars from 'handlebars';
-import log from '../lib/log';
+const when = require('when');
+const inquirer = require('inquirer');
+const Handlebars = require('handlebars');
+const { Spinner } = require('cli-spinner');
+const log = require('../lib/log');
+require('./templates');
+
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 
@@ -63,9 +64,10 @@ function render(templateName, data, supportingData) {
 	process.stdout.write(Handlebars.templates[templateName](Object.assign({ data }, supportingData)));
 }
 
-export {
+module.exports = {
 	prompt,
 	spin,
 	retry,
 	render
 };
+

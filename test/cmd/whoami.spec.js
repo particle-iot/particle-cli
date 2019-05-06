@@ -18,8 +18,8 @@ const stubs = {
 };
 
 const WhoAmICommands = proxyquire('../../src/cmd/whoami', {
-	'../../settings.js': stubs.settings,
-	'../lib/ApiClient.js': stubs.ApiClient
+	'../../settings': stubs.settings,
+	'../lib/ApiClient': stubs.ApiClient
 });
 
 

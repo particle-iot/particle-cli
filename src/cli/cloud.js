@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const cloud = commandProcessor.createCategory(root, 'cloud', 'Access Particle cloud functionality');
 
 	const compileOptions = {
@@ -91,7 +91,7 @@ export default ({ commandProcessor, root }) => {
 			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
 		},
 		// TODO: get the platforms from config and document in epilogue
-		epilogue: 'Param deviceType can be: core, photon, p1, electron, argon, boron, xenon, aseries, bseries, xseries, etc'
+		epilogue: 'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc'
 	});
 
 	commandProcessor.createCommand(cloud, 'nyan', 'Make your device shout rainbows', {
@@ -140,3 +140,4 @@ export default ({ commandProcessor, root }) => {
 
 	return cloud;
 };
+

@@ -17,17 +17,14 @@
  ******************************************************************************
  */
 
-import { expect } from '../test-setup';
-import { itHasAccessToken, fetchAccessToken } from './access_token';
-const settings = require('../../settings');
 const mockfs = require('mock-fs');
-
-import * as commandProcessor from '../../src/app/command-processor';
-
+const settings = require('../../settings');
+const { expect } = require('../test-setup');
+const commandProcessor = require('../../src/app/command-processor');
+const { itHasAccessToken, fetchAccessToken } = require('./access_token');
 
 
 describe('library install', () => {
-
 	let token;
 
 	beforeEach(() => {
@@ -52,7 +49,7 @@ describe('library install', () => {
 		fs.mkdirSync('src');
 
 
-		const libraryInstall = require('../../src/cli/library_install').default;
+		const libraryInstall = require('../../src/cli/library_install');
 
 		const root = commandProcessor.createAppCategory();
 		const lib = commandProcessor.createCategory(root, 'library');
@@ -73,3 +70,4 @@ describe('library install', () => {
 		return expect(result).to.eventually.be.fulfilled;
 	});
 });
+

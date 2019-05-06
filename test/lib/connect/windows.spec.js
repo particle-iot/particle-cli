@@ -1,8 +1,7 @@
-
-import { sinon, expect } from '../../test-setup';
-
-const windowsWiFi = require('../../../src/lib/connect/windows.js');
+const { sinon, expect } = require('../../test-setup');
+const windowsWiFi = require('../../../src/lib/connect/windows');
 var Connector = windowsWiFi.Connector;
+
 
 describe('Windows wifi', () => {
 	var sut;
@@ -558,3 +557,4 @@ describe('Windows wifi', () => {
 		});
 	});
 });
+

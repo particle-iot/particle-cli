@@ -16,13 +16,12 @@
  * With each level, the yargs parser is augmented with new commands, options and parameters.
  *
  */
-
-import chalk from 'chalk';
-import yargsFactory from 'yargs/yargs';
-import util from 'util';
-import _ from 'lodash';
-import path from 'path';
-import VError from 'verror';
+const _ = require('lodash');
+const path = require('path');
+const util = require('util');
+const chalk = require('chalk');
+const VError = require('verror');
+const yargsFactory = require('yargs/yargs');
 
 // It's important to run yargs in the directory of the script so it picks up options from package.json
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
@@ -680,7 +679,7 @@ function showHelp(cb) {
 	Yargs.showHelp(cb);
 }
 
-export {
+module.exports = {
 	parse,
 	createCommand,
 	createCategory,

@@ -2,11 +2,11 @@ const VError = require('verror');
 const url = require('url');
 const whenNode = require('when/node');
 const temp = require('temp').track();
-const utilities = require('../lib/utilities.js');
-const ApiClient = require('../lib/ApiClient.js');
+const utilities = require('../lib/utilities');
+const ApiClient = require('../lib/ApiClient');
 const fs = require('fs');
 const path = require('path');
-const dfu = require('../lib/dfu.js');
+const dfu = require('../lib/dfu');
 const deviceSpecs = require('../lib/deviceSpecs');
 const ensureError = require('../lib/utilities').ensureError;
 

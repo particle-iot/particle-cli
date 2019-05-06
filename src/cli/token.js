@@ -1,4 +1,4 @@
-export default ({ commandProcessor, root }) => {
+module.exports = ({ commandProcessor, root }) => {
 	const token = commandProcessor.createCategory(root, 'token', 'Manage access tokens (require username/password)');
 
 	commandProcessor.createCommand(token, 'list', 'List all access tokens for your account', {
@@ -31,3 +31,4 @@ export default ({ commandProcessor, root }) => {
 
 	return token;
 };
+
