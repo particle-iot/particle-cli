@@ -340,6 +340,13 @@ module.exports = class MeshCommand {
 				if (networks.length === 0) {
 					console.log('No networks found.');
 				} else {
+					// Device OS versions prior to 1.2.0 might report the same network multiple times:
+					// https://github.com/particle-iot/device-os/pull/1760. As a workaround, we're filtering
+					// out duplicate network entries at the client side as well
+					networks = networks.filter((n1, i1) => {
+						const i2 = networks.findIndex(n2 => n1.name === n2.name && n1.panId === n2.panId && n1.extPanId === n2.extPanId);
+						return i1 === i2;
+					});
 					networks = networks.sort((a, b) => a.name.localeCompare(b.name)); // Sort networks by name
 					networks.forEach(network => console.log(network.name));
 				}
@@ -353,7 +360,7 @@ module.exports = class MeshCommand {
 
 	_removeDeviceFromNetwork(usbDevice) {
 		return spin(this._api.removeMeshNetworkDevice({ deviceId: usbDevice.id, auth: this._auth }),
-				'Removing the device from the network...').then(() => {
+			'Removing the device from the network...').then(() => {
 			return spin(usbDevice.leaveMeshNetwork(), 'Clearing the network credentials...');
 		});
 	}
