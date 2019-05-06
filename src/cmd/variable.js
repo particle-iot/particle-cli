@@ -21,7 +21,7 @@ class VariableCommand {
 				if (!device) {
 					// see if any devices have a variable name matching value of deviceId
 					variableName = deviceId;
-					const maybeDeviceIds = _.pluck(_.filter(devices, (c) => {
+					const maybeDeviceIds = _.map(_.filter(devices, (c) => {
 						return _.has(c.variables, variableName);
 					}), 'id');
 					if (maybeDeviceIds.length === 0) {
@@ -47,7 +47,7 @@ class VariableCommand {
 				});
 			}
 
-			const deviceIds = _.pluck(_.filter(devices, (c) => {
+			const deviceIds = _.map(_.filter(devices, (c) => {
 				return _.has(c.variables, variableName);
 			}), 'id');
 			return { deviceIds: deviceIds, variableName: variableName };

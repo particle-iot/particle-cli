@@ -275,7 +275,7 @@ class CloudCommand {
 						return t.version === target;
 					});
 					if (!validTarget.length) {
-						throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.pluck(validTargets, 'version')).join('\n'));
+						throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.map(validTargets, 'version')).join('\n'));
 					}
 
 					targetVersion = validTarget[0].version;
