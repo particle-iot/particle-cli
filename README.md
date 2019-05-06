@@ -44,8 +44,10 @@ node bin/particle help
       - [particle update](#particle-update)
   - [Command Reference](#command-reference)
 - [Development](#development)
-  - [Releasing a new version](#releasing-a-new-version)
+  - [Installation](#installation)
+  - [Running](#running)
   - [Updating system firmware](#updating-system-firmware)
+  - [Releasing a new version](#releasing-a-new-version)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -90,17 +92,35 @@ For the full list of commands, please see the [CLI command reference](https://do
 
 # Development
 
-Clone the repository and run `npm install`.
 
-To ensure compatibility with versions of Node 4 and later, the code in
-`src` is transpiled using Babel and output to `dist`. This means you
-must run `npm run compile` to have changes in `src` be taken into account.
+## Installation
 
-To run in development mode using the files from `src` directly, run
+1. Install Node.js [`node@8.x` and `npm@5.x` are required]
+1. Clone this repository `$ git clone git@github.com:particle-iot/particle-cli.git && cd ./particle-cli`
+1. Install dependencies `$ npm install`
+1. View available commands `$ npm run`
+1. Run the tests `$ npm test`
+1. Run the CLI `$ npm start`
+1. Start Hacking!
 
-```
-PARTICLE_CLI_DEVELOPMENT=1 bin/particle.js
-```
+
+## Running
+
+To ensure compatibility with a wide range of NodeJS versions, the CLI's source is transpiled using Babel.
+
+**When developing, run individual commands using:**
+
+`$ npm start -- <command> <options>` - e.g. `$ npm start -- library view dotstar --readme`
+
+Anything after the `--` delimeter is passed directly to the CLI ([docs](https://docs.npmjs.com/cli/run-script)), source code is transpiled on-demand.
+
+
+**To test the transpiled source as it will be published:**
+
+1. Compile: `$ npm run compile`
+1. Register the `particle` command globally: `$ npm link`
+1. Run commands: `$ particle --help` (using standard argument formatting)
+
 
 ## Updating system firmware
 
