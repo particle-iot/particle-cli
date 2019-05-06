@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.40.1 - 6 May 2019
+
+* Overhaul build pipeline [#484](https://github.com/particle-iot/particle-cli/pull/484)
+* Update dependencies [#482](https://github.com/particle-iot/particle-cli/pull/482), [#483](https://github.com/particle-iot/particle-cli/pull/483)
+
 ## 1.40.0 - 20 March 2019
 
 * Add mesh commands (`particle mesh`) [#473](https://github.com/particle-iot/particle-cli/pull/473)
