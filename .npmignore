@@ -17,6 +17,7 @@ coverage
 scripts
 accept
 test
+**/*.test.js
 
 npm-debug.log
 node_modules
