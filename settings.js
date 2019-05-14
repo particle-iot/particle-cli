@@ -75,6 +75,12 @@ var settings = {
 		6: 'Photon',
 		8: 'P1',
 		10: 'Electron',
+		12: 'Argon',
+		13: 'Boron',
+		14: 'Xenon',
+		22: 'A Som',
+		23: 'B Som',
+		24: 'X Som',
 		88: 'Duo',
 		103: 'Bluz'
 	},
@@ -94,7 +100,25 @@ var settings = {
 			systemFirmwareOne:   'electron-system-part2@1.1.0+debug.bin',
 			systemFirmwareTwo:   'electron-system-part3@1.1.0+debug.bin',
 			systemFirmwareThree: 'electron-system-part1@1.1.0+debug.bin'
-		}
+		},
+		'2b04:d00c': {
+			systemFirmwareOne: 'argon-system-part1@1.1.0.bin'
+		},
+		'2b04:d00d': {
+			systemFirmwareOne: 'boron-system-part1@1.1.0.bin'
+		},
+		'2b04:d00e': {
+			systemFirmwareOne: 'xenon-system-part1@1.1.0.bin'
+		},
+		'2b04:d016': {
+			systemFirmwareOne: 'asom-system-part1@1.1.0.bin'
+		},
+		'2b04:d017': {
+			systemFirmwareOne: 'bsom-system-part1@1.1.0.bin'
+		},
+		'2b04:d018': {
+			systemFirmwareOne: 'xsom-system-part1@1.1.0.bin'
+		},
 	},
 };
 
