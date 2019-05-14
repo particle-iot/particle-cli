@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.41.0 - 14 May 2019
+
+* Updates bootloader on Photon and P1 to Device OS v1.1.0's latest version (v301), even though (v201) is only required. [#487](https://github.com/particle-iot/particle-cli/pull/487)
+* Also updates Photon/P1/Electron Device OS binaries to v1.1.0 [#487](https://github.com/particle-iot/particle-cli/pull/487)
+* Adds `particle update` support for Gen 3 platforms [#487](https://github.com/particle-iot/particle-cli/pull/487)
+
 ## 1.40.1 - 6 May 2019
 
 * Overhaul build pipeline [#484](https://github.com/particle-iot/particle-cli/pull/484)
