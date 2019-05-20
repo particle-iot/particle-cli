@@ -1,4 +1,4 @@
-const ParticleApi = require('./api').default;
+const ParticleApi = require('./api');
 const { openUsbDevice, openUsbDeviceById } = require('./usb-util');
 const { prompt, spin } = require('../app/ui');
 const deviceSpecs = require('../lib/deviceSpecs');
@@ -231,7 +231,7 @@ module.exports = class LogCommand {
 			return openUsbDeviceById({ id: args.params.device, api: this._api, auth: this._auth });
 		})
 			.then(dev => {
-			// Enable logging
+				// Enable logging
 				usbDevice = dev;
 				deviceId = usbDevice.id;
 				handlerId = handlerIdForStreamType(streamType);
@@ -250,14 +250,14 @@ module.exports = class LogCommand {
 				return spin(p, 'Configuring the device...');
 			})
 			.then(() => {
-			// Get the serial port assigned to the device
+				// Get the serial port assigned to the device
 				if (args.params.serial_port) {
 					return args.params.serial_port;
 				}
 				return this._findSerialPort(streamType, deviceId);
 			})
 			.then(portName => {
-			// Open serial port
+				// Open serial port
 				return when.promise((resolve, reject) => {
 					console.error(`Opening serial port: ${portName}`);
 					const port = new SerialPort(portName, { baudRate }, err => {
@@ -283,7 +283,7 @@ module.exports = class LogCommand {
 						console.error('\nClosing the device...');
 						serialPort.close();
 					} else {
-					// Terminate the process on second Ctrl-C
+						// Terminate the process on second Ctrl-C
 						console.error('\nAborted.');
 						process.exit(1);
 					}
@@ -302,7 +302,7 @@ module.exports = class LogCommand {
 			})
 			.finally(() => {
 				if (serialPort) {
-				// Close the serial port
+					// Close the serial port
 					return when.promise((resolve) => {
 						serialPort.close(() => resolve()); // Ignore errors
 					});
@@ -310,7 +310,7 @@ module.exports = class LogCommand {
 			})
 			.finally(() => {
 				if (usbDevice && handlerEnabled) {
-				// Unregister the log handler
+					// Unregister the log handler
 					return openUsbDevice(usbDevice)
 						.then(() => usbDevice.removeLogHandler({ id: handlerId }))
 						.catch(() => {}); // Ignore errors
@@ -318,7 +318,7 @@ module.exports = class LogCommand {
 			})
 			.finally(() => {
 				if (usbDevice) {
-				// Close the USB device
+					// Close the USB device
 					return usbDevice.close()
 						.catch(() => {}); // Ignore errors
 				}
@@ -334,12 +334,12 @@ module.exports = class LogCommand {
 		})
 			.then(ports => {
 				if (streamType.isUsbSerial) {
-				// Get all USB serial ports with a matching serial number
-				// TODO: Check the interface index to identify ports assigned to Serial and USBSerial1
+					// Get all USB serial ports with a matching serial number
+					// TODO: Check the interface index to identify ports assigned to Serial and USBSerial1
 					ports = ports.filter(p => p.serialNumber && p.serialNumber.toLowerCase() === deviceId);
 				} else {
-				// Filter out all Particle and non-USB serial ports
-				// FIXME: This will likely filter out built-in UARTs on Raspberry Pi
+					// Filter out all Particle and non-USB serial ports
+					// FIXME: This will likely filter out built-in UARTs on Raspberry Pi
 					ports = ports.filter(p => p.vendorId && p.productId && !isParticleSerialPort(p));
 				}
 				if (ports.length === 0) {
