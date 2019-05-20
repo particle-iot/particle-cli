@@ -36,6 +36,9 @@ const DEFAULT_LOG_LEVEL = 'all';
 
 const CATEGORY_FIELD_WIDTH = 14;
 
+// TODO: Define this result code in particle-usb
+const REQUEST_RESULT_DISABLED = -131;
+
 class PrettyFormatter extends EventEmitter {
 	constructor() {
 		super();
@@ -205,6 +208,13 @@ function isParticleSerialPort(port) {
 	return PARTICLE_USB_IDS.has(s);
 }
 
+function serialPortError(error) {
+	if (error.disconnected) {
+		return new Error('Serial connection closed');
+	}
+	return error;
+}
+
 module.exports = class LogCommand {
 	constructor(settings) {
 		this._auth = settings.access_token;
@@ -247,7 +257,14 @@ module.exports = class LogCommand {
 						handlerEnabled = true;
 						return usbDevice.close();
 					});
-				return spin(p, 'Configuring the device...');
+				return spin(p, 'Configuring the device...')
+					.catch(e => {
+						if (e.result === REQUEST_RESULT_DISABLED) {
+							throw new Error(`Unable to configure logging. Make sure the ${chalk.bold('FEATURE_LOG_CONFIG')} feature is \
+enabled in the application code`);
+						}
+						throw e;
+					});
 			})
 			.then(() => {
 				// Get the serial port assigned to the device
@@ -272,8 +289,8 @@ module.exports = class LogCommand {
 				serialPort = port;
 				// TODO: Try to reopen the serial port and re-register the log handler on USB/serial port errors
 				const p = when.promise((resolve, reject) => {
-					serialPort.on('error', err => reject(err));
-					serialPort.on('close', err => err ? reject(err) : resolve());
+					serialPort.on('error', err => reject(serialPortError(err)));
+					serialPort.on('close', err => err ? reject(serialPortError(err)) : resolve());
 				});
 				// Close the serial port on Ctrl-C
 				let closing = false;

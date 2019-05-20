@@ -36,7 +36,8 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command my_device': 'Start reading and displaying log messages from the device "my_device"',
 			'$0 $command my_device -l none -f app:all': 'Show only application messages',
 			'$0 $command my_device -l warn -f app:all': 'Show all application messages as well as system warnings and errors',
-			'$0 $command my_device Serial1': 'Use the hardware serial interface for logging'
+			'$0 $command my_device Serial1': 'Use the hardware serial interface for logging',
+			'$0 $command my_device Serial1 /dev/ttyUSB0': 'Use the specified serial port instead of auto-detecting'
 		},
 		handler: (args) => {
 			return logCommand().run(args);
