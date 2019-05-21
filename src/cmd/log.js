@@ -19,10 +19,12 @@ const STREAM_TYPES = [
 		name: 'Serial',
 		isUsbSerial: true
 	},
-	{
-		name: 'USBSerial1',
-		isUsbSerial: true
-	},
+	// TODO: It looks like calling USBSerial1.begin() in the Device OS causes the device to be detached
+	// from the system. Disabling this serial interface for now
+	// {
+	// 	name: 'USBSerial1',
+	// 	isUsbSerial: true
+	// },
 	{
 		name: 'Serial1'
 	}
