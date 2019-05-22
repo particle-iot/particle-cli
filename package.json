@@ -103,7 +103,7 @@
     "sinon-chai": "^3.3.0"
   },
   "optionalDependencies": {
-    "particle-usb": "^0.4.2"
+    "particle-usb": "^0.4.4"
   },
   "engines": {
     "node": ">=6",
