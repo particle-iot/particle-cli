@@ -97,7 +97,7 @@ module.exports = class UsbCommand {
 	reset(args) {
 		return this._forEachUsbDevice(args, usbDevice => {
 			return usbDevice.reset();
-		})
+		}, { dfuMode: true })
 			.then(() => {
 				console.log('Done.');
 			});
