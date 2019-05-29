@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.41.1 - 29 May 2019
+* Add `particle usb reset` support for devices in DFU mode [#488](https://github.com/particle-iot/particle-cli/pull/488)
+
 ## 1.41.0 - 14 May 2019
 
 * Updates bootloader on Photon and P1 to Device OS v1.1.0's latest version (v301), even though (v201) is only required. [#487](https://github.com/particle-iot/particle-cli/pull/487)
