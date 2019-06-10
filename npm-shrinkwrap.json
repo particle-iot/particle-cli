@@ -10694,9 +10694,9 @@
       "integrity": "sha1-ugZWKbepJRMOFXeRCM9UCZDpjRs="
     },
     "wiring-preprocessor": {
-      "version": "1.0.1",
-      "resolved": "https://registry.npmjs.org/wiring-preprocessor/-/wiring-preprocessor-1.0.1.tgz",
-      "integrity": "sha512-Wb2UAGWjAUqlW6qmsMAZqdBhB96trf0vkno7PowkmAbCmMFE9w7BjyUVPjIsD3TFH5opnjre29nHQXOMnt6n3g=="
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/wiring-preprocessor/-/wiring-preprocessor-2.0.1.tgz",
+      "integrity": "sha512-7P8ZD3X+IzPMuUrptdnrcZaokpHTfwnASbeqJ4npxoGSQ0x+2kQIcOiS8Kbb4Zer1KHzYaRzoavMWK1IEzKv9w=="
     },
     "wordwrap": {
       "version": "0.0.3",
