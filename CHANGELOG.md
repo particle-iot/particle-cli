@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.41.2 - 10 June 2019
+* Move `core-js` from `devDependencies` to `dependencies` (fixes [#491](https://github.com/particle-iot/particle-cli/issues/491))
+* Update `wiring-preprocessor` to `v2.0.1`, show generated file warning when coverting `.ino` -> `.cpp`
+
 ## 1.41.1 - 29 May 2019
 * Add `particle usb reset` support for devices in DFU mode [#488](https://github.com/particle-iot/particle-cli/pull/488)
 
