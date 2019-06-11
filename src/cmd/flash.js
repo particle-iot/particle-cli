@@ -96,18 +96,18 @@ class FlashCommand {
 				}
 
 				switch (info.prefixInfo.moduleFunction) {
-					case ModuleInfo.Function.MONO_FIRMWARE:
+					case ModuleInfo.FunctionType.MONO_FIRMWARE:
 						// only override if modular capable
 						destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
 						break;
-					case ModuleInfo.Function.SYSTEM_PART:
+					case ModuleInfo.FunctionType.SYSTEM_PART:
 						destSegment = systemModuleIndexToString[info.prefixInfo.moduleIndex];
 						destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
 						break;
-					case ModuleInfo.Function.USER_PART:
+					case ModuleInfo.FunctionType.USER_PART:
 						// use existing destSegment for userFirmware/factoryReset
 						break;
-					case ModuleInfo.Function.RADIO_STACK:
+					case ModuleInfo.FunctionType.RADIO_STACK:
 						destSegment = 'radioStack';
 						destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
 						break;
@@ -124,7 +124,7 @@ class FlashCommand {
 
 				return binary;
 			});
-		}).then((binary) => {
+		}).then((finalBinary) => {
 			if (!destAddress && destSegment) {
 				const segment = dfu._validateSegmentSpecs(destSegment);
 				if (segment.error) {
@@ -137,7 +137,7 @@ class FlashCommand {
 			}
 			const alt = 0;
 			const leave = destSegment === 'userFirmware'; // todo - leave on factory firmware write too?
-			return dfu.writeDfu(alt, binary, destAddress, leave);
+			return dfu.writeDfu(alt, finalBinary, destAddress, leave);
 		}).then(() => {
 			console.log ('\nFlash success!');
 		}).catch((err) => {
