@@ -398,6 +398,10 @@ const specs = {
 			alt: '1',
 			size: '1'
 		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
+		},
 		knownApps: {
 			'tinker': 'tinker-0.8.0-rc.27-argon.bin'
 		},
@@ -461,6 +465,10 @@ const specs = {
 			alt: '1',
 			size: '1'
 		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
+		},
 		knownApps: {
 		},
 		serial: {
@@ -522,6 +530,10 @@ const specs = {
 			address: '1753',
 			alt: '1',
 			size: '1'
+		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
 		},
 		knownApps: {
 			'tinker': 'tinker-0.8.0-rc.27-boron.bin'
@@ -586,6 +598,10 @@ const specs = {
 			alt: '1',
 			size: '1'
 		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
+		},
 		knownApps: {
 		},
 		serial: {
@@ -647,6 +663,10 @@ const specs = {
 			address: '1753',
 			alt: '1',
 			size: '1'
+		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
 		},
 		knownApps: {
 			'tinker': 'tinker-0.8.0-rc.27-xenon.bin'
@@ -711,6 +731,10 @@ const specs = {
 			address: '1753',
 			alt: '1',
 			size: '1'
+		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
 		},
 		knownApps: {
 		},
