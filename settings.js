@@ -86,38 +86,38 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'system-part1-1.1.0-photon-no-boot-dep.bin',
-			systemFirmwareTwo: 'system-part2-1.1.0-photon-no-boot-dep.bin',
-			userFirmware: 'ascender-1.1.0-photon.bin'
+			systemFirmwareOne: 'system-part1-1.1.1-photon-no-boot-dep.bin',
+			systemFirmwareTwo: 'system-part2-1.1.1-photon-no-boot-dep.bin',
+			userFirmware: 'ascender-1.1.1-photon.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'system-part1-1.1.0-p1-no-boot-dep.bin',
-			systemFirmwareTwo: 'system-part2-1.1.0-p1-no-boot-dep.bin',
-			userFirmware: 'ascender-1.1.0-p1.bin'
+			systemFirmwareOne: 'system-part1-1.1.1-p1-no-boot-dep.bin',
+			systemFirmwareTwo: 'system-part2-1.1.1-p1-no-boot-dep.bin',
+			userFirmware: 'ascender-1.1.1-p1.bin'
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
-			systemFirmwareOne:   'electron-system-part2@1.1.0+debug.bin',
-			systemFirmwareTwo:   'electron-system-part3@1.1.0+debug.bin',
-			systemFirmwareThree: 'electron-system-part1@1.1.0+debug.bin'
+			systemFirmwareOne:   'electron-system-part2@1.1.1+debug.bin',
+			systemFirmwareTwo:   'electron-system-part3@1.1.1+debug.bin',
+			systemFirmwareThree: 'electron-system-part1@1.1.1+debug.bin'
 		},
 		'2b04:d00c': {
-			systemFirmwareOne: 'argon-system-part1@1.1.0.bin'
+			systemFirmwareOne: 'argon-system-part1@1.1.1.bin'
 		},
 		'2b04:d00d': {
-			systemFirmwareOne: 'boron-system-part1@1.1.0.bin'
+			systemFirmwareOne: 'boron-system-part1@1.1.1.bin'
 		},
 		'2b04:d00e': {
-			systemFirmwareOne: 'xenon-system-part1@1.1.0.bin'
+			systemFirmwareOne: 'xenon-system-part1@1.1.1.bin'
 		},
 		'2b04:d016': {
-			systemFirmwareOne: 'asom-system-part1@1.1.0.bin'
+			systemFirmwareOne: 'asom-system-part1@1.1.1.bin'
 		},
 		'2b04:d017': {
-			systemFirmwareOne: 'bsom-system-part1@1.1.0.bin'
+			systemFirmwareOne: 'bsom-system-part1@1.1.1.bin'
 		},
 		'2b04:d018': {
-			systemFirmwareOne: 'xsom-system-part1@1.1.0.bin'
+			systemFirmwareOne: 'xsom-system-part1@1.1.1.bin'
 		},
 	},
 };
