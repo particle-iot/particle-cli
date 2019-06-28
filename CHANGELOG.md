@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.42.0 - 28 June 2019
+
+* Updates bootloader on Photon and P1 to Device OS v1.1.1's latest version (v301), even though (v201) is only required. [#496](https://github.com/particle-iot/particle-cli/pull/496)
+* Also updates all Device OS binaries to v1.1.1 [#496](https://github.com/particle-iot/particle-cli/pull/496)
+
 ## 1.41.2 - 10 June 2019
 * Move `core-js` from `devDependencies` to `dependencies` (fixes [#491](https://github.com/particle-iot/particle-cli/issues/491))
 * Update `wiring-preprocessor` to `v2.0.1`, show generated file warning when coverting `.ino` -> `.cpp`
