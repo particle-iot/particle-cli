@@ -127,8 +127,6 @@ Anything after the `--` delimeter is passed directly to the CLI ([docs](https://
 - `npm run update-firmware-binaries <version>`
   where `<version>` is the newly released system firmware version like 0.7.0
 
-- If a particular device requires `requiresBootloaderAscenderApp: true` found in `src/lib/deviceSpecs/specifications.js` then a manual step is required that replaces the firmware files copied from the above step with the special system firmware required that allows the bootloader to be updated by the ascender.bin user app.  There will be a draft release in the `particle-iot/firmware` repo containing these files.
-
 - Test on each platform by doing
 
   ```

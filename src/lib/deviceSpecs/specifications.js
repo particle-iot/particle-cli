@@ -57,7 +57,6 @@ const specs = {
 	},
 	'2b04:d006': {
 		productName: 'Photon',
-		requiresBootloaderAscenderApp: true,
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -99,10 +98,6 @@ const specs = {
 			alt: '0',
 			size: 128*1024
 		},
-		otaRegion: {
-			address: '0x080C0000',
-			alt: '0'
-		},
 		systemFirmwareOne: {
 			address: '0x08020000',
 			alt: '0'
@@ -110,6 +105,15 @@ const specs = {
 		systemFirmwareTwo: {
 			address: '0x08060000',
 			alt: '0'
+		},
+		otaRegion: {
+			address: '0x080C0000',
+			alt: '0'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
 		},
 		knownApps: {
 			'tinker': 'tinker-0.4.5-photon.bin',
@@ -133,7 +137,6 @@ const specs = {
 	},
 	'2b04:d008': {
 		productName: 'P1',
-		requiresBootloaderAscenderApp: true,
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -164,10 +167,6 @@ const specs = {
 			alt: '1',
 			alg: 'ec'
 		},
-		otaRegion: {
-			address: '0x080C0000',
-			alt: '0'
-		},
 		factoryReset: {
 			address: '0x080E0000',
 			alt: '0'
@@ -184,6 +183,15 @@ const specs = {
 		systemFirmwareTwo: {
 			address: '0x08060000',
 			alt: '0'
+		},
+		otaRegion: {
+			address: '0x080C0000',
+			alt: '0'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
 		},
 		knownApps: {
 			'tinker': 'tinker-0.4.5-p1.bin',
@@ -253,6 +261,15 @@ const specs = {
 		systemFirmwareThree: {
 			address: '0x08060000',
 			alt: '0'
+		},
+		otaRegion: {
+			address: '0x080C0000',
+			alt: '0'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
 		},
 		userFirmware: {
 			address: '0x08080000',
@@ -372,6 +389,15 @@ const specs = {
 			address: '0x00030000',
 			alt: '0'
 		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
+		},
 		knownApps: {
 			'tinker': 'tinker-0.8.0-rc.27-argon.bin'
 		},
@@ -426,6 +452,15 @@ const specs = {
 			address: '0x00030000',
 			alt: '0'
 		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
+		},
 		knownApps: {
 		},
 		serial: {
@@ -478,6 +513,15 @@ const specs = {
 		systemFirmwareOne: {
 			address: '0x00030000',
 			alt: '0'
+		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
 		},
 		knownApps: {
 			'tinker': 'tinker-0.8.0-rc.27-boron.bin'
@@ -533,6 +577,15 @@ const specs = {
 			address: '0x00030000',
 			alt: '0'
 		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
+		},
 		knownApps: {
 		},
 		serial: {
@@ -585,6 +638,15 @@ const specs = {
 		systemFirmwareOne: {
 			address: '0x00030000',
 			alt: '0'
+		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
 		},
 		knownApps: {
 			'tinker': 'tinker-0.8.0-rc.27-xenon.bin'
@@ -640,6 +702,15 @@ const specs = {
 		systemFirmwareOne: {
 			address: '0x00030000',
 			alt: '0'
+		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
 		},
 		knownApps: {
 		},

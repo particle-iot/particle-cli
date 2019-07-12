@@ -86,38 +86,55 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'system-part1-1.1.1-photon-no-boot-dep.bin',
-			systemFirmwareTwo: 'system-part2-1.1.1-photon-no-boot-dep.bin',
-			userFirmware: 'ascender-1.1.1-photon.bin'
+			systemFirmwareOne: 'photon-system-part1@1.2.1.bin',
+			systemFirmwareTwo: 'photon-system-part2@1.2.1.bin',
+			otaRegion: 'photon-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'system-part1-1.1.1-p1-no-boot-dep.bin',
-			systemFirmwareTwo: 'system-part2-1.1.1-p1-no-boot-dep.bin',
-			userFirmware: 'ascender-1.1.1-p1.bin'
+			systemFirmwareOne: 'p1-system-part1@1.2.1.bin',
+			systemFirmwareTwo: 'p1-system-part2@1.2.1.bin',
+			otaRegion: 'p1-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
-			systemFirmwareOne:   'electron-system-part2@1.1.1+debug.bin',
-			systemFirmwareTwo:   'electron-system-part3@1.1.1+debug.bin',
-			systemFirmwareThree: 'electron-system-part1@1.1.1+debug.bin'
+			systemFirmwareOne:   'electron-system-part2@1.2.1+debug.bin',
+			systemFirmwareTwo:   'electron-system-part3@1.2.1+debug.bin',
+			systemFirmwareThree: 'electron-system-part1@1.2.1+debug.bin'
+			// For now, electron still contains the bootloader in system firmware
+			// otaRegion: 'electron-bootloader@1.2.1.bin',
+			// otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00c': {
-			systemFirmwareOne: 'argon-system-part1@1.1.1.bin'
+			systemFirmwareOne: 'argon-system-part1@1.2.1.bin',
+			otaRegion: 'argon-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00d': {
-			systemFirmwareOne: 'boron-system-part1@1.1.1.bin'
+			systemFirmwareOne: 'boron-system-part1@1.2.1.bin',
+			otaRegion: 'boron-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00e': {
-			systemFirmwareOne: 'xenon-system-part1@1.1.1.bin'
+			systemFirmwareOne: 'xenon-system-part1@1.2.1.bin',
+			otaRegion: 'xenon-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d016': {
-			systemFirmwareOne: 'asom-system-part1@1.1.1.bin'
+			systemFirmwareOne: 'asom-system-part1@1.2.1.bin',
+			otaRegion: 'asom-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d017': {
-			systemFirmwareOne: 'bsom-system-part1@1.1.1.bin'
+			systemFirmwareOne: 'bsom-system-part1@1.2.1.bin',
+			otaRegion: 'bsom-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d018': {
-			systemFirmwareOne: 'xsom-system-part1@1.1.1.bin'
+			systemFirmwareOne: 'xsom-system-part1@1.2.1.bin',
+			otaRegion: 'xsom-bootloader@1.2.1.bin',
+			otaFlag: 'ota-flag-a5.bin'
 		},
 	},
 };
