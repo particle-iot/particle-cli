@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.43.0 - 11 July 2019
+
+* Updated binaries for Device OS 1.2.1
+* Removed Ascender mechanism for updating bootloaders and replaced with shiny new 🌟 feature implemented in [Device OS PR 1788](https://github.com/particle-iot/device-os/pull/1788) that allows us to flash the bootloader via DFU with special sequence.
+
 ## 1.42.0 - 28 June 2019
 
 * Updates bootloader on Photon and P1 to Device OS v1.1.1's latest version (v301), even though (v201) is only required. [#496](https://github.com/particle-iot/particle-cli/pull/496)
