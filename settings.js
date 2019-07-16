@@ -86,16 +86,22 @@ var settings = {
 	},
 	updates: {
 		'2b04:d006': {
-			systemFirmwareOne: 'photon-system-part1@1.2.1.bin',
-			systemFirmwareTwo: 'photon-system-part2@1.2.1.bin',
+			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
+			// because as soon as the system parts are flashed they will change the location
+			// of DFU read/write functions which live in system firmware.
 			otaRegion: 'photon-bootloader@1.2.1.bin',
-			otaFlag: 'ota-flag-a5.bin'
+			otaFlag: 'ota-flag-a5.bin',
+			systemFirmwareOne: 'photon-system-part1@1.2.1.bin',
+			systemFirmwareTwo: 'photon-system-part2@1.2.1.bin'
 		},
 		'2b04:d008': {
-			systemFirmwareOne: 'p1-system-part1@1.2.1.bin',
-			systemFirmwareTwo: 'p1-system-part2@1.2.1.bin',
+			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
+			// because as soon as the system parts are flashed they will change the location
+			// of DFU read/write functions which live in system firmware.
 			otaRegion: 'p1-bootloader@1.2.1.bin',
-			otaFlag: 'ota-flag-a5.bin'
+			otaFlag: 'ota-flag-a5.bin',
+			systemFirmwareOne: 'p1-system-part1@1.2.1.bin',
+			systemFirmwareTwo: 'p1-system-part2@1.2.1.bin'
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
