@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.43.1 - 16 July 2019
+
+* Fixes issue #498 where `particle update` fails on Photon/P1 [#499](https://github.com/particle-iot/particle-cli/pull/499)
+
 ## 1.43.0 - 11 July 2019
 
 * Updated binaries for Device OS 1.2.1
