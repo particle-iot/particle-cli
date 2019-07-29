@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.43.2 - 29 July 2019
+
+* Support for radio stack modules and `DROP_MODULE_INFO` module flag [#493](https://github.com/particle-iot/particle-cli/pull/493)
+* Support for secondary dependency in `particle binary inspect` [#493](https://github.com/particle-iot/particle-cli/pull/493)
+
 ## 1.43.1 - 16 July 2019
 
 * Fixes issue #498 where `particle update` fails on Photon/P1 [#499](https://github.com/particle-iot/particle-cli/pull/499)
