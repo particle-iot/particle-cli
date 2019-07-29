@@ -91,7 +91,8 @@ class BinaryCommand {
 			'a system module',
 			'an application module',
 			'a settings module',
-			'a network coprocessor (NCP) module'
+			'a network coprocessor (NCP) module',
+			'a radio stack module'
 		];
 		let moduleFunction = fileInfo.prefixInfo.moduleFunction;
 		if (moduleFunction >= functions.length) {
@@ -108,6 +109,13 @@ class BinaryCommand {
 				+ ' number ' + chalk.bold(fileInfo.prefixInfo.depModuleIndex.toString())
 				+ ' at version '
 				+ chalk.bold(fileInfo.prefixInfo.depModuleVersion.toString()));
+		}
+		if (fileInfo.prefixInfo.dep2ModuleFunction) {
+			console.log(` It ${fileInfo.prefixInfo.depModuleFunction ? 'also ' : ''}depends on `
+				+ chalk.bold(functions[fileInfo.prefixInfo.dep2ModuleFunction])
+				+ ' number ' + chalk.bold(fileInfo.prefixInfo.dep2ModuleIndex.toString())
+				+ ' at version '
+				+ chalk.bold(fileInfo.prefixInfo.dep2ModuleVersion.toString()));
 		}
 	}
 }

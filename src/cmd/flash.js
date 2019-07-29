@@ -2,12 +2,11 @@ const fs = require('fs');
 const VError = require('verror');
 const dfu = require('../lib/dfu');
 const ModuleParser = require('binary-version-reader').HalModuleParser;
+const ModuleInfo = require('binary-version-reader').ModuleInfo;
 const deviceSpecs = require('../lib/deviceSpecs');
 const ensureError = require('../lib/utilities').ensureError;
-
-const MONOLITHIC = 3;
-const SYSTEM_MODULE = 4;
-const APPLICATION_MODULE = 5;
+const temp = require('temp').track();
+const when = require('when');
 
 const systemModuleIndexToString = {
 	1: 'systemFirmwareOne',
@@ -97,16 +96,20 @@ class FlashCommand {
 				}
 
 				switch (info.prefixInfo.moduleFunction) {
-					case MONOLITHIC:
+					case ModuleInfo.FunctionType.MONO_FIRMWARE:
 						// only override if modular capable
 						destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
 						break;
-					case SYSTEM_MODULE:
+					case ModuleInfo.FunctionType.SYSTEM_PART:
 						destSegment = systemModuleIndexToString[info.prefixInfo.moduleIndex];
 						destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
 						break;
-					case APPLICATION_MODULE:
+					case ModuleInfo.FunctionType.USER_PART:
 						// use existing destSegment for userFirmware/factoryReset
+						break;
+					case ModuleInfo.FunctionType.RADIO_STACK:
+						destSegment = 'radioStack';
+						destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
 						break;
 					default:
 						if (!force) {
@@ -114,8 +117,14 @@ class FlashCommand {
 						}
 						break;
 				}
+
+				if (info.prefixInfo.moduleFlags & ModuleInfo.Flags.DROP_MODULE_INFO) {
+					return this._dropModuleInfo(binary);
+				}
+
+				return binary;
 			});
-		}).then(() => {
+		}).then((finalBinary) => {
 			if (!destAddress && destSegment) {
 				const segment = dfu._validateSegmentSpecs(destSegment);
 				if (segment.error) {
@@ -128,11 +137,23 @@ class FlashCommand {
 			}
 			const alt = 0;
 			const leave = destSegment === 'userFirmware'; // todo - leave on factory firmware write too?
-			return dfu.writeDfu(alt, binary, destAddress, leave);
+			return dfu.writeDfu(alt, finalBinary, destAddress, leave);
 		}).then(() => {
 			console.log ('\nFlash success!');
 		}).catch((err) => {
 			throw new VError(ensureError(err), 'Error writing firmware');
+		});
+	}
+
+	_dropModuleInfo(binary) {
+		// Creates a temporary binary with module info stripped out and returns the path to it
+
+		return when.promise((resolve, reject) => {
+			const rStream = fs.createReadStream(binary, { start: ModuleInfo.HEADER_SIZE });
+			const wStream = temp.createWriteStream({ suffix: '.bin' });
+			rStream.pipe(wStream)
+				.on('error', reject)
+				.on('finish', () => resolve(wStream.path));
 		});
 	}
 }

@@ -290,7 +290,8 @@ class SerialCommand {
 				b: 'Bootloader',
 				r: 'Reserved',
 				m: 'Monolithic',
-				c: 'NCP'
+				c: 'NCP',
+				a: 'Radio stack'
 			};
 			const locationMap = {
 				m: 'main',
