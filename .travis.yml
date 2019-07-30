@@ -12,6 +12,7 @@ before_install:
 - npm install -g npm@5
 script:
 - MOCHA_OPTIONS=--forbid-only npm test
+- npm run test:e2e:ci
 - accept/install.sh && source accept/.profile && npm run test:accept
 jobs:
   include:
