@@ -74,7 +74,7 @@ class FlashCommand {
 		}).then(() => {
 			destSegment = factory ? 'factoryReset' : 'userFirmware';
 			if (flashingKnownApp) {
-				return;
+				return binary;
 			}
 
 			const parser = new ModuleParser();
