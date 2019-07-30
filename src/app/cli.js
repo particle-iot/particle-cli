@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const when = require('when');
 const log = require('../lib/log');
 const pkg = require('../../package.json');
 const settings = require('../../settings');
@@ -129,25 +128,24 @@ module.exports = class CLI {
 		});
 	}
 
-	runCommand(args) {
-		const errors = commandProcessor.createErrorHandler();
-		this.rootCategory = this.setupCommandProcessor();
+	async runCommand(args){
 		let argv;
+
+		this.rootCategory = this.setupCommandProcessor();
+
 		try {
 			argv = commandProcessor.parse(this.rootCategory, args);
-		} catch (error) {
+		} catch (error){
 			error.isUsageError = true;
-			errors(error);
+			throw error;
 		}
-		// we want to separate execution from parsing, but yargs wants to execute help/version when parsing args.
-		// this also gives us more control.
-		// todo - handle root command passing --version
-		if (argv.help) {
+
+		if (argv.help){
 			commandProcessor.showHelp();
-		} else if (argv.clierror) {
-			errors(argv.clierror);
-		} else if (argv.clicommand) {
-			when(argv.clicommand.exec(argv)).done(result => result, errors);
+		} else if (argv.clierror){
+			throw argv.clierror;
+		} else if (argv.clicommand){
+			await argv.clicommand.exec(argv);
 		}
 	}
 
@@ -165,17 +163,20 @@ module.exports = class CLI {
 		return false;
 	}
 
-	run(args) {
+	async run(args){
 		settings.whichProfile();
 		settings.loadOverrides();
-
 		settings.disableUpdateCheck = this.hasArg('--no-update-check', args);
 		const force = this.hasArg('--force-update-check', args);
 
-		return updateCheck(settings.disableUpdateCheck, force).then(() => {
+		try {
+			await updateCheck(settings.disableUpdateCheck, force);
 			const cmdargs = args.slice(2); // remove executable and script
-			return this.runCommand(cmdargs);
-		}).catch(commandProcessor.createErrorHandler());
+			return await this.runCommand(cmdargs);
+		} catch (error){
+			const onError = commandProcessor.createErrorHandler();
+			return onError(error);
+		}
 	}
 };
 
