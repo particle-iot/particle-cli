@@ -1,4 +1,4 @@
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const { delay } = require('../__lib__/mocha-utils');
 const cli = require('../__lib__/cli');
 

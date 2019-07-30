@@ -1,4 +1,4 @@
-const { expect, sinon } = require('../../../test/test-setup');
+const { expect, sinon } = require('../../../test/setup');
 const windowsWiFi = require('./windows');
 
 

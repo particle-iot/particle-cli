@@ -2,10 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const stream = require('stream');
 const wiringPreprocessor = require('wiring-preprocessor');
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 const PreprocessCommand = require('./preprocess');
 
-const FIXTURES_DIR = path.join(__dirname, '..', '..', 'test', 'fixtures');
+const FIXTURES_DIR = path.join(__dirname, '..', '..', 'test', '__fixtures__');
 
 
 describe('Preprocess Command', () => {

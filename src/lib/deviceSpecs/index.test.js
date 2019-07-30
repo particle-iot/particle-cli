@@ -1,4 +1,4 @@
-const { expect } = require('../../../test/test-setup');
+const { expect } = require('../../../test/setup');
 const deviceSpecs = require('./index');
 
 

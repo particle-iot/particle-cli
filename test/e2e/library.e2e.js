@@ -1,5 +1,5 @@
 const path = require('path');
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const { delay } = require('../__lib__/mocha-utils');
 const matches = require('../__lib__/capture-matches');
 const stripANSI = require('../__lib__/ansi-strip');

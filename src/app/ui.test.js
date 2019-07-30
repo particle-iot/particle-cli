@@ -1,4 +1,4 @@
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 const { Spinner } = require('cli-spinner');
 const inquirer = require('inquirer');
 const log = require('../lib/log');

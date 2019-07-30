@@ -1,5 +1,5 @@
 const proxyquire = require('proxyquire');
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 
 const stubs = {
 	api: {

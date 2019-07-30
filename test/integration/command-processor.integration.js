@@ -17,7 +17,7 @@
  ******************************************************************************
  */
 
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const CLI = require('../../src/app/cli');
 const commandProcessor = require('../../src/app/command-processor');
 

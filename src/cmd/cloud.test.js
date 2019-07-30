@@ -1,5 +1,5 @@
 const proxyquire = require('proxyquire');
-const { expect } = require('../../test/test-setup');
+const { expect } = require('../../test/setup');
 const sandbox = require('sinon').createSandbox();
 
 const stubs = {

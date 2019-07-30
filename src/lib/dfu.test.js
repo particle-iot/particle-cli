@@ -1,12 +1,12 @@
 const fs = require('fs');
 const path = require('path');
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 const dfu = require('./dfu');
 
 
 describe('DFU', () => {
 	const sandbox = sinon.createSandbox();
-	const FIXTURES_DIR = path.join(__dirname, '../../test/fixtures/dfu');
+	const FIXTURES_DIR = path.join(__dirname, '../../test/__fixtures__/dfu');
 
 	afterEach(() => {
 		sandbox.restore();

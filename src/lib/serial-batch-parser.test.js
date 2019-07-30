@@ -1,6 +1,6 @@
 const util = require('util');
 const Readable = require('stream').Readable;
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 const SerialBatchParser = require('./serial-batch-parser');
 
 

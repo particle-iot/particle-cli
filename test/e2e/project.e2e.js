@@ -1,5 +1,5 @@
 const path = require('path');
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const { delay } = require('../__lib__/mocha-utils');
 const cli = require('../__lib__/cli');
 const fs = require('../__lib__/fs');

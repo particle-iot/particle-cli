@@ -1,5 +1,5 @@
 const capitalize = require('lodash/capitalize');
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const cli = require('../__lib__/cli');
 const {
 	DEVICE_ID,

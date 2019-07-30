@@ -17,7 +17,7 @@
  ******************************************************************************
  */
 
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 const { CLILibraryTestMigrateCommandSite } = require('./library_migrate');
 
 

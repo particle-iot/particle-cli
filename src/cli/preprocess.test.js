@@ -1,4 +1,4 @@
-const { expect } = require('../../test/test-setup');
+const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const preprocess = require('./preprocess');
 

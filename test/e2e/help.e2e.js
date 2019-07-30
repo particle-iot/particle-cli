@@ -1,4 +1,4 @@
-const { expect, sinon } = require('../test-setup');
+const { expect, sinon } = require('../setup');
 const stripANSI = require('../__lib__/ansi-strip');
 const matches = require('../__lib__/capture-matches');
 const cli = require('../__lib__/cli');

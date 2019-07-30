@@ -1,5 +1,5 @@
 const path = require('path');
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const cli = require('../__lib__/cli');
 const fs = require('../__lib__/fs');
 const {

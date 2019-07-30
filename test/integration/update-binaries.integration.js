@@ -1,11 +1,11 @@
 var fs = require('fs');
 var path = require('path');
-const { expect } = require('./test-setup');
+const { expect } = require('../setup');
 var Parser = require('binary-version-reader').HalModuleParser;
 
 
 describe('the update firmware binaries are all valid', () => {
-	var updateDir = path.resolve(__dirname, '../assets/updates');
+	var updateDir = path.resolve(__dirname, '../../assets/updates');
 
 	it('has update files', () => {
 		expect(getUpdateFiles(updateDir)).to.have.property('length').greaterThan(0);
@@ -59,3 +59,4 @@ describe('the update firmware binaries are all valid', () => {
 		return fileSizeInBytes;
 	}
 });
+

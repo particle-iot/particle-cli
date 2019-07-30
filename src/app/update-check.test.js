@@ -1,5 +1,5 @@
 const semver = require('semver');
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 const updateCheck = require('./update-check');
 const settings = require('../../settings');
 const pkg = require('../../package');

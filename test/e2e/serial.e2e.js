@@ -1,6 +1,6 @@
 const words = require('lodash/words');
 const capitalize = require('lodash/capitalize');
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const { runForAtLeast } = require('../__lib__/mocha-utils');
 const cli = require('../__lib__/cli');
 const {

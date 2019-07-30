@@ -1,5 +1,5 @@
-const MockSerial = require('../../test/mocks/serial.mock');
-const { expect } = require('../../test/test-setup');
+const MockSerial = require('../../test/__mocks__/serial.mock');
+const { expect } = require('../../test/setup');
 const SerialCommand = require('./serial');
 
 

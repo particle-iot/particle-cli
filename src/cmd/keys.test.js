@@ -1,6 +1,6 @@
 const fs = require('fs');
 const proxyquire = require('proxyquire');
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 
 let api;
 function ApiClient() {

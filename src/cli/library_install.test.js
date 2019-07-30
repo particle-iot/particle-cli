@@ -17,7 +17,7 @@
  ******************************************************************************
  */
 
-const { expect } = require('../../test/test-setup');
+const { expect } = require('../../test/setup');
 const { LibraryInstallCommand } = require('../cmd');
 const libraryCommands = require('./library');
 const commandProcessor = require('../app/command-processor');

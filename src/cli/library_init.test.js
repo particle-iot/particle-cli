@@ -17,7 +17,7 @@
  ******************************************************************************
  */
 
-const { expect, sinon } = require('../../test/test-setup');
+const { expect, sinon } = require('../../test/setup');
 const { LibraryInitGenerator } = require('particle-library-manager');
 const { CLILibraryInitCommandSite } = require('./library_init');
 const { LibraryInitCommand } = require('../cmd');

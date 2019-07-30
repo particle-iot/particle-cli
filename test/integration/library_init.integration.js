@@ -21,7 +21,7 @@
 const fs = require('fs');
 const path = require('path');
 const mockfs = require('mock-fs');
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const libraryCommands = require('../../src/cli/library');
 const { LibraryInitCommand } = require('particle-commands');
 const commandProcessor = require('../../src/app/command-processor');

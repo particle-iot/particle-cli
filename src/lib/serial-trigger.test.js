@@ -1,6 +1,6 @@
 const util = require('util');
 const Transform = require('stream').Transform;
-const MockSerial = require('../../test/mocks/serial.mock');
+const MockSerial = require('../../test/__mocks__/serial.mock');
 const SerialTrigger = require('./serial-trigger');
 
 function PassthroughStream() {
