@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.43.3 - 30 July 2019
+
+* Resolves a regression introduced in 1.43.2 when flashing known applications e.g. tinker.
+
 ## 1.43.2 - 29 July 2019
 
 * Support for radio stack modules and `DROP_MODULE_INFO` module flag [#493](https://github.com/particle-iot/particle-cli/pull/493)
