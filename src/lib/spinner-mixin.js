@@ -1,5 +1,6 @@
 const Spinner = require('cli-spinner').Spinner;
 
+
 module.exports = function spinnerMixin(obj) {
 	Object.assign(obj, {
 		newSpin(str) {
@@ -29,3 +30,4 @@ module.exports = function spinnerMixin(obj) {
 		}
 	});
 };
+

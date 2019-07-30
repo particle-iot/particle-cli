@@ -1,12 +1,13 @@
-const _ = require('lodash');
 const os = require('os');
+const _ = require('lodash');
 const connect = {
 	'darwin': require('./connect/darwin'),
 	'linux': require('./connect/linux'),
 	'win32': require('./connect/windows')
 };
 
-class WiFiManager {
+
+module.exports = class WiFiManager {
 	constructor(opts) {
 		if (opts) {
 			// TODO: something fancy with the interfaces.
@@ -80,6 +81,5 @@ class WiFiManager {
 	__lookupMAC(mac) {
 		return _.find(this.__cache, 'mac', mac);
 	}
-}
+};
 
-module.exports = WiFiManager;

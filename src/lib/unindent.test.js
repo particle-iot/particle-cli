@@ -35,3 +35,4 @@ foo
 		expect(unindent(string)).to.equal('foo\n	bar\nfred');
 	});
 });
+

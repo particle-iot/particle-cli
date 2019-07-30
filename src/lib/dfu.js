@@ -24,27 +24,22 @@ You should have received a copy of the GNU Lesser General Public
 License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
-
-
-const _ = require('lodash');
-
 const fs = require('fs');
-const when = require('when');
-const whenNode = require('when/node');
-const utilities = require('./utilities');
+const _ = require('lodash');
+const temp = require('temp');
+const chalk = require('chalk');
+const inquirer = require('inquirer');
 const childProcess = require('child_process');
+const { systemSupportsUdev, promptAndInstallUdevRules } = require('../cmd/udev');
 const settings = require('../../settings');
+const utilities = require('./utilities');
 const specs = require('./deviceSpecs');
 const log = require('./log');
-const { systemSupportsUdev, promptAndInstallUdevRules } = require('../cmd/udev');
 
-const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
-const chalk = require('chalk');
-const temp = require('temp');
 
-const dfu = {
 
+module.exports = {
 	_dfuIdsFromDfuOutput(stdout) {
 		// find DFU devices that match specs
 		let dfuIds =
@@ -64,43 +59,51 @@ const dfu = {
 
 	dfuId: undefined,
 	listDFUDevices() {
-		let temp = when.defer();
+		const { getCommand, _dfuIdsFromDfuOutput, _missingDevicePermissions } = module.exports;
 
-		let failTimer = utilities.timeoutGenerator('listDFUDevices timed out', temp, 6000);
-		let cmd = dfu.getCommand() + ' -l';
-		childProcess.exec(cmd, (error, stdout, stderr) => {
-			clearTimeout(failTimer);
-			if (error) {
-				return temp.reject(error);
-			}
-			if (stderr) {
-				if (dfu._missingDevicePermissions(stderr) && systemSupportsUdev()) {
-					const error = new Error('Missing permissions to use DFU');
-					return promptAndInstallUdevRules(error).then(() => temp.reject(error), e => temp.reject(e));
+		return new Promise((resolve, reject) => {
+			let failTimer = utilities.timeoutGenerator('listDFUDevices timed out', temp, 6000);
+			let cmd = getCommand() + ' -l';
+
+			childProcess.exec(cmd, (error, stdout, stderr) => {
+				clearTimeout(failTimer);
+
+				if (error) {
+					return reject(error);
 				}
-			}
 
-			// find DFU devices that match specs
-			stdout = stdout || '';
-			let dfuIds = dfu._dfuIdsFromDfuOutput(stdout);
-			let dfuDevices = dfuIds.map((d) => {
-				return {
-					type: specs[d].productName,
-					dfuId: d,
-					specs: specs[d]
-				};
+				if (stderr) {
+					if (_missingDevicePermissions(stderr) && systemSupportsUdev()) {
+						const error = new Error('Missing permissions to use DFU');
+						return promptAndInstallUdevRules(error)
+							.then(() => reject(error))
+							.catch((e) => reject(e));
+					}
+				}
+
+				// find DFU devices that match specs
+				stdout = stdout || '';
+				let dfuIds = _dfuIdsFromDfuOutput(stdout);
+				let dfuDevices = dfuIds.map((d) => {
+					return {
+						type: specs[d].productName,
+						dfuId: d,
+						specs: specs[d]
+					};
+				});
+
+				resolve(dfuDevices);
 			});
-			temp.resolve(dfuDevices);
 		});
-
-		return temp.promise;
 	},
 
 	findCompatibleDFU(showHelp = true) {
-		return dfu.listDFUDevices()
+		const { listDFUDevices, showDfuModeHelp } = module.exports;
+
+		return listDFUDevices()
 			.then((dfuDevices) => {
 				if (dfuDevices.length > 1) {
-					return prompt([{
+					const question = {
 						type: 'list',
 						name: 'device',
 						message: 'Which device would you like to select?',
@@ -112,63 +115,72 @@ const dfu = {
 								};
 							});
 						}
-					}]).then((ans) => {
-						dfu.dfuId = ans.device;
-						return dfu.dfuId;
-					});
+					};
+					return prompt([question])
+						.then((ans) => {
+							const dfuId = ans.device;
+							module.exports.dfuId = dfuId;
+							return dfuId;
+						});
 				} else if (dfuDevices.length === 1) {
-					dfu.dfuId = dfuDevices[0].dfuId;
-					log.verbose('Found DFU device %s', dfu.dfuId);
-					return dfu.dfuId;
+					const dfuId = dfuDevices[0].dfuId;
+					module.exports.dfuId = dfuId;
+					log.verbose('Found DFU device %s', dfuId);
+					return dfuId;
 				} else {
 					if (showHelp) {
-						dfu.showDfuModeHelp();
+						showDfuModeHelp();
 					}
-					return when.reject('No DFU device found');
+					return Promise.reject('No DFU device found');
 				}
 			});
 	},
 
 	isDfuUtilInstalled() {
-		let cmd = dfu.getCommand() + ' -l';
+		const { getCommand } = module.exports;
+		let cmd = getCommand() + ' -l';
 		let installCheck = utilities.deferredChildProcess(cmd);
 		return utilities.replaceDfdResults(installCheck, 'Installed', 'dfu-util is not installed');
 	},
 
 	readDfu(memoryInterface, destination, firmwareAddress, leave) {
-		let prefix = dfu.getCommand() + ' -d ' + dfu.dfuId;
-		let leaveStr = (leave) ? ':leave' : '';
-		let cmd = prefix + ' -a ' + memoryInterface + ' -s ' + firmwareAddress + leaveStr + ' -U ' + destination;
-
+		const { dfuId, getCommand } = module.exports;
+		let prefix = `${getCommand()} -d ${dfuId}`;
+		let leaveStr = leave ? ':leave' : '';
+		let cmd = `${prefix} -a ${memoryInterface} -s ${firmwareAddress}${leaveStr} -U ${destination}`;
 		return utilities.deferredChildProcess(cmd);
 	},
 
 	writeDfu(memoryInterface, binaryPath, firmwareAddress, leave) {
+		const { dfuId, checkBinaryAlignment } = module.exports;
 		let leaveStr = (leave) ? ':leave' : '';
+		let cmd = 'dfu-util';
 		let args = [
-			'-d', dfu.dfuId,
+			'-d', dfuId,
 			'-a', memoryInterface,
 			'-i', '0',
 			'-s', firmwareAddress + leaveStr,
 			'-D', binaryPath
 		];
-		let cmd = 'dfu-util';
+
 		if (settings.useSudoForDfu) {
 			cmd = 'sudo';
 			args.unshift('dfu-util');
 		}
 
-		let deviceSpecs = specs[dfu.dfuId] || { };
-		dfu.checkBinaryAlignment(binaryPath, deviceSpecs);
-		return utilities.deferredSpawnProcess(cmd, args).then((output) => {
-			return when.resolve(output.stdout.join('\n'));
-		}).catch((output) => {
-			// If this line is printed, it actually worked. Ignore other errors.
-			if (output.stdout.indexOf('File downloaded successfully') >= 0) {
-				return when.resolve(output.stdout.join('\n'));
-			}
-			return when.reject(output.stderr.join('\n'));
-		});
+		let deviceSpecs = specs[dfuId] || { };
+		checkBinaryAlignment(binaryPath, deviceSpecs);
+		return utilities.deferredSpawnProcess(cmd, args)
+			.then((output) => {
+				return Promise.resolve(output.stdout.join('\n'));
+			})
+			.catch((output) => {
+				// If this line is printed, it actually worked. Ignore other errors.
+				if (output.stdout.indexOf('File downloaded successfully') >= 0) {
+					return Promise.resolve(output.stdout.join('\n'));
+				}
+				return Promise.reject(output.stderr.join('\n'));
+			});
 	},
 
 	getCommand() {
@@ -180,8 +192,10 @@ const dfu = {
 	},
 
 	checkBinaryAlignment(filepath, specs) {
-		if (specs.writePadding===2) {
-			dfu.appendToEvenBytes(filepath);
+		const { appendToEvenBytes } = module.exports;
+
+		if (specs.writePadding === 2) {
+			appendToEvenBytes(filepath);
 		}
 	},
 
@@ -205,10 +219,10 @@ const dfu = {
 	},
 
 	checkKnownApp(appName) {
-		if (typeof dfu._validateKnownApp(appName, 'knownApps') !== 'undefined') {
-			return dfu._validateKnownApp(appName, 'knownApps');
-		} else {
-			return;
+		const { _validateKnownApp } = module.exports;
+
+		if (typeof _validateKnownApp(appName, 'knownApps') !== 'undefined') {
+			return _validateKnownApp(appName, 'knownApps');
 		}
 	},
 
@@ -247,7 +261,9 @@ const dfu = {
 	},
 
 	_validateKnownApp(appName, segmentName) {
-		let segment = dfu._validateSegmentSpecs(segmentName);
+		const { _validateSegmentSpecs } = module.exports;
+		let segment = _validateSegmentSpecs(segmentName);
+
 		if (segment.error) {
 			throw new Error('App is unknown: ' + segment.error);
 		}
@@ -255,77 +271,86 @@ const dfu = {
 	},
 
 	_validateSegmentSpecs(segmentName) {
+		const { dfuId } = module.exports;
+		let deviceSpecs = specs[dfuId] || {};
+		let params = deviceSpecs[segmentName];
 		let err = null;
-		let deviceSpecs = specs[dfu.dfuId] || { };
-		let params = deviceSpecs[segmentName] || undefined;
+
 		if (!segmentName) {
 			err = "segmentName required. Don't know where to read/write.";
 		} else if (!deviceSpecs) {
 			err = "dfuId has no specification. Don't know how to read/write.";
 		} else if (!params) {
-			err = 'segment ' + segmentName + ' has no specs. Not aware of this segment.';
+			err = `segment ${segmentName} has no specs. Not aware of this segment.`;
 		}
 
 		if (err) {
 			return { error: err, specs: undefined };
 		}
+
 		return { error: null, specs: params };
 	},
-	read(destination, segmentName, leave) {
 
+	read(destination, segmentName, leave) {
+		const { readDfu, _validateSegmentSpecs } = module.exports;
+		let segment = _validateSegmentSpecs(segmentName);
 		let address;
-		let segment = dfu._validateSegmentSpecs(segmentName);
+
 		if (segment.error) {
 			throw new Error('dfu.read: ' + segment.error);
 		}
+
 		if (segment.specs.size) {
-			address = segment.specs.address + ':' + segment.specs.size;
+			address = `${segment.specs.address}:${segment.specs.size}`;
 		} else {
 			address = segment.specs.address;
 		}
 
-		return dfu.readDfu(
+		return readDfu(
 			segment.specs.alt,
 			destination,
 			address,
 			leave
 		);
 	},
+
 	readBuffer(segmentName, leave) {
+		const { read } = module.exports;
 		let filename = temp.path({ suffix: '.bin' });
-		return this.read(filename, segmentName, leave)
-			.then(() => {
-				return whenNode.lift(fs.readFile)(filename);
-			})
-			.then((buf) => {
-				return buf;
-			})
+
+		return read(filename, segmentName, leave)
+			.then(() => utilities.readFile(filename))
+			.then((buf) => buf)
 			.finally(() => {
 				fs.unlink(filename, () => {
 					// do nothing
 				});
 			});
 	},
-	write(binaryPath, segmentName, leave) {
 
-		let segment = dfu._validateSegmentSpecs(segmentName);
+	write(binaryPath, segmentName, leave) {
+		const { writeDfu, _validateSegmentSpecs } = module.exports;
+		let segment = _validateSegmentSpecs(segmentName);
+
 		if (segment.error) {
-			throw new Error('dfu.write: ' + segment.error);
+			throw new Error(`dfu.write: ${segment.error}`);
 		}
 
-		return dfu.writeDfu(
+		return writeDfu(
 			segment.specs.alt,
 			binaryPath,
 			segment.specs.address,
 			leave
 		);
 	},
+
 	writeBuffer(buffer, segmentName, leave) {
+		const { write } = module.exports;
 		let filename = temp.path({ suffix: '.bin' });
-		let self = this;
-		return whenNode.lift(fs.writeFile)(filename, buffer)
+
+		return utilities.writeFile(filename, buffer)
 			.then(() => {
-				return self.write(filename, segmentName, leave)
+				return write(filename, segmentName, leave)
 					.finally(() => {
 						fs.unlink(filename, () => {
 							// do nothing
@@ -350,4 +375,3 @@ const dfu = {
 	}
 };
 
-module.exports = dfu;

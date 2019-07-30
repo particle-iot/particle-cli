@@ -1,98 +1,100 @@
 const { expect, sinon } = require('../../../test/test-setup');
 const windowsWiFi = require('./windows');
-var Connector = windowsWiFi.Connector;
 
 
 describe('Windows wifi', () => {
-	var sut;
+	const sandbox = sinon.createSandbox();
+	const { Connector } = windowsWiFi;
+	let connector, executor, callback;
 
 	beforeEach(() => {
-		// default sut has no executor
-		sut = new Connector(sinon.stub().throws('don\'t push me'));
+		// default connector has no executor
+		connector = new Connector(sinon.stub().throws('don\'t push me'));
+		executor = sandbox.spy(() => Promise.resolve(123));
+		callback = sandbox.stub();
+	});
+
+	afterEach(() => {
+		sandbox.restore();
 	});
 
 	describe('asCallback', () => {
-		it('handles success', () => {
-			var value = 123;
+		it('handles success', async () => {
+			const value = 123;
 
-			function handler(err, data) {
-				expect(data).to.be.eql(value);
-				expect(err).to.be.not.ok;
-			}
-			return windowsWiFi.asCallback(Promise.resolve(value), handler);
+			await windowsWiFi.asCallback(Promise.resolve(value), callback);
+
+			expect(callback).to.have.property('callCount', 1);
+			expect(callback.firstCall.args).to.eql([null, value]);
 		});
 
-		it('handles rejection', () => {
-			var rejection = 'My hat is too big';
+		it('handles rejection', async () => {
+			const error = new Error('My hat is too big');
 
-			function handler(err, data) {
-				expect(err).to.be.eql(rejection);
-				expect(data).to.be.undefined;
-			}
-			return windowsWiFi.asCallback(Promise.reject(rejection), handler);
+			await windowsWiFi.asCallback(Promise.reject(error), callback);
+
+			expect(callback).to.have.property('callCount', 1);
+			expect(callback.firstCall.args).to.eql([error]);
 		});
 	});
 
 	describe('_exec', () => {
-		it('invokes the command executor', () => {
-			var executor = sinon.stub().returns(Promise.resolve(123));
-			var sut = new Connector(executor);
-			var args = ['a', 'b', 'c'];
-			return sut._exec(args).then(() => {
-				expect(executor).to.have.been.calledWith(args);
-			});
+		it('invokes the command executor', async () => {
+			const args = ['a', 'b', 'c'];
+
+			await new Connector(executor)._exec(args);
+
+			expect(executor).to.have.been.calledWith(args);
 		});
 	});
 
 	describe('_execWiFiCommand', () => {
-		it('invokes the command executor with a "netsh wlan" prefix', () => {
-			var executor = sinon.stub().returns(Promise.resolve(123));
-			var sut = new Connector(executor);
-			var args = ['a', 'b', 'c'];
-			return sut._execWiFiCommand(args).then(() => {
-				expect(executor).to.have.been.calledWith(['netsh', 'wlan', 'a', 'b', 'c']);
-			});
+		it('invokes the command executor with a "netsh wlan" prefix', async () => {
+			const args = ['a', 'b', 'c'];
+
+			await new Connector(executor)._execWiFiCommand(args);
+
+			expect(executor).to.have.been.calledWith(['netsh', 'wlan', 'a', 'b', 'c']);
 		});
 	});
 
 	describe('parsing', () => {
 		describe('_stringToLines', () => {
 			it('converts all kinds of line endings', () => {
-				var s = 'one\ntwo\r\nthree\r\n\n\n\n';
-				var lines = sut._stringToLines(s);
+				const s = 'one\ntwo\r\nthree\r\n\n\n\n';
+				const lines = connector._stringToLines(s);
 				expect(lines).to.be.eql(['one', 'two', 'three']);
 			});
 
 			it('returns the empty array when there are no lines', () => {
-				expect(sut._stringToLines('')).to.be.eql([]);
+				expect(connector._stringToLines('')).to.be.eql([]);
 			});
 
 			it('returns a single line', () => {
-				expect(sut._stringToLines('abcd\n')).to.be.eql(['abcd']);
+				expect(connector._stringToLines('abcd\n')).to.be.eql(['abcd']);
 			});
-
 		});
 
 		describe('_keyValue', () => {
 			it('returns undefined if no colon', () => {
-				var result = sut._keyValue('key value');
+				const result = connector._keyValue('key value');
 				expect(result).to.be.eql(undefined);
 			});
 
 			it('splits at the first colon', () => {
-				var result = sut._keyValue('key space: value : value 2');
+				const result = connector._keyValue('key space: value : value 2');
 				expect(result).to.have.property('key').eql('key space');
 				expect(result).to.have.property('value').eql('value : value 2');
 			});
 
 			it('returns the key lowercased, and value in original case', () => {
-				var result = sut._keyValue('KeY     :    MY VALUE');
+				const result = connector._keyValue('KeY     :    MY VALUE');
 				expect(result).to.have.property('key').eql('key');
 				expect(result).to.have.property('value').eql('MY VALUE');
 			});
 
 			it('trims external whitespace', () => {
-				var result = sut._keyValue('KeY       :    MY VALUE   ');
+				const result = connector._keyValue('KeY       :    MY VALUE   ');
 				expect(result).to.have.property('key').eql('key');
 				expect(result).to.have.property('value').eql('MY VALUE');
 			});
@@ -100,34 +102,32 @@ describe('Windows wifi', () => {
 
 		describe('_extractInterface', () => {
 			it('ignores properties up to the first name', () => {
-				var lines = `
-				blah: blah
-				Name: bob
-				Favorite food: worms
-				`.split('\n');
+				const data = connector._extractInterface(`
+					blah: blah
+					Name: bob
+					Favorite food: worms
+				`.split('\n'));
 
-				var data = sut._extractInterface(lines);
 				expect(data).to.be.ok;
-				expect(data.range).to.eql({ start:2, end:5 });
+				expect(data.range).to.eql({ start: 2, end: 5 });
 				expect(data.iface).to.not.have.property('blah');
 				expect(data.iface).to.have.property('name').eql('bob');
 				expect(data.iface).to.have.property('favorite food').eql('worms');
 			});
 
 			it('gathers properties up to the next name from the start', () => {
-				var lines = `
-				blah: blah
-				Name: bob
-				Favorite food: worms
-				pet: dogs
-				
-				name: joe
-				height: 1234
-				`.split('\n');
+				const data = connector._extractInterface(`
+					blah: blah
+					Name: bob
+					Favorite food: worms
+					pet: dogs
+					
+					name: joe
+					height: 1234
+				`.split('\n'));
 
-				var data = sut._extractInterface(lines);
 				expect(data).to.be.ok;
-				expect(data.range).to.eql({ start:2, end:6 });
+				expect(data.range).to.eql({ start: 2, end: 6 });
 				expect(data.iface).to.not.have.property('blah');
 				expect(data.iface).to.have.property('name').eql('bob');
 				expect(data.iface).to.have.property('favorite food').eql('worms');
@@ -137,7 +137,7 @@ describe('Windows wifi', () => {
 
 
 			it('gathers properties up to the next name from the index given', () => {
-				var lines = `
+				const lines = `
 				blah: blah
 				Name: bob
 				Favorite food: worms
@@ -148,10 +148,10 @@ describe('Windows wifi', () => {
 				
 				
 				`.split('\n');
+				const data = connector._extractInterface(lines, 6);
 
-				var data = sut._extractInterface(lines, 6);
 				expect(data).to.be.ok;
-				expect(data.range).to.eql({ start:6, end:11 });
+				expect(data.range).to.eql({ start: 6, end: 11 });
 				expect(data.iface).to.not.have.property('blah');
 				expect(data.iface).to.have.property('name').eql('joe');
 				expect(data.iface).to.not.have.property('favorite food');
@@ -162,7 +162,7 @@ describe('Windows wifi', () => {
 
 		describe('_currentFromInterfaces', () => {
 			it('retrieves the first interface with a profile', () => {
-				var lines = `
+				const lines = `
 				blah: blah
 				Name: bob
 				
@@ -173,8 +173,8 @@ describe('Windows wifi', () => {
 				Profile: 1234
 				pet: dog
 				`.split('\n');
+				const iface = connector._currentFromInterfaces(lines);
 
-				var iface = sut._currentFromInterfaces(lines);
 				expect(iface).to.be.ok;
 				expect(iface).to.not.have.property('blah');
 				expect(iface).to.not.have.property('pet');
@@ -185,23 +185,13 @@ describe('Windows wifi', () => {
 	});
 
 	describe('currentInterface', () => {
-		function assertCurrent(response, current) {
-			var cmd = 'netsh wlan show interfaces'.split(' ');
-			var executor = sinon.stub().returns(Promise.resolve(response));
-			var sut = new Connector(executor);
-			return sut.currentInterface().then((result) => {
-				expect(result).to.eql(current);
-				expect(executor).to.have.been.calledWith(cmd);
-			});
-		}
-
 		it('returns null when there are no interfaces', () => {
-			var response = 'There is 0 interface on the system';
+			const response = 'There is 0 interface on the system';
 			return assertCurrent(response, null);
 		});
 
 		it('returns null when the interface is not connected', () => {
-			var response = `There is 1 interface on the system:
+			const response = `There is 1 interface on the system:
 
     Name                   : WiFi
     Description            : D-Link DWA-132 Wireless N USB Adapter(rev.B)
@@ -223,7 +213,12 @@ describe('Windows wifi', () => {
 				Name                   : no more Mr Wi-Fi 2
 				State                  : connected
 				Profile                : profileName`;
-			return assertCurrent(response, { 'name' : 'no more Mr Wi-Fi 2', 'state' : 'connected', 'profile' : 'profileName' });
+
+			return assertCurrent(response, {
+				name: 'no more Mr Wi-Fi 2',
+				state: 'connected',
+				profile: 'profileName'
+			});
 		});
 
 		it('returns the profile name of the first interface when an interface is not specified', () => {
@@ -234,27 +229,50 @@ describe('Windows wifi', () => {
 				Name                   : no more Mr Wi-Fi 2
 				State                  : connected
 				Profile                : profile name 2`;
-			return assertCurrent(response, { 'name' : 'no more Mr Wi-Fi', 'state' : 'connected', 'profile' : 'profile name 1' });
+
+			return assertCurrent(response, {
+				name: 'no more Mr Wi-Fi',
+				state: 'connected',
+				profile: 'profile name 1'
+			});
 		});
 
-		// todo - allow the interface name to be specified
+		async function assertCurrent(response, current){
+			const cmd = 'netsh wlan show interfaces'.split(' ');
+			const executor = sandbox.spy(() => Promise.resolve(response));
+			const result = await new Connector(executor).currentInterface();
+
+			expect(result).to.eql(current);
+			expect(executor).to.have.been.calledWith(cmd);
+		}
 	});
 
 	describe('current', () => {
-		it('returns the current profile when defined', () => {
-			sut.currentInterface = sinon.stub().resolves({ name:'beer', profile:'Beer' });
-			expect(sut.current()).to.eventually.eql('Beer');
+		beforeEach(() => {
+			sandbox.stub(connector, 'currentInterface');
 		});
 
-		it('returns undefined when no current network interface', () => {
-			sut.currentInterface = sinon.stub().resolves({});
-			expect(sut.current()).to.eventually.eql(undefined);
+		it('returns the current profile when defined', async () => {
+			const iface = { name: 'beer', profile: 'Beer' };
+			connector.currentInterface.resolves(iface);
+			const profile = await connector.current();
+
+			expect(profile).to.equal(iface.profile);
+		});
+
+		it('returns undefined when no current network interface', async () => {
+			const iface = {};
+			connector.currentInterface.resolves(iface);
+			const profile = await connector.current();
+
+			expect(profile).to.equal(undefined);
 		});
 	});
 
 	describe('_buildProfile', () => {
 		it('builds a profile with the name and ssid equal', () => {
-			var expected = `<?xml version="1.0"?>
+			const name = 'Photon-8QNP';
+			const expected = `<?xml version="1.0"?>
 			<WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
 			<name>Photon-8QNP</name>
 			<SSIDConfig>
@@ -274,286 +292,334 @@ describe('Windows wifi', () => {
 			</security>
 			</MSM>
 			</WLANProfile>`.replace(/\s+/g, ' ');
-			var name = 'Photon-8QNP';
 
-			var result = new Connector()._buildProfile(name);
-			expect(result).to.be.equal(expected);
+			expect(connector._buildProfile(name)).to.be.equal(expected);
 		});
 	});
 
 	describe('connect', () => {
-		var interfaceName = 'blah';
-		var profile = 'foo';
+		let interfaceName, profile;
 
-		it('invokes a pipeline of functions', () => {
-			var profiles = ['a', 'b', profile];
-			sut.currentInterface = sinon.stub().resolves(interfaceName);
-			sut._checkHasInterface = sinon.stub().resolves(interfaceName);
-			sut.listProfiles = sinon.stub().resolves(profiles);
-			sut._createProfileIfNeeded = sinon.stub().resolves(profile);
-			sut._connectProfile = sinon.stub().resolves('ok');
-
-			return sut.connect(profile)
-				.then(() => {
-					expect(sut.currentInterface).to.have.been.calledOnce;
-					expect(sut._checkHasInterface).to.have.been.calledWith(interfaceName);
-					expect(sut.listProfiles).to.have.been.calledWith(interfaceName);
-					expect(sut._createProfileIfNeeded).to.have.been.calledWith(profile, interfaceName, profiles);
-					expect(sut._connectProfile).to.have.been.calledWith(profile, interfaceName);
-				});
+		beforeEach(() => {
+			profile = 'foo';
+			interfaceName = 'blah';
+			sandbox.stub(connector, 'currentInterface').resolves(interfaceName);
+			sandbox.stub(connector, '_checkHasInterface').resolves(interfaceName);
+			sandbox.stub(connector, '_createProfileIfNeeded').resolves(profile);
+			sandbox.stub(connector, '_connectProfile').resolves('ok');
+			sandbox.stub(connector, '_createProfile').resolves();
+			sandbox.stub(connector, '_execWiFiCommand');
+			sandbox.stub(connector, 'listProfiles');
 		});
 
-		it('creates a new profile for the given interface if it does not exist', () => {
-			sut._execWiFiCommand = sinon.stub();
-			var profiles = [];
-			sut.currentInterface = sinon.stub().resolves(interfaceName);
-			sut._checkHasInterface = sinon.stub().resolves(interfaceName);
-			sut.listProfiles = sinon.stub().resolves(profiles);
-			sut._createProfile = sinon.stub().resolves();
-			sut._connectProfile = sinon.stub().resolves('ok');
-			return sut.connect(profile)
-				.then(() => {
-					expect(sut._createProfile).to.have.been.calledWith(profile, interfaceName);
-					expect(sut._connectProfile).to.have.been.calledWith(profile, interfaceName);
-				});
+		it('invokes a pipeline of functions', async () => {
+			const profiles = ['a', 'b', profile];
+
+			connector.listProfiles.resolves(profiles);
+			await connector.connect(profile);
+
+			expect(connector.currentInterface).to.have.property('callCount', 1);
+			expect(connector._checkHasInterface).to.have.been.calledWith(interfaceName);
+			expect(connector.listProfiles).to.have.been.calledWith(interfaceName);
+			expect(connector._createProfileIfNeeded).to.have.been.calledWith(profile, interfaceName, profiles);
+			expect(connector._connectProfile).to.have.been.calledWith(profile, interfaceName);
 		});
 
-		it('connects to the network when a profile already exists', () => {
-			sut._execWiFiCommand = sinon.stub();
-			var profiles = [profile];
-			sut.currentInterface = sinon.stub().resolves(interfaceName);
-			sut._checkHasInterface = sinon.stub().resolves(interfaceName);
-			sut.listProfiles = sinon.stub().resolves(profiles);
-			sut._createProfile = sinon.stub().resolves();
-			sut._connectProfile = sinon.stub().resolves('ok');
-			return sut.connect(profile)
-				.then(() => {
-					expect(sut._createProfile).to.not.have.been.called;
-					expect(sut._connectProfile).to.have.been.calledWith(profile, interfaceName);
-				});
+		it('creates a new profile for the given interface if it does not exist', async () => {
+			const profiles = [];
+
+			connector._createProfileIfNeeded.restore();
+			connector.listProfiles.resolves(profiles);
+			await connector.connect(profile);
+
+			expect(connector._createProfile).to.have.been.calledWith(profile, interfaceName);
+			expect(connector._connectProfile).to.have.been.calledWith(profile, interfaceName);
+		});
+
+		it('connects to the network when a profile already exists', async () => {
+			const profiles = [profile];
+
+			connector.listProfiles.resolves(profiles);
+			await connector.connect(profile);
+
+			expect(connector._createProfile).to.not.have.been.called;
+			expect(connector._connectProfile).to.have.been.calledWith(profile, interfaceName);
 		});
 	});
 
 	describe('_connectProfile', () => {
+		beforeEach(() => {
+			connector = new Connector(executor);
+			sandbox.stub(connector, '_execWiFiCommand').resolves('');
+			sandbox.stub(connector, 'waitForConnected').resolves();
+		});
+
 		it('runs netsh wlan connect', () => {
-			sut._execWiFiCommand = sinon.stub().resolves('');
-			var profile = 'blah';
-			var iface = 'may contain spaces';
-			sut._connectProfile(profile, iface);
-			expect(sut._execWiFiCommand).to.be.calledWith(['connect', 'name=blah', 'interface=may contain spaces']);
+			const profile = 'blah';
+			const iface = 'may contain spaces';
+
+			connector._connectProfile(profile, iface);
+
+			expect(connector._execWiFiCommand).to.be.calledWith([
+				'connect',
+				'name=blah',
+				'interface=may contain spaces'
+			]);
 		});
 	});
 
 	describe('_createProfileIfNeeded', () => {
+		let profile, iface;
+
+		beforeEach(() => {
+			sandbox.stub(connector, '_createProfile').returns(123);
+			profile = 'blah';
+			iface = 'foo';
+		});
+
 		it('skips creation when it already exists and returns the profile name', () => {
-			sut._createProfile = sinon.stub();
-			var profile = 'blah', iface = 'foo', profiles = ['a', profile];
-			var result = sut._createProfileIfNeeded(profile, iface, profiles);
+			const profiles = ['a', profile];
+			const result = connector._createProfileIfNeeded(profile, iface, profiles);
+
 			expect(result).to.eql(profile);
-			expect(sut._createProfile).to.not.have.been.called;
+			expect(connector._createProfile).to.not.have.been.called;
 		});
 
 		it('creates the profile when it does not exist and returns the created profile', () => {
-			sut._createProfile = sinon.stub().returns(123);
-			var profile = 'blah', iface = 'foo', profiles = ['a'];
-			var result = sut._createProfileIfNeeded(profile, iface, profiles);
+			const profiles = ['a'];
+			const result = connector._createProfileIfNeeded(profile, iface, profiles);
+
 			expect(result).to.eql(123);
-			expect(sut._createProfile).to.have.been.calledWith(profile, iface);
+			expect(connector._createProfile).to.have.been.calledWith(profile, iface);
 		});
 	});
 
 	describe('_profileExists', () => {
 		it('returns false when the profile does not exist', () => {
-			expect(sut._profileExists('abcd', ['blah', 'foo'])).to.be.eql(false);
+			expect(connector._profileExists('abcd', ['blah', 'foo'])).to.be.eql(false);
 		});
 
 		it('returns true when the profile does exist', () => {
-			expect(sut._profileExists('abcd', ['blah', 'abcd', 'foo'])).to.be.eql(true);
+			expect(connector._profileExists('abcd', ['blah', 'abcd', 'foo'])).to.be.eql(true);
 		});
 	});
 
 	describe('_createProfile', () => {
-		var fs;
-		var profile = 'myprofile';
-		var profileContent = 'blah';
-		var filename = '_wifi_profile.xml';
-		var response = 'Profile blah is added on interface Some Interface';
+		let fs, profile, profileContent, filename, response;
+
 		beforeEach(() => {
-			fs = {
-				writeFileSync: sinon.stub(),
-				unlinkSync: sinon.stub()
-			};
+			profile = 'myprofile';
+			profileContent = 'blah';
+			filename = '_wifi_profile.xml';
+			response = 'Profile blah is added on interface Some Interface';
+			sandbox.stub(connector, '_execWiFiCommand').resolves(response);
+			sandbox.stub(connector, '_buildProfile').returns(profileContent);
+			fs = { writeFileSync: sinon.stub(), unlinkSync: sinon.stub() };
 		});
 
-		it('writes the profile to disk and runs metsh wlan add profile', () => {
-			sut._execWiFiCommand = sinon.stub().resolves(response);
-			sut._buildProfile = sinon.stub().returns(profileContent);
-			return sut._createProfile(profile, undefined, fs).then(() => {
-				expect(sut._buildProfile).to.have.been.calledWith(profile);
-				expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
-				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml']);
-				expect(fs.unlinkSync).to.have.been.calledWith(filename);
-			});
+		it('writes the profile to disk and runs metsh wlan add profile', async () => {
+			await connector._createProfile(profile, undefined, fs);
+
+			expect(connector._buildProfile).to.have.been.calledWith(profile);
+			expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
+			expect(connector._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml']);
+			expect(fs.unlinkSync).to.have.been.calledWith(filename);
 		});
 
-		it('propagates errors from the wifi command', () => {
-			sut._execWiFiCommand = sinon.stub().rejects(1);
-			return expect(sut._createProfile(profile, undefined, fs)).to.eventually.be.rejected;
+		it('propagates errors from the wifi command', async () => {
+			connector._execWiFiCommand.rejects(new Error('nope'));
+			let error;
+
+			try {
+				await connector._createProfile(profile, undefined, fs);
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'nope');
 		});
 
-		it('unlinks the file when an error occurs', () => {
-			var error = Error('it is tuesday');
-			var errorRaised = false;
-			sut._execWiFiCommand = sinon.stub().rejects(error);
-			sut._buildProfile = sinon.stub().returns(profileContent);
-			return sut._createProfile(profile, undefined, fs)
-				.catch((err) => {
-					expect(err).to.eql(error);
-					errorRaised = true;
-				})
-				.then(() => {
-					expect(sut._buildProfile).to.have.been.calledWith(profile);
-					expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
-					expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml']);
-					expect(fs.unlinkSync).to.have.been.calledWith(filename);
-					expect(errorRaised).to.be.eql(true);
-				});
+		it('unlinks the file when an error occurs', async () => {
+			connector._execWiFiCommand.rejects(new Error('nope'));
+			let error;
+
+			try {
+				await connector._createProfile(profile, undefined, fs);
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'nope');
+			expect(connector._buildProfile).to.have.been.calledWith(profile);
+			expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
+			expect(connector._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml']);
+			expect(fs.unlinkSync).to.have.been.calledWith(filename);
 		});
 
-		it('adds the interface to the command when specified', () => {
-			sut._execWiFiCommand = sinon.stub().resolves();
-			sut._buildProfile = sinon.stub().returns(profileContent);
+		it('adds the interface to the command when specified', async () => {
 			const ifaceName = 'myface';
-			return sut._createProfile(profile, ifaceName, fs).then(() => {
-				expect(sut._buildProfile).to.have.been.calledWith(profile);
-				expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
-				expect(sut._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml', 'interface='+ifaceName]);
-				expect(fs.unlinkSync).to.have.been.calledWith(filename);
-			});
+
+			await connector._createProfile(profile, ifaceName, fs);
+
+			expect(connector._buildProfile).to.have.been.calledWith(profile);
+			expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
+			expect(connector._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml', 'interface='+ifaceName]);
+			expect(fs.unlinkSync).to.have.been.calledWith(filename);
 		});
 	});
 
 	describe('listProfiles', () => {
-		var list = 'profiles for interface:\nuser profile: profile 1\nuser profile: profile 2';
+		let list;
 
-		it('calls show profiles interface=ifaceName when an interface is specified', () => {
-			sut._execWiFiCommand = sinon.stub().resolves('');
-			return sut.listProfiles('abcd').
-				then(() => {
-					expect(sut._execWiFiCommand).to.have.been.calledWith(['show', 'profiles', 'interface=abcd']);
-				});
+		beforeEach(() => {
+			sandbox.stub(connector, '_execWiFiCommand').resolves('');
+			list = 'profiles for interface:\nuser profile: profile 1\nuser profile: profile 2';
 		});
 
-		it('calls show profiles when no interface is specified', () => {
-			sut._execWiFiCommand = sinon.stub().resolves('');
-			return sut.listProfiles().
-				then(() => {
-					expect(sut._execWiFiCommand).to.have.been.calledWith(['show', 'profiles']);
-				});
+		it('calls show profiles interface=ifaceName when an interface is specified', async () => {
+			await connector.listProfiles('abcd');
+			expect(connector._execWiFiCommand).to.have.been.calledWith(['show', 'profiles', 'interface=abcd']);
 		});
 
-		it('it parses the profiles', () => {
-			sut._execWiFiCommand = sinon.stub().resolves(list);
-			return sut.listProfiles().
-				then((profiles) => {
-					expect(profiles).to.eql(['profile 1', 'profile 2']);
-				});
+		it('calls show profiles when no interface is specified', async () => {
+			await connector.listProfiles();
+			expect(connector._execWiFiCommand).to.have.been.calledWith(['show', 'profiles']);
+		});
+
+		it('it parses the profiles', async () => {
+			connector._execWiFiCommand.resolves(list);
+			const profiles = await connector.listProfiles();
+			expect(profiles).to.eql(['profile 1', 'profile 2']);
 		});
 	});
 
 	describe('_checkHasInterface', () => {
-		var msg = 'no Wi-Fi interface detected';
+		let msg;
+
+		beforeEach(() => {
+			msg = 'no Wi-Fi interface detected';
+		});
+
 		it('raises an error when the interface is falsey', () => {
-			function fn() {
-				return sut._checkHasInterface();
-			}
-			expect(fn).to.throw(Error, msg);
+			expect(() => connector._checkHasInterface()).to.throw(Error, msg);
 		});
 
 		it('raises an error when the interface has no name', () => {
-			function fn() {
-				return sut._checkHasInterface( { ssid: 'abcd' });
-			}
-			expect(fn).to.throw(Error, msg);
+			expect(() => connector._checkHasInterface({ ssid: 'abcd' })).to.throw(Error, msg);
 		});
 
 		it('returns the interface name on success', () => {
-			expect(sut._checkHasInterface( { ssid: 'abcd', name: 'foo' })).to.eql('foo');
+			expect(connector._checkHasInterface({ ssid: 'abcd', name: 'foo' })).to.eql('foo');
 		});
 	});
 
 	describe('module connect', () => {
-		it('retrieves the ssid from the options and calls connect', (done) => {
-			sut.connect = sinon.stub().resolves({ ssid:'abcd2' });
-			function cb(err, iface) {
-				expect(err).to.be.eql(null);
-				expect(iface).to.be.eql({ ssid:'abcd2' });
-				expect(sut.connect).to.have.been.calledWith('abcd');
-				done();
-			}
-			windowsWiFi.connect({ ssid:'abcd' }, cb, sut);
+		let iface;
+
+		beforeEach(() => {
+			iface = { ssid:'abcd2' };
+			sandbox.stub(connector, 'connect').resolves(iface);
 		});
 
-		it('calls the handler with error', (done) => {
-			var error = new Error('I do like Mondays');
-			sut.connect = sinon.stub().rejects(error);
-			function cb(err, iface) {
-				expect(err).to.be.eql(error);
-				expect(iface).to.be.eql(undefined);
-				expect(sut.connect).to.have.been.calledWith('abcd');
-				done();
-			}
-			windowsWiFi.connect({ ssid:'abcd' }, cb, sut);
+		it('retrieves the ssid from the options and calls connect', async () => {
+			const callback = sandbox.stub();
+
+			await windowsWiFi.connect(iface, callback, connector);
+
+			expect(callback).to.have.property('callCount', 1);
+			expect(callback.firstCall.args).to.eql([null, iface]);
+			expect(connector.connect).to.have.been.calledWith(iface.ssid);
+		});
+
+		it('calls the handler with error', async () => {
+			const error = new Error('nope');
+			const callback = sandbox.stub();
+
+			connector.connect.rejects(error);
+			await windowsWiFi.connect(iface, callback, connector);
+
+			expect(callback).to.have.property('callCount', 1);
+			expect(callback.firstCall.args).to.eql([error]);
+			expect(connector.connect).to.have.been.calledWith(iface.ssid);
 		});
 	});
 
 	describe('module getCurrentNetwork', () => {
-		it('retrieves the current network via current()', (done) => {
-			sut.current = sinon.stub().resolves('abcd2');
-			function cb(err, ssid) {
-				expect(err).to.be.eql(null);
-				expect(ssid).to.be.eql('abcd2');
-				expect(sut.current).to.have.been.calledWith();
-				done();
-			}
-			windowsWiFi.getCurrentNetwork(cb, sut);
+		let ssid;
+
+		beforeEach(() => {
+			ssid = 'abcd2';
+			sandbox.stub(connector, 'current').resolves(ssid);
 		});
 
-		it('calls the handler with error', (done) => {
-			var error = new Error('I do like Mondays');
-			sut.current = sinon.stub().rejects(error);
-			function cb(err, ssid) {
-				expect(err).to.be.eql(error);
-				expect(ssid).to.be.eql(undefined);
-				expect(sut.current).to.have.been.calledWith();
-				done();
-			}
-			windowsWiFi.getCurrentNetwork(cb, sut);
+		it('retrieves the current network via current()', async () => {
+			const callback = sandbox.stub();
+
+			await windowsWiFi.getCurrentNetwork(callback, connector);
+
+			expect(callback).to.have.property('callCount', 1);
+			expect(callback.firstCall.args).to.eql([null, ssid]);
+			expect(connector.current).to.have.property('callCount', 1);
+			expect(connector.current.firstCall.args).to.eql([]);
+		});
+
+		it('calls the handler with error', async () => {
+			const error = new Error('nope');
+			const callback = sandbox.stub();
+
+			connector.current.rejects(error);
+			await windowsWiFi.getCurrentNetwork(callback, connector);
+
+			expect(callback).to.have.property('callCount', 1);
+			expect(callback.firstCall.args).to.eql([error]);
+			expect(connector.current).to.have.property('callCount', 1);
+			expect(connector.current.firstCall.args).to.eql([]);
 		});
 	});
 
 	describe('_connectProfile', () => {
-		it('returns the ssid', () => {
-			sut._execWiFiCommand = sinon.stub().resolves();
-			sut.waitForConnected = sinon.stub().resolves();
-			return sut._connectProfile('abcd', 'iface')
-				.then((result) => {
-					expect(result).to.eql({ ssid:'abcd' });
-					expect(sut._execWiFiCommand).to.have.been.calledWith(['connect', 'name=abcd', 'interface=iface']);
-					expect(sut.waitForConnected).to.have.been.calledWith('abcd', 'iface', 20, 500);
-				});
+		beforeEach(() => {
+			sandbox.stub(connector, 'waitForConnected').resolves();
+			sandbox.stub(connector, '_execWiFiCommand').resolves();
+		});
+
+		it('returns the ssid', async () => {
+			const result = await connector._connectProfile('abcd', 'iface');
+			expect(result).to.eql({ ssid:'abcd' });
+			expect(connector._execWiFiCommand).to.have.been.calledWith(['connect', 'name=abcd', 'interface=iface']);
+			expect(connector.waitForConnected).to.have.been.calledWith('abcd', 'iface', 20, 500);
 		});
 	});
 
 	describe('waitForConnected', () => {
-		it('timees out when the network never reaches the given value', () => {
-			sut.current = sinon.stub().resolves(undefined);
-			return expect(sut.waitForConnected('abcd', 'iface', 2, 1)).to.eventually.be.rejectedWith(Error, /timeout/);
+		beforeEach(() => {
+			sandbox.stub(connector, 'current').resolves();
+			sandbox.stub(connector, '_execWiFiCommand').resolves();
 		});
 
-		it('returns the ssid when the network  reaches the given value', () => {
-			sut.current = sinon.stub().resolves('abcd');
-			return expect(sut.waitForConnected('abcd', 'iface', 2, 1)).to.eventually.be.equal('abcd');
+		it('throws when the network never reaches the given value after retrying', async () => {
+			sandbox.spy(connector, 'waitForConnected');
+			let error;
+
+			try {
+				await connector.waitForConnected('abcd', 'iface', 2, 1);
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'unable to connect to network abcd');
+			expect(connector.waitForConnected).to.have.property('callCount', 2);
+			expect(connector.waitForConnected.firstCall.args).to.eql(['abcd', 'iface', 2, 1]);
+			expect(connector.waitForConnected.secondCall.args).to.eql(['abcd', 'iface', 1, 1]);
+		});
+
+		it('returns the ssid when the network reaches the given value', async () => {
+			connector.current.resolves('abcd');
+			const ssid = await connector.waitForConnected('abcd', 'iface', 2, 1);
+			expect(ssid).to.equal('abcd');
 		});
 	});
 });

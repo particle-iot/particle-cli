@@ -1,49 +1,65 @@
 const fs = require('fs');
 const path = require('path');
-const assert = require('assert');
 const { expect, sinon } = require('../../test/test-setup');
 const dfu = require('./dfu');
 
 
 describe('DFU', () => {
-	const FIXTURES_DIR = path.join(__dirname, '../../test/lib/fixtures/dfu');
+	const sandbox = sinon.createSandbox();
+	const FIXTURES_DIR = path.join(__dirname, '../../test/fixtures/dfu');
+
+	afterEach(() => {
+		sandbox.restore();
+	});
 
 	it('finds Particle devices in dfu-util -l output', () => {
-		var output = fs.readFileSync(path.join(FIXTURES_DIR, 'only_particle.txt')).toString();
-		var devices = dfu._dfuIdsFromDfuOutput(output);
-		assert.ok(devices);
-		assert.equal(devices.length, 1);
-		assert.equal(devices[0], '2b04:d006');
+		const filename = path.join(FIXTURES_DIR, 'only_particle.txt');
+		const output = fs.readFileSync(filename).toString();
+		const devices = dfu._dfuIdsFromDfuOutput(output);
+
+		expect(devices).to.be.an('array');
+		expect(devices).to.have.lengthOf(1);
+		expect(devices[0]).to.equal('2b04:d006');
 	});
 
 	it('filters out non-Particle devices in dfu-util -l output', () => {
-		var output = fs.readFileSync(path.join(FIXTURES_DIR, 'mixed.txt')).toString();
-		var devices = dfu._dfuIdsFromDfuOutput(output);
-		assert.ok(devices);
-		assert.equal(devices.length, 1);
-		assert.equal(devices[0], '2b04:d00a');
+		const filename = path.join(FIXTURES_DIR, 'mixed.txt');
+		const output = fs.readFileSync(filename).toString();
+		const devices = dfu._dfuIdsFromDfuOutput(output);
+
+		expect(devices).to.be.an('array');
+		expect(devices).to.have.lengthOf(1);
+		expect(devices[0]).to.equal('2b04:d00a');
 	});
 
 	it('handles no devices output', () => {
-		var output = fs.readFileSync(path.join(FIXTURES_DIR, 'none.txt')).toString();
-		var devices = dfu._dfuIdsFromDfuOutput(output);
-		assert.ok(devices);
-		assert.equal(devices.length, 0);
+		const filename = path.join(FIXTURES_DIR, 'none.txt');
+		const output = fs.readFileSync(filename).toString();
+		const devices = dfu._dfuIdsFromDfuOutput(output);
+
+		expect(devices).to.be.an('array');
+		expect(devices).to.have.lengthOf(0);
 	});
 
 	it('pads to 2 on the core', () => {
-		var specs = dfu.specsForPlatform(0);
-		var file = 'abcd';
-		dfu.appendToEvenBytes = sinon.spy();
+		sandbox.stub(dfu, 'appendToEvenBytes');
+		const specs = dfu.specsForPlatform(0);
+		const file = 'abcd';
+
 		dfu.checkBinaryAlignment(file, specs);
-		expect(dfu.appendToEvenBytes).to.have.been.calledWith(file);
+
+		expect(dfu.appendToEvenBytes).to.have.property('callCount', 1);
+		expect(dfu.appendToEvenBytes.firstCall.args).to.eql([file]);
 	});
 
 	it('does not pad on other platforms', () => {
-		var specs = dfu.specsForPlatform(6);
-		var file = 'abcd';
-		dfu.appendToEvenBytes = sinon.spy();
+		sandbox.stub(dfu, 'appendToEvenBytes');
+		const specs = dfu.specsForPlatform(6);
+		const file = 'abcd';
+
 		dfu.checkBinaryAlignment(file, specs);
-		expect(dfu.appendToEvenBytes).to.have.not.been.called;
+
+		expect(dfu.appendToEvenBytes).to.have.property('callCount', 0);
 	});
 });
+

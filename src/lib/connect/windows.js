@@ -1,6 +1,5 @@
+const { delay } = require('../utilities');
 const systemExecutor = require('./executor').systemExecutor;
-const when = require('when');
-const pipeline = require('when/pipeline');
 
 
 /**
@@ -8,102 +7,71 @@ const pipeline = require('when/pipeline');
  * @constructor
  */
 class Connect {
-	constructor(commandExecutor) {
+	constructor(commandExecutor){
 		this.commandExecutor = commandExecutor || systemExecutor;
 	}
 
-	_execWiFiCommand(cmdArgs) {
+	_execWiFiCommand(cmdArgs){
 		return this._exec(['netsh', 'wlan'].concat(cmdArgs));
 	}
 
-	_exec(cmdArgs) {
+	_exec(cmdArgs){
 		return this.commandExecutor(cmdArgs);
 	}
 
 	/**
 	 * Retrieves the profile name of the currently connected network.
-	 * @returns {Promise.<String>}  The profile name of the currently connected network, or undefined if no
-
-	 connection.
+	 * @returns {Promise.<String>}  The profile name of the currently connected network, or undefined if no connection.
 	 */
-	current() {
-		return this.currentInterface()
-			.then((iface) => {
-				return iface ? iface.profile : undefined;
-			});
+	async current(){
+		const iface = await this.currentInterface();
+		return iface ? iface.profile : undefined;
 	}
 
 	/**
 	 * Determine the current network interface.
 	 * @return {Promise.<Object>} the current network interface object
 	 */
-	currentInterface() {
-		const self = this;
-		return this._execWiFiCommand(['show', 'interfaces'])
-			.then((output) => {
-				const lines = self._stringToLines(output);
-				let iface = self._currentFromInterfaces(lines);
-				if (iface && !iface['profile']) {
-					iface = null;
-				}
-				return iface;
-			});
+	async currentInterface(){
+		const output = await this._execWiFiCommand(['show', 'interfaces']);
+		const lines = this._stringToLines(output);
+		let iface = this._currentFromInterfaces(lines);
+
+		if (iface && !iface['profile']){
+			iface = null;
+		}
+		return iface;
 	}
 
 	/**
 	 * Connect the wifi interface to the given access point with the named profile.
 	 * If the profile already exists, it is used. Otherwise a new profile for an open AP is created.
 	 */
-	connect(profile) {
-		const self = this;
-		let interfaceName;
-		return pipeline([
-			this.currentInterface.bind(this), // find the current interface
-			this._checkHasInterface.bind(this), // fail if no interfaces
-			(ifaceName) => { // save the interface name
-				interfaceName = ifaceName;
-				return ifaceName;
-			},
-			this.listProfiles.bind(this), // fetch the profiles for the interface
-			(profiles) => {
-				return self._createProfileIfNeeded(profile, interfaceName, profiles);
-			},
-			() => {
-				return self._connectProfile(profile, interfaceName);
+	async connect(profile){
+		const iface = await this.currentInterface();
+		const ifaceName = await this._checkHasInterface(iface);
+		const profiles = await this.listProfiles(ifaceName);
+		await this._createProfileIfNeeded(profile, ifaceName, profiles);
+		return this._connectProfile(profile, ifaceName);
+	}
+
+	async _connectProfile(profile, interfaceName){
+		await this._execWiFiCommand(['connect', `name=${profile}`, `interface=${interfaceName}`]);
+		await this.waitForConnected(profile, interfaceName, 20, 500);
+		return { ssid: profile };
+	}
+
+	async waitForConnected(profile, interfaceName, count, retryPeriod){
+		const ssid = await this.current();
+
+		if (ssid !== profile){
+			if (--count <= 0){
+				throw new Error(`unable to connect to network ${profile}`);
 			}
-		]);
-	}
-
-	_connectProfile(profile, interfaceName) {
-		const self = this;
-		const args = ['connect', 'name='+profile, 'interface='+interfaceName];
-		return this._execWiFiCommand(args)
-			.then(() => {
-				return self.waitForConnected(profile, interfaceName, 20, 500);
-			})
-			.then(() => {
-				return { ssid: profile };
-			});
-	}
-
-	waitForConnected(profile, interfaceName, count, retryPeriod, dfd) {
-		const self = this;
-		dfd = dfd || when.defer();
-		return this.current()
-			.then((ssid) => {
-				if (ssid!==profile) {
-					if (--count <= 0) {
-						dfd.reject(new Error('timeout waiting for network to connect'));
-					}	else {
-						setTimeout(() => {
-							self.waitForConnected(profile, interfaceName, count, retryPeriod, dfd);
-						}, retryPeriod);
-					}
-				} else {
-					dfd.resolve(ssid);
-				}
-				return dfd.promise;
-			});
+			await delay(retryPeriod);
+			return this.waitForConnected(profile, interfaceName, count, retryPeriod);
+		}
+		return ssid;
 	}
 
 	/**
@@ -114,15 +82,15 @@ class Connect {
 	 * @return the profile name or a promise to create the profile, resolving to the profile name
 	 * @private
 	 */
-	_createProfileIfNeeded(profile, interfaceName, profiles) {
-		if (!this._profileExists(profile, profiles)) {
+	_createProfileIfNeeded(profile, interfaceName, profiles){
+		if (!this._profileExists(profile, profiles)){
 			return this._createProfile(profile, interfaceName);
 		}
 		return profile;
 	}
 
-	_profileExists(profile, profiles) {
-		return profiles.indexOf(profile)>=0;
+	_profileExists(profile, profiles){
+		return profiles.indexOf(profile) >= 0;
 	}
 
 	/**
@@ -133,22 +101,23 @@ class Connect {
 	 * @returns {*}
 	 * @private
 	 */
-	_createProfile(profile, interfaceName, fs) {
+	async _createProfile(profile, interfaceName, fs){
 		fs = fs || require('fs');
 		const filename = '_wifi_profile.xml';
 		const content = this._buildProfile(profile);
-		const self = this;
+		const args = ['add', 'profile', `filename=${filename}`];
+
 		fs.writeFileSync(filename, content);
-		const args = ['add', 'profile', 'filename='+filename+''];
-		if (interfaceName) {
-			args.push('interface='+interfaceName);
+
+		if (interfaceName){
+			args.push(`interface=${interfaceName}`);
 		}
-		return pipeline([() => {
-			return self._execWiFiCommand(args);
-		}])
-			.finally(() => {
-				fs.unlinkSync(filename);
-			});
+
+		try {
+			return this._execWiFiCommand(args);
+		} finally {
+			fs.unlinkSync(filename);
+		}
 	}
 
 	/**
@@ -157,9 +126,9 @@ class Connect {
 	 * @throws Error if the interface is not valid
 	 * @private
 	 */
-	_checkHasInterface(iface) {
+	_checkHasInterface(iface){
 		// todo - make this a programmatically identifiable error
-		if (!iface || !iface.name) {
+		if (!iface || !iface.name){
 			throw Error('no Wi-Fi interface detected');
 		}
 		return iface.name;
@@ -170,17 +139,16 @@ class Connect {
 	 * @param {string} ifaceName    The name of the interface to list profiles for.
 	 * @returns {Promise.<Array.<string>>}  An array of profile names
 	 */
-	listProfiles(ifaceName) {
-		const self = this;
+	async listProfiles(ifaceName){
 		const cmd = ['show', 'profiles'];
-		if (ifaceName) {
-			cmd.push('interface='+ifaceName);
+
+		if (ifaceName){
+			cmd.push(`interface=${ifaceName}`);
 		}
-		return this._execWiFiCommand(cmd)
-			.then((output) => {
-				const lines = self._stringToLines(output);
-				return self._parseProfiles(lines);
-			});
+
+		const output = await this._execWiFiCommand(cmd);
+		const lines = this._stringToLines(output);
+		return this._parseProfiles(lines);
 	}
 
 	/**
@@ -189,11 +157,11 @@ class Connect {
 	 * @returns {Array}
 	 * @private
 	 */
-	_parseProfiles(lines) {
+	_parseProfiles(lines){
 		const profiles = [];
-		for (let i=0; i<lines.length; i++) {
+		for (let i = 0; i < lines.length; i++){
 			const kv = this._keyValue(lines[i]);
-			if (kv && kv.key && kv.value) {
+			if (kv && kv.key && kv.value){
 				profiles.push(kv.value);
 			}
 		}
@@ -205,10 +173,10 @@ class Connect {
 	 * @param {Array.<string>} lines    The lines from the command output.
 	 * @private
 	 */
-	_currentFromInterfaces(lines) {
+	_currentFromInterfaces(lines){
 		let idx = 0;
 		let iface;
-		while (idx < lines.length && (!iface || !iface['profile'])) {
+		while (idx < lines.length && (!iface || !iface['profile'])){
 			const data = this._extractInterface(lines, idx);
 			iface = data.iface;
 			idx = data.range.end;
@@ -224,14 +192,14 @@ class Connect {
 	 * @param index
 	 * @private
 	 */
-	_extractInterface(lines, index) {
+	_extractInterface(lines, index){
 		index = index || 0;
 		const result = { iface: {}, range: {} };
 		const name = 'name';
 		let kv;
-		for (;index<lines.length;index++) {
+		for (;index < lines.length; index++){
 			kv = this._keyValue(lines[index]);
-			if (kv && kv.key===name) {
+			if (kv && kv.key === name){
 				// we have the start
 				result.iface[kv.key] = kv.value;
 				break;
@@ -240,18 +208,18 @@ class Connect {
 
 		result.range.start = index++;
 
-		for (;index<lines.length;index++) {
+		for (;index < lines.length; index++){
 			kv = this._keyValue(lines[index]);
-			if (!kv)				{
+			if (!kv){
 				continue;
 			}
 
-			if (kv.key===name) {
+			if (kv.key === name){
 				// we have the end
 				break;
 			}
 
-			if (kv.key && kv.value) {
+			if (kv.key && kv.value){
 				result.iface[kv.key] = kv.value;
 			}
 		}
@@ -264,10 +232,10 @@ class Connect {
 	 * @param line
 	 * @private
 	 */
-	_keyValue(line) {
+	_keyValue(line){
 		const colonIndex = line.indexOf(':');
 		let result;
-		if (colonIndex>0) {
+		if (colonIndex > 0){
 			const key = line.slice(0, colonIndex).trim().toLowerCase();
 			const value = line.slice(colonIndex+1).trim();
 			result = { key: key, value: value };
@@ -275,7 +243,7 @@ class Connect {
 		return result;
 	}
 
-	_stringToLines(s) {
+	_stringToLines(s){
 		return s.match(/[^\r\n]+/g) || [];
 	}
 
@@ -285,7 +253,7 @@ class Connect {
 	 * @returns {string}    The XML descriptor of the profile.
 	 * @private
 	 */
-	_buildProfile(ssid) {
+	_buildProfile(ssid){
 		// todo - xml encode profile name
 		let result = '<?xml version="1.0"?> <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1"> <name>' + ssid + '</name> <SSIDConfig> <SSID> <name>' + ssid + '</name> </SSID> </SSIDConfig>';
 		result += ' <connectionType>ESS</connectionType> <connectionMode>manual</connectionMode> <MSM> <security> <authEncryption> <authentication>open</authentication> <encryption>none</encryption> <useOneX>false</useOneX> </authEncryption> </security> </MSM>';
@@ -294,20 +262,21 @@ class Connect {
 	}
 }
 
-function asCallback(promise, cb) {
-	const result = promise.then((arg) => {
+async function asCallback(promise, cb){
+	try {
+		const arg = await promise;
+
 		try {
 			cb(null, arg);
-		} catch (err) {
-			// what do to with this?
+		} catch (error){
+			// ignore callback error
 		}
-	}).catch((error) => {
+	} catch (error){
 		cb(error);
-	});
-	return result;
+	}
 }
 
-function getCurrentNetwork(cb, connect) {
+function getCurrentNetwork(cb, connect){
 	connect = connect || new Connect();
 	asCallback(connect.current(), cb);
 }
@@ -320,7 +289,7 @@ function getCurrentNetwork(cb, connect) {
  * @param cb
  * @param connect   The Connector() instance to use. If not defined a new Connector instance will be provided.
  */
-function connect(opts, cb, connect) {
+function connect(opts, cb, connect){
 	connect = connect || new Connect();
 	asCallback(connect.connect(opts.ssid), cb);
 }
@@ -331,3 +300,4 @@ module.exports = {
 	asCallback: asCallback,
 	Connector: Connect
 };
+

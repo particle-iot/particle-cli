@@ -42,18 +42,14 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  *     TODO: How to use this function: a.claimDevice('3').then(function(g,b) { console.log("AAAAAAAAAAA", g,b) })
  *
  **/
-const when = require('when');
-const VError = require('verror');
-const pipeline = require('when/pipeline');
-const utilities = require('./utilities');
-const settings = require('../../settings');
-
-const request = require('request');
 const fs = require('fs');
-const path = require('path');
 const _ = require('lodash');
-const Spinner = require('cli-spinner').Spinner;
+const path = require('path');
 const chalk = require('chalk');
+const VError = require('verror');
+const request = require('request');
+const Spinner = require('cli-spinner').Spinner;
+const settings = require('../../settings');
 
 /**
  * Provides a framework for interacting with and testing the API
@@ -64,9 +60,8 @@ const chalk = require('chalk');
  * - tests for specific known errors such as invalid access token.
  *
  */
-
-class ApiClient {
-	constructor(baseUrl, accessToken) {
+module.exports = class ApiClient {
+	constructor(baseUrl, accessToken){
 		this._access_token = accessToken || settings.access_token;
 
 		this.request = request.defaults({
@@ -74,100 +69,100 @@ class ApiClient {
 			proxy: settings.proxyUrl || process.env.HTTPS_PROXY || process.env.https_proxy
 		});
 	}
-	ready() {
+	ready(){
 		let hasToken = this.hasToken();
 
-		if (!hasToken) {
+		if (!hasToken){
 			console.log("You're not logged in. Please login using", chalk.bold.cyan('particle cloud login'), 'before using this command');
 		}
 
 		return hasToken;
 	}
 
-	ensureToken() {
-		if (!this._access_token) {
+	ensureToken(){
+		if (!this._access_token){
 			throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
 		}
 	}
 
-	hasToken() {
+	hasToken(){
 		return !!this._access_token;
 	}
 
-	clearToken() {
+	clearToken(){
 		this._access_token = null;
 	}
 
-	getToken () {
+	getToken (){
 		return this._access_token;
 	}
 
-	updateToken(token) {
+	updateToken(token){
 		this._access_token = token;
 	}
 
-	createUser(user, pass) {
-		let dfd = when.defer();
-
-		//todo; if !user, make random?
-		//todo; if !pass, make random?
-
-		//curl -d username=zachary@particle.io -d password=foobar https://api.particle.io/v1/users
+	createUser(user, pass){
+		const { request } = this;
+		let self = this;
 
 		if (!user || (user === '')
-			|| (!utilities.contains(user, '@'))
-			|| (!utilities.contains(user, '.'))) {
-			return when.reject('Username must be an email address.');
+			|| (!user.includes('@'))
+			|| (!user.includes('.'))){
+			return Promise.reject('Username must be an email address.');
 		}
 
-		let that = this;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/users',
+				method: 'POST',
+				json: true,
+				form: {
+					username: user,
+					password: pass
+				}
+			};
 
-		this.request({
-			uri: '/v1/users',
-			method: 'POST',
-			form: {
-				username: user,
-				password: pass
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (body && body.ok) {
-				that._user = user;
-				that._pass = pass;
-			} else if (body && !body.ok && body.errors) {
-				return dfd.reject(body.errors);
-			}
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
 
-			dfd.resolve(body);
+				if (body && !body.ok && body.errors){
+					return reject(body.errors);
+				}
+
+				self._user = user;
+				self._pass = pass;
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
 	getUser(token){
 		const { request, hasBadToken } = this;
 		token = token || this._access_token;
 
-		return when.promise((resolve, reject) => {
-			request({
+		return new Promise((resolve, reject) => {
+			const options = {
 				uri: '/v1/user',
 				method: 'GET',
 				json: true,
 				headers: {
 					Authorization: `Bearer ${token}`
 				}
-			}, (error, response, body) => {
-				if (error) {
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
 					return reject(error);
 				}
-				if (hasBadToken(body)) {
+
+				if (hasBadToken(body)){
 					// TODO (mirande): throw a real error and supress the logging
 					// done within hasBadToken();
 					return reject('Invalid token');
 				}
+
 				return resolve(body);
 			});
 		});
@@ -177,7 +172,7 @@ class ApiClient {
 	 * Login and update the access token on this instance. Doesn't update the global settings.
 	 * Outputs failure to the console.
 	 */
-	login(clientId, user, pass) {
+	login(clientId, user, pass){
 		let that = this;
 
 		return this.createAccessToken(clientId, user, pass).then((body) => {
@@ -193,56 +188,66 @@ class ApiClient {
 	 * @param password  The password
 	 * @returns {Promise} to create the token
 	 */
-	createAccessToken (clientId, username, password) {
-		let that = this;
-		return when.promise((resolve, reject) => {
-			that.request({
+	createAccessToken(clientId, username, password){
+		const { request } = this;
+
+		return new Promise((resolve, reject) => {
+			const options = {
 				uri: '/oauth/token',
 				method: 'POST',
+				json: true,
 				form: {
 					username: username,
 					password: password,
 					grant_type: 'password',
 					client_id: clientId,
 					client_secret: 'client_secret_here'
-				},
-				json: true
-			}, (error, response, body) => {
-				if (error) {
+				}
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
 					return reject(error);
 				}
-				if (body.error) {
-					reject(body);
-				} else {
-					resolve(body);
+
+				if (body.error){
+					return reject(body);
 				}
+
+				resolve(body);
 			});
 		});
 	}
 
-	sendOtp (clientId, mfaToken, otp) {
-		return when.promise((resolve, reject) => {
-			this.request({
+	sendOtp(clientId, mfaToken, otp){
+		const { request } = this;
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			const options = {
 				uri: '/oauth/token',
 				method: 'POST',
+				json: true,
 				form: {
 					mfa_token: mfaToken,
 					otp,
 					grant_type: 'urn:custom:mfa-otp',
 					client_id: clientId,
 					client_secret: 'client_secret_here'
-				},
-				json: true
-			}, (error, response, body) => {
-				if (error) {
+				}
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
 					return reject(error);
 				}
-				if (body.error) {
-					reject(body);
-				} else {
-					this._access_token = body.access_token;
-					resolve(body);
+
+				if (body.error){
+					return reject(body);
 				}
+
+				self._access_token = body.access_token;
+				resolve(body);
 			});
 		});
 	}
@@ -252,43 +257,45 @@ class ApiClient {
 	 * Removes the given access token, outputting any errors to the console.
 	 * @returns {Promise}   To retrieve the API response body
 	 */
-	removeAccessToken (username, password, accessToken) {
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/access_tokens/' + accessToken,
-			method: 'DELETE',
-			auth: {
-				username: username,
-				password: password
-			},
-			form: {
-				access_token: this._access_token
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				console.error('error removing token: ' + error);
-				return dfd.reject(error);
-			}
+	removeAccessToken(username, password, accessTokenToDelete){
+		const { request, _access_token: token } = this;
 
-			if (body && body.ok) {
-				dfd.resolve(body);
-			} else if (body && (body.error || body.errors)) {
-				dfd.reject(body.error || body.errors);
-			} else {
-				//huh?
-				dfd.reject(body);
-			}
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/access_tokens/' + accessTokenToDelete,
+				method: 'DELETE',
+				json: true,
+				auth: {
+					username: username,
+					password: password
+				},
+				form: {
+					access_token: token
+				}
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					console.error('error removing token: ' + error);
+					return reject(error);
+				}
+
+				if (body && (body.error || body.errors)){
+					return reject(body.error || body.errors);
+				}
+
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
 	//GET /v1/access_tokens
-	listTokens (username, password) {
-		let that = this;
-		return when.promise((resolve, reject) => {
-			that.request({
+	listTokens(username, password){
+		const { request } = this;
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			const options = {
 				uri: '/v1/access_tokens',
 				method: 'GET',
 				auth: {
@@ -296,313 +303,348 @@ class ApiClient {
 					password: password
 				},
 				json: true
-			}, (error, response, body) => {
-				if (error) {
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
 					return reject(error);
 				}
-				if (that.hasBadToken(body)) {
+
+				if (self.hasBadToken(body)){
 					return reject('Invalid token');
 				}
-				if (error || (body['ok'] === false)) {
-					let err = error || body.errors;
-					if (typeof err == 'object') {
-						err = err.join(', ');
-					}
+
+				if (body && (body.error || body.errors)){
+					const err = body.error || body.errors;
 					console.error('error listing tokens: ', err);
-					reject(error || body.errors);
-				} else {
-					resolve(body);
+					return reject(err);
 				}
+
+				resolve(body);
 			});
 		});
 	}
 
 
 	//GET /v1/devices
-	listDevices ({ silent = false } = {}) {
+	listDevices({ silent = false } = {}){
 		let spinner = new Spinner('Retrieving devices...');
-		if (!silent) {
+		const { request } = this;
+		let self = this;
+
+		if (!silent){
 			spinner.start();
 		}
 
-		let that = this;
-		let prom = when.promise((resolve, reject) => {
-			that.request({
-				uri: '/v1/devices?access_token=' + that._access_token,
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/devices?access_token=' + self._access_token,
 				method: 'GET',
 				json: true
-			}, (error, response, body) => {
-				if (error) {
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
 					return reject(error);
 				}
-				if (that.hasBadToken(body)) {
+
+				if (self.hasBadToken(body)){
 					return reject('Invalid token');
 				}
-				if (body.error) {
-					if (!silent) {
+
+				if (body.error){
+					if (!silent){
 						console.error('listDevices got error: ', body.error);
 					}
-					reject(body.error);
-				} else {
-					that._devices = body;
-					resolve(body);
+					return reject(body.error);
 				}
+
+				self._devices = body;
+				resolve(body);
+			});
+		})
+			.finally(() => spinner.stop(true));
+	}
+
+	claimDevice(deviceId, requestTransfer){
+		const { request, _access_token: token } = this;
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/devices',
+				method: 'POST',
+				json: true,
+				form: {
+					id: deviceId,
+					access_token: token,
+					request_transfer: requestTransfer ? true : undefined
+				}
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (body && (body.error || body.errors)){
+					return reject(body.error || body.errors);
+				}
+
+				resolve(body);
 			});
 		});
-
-		prom.finally(() => {
-			spinner.stop(true);
-		});
-
-		return prom;
 	}
 
-	claimDevice (deviceId, requestTransfer) {
-		let that = this;
-		let dfd = when.defer();
+	removeDevice(deviceID){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		let params = {
-			uri: '/v1/devices',
-			method: 'POST',
-			form: {
-				id: deviceId,
-				access_token: this._access_token
-			},
-			json: true
-		};
-
-		if (requestTransfer) {
-			params.form.request_transfer = true;
-		}
-
-		this.request(params, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-
-			if (body && (body.ok || response.statusCode === 200)) {
-				dfd.resolve(body);
-			} else {
-				let errors = body && body.errors && body.errors.join('\n');
-				dfd.reject(errors);
-			}
-		});
-
-		return dfd.promise;
-	}
-
-	removeDevice (deviceID) {
 		console.log('releasing device ' + deviceID);
 
-		let dfd = when.defer();
-		let that = this;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/devices/' + deviceID,
+				method: 'DELETE',
+				form: {
+					id: deviceID,
+					access_token: token
+				},
+				json: true
+			};
 
-		that.request({
-			uri: '/v1/devices/' + deviceID,
-			method: 'DELETE',
-			form: {
-				id: deviceID,
-				access_token: this._access_token
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
 
-			if (body && body.ok) {
-				dfd.resolve(body);
-			} else if (body && body.error) {
-				dfd.reject(body.error);
-			}
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (body && (body.error || body.errors)){
+					return reject(body.error || body.errors);
+				}
+
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
 
-	renameDevice (deviceId, name) {
-		let that = this;
-		let dfd = when.defer();
+	renameDevice(deviceId, name){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		that.request({
-			uri: '/v1/devices/' + deviceId,
-			method: 'PUT',
-			form: {
-				name: name,
-				access_token: this._access_token
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/devices/' + deviceId,
+				method: 'PUT',
+				json: true,
+				form: {
+					name: name,
+					access_token: token
+				}
+			};
 
-			if (body && (body.name === name)) {
-				dfd.resolve(body);
-			} else {
-				dfd.reject(body);
-			}
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (body && (body.error || body.errors)){
+					return reject(body.error || body.errors);
+				}
+
+				if (body && body.name !== name){
+					return reject(body);
+				}
+
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
 	//GET /v1/devices/{DEVICE_ID}
-	getAttributes (deviceId) {
-		let that = this;
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/devices/' + deviceId + '?access_token=' + this._access_token,
-			method: 'GET',
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			dfd.resolve(body);
-		});
+	getAttributes(deviceId){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		return dfd.promise;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: `/v1/devices/${deviceId}?access_token=${token}`,
+				method: 'GET',
+				json: true
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				resolve(body);
+			});
+		});
 	}
 
 	//GET /v1/devices/{DEVICE_ID}/{VARIABLE}
-	getVariable (deviceId, name) {
-		let that = this;
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/devices/' + deviceId + '/' + name + '?access_token=' + this._access_token,
-			method: 'GET',
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			dfd.resolve(body);
-		});
+	getVariable(deviceId, name){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		return dfd.promise;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: `/v1/devices/${deviceId}/${name}?access_token=${token}`,
+				method: 'GET',
+				json: true
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				resolve(body);
+			});
+		});
 	}
 
 	//PUT /v1/devices/{DEVICE_ID}
-	signalDevice (deviceId, beSignalling) {
-		let dfd = when.defer();
-		let that = this;
-		this.request({
-			uri: '/v1/devices/' + deviceId,
-			method: 'PUT',
-			form: {
-				signal: (beSignalling) ? 1 : 0,
-				access_token: this._access_token
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
+	signalDevice(deviceId, beSignalling){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-			dfd.resolve(body);
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: `/v1/devices/${deviceId}`,
+				method: 'PUT',
+				form: {
+					signal: (beSignalling) ? 1 : 0,
+					access_token: token
+				},
+				json: true
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
 	//PUT /v1/devices/{DEVICE_ID}
 	// todo - this is used to both flash a binary and compile sources
 	// these are quite distinct operations, and even though they hit the same API should
 	// have different code paths here since there is little overlap in functionality
-	flashDevice (deviceId, fileMapping, targetVersion) {
-		console.log('attempting to flash firmware to your device ' + deviceId);
+	flashDevice(deviceId, fileMapping, targetVersion){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		let that = this;
-		let dfd = when.defer();
-		let r = this.request.put({
-			uri: '/v1/devices/' + deviceId,
-			qs: {
-				access_token: this._access_token
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			dfd.resolve(body);
+		console.log(`attempting to flash firmware to your device ${deviceId}`);
+
+		return new Promise((resolve, reject) => {
+			const options = {
+				method: 'PUT',
+				uri: `/v1/devices/${deviceId}`,
+				qs: {
+					access_token: token
+				},
+				json: true
+			};
+
+			const req = request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				resolve(body);
+			});
+
+			// TODO (mirande): refactor this pattern away
+			self._addFilesToCompile(req, fileMapping, targetVersion);
 		});
-
-		// NB: fileMaping may be a singleton list of a binary file to flash
-		this._addFilesToCompile(r, fileMapping, targetVersion);
-
-
-		return dfd.promise;
 	}
 
-	compileCode(fileMapping, platformId, targetVersion) {
+	compileCode(fileMapping, platformId, targetVersion){
+		const { request, _access_token: token } = this;
+		let self = this;
+
 		console.log('attempting to compile firmware ');
 
-		let that = this;
-		let dfd = when.defer();
-		let r = this.request.post({
-			uri: '/v1/binaries',
-			qs: {
-				access_token: this._access_token
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			if (body.errors) {
-				body.errors = that._mapFilenames(fileMapping, body.errors);
-			}
-			dfd.resolve(body);
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/binaries',
+				qs: {
+					access_token: token
+				},
+				json: true
+			};
+
+			const req = request.post(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (body.errors){
+					body.errors = self._mapFilenames(fileMapping, body.errors);
+				}
+
+				resolve(body);
+			});
+
+
+			// TODO (mirande): refactor this pattern away
+			self._addFilesToCompile(req, fileMapping, targetVersion, platformId);
 		});
-
-		this._addFilesToCompile(r, fileMapping, targetVersion, platformId);
-
-		return dfd.promise;
 	}
 
-	_mapFilenames(fileMapping, messages) {
-
-		function regexEscape(s) {
+	_mapFilenames(fileMapping, messages){
+		function regexEscape(s){
 			return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 		}
 
 		let result = [];
 		let map = {};
 		// prepend each logical path with a slash (since the compile server does that.)
-		Object.keys(fileMapping.map).map(function addSlash(item) {
+		Object.keys(fileMapping.map).map(function addSlash(item){
 			map[path.sep+item] = fileMapping.map[item];
 		});
 
 		// escape each filename to be regex-safe and create union recogniser
 		let re = new RegExp(Object.keys(map).map(regexEscape).join('|'),'gi');
 
-		for (let i = 0, n = messages.length; i < n; i++) {
+		for (let i = 0, n = messages.length; i < n; i++){
 			let message = messages[i];
 			message = message.replace(re, (matched) => {
 				return map[matched];
@@ -612,11 +654,11 @@ class ApiClient {
 		return result;
 	}
 
-	_populateFileMapping(fileMapping) {
-		if (!fileMapping.map) {
+	_populateFileMapping(fileMapping){
+		if (!fileMapping.map){
 			fileMapping.map = {};
-			if (fileMapping.list) {
-				for (let i = 0; i < fileMapping.list.length; i++) {
+			if (fileMapping.list){
+				for (let i = 0; i < fileMapping.list.length; i++){
 					let item = fileMapping.list[i];
 					fileMapping.map[item] = item;
 				}
@@ -625,11 +667,11 @@ class ApiClient {
 		return fileMapping;
 	}
 
-	_addFilesToCompile (r, fileMapping, targetVersion, platformId) {
+	_addFilesToCompile (r, fileMapping, targetVersion, platformId){
 		let form = r.form();
 		this._populateFileMapping(fileMapping);
 		let list = Object.keys(fileMapping.map);
-		for (let i = 0, n = list.length; i < n; i++) {
+		for (let i = 0, n = list.length; i < n; i++){
 			let relativeFilename = list[i];
 			let filename = fileMapping.map[relativeFilename];
 
@@ -639,212 +681,219 @@ class ApiClient {
 				includePath: true
 			});
 		}
-		if (platformId) {
+		if (platformId){
 			form.append('platform_id', platformId);
 		}
-		if (targetVersion) {
+		if (targetVersion){
 			form.append('build_target_version', targetVersion);
 		} else {
 			form.append('latest', 'true');
 		}
 	}
 
-	downloadBinary (url, filename) {
-		if (fs.existsSync(filename)) {
+	downloadBinary(url, filename){
+		const { request, _access_token: token } = this;
+		let self = this;
+
+		if (fs.existsSync(filename)){
 			try {
 				fs.unlinkSync(filename);
-			} catch (ex) {
-				console.error('error deleting file: ' + filename + ' ' + ex);
+			} catch (ex){
+				console.error(`error deleting file: ${filename} ${ex}`);
 			}
 		}
 
-		let that = this;
-		let dfd = when.defer();
-		console.log('downloading binary from: ' + url);
-		let r = this.request.get({ uri: url, qs: { access_token: this._access_token } });
-		r.pause();
+		console.log(`downloading binary from: ${url}`);
 
-		r.on('error', (err) => {
-			return dfd.reject(err);
-		});
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: url,
+				qs: {
+					access_token: token
+				}
+			};
 
-		r.on('response', (response) => {
-			if (that.isUnauthorized(response)) {
-				return dfd.reject('Invalid token');
-			}
+			const req = request.get(options);
 
-			if (response.statusCode !== 200) {
-				r.on('complete', (resp, body) => {
-					return dfd.reject(body);
-				});
-				r.readResponseBody(response);
-				r.resume();
-				return;
-			}
+			req.pause();
+			req.on('error', (err) => reject(err));
+			req.on('response', (res) => {
+				if (self.isUnauthorized(res)){
+					return reject('Invalid token');
+				}
 
-			console.log('saving to: ' + filename);
-			let outFs = fs.createWriteStream(filename);
-			r.pipe(outFs).on('finish', () => {
-				return dfd.resolve();
+				if (res.statusCode !== 200){
+					req.on('complete', (resp, body) => reject(body));
+					req.readResponseBody(res);
+					req.resume();
+					return;
+				}
+
+				console.log('saving to: ' + filename);
+
+				const outFs = fs.createWriteStream(filename);
+				req.pipe(outFs).on('finish', () => resolve());
+				req.resume();
 			});
-			r.resume();
 		});
-
-		return dfd.promise;
 	}
 
-	sendPublicKey (deviceId, buffer, algorithm, productId) {
+	sendPublicKey(deviceId, buffer, algorithm, productId){
+		const { request, _access_token: token } = this;
+		let self = this;
+
 		console.log('attempting to add a new public key for device ' + deviceId);
 
-		let dfd = when.defer();
-		let that = this;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: `/v1/provisioning/${deviceId}`,
+				method: 'POST',
+				json: true,
+				form: {
+					deviceID: deviceId,
+					publicKey: buffer.toString(),
+					order: `manual_${Date.now()}`,
+					filename: 'cli',
+					algorithm: algorithm,
+					access_token: token
+				}
+			};
 
-		let params = {
-			uri: '/v1/provisioning/' + deviceId,
-			method: 'POST',
-			form: {
-				deviceID: deviceId,
-				publicKey: buffer.toString(),
-				order: 'manual_' + Date.now(),
-				filename: 'cli',
-				algorithm: algorithm,
-				access_token: this._access_token
-			},
-			json: true
-		};
-
-		if (productId !== undefined) {
-			params.form.product_id = productId;
-		}
-
-		this.request(params, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
+			if (productId !== undefined){
+				options.form.product_id = productId;
 			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			if (body.error) {
-				dfd.reject(body.error);
-			} else {
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (body.error){
+					return reject(body.error);
+				}
+
 				console.log('submitting public key succeeded!');
-				dfd.resolve(response);
-			}
-
-			that._devices = body;
+				self._devices = body;
+				resolve(response);
+			});
 		});
-
-		return dfd.promise;
 	}
 
-	callFunction (deviceId, functionName, funcParam) {
-		//console.log('callFunction for user ');
+	callFunction(deviceId, functionName, funcParam){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		let that = this;
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/devices/' + deviceId + '/' + functionName,
-			method: 'POST',
-			form: {
-				arg: funcParam,
-				access_token: this._access_token
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			dfd.resolve(body);
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: `/v1/devices/${deviceId}/${functionName}`,
+				method: 'POST',
+				json: true,
+				form: {
+					arg: funcParam,
+					access_token: token
+				}
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
-	getAllAttributes () {
-		if (this._attributeCache) {
-			return when.resolve(this._attributeCache);
+	getAllAttributes(){
+		let self = this;
+
+		if (this._attributeCache){
+			return Promise.resolve(this._attributeCache);
 		}
 
 		console.error('polling server to see what devices are online, and what functions are available');
 
-		let that = this;
-		let lookupAttributes = (devices) => {
-			let tmp = when.defer();
+		return this.listDevices()
+			.then(devices => {
+				if (!devices || (devices.length === 0)){
+					console.log('No devices found.');
+					self._attributeCache = null;
+					return Promise.reject('No devices found');
+				}
 
-			if (!devices || (devices.length === 0)) {
-				console.log('No devices found.');
-				that._attributeCache = null;
-				tmp.reject('No devices found');
-			} else {
 				let promises = [];
-				for (let i = 0; i < devices.length; i++) {
+
+				for (let i = 0; i < devices.length; i++){
 					let deviceid = devices[i].id;
-					if (devices[i].connected) {
-						promises.push(that.getAttributes(deviceid));
+
+					if (devices[i].connected){
+						promises.push(self.getAttributes(deviceid));
 					} else {
-						promises.push(when.resolve(devices[i]));
+						promises.push(Promise.resolve(devices[i]));
 					}
 				}
 
-				when.all(promises).then((devices) => {
-					//sort alphabetically
-					devices = devices.sort((a, b) => {
-						return (a.name || '').localeCompare(b.name);
+				return Promise.all(promises)
+					.then(devices => {
+						devices = devices.sort((a, b) => {
+							return (a.name || '').localeCompare(b.name);
+						});
+						self._attributeCache = devices;
+						return devices;
 					});
-
-					that._attributeCache = devices;
-					tmp.resolve(devices);
-				});
-			}
-			return tmp.promise;
-		};
-
-		return pipeline([
-			that.listDevices.bind(that),
-			lookupAttributes
-		]);
+			});
 	}
 
-	getEventStream (eventName, deviceId, onDataHandler) {
+	getEventStream(eventName, deviceId, onDataHandler){
+		const { request, _access_token: token } = this;
 		let self = this;
+		let failed = false;
 		let url;
-		if (!deviceId) {
+
+		if (!deviceId){
 			url = '/v1/events';
-		} else if (deviceId === 'mine') {
+		} else if (deviceId === 'mine'){
 			url = '/v1/devices/events';
 		} else {
-			url = '/v1/devices/' + deviceId + '/events';
+			url = `/v1/devices/${deviceId}/events`;
 		}
 
-		if (eventName) {
-			url += '/' + encodeURIComponent(eventName);
+		if (eventName){
+			url += `/${encodeURIComponent(eventName)}`;
 		}
 
-		let failed = false;
-		console.log('Listening to: ' + url);
-		return when.promise((resolve, reject) => {
-			self.request
-				.get({
-					uri: url,
-					qs: {
-						access_token: self._access_token
-					}
-				})
-				.on('response', (response) => {
-					if (self.isUnauthorized(response)) {
+		console.log(`Listening to: ${url}`);
+
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: url,
+				qs: {
+					access_token: token
+				}
+			};
+
+			request.get(options)
+				.on('response', (res) => {
+					if (self.isUnauthorized(res)){
 						reject('Invalid access token');
 					}
-					if (response.statusCode >= 300) {
+
+					if (res.statusCode >= 300){
 						failed = true;
 					}
 				})
-				.on('error', reject)
-				.on('close', resolve)
-				.on('data', data => {
-					if (failed) {
+				.on('error', (err) => reject(err))
+				.on('cloud', (data) => resolve(data))
+				.on('data', (data) => {
+					if (failed){
 						return reject(JSON.parse(data));
 					}
 					onDataHandler(data);
@@ -852,220 +901,200 @@ class ApiClient {
 		});
 	}
 
-	publishEvent (eventName, data, setPrivate) {
-		let that = this;
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/devices/events',
-			method: 'POST',
-			form: {
-				name: eventName,
-				data: data,
-				access_token: this._access_token,
-				private: setPrivate
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			if (body && body.ok) {
-				let consolePrint = '';
-				consolePrint += 'Published ';
-				if (setPrivate) {
-					consolePrint += 'private';
-				} else {
-					consolePrint += 'public';
+	publishEvent(eventName, data, setPrivate){
+		const { request, _access_token: token } = this;
+		let self = this;
+
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/devices/events',
+				method: 'POST',
+				json: true,
+				form: {
+					name: eventName,
+					data: data,
+					access_token: token,
+					private: setPrivate
+				}
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
 				}
 
-				console.log(consolePrint,'event:',eventName);
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (body && body.error){
+					console.log('Server said', body.error);
+					return reject(body);
+				}
+
+				console.log(
+					`Published ${setPrivate ? 'private' : 'public'}`,
+					'event:',
+					eventName
+				);
 				console.log('');
-				dfd.resolve(body);
-			} else if (body && body.error) {
-				console.log('Server said', body.error);
-				dfd.reject(body);
-			}
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
-	createWebhookWithObj(obj) {
-		let that = this;
-		let dfd = when.defer();
+	createWebhookWithObj(obj){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		let webhookObj = {
-			uri: '/v1/webhooks',
-			method: 'POST',
-			json: obj,
-			headers: {
-				'Authorization': 'Bearer ' + this._access_token
-			}
-		};
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/webhooks',
+				method: 'POST',
+				json: obj,
+				headers: {
+					Authorization: `Bearer ${token}`
+				}
+			};
 
-		console.log('Sending webhook request ', webhookObj);
+			console.log('Sending webhook request ', options);
 
-		this.request(webhookObj, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			if (body && body.ok) {
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (!body || !body.ok){
+					return reject(body);
+				}
+
+				if (body && body.error){
+					return reject(body.error);
+				}
+
 				console.log('Successfully created webhook with ID ' + body.id);
-				dfd.resolve(body);
-			} else if (body && body.error) {
-				dfd.reject(body.error);
-			} else {
-				dfd.reject(body);
-			}
+				resolve(body);
+			});
 		});
-
-		return dfd.promise;
 	}
 
-	// not used
-	_createWebhook (event, url, deviceId, requestType, headers, json, query, auth, mydevices, rejectUnauthorized) {
-		let that = this;
-		let dfd = when.defer();
+	deleteWebhook(hookID){
+		const { request, _access_token: token } = this;
 
-		let obj = {
-			uri: '/v1/webhooks',
-			method: 'POST',
-			json: true,
-			form: {
-				event: event,
-				url: url,
-				deviceid: deviceId,
-				access_token: this._access_token,
-				requestType: requestType,
-				headers: headers,
-				json: json,
-				query: query,
-				auth: auth,
-				mydevices: mydevices,
-				rejectUnauthorized: rejectUnauthorized
-			}
-		};
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: `/v1/webhooks/${hookID}?access_token=${token}`,
+				method: 'DELETE',
+				json: true
+			};
 
-		console.log('Sending webhook request ', obj);
-
-		this.request(obj, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			if (body && body.ok) {
-				console.log('Successfully created webhook!');
-				dfd.resolve(body);
-			} else if (body && body.error) {
-				dfd.reject(body.error);
-			} else {
-				dfd.reject(body);
-			}
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+				if (body && body.ok){
+					console.log('Successfully deleted webhook!');
+					resolve(body);
+				} else if (body && body.error){
+					reject(body.error);
+				}
+			});
 		});
-
-		return dfd.promise;
 	}
 
-	deleteWebhook (hookID) {
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/webhooks/' + hookID + '?access_token=' + this._access_token,
-			method: 'DELETE',
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (body && body.ok) {
-				console.log('Successfully deleted webhook!');
-				dfd.resolve(body);
-			} else if (body && body.error) {
-				dfd.reject(body.error);
-			}
-		});
+	listWebhooks(){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		return dfd.promise;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: `/v1/webhooks/?access_token=${token}`,
+				method: 'GET',
+				json: true
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				resolve(body);
+			});
+		});
 	}
 
-	listWebhooks () {
-		let that = this;
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/webhooks/?access_token=' + this._access_token,
-			method: 'GET', json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			dfd.resolve(body);
-		});
+	getBuildTargets(){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		return dfd.promise;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/build_targets',
+				qs: {
+					access_token: token,
+					featured: true
+				},
+				method: 'GET',
+				json: true
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				resolve(body);
+			});
+		});
 	}
 
-	getBuildTargets() {
-		let that = this;
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/build_targets',
-			qs: {
-				access_token: this._access_token,
-				featured: true
-			},
-			method: 'GET',
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (that.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			dfd.resolve(body);
-		});
+	getClaimCode(){
+		const { request, _access_token: token } = this;
+		let self = this;
 
-		return dfd.promise;
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/device_claims',
+				method: 'POST',
+				qs: {
+					access_token: token,
+				},
+				json: true
+			};
+
+			request(options, (error, response, body) => {
+				if (error){
+					return reject(error);
+				}
+
+				if (self.hasBadToken(body)){
+					return reject('Invalid token');
+				}
+
+				if (!body || !body.claim_code){
+					return reject(new Error('Unable to obtain claim code'));
+				}
+
+				resolve(body);
+			});
+		});
 	}
 
-	getClaimCode() {
-		let dfd = when.defer();
-		this.request({
-			uri: '/v1/device_claims',
-			method: 'POST',
-			qs: {
-				access_token: this._access_token,
-			},
-			json: true
-		}, (error, response, body) => {
-			if (error) {
-				return dfd.reject(error);
-			}
-			if (this.hasBadToken(body)) {
-				return dfd.reject('Invalid token');
-			}
-			if (!body || !body.claim_code) {
-				return dfd.reject(new Error('Unable to obtain claim code'));
-			}
-			dfd.resolve(body);
-		});
-
-		return dfd.promise;
-	}
-
-	hasBadToken(body) {
+	hasBadToken(body){
 		if (body && body.error && body.error.indexOf
-			&& (body.error.indexOf('invalid_token') >= 0)) {
+			&& (body.error.indexOf('invalid_token') >= 0)){
 			// todo - factor out the console logging out of the predicate
 			console.log();
 			console.log(chalk.red('!'), 'Please login - it appears your access token may have expired');
@@ -1075,8 +1104,8 @@ class ApiClient {
 		return false;
 	}
 
-	isUnauthorized(response) {
-		if (response && response.statusCode === 401) {
+	isUnauthorized(response){
+		if (response && response.statusCode === 401){
 			console.log();
 			console.log(chalk.red('!'), 'Please login - it appears your access token may have expired');
 			console.log();
@@ -1085,18 +1114,18 @@ class ApiClient {
 		return false;
 	}
 
-	normalizedApiError(response) {
-		if (_.isError(response) || response instanceof VError) {
+	normalizedApiError(response){
+		if (_.isError(response) || response instanceof VError){
 			return response;
 		}
 
 		let reason = 'Server error';
-		if (typeof response === 'string') {
+		if (typeof response === 'string'){
 			reason = response;
-		} else if (response.errors) {
+		} else if (response.errors){
 			reason = response.errors.map((err) => {
-				if (err.error) {
-					if (err.error.status) {
+				if (err.error){
+					if (err.error.status){
 						return err.error.status;
 					} else {
 						return err.error;
@@ -1105,16 +1134,14 @@ class ApiClient {
 					return err;
 				}
 			}).join('\n');
-		} else if (response.info) {
+		} else if (response.info){
 			reason = response.info;
-		} else if (response.error) {
+		} else if (response.error){
 			reason = response.error;
-		} else if (response.error_description) {
+		} else if (response.error_description){
 			reason = response.error_description;
 		}
 		return new Error(reason);
 	}
-}
-
-module.exports = ApiClient;
+};
 

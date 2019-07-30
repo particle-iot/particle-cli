@@ -1,8 +1,9 @@
-const EventEmitter = require('events').EventEmitter;
 const _ = require('lodash');
+const EventEmitter = require('events').EventEmitter;
 const log = require('./log');
 
-class SerialTrigger extends EventEmitter {
+
+module.exports = class SerialTrigger extends EventEmitter {
 	constructor(port, stream) {
 		super();
 		this.port = port;
@@ -87,6 +88,5 @@ class SerialTrigger extends EventEmitter {
 			this.dataCallback = null;
 		}
 	}
-}
+};
 
-module.exports = SerialTrigger;

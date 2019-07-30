@@ -16,7 +16,6 @@ PassthroughStream.prototype._flush = function _flush(cb) {
 	process.nextTick(cb);
 };
 
-
 describe('SerialTrigger', () => {
 	it('should trigger when prompt is at beginning of line', (done) => {
 		var port = new MockSerial();
@@ -68,3 +67,4 @@ describe('SerialTrigger', () => {
 		port.push('SSID: ');
 	});
 });
+

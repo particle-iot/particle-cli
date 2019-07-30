@@ -1,23 +1,20 @@
 const spawn = require('child_process').spawn;
 const extend = require('xtend');
-const when = require('when');
 
-function systemExecutor(cmdArgs) {
 
-	const dfd = when.defer();
+module.exports.systemExecutor = (cmdArgs) => {
+	const { runCommand } = module.exports;
 
-	runCommand(cmdArgs[0], cmdArgs.splice(1), function handler(err, code, stdout, stderr) {
-		const fail = err || stderr || code;
-		if (fail) {
-			dfd.reject({ err:err, stderr:stderr, stdout:stdout, code:code });
-		}		else {
-			dfd.resolve(stdout);
-		}
+	return new Promise((resolve, reject) => {
+		runCommand(cmdArgs[0], cmdArgs.splice(1), (err, code, stdout, stderr) => {
+			if (err || stderr || code){
+				reject({ err, stderr, stdout, code });
+			} else {
+				resolve(stdout);
+			}
+		});
 	});
-
-	return dfd.promise;
-}
-
+};
 
 /***
  * Executes a command, collecting the output from stdout and stderr.
@@ -25,8 +22,7 @@ function systemExecutor(cmdArgs) {
  * @param args
  * @param cb callback that receives (error, exitCode, stdout, stderr)
  */
-function runCommand(cmd, args, cb) {
-
+module.exports.runCommand = (cmd, args, cb) => {
 	// set locale so we can be sure of consistency of command execution
 	const env = extend(process.env, { LANG: 'en', LC_ALL: 'en', LC_MESSAGES: 'en' });
 
@@ -54,9 +50,5 @@ function runCommand(cmd, args, cb) {
 	s.on('close', (code) => {
 		cb(null, code, stdout, stderr);
 	});
-}
-
-module.exports = {
-	runCommand: runCommand,
-	systemExecutor: systemExecutor
 };
+
