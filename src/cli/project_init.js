@@ -8,11 +8,11 @@ const { ProjectInitCommand, ProjectInitCommandSite, Projects } = require('../cmd
 
 // todo - this is pulled from validating_editor in particle-dev-libraries. Please refactor/DRY.
 
-function validationMessage(validationResult, fieldName) {
+function validationMessage(validationResult, fieldName){
 	return fieldName+' '+validationResult.errors[fieldName];
 }
 
-function fieldValidator(fieldName) {
+function fieldValidator(fieldName){
 	const validator = (value) => {
 		const result = validateField(fieldName, value);
 		return (result && result.valid) ?
@@ -21,9 +21,9 @@ function fieldValidator(fieldName) {
 	return validator;
 }
 
-function yesNoValidator() {
+function yesNoValidator(){
 	const validator = (value) => {
-		if (!value || (value!=='Y' && value!=='y' && value!=='N' && value!=='n')) {
+		if (!value || (value !== 'Y' && value !== 'y' && value !== 'N' && value !== 'n')){
 			return 'Please answer "y" or "n" - you typed '+value;
 		}
 	};
@@ -32,7 +32,7 @@ function yesNoValidator() {
 
 
 class CLIProjectInitCommandSite extends ProjectInitCommandSite {
-	constructor({ name, directory }) {
+	constructor({ name, directory }){
 		super();
 		this._name = name;
 		this._dir = directory;
@@ -50,20 +50,20 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 If you answer anything else, the `project init` process is cancelled
 	 * @returns {Promise} promise
 	 */
-	dialog() {
+	async dialog(){
 		const promptForName = () => {
 			return this._name || this.prompt('What would you like to call your project? [myproject]', 'myproject', fieldValidator('name'));
 		};
 
-		function isYes(result) {
-			return (result||'').toLowerCase()==='y';
+		function isYes(result){
+			return (result||'').toLowerCase() === 'y';
 		}
 
 		const promptForLocation = (commonLocation, currentLocation) => {
 			return this._dir ||
 				this.prompt('Would you like to create your project in the default project directory? [Y/n]', 'Y', yesNoValidator())
 					.then(result => {
-						if (isYes(result)) {
+						if (isYes(result)){
 							return commonLocation;
 						}
 					})
@@ -75,18 +75,13 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 					});
 		};
 
-		return Promise.resolve()
-			.then(() => promptForName())
-			.then((name) => {
-				this._name = name;
-				if (name) {
-					return promptForLocation(new Projects().myProjectsFolder(), process.cwd());
-				}
-			})
-			.then(directory => {
-				this._dir = directory;
-				return this._dir && this._name; // are we ready?
-			});
+		this._name = await promptForName();
+
+		if (this._name){
+			const projFolder = new Projects().myProjectsFolder();
+			this._dir = await promptForLocation(projFolder, process.cwd());
+		}
+		return this._dir && this._name;
 	}
 
 	/**
@@ -96,19 +91,19 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
      * @param {function(value)}         validator The validator that is used to validate the response.
 	 * @returns {Promise} promise
 	 */
-	prompt(message, value, validator) {
+	prompt(message, value, validator){
 		return prompt.promptAndValidate(message, value, validator);
 	}
 
-	name() {
+	name(){
 		return this._name;
 	}
 
-	directory() {
+	directory(){
 		return path.join(this._dir, this._name);
 	}
 
-	filesystem() {
+	filesystem(){
 		return require('fs');
 	}
 
@@ -118,7 +113,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 * @returns {boolean} true to continue with project creation
 	 * The response can be a direct value or a promise. If the promise is falsey then the process is stopped.
 	 */
-	notifyDirectoryExists() {
+	notifyDirectoryExists(){
 		// creating a new project is non-destructive so we allow it always
 		return true;
 	}
@@ -126,10 +121,9 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	/**
 	 * Notification of the entire project creation operation.
 	 * @param {String} path      The directory that will contain the project
-	 * @param {Promise} promise   The promise to create the project in the given directory
-	 * @returns {Promise} Promise
+	 * @returns {undefined}
 	 */
-	notifyCreatingProject(path) {
+	notifyCreatingProject(path){
 		return log.info(`Initializing project in directory ${chalk.bold(path)}...`);
 	}
 
@@ -140,16 +134,16 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 	 * extend this promise and return the new extension. This may be undefined also.
 	 * @return {Promise} undefined to use the original promise, or a wrapped version of the promise.
 	 */
-	notifyCreatingPath(path, promise) {
+	notifyCreatingPath(path, promise){
 		return promise;
 	}
 
 
-	notifyProjectNotCreated() {
+	notifyProjectNotCreated(){
 		log.warn('Project initialization was cancelled.');
 	}
 
-	notifyProjectCreated(directory) {
+	notifyProjectCreated(directory){
 		log.success(`A new project has been initialized in directory ${chalk.bold(directory)}`);
 	}
 }
@@ -162,7 +156,7 @@ module.exports.command = (argv) => {
 	});
 	return site.dialog()
 		.then((ready) => {
-			if (ready) {
+			if (ready){
 				return site.run(cmd);
 			}
 		});

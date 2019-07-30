@@ -6,18 +6,18 @@ const { LibraryAddCommand, LibraryAddCommandSite } = require('../cmd');
 
 
 class CLILibraryAddCommandSite extends LibraryAddCommandSite {
-	constructor(argv, apiClient) {
+	constructor(argv, apiClient){
 		super();
 		this._apiClient = apiClient;
 		[this.name, this.version='latest'] = argv.params.name.split('@');
 		this.dir = argv.params.dir || process.cwd();
 	}
 
-	apiClient() {
+	apiClient(){
 		return this._apiClient;
 	}
 
-	libraryIdent() {
+	libraryIdent(){
 		// todo - shouldn't this be a promise?
 		return {
 			name: this.name,
@@ -25,19 +25,17 @@ class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 		};
 	}
 
-	projectDir() {
+	projectDir(){
 		return this.dir;
 	}
 
-	fetchingLibrary(promise, name) {
+	fetchingLibrary(promise, name){
 		return spin(promise, `Adding library ${chalk.blue(name)}`);
 	}
 
-	addedLibrary(name, version) {
-		return Promise.resolve().then(() => {
-			log.success(`Library ${chalk.blue(name)} ${version} has been added to the project.`);
-			log.success(`To get started using this library, run ${chalk.bold('particle library view '+name)} to view the library documentation and sources.`);
-		});
+	async addedLibrary(name, version){
+		log.success(`Library ${chalk.blue(name)} ${version} has been added to the project.`);
+		log.success(`To get started using this library, run ${chalk.bold('particle library view '+name)} to view the library documentation and sources.`);
 	}
 }
 

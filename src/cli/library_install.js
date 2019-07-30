@@ -5,71 +5,67 @@ const { LibraryInstallCommand, LibraryInstallCommandSite } = require('../cmd');
 
 
 class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
-	constructor(argv, dir, apiClient) {
+	constructor(argv, dir, apiClient){
 		super();
 		this._apiClient = apiClient;
 		this.argv = argv;
 		this.dir = dir;
 	}
 
-	apiClient() {
+	apiClient(){
 		return this._apiClient;
 	}
 
-	isVendored() {
+	isVendored(){
 		return this.argv.vendored;
 	}
 
-	isAdaptersRequired() {
+	isAdaptersRequired(){
 		return this.argv.adapter;
 	}
 
-	libraryName() {
+	libraryName(){
 		const params = this.argv.params;
 		return params && params.name;
 	}
 
-	targetDirectory() {
+	targetDirectory(){
 		return this.dir;
 	}
 
-	homePathOverride() {
+	homePathOverride(){
 		return this.argv.dest;
 	}
 
-	error(error) {
+	error(error){
 		throw convertApiError(error);
 	}
 
-	notifyIncorrectLayout(actualLayout, expectedLayout, libName, targetDir) {
-		return this.promiseLog(`Cannot install library: directory '${targetDir}' is a '${actualLayout}' format project, please change to a '${expectedLayout}' format.`);
+	async notifyIncorrectLayout(actualLayout, expectedLayout, libName, targetDir){
+		return console.log(`Cannot install library: directory '${targetDir}' is a '${actualLayout}' format project, please change to a '${expectedLayout}' format.`);
 	}
 
-	notifyCheckingLibrary(libName) {
-		return this.promiseLog(`Checking library ${chalk.green(libName)}...`);
+	async notifyCheckingLibrary(libName){
+		return console.log(`Checking library ${chalk.green(libName)}...`);
 	}
 
-	notifyFetchingLibrary(lib, targetDir) {
+	async notifyFetchingLibrary(lib, targetDir){
 		const dest = ` to ${targetDir}`;
-		return this.promiseLog(`Installing library ${chalk.blue(lib.name)} ${lib.version}${dest} ...`);
+		return console.log(`Installing library ${chalk.blue(lib.name)} ${lib.version}${dest} ...`);
 	}
 
-	notifyInstalledLibrary(lib) {
-		return this.promiseLog(`Library ${chalk.blue(lib.name)} ${lib.version} installed.`);
-	}
-
-	promiseLog(msg) {
-		return Promise.resolve().then(() => console.log(msg));
+	async notifyInstalledLibrary(lib){
+		return console.log(`Library ${chalk.blue(lib.name)} ${lib.version} installed.`);
 	}
 }
 
-function install(argv, apiJS) {
+function install(argv, apiJS){
 	const site = new CLILibraryInstallCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryInstallCommand();
 	return site.run(cmd);
 }
 
-function copy(argv, apiJS) {
+function copy(argv, apiJS){
 	argv.vendored = true;
 	argv.adapter = false;
 	argv.confirm = false;
@@ -79,9 +75,9 @@ function copy(argv, apiJS) {
 
 module.exports.CLILibraryInstallCommandSite = CLILibraryInstallCommandSite;
 module.exports.command = (cmd, apiJS, argv) => {
-	if (cmd==='copy') {
+	if (cmd === 'copy'){
 		return copy(argv, apiJS);
-	} else if (cmd==='install') {
+	} else if (cmd === 'install'){
 		return install(argv, apiJS);
 	} else {
 		throw Error('uknown command '+cmd);

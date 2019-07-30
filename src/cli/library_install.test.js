@@ -18,9 +18,9 @@
  */
 
 const { expect } = require('../../test/test-setup');
-const commandProcessor = require('../app/command-processor');
 const { LibraryInstallCommand } = require('../cmd');
 const libraryCommands = require('./library');
+const commandProcessor = require('../app/command-processor');
 const { CLILibraryInstallCommandSite } = require('./library_install');
 
 

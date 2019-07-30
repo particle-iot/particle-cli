@@ -9,34 +9,34 @@ const { LibraryPublishCommand, LibraryPublishCommandSite } = require('../cmd');
 
 class CLILibraryPublishCommandSite extends LibraryPublishCommandSite {
 
-	constructor(argv, apiClient) {
+	constructor(argv, apiClient){
 		super();
 		this.argv = argv;
 		this.ident = argv.params.name;
 		this._apiClient = apiClient;
 	}
 
-	libraryIdent() {
+	libraryIdent(){
 		return this.ident;
 	}
 
-	libraryDirectory() {
+	libraryDirectory(){
 		return this.dir;
 	}
 
-	apiClient() {
+	apiClient(){
 		return this._apiClient;
 	}
 
-	error(error) {
+	error(error){
 		throw error;
 	}
 
-	publishingLibrary(promise, ident) {
+	publishingLibrary(promise, ident){
 		return spin(promise, `Publishing library ${chalk.green(ident)}`);
 	}
 
-	publishLibraryComplete(library) {
+	publishLibraryComplete(library){
 		return log.success(`Library ${chalk.green(library.name)} was successfully published.`);
 	}
 }
@@ -49,26 +49,25 @@ class CLILibraryPublishContributeCommandSite extends CLILibraryContributeCommand
 	 * are complete.
 	 * @param {Library} library   The library that was contributed.
 	 */
-	contributeComplete(library) {
+	contributeComplete(library){
 		this.contributedLibrary = library;
 	}
 }
 
 
 module.exports.CLILibraryPublishCommandSite = CLILibraryPublishCommandSite;
-module.exports.command = (apiJS, argv) => {
+module.exports.command = async (apiJS, argv) => {
 	const site = new CLILibraryPublishCommandSite(argv, buildAPIClient(apiJS));
 	const cmd = new LibraryPublishCommand();
-	let promise = Promise.resolve();
-	if (!site.libraryIdent()) {
+
+	if (!site.libraryIdent()){
 		// no library name given - try publishing the current library
 		const contributeSite = new CLILibraryPublishContributeCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 		// todo - set more stringent validation on the contribute command since this is pre-publish
 		const contribute = new LibraryContributeCommand();
-		promise = contributeSite.run(contribute).then(() => {
-			site.ident = contributeSite.contributedLibrary.name;
-		});
+		await contributeSite.run(contribute);
+		site.ident = contributeSite.contributedLibrary.name;
 	}
-	return promise.then(() => site.run(cmd));
+	return site.run(cmd);
 };
 

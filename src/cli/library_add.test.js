@@ -6,42 +6,44 @@ const { LibraryAddCommand, LibraryAddCommandSite } = require('../cmd');
 
 
 describe('LibraryAddCommand', () => {
-	beforeEach((done) => {
-		mockfs({});
-		done();
+	const sandbox = sinon.createSandbox();
+	let testSite;
+
+	beforeEach(() => {
+		testSite = sandbox.createStubInstance(LibraryAddCommandSite);
+		mockfs();
 	});
 
-	afterEach((done) => {
+	afterEach(() => {
+		sandbox.restore();
 		mockfs.restore();
-		done();
 	});
 
-	it('adds a library to a project', () => {
+	it('adds a library to a project', async () => {
+		const name = 'neopixel';
+		const version = '1.0.0';
 		const dir = '.';
+
 		fs.writeFileSync(path.join(dir, 'project.properties'), '');
-		const testSite = sinon.createStubInstance(LibraryAddCommandSite);
-		const apiClient = {
-			library: sinon.stub()
-		};
-		testSite.apiClient.withArgs().resolves(apiClient);
+
+		const apiClient = { library: sandbox.stub() };
+
 		testSite.projectDir.withArgs().returns(dir);
+		testSite.apiClient.withArgs().resolves(apiClient);
+		testSite.libraryIdent.withArgs().returns({ name });
+		testSite.addedLibrary.withArgs(name, version).resolves();
 		testSite.fetchingLibrary.withArgs().callsFake(promise => promise);
-		testSite.libraryIdent.withArgs().returns({ name: 'neopixel' });
-		testSite.addedLibrary.withArgs('neopixel', '1.0.0').resolves();
-		const neopixelLatest = {
-			name: 'neopixel',
-			version: '1.0.0',
-		};
-		apiClient.library.withArgs('neopixel', { version: 'latest' }).resolves(neopixelLatest);
 
-		const sut = new LibraryAddCommand();
+		const neopixelLatest = { name, version };
 
-		return sut.run({}, testSite)
-			.then(() => {
-				const expectedDependency = /dependencies.neopixel=1\.0\.0/;
-				const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
-				expect(savedProperties).to.match(expectedDependency);
-			});
+		apiClient.library.withArgs(name, { version: 'latest' }).resolves(neopixelLatest);
+
+		const cmd = new LibraryAddCommand();
+		const result = await cmd.run({}, testSite);
+		const expectedDependency = /dependencies.neopixel=1\.0\.0/;
+		const savedProperties = fs.readFileSync(`${dir}/project.properties`, 'utf8');
+		expect(savedProperties).to.match(expectedDependency);
+		expect(result).to.not.exist;
 	});
 });
 
