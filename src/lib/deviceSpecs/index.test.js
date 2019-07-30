@@ -1,5 +1,5 @@
-const { expect } = require('../test-setup');
-const deviceSpecs = require('../../src/lib/deviceSpecs');
+const { expect } = require('../../../test/test-setup');
+const deviceSpecs = require('./index');
 
 
 describe('deviceSpecs', () => {

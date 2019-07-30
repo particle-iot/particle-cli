@@ -1,15 +1,7 @@
-
-var sinon = require('sinon');
-var chai = require('chai');
-var sinonChai = require('sinon-chai');
-var chaiAsPromised = require('chai-as-promised');
-chai.use(chaiAsPromised);
-chai.use(sinonChai);
-var expect = chai.expect;
-
-var util = require('util');
-var Readable = require('stream').Readable;
-var SerialBatchParser = require('../../src/lib/SerialBatchParser');
+const util = require('util');
+const Readable = require('stream').Readable;
+const { expect, sinon } = require('../../test/test-setup');
+const SerialBatchParser = require('./serial-batch-parser');
 
 
 function MockStream() {

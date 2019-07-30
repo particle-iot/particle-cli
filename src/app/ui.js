@@ -3,7 +3,6 @@ const inquirer = require('inquirer');
 const Handlebars = require('handlebars');
 const { Spinner } = require('cli-spinner');
 const log = require('../lib/log');
-require('./templates');
 
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);

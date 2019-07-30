@@ -16,14 +16,14 @@ try {
 }
 const wifiScan = require('node-wifiscanner2').scan;
 const specs = require('../lib/deviceSpecs');
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
 const YModem = require('../lib/ymodem');
 
-const SerialBatchParser = require('../lib/SerialBatchParser');
-const SerialTrigger = require('../lib/SerialTrigger');
-const spinnerMixin = require('../lib/spinnerMixin');
+const SerialBatchParser = require('../lib/serial-batch-parser');
+const SerialTrigger = require('../lib/serial-trigger');
+const spinnerMixin = require('../lib/spinner-mixin');
 const ensureError = require('../lib/utilities').ensureError;
 
 // TODO: DRY this up somehow

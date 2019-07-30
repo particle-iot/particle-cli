@@ -1,5 +1,5 @@
 const VError = require('verror');
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 
 class SubscribeCommand {
 	startListening(event, { device, all }) {

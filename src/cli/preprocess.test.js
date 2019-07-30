@@ -1,6 +1,6 @@
-const { expect } = require('../test-setup');
-const commandProcessor = require('../../src/app/command-processor');
-const preprocess = require('../../src/cli/preprocess');
+const { expect } = require('../../test/test-setup');
+const commandProcessor = require('../app/command-processor');
+const preprocess = require('./preprocess');
 
 
 describe('preprocess command-line interface', () => {

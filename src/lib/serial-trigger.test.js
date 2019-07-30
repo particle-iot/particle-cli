@@ -1,10 +1,7 @@
-
-
-var util = require('util');
-var MockSerial = require('../mocks/Serial.mock');
-var Transform = require('stream').Transform;
-
-var SerialTrigger = require('../../src/lib/SerialTrigger');
+const util = require('util');
+const Transform = require('stream').Transform;
+const MockSerial = require('../../test/mocks/serial.mock');
+const SerialTrigger = require('./serial-trigger');
 
 function PassthroughStream() {
 	Transform.call(this);
@@ -18,6 +15,7 @@ PassthroughStream.prototype._transform = function _transform(chunk, encoding, cb
 PassthroughStream.prototype._flush = function _flush(cb) {
 	process.nextTick(cb);
 };
+
 
 describe('SerialTrigger', () => {
 	it('should trigger when prompt is at beginning of line', (done) => {

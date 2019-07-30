@@ -3,7 +3,7 @@ const when = require('when');
 
 const inquirer = require('inquirer');
 
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const prompts = require('../lib/prompts');
 const settings = require('../../settings');
 const CloudCommand = require('./cloud');

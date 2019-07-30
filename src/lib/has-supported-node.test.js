@@ -1,5 +1,5 @@
-const { expect, sinon } = require('../test-setup');
-const hasSupportedNode = require('../../src/lib/has-supported-node');
+const { expect, sinon } = require('../../test/test-setup');
+const hasSupportedNode = require('./has-supported-node');
 
 
 describe('NodeJS Support Check', () => {

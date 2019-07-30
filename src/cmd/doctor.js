@@ -6,7 +6,7 @@ const _ = require('lodash');
 const chalk = require('chalk');
 const prompt = require('inquirer').prompt;
 const dfu = require('../lib/dfu');
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 
 function EarlyReturnError() {
 }

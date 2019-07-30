@@ -17,8 +17,8 @@
  ******************************************************************************
  */
 
-const { expect, sinon } = require('../test-setup');
-const commandProcessor = require('../../src/app/command-processor');
+const { expect, sinon } = require('../../test/test-setup');
+const commandProcessor = require('./command-processor');
 
 
 describe('command-line parsing', () => {

@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const util = require('util');
-const WiFiManager = require('../lib/WiFiManager');
-const ApiClient = require('../lib/ApiClient');
+const WiFiManager = require('../lib/wifi-manager');
+const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
@@ -9,7 +9,7 @@ const chalk = require('chalk');
 const scan = require('node-wifiscanner2').scan;
 const SAP = require('softap-setup');
 const path = require('path');
-const spinnerMixin = require('../lib/spinnerMixin');
+const spinnerMixin = require('../lib/spinner-mixin');
 
 const strings = {
 	'monitorPrompt': 'Would you like to wait and monitor for Photons entering setup mode?',

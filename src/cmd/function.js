@@ -1,4 +1,4 @@
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const VError = require('verror');
 const ensureError = require('../lib/utilities').ensureError;
 

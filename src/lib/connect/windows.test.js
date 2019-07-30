@@ -1,5 +1,5 @@
-const { sinon, expect } = require('../../test-setup');
-const windowsWiFi = require('../../../src/lib/connect/windows');
+const { expect, sinon } = require('../../../test/test-setup');
+const windowsWiFi = require('./windows');
 var Connector = windowsWiFi.Connector;
 
 

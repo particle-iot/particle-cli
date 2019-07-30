@@ -4,9 +4,9 @@ const prompt = require('inquirer').prompt;
 
 const settings = require('../../settings');
 const specs = require('../lib/deviceSpecs');
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const utilities = require('../lib/utilities');
-const spinnerMixin = require('../lib/spinnerMixin');
+const spinnerMixin = require('../lib/spinner-mixin');
 const ensureError = require('../lib/utilities').ensureError;
 const prompts = require('../lib/prompts');
 const platformsById = require('./constants').platformsById;

@@ -3,7 +3,7 @@ const when = require('when');
 const _ = require('lodash');
 
 const settings = require('../../settings');
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const moment = require('moment');
 const prompt = require('inquirer').prompt;
 

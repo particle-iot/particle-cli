@@ -4,7 +4,7 @@ const when = require('when');
 const prompt = require('inquirer').prompt;
 const fs = require('fs');
 
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 
 class WebhookCommand {

@@ -2,7 +2,7 @@ const chalk = require('chalk');
 const prompt = require('inquirer').prompt;
 
 const settings = require('../../settings');
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 
 const when = require('when');
@@ -10,7 +10,7 @@ const sequence = require('when/sequence');
 const pipeline = require('when/pipeline');
 const util = require('util');
 const path = require('path');
-const spinnerMixin = require('../lib/spinnerMixin');
+const spinnerMixin = require('../lib/spinner-mixin');
 
 // this is mainly so we only break 80 columns in one place.
 const strings = {

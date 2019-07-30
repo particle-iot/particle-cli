@@ -1,6 +1,6 @@
-const expect = require('chai').expect;
 const proxyquire = require('proxyquire');
-const sandbox = require('sinon').createSandbox();
+const { expect, sinon } = require('../../test/test-setup');
+const sandbox = sinon.createSandbox();
 
 const stubs = {
 	api: {
@@ -14,7 +14,7 @@ const stubs = {
 };
 
 const FunctionCommand = proxyquire('../../src/cmd/function', {
-	'../lib/ApiClient': stubs.ApiClient
+	'../lib/api-client': stubs.ApiClient
 });
 
 

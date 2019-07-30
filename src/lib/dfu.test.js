@@ -1,20 +1,15 @@
-
-
-var dfu = require('../../src/lib/dfu');
-var fs = require('fs');
-var path = require('path');
-var assert = require('assert');
-var sinon = require('sinon');
-
-const chai = require('chai');
-const sinonChai = require('sinon-chai');
-chai.use(sinonChai);
-const expect = chai.expect;
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
+const { expect, sinon } = require('../../test/test-setup');
+const dfu = require('./dfu');
 
 
 describe('DFU', () => {
+	const FIXTURES_DIR = path.join(__dirname, '../../test/lib/fixtures/dfu');
+
 	it('finds Particle devices in dfu-util -l output', () => {
-		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/only_particle.txt')).toString();
+		var output = fs.readFileSync(path.join(FIXTURES_DIR, 'only_particle.txt')).toString();
 		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
 		assert.equal(devices.length, 1);
@@ -22,7 +17,7 @@ describe('DFU', () => {
 	});
 
 	it('filters out non-Particle devices in dfu-util -l output', () => {
-		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/mixed.txt')).toString();
+		var output = fs.readFileSync(path.join(FIXTURES_DIR, 'mixed.txt')).toString();
 		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
 		assert.equal(devices.length, 1);
@@ -30,7 +25,7 @@ describe('DFU', () => {
 	});
 
 	it('handles no devices output', () => {
-		var output = fs.readFileSync(path.join(__dirname, './fixtures/dfu/none.txt')).toString();
+		var output = fs.readFileSync(path.join(FIXTURES_DIR, 'none.txt')).toString();
 		var devices = dfu._dfuIdsFromDfuOutput(output);
 		assert.ok(devices);
 		assert.equal(devices.length, 0);

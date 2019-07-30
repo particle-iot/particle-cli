@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    lib/ApiClient.js
+ * @file    lib/api-client.js
  * @author  David Middlecamp (david@particle.io)
  * @company Particle ( https://www.particle.io/ )
  * @source https://github.com/spark/particle-cli
@@ -35,7 +35,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  *     node
  *
  *     # in node Repl
- *     var ApiClient = require('./ApiClient')
+ *     var ApiClient = require('./api-client')
  *     var a = new ApiClient('http://localhost:9090')
  *     a.createUser('j3@j3.com','j3')
  *     a.login('j3@j3.com','j3')

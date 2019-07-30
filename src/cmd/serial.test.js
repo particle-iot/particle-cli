@@ -1,19 +1,8 @@
+const proxyquire = require('proxyquire');
+const { expect } = require('../../test/test-setup');
+const MockSerial = require('../../test/mocks/serial.mock');
+const SerialCommand = proxyquire('./serial', {});
 
-
-var proxyquire = require('proxyquire');
-var MockSerial = require('../mocks/Serial.mock');
-
-var chai = require('chai');
-var sinonChai = require('sinon-chai');
-var chaiAsPromised = require('chai-as-promised');
-chai.use(chaiAsPromised);
-chai.use(sinonChai);
-var expect = chai.expect;
-
-
-var SerialCommand = proxyquire('../../src/cmd/serial', {
-
-});
 
 describe('Serial Command', () => {
 	let serial;

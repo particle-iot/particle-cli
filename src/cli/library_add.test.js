@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const mockfs = require('mock-fs');
-const { expect, sinon } = require('../test-setup');
-const { LibraryAddCommand, LibraryAddCommandSite } = require('../../src/cmd');
+const { expect, sinon } = require('../../test/test-setup');
+const { LibraryAddCommand, LibraryAddCommandSite } = require('../cmd');
 
 
 describe('LibraryAddCommand', () => {

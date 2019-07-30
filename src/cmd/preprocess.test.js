@@ -1,9 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const stream = require('stream');
-const { sinon, expect } = require('../test-setup');
 const wiringPreprocessor = require('wiring-preprocessor');
-const PreprocessCommand = require('../../src/cmd/preprocess');
+const { expect, sinon } = require('../../test/test-setup');
+const PreprocessCommand = require('./preprocess');
+const FIXTURES_DIR = path.join(__dirname, '..', '..', 'test', 'fixtures');
 
 
 describe('Preprocess Command', () => {
@@ -70,7 +71,7 @@ describe('Preprocess Command', () => {
 		});
 
 		it('preprocesses from a file and write to another file', () => {
-			process.chdir(path.join(__dirname, '..', 'fixtures', 'wiring', 'one'));
+			process.chdir(path.join(FIXTURES_DIR, 'wiring', 'one'));
 
 			const mock = sandbox.mock(wiringPreprocessor).expects('processFile').withExactArgs('app.ino', 'ino file\n').returns('cpp file\n');
 
@@ -83,7 +84,7 @@ describe('Preprocess Command', () => {
 		});
 
 		it('preprocesses large files', () => {
-			process.chdir(path.join(__dirname, '..', 'fixtures', 'wiring', 'two'));
+			process.chdir(path.join(FIXTURES_DIR, 'wiring', 'two'));
 			const input = fs.readFileSync('input.ino', 'utf8');
 			const mock = sandbox.mock(wiringPreprocessor).expects('processFile').withExactArgs('app.ino', input).returns('ok\n');
 

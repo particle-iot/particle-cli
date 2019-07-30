@@ -1,6 +1,6 @@
-const expect = require('chai').expect;
 const proxyquire = require('proxyquire');
-const sandbox = require('sinon').createSandbox();
+const { expect, sinon } = require('../../test/test-setup');
+const sandbox = sinon.createSandbox();
 
 const stubs = {
 	api: {
@@ -17,9 +17,9 @@ const stubs = {
 	}
 };
 
-const WhoAmICommands = proxyquire('../../src/cmd/whoami', {
+const WhoAmICommands = proxyquire('./whoami', {
 	'../../settings': stubs.settings,
-	'../lib/ApiClient': stubs.ApiClient
+	'../lib/api-client': stubs.ApiClient
 });
 
 

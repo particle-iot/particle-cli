@@ -1,14 +1,7 @@
-
-
-var proxyquire = require('proxyquire');
-var sinon = require('sinon');
-
-const chai = require('chai');
-const sinonChai = require('sinon-chai');
-chai.use(sinonChai);
-const expect = chai.expect;
 const fs = require('fs');
 const when = require('when');
+const proxyquire = require('proxyquire');
+const { expect, sinon } = require('../../test/test-setup');
 
 var settings = {
 	username: 'test'
@@ -19,10 +12,10 @@ function ApiClient() {
 	return api;
 }
 
-var KeysCommand = proxyquire('../../src/cmd/keys', {
+var KeysCommand = proxyquire('./keys', {
 	'../../settings': settings,
 	'../lib/utilities': utilities,
-	'../lib/ApiClient': ApiClient
+	'../lib/api-client': ApiClient
 });
 
 function utilities() { }

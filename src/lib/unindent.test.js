@@ -1,6 +1,6 @@
-const unindent = require('../../src/lib/unindent');
-const chai = require('chai');
-const expect = chai.expect;
+const { expect } = require('../../test/test-setup');
+const unindent = require('./unindent');
+
 
 describe('unindent', () => {
 	it('does not change a single line string', () => {

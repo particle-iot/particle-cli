@@ -17,10 +17,10 @@
  ******************************************************************************
  */
 
-const { sinon, expect } = require('../test-setup');
+const { expect, sinon } = require('../../test/test-setup');
 const { LibraryInitGenerator } = require('particle-library-manager');
-const { CLILibraryInitCommandSite } = require('../../src/cli/library_init');
-const { LibraryInitCommand } = require('../../src/cmd');
+const { CLILibraryInitCommandSite } = require('./library_init');
+const { LibraryInitCommand } = require('../cmd');
 
 
 describe('library init command', () => {

@@ -1,8 +1,8 @@
 const chalk = require('chalk');
 const VError = require('verror');
 const settings = require('../../settings');
-const ApiClient = require('../lib/ApiClient');
-const spinnerMixin = require('../lib/spinnerMixin');
+const ApiClient = require('../lib/api-client');
+const spinnerMixin = require('../lib/spinner-mixin');
 
 const arrow = chalk.green('>');
 
