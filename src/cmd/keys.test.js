@@ -1,30 +1,24 @@
 const fs = require('fs');
-const when = require('when');
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/test-setup');
 
-var settings = {
-	username: 'test'
-};
-
-var api;
+let api;
 function ApiClient() {
 	return api;
 }
+const settings = { username: 'test' };
+const utilities = () => {};
 
-var KeysCommand = proxyquire('./keys', {
+const KeysCommand = proxyquire('./keys', {
 	'../../settings': settings,
 	'../lib/utilities': utilities,
 	'../lib/api-client': ApiClient
 });
 
-function utilities() { }
 
 describe('Key Command', () => {
-
 	var key;
 	var dfu;
-
 	var filename;
 	var keyFilename;
 	var transport;
@@ -32,7 +26,7 @@ describe('Key Command', () => {
 	function setupDfuTransport() {
 		transport = [];
 		dfu.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
-		dfu.readBuffer = sinon.stub().withArgs('transport', false).returns(when.resolve(transport));
+		dfu.readBuffer = sinon.stub().withArgs('transport', false).returns(Promise.resolve(transport));
 		dfu.read = sinon.stub();
 		dfu.write = sinon.stub();
 		filename = 'abc.bin';
@@ -40,7 +34,7 @@ describe('Key Command', () => {
 	}
 
 	function setupCommand(options = {}) {
-		utilities.deferredChildProcess = sinon.stub().returns(when.resolve());
+		utilities.deferredChildProcess = sinon.stub().returns(Promise.resolve());
 
 		options = Object.assign({ params: {} }, options);
 		key = new KeysCommand(options);
@@ -105,16 +99,18 @@ describe('Key Command', () => {
 				var args = cmd.split(' ');
 				tempfile = args[args.length - 1];
 				fs.writeFileSync(tempfile, '');
-				return when.resolve();
+				return Promise.resolve();
 			});
-			return when(key.sendPublicKeyToServer(deviceID, filename, {})).then(() => {
-				expect(api.sendPublicKey).has.been.calledWith(deviceID.toLowerCase(), new Buffer([]), 'rsa');
-			}).finally(() => {
-				if (tempfile) {
-					// the file should be removed
-					expect(fs.existsSync(tempfile)).to.be.eql(false);
-				}
-			});
+			return Promise.resolve(key.sendPublicKeyToServer(deviceID, filename, {}))
+				.then(() => {
+					expect(api.sendPublicKey).has.been.calledWith(deviceID.toLowerCase(), new Buffer([]), 'rsa');
+				})
+				.finally(() => {
+					if (tempfile) {
+						// the file should be removed
+						expect(fs.existsSync(tempfile)).to.be.eql(false);
+					}
+				});
 		});
 	});
 
@@ -258,3 +254,4 @@ describe('Key Command', () => {
 		});
 	});
 });
+

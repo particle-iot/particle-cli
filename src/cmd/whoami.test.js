@@ -1,6 +1,5 @@
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/test-setup');
-const sandbox = sinon.createSandbox();
 
 const stubs = {
 	api: {
@@ -24,6 +23,7 @@ const WhoAmICommands = proxyquire('./whoami', {
 
 
 describe('Whoami Commands', () => {
+	const sandbox = sinon.createSandbox();
 	let fakeUser, fakeUserPromise;
 
 	beforeEach(() => {

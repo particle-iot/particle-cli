@@ -711,8 +711,7 @@ class CloudCommand {
 				continue;
 			}
 
-			if (!alwaysIncludeThisFile
-				&& utilities.contains(settings.notSourceExtensions, ext)) {
+			if (!alwaysIncludeThisFile && settings.notSourceExtensions.includes(ext)) {
 				continue;
 			}
 

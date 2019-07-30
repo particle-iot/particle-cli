@@ -1,6 +1,5 @@
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/test-setup');
-const sandbox = sinon.createSandbox();
 
 const stubs = {
 	api: {
@@ -13,13 +12,13 @@ const stubs = {
 	}
 };
 
-const FunctionCommand = proxyquire('../../src/cmd/function', {
+const FunctionCommand = proxyquire('./function', {
 	'../lib/api-client': stubs.ApiClient
 });
 
 
 describe('Function Command', () => {
-
+	const sandbox = sinon.createSandbox();
 	let deviceId, functionName, functionParam;
 
 	beforeEach(() => {
@@ -107,3 +106,4 @@ describe('Function Command', () => {
 		};
 	}
 });
+

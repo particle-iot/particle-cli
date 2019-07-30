@@ -1,7 +1,6 @@
-const proxyquire = require('proxyquire');
-const { expect } = require('../../test/test-setup');
 const MockSerial = require('../../test/mocks/serial.mock');
-const SerialCommand = proxyquire('./serial', {});
+const { expect } = require('../../test/test-setup');
+const SerialCommand = require('./serial');
 
 
 describe('Serial Command', () => {
@@ -55,3 +54,4 @@ describe('Serial Command', () => {
 		});
 	});
 });
+

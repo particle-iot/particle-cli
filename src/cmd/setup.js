@@ -1,16 +1,11 @@
-const chalk = require('chalk');
-const prompt = require('inquirer').prompt;
-
-const settings = require('../../settings');
-const ApiClient = require('../lib/api-client');
-const utilities = require('../lib/utilities');
-
-const when = require('when');
-const sequence = require('when/sequence');
-const pipeline = require('when/pipeline');
 const util = require('util');
 const path = require('path');
+const chalk = require('chalk');
+const prompt = require('inquirer').prompt;
+const settings = require('../../settings');
+const ApiClient = require('../lib/api-client');
 const spinnerMixin = require('../lib/spinner-mixin');
+const { banner, retryDeferred } = require('../lib/utilities');
 
 // this is mainly so we only break 80 columns in one place.
 const strings = {
@@ -30,8 +25,8 @@ function goodbye() {
 	console.log(arrow, 'Goodbye!');
 }
 
-class SetupCommand {
 
+module.exports = class SetupCommand {
 	constructor() {
 		spinnerMixin(this);
 		this.api = new ApiClient();
@@ -49,7 +44,7 @@ class SetupCommand {
 
 		this.forceWiFi = wifi;
 
-		console.log(chalk.bold.cyan(utilities.banner()));
+		console.log(chalk.bold.cyan(banner()));
 		console.log(arrow, "Setup is easy! Let's get started...");
 
 		loginCheck();
@@ -390,109 +385,81 @@ class SetupCommand {
 		const serial = this.command('serial');
 
 		function promptForCyan() {
-			const online = when.defer();
-			self.prompt([
-				{
-					type: 'input',
-					name: 'online',
-					message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is breathing ' + chalk.bold.cyan('CYAN'),
-				}
-			]).then(() => {
-				online.resolve();
-			});
-			return online.promise;
+			return self.prompt([{
+				type: 'input',
+				name: 'online',
+				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is breathing ' + chalk.bold.cyan('CYAN'),
+			}]);
 		}
 
 		function promptForListen() {
-			const listen = when.defer();
-			self.prompt([
-				{
-					type: 'confirm',
-					name: 'listen',
-					message: 'Is your core blinking ' + chalk.bold.blue('BLUE'),
-					default: true
-				}
-			]).then((answer) => {
-				if (answer.listen) {
-					console.log('Great! Lets give this another try...');
-				} else {
-					console.log();
-					console.log(alert, 'Hold the', chalk.bold.cyan('MODE'), 'button for a couple seconds, until it starts blinking', chalk.bold.blue('BLUE'));
-					console.log();
-				}
-				listen.resolve();
-			});
-			return listen.promise;
+			const question = {
+				type: 'confirm',
+				name: 'listen',
+				message: 'Is your core blinking ' + chalk.bold.blue('BLUE'),
+				default: true
+			};
+
+			return self.prompt([question])
+				.then((answer) => {
+					if (answer.listen) {
+						console.log('Great! Lets give this another try...');
+					} else {
+						console.log();
+						console.log(alert, 'Hold the', chalk.bold.cyan('MODE'), 'button for a couple seconds, until it starts blinking', chalk.bold.blue('BLUE'));
+						console.log();
+					}
+				});
 		}
 
 		let deviceId;
 		let deviceName;
-		pipeline([
-			() => {
-				return utilities.retryDeferred(() => {
-					return serial.askForDeviceID(device);
-				}, 3, promptForListen);
-			},
-			(id) => {
+		Promise.resolve()
+			.then(() => {
+				return retryDeferred(() => serial.askForDeviceID(device), 3, promptForListen);
+			})
+			.then((id) => {
 				deviceId = id;
 				return serial.configureWifi(device.port);
-			},
-			() => {
-				return promptForCyan();
-			},
-			() => {
+			})
+			.then(() => promptForCyan())
+			.then(() => {
 				self.newSpin('Claiming the core to your account').start();
-				return utilities.retryDeferred(() => {
-					return self.api.claimDevice(deviceId);
-				}, 3, promptForCyan);
-			},
-			() => {
+				return retryDeferred(() => self.api.claimDevice(deviceId), 3, promptForCyan);
+			})
+			.then(() => {
 				self.stopSpin();
 				return self.api.signalDevice(deviceId, true);
-			},
-			() => {
-				const rainbow = when.defer();
-				self.prompt([
-					{
-						type: 'input',
-						name: 'rainbows',
-						message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is excitedly shouting rainbows',
-					}
-				]).then(() => {
-					rainbow.resolve();
-				});
-				return rainbow.promise;
-			},
-			() => {
-				const naming = when.defer();
-				self.prompt([
-					{
-						type: 'input',
-						name: 'coreName',
-						message: 'What would you like to call your core?'
-					}
-				]).then((ans) => {
-					deviceName = ans.coreName;
-					sequence([
-						() => {
-							return self.api.signalDevice(deviceId, false);
-						},
-						() => {
-							return self.api.renameDevice(deviceId, deviceName);
-						}
-					]).then(naming.resolve, naming.reject);
-				});
-				return naming.promise;
-			}
-		]).then(() => {
-			console.log();
-			console.log(util.format("You've successfully setup your core %s (%s)", deviceName, deviceId));
-			console.log('Nice work!');
-		}, (err) => {
-			self.stopSpin();
-			console.error(alert, 'Something went wrong');
-			console.error(alert, err);
-		});
+			})
+			.then(() => self.prompt([{
+				type: 'input',
+				name: 'rainbows',
+				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your core is excitedly shouting rainbows',
+			}]))
+			.then(() => {
+				const question = {
+					type: 'input',
+					name: 'coreName',
+					message: 'What would you like to call your core?'
+				};
+
+				return self.prompt([question])
+					.then((ans) => {
+						deviceName = ans.coreName;
+						return self.api.signalDevice(deviceId, false)
+							.then(() => self.api.renameDevice(deviceId, deviceName));
+					});
+			})
+			.then(() => {
+				console.log();
+				console.log(util.format("You've successfully setup your core %s (%s)", deviceName, deviceId));
+				console.log('Nice work!');
+			})
+			.catch((err) => {
+				self.stopSpin();
+				console.error(alert, 'Something went wrong');
+				console.error(alert, err);
+			});
 	}
 
 	setupElectron() {
@@ -506,9 +473,11 @@ class SetupCommand {
 
 	prompt(prompts) {
 		let handler = (result) => result;
+
 		if (this.options.yes) {
 			const newPrompts = [];
 			const answers = {};
+
 			for (let i = 0; i < prompts.length; i++) {
 				const p = prompts[i];
 				if (p.type !== 'confirm' || p.default !== true) {
@@ -517,10 +486,12 @@ class SetupCommand {
 					answers[p.name] = true;
 				}
 			}
+
 			handler = (ans) => {
 				ans = Object.assign({}, ans, answers);
 				return ans;
 			};
+
 			prompts = newPrompts;
 		}
 
@@ -536,6 +507,5 @@ class SetupCommand {
 		);
 		process.exit(0);
 	}
-}
+};
 
-module.exports = SetupCommand;

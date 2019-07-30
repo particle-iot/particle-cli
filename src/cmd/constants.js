@@ -1,4 +1,6 @@
-const platformsById = {
+module.exports.MAX_FILE_SIZE = 1024 * 1024 * 2;
+
+module.exports.platformsById = {
 	0: 'Core',
 	6: 'Photon',
 	8: 'P1',
@@ -14,7 +16,7 @@ const platformsById = {
 	103: 'Bluz'
 };
 
-const notSourceExtensions = [
+module.exports.notSourceExtensions = [
 	'.ds_store',
 	'.jpg',
 	'.gif',
@@ -25,10 +27,3 @@ const notSourceExtensions = [
 	'.bin'
 ];
 
-const MAX_FILE_SIZE = 1024 * 1024 * 2;
-
-module.exports = {
-	platformsById,
-	notSourceExtensions,
-	MAX_FILE_SIZE
-};

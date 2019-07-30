@@ -1,6 +1,6 @@
 const proxyquire = require('proxyquire');
-const { expect, sinon } = require('../../test/test-setup');
-const sandbox = sinon.createSandbox();
+const { expect } = require('../../test/test-setup');
+const sandbox = require('sinon').createSandbox();
 
 const stubs = {
 	api: {
@@ -23,7 +23,7 @@ const stubs = {
 	}
 };
 
-const CloudCommands = proxyquire('../../src/cmd/cloud', {
+const CloudCommands = proxyquire('./cloud', {
 	'../../settings': stubs.settings,
 	'../lib/utilities': stubs.utils,
 	'../lib/api-client': stubs.ApiClient,

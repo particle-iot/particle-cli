@@ -1,9 +1,9 @@
-const settings = require('../../settings');
 const path = require('path');
-
+const settings = require('../../settings');
 const utilities = require('../lib/utilities');
 
-class ConfigCommand {
+
+module.exports = class ConfigCommand {
 	constructor(options) {
 		this.options = options;
 	}
@@ -59,6 +59,5 @@ class ConfigCommand {
 			console.log('No configuration files found.');
 		}
 	}
-}
+};
 
-module.exports = ConfigCommand;

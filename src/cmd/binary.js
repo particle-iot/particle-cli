@@ -33,31 +33,36 @@ const Parser = require('binary-version-reader').HalModuleParser;
 const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
 
+
 class BinaryCommand {
-	inspectBinary(binaryFile) {
+	inspectBinary(binaryFile){
 		return Promise.resolve().then(() => {
-			if (!fs.existsSync(binaryFile)) {
+			if (!fs.existsSync(binaryFile)){
 				throw new VError(`Binary file not found ${binaryFile}`);
 			}
+
 			const parser = new Parser();
-			return parser.parseFile(binaryFile).catch(err => {
-				throw new VError(ensureError(err), `Could not parse ${binaryFile}`);
-			}).then(fileInfo => {
-				if (fileInfo.suffixInfo.suffixSize === 65535) {
-					throw new VError(`${binaryFile} does not contain inspection information`);
-				}
 
-				console.log(chalk.bold(path.basename(binaryFile)));
+			return parser.parseFile(binaryFile)
+				.catch(err => {
+					throw new VError(ensureError(err), `Could not parse ${binaryFile}`);
+				})
+				.then(fileInfo => {
+					if (fileInfo.suffixInfo.suffixSize === 65535){
+						throw new VError(`${binaryFile} does not contain inspection information`);
+					}
 
-				this._showCrc(fileInfo);
-				this._showPlatform(fileInfo);
-				this._showModuleInfo(fileInfo);
-			});
+					console.log(chalk.bold(path.basename(binaryFile)));
+
+					this._showCrc(fileInfo);
+					this._showPlatform(fileInfo);
+					this._showModuleInfo(fileInfo);
+				});
 		});
 	}
 
-	_showCrc(fileInfo) {
-		if (fileInfo.crc.ok) {
+	_showCrc(fileInfo){
+		if (fileInfo.crc.ok){
 			console.log(chalk.green(' CRC is ok (' + fileInfo.crc.actualCrc + ')'));
 		} else {
 			console.log(chalk.red(' CRC failed (should be '
@@ -66,15 +71,17 @@ class BinaryCommand {
 		}
 	}
 
-	_showPlatform(fileInfo) {
+	_showPlatform(fileInfo){
 		const platforms = utilities.knownPlatforms();
 		let platformName;
-		for (const k in platforms) {
-			if (platforms[k] === fileInfo.prefixInfo.platformID) {
+
+		for (const k in platforms){
+			if (platforms[k] === fileInfo.prefixInfo.platformID){
 				platformName = k;
 			}
 		}
-		if (platformName) {
+
+		if (platformName){
 			console.log(' Compiled for ' + chalk.bold(platformName));
 		} else {
 			console.log(' Compiled for unknown platform (ID: '
@@ -82,7 +89,7 @@ class BinaryCommand {
 		}
 	}
 
-	_showModuleInfo(fileInfo) {
+	_showModuleInfo(fileInfo){
 		const functions = [
 			'an unknown module',
 			'a reserved module',
@@ -95,7 +102,8 @@ class BinaryCommand {
 			'a radio stack module'
 		];
 		let moduleFunction = fileInfo.prefixInfo.moduleFunction;
-		if (moduleFunction >= functions.length) {
+
+		if (moduleFunction >= functions.length){
 			moduleFunction = 0;
 		}
 		console.log(' This is ' + chalk.bold(functions[moduleFunction])
@@ -103,14 +111,15 @@ class BinaryCommand {
 			+ ' at version '
 			+ chalk.bold(fileInfo.prefixInfo.moduleVersion.toString()));
 
-		if (fileInfo.prefixInfo.depModuleFunction) {
+		if (fileInfo.prefixInfo.depModuleFunction){
 			console.log(' It depends on '
 				+ chalk.bold(functions[fileInfo.prefixInfo.depModuleFunction])
 				+ ' number ' + chalk.bold(fileInfo.prefixInfo.depModuleIndex.toString())
 				+ ' at version '
 				+ chalk.bold(fileInfo.prefixInfo.depModuleVersion.toString()));
 		}
-		if (fileInfo.prefixInfo.dep2ModuleFunction) {
+
+		if (fileInfo.prefixInfo.dep2ModuleFunction){
 			console.log(` It ${fileInfo.prefixInfo.depModuleFunction ? 'also ' : ''}depends on `
 				+ chalk.bold(functions[fileInfo.prefixInfo.dep2ModuleFunction])
 				+ ' number ' + chalk.bold(fileInfo.prefixInfo.dep2ModuleIndex.toString())

@@ -1,16 +1,14 @@
 const { spin } = require('../app/ui');
 
-const when = require('when');
-
 /**
  * Check if the string can represent a valid device ID.
  *
  * @param {String} str A string.
  * @return {Boolean}
  */
-function isDeviceId(str) {
+module.exports.isDeviceId = (str) => {
 	return /^[0-9a-f]{24}$/i.test(str);
-}
+};
 
 /**
  * Format device info.
@@ -21,9 +19,9 @@ function isDeviceId(str) {
  * @param {String} [device.name] Device name.
  * @return {String}
  */
-function formatDeviceInfo({ id, type, name = null }) {
+module.exports.formatDeviceInfo = ({ id, type, name = null }) => {
 	return `${name || '<no name>'} [${id}] (${type})`;
-}
+};
 
 /**
  * Get device attributes.
@@ -36,23 +34,19 @@ function formatDeviceInfo({ id, type, name = null }) {
  * @param {Boolean} [options.dontThrow] Return 'null' instead of throwing an error if the device cannot be found.
  * @param {Promise<Object>}
  */
-function getDevice({ id, api, auth, displayName = null, dontThrow = false }) {
-	const p = when.resolve().then(() => api.getDevice({ deviceId: id, auth }))
-		.then(r => r.body)
-		.catch(e => {
-			if (e.statusCode === 403 || e.statusCode === 404) {
+module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = false }) => {
+	const getDeviceInfo = api.getDevice({ deviceId: id, auth })
+		.then(res => res.body)
+		.catch(error => {
+			if (error.statusCode === 403 || error.statusCode === 404) {
 				if (dontThrow) {
 					return null;
 				}
 				throw new Error(`Device not found: ${displayName || id}`);
 			}
-			throw e;
+			throw error;
 		});
-	return spin(p, 'Getting device information...');
-}
 
-module.exports = {
-	isDeviceId,
-	formatDeviceInfo,
-	getDevice
+	return spin(getDeviceInfo, 'Getting device information...');
 };
+

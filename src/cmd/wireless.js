@@ -22,15 +22,16 @@ const strings = {
 };
 
 // TODO: DRY this up somehow
-
 const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
+
 function protip() {
 	const args = Array.prototype.slice.call(arguments);
 	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
 	console.log.apply(null, args);
 }
+
 function updateWarning() {
 	protip(
 		'Your Photon may start a',
@@ -44,7 +45,8 @@ function updateWarning() {
 	);
 }
 
-class WirelessCommand {
+
+module.exports = class WirelessCommand {
 	constructor(options) {
 		spinnerMixin(this);
 		this.options = options;
@@ -1027,7 +1029,7 @@ class WirelessCommand {
 		);
 		process.exit(0);
 	}
-}
+};
 
 
 function manualDone(err, dat) {
@@ -1038,6 +1040,7 @@ function manualDone(err, dat) {
 		return console.log(arrow, 'We successfully configured your Photon! Great work. We make a good team!', chalk.magenta('<3'));
 	}
 }
+
 function filter(list, pattern, inverse) {
 	// const returnedOne = false;
 	return list.filter((ap) => {
@@ -1051,7 +1054,6 @@ function filter(list, pattern, inverse) {
 }
 
 function ssids(list) {
-
 	return clean(list).map((ap) => {
 		return ap.ssid;
 	});
@@ -1067,30 +1069,25 @@ function removePhotonNetworks(ssids) {
 }
 
 function clean(list) {
-
 	const dupes = [];
 
-	return list.sort((a, b) => {
+	return list
+		.sort((a, b) => {
+			if (a.ssid && !b.ssid) {
+				return 1;
+			} else if (b.ssid && !a.ssid) {
+				return -1;
+			}
 
-		if (a.ssid && !b.ssid) {
-			return 1;
-		} else if (b.ssid && !a.ssid) {
-			return -1;
-		}
-		return a.ssid.localeCompare(b.ssid);
+			return a.ssid.localeCompare(b.ssid);
+		})
+		.filter((ap) => {
+			if (dupes[ap.ssid]) {
+				return false;
+			}
 
-	}).filter((ap) => {
-
-		if (dupes[ap.ssid]) {
-			return false;
-		}
-
-		dupes[ap.ssid] = true;
-		return true;
-
-	});
+			dupes[ap.ssid] = true;
+			return true;
+		});
 }
 
-
-
-module.exports = WirelessCommand;

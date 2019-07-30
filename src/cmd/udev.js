@@ -1,10 +1,8 @@
-const { prompt } = require('../app/ui');
-
-const chalk = require('chalk');
-const when = require('when');
-const VError = require('verror');
 const fs = require('fs');
+const chalk = require('chalk');
+const VError = require('verror');
 const childProcess = require('child_process');
+const { prompt } = require('../app/ui');
 
 const UDEV_RULES_SYSTEM_PATH = '/etc/udev/rules.d';
 const UDEV_RULES_FILE_NAME = '50-particle.rules';
@@ -65,9 +63,9 @@ function udevRulesInstalled() {
  */
 function installUdevRules() {
 	if (!systemSupportsUdev()) {
-		return when.reject(new Error('Not supported'));
+		return Promise.reject(new Error('Not supported'));
 	}
-	return when.promise((resolve, reject) => {
+	return new Promise((resolve, reject) => {
 		const cmd = `sudo cp "${UDEV_RULES_ASSET_FILE}" "${UDEV_RULES_SYSTEM_FILE}"`;
 		console.log(cmd);
 		childProcess.exec(cmd, err => {
@@ -89,14 +87,14 @@ function installUdevRules() {
  */
 function promptAndInstallUdevRules(err = null) {
 	if (!systemSupportsUdev()) {
-		return when.reject(new Error('Not supported'));
+		return Promise.reject(new Error('Not supported'));
 	}
 	if (udevRulesInstalled()) {
 		if (err) {
 			console.log(chalk.bold.red('Physically unplug and reconnect your Particle devices and try again.'));
-			return when.reject(err);
+			return Promise.reject(err);
 		}
-		return when.resolve();
+		return Promise.resolve();
 	}
 	console.log(chalk.yellow('You are missing the permissions to access USB devices without root.'));
 	return prompt({
@@ -129,3 +127,4 @@ module.exports = {
 	installUdevRules,
 	promptAndInstallUdevRules
 };
+

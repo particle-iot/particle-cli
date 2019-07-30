@@ -1,15 +1,14 @@
 const path = require('path');
 const chalk = require('chalk');
-const settings = require('../../settings');
-const dfu = require('../lib/dfu');
-const when = require('when');
-const whenNode = require('when/node');
 const Spinner = require('cli-spinner').Spinner;
+const settings = require('../../settings');
+const { delay } = require('../lib/utilities');
+const dfu = require('../lib/dfu');
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 const spin = new Spinner('Updating system firmware on the device...');
 
-class UpdateCommand {
+module.exports = class UpdateCommand {
 	updateDevice() {
 		return dfu.findCompatibleDFU().then((deviceId) => {
 			return doUpdate(deviceId);
@@ -17,7 +16,7 @@ class UpdateCommand {
 			return dfuError(err);
 		});
 	}
-}
+};
 
 function doUpdate(id) {
 	const updates = settings.updates[id] || null;
@@ -36,9 +35,10 @@ function doUpdate(id) {
 		steps.push((next) => {
 			const binary = path.resolve(__dirname, '../../assets/updates', updates[part]);
 			const leave = partNumber === parts.length - 1;
-			whenNode.bindCallback(
-				dfu.write(binary, part, leave).delay(2000)
-				, next);
+			dfu.write(binary, part, leave)
+				.then((result) => delay(2000).then(() => result))
+				.then((result) => next(null, result))
+				.catch((error) => next(error));
 		});
 	});
 
@@ -51,7 +51,7 @@ function doUpdate(id) {
 		spin.start();
 	}
 
-	return when.promise((resolve, reject) => {
+	return new Promise((resolve, reject) => {
 		flash();
 		function flash(err) {
 			if (err) {
@@ -125,4 +125,3 @@ function dfuInstall(noent) {
 	console.log();
 }
 
-module.exports = UpdateCommand;

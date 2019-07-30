@@ -2,7 +2,8 @@ const VError = require('verror');
 const ApiClient = require('../lib/api-client');
 const ensureError = require('../lib/utilities').ensureError;
 
-class PublishCommand {
+
+module.exports = class PublishCommand {
 	constructor(options) {
 		this.options = options;
 	}
@@ -18,6 +19,5 @@ class PublishCommand {
 			throw new VError(ensureError(err), 'Could not publish event');
 		});
 	}
-}
+};
 
-module.exports = PublishCommand;

@@ -4,6 +4,7 @@ const stream = require('stream');
 const wiringPreprocessor = require('wiring-preprocessor');
 const { expect, sinon } = require('../../test/test-setup');
 const PreprocessCommand = require('./preprocess');
+
 const FIXTURES_DIR = path.join(__dirname, '..', '..', 'test', 'fixtures');
 
 

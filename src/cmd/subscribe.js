@@ -1,7 +1,8 @@
 const VError = require('verror');
 const ApiClient = require('../lib/api-client');
 
-class SubscribeCommand {
+
+module.exports = class SubscribeCommand {
 	startListening(event, { device, all }) {
 		const api = new ApiClient();
 		api.ensureToken();
@@ -72,6 +73,5 @@ class SubscribeCommand {
 			throw new VError(api.normalizedApiError(err), 'Error subscribing to event stream');
 		});
 	}
-}
+};
 
-module.exports = SubscribeCommand;
