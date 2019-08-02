@@ -60,6 +60,8 @@ describe('Config Command', () => {
 		const args = ['config', profileName];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
+		expect(await fs.pathExists(profilePath)).to.equal(false);
+
 		await cli.login();
 
 		expect(stdout).to.equal('');

@@ -10,6 +10,7 @@ void setup() {
   pinMode(led1, OUTPUT);
   Particle.variable("name", &name, STRING);
   Particle.variable("version", &version, INT);
+  Particle.variable("blinking", &blinkState, INT);
   Particle.function("check", check);
   Particle.function("stop", stop);
   Particle.function("start", start);

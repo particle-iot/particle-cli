@@ -93,7 +93,7 @@ describe('Cloud Command [@device]', () => {
 			`saving to: ${strobyBinPath}`,
 			'Memory use: ',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   7420\t    116\t   1444\t   8980\t   2314\t/workspace/target/workspace.elf',
+			'   7436\t    116\t   1444\t   8996\t   2324\t/workspace/target/workspace.elf',
 			'',
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`

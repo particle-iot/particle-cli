@@ -96,7 +96,7 @@ describe('Library Commands', () => {
 		const name = 'dotstar';
 		const args = ['library', 'view', name];
 		const { stdout, stderr, exitCode } = await cli.run(args);
-		const version = matches(stdout, /Library dotstar (.*) installed./g);
+		const version = matches(stdout, /Library dotstar (.*) installed./g)[0] || '';
 		const libPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
 
 		expect(version).to.match(/^\d+\.\d+\.\d+$/);
@@ -154,7 +154,7 @@ describe('Library Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Add a library to a project', async () => {
+	it('Adds a library to a project', async () => {
 		const opts = { cwd: projPath };
 		const args = ['library', 'add', 'dotstar'];
 		const { stdout, stderr, exitCode } = await cli.run(args, opts);
@@ -172,7 +172,7 @@ describe('Library Commands', () => {
 		expect(await fs.pathExists(libPath)).to.equal(false);
 	});
 
-	it('Add a library at a specific version to a project', async () => {
+	it('Adds a library at a specific version to a project', async () => {
 		const version = '0.0.3';
 		const opts = { cwd: projPath };
 		const args = ['library', 'add', `dotstar@${version}`];

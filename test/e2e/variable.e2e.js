@@ -61,7 +61,9 @@ describe('Variable Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['variable', 'list']);
 
 		expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
+		expect(stdout).to.include('name (string)');
 		expect(stdout).to.include('version (int32)');
+		expect(stdout).to.include('blinking (int32)');
 		expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
 		expect(exitCode).to.equal(0);
 	});
@@ -70,7 +72,9 @@ describe('Variable Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['variable', 'get']);
 
 		expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
+		expect(stdout).to.include('name (string)');
 		expect(stdout).to.include('version (int32)');
+		expect(stdout).to.include('blinking (int32)');
 		expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
 		expect(exitCode).to.equal(0);
 	});
