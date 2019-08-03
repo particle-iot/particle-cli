@@ -4,13 +4,14 @@ const PATH_REPO_DIR = path.join(__dirname, '..', '..');
 const PATH_TEST_DIR = path.join(PATH_REPO_DIR, 'test');
 const PATH_TMP_DIR = path.join(PATH_TEST_DIR, 'tmp');
 const PATH_FIXTURES_DIR = path.join(PATH_TEST_DIR, '__fixtures__');
+const PATH_FIXTURES_PROJECTS_DIR = path.join(PATH_FIXTURES_DIR, 'projects');
 const PATH_PARTICLE_DIR = path.join(os.homedir(), '.particle');
 const PATH_PARTICLE_PUBLIC_DIR = path.join(os.homedir(), 'Particle');
 const PATH_PARTICLE_PROJECTS_DIR = path.join(PATH_PARTICLE_PUBLIC_DIR, 'projects');
 const PATH_PARTICLE_LIBRARIES_DIR = path.join(PATH_PARTICLE_PUBLIC_DIR, 'community', 'libraries');
 const PATH_PARTICLE_PROFILE = path.join(PATH_PARTICLE_DIR, 'particle.config.json');
-const PATH_PROJ_BLANK_INO = path.join(PATH_FIXTURES_DIR, 'blank', 'src', 'blank.ino');
-const PATH_PROJ_STROBY_INO = path.join(PATH_FIXTURES_DIR, 'stroby', 'src', 'stroby.ino');
+const PATH_PROJ_BLANK_INO = path.join(PATH_FIXTURES_PROJECTS_DIR, 'blank', 'src', 'blank.ino');
+const PATH_PROJ_STROBY_INO = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby', 'src', 'stroby.ino');
 
 require('dotenv').config({ path: path.join(PATH_TEST_DIR, '.env') });
 
