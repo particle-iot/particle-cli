@@ -1,7 +1,7 @@
 module.exports = {
 	extends: ['eslint-config-particle'],
 	parserOptions: {
-		ecmaVersion: 8,
+		ecmaVersion: 9,
 		sourceType: 'module'
 	},
 	env: {
