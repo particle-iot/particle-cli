@@ -3,7 +3,9 @@ const { expect } = require('../setup');
 const cli = require('../__lib__/cli');
 const {
 	PATH_TMP_DIR,
-	PATH_PROJ_STROBY_INO
+	PATH_PROJ_STROBY_INO,
+	PATH_FIXTURES_PROJECTS_DIR,
+	PATH_FIXTURES_LIBRARIES_DIR
 } = require('../__lib__/env');
 
 
@@ -61,7 +63,7 @@ describe('Compile Command', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Compiles firmware', async () => {
+	it('Compiles a project', async () => {
 		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
@@ -83,6 +85,308 @@ describe('Compile Command', () => {
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles a legacy flat project', async () => {
+		const name = 'legacy-flat';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    helper.h',
+			'    app.ino',
+			'    helper.cpp',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles a legacy nested project', async () => {
+		const name = 'legacy-nested';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    helper/helper.h',
+			'    app.ino',
+			'    helper/helper.cpp',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles a legacy project which uses `particle.include` file', async () => {
+		const name = 'legacy-include';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, 'main', '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    main/app.ino',
+			'    helper/helper.cpp',
+			'    helper/helper.h',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles a project using the `*` wildcard', async () => {
+		const name = 'wildcard';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'legacy-flat');
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, '*', '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd, shell: true });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    helper.h',
+			'    app.ino',
+			'    helper.cpp',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles a project using its directory name', async () => {
+		const name = 'dirname';
+		const platform = 'photon';
+		const cwd = PATH_FIXTURES_PROJECTS_DIR;
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, 'legacy-flat', '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    legacy-flat/helper.h',
+			'    legacy-flat/app.ino',
+			'    legacy-flat/helper.cpp',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles an `extended` project', async () => {
+		const name = 'extended';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, '.', '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    src/helper/helper.h',
+			'    src/app.ino',
+			'    src/helper/helper.cpp',
+			'    project.properties',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles a library example', async () => {
+		const name = 'library-example';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_LIBRARIES_DIR, 'valid', '0.0.2');
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, 'examples/blink-an-led', '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    examples/blink-an-led/blink-an-led.cpp',
+			'    library.properties',
+			'    src/a-c-example.c',
+			'    src/test-library-publish.cpp',
+			'    src/test-library-publish.h',
+			'    src/uber-library-example/uber-library-example.h',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   5100\t    108\t   1432\t   6640\t   19f0\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Fails to compile when platform is unrecognized', async () => {
+		const platform = 'WATNOPE';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR);
+		const args = ['compile', platform, 'WATNOPE'];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			'Compile failed: Target device WATNOPE is not valid',
+			'	eg. particle compile core xxx',
+			'	eg. particle compile photon xxx'
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Fails to compile when file cannot be found', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR);
+		const args = ['compile', platform, 'WATNOPE'];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'Compile failed: I couldn\'t find that: WATNOPE'
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Fails to compile when `--saveTo` is not writable', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'legacy-flat');
+		const destination = path.join(PATH_TMP_DIR, 'WAT', 'NOPE', 'no.bin');
+		const args = ['compile', platform, '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    helper.h',
+			'    app.ino',
+			'    helper.cpp',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.include(`Error: ENOENT: no such file or directory, open '${destination}'`);
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Fails to compile invalid code', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'fail');
+		const args = ['compile', platform, '.'];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+
+		expect(stdout).to.include('Compiling code for photon');
+		expect(stdout).to.include('error: \'asdfjasfjdkl\' does not name a type');
+		expect(stdout).to.include('Compile failed: Compiler encountered an error');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Fails to compile when user is signed-out', async () => {
+		await cli.logout();
+
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR);
+		const args = ['compile', platform, '.'];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+
+		expect(stdout).to.include('Compile failed: You\'re not logged in. Please login using particle cloud login before using this command');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
 	});
 });
 

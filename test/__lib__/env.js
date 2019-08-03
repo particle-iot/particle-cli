@@ -6,6 +6,7 @@ const PATH_TMP_DIR = path.join(PATH_TEST_DIR, 'tmp');
 const PATH_FIXTURES_DIR = path.join(PATH_TEST_DIR, '__fixtures__');
 const PATH_FIXTURES_BINARIES_DIR = path.join(PATH_FIXTURES_DIR, 'binaries');
 const PATH_FIXTURES_PROJECTS_DIR = path.join(PATH_FIXTURES_DIR, 'projects');
+const PATH_FIXTURES_LIBRARIES_DIR = path.join(PATH_FIXTURES_DIR, 'libraries');
 const PATH_PARTICLE_DIR = path.join(os.homedir(), '.particle');
 const PATH_PARTICLE_PUBLIC_DIR = path.join(os.homedir(), 'Particle');
 const PATH_PARTICLE_PROJECTS_DIR = path.join(PATH_PARTICLE_PUBLIC_DIR, 'projects');
@@ -38,6 +39,7 @@ module.exports = {
 	PATH_FIXTURES_DIR,
 	PATH_FIXTURES_BINARIES_DIR,
 	PATH_FIXTURES_PROJECTS_DIR,
+	PATH_FIXTURES_LIBRARIES_DIR,
 	PATH_TMP_DIR,
 	PATH_PARTICLE_DIR,
 	PATH_PARTICLE_PROJECTS_DIR,
