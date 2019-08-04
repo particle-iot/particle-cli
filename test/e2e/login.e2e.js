@@ -134,5 +134,17 @@ describe('Login Command', () => {
 		expect(stderr).to.equal('');
 		expect(isCanceled).to.equal(true);
 	});
+
+	it('Fails to sign in when `--username` and `--password` flags are bad', async () => {
+		const username = 'watnope@example.com';
+		const password = 'WATNOPEWATWATNOPENOPE';
+		const args = ['login', '--username', username, '--password', password];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include('There was an error logging you in!');
+		expect(stdout).to.include('It seems we\'re having trouble with logging in.');
+		expect(stderr).to.include('User credentials are invalid');
+		expect(exitCode).to.equal(1);
+	});
 });
 
