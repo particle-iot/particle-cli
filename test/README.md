@@ -45,7 +45,11 @@ Test filenames are formatted like: `<command>.e2e.js` and located within the `./
 ```
 test
 ├── __fixtures__  <-- test fixtures (projects, data, etc)
-│   ├── stroby
+│   ├── binaries
+│   │   └── ...
+│   ├── libraries
+│   │   └── ...
+│   ├── projects
 │   │   └── ...
 │   └── ...
 │
@@ -105,5 +109,6 @@ Tags provide an easy way to filter tests using use mocha's `--grep` feature ([do
 
 * `node@8` or greater _is required_
 * tests run somewhat slowly (~10m) and are generally less stable than unitish tests
-* currently known to work under macOS _only_
+* currently known to work under macOS _only_ when running with a device
+* tests should run in docker
 
