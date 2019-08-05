@@ -6,6 +6,7 @@ const {
 	PASSWORD,
 	DEVICE_ID,
 	DEVICE_NAME,
+	PATH_TMP_DIR,
 	PATH_REPO_DIR,
 	PATH_PROJ_BLANK_INO,
 	PATH_PROJ_STROBY_INO
@@ -82,6 +83,13 @@ module.exports.stopListeningMode = () => {
 	return run(['usb', 'stop-listening'], { reject: true });
 };
 
+module.exports.compileBlankFirmwareForTest = async (platform = 'photon') => {
+	const { run } = module.exports;
+	const destination = path.join(PATH_TMP_DIR, `blank-${platform}.bin`);
+	await run(['compile', platform, PATH_PROJ_BLANK_INO, '--saveTo', destination]);
+	return { bin: destination };
+};
+
 module.exports.flashTestFirmwareOTA = async (pathToIno) => {
 	const { run } = module.exports;
 	return run(['flash', DEVICE_NAME, pathToIno], { reject: true });
@@ -123,7 +131,7 @@ module.exports.getNameVariable = async () => {
 module.exports.waitForVariable = async (name, value) => {
 	const { run } = module.exports;
 	await delay(2000);
-	const subprocess = run(['monitor', DEVICE_NAME, name]);
+	const subprocess = run(['monitor', DEVICE_NAME, name, '--delay', 500]);
 	return new Promise((resolve, reject) => {
 		subprocess.all.on('data', (data) => {
 			const received = data.toString('utf8');
