@@ -62,7 +62,7 @@ describe('Token Commands', () => {
 
 		await delay(1000);
 		subprocess.stdin.write(PASSWORD);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 		const [msg, token] = stripANSI(stdout).split('\n').slice(-2).map(t => t.trim());
@@ -78,7 +78,7 @@ describe('Token Commands', () => {
 
 		await delay(1000);
 		subprocess.stdin.write(PASSWORD);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout: log } = await subprocess;
 		const [, token] = stripANSI(log).split('\n').slice(-2).map(t => t.trim());
@@ -89,7 +89,7 @@ describe('Token Commands', () => {
 
 		await delay(1000);
 		subprocess.stdin.write(PASSWORD);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 		const [msg] = stripANSI(stdout).split('\n').slice(-1).map(t => t.trim());
@@ -104,7 +104,7 @@ describe('Token Commands', () => {
 
 		await delay(1000);
 		subprocess.stdin.write(PASSWORD);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 		const tokens = matches(stripANSI(stdout), / Token:\s{6}(.*)/g);

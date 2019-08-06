@@ -50,8 +50,11 @@ describe('Library Commands', () => {
 	});
 
 	beforeEach(async () => {
-		await fs.emptyDir(PATH_TMP_DIR);
 		await cli.run(['project', 'create', '--name', projName, PATH_TMP_DIR], { reject: true });
+	});
+
+	afterEach(async () => {
+		await fs.emptyDir(PATH_PARTICLE_LIBRARIES_DIR);
 	});
 
 	after(async () => {
@@ -227,12 +230,15 @@ describe('Library Commands', () => {
 		});
 
 		it('Adds a library to a project', async () => {
+			const libPath = path.join(projPath, 'lib');
+
+			expect(await fs.pathExists(libPath)).to.equal(false);
+
 			const opts = { cwd: projPath };
 			const args = ['library', 'add', 'dotstar'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 			const [version] = matches(stdout, /Library dotstar (.*) has been added to the project./g);
 			const projPropsPath = path.join(projPath, 'project.properties');
-			const libPath = path.join(projPath, 'lib');
 
 			expect(!!semver.valid(version)).to.equal(true);
 			expect(stderr).to.equal('');
@@ -245,12 +251,15 @@ describe('Library Commands', () => {
 		});
 
 		it('Adds a library at a specific version to a project', async () => {
+			const libPath = path.join(projPath, 'lib');
+
+			expect(await fs.pathExists(libPath)).to.equal(false);
+
 			const version = '0.0.3';
 			const opts = { cwd: projPath };
 			const args = ['library', 'add', `dotstar@${version}`];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 			const projPropsPath = path.join(projPath, 'project.properties');
-			const libPath = path.join(projPath, 'lib');
 
 			expect(stdout).to.include(`Library dotstar ${version} has been added to the project.`);
 			expect(stderr).to.equal('');
@@ -263,12 +272,15 @@ describe('Library Commands', () => {
 		});
 
 		it('Adds a library to a library project', async () => {
+			const libPath = path.join(libDirPath, 'lib');
+
+			expect(await fs.pathExists(libPath)).to.equal(false);
+
 			const opts = { cwd: libDirPath };
 			const args = ['library', 'add', 'dotstar'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 			const [version] = matches(stdout, /Library dotstar (.*) has been added to the project./g);
 			const libPropsPath = path.join(libDirPath, 'library.properties');
-			const libPath = path.join(libDirPath, 'lib');
 
 			expect(stdout).to.include(`Library dotstar ${version} has been added to the project.`);
 			expect(stderr).to.equal('');
@@ -418,16 +430,13 @@ describe('Library Commands', () => {
 			const args = ['library', 'install', name, '--copy'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 			const [version] = matches(stdout, /Library dotstar (.*) installed./g);
-			// const libPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
+			const libPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
 			const localLibPath = path.join(projPath, 'lib');
 
 			expect(!!semver.valid(version)).to.equal(true);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
-			// TODO (mirande): need to set $HOME env var pointing at a temp dir
-			// so we can reliably make assertions around when and where lib
-			// files are created
-			// expect(await fs.pathExists(libPath)).to.equal(false);
+			expect(await fs.pathExists(libPath)).to.equal(false);
 			expect(await fs.pathExists(localLibPath)).to.equal(true);
 
 			const projPropsPath = path.join(projPath, 'project.properties');
@@ -465,17 +474,18 @@ describe('Library Commands', () => {
 			const opts = { cwd: projPath };
 			const args = ['library', 'install', '--vendored', '-y'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
-			// const libPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
+			const [dotstarVer] = matches(stdout, /Library dotstar (.*) installed./g);
+			const [neopixelVer] = matches(stdout, /Library neopixel (.*) installed./g);
+			const dotstarLibPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `dotstar@${dotstarVer}`);
+			const neopixelLibPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `neopixel@${neopixelVer}`);
 			const localLibPath = path.join(projPath, 'lib');
 
-			expect(stdout).to.match(/Library dotstar (.*) installed./);
-			expect(stdout).to.match(/Library neopixel (.*) installed./);
+			expect(!!semver.valid(dotstarVer)).to.equal(true);
+			expect(!!semver.valid(neopixelVer)).to.equal(true);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
-			// TODO (mirande): need to set $HOME env var pointing at a temp dir
-			// so we can reliably make assertions around when and where lib
-			// files are created
-			// expect(await fs.pathExists(libPath)).to.equal(false);
+			expect(await fs.pathExists(dotstarLibPath)).to.equal(false);
+			expect(await fs.pathExists(neopixelLibPath)).to.equal(false);
 			expect(await fs.pathExists(localLibPath)).to.equal(true);
 
 			projProps = await fs.readFile(projPropsPath, 'utf8');
@@ -510,7 +520,7 @@ describe('Library Commands', () => {
 			subprocess.stdin.write('\n');
 			await delay(1000);
 			subprocess.stdin.write('me@example.com');
-			subprocess.stdin.write('\n');
+			subprocess.stdin.end('\n');
 
 			const { stderr, exitCode } = await subprocess;
 

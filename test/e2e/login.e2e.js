@@ -62,7 +62,7 @@ describe('Login Command', () => {
 		subprocess.stdin.write('\n');
 		await delay(1000);
 		subprocess.stdin.write(PASSWORD);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 
@@ -79,7 +79,7 @@ describe('Login Command', () => {
 		subprocess.stdin.write('\n');
 		await delay(1000);
 		subprocess.stdin.write(PASSWORD);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 

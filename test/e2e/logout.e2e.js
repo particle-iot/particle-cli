@@ -46,7 +46,7 @@ describe('Logout Command', () => {
 
 		await delay(1000);
 		subprocess.stdin.write('y');
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 

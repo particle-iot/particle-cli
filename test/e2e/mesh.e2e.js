@@ -77,7 +77,7 @@ describe('Mesh Commands [@device]', () => {
 		subprocess.stdin.write('\n');
 		await delay(1000);
 		subprocess.stdin.write(password);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 
@@ -112,7 +112,7 @@ describe('Mesh Commands [@device]', () => {
 
 		await delay(1000);
 		subprocess.stdin.write('y');
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 
