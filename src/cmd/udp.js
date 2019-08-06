@@ -1,13 +1,13 @@
-const when = require('when');
 const dgram = require('dgram');
 
-class UdpCommands {
+
+module.exports = class UdpCommands {
 	sendUdpPacket({ host, port, message }) {
 		const client = dgram.createSocket('udp4');
 		const buf = new Buffer(message);
 
 		console.log('Sending "' + message + '" to', host, 'at port', port);
-		return when.promise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			client.send(buf, 0, buf.length, port, host, (err) => {
 				if (err) {
 					console.log('error during send ' + err);
@@ -36,6 +36,5 @@ class UdpCommands {
 
 		udpSocket.bind(port);
 	}
-}
+};
 
-module.exports = UdpCommands;

@@ -26,326 +26,209 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 
-const os = require('os');
 const fs = require('fs');
-const path = require('path');
-const when = require('when');
-const childProcess = require('child_process');
-const glob = require('glob');
 const _ = require('lodash');
+const path = require('path');
+const glob = require('glob');
 const VError = require('verror');
+const childProcess = require('child_process');
 const log = require('./log');
 
-const utilities = {
-	contains(arr, obj) {
-		return (utilities.indexOf(arr, obj) >= 0);
-	},
-	containsKey(arr, obj) {
-		if (!arr) {
-			return false;
-		}
 
-		return utilities.contains(Object.keys(arr), obj);
-	},
-	indexOf(arr, obj) {
-		if (!arr || (arr.length === 0)) {
-			return -1;
-		}
-
-		for (let i=0;i<arr.length;i++) {
-			if (arr[i] === obj) {
-				return i;
-			}
-		}
-
-		return -1;
-	},
-	// String.endsWith polyfill
-	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/endsWith#Polyfill
-	endsWith(subject, searchString, position) {
-		let subjectString = subject.toString();
-		if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
-			position = subjectString.length;
-		}
-		position -= searchString.length;
-		let lastIndex = subjectString.lastIndexOf(searchString, position);
-		return lastIndex !== -1 && lastIndex === position;
-	},
-	pipeDeferred(left, right) {
-		return when(left).then(() => {
-			right.resolve.apply(right, arguments);
-		}, () => {
-			right.reject.apply(right, arguments);
-		});
-	},
-
-	deferredChildProcess(exec) {
-		let tmp = when.defer();
-
-		childProcess.exec(exec, (error, stdout) => {
-			if (error) {
-				tmp.reject(error);
-			} else {
-				tmp.resolve(stdout);
-			}
-		});
-
-		return tmp.promise;
-	},
-
-	deferredSpawnProcess(exec, args) {
-		let tmp = when.defer();
-		try {
-			log.verbose('spawning ' + exec + ' ' + args.join(' '));
-
-			let options = {
-				stdio: ['ignore', 'pipe', 'pipe']
-			};
-
-			let child = childProcess.spawn(exec, args, options);
-			let stdout = [],
-				errors = [];
-
-			if (child.stdout) {
-				child.stdout.pipe(log.stdout());
-				child.stdout.on('data', (data) => {
-					stdout.push(data);
-				});
-			}
-
-			if (child.stderr) {
-				child.stderr.pipe(log.stderr());
-				child.stderr.on('data', (data) => {
-					errors.push(data);
-				});
-			}
-
-			child.on('close', (code) => {
-				let output = { stdout: stdout, stderr: errors };
-				if (!code) {
-					tmp.resolve(output);
+module.exports = {
+	deferredChildProcess(exec){
+		return new Promise((resolve, reject) => {
+			childProcess.exec(exec, (error, stdout) => {
+				if (error){
+					reject(error);
 				} else {
-					tmp.reject(output);
+					resolve(stdout);
 				}
 			});
-		} catch (ex) {
-			console.error('Error during spawn ' + ex);
-			tmp.reject(ex);
-		}
-		return tmp.promise;
+		});
 	},
 
-	filenameNoExt(filename) {
-		if (!filename || (filename.length === 0)) {
+	deferredSpawnProcess(exec, args){
+		return new Promise((resolve, reject) => {
+			try {
+				log.verbose('spawning ' + exec + ' ' + args.join(' '));
+
+				let options = {
+					stdio: ['ignore', 'pipe', 'pipe']
+				};
+
+				let child = childProcess.spawn(exec, args, options);
+				let stdout = [],
+					errors = [];
+
+				if (child.stdout){
+					child.stdout.pipe(log.stdout());
+					child.stdout.on('data', (data) => {
+						stdout.push(data);
+					});
+				}
+
+				if (child.stderr){
+					child.stderr.pipe(log.stderr());
+					child.stderr.on('data', (data) => {
+						errors.push(data);
+					});
+				}
+
+				child.on('close', (code) => {
+					let output = { stdout: stdout, stderr: errors };
+					if (!code){
+						resolve(output);
+					} else {
+						reject(output);
+					}
+				});
+			} catch (ex){
+				console.error('Error during spawn ' + ex);
+				reject(ex);
+			}
+		});
+	},
+
+	// TODO (mirande): use util.promisify once node@6 is no longer supported
+	readFile(file, options){
+		return new Promise((resolve, reject) => {
+			fs.readFile(file, options, (error, data) => {
+				if (error){
+					return reject(error);
+				}
+				return resolve(data);
+			});
+		});
+	},
+
+	// TODO (mirande): use util.promisify once node@6 is no longer supported
+	writeFile(file, data, options){
+		return new Promise((resolve, reject) => {
+			fs.writeFile(file, data, options, error => {
+				if (error){
+					return reject(error);
+				}
+				return resolve();
+			});
+		});
+	},
+
+	filenameNoExt(filename){
+		if (!filename || (filename.length === 0)){
 			return filename;
 		}
 
 		let idx = filename.lastIndexOf('.');
-		if (idx >= 0) {
+		if (idx >= 0){
 			return filename.substr(0, idx);
 		} else {
 			return filename;
 		}
 	},
-	getFilenameExt(filename) {
-		if (!filename || (filename.length === 0)) {
+
+	getFilenameExt(filename){
+		if (!filename || (filename.length === 0)){
 			return filename;
 		}
 
 		let idx = filename.lastIndexOf('.');
-		if (idx >= 0) {
+		if (idx >= 0){
 			return filename.substr(idx);
 		} else {
 			return filename;
 		}
 	},
 
-	timeoutGenerator(msg, defer, delay) {
+	// TODO (mirande): replace w/ @particle/async-utils
+	delay(ms){
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	},
+
+	// TODO (mirande): replace w/ @particle/async-utils
+	asyncReduceSeries(array, fn, initial){
+		return array.reduce((promise, current, index, source) => {
+			return promise.then((result) => fn(result, current, index, source));
+		}, Promise.resolve(initial));
+	},
+
+	// TODO (mirande): replace w/ @particle/async-utils
+	asyncMapSeries(array, fn){
+		const { asyncReduceSeries } = module.exports;
+		return asyncReduceSeries(array, async (result, current, index, source) => {
+			const value = await fn(current, index, source);
+			result.push(value);
+			return result;
+		}, []);
+	},
+
+	// TODO (mirande): replace w/ @particle/async-utils
+	enforceTimeout(promise, ms){
+		const { delay } = module.exports;
+		const timer = delay(ms).then(() => {
+			const error = new Error('The operation timed out :(');
+			error.isTimeout = true;
+			throw error;
+		});
+
+		return Promise.race([promise, timer]);
+	},
+
+	timeoutGenerator(msg, defer, delay){
 		return setTimeout(() => {
 			defer.reject(msg);
 		}, delay);
 	},
 
-	indentLeft(str, char, len) {
-		let extra = [];
-		for (let i=0;i<len;i++) {
-			extra.push(char);
-		}
-		return extra.join('') + str;
-	},
-
-	indentLines(arr, char, len) {
-		let extra = [];
-		for (let i = 0; i < arr.length; i++) {
-			extra.push(utilities.indentLeft(arr[i], char, len));
-		}
-		return extra.join('\n');
-	},
-
-	/**
-	 * pad the left side of "str" with "char" until it's length "len"
-	 * @param {String} str
-	 * @param {String} char
-	 * @param {Number} len
-	 * @returns {String} string padded with char
-	 */
-	padLeft(str, char, len) {
-		let delta = len - str.length;
-		let extra = [];
-		for (let i=0;i<delta;i++) {
-			extra.push(char);
-		}
-		return extra.join('') + str;
-	},
-
-	padRight(str, char, len) {
-		let delta = len - str.length;
-		let extra = [];
-		for (let i=0;i<delta;i++) {
-			extra.push(char);
-		}
-		return str + extra.join('');
-	},
-
-	wrapArrayText(arr, maxLength, delim) {
-		let lines = [];
-		let line = '';
-		delim = delim || ', ';
-
-		for (let i=0;i<arr.length;i++) {
-			let str = arr[i];
-			let newLength = line.length + str.length + delim.length;
-
-			if (newLength >= maxLength) {
-				lines.push(line);
-				line = '';
-			}
-
-			if (line.length > 0) {
-				line += delim;
-			}
-			line += str;
-		}
-		if (line !== '') {
-			lines.push(line);
-		}
-
-
-		return lines;
-	},
-
-
-	retryDeferred(testFn, numTries, recoveryFn) {
-		if (!testFn) {
+	async retryDeferred(testFn, numTries, recoveryFn){
+		if (!testFn){
 			console.error('retryDeferred - comon, pass me a real function.');
-			return when.reject('not a function!');
+			return Promise.reject('not a function!');
 		}
 
-		let defer = when.defer();
-		let lastError = null;
-		let tryTestFn = () => {
-			numTries--;
-			if (numTries < 0) {
-				defer.reject('Out of tries ' + lastError);
-				return;
-			}
+		return new Promise((resolve, reject) => {
+			let lastError = null;
+			let tryTestFn = (async () => {
+				numTries--;
 
-			try {
-				when(testFn()).then(
-					(value) => {
-						defer.resolve(value);
-					},
-					(msg) => {
-						lastError = msg;
+				if (numTries < 0){
+					return reject(lastError);
+				}
 
-						if (recoveryFn) {
-							when(recoveryFn()).then(tryTestFn);
-						} else {
-							tryTestFn();
-						}
-					});
-			} catch (ex) {
-				lastError = ex;
-			}
-		};
+				try {
+					const value = await Promise.resolve(testFn());
+					return resolve(value);
+				} catch (error){
+					lastError = error;
 
-		tryTestFn();
-		return defer.promise;
-	},
-
-	isDirectory(somepath) {
-		if (fs.existsSync(somepath)) {
-			return fs.statSync(somepath).isDirectory();
-		}
-		return false;
-	},
-
-	fixRelativePaths(dirname, files) {
-		if (!files || (files.length === 0)) {
-			return null;
-		}
-
-		//convert to absolute paths, and return!
-		return files.map((obj) => {
-			return path.join(dirname, obj);
+					if (typeof recoveryFn === 'function'){
+						Promise.resolve(recoveryFn()).then(tryTestFn);
+					} else {
+						tryTestFn();
+					}
+				}
+			})();
 		});
 	},
 
-	/**
-	 * for a given list of absolute filenames, identify directories,
-	 * and add them to the end of the list.
-	 * @param {Array} files
-	 * @returns {Array} array of files contained within subdirectories
-	 */
-	expandSubdirectories(files) {
-		if (!files || (files.length === 0)) {
-			return files;
-		}
-
-		let result = [];
-
-		for (let i=0;i<files.length;i++) {
-			let filename = files[0];
-			let stats = fs.statSync(filename);
-			if (!stats.isDirectory()) {
-				result.push(filename);
-			} else {
-				let arr = utilities.recursiveListFiles(filename);
-				if (arr) {
-					result = result.concat(arr);
-				}
-			}
-		}
-		return result;
-	},
-
-	globList(basepath, arr) {
+	globList(basepath, arr){
 		let line, found, files = [];
-		for (let i=0;i<arr.length;i++) {
+		for (let i=0;i<arr.length;i++){
 			line = arr[i];
-			if (basepath) {
+			if (basepath){
 				line = path.join(basepath, line);
 			}
 			found = glob.sync(line, { nodir: true });
 
-			if (found && (found.length > 0)) {
+			if (found && (found.length > 0)){
 				files = files.concat(found);
 			}
 		}
 		return files;
 	},
 
-	trimBlankLines(arr) {
-		if (arr && (arr.length !== 0)) {
-			return arr.filter((obj) => {
-				return obj && (obj !== '');
-			});
-		}
-		return arr;
-	},
-
-	trimBlankLinesAndComments(arr) {
-		if (arr && (arr.length !== 0)) {
+	trimBlankLinesAndComments(arr){
+		if (arr && (arr.length !== 0)){
 			return arr.filter((obj) => {
 				return obj && (obj !== '') && (obj.indexOf('#') !== 0);
 			});
@@ -353,143 +236,31 @@ const utilities = {
 		return arr;
 	},
 
-	readLines(file) {
-		if (fs.existsSync(file)) {
-			let str = fs.readFileSync(file).toString();
-			if (str) {
-				return str.split('\n');
-			}
-		}
-
-		return null;
-	},
-
-	readAndTrimLines(file) {
-		if (!fs.existsSync(file)) {
+	readAndTrimLines(file){
+		if (!fs.existsSync(file)){
 			return null;
 		}
 
 		let str = fs.readFileSync(file).toString();
-		if (!str) {
+		if (!str){
 			return null;
 		}
 
 		let arr = str.split('\n');
-		if (arr && (arr.length > 0)) {
-			for (let i = 0; i < arr.length; i++) {
+		if (arr && (arr.length > 0)){
+			for (let i = 0; i < arr.length; i++){
 				arr[i] = arr[i].trim();
 			}
 		}
 		return arr;
 	},
 
-	arrayToHashSet(arr) {
-		let h = {};
-		if (arr) {
-			for (let i = 0; i < arr.length; i++) {
-				h[arr[i]] = true;
-			}
-		}
-		return h;
-	},
-
-	/**
-	 * recursively create a list of all files in a directory and all subdirectories,
-	 * potentially excluding certain directories
-	 * @param {String} dir
-	 * @param {Array} excludedDirs
-	 * @returns {Array} array of all filenames
-	 */
-	recursiveListFiles(dir, excludedDirs) {
-		excludedDirs = excludedDirs || [];
-
-		let result = [];
-		let files = fs.readdirSync(dir);
-		for (let i = 0; i < files.length; i++) {
-			let fullpath = path.join(dir, files[i]);
-			let stat = fs.statSync(fullpath);
-			if (stat.isDirectory()) {
-				if (!excludedDirs.contains(fullpath)) {
-					result = result.concat(utilities.recursiveListFiles(fullpath, excludedDirs));
-				}
-			} else {
-				result.push(fullpath);
-			}
-		}
-		return result;
-	},
-
-	tryParseArgs(args, name, errText) {
-		let idx = utilities.indexOf(args, name);
-		let result;
-		if (idx >= 0) {
-			result = true;
-			if ((idx + 1) < args.length) {
-				result = args[idx + 1];
-			} else if (errText) {
-				console.log(errText);
-			}
-		}
-		return result;
-	},
-
-	copyArray(arr) {
-		let result = [];
-		for (let i=0;i<arr.length;i++) {
-			result.push(arr[i]);
-		}
-		return result;
-	},
-
-	countHashItems(hash) {
-		let count = 0;
-		if (hash) {
-			return Object.keys(hash).length;
-		}
-		return count;
-	},
-	replaceAll(str, src, dest) {
-		return str.split(src).join(dest);
-	},
-
-	getIPAddresses() {
-		//adapter = adapter || "eth0";
-		let results = [];
-		let nics = os.networkInterfaces();
-
-		for (let name in nics) {
-			let nic = nics[name];
-
-			for (let i = 0; i < nic.length; i++) {
-				let addy = nic[i];
-
-				if ((addy.family !== 'IPv4') || (addy.address === '127.0.0.1')) {
-					continue;
-				}
-
-				results.push(addy.address);
-			}
-		}
-
-		return results;
-	},
-
-	tryStringify(obj) {
+	tryParse(str){
 		try {
-			if (obj) {
-				return JSON.stringify(obj);
-			}
-		} catch (ex) {
-			console.error('stringify error ', ex);
-		}
-	},
-
-	tryParse(str) {
-		try {
-			if (str) {
+			if (str){
 				return JSON.parse(str);
 			}
-		} catch (ex) {
+		} catch (ex){
 			console.error('tryParse error ', ex);
 		}
 	},
@@ -502,66 +273,55 @@ const utilities = {
 	 * @param {*} err
 	 * @returns {Promise} promise, resolving with res, or rejecting with err
 	 */
-	replaceDfdResults(promise, res, err) {
-		let dfd = when.defer();
-
-		when(promise).then(() => {
-			dfd.resolve(res);
-		}, () => {
-			dfd.reject(err);
-		});
-
-		return dfd.promise;
+	replaceDfdResults(promise, res, err){
+		return Promise.resolve(promise)
+			.then(() => res)
+			.catch(() => err);
 	},
 
-	compliment(arr, excluded) {
-		let hash = utilities.arrayToHashSet(excluded);
+	compliment(arr, excluded){
+		const { arrayToHashSet } = module.exports;
+		let hash = arrayToHashSet(excluded);
 
 		let result = [];
-		for (let i=0;i<arr.length;i++) {
+		for (let i=0;i<arr.length;i++){
 			let key = arr[i];
-			if (!hash[key]) {
+			if (!hash[key]){
 				result.push(key);
 			}
 		}
 		return result;
 	},
 
-	tryDelete(filename) {
+	tryDelete(filename){
 		try {
-			if (fs.existsSync(filename)) {
+			if (fs.existsSync(filename)){
 				fs.unlinkSync(filename);
 			}
 			return true;
-		} catch (ex) {
+		} catch (ex){
 			console.error('error deleting file ' + filename);
 		}
 		return false;
 	},
 
-	resolvePaths(basepath, files) {
-		for (let i=0;i<files.length;i++) {
-			files[i] = path.join(basepath, files[i]);
-		}
-		return files;
-	},
-
 	__banner: undefined,
-
-	banner() {
+	banner(){
 		let bannerFile = path.join(__dirname, '../../assets/banner.txt');
-		if (this.__banner===undefined) {
+
+		if (module.exports.__banner === undefined){
 			try {
-				this.__banner = fs.readFileSync(bannerFile, 'utf8');
-			} catch (err) {
+				module.exports.__banner = fs.readFileSync(bannerFile, 'utf8');
+			} catch (err){
 				// ignore missing banner
 			}
 		}
-		return this.__banner;
+
+		return module.exports.__banner;
 	},
 
 	// todo - factor from/to constants.js
-	knownPlatforms() {
+	knownPlatforms(){
 		return {
 			'core': 0,
 			'photon': 6,
@@ -582,21 +342,11 @@ const utilities = {
 		};
 	},
 
-
-	cellularOtaUsage(fileSize) {
-		let numChunks = Math.ceil(fileSize / 512);
-		let perChunkOverhead = (16+29+28);
-		let controlOverhead = 48 + (6*(29+28));
-		let totalBytes = (numChunks * perChunkOverhead) + controlOverhead + fileSize;
-
-		return (totalBytes / 1E6).toFixed(3);
-	},
-
-	ensureError(err) {
-		if (!_.isError(err) && !(err instanceof VError)) {
+	ensureError(err){
+		if (!_.isError(err) && !(err instanceof VError)){
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}
 		return err;
 	}
 };
-module.exports = utilities;
+

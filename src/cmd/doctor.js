@@ -1,52 +1,51 @@
-const VError = require('verror');
-
-const when = require('when');
-const pipeline = require('when/pipeline');
 const _ = require('lodash');
 const chalk = require('chalk');
+const VError = require('verror');
 const prompt = require('inquirer').prompt;
+const { delay } = require('../lib/utilities');
+const ApiClient = require('../lib/api-client');
 const dfu = require('../lib/dfu');
-const ApiClient = require('../lib/ApiClient');
 
-function EarlyReturnError() {
+function EarlyReturnError(){
 }
-function SkipStepError() {
+
+function SkipStepError(){
 }
 
 const deviceTimeout = 3000;
 const serialTimeout = 3000;
 
-class DoctorCommand {
-	constructor() {
+
+module.exports = class DoctorCommand {
+	constructor(){
 		this._commands = {};
 	}
 
-	deviceDoctor() {
-		return pipeline([
-			this._showDoctorWelcome.bind(this),
-			this._setupApi.bind(this),
-			this._findDevice.bind(this),
-			this._nameDevice.bind(this),
-			this._updateSystemFirmware.bind(this),
-			this._updateCC3000.bind(this),
-			this._flashDoctor.bind(this),
-			this._selectAntenna.bind(this),
-			this._selectIP.bind(this),
-			this._resetSoftAPPrefix.bind(this),
-			this._clearEEPROM.bind(this),
-			this._setupWiFi.bind(this),
-			this._resetKeys.bind(this),
-			this._flashTinker.bind(this),
-			this._showDoctorGoodbye.bind(this),
-		]).catch(this._showDoctorError.bind(this));
+	deviceDoctor(){
+		return this._showDoctorWelcome()
+			.then(this._setupApi.bind(this))
+			.then(this._findDevice.bind(this))
+			.then(this._nameDevice.bind(this))
+			.then(this._updateSystemFirmware.bind(this))
+			.then(this._updateCC3000.bind(this))
+			.then(this._flashDoctor.bind(this))
+			.then(this._selectAntenna.bind(this))
+			.then(this._selectIP.bind(this))
+			.then(this._resetSoftAPPrefix.bind(this))
+			.then(this._clearEEPROM.bind(this))
+			.then(this._setupWiFi.bind(this))
+			.then(this._resetKeys.bind(this))
+			.then(this._flashTinker.bind(this))
+			.then(this._showDoctorGoodbye.bind(this))
+			.catch(this._showDoctorError.bind(this));
 	}
 
-	command(name, options = { params: {} }) {
+	command(name, options = { params: {} }){
 		const Command = require(`./${name}`);
 		return new Command(options);
 	}
 
-	_showDoctorWelcome() {
+	_showDoctorWelcome(){
 		console.log(chalk.bold.white('The Device Doctor will put your device back into a healthy state'));
 		console.log('It will:');
 		_.map([
@@ -59,17 +58,17 @@ class DoctorCommand {
 		});
 	}
 
-	_setupApi() {
+	_setupApi(){
 		this.api = new ApiClient();
-		if (!this.api.ready()) {
+		if (!this.api.ready()){
 			throw new EarlyReturnError();
 		}
 	}
 
-	_findDevice() {
+	_findDevice(){
 		// Try to find a "normal" mode device through the serial port
 		return this.command('serial').findDevices().then(devices => {
-			if (devices.length === 0) {
+			if (devices.length === 0){
 				// Try to find a "DFU" mode device through dfu-util
 				return dfu.listDFUDevices();
 			} else {
@@ -81,14 +80,14 @@ class DoctorCommand {
 		});
 	}
 
-	_nameDevice(devices) {
-		if (devices.length === 0) {
+	_nameDevice(devices){
+		if (devices.length === 0){
 			console.log('');
 			console.log(chalk.cyan('>'), 'Connect a Particle device to a USB port and run the command again.');
 			throw new EarlyReturnError();
 		}
 
-		if (devices.length > 1) {
+		if (devices.length > 1){
 			console.log('');
 			console.log(chalk.cyan('!'), 'You have ' + devices.length + ' devices connected to USB ports.');
 			console.log(chalk.cyan('!'), 'To avoid confusion, disconnect all but the one device and run the command again.');
@@ -101,21 +100,21 @@ class DoctorCommand {
 		console.log("You'll be asked to put your device in DFU mode several times to reset different settings.");
 	}
 
-	_enterDfuMode() {
+	_enterDfuMode(){
 		console.log('Put the device in ' + chalk.bold.yellow('DFU mode'));
 		console.log('Tap ' + chalk.bold.cyan('RESET/RST') + ' while holding ' + chalk.bold.cyan('MODE/SETUP') +
 			' until the device blinks ' + chalk.bold.yellow('yellow.'));
 		return this._promptReady();
 	}
 
-	_promptReady() {
+	_promptReady(){
 		return prompt([{
 			type: 'list',
 			name: 'choice',
 			message: 'Select Continue when ready',
 			choices: ['Continue', 'Skip step', 'Exit']
 		}]).then((ans) => {
-			switch (ans.choice) {
+			switch (ans.choice){
 				case 'Skip step':
 					throw new SkipStepError();
 				case 'Exit':
@@ -126,20 +125,20 @@ class DoctorCommand {
 		});
 	}
 
-	_catchSkipStep(e) {
-		if (e instanceof SkipStepError) {
+	_catchSkipStep(e){
+		if (e instanceof SkipStepError){
 			return;
 		} else {
 			throw e;
 		}
 	}
 
-	_displayStepTitle(title) {
+	_displayStepTitle(title){
 		console.log(chalk.bold.white('\n' + title + '\n'));
 	}
 
-	_updateSystemFirmware() {
-		if (!this._deviceHasFeature('system-firmware')) {
+	_updateSystemFirmware(){
+		if (!this._deviceHasFeature('system-firmware')){
 			return;
 		}
 
@@ -150,8 +149,8 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_updateCC3000() {
-		if (!this._deviceHasFeature('cc3000')) {
+	_updateCC3000(){
+		if (!this._deviceHasFeature('cc3000')){
 			return;
 		}
 
@@ -172,7 +171,7 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_flashDoctor() {
+	_flashDoctor(){
 		this._displayStepTitle('Flashing the Device Doctor app');
 		console.log('This app allows changing more settings on your device\n');
 		return this._enterDfuMode()
@@ -184,14 +183,14 @@ class DoctorCommand {
 				return this._waitForSerialDevice(deviceTimeout);
 			})
 			.then((device) => {
-				if (!device) {
+				if (!device){
 					throw new Error('Could not find serial device. Ensure the Device Doctor app was flashed');
 				}
 			}).catch(this._catchSkipStep);
 	}
 
-	_selectAntenna() {
-		if (!this._deviceHasFeature('antenna-selection')) {
+	_selectAntenna(){
+		if (!this._deviceHasFeature('antenna-selection')){
 			return;
 		}
 
@@ -203,7 +202,7 @@ class DoctorCommand {
 			choices: ['Internal', 'External', 'Skip step', 'Exit']
 		}])
 			.then((ans) => {
-				switch (ans.choice) {
+				switch (ans.choice){
 					case 'Skip step':
 						throw new SkipStepError();
 					case 'Exit':
@@ -218,8 +217,8 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_selectIP() {
-		if (!this._deviceHasFeature('wifi')) {
+	_selectIP(){
+		if (!this._deviceHasFeature('wifi')){
 			return;
 		}
 
@@ -232,7 +231,7 @@ class DoctorCommand {
 			choices: ['Dynamic IP', 'Static IP', 'Skip step', 'Exit']
 		}])
 			.then((ans) => {
-				switch (ans.choice) {
+				switch (ans.choice){
 					case 'Skip step':
 						throw new SkipStepError();
 					case 'Exit':
@@ -241,7 +240,7 @@ class DoctorCommand {
 						mode = ans.choice;
 				}
 			}).then(() => {
-				if (mode === 'Static IP') {
+				if (mode === 'Static IP'){
 					return this._promptIPAddresses({
 						device_ip: 'Device IP',
 						netmask: 'Netmask',
@@ -256,13 +255,13 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_promptIPAddresses(ips) {
+	_promptIPAddresses(ips){
 		return prompt(_.map(ips, (label, key) => {
 			return {
 				type: 'input',
 				name: key,
 				message: label,
-				validate(val) {
+				validate(val){
 					const parts = val.split('.');
 					const allNumbers = _.every(parts, (n) => {
 						return (+n).toString() === n;
@@ -277,8 +276,8 @@ class DoctorCommand {
 		});
 	}
 
-	_resetSoftAPPrefix() {
-		if (!this._deviceHasFeature('softap')) {
+	_resetSoftAPPrefix(){
+		if (!this._deviceHasFeature('softap')){
 			return;
 		}
 
@@ -292,7 +291,7 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_clearEEPROM() {
+	_clearEEPROM(){
 		this._displayStepTitle('Clear all data in EEPROM storage');
 
 		return this._promptReady()
@@ -303,7 +302,7 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_flashTinker() {
+	_flashTinker(){
 		this._displayStepTitle('Flashing the default Particle Tinker app');
 		return this._enterDfuMode()
 			.then(() => {
@@ -311,7 +310,7 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_resetKeys() {
+	_resetKeys(){
 		this._displayStepTitle('Resetting server and device keys');
 
 		// do this again to refresh the device data with latest firmware
@@ -323,7 +322,7 @@ class DoctorCommand {
 				// keys servers doesn't cause the device to reset so it is still in DFU mode
 			})
 			.then(() => {
-				if (!this.device || !this.device.deviceId) {
+				if (!this.device || !this.device.deviceId){
 					console.log(chalk.red('!'), 'Skipping device key because it does not report its device ID over USB');
 					return;
 				}
@@ -331,20 +330,21 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_waitForSerialDevice(timeout) {
+	_waitForSerialDevice(timeout){
 		let timeoutReached = false;
-		when().delay(timeout).then(() => {
+
+		delay(timeout).then(() => {
 			timeoutReached = true;
 		});
 
 		const tryFindDevice = () => {
 			return this._findDevice().then(() => {
-				if (this.device && this.device.port) {
+				if (this.device && this.device.port){
 					return this.device;
-				} else if (timeoutReached) {
+				} else if (timeoutReached){
 					return null;
 				} else {
-					return when().delay(250).then(tryFindDevice);
+					return delay(250).then(tryFindDevice);
 				}
 			});
 		};
@@ -352,38 +352,39 @@ class DoctorCommand {
 		return tryFindDevice();
 	}
 
-	_verifyDeviceOwnership() {
-		return when().then(() => {
-			if (!this.device || !this.device.deviceId) {
-				return false;
-			}
-
-			return this.api.getAttributes(this.device.deviceId).then((attributes) => {
-				return attributes.error !== 'Permission Denied';
-			}, () => {
-				return false;
-			});
-		}).then((ownsDevice) => {
-			if (ownsDevice) {
-				return;
-			}
-			console.log(chalk.red('!'), 'This device is not claimed to your Particle account.');
-			console.log(chalk.red('!'), 'Resetting keys for a device you do not own may permanently prevent it from connecting to the Particle cloud.');
-			return prompt([{
-				type: 'confirm',
-				name: 'choice',
-				message: 'Skip resetting keys?',
-				default: true
-			}]).then((ans) => {
-				if (ans.choice) {
-					throw new SkipStepError();
+	_verifyDeviceOwnership(){
+		return Promise.resolve()
+			.then(() => {
+				if (!this.device || !this.device.deviceId){
+					return false;
 				}
+
+				return this.api.getAttributes(this.device.deviceId)
+					.then((attributes) => attributes.error !== 'Permission Denied')
+					.catch(() => false);
+			})
+			.then((ownsDevice) => {
+				if (ownsDevice){
+					return;
+				}
+				console.log(chalk.red('!'), 'This device is not claimed to your Particle account.');
+				console.log(chalk.red('!'), 'Resetting keys for a device you do not own may permanently prevent it from connecting to the Particle cloud.');
+				return prompt([{
+					type: 'confirm',
+					name: 'choice',
+					message: 'Skip resetting keys?',
+					default: true
+				}])
+					.then((ans) => {
+						if (ans.choice){
+							throw new SkipStepError();
+						}
+					});
 			});
-		});
 	}
 
-	_setupWiFi() {
-		if (!this._deviceHasFeature('wifi')) {
+	_setupWiFi(){
+		if (!this._deviceHasFeature('wifi')){
 			return;
 		}
 
@@ -402,28 +403,27 @@ class DoctorCommand {
 			}).catch(this._catchSkipStep);
 	}
 
-	_deviceHasFeature(feature) {
+	_deviceHasFeature(feature){
 		const features = (this.device && this.device.specs && this.device.specs.features) || [];
 		return _.includes(features, feature);
 	}
 
-	_showDoctorGoodbye() {
+	_showDoctorGoodbye(){
 		this._displayStepTitle('The Doctor has restored your device!');
 		console.log(chalk.cyan('>'), "Please visit our community forums if your device still can't connect to the Particle cloud");
 		console.log(chalk.bold.white('https://community.particle.io/'));
 	}
 
-	_showDoctorError(e) {
-		if (e instanceof EarlyReturnError) {
+	_showDoctorError(e){
+		if (e instanceof EarlyReturnError){
 			return;
 		}
 		console.log("The Doctor didn't complete sucesfully. " + e.message);
-		if (global.verboseLevel > 1) {
+		if (global.verboseLevel > 1){
 			console.log(VError.fullStack(e));
 		}
 		console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
 		console.log(chalk.bold.white('https://community.particle.io/'));
 	}
-}
+};
 
-module.exports = DoctorCommand;

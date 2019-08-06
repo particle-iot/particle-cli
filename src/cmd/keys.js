@@ -1,14 +1,13 @@
-const VError = require('verror');
+const fs = require('fs');
 const url = require('url');
-const whenNode = require('when/node');
+const path = require('path');
+const VError = require('verror');
 const temp = require('temp').track();
 const utilities = require('../lib/utilities');
-const ApiClient = require('../lib/ApiClient');
-const fs = require('fs');
-const path = require('path');
-const dfu = require('../lib/dfu');
+const ApiClient = require('../lib/api-client');
 const deviceSpecs = require('../lib/deviceSpecs');
 const ensureError = require('../lib/utilities').ensureError;
+const dfu = require('../lib/dfu');
 
 /**
  * Commands for managing encryption keys.
@@ -19,7 +18,7 @@ const ensureError = require('../lib/utilities').ensureError;
  * protocol on the device is used.
  * @constructor
  */
-class KeysCommand {
+module.exports = class KeysCommand {
 	constructor() {
 		this.dfu = dfu;
 	}
@@ -221,31 +220,36 @@ class KeysCommand {
 
 		const cleanup = () => fs.unlinkSync(pubKey);
 
-		return Promise.resolve().then(() => {
-			// try both private and public versions and both algorithms
-			return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey)
-				.catch(() => {
-					return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
-				})
-				.catch(() => {
-					// try other algorithm next
-					algorithm = algorithm === 'rsa' ? 'ec' : 'rsa';
-					return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
-				})
-				.catch(() => {
-					return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
-				});
-		}).then(() => {
-			return whenNode.lift(fs.readFile)(pubKey);
-		}).then(keyBuf => {
-			let apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
-			return api.sendPublicKey(deviceId, keyBuf, apiAlg, productId);
-		}).catch(err => {
-			throw new VError(ensureError(err), 'Error sending public key to server');
-		}).then(cleanup, err => {
-			cleanup();
-			throw err;
-		});
+		return Promise.resolve()
+			.then(() => {
+				// try both private and public versions and both algorithms
+				return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey)
+					.catch(() => {
+						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+					})
+					.catch(() => {
+						// try other algorithm next
+						algorithm = algorithm === 'rsa' ? 'ec' : 'rsa';
+						return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+					})
+					.catch(() => {
+						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+					});
+			})
+			.then(() => {
+				return utilities.readFile(pubKey);
+			})
+			.then(keyBuf => {
+				let apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
+				return api.sendPublicKey(deviceId, keyBuf, apiAlg, productId);
+			})
+			.catch(err => {
+				throw new VError(ensureError(err), 'Error sending public key to server');
+			})
+			.then(cleanup, err => {
+				cleanup();
+				throw err;
+			});
 	}
 
 	keyDoctor(deviceId, { protocol } = {}) {
@@ -589,6 +593,5 @@ class KeysCommand {
 		}
 		return filename;
 	}
-}
+};
 
-module.exports = KeysCommand;

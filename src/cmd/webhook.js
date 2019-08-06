@@ -1,16 +1,13 @@
-const VError = require('verror');
-const when = require('when');
-
-const prompt = require('inquirer').prompt;
 const fs = require('fs');
+const VError = require('verror');
+const prompt = require('inquirer').prompt;
+const ApiClient = require('../lib/api-client');
+const { tryParse, getFilenameExt, asyncMapSeries } = require('../lib/utilities');
 
-const ApiClient = require('../lib/ApiClient');
-const utilities = require('../lib/utilities');
 
-class WebhookCommand {
+module.exports = class WebhookCommand {
 	constructor(options) {
 		this.options = options;
-
 	}
 
 	createPOSTHook({ eventName, url, device }) {
@@ -25,26 +22,29 @@ class WebhookCommand {
 		return this._createHook({ eventName, url, deviceID: device, requestType });
 	}
 
-
 	_createHook({ eventName, url, deviceID, requestType }) {
 		const api = new ApiClient();
+
 		api.ensureToken();
 
 		//if they gave us one thing, and it happens to be a file, and we could parse it as json
 		let data = {};
+
 		//particle webhook create xxx.json
 		if (eventName && !url && !deviceID) {
 			const filename = eventName;
 
-			if (utilities.getFilenameExt(filename).toLowerCase() === '.json') {
+			if (getFilenameExt(filename).toLowerCase() === '.json') {
 				if (!fs.existsSync(filename)) {
 					throw new VError(filename + ' is not found.');
 				}
 
-				data = utilities.tryParse(fs.readFileSync(filename));
+				data = tryParse(fs.readFileSync(filename));
+
 				if (!data) {
 					throw new VError('Please check your .json file for syntax error.');
 				}
+
 				console.log('Using settings from the file ' + filename);
 				//only override these when we didn't get them from the command line
 				eventName = data.event || data.eventName;
@@ -79,61 +79,69 @@ class WebhookCommand {
 		const api = new ApiClient();
 		api.ensureToken();
 
-		return Promise.resolve().then(() => {
-			if (hookId === 'all') {
-				// delete all hook using `particle webhook delete all`
-				return prompt([{
-					type: 'confirm',
-					name: 'deleteAll',
-					message: 'Do you want to delete ALL your webhooks?',
-					default: false
-				}]).then((answer) => {
-					if (answer.deleteAll) {
-						return api.listWebhooks().then(hooks => {
-							console.log('Found ' + hooks.length + ' hooks registered\n');
-							return when.reduce(hooks, (ignore, hook) => {
-								console.log('deleting ' + hook.id);
-								return api.deleteWebhook(hook.id);
-							});
+		return Promise.resolve()
+			.then(() => {
+				if (hookId === 'all') {
+					// delete all hook using `particle webhook delete all`
+					const question = {
+						type: 'confirm',
+						name: 'deleteAll',
+						message: 'Do you want to delete ALL your webhooks?',
+						default: false
+					};
+					return prompt([question])
+						.then((answer) => {
+							if (answer.deleteAll) {
+								return api.listWebhooks()
+									.then(hooks => {
+										console.log('Found ' + hooks.length + ' hooks registered\n');
+										return asyncMapSeries(hooks, (hook) => {
+											console.log('deleting ' + hook.id);
+											return api.deleteWebhook(hook.id);
+										});
+									});
+							}
 						});
-					}
-				});
-			} else {
-				// delete a hook based on ID
-				return api.deleteWebhook(hookId);
-			}
-		}).catch(err => {
-			throw new VError(api.normalizedApiError(err), 'Error deleting webhook');
-		});
+				} else {
+					// delete a hook based on ID
+					return api.deleteWebhook(hookId);
+				}
+			})
+			.catch(err => {
+				throw new VError(api.normalizedApiError(err), 'Error deleting webhook');
+			});
 	}
 
 	listHooks() {
 		const api = new ApiClient();
+
 		api.ensureToken();
 
-		return api.listWebhooks().then(hooks => {
-			console.log('Found ' + hooks.length + ' hooks registered\n');
-			for (let i=0;i < hooks.length;i++) {
-				const hook = hooks[i];
-				const line = [
-					'    ', (i+1),
-					'.) Hook ID ' + hook.id + ' is watching for ',
-					'"'+hook.event+'"',
+		return api.listWebhooks()
+			.then(hooks => {
+				console.log('Found ' + hooks.length + ' hooks registered\n');
 
-					'\n       ', ' and sending to: ' + hook.url,
+				for (let i=0;i < hooks.length;i++) {
+					const hook = hooks[i];
+					const line = [
+						'    ', (i+1),
+						'.) Hook ID ' + hook.id + ' is watching for ',
+						'"'+hook.event+'"',
 
-					(hook.deviceID) ? '\n       ' + ' for device ' + hook.deviceID : '',
+						'\n       ', ' and sending to: ' + hook.url,
 
-					'\n       ', ' created at ' + hook.created_at,
-					'\n'
-				].join('');
+						(hook.deviceID) ? '\n       ' + ' for device ' + hook.deviceID : '',
 
-				console.log(line);
-			}
-		}).catch(err => {
-			throw new VError(api.normalizedApiError(err), 'Error listing webhooks');
-		});
+						'\n       ', ' created at ' + hook.created_at,
+						'\n'
+					].join('');
+
+					console.log(line);
+				}
+			})
+			.catch(err => {
+				throw new VError(api.normalizedApiError(err), 'Error listing webhooks');
+			});
 	}
-}
+};
 
-module.exports = WebhookCommand;

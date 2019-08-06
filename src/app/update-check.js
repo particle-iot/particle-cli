@@ -1,52 +1,57 @@
-const when = require('when');
 const chalk = require('chalk');
 const semver = require('semver');
 const latestVersion = require('latest-version');
-const pkg = require('../../package');
 const settings = require('../../settings');
+const pkg = require('../../package');
+const ui = require('./ui');
 
 
-function spin() {
-	return require('./ui').spin;
-}
+module.exports = async (skip, force) => {
+	const { displayVersionBanner } = module.exports.__internal__;
 
-function check(skip, force) {
-	return when.promise((resolve) => {
-		if (skip) {
-			return resolve();
-		}
+	if (skip) {
+		return;
+	}
 
-		const now = Date.now();
-		const lastCheck = settings.profile_json.last_version_check || 0;
-		if ((now - lastCheck >= settings.updateCheckInterval) || force) {
-			settings.profile_json.last_version_check = now;
-			checkVersion().then(() => {
-				settings.saveProfileData();
-				start();
-				resolve();
-			});
-			return;
-		}
+	const now = Date.now();
+	const lastCheck = settings.profile_json.last_version_check || 0;
 
-		resolve();
-	});
-}
+	if ((now - lastCheck >= settings.updateCheckInterval) || force){
+		settings.profile_json.last_version_check = now;
 
-function checkVersion() {
-	const checkPromise = when(latestVersion(pkg.name)).timeout(settings.updateCheckTimeout);
+		try {
+			const version = await getPublishedVersion(pkg, settings);
 
-	return spin()(checkPromise, 'Checking for updates...')
-		.then((version) => {
-			if (semver.gt(version, pkg.version)) {
+			if (semver.gt(version, pkg.version)){
 				settings.profile_json.newer_version = version;
 			} else {
 				delete settings.profile_json.newer_version;
 			}
-		})
-		.catch(() => {});
+
+			settings.saveProfileData();
+
+			if (settings.profile_json.newer_version){
+				displayVersionBanner(settings.profile_json.newer_version);
+			}
+		} catch (error){
+			return;
+		}
+		return;
+	}
+};
+
+async function getPublishedVersion(pkgJSON, settings){
+	const { latestVersion } = module.exports.__internal__;
+
+	try {
+		const promise = withTimeout(latestVersion(pkgJSON.name), settings.updateCheckTimeout);
+		return await ui.spin(promise, 'Checking for updates...');
+	} catch (error){
+		return pkgJSON.version;
+	}
 }
 
-function displayVersionBanner(version) {
+function displayVersionBanner(version){
 	console.error('particle-cli v' + pkg.version);
 	console.error();
 	console.error(chalk.yellow('!'), 'A newer version (' + chalk.cyan(version) + ') of', chalk.bold.white('particle-cli'), 'is available.');
@@ -54,11 +59,20 @@ function displayVersionBanner(version) {
 	console.error();
 }
 
-function start() {
-	const storedVersion = settings.profile_json.newer_version;
-	if (storedVersion && semver.gt(storedVersion, pkg.version)) {
-		displayVersionBanner(storedVersion);
-	}
+function withTimeout(promise, ms){
+	const timer = delay(ms).then(() => {
+		throw new Error('The operation timed out');
+	});
+	return Promise.race([promise, timer]);
 }
 
-module.exports = check;
+function delay(ms){
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+
+module.exports.__internal__ = {
+	latestVersion,
+	displayVersionBanner
+};
+

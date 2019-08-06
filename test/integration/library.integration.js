@@ -20,7 +20,7 @@
 
 const path = require('path');
 const settings = require('../../settings');
-const { expect, sinon } = require('../test-setup');
+const { expect, sinon } = require('../setup');
 const { itHasAccessToken, fetchAccessToken } = require('./access_token');
 const { LibraryAddCommand, LibraryAddCommandSite } = require('../../src/cmd');
 const commandProcessor = require('../../src/app/command-processor');

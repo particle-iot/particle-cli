@@ -1,29 +1,29 @@
-const VError = require('verror');
-const _ = require('lodash');
 const fs = require('fs');
-const prompt = require('inquirer').prompt;
+const _ = require('lodash');
 const path = require('path');
-const when = require('when');
-const whenNode = require('when/node');
-const inquirer = require('inquirer');
-const log = require('../lib/log');
 const chalk = require('chalk');
+const VError = require('verror');
+const inquirer = require('inquirer');
+const prompt = require('inquirer').prompt;
+const wifiScan = require('node-wifiscanner2').scan;
+const log = require('../lib/log');
+
 let SerialPort;
 try {
 	SerialPort = require('serialport');
-} catch (err) {
+} catch (err){
 	log.fatal(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
 }
-const wifiScan = require('node-wifiscanner2').scan;
+
 const specs = require('../lib/deviceSpecs');
-const ApiClient = require('../lib/ApiClient');
+const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
 const YModem = require('../lib/ymodem');
 
-const SerialBatchParser = require('../lib/SerialBatchParser');
-const SerialTrigger = require('../lib/SerialTrigger');
-const spinnerMixin = require('../lib/spinnerMixin');
+const SerialBatchParser = require('../lib/serial-batch-parser');
+const SerialTrigger = require('../lib/serial-trigger');
+const spinnerMixin = require('../lib/spinner-mixin');
 const ensureError = require('../lib/utilities').ensureError;
 
 // TODO: DRY this up somehow
@@ -39,101 +39,108 @@ function protip(){
 	console.log.apply(null, args);
 }
 
-
 // An LTE device may take up to 18 seconds to power up the modem
 const MODULE_INFO_COMMAND_TIMEOUT = 20000;
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
-class SerialCommand {
-	constructor() {
+const SERIAL_PORT_DEFAULTS = {
+	baudRate: 9600,
+	autoOpen: false
+};
+
+module.exports = class SerialCommand {
+	constructor(){
 		spinnerMixin(this);
 	}
 
-	findDevices() {
-		return SerialPort.list().then(ports => {
-			const devices = [];
+	findDevices(){
+		return SerialPort.list()
+			.then(ports => {
+				const devices = [];
 
-			ports.forEach((port) => {
-				// manufacturer value
-				// Mac - Spark devices
-				// Devices on old driver - Spark Core, Photon
-				// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
-				// Windows only contains the pnpId field
-
-				let device;
-				const serialDeviceSpec = _.find(specs, (deviceSpec) => {
-					if (!deviceSpec.serial) {
-						return false;
-					}
-					const vid = deviceSpec.serial.vid;
-					const pid = deviceSpec.serial.pid;
-					const serialNumber = deviceSpec.serial.serialNumber;
-
-					const usbMatches = (port.vendorId === vid.toLowerCase() && port.productId === pid.toLowerCase());
-					const pnpMatches = !!(port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
-					const serialNumberMatches = port.serialNumber && port.serialNumber.indexOf(serialNumber) >= 0;
-
-					return !!(usbMatches || pnpMatches || serialNumberMatches);
-
-				});
-				if (serialDeviceSpec) {
-					device = {
-						port: port.comName,
-						type: serialDeviceSpec.productName,
-						deviceId: serialDeviceSpec.serial.deviceId && serialDeviceSpec.serial.deviceId(port.serialNumber || port.pnpId),
-						specs: serialDeviceSpec
-					};
-				}
-
-				const matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
-				if (!device && matchesManufacturer) {
-					device = { port: port.comName, type: 'Core' };
-				}
-
-				if (device) {
-					devices.push(device);
-				}
-			});
-
-			//if I didn't find anything, grab any 'ttyACM's
-			if (devices.length === 0) {
 				ports.forEach((port) => {
-					//if it doesn't have a manufacturer or pnpId set, but it's a ttyACM port, then lets grab it.
-					if (port.comName.indexOf('/dev/ttyACM') === 0) {
-						devices.push({ port: port.comName, type: '' });
-					} else if (port.comName.indexOf('/dev/cuaU') === 0) {
-						devices.push({ port: port.comName, type: '' });
+					// manufacturer value
+					// Mac - Spark devices
+					// Devices on old driver - Spark Core, Photon
+					// Devices on new driver - Particle IO (https://github.com/spark/firmware/pull/447)
+					// Windows only contains the pnpId field
+
+					let device;
+					const serialDeviceSpec = _.find(specs, (deviceSpec) => {
+						if (!deviceSpec.serial){
+							return false;
+						}
+						const vid = deviceSpec.serial.vid;
+						const pid = deviceSpec.serial.pid;
+						const serialNumber = deviceSpec.serial.serialNumber;
+
+						const usbMatches = (port.vendorId === vid.toLowerCase() && port.productId === pid.toLowerCase());
+						const pnpMatches = !!(port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
+						const serialNumberMatches = port.serialNumber && port.serialNumber.indexOf(serialNumber) >= 0;
+
+						return !!(usbMatches || pnpMatches || serialNumberMatches);
+
+					});
+
+					if (serialDeviceSpec){
+						device = {
+							port: port.comName,
+							type: serialDeviceSpec.productName,
+							deviceId: serialDeviceSpec.serial.deviceId && serialDeviceSpec.serial.deviceId(port.serialNumber || port.pnpId),
+							specs: serialDeviceSpec
+						};
+					}
+
+					const matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
+
+					if (!device && matchesManufacturer){
+						device = { port: port.comName, type: 'Core' };
+					}
+
+					if (device){
+						devices.push(device);
 					}
 				});
-			}
 
-			return devices;
-		}).catch(err => {
-			throw new VError(ensureError(err), 'Error listing serial ports');
-		});
-	}
+				//if I didn't find anything, grab any 'ttyACM's
+				if (devices.length === 0){
+					ports.forEach((port) => {
+						//if it doesn't have a manufacturer or pnpId set, but it's a ttyACM port, then lets grab it.
+						if (port.comName.indexOf('/dev/ttyACM') === 0){
+							devices.push({ port: port.comName, type: '' });
+						} else if (port.comName.indexOf('/dev/cuaU') === 0){
+							devices.push({ port: port.comName, type: '' });
+						}
+					});
+				}
 
-	listDevices() {
-		return this.findDevices().then(devices => {
-			if (devices.length === 0) {
-				console.log(chalk.bold.white('No devices available via serial'));
-				return;
-			}
-
-			console.log('Found', chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device'), 'connected via serial:');
-			devices.forEach((device) => {
-				console.log(`${device.port} - ${device.type}`);
+				return devices;
+			})
+			.catch(err => {
+				throw new VError(ensureError(err), 'Error listing serial ports');
 			});
-		});
 	}
 
-	monitorPort({ port, follow }) {
+	listDevices(){
+		return this.findDevices()
+			.then(devices => {
+				if (devices.length === 0){
+					console.log(chalk.bold.white('No devices available via serial'));
+					return;
+				}
+
+				console.log('Found', chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device'), 'connected via serial:');
+				devices.forEach((device) => console.log(`${device.port} - ${device.type}`));
+			});
+	}
+
+	monitorPort({ port, follow }){
 		let cleaningUp = false;
 		let selectedDevice;
 		let serialPort;
 
 		const displayError = (err) => {
-			if (err) {
+			if (err){
 				console.error('Serial err: ' + err);
 				console.error('Serial problems, please reconnect the device.');
 			}
@@ -141,7 +148,7 @@ class SerialCommand {
 
 		// Called when port closes
 		const handleClose = () => {
-			if (follow && !cleaningUp) {
+			if (follow && !cleaningUp){
 				console.log(chalk.bold.white('Serial connection closed.  Attempting to reconnect...'));
 				reconnect();
 			} else {
@@ -151,12 +158,12 @@ class SerialCommand {
 
 		// Handle interrupts and close the port gracefully
 		const handleInterrupt = (silent) => {
-			if (!cleaningUp) {
-				if (!silent) {
+			if (!cleaningUp){
+				if (!silent){
 					console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
 				}
 				cleaningUp = true;
-				if (serialPort && serialPort.isOpen) {
+				if (serialPort && serialPort.isOpen){
 					serialPort.close();
 				}
 			}
@@ -168,8 +175,8 @@ class SerialCommand {
 		};
 
 		const handlePortFn = (device) => {
-			if (!device) {
-				if (follow) {
+			if (!device){
+				if (follow){
 					setTimeout(() => {
 						this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
 					}, 5);
@@ -184,20 +191,17 @@ class SerialCommand {
 			openPort();
 		};
 
-		function openPort() {
-			serialPort = new SerialPort(selectedDevice.port, {
-				baudRate: 9600,
-				autoOpen: false
-			});
+		function openPort(){
+			serialPort = new SerialPort(selectedDevice.port, SERIAL_PORT_DEFAULTS);
 			serialPort.on('close', handleClose);
 			serialPort.on('readable', () => {
 				process.stdout.write(serialPort.read().toString());
 			});
 			serialPort.on('error', displayError);
 			serialPort.open((err) => {
-				if (err && follow) {
+				if (err && follow){
 					reconnect(selectedDevice);
-				} else if (err) {
+				} else if (err){
 					displayError(err);
 				} else {
 					handleOpen();
@@ -205,7 +209,7 @@ class SerialCommand {
 			});
 		}
 
-		function reconnect() {
+		function reconnect(){
 			setTimeout(() => {
 				openPort(selectedDevice);
 			}, 5);
@@ -216,7 +220,7 @@ class SerialCommand {
 		process.on('SIGTERM', handleInterrupt);
 		process.on('exit', () => handleInterrupt(true));
 
-		if (follow) {
+		if (follow){
 			console.log('Polling for available serial device...');
 		}
 
@@ -227,120 +231,133 @@ class SerialCommand {
 	 * Check to see if the device is in listening mode, try to get the device ID via serial
 	 * @param {Number|String} comPort
 	 */
-	identifyDevice({ port }) {
+	identifyDevice({ port }){
 		let device;
-		return this.whatSerialPortDidYouMean(port, true).then(_device => {
-			device = _device;
-			if (!device) {
-				throw new VError('No serial port identified');
-			}
-
-			return this.askForDeviceID(device);
-		}).then(data => {
-			if (_.isObject(data)) {
-				console.log();
-				console.log('Your device id is', chalk.bold.cyan(data.id));
-				if (data.imei) {
-					console.log('Your IMEI is', chalk.bold.cyan(data.imei));
+		return this.whatSerialPortDidYouMean(port, true)
+			.then(_device => {
+				device = _device;
+				if (!device){
+					throw new VError('No serial port identified');
 				}
-				if (data.iccid) {
-					console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
-				}
-			} else {
-				console.log();
-				console.log('Your device id is', chalk.bold.cyan(data));
-			}
 
-			return this.askForSystemFirmwareVersion(device, 2000).then(version => {
-				console.log('Your system firmware version is', chalk.bold.cyan(version));
-			}).catch(() => {
-				console.log('Unable to determine system firmware version');
+				return this.askForDeviceID(device);
+			})
+			.then(data => {
+				if (_.isObject(data)){
+					console.log();
+					console.log('Your device id is', chalk.bold.cyan(data.id));
+					if (data.imei){
+						console.log('Your IMEI is', chalk.bold.cyan(data.imei));
+					}
+					if (data.iccid){
+						console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
+					}
+				} else {
+					console.log();
+					console.log('Your device id is', chalk.bold.cyan(data));
+				}
+
+				return this.askForSystemFirmwareVersion(device, 2000)
+					.then(version => {
+						console.log('Your system firmware version is', chalk.bold.cyan(version));
+					})
+					.catch(() => {
+						console.log('Unable to determine system firmware version');
+					});
+			})
+			.catch((err) => {
+				throw new VError(err, 'Could not identify device');
 			});
-		}).catch((err) => {
-			throw new VError(err, 'Could not identify device');
-		});
 	}
 
-	deviceMac({ port }) {
-		return this.whatSerialPortDidYouMean(port, true).then(device => {
-			if (!device) {
-				throw new VError('No serial port identified');
-			}
+	deviceMac({ port }){
+		return this.whatSerialPortDidYouMean(port, true)
+			.then(device => {
+				if (!device){
+					throw new VError('No serial port identified');
+				}
 
-			return this.getDeviceMacAddress(device);
-		}).then(data => {
-			console.log();
-			console.log('Your device MAC address is', chalk.bold.cyan(data));
-		}).catch((err) => {
-			throw new VError(ensureError(err), 'Could not get MAC address');
-		});
+				return this.getDeviceMacAddress(device);
+			})
+			.then(data => {
+				console.log();
+				console.log('Your device MAC address is', chalk.bold.cyan(data));
+			})
+			.catch((err) => {
+				throw new VError(ensureError(err), 'Could not get MAC address');
+			});
 	}
 
-	inspectDevice({ port }) {
-		return this.whatSerialPortDidYouMean(port, true).then(device => {
-			if (!device) {
-				throw new VError('No serial port identified');
-			}
+	inspectDevice({ port }){
+		return this.whatSerialPortDidYouMean(port, true)
+			.then(device => {
+				if (!device){
+					throw new VError('No serial port identified');
+				}
 
-			return this.getSystemInformation(device);
-		}).then((data) => {
-			const functionMap = {
-				s: 'System',
-				u: 'User',
-				b: 'Bootloader',
-				r: 'Reserved',
-				m: 'Monolithic',
-				c: 'NCP',
-				a: 'Radio stack'
-			};
-			const locationMap = {
-				m: 'main',
-				b: 'backup',
-				f: 'factory',
-				t: 'temp'
-			};
+				return this.getSystemInformation(device);
+			})
+			.then((data) => {
+				const functionMap = {
+					s: 'System',
+					u: 'User',
+					b: 'Bootloader',
+					r: 'Reserved',
+					m: 'Monolithic',
+					a: 'Radio stack',
+					c: 'NCP'
+				};
+				const locationMap = {
+					m: 'main',
+					b: 'backup',
+					f: 'factory',
+					t: 'temp'
+				};
 
-			const d = JSON.parse(data);
-			const parser = new DescribeParser();
-			const modules = parser.getModules(d);
+				const d = JSON.parse(data);
+				const parser = new DescribeParser();
+				const modules = parser.getModules(d);
 
-			if (d.p !== undefined) {
-				const platformName = settings.knownPlatforms[d.p];
-				console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
-			}
-			if (modules && modules.length > 0) {
-				console.log(chalk.underline('Modules'));
-				modules.forEach((m) => {
-					const func = functionMap[m.func];
-					if (!func) {
-						console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-						return;
-					}
+				if (d.p !== undefined){
+					const platformName = settings.knownPlatforms[d.p];
+					console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
+				}
 
-					console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+				if (modules && modules.length > 0){
+					console.log(chalk.underline('Modules'));
+					modules.forEach((m) => {
+						const func = functionMap[m.func];
+						if (!func){
+							console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+							return;
+						}
 
-					if (m.isUserModule() && m.uuid) {
-						console.log('    UUID:', m.uuid);
-					}
+						console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
 
-					console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
-					console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
-					console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-					console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-					if (m.dependencies.length > 0) {
-						m.dependencies.forEach((dep) => {
-							const df = functionMap[dep.func];
-							console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
-						});
-					}
-				});
-			}
-		}).catch((err) => {
-			throw new VError(ensureError(err), 'Could not get inspect device');
-		});
+						if (m.isUserModule() && m.uuid){
+							console.log('    UUID:', m.uuid);
+						}
+
+						console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
+						console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
+						console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+						console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+
+						if (m.dependencies.length > 0){
+							m.dependencies.forEach((dep) => {
+								const df = functionMap[dep.func];
+								console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
+							});
+						}
+					});
+				}
+			})
+			.catch((err) => {
+				throw new VError(ensureError(err), 'Could not get inspect device');
+			});
 	}
 
-	_promptForListeningMode() {
+	_promptForListeningMode(){
 		console.log(
 			chalk.cyan('!'),
 			'PROTIP:',
@@ -359,170 +376,187 @@ class SerialCommand {
 		]);
 	}
 
-	flashDevice(binary, { port, yes }) {
+	flashDevice(binary, { port, yes }){
 		let device;
 
-		return Promise.resolve().then(() => {
-			if (!yes) {
-				return this._promptForListeningMode();
-			}
-		}).then(() => {
-			return this.whatSerialPortDidYouMean(port, true);
-		}).then(_device => {
-			device = _device;
-			if (!device) {
-				throw new VError('No serial port identified');
-			}
-			if (device.type === 'Core') {
-				throw new VError('Serial flashing is not supported on the Core');
-			}
-
-			//only match against knownApp if file is not found
-			let stats;
-			try {
-				stats = fs.statSync(binary);
-			} catch (ex) {
-				// file does not exist
-				const specsByProduct = _.keyBy(specs, 'productName');
-				const productSpecs = specsByProduct[device.type];
-				binary = productSpecs && productSpecs.knownApps[binary];
-				if (binary === undefined) {
-					throw new VError('File does not exist and no known app found');
-				} else {
-					return;
+		return Promise.resolve()
+			.then(() => {
+				if (!yes){
+					return this._promptForListeningMode();
 				}
-			}
+			})
+			.then(() => this.whatSerialPortDidYouMean(port, true))
+			.then(_device => {
+				device = _device;
+				if (!device){
+					throw new VError('No serial port identified');
+				}
+				if (device.type === 'Core'){
+					throw new VError('Serial flashing is not supported on the Core');
+				}
 
-			if (!stats.isFile()) {
-				throw new VError('You cannot flash a directory over USB');
-			}
-		}).then(() => {
-			const serialPort = new SerialPort(device.port, {
-				baudRate: 28800,
-				autoOpen: false
+				//only match against knownApp if file is not found
+				let stats;
+				try {
+					stats = fs.statSync(binary);
+				} catch (ex){
+					// file does not exist
+					const specsByProduct = _.keyBy(specs, 'productName');
+					const productSpecs = specsByProduct[device.type];
+					binary = productSpecs && productSpecs.knownApps[binary];
+					if (binary === undefined){
+						throw new VError('File does not exist and no known app found');
+					} else {
+						return;
+					}
+				}
+
+				if (!stats.isFile()){
+					throw new VError('You cannot flash a directory over USB');
+				}
+			})
+			.then(() => {
+				const serialPort = new SerialPort(device.port, {
+					baudRate: 28800,
+					autoOpen: false
+				});
+
+				const closePort = () => {
+					if (serialPort.isOpen){
+						serialPort.close();
+					}
+					process.exit(0);
+				};
+				process.on('SIGINT', closePort);
+				process.on('SIGTERM', closePort);
+
+				const ymodem = new YModem(serialPort, { debug: true });
+				return ymodem.send(binary);
+			})
+			.then(() => {
+				console.log('\nFlash success!');
+			})
+			.catch(err => {
+				throw new VError(ensureError(err), 'Error writing firmware');
 			});
-
-			const closePort = () => {
-				if (serialPort.isOpen) {
-					serialPort.close();
-				}
-				process.exit(0);
-			};
-			process.on('SIGINT', closePort);
-			process.on('SIGTERM', closePort);
-
-			const ymodem = new YModem(serialPort, { debug: true });
-			return ymodem.send(binary);
-		}).then(() => {
-			console.log('\nFlash success!');
-		}).catch(err =>	{
-			throw new VError(ensureError(err), 'Error writing firmware');
-		});
 	}
 
-	_scanNetworks() {
+	_scanNetworks(){
 		return new Promise((resolve, reject) => {
 			this.newSpin('Scanning for nearby Wi-Fi networks...').start();
 
 			wifiScan((err, networkList) => {
 				this.stopSpin();
 
-				if (err) {
+				if (err){
 					reject(new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?'));
 				}
 				resolve(networkList);
 			});
-		}).then(networkList => {
-			// todo - if the prompt is auto answering, then only auto answer once, to prevent
-			// never ending loops
-			if (networkList.length === 0) {
-				return prompt([{
-					type: 'confirm',
-					name: 'rescan',
-					message: 'Uh oh, no networks found. Try again?',
-					default: true
-				}]).then((answers) => {
-					if (answers.rescan) {
-						return this._scanNetworks();
+		})
+			.then(networkList => {
+				// todo - if the prompt is auto answering, then only auto answer once, to prevent
+				// never ending loops
+				if (networkList.length === 0){
+					return prompt([{
+						type: 'confirm',
+						name: 'rescan',
+						message: 'Uh oh, no networks found. Try again?',
+						default: true
+					}]).then((answers) => {
+						if (answers.rescan){
+							return this._scanNetworks();
+						}
+						return [];
+					});
+				}
+
+				networkList = networkList.filter((ap) => {
+					if (!ap){
+						return false;
 					}
-					return [];
+
+					// channel # > 14 === 5GHz
+					if (ap.channel && parseInt(ap.channel, 10) > 14){
+						return false;
+					}
+					return true;
 				});
-			}
 
-			networkList = networkList.filter((ap) => {
-				if (!ap) {
-					return false;
-				}
+				networkList.sort((a, b) => {
+					return a.ssid.toLowerCase().localeCompare(b.ssid.toLowerCase());
+				});
 
-				// channel # > 14 === 5GHz
-				if (ap.channel && parseInt(ap.channel, 10) > 14) {
-					return false;
-				}
-				return true;
+				return networkList;
 			});
-
-			networkList.sort((a, b) => {
-				return a.ssid.toLowerCase().localeCompare(b.ssid.toLowerCase());
-			});
-
-			return networkList;
-		});
 	}
 
-	configureWifi({ port, file }) {
+	configureWifi({ port, file }){
 		const credentialsFile = file;
 
-		return this.whatSerialPortDidYouMean(port, true).then(device => {
-			if (!device) {
-				throw new VError('No serial port identified');
-			}
+		return this.whatSerialPortDidYouMean(port, true)
+			.then(device => {
+				if (!device){
+					throw new VError('No serial port identified');
+				}
 
-			if (credentialsFile) {
-				return this._configWifiFromFile(device, credentialsFile);
-			} else {
-				return this.promptWifiScan(device);
-			}
-		}).catch(err =>	{
-			throw new VError(ensureError(err), 'Error configuring Wi-Fi');
-		});
+				if (credentialsFile){
+					return this._configWifiFromFile(device, credentialsFile);
+				} else {
+					return this.promptWifiScan(device);
+				}
+			})
+			.catch(err => {
+				throw new VError(ensureError(err), 'Error configuring Wi-Fi');
+			});
 	}
 
-	_configWifiFromFile(device, filename) {
-		return whenNode.lift(fs.readFile)(filename, 'utf-8').then(content => {
-			const opts = JSON.parse(content);
-			return this.serialWifiConfig(device, opts);
-		});
+	_configWifiFromFile(device, filename){
+		// TODO (mirande): use util.promisify once node@6 is no longer supported
+		return new Promise((resolve, reject) => {
+			fs.readFile(filename, 'utf8', (error, data) => {
+				if (error){
+					return reject(error);
+				}
+				return resolve(data);
+			});
+		})
+			.then(content => {
+				const opts = JSON.parse(content);
+				return this.serialWifiConfig(device, opts);
+			});
 	}
 
-	promptWifiScan(device) {
-		return prompt([
-			{
-				type: 'confirm',
-				name: 'scan',
-				message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
-				default: true
-			}
-		]).then((ans) => {
-			if (ans.scan) {
-				return this._scanNetworks().then(networks => {
-					return this._getWifiInformation(device, networks);
-				});
-			} else {
-				return this._getWifiInformation(device);
-			}
-		});
+	promptWifiScan(device){
+		const question = {
+			type: 'confirm',
+			name: 'scan',
+			message: chalk.bold.white('Should I scan for nearby Wi-Fi networks?'),
+			default: true
+		};
+
+		return prompt([question])
+			.then((ans) => {
+				if (ans.scan){
+					return this._scanNetworks().then(networks => {
+						return this._getWifiInformation(device, networks);
+					});
+				} else {
+					return this._getWifiInformation(device);
+				}
+			});
 	}
 
-	_removePhotonNetworks(ssids) {
+	_removePhotonNetworks(ssids){
 		return ssids.filter((ap) => {
-			if (ap.indexOf('Photon-') === 0) {
+			if (ap.indexOf('Photon-') === 0){
 				return false;
 			}
 			return true;
 		});
 	}
 
-	_getWifiInformation(device, networks) {
+	_getWifiInformation(device, networks){
 		const rescanLabel = '[rescan networks]';
 
 		networks = networks || [];
@@ -531,7 +565,7 @@ class SerialCommand {
 		let ssids = _.map(networks, 'ssid');
 		ssids = this._removePhotonNetworks(ssids);
 
-		return prompt([
+		const questions = [
 			{
 				type: 'list',
 				name: 'ap',
@@ -557,34 +591,40 @@ class SerialCommand {
 				},
 				default: true
 			}
-		]).then(answers => {
-			if (answers.ap === rescanLabel) {
-				return this._scanNetworks().then(networks => {
-					return this._getWifiInformation(device, networks);
-				});
-			}
+		];
 
-			const network = answers.ap;
-			const ap = networkMap[network];
-			const security = answers.detectSecurity && ap && ap.security;
-			if (security) {
-				console.log(arrow, 'Detected', security, 'security');
-			}
+		return prompt(questions)
+			.then(answers => {
+				if (answers.ap === rescanLabel){
+					return this._scanNetworks().then(networks => {
+						return this._getWifiInformation(device, networks);
+					});
+				}
 
-			return this.serialWifiConfig(device, { network, security });
-		});
+				const network = answers.ap;
+				const ap = networkMap[network];
+				const security = answers.detectSecurity && ap && ap.security;
+
+				if (security){
+					console.log(arrow, 'Detected', security, 'security');
+				}
+
+				return this.serialWifiConfig(device, { network, security });
+			});
 	}
 
-	supportsClaimCode(device) {
-		return this._issueSerialCommand(device, 'c', 500).then((data) => {
-			const matches = data.match(/Device claimed: (\w+)/);
-			return !!matches;
-		}).catch((err) => {
-			if (err !== timeoutError) {
-				throw err;
-			}
-			return false;
-		});
+	supportsClaimCode(device){
+		return this._issueSerialCommand(device, 'c', 500)
+			.then((data) => {
+				const matches = data.match(/Device claimed: (\w+)/);
+				return !!matches;
+			})
+			.catch((err) => {
+				if (err !== timeoutError){
+					throw err;
+				}
+				return false;
+			});
 	}
 
 	/**
@@ -595,21 +635,23 @@ class SerialCommand {
 	 * - configuring
 	 * @param device
 	 */
-	setup(device) {
+	setup(device){
 		const self = this;
 		let _deviceID = '';
 		const api = new ApiClient();
 
-		function afterClaim(err, dat) {
+		function afterClaim(err, dat){
 			self.stopSpin();
-			if (err) {
+
+			if (err){
 				// TODO: Graceful recovery here
 				// How about retrying the claim code again
 				// console.log(arrow, arrow, err);
-				if (err.code === 'ENOTFOUND') {
+				if (err.code === 'ENOTFOUND'){
 					protip("Your computer couldn't find the cloud...");
 				}
-				if (!err.code && err.message) {
+
+				if (!err.code && err.message){
 					protip(err.message);
 				} else {
 					protip('There was a network error while connecting to the cloud...');
@@ -621,39 +663,45 @@ class SerialCommand {
 
 			console.log(arrow, 'Obtained magical secure claim code.');
 			console.log();
-			return self.sendClaimCode(device, dat.claim_code).then(() => {
-				console.log('Claim code set. Now setting up Wi-Fi');
-				// todo - add additional commands over USB to have the device scan for Wi-Fi
-				return self.promptWifiScan(device);
-			}).then(revived);
+
+			return self.sendClaimCode(device, dat.claim_code)
+				.then(() => {
+					console.log('Claim code set. Now setting up Wi-Fi');
+					// todo - add additional commands over USB to have the device scan for Wi-Fi
+					return self.promptWifiScan(device);
+				})
+				.then(revived);
 		}
 
-		function getClaim() {
+		function getClaim(){
 			self.newSpin('Obtaining magical secure claim code from the cloud...').start();
-			api.getClaimCode().then((response) => {
-				afterClaim(null, response);
-			}, (error) => {
-				afterClaim(error);
-			});
+			api.getClaimCode()
+				.then((response) => {
+					afterClaim(null, response);
+				}, (error) => {
+					afterClaim(error);
+				});
 		}
 
-		function revived() {
+		function revived(){
 			self.stopSpin();
 			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
 
 			setTimeout(() => {
-				api.listDevices({ silent: true }).then((body) => {
-					checkDevices(null, body);
-				}, (error) => {
-					checkDevices(error);
-				});
+				api.listDevices({ silent: true })
+					.then((body) => {
+						checkDevices(null, body);
+					}, (error) => {
+						checkDevices(error);
+					});
 			}, 6000);
 		}
 
-		function checkDevices(err, dat) {
+		function checkDevices(err, dat){
 			self.stopSpin();
-			if (err) {
-				if (err.code === 'ENOTFOUND') {
+
+			if (err){
+				if (err.code === 'ENOTFOUND'){
 					// todo - limit the number of retries here.
 					console.log(alert, 'Network not ready yet, retrying...');
 					console.log();
@@ -670,7 +718,7 @@ class SerialCommand {
 				return (device.id.toUpperCase() === _deviceID.toUpperCase()) && device.connected === true;
 			});
 
-			if (onlinePhoton) {
+			if (onlinePhoton){
 				console.log(arrow, 'It looks like your Photon has made it happily to the cloud!');
 				console.log();
 				namePhoton(onlinePhoton.id);
@@ -679,8 +727,8 @@ class SerialCommand {
 
 			console.log(alert, "It doesn't look like your Photon has made it to the cloud yet.");
 			console.log();
-			prompt([{
 
+			const question = {
 				type: 'list',
 				name: 'recheck',
 				message: 'What would you like to do?',
@@ -688,16 +736,18 @@ class SerialCommand {
 					{ name: 'Check again to see if the Photon has connected', value: 'recheck' },
 					{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' }
 				]
+			};
 
-			}]).then(recheck);
+			prompt([question]).then(recheck);
 
-			function recheck(ans) {
-				if (ans.recheck === 'recheck') {
-					api.listDevices({ silent: true }).then((body) => {
-						checkDevices(null, body);
-					}, (error) => {
-						checkDevices(error);
-					});
+			function recheck(ans){
+				if (ans.recheck === 'recheck'){
+					api.listDevices({ silent: true })
+						.then((body) => {
+							checkDevices(null, body);
+						}, (error) => {
+							checkDevices(error);
+						});
 				} else {
 					self._promptForListeningMode();
 					self.setup(device);
@@ -705,65 +755,71 @@ class SerialCommand {
 			}
 		}
 
-		function namePhoton(deviceId) {
-			prompt([
-				{
-					type: 'input',
-					name: 'deviceName',
-					message: 'What would you like to call your Photon (Enter to skip)?'
-				}
-			]).then((ans) => {
-				// todo - retrieve existing name of the device?
-				const deviceName = ans.deviceName;
-				if (deviceName) {
-					api.renameDevice(deviceId, deviceName).then(() => {
-						console.log();
-						console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
-						console.log(arrow, "Congratulations! You've just won the internet!");
-						console.log();
+		function namePhoton(deviceId){
+			const question = {
+				type: 'input',
+				name: 'deviceName',
+				message: 'What would you like to call your Photon (Enter to skip)?'
+			};
+
+			prompt([question])
+				.then((ans) => {
+					// todo - retrieve existing name of the device?
+					const deviceName = ans.deviceName;
+					if (deviceName){
+						api.renameDevice(deviceId, deviceName)
+							.then(() => {
+								console.log();
+								console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
+								console.log(arrow, "Congratulations! You've just won the internet!");
+								console.log();
+								self.exit();
+							}, (err) => {
+								console.error(alert, 'Error naming your Photon: ', err);
+								namePhoton(deviceId);
+							});
+					} else {
+						console.log('Skipping device naming.');
 						self.exit();
-					}, (err) => {
-						console.error(alert, 'Error naming your Photon: ', err);
-						namePhoton(deviceId);
-					});
-				} else {
-					console.log('Skipping device naming.');
-					self.exit();
-				}
-			});
+					}
+				});
 		}
 
-		return this.askForDeviceID(device).then((deviceID) => {
-			_deviceID = deviceID;
-			console.log('setting up device', deviceID);
-			return getClaim();
-		}).catch((err) => {
-			this.stopSpin();
-			throw new VError(ensureError(err), 'Error during setup');
-		});
+		return this.askForDeviceID(device)
+			.then((deviceID) => {
+				_deviceID = deviceID;
+				console.log('setting up device', deviceID);
+				return getClaim();
+			})
+			.catch((err) => {
+				this.stopSpin();
+				throw new VError(ensureError(err), 'Error during setup');
+			});
 	}
 
-	claimDevice({ port, claimCode }) {
-		return this.whatSerialPortDidYouMean(port, true).then(device => {
-			if (!device) {
-				throw new VError('No serial port identified');
-			}
-			return this.sendClaimCode(device, claimCode);
-		}).then(() => {
-			console.log('Claim code set.');
-		});
+	claimDevice({ port, claimCode }){
+		return this.whatSerialPortDidYouMean(port, true)
+			.then(device => {
+				if (!device){
+					throw new VError('No serial port identified');
+				}
+				return this.sendClaimCode(device, claimCode);
+			})
+			.then(() => {
+				console.log('Claim code set.');
+			});
 	}
 
-	sendClaimCode(device, claimCode) {
+	sendClaimCode(device, claimCode){
 		const expectedPrompt = 'Enter 63-digit claim code: ';
 		const confirmation = 'Claim code set to: ' + claimCode;
 		return this.doSerialInteraction(device, 'C', [
-			[expectedPrompt, 2000, (promise, next) => {
+			[expectedPrompt, 2000, (deferred, next) => {
 				next(claimCode + '\n');
 			}],
-			[confirmation, 2000, (promise, next) => {
+			[confirmation, 2000, (deferred, next) => {
 				next();
-				promise.resolve();
+				deferred.resolve();
 			}]
 		]);
 	}
@@ -783,431 +839,453 @@ class SerialCommand {
 	 *              Response can be undefined
 	 * @returns {Promise}
 	 */
-	doSerialInteraction(device, command, interactions) {
-		if (!device) {
+	doSerialInteraction(device, command, interactions){
+		if (!device){
 			throw new VError('No serial port identified');
 		}
 
-		if (!interactions.length) {
+		if (!interactions.length){
 			return;
 		}
 
-		const serialPort = this.serialPort || new SerialPort(device.port, {
-			baudRate: 9600,
-			autoOpen: false
-		});
-		const parser = new SerialBatchParser({ timeout: 250 });
-		serialPort.pipe(parser);
+		const self = this;
+		let cleanUpFn;
+		const promise = new Promise((resolve, reject) => {
+			const serialPort = this.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
+			const parser = new SerialBatchParser({ timeout: 250 });
 
-		const done = when.defer();
-		serialPort.on('error', (err) => {
-			done.reject(err);
-		});
-		const serialClosedEarly = () => {
-			done.reject('Serial port closed early');
-		};
-		serialPort.on('close', serialClosedEarly);
-
-		const startTimeout = (to) => {
-			this._serialTimeout = setTimeout(() => {
-				done.reject('Serial timed out');
-			}, to);
-		};
-
-		const resetTimeout = () => {
-			clearTimeout(this._serialTimeout);
-			this._serialTimeout = null;
-		};
-
-		const st = new SerialTrigger(serialPort, parser);
-
-		const addTrigger = (expectedPrompt, timeout, callback) => {
-			st.addTrigger(expectedPrompt, (cb) => {
+			cleanUpFn = () => {
 				resetTimeout();
-
-				callback(done, (response) => {
-					cb(response, timeout ? startTimeout.bind(this, timeout) : undefined);
-				});
-			});
-		};
-
-		let expectedPrompt = interactions[0][0];
-		let callback = interactions[0][2];
-		for (let i = 1; i < interactions.length; i++) {
-			const timeout = interactions[i][1];
-			addTrigger(expectedPrompt, timeout, callback);
-			expectedPrompt = interactions[i][0];
-			callback = interactions[i][2];
-		}
-		// the last interaction completes without a timeout
-		addTrigger(expectedPrompt, undefined, callback);
-
-		serialPort.open((err) => {
-			if (err) {
-				return done.reject(err);
-			}
-
-			st.start();
-			const next = () => {
-				startTimeout(interactions[0][1]);
+				serialPort.removeListener('close', serialClosedEarly);
+				return new Promise((resolve) => serialPort.close(resolve));
 			};
-			if (command) {
-				serialPort.write(command);
-				serialPort.drain(next);
-			} else {
-				next();
+			serialPort.pipe(parser);
+			serialPort.on('error', (err) => reject(err));
+			serialPort.on('close', serialClosedEarly);
+
+			const serialTrigger = new SerialTrigger(serialPort, parser);
+			let expectedPrompt = interactions[0][0];
+			let callback = interactions[0][2];
+
+			for (let i = 1; i < interactions.length; i++){
+				const timeout = interactions[i][1];
+				addTrigger(expectedPrompt, timeout, callback);
+				expectedPrompt = interactions[i][0];
+				callback = interactions[i][2];
+			}
+
+			// the last interaction completes without a timeout
+			addTrigger(expectedPrompt, undefined, callback);
+
+			serialPort.open((err) => {
+				if (err){
+					return reject(err);
+				}
+
+				serialTrigger.start();
+
+				if (command){
+					serialPort.write(command);
+					serialPort.drain(next);
+				} else {
+					next();
+				}
+
+				function next(){
+					startTimeout(interactions[0][1]);
+				}
+			});
+
+			function serialClosedEarly(){
+				reject('Serial port closed early');
+			}
+
+			function startTimeout(to){
+				self._serialTimeout = setTimeout(() => reject('Serial timed out'), to);
+			}
+
+			function resetTimeout(){
+				clearTimeout(self._serialTimeout);
+				self._serialTimeout = null;
+			}
+
+			function addTrigger(expectedPrompt, timeout, callback){
+				serialTrigger.addTrigger(expectedPrompt, (cb) => {
+					resetTimeout();
+
+					callback({ resolve, reject }, (response) => {
+						cb(response, timeout ? startTimeout.bind(self, timeout) : undefined);
+					});
+				});
 			}
 		});
 
-		when(done.promise).finally(() => {
-			resetTimeout();
-			serialPort.removeListener('close', serialClosedEarly);
-			return when.promise((resolve) => {
-				serialPort.close(resolve);
-			});
-		});
-
-		return done.promise;
+		return promise.finally(cleanUpFn);
 	}
 
 	/* eslint-disable max-statements */
-	serialWifiConfig(device, opts = {}) {
-		if (!device) {
-			return when.reject('No serial port available');
+	serialWifiConfig(device, opts = {}){
+		if (!device){
+			return Promise.reject('No serial port available');
 		}
-
-		let isEnterprise = false;
 
 		log.verbose('Attempting to configure Wi-Fi on ' + device.port);
 
-		const serialPort = this.serialPort || new SerialPort(device.port, {
-			baudRate: 9600,
-			autoOpen: false
-		});
-		const parser = new SerialBatchParser({ timeout: 250 });
-		serialPort.pipe(parser);
+		let isEnterprise = false;
+		const self = this;
+		let cleanUpFn;
+		const promise = new Promise((resolve, reject) => {
+			const serialPort = self.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
+			const parser = new SerialBatchParser({ timeout: 250 });
 
-		const wifiDone = when.defer();
-		serialPort.on('error', (err) => {
-			wifiDone.reject(err);
-		});
+			cleanUpFn = () => {
+				resetTimeout();
+				serialPort.removeListener('close', serialClosedEarly);
+				return new Promise((resolve) => {
+					serialPort.close(resolve);
+				});
+			};
+			serialPort.pipe(parser);
+			serialPort.on('error', (err) => reject(err));
+			serialPort.on('close', serialClosedEarly);
 
-		const serialClosedEarly = () => {
-			wifiDone.reject('Serial port closed early');
-		};
+			const serialTrigger = new SerialTrigger(serialPort, parser);
 
-		serialPort.on('close', serialClosedEarly);
+			serialTrigger.addTrigger('SSID:', (cb) => {
+				resetTimeout();
 
-		const startTimeout = (to) => {
-			this._serialTimeout = setTimeout(() => {
-				wifiDone.reject('Serial timed out');
-			}, to);
-		};
-
-		const resetTimeout = () => {
-			clearTimeout(this._serialTimeout);
-			this._serialTimeout = null;
-		};
-
-		const st = new SerialTrigger(serialPort, parser);
-
-		st.addTrigger('SSID:', (cb) => {
-			resetTimeout();
-			if (opts.network) {
-				return cb(opts.network + '\n');
-			}
-
-			prompt([{
-				type: 'input',
-				name: 'ssid',
-				message: 'SSID',
-				validate: (input) => {
-					if (!input || !input.trim()) {
-						return 'Please enter a valid SSID';
-					} else {
-						return true;
-					}
-				},
-				filter: (input) => {
-					return input.trim();
-				}
-			}]).then((ans) => {
-				cb(ans.ssid + '\n', startTimeout.bind(this, 5000));
-			});
-		});
-
-		const parsesecurity = (ent, cb) => {
-			resetTimeout();
-			if (opts.security) {
-				let security = 3;
-				if (opts.security.indexOf('WPA2') >= 0 && opts.security.indexOf('802.1x') >= 0) {
-					security = 5;
-					isEnterprise = true;
-				} else if (opts.security.indexOf('WPA') >= 0 && opts.security.indexOf('802.1x') >= 0) {
-					security = 4;
-					isEnterprise = true;
-				} else if (opts.security.indexOf('WPA2') >= 0) {
-					security = 3;
-				} else if (opts.security.indexOf('WPA') >= 0) {
-					security = 2;
-				} else if (opts.security.indexOf('WEP') >= 0) {
-					security = 1;
-				} else if (opts.security.indexOf('NONE') >= 0) {
-					security = 0;
+				if (opts.network){
+					return cb(opts.network + '\n');
 				}
 
-				return cb(security + '\n', startTimeout.bind(this, 10000));
-			}
-
-			const choices = [
-				{ name: 'WPA2', value: 3 },
-				{ name: 'WPA', value: 2 },
-				{ name: 'WEP', value: 1 },
-				{ name: 'Unsecured', value: 0 }
-			];
-
-			if (ent) {
-				choices.push({ name: 'WPA Enterprise', value: 4 });
-				choices.push({ name: 'WPA2 Enterprise', value: 5 });
-			}
-
-			prompt([{
-				type: 'list',
-				name: 'security',
-				message: 'Security Type',
-				choices: choices
-			}]).then((ans) => {
-				if (ans.security > 3) {
-					isEnterprise = true;
-				}
-				cb(ans.security + '\n', startTimeout.bind(this, 10000));
-			});
-		};
-
-		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', parsesecurity.bind(null, false));
-		st.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2, 4=WPA Enterprise, 5=WPA2 Enterprise:', parsesecurity.bind(null, true));
-
-		st.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', (cb) => {
-			resetTimeout();
-			if (opts.security !== undefined) {
-				let cipherType = 1;
-				if (opts.security.indexOf('AES') >= 0 && opts.security.indexOf('TKIP') >= 0) {
-					cipherType = 3;
-				} else if (opts.security.indexOf('TKIP') >= 0) {
-					cipherType = 2;
-				} else if (opts.security.indexOf('AES') >= 0) {
-					cipherType = 1;
-				}
-
-				return cb(cipherType + '\n', startTimeout.bind(this, 5000));
-			}
-
-			prompt([{
-				type: 'list',
-				name: 'cipher',
-				message: 'Cipher Type',
-				choices: [
-					{ name: 'AES+TKIP', value: 3 },
-					{ name: 'TKIP', value: 2 },
-					{ name: 'AES', value: 1 }
-				]
-			}]).then((ans) => {
-				cb(ans.cipher + '\n', startTimeout.bind(this, 5000));
-			});
-		});
-
-		st.addTrigger('EAP Type 0=PEAP/MSCHAPv2, 1=EAP-TLS:', (cb) => {
-			resetTimeout();
-
-			isEnterprise = true;
-
-			if (opts.eap !== undefined) {
-				let eapType = 0;
-				if (opts.eap.toLowerCase().indexOf('peap') >= 0) {
-					eapType = 0;
-				} else if (opts.eap.toLowerCase().indexOf('tls')) {
-					eapType = 1;
-				}
-				return cb(eapType + '\n', startTimeout.bind(this, 5000));
-			}
-
-			prompt([{
-				type: 'list',
-				name: 'eap',
-				message: 'EAP Type',
-				choices: [
-					{ name: 'PEAP/MSCHAPv2', value: 0 },
-					{ name: 'EAP-TLS', value: 1 }
-				]
-			}]).then((ans) => {
-				cb(ans.eap + '\n', startTimeout.bind(this, 5000));
-			});
-		});
-
-		st.addTrigger('Username:', (cb) => {
-			resetTimeout();
-
-			if (opts.username) {
-				cb(opts.username + '\n', startTimeout.bind(this, 15000));
-			} else {
-				prompt([{
+				const question = {
 					type: 'input',
-					name: 'username',
-					message: 'Username',
-					validate: (val) => {
-						return !!val;
-					}
-				}]).then((ans) => {
-					cb(ans.username + '\n', startTimeout.bind(this, 15000));
-				});
-			}
-		});
-
-		st.addTrigger('Outer identity (optional):', (cb) => {
-			resetTimeout();
-
-			if (opts.outer_identity) {
-				cb(opts.outer_identity.trim + '\n', startTimeout.bind(this, 15000));
-			} else {
-				prompt([{
-					type: 'input',
-					name: 'outer_identity',
-					message: 'Outer identity (optional)'
-				}]).then((ans) => {
-					cb(ans.outer_identity + '\n', startTimeout.bind(this, 15000));
-				});
-			}
-		});
-
-		st.addTrigger('Client certificate in PEM format:', (cb) => {
-			resetTimeout();
-
-			if (opts.client_certificate) {
-				cb(opts.client_certificate.trim() + '\n\n', startTimeout.bind(this, 15000));
-			} else {
-				prompt([{
-					type: 'editor',
-					name: 'client_certificate',
-					message: 'Client certificate in PEM format',
-					validate: (val) => {
-						return !!val;
-					}
-				}]).then((ans) => {
-					cb(ans.client_certificate.trim() + '\n\n', startTimeout.bind(this, 15000));
-				});
-			}
-		});
-
-		st.addTrigger('Private key in PEM format:', (cb) => {
-			resetTimeout();
-
-			if (opts.private_key) {
-				cb(opts.private_key.trim() + '\n\n', startTimeout.bind(this, 15000));
-			} else {
-				prompt([{
-					type: 'editor',
-					name: 'private_key',
-					message: 'Private key in PEM format',
-					validate: (val) => {
-						return !!val;
-					}
-				}]).then((ans) => {
-					cb(ans.private_key.trim() + '\n\n', startTimeout.bind(this, 15000));
-				});
-			}
-		});
-
-		st.addTrigger('Root CA in PEM format (optional):', (cb) => {
-			resetTimeout();
-
-			if (opts.root_ca) {
-				cb(opts.root_ca.trim() + '\n\n', startTimeout.bind(this, 15000));
-			} else {
-				prompt([
-					{
-						type: 'confirm',
-						name: 'provide_root_ca',
-						message: 'Would you like to provide CA certificate?',
-						default: true
+					name: 'ssid',
+					message: 'SSID',
+					validate: (input) => {
+						if (!input || !input.trim()){
+							return 'Please enter a valid SSID';
+						} else {
+							return true;
+						}
 					},
-					{
-						type: 'editor',
-						name: 'root_ca',
-						message: 'CA certificate in PEM format',
-						when: (answers) => {
-							return answers.provide_root_ca;
-						},
+					filter: (input) => {
+						return input.trim();
+					}
+				};
+
+				prompt([question])
+					.then((ans) => {
+						cb(ans.ssid + '\n', startTimeout.bind(self, 5000));
+					});
+			});
+
+			serialTrigger.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2:', parsesecurity.bind(null, false));
+			serialTrigger.addTrigger('Security 0=unsecured, 1=WEP, 2=WPA, 3=WPA2, 4=WPA Enterprise, 5=WPA2 Enterprise:', parsesecurity.bind(null, true));
+
+			serialTrigger.addTrigger('Security Cipher 1=AES, 2=TKIP, 3=AES+TKIP:', (cb) => {
+				resetTimeout();
+				if (opts.security !== undefined){
+					let cipherType = 1;
+					if (opts.security.indexOf('AES') >= 0 && opts.security.indexOf('TKIP') >= 0){
+						cipherType = 3;
+					} else if (opts.security.indexOf('TKIP') >= 0){
+						cipherType = 2;
+					} else if (opts.security.indexOf('AES') >= 0){
+						cipherType = 1;
+					}
+
+					return cb(cipherType + '\n', startTimeout.bind(self, 5000));
+				}
+
+				const question = {
+					type: 'list',
+					name: 'cipher',
+					message: 'Cipher Type',
+					choices: [
+						{ name: 'AES+TKIP', value: 3 },
+						{ name: 'TKIP', value: 2 },
+						{ name: 'AES', value: 1 }
+					]
+				};
+
+				prompt([question])
+					.then((ans) => {
+						cb(ans.cipher + '\n', startTimeout.bind(self, 5000));
+					});
+			});
+
+			serialTrigger.addTrigger('EAP Type 0=PEAP/MSCHAPv2, 1=EAP-TLS:', (cb) => {
+				resetTimeout();
+
+				isEnterprise = true;
+
+				if (opts.eap !== undefined){
+					let eapType = 0;
+					if (opts.eap.toLowerCase().indexOf('peap') >= 0){
+						eapType = 0;
+					} else if (opts.eap.toLowerCase().indexOf('tls')){
+						eapType = 1;
+					}
+					return cb(eapType + '\n', startTimeout.bind(self, 5000));
+				}
+
+				const question = {
+					type: 'list',
+					name: 'eap',
+					message: 'EAP Type',
+					choices: [
+						{ name: 'PEAP/MSCHAPv2', value: 0 },
+						{ name: 'EAP-TLS', value: 1 }
+					]
+				};
+
+				prompt([question])
+					.then((ans) => {
+						cb(ans.eap + '\n', startTimeout.bind(self, 5000));
+					});
+			});
+
+			serialTrigger.addTrigger('Username:', (cb) => {
+				resetTimeout();
+
+				if (opts.username){
+					cb(opts.username + '\n', startTimeout.bind(self, 15000));
+				} else {
+					const question = {
+						type: 'input',
+						name: 'username',
+						message: 'Username',
 						validate: (val) => {
 							return !!val;
+						}
+					};
+
+					prompt([question])
+						.then((ans) => {
+							cb(ans.username + '\n', startTimeout.bind(self, 15000));
+						});
+				}
+			});
+
+			serialTrigger.addTrigger('Outer identity (optional):', (cb) => {
+				resetTimeout();
+
+				if (opts.outer_identity){
+					cb(opts.outer_identity.trim + '\n', startTimeout.bind(self, 15000));
+				} else {
+					const question = {
+						type: 'input',
+						name: 'outer_identity',
+						message: 'Outer identity (optional)'
+					};
+
+					prompt([question])
+						.then((ans) => {
+							cb(ans.outer_identity + '\n', startTimeout.bind(self, 15000));
+						});
+				}
+			});
+
+			serialTrigger.addTrigger('Client certificate in PEM format:', (cb) => {
+				resetTimeout();
+
+				if (opts.client_certificate){
+					cb(opts.client_certificate.trim() + '\n\n', startTimeout.bind(self, 15000));
+				} else {
+					const question = {
+						type: 'editor',
+						name: 'client_certificate',
+						message: 'Client certificate in PEM format',
+						validate: (val) => {
+							return !!val;
+						}
+					};
+
+					prompt([question])
+						.then((ans) => {
+							cb(ans.client_certificate.trim() + '\n\n', startTimeout.bind(self, 15000));
+						});
+				}
+			});
+
+			serialTrigger.addTrigger('Private key in PEM format:', (cb) => {
+				resetTimeout();
+
+				if (opts.private_key){
+					cb(opts.private_key.trim() + '\n\n', startTimeout.bind(self, 15000));
+				} else {
+					const question = {
+						type: 'editor',
+						name: 'private_key',
+						message: 'Private key in PEM format',
+						validate: (val) => {
+							return !!val;
+						}
+					};
+
+					prompt([question])
+						.then((ans) => {
+							cb(ans.private_key.trim() + '\n\n', startTimeout.bind(self, 15000));
+						});
+				}
+			});
+
+			serialTrigger.addTrigger('Root CA in PEM format (optional):', (cb) => {
+				resetTimeout();
+
+				if (opts.root_ca){
+					cb(opts.root_ca.trim() + '\n\n', startTimeout.bind(self, 15000));
+				} else {
+					const questions = [
+						{
+							type: 'confirm',
+							name: 'provide_root_ca',
+							message: 'Would you like to provide CA certificate?',
+							default: true
 						},
-						default: ''
+						{
+							type: 'editor',
+							name: 'root_ca',
+							message: 'CA certificate in PEM format',
+							when: (answers) => {
+								return answers.provide_root_ca;
+							},
+							validate: (val) => {
+								return !!val;
+							},
+							default: ''
+						}
+					];
+
+					prompt(questions)
+						.then((ans) => {
+							if (ans.root_ca === undefined){
+								ans.root_ca = '';
+							}
+							cb(ans.root_ca.trim() + '\n\n', startTimeout.bind(self, 15000));
+						});
+				}
+			});
+
+			serialTrigger.addTrigger('Password:', (cb) => {
+				resetTimeout();
+				// Skip password prompt as appropriate
+				if (opts.password){
+					cb(opts.password + '\n', startTimeout.bind(self, 15000));
+				} else {
+					const question = {
+						type: 'input',
+						name: 'password',
+						message: !isEnterprise ? 'Wi-Fi Password' : 'Password',
+						validate: (val) => {
+							return !!val;
+						}
+					};
+
+					prompt([question])
+						.then((ans) => {
+							cb(ans.password + '\n', startTimeout.bind(self, 15000));
+						});
+				}
+			});
+
+			serialTrigger.addTrigger('Spark <3 you!', () => {
+				resetTimeout();
+				resolve();
+			});
+
+			serialTrigger.addTrigger('Particle <3 you!', () => {
+				resetTimeout();
+				resolve();
+			});
+
+			serialPort.open((err) => {
+				if (err){
+					return reject(err);
+				}
+
+				serialTrigger.start(true);
+				serialPort.write('w');
+				serialPort.drain();
+			});
+
+			function serialClosedEarly(){
+				reject('Serial port closed early');
+			}
+
+			function startTimeout(to){
+				self._serialTimeout = setTimeout(() => {
+					reject('Serial timed out');
+				}, to);
+			}
+
+			function resetTimeout(){
+				clearTimeout(self._serialTimeout);
+				self._serialTimeout = null;
+			}
+
+			function parsesecurity(ent, cb){
+				resetTimeout();
+
+				if (opts.security){
+					let security = 3;
+
+					if (opts.security.indexOf('WPA2') >= 0 && opts.security.indexOf('802.1x') >= 0){
+						security = 5;
+						isEnterprise = true;
+					} else if (opts.security.indexOf('WPA') >= 0 && opts.security.indexOf('802.1x') >= 0){
+						security = 4;
+						isEnterprise = true;
+					} else if (opts.security.indexOf('WPA2') >= 0){
+						security = 3;
+					} else if (opts.security.indexOf('WPA') >= 0){
+						security = 2;
+					} else if (opts.security.indexOf('WEP') >= 0){
+						security = 1;
+					} else if (opts.security.indexOf('NONE') >= 0){
+						security = 0;
 					}
-				]).then((ans) => {
-					if (ans.root_ca === undefined) {
-						ans.root_ca = '';
-					}
-					cb(ans.root_ca.trim() + '\n\n', startTimeout.bind(this, 15000));
-				});
+
+					return cb(security + '\n', startTimeout.bind(self, 10000));
+				}
+
+				const choices = [
+					{ name: 'WPA2', value: 3 },
+					{ name: 'WPA', value: 2 },
+					{ name: 'WEP', value: 1 },
+					{ name: 'Unsecured', value: 0 }
+				];
+
+				if (ent){
+					choices.push({ name: 'WPA Enterprise', value: 4 });
+					choices.push({ name: 'WPA2 Enterprise', value: 5 });
+				}
+
+				const question = {
+					type: 'list',
+					name: 'security',
+					message: 'Security Type',
+					choices: choices
+				};
+
+				prompt([question])
+					.then((ans) => {
+						if (ans.security > 3){
+							isEnterprise = true;
+						}
+						cb(ans.security + '\n', startTimeout.bind(self, 10000));
+					});
 			}
 		});
 
-
-		st.addTrigger('Password:', (cb) => {
-			resetTimeout();
-			// Skip password prompt as appropriate
-			if (opts.password) {
-				cb(opts.password + '\n', startTimeout.bind(this, 15000));
-
-			} else {
-				prompt([{
-					type: 'input',
-					name: 'password',
-					message: !isEnterprise ? 'Wi-Fi Password' : 'Password',
-					validate: (val) => {
-						return !!val;
-					}
-				}]).then((ans) => {
-					cb(ans.password + '\n', startTimeout.bind(this, 15000));
-				});
-			}
-		});
-
-		st.addTrigger('Spark <3 you!', () => {
-			resetTimeout();
-			wifiDone.resolve();
-		});
-
-		st.addTrigger('Particle <3 you!', () => {
-			resetTimeout();
-			wifiDone.resolve();
-		});
-
-		serialPort.open((err) => {
-			if (err) {
-				return wifiDone.reject(err);
-			}
-
-			st.start(true);
-			serialPort.write('w');
-			serialPort.drain();
-		});
-
-		when(wifiDone.promise).then(
-			() => {
+		return promise
+			.then(() => {
 				console.log('Done! Your device should now restart.');
 			}, (err) => {
 				log.error('Something went wrong:', err);
-			});
-
-		when(wifiDone.promise).finally(() => {
-			resetTimeout();
-			serialPort.removeListener('close', serialClosedEarly);
-			return when.promise((resolve) => {
-				serialPort.close(resolve);
-			});
-		});
-
-		return wifiDone.promise;
+			})
+			.finally(cleanUpFn);
 	}
 	/* eslint-enable max-statements */
 
@@ -1220,18 +1298,15 @@ class SerialCommand {
 	 * The serial port should not be open, and is closed after the command is sent.
 	 * @private
 	 */
-	_issueSerialCommand(device, command, timeout) {
-		if (!device) {
+	_issueSerialCommand(device, command, timeout){
+		if (!device){
 			throw new VError('No serial port identified');
 		}
 		const failDelay = timeout || 5000;
 
 		let serialPort;
-		return when.promise((resolve, reject) => {
-			serialPort = this.serialPort || new SerialPort(device.port, {
-				baudRate: 9600,
-				autoOpen: false
-			});
+		return new Promise((resolve, reject) => {
+			serialPort = this.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
 			const parser = new SerialBatchParser({ timeout: 250 });
 			serialPort.pipe(parser);
 
@@ -1245,7 +1320,7 @@ class SerialCommand {
 			});
 
 			serialPort.open((err) => {
-				if (err) {
+				if (err){
 					console.error('Serial err: ' + err);
 					console.error('Serial problems, please reconnect the device.');
 					reject('Serial problems, please reconnect the device.');
@@ -1253,46 +1328,53 @@ class SerialCommand {
 				}
 
 				serialPort.write(command, (werr) => {
-					if (werr) {
+					if (werr){
 						reject(err);
 					}
 				});
 			});
-		}).finally(() => {
-			if (serialPort) {
-				serialPort.removeAllListeners('open');
-				if (serialPort.isOpen) {
-					return when.promise((resolve) => {
-						serialPort.close(resolve);
-					});
+		})
+			.finally(() => {
+				if (serialPort){
+					serialPort.removeAllListeners('open');
+
+					if (serialPort.isOpen){
+						return new Promise((resolve) => {
+							serialPort.close(resolve);
+						});
+					}
 				}
-			}
-		});
+			});
 	}
 
-	getDeviceMacAddress(device) {
-		if (device.type === 'Core') {
+	getDeviceMacAddress(device){
+		if (device.type === 'Core'){
 			throw new VError('Unable to get MAC address of a Core');
 		}
 
 		return this._issueSerialCommand(device, 'm').then((data) => {
 			const matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
-			if (matches) {
+
+			if (matches){
 				let mac = matches[0].toLowerCase();
+
 				// manufacturing firmware can sometimes not report the full MAC
 				// lets try and fix it
-				if (mac.length < 17) {
+				if (mac.length < 17){
 					const bytes = mac.split(':');
-					while (bytes.length < 6) {
+
+					while (bytes.length < 6){
 						bytes.unshift('00');
 					}
+
 					const usiMacs = [
 						['6c', '0b', '84'],
 						['44', '39', 'c4']
 					];
+
 					usiMacs.some((usimac) => {
-						for (let i = usimac.length - 1; i >= 0; i--) {
-							if (bytes[i] === usimac[i]) {
+						for (let i = usimac.length - 1; i >= 0; i--){
+							if (bytes[i] === usimac[i]){
 								mac = usimac.concat(bytes.slice(usimac.length)).join(':');
 								return true;
 							}
@@ -1305,130 +1387,122 @@ class SerialCommand {
 		});
 	}
 
-	getSystemInformation(device) {
+	getSystemInformation(device){
 		return this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
 	}
 
-	askForDeviceID(device) {
-		return this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT).then((data) => {
-			const matches = data.match(/Your (core|device) id is\s+(\w+)/);
-			if (matches && matches.length === 3) {
-				return matches[2];
-			}
-			const electronMatches = data.match(/\s+([a-fA-F0-9]{24})\s+/);
-			if (electronMatches && electronMatches.length === 2) {
-				const info = { id: electronMatches[1] };
-				const imeiMatches = data.match(/IMEI: (\w+)/);
-				if (imeiMatches) {
-					info.imei = imeiMatches[1];
-				}
-				const iccidMatches = data.match(/ICCID: (\w+)/);
-				if (iccidMatches) {
-					info.iccid = iccidMatches[1];
+	askForDeviceID(device){
+		return this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT)
+			.then((data) => {
+				const matches = data.match(/Your (core|device) id is\s+(\w+)/);
+
+				if (matches && matches.length === 3){
+					return matches[2];
 				}
 
-				return info;
-			}
-		});
+				const electronMatches = data.match(/\s+([a-fA-F0-9]{24})\s+/);
+
+				if (electronMatches && electronMatches.length === 2){
+					const info = { id: electronMatches[1] };
+					const imeiMatches = data.match(/IMEI: (\w+)/);
+
+					if (imeiMatches){
+						info.imei = imeiMatches[1];
+					}
+
+					const iccidMatches = data.match(/ICCID: (\w+)/);
+
+					if (iccidMatches){
+						info.iccid = iccidMatches[1];
+					}
+
+					return info;
+				}
+			});
 	}
 
-	askForSystemFirmwareVersion(device, timeout) {
-		return this._issueSerialCommand(device, 'v', timeout).then((data) => {
-			const matches = data.match(/system firmware version:\s+([\w.-]+)/);
-			if (matches && matches.length === 2) {
-				return matches[1];
-			}
-		});
+	askForSystemFirmwareVersion(device, timeout){
+		return this._issueSerialCommand(device, 'v', timeout)
+			.then((data) => {
+				const matches = data.match(/system firmware version:\s+([\w.-]+)/);
+
+				if (matches && matches.length === 2){
+					return matches[1];
+				}
+			});
 	}
 
-	sendDoctorAntenna(device, antenna, timeout) {
-		const antennaValues = {
-			'Internal': 'i',
-			'External': 'e'
-		};
+	sendDoctorAntenna(device, antenna, timeout){
+		const antennaValues = { Internal: 'i', External: 'e' };
 		const command = 'a' + antennaValues[antenna];
-
-		return this._issueSerialCommand(device, command, timeout).then((data) => {
-			return data;
-		});
+		return this._issueSerialCommand(device, command, timeout);
 	}
 
-	sendDoctorIP(device, mode, ipAddresses, timeout) {
+	sendDoctorIP(device, mode, ipAddresses, timeout){
 		const modeValues = {
 			'Dynamic IP': 'd',
 			'Static IP': 's'
 		};
+
 		let command = 'i' + modeValues[mode];
 
-		if (mode === 'Static IP') {
+		if (mode === 'Static IP'){
 			const ipAddressValues = [ipAddresses.device_ip, ipAddresses.netmask, ipAddresses.gateway, ipAddresses.dns];
 			const ipAddressesInt = _.map(ipAddressValues, this._ipToInteger);
 			command += ipAddressesInt.join(' ') + '\n';
 		}
 
-		return this._issueSerialCommand(device, command, timeout).then((data) => {
-			return data;
-		});
+		return this._issueSerialCommand(device, command, timeout);
 	}
 
-	sendDoctorSoftAPPrefix(device, prefix, timeout) {
+	sendDoctorSoftAPPrefix(device, prefix, timeout){
 		const command = 'p' + prefix + '\n';
-
-		return this._issueSerialCommand(device, command, timeout).then((data) => {
-			return data;
-		});
+		return this._issueSerialCommand(device, command, timeout);
 	}
 
-	sendDoctorClearEEPROM(device, timeout) {
+	sendDoctorClearEEPROM(device, timeout){
 		const command = 'e';
-
-		return this._issueSerialCommand(device, command, timeout).then((data) => {
-			return data;
-		});
+		return this._issueSerialCommand(device, command, timeout);
 	}
 
-	sendDoctorClearWiFi(device, timeout) {
+	sendDoctorClearWiFi(device, timeout){
 		const command = 'c';
-
-		return this._issueSerialCommand(device, command, timeout).then((data) => {
-			return data;
-		});
+		return this._issueSerialCommand(device, command, timeout);
 	}
 
-	sendDoctorListenMode(device, timeout) {
+	sendDoctorListenMode(device, timeout){
 		const command = 'l';
-
-		return this._issueSerialCommand(device, command, timeout).then((data) => {
-			return data;
-		});
+		return this._issueSerialCommand(device, command, timeout);
 	}
 
-	_ipToInteger(ip) {
+	_ipToInteger(ip){
 		const parts = ip.split('.');
-		if (parts.length !== 4) {
+
+		if (parts.length !== 4){
 			return 0;
 		}
 
 		return (((parts[0] * 256) + parts[1]) * 256 + parts[2]) * 256 + parts[3];
 	}
 
-	_parsePort(devices, comPort) {
-		if (!comPort) {
+	_parsePort(devices, comPort){
+		if (!comPort){
 			//they didn't give us anything.
-			if (devices.length === 1) {
+			if (devices.length === 1){
 				//we have exactly one device, use that.
 				return devices[0];
 			}
 			//else - which one?
 		} else {
 			let portNum = parseInt(comPort);
-			if (!isNaN(portNum)) {
+
+			if (!isNaN(portNum)){
 				//they gave us a number
-				if (portNum > 0) {
+				if (portNum > 0){
 					portNum -= 1;
 				}
 
-				if (devices.length > portNum) {
+				if (devices.length > portNum){
 					//we have it, use it.
 					return devices[portNum];
 				}
@@ -1437,7 +1511,8 @@ class SerialCommand {
 				const matchedDevices = devices.filter((d) => {
 					return d.port === comPort;
 				});
-				if (matchedDevices.length) {
+
+				if (matchedDevices.length){
 					return matchedDevices[0];
 				}
 
@@ -1450,19 +1525,19 @@ class SerialCommand {
 		return null;
 	}
 
-	whatSerialPortDidYouMean(comPort) {
-		return this.findDevices().then(devices => {
-			const port = this._parsePort(devices, comPort);
-			if (port) {
-				return port;
-			}
+	whatSerialPortDidYouMean(comPort){
+		return this.findDevices()
+			.then(devices => {
+				const port = this._parsePort(devices, comPort);
+				if (port){
+					return port;
+				}
 
-			if (!devices || devices.length === 0) {
-				return;
-			}
+				if (!devices || devices.length === 0){
+					return;
+				}
 
-			return prompt([
-				{
+				const question = {
 					name: 'port',
 					type: 'list',
 					message: 'Which device did you mean?',
@@ -1472,14 +1547,16 @@ class SerialCommand {
 							value: d
 						};
 					})
-				}
-			]).then(answers => {
-				return answers.port;
+				};
+
+				return prompt([question])
+					.then(answers => {
+						return answers.port;
+					});
 			});
-		});
 	}
 
-	exit() {
+	exit(){
 		console.log();
 		console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
 			chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
@@ -1487,6 +1564,5 @@ class SerialCommand {
 		);
 		process.exit(0);
 	}
-}
+};
 
-module.exports = SerialCommand;

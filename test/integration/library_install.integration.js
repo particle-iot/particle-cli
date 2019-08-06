@@ -19,7 +19,7 @@
 
 const mockfs = require('mock-fs');
 const settings = require('../../settings');
-const { expect } = require('../test-setup');
+const { expect } = require('../setup');
 const commandProcessor = require('../../src/app/command-processor');
 const { itHasAccessToken, fetchAccessToken } = require('./access_token');
 

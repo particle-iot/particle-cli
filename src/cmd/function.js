@@ -1,8 +1,9 @@
-const ApiClient = require('../lib/ApiClient');
 const VError = require('verror');
+const ApiClient = require('../lib/api-client');
 const ensureError = require('../lib/utilities').ensureError;
 
-class FunctionCommand {
+
+module.exports = class FunctionCommand {
 	listFunctions() {
 		const api = new ApiClient();
 		api.ensureToken();
@@ -47,6 +48,5 @@ class FunctionCommand {
 			throw new VError(ensureError(err), 'Function call failed');
 		});
 	}
-}
+};
 
-module.exports = FunctionCommand;

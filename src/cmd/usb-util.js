@@ -1,9 +1,7 @@
+const chalk = require('chalk');
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
 const log = require('../lib/log');
-
-const chalk = require('chalk');
-const when = require('when');
 
 let particleUsb = null;
 try {
@@ -21,7 +19,7 @@ function handleDeviceOpenError(err) {
 			return promptAndInstallUdevRules(err);
 		}
 	}
-	return when.reject(err);
+	return Promise.reject(err);
 }
 
 /**
@@ -37,9 +35,9 @@ function handleDeviceOpenError(err) {
  */
 function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
 	if (!dfuMode && usbDevice.isInDfuMode) {
-		return when.reject(new Error('The device should not be in DFU mode'));
+		return Promise.reject(new Error('The device should not be in DFU mode'));
 	}
-	return when.resolve().then(() => usbDevice.open())
+	return Promise.resolve().then(() => usbDevice.open())
 		.catch(e => handleDeviceOpenError(e));
 }
 
@@ -58,7 +56,7 @@ function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
  * @return {Promise}
  */
 function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null }) {
-	return when.resolve().then(() => {
+	return Promise.resolve().then(() => {
 		if (isDeviceId(id)) {
 			// Try to open the device straight away
 			return openDeviceById(id).catch(e => {
@@ -103,7 +101,7 @@ function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null 
  * @return {Promise}
  */
 function getUsbDevices({ dfuMode = true } = {}) {
-	return when.resolve().then(() => getDevices({ includeDfu: dfuMode }));
+	return Promise.resolve().then(() => getDevices({ includeDfu: dfuMode }));
 }
 
 module.exports = {
@@ -111,3 +109,4 @@ module.exports = {
 	openUsbDeviceById,
 	getUsbDevices
 };
+

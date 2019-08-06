@@ -1,35 +1,28 @@
 const VError = require('verror');
-const when = require('when');
-
 const inquirer = require('inquirer');
-
-const ApiClient = require('../lib/ApiClient');
-const prompts = require('../lib/prompts');
 const settings = require('../../settings');
+const ApiClient = require('../lib/api-client');
+const prompts = require('../lib/prompts');
 const CloudCommand = require('./cloud');
 
-class AccessTokenCommands {
+
+module.exports = class AccessTokenCommands {
 	getCredentials() {
-		if (settings.username) {
-			const creds = when.defer();
-
-			inquirer.prompt([
-				{
-					type: 'password',
-					name: 'password',
-					message: 'Using account ' + settings.username + '\nPlease enter your password:'
-				}
-			]).then((answers) => {
-				creds.resolve({
-					username: settings.username,
-					password: answers.password
-				});
-			});
-
-			return creds.promise;
-		} else {
+		if (!settings.username){
 			return prompts.getCredentials();
 		}
+
+		const question = {
+			type: 'password',
+			name: 'password',
+			message: 'Using account ' + settings.username + '\nPlease enter your password:'
+		};
+
+		return inquirer.prompt([question])
+			.then((answers) => ({
+				username: settings.username,
+				password: answers.password
+			}));
 	}
 
 	getAccessTokens (api) {
@@ -95,18 +88,23 @@ class AccessTokenCommands {
 
 		const api = new ApiClient();
 
-		return this.getCredentials().then((creds) => {
-			return when.map(tokens, (x) => {
-				return api.removeAccessToken(creds.username, creds.password, x).then(() => {
-					console.log('successfully deleted ' + x);
-					if (x === settings.access_token) {
-						settings.override(null, 'access_token', null);
-					}
+		return this.getCredentials()
+			.then((creds) => {
+				const promises = tokens.map((tkn) => {
+					return api.removeAccessToken(creds.username, creds.password, tkn)
+						.then(() => {
+							console.log('successfully deleted ' + tkn);
+							if (tkn === settings.access_token){
+								settings.override(null, 'access_token', null);
+							}
+						});
 				});
+
+				return Promise.all(promises)
+					.catch(err => {
+						throw new VError(api.normalizedApiError(err), 'Error while revoking tokens');
+					});
 			});
-		}).catch(err => {
-			throw new VError(api.normalizedApiError(err), 'Error while revoking tokens');
-		});
 	}
 
 	/**
@@ -138,6 +136,5 @@ class AccessTokenCommands {
 			throw new VError(api.normalizedApiError(err), 'Error while creating a new access token');
 		});
 	}
-}
+};
 
-module.exports = AccessTokenCommands;
