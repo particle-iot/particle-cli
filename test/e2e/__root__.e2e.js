@@ -15,3 +15,7 @@ after(async () => {
 	await cli.setDefaultProfile();
 });
 
+afterEach(async () => {
+	await fs.emptyDir(PATH_TMP_DIR);
+});
+

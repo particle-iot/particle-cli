@@ -1,8 +1,11 @@
+const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../__lib__/cli');
 const {
 	DEVICE_NAME,
-	PATH_PROJ_STROBY_INO
+	DEVICE_PLATFORM_NAME,
+	PATH_PROJ_STROBY_INO,
+	PATH_FIXTURES_PROJECTS_DIR
 } = require('../__lib__/env');
 
 
@@ -67,7 +70,46 @@ describe('Flash Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Flashes `.ino` file', async () => {
+	it('Flashes a project', async () => {
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby');
+		const args = ['flash', DEVICE_NAME];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			'Including:',
+			'    src/stroby.ino',
+			'    project.properties',
+			`attempting to flash firmware to your device ${DEVICE_NAME}`,
+			'Flash device OK:  Update started'
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+
+		await cli.waitForVariable('name', 'stroby');
+	});
+
+	// TODO (mirande): need a better way to confirm device is back online after
+	// flashing - in this case, the current hackaround doesn't work b/c tinker
+	// doesn't expose a `name` variable
+	it.skip('FIXME: Flashes a known app', async () => {
+		const args = ['flash', DEVICE_NAME, 'tinker'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const log = [
+			'Including:',
+			`    ${PATH_PROJ_STROBY_INO}`,
+			`attempting to flash firmware to your device ${DEVICE_NAME}`,
+			'Flash device OK:  Update started'
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+
+		await cli.waitForVariable('name', 'tinker');
+	});
+
+	it('Flashes an `.ino` file', async () => {
 		const args = ['flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
@@ -82,6 +124,24 @@ describe('Flash Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 
 		await cli.waitForVariable('name', 'stroby');
+	});
+
+	it('Flashes a `.bin` file', async () => {
+		const { bin } = await cli.compileBlankFirmwareForTest(DEVICE_PLATFORM_NAME);
+		const args = ['flash', DEVICE_NAME, bin];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const log = [
+			'Including:',
+			`    ${bin}`,
+			`attempting to flash firmware to your device ${DEVICE_NAME}`,
+			'Flash device OK:  Update started'
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+
+		await cli.waitForVariable('name', 'blank');
 	});
 });
 

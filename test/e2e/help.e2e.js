@@ -96,7 +96,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		expect(exitCode).to.equal(1);
 	});
 
-	it('Shows `help` content when run with unknown argument', async () => {
+	it('Shows `help` content when run with unknown flag', async () => {
 		const { stdout, stderr, exitCode } = await cli.run('--WATNOPE');
 
 		expect(stdout).to.equal('Unknown argument \'WATNOPE\'');
@@ -107,37 +107,18 @@ describe('Help & Unknown Command / Argument Handling', () => {
 	it('Shows `help` content for all commands', async () => {
 		const { stderr } = await cli.run();
 		const cmds = findHelpCommands(stderr);
+		sandbox.spy(cli, 'run');
 
 		expect(cmds).to.eql(mainCmds);
 
-		sandbox.spy(cli, 'run');
-		await checkCmds(cmds);
+		await expectForEachCommand(cmds, (cmd, help) => {
+			expect(help).to.include(`Usage: particle ${cmd}`);
+			expect(help).to.include('Global Options:');
+		});
+
 		const called = cli.run.args.map(a => a[0].join(' '));
 
 		expect(called).to.eql(allCmds.reverse().map(c => `${c} --help`));
-
-		async function checkCmds(cmds){
-			let cmd;
-
-			while ((cmd = cmds.pop())){
-				const args = cmd.split(' ');
-				const { stderr: help } = await cli.run([...args, '--help']);
-
-				try {
-					expect(help).to.include(`Usage: particle ${cmd}`);
-					expect(help).to.include('Global Options:');
-				} catch (error){
-					error.message = `FOR CMD: ${cmd} - ${error.message}`;
-					throw error;
-				}
-
-				const subCmds = findHelpCommands(help);
-
-				if (subCmds.length){
-					await checkCmds(subCmds.map(scmd => `${cmd} ${scmd}`));
-				}
-			}
-		}
 	}).timeout(5 * 1000 * 60);
 
 	function dedupe(arr){
@@ -150,6 +131,28 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		const cmdList = matches(help, cmdListPtn)[0] || '';
 		const cmdsPtn = /^.+?([A-Za-z0-9-]+).*$/mg;
 		return matches(cmdList, cmdsPtn);
+	}
+
+	async function expectForEachCommand(cmds, assert){
+		let cmd;
+
+		while ((cmd = cmds.pop())){
+			const args = cmd.split(' ');
+			const { stderr: help } = await cli.run([...args, '--help']);
+
+			try {
+				assert(cmd, help);
+			} catch (error){
+				error.message = `FOR CMD: ${cmd} - ${error.message}`;
+				throw error;
+			}
+
+			const subCmds = findHelpCommands(help);
+
+			if (subCmds.length){
+				await expectForEachCommand(subCmds.map(scmd => `${cmd} ${scmd}`), assert);
+			}
+		}
 	}
 });
 

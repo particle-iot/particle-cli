@@ -1,14 +1,12 @@
 const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../__lib__/cli');
-const fs = require('../__lib__/fs');
 const {
-	PATH_REPO_DIR
+	PATH_FIXTURES_BINARIES_DIR
 } = require('../__lib__/env');
 
 
 describe('Binary Command', () => {
-	const binPath = path.join(PATH_REPO_DIR, 'assets', 'binaries', 'p1_doctor.bin');
 	const help = [
 		'Inspect binaries',
 		'Usage: particle binary <command>',
@@ -21,12 +19,6 @@ describe('Binary Command', () => {
 		'  -v, --verbose  Increases how much logging to display  [count]',
 		'  -q, --quiet    Decreases how much logging to display  [count]'
 	];
-
-	before(async () => {
-		if (!await fs.pathExists(binPath)){
-			throw new Error(`Required binary file is missing! ${binPath}`);
-		}
-	});
 
 	it('Shows `help` content', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['help', 'binary']);
@@ -52,19 +44,100 @@ describe('Binary Command', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Inspects a binary file', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['binary', 'inspect', binPath]);
-		const binContents = [
-			'p1_doctor.bin',
-			' CRC is ok (f971a904)',
-			' Compiled for p1',
-			' This is an application module number 1 at version 4',
-			' It depends on a system module number 2 at version 108'
-		];
+	const specs = [
+		{
+			file: 'core_tinker.bin',
+			contents: [
+				'core_tinker.bin',
+				' CRC is ok (aded513e)',
+				' Compiled for core',
+				' This is a monolithic firmware number 0 at version 0'
+			]
+		},
+		{
+			file: 'photon_tinker.bin',
+			contents: [
+				'photon_tinker.bin',
+				' CRC is ok (ba4f59ab)',
+				' Compiled for photon',
+				' This is an application module number 1 at version 2',
+				' It depends on a system module number 2 at version 1'
+			]
+		},
+		{
+			file: 'photon_tinker-0.4.5.bin',
+			contents: [
+				'photon_tinker-0.4.5.bin',
+				' CRC is ok (4a738441)',
+				' Compiled for photon',
+				' This is an application module number 1 at version 3',
+				' It depends on a system module number 2 at version 6'
+			]
+		},
+		{
+			file: 'p1_tinker.bin',
+			contents: [
+				'p1_tinker.bin',
+				' CRC is ok (61972e4d)',
+				' Compiled for p1',
+				' This is an application module number 1 at version 2',
+				' It depends on a system module number 2 at version 3'
+			]
+		},
+		{
+			file: 'p1_tinker-0.4.5.bin',
+			contents: [
+				'p1_tinker-0.4.5.bin',
+				' CRC is ok (70e7c48c)',
+				' Compiled for p1',
+				' This is an application module number 1 at version 3',
+				' It depends on a system module number 2 at version 6'
+			]
+		},
+		{
+			file: 'electron_tinker.bin',
+			contents: [
+				'electron_tinker.bin',
+				' CRC is ok (b3934494)',
+				' Compiled for electron',
+				' This is an application module number 1 at version 3',
+				' It depends on a system module number 2 at version 10'
+			]
+		},
+		{
+			file: 'argon_stroby.bin',
+			contents: [
+				'argon_stroby.bin',
+				' CRC is ok (da140931)',
+				' Compiled for argon',
+				' This is an application module number 1 at version 6',
+				' It depends on a system module number 1 at version 1213'
+			]
+		},
+		{
+			file: 'boron_blank.bin',
+			contents: [
+				'boron_blank.bin',
+				' CRC is ok (4d02d94f)',
+				' Compiled for boron',
+				' This is an application module number 1 at version 6',
+				' It depends on a system module number 1 at version 1213'
+			]
+		}
+	];
 
-		expect(stdout.split('\n')).to.include.members(binContents);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+	specs.forEach(spec => {
+		const { file, contents } = spec;
+
+		it(`Inspects binary file: ${file}`, async () => {
+			const bin = path.join(PATH_FIXTURES_BINARIES_DIR, file);
+			const args = ['binary', 'inspect', bin];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout.split('\n')).to.include.members(contents);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 });
 
