@@ -1,0 +1,6 @@
+# all directory contents are ignored
+*
+
+# except us :)
+!/.gitignore
+!/README.md
