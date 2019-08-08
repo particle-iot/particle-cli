@@ -3174,7 +3174,7 @@
       "integrity": "sha1-pfdf/02ZJhJt2sDqXcOOaJFTywI=",
       "requires": {
         "string-template": "0.2.1",
-        "xtend": "4.0.1"
+        "xtend": "~4.0.0"
       }
     },
     "error-ex": {
@@ -5907,7 +5907,7 @@
         "generate-function": "2.0.0",
         "generate-object-property": "1.2.0",
         "jsonpointer": "4.0.1",
-        "xtend": "4.0.1"
+        "xtend": "^4.0.0"
       }
     },
     "is-number": {
@@ -9771,7 +9771,7 @@
         "bl": "1.2.0",
         "end-of-stream": "1.0.0",
         "readable-stream": "2.2.2",
-        "xtend": "4.0.1"
+        "xtend": "^4.0.0"
       }
     },
     "temp": {
@@ -9974,7 +9974,7 @@
       "integrity": "sha1-AARWmzfHx0ujnEPzzteNGtlBQL4=",
       "requires": {
         "readable-stream": "2.2.2",
-        "xtend": "4.0.1"
+        "xtend": "~4.0.1"
       }
     },
     "timed-out": {
@@ -10589,9 +10589,9 @@
       "dev": true
     },
     "xtend": {
-      "version": "4.0.1",
-      "resolved": "https://registry.npmjs.org/xtend/-/xtend-4.0.1.tgz",
-      "integrity": "sha1-pcbVMr5lbiPbgg77lDofBJmNY68="
+      "version": "4.0.2",
+      "resolved": "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz",
+      "integrity": "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="
     },
     "y18n": {
       "version": "3.2.1",
