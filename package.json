@@ -61,7 +61,7 @@
     "handlebars": "^4.1.2",
     "inquirer": "^6.3.1",
     "latest-version": "^2.0.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "node-wifiscanner2": "^1.2.0",
     "particle-api-js": "^7.4.1",
