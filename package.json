@@ -77,7 +77,7 @@
     "wiring-preprocessor": "^2.0.2",
     "xtend": "^4.0.2",
     "yargs": "^5.0.0",
-    "yeoman-environment": "^2.3.4",
+    "yeoman-environment": "^2.4.0",
     "yeoman-generator": "^1.1.1"
   },
   "devDependencies": {
