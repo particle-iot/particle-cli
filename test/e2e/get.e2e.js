@@ -64,7 +64,7 @@ describe('Get Commands [@device]', () => {
 		const subprocess = cli.run(['get', DEVICE_ID]);
 
 		await delay(1000);
-		subprocess.stdin.write('\n');
+		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 
