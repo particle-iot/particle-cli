@@ -44,10 +44,27 @@ describe('preprocess command-line interface', () => {
 	it('includes help with examples', () => {
 		commandProcessor.parse(root, ['preprocess', '--help']);
 		commandProcessor.showHelp((helpText) => {
+			helpText = normalizeText(helpText);
 			expect(helpText).to.include('Preprocess a Wiring file (ino) into a C++ file (cpp)');
 			expect(helpText).to.include('particle preprocess app.ino');
 			expect(helpText).to.include('particle preprocess - --name app.ino --saveTo -');
 		});
 	});
 });
+
+/**
+ * As described here:
+ * https://github.com/particle-iot/particle-cli/pull/486#issuecomment-495353964
+ * There are issues with help text. On certain CI builds, the terminal is narrower, resulting in a wrapped help text.
+ *
+ * This function strips line breaks and replaces (spaced) indentation with a single space.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function normalizeText(text) {
+	text = text.replace(/\n/, '');
+	text = text.replace(/ +/, ' ');
+	return text;
+}
 
