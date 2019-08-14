@@ -212,7 +212,7 @@ describe('Compile Command', () => {
 	});
 
 	it('Compiles a project with multiple header file extensions', async () => {
-		const name = 'wildcard';
+		const name = 'multiheaders';
 		const platform = 'photon';
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'multiple-header-extensions');
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
@@ -222,22 +222,23 @@ describe('Compile Command', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    helper/h0.h',
-			'    helper/h1.hpp',
-			'    helper/h3.hh',
-			'    helper/h2.hxx',
-			'    app.ino',
-			'    helper/h0.cpp',
-			'    helper/h1.cpp',
-			'    helper/h2.cpp',
-			'    helper/h3.cpp',
+			'    project.properties',
+			'    src/helper/h0.h',
+			'    src/helper/h1.hpp',
+			'    src/helper/h3.hh',
+			'    src/helper/h2.hxx',
+			'    src/app.ino',
+			'    src/helper/h0.cpp',
+			'    src/helper/h1.cpp',
+			'    src/helper/h2.cpp',
+			'    src/helper/h3.cpp',
 			'',
 			'attempting to compile firmware ',
 			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
 			`saving to: ${destination}`,
 			'Memory use: ',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'   4876\t    108\t   1396\t   6380\t   18ec\t/workspace/target/workspace.elf',
 			'',
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`

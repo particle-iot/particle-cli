@@ -1,3 +1,3 @@
 #include "h2.hxx"
 
-const int DOIT_1 = 1;
+const int DOIT_2 = 1;
