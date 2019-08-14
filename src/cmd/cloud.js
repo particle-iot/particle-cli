@@ -749,6 +749,9 @@ class CloudCommand {
 		// Recursively find source files
 		let includes = [
 			'**/*.h',
+			'**/*.hpp',
+			'**/*.hh',
+			'**/*.hxx',
 			'**/*.ino',
 			'**/*.cpp',
 			'**/*.c',
