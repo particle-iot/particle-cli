@@ -21,4 +21,5 @@ dist
 es6
 accept/tmp
 
+.nyc_output
 .env

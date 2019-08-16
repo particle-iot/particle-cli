@@ -15,6 +15,7 @@ before_install:
 
 script:
   - npm run test:ci
+  - npm run coverage
 
 jobs:
   include:
