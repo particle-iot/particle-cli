@@ -47,6 +47,8 @@ var settings = {
 
 	wirelessSetupFilter: /^Photon-.*$/,
 
+	serial_follow_check_frequency: 5,
+
 	notSourceExtensions: [
 		'.ds_store',
 		'.jpg',
