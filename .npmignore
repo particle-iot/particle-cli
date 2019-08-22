@@ -29,6 +29,7 @@ es6
 .idea
 *.sw?
 
+.nyc_output
 .babelrc.js
 .eslintrc.js
 .travis.yml
