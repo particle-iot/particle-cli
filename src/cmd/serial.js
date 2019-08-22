@@ -178,8 +178,12 @@ module.exports = class SerialCommand {
 			if (!device){
 				if (follow){
 					setTimeout(() => {
-						this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
-					}, 5);
+						if (cleaningUp) {
+							return;
+						} else {
+							this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
+						}
+					}, settings.serial_follow_delay);
 					return;
 				} else {
 					throw new VError('No serial port identified');
@@ -212,7 +216,7 @@ module.exports = class SerialCommand {
 		function reconnect(){
 			setTimeout(() => {
 				openPort(selectedDevice);
-			}, 5);
+			}, settings.serial_follow_delay);
 		}
 
 		process.on('SIGINT', handleInterrupt);
