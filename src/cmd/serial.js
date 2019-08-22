@@ -178,7 +178,11 @@ module.exports = class SerialCommand {
 			if (!device){
 				if (follow){
 					setTimeout(() => {
-						this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
+						if (cleaningUp) {
+							return;
+						} else {
+							this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
+						}
 					}, settings.serial_follow_delay);
 					return;
 				} else {
