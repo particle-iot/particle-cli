@@ -122,14 +122,14 @@ Anything after the `--` delimiter is passed directly to the CLI ([docs](https://
 
 The Particle CLI has a number of automated test suites and related commands. The most important are:
 
-* `npm test` - run all tests (NOTE: [End-To-End tests require additional setup](https://github.com/particle-iot/particle-cli/tree/master/test))
+* `npm test` - run all tests (NOTE: [End-To-End tests require additional setup](https://github.com/particle-iot/particle-cli/tree/master/test/README.md))
 * `npm run lint` - run the linter and print any errors to your terminal
 * `npm run test:ci` - run all tests excluding device-dependent end-to-end test as CI does
 * `npm run test:unit` - run unit tests
 * `npm run test:integration` - run integration tests
 * `npm run coverage` - report code coverage stats
 
-All tests use [mocha](https://mochajs.org) and [sinon](https://sinonjs.org/) with coverage handled by [nyc](https://github.com/istanbuljs/nyc).
+All tests use [mocha](https://mochajs.org), [chai](https://www.chaijs.com), and [sinon](https://sinonjs.org/) with coverage handled by [nyc](https://github.com/istanbuljs/nyc).
 
 We recommend running locally if you can as it greatly shortens your feedback loop. However, CI also runs against every PR and [error reporting is publicly available](https://travis-ci.org/particle-iot/particle-cli).
 

@@ -12,7 +12,7 @@
 		> run integration tests: `npm run test:integration`
 		> run end-to-end tests: `npm run test:e2e` (requires setup - see: https://github.com/particle-iot/particle-cli/blob/master/test/README.md)
 
-	Have any questions? Ask in them here and a maintainer will be happy to help :)
+	Have any questions? Ask here and a maintainer will be happy to help :)
 -->
 
 
