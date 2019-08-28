@@ -1331,9 +1331,9 @@
       }
     },
     "@babel/runtime-corejs2": {
-      "version": "7.4.5",
-      "resolved": "https://registry.npmjs.org/@babel/runtime-corejs2/-/runtime-corejs2-7.4.5.tgz",
-      "integrity": "sha512-5yLuwzvIDecKwYMzJtiarky4Fb5643H3Ao5jwX0HrMR5oM5mn2iHH9wSZonxwNK0oAjAFUQAiOd4jT7/9Y2jMQ==",
+      "version": "7.5.5",
+      "resolved": "https://registry.npmjs.org/@babel/runtime-corejs2/-/runtime-corejs2-7.5.5.tgz",
+      "integrity": "sha512-FYATQVR00NSNi7mUfpPDp7E8RYMXDuO8gaix7u/w3GekfUinKgX1AcTxs7SoiEmoEW9mbpjrwqWSW6zCmw5h8A==",
       "optional": true,
       "requires": {
         "core-js": "^2.6.5",
@@ -1341,15 +1341,15 @@
       },
       "dependencies": {
         "core-js": {
-          "version": "2.6.8",
-          "resolved": "https://registry.npmjs.org/core-js/-/core-js-2.6.8.tgz",
-          "integrity": "sha512-RWlREFU74TEkdXzyl1bka66O3kYp8jeTXrvJZDzVVMH8AiHUSOFpL1yfhQJ+wHocAm1m+4971W1PPzfLuCv1vg==",
+          "version": "2.6.9",
+          "resolved": "https://registry.npmjs.org/core-js/-/core-js-2.6.9.tgz",
+          "integrity": "sha512-HOpZf6eXmnl7la+cUdMnLvUxKNqLUzJvgIziQ0DiF3JwSImNphIqdGqzj6hIKyX04MmV0poclQ7+wjWvxQyR2A==",
           "optional": true
         },
         "regenerator-runtime": {
-          "version": "0.13.2",
-          "resolved": "https://registry.npmjs.org/regenerator-runtime/-/regenerator-runtime-0.13.2.tgz",
-          "integrity": "sha512-S/TQAZJO+D3m9xeN1WTI8dLKBBiRgXBlTJvbWjCThHWZj9EvHK70Ff50/tYj2J/fvBY6JtFVwRuazHN2E7M9BA==",
+          "version": "0.13.3",
+          "resolved": "https://registry.npmjs.org/regenerator-runtime/-/regenerator-runtime-0.13.3.tgz",
+          "integrity": "sha512-naKIZz2GQ8JWh///G7L3X6LaQUAMp2lvb1rvwwsURe/VXwD6VMfr+/1NuNw3ag8v2kY1aQ/go5SNn79O9JU7yw==",
           "optional": true
         }
       }
@@ -1718,9 +1718,9 @@
       "optional": true
     },
     "@types/node": {
-      "version": "10.14.7",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-10.14.7.tgz",
-      "integrity": "sha512-on4MmIDgHXiuJDELPk1NFaKVUxxCFr37tm8E9yN6rAiF5Pzp/9bBfBHkoexqRiY+hk/Z04EJU9kKEb59YqJ82A==",
+      "version": "10.14.16",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-10.14.16.tgz",
+      "integrity": "sha512-/opXIbfn0P+VLt+N8DE4l8Mn8rbhiJgabU96ZJ0p9mxOkIks5gh6RUnpHak7Yh0SFkyjO/ODbxsQQPV2bpMmyA==",
       "optional": true
     },
     "acorn": {
@@ -5534,6 +5534,12 @@
       "resolved": "https://registry.npmjs.org/invert-kv/-/invert-kv-1.0.0.tgz",
       "integrity": "sha1-EEqOSqym09jNFXqO+L+rLXo//bY="
     },
+    "ip": {
+      "version": "1.1.5",
+      "resolved": "https://registry.npmjs.org/ip/-/ip-1.1.5.tgz",
+      "integrity": "sha1-vd7XARQpCCjAoDnnLvJfWq7ENUo=",
+      "optional": true
+    },
     "is-accessor-descriptor": {
       "version": "0.1.6",
       "resolved": "https://registry.npmjs.org/is-accessor-descriptor/-/is-accessor-descriptor-0.1.6.tgz",
@@ -7989,14 +7995,15 @@
       }
     },
     "particle-usb": {
-      "version": "0.4.4",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-0.4.4.tgz",
-      "integrity": "sha512-vjMMlIx7oU5rCDTsjNT+8rvYFoAfcNh27No8PMB82JrvwnHGLyol9JZV7brt1exCCxFnR8kEDtRKD2goG5b3Ew==",
+      "version": "0.5.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-0.5.0.tgz",
+      "integrity": "sha512-0nqUIALRtq7TNIve/pBiLVtkwLOOWFMg7/9biHTO4hKyIA1sC5YjBmdnEIdGWZ2vs4H8Q9T7jTvl2EvMLALLOw==",
       "optional": true,
       "requires": {
         "@babel/runtime-corejs2": "^7.3.4",
+        "ip": "^1.1.5",
         "protobufjs": "^6.8.8",
-        "usb": "https://github.com/particle-iot/node-usb/archive/particle-1.5.0.tar.gz",
+        "usb": "^1.6.0",
         "verror": "^1.10.0"
       }
     },
@@ -10203,21 +10210,14 @@
       }
     },
     "usb": {
-      "version": "https://github.com/particle-iot/node-usb/archive/particle-1.5.0.tar.gz",
-      "integrity": "sha512-0xJdZ7wK2oo3MnogJ0+fdapKevubzmKJ2ELqBXAyzDdPZDs9QE6Gt6H5b6o/gnSUjb1G4Y9q368457lS1/a6tA==",
+      "version": "1.6.0",
+      "resolved": "https://registry.npmjs.org/usb/-/usb-1.6.0.tgz",
+      "integrity": "sha512-52DyWlCk9K+iw3LnvY95WXSnpHjxJoI++aGkV8HiMNPc4zmvDQlYvWAzrkbJ2JH3oUcx26XfU5sZcG4RAcVkMg==",
       "optional": true,
       "requires": {
         "bindings": "^1.4.0",
-        "nan": "2.11.1",
+        "nan": "2.13.2",
         "prebuild-install": "^5.2.4"
-      },
-      "dependencies": {
-        "nan": {
-          "version": "2.11.1",
-          "resolved": "https://registry.npmjs.org/nan/-/nan-2.11.1.tgz",
-          "integrity": "sha512-iji6k87OSXa0CcrLl9z+ZiYSuR2o+c0bGuNmXdrhTQTakxytAFsC56SArGYoiHlJlFoHSnvmhpceZJaXkVuOtA==",
-          "optional": true
-        }
       }
     },
     "use": {
