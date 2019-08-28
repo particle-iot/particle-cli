@@ -1,26 +1,12 @@
-const chalk = require('chalk');
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
-const log = require('../lib/log');
+const {
+	getDevices,
+	openDeviceById,
+	NotFoundError,
+	NotAllowedError
+} = require('../lib/require-optional')('particle-usb');
 
-let particleUsb = null;
-try {
-	particleUsb = require('particle-usb');
-} catch (e) {
-	log.error(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
-	throw e;
-}
-const { getDevices, openDeviceById, NotFoundError, NotAllowedError } = particleUsb;
-
-function handleDeviceOpenError(err) {
-	if (err instanceof NotAllowedError) {
-		err = new Error('Missing permissions to access the USB device');
-		if (systemSupportsUdev()) {
-			return promptAndInstallUdevRules(err);
-		}
-	}
-	return Promise.reject(err);
-}
 
 /**
  * Open a USB device.
@@ -33,8 +19,8 @@ function handleDeviceOpenError(err) {
  * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
  * @return {Promise}
  */
-function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
-	if (!dfuMode && usbDevice.isInDfuMode) {
+function openUsbDevice(usbDevice, { dfuMode = false } = {}){
+	if (!dfuMode && usbDevice.isInDfuMode){
 		return Promise.reject(new Error('The device should not be in DFU mode'));
 	}
 	return Promise.resolve().then(() => usbDevice.open())
@@ -55,27 +41,28 @@ function openUsbDevice(usbDevice, { dfuMode = false } = {}) {
  * @param {String} [options.displayName] Device name as shown to the user.
  * @return {Promise}
  */
-function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null }) {
-	return Promise.resolve().then(() => {
-		if (isDeviceId(id)) {
-			// Try to open the device straight away
-			return openDeviceById(id).catch(e => {
-				if (!(e instanceof NotFoundError)) {
-					return handleDeviceOpenError(e);
-				}
-			});
-		}
-	})
+function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null }){
+	return Promise.resolve()
+		.then(() => {
+			if (isDeviceId(id)){
+				// Try to open the device straight away
+				return openDeviceById(id).catch(e => {
+					if (!(e instanceof NotFoundError)){
+						return handleDeviceOpenError(e);
+					}
+				});
+			}
+		})
 		.then(usbDevice => {
-			if (!usbDevice) {
+			if (!usbDevice){
 				return getDevice({ id, api, auth, displayName }).then(device => {
-					if (device.id === id) {
+					if (device.id === id){
 						throw new NotFoundError();
 					}
 					return openDeviceById(device.id).catch(e => handleDeviceOpenError(e));
 				})
 					.catch(e => {
-						if (e instanceof NotFoundError) {
+						if (e instanceof NotFoundError){
 							throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);
 						}
 						throw e;
@@ -84,7 +71,7 @@ function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null 
 			return usbDevice;
 		})
 		.then(usbDevice => {
-			if (!dfuMode && usbDevice.isInDfuMode) {
+			if (!dfuMode && usbDevice.isInDfuMode){
 				return usbDevice.close().then(() => {
 					throw new Error('The device should not be in DFU mode');
 				});
@@ -100,8 +87,18 @@ function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null 
  * @param {Boolean} [options.dfuMode] Set to `false` to exclude devices in DFU mode.
  * @return {Promise}
  */
-function getUsbDevices({ dfuMode = true } = {}) {
+function getUsbDevices({ dfuMode = true } = {}){
 	return Promise.resolve().then(() => getDevices({ includeDfu: dfuMode }));
+}
+
+function handleDeviceOpenError(err){
+	if (err instanceof NotAllowedError){
+		err = new Error('Missing permissions to access the USB device');
+		if (systemSupportsUdev()){
+			return promptAndInstallUdevRules(err);
+		}
+	}
+	return Promise.reject(err);
 }
 
 module.exports = {

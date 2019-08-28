@@ -6,21 +6,13 @@ const VError = require('verror');
 const inquirer = require('inquirer');
 const prompt = require('inquirer').prompt;
 const wifiScan = require('node-wifiscanner2').scan;
+const SerialPort = require('../lib/require-optional')('serialport');
 const log = require('../lib/log');
-
-let SerialPort;
-try {
-	SerialPort = require('serialport');
-} catch (err){
-	log.fatal(`Please reinstall the CLI again using ${chalk.bold('npm install -g particle-cli')}`);
-}
-
 const specs = require('../lib/deviceSpecs');
 const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
 const YModem = require('../lib/ymodem');
-
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
@@ -178,7 +170,7 @@ module.exports = class SerialCommand {
 			if (!device){
 				if (follow){
 					setTimeout(() => {
-						if (cleaningUp) {
+						if (cleaningUp){
 							return;
 						} else {
 							this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
