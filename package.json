@@ -70,7 +70,6 @@
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.2.0",
     "semver": "^6.3.0",
-    "serialport": "^7.1.5",
     "softap-setup": "^4.1.0",
     "temp": "^0.9.0",
     "verror": "^1.10.0",
@@ -103,7 +102,8 @@
     "sinon-chai": "^3.3.0"
   },
   "optionalDependencies": {
-    "particle-usb": "^0.4.4"
+    "particle-usb": "^0.4.4",
+    "serialport": "^7.1.5"
   },
   "engines": {
     "node": ">=6",
