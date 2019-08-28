@@ -55,7 +55,7 @@ function displayVersionBanner(version){
 	console.error('particle-cli v' + pkg.version);
 	console.error();
 	console.error(chalk.yellow('!'), 'A newer version (' + chalk.cyan(version) + ') of', chalk.bold.white('particle-cli'), 'is available.');
-	console.error(chalk.yellow('!'), 'Upgrade now by running:', chalk.bold.white('npm install -g particle-cli'));
+	console.error(chalk.yellow('!'), 'Upgrade now by running:', chalk.bold.white('particle update-cli'));
 	console.error();
 }
 
