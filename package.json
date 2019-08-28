@@ -91,7 +91,7 @@
     "dotenv": "^7.0.0",
     "eslint": "^5.16.0",
     "eslint-config-particle": "^2.2.1",
-    "execa": "^2.0.3",
+    "execa": "^2.0.4",
     "fs-extra": "^8.1.0",
     "github-api": "^3.2.2",
     "mocha": "^6.2.0",
