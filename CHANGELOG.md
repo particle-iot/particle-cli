@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.44.0 - 29 August 2019
+
+* Cloud compile and flash now accept `.hpp`, `.hxx`, and `.hh` files
+* Update `particle-usb` to `v0.5.0` in preparation for `node@12` support
+* Improved install / update instructions to reduce confusion for users of our wrapper bins
+* `serial_follow_delay` setting uses default of 250ms (vs 5ms)
+* Made `serialport` an _optional_ dependency
+
 ## 1.43.3 - 30 July 2019
 
 * Resolves a regression introduced in 1.43.2 when flashing known applications e.g. tinker.
