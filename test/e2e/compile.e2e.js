@@ -249,6 +249,27 @@ describe('Compile Command', () => {
 		expect(exitCode).to.equal(0);
 	});
 
+	it('Compiles a project with symlinks to parent/other file locations', async () => {
+		const name = 'symlinks';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'symlink', 'main-project');
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, '*', '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd, shell: true });
+		const log = [
+			`Compiling code for ${platform}`,
+			'Including:',
+			'    shared/sub_dir/helper.h',
+			'    app.ino',
+			'    shared/sub_dir/helper.cpp',
+			'    project.properties',
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
 	it('Compiles a project using its directory name', async () => {
 		const name = 'dirname';
 		const platform = 'photon';
