@@ -1,5 +1,6 @@
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/setup');
+const { withConsoleStubs } = require('../../test/__lib__/mocha-utils');
 
 const stubs = {
 	api: {
@@ -63,7 +64,7 @@ describe('Whoami Commands', () => {
 			});
 	});
 
-	it('returns username from the local settings when user is signed-in', withConsoleStubs(() => {
+	it('returns username from the local settings when user is signed-in', withConsoleStubs(sandbox, () => {
 		const { whoami, api } = stubForWhoAmI(new WhoAmICommands(), stubs);
 		stubs.settings.username = 'from-settings@example.com';
 		api.getUser.returns(fakeUserPromise);
@@ -78,7 +79,7 @@ describe('Whoami Commands', () => {
 			});
 	}));
 
-	it('returns username from the API when user is signed-in and username isn\'t saved locally', withConsoleStubs(() => {
+	it('returns username from the API when user is signed-in and username isn\'t saved locally', withConsoleStubs(sandbox, () => {
 		const { whoami, api } = stubForWhoAmI(new WhoAmICommands(), stubs);
 		api.getUser.returns(fakeUserPromise);
 		api.hasToken.returns(true);
@@ -92,7 +93,7 @@ describe('Whoami Commands', () => {
 			});
 	}));
 
-	it('returns fallback when user is signed-in but username is not saved locally or available in the API', withConsoleStubs(() => {
+	it('returns fallback when user is signed-in but username is not saved locally or available in the API', withConsoleStubs(sandbox, () => {
 		const { whoami, api } = stubForWhoAmI(new WhoAmICommands(), stubs);
 		fakeUser.username = '';
 		stubs.settings.username = '';
@@ -123,31 +124,6 @@ describe('Whoami Commands', () => {
 		sandbox.stub(api, 'hasToken');
 		sandbox.stub(api, 'getUser');
 		return { whoami, api };
-	}
-
-	// TODO (mirande): figure out a better approach. this allows us to verify
-	// log output without supressing mocha's success / error messages but is a
-	// bit awkward
-	function withConsoleStubs(fn){
-		return () => {
-			let result;
-
-			sandbox.stub(process.stdout, 'write');
-			sandbox.stub(process.stderr, 'write');
-
-			try {
-				result = fn();
-			} catch (error) {
-				sandbox.restore();
-				throw error;
-			}
-
-			if (result && typeof result.finally === 'function'){
-				return result.finally(() => sandbox.restore());
-			}
-			sandbox.restore();
-			return result;
-		};
 	}
 });
 

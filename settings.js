@@ -47,7 +47,7 @@ var settings = {
 
 	wirelessSetupFilter: /^Photon-.*$/,
 
-	serial_follow_delay: 5,
+	serial_follow_delay: 250,
 
 	notSourceExtensions: [
 		'.ds_store',

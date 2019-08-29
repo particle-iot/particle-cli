@@ -29,6 +29,7 @@ es6
 .idea
 *.sw?
 
+.github
 .nyc_output
 .babelrc.js
 .eslintrc.js
