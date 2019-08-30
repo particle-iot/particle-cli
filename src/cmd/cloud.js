@@ -121,7 +121,7 @@ class CloudCommand {
 		});
 	}
 
-	flashDevice(deviceId, files, { target }) {
+	flashDevice(deviceId, files, { target, followSymlinks }) {
 		return Promise.resolve().then(() => {
 			if (files.length === 0) {
 				// default to current directory
@@ -143,7 +143,7 @@ class CloudCommand {
 			}
 
 			return Promise.resolve().then(() => {
-				const fileMapping = this._handleMultiFileArgs(files);
+				const fileMapping = this._handleMultiFileArgs(files, { followSymlinks });
 				api._populateFileMapping(fileMapping);
 				return fileMapping;
 			}).then((fileMapping) => {
@@ -235,7 +235,7 @@ class CloudCommand {
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	compileCode(deviceType, files, { target, saveTo }) {
+	compileCode(deviceType, files, { target, saveTo, followSymlinks }) {
 		let api;
 		let platformId;
 		let targetVersion;
@@ -290,7 +290,7 @@ class CloudCommand {
 				throw new VError(`I couldn't find that: ${filePath}`);
 			}
 
-			return this._handleMultiFileArgs(files);
+			return this._handleMultiFileArgs(files, { followSymlinks });
 		}).then((fileMapping) => {
 			if (!fileMapping) {
 				return;
@@ -681,7 +681,7 @@ class CloudCommand {
 	 * compile File1 File2 File3 output.bin
 	 * compile File1 File2 File3 --saveTo anotherPlace.bin
 	 */
-	_handleMultiFileArgs(filenames) {
+	_handleMultiFileArgs(filenames, { followSymlinks } = {}){
 		const fileMapping = {
 			basePath: process.cwd(),
 			map: {}
@@ -707,7 +707,7 @@ class CloudCommand {
 			}
 
 			if (filestats.isDirectory()) {
-				this._processDirIncludes(fileMapping, filename);
+				this._processDirIncludes(fileMapping, filename, { followSymlinks });
 				continue;
 			}
 
@@ -739,7 +739,7 @@ class CloudCommand {
 	 * @private
 	 * @returns {nothing} nothing
 	 */
-	_processDirIncludes(fileMapping, dirname) {
+	_processDirIncludes(fileMapping, dirname, { followSymlinks } = {}){
 		dirname = path.resolve(dirname);
 
 		const includesFile = path.join(dirname, settings.dirIncludeFilename),
@@ -768,14 +768,14 @@ class CloudCommand {
 
 		}
 
-		let files = utilities.globList(dirname, includes);
+		let files = utilities.globList(dirname, includes, { followSymlinks });
 
 		if (fs.existsSync(ignoreFile)) {
 			const ignores = utilities.trimBlankLinesAndComments(
 				utilities.readAndTrimLines(ignoreFile)
 			);
 
-			const ignoredFiles = utilities.globList(dirname, ignores);
+			const ignoredFiles = utilities.globList(dirname, ignores, { followSymlinks });
 			files = utilities.compliment(files, ignoredFiles);
 		}
 

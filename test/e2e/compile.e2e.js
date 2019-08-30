@@ -20,8 +20,9 @@ describe('Compile Command', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --target  The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
-		'  --saveTo  Filename for the compiled binary  [string]',
+		'  --target          The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
+		'  --followSymlinks  Follow symlinks when collecting files  [boolean]',
+		'  --saveTo          Filename for the compiled binary  [string]',
 		'',
 		'Examples:',
 		'  particle compile photon                                  Compile the source code in the current directory in the cloud for a Photon',
@@ -216,8 +217,8 @@ describe('Compile Command', () => {
 		const platform = 'photon';
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'multiple-header-extensions');
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
-		const args = ['compile', platform, '*', '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd, shell: true });
+		const args = ['compile', platform, '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -254,8 +255,8 @@ describe('Compile Command', () => {
 		const platform = 'photon';
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'symlink', 'main-project');
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
-		const args = ['compile', platform, '*', '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd, shell: true });
+		const args = ['compile', platform, '--saveTo', destination, '--followSymlinks'];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
 		const log = [
 			`Compiling code for ${platform}`,
 			'Including:',

@@ -4,6 +4,10 @@ module.exports = ({ commandProcessor, root }) => {
 	const compileOptions = {
 		'target': {
 			description: 'The firmware version to compile against. Defaults to latest version, or version on device for cellular.'
+		},
+		'followSymlinks': {
+			boolean: true,
+			description: 'Follow symlinks when collecting files'
 		}
 	};
 

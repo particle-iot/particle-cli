@@ -211,14 +211,14 @@ module.exports = {
 		});
 	},
 
-	globList(basepath, arr){
+	globList(basepath, arr, { followSymlinks } = {}){
 		let line, found, files = [];
 		for (let i=0;i<arr.length;i++){
 			line = arr[i];
 			if (basepath){
 				line = path.join(basepath, line);
 			}
-			found = glob.sync(line, { nodir: true, follow: true });
+			found = glob.sync(line, { nodir: true, follow: !!followSymlinks });
 
 			if (found && (found.length > 0)){
 				files = files.concat(found);
