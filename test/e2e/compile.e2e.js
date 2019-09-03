@@ -1,12 +1,12 @@
 const path = require('path');
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 const {
 	PATH_TMP_DIR,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR,
 	PATH_FIXTURES_LIBRARIES_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Compile Command', () => {

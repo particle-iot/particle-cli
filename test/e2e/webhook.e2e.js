@@ -1,7 +1,7 @@
 const { expect } = require('../setup');
-const { delay } = require('../__lib__/mocha-utils');
-const matches = require('../__lib__/capture-matches');
-const cli = require('../__lib__/cli');
+const { delay } = require('../lib/mocha-utils');
+const matches = require('../lib/capture-matches');
+const cli = require('../lib/cli');
 
 
 describe('Webhook Commands', () => {

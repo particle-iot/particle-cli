@@ -1,9 +1,9 @@
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
 	DEVICE_NAME
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Device Commands [@device]', () => {

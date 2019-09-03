@@ -1,5 +1,5 @@
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 
 
 describe('Update Commands', () => {

@@ -1,9 +1,9 @@
 const { expect } = require('../setup');
-const { delay } = require('../__lib__/mocha-utils');
-const cli = require('../__lib__/cli');
+const { delay } = require('../lib/mocha-utils');
+const cli = require('../lib/cli');
 const {
 	DEVICE_ID
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Monitor Commands [@device]', () => {

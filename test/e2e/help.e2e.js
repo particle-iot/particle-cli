@@ -1,7 +1,7 @@
 const { expect, sinon } = require('../setup');
-const stripANSI = require('../__lib__/ansi-strip');
-const matches = require('../__lib__/capture-matches');
-const cli = require('../__lib__/cli');
+const stripANSI = require('../lib/ansi-strip');
+const matches = require('../lib/capture-matches');
+const cli = require('../lib/cli');
 
 
 describe('Help & Unknown Command / Argument Handling', () => {

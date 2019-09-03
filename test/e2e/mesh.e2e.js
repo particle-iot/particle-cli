@@ -1,12 +1,12 @@
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
-const { runForAtLeast, delay } = require('../__lib__/mocha-utils');
-const cli = require('../__lib__/cli');
+const { runForAtLeast, delay } = require('../lib/mocha-utils');
+const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Mesh Commands [@device]', () => {

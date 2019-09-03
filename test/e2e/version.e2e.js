@@ -1,7 +1,7 @@
 const semver = require('semver');
 const pkgJSON = require('../../package.json');
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 
 
 describe('Version Commands', () => {

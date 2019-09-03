@@ -1,9 +1,9 @@
 const { expect } = require('../setup');
-const { runForAtLeast } = require('../__lib__/mocha-utils');
-const cli = require('../__lib__/cli');
+const { runForAtLeast } = require('../lib/mocha-utils');
+const cli = require('../lib/cli');
 const {
 	DEVICE_ID
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Identify Commands [@device]', () => {
