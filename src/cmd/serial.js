@@ -445,7 +445,7 @@ module.exports = class SerialCommand {
 				this.stopSpin();
 
 				if (err){
-					reject(new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?'));
+					return reject(new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?'));
 				}
 				resolve(networkList);
 			});

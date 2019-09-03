@@ -28,6 +28,6 @@ describe('Doctor Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it.skip('NYI: REQUIRES DFU-UTIL', async () => {});
+	it.skip('NYI: REQUIRES GEN2 HW', async () => {});
 });
 
