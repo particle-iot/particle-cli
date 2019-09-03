@@ -742,8 +742,8 @@ class CloudCommand {
 	_processDirIncludes(fileMapping, dirname, { followSymlinks } = {}){
 		dirname = path.resolve(dirname);
 
-		const includesFile = path.join(dirname, settings.dirIncludeFilename),
-			ignoreFile = path.join(dirname, settings.dirExcludeFilename);
+		const includesFile = path.join(dirname, settings.dirIncludeFilename);
+		const ignoreFile = path.join(dirname, settings.dirExcludeFilename);
 		let hasIncludeFile = false;
 
 		// Recursively find source files

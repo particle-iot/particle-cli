@@ -255,6 +255,16 @@ module.exports = {
 		return arr;
 	},
 
+	arrayToHashSet(arr){
+		let h = {};
+		if (arr) {
+			for (let i = 0; i < arr.length; i++) {
+				h[arr[i]] = true;
+			}
+		}
+		return h;
+	},
+
 	tryParse(str){
 		try {
 			if (str){
