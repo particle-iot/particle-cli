@@ -255,7 +255,7 @@ module.exports = {
 		return arr;
 	},
 
-	arrayToHashSet(arr) {
+	arrayToHashSet(arr){
 		let h = {};
 		if (arr) {
 			for (let i = 0; i < arr.length; i++) {

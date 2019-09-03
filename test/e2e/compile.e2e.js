@@ -181,6 +181,39 @@ describe('Compile Command', () => {
 		expect(exitCode).to.equal(0);
 	});
 
+	it('Compiles a legacy project which uses `particle.ignore` file', async () => {
+		const name = 'legacy-exclude';
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
+		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
+		const args = ['compile', platform, '--saveTo', destination];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    app.ino',
+			'    helper.cpp',
+			'    helper.h',
+			'',
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${destination}`,
+			'Memory use: ',
+			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
+			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
+			'',
+			'Compile succeeded.',
+			`Saved firmware to: ${destination}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stdout).to.not.include('nope.cpp');
+		expect(stdout).to.not.include('nope.h');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
 	it('Compiles a project using the `*` wildcard', async () => {
 		const name = 'wildcard';
 		const platform = 'photon';
