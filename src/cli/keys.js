@@ -54,7 +54,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'doctor', 'Creates and assigns a new key to your device, and uploads it to the cloud', {
-		params: '<device>',
+		params: '<device id>',
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
