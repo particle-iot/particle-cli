@@ -6,7 +6,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Logout Command', () => {
+describe('Logout Commands', () => {
 	const help = [
 		'Log out of your session and clear your saved access token',
 		'Usage: particle logout [options]',

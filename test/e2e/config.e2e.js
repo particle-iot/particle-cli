@@ -7,7 +7,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Config Command', () => {
+describe('Config Commands', () => {
 	const profileName = 'e2e-updated';
 	const profilePath = path.join(PATH_PARTICLE_DIR, `${profileName}.config.json`);
 	const help = [

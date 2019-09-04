@@ -11,7 +11,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Cloud Command [@device]', () => {
+describe('Cloud Commands [@device]', () => {
 	const strobyBinPath = path.join(PATH_TMP_DIR, 'photon-stroby.bin');
 	const help = [
 		'Access Particle cloud functionality',

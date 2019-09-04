@@ -6,7 +6,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Binary Command', () => {
+describe('Binary Commands', () => {
 	const help = [
 		'Inspect binaries',
 		'Usage: particle binary <command>',

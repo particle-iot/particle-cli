@@ -7,7 +7,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Login Command', () => {
+describe('Login Commands', () => {
 	const help = [
 		'Login to the cloud and store an access token locally',
 		'Usage: particle login [options]',

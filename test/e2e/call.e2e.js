@@ -5,7 +5,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Call Command [@device]', () => {
+describe('Call Commands [@device]', () => {
 	const help = [
 		'Call a particular function on a device',
 		'Usage: particle call [options] <device> <function> [argument]',

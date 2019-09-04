@@ -9,7 +9,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Compile Command', () => {
+describe('Compile Commands', () => {
 	const strobyBinPath = path.join(PATH_TMP_DIR, 'photon-stroby-updated.bin');
 	const help = [
 		'Compile a source file, or directory using the cloud compiler',
