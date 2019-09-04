@@ -1,6 +1,6 @@
 const os = require('os');
-const cli = require('../__lib__/cli');
-const fs = require('../__lib__/fs');
+const cli = require('../lib/cli');
+const fs = require('../lib/fs');
 const {
 	USERNAME,
 	PASSWORD,
@@ -10,7 +10,7 @@ const {
 	DEVICE_PLATFORM_NAME,
 	PATH_HOME_DIR,
 	PATH_TMP_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 if (os.userInfo().homedir === os.homedir()){
@@ -18,7 +18,7 @@ if (os.userInfo().homedir === os.homedir()){
 		'\n',
 		'::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::',
 		':::: Cannot write to default $HOME directory - Please override! ::::',
-		':::: See: ./test/__lib__/.env.js :::::::::::::::::::::::::::::::::::',
+		':::: See: ./test/lib/.env.js :::::::::::::::::::::::::::::::::::::::',
 		'::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::',
 		'\n'
 	].join('\n'));

@@ -1,12 +1,12 @@
 const path = require('path');
 const { expect } = require('../setup');
-const { delay } = require('../__lib__/mocha-utils');
-const cli = require('../__lib__/cli');
-const fs = require('../__lib__/fs');
+const { delay } = require('../lib/mocha-utils');
+const cli = require('../lib/cli');
+const fs = require('../lib/fs');
 const {
 	PATH_TMP_DIR,
 	PATH_PARTICLE_PROJECTS_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Project Commands', () => {

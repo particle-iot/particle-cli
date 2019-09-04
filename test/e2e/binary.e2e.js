@@ -1,12 +1,12 @@
 const path = require('path');
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 const {
 	PATH_FIXTURES_BINARIES_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
-describe('Binary Command', () => {
+describe('Binary Commands', () => {
 	const help = [
 		'Inspect binaries',
 		'Usage: particle binary <command>',

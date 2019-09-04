@@ -1,16 +1,16 @@
 const path = require('path');
 const semver = require('semver');
 const { expect } = require('../setup');
-const { delay } = require('../__lib__/mocha-utils');
-const matches = require('../__lib__/capture-matches');
-const stripANSI = require('../__lib__/ansi-strip');
-const cli = require('../__lib__/cli');
-const fs = require('../__lib__/fs');
+const { delay } = require('../lib/mocha-utils');
+const matches = require('../lib/capture-matches');
+const stripANSI = require('../lib/ansi-strip');
+const cli = require('../lib/cli');
+const fs = require('../lib/fs');
 const {
 	PATH_TMP_DIR,
 	PATH_FIXTURES_LIBRARIES_DIR,
 	PATH_PARTICLE_LIBRARIES_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Library Commands', () => {

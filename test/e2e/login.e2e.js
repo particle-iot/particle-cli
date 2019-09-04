@@ -1,13 +1,13 @@
 const { expect } = require('../setup');
-const { delay } = require('../__lib__/mocha-utils');
-const cli = require('../__lib__/cli');
+const { delay } = require('../lib/mocha-utils');
+const cli = require('../lib/cli');
 const {
 	USERNAME,
 	PASSWORD
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
-describe('Login Command', () => {
+describe('Login Commands', () => {
 	const help = [
 		'Login to the cloud and store an access token locally',
 		'Usage: particle login [options]',

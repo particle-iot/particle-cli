@@ -1,12 +1,12 @@
 const { expect } = require('../setup');
-const { delay } = require('../__lib__/mocha-utils');
-const cli = require('../__lib__/cli');
+const { delay } = require('../lib/mocha-utils');
+const cli = require('../lib/cli');
 const {
 	USERNAME
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
-describe('Logout Command', () => {
+describe('Logout Commands', () => {
 	const help = [
 		'Log out of your session and clear your saved access token',
 		'Usage: particle logout [options]',

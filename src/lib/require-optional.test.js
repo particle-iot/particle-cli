@@ -1,5 +1,5 @@
 const { expect, sinon } = require('../../test/setup');
-const { withConsoleStubs } = require('../../test/__lib__/mocha-utils');
+const { withConsoleStubs } = require('../../test/lib/mocha-utils');
 
 
 describe('Require Optional', () => {

@@ -1,11 +1,11 @@
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 const {
 	DEVICE_NAME
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
-describe('Call Command [@device]', () => {
+describe('Call Commands [@device]', () => {
 	const help = [
 		'Call a particular function on a device',
 		'Usage: particle call [options] <device> <function> [argument]',

@@ -1,12 +1,12 @@
 const path = require('path');
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Flash Commands [@device]', () => {

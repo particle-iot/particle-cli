@@ -53,12 +53,6 @@ test
 │   │   └── ...
 │   └── ...
 │
-├── __lib__  <-- supporting libraries
-│   ├── cli.js
-│   ├── env.js
-│   ├── fs.js
-│   └── ...
-│
 ├── __mocks__  <-- mocks for tests (unit, integration, etc)
 │   ├── serial.mock.js
 │   └── ...
@@ -73,6 +67,12 @@ test
 │
 ├── integration  <-- legacy integration tests
 │   ├── command-processor.integration.js
+│   └── ...
+│
+├── lib  <-- supporting libraries
+│   ├── cli.js
+│   ├── env.js
+│   ├── fs.js
 │   └── ...
 │
 ├── .env <-- e2e test environment variables

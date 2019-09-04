@@ -1,15 +1,15 @@
 const path = require('path');
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 const {
 	PATH_TMP_DIR,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR,
 	PATH_FIXTURES_LIBRARIES_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
-describe('Compile Command', () => {
+describe('Compile Commands', () => {
 	const strobyBinPath = path.join(PATH_TMP_DIR, 'photon-stroby-updated.bin');
 	const help = [
 		'Compile a source file, or directory using the cloud compiler',

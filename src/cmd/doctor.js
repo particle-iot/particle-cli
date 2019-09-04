@@ -22,7 +22,9 @@ module.exports = class DoctorCommand {
 	}
 
 	deviceDoctor(){
-		return this._showDoctorWelcome()
+		this._showDoctorWelcome();
+
+		return Promise.resolve()
 			.then(this._setupApi.bind(this))
 			.then(this._findDevice.bind(this))
 			.then(this._nameDevice.bind(this))
@@ -67,17 +69,20 @@ module.exports = class DoctorCommand {
 
 	_findDevice(){
 		// Try to find a "normal" mode device through the serial port
-		return this.command('serial').findDevices().then(devices => {
-			if (devices.length === 0){
-				// Try to find a "DFU" mode device through dfu-util
-				return dfu.listDFUDevices();
-			} else {
+		return this.command('serial')
+			.findDevices()
+			.then(devices => {
+				if (devices.length === 0){
+					// Try to find a "DFU" mode device through dfu-util
+					return dfu.listDFUDevices();
+				} else {
+					return devices;
+				}
+			})
+			.then((devices) => {
+				this.device = devices && devices[0];
 				return devices;
-			}
-		}).then((devices) => {
-			this.device = devices && devices[0];
-			return devices;
-		});
+			});
 	}
 
 	_nameDevice(devices){
@@ -143,10 +148,12 @@ module.exports = class DoctorCommand {
 		}
 
 		this._displayStepTitle('Updating system firmware');
+
 		return this._enterDfuMode()
 			.then(() => {
 				return this.command('update').updateDevice();
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_updateCC3000(){
@@ -155,10 +162,12 @@ module.exports = class DoctorCommand {
 		}
 
 		this._displayStepTitle('Updating CC3000 firmware');
+
 		return this._enterDfuMode()
 			.then(() => {
 				return this.command('flash').flashDfu({ binary: 'cc3000' });
-			}).then(() => {
+			})
+			.then(() => {
 				console.log('Applying update...');
 				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
 
@@ -168,7 +177,8 @@ module.exports = class DoctorCommand {
 					message: 'Press ENTER when ready',
 					choices: ['Continue']
 				}]);
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_flashDoctor(){
@@ -186,7 +196,8 @@ module.exports = class DoctorCommand {
 				if (!device){
 					throw new Error('Could not find serial device. Ensure the Device Doctor app was flashed');
 				}
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_selectAntenna(){
@@ -195,12 +206,14 @@ module.exports = class DoctorCommand {
 		}
 
 		this._displayStepTitle('Select antenna');
-		return prompt([{
+		const question = {
 			type: 'list',
 			name: 'choice',
 			message: 'Select the antenna to use to connect to Wi-Fi',
 			choices: ['Internal', 'External', 'Skip step', 'Exit']
-		}])
+		};
+
+		return prompt([question])
 			.then((ans) => {
 				switch (ans.choice){
 					case 'Skip step':
@@ -210,11 +223,14 @@ module.exports = class DoctorCommand {
 					default:
 						return ans.choice;
 				}
-			}).then((antenna) => {
+			})
+			.then((antenna) => {
 				return this.command('serial').sendDoctorAntenna(this.device, antenna, serialTimeout);
-			}).then((message) => {
+			})
+			.then((message) => {
 				console.log(message);
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_selectIP(){
@@ -223,13 +239,15 @@ module.exports = class DoctorCommand {
 		}
 
 		this._displayStepTitle('Configure IP address');
-		let mode;
-		return prompt([{
+		const question = {
 			type: 'list',
 			name: 'choice',
 			message: 'Select how the device will be assigned an IP address',
 			choices: ['Dynamic IP', 'Static IP', 'Skip step', 'Exit']
-		}])
+		};
+
+		let mode;
+		return prompt([question])
 			.then((ans) => {
 				switch (ans.choice){
 					case 'Skip step':
@@ -239,7 +257,8 @@ module.exports = class DoctorCommand {
 					default:
 						mode = ans.choice;
 				}
-			}).then(() => {
+			})
+			.then(() => {
 				if (mode === 'Static IP'){
 					return this._promptIPAddresses({
 						device_ip: 'Device IP',
@@ -248,11 +267,14 @@ module.exports = class DoctorCommand {
 						dns: 'DNS'
 					});
 				}
-			}).then((ipAddresses) => {
+			})
+			.then((ipAddresses) => {
 				return this.command('serial').sendDoctorIP(this.device, mode, ipAddresses, serialTimeout);
-			}).then((message) => {
+			})
+			.then((message) => {
 				console.log(message);
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_promptIPAddresses(ips){
@@ -286,9 +308,11 @@ module.exports = class DoctorCommand {
 		return this._promptReady()
 			.then(() => {
 				return this.command('serial').sendDoctorSoftAPPrefix(this.device, '', serialTimeout);
-			}).then((message) => {
+			})
+			.then((message) => {
 				console.log(message);
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_clearEEPROM(){
@@ -297,17 +321,21 @@ module.exports = class DoctorCommand {
 		return this._promptReady()
 			.then(() => {
 				return this.command('serial').sendDoctorClearEEPROM(this.device, serialTimeout);
-			}).then((message) => {
+			})
+			.then((message) => {
 				console.log(message);
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_flashTinker(){
 		this._displayStepTitle('Flashing the default Particle Tinker app');
+
 		return this._enterDfuMode()
 			.then(() => {
 				return this.command('flash').flashDfu({ binary: 'tinker' });
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_resetKeys(){
@@ -327,7 +355,8 @@ module.exports = class DoctorCommand {
 					return;
 				}
 				return this.command('keys').keyDoctor(this.device.deviceId);
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_waitForSerialDevice(timeout){
@@ -389,18 +418,24 @@ module.exports = class DoctorCommand {
 		}
 
 		this._displayStepTitle('Clearing and setting up Wi-Fi settings');
+
 		return this._promptReady()
 			.then(() => {
 				return this.command('serial').sendDoctorClearWiFi(this.device, serialTimeout);
-			}).then((message) => {
+			})
+			.then((message) => {
 				console.log(message);
-			}).then(() => {
+			})
+			.then(() => {
 				return this.command('serial').sendDoctorListenMode(this.device, serialTimeout);
-			}).then((message) => {
+			})
+			.then((message) => {
 				console.log(message);
-			}).then(() => {
+			})
+			.then(() => {
 				return this.command('serial').promptWifiScan(this.device);
-			}).catch(this._catchSkipStep);
+			})
+			.catch(this._catchSkipStep);
 	}
 
 	_deviceHasFeature(feature){
@@ -418,7 +453,10 @@ module.exports = class DoctorCommand {
 		if (e instanceof EarlyReturnError){
 			return;
 		}
-		console.log("The Doctor didn't complete sucesfully. " + e.message);
+
+		const msg = (e && e.message) || '';
+		console.log(`The Doctor didn't complete successfully. ${msg}`);
+
 		if (global.verboseLevel > 1){
 			console.log(VError.fullStack(e));
 		}

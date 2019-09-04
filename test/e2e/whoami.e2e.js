@@ -1,8 +1,8 @@
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
+const cli = require('../lib/cli');
 const {
 	USERNAME
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
 describe('Whoami Commands', () => {

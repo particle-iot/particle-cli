@@ -1,13 +1,13 @@
 const path = require('path');
 const { expect } = require('../setup');
-const cli = require('../__lib__/cli');
-const fs = require('../__lib__/fs');
+const cli = require('../lib/cli');
+const fs = require('../lib/fs');
 const {
 	PATH_PARTICLE_DIR
-} = require('../__lib__/env');
+} = require('../lib/env');
 
 
-describe('Config Command', () => {
+describe('Config Commands', () => {
 	const profileName = 'e2e-updated';
 	const profilePath = path.join(PATH_PARTICLE_DIR, `${profileName}.config.json`);
 	const help = [
