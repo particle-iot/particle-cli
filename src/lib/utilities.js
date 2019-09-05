@@ -164,8 +164,8 @@ module.exports = {
 
 	// TODO (mirande): replace w/ @particle/async-utils
 	enforceTimeout(promise, ms){
-		const { delay } = module.exports;
-		const timer = delay(ms).then(() => {
+		const delay = new Promise((resolve) => setTimeout(resolve, ms).unref());
+		const timer = delay.then(() => {
 			const error = new Error('The operation timed out :(');
 			error.isTimeout = true;
 			throw error;
