@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.45.0 - 29 August 2019
+
+* Fixes issue "Cannot read property 'then' of undefined" w/ `particle doctor`
+* Fixes long delay before exiting `particle flash --serial <bin>` command
+* Fixes support for `particle.ignore` within legacy projects
+* Optionally follow symlinks when collecting files for compilation - e.g. `particle compile argon --followSymlinks`
+* Update help text for particle keys doctor to specify device id is required
+
 ## 1.44.0 - 29 August 2019
 
 * Cloud compile and flash now accept `.hpp`, `.hxx`, and `.hh` files
