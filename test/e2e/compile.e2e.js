@@ -76,6 +76,28 @@ describe('Compile Commands', () => {
 			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
 			`saving to: ${strobyBinPath}`,
 			'Memory use: ',
+			'', // TODO (mirande): since default is to use latest non-rc Device OS, skip memory stats check
+			'Compile succeeded.',
+			`Saved firmware to: ${strobyBinPath}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Compiles a project using the `--target` flag', async () => {
+		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath, '--target', '1.2.1'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const log = [
+			'Compiling code for argon',
+			'',
+			'Including:',
+			`    ${PATH_PROJ_STROBY_INO}`,
+			'attempting to compile firmware ',
+			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			`saving to: ${strobyBinPath}`,
+			'Memory use: ',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
 			'   7900\t    112\t   1084\t   9096\t   2388\t/workspace/target/workspace.elf',
 			'',
