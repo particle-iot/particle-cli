@@ -87,8 +87,9 @@ describe('Serial Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['serial', 'inspect']);
 		const pass = words(stdout).filter(w => w === 'PASS');
 
+		expect(stdout).to.not.include('FAIL');
 		expect(stdout).to.include(`Platform: ${DEVICE_PLATFORM_ID} - ${platform}`);
-		expect(pass).to.have.lengthOf(16);
+		expect(pass).to.have.lengthOf.at.least(16);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
