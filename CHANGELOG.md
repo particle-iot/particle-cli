@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.46.2 - 6 September 2019
+
+* Fix “utilities.replaceAll is not a function” when running `particle keys server` using the `--host` flag
+* Fix “Cannot read property ‘toLowerCase’ of undefined” when running `particle keys doctor`
+* Update help text for `particle keys send` to specify device `id` is required
+* Refine end-to-end `compile` assertions to improve reliability
+* Add device-dependent end-to-end tests for `particle update`
+
 ## 1.46.1 - 6 September 2019
 
 * Fix flaky end-to-end compilation test
@@ -14,7 +22,7 @@
 * Fixes long delay before exiting `particle flash --serial <bin>` command
 * Fixes support for `particle.ignore` within legacy projects
 * Optionally follow symlinks when collecting files for compilation - e.g. `particle compile argon --followSymlinks`
-* Update help text for particle keys doctor to specify device id is required
+* Update help text for `particle keys doctor` to specify device `id` is required
 
 ## 1.44.0 - 29 August 2019
 
