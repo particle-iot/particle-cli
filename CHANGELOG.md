@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.46.0 - 6 September 2019
+
+* Updated binaries for DeviceOS 1.3.1
+
 ## 1.45.0 - 29 August 2019
 
 * Fixes issue "Cannot read property 'then' of undefined" w/ `particle doctor`
