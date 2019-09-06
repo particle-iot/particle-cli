@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.46.1 - 6 September 2019
+
+* Fix flaky end-to-end compilation test
+
 ## 1.46.0 - 6 September 2019
 
 * Updated binaries for DeviceOS 1.3.1
