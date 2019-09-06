@@ -90,12 +90,10 @@ describe('Cloud Commands [@device]', () => {
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   7436\t    116\t   1444\t   8996\t   2324\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
 		];
