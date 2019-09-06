@@ -73,10 +73,10 @@ describe('Compile Commands', () => {
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
 			'Memory use: ',
-			'', // TODO (mirande): since default is to use latest non-rc Device OS, skip memory stats check
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
 		];
@@ -95,7 +95,7 @@ describe('Compile Commands', () => {
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
 			'Memory use: ',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
@@ -126,12 +126,10 @@ describe('Compile Commands', () => {
 			'    helper.cpp',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -157,12 +155,10 @@ describe('Compile Commands', () => {
 			'    helper/helper.cpp',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -188,12 +184,10 @@ describe('Compile Commands', () => {
 			'    helper/helper.h',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -219,12 +213,10 @@ describe('Compile Commands', () => {
 			'    helper.h',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -252,12 +244,10 @@ describe('Compile Commands', () => {
 			'    helper.cpp',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -290,12 +280,10 @@ describe('Compile Commands', () => {
 			'    src/helper/h3.cpp',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4876\t    108\t   1396\t   6380\t   18ec\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -342,12 +330,10 @@ describe('Compile Commands', () => {
 			'    legacy-flat/helper.cpp',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -374,12 +360,10 @@ describe('Compile Commands', () => {
 			'    project.properties',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   4764\t    108\t   1396\t   6268\t   187c\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -408,12 +392,10 @@ describe('Compile Commands', () => {
 			'    src/uber-library-example/uber-library-example.h',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
 			'Memory use: ',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   5100\t    108\t   1432\t   6640\t   19f0\t/workspace/target/workspace.elf',
-			'',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
 		];
@@ -469,7 +451,7 @@ describe('Compile Commands', () => {
 			'    helper.cpp',
 			'',
 			'attempting to compile firmware ',
-			'', // TODO (mirande): should be 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9' but the hash changes on each run
+			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`
 		];
 

@@ -83,6 +83,12 @@ module.exports.stopListeningMode = () => {
 	return run(['usb', 'stop-listening'], { reject: true });
 };
 
+module.exports.enterDFUMode = async () => {
+	const { run } = module.exports;
+	await run(['usb', 'dfu'], { reject: true });
+	await delay(2000);
+};
+
 module.exports.compileBlankFirmwareForTest = async (platform = 'photon') => {
 	const { run } = module.exports;
 	const destination = path.join(PATH_TMP_DIR, `blank-${platform}.bin`);
@@ -90,7 +96,7 @@ module.exports.compileBlankFirmwareForTest = async (platform = 'photon') => {
 	return { bin: destination };
 };
 
-module.exports.flashTestFirmwareOTA = async (pathToIno) => {
+module.exports.flashTestFirmwareOTA = (pathToIno) => {
 	const { run } = module.exports;
 	return run(['flash', DEVICE_NAME, pathToIno], { reject: true });
 };

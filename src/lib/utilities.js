@@ -289,6 +289,10 @@ module.exports = {
 			.catch(() => err);
 	},
 
+	replaceAll(str, src, dest) {
+		return str.split(src).join(dest);
+	},
+
 	compliment(arr, excluded){
 		const { arrayToHashSet } = module.exports;
 		let hash = arrayToHashSet(excluded);
