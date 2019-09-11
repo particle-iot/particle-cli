@@ -31,7 +31,9 @@ module.exports = class FlashCommand {
 			result = this.flashCloud({ device, files, target, yes });
 		}
 
-		return result;
+		return result.then(() => {
+			console.log ('\nFlash success!');
+		});
 	}
 
 	flashCloud({ device, files, target, yes }){
@@ -44,7 +46,7 @@ module.exports = class FlashCommand {
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
-	flashDfu({ binary, factory, force }){
+	flashDfu({ binary, factory, force, requestLeave }){
 		let specs, destSegment, destAddress;
 		let flashingKnownApp = false;
 		return Promise.resolve()
@@ -143,11 +145,9 @@ module.exports = class FlashCommand {
 				}
 
 				const alt = 0;
-				const leave = destSegment === 'userFirmware'; // todo - leave on factory firmware write too?
+				// todo - leave on factory firmware write too?
+				const leave = requestLeave !== undefined ? requestLeave : (destSegment === 'userFirmware');
 				return dfu.writeDfu(alt, finalBinary, destAddress, leave);
-			})
-			.then(() => {
-				console.log ('\nFlash success!');
 			})
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Error writing firmware');
