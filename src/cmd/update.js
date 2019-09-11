@@ -4,6 +4,9 @@ const Spinner = require('cli-spinner').Spinner;
 const settings = require('../../settings');
 const { delay } = require('../lib/utilities');
 const dfu = require('../lib/dfu');
+const ModuleParser = require('binary-version-reader').HalModuleParser;
+const ModuleInfo = require('binary-version-reader').ModuleInfo;
+const FlashCommand = require('./flash');
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 const spin = new Spinner('Updating system firmware on the device...');
@@ -35,7 +38,25 @@ function doUpdate(id) {
 		steps.push((next) => {
 			const binary = path.resolve(__dirname, '../../assets/updates', updates[part]);
 			const leave = partNumber === parts.length - 1;
-			dfu.write(binary, part, leave)
+
+			const parser = new ModuleParser();
+			return parser.parseFile(binary)
+				.catch(() => {
+					return;
+				})
+				.then((mod) => {
+					if (mod && mod.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.BOOTLOADER) {
+						// This is a valid non-bootloader module, use FlashCommand to handle all possible quirks
+						// e.g. DROP_MODULE_INFO flag
+						return new FlashCommand().flashDfu({ binary: binary, requestLeave: leave })
+							.catch((err) => {
+								throw new Error(err);
+							});
+					} else {
+						// This is not a valid module and a simple binary, use DFU directly
+						return dfu.write(binary, part, leave);
+					}
+				})
 				.then((result) => delay(2000).then(() => result))
 				.then((result) => next(null, result))
 				.catch((error) => next(error));
