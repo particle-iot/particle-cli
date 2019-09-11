@@ -91,7 +91,7 @@ var settings = {
 			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
 			// because as soon as the system parts are flashed they will change the location
 			// of DFU read/write functions which live in system firmware.
-			otaRegion: 'photon-bootloader@1.4.0.bin',
+			otaRegion: 'photon-bootloader@1.4.0+lto.bin',
 			otaFlag: 'ota-flag-a5.bin',
 			systemFirmwareOne: 'photon-system-part1@1.4.0.bin',
 			systemFirmwareTwo: 'photon-system-part2@1.4.0.bin'
@@ -100,7 +100,7 @@ var settings = {
 			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
 			// because as soon as the system parts are flashed they will change the location
 			// of DFU read/write functions which live in system firmware.
-			otaRegion: 'p1-bootloader@1.4.0.bin',
+			otaRegion: 'p1-bootloader@1.4.0+lto.bin',
 			otaFlag: 'ota-flag-a5.bin',
 			systemFirmwareOne: 'p1-system-part1@1.4.0.bin',
 			systemFirmwareTwo: 'p1-system-part2@1.4.0.bin'

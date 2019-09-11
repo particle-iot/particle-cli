@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.47.0 - 10 September 2019
+
+* Updated binaries for DeviceOS 1.4.0
+
 ## 1.46.2 - 6 September 2019
 
 * Fix “utilities.replaceAll is not a function” when running `particle keys server` using the `--host` flag
