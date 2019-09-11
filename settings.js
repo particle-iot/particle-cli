@@ -116,31 +116,37 @@ var settings = {
 		},
 		'2b04:d00c': {
 			systemFirmwareOne: 'argon-system-part1@1.4.0.bin',
+			radioStack: 'argon-softdevice@1.4.0.bin',
 			otaRegion: 'argon-bootloader@1.4.0.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00d': {
 			systemFirmwareOne: 'boron-system-part1@1.4.0.bin',
+			radioStack: 'boron-softdevice@1.4.0.bin',
 			otaRegion: 'boron-bootloader@1.4.0.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00e': {
 			systemFirmwareOne: 'xenon-system-part1@1.4.0.bin',
+			radioStack: 'xenon-softdevice@1.4.0.bin',
 			otaRegion: 'xenon-bootloader@1.4.0.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d016': {
 			systemFirmwareOne: 'asom-system-part1@1.4.0.bin',
+			radioStack: 'asom-softdevice@1.4.0.bin',
 			otaRegion: 'asom-bootloader@1.4.0.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d017': {
 			systemFirmwareOne: 'bsom-system-part1@1.4.0.bin',
+			radioStack: 'bsom-softdevice@1.4.0.bin',
 			otaRegion: 'bsom-bootloader@1.4.0.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d018': {
 			systemFirmwareOne: 'xsom-system-part1@1.4.0.bin',
+			radioStack: 'xsom-softdevice@1.4.0.bin',
 			otaRegion: 'xsom-bootloader@1.4.0.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
