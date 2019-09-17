@@ -92,7 +92,7 @@
     "eslint-config-particle": "^2.2.1",
     "execa": "^2.0.4",
     "fs-extra": "^8.1.0",
-    "github-api": "^3.2.3",
+    "github-api": "^3.3.0",
     "mocha": "^6.2.0",
     "mock-fs": "^4.10.1",
     "nyc": "^14.1.1",

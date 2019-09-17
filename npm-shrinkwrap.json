@@ -4955,9 +4955,9 @@
       }
     },
     "github-api": {
-      "version": "3.2.3",
-      "resolved": "https://registry.npmjs.org/github-api/-/github-api-3.2.3.tgz",
-      "integrity": "sha512-QRnZeY0n8gnDmYB3OO9Oa4dOHpF6zhv0n7ho/hs3niAYQbN54goxDmQBX1gqBOcLFncy2qykT/EeRVC0WPBjPQ==",
+      "version": "3.3.0",
+      "resolved": "https://registry.npmjs.org/github-api/-/github-api-3.3.0.tgz",
+      "integrity": "sha512-30pABj/1ciHmlqmjnWXn+A4JL8j9qB2IcQgibrJ7euGbaNRkAj+T6QhJwjLcPx4Hxlj+BP1TcdvaQ/7resw+VA==",
       "dev": true,
       "requires": {
         "axios": "^0.19.0",
