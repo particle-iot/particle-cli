@@ -526,7 +526,7 @@ describe('Library Commands', () => {
 
 			expect(stderr.split('\n')).to.include.members(libCreateLog);
 			expect(exitCode).to.equal(0);
-			expectLibrary(name, version, PATH_TMP_DIR);
+			await expectLibrary(name, version, PATH_TMP_DIR);
 		}).timeout(60 * 1000);
 
 		it('Creates a library using `--name` `--version` and `--author` flags', async () => {
@@ -539,7 +539,7 @@ describe('Library Commands', () => {
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(libCreateLog);
 			expect(exitCode).to.equal(0);
-			expectLibrary(name, version, PATH_TMP_DIR);
+			await expectLibrary(name, version, PATH_TMP_DIR);
 		});
 
 		it('Fails to create a library when `name` is blank', async () => {
