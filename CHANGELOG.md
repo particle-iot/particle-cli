@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.48.0 - 16 October 2019
+
+* Updated binaries for DeviceOS 1.4.1
+* Electron DeviceOS binaries used for `particle update` are no longer built with `DEBUG_BUILD=y`
+
 ## 1.47.0 - 10 September 2019
 
 * Updated binaries for DeviceOS 1.4.0
