@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.49.0 - 18 October 2019
+
+* Updated binaries for DeviceOS 1.4.2
+
 ## 1.48.0 - 16 October 2019
 
 * Updated binaries for DeviceOS 1.4.1
