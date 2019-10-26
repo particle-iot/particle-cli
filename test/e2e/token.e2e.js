@@ -99,7 +99,7 @@ describe('Token Commands', () => {
 		const { stdout, stderr, exitCode } = await subprocess;
 		const [msg, token] = stripANSI(stdout).split('\n').slice(-2).map(t => t.trim());
 
-		expect(msg).to.include('New access token does not expire');
+		expect(msg).to.include('New access token never expires');
 		expect(token).to.be.a('string').with.lengthOf.at.least(12);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
