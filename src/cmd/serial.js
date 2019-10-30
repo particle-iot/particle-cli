@@ -23,13 +23,14 @@ const ensureError = require('../lib/utilities').ensureError;
 const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
-const timeoutError = 'Serial timed out';
 
 function protip(){
 	const args = Array.prototype.slice.call(arguments);
 	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
 	console.log.apply(null, args);
 }
+
+const TIMEOUT_ERROR_MESSAGE = 'Serial timed out';
 
 // An LTE device may take up to 18 seconds to power up the modem
 const MODULE_INFO_COMMAND_TIMEOUT = 20000;
@@ -616,7 +617,7 @@ module.exports = class SerialCommand {
 				return !!matches;
 			})
 			.catch((err) => {
-				if (err !== timeoutError){
+				if (err !== TIMEOUT_ERROR_MESSAGE){
 					throw err;
 				}
 				return false;
@@ -897,7 +898,7 @@ module.exports = class SerialCommand {
 			}
 
 			function startTimeout(to){
-				self._serialTimeout = setTimeout(() => reject('Serial timed out'), to);
+				self._serialTimeout = setTimeout(() => reject(TIMEOUT_ERROR_MESSAGE), to);
 			}
 
 			function resetTimeout(){
@@ -919,8 +920,22 @@ module.exports = class SerialCommand {
 		return promise.finally(cleanUpFn);
 	}
 
+	/**
+	 * This is a wrapper function created so _serialWifiConfig can return the
+	 * true promise state, but the wrapper can still act like it handled any
+	 * failures gracefully as it acted before testing was attempted.
+	 */
+	serialWifiConfig(...args) {
+		return this._serialWifiConfig.apply(this, args)
+			.then(() => {
+				console.log('Done! Your device should now restart.');
+			}, (err) => {
+				log.error('Something went wrong:', err);
+			});
+	}
+
 	/* eslint-disable max-statements */
-	serialWifiConfig(device, opts = {}){
+	_serialWifiConfig(device, opts = {}){
 		if (!device){
 			return Promise.reject('No serial port available');
 		}
@@ -1204,15 +1219,18 @@ module.exports = class SerialCommand {
 				serialTrigger.start(true);
 				serialPort.write('w');
 				serialPort.drain();
+
+				// In case device is not in listening mode.
+				startTimeout(5000, 'Serial timed out while initially listening to device, please ensure device is in listening mode with particle usb start-listening');
 			});
 
 			function serialClosedEarly(){
 				reject('Serial port closed early');
 			}
 
-			function startTimeout(to){
+			function startTimeout(to, message = TIMEOUT_ERROR_MESSAGE){
 				self._serialTimeout = setTimeout(() => {
-					reject('Serial timed out');
+					reject(message);
 				}, to);
 			}
 
@@ -1275,13 +1293,7 @@ module.exports = class SerialCommand {
 			}
 		});
 
-		return promise
-			.then(() => {
-				console.log('Done! Your device should now restart.');
-			}, (err) => {
-				log.error('Something went wrong:', err);
-			})
-			.finally(cleanUpFn);
+		return promise.finally(cleanUpFn);
 	}
 	/* eslint-enable max-statements */
 
@@ -1307,7 +1319,7 @@ module.exports = class SerialCommand {
 			serialPort.pipe(parser);
 
 			const failTimer = setTimeout(() => {
-				reject(timeoutError);
+				reject(TIMEOUT_ERROR_MESSAGE);
 			}, failDelay);
 
 			parser.on('data', (data) => {
