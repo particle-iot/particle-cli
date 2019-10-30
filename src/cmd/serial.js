@@ -23,6 +23,7 @@ const ensureError = require('../lib/utilities').ensureError;
 const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
+const timeoutError = 'Serial timed out';
 
 function protip(){
 	const args = Array.prototype.slice.call(arguments);
@@ -30,7 +31,6 @@ function protip(){
 	console.log.apply(null, args);
 }
 
-const TIMEOUT_ERROR_MESSAGE = 'Serial timed out';
 
 // An LTE device may take up to 18 seconds to power up the modem
 const MODULE_INFO_COMMAND_TIMEOUT = 20000;
@@ -617,7 +617,7 @@ module.exports = class SerialCommand {
 				return !!matches;
 			})
 			.catch((err) => {
-				if (err !== TIMEOUT_ERROR_MESSAGE){
+				if (err !== timeoutError){
 					throw err;
 				}
 				return false;
@@ -898,7 +898,7 @@ module.exports = class SerialCommand {
 			}
 
 			function startTimeout(to){
-				self._serialTimeout = setTimeout(() => reject(TIMEOUT_ERROR_MESSAGE), to);
+				self._serialTimeout = setTimeout(() => reject(timeoutError), to);
 			}
 
 			function resetTimeout(){
@@ -1228,7 +1228,7 @@ module.exports = class SerialCommand {
 				reject('Serial port closed early');
 			}
 
-			function startTimeout(to, message = TIMEOUT_ERROR_MESSAGE){
+			function startTimeout(to, message = timeoutError){
 				self._serialTimeout = setTimeout(() => {
 					reject(message);
 				}, to);
@@ -1319,7 +1319,7 @@ module.exports = class SerialCommand {
 			serialPort.pipe(parser);
 
 			const failTimer = setTimeout(() => {
-				reject(TIMEOUT_ERROR_MESSAGE);
+				reject(timeoutError);
 			}, failDelay);
 
 			parser.on('data', (data) => {

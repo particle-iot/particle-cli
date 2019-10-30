@@ -69,6 +69,8 @@ describe('Serial Command', () => {
 			const mockSerial = new MockSerial();
 			serial.serialPort = mockSerial;
 			const wifiPromise = serial._serialWifiConfig(device);
+			// This allows _serialWifiConfig's internal promises to run and try to
+			// connect to the serial device before moving time forward.
 			process.nextTick(() => {
 				clock.tick(5010);
 			});
