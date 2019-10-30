@@ -73,6 +73,38 @@ describe('Token Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
+	it('Creates a token with an expiration time', async () => {
+		const subprocess = cli.run(['token', 'create', '--expires-in', '3600']);
+
+		await delay(1000);
+		subprocess.stdin.write(PASSWORD);
+		subprocess.stdin.end('\n');
+
+		const { stdout, stderr, exitCode } = await subprocess;
+		const [msg, token] = stripANSI(stdout).split('\n').slice(-2).map(t => t.trim());
+
+		expect(msg).to.include('New access token expires on');
+		expect(token).to.be.a('string').with.lengthOf.at.least(12);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Creates a token that does not expire', async () => {
+		const subprocess = cli.run(['token', 'create', '--never-expires']);
+
+		await delay(1000);
+		subprocess.stdin.write(PASSWORD);
+		subprocess.stdin.end('\n');
+
+		const { stdout, stderr, exitCode } = await subprocess;
+		const [msg, token] = stripANSI(stdout).split('\n').slice(-2).map(t => t.trim());
+
+		expect(msg).to.include('New access token never expires');
+		expect(token).to.be.a('string').with.lengthOf.at.least(12);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
 	it('Revokes a token', async () => {
 		let subprocess = cli.run(['token', 'create'], { reject: true });
 

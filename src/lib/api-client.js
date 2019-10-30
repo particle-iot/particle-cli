@@ -186,23 +186,30 @@ module.exports = class ApiClient {
 	 * @param clientId The OAuth client ID to identify the client
 	 * @param username  The username
 	 * @param password  The password
+	 * @param [expiresIn] The number of second for the token to last
 	 * @returns {Promise} to create the token
 	 */
-	createAccessToken(clientId, username, password){
+	createAccessToken(clientId, username, password, expiresIn){
 		const { request } = this;
+
+		const form = {
+			username: username,
+			password: password,
+			grant_type: 'password',
+			client_id: clientId,
+			client_secret: 'client_secret_here'
+		};
+
+		if (typeof expiresIn !== 'undefined') {
+			form.expires_in = expiresIn;
+		}
 
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/oauth/token',
 				method: 'POST',
 				json: true,
-				form: {
-					username: username,
-					password: password,
-					grant_type: 'password',
-					client_id: clientId,
-					client_secret: 'client_secret_here'
-				}
+				form
 			};
 
 			request(options, (error, response, body) => {

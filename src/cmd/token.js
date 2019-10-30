@@ -111,15 +111,19 @@ module.exports = class AccessTokenCommands {
 	 * Creates an access token using the given client name.
 	 * @returns {Promise} Will print the access token to the console, along with the expiration date.
 	 */
-	createAccessToken () {
+	createAccessToken ({ expiresIn, neverExpires }) {
 		const clientName = 'user';
 
 		const api = new ApiClient();
 
+		if (neverExpires) {
+			expiresIn = 0;
+		}
+
 		return Promise.resolve().then(() => {
 			return this.getCredentials();
 		}).then(creds => {
-			return api.createAccessToken(clientName, creds.username, creds.password).catch((error) => {
+			return api.createAccessToken(clientName, creds.username, creds.password, expiresIn).catch((error) => {
 				if (error.error === 'mfa_required') {
 					const cloud = new CloudCommand();
 					return cloud.enterOtp({ mfaToken: error.mfa_token });
@@ -127,10 +131,14 @@ module.exports = class AccessTokenCommands {
 				throw error;
 			});
 		}).then(result => {
-			const nowUnix = Date.now();
-			const expiresUnix = nowUnix + (result.expires_in * 1000);
-			const expiresDate = new Date(expiresUnix);
-			console.log('New access token expires on ' + expiresDate);
+			if (result.expires_in) {
+				const nowUnix = Date.now();
+				const expiresUnix = nowUnix + (result.expires_in * 1000);
+				const expiresDate = new Date(expiresUnix);
+				console.log('New access token expires on ' + expiresDate);
+			} else {
+				console.log('New access token never expires');
+			}
 			console.log('    ' + result.access_token);
 		}).catch(err => {
 			throw new VError(api.normalizedApiError(err), 'Error while creating a new access token');
