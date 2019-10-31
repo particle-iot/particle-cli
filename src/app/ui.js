@@ -24,12 +24,8 @@ module.exports.spin = async (promise, str) => {
 		return promise;
 	}
 
-	try {
-		spinner = new Spinner(str);
-		spinner.start();
-		return promise;
-	} finally {
-		spinner.stop(true);
-	}
+	spinner = new Spinner(str);
+	spinner.start();
+	return promise.finally(() => spinner.stop(true));
 };
 
