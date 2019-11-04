@@ -31,6 +31,7 @@ function protip(){
 	console.log.apply(null, args);
 }
 
+
 // An LTE device may take up to 18 seconds to power up the modem
 const MODULE_INFO_COMMAND_TIMEOUT = 20000;
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
@@ -897,7 +898,7 @@ module.exports = class SerialCommand {
 			}
 
 			function startTimeout(to){
-				self._serialTimeout = setTimeout(() => reject('Serial timed out'), to);
+				self._serialTimeout = setTimeout(() => reject(timeoutError), to);
 			}
 
 			function resetTimeout(){
@@ -919,8 +920,25 @@ module.exports = class SerialCommand {
 		return promise.finally(cleanUpFn);
 	}
 
+	/**
+	 * This is a wrapper function so _serialWifiConfig can return the
+	 * true promise state for testing.
+	 */
+	serialWifiConfig(...args) {
+		return this._serialWifiConfig(...args)
+			.then(() => {
+				console.log('Done! Your device should now restart.');
+			}, (err) => {
+				if (err && err.message) {
+					log.error('Something went wrong:', err.message);
+				} else {
+					log.error('Something went wrong:', err);
+				}
+			});
+	}
+
 	/* eslint-disable max-statements */
-	serialWifiConfig(device, opts = {}){
+	_serialWifiConfig(device, opts = {}){
 		if (!device){
 			return Promise.reject('No serial port available');
 		}
@@ -1204,15 +1222,18 @@ module.exports = class SerialCommand {
 				serialTrigger.start(true);
 				serialPort.write('w');
 				serialPort.drain();
+
+				// In case device is not in listening mode.
+				startTimeout(5000, 'Serial timed out while initially listening to device, please ensure device is in listening mode with particle usb start-listening', 'InitialTimeoutError');
 			});
 
 			function serialClosedEarly(){
 				reject('Serial port closed early');
 			}
 
-			function startTimeout(to){
+			function startTimeout(to, message = timeoutError, name = 'TimeoutError'){
 				self._serialTimeout = setTimeout(() => {
-					reject('Serial timed out');
+					reject(new VError({ name }, message));
 				}, to);
 			}
 
@@ -1275,13 +1296,7 @@ module.exports = class SerialCommand {
 			}
 		});
 
-		return promise
-			.then(() => {
-				console.log('Done! Your device should now restart.');
-			}, (err) => {
-				log.error('Something went wrong:', err);
-			})
-			.finally(cleanUpFn);
+		return promise.finally(cleanUpFn);
 	}
 	/* eslint-enable max-statements */
 

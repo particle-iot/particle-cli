@@ -1,13 +1,21 @@
 const MockSerial = require('../../test/__mocks__/serial.mock');
-const { expect } = require('../../test/setup');
+const { expect, sinon } = require('../../test/setup');
 const SerialCommand = require('./serial');
 
 
 describe('Serial Command', () => {
 	let serial;
+	let clock;
 
 	beforeEach(() => {
 		serial = new SerialCommand({ params: {} });
+	});
+
+	afterEach(() => {
+		if (clock !== undefined) {
+			clock.restore();
+			clock = undefined;
+		}
 	});
 
 	describe('supportsClaimCode', () => {
@@ -51,6 +59,36 @@ describe('Serial Command', () => {
 			return serial.sendClaimCode(device, code, false).then(() => {
 				expect(mockSerial.claimCodeSet).to.be.eql(code);
 			});
+		});
+	});
+
+	describe('serialWifiConfig', async () => {
+		it('can reject with timeout after 5000ms if not getting any serial data', async () => {
+			clock = sinon.useFakeTimers();
+			const device = { port: 'baltimore' };
+			const mockSerial = new MockSerial();
+
+			mockSerial.write = function write(data) {
+				if (data === 'w') {
+					// This next tick allows _serialWifiConfig to set the timeout before we move the clock foward.
+					process.nextTick(() => {
+						clock.tick(5010);
+					});
+				}
+			};
+
+			serial.serialPort = mockSerial;
+
+			let error;
+
+			try {
+				await serial._serialWifiConfig(device);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error).to.have.property('name', 'InitialTimeoutError');
 		});
 	});
 });

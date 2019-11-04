@@ -15,7 +15,7 @@ MockSerial.prototype.write = function write(chunk) {
 	this.data += chunk;
 };
 
-MockSerial.prototype.drain = function drain(cb) {
+MockSerial.prototype.drain = function drain(cb = () => {}) {
 	this.emit('drain');
 	process.nextTick(cb);
 };
