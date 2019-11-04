@@ -62,19 +62,34 @@ describe('Serial Command', () => {
 		});
 	});
 
-	describe('serialWifiConfig', () => {
-		it('can reject with timeout after 5000ms if not getting any serial data', () => {
+	describe('serialWifiConfig', async () => {
+		it('can reject with timeout after 5000ms if not getting any serial data', async () => {
 			clock = sinon.useFakeTimers();
 			const device = { port: 'baltimore' };
 			const mockSerial = new MockSerial();
+
+			mockSerial.write = function write(data) {
+				if (data === 'w') {
+					// This next tick allows _serialWifiConfig to set the timeout before we move the clock foward.
+					process.nextTick(() => {
+						clock.tick(5010);
+					});
+				}
+			};
+
 			serial.serialPort = mockSerial;
-			const wifiPromise = serial._serialWifiConfig(device);
-			// This allows _serialWifiConfig's internal promises to run and try to
-			// connect to the serial device before moving time forward.
-			process.nextTick(() => {
-				clock.tick(5010);
-			});
-			return expect(wifiPromise).to.be.rejected;
+
+
+			let error;
+
+			try {
+				await serial._serialWifiConfig(device);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error).to.have.property('name', 'InitialTimeoutError');
 		});
 	});
 });

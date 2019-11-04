@@ -921,12 +921,11 @@ module.exports = class SerialCommand {
 	}
 
 	/**
-	 * This is a wrapper function created so _serialWifiConfig can return the
-	 * true promise state, but the wrapper can still act like it handled any
-	 * failures gracefully as it acted before testing was attempted.
+	 * This is a wrapper function so _serialWifiConfig can return the
+	 * true promise state for testing.
 	 */
 	serialWifiConfig(...args) {
-		return this._serialWifiConfig.apply(this, args)
+		return this._serialWifiConfig(...args)
 			.then(() => {
 				console.log('Done! Your device should now restart.');
 			}, (err) => {
@@ -1221,16 +1220,16 @@ module.exports = class SerialCommand {
 				serialPort.drain();
 
 				// In case device is not in listening mode.
-				startTimeout(5000, 'Serial timed out while initially listening to device, please ensure device is in listening mode with particle usb start-listening');
+				startTimeout(5000, 'Serial timed out while initially listening to device, please ensure device is in listening mode with particle usb start-listening', 'InitialTimeoutError');
 			});
 
 			function serialClosedEarly(){
 				reject('Serial port closed early');
 			}
 
-			function startTimeout(to, message = timeoutError){
+			function startTimeout(to, message = timeoutError, name = 'TimeoutError'){
 				self._serialTimeout = setTimeout(() => {
-					reject(message);
+					reject(VError({name}, message));
 				}, to);
 			}
 
