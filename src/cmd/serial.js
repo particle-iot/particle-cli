@@ -1233,7 +1233,7 @@ module.exports = class SerialCommand {
 
 			function startTimeout(to, message = timeoutError, name = 'TimeoutError'){
 				self._serialTimeout = setTimeout(() => {
-					reject(VError({name}, message));
+					reject(new VError({ name }, message));
 				}, to);
 			}
 

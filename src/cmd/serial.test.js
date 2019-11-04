@@ -79,7 +79,6 @@ describe('Serial Command', () => {
 
 			serial.serialPort = mockSerial;
 
-
 			let error;
 
 			try {
