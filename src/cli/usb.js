@@ -35,7 +35,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	};
 
-	commandProcessor.createCommand(usb, 'start-listening', 'Put a device into the listening mode', {
+	const startListeningOptions = {
 		params: '[devices...]',
 		options: commonOptions,
 		examples: {
@@ -45,7 +45,10 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			return usbCommand().startListening(args);
 		}
-	});
+	};
+
+	commandProcessor.createCommand(usb, 'start-listening', 'Put a device into the listening mode', startListeningOptions);
+	commandProcessor.createCommand(usb, 'listen', 'alias for start-listening', startListeningOptions);
 
 	commandProcessor.createCommand(usb, 'stop-listening', 'Make a device exit the listening mode', {
 		params: '[devices...]',

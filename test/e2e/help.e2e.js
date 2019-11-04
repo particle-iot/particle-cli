@@ -60,7 +60,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'serial mac', 'serial inspect', 'serial flash', 'serial claim',
 		'serial', 'setup', 'subscribe', 'token list', 'token revoke',
 		'token create', 'token', 'udp send', 'udp listen', 'udp', 'update',
-		'update-cli', 'usb list', 'usb start-listening', 'usb stop-listening',
+		'update-cli', 'usb list', 'usb start-listening', 'usb listen', 'usb stop-listening',
 		'usb safe-mode', 'usb dfu', 'usb reset', 'usb configure', 'usb',
 		'variable list', 'variable get', 'variable monitor', 'variable',
 		'webhook create', 'webhook list', 'webhook delete', 'webhook POST',
