@@ -929,7 +929,11 @@ module.exports = class SerialCommand {
 			.then(() => {
 				console.log('Done! Your device should now restart.');
 			}, (err) => {
-				log.error('Something went wrong:', err);
+				if (err && err.message) {
+					log.error('Something went wrong:', err.message);
+				} else {
+					log.error('Something went wrong:', err);
+				}
 			});
 	}
 
