@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.50.0 - 5 November 2019
+
+* Add option to set expiration time when creation API tokens
+
+  Examples:
+
+  ```bash
+  # Token for 1 hour (3600 seconds)
+  particle token create --expires-in 3600
+  # Token that never expires (good for cloud applications)
+  particle token create --never-expires
+  ```
+* Add `particle usb listen` as an alias to `particle usb start-listening`
+* Fix `particle serial wifi` to now time out after 5 seconds if the device is not in USB listening mode.
+* Fix spinner to now spin while commands like `partilce usb` and `particle mesh` are waiting.
+
 ## 1.49.0 - 18 October 2019
 
 * Updated binaries for DeviceOS 1.4.2
