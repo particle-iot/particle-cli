@@ -224,10 +224,12 @@ module.exports = class VariableCommand {
 				console.error('Hit CTRL-C to stop!');
 
 				const checkVariable = () => {
-					this._getValue(deviceIds, variableName, { time })
-						.finally(() => setTimeout(checkVariable, delay));
+					const retry = () => setTimeout(checkVariable, delay);
+					return this._getValue(deviceIds, variableName, { time })
+						.then(retry)
+						.catch(retry);
 				};
-				checkVariable();
+				return checkVariable();
 			})
 			.catch(err => {
 				const api = new ApiClient();
