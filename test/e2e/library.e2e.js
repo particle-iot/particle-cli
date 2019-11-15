@@ -213,6 +213,24 @@ describe('Library Commands', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
+
+		it('Lists libraries using `--page` flag', async () => {
+			const args = ['library', 'list', '--page', 3];
+			const subprocess = cli.run(args);
+
+			await delay(1000);
+			subprocess.stdin.write(' ');
+			await delay(1000);
+			subprocess.cancel(); // CTRL-C
+
+			const { all, isCanceled } = await subprocess;
+			const lines = stripANSI(all).trim().split('\n');
+
+			expect(lines).to.have.lengthOf(12);
+			expect(lines[0]).to.equal('Community Libraries page 3');
+			expect(lines[11]).to.equal('Press ENTER for next page, CTRL-C to exit.');
+			expect(isCanceled).to.equal(true);
+		});
 	});
 
 	describe('Add Subcommand', () => {
