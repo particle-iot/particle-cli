@@ -73,7 +73,7 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 		const result = {};
 		const sections = this.sectionNames();
 		for (let section of sections) {
-			result[section] = { page:1 };
+			result[section] = { page: this._page || 1 };
 		}
 		if (result.mine) {
 			result.mine.excludeBadges = { mine:true };

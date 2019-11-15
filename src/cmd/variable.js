@@ -169,7 +169,6 @@ module.exports = class VariableCommand {
 			});
 	}
 
-
 	listVariables() {
 		return this.getAllVariables()
 			.then((devices) => {
@@ -202,7 +201,7 @@ module.exports = class VariableCommand {
 			});
 	}
 
-	monitorVariables(deviceId, variableName, { delay = settings.minimumApiDelay, time }) {
+	monitorVariables(deviceId, variableName, { delay = settings.minimumApiDelay, time } = {}) {
 		return Promise.resolve()
 			.then(() => {
 				if (deviceId === 'all') {
@@ -220,19 +219,24 @@ module.exports = class VariableCommand {
 					delay = settings.minimumApiDelay;
 					console.error(`Delay was too short, resetting to ${settings.minimumApiDelay}ms`);
 				}
-
 				console.error('Hit CTRL-C to stop!');
-
-				const checkVariable = () => {
-					this._getValue(deviceIds, variableName, { time })
-						.finally(() => setTimeout(checkVariable, delay));
-				};
-				checkVariable();
+				return this._pollForVariable(deviceIds, variableName, { delay, time });
 			})
 			.catch(err => {
 				const api = new ApiClient();
 				throw new VError(api.normalizedApiError(err), 'Error while monitoring variable');
 			});
+	}
+
+	_pollForVariable(deviceIds, variableName, { delay, time }){
+		const retry = () => setTimeout(
+			this._pollForVariable.bind(this, deviceIds, variableName, { delay, time }),
+			delay
+		);
+
+		return this._getValue(deviceIds, variableName, { time })
+			.then(retry)
+			.catch(retry);
 	}
 };
 

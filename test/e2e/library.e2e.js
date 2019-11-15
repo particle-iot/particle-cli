@@ -213,6 +213,24 @@ describe('Library Commands', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
+
+		it('Lists libraries using `--page` flag', async () => {
+			const args = ['library', 'list', '--page', 3];
+			const subprocess = cli.run(args);
+
+			await delay(1000);
+			subprocess.stdin.write(' ');
+			await delay(1000);
+			subprocess.cancel(); // CTRL-C
+
+			const { all, isCanceled } = await subprocess;
+			const lines = stripANSI(all).trim().split('\n');
+
+			expect(lines).to.have.lengthOf(12);
+			expect(lines[0]).to.equal('Community Libraries page 3');
+			expect(lines[11]).to.equal('Press ENTER for next page, CTRL-C to exit.');
+			expect(isCanceled).to.equal(true);
+		});
 	});
 
 	describe('Add Subcommand', () => {
@@ -526,7 +544,7 @@ describe('Library Commands', () => {
 
 			expect(stderr.split('\n')).to.include.members(libCreateLog);
 			expect(exitCode).to.equal(0);
-			expectLibrary(name, version, PATH_TMP_DIR);
+			await expectLibrary(name, version, PATH_TMP_DIR);
 		}).timeout(60 * 1000);
 
 		it('Creates a library using `--name` `--version` and `--author` flags', async () => {
@@ -539,7 +557,7 @@ describe('Library Commands', () => {
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(libCreateLog);
 			expect(exitCode).to.equal(0);
-			expectLibrary(name, version, PATH_TMP_DIR);
+			await expectLibrary(name, version, PATH_TMP_DIR);
 		});
 
 		it('Fails to create a library when `name` is blank', async () => {

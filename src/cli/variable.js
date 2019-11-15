@@ -30,7 +30,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(variable, 'monitor', 'Connect and display messages from a device', {
 		params: '[device] [variableName]',
-		options: Object.assign(timeOption, {
+		options: Object.assign({}, timeOption, {
 			'delay': {
 				number: true,
 				description: 'Interval in milliseconds between variable fetches',

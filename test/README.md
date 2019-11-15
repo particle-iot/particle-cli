@@ -28,8 +28,9 @@ The e2e tests run in two modes: with a device connected, and without. Since the 
 
 ### Running _with_ a device
 
-1. Connect your device via USB and wait for it to connect to the cloud (breathe cyan)
-2. run `npm run test:e2e`
+1. Disconnect all Particle devices from your computer's USB
+2. Connect your test device via USB and wait for it to connect to the cloud (breathe cyan)
+3. run `npm run test:e2e`
 
 
 ### Running _without_ a device

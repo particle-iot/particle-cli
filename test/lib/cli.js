@@ -75,17 +75,17 @@ module.exports.revertDeviceName = () => {
 
 module.exports.startListeningMode = () => {
 	const { run } = module.exports;
-	return run(['usb', 'start-listening'], { reject: true });
+	return run(['usb', 'start-listening', DEVICE_ID], { reject: true });
 };
 
 module.exports.stopListeningMode = () => {
 	const { run } = module.exports;
-	return run(['usb', 'stop-listening'], { reject: true });
+	return run(['usb', 'stop-listening', DEVICE_ID], { reject: true });
 };
 
 module.exports.enterDFUMode = async () => {
 	const { run } = module.exports;
-	await run(['usb', 'dfu'], { reject: true });
+	await run(['usb', 'dfu', DEVICE_ID], { reject: true });
 	await delay(2000);
 };
 
