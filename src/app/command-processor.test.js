@@ -52,8 +52,8 @@ describe('command-line parsing', () => {
 			expect(result.type).to.be.equal(commandProcessor.errors.unknownArgumentError);
 		});
 
-		const param = 'param';
 		it('variadic parameter position', () => {
+			const param = 'param';
 			const result = commandProcessor.errors.variadicParameterPositionError(param);
 			expect(result.data).to.be.equal(param);
 			expect(result.message).to.be.equal('Variadic parameter \'param\' must the final parameter.');
@@ -62,6 +62,7 @@ describe('command-line parsing', () => {
 		});
 
 		it('optional parameter position', () => {
+			const param = 'param';
 			const result = commandProcessor.errors.requiredParameterPositionError(param);
 			expect(result.data).to.be.equal(param);
 			expect(result.message).to.be.equal('Required parameter \'param\' must be placed before all optional parameters.');
@@ -70,6 +71,7 @@ describe('command-line parsing', () => {
 		});
 
 		it('parameter required', () => {
+			const param = 'param';
 			const result = commandProcessor.errors.requiredParameterError(param);
 			expect(result.data).to.be.equal(param);
 			expect(result.message).to.be.equal('Parameter \'param\' is required.');
@@ -78,6 +80,7 @@ describe('command-line parsing', () => {
 		});
 
 		it('variadic parameter required', () => {
+			const param = 'param';
 			const result = commandProcessor.errors.variadicParameterRequiredError(param);
 			expect(result.data).to.be.equal(param);
 			expect(result.message).to.be.equal('Parameter \'param\' must have at least one item.');
@@ -236,9 +239,9 @@ describe('command-line parsing', () => {
 				}
 			});
 			const result = commandProcessor.parse(app, ['cmd'].concat(args));
+
 			// only one of them set
 			expect(result.clicommand || result.clierror).to.be.ok;
-
 			expect(result.clicommand && result.clierror).to.be.not.ok;
 			if (result.clicommand) {
 				expect(result.clicommand).to.be.equal(cmd);
@@ -267,7 +270,6 @@ describe('command-line parsing', () => {
 		it('rejects varadic parameters not in final position', () => {
 			const argv = paramsCommand('[a] [b...] [c]', ['1','2', '3']);
 			const error = commandProcessor.errors.variadicParameterPositionError('b');
-
 			expect(argv.clicommand).to.equal(undefined);
 			expectCLIError(argv.clierror, error);
 		});
@@ -275,7 +277,6 @@ describe('command-line parsing', () => {
 		it('rejects omitted required varadic parameters', () => {
 			const argv = paramsCommand('[a] <b...>', ['1']);
 			const error = commandProcessor.errors.variadicParameterRequiredError('b');
-
 			expect(argv.clicommand).to.equal(undefined);
 			expectCLIError(argv.clierror, error);
 		});
@@ -283,7 +284,6 @@ describe('command-line parsing', () => {
 		it('rejects omitted required parameters', () => {
 			const argv = paramsCommand('<a> <b>', ['1']);
 			const error = commandProcessor.errors.requiredParameterError('b');
-
 			expect(argv.clicommand).to.equal(undefined);
 			expectCLIError(argv.clierror, error);
 		});
@@ -291,7 +291,6 @@ describe('command-line parsing', () => {
 		it('rejects required parameters after optional parameters', () => {
 			const argv = paramsCommand('[a] <b>', ['1']);
 			const error = commandProcessor.errors.requiredParameterPositionError('b');
-
 			expect(argv.clicommand).to.equal(undefined);
 			expectCLIError(argv.clierror, error);
 		});
@@ -317,7 +316,6 @@ describe('command-line parsing', () => {
 		it('rejects commands with unfilled required parameters', () => {
 			const argv = paramsCommand('<a> <b>', ['1']);
 			const error = commandProcessor.errors.requiredParameterError('b');
-
 			expect(argv.clicommand).to.equal(undefined);
 			expectCLIError(argv.clierror, error);
 		});
@@ -346,7 +344,6 @@ describe('command-line parsing', () => {
 		it('rejects parameterized command with surplus arguments', () => {
 			const argv = paramsCommand('[a]', ['hey', 'there', 'you']);
 			const error = commandProcessor.errors.unknownParametersError(['there', 'you']);
-
 			expect(argv.clicommand).to.equal(undefined);
 			expectCLIError(argv.clierror, error);
 		});
@@ -394,7 +391,6 @@ describe('command-line parsing', () => {
 	});
 
 	describe('consoleErrorHandler', () => {
-
 		it('calls yargs.showHelp if the error is falsey', () => {
 			const yargs = { showHelp: sinon.stub() };
 			const error = '';
@@ -450,7 +446,6 @@ describe('command-line parsing', () => {
 			expect(console.log).to.have.been.calledWithMatch('hey').and.calledOnce;
 		});
 	});
-
 
 	describe('CLICommand', () => {
 		function assertCanSetDescription(desc) {

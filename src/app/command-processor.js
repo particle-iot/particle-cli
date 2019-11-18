@@ -27,8 +27,8 @@ const yargsFactory = require('yargs/yargs');
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
 Yargs.$0 = 'particle';
 
-class CLICommandItem {
 
+class CLICommandItem {
 	/**
 	 * Constructor.
 	 * @param {string} name             The name of the command. This is the text the command is recognized by.
@@ -39,8 +39,8 @@ class CLICommandItem {
 	 *  - examples: an object of examples to add to yargs (key is the command, value is the description)
 	 *  - version: the version function to pass to yargs
 	 */
-	constructor(name, description = '', options = {}) {
-		if (!name) {
+	constructor(name, description = '', options = {}){
+		if (!name){
 			throw Error('name must be defined');
 		}
 		this.commands = {};
@@ -54,7 +54,7 @@ class CLICommandItem {
 	 * In cases where a command has an alias, this returns the canonical form of the command.
 	 * @returns {Array<String>} The command path as an array of simple names.
 	 */
-	get path() {
+	get path(){
 		return this.parent
 			? this.parent.path.concat([this.name])
 			: [this.name];
@@ -65,7 +65,7 @@ class CLICommandItem {
 	 * @param {string} name  The name of the sub item to retrieve.
 	 * @returns {CLICommandItem} A command item matching the name, or `undefined` if the named item doesn't exist.
 	 */
-	item(name) {
+	item(name){
 		return this.commands[name];
 	}
 
@@ -74,8 +74,8 @@ class CLICommandItem {
 	 * @param {Array<string>} path  The command path to find from this command
 	 * @returns {CliCommandItem}  the item found at the path or undefined
 	 */
-	find(path) {
-		if (!path || !path.length) {
+	find(path){
+		if (!path || !path.length){
 			return this;
 		}
 		const name = path[0];
@@ -89,7 +89,7 @@ class CLICommandItem {
 	 * @param {CLICommandItem} item     the command to add.
 	 * @returns {CLICommandItem} this
 	 */
-	addItem(item) {
+	addItem(item){
 		this.commands[item.name] = item;
 		item.parent = this;
 		return this;
@@ -105,8 +105,8 @@ class CLICommandItem {
 	 * @param {function} version    A function to retrieve the version
 	 * @param {string} epilogue     Printed at the end of the command block.
 	 */
-	configure(yargs, { options, setup, examples, version, epilogue }=this.buildOptions()) {
-		if (options) {
+	configure(yargs, { options, setup, examples, version, epilogue }=this.buildOptions()){
+		if (options){
 			this.fetchAliases(options);
 			this.configureOptions(options);
 			// avoid converting positional arguments to numbers by default
@@ -114,45 +114,46 @@ class CLICommandItem {
 			yargs.options(optionsWithDefaults);
 		}
 
-		if (setup) {
+		if (setup){
 			setup(yargs, this);
 		}
 
-		if (examples) {
+		if (examples){
 			const command = this.path.join(' ');
 			Object.keys(examples).forEach(cmd => {
 				yargs.example(cmd.replace(/\$command/, command), examples[cmd]);
 			});
 		}
 
-		if (version) {
+		if (version){
 			this.version = version;
 		}
 
-		if (epilogue) {
+		if (epilogue){
 			yargs.epilogue(epilogue);
 		}
 
 		yargs.exitProcess(false);
 	}
 
-	fetchAliases(options) {
+	fetchAliases(options){
 		Object.keys(options).forEach((key) => {
 			const option = options[key];
 			const alias = option.alias;
-			if (alias) {
+			if (alias){
 				this.aliases[alias] = key;
 			}
 		});
 	}
 
-	configureOptions(options) {
+	configureOptions(options){
 		Object.keys(options).forEach((key) => {
 			const option = options[key];
+
 			if (!option.hasOwnProperty('nargs') &&
 				!option.boolean &&
 				!option.count &&
-				!option.array) {
+				!option.array){
 				option.nargs = 1;
 			}
 
@@ -160,7 +161,7 @@ class CLICommandItem {
 				!option.hasOwnProperty('boolean') &&
 				!option.hasOwnProperty('string') &&
 				!option.hasOwnProperty('count') &&
-				!option.hasOwnProperty('array')) {
+				!option.hasOwnProperty('array')){
 				option.string = true;
 			}
 		});
@@ -171,7 +172,7 @@ class CLICommandItem {
 	 * @param {string} name The option name to unalias.
 	 * @returns {string} The original option name
 	 */
-	unaliasOption(name) {
+	unaliasOption(name){
 		return this.aliases[name] || (this.parent ? this.parent.unaliasOption(name) : undefined);
 	}
 
@@ -183,9 +184,8 @@ class CLICommandItem {
 	 *  clierror: any errors produces (mutually exclusive with clicommand)
 	 *  *: properties corresponding to any options specified on the command line.
 	 */
-	parse(args, yargs) {
-
-		if (yargs===undefined) {
+	parse(args, yargs){
+		if (yargs === undefined){
 			yargs = Yargs;
 		}
 
@@ -195,12 +195,12 @@ class CLICommandItem {
 		});
 
 		const argv = this.configureAndParse(args, yargs);
-		if (!error) {
-			if (this.options.parsed) {
+
+		if (!error){
+			if (this.options.parsed){
 				this.options.parsed(argv);
 			}
-
-			if (this.matches(argv)) {
+			if (this.matches(argv)){
 				argv.clicommand = this;
 			}
 		} else {
@@ -210,27 +210,30 @@ class CLICommandItem {
 		return argv;
 	}
 
-	configureAndParse(args, yargs) {
+	configureAndParse(args, yargs){
 		this.configureParser(args, yargs);
 		return yargs.parse(args);
 	}
 
-	matches(argv) {
+	matches(argv){
 		return this.matchesArgs(argv._);
 	}
 
-	matchesArgs(args) {
-		if (!this.path.length) {
+	matchesArgs(args){
+		if (!this.path.length){
 			return !args.length;
 		}
 
 		// walk the argv matching each command in sequence
-		const last = args[args.length-1];
-		return this.matchesName(last) && (!this.parent || this.parent.matchesArgs(args.slice(0, args.length-1)));
+		const last = args[args.length - 1];
+		return this.matchesName(last) && (!this.parent || this.parent.matchesArgs(args.slice(0, args.length - 1)));
 	}
 
-	matchesName(name) {
-		return this.name===name || (this.options.alias && this.options.alias===name);
+	matchesName(name){
+		if (this.name === name){
+			return true;
+		}
+		return this.options.alias && this.options.alias === name;
 	}
 
 	/**
@@ -238,38 +241,39 @@ class CLICommandItem {
 	 * @param {object} argv  The parsed arguments for the cli command.
 	 * @returns {Promise} to run the comand
 	 */
-	exec(argv) {
-		if (this.options.handler) {
+	exec(argv){
+		if (this.options.handler){
 			return Promise.resolve().then(() => this.options.handler(argv));
-		} else if (argv.version && this.version) {
-			return Promise.resolve(this.version(argv));
-		} else {
-			return this.showHelp();
 		}
+		if (argv.version && this.version){
+			return Promise.resolve(this.version(argv));
+		}
+		return this.showHelp();
 	}
 
-	showHelp() {
+	showHelp(){
 		Yargs.showHelp();
 	}
 
-	addInheritedOptions(target) {
+	addInheritedOptions(target){
 		const parent = this.parent;
-		if (parent) {
+
+		if (parent){
 			parent.addInheritedOptions(target);
 		}
 		this.assign(target, this.inherited);
 	}
 
-	buildOptions() {
+	buildOptions(){
 		const target = {};
 		this.addInheritedOptions(target);
 		this.assign(target, this.options);
 		return target;
 	}
 
-	assign(target, value) {
-		if (value) {
-			// this is a dirty hack! for now, only merge the options
+	assign(target, value){
+		if (value){
+			// TODO (mirande): this is a dirty hack! for now, only merge the options
 			const options = target.options || {};
 			Object.assign(target, value);
 			target.options = Object.assign(options, value.options);
@@ -277,13 +281,14 @@ class CLICommandItem {
 	}
 }
 
+
 /**
  * Describes a container of commands, and whose path has a common prefix.
  * Uses the container pattern where child items can be further nested categories or
  * CLICommand instance.
  */
 class CLICommandCategory extends CLICommandItem {
-	constructor(name, description, options) {
+	constructor(name, description, options){
 		super(name, description, options);
 		this.parent = null;
 	}
@@ -295,10 +300,9 @@ class CLICommandCategory extends CLICommandItem {
 	 * @param {object} argv  the parsed yargs arguments
 	 * @returns {boolean} the validity of the check.
 	 */
-	check(yargs, argv) {
-
+	check(yargs, argv){
 		// ensure common prefix
-		if (!this.matches(argv)) {
+		if (!this.matches(argv)){
 			throw unknownCommandError(argv._, this);
 		}
 
@@ -308,28 +312,25 @@ class CLICommandCategory extends CLICommandItem {
 		// Additionally, `yargs.strict()` does not seem to handle pre-
 		// negated params like `--no-run`.
 		checkForUnknownArguments(yargs, argv, this);
-
 		return true;
 	}
 
-	get commandNames() {
+	get commandNames(){
 		return Object.keys(this.commands);
 	}
 
-	configureParser(args, yargs) {
-
+	configureParser(args, yargs){
 		this.configure(yargs);
-
 		// add the subcommands of this category
 		this.commandNames.forEach((commandName) => {
 			const command = this.commands[commandName];
-
 			const builder = (yargs) => {
 				return { argv: command.parse(args, yargs) };
 			};
 
 			yargs.command(command.name, command.description, builder);
-			if (command.options && command.options.alias) {
+
+			if (command.options && command.options.alias){
 				// hidden command
 				yargs.command(command.options.alias, false, builder);
 			}
@@ -345,39 +346,37 @@ class CLICommandCategory extends CLICommandItem {
 	}
 }
 
+
 class CLIRootCategory extends CLICommandCategory {
-	constructor(options) {
+	constructor(options){
 		super('$0', options && options.description, options);
 	}
 
-	get path() {
+	get path(){
 		return [];
 	}
 
-	get commandNames() {
+	get commandNames(){
 		return super.commandNames.sort();
 	}
-
 }
+
 
 class CLICommand extends CLICommandItem {
 	/**
 	 * @param {string} name The invocation name of the command on the command line
 	 * @param {string} description Description of the command. Used to produce help text.
 	 * @param {object} options  In addition to attributes defined by the base class:
- 	 *  - params: the positional arguments in this format: <required> [optional] <rest...>
+	 *  - params: the positional arguments in this format: <required> [optional] <rest...>
 	 *  - handler: the function that is invoked with `this` and the parsed commandline.
 	 */
-	constructor(name, description, options) {
-		super(name, description, _.defaultsDeep(options || {}, {
-			params: '',
-		}));
+	constructor(name, description, options){
+		super(name, description, _.defaultsDeep(options || {}, { params: '' }));
 		this.name = name || '$0';
 		this.parent = null;
 	}
 
-	configureParser(args, yargs) {
-
+	configureParser(args, yargs){
 		this.configure(yargs);
 
 		yargs
@@ -388,9 +387,7 @@ class CLICommand extends CLICommandItem {
 				// Additionally, `yargs.strict()` does not seem to handle pre-
 				// negated params like `--no-run`.
 				checkForUnknownArguments(yargs, argv, this);
-
 				parseParams(yargs, argv, this.path, this.options.params);
-
 				return true;
 			})
 			.usage((this.description ? this.description + '\n' : '')
@@ -401,52 +398,54 @@ class CLICommand extends CLICommandItem {
 	}
 }
 
+
 /**
  * Creates an error handler. The handler displays the error message if there is one,
  * or displays the help if there ie no error or it is a usage error.
  * @param {object} yargs
  * @returns {function(err)} the error handler function
  */
-function createErrorHandler(yargs) {
-	if (!yargs) {
+function createErrorHandler(yargs){
+	if (!yargs){
 		yargs = Yargs;
 	}
 	return consoleErrorLogger.bind(undefined, console, yargs, true);
 }
 
-function stringify(err) {
+function stringify(err){
 	return _.isString(err) ? err : util.inspect(err);
 }
 
 /**
  * Logs an error to the console given and optionally calls yargs.showHelp() if the
  * error is a usage error.
- * @param {object} console   The console to log to.
+ * @param {object} console  the console to log to.
  * @param {Yargs} yargs     the yargs instance
- * @param {boolean} exit     if true, process.exit() is called.
- * @param {object} err      The error to log. If it has a `message` property, that is logged, otherwise
+ * @param {boolean} exit    if true, process.exit() is called.
+ * @param {object} error    the error to log. If it has a `message` property, that is logged, otherwise
  *  the error is converted to a string by calling `stringify(err)`.
  */
-function consoleErrorLogger(console, yargs, exit, err) {
-	const usage = (!err || err.isUsageError);
-	if (usage) {
+function consoleErrorLogger(console, yargs, exit, error){
+	const usage = (!error || error.isUsageError);
+
+	if (usage){
 		yargs.showHelp();
 	}
 
-	if (err) {
-		console.log(chalk.red(err.message || stringify(err)));
+	if (error){
+		console.log(chalk.red(error.message || stringify(error)));
 	}
-	if (!usage && (err.stack && ((global.verboseLevel || 0)>1))) {
-		console.log(VError.fullStack(err));
+	if (!usage && (error.stack && ((global.verboseLevel || 0) > 1))){
+		console.log(VError.fullStack(error));
 	}
-	// todo - try to find a more controllable way to singal an error - this isn't easily testable.
-	if (exit) {
+	// TODO (mirande): try to find a more controllable way to singal an error - this isn't easily testable.
+	if (exit){
 		process.exit(1);
 	}
 }
 
 // Adapted from: https://github.com/bcoe/yargs/blob/master/lib/validation.js#L83-L110
-function checkForUnknownArguments(yargs, argv, command) {
+function checkForUnknownArguments(yargs, argv, command){
 	const aliasLookup = {};
 	const flags = yargs.getOptions().key;
 	const demanded = yargs.getDemanded();
@@ -458,7 +457,7 @@ function checkForUnknownArguments(yargs, argv, command) {
 		});
 	});
 
-	function isUnknown(key) {
+	function isUnknown(key){
 		return (key !== '$0' && key !== '_' && key !== 'params' &&
 			!demanded.hasOwnProperty(key) &&
 			!flags.hasOwnProperty(key) &&
@@ -466,18 +465,18 @@ function checkForUnknownArguments(yargs, argv, command) {
 			!aliasLookup.hasOwnProperty(key));
 	}
 
-	function aliasFor(key) {
+	function aliasFor(key){
 		return command.unaliasOption(key);
 	}
 
 	Object.keys(argv).forEach((key) => {
 		const alias = aliasFor(key);
-		if (isUnknown(key) && (!alias || isUnknown(alias))) {
+		if (isUnknown(key) && (!alias || isUnknown(alias))){
 			unknown.push(key);
 		}
 	});
 
-	if (unknown.length) {
+	if (unknown.length){
 		throw unknownArgumentError(unknown);
 	}
 }
@@ -490,7 +489,7 @@ function checkForUnknownArguments(yargs, argv, command) {
  * @param {Array<String>} path     The command path the params apply to
  * @param {string} params   The params to parse.
  */
-function parseParams(yargs, argv, path, params) {
+function parseParams(yargs, argv, path, params){
 	let required = 0;
 	let optional = 0;
 	let variadic = false;
@@ -501,57 +500,59 @@ function parseParams(yargs, argv, path, params) {
 
 	argv._ = argv._.slice(0, path.length);
 
-	params.replace(/(<[^>]+>|\[[^\]]+\])/g,
-		(match) => {
-			if (variadic) {
-				throw variadicParameterPositionError(variadic);
-			}
+	params.replace(/(<[^>]+>|\[[^\]]+\])/g, (match) => {
+		if (variadic){
+			throw variadicParameterPositionError(variadic);
+		}
 
-			const isRequired = match[0] === '<';
-			const param = match
-				.slice(1, -1)
-				.replace(/(.*)\.\.\.$/, (m, param) => {
-					variadic = true;
-					return param;
-				});
-			let value;
-			if (isRequired) {
-				required++;
-			} else {
-				optional++;
-			}
-
-			if (variadic) {
-				variadic = param; // save the name
-				value = extra.slice(-1 + required + optional).map(String);
-
-				if (isRequired && !value.length) {
-					throw variadicParameterRequiredError(param);
-				}
-			} else {
-				if (isRequired && optional > 0) {
-					throw requiredParameterPositionError(param);
-				}
-
-				value = extra[-1 + required + optional];
-
-				if (value) {
-					value = String(value);
-				}
-
-				if (isRequired && typeof value === 'undefined') {
-					throw requiredParameterError(param);
-				}
-			}
-
-			const params = param.split('|');
-			params.forEach(p => {
-				argv.params[p] = value;
+		const isRequired = match[0] === '<';
+		const param = match
+			.slice(1, -1)
+			.replace(/(.*)\.\.\.$/, (m, param) => {
+				variadic = true;
+				return param;
 			});
-		});
 
-	if (!variadic && required+optional < extra.length) {
-		throw unknownParametersError(extra.slice(required+optional));
+		if (isRequired){
+			required++;
+		} else {
+			optional++;
+		}
+
+		let value;
+
+		if (variadic){
+			variadic = param; // save the name
+			value = extra.slice(-1 + required + optional).map(String);
+
+			if (isRequired && !value.length){
+				throw variadicParameterRequiredError(param);
+			}
+		} else {
+			if (isRequired && optional > 0){
+				throw requiredParameterPositionError(param);
+			}
+
+			value = extra[-1 + required + optional];
+
+			if (value){
+				value = String(value);
+			}
+
+			if (isRequired && typeof value === 'undefined'){
+				throw requiredParameterError(param);
+			}
+		}
+
+		const params = param.split('|');
+
+		params.forEach(p => {
+			argv.params[p] = value;
+		});
+	});
+
+	if (!variadic && required+optional < extra.length){
+		throw unknownParametersError(extra.slice(required + optional));
 	}
 }
 
@@ -559,12 +560,12 @@ function parseParams(yargs, argv, path, params) {
  * @param {object} options
  * @returns {CLIRootCategory} The root category for the app command line args.
  */
-function createAppCategory(options) {
+function createAppCategory(options){
 	return new CLIRootCategory(options);
 }
 
-function createCategory(parent, name, description, options) {
-	if (_.isObject(description)) {
+function createCategory(parent, name, description, options){
+	if (_.isObject(description)){
 		options = description;
 		description = '';
 	}
@@ -574,14 +575,14 @@ function createCategory(parent, name, description, options) {
 	return cat;
 }
 
-function createCommand(category, name, description, options) {
-	if (_.isObject(name)) {
+function createCommand(category, name, description, options){
+	if (_.isObject(name)){
 		options = name;
 		name = '$0';
 		description = '';
 	}
 
-	if (_.isObject(description)) {
+	if (_.isObject(description)){
 		options = description;
 		description = '';
 	}
@@ -599,13 +600,13 @@ function createCommand(category, name, description, options) {
  * Options/booleans are attributes of the object. The property `clicommand` contains the command corresponding
  * to the requested command. `clierror` contains any error encountered durng parsing.
  */
-function parse(command, args) {
+function parse(command, args){
 	Yargs.reset();
 	Yargs.wrap(Yargs.terminalWidth());
 	return command.parse(args, Yargs);
 }
 
-function baseError(message, data) {
+function baseError(message, data){
 	const error = new Error();
 	// yargs doesn't pass the full error if a message is defined, only the message
 	// since we need the full object, use an alias
@@ -614,7 +615,7 @@ function baseError(message, data) {
 	return error;
 }
 
-function usageError(message, data, type, item) {
+function usageError(message, data, type, item){
 	const error = baseError(message, data);
 	error.isUsageError = true;
 	error.type = type;
@@ -622,43 +623,72 @@ function usageError(message, data, type, item) {
 	return error;
 }
 
-function applicationError(message, data, type) {
+function applicationError(message, data, type){
 	const error = baseError(message, data);
 	error.isApplicationError = true;
 	error.type = type;
 	return error;
 }
 
-function unknownCommandError(command, item) {
+function unknownCommandError(command, item){
 	const commandString = command.join(' ');
-	return usageError(`No such command '${commandString}'`, command, unknownCommandError, item);
+	return usageError(
+		`No such command '${commandString}'`,
+		command,
+		unknownCommandError,
+		item
+	);
 }
 
-function unknownArgumentError(argument) {
+function unknownArgumentError(argument){
 	const argsString = argument.join(', ');
 	const s = argument.length > 1 ? 's' : '';
-	return usageError(`Unknown argument${s} '${argsString}'`, argument, unknownArgumentError);
+	return usageError(
+		`Unknown argument${s} '${argsString}'`,
+		argument,
+		unknownArgumentError
+	);
 }
 
-function requiredParameterError(param) {
-	return usageError(`Parameter '${param}' is required.`, param, requiredParameterError);
+function requiredParameterError(param){
+	return usageError(
+		`Parameter '${param}' is required.`,
+		param,
+		requiredParameterError
+	);
 }
 
-function variadicParameterRequiredError(param) {
-	return usageError(`Parameter '${param}' must have at least one item.`, param, variadicParameterRequiredError);
+function variadicParameterRequiredError(param){
+	return usageError(
+		`Parameter '${param}' must have at least one item.`,
+		param,
+		variadicParameterRequiredError
+	);
 }
 
-function variadicParameterPositionError(param) {
-	return applicationError(`Variadic parameter '${param}' must the final parameter.`, param, variadicParameterPositionError);
+function variadicParameterPositionError(param){
+	return applicationError(
+		`Variadic parameter '${param}' must the final parameter.`,
+		param,
+		variadicParameterPositionError
+	);
 }
 
-function requiredParameterPositionError(param) {
-	return applicationError(`Required parameter '${param}' must be placed before all optional parameters.`, param, requiredParameterPositionError);
+function requiredParameterPositionError(param){
+	return applicationError(
+		`Required parameter '${param}' must be placed before all optional parameters.`,
+		param,
+		requiredParameterPositionError
+	);
 }
 
-function unknownParametersError(params) {
+function unknownParametersError(params){
 	const paramsString = params.join(' ');
-	return usageError(`Command parameters '${paramsString}' are not expected here.`, params, unknownParametersError);
+	return usageError(
+		`Command parameters '${paramsString}' are not expected here.`,
+		params,
+		unknownParametersError
+	);
 }
 
 const errors = {
@@ -675,7 +705,7 @@ const test = {
 	consoleErrorLogger
 };
 
-function showHelp(cb) {
+function showHelp(cb){
 	Yargs.showHelp(cb);
 }
 
@@ -687,5 +717,5 @@ module.exports = {
 	createErrorHandler,
 	showHelp,
 	errors,
-	test,
+	test
 };
