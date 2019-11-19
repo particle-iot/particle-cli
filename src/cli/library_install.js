@@ -46,15 +46,24 @@ class CLILibraryInstallCommandSite extends LibraryInstallCommandSite {
 	}
 
 	async notifyCheckingLibrary(libName){
+		if (this.argv.json){
+			return;
+		}
 		return console.log(`Checking library ${chalk.green(libName)}...`);
 	}
 
 	async notifyFetchingLibrary(lib, targetDir){
+		if (this.argv.json){
+			return;
+		}
 		const dest = ` to ${targetDir}`;
 		return console.log(`Installing library ${chalk.blue(lib.name)} ${lib.version}${dest} ...`);
 	}
 
 	async notifyInstalledLibrary(lib){
+		if (this.argv.json){
+			return;
+		}
 		return console.log(`Library ${chalk.blue(lib.name)} ${lib.version} installed.`);
 	}
 }

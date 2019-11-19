@@ -179,12 +179,16 @@ describe('Library Commands', () => {
 	});
 
 	describe('View Subcommand', () => {
+		after(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
 		it('Views library', async () => {
 			const name = 'dotstar';
 			const args = ['library', 'view', name];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const [version] = matches(stdout, /Library dotstar (.*) installed./g);
-			const libPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
+			const libPath = getExpectedLibraryPath(name, version);
 			const localLibPath = path.join(projPath, 'lib');
 
 			expect(!!semver.valid(version)).to.equal(true);
@@ -194,12 +198,168 @@ describe('Library Commands', () => {
 			expect(await fs.pathExists(localLibPath)).to.equal(false);
 		});
 
+		it('Views library using the `--json` flag', async () => {
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+			const libPath = getExpectedLibraryPath(name, json.data.version);
+
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta.filter).to.equal(name);
+			expect(json.meta.location).to.equal(libPath);
+			expect(json.data).to.have.all.keys('architectures', 'author',
+				'content', 'downloadUrl', 'installs', 'license', 'mine', 'name',
+				'repository', 'sentence', 'url', 'version', 'visibility');
+			expect(json.data.name).to.equal(name);
+			expect(!!semver.valid(json.data.version)).to.equal(true);
+			expect(json.data.content).to.equal(null);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Views library README using the `--readme` flag', async () => {
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--readme'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('Implementation based on Adafruit\'s DotStar Library.');
+			expect(stdout).to.include('DotStar LED\'s are APA102');
+			expect(stdout).to.include('Example Usage');
+			expect(stdout).to.include('To view the library documentation and sources directly, please change to the directory');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Views library README using the `--readme` and `--json` flags', async () => {
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--readme', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+			const libPath = getExpectedLibraryPath(name, json.data.version);
+
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta.filter).to.equal(name);
+			expect(json.meta.location).to.equal(libPath);
+			expect(json.data).to.have.all.keys('architectures', 'author',
+				'content', 'downloadUrl', 'installs', 'license', 'mine', 'name',
+				'repository', 'sentence', 'url', 'version', 'visibility');
+			expect(json.data.name).to.equal(name);
+			expect(!!semver.valid(json.data.version)).to.equal(true);
+			expect(json.data.content).to.include('Implementation based on Adafruit\'s DotStar Library.');
+			expect(json.data.content).to.include('DotStar LED\'s are APA102');
+			expect(json.data.content).to.include('Example Usage');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Views library source using the `--source` flag', async () => {
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--source'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('void Adafruit_DotStar::show(');
+			expect(stdout).to.include('void Adafruit_DotStar::clear()');
+			expect(stdout).to.include('To view the library documentation and sources directly, please change to the directory');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Views library source using the `--source` and `--json` flags', async () => {
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--source', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+			const libPath = getExpectedLibraryPath(name, json.data.version);
+
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta.filter).to.equal(name);
+			expect(json.meta.location).to.equal(libPath);
+			expect(json.data).to.have.all.keys('architectures', 'author',
+				'content', 'downloadUrl', 'installs', 'license', 'mine', 'name',
+				'repository', 'sentence', 'url', 'version', 'visibility');
+			expect(json.data.name).to.equal(name);
+			expect(!!semver.valid(json.data.version)).to.equal(true);
+			expect(json.data.content).to.include('void Adafruit_DotStar::show(');
+			expect(json.data.content).to.include('void Adafruit_DotStar::clear()');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Views library header using the `--header` flag', async () => {
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--header'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('#define DOTSTAR_RGB');
+			expect(stdout).to.include('class Adafruit_DotStar');
+			expect(stdout).to.include('To view the library documentation and sources directly, please change to the directory');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Views library header using the `--header` and `--json` flags', async () => {
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--header', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+			const libPath = getExpectedLibraryPath(name, json.data.version);
+
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta.filter).to.equal(name);
+			expect(json.meta.location).to.equal(libPath);
+			expect(json.data).to.have.all.keys('architectures', 'author',
+				'content', 'downloadUrl', 'installs', 'license', 'mine', 'name',
+				'repository', 'sentence', 'url', 'version', 'visibility');
+			expect(json.data.name).to.equal(name);
+			expect(!!semver.valid(json.data.version)).to.equal(true);
+			expect(json.data.content).to.include('#define DOTSTAR_RGB');
+			expect(json.data.content).to.include('class Adafruit_DotStar');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
 		it('Fails when attempting to view an unknown library', async () => {
 			const opts = { cwd: projPath };
 			const args = ['library', 'view', 'WATNOPEWATWATNOPENOPE'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 
 			expect(stdout).to.include('Library WATNOPEWATWATNOPENOPE not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails when attempting to view an unknown library using the `--json` flag', async () => {
+			const opts = { cwd: projPath };
+			const args = ['library', 'view', 'WATNOPEWATWATNOPENOPE', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args, opts);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('error');
+			expect(json.error).to.have.property('message').that.is.a('string');
+			expect(json.error.message).to.equal('Library WATNOPEWATWATNOPENOPE not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails when user is signed-out and using the `--json` flag', async () => {
+			await cli.logout();
+
+			const name = 'dotstar';
+			const args = ['library', 'view', name, '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('error');
+			expect(json.error).to.have.property('message').that.is.a('string');
+			expect(json.error.message).include('HTTP error 400');
+			expect(json.error.message).include('The access token was not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -530,7 +690,7 @@ describe('Library Commands', () => {
 			const args = ['library', 'install', name];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 			const [version] = matches(stdout, /Library dotstar (.*) installed./g);
-			const libPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
+			const libPath = getExpectedLibraryPath(name, version);
 			const localLibPath = path.join(projPath, 'lib');
 
 			expect(!!semver.valid(version)).to.equal(true);
@@ -551,7 +711,7 @@ describe('Library Commands', () => {
 			const args = ['library', 'install', name, '--copy'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 			const [version] = matches(stdout, /Library dotstar (.*) installed./g);
-			const libPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
+			const libPath = getExpectedLibraryPath(name, version);
 			const localLibPath = path.join(projPath, 'lib');
 
 			expect(!!semver.valid(version)).to.equal(true);
@@ -597,8 +757,8 @@ describe('Library Commands', () => {
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 			const [dotstarVer] = matches(stdout, /Library dotstar (.*) installed./g);
 			const [neopixelVer] = matches(stdout, /Library neopixel (.*) installed./g);
-			const dotstarLibPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `dotstar@${dotstarVer}`);
-			const neopixelLibPath = path.join(PATH_PARTICLE_LIBRARIES_DIR, `neopixel@${neopixelVer}`);
+			const dotstarLibPath = getExpectedLibraryPath('dotstar', dotstarVer);
+			const neopixelLibPath = getExpectedLibraryPath('neopixel', neopixelVer);
 			const localLibPath = path.join(projPath, 'lib');
 
 			expect(!!semver.valid(dotstarVer)).to.equal(true);
@@ -921,6 +1081,10 @@ describe('Library Commands', () => {
 			'# repository=git repository for the project, like https://github.com/mygithub_user/my_repo.git',
 			'# architectures=a list of supported boards if this library is hardware dependent, like particle-photon,particle-electron'
 		]);
+	}
+
+	function getExpectedLibraryPath(name, version){
+		return path.join(PATH_PARTICLE_LIBRARIES_DIR, `${name}@${version}`);
 	}
 });
 

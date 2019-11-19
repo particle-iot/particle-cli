@@ -150,8 +150,12 @@ module.exports = ({ commandProcessor, root }) => {
 			'header': {
 				boolean: true,
 				description: 'display the main header file for the library'
+			},
+			// TODO (mirande): should be a global flag supported by all commands
+			'json': {
+				boolean: true,
+				description: 'output in JSON format instead of human friendly'
 			}
-
 		},
 		params: '<name>',
 		handler: (...args) => require('./library_view').command(api(), ...args)
