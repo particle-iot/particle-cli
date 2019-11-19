@@ -206,6 +206,10 @@ describe('Library Commands', () => {
 	});
 
 	describe('List Subcommand', () => {
+		after(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
 		it('Lists libraries', async () => {
 			const args = ['library', 'list'];
 			const subprocess = cli.run(args);
@@ -271,6 +275,64 @@ describe('Library Commands', () => {
 			expect(lines[0]).to.equal('Community Libraries page 3');
 			expect(lines[11]).to.equal('Press ENTER for next page, CTRL-C to exit.');
 			expect(isCanceled).to.equal(true);
+		});
+
+		it('Lists libraries using `--json` flag', async () => {
+			const args = ['library', 'list', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('previous', 'current', 'next');
+			expect(json.meta.previous).to.equal(0);
+			expect(json.meta.current).to.equal(1);
+			expect(json.meta.next).to.equal(2);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists libraries using `--json` and `--page` flag', async () => {
+			const args = ['library', 'list', '--json', '--page', '3'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('previous', 'current', 'next');
+			expect(json.meta.previous).to.equal(2);
+			expect(json.meta.current).to.equal(3);
+			expect(json.meta.next).to.equal(4);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails when user is signed-out', async () => {
+			await cli.logout();
+
+			const args = ['library', 'list'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('HTTP error 400');
+			expect(stdout).to.include('The access token was not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails when user is signed-out and using the `--json` flag', async () => {
+			await cli.logout();
+
+			const args = ['library', 'list', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('error');
+			expect(json.error).to.have.property('message').that.is.a('string');
+			expect(json.error.message).include('HTTP error 400');
+			expect(json.error.message).include('The access token was not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
 		});
 	});
 

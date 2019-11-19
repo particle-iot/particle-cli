@@ -81,6 +81,11 @@ module.exports = ({ commandProcessor, root }) => {
 			'limit': {
 				number: true,
 				description: 'The number of items to show per page'
+			},
+			// TODO (mirande): should be a global flag supported by all commands
+			'json': {
+				boolean: true,
+				description: 'output in JSON format instead of human friendly'
 			}
 		},
 		params: '[sections...]',

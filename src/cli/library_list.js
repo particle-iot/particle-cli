@@ -105,10 +105,28 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 
 	notifyFetchLists(promise) {
-		const msg = this._page === 1 ? 'Searching for libraries...' : `Retrieving libraries page ${this._page}`;
-		return spin(promise, msg)
+		const { json } = this.argv;
+		const page = this._page || 0;
+		const msg = page === 1 ? 'Searching for libraries...' : `Retrieving libraries page ${page}`;
+
+		return (json ? promise : spin(promise, msg))
 			.then((results) => {
 				const sections = this.sectionNames();
+
+				if (json){
+					const meta = { previous: page - 1, current: page, next: page + 1 };
+					let out = { meta, data: [] };
+					for (let name of sections){
+						const list = results[name];
+						if (list){
+							out.data.push(...list);
+						}
+					}
+					return console.log(
+						JSON.stringify(out, null, 4)
+					);
+				}
+
 				let separator = false;
 				for (let name of sections) {
 					const list = results[name];
@@ -158,7 +176,12 @@ module.exports.command = (apiJS, argv) => {
 	}
 
 	function runPage() {
-		return site.run(cmd).then((results) => nextPage(results));
+		return site.run(cmd)
+			.then((results) => nextPage(results))
+			.catch(error => {
+				error.asJSON = argv.json;
+				throw error;
+			});
 	}
 
 	function nextPage(results) {
