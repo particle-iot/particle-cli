@@ -107,6 +107,13 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(lib, 'search', 'Search available libraries', {
 		params: '<name>',
+		options: {
+			// TODO (mirande): should be a global flag supported by all commands
+			'json': {
+				boolean: true,
+				description: 'output in JSON format instead of human friendly'
+			}
+		},
 		handler: (...args) => require('./library_search').command(api(), ...args)
 	});
 

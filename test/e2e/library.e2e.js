@@ -121,18 +121,59 @@ describe('Library Commands', () => {
 			expect(exitCode).to.equal(0);
 		});
 
+		it('Searches for a library using the `--json` flag', async () => {
+			const args = ['library', 'search', 'dotstar', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('filter');
+			expect(json.meta.filter).to.equal('dotstar');
+			expect(json.data).to.lengthOf.above(1);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Searches for a library that does not exist using the `--json` flag', async () => {
+			const args = ['library', 'search', 'WATNOPEWATWATNOPENOPE', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('filter');
+			expect(json.meta.filter).to.equal('WATNOPEWATWATNOPENOPE');
+			expect(json.data).to.lengthOf(0);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
 		it('Fails when user is signed-out', async () => {
 			await cli.logout();
 
-			const opts = { cwd: projPath };
 			const args = ['library', 'search', 'dotstar'];
-			const { stdout, stderr, exitCode } = await cli.run(args, opts);
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			// TODO (mirande): this is a bug - we shouldn't show raw http errors
 			expect(stdout).to.include('HTTP error 400');
 			expect(stdout).to.include('The access token was not found');
-			expect(stderr).to.include('statusCode: 400');
-			expect(stderr).to.include('at IncomingMessage.emit');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails when user is signed-out and using the `--json` flag', async () => {
+			await cli.logout();
+
+			const args = ['library', 'search', 'dotstar', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = JSON.parse(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('error');
+			expect(json.error).to.have.property('message').that.is.a('string');
+			expect(json.error.message).include('HTTP error 400');
+			expect(json.error.message).include('The access token was not found');
+			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
 	});
