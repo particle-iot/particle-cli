@@ -412,10 +412,6 @@ function createErrorHandler(yargs){
 	return consoleErrorLogger.bind(undefined, console, yargs, true);
 }
 
-function stringify(err){
-	return _.isString(err) ? err : util.inspect(err);
-}
-
 /**
  * Logs an error to the console given and optionally calls yargs.showHelp() if the
  * error is a usage error.
@@ -427,21 +423,48 @@ function stringify(err){
  */
 function consoleErrorLogger(console, yargs, exit, error){
 	const usage = (!error || error.isUsageError);
+	const verbose = (global.verboseLevel || 0) > 1;
 
 	if (usage){
 		yargs.showHelp();
 	}
 
 	if (error){
-		console.log(chalk.red(error.message || stringify(error)));
+		if (error.asJSON){
+			console.log(
+				serializeError(error)
+			);
+		} else {
+			console.log(
+				chalk.red(error.message || stringify(error))
+			);
+			if (!usage && error.stack && verbose){
+				console.log(
+					VError.fullStack(error)
+				);
+			}
+		}
 	}
-	if (!usage && (error.stack && ((global.verboseLevel || 0) > 1))){
-		console.log(VError.fullStack(error));
-	}
+
 	// TODO (mirande): try to find a more controllable way to singal an error - this isn't easily testable.
 	if (exit){
 		process.exit(1);
 	}
+}
+
+function stringify(err){
+	return _.isString(err) ? err : util.inspect(err);
+}
+
+function serializeError(error){
+	const names = Object.getOwnPropertyNames(error);
+	const out = {};
+
+	for (const name of names){
+		out[name] = error[name];
+	}
+
+	return JSON.stringify({ error: out }, null, 4);
 }
 
 // Adapted from: https://github.com/bcoe/yargs/blob/master/lib/validation.js#L83-L110
@@ -701,10 +724,6 @@ const errors = {
 	unknownParametersError
 };
 
-const test = {
-	consoleErrorLogger
-};
-
 function showHelp(cb){
 	Yargs.showHelp(cb);
 }
@@ -717,5 +736,7 @@ module.exports = {
 	createErrorHandler,
 	showHelp,
 	errors,
-	test
+	test: {
+		consoleErrorLogger
+	}
 };

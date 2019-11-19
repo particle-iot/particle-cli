@@ -22,6 +22,8 @@ const commandProcessor = require('./command-processor');
 
 
 describe('command-line parsing', () => {
+	const sandbox = sinon.createSandbox();
+
 	describe('errors', () => {
 		it('unknown command', () => {
 			const args = ['a', 'b'];
@@ -390,60 +392,81 @@ describe('command-line parsing', () => {
 		});
 	});
 
-	describe('consoleErrorHandler', () => {
+	describe('consoleErrorLogger()', () => {
+		const { consoleErrorLogger } = commandProcessor.test;
+		let fakeConsole;
+
+		beforeEach(() => {
+			fakeConsole = { log: sandbox.stub() };
+		});
+
 		it('calls yargs.showHelp if the error is falsey', () => {
 			const yargs = { showHelp: sinon.stub() };
 			const error = '';
-			const console = { log: sinon.stub() };
-			commandProcessor.test.consoleErrorLogger(console, yargs, false, error);
-			return expect(yargs.showHelp).to.have.been.calledOnce;
+			consoleErrorLogger(fakeConsole, yargs, false, error);
+			expect(yargs.showHelp).to.have.been.calledOnce;
 		});
 
 		it('calls yargs.showHelp if the error is a usage error', () => {
 			const yargs = { showHelp: sinon.stub() };
 			const error = { isUsageError: true };
-			const console = { log: sinon.stub() };
-			commandProcessor.test.consoleErrorLogger(console, yargs, false, error);
-			return expect(yargs.showHelp).to.have.been.calledOnce;
+			consoleErrorLogger(fakeConsole, yargs, false, error);
+			expect(yargs.showHelp).to.have.been.calledOnce;
 		});
 
 		it('logs the error message to the console', () => {
 			const yargs = { };
 			const message = 'we come in peace';
 			const error = { message };
-			const console = { log: sinon.stub() };
-			commandProcessor.test.consoleErrorLogger(console, yargs, false, error);
-			expect(console.log).to.have.been.calledWithMatch(message);
+			consoleErrorLogger(fakeConsole, yargs, false, error);
+			expect(fakeConsole.log).to.have.been.calledWithMatch(message);
 		});
 
 		it('logs the error to the console when no message is given', () => {
 			const yargs = { };
 			const error = { bass: 'ice ice baby' };
-			const console = { log: sinon.stub() };
-			commandProcessor.test.consoleErrorLogger(console, yargs, false, error);
-			expect(console.log).to.have.been.calledWithMatch('{ bass: \'ice ice baby\' }');
+			consoleErrorLogger(fakeConsole, yargs, false, error);
+			expect(fakeConsole.log).to.have.been.calledWithMatch('{ bass: \'ice ice baby\' }');
+		});
+
+		it('logs the error as JSON when `asJSON` field is true', () => {
+			const yargs = { };
+			const error = new Error('nope!');
+			error.asJSON = true;
+
+			consoleErrorLogger(fakeConsole, yargs, false, error);
+
+			expect(fakeConsole.log).to.have.property('callCount', 1);
+
+			const json = JSON.parse(fakeConsole.log.firstCall.args[0]);
+
+			expect(json).to.have.property('error').that.is.an('object');
+			expect(json.error).to.have.all.keys('message', 'stack', 'asJSON');
+			expect(json.error.message).to.equal('nope!');
+			expect(json.error).to.have.property('stack').that.is.a('string');
+			expect(json.error.asJSON).to.equal(true);
 		});
 
 		it('logs the stack trace to the console when verbose mode is enabled', () => {
-			const console = { log: sinon.stub() };
 			const error = new Error('hey');
+
 			try {
 				global.verboseLevel = 2;
-				commandProcessor.test.consoleErrorLogger(console, undefined /*yargs*/, false, error);
+				consoleErrorLogger(fakeConsole, undefined /*yargs*/, false, error);
 			} finally {
 				delete global.verboseLevel;
 			}
-			expect(console.log).to.have.been.calledWithMatch('hey');
-			expect(console.log).to.have.been.calledWithMatch('Error: hey\n' +
+
+			expect(fakeConsole.log).to.have.been.calledWithMatch('hey');
+			expect(fakeConsole.log).to.have.been.calledWithMatch('Error: hey\n' +
 				'    at Context.');
 		});
 
 		it('does not log the stack for usage errors.', () => {
-			const console = { log: sinon.stub() };
 			const error = { stack: '1\n2\n3', isUsageError:true, message: 'hey' };
 			const yargs = { showHelp: sinon.stub() };
-			commandProcessor.test.consoleErrorLogger(console, yargs, false, error);
-			expect(console.log).to.have.been.calledWithMatch('hey').and.calledOnce;
+			consoleErrorLogger(fakeConsole, yargs, false, error);
+			expect(fakeConsole.log).to.have.been.calledWithMatch('hey').and.calledOnce;
 		});
 	});
 
