@@ -394,48 +394,51 @@ describe('command-line parsing', () => {
 
 	describe('consoleErrorLogger()', () => {
 		const { consoleErrorLogger } = commandProcessor.test;
-		let fakeConsole;
+		let fakeConsole, fakeYargs;
 
 		beforeEach(() => {
 			fakeConsole = { log: sandbox.stub() };
+			fakeYargs = { showHelp: sandbox.stub() };
+		});
+
+		afterEach(() => {
+			sandbox.restore();
 		});
 
 		it('calls yargs.showHelp if the error is falsey', () => {
-			const yargs = { showHelp: sinon.stub() };
 			const error = '';
-			consoleErrorLogger(fakeConsole, yargs, false, error);
-			expect(yargs.showHelp).to.have.been.calledOnce;
+			consoleErrorLogger(fakeConsole, fakeYargs, false, error);
+			expect(fakeYargs.showHelp).to.have.property('callCount', 1);
 		});
 
 		it('calls yargs.showHelp if the error is a usage error', () => {
-			const yargs = { showHelp: sinon.stub() };
 			const error = { isUsageError: true };
-			consoleErrorLogger(fakeConsole, yargs, false, error);
-			expect(yargs.showHelp).to.have.been.calledOnce;
+			consoleErrorLogger(fakeConsole, fakeYargs, false, error);
+			expect(fakeYargs.showHelp).to.have.property('callCount', 1);
 		});
 
 		it('logs the error message to the console', () => {
-			const yargs = { };
 			const message = 'we come in peace';
 			const error = { message };
-			consoleErrorLogger(fakeConsole, yargs, false, error);
+			consoleErrorLogger(fakeConsole, fakeYargs, false, error);
 			expect(fakeConsole.log).to.have.been.calledWithMatch(message);
+			expect(fakeYargs.showHelp).to.have.property('callCount', 0);
 		});
 
 		it('logs the error to the console when no message is given', () => {
-			const yargs = { };
 			const error = { bass: 'ice ice baby' };
-			consoleErrorLogger(fakeConsole, yargs, false, error);
+			consoleErrorLogger(fakeConsole, fakeYargs, false, error);
 			expect(fakeConsole.log).to.have.been.calledWithMatch('{ bass: \'ice ice baby\' }');
+			expect(fakeYargs.showHelp).to.have.property('callCount', 0);
 		});
 
 		it('logs the error as JSON when `asJSON` field is true', () => {
-			const yargs = { };
 			const error = new Error('nope!');
 			error.asJSON = true;
 
-			consoleErrorLogger(fakeConsole, yargs, false, error);
+			consoleErrorLogger(fakeConsole, fakeYargs, false, error);
 
+			expect(fakeYargs.showHelp).to.have.property('callCount', 0);
 			expect(fakeConsole.log).to.have.property('callCount', 1);
 
 			const json = JSON.parse(fakeConsole.log.firstCall.args[0]);
@@ -464,9 +467,9 @@ describe('command-line parsing', () => {
 
 		it('does not log the stack for usage errors.', () => {
 			const error = { stack: '1\n2\n3', isUsageError:true, message: 'hey' };
-			const yargs = { showHelp: sinon.stub() };
-			consoleErrorLogger(fakeConsole, yargs, false, error);
+			consoleErrorLogger(fakeConsole, fakeYargs, false, error);
 			expect(fakeConsole.log).to.have.been.calledWithMatch('hey').and.calledOnce;
+			expect(fakeYargs.showHelp).to.have.property('callCount', 1);
 		});
 	});
 

@@ -105,7 +105,7 @@ class CLICommandItem {
 	 * @param {function} version    A function to retrieve the version
 	 * @param {string} epilogue     Printed at the end of the command block.
 	 */
-	configure(yargs, { options, setup, examples, version, epilogue }=this.buildOptions()){
+	configure(yargs, { options, setup, examples, version, epilogue } = this.buildOptions()){
 		if (options){
 			this.fetchAliases(options);
 			this.configureOptions(options);
