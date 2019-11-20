@@ -4,6 +4,7 @@ const { spin } = require('../app/ui');
 const { buildAPIClient } = require('./apiclient');
 const { formatLibrary } = require('./library_ui');
 const { LibrarySearchCommandSite, LibrarySearchCommand } = require('../cmd');
+const { JSONResult } = require('../lib/json-result');
 
 
 class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
@@ -38,8 +39,9 @@ class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 		}
 
 		if (json){
-			const out = createJSONOutput(filter, libraries);
-			return console.log(out);
+			return console.log(
+				this.createJSONResult(filter, libraries)
+			);
 		}
 
 		const count = libraries ? libraries.length : 0;
@@ -49,6 +51,10 @@ class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 			const lib = libraries[idx];
 			console.log(formatLibrary(lib));
 		}
+	}
+
+	createJSONResult(filter, libraries){
+		return new JSONResult({ filter }, libraries).toString();
 	}
 }
 
@@ -63,12 +69,4 @@ module.exports.command = (apiJS, argv) => {
 			throw error;
 		});
 };
-
-
-// UTILS //////////////////////////////////////////////////////////////////////
-function createJSONOutput(filter, libraries){
-	const meta = { filter };
-	const out = { meta, data: libraries };
-	return JSON.stringify(out, null, 4);
-}
 

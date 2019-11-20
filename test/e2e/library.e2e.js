@@ -128,7 +128,8 @@ describe('Library Commands', () => {
 
 			expect(json).to.be.an('object');
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('filter');
+			expect(json.meta).to.have.all.keys('version', 'filter');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.filter).to.equal('dotstar');
 			expect(json.data).to.lengthOf.above(1);
 			expect(stderr).to.equal('');
@@ -142,7 +143,8 @@ describe('Library Commands', () => {
 
 			expect(json).to.be.an('object');
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('filter');
+			expect(json.meta).to.have.all.keys('version', 'filter');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.filter).to.equal('WATNOPEWATWATNOPENOPE');
 			expect(json.data).to.lengthOf(0);
 			expect(stderr).to.equal('');
@@ -169,7 +171,9 @@ describe('Library Commands', () => {
 			const json = JSON.parse(stdout);
 
 			expect(json).to.be.an('object');
-			expect(json).to.have.all.keys('error');
+			expect(json).to.have.all.keys('meta', 'error');
+			expect(json.meta).to.have.all.keys('version');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
 			expect(json.error.message).include('HTTP error 400');
 			expect(json.error.message).include('The access token was not found');
@@ -206,7 +210,8 @@ describe('Library Commands', () => {
 			const libPath = getExpectedLibraryPath(name, json.data.version);
 
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta).to.have.all.keys('version', 'filter', 'location');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.filter).to.equal(name);
 			expect(json.meta.location).to.equal(libPath);
 			expect(json.data).to.have.all.keys('architectures', 'author',
@@ -240,7 +245,8 @@ describe('Library Commands', () => {
 			const libPath = getExpectedLibraryPath(name, json.data.version);
 
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta).to.have.all.keys('version', 'filter', 'location');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.filter).to.equal(name);
 			expect(json.meta.location).to.equal(libPath);
 			expect(json.data).to.have.all.keys('architectures', 'author',
@@ -275,7 +281,8 @@ describe('Library Commands', () => {
 			const libPath = getExpectedLibraryPath(name, json.data.version);
 
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta).to.have.all.keys('version', 'filter', 'location');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.filter).to.equal(name);
 			expect(json.meta.location).to.equal(libPath);
 			expect(json.data).to.have.all.keys('architectures', 'author',
@@ -309,7 +316,8 @@ describe('Library Commands', () => {
 			const libPath = getExpectedLibraryPath(name, json.data.version);
 
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('filter', 'location');
+			expect(json.meta).to.have.all.keys('version', 'filter', 'location');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.filter).to.equal(name);
 			expect(json.meta.location).to.equal(libPath);
 			expect(json.data).to.have.all.keys('architectures', 'author',
@@ -340,7 +348,9 @@ describe('Library Commands', () => {
 			const json = JSON.parse(stdout);
 
 			expect(json).to.be.an('object');
-			expect(json).to.have.all.keys('error');
+			expect(json).to.have.all.keys('meta', 'error');
+			expect(json.meta).to.have.all.keys('version');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
 			expect(json.error.message).to.equal('Library WATNOPEWATWATNOPENOPE not found');
 			expect(stderr).to.equal('');
@@ -356,7 +366,9 @@ describe('Library Commands', () => {
 			const json = JSON.parse(stdout);
 
 			expect(json).to.be.an('object');
-			expect(json).to.have.all.keys('error');
+			expect(json).to.have.all.keys('meta', 'error');
+			expect(json.meta).to.have.all.keys('version');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
 			expect(json.error.message).include('HTTP error 400');
 			expect(json.error.message).include('The access token was not found');
@@ -444,7 +456,8 @@ describe('Library Commands', () => {
 
 			expect(json).to.be.an('object');
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('previous', 'current', 'next');
+			expect(json.meta).to.have.all.keys('version', 'previous', 'current', 'next');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.previous).to.equal(0);
 			expect(json.meta.current).to.equal(1);
 			expect(json.meta.next).to.equal(2);
@@ -459,7 +472,8 @@ describe('Library Commands', () => {
 
 			expect(json).to.be.an('object');
 			expect(json).to.have.all.keys('meta', 'data');
-			expect(json.meta).to.have.all.keys('previous', 'current', 'next');
+			expect(json.meta).to.have.all.keys('version', 'previous', 'current', 'next');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.meta.previous).to.equal(2);
 			expect(json.meta.current).to.equal(3);
 			expect(json.meta.next).to.equal(4);
@@ -487,7 +501,9 @@ describe('Library Commands', () => {
 			const json = JSON.parse(stdout);
 
 			expect(json).to.be.an('object');
-			expect(json).to.have.all.keys('error');
+			expect(json).to.have.all.keys('meta', 'error');
+			expect(json.meta).to.have.all.keys('version');
+			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
 			expect(json.error.message).include('HTTP error 400');
 			expect(json.error.message).include('The access token was not found');

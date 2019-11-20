@@ -5,6 +5,7 @@ const { convertApiError } = require('../cmd/api');
 const { buildAPIClient } = require('./apiclient');
 const { formatLibrary } = require('./library_ui');
 const { LibraryListCommand, LibraryListCommandSite } = require('../cmd');
+const { JSONResult } = require('../lib/json-result');
 
 
 class CLILibraryListCommandSite extends LibraryListCommandSite {
@@ -114,16 +115,15 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 				const sections = this.sectionNames();
 
 				if (json){
-					const meta = { previous: page - 1, current: page, next: page + 1 };
-					let out = { meta, data: [] };
+					let data = [];
 					for (let name of sections){
 						const list = results[name];
 						if (list){
-							out.data.push(...list);
+							data.push(...list);
 						}
 					}
 					return console.log(
-						JSON.stringify(out, null, 4)
+						this.createJSONResult(page, data)
 					);
 				}
 
@@ -140,6 +140,11 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 				}
 				return results;
 			});
+	}
+
+	createJSONResult(page, data){
+		const meta = { previous: page - 1, current: page, next: page + 1 };
+		return new JSONResult(meta, data).toString();
 	}
 
 	printSection(name, section, libraries) {

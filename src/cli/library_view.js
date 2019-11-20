@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const { buildAPIClient } = require('./apiclient');
 const { LibraryInstallCommand } = require('../cmd');
 const { CLILibraryInstallCommandSite } = require('./library_install');
+const { JSONResult } = require('../lib/json-result');
 
 
 class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
@@ -103,7 +104,7 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 	createJSONResult(content = null){
 		const data = Object.assign({ content }, this.metadata);
 		const meta = { filter: data.name, location: this.targetDir };
-		return JSON.stringify({ meta, data }, null, 4);
+		return new JSONResult(meta, data).toString();
 	}
 
 	loadFile(filename){

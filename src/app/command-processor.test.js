@@ -443,11 +443,12 @@ describe('command-line parsing', () => {
 
 			const json = JSON.parse(fakeConsole.log.firstCall.args[0]);
 
-			expect(json).to.have.property('error').that.is.an('object');
-			expect(json.error).to.have.all.keys('message', 'stack', 'asJSON');
+			expect(json).to.have.all.keys('meta', 'error');
+			expect(json.meta).to.have.all.keys('version');
+			expect(json.meta.version).to.equal('1.0.0');
+			expect(json.error).to.have.all.keys('message', 'stack');
 			expect(json.error.message).to.equal('nope!');
 			expect(json.error).to.have.property('stack').that.is.a('string');
-			expect(json.error.asJSON).to.equal(true);
 		});
 
 		it('logs the stack trace to the console when verbose mode is enabled', () => {

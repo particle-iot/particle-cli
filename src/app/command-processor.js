@@ -22,6 +22,7 @@ const util = require('util');
 const chalk = require('chalk');
 const VError = require('verror');
 const yargsFactory = require('yargs/yargs');
+const { JSONErrorResult } = require('../lib/json-result');
 
 // It's important to run yargs in the directory of the script so it picks up options from package.json
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
@@ -432,7 +433,7 @@ function consoleErrorLogger(console, yargs, exit, error){
 	if (error){
 		if (error.asJSON){
 			console.log(
-				serializeError(error)
+				new JSONErrorResult(error).toString()
 			);
 		} else {
 			console.log(
@@ -454,17 +455,6 @@ function consoleErrorLogger(console, yargs, exit, error){
 
 function stringify(err){
 	return _.isString(err) ? err : util.inspect(err);
-}
-
-function serializeError(error){
-	const names = Object.getOwnPropertyNames(error);
-	const out = {};
-
-	for (const name of names){
-		out[name] = error[name];
-	}
-
-	return JSON.stringify({ error: out }, null, 4);
 }
 
 // Adapted from: https://github.com/bcoe/yargs/blob/master/lib/validation.js#L83-L110
