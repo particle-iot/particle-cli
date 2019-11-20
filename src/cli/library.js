@@ -85,7 +85,7 @@ module.exports = ({ commandProcessor, root }) => {
 			// TODO (mirande): should be a global flag supported by all commands
 			'json': {
 				boolean: true,
-				description: 'output in JSON format instead of human friendly'
+				description: 'output JSON formatted data [experimental]'
 			}
 		},
 		params: '[sections...]',
@@ -116,7 +116,7 @@ module.exports = ({ commandProcessor, root }) => {
 			// TODO (mirande): should be a global flag supported by all commands
 			'json': {
 				boolean: true,
-				description: 'output in JSON format instead of human friendly'
+				description: 'output JSON formatted data [experimental]'
 			}
 		},
 		handler: (...args) => require('./library_search').command(api(), ...args)
@@ -154,7 +154,7 @@ module.exports = ({ commandProcessor, root }) => {
 			// TODO (mirande): should be a global flag supported by all commands
 			'json': {
 				boolean: true,
-				description: 'output in JSON format instead of human friendly'
+				description: 'output JSON formatted data [experimental]'
 			}
 		},
 		params: '<name>',
