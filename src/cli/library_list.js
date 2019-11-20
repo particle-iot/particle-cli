@@ -107,7 +107,7 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 
 	notifyFetchLists(promise) {
 		const { json } = this.argv;
-		const page = this._page || 0;
+		const page = this._page || 1;
 		const msg = page === 1 ? 'Searching for libraries...' : `Retrieving libraries page ${page}`;
 
 		return (json ? promise : spin(promise, msg))
