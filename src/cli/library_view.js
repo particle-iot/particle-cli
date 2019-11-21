@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const { buildAPIClient } = require('./apiclient');
 const { LibraryInstallCommand } = require('../cmd');
 const { CLILibraryInstallCommandSite } = require('./library_install');
+const { JSONResult } = require('../lib/json-result');
 
 
 class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
@@ -25,41 +26,90 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 	}
 
 	view(){
-		if (this.argv.readme){
-			this.showFile('No readme files found for the library.', ['README.md', 'README.txt']);
+		const { readme, source, header, json } = this.argv;
+		const { name } = this.metadata;
+		const { targetDir } = this;
+
+		if (readme){
+			this.showFile(
+				'No readme files found for the library.',
+				[
+					path.join(targetDir, 'README.md'),
+					path.join(targetDir, 'README.txt')
+				]
+			);
 		}
 
-		if (this.argv.source){
-			this.showFile('No source files found for the library.', [path.join('src', this.metadata.name+'.cpp')]);
+		if (source){
+			this.showFile(
+				'No source files found for the library.',
+				[
+					path.join(targetDir, 'src', `${name}.cpp`)
+				]
+			);
 		}
 
-		if (this.argv.header){
-			this.showFile('No header files found for the library.', [path.join('src', this.metadata.name+'.h')]);
+		if (header){
+			this.showFile(
+				'No header files found for the library.',
+				[
+					path.join(targetDir, 'src', `${name}.h`)
+				]
+			);
 		}
 
-		console.log(`To view the library documentation and sources directly, please change to the directory ${chalk.bold(this.targetDir)}`);
+		if (json){
+			if (readme || source || header){
+				return;
+			}
+			return console.log(
+				this.createJSONResult()
+			);
+		}
+		console.log(`To view the library documentation and sources directly, please change to the directory ${chalk.bold(targetDir)}`);
 	}
 
-	showFile(missing, files){
+	showFile(missing, filenames){
+		const { json } = this.argv;
 		let shown = false;
-		for (let file of files){
-			const content = this.loadFile(file);
+
+		for (let filename of filenames){
+			const content = this.loadFile(filename);
+
 			if (content !== undefined){
-				console.log(content);
+				if (json){
+					console.log(
+						this.createJSONResult(content)
+					);
+				} else {
+					console.log(content);
+				}
+
 				shown = true;
 				break;
 			}
 		}
 
 		if (!shown){
-			console.log(missing);
+			if (json){
+				console.log(
+					this.createJSONResult()
+				);
+			} else {
+				console.log(missing);
+			}
 		}
 	}
 
-	loadFile(file){
-		const full = path.join(this.targetDir, file);
+	createJSONResult(content = null){
+		const data = Object.assign({ content }, this.metadata);
+		const meta = { filter: data.name, location: this.targetDir };
+		return new JSONResult(meta, data).toString();
+	}
+
+	loadFile(filename){
 		try {
-			return fs.readFileSync(full, 'utf-8');
+			return fs.readFileSync(filename, 'utf-8');
 		} catch (error){
 			return undefined;
 		}
@@ -70,6 +120,11 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 module.exports.command = (apiJS, argv) => {
 	const site = new CLILibraryViewCommandSite(argv, process.cwd(), buildAPIClient(apiJS));
 	const cmd = new LibraryInstallCommand();
-	return site.run(cmd).then(() => site.view());
+	return site.run(cmd)
+		.then(() => site.view())
+		.catch(error => {
+			error.asJSON = argv.json;
+			throw error;
+		});
 };
 

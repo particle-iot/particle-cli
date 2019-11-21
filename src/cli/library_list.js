@@ -5,6 +5,7 @@ const { convertApiError } = require('../cmd/api');
 const { buildAPIClient } = require('./apiclient');
 const { formatLibrary } = require('./library_ui');
 const { LibraryListCommand, LibraryListCommandSite } = require('../cmd');
+const { JSONResult } = require('../lib/json-result');
 
 
 class CLILibraryListCommandSite extends LibraryListCommandSite {
@@ -105,10 +106,27 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 	}
 
 	notifyFetchLists(promise) {
-		const msg = this._page === 1 ? 'Searching for libraries...' : `Retrieving libraries page ${this._page}`;
-		return spin(promise, msg)
+		const { json } = this.argv;
+		const page = this._page || 1;
+		const msg = page === 1 ? 'Searching for libraries...' : `Retrieving libraries page ${page}`;
+
+		return (json ? promise : spin(promise, msg))
 			.then((results) => {
 				const sections = this.sectionNames();
+
+				if (json){
+					let data = [];
+					for (let name of sections){
+						const list = results[name];
+						if (list){
+							data.push(...list);
+						}
+					}
+					return console.log(
+						this.createJSONResult(page, data)
+					);
+				}
+
 				let separator = false;
 				for (let name of sections) {
 					const list = results[name];
@@ -122,6 +140,11 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 				}
 				return results;
 			});
+	}
+
+	createJSONResult(page, data){
+		const meta = { previous: page - 1, current: page, next: page + 1 };
+		return new JSONResult(meta, data).toString();
 	}
 
 	printSection(name, section, libraries) {
@@ -158,7 +181,12 @@ module.exports.command = (apiJS, argv) => {
 	}
 
 	function runPage() {
-		return site.run(cmd).then((results) => nextPage(results));
+		return site.run(cmd)
+			.then((results) => nextPage(results))
+			.catch(error => {
+				error.asJSON = argv.json;
+				throw error;
+			});
 	}
 
 	function nextPage(results) {

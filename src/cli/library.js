@@ -81,6 +81,11 @@ module.exports = ({ commandProcessor, root }) => {
 			'limit': {
 				number: true,
 				description: 'The number of items to show per page'
+			},
+			// TODO (mirande): should be a global flag supported by all commands
+			'json': {
+				boolean: true,
+				description: 'output JSON formatted data [experimental]'
 			}
 		},
 		params: '[sections...]',
@@ -107,6 +112,13 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(lib, 'search', 'Search available libraries', {
 		params: '<name>',
+		options: {
+			// TODO (mirande): should be a global flag supported by all commands
+			'json': {
+				boolean: true,
+				description: 'output JSON formatted data [experimental]'
+			}
+		},
 		handler: (...args) => require('./library_search').command(api(), ...args)
 	});
 
@@ -138,8 +150,12 @@ module.exports = ({ commandProcessor, root }) => {
 			'header': {
 				boolean: true,
 				description: 'display the main header file for the library'
+			},
+			// TODO (mirande): should be a global flag supported by all commands
+			'json': {
+				boolean: true,
+				description: 'output JSON formatted data [experimental]'
 			}
-
 		},
 		params: '<name>',
 		handler: (...args) => require('./library_view').command(api(), ...args)
