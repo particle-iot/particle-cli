@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.51.0 - 21 November 2019
+
+* remove irrelevant `--delay` flag from `variable get` subcommand and alias
+* fix --page flag handling in library list command
+* library subcommands `search`, `list`, and `view` support optional `--json` flag to output JSON formatted data - _NOTE: Experimental! Use with caution and expect breaking changes_
+
 ## 1.50.0 - 5 November 2019
 
 * Add option to set expiration time when creation API tokens
