@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.52.0 - 26 November 2019
+
+* Updated binaries for DeviceOS 1.4.3
+
 ## 1.51.0 - 21 November 2019
 
 * remove irrelevant `--delay` flag from `variable get` subcommand and alias
