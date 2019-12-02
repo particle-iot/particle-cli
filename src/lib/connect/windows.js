@@ -278,7 +278,7 @@ async function asCallback(promise, cb){
 
 function getCurrentNetwork(cb, connect){
 	connect = connect || new Connect();
-	asCallback(connect.current(), cb);
+	return asCallback(connect.current(), cb);
 }
 
 /**
@@ -291,7 +291,7 @@ function getCurrentNetwork(cb, connect){
  */
 function connect(opts, cb, connect){
 	connect = connect || new Connect();
-	asCallback(connect.connect(opts.ssid), cb);
+	return asCallback(connect.connect(opts.ssid), cb);
 }
 
 module.exports = {
