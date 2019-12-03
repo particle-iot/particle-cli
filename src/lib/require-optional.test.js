@@ -27,7 +27,7 @@ describe('Require Optional', () => {
 		}
 
 		expect(error).to.an.instanceof(Error);
-		expect(error).to.have.property('message', 'Cannot find module \'WATNOPE\'');
+		expect(error.message).to.have.include('Cannot find module \'WATNOPE\'');
 		expect(process.stdout.write).to.have.callCount(0);
 		expect(process.stderr.write).to.have.callCount(2);
 
