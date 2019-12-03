@@ -7470,9 +7470,9 @@
       }
     },
     "mock-fs": {
-      "version": "4.10.1",
-      "resolved": "https://registry.npmjs.org/mock-fs/-/mock-fs-4.10.1.tgz",
-      "integrity": "sha512-w22rOL5ZYu6HbUehB5deurghGM0hS/xBVyHMGKOuQctkk93J9z9VEOhDsiWrXOprVNQpP9uzGKdl8v9mFspKuw==",
+      "version": "4.10.4",
+      "resolved": "https://registry.npmjs.org/mock-fs/-/mock-fs-4.10.4.tgz",
+      "integrity": "sha512-gDfZDLaPIvtOusbusLinfx6YSe2YpQsDT8qdP41P47dQ/NQggtkHukz7hwqgt8QvMBmAv+Z6DGmXPyb5BWX2nQ==",
       "dev": true
     },
     "module-not-found-error": {
