@@ -174,12 +174,6 @@ module.exports = {
 		return Promise.race([promise, timer]);
 	},
 
-	timeoutGenerator(msg, defer, delay){
-		return setTimeout(() => {
-			defer.reject(msg);
-		}, delay);
-	},
-
 	async retryDeferred(testFn, numTries, recoveryFn){
 		if (!testFn){
 			console.error('retryDeferred - comon, pass me a real function.');
