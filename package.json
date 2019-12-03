@@ -107,7 +107,7 @@
   },
   "engines": {
     "node": ">=8",
-    "npm": ">=5"
+    "npm": ">=6"
   },
   "homepage": "https://github.com/particle-iot/particle-cli/",
   "keywords": [

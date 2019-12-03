@@ -10,7 +10,7 @@ cache:
     - node_modules
 
 before_install:
-  - npm install -g npm@5
+  - npm install -g npm@6
 
 script:
   - npm run test:ci
