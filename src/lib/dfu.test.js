@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const childProcess = require('child_process');
 const { expect, sinon } = require('../../test/setup');
 const dfu = require('./dfu');
 
@@ -60,6 +61,23 @@ describe('DFU', () => {
 		dfu.checkBinaryAlignment(file, specs);
 
 		expect(dfu.appendToEvenBytes).to.have.property('callCount', 0);
+	});
+
+	it('times out when unable to list dfu devices', () => {
+		sandbox.useFakeTimers();
+		sandbox.stub(childProcess, 'exec');
+		const promise = dfu.listDFUDevices();
+
+		sandbox.clock.tick(6001);
+
+		return promise
+			.then(() => {
+				throw new Error('Promise should have been rejected');
+			})
+			.catch((error) => {
+				expect(error).to.be.instanceof(Error);
+				expect(error.message).to.equal('Timed out attempting to list DFU devices');
+			});
 	});
 });
 

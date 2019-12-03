@@ -62,11 +62,11 @@ module.exports = {
 		const { getCommand, _dfuIdsFromDfuOutput, _missingDevicePermissions } = module.exports;
 
 		return new Promise((resolve, reject) => {
-			let failTimer = utilities.timeoutGenerator('listDFUDevices timed out', temp, 6000);
-			let cmd = getCommand() + ' -l';
+			const timer = setTimeout(() => reject(new Error('Timed out attempting to list DFU devices')), 6000);
+			const cmd = getCommand() + ' -l';
 
 			childProcess.exec(cmd, (error, stdout, stderr) => {
-				clearTimeout(failTimer);
+				clearTimeout(timer);
 
 				if (error) {
 					return reject(error);
