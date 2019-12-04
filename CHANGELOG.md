@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.53.0 - 4 December 2019
+
+* Updated binaries for DeviceOS 1.4.4
+
 ## 1.52.0 - 26 November 2019
 
 * Updated binaries for DeviceOS 1.4.3
