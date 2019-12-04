@@ -91,63 +91,63 @@ var settings = {
 			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
 			// because as soon as the system parts are flashed they will change the location
 			// of DFU read/write functions which live in system firmware.
-			otaRegion: 'photon-bootloader@1.4.3+lto.bin',
+			otaRegion: 'photon-bootloader@1.4.4+lto.bin',
 			otaFlag: 'ota-flag-a5.bin',
-			systemFirmwareOne: 'photon-system-part1@1.4.3.bin',
-			systemFirmwareTwo: 'photon-system-part2@1.4.3.bin'
+			systemFirmwareOne: 'photon-system-part1@1.4.4.bin',
+			systemFirmwareTwo: 'photon-system-part2@1.4.4.bin'
 		},
 		'2b04:d008': {
 			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
 			// because as soon as the system parts are flashed they will change the location
 			// of DFU read/write functions which live in system firmware.
-			otaRegion: 'p1-bootloader@1.4.3+lto.bin',
+			otaRegion: 'p1-bootloader@1.4.4+lto.bin',
 			otaFlag: 'ota-flag-a5.bin',
-			systemFirmwareOne: 'p1-system-part1@1.4.3.bin',
-			systemFirmwareTwo: 'p1-system-part2@1.4.3.bin'
+			systemFirmwareOne: 'p1-system-part1@1.4.4.bin',
+			systemFirmwareTwo: 'p1-system-part2@1.4.4.bin'
 		},
 		'2b04:d00a': {
 			// The bin files MUST be in this order to be flashed to the correct memory locations
-			systemFirmwareOne:   'electron-system-part2@1.4.3.bin',
-			systemFirmwareTwo:   'electron-system-part3@1.4.3.bin',
-			systemFirmwareThree: 'electron-system-part1@1.4.3.bin'
+			systemFirmwareOne:   'electron-system-part2@1.4.4.bin',
+			systemFirmwareTwo:   'electron-system-part3@1.4.4.bin',
+			systemFirmwareThree: 'electron-system-part1@1.4.4.bin'
 			// For now, electron still contains the bootloader in system firmware
-			// otaRegion: 'electron-bootloader@1.4.3.bin',
+			// otaRegion: 'electron-bootloader@1.4.4.bin',
 			// otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00c': {
-			systemFirmwareOne: 'argon-system-part1@1.4.3.bin',
-			radioStack: 'argon-softdevice@1.4.3.bin',
-			otaRegion: 'argon-bootloader@1.4.3.bin',
+			systemFirmwareOne: 'argon-system-part1@1.4.4.bin',
+			radioStack: 'argon-softdevice@1.4.4.bin',
+			otaRegion: 'argon-bootloader@1.4.4.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00d': {
-			systemFirmwareOne: 'boron-system-part1@1.4.3.bin',
-			radioStack: 'boron-softdevice@1.4.3.bin',
-			otaRegion: 'boron-bootloader@1.4.3.bin',
+			systemFirmwareOne: 'boron-system-part1@1.4.4.bin',
+			radioStack: 'boron-softdevice@1.4.4.bin',
+			otaRegion: 'boron-bootloader@1.4.4.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d00e': {
-			systemFirmwareOne: 'xenon-system-part1@1.4.3.bin',
-			radioStack: 'xenon-softdevice@1.4.3.bin',
-			otaRegion: 'xenon-bootloader@1.4.3.bin',
+			systemFirmwareOne: 'xenon-system-part1@1.4.4.bin',
+			radioStack: 'xenon-softdevice@1.4.4.bin',
+			otaRegion: 'xenon-bootloader@1.4.4.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d016': {
-			systemFirmwareOne: 'asom-system-part1@1.4.3.bin',
-			radioStack: 'asom-softdevice@1.4.3.bin',
-			otaRegion: 'asom-bootloader@1.4.3.bin',
+			systemFirmwareOne: 'asom-system-part1@1.4.4.bin',
+			radioStack: 'asom-softdevice@1.4.4.bin',
+			otaRegion: 'asom-bootloader@1.4.4.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d017': {
-			systemFirmwareOne: 'bsom-system-part1@1.4.3.bin',
-			radioStack: 'bsom-softdevice@1.4.3.bin',
-			otaRegion: 'bsom-bootloader@1.4.3.bin',
+			systemFirmwareOne: 'bsom-system-part1@1.4.4.bin',
+			radioStack: 'bsom-softdevice@1.4.4.bin',
+			otaRegion: 'bsom-bootloader@1.4.4.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 		'2b04:d018': {
-			systemFirmwareOne: 'xsom-system-part1@1.4.3.bin',
-			radioStack: 'xsom-softdevice@1.4.3.bin',
-			otaRegion: 'xsom-bootloader@1.4.3.bin',
+			systemFirmwareOne: 'xsom-system-part1@1.4.4.bin',
+			radioStack: 'xsom-softdevice@1.4.4.bin',
+			otaRegion: 'xsom-bootloader@1.4.4.bin',
 			otaFlag: 'ota-flag-a5.bin'
 		},
 	},
