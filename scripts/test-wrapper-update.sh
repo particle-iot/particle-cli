@@ -48,11 +48,18 @@ echo ":::: Installing CLI package ::::::::::::::::"
 echo ":::: Destination: ${node_dir}"
 echo ":::: Package: ${pkg}"
 
-node_bin=${node_dir}/bin/node
-npm_bin=${node_dir}/lib/node_modules/npm/bin/npm-cli.js
+node_bin_dir=${node_dir}/bin
+
+export PATH="$node_bin_dir:$PATH"
+
+echo
+echo ':::: Using Configuration :::::::::::::::::::'
+echo ":::: PATH: ${PATH}"
+echo ":::: node: $(node -v)"
+echo ":::: npm: $(npm -v)"
 
 cd ${particle_dir}
-npm_install_log=$(${node_bin} ${npm_bin} install ${pkg} --loglevel=verbose --color=always 2>&1 | tee /dev/tty)
+npm_install_log=$(npm install ${pkg} --loglevel=verbose --color=always 2>&1 | tee /dev/tty)
 
 if (echo $npm_install_log | grep --silent "No prebuilt binaries found")
 then
