@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.0 - 11 December 2019
+
+* drop support for `node@6`, add support for `node@12`. no other breaking changes.
+
 ## 2.0.0-rc.0 - 6 December 2019
 
 * Initial release candidate for v2 - dropping support for `node@6` and adding support for `node@12`. no other breaking changes.
