@@ -28,7 +28,16 @@ module.exports.withConsoleStubs = (sandbox, fn) => {
 		let result;
 
 		sandbox.stub(process.stdout, 'write');
+
+		if (process.stdout.isTTY){
+			sandbox.stub(process.stdout, 'isTTY').get(() => false);
+		}
+
 		sandbox.stub(process.stderr, 'write');
+
+		if (process.stderr.isTTY){
+			sandbox.stub(process.stderr, 'isTTY').get(() => false);
+		}
 
 		try {
 			result = fn();

@@ -6,7 +6,7 @@ module.exports = {
 				corejs: '3',
 				useBuiltIns: 'usage',
 				targets: {
-					node: '6'
+					node: '8'
 				}
 			}
 		]

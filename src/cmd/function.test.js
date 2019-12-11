@@ -1,5 +1,6 @@
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/setup');
+const { withConsoleStubs } = require('../../test/lib/mocha-utils');
 
 const stubs = {
 	api: {
@@ -32,22 +33,20 @@ describe('Function Command', () => {
 	});
 
 	describe('when the function succeeds', () => {
-		it('prints the return value', withConsoleStubs(() => {
+		it('prints the return value', withConsoleStubs(sandbox, () => {
 			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
 			api.callFunction.resolves({ ok: true, return_value: 42 });
 
-			return func.callFunction(deviceId, functionName, functionParam).then(() => {
-				expectSuccessMessage(42);
-			});
+			return func.callFunction(deviceId, functionName, functionParam)
+				.then(() => expectSuccessMessage(42));
 		}));
 
-		it('prints the return value of 0', withConsoleStubs(() => {
+		it('prints the return value of 0', withConsoleStubs(sandbox, () => {
 			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
 			api.callFunction.resolves({ ok: true, return_value: 0 });
 
-			return func.callFunction(deviceId, functionName, functionParam).then(() => {
-				expectSuccessMessage(0);
-			});
+			return func.callFunction(deviceId, functionName, functionParam)
+				.then(() => expectSuccessMessage(0));
 		}));
 	});
 
@@ -78,32 +77,6 @@ describe('Function Command', () => {
 		sandbox.stub(api, 'ensureToken');
 		sandbox.stub(api, 'callFunction');
 		return { func, api };
-	}
-
-	// TODO (mirande): figure out a better approach. this allows us to verify
-	// log output without supressing mocha's success / error messages but is a
-	// bit awkward
-	function withConsoleStubs(fn){
-
-		return () => {
-			let result;
-
-			sandbox.stub(process.stdout, 'write');
-			sandbox.stub(process.stderr, 'write');
-
-			try {
-				result = fn();
-			} catch (error) {
-				sandbox.restore();
-				throw error;
-			}
-
-			if (result && typeof result.finally === 'function'){
-				return result.finally(() => sandbox.restore());
-			}
-			sandbox.restore();
-			return result;
-		};
 	}
 });
 

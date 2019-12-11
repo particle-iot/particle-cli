@@ -77,7 +77,7 @@ module.exports = class SerialCommand {
 
 					if (serialDeviceSpec){
 						device = {
-							port: port.comName,
+							port: port.path,
 							type: serialDeviceSpec.productName,
 							deviceId: serialDeviceSpec.serial.deviceId && serialDeviceSpec.serial.deviceId(port.serialNumber || port.pnpId),
 							specs: serialDeviceSpec
@@ -87,7 +87,7 @@ module.exports = class SerialCommand {
 					const matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
 
 					if (!device && matchesManufacturer){
-						device = { port: port.comName, type: 'Core' };
+						device = { port: port.path, type: 'Core' };
 					}
 
 					if (device){
@@ -99,10 +99,10 @@ module.exports = class SerialCommand {
 				if (devices.length === 0){
 					ports.forEach((port) => {
 						//if it doesn't have a manufacturer or pnpId set, but it's a ttyACM port, then lets grab it.
-						if (port.comName.indexOf('/dev/ttyACM') === 0){
-							devices.push({ port: port.comName, type: '' });
-						} else if (port.comName.indexOf('/dev/cuaU') === 0){
-							devices.push({ port: port.comName, type: '' });
+						if (port.path.indexOf('/dev/ttyACM') === 0){
+							devices.push({ port: port.path, type: '' });
+						} else if (port.path.indexOf('/dev/cuaU') === 0){
+							devices.push({ port: port.path, type: '' });
 						}
 					});
 				}
