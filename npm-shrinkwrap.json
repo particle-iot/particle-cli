@@ -2636,7 +2636,8 @@
     "assertion-error": {
       "version": "1.1.0",
       "resolved": "https://registry.npmjs.org/assertion-error/-/assertion-error-1.1.0.tgz",
-      "integrity": "sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw=="
+      "integrity": "sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==",
+      "dev": true
     },
     "assign-symbols": {
       "version": "1.0.0",
@@ -2841,47 +2842,14 @@
       "optional": true
     },
     "binary-version-reader": {
-      "version": "0.6.5",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-0.6.5.tgz",
-      "integrity": "sha512-/7qMz4ta+/5LGz3aalMNWXXGLAeOgvs8Oscl+0f2yAgJBSxuhU6OuY2tWMysMiLM4gIP0ka9MnE8chx8//9OBw==",
+      "version": "0.7.4",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-0.7.4.tgz",
+      "integrity": "sha512-H0ToVv41KD57gC0tjWzIpMTsqnrJwSgh7Tao5GXGD/jl1PaILHnO4nPHf42PEWUxhL6zmhwlm5hpYaZkNLtZPw==",
       "requires": {
         "buffer-crc32": "^0.2.5",
-        "chai": "^3.5.0",
         "h5.buffers": "^0.1.1",
         "when": "^3.7.3",
-        "xtend": "^4.0.0"
-      },
-      "dependencies": {
-        "chai": {
-          "version": "3.5.0",
-          "resolved": "https://registry.npmjs.org/chai/-/chai-3.5.0.tgz",
-          "integrity": "sha1-TQJjewZ/6Vi9v906QOxW/vc3Mkc=",
-          "requires": {
-            "assertion-error": "^1.0.1",
-            "deep-eql": "^0.1.3",
-            "type-detect": "^1.0.0"
-          }
-        },
-        "deep-eql": {
-          "version": "0.1.3",
-          "resolved": "https://registry.npmjs.org/deep-eql/-/deep-eql-0.1.3.tgz",
-          "integrity": "sha1-71WKyrjeJSBs1xOQbXTlaTDrafI=",
-          "requires": {
-            "type-detect": "0.1.1"
-          },
-          "dependencies": {
-            "type-detect": {
-              "version": "0.1.1",
-              "resolved": "https://registry.npmjs.org/type-detect/-/type-detect-0.1.1.tgz",
-              "integrity": "sha1-C6XsKohWQORw6k6FBZcZANrFiCI="
-            }
-          }
-        },
-        "type-detect": {
-          "version": "1.0.0",
-          "resolved": "https://registry.npmjs.org/type-detect/-/type-detect-1.0.0.tgz",
-          "integrity": "sha1-diIXzAbbJY7EiQihKY6LlRIejqI="
-        }
+        "xtend": "^4.0.2"
       }
     },
     "binaryextensions": {
