@@ -80,9 +80,10 @@ var settings = {
 		12: 'Argon',
 		13: 'Boron',
 		14: 'Xenon',
-		22: 'A Som',
-		23: 'B Som',
-		24: 'X Som',
+		22: 'A SoM',
+		23: 'B SoM',
+		24: 'X SoM',
+		25: 'B5 SoM',
 		88: 'Duo',
 		103: 'Bluz'
 	},
