@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.1 - 19 December 2019
+
+* `particle keys` commands handle file paths with spaces
+* add text warning users to disconnect all but the target device when running `particle doctor`
+
 ## 2.0.0 - 11 December 2019
 
 * drop support for `node@6`, add support for `node@12`. no other breaking changes.
