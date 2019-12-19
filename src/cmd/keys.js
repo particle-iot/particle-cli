@@ -68,21 +68,25 @@ module.exports = class KeysCommand {
 	}
 
 	makeKeyOpenSSL(filename, alg, { protocol }) {
-		filename = utilities.filenameNoExt(filename);
+		const { filenameNoExt, deferredChildProcess } = utilities;
 
+		filename = filenameNoExt(filename);
 		alg = alg || this._getPrivateKeyAlgorithm({ protocol });
 
-		return Promise.resolve().then(() => {
-			if (alg === 'rsa') {
-				return utilities.deferredChildProcess(`openssl genrsa -out ${filename}.pem 1024`);
-			} else if (alg === 'ec') {
-				return utilities.deferredChildProcess(`openssl ecparam -name prime256v1 -genkey -out ${filename}.pem`);
-			}
-		}).then(() => {
-			return utilities.deferredChildProcess(`openssl ${alg} -in ${filename}.pem -pubout -out ${filename}.pub.pem`);
-		}).then(() => {
-			return utilities.deferredChildProcess(`openssl ${alg} -in ${filename}.pem -outform DER -out ${filename}.der`);
-		});
+		return Promise.resolve()
+			.then(() => {
+				if (alg === 'rsa') {
+					return deferredChildProcess(`openssl genrsa -out "${filename}.pem" 1024`);
+				} else if (alg === 'ec') {
+					return deferredChildProcess(`openssl ecparam -name prime256v1 -genkey -out "${filename}.pem"`);
+				}
+			})
+			.then(() => {
+				return deferredChildProcess(`openssl ${alg} -in "${filename}.pem" -pubout -out "${filename}.pub.pem"`);
+			})
+			.then(() => {
+				return deferredChildProcess(`openssl ${alg} -in "${filename}.pem" -outform DER -out "${filename}.der"`);
+			});
 	}
 
 	keyAlgorithmForProtocol(protocol) {
@@ -162,40 +166,55 @@ module.exports = class KeysCommand {
 	}
 
 	_saveKeyFromDevice({ filename, force }) {
+		const { tryDelete, filenameNoExt, deferredChildProcess } = utilities;
 		let protocol;
+
 		if (!force && fs.existsSync(filename)) {
 			throw new VError('This file already exists, please specify a different file, or use the --force flag.');
 		} else if (fs.existsSync(filename)) {
-			utilities.tryDelete(filename);
+			tryDelete(filename);
 		}
 
 		//find this.dfu devices, make sure a device is connected
 		//pull the key down and save it there
 
-		return Promise.resolve().then(() => {
-			return this.dfu.isDfuUtilInstalled();
-		}).then(() => {
-			return this.dfu.findCompatibleDFU();
-		}).then(() => {
-			return this.validateDeviceProtocol();
-		}).then(_protocol => {
-			protocol = _protocol;
-			let segment = this._getPrivateKeySegmentName({ protocol });
-			return this.dfu.read(filename, segment, false);
-		}).then(() => {
-			let pubPemFilename = utilities.filenameNoExt(filename) + '.pub.pem';
-			if (force) {
-				utilities.tryDelete(pubPemFilename);
-			}
-			let alg = this._getPrivateKeyAlgorithm({ protocol });
-			return utilities.deferredChildProcess(`openssl ${alg} -in ${filename} -inform DER -pubout -out ${pubPemFilename}`).catch((err) => {
-				throw new VError(err, 'Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device.');
+		return Promise.resolve()
+			.then(() => {
+				return this.dfu.isDfuUtilInstalled();
+			})
+			.then(() => {
+				return this.dfu.findCompatibleDFU();
+			})
+			.then(() => {
+				return this.validateDeviceProtocol();
+			})
+			.then(_protocol => {
+				protocol = _protocol;
+				let segment = this._getPrivateKeySegmentName({ protocol });
+				return this.dfu.read(filename, segment, false);
+			})
+			.then(() => {
+				let pubPemFilename = filenameNoExt(filename) + '.pub.pem';
+
+				if (force) {
+					tryDelete(pubPemFilename);
+				}
+
+				let alg = this._getPrivateKeyAlgorithm({ protocol });
+				return deferredChildProcess(`openssl ${alg} -in "${filename}" -inform DER -pubout -out ${pubPemFilename}`)
+					.catch((err) => {
+						throw new VError(
+							err,
+							'Unable to generate public key from the key downloaded from the device. This usually means you had a corrupt key on the device.'
+						);
+					});
+			})
+			.then(() => {
+				console.log('Saved!');
+			})
+			.catch(err => {
+				return new VError(ensureError(err), 'Error saving key from device');
 			});
-		}).then(() => {
-			console.log('Saved!');
-		}).catch(err => {
-			return new VError(ensureError(err), 'Error saving key from device');
-		});
 	}
 
 	sendPublicKeyToServer(deviceId, filename, { product_id: productId }) {
@@ -203,8 +222,10 @@ module.exports = class KeysCommand {
 	}
 
 	_sendPublicKeyToServer({ deviceId, filename, productId, algorithm }) {
+		const { filenameNoExt, deferredChildProcess, readFile } = utilities;
+
 		if (!fs.existsSync(filename)) {
-			filename = utilities.filenameNoExt(filename) + '.pub.pem';
+			filename = filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)) {
 				throw new VError("Couldn't find " + filename);
 			}
@@ -217,27 +238,26 @@ module.exports = class KeysCommand {
 
 		let pubKey = temp.path({ suffix: '.pub.pem' });
 		let inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';
-
 		const cleanup = () => fs.unlinkSync(pubKey);
 
 		return Promise.resolve()
 			.then(() => {
 				// try both private and public versions and both algorithms
-				return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey)
+				return deferredChildProcess(`openssl ${algorithm} -inform ${inform} -in "${filename}" -pubout -outform PEM -out "${pubKey}"`)
 					.catch(() => {
-						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+						return deferredChildProcess(`openssl ${algorithm} -pubin -inform ${inform} -in "${filename}" -pubout -outform PEM -out "${pubKey}"`);
 					})
 					.catch(() => {
 						// try other algorithm next
 						algorithm = algorithm === 'rsa' ? 'ec' : 'rsa';
-						return utilities.deferredChildProcess('openssl ' + algorithm + ' -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+						return deferredChildProcess(`openssl ${algorithm} -inform ${inform} -in "${filename}" -pubout -outform PEM -out "${pubKey}"`);
 					})
 					.catch(() => {
-						return utilities.deferredChildProcess('openssl ' + algorithm + ' -pubin -inform ' + inform + ' -in ' + filename + ' -pubout -outform PEM -out ' + pubKey);
+						return deferredChildProcess(`openssl ${algorithm} -pubin -inform ${inform} -in "${filename}" -pubout -outform PEM -out "${pubKey}"`);
 					});
 			})
 			.then(() => {
-				return utilities.readFile(pubKey);
+				return readFile(pubKey);
 			})
 			.then(keyBuf => {
 				let apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
@@ -501,27 +521,32 @@ module.exports = class KeysCommand {
 	}
 
 	_getDERPublicKey(filename, { protocol }) {
+		const { getFilenameExt, filenameNoExt, deferredChildProcess } = utilities;
 		let alg = this._getServerKeyAlgorithm({ protocol });
+
 		if (!alg) {
 			throw new VError('No device specs');
 		}
+
 		let variant = this._getServerKeyVariant({ protocol });
 
 		if (!filename) {
 			filename = this.serverKeyFilename({ alg, variant });
 		}
 
-		if (utilities.getFilenameExt(filename).toLowerCase() !== '.der') {
-			let derFile = utilities.filenameNoExt(filename) + '.der';
+		if (getFilenameExt(filename).toLowerCase() !== '.der') {
+			let derFile = filenameNoExt(filename) + '.der';
 
 			if (!fs.existsSync(derFile)) {
 				console.log('Creating DER format file');
-				let derFilePromise = utilities.deferredChildProcess('openssl ' + alg + ' -in  ' + filename + ' -pubin -pubout -outform DER -out ' + derFile);
-				return derFilePromise.then(() => {
-					return derFile;
-				}).catch(err => {
-					throw new VError(ensureError(err), 'Error creating a DER formatted version of that key.  Make sure you specified the public key');
-				});
+				let derFilePromise = deferredChildProcess(`openssl ${alg} -in "${filename}" -pubin -pubout -outform DER -out "${derFile}"`);
+				return derFilePromise
+					.then(() => {
+						return derFile;
+					})
+					.catch(err => {
+						throw new VError(ensureError(err), 'Error creating a DER formatted version of that key.  Make sure you specified the public key');
+					});
 			} else {
 				return Promise.resolve(derFile);
 			}
