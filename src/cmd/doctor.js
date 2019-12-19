@@ -102,6 +102,9 @@ module.exports = class DoctorCommand {
 		const deviceName = this.device.type || 'Device';
 		console.log('');
 		console.log('The Doctor will operate on your ' + deviceName + ' connected over USB');
+		console.log('');
+		console.log('PLEASE DISCONNECT ALL OTHER DEVICES BEFORE PROCEEDING');
+		console.log('');
 		console.log("You'll be asked to put your device in DFU mode several times to reset different settings.");
 	}
 
