@@ -8,8 +8,8 @@ const ApiClient = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 const spinnerMixin = require('../lib/spinner-mixin');
 const ensureError = require('../lib/utilities').ensureError;
+const UI = require('../lib/ui');
 const prompts = require('../lib/prompts');
-const platformsById = require('./constants').platformsById;
 
 const fs = require('fs');
 const path = require('path');
@@ -43,6 +43,7 @@ const PLATFORMS = extend(utilities.knownPlatforms(), {
 class CloudCommand {
 	constructor() {
 		spinnerMixin(this);
+		this.ui = new UI();
 	}
 
 	claimDevice(deviceId) {
@@ -605,68 +606,16 @@ class CloudCommand {
 	}
 
 	listDevices(filter) {
-		const formatVariables = (vars, lines) => {
-			if (vars) {
-				const arr = [];
-				for (const key in vars) {
-					const type = vars[key];
-					arr.push('    ' + key + ' (' + type + ')');
+		return this.getAllDeviceAttributes(filter)
+			.then((devices) => {
+				if (!devices) {
+					return;
 				}
-
-				if (arr.length > 0) {
-					lines.push('  variables:');
-					for (let i=0;i<arr.length;i++) {
-						lines.push(arr[i]);
-					}
-				}
-			}
-		};
-		const formatFunctions = (funcs, lines) => {
-			if (funcs && (funcs.length > 0)) {
-				lines.push('  Functions:');
-
-				for (let idx = 0; idx < funcs.length; idx++) {
-					const name = funcs[idx];
-					lines.push('    int ' + name + '(String args) ');
-				}
-			}
-		};
-
-		return this.getAllDeviceAttributes(filter).then((devices) => {
-			if (!devices) {
-				return;
-			}
-
-			const lines = [];
-			for (let i = 0; i < devices.length; i++) {
-				let name;
-				const device = devices[i];
-				const deviceType = platformsById[device.product_id] || `Product ${device.product_id}`;
-				const connectedState = device.connected ? 'online' : 'offline';
-
-				if (!device.name || device.name === 'null') {
-					name = '<no name>';
-				} else {
-					name = device.name;
-				}
-
-				if (device.connected) {
-					name = chalk.cyan.bold(name);
-				} else {
-					name = chalk.cyan.dim(name);
-				}
-
-				const status = `${name} [${device.id}] (${deviceType}) is ${connectedState}`;
-				lines.push(status);
-
-				formatVariables(device.variables, lines);
-				formatFunctions(device.functions, lines);
-			}
-
-			console.log(lines.join('\n'));
-		}).catch((err) => {
-			throw new VError(ensureError(err), 'Failed to list device');
-		});
+				this.ui.logDeviceDetail(devices);
+			})
+			.catch((err) => {
+				throw new VError(ensureError(err), 'Failed to list device');
+			});
 	}
 
 	/**
