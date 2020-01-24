@@ -41,12 +41,24 @@ module.exports = class ParticleApi {
 			});
 	}
 
-	listDevices(){
-		return this._wrap(this.api.listDevices({ auth: this.accessToken }));
+	listDevices(options){
+		return this._wrap(
+			this.api.listDevices(
+				Object.assign({
+					auth: this.accessToken
+				}, options)
+			)
+		);
 	}
 
-	getDeviceAttributes(deviceId){
-		return this._wrap(this.api.getDevice({ deviceId, auth: this.accessToken }));
+	getDeviceAttributes(deviceId, product){
+		return this._wrap(
+			this.api.getDevice({
+				product,
+				deviceId,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	claimDevice(deviceId, requestTransfer){
