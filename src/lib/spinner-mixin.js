@@ -27,6 +27,11 @@ module.exports = function spinnerMixin(obj) {
 				this.stopSpin();
 				throw error;
 			});
+		},
+		showBusySpinnerUntilResolved(message, promise){
+			this.newSpin(message);
+			this.startSpin();
+			return this.stopSpinAfterPromise(promise);
 		}
 	});
 };
