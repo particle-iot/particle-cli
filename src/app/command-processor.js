@@ -615,7 +615,7 @@ function createCommand(category, name, description, options){
  */
 function parse(command, args){
 	Yargs.reset();
-	Yargs.wrap(Yargs.terminalWidth());
+	Yargs.wrap(null);
 	return command.parse(args, Yargs);
 }
 
