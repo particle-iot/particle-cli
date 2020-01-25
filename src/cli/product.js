@@ -34,7 +34,10 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command 12345 5a8ef38cb85f8720edce631a': 'Get details for device 5a8ef38cb85f8720edce631a within in product 12345',
 			'$0 $command 12345 --groups foo bar': 'Lists devices in Product which are assigned the `foo` or `bar` groups'
 		},
-		handler: () => {}
+		handler: (args) => {
+			const ProdCmd = require('../cmd/product');
+			return new ProdCmd().showDeviceList(args);
+		}
 	});
 
 	return product;
