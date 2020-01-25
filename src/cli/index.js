@@ -9,6 +9,7 @@ const func = require('./function');
 const keys = require('./keys');
 const library = require('./library');
 const preprocess = require('./preprocess');
+const product = require('./product');
 const project = require('./project');
 const publish = require('./publish');
 const serial = require('./serial');
@@ -51,6 +52,7 @@ module.exports = function registerAllCommands(context) {
 	keys(context);
 	library(context);
 	preprocess(context);
+	product(context);
 	project(context);
 	publish(context);
 	serial(context);
