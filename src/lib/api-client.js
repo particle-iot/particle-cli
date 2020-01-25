@@ -69,6 +69,41 @@ module.exports = class ApiClient {
 			proxy: settings.proxyUrl || process.env.HTTPS_PROXY || process.env.https_proxy
 		});
 	}
+
+	static normalizedApiError(response){
+		if (_.isError(response) || response instanceof VError){
+			return response;
+		}
+
+		let reason = 'Server error';
+		if (typeof response === 'string'){
+			reason = response;
+		} else if (response.errors){
+			reason = response.errors.map((err) => {
+				if (err.error){
+					if (err.error.status){
+						return err.error.status;
+					} else {
+						return err.error;
+					}
+				} else {
+					return err;
+				}
+			}).join('\n');
+		} else if (response.info){
+			reason = response.info;
+		} else if (response.error){
+			reason = response.error;
+		} else if (response.error_description){
+			reason = response.error_description;
+		}
+		return new Error(reason);
+	}
+
+	normalizedApiError(...args){
+		return this.constructor.normalizedApiError(...args);
+	}
+
 	ready(){
 		let hasToken = this.hasToken();
 
@@ -1119,36 +1154,6 @@ module.exports = class ApiClient {
 			return true;
 		}
 		return false;
-	}
-
-	normalizedApiError(response){
-		if (_.isError(response) || response instanceof VError){
-			return response;
-		}
-
-		let reason = 'Server error';
-		if (typeof response === 'string'){
-			reason = response;
-		} else if (response.errors){
-			reason = response.errors.map((err) => {
-				if (err.error){
-					if (err.error.status){
-						return err.error.status;
-					} else {
-						return err.error;
-					}
-				} else {
-					return err;
-				}
-			}).join('\n');
-		} else if (response.info){
-			reason = response.info;
-		} else if (response.error){
-			reason = response.error;
-		} else if (response.error_description){
-			reason = response.error_description;
-		}
-		return new Error(reason);
 	}
 };
 
