@@ -40,5 +40,20 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(device, 'add', 'Adds one or more devices into a Product', {
+		params: '<product> [device]',
+		options: {
+			file: {
+				alias: 'f',
+				description: 'Path to single column .txt file with list of IDs, S/Ns, IMEIs, or ICCIDs of the devices to add'
+			}
+		},
+		examples: {
+			'$0 $command 12345 5a8ef38cb85f8720edce631a': 'Add device id 5a8ef38cb85f8720edce631a into product 12345',
+			'$0 $command 12345 --file ./path/to/device_ids.txt': 'Adds a list of devices into product 12345',
+		},
+		handler: () => {}
+	});
+
 	return product;
 };
