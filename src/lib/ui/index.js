@@ -34,7 +34,8 @@ module.exports = class UI {
 		for (let i = 0; i < deviceList.length; i++){
 			const device = deviceList[i];
 			const deviceType = platformsById[device.product_id] || `Product ${device.product_id}`;
-			const connectedState = device.connected ? 'online' : 'offline';
+			const connected = device.connected;
+			const connectedState = connected ? 'online' : 'offline';
 			let name;
 
 			if (!device.name || device.name === 'null'){
@@ -43,7 +44,7 @@ module.exports = class UI {
 				name = device.name;
 			}
 
-			if (device.connected){
+			if (connected){
 				name = chalk.cyan.bold(name);
 			} else {
 				name = chalk.cyan.dim(name);
