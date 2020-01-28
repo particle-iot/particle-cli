@@ -42,7 +42,8 @@ describe('preprocess command-line interface', () => {
 	});
 
 	it('includes help with examples', () => {
-		commandProcessor.parse(root, ['preprocess', '--help']);
+		const termWidth = null; // don't right-align option type labels so testing is easier
+		commandProcessor.parse(root, ['preprocess', '--help'], termWidth);
 		commandProcessor.showHelp((helpText) => {
 			expect(helpText).to.include('Preprocess a Wiring file (ino) into a C++ file (cpp)');
 			expect(helpText).to.include('Options:');
