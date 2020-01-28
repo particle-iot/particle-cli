@@ -705,6 +705,7 @@ function unknownParametersError(params){
 }
 
 const errors = {
+	usageError,
 	unknownCommandError,
 	unknownArgumentError,
 	requiredParameterError,
