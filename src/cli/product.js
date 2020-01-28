@@ -52,7 +52,10 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command 12345 5a8ef38cb85f8720edce631a': 'Add device id 5a8ef38cb85f8720edce631a into product 12345',
 			'$0 $command 12345 --file ./path/to/device_ids.txt': 'Adds a list of devices into product 12345',
 		},
-		handler: () => {}
+		handler: (args) => {
+			const ProdCmd = require('../cmd/product');
+			return new ProdCmd().addDevices(args);
+		}
 	});
 
 	return product;
