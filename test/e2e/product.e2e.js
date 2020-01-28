@@ -1,7 +1,10 @@
 const os = require('os');
+const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
+const fs = require('../lib/fs');
 const {
+	PATH_TMP_DIR,
 	PRODUCT_01_ID,
 	PRODUCT_01_DEVICE_01_ID,
 	PRODUCT_01_DEVICE_01_NAME,
@@ -36,21 +39,21 @@ describe('Product Commands', () => {
 	it('Shows `help` content', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['help', 'product']);
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
 	it('Shows `help` content when run without arguments', async () => {
 		const { stdout, stderr, exitCode } = await cli.run('product');
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
 	it('Shows `help` content when run with `--help` flag', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['product', '--help']);
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -256,6 +259,160 @@ describe('Product Commands', () => {
 			expect(json.error).to.have.property('message').that.is.a('string');
 			expect(json.error.message).include('HTTP error 400');
 			expect(json.error.message).include('The access token was not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('Device Add Subcommand', () => {
+		const deviceIDsFilePath = path.join(PATH_TMP_DIR, 'product-device-ids.txt');
+		const deviceIDsEmptyFilePath = path.join(PATH_TMP_DIR, 'product-device-ids-empty.txt');
+		const help = [
+			'Adds one or more devices into a Product',
+			'Usage: particle product device add [options] <product> [device]',
+			'',
+			'Global Options:',
+			'  -v, --verbose  Increases how much logging to display  [count]',
+			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --file, -f  Path to single column .txt file with list of IDs, S/Ns, IMEIs, or ICCIDs of the devices to add  [string]',
+			'',
+			'Examples:',
+			'  particle product device add 12345 5a8ef38cb85f8720edce631a         Add device id 5a8ef38cb85f8720edce631a into product 12345',
+			'  particle product device add 12345 --file ./path/to/device_ids.txt  Adds a list of devices into product 12345'
+		];
+
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
+		beforeEach(async () => {
+			await Promise.all([
+				fs.writeFile(deviceIDsFilePath, [PRODUCT_01_DEVICE_01_ID, PRODUCT_01_DEVICE_02_ID].join(os.EOL), 'utf8'),
+				fs.writeFile(deviceIDsEmptyFilePath, '', 'utf8')
+			]);
+		});
+
+		// TODO (mirande): remove device from product first once we fully support
+		// removing devices - see: https://app.clubhouse.io/particle/story/45489/product-device-is-not-removed
+		it('Adds a single device', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`Success!${os.EOL + os.EOL}`);
+			expect(stdout).to.include(`Product ${PRODUCT_01_ID} Includes:${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_01_ID}${os.EOL}`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Adds a single device when device was already in product', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_ID];
+			await cli.run(args);
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`Success!${os.EOL + os.EOL}`);
+			expect(stdout).to.include(`Product ${PRODUCT_01_ID} Includes:${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_01_ID}${os.EOL}`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to add a single device when `device` param or `--file` flag is not provided', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('`device` parameter or `--file` option is required');
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to add a single device when `product` is unknown', async () => {
+			const args = ['product', 'device', 'add', 'LOLWUTNOPE', PRODUCT_01_DEVICE_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('HTTP error 404');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to add a single device when `device` is unknown', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, 'LOLWUTNOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			// for an unknown reason the API does .toLowerCase() on the ID
+			expect(stdout).to.include('Skipped Invalid IDs:');
+			expect(stdout).to.include('  lolwutnope');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		// TODO (mirande): remove devices from product first once we fully support
+		// removing devices - see: https://app.clubhouse.io/particle/story/45489/product-device-is-not-removed
+		it('Adds multiple devices using the `--file` flag', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, '--file', deviceIDsFilePath];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`Success!${os.EOL + os.EOL}`);
+			expect(stdout).to.include(`Product ${PRODUCT_01_ID} Includes:${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_01_ID}${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_02_ID}${os.EOL}`);
+			expect(stdout).to.not.include('Skipped Non-Member IDs:');
+			expect(stdout).to.not.include('Skipped Invalid IDs:');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Adds multiple devices using the `--file` flag and logs skipped items', async () => {
+			const data = ['WAT', PRODUCT_01_DEVICE_01_ID, 'NOPE', PRODUCT_01_DEVICE_02_ID, 'NOPE', 'LOL'];
+			await fs.writeFile(deviceIDsFilePath, data.join(os.EOL), 'utf8');
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, '--file', deviceIDsFilePath];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`Success!${os.EOL + os.EOL}`);
+			expect(stdout).to.include(`Product ${PRODUCT_01_ID} Includes:${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_01_ID}${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_02_ID}${os.EOL}`);
+			expect(stdout).to.not.include('Skipped Non-Member IDs:');
+			expect(stdout).to.include(`Skipped Invalid IDs:${os.EOL}`);
+			expect(stdout).to.include(`  wat${os.EOL}`);
+			expect(stdout).to.include(`  nope${os.EOL}`);
+			expect(stdout).to.include(`  lol${os.EOL}`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Adds multiple devices using the `--file` flag when file uses windows-style line-breaks', async () => {
+			const data = [PRODUCT_01_DEVICE_01_ID, PRODUCT_01_DEVICE_02_ID];
+			await fs.writeFile(deviceIDsFilePath, data.join('\r\n'), 'utf8');
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, '--file', deviceIDsFilePath];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`Success!${os.EOL + os.EOL}`);
+			expect(stdout).to.include(`Product ${PRODUCT_01_ID} Includes:${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_01_ID}${os.EOL}`);
+			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_02_ID}${os.EOL}`);
+			expect(stdout).to.not.include('Skipped Non-Member IDs:');
+			expect(stdout).to.not.include('Skipped Invalid IDs:');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to add multiple devices when `--file` is empty', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, '--file', deviceIDsEmptyFilePath];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('product-device-ids-empty.txt is empty');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to add multiple devices when `--file` is not found', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, '--file', path.join(PATH_TMP_DIR, 'missing.txt')];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('missing.txt does not exist');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
