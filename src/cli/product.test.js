@@ -75,7 +75,8 @@ describe('Product Command-Line Interface', () => {
 		});
 
 		it('Includes help with examples', () => {
-			commandProcessor.parse(root, ['product', 'device', 'list', '--help']);
+			const termWidth = null; // don't right-align option type labels so testing is easier
+			commandProcessor.parse(root, ['product', 'device', 'list', '--help'], termWidth);
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
 					'List all devices that are part of a product',
