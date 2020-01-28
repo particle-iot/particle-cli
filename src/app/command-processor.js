@@ -613,9 +613,9 @@ function createCommand(category, name, description, options){
  * Options/booleans are attributes of the object. The property `clicommand` contains the command corresponding
  * to the requested command. `clierror` contains any error encountered durng parsing.
  */
-function parse(command, args){
+function parse(command, args, width = Yargs.terminalWidth()){
 	Yargs.reset();
-	Yargs.wrap(null);
+	Yargs.wrap(width);
 	return command.parse(args, Yargs);
 }
 
