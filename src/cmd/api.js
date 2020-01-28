@@ -61,12 +61,29 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	addDeviceToProduct(deviceId, product, file){
+		return this._wrap(
+			this.api.addDeviceToProduct({
+				product,
+				deviceId,
+				file,
+				auth: this.accessToken
+			})
+		);
+	}
+
 	claimDevice(deviceId, requestTransfer){
 		return this._wrap(this.api.claimDevice({ deviceId, requestTransfer, auth: this.accessToken }));
 	}
 
-	removeDevice(deviceId){
-		return this._wrap(this.api.removeDevice({ deviceId, auth: this.accessToken }));
+	removeDevice(deviceId, product){
+		return this._wrap(
+			this.api.removeDevice({
+				product,
+				deviceId,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	renameDevice(deviceId, name){
