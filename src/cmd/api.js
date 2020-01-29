@@ -41,6 +41,19 @@ module.exports = class ParticleApi {
 			});
 	}
 
+	listProducts(options){
+		return this._wrap(
+			this.api.listProducts(
+				Object.assign({
+					headers: {
+						'X-Api-Version': '1.1.0'
+					},
+					auth: this.accessToken
+				}, options)
+			)
+		);
+	}
+
 	listDevices(options){
 		return this._wrap(
 			this.api.listDevices(
