@@ -26,6 +26,34 @@ module.exports = class UI {
 		stderr.write(data + EOL);
 	}
 
+	logProductDetail(products){
+		const { EOL, chalk } = this;
+		const productList = Array.isArray(products) ? products : [products];
+		const lines = [];
+
+		for (const product of productList){
+			const deviceType = platformsById[product.platform_id] || 'Unknown';
+			lines.push(`${chalk.cyan.bold(product.name)} [${product.id}] (${deviceType})`);
+
+			if (product.description){
+				lines.push('  Description:');
+				lines.push(`    ${product.description}`);
+			}
+
+			if (product.organization){
+				lines.push('  Organization:');
+				lines.push(`    ${product.organization}`);
+			}
+
+			if (product.groups && product.groups.length){
+				lines.push('  Groups:');
+				lines.push(`    ${product.groups.join(`${os.EOL}    `)}`);
+			}
+		}
+
+		this.write(lines.join(EOL));
+	}
+
 	logDeviceDetail(devices){
 		const { EOL, chalk } = this;
 		const deviceList = Array.isArray(devices) ? devices : [devices];

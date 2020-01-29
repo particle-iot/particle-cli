@@ -50,6 +50,58 @@ describe('UI', () => {
 
 	describe('Logging device details', () => {
 		it('Logs details for a single device', () => {
+			const [product] = getProductList();
+			ui.logProductDetail(product);
+
+			expect(stdout.content).to.equal([
+				'Test Product 01 [12345] (Boron)',
+				'  Description:',
+				'    A fake boron product entity for testing',
+				'  Organization:',
+				'    0xx00xx000x00x00000xx0xx',
+				''
+			].join(ui.EOL));
+		});
+
+		it('Logs details for multiple devices', () => {
+			const products = getProductList();
+			ui.logProductDetail(products);
+
+			expect(stdout.content).to.equal([
+				'Test Product 01 [12345] (Boron)',
+				'  Description:',
+				'    A fake boron product entity for testing',
+				'  Organization:',
+				'    0xx00xx000x00x00000xx0xx',
+				'Test Product 02 [12346] (Photon)',
+				'  Description:',
+				'    A fake photon product entity for testing',
+				'  Organization:',
+				'    0xx00xx000x00x00000xx0xx',
+				'Test Product 03 [12347] (Argon)',
+				'  Description:',
+				'    A fake argon product entity for testing',
+				'  Organization:',
+				'    0xx00xx000x00x00000xx0xx',
+				'  Groups:',
+				'    locked-v14',
+				'    us-ca-one',
+				'    us-ca-two',
+				'    us-ca-three',
+				'    us-ca-four',
+				'    us-ca-five',
+				'    us-il-six',
+				'    us-mi-seven',
+				'    us-mn-eight',
+				'    us-ny-nine',
+				'    us-or-ten',
+				''
+			].join(ui.EOL));
+		});
+	});
+
+	describe('Logging device details', () => {
+		it('Logs details for a single device', () => {
 			const [device] = getDetailedDeviceList();
 			ui.logDeviceDetail(device);
 
@@ -186,6 +238,66 @@ describe('UI', () => {
 			].join(ui.EOL));
 		});
 	});
+
+	function getProductList(){
+		return [
+			{
+				id: 12345,
+				platform_id: 13,
+				name: 'Test Product 01',
+				slug: 'test-product-01-12345',
+				description: 'A fake boron product entity for testing',
+				subscription_id: 66666,
+				mb_limit: null,
+				groups: [],
+				organization: '0xx00xx000x00x00000xx0xx',
+				type: null,
+				hardware_version: null,
+				latest_firmware_version: null
+			},
+			{
+				id: 12346,
+				platform_id: 6,
+				name: 'Test Product 02',
+				slug: 'test-product-02-12346',
+				description: 'A fake photon product entity for testing',
+				subscription_id: 66667,
+				mb_limit: null,
+				groups: [],
+				organization: '0xx00xx000x00x00000xx0xx',
+				type: null,
+				hardware_version: null,
+				latest_firmware_version: null
+			},
+			{
+				id: 12347,
+				platform_id: 12,
+				name: 'Test Product 03',
+				slug: 'test-product-03-12347',
+				description: 'A fake argon product entity for testing',
+				subscription_id: 66668,
+				mb_limit: null,
+				groups: [
+					'locked-v14',
+					'us-ca-one',
+					'us-ca-two',
+					'us-ca-three',
+					'us-ca-four',
+					'us-ca-five',
+					'us-il-six',
+					'us-mi-seven',
+					'us-mn-eight',
+					'us-ny-nine',
+					'us-or-ten'
+				],
+				organization: '0xx00xx000x00x00000xx0xx',
+				type: null,
+				hardware_version: '1',
+				config_id: '0xx000000xx0000xxxx00000',
+				latest_firmware_version: null
+			}
+		];
+	}
 
 	function getDeviceList(){
 		return [
