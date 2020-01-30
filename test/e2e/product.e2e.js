@@ -58,12 +58,15 @@ describe('Product Commands', () => {
 	});
 
 	describe('Device List Subcommand', () => {
-		const summaryDeviceFieldNames = ['denied', 'desired_firmware_version',
+		// TODO (mirande): sometimes entity includes: `desired_firmware_version`
+		const summaryDeviceFieldNames = ['denied',
 			'development', 'firmware_product_id', 'groups', 'iccid', 'id', 'imei',
 			'last_handshake_at', 'last_iccid', 'last_ip_address', 'name', 'notes',
 			'online', 'owner', 'platform_id', 'product_id', 'quarantined',
 			'serial_number', 'system_firmware_version',
 			'targeted_firmware_release_version', 'user_id'];
+
+		// TODO (mirande): sometimes entity includes: `pinned_build_target`
 		const detailedDeviceFieldNames = ['cellular', 'connected',
 			'current_build_target', 'default_build_target', 'functions', 'groups',
 			'iccid', 'id', 'imei', 'last_app', 'last_heard', 'last_iccid',
@@ -117,11 +120,11 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version', 'current', 'next', 'previous');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.data).to.have.lengthOf.at.least(2);
-			expect(json.data[0]).to.have.all.keys(summaryDeviceFieldNames);
+			expect(json.data[0]).to.include.keys(summaryDeviceFieldNames);
 			expect(json.data[0].id).to.equal(PRODUCT_01_DEVICE_01_ID);
 			expect(json.data[0].name).to.equal(PRODUCT_01_DEVICE_01_NAME);
 			expect(`${json.data[0].product_id}`).to.equal(PRODUCT_01_ID);
-			expect(json.data[1]).to.have.all.keys(summaryDeviceFieldNames);
+			expect(json.data[1]).to.include.keys(summaryDeviceFieldNames);
 			expect(json.data[1].id).to.equal(PRODUCT_01_DEVICE_02_ID);
 			expect(json.data[1].name).to.equal(PRODUCT_01_DEVICE_02_NAME);
 			expect(`${json.data[1].product_id}`).to.equal(PRODUCT_01_ID);
@@ -147,7 +150,7 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.data).to.be.an('object');
-			expect(json.data).to.have.all.keys(detailedDeviceFieldNames);
+			expect(json.data).to.include.keys(detailedDeviceFieldNames);
 			expect(json.data.id).to.equal(PRODUCT_01_DEVICE_01_ID);
 			expect(json.data.name).to.equal(PRODUCT_01_DEVICE_01_NAME);
 			expect(`${json.data.product_id}`).to.equal(PRODUCT_01_ID);
