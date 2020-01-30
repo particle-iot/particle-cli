@@ -186,7 +186,6 @@ function readDeviceListFile(file){
 }
 
 function filterDeviceIdentifiers(identifiers, invalid = [], nonmember = []){
-	identifiers = Array.isArray(identifiers) ? identifiers : [identifiers];
 	return identifiers.reduce((out, x) => {
 		if (!hasDeviceIdentifier(x, invalid) && !hasDeviceIdentifier(x, nonmember)){
 			out.push(x);
@@ -196,9 +195,11 @@ function filterDeviceIdentifiers(identifiers, invalid = [], nonmember = []){
 }
 
 function hasDeviceIdentifier(x = '', ids = []){
+	x = x.toLowerCase().trim();
+
 	return ids
 		.map(id => id.toLowerCase().trim())
-		.some(id => id === x.toLowerCase().trim());
+		.some(id => id === x);
 }
 
 function dedupeAndStringifyIDList(array){
