@@ -265,6 +265,7 @@ describe('Product Commands', () => {
 	});
 
 	describe('Device Add Subcommand', () => {
+		const deviceIDs = [PRODUCT_01_DEVICE_01_ID, PRODUCT_01_DEVICE_02_ID];
 		const deviceIDsFilePath = path.join(PATH_TMP_DIR, 'product-device-ids.txt');
 		const deviceIDsEmptyFilePath = path.join(PATH_TMP_DIR, 'product-device-ids-empty.txt');
 		const help = [
@@ -289,7 +290,7 @@ describe('Product Commands', () => {
 
 		beforeEach(async () => {
 			await Promise.all([
-				fs.writeFile(deviceIDsFilePath, [PRODUCT_01_DEVICE_01_ID, PRODUCT_01_DEVICE_02_ID].join(os.EOL), 'utf8'),
+				fs.writeFile(deviceIDsFilePath, deviceIDs.join(os.EOL), 'utf8'),
 				fs.writeFile(deviceIDsEmptyFilePath, '', 'utf8')
 			]);
 		});
@@ -384,8 +385,7 @@ describe('Product Commands', () => {
 		});
 
 		it('Adds multiple devices using the `--file` flag when file uses windows-style line-breaks', async () => {
-			const data = [PRODUCT_01_DEVICE_01_ID, PRODUCT_01_DEVICE_02_ID];
-			await fs.writeFile(deviceIDsFilePath, data.join('\r\n'), 'utf8');
+			await fs.writeFile(deviceIDsFilePath, deviceIDs.join('\r\n'), 'utf8');
 			const args = ['product', 'device', 'add', PRODUCT_01_ID, '--file', deviceIDsFilePath];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
