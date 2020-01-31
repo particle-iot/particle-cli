@@ -111,6 +111,13 @@ class BinaryCommand {
 			+ ' at version '
 			+ chalk.bold(fileInfo.prefixInfo.moduleVersion.toString()));
 
+		if (fileInfo.suffixInfo.productId !== 65535 && fileInfo.suffixInfo.productVersion !== 65535) {
+			console.log(' It is firmware for '
+				+ chalk.bold('product id ' + fileInfo.suffixInfo.productId)
+				+ ' at version '
+				+ chalk.bold(fileInfo.suffixInfo.productVersion));
+		}
+
 		if (fileInfo.prefixInfo.depModuleFunction){
 			console.log(' It depends on '
 				+ chalk.bold(functions[fileInfo.prefixInfo.depModuleFunction])
