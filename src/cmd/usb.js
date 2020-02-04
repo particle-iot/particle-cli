@@ -109,6 +109,18 @@ module.exports = class UsbCommand {
 			});
 	}
 
+	setSetupDone(args) {
+		const done = !args.reset;
+		return this._forEachUsbDevice(args, usbDevice => {
+			if (usbDevice.isMeshDevice) {
+				return usbDevice.setSetupDone(done);
+			}
+		})
+			.then(() => {
+				console.log('Done.');
+			});
+	}
+
 	configure() {
 		if (!systemSupportsUdev()) {
 			console.log('The system does not require configuration.');
