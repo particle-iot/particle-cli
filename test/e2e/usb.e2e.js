@@ -116,7 +116,7 @@ describe('USB Commands [@device]', () => {
 		expect(subproc.exitCode).to.equal(1);
 	});
 
-	it('Sets and clears the setup done flag', async function () {
+	it.only('Sets and clears the setup done flag', async function test() {
 		await openUsbDevice();
 		if (!usbDevice.isMeshDevice) {
 			this.skip();
