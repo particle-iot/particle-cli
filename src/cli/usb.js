@@ -102,14 +102,14 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[devices...]',
 		options: {
 			'reset': {
-				description: 'Reset the setup done flag',
+				description: 'Clear the setup done flag',
 				boolean: true
 			},
 			...commonOptions
 		},
 		examples: {
 			'$0 $command my_device': 'Set the setup done flag on the device "my_device"',
-			'$0 $command --reset my_device': 'Reset the setup done flag on the device "my_device"',
+			'$0 $command --clear my_device': 'Clear the setup done flag on the device "my_device"',
 			'$0 $command --all': 'Set the setup done flag on all devices connected to the host computer',
 		},
 		handler: (args) => {

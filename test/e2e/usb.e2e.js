@@ -1,4 +1,5 @@
 const capitalize = require('lodash/capitalize');
+const usb = require('particle-usb');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
@@ -22,12 +23,32 @@ describe('USB Commands [@device]', () => {
 		'  safe-mode        Put a device into the safe mode',
 		'  dfu              Put a device into the DFU mode',
 		'  reset            Reset a device',
+		'  setup-done       Set the setup done flag',
 		'  configure        Update the system USB configuration',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
 		'  -q, --quiet    Decreases how much logging to display  [count]'
 	];
+
+	let usbDevice = null;
+
+	const closeUsbDevice = async () => {
+		if (usbDevice) {
+			await usbDevice.close();
+			usbDevice = null;
+		}
+	};
+
+	const openUsbDevice = async () => {
+		await closeUsbDevice();
+		const devs = await usb.getDevices();
+		if (!devs.length) {
+			throw new Error('No USB devices found');
+		}
+		await devs[0].open();
+		usbDevice = devs[0];
+	};
 
 	before(async () => {
 		await cli.setTestProfileAndLogin();
@@ -36,6 +57,10 @@ describe('USB Commands [@device]', () => {
 	after(async () => {
 		await cli.logout();
 		await cli.setDefaultProfile();
+	});
+
+	afterEach(async () => {
+		await closeUsbDevice();
 	});
 
 	it('Shows `help` content', async () => {
@@ -90,5 +115,34 @@ describe('USB Commands [@device]', () => {
 		expect(subproc.stderr).to.equal('');
 		expect(subproc.exitCode).to.equal(1);
 	});
-});
 
+	it('Sets and clears the setup done flag', async function () {
+		await openUsbDevice();
+		if (!usbDevice.isMeshDevice) {
+			this.skip();
+			return;
+		}
+
+		// Clear the setup done flag
+		await cli.run(['usb', 'setup-done', '--reset']);
+
+		// Reset and reopen the device
+		await usbDevice.reset();
+		await delay(2000);
+		await openUsbDevice();
+
+		let mode = await usbDevice.getDeviceMode();
+		expect(mode).to.equal('LISTENING'); // FIXME: particle-usb doesn't export DeviceMode
+
+		// Set the setup done flag
+		await cli.run(['usb', 'setup-done']);
+
+		// Reset and reopen the device
+		await usbDevice.reset();
+		await delay(2000);
+		await openUsbDevice();
+
+		mode = await usbDevice.getDeviceMode();
+		expect(mode).to.not.equal('LISTENING');
+	});
+});
