@@ -1,5 +1,20 @@
 module.exports = ({ commandProcessor, root }) => {
 	const product = commandProcessor.createCategory(root, 'product', 'Access Particle Product functionality');
+
+	commandProcessor.createCommand(product, 'list', 'Display a list of your products', {
+		params: '',
+		options: {
+			json: {
+				boolean: true,
+				description: 'Output JSON formatted data (experimental)'
+			}
+		},
+		examples: {
+			'$0 $command': 'Lists your Products'
+		},
+		handler: () => {}
+	});
+
 	const device = commandProcessor.createCategory(product, 'device', 'Manage the devices associated with your product');
 
 	commandProcessor.createCommand(device, 'list', 'List all devices that are part of a product', {

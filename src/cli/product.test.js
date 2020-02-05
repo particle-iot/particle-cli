@@ -28,7 +28,34 @@ describe('Product Command-Line Interface', () => {
 					'Help:  particle help product <command>',
 					'',
 					'Commands:',
+					'  list    Display a list of your products',
 					'  device  Manage the devices associated with your product',
+					''
+				].join(os.EOL));
+			});
+		});
+	});
+
+	describe('Handles `product list` Command', () => {
+		it('Parses arguments', () => {
+			const argv = commandProcessor.parse(root, ['product', 'list']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({});
+		});
+
+		it('Includes help with examples', () => {
+			const termWidth = null; // don't right-align option type labels so testing is easier
+			commandProcessor.parse(root, ['product', 'list', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Display a list of your products',
+					'Usage: particle product list [options]',
+					'',
+					'Options:',
+					'  --json  Output JSON formatted data (experimental)  [boolean]',
+					'',
+					'Examples:',
+					'  particle product list  Lists your Products',
 					''
 				].join(os.EOL));
 			});
