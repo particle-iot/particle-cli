@@ -12,7 +12,10 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command': 'Lists your Products'
 		},
-		handler: () => {}
+		handler: (args) => {
+			const ProdCmd = require('../cmd/product');
+			return new ProdCmd().listProducts(args);
+		}
 	});
 
 	const device = commandProcessor.createCategory(product, 'device', 'Manage the devices associated with your product');

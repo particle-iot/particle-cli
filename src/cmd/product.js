@@ -23,6 +23,26 @@ module.exports = class ProductCommand {
 		spinnerMixin(this);
 	}
 
+	listProducts({ json }){
+		const msg = 'Fetching products';
+		const fetchList = createAPI().listProducts();
+
+		return (json ? fetchList : this.showBusySpinnerUntilResolved(msg, fetchList))
+			.then(res => {
+				if (json){
+					this.ui.stdout.write(
+						createJSONResult(null, res.products)
+					);
+				} else {
+					this.ui.logProductDetail(res.products);
+				}
+			})
+			.catch(error => {
+				const message = 'Error listing products';
+				throw createAPIErrorResult({ error, message, json });
+			});
+	}
+
 	addDevice({ params: { product, device } }){
 		const identifiers = [device];
 		const msg = `Adding device ${device} to product ${product}`;

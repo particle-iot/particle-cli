@@ -1,13 +1,16 @@
 const os = require('os');
 const path = require('path');
 const { expect } = require('../setup');
+const capitalize = require('lodash/capitalize');
 const cli = require('../lib/cli');
 const fs = require('../lib/fs');
 const {
 	PATH_TMP_DIR,
 	PRODUCT_01_ID,
+	PRODUCT_01_NAME,
 	PRODUCT_01_DEVICE_01_ID,
 	PRODUCT_01_DEVICE_01_NAME,
+	PRODUCT_01_DEVICE_01_PLATFORM_NAME,
 	PRODUCT_01_DEVICE_02_ID,
 	PRODUCT_01_DEVICE_02_NAME,
 	PRODUCT_01_DEVICE_02_GROUP,
@@ -57,6 +60,73 @@ describe('Product Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
+	describe('List Subcommand', () => {
+		const productFieldNames = ['id', 'name', 'slug', 'description',
+			'platform_id', 'subscription_id', 'mb_limit', 'groups', 'settings'];
+
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
+		it('Lists products', async () => {
+			const args = ['product', 'list'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`${PRODUCT_01_NAME} [${PRODUCT_01_ID}] (${capitalize(PRODUCT_01_DEVICE_01_PLATFORM_NAME)})`);
+			expect(stdout).to.include('  Description:');
+			expect(stdout).to.include('  Groups:');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		// TODO (mirande): device's `id` field should probably be a string
+		it('Lists products using the `--json` flag', async () => {
+			const args = ['product', 'list', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = parseAndSortProductList(stdout);
+
+			expect(json).to.have.all.keys('meta', 'data');
+			expect(json.meta).to.have.all.keys('version');
+			expect(json.meta.version).to.equal('1.0.0');
+			expect(json.data).to.have.lengthOf.at.least(1);
+			expect(json.data[0]).to.include.keys(productFieldNames);
+			expect(`${json.data[0].id}`).to.equal(PRODUCT_01_ID);
+			expect(json.data[0].name).to.equal(PRODUCT_01_NAME);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to list products when user is signed-out', async () => {
+			await cli.logout();
+
+			const args = ['product', 'list'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('HTTP error 400');
+			expect(stdout).to.include('The access token was not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to list products when user is signed-out and using the `--json` flag', async () => {
+			await cli.logout();
+
+			const args = ['product', 'list', '--json'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const json = parseAndSortProductList(stdout);
+
+			expect(json).to.be.an('object');
+			expect(json).to.have.all.keys('meta', 'error');
+			expect(json.meta).to.have.all.keys('version');
+			expect(json.meta.version).to.equal('1.0.0');
+			expect(json.error).to.have.property('message').that.is.a('string');
+			expect(json.error.message).include('HTTP error 400');
+			expect(json.error.message).include('The access token was not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
 	describe('Device List Subcommand', () => {
 		// TODO (mirande): sometimes entity includes: `desired_firmware_version`
 		const summaryDeviceFieldNames = ['denied',
@@ -73,6 +143,10 @@ describe('Product Commands', () => {
 			'last_ip_address', 'mobile_secret', 'name', 'notes', 'platform_id',
 			'product_id', 'serial_number', 'status', 'system_firmware_version',
 			'targeted_firmware_release_version', 'variables'];
+
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+		});
 
 		it('Lists devices', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID];
@@ -420,6 +494,16 @@ describe('Product Commands', () => {
 			expect(exitCode).to.equal(1);
 		});
 	});
+
+	function parseAndSortProductList(stdout){
+		const json = JSON.parse(stdout);
+
+		if (json.error){
+			return json;
+		}
+		json.data.sort((a, b) => a.id > b.id ? 1 : -1);
+		return json;
+	}
 
 	function parseAndSortDeviceList(stdout){
 		const json = JSON.parse(stdout);
