@@ -113,7 +113,13 @@ module.exports = class UsbCommand {
 		const done = !args.reset;
 		return this._forEachUsbDevice(args, usbDevice => {
 			if (usbDevice.isMeshDevice) {
-				return usbDevice.setSetupDone(done);
+				return usbDevice.setSetupDone(done)
+					.then(() => {
+						if (done) {
+							return usbDevice.leaveListeningMode();
+						}
+						return usbDevice.enterListeningMode();
+					});
 			}
 		})
 			.then(() => {
