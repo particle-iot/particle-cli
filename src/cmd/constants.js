@@ -11,6 +11,7 @@ module.exports.platformsById = {
 	22: 'A SoM',
 	23: 'B SoM',
 	24: 'X SoM',
+	25: 'B5 SoM',
 	31: 'Raspberry Pi',
 	88: 'Duo',
 	103: 'Bluz'

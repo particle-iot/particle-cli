@@ -33,6 +33,7 @@ const PLATFORMS = extend(utilities.knownPlatforms(), {
 	'a-series': 22,
 	'b-series': 23,
 	'x-series': 24,
+	'b5som': 25,
 	'o': 82,
 	'd': 88,
 	'bl': 103,

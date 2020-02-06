@@ -342,6 +342,7 @@ module.exports = {
 			'asom': 22,
 			'bsom': 23,
 			'xsom': 24,
+			'b5som': 25,
 			'oak': 82,
 			'duo': 88,
 			'bluz': 103,
