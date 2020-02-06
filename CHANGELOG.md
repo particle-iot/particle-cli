@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 - 6 February 2020
+
+* Display info about product firmware in `particle binary inspect` command ([PR #546](https://github.com/particle-iot/particle-cli/pull/546))
+* Add a command `particle usb setup-done` to set and clear the "setup done" flag ([PR #547](https://github.com/particle-iot/particle-cli/pull/547))
+* Recognize B5 SoM platform ([PR #548](https://github.com/particle-iot/particle-cli/pull/548))
+
 ## 2.0.1 - 19 December 2019
 
 * `particle keys` commands handle file paths with spaces
