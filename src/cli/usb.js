@@ -98,6 +98,25 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(usb, 'setup-done', 'Set the setup done flag', {
+		params: '[devices...]',
+		options: {
+			'reset': {
+				description: 'Clear the setup done flag',
+				boolean: true
+			},
+			...commonOptions
+		},
+		examples: {
+			'$0 $command my_device': 'Set the setup done flag on the device "my_device"',
+			'$0 $command --reset my_device': 'Clear the setup done flag on the device "my_device"',
+			'$0 $command --all': 'Set the setup done flag on all devices connected to the host computer',
+		},
+		handler: (args) => {
+			return usbCommand().setSetupDone(args);
+		}
+	});
+
 	commandProcessor.createCommand(usb, 'configure', 'Update the system USB configuration', {
 		handler: (args) => {
 			return usbCommand().configure(args);

@@ -22,6 +22,7 @@ describe('USB Commands [@device]', () => {
 		'  safe-mode        Put a device into the safe mode',
 		'  dfu              Put a device into the DFU mode',
 		'  reset            Reset a device',
+		'  setup-done       Set the setup done flag',
 		'  configure        Update the system USB configuration',
 		'',
 		'Global Options:',
@@ -34,6 +35,8 @@ describe('USB Commands [@device]', () => {
 	});
 
 	after(async () => {
+		await cli.run(['usb', 'setup-done']);
+		await delay(2000);
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -90,5 +93,23 @@ describe('USB Commands [@device]', () => {
 		expect(subproc.stderr).to.equal('');
 		expect(subproc.exitCode).to.equal(1);
 	});
-});
 
+	it('Sets and clears the setup done flag', async function test() {
+		await cli.run(['usb', 'setup-done', '--reset']);
+		await delay(2000);
+
+		const platform = capitalize(DEVICE_PLATFORM_NAME);
+		const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
+		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, LISTENING)`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+
+		await cli.run(['usb', 'setup-done']);
+		await delay(2000);
+
+		const subproc = await cli.run(['usb', 'list']);
+		expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+		expect(subproc.stderr).to.equal('');
+		expect(subproc.exitCode).to.equal(0);
+	});
+});

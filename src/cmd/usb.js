@@ -36,11 +36,30 @@ module.exports = class UsbCommand {
 							}
 						})
 						.then(device => {
-							const type = platformsById[usbDevice.platformId];
+							let info = [device, usbDevice.isInDfuMode];
+
+							if (!usbDevice.isInDfuMode){
+								info.push(usbDevice.getDeviceMode());
+							}
+
+							return Promise.all(info);
+						})
+						.then(([device, isInDfuMode, mode]) => {
+							const platform = platformsById[usbDevice.platformId];
+							const type = [platform];
+
+							if (isInDfuMode){
+								type.push('DFU');
+							}
+
+							if (mode && mode !== 'UNKNOWN'){
+								type.push(mode);
+							}
+
 							return {
 								id: usbDevice.id,
-								type: usbDevice.isInDfuMode ? `${type}, DFU` : type,
-								name: (device && device.name) ? device.name : ''
+								name: (device && device.name) ? device.name : '',
+								type: `${type.join(', ')}`
 							};
 						})
 						.finally(() => usbDevice.close());
@@ -104,6 +123,24 @@ module.exports = class UsbCommand {
 		return this._forEachUsbDevice(args, usbDevice => {
 			return usbDevice.reset();
 		}, { dfuMode: true })
+			.then(() => {
+				console.log('Done.');
+			});
+	}
+
+	setSetupDone(args) {
+		const done = !args.reset;
+		return this._forEachUsbDevice(args, usbDevice => {
+			if (usbDevice.isMeshDevice) {
+				return usbDevice.setSetupDone(done)
+					.then(() => {
+						if (done) {
+							return usbDevice.leaveListeningMode();
+						}
+						return usbDevice.enterListeningMode();
+					});
+			}
+		})
 			.then(() => {
 				console.log('Done.');
 			});
