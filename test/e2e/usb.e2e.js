@@ -1,5 +1,4 @@
 const capitalize = require('lodash/capitalize');
-const usb = require('particle-usb');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
@@ -31,36 +30,16 @@ describe('USB Commands [@device]', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]'
 	];
 
-	let usbDevice = null;
-
-	const closeUsbDevice = async () => {
-		if (usbDevice) {
-			await usbDevice.close();
-			usbDevice = null;
-		}
-	};
-
-	const openUsbDevice = async () => {
-		await closeUsbDevice();
-		const devs = await usb.getDevices();
-		if (!devs.length) {
-			throw new Error('No USB devices found');
-		}
-		await devs[0].open();
-		usbDevice = devs[0];
-	};
-
 	before(async () => {
 		await cli.setTestProfileAndLogin();
 	});
 
 	after(async () => {
+		await cli.run(['usb', 'setup-done']);
+		await cli.run(['usb', 'reset']);
+		await delay(2000);
 		await cli.logout();
 		await cli.setDefaultProfile();
-	});
-
-	afterEach(async () => {
-		await closeUsbDevice();
 	});
 
 	it('Shows `help` content', async () => {
@@ -116,33 +95,24 @@ describe('USB Commands [@device]', () => {
 		expect(subproc.exitCode).to.equal(1);
 	});
 
-	it.only('Sets and clears the setup done flag', async function test() {
-		await openUsbDevice();
-		if (!usbDevice.isMeshDevice) {
-			this.skip();
-			return;
-		}
-
-		// Clear the setup done flag
+	it('Sets and clears the setup done flag', async function test() {
 		await cli.run(['usb', 'setup-done', '--reset']);
-
-		// Reset and reopen the device
-		await usbDevice.reset();
+		await cli.run(['usb', 'reset']);
 		await delay(2000);
-		await openUsbDevice();
 
-		let mode = await usbDevice.getDeviceMode();
-		expect(mode).to.equal('LISTENING'); // FIXME: particle-usb doesn't export DeviceMode
+		const platform = capitalize(DEVICE_PLATFORM_NAME);
+		const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
+		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, LISTENING)`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
 
-		// Set the setup done flag
 		await cli.run(['usb', 'setup-done']);
-
-		// Reset and reopen the device
-		await usbDevice.reset();
+		await cli.run(['usb', 'reset']);
 		await delay(2000);
-		await openUsbDevice();
 
-		mode = await usbDevice.getDeviceMode();
-		expect(mode).to.not.equal('LISTENING');
+		const subproc = await cli.run(['usb', 'list']);
+		expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+		expect(subproc.stderr).to.equal('');
+		expect(subproc.exitCode).to.equal(0);
 	});
 });

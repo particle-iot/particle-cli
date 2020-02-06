@@ -36,11 +36,30 @@ module.exports = class UsbCommand {
 							}
 						})
 						.then(device => {
-							const type = platformsById[usbDevice.platformId];
+							let info = [device, usbDevice.isInDfuMode];
+
+							if (!usbDevice.isInDfuMode){
+								info.push(usbDevice.getDeviceMode());
+							}
+
+							return Promise.all(info);
+						})
+						.then(([device, isInDfuMode, mode]) => {
+							const platform = platformsById[usbDevice.platformId];
+							const type = [platform];
+
+							if (isInDfuMode){
+								type.push('DFU');
+							}
+
+							if (mode && mode !== 'UNKNOWN'){
+								type.push(mode);
+							}
+
 							return {
 								id: usbDevice.id,
-								type: usbDevice.isInDfuMode ? `${type}, DFU` : type,
-								name: (device && device.name) ? device.name : ''
+								name: (device && device.name) ? device.name : '',
+								type: `${type.join(', ')}`
 							};
 						})
 						.finally(() => usbDevice.close());
