@@ -33,6 +33,9 @@ const Parser = require('binary-version-reader').HalModuleParser;
 const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
 
+const INVALID_SUFFIX_SIZE = 65535;
+const DEFAULT_PRODUCT_ID = 65535;
+const DEFAULT_PRODUCT_VERSION = 65535;
 
 class BinaryCommand {
 	inspectBinary(binaryFile){
@@ -48,7 +51,7 @@ class BinaryCommand {
 					throw new VError(ensureError(err), `Could not parse ${binaryFile}`);
 				})
 				.then(fileInfo => {
-					if (fileInfo.suffixInfo.suffixSize === 65535){
+					if (fileInfo.suffixInfo.suffixSize === INVALID_SUFFIX_SIZE){
 						throw new VError(`${binaryFile} does not contain inspection information`);
 					}
 
@@ -110,6 +113,14 @@ class BinaryCommand {
 			+ ' number ' + chalk.bold(fileInfo.prefixInfo.moduleIndex.toString())
 			+ ' at version '
 			+ chalk.bold(fileInfo.prefixInfo.moduleVersion.toString()));
+
+		if (fileInfo.suffixInfo.productId !== DEFAULT_PRODUCT_ID &&
+			fileInfo.suffixInfo.productVersion !== DEFAULT_PRODUCT_VERSION) {
+			console.log(' It is firmware for '
+				+ chalk.bold('product id ' + fileInfo.suffixInfo.productId)
+				+ ' at version '
+				+ chalk.bold(fileInfo.suffixInfo.productVersion));
+		}
 
 		if (fileInfo.prefixInfo.depModuleFunction){
 			console.log(' It depends on '

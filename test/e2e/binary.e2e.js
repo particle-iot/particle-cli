@@ -123,6 +123,17 @@ describe('Binary Commands', () => {
 				' This is an application module number 1 at version 6',
 				' It depends on a system module number 1 at version 1213'
 			]
+		},
+		{
+			file: 'product_firmware.bin',
+			contents: [
+				'product_firmware.bin',
+				' CRC is ok (e309c618)',
+				' Compiled for electron',
+				' This is an application module number 1 at version 6',
+				' It is firmware for product id 8178 at version 13',
+				' It depends on a system module number 2 at version 1201'
+			]
 		}
 	];
 
