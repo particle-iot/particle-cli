@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.1 - 7 February 2020
+
+* Fix device transfer prompt in `particle cloud claim` command ([PR #549](https://github.com/particle-iot/particle-cli/pull/549))
+* Clarify that `particle cloud claim` requires `deviceID`, always send lowercase id to the API ([PR #550](https://github.com/particle-iot/particle-cli/pull/550))
+
 ## 2.1.0 - 6 February 2020
 
 * Display info about product firmware in `particle binary inspect` command ([PR #546](https://github.com/particle-iot/particle-cli/pull/546))
