@@ -54,7 +54,7 @@ class CloudCommand {
 		return api.claimDevice(deviceId).then(() => {
 			console.log('Successfully claimed device ' + deviceId);
 		}, (err) => {
-			if (err && typeof err === 'string' && err.indexOf('That belongs to someone else.') >= 0) {
+			if (err && typeof err[0] === 'string' && err[0].indexOf('That belongs to someone else.') >= 0) {
 				return prompt([{
 					type: 'confirm',
 					name: 'transfer',
