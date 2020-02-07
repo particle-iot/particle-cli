@@ -175,11 +175,26 @@ describe('Cloud Commands [@device]', () => {
 	});
 
 	it('Claims device', async () => {
-		const args = ['cloud', 'claim', DEVICE_ID];
+		const id = DEVICE_ID.toLowerCase();
+		const args = ['cloud', 'claim', id];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			`Claiming device ${DEVICE_ID}`,
-			`Successfully claimed device ${DEVICE_ID}`
+			`Claiming device ${id}`,
+			`Successfully claimed device ${id}`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Claims device when device id is capitalized', async () => {
+		const id = DEVICE_ID.toUpperCase();
+		const args = ['cloud', 'claim', id];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const log = [
+			`Claiming device ${id}`,
+			`Successfully claimed device ${id}`
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);

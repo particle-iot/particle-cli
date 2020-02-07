@@ -12,10 +12,10 @@ module.exports = ({ commandProcessor, root }) => {
 	};
 
 	commandProcessor.createCommand(cloud, 'claim', 'Register a device with your user account with the cloud', {
-		params: '<device>',
+		params: '<deviceID>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().claimDevice(args.params.device);
+			return new CloudCommands().claimDevice(args.params.deviceID);
 		},
 		examples: {
 			'$0 $command 123456789': 'Claim device by id to your account'
