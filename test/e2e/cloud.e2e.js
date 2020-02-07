@@ -1,11 +1,14 @@
 const path = require('path');
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
+const { delay } = require('../lib/mocha-utils');
+const stripANSI = require('../lib/ansi-strip');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
+	FOREIGN_DEVICE_ID,
 	PATH_TMP_DIR,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR
@@ -182,6 +185,37 @@ describe('Cloud Commands [@device]', () => {
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
+	});
+
+	it('Fails to claim an unknown device', async () => {
+		const invalidDeviceID = '1234567890';
+		const args = ['cloud', 'claim', invalidDeviceID];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const log = [
+			`Claiming device ${invalidDeviceID}`,
+			'Failed to claim device: device not found'
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Fails to claim a device owned by someone else', async () => {
+		const args = ['cloud', 'claim', FOREIGN_DEVICE_ID];
+		const subprocess = cli.run(args);
+
+		await delay(1000);
+		subprocess.stdin.write('n');
+		subprocess.stdin.write('\n');
+
+		const { all, exitCode } = await subprocess;
+		const log = stripANSI(all);
+
+		expect(log).to.include(`Claiming device ${FOREIGN_DEVICE_ID}`);
+		expect(log).to.include('That device belongs to someone else. Would you like to request a transfer?');
+		expect(log).to.include('Failed to claim device: You cannot claim a device owned by someone else');
+		expect(exitCode).to.equal(1);
 	});
 
 	it('Names a device', async () => {
