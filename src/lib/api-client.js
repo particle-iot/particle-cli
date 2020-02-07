@@ -383,7 +383,7 @@ module.exports = class ApiClient {
 				method: 'POST',
 				json: true,
 				form: {
-					id: deviceId,
+					id: (deviceId || '').toLowerCase(),
 					access_token: token,
 					request_transfer: requestTransfer ? true : undefined
 				}
