@@ -128,8 +128,8 @@ module.exports = class ParticleApi {
 	_checkToken(err){
 		const { UnauthorizedError } = module.exports;
 
-		if (err.statusCode === 401){
-			return Promise.reject(new UnauthorizedError());
+		if ([400, 401].includes(err.statusCode)){
+			return Promise.reject(new UnauthorizedError(err.shortErrorDescription));
 		}
 		return Promise.reject(err);
 	}
