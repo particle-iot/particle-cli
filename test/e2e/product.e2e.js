@@ -212,8 +212,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 400');
-			expect(stdout).to.include('The access token was not found');
+			expect(stdout).to.include('Error listing product devices: The access token was not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -230,8 +229,7 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('HTTP error 400');
-			expect(json.error.message).include('The access token was not found');
+			expect(json.error.message).include('Error listing product devices: The access token was not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -242,8 +240,7 @@ describe('Product Commands', () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('HTTP error 400');
-			expect(stdout).to.include('The access token was not found');
+			expect(stdout).to.include('Error showing product device detail: The access token was not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -260,8 +257,7 @@ describe('Product Commands', () => {
 			expect(json.meta).to.have.all.keys('version');
 			expect(json.meta.version).to.equal('1.0.0');
 			expect(json.error).to.have.property('message').that.is.a('string');
-			expect(json.error.message).include('HTTP error 400');
-			expect(json.error.message).include('The access token was not found');
+			expect(json.error.message).include('Error showing product device detail: The access token was not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
