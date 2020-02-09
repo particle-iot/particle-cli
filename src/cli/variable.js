@@ -20,7 +20,7 @@ module.exports = ({ commandProcessor, root }) => {
 		options: timeOption,
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand().getValue(args.params.device, args.params.variableName, args);
+			return new VariableCommand().getValue(args);
 		},
 		examples: {
 			'$0 $command basement temperature': 'Read the temperature variable from the device basement',
@@ -39,7 +39,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand().monitorVariables(args.params.device, args.params.variableName, args);
+			return new VariableCommand().monitorVariables(args);
 		},
 		examples: {
 			'$0 $command up temp --delay 2000': 'Read the temp variable from the device up every 2 seconds'
