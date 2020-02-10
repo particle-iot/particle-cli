@@ -26,7 +26,7 @@ module.exports = class UI {
 		stderr.write(data + EOL);
 	}
 
-	logDeviceDetail(devices){
+	logDeviceDetail(devices, { varsOnly = false, fnsOnly = false } = {}){
 		const { EOL, chalk } = this;
 		const deviceList = Array.isArray(devices) ? devices : [devices];
 		const lines = [];
@@ -52,8 +52,14 @@ module.exports = class UI {
 
 			const status = `${name} [${device.id}] (${deviceType}) is ${connectedState}`;
 			lines.push(status);
-			formatVariables(device.variables, lines);
-			formatFunctions(device.functions, lines);
+
+			if (!fnsOnly){
+				formatVariables(device.variables, lines);
+			}
+
+			if (!varsOnly){
+				formatFunctions(device.functions, lines);
+			}
 		}
 
 		this.write(lines.join(EOL));
