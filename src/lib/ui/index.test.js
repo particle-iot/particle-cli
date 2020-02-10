@@ -102,7 +102,7 @@ describe('UI', () => {
 			ui.logDeviceDetail(device);
 
 			expect(stdout.content).to.equal([
-				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is offline',
+				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is online',
 				'  Variables:',
 				'    name (string)',
 				'    version (int32)',
@@ -131,7 +131,7 @@ describe('UI', () => {
 			ui.logDeviceDetail(device);
 
 			expect(stdout.content).to.equal([
-				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is offline',
+				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is online',
 				''
 			].join(ui.EOL));
 		});
@@ -207,7 +207,7 @@ describe('UI', () => {
 			ui.logDeviceDetail(devices);
 
 			expect(stdout.content).to.equal([
-				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is offline',
+				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is online',
 				'  Variables:',
 				'    name (string)',
 				'    version (int32)',
@@ -248,7 +248,7 @@ describe('UI', () => {
 			ui.logDeviceDetail(devices);
 
 			expect(stdout.content).to.equal([
-				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is offline',
+				'prod-test-01 [e00fce0000dba0f00f000d0d] (Product 12345) is online',
 				'prod-test-02 [e00fce0000000ce0de0000dd] (Product 12345) is offline',
 				''
 			].join(ui.EOL));
@@ -430,7 +430,7 @@ describe('UI', () => {
 				last_ip_address: '192.0.2.3',
 				firmware_version: 1,
 				last_handshake_at: '2020-01-24T14:47:03.150Z',
-				online: false,
+				online: true,
 				name: 'prod-test-01',
 				platform_id: 12,
 				notes: 'here are some notes for testing',
@@ -476,7 +476,7 @@ describe('UI', () => {
 				last_ip_address: '192.0.2.3',
 				last_heard: '2020-01-24T14:47:03.150Z',
 				product_id: 12345,
-				connected: false,
+				connected: true,
 				platform_id: 12,
 				cellular: false,
 				notes: 'here are some notes for testing',
