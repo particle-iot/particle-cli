@@ -6,39 +6,31 @@ const find = require('lodash/find');
 const filter = require('lodash/filter');
 const prompt = require('inquirer').prompt;
 const settings = require('../../settings');
+const spinnerMixin = require('../lib/spinner-mixin');
 const LegacyApiClient = require('../lib/api-client');
+const UI = require('../lib/ui');
+
+const { normalizedApiError } = LegacyApiClient;
 
 
 module.exports = class VariableCommand {
+	constructor({
+		stdin = process.stdin,
+		stdout = process.stdout,
+		stderr = process.stderr
+	} = {}) {
+		this.stdin = stdin;
+		this.stdout = stdout;
+		this.stderr = stderr;
+		this.ui = new UI({ stdin, stdout, stderr });
+		spinnerMixin(this);
+	}
+
 	listVariables(){
 		return this.getAllVariablesWithCache()
-			.then((devices) => {
-				let lines = [];
-
-				for (let i = 0; i < devices.length; i++){
-					const device = devices[i];
-					const available = [];
-
-					if (device.variables){
-						for (const key in device.variables){
-							const type = device.variables[key];
-							available.push('  ' + key + ' (' + type + ')');
-						}
-					}
-
-					let status = device.name + ' (' + device.id + ') has ' + available.length + ' variables ';
-					if (available.length === 0){
-						status += ' (or is offline) ';
-					}
-
-					lines.push(status);
-					lines = lines.concat(available);
-				}
-				console.log(lines.join('\n'));
-			})
+			.then(devices => this.ui.logDeviceDetail(devices, { varsOnly: true }))
 			.catch(err => {
-				const api = new LegacyApiClient();
-				throw new VError(api.normalizedApiError(err), 'Error while listing variables');
+				throw new VError(normalizedApiError(err), 'Error while listing variables');
 			});
 	}
 
