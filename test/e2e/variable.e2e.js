@@ -1,11 +1,13 @@
 const os = require('os');
+const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const stripANSI = require('../lib/ansi-strip');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
-	DEVICE_NAME
+	DEVICE_NAME,
+	DEVICE_PLATFORM_NAME
 } = require('../lib/env');
 
 
@@ -61,9 +63,10 @@ describe('Variable Commands [@device]', () => {
 
 	describe('Variable List Subcommand', () => {
 		it('Lists all available variables', async () => {
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(['variable', 'list']);
 
-			expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
 			expect(stdout).to.include('name (string)');
 			expect(stdout).to.include('version (int32)');
 			expect(stdout).to.include('blinking (int32)');
@@ -72,9 +75,10 @@ describe('Variable Commands [@device]', () => {
 		});
 
 		it('Lists all available variables (alt)', async () => {
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(['variable', 'get']);
 
-			expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
 			expect(stdout).to.include('name (string)');
 			expect(stdout).to.include('version (int32)');
 			expect(stdout).to.include('blinking (int32)');
