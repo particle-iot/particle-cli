@@ -68,6 +68,35 @@ describe('UI', () => {
 			].join(ui.EOL));
 		});
 
+		it('Logs details for a single device excluding cloud variables', () => {
+			const [device] = getDetailedDeviceList();
+			ui.logDeviceDetail(device, { fnsOnly: true });
+
+			expect(stdout.content).to.equal([
+				'test-photon [000000000e00000000000001] (Photon) is offline',
+				'  Functions:',
+				'    int check (String args) ',
+				'    int stop (String args) ',
+				'    int start (String args) ',
+				'    int toggle (String args) ',
+				''
+			].join(ui.EOL));
+		});
+
+		it('Logs details for a single device excluding cloud functions', () => {
+			const [device] = getDetailedDeviceList();
+			ui.logDeviceDetail(device, { varsOnly: true });
+
+			expect(stdout.content).to.equal([
+				'test-photon [000000000e00000000000001] (Photon) is offline',
+				'  Variables:',
+				'    name (string)',
+				'    version (int32)',
+				'    blinking (int32)',
+				''
+			].join(ui.EOL));
+		});
+
 		it('Logs details for a single product device', () => {
 			const [device] = getDetailedProductDeviceList();
 			ui.logDeviceDetail(device);
@@ -130,6 +159,45 @@ describe('UI', () => {
 				'  Functions:',
 				'    int start (String args) ',
 				'    int stop (String args) ',
+				''
+			].join(ui.EOL));
+		});
+
+		it('Logs details for multiple devices excluding cloud variables', () => {
+			const devices = getDetailedDeviceList();
+			ui.logDeviceDetail(devices, { fnsOnly: true });
+
+			expect(stdout.content).to.equal([
+				'test-photon [000000000e00000000000001] (Photon) is offline',
+				'  Functions:',
+				'    int check (String args) ',
+				'    int stop (String args) ',
+				'    int start (String args) ',
+				'    int toggle (String args) ',
+				'test-boron [e00fce0000f0c0a00c00e00a] (Boron) is online',
+				'  Functions:',
+				'    int start (String args) ',
+				'    int stop (String args) ',
+				'test-argon [e00fce00000e0df000f0000c] (Argon) is online',
+				'  Functions:',
+				'    int start (String args) ',
+				'    int stop (String args) ',
+				''
+			].join(ui.EOL));
+		});
+
+		it('Logs details for multiple devices excluding cloud functions', () => {
+			const devices = getDetailedDeviceList();
+			ui.logDeviceDetail(devices, { varsOnly: true });
+
+			expect(stdout.content).to.equal([
+				'test-photon [000000000e00000000000001] (Photon) is offline',
+				'  Variables:',
+				'    name (string)',
+				'    version (int32)',
+				'    blinking (int32)',
+				'test-boron [e00fce0000f0c0a00c00e00a] (Boron) is online',
+				'test-argon [e00fce00000e0df000f0000c] (Argon) is online',
 				''
 			].join(ui.EOL));
 		});
