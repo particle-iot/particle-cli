@@ -1,9 +1,11 @@
+const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
-	DEVICE_NAME
+	DEVICE_NAME,
+	DEVICE_PLATFORM_NAME
 } = require('../lib/env');
 
 
@@ -51,9 +53,10 @@ describe('Get Commands [@device]', () => {
 	});
 
 	it('Lists all available variables', async () => {
+		const platform = capitalize(DEVICE_PLATFORM_NAME);
 		const { stdout, stderr, exitCode } = await cli.run('get');
 
-		expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
+		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
 		expect(stdout).to.include('version (int32)');
 		expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
 		expect(exitCode).to.equal(0);
