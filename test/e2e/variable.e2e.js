@@ -61,78 +61,84 @@ describe('Variable Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Lists all available variables', async () => {
-		const platform = capitalize(DEVICE_PLATFORM_NAME);
-		const { stdout, stderr, exitCode } = await cli.run(['variable', 'list']);
+	describe('Variable List Subcommand', () => {
+		it('Lists all available variables', async () => {
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
+			const { stdout, stderr, exitCode } = await cli.run(['variable', 'list']);
 
-		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-		expect(stdout).to.include('name (string)');
-		expect(stdout).to.include('version (int32)');
-		expect(stdout).to.include('blinking (int32)');
-		expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
-		expect(exitCode).to.equal(0);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include('name (string)');
+			expect(stdout).to.include('version (int32)');
+			expect(stdout).to.include('blinking (int32)');
+			expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists all available variables (alt)', async () => {
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
+			const { stdout, stderr, exitCode } = await cli.run(['variable', 'get']);
+
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include('name (string)');
+			expect(stdout).to.include('version (int32)');
+			expect(stdout).to.include('blinking (int32)');
+			expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists variables available on device and prompts to pick', async () => {
+			const subprocess = cli.run(['variable', 'get', DEVICE_ID]);
+
+			await delay(1000);
+			subprocess.stdin.end('\n');
+
+			const { stdout, stderr, exitCode } = await subprocess;
+			const log = stripANSI(stdout);
+
+			expect(log).to.include('Which variable did you want?');
+			expect(log).to.include(`name (string)${os.EOL}stroby`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Lists all available variables (alt)', async () => {
-		const platform = capitalize(DEVICE_PLATFORM_NAME);
-		const { stdout, stderr, exitCode } = await cli.run(['variable', 'get']);
+	describe('Variable Get Subcommand', () => {
+		it('Gets a variable by name', async () => {
+			const args = ['get', DEVICE_ID, 'version'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-		expect(stdout).to.include('name (string)');
-		expect(stdout).to.include('version (int32)');
-		expect(stdout).to.include('blinking (int32)');
-		expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
-		expect(exitCode).to.equal(0);
+			expect(stdout).to.equal('42');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Gets a variable by name with timestamp', async () => {
+			const args = ['variable', 'get', DEVICE_ID, 'version', '--time'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const [timestamp, version] = stdout.split(', ');
+
+			expect(timestamp.split(':')).to.have.lengthOf(4);
+			expect(version).to.equal('42');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Lists variables available on device and prompts to pick', async () => {
-		const subprocess = cli.run(['variable', 'get', DEVICE_ID]);
+	describe('Variable Get Subcommand', () => {
+		it('Monitors a variable', async () => {
+			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1000];
+			const subprocess = cli.run(args);
 
-		await delay(1000);
-		subprocess.stdin.end('\n');
+			await delay(5000);
+			subprocess.cancel(); // CTRL-C
 
-		const { stdout, stderr, exitCode } = await subprocess;
-		const log = stripANSI(stdout);
+			const { all, isCanceled } = await subprocess;
+			const [msg, ...results] = all.split('\n');
 
-		expect(log).to.include('Which variable did you want?');
-		expect(log).to.include(`name (string)${os.EOL}stroby`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	it('Gets a variable by name', async () => {
-		const args = ['get', DEVICE_ID, 'version'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.equal('42');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	it('Gets a variable by name with timestamp', async () => {
-		const args = ['variable', 'get', DEVICE_ID, 'version', '--time'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const [timestamp, version] = stdout.split(', ');
-
-		expect(timestamp.split(':')).to.have.lengthOf(4);
-		expect(version).to.equal('42');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	it('Monitors a variable', async () => {
-		const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1000];
-		const subprocess = cli.run(args);
-
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [msg, ...results] = all.split('\n');
-
-		expect(msg).to.equal('Hit CTRL-C to stop!');
-		expect(results).to.have.lengthOf.above(2);
-		expect(isCanceled).to.equal(true);
+			expect(msg).to.equal('Hit CTRL-C to stop!');
+			expect(results).to.have.lengthOf.above(2);
+			expect(isCanceled).to.equal(true);
+		});
 	});
 });
 
