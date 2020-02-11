@@ -88,6 +88,7 @@ describe('Variable Command-Line Interface', () => {
 					'',
 					'Options:',
 					'  --time     Show the time when the variable was received  [boolean]',
+					'  --product  product id or slug  [string]',
 					'',
 					'Examples:',
 					'  particle variable get basement temperature  Read the temperature variable from the device basement',
