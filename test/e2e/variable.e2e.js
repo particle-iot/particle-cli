@@ -1,3 +1,4 @@
+const os = require('os');
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
@@ -5,7 +6,9 @@ const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
 	DEVICE_NAME,
-	DEVICE_PLATFORM_NAME
+	DEVICE_PLATFORM_NAME,
+	PRODUCT_01_ID,
+	PRODUCT_01_DEVICE_01_ID
 } = require('../lib/env');
 
 
@@ -99,6 +102,23 @@ describe('Variable Commands [@device]', () => {
 	});
 
 	describe('Variable Get Subcommand', () => {
+		const help = [
+			'Retrieve a value from your device',
+			'Usage: particle get [options] [device] [variableName]',
+			'',
+			'Global Options:',
+			'  -v, --verbose  Increases how much logging to display  [count]',
+			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --time     Show the time when the variable was received  [boolean]',
+			'  --product  product id or slug  [string]',
+			'',
+			'Examples:',
+			'  particle get basement temperature  Read the temperature variable from the device basement',
+			'  particle get all temperature       Read the temperature variable from all my devices'
+		];
+
 		it('Gets a variable by name', async () => {
 			const args = ['get', DEVICE_ID, 'version'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -117,6 +137,37 @@ describe('Variable Commands [@device]', () => {
 			expect(version).to.equal('42');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+		});
+
+		// TODO (mirande): need to ensure device is running expected firmware and online
+		// once flashing product devices is implemented - as it is, the expectation
+		// is that your product device is running the `stroby` firmware found in:
+		// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
+		it('Gets a variable from a product device by name', async () => {
+			const args = ['get', PRODUCT_01_DEVICE_01_ID, 'version', '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout.slice(-2)).to.equal('42');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to get a variable from a product device when `device` param is not provided', async () => {
+			const args = ['get', '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('`device` parameter is required when `--product` flag is set');
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to get a variable from a product device when `variableName` param is not provided', async () => {
+			const args = ['get', PRODUCT_01_DEVICE_01_ID, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`\`variableName\` parameter is required when \`--product\` flag is set. To view available variables, run: particle product device list ${PRODUCT_01_ID}`);
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
 		});
 	});
 
