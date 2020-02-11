@@ -102,6 +102,17 @@ module.exports = class ParticleApi {
 		return this._wrap(this.api.compileCode({ files, platformId, targetVersion, auth: this.accessToken }));
 	}
 
+	getVariable(deviceId, name, product){
+		return this._wrap(
+			this.api.getVariable({
+				name,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
+	}
+
 	downloadFirmwareBinary(binaryId, downloadPath){
 		return new Promise((resolve, reject) => {
 			const req = this.api.downloadFirmwareBinary({ binaryId, auth: this.accessToken });
