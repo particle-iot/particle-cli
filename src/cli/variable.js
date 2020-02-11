@@ -17,7 +17,11 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(variable, 'get', 'Retrieve a value from your device', {
 		params: '[device] [variableName]',
-		options: timeOption,
+		options: Object.assign({}, timeOption, {
+			'product': {
+				description: 'product id or slug'
+			}
+		}),
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
 			return new VariableCommand().getValue(args);
