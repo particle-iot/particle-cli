@@ -1,3 +1,4 @@
+const os = require('os');
 const VError = require('verror');
 const moment = require('moment');
 const has = require('lodash/has');
@@ -6,8 +7,10 @@ const find = require('lodash/find');
 const filter = require('lodash/filter');
 const prompt = require('inquirer').prompt;
 const settings = require('../../settings');
+const { errors: { usageError } } = require('../app/command-processor');
 const spinnerMixin = require('../lib/spinner-mixin');
 const LegacyApiClient = require('../lib/api-client');
+const ParticleAPI = require('./api');
 const UI = require('../lib/ui');
 
 const { normalizedApiError } = LegacyApiClient;
@@ -34,7 +37,32 @@ module.exports = class VariableCommand {
 			});
 	}
 
-	getValue({ time, params: { device, variableName } }){
+	getValue({ time, product, params: { device, variableName } }){
+		if (product){
+			if (!device){
+				throw usageError(
+					'`device` parameter is required when `--product` flag is set'
+				);
+			}
+
+			if (!variableName){
+				throw usageError(
+					`\`variableName\` parameter is required when \`--product\` flag is set. To view available variables, run: particle product device list ${product}`
+				);
+			}
+
+			const msg = `Fetching variable ${variableName} from device ${device} in product ${product}`;
+			const fetchVar = createAPI().getVariable(device, variableName, product);
+			return this.showBusySpinnerUntilResolved(msg, fetchVar)
+				.then(res => {
+					this.ui.stdout.write(`${res.result}${os.EOL}`);
+				})
+				.catch(error => {
+					const message = `Error fetching variable: \`${variableName}\``;
+					throw createAPIErrorResult({ error, message });
+				});
+		}
+
 		return Promise.resolve()
 			.then(() => {
 				if (!device && !variableName){
@@ -232,4 +260,18 @@ module.exports = class VariableCommand {
 			});
 	}
 };
+
+
+// UTILS //////////////////////////////////////////////////////////////////////
+function createAPI(){
+	return new ParticleAPI(settings.apiUrl, {
+		accessToken: settings.access_token
+	});
+}
+
+function createAPIErrorResult({ error: e, message, json }){
+	const error = new VError(normalizedApiError(e), message);
+	error.asJSON = json;
+	return error;
+}
 
