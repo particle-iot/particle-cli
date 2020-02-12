@@ -1,8 +1,10 @@
+const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
-	DEVICE_NAME
+	DEVICE_NAME,
+	DEVICE_PLATFORM_NAME
 } = require('../lib/env');
 
 
@@ -57,11 +59,12 @@ describe('Function Commands [@device]', () => {
 
 	describe('Function List Subcommand', () => {
 		it('Lists available functions', async () => {
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(['function', 'list']);
 
-			expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
-			expect(stdout).to.include('int toggle(String args)');
-			expect(stdout).to.include('int check(String args)');
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include('int toggle (String args)');
+			expect(stdout).to.include('int check (String args)');
 			expect(stderr).to.include('polling server to see what devices are online, and what functions are available');
 			expect(exitCode).to.equal(0);
 		});
