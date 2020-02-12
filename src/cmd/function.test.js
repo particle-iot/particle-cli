@@ -20,12 +20,12 @@ const FunctionCommand = proxyquire('./function', {
 
 describe('Function Command', () => {
 	const sandbox = sinon.createSandbox();
-	let deviceId, functionName, functionParam;
+	let device, fn, arg;
 
 	beforeEach(() => {
-		deviceId = 'test-device';
-		functionName = 'fn';
-		functionParam = 'param';
+		device = 'test-device';
+		fn = 'fn';
+		arg = 'param';
 	});
 
 	afterEach(() => {
@@ -34,35 +34,37 @@ describe('Function Command', () => {
 
 	describe('when the function succeeds', () => {
 		it('prints the return value', withConsoleStubs(sandbox, () => {
-			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
+			const { cmd, api } = stubForFunction(new FunctionCommand(), stubs);
 			api.callFunction.resolves({ ok: true, return_value: 42 });
 
-			return func.callFunction(deviceId, functionName, functionParam)
+			return cmd.callFunction({ params: { device, function: fn, argument: arg } })
 				.then(() => expectSuccessMessage(42));
 		}));
 
 		it('prints the return value of 0', withConsoleStubs(sandbox, () => {
-			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
+			const { cmd, api } = stubForFunction(new FunctionCommand(), stubs);
 			api.callFunction.resolves({ ok: true, return_value: 0 });
 
-			return func.callFunction(deviceId, functionName, functionParam)
+			return cmd.callFunction({ params: { device, function: fn, argument: arg } })
 				.then(() => expectSuccessMessage(0));
 		}));
 	});
 
 	describe('when the function does not exist', () => {
 		it('rejects with an error',() => {
-			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
+			const { cmd, api } = stubForFunction(new FunctionCommand(), stubs);
 			api.callFunction.resolves({
 				ok: false,
-				error: `Function ${functionName} not found`
+				error: `Function ${fn} not found`
 			});
 
-			return func.callFunction(deviceId, functionName, functionParam).then(() => {
-				throw new Error('expected promise to be rejected');
-			}).catch(error => {
-				expect(error).to.have.property('message', `Function call failed: Function ${functionName} not found`);
-			});
+			return cmd.callFunction({ params: { device, function: fn, argument: arg } })
+				.then(() => {
+					throw new Error('expected promise to be rejected');
+				})
+				.catch(error => {
+					expect(error).to.have.property('message', `Function call failed: Function ${fn} not found`);
+				});
 		});
 	});
 
@@ -72,11 +74,11 @@ describe('Function Command', () => {
 			.to.match(new RegExp(`${value}\\n$`));
 	}
 
-	function stubForFunction(func, stubs){
+	function stubForFunction(cmd, stubs){
 		const { api } = stubs;
 		sandbox.stub(api, 'ensureToken');
 		sandbox.stub(api, 'callFunction');
-		return { func, api };
+		return { cmd, api };
 	}
 });
 
