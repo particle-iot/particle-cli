@@ -57,7 +57,7 @@ describe('Call Commands [@device]', () => {
 		const args = ['call', DEVICE_NAME, 'check'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal('200');
+		expect(stdout.slice(-3)).to.equal('200');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -66,7 +66,7 @@ describe('Call Commands [@device]', () => {
 		const args = ['call', DEVICE_NAME, 'WATNOPE'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal('Function call failed: Function WATNOPE not found');
+		expect(stdout).to.include('Function call failed: Function `WATNOPE` not found');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
