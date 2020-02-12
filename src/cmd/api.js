@@ -113,6 +113,18 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	callFunction(deviceId, name, argument, product){
+		return this._wrap(
+			this.api.callFunction({
+				name,
+				argument,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
+	}
+
 	downloadFirmwareBinary(binaryId, downloadPath){
 		return new Promise((resolve, reject) => {
 			const req = this.api.downloadFirmwareBinary({ binaryId, auth: this.accessToken });
