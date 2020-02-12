@@ -4,11 +4,15 @@ const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
 	DEVICE_NAME,
-	DEVICE_PLATFORM_NAME
+	DEVICE_PLATFORM_NAME,
+	PRODUCT_01_ID,
+	PRODUCT_01_DEVICE_01_ID,
+	PRODUCT_01_DEVICE_01_NAME
 } = require('../lib/env');
 
 
 describe('Function Commands [@device]', () => {
+	const fn = 'check';
 	const help = [
 		'Call functions on your device',
 		'Usage: particle function <command>',
@@ -72,19 +76,51 @@ describe('Function Commands [@device]', () => {
 
 	describe('Function Call Subcommand', () => {
 		it('Calls a function', async () => {
-			const args = ['function', 'call', DEVICE_NAME, 'check'];
+			const args = ['function', 'call', DEVICE_NAME, fn];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.equal('200');
+			expect(stdout.slice(-3)).to.equal('200');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+		});
+
+		// TODO (mirande): need to ensure device is running expected firmware and online
+		// once flashing product devices is implemented - as it is, the expectation
+		// is that your product device is running the `stroby` firmware found in:
+		// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
+		it('Calls a function on a product device', async () => {
+			const args = ['function', 'call', PRODUCT_01_DEVICE_01_ID, fn, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout.slice(-3)).to.equal('200');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		// TODO (mirande): this seems like a bug
+		it('Fails when attempting to calls a function on a product device by name', async () => {
+			const args = ['function', 'call', PRODUCT_01_DEVICE_01_NAME, fn, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`Function call failed: Function \`${fn}\` not found`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails when attempting to target an unknown device', async () => {
+			const args = ['function', 'call', 'DOESNOTEXIST', 'WATNOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('Error calling function: `WATNOPE`');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
 		});
 
 		it('Fails when attempting to call an unknown function', async () => {
 			const args = ['function', 'call', DEVICE_NAME, 'WATNOPE'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.equal('Function call failed: Function WATNOPE not found');
+			expect(stdout).to.include('Function call failed: Function `WATNOPE` not found');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
