@@ -128,12 +128,6 @@ module.exports.removeDeviceFromMeshNetwork = () => {
 	return run(['mesh', 'remove', DEVICE_ID, '--yes'], { reject: true });
 };
 
-module.exports.getNameVariable = async () => {
-	const { run } = module.exports;
-	const { stdout } = await run(['get', DEVICE_NAME, 'name'], { reject: true });
-	return stdout;
-};
-
 module.exports.waitForVariable = async (name, value) => {
 	const { run } = module.exports;
 	await delay(2000);
