@@ -16,7 +16,7 @@ describe('Preprocess Commands', () => {
 		'//       THIS IS A GENERATED FILE - DO NOT EDIT       //',
 		'/******************************************************/',
 		'',
-		'#include "application.h"',
+		'#include "Particle.h"',
 		`#line 1 "${PATH_PROJ_STROBY_INO}"`
 	];
 	const help = [
