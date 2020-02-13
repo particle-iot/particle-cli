@@ -19,7 +19,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[device] [variableName]',
 		options: Object.assign({}, timeOption, {
 			'product': {
-				description: 'product id or slug'
+				description: 'Target a device within the given Product ID or Slug'
 			}
 		}),
 		handler: (args) => {
@@ -28,7 +28,8 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command basement temperature': 'Read the temperature variable from the device basement',
-			'$0 $command all temperature': 'Read the temperature variable from all my devices',
+			'$0 $command basement temperature --product 12345': 'Read the temperature variable from the device basement within product 12345',
+			'$0 $command all temperature': 'Read the temperature variable from all my devices'
 		}
 	});
 
