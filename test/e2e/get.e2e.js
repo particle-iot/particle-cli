@@ -20,10 +20,12 @@ describe('Get Commands [@device]', () => {
 		'',
 		'Options:',
 		'  --time  Show the time when the variable was received  [boolean]',
+		'  --product  Target a device within the given Product ID or Slug  [string]',
 		'',
 		'Examples:',
-		'  particle get basement temperature  Read the temperature variable from the device basement',
-		'  particle get all temperature       Read the temperature variable from all my devices'
+		'  particle get basement temperature                  Read the temperature variable from the device basement',
+		'  particle get basement temperature --product 12345  Read the temperature variable from the device basement within product 12345',
+		'  particle get all temperature                       Read the temperature variable from all my devices'
 	];
 
 	before(async () => {
