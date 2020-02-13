@@ -1,6 +1,8 @@
 // ------------
 // Strobe an LED
 // ------------
+SYSTEM_MODE(SEMI_AUTOMATIC);
+
 String name = "stroby";
 int version = 42;
 int blinkState = 0;
@@ -15,6 +17,7 @@ void setup() {
   Particle.function("stop", stop);
   Particle.function("start", start);
   Particle.function("toggle", toggleBlink);
+  Particle.connect();
 }
 
 void loop(){
