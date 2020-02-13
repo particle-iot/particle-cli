@@ -88,11 +88,12 @@ describe('Variable Command-Line Interface', () => {
 					'',
 					'Options:',
 					'  --time     Show the time when the variable was received  [boolean]',
-					'  --product  product id or slug  [string]',
+					'  --product  Target a device within the given Product ID or Slug  [string]',
 					'',
 					'Examples:',
-					'  particle variable get basement temperature  Read the temperature variable from the device basement',
-					'  particle variable get all temperature       Read the temperature variable from all my devices',
+					'  particle variable get basement temperature                  Read the temperature variable from the device basement',
+					'  particle variable get basement temperature --product 12345  Read the temperature variable from the device basement within product 12345',
+					'  particle variable get all temperature                       Read the temperature variable from all my devices',
 					''
 				].join(os.EOL));
 			});
