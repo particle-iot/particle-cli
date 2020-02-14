@@ -19,7 +19,7 @@ describe('Get Commands [@device]', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --time  Show the time when the variable was received  [boolean]',
+		'  --time     Show the time when the variable was received  [boolean]',
 		'  --product  Target a device within the given Product ID or Slug  [string]',
 		'',
 		'Examples:',
