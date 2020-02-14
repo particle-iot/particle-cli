@@ -14,9 +14,13 @@ describe('Call Commands [@device]', () => {
 		'  -v, --verbose  Increases how much logging to display  [count]',
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
+		'Options:',
+		'  --product  Target a device within the given Product ID or Slug  [string]',
+		'',
 		'Examples:',
-		'  particle call coffee brew                 Call the brew function on the coffee device',
-		'  particle call board digitalWrite D7=HIGH  Call the digitalWrite function with argument D7=HIGH on the board device'
+		'  particle call coffee brew                  Call the brew function on the coffee device',
+		'  particle call board digitalWrite D7=HIGH   Call the digitalWrite function with argument D7=HIGH on the board device',
+		'  particle call coffee brew --product 12345  Call the brew function on the coffee device within product 12345'
 	];
 
 	before(async () => {
