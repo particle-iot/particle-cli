@@ -159,48 +159,12 @@ module.exports = class UsbCommand {
 			.then(() => console.log('Done.'));
 	}
 
-	_forEachUsbDevice(args, func, { dfuMode = false } = {}) {
-		const deviceIds = args.params.devices;
+	_forEachUsbDevice(args, func, { dfuMode = false } = {}){
+		const msg = 'Getting device information...';
+		const operation = this._openUsbDevices(args, { dfuMode });
 		let lastError = null;
-		return Promise.resolve().then(() => {
-			const openUsbDevices = [];
-			let p = null;
-			if (args.all) {
-				// Open all attached devices
-				p = getUsbDevices()
-					.then(usbDevices => {
-						return asyncMapSeries(usbDevices, (usbDevice) => {
-							return openUsbDevice(usbDevice, { dfuMode })
-								.then(() => openUsbDevices.push(usbDevice))
-								.catch(e => lastError = e); // Skip the device and remember the error
-						});
-					});
-			} else if (deviceIds.length === 0) {
-				// Open a single device. Fail if multiple devices are detected
-				p = getUsbDevices()
-					.then(usbDevices => {
-						if (usbDevices.length === 0) {
-							throw new Error('No devices found');
-						}
-						if (usbDevices.length > 1) {
-							throw new Error('Found multiple devices. Please specify the ID or name of one of them');
-						}
-						const usbDevice = usbDevices[0];
-						return openUsbDevice(usbDevice, { dfuMode })
-							.then(() => openUsbDevices.push(usbDevice));
-					});
-			} else {
-				// Open specific devices
-				p = asyncMapSeries(deviceIds, (id) => {
-					return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
-						.then(usbDevice => openUsbDevices.push(usbDevice))
-						.catch(e => lastError = e);
-				});
-			}
-			return p.then(() => openUsbDevices);
-		})
+		return spin(operation, msg)
 			.then(usbDevices => {
-			// Send the command to each device
 				const p = usbDevices.map(usbDevice => {
 					return Promise.resolve()
 						.then(() => func(usbDevice))
@@ -210,9 +174,45 @@ module.exports = class UsbCommand {
 				return spin(Promise.all(p), 'Sending a command to the device...');
 			})
 			.then(() => {
-				if (lastError) {
+				if (lastError){
 					throw lastError;
 				}
+			});
+	}
+
+	_openUsbDevices(args, { dfuMode = false } = {}){
+		const deviceIds = args.params.devices;
+		return Promise.resolve()
+			.then(() => {
+				if (args.all){
+					return getUsbDevices()
+						.then(usbDevices => {
+							return asyncMapSeries(usbDevices, (usbDevice) => {
+								return openUsbDevice(usbDevice, { dfuMode })
+									.then(() => usbDevice);
+							});
+						});
+				}
+
+				if (deviceIds.length === 0){
+					return getUsbDevices()
+						.then(usbDevices => {
+							if (usbDevices.length === 0){
+								throw new Error('No devices found');
+							}
+							if (usbDevices.length > 1){
+								throw new Error('Found multiple devices. Please specify the ID or name of one of them');
+							}
+							const usbDevice = usbDevices[0];
+							return openUsbDevice(usbDevice, { dfuMode })
+								.then(() => [usbDevice]);
+						});
+				}
+
+				return asyncMapSeries(deviceIds, (id) => {
+					return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
+						.then(usbDevice => usbDevice);
+				});
 			});
 	}
 };
