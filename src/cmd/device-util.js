@@ -1,5 +1,3 @@
-const { spin } = require('../app/ui');
-
 /**
  * Check if the string can represent a valid device ID.
  *
@@ -35,7 +33,7 @@ module.exports.formatDeviceInfo = ({ id, type, name = null }) => {
  * @param {Promise<Object>}
  */
 module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = false }) => {
-	const getDeviceInfo = api.getDevice({ deviceId: id, auth })
+	return api.getDevice({ deviceId: id, auth })
 		.then(res => res.body)
 		.catch(error => {
 			if (error.statusCode === 403 || error.statusCode === 404) {
@@ -46,7 +44,5 @@ module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = fal
 			}
 			throw error;
 		});
-
-	return spin(getDeviceInfo, 'Getting device information...');
 };
 

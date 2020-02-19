@@ -432,7 +432,9 @@ module.exports = class MeshCommand {
 	}
 
 	_getDevice(deviceId, dontThrow = false) {
-		return getDevice({ id: deviceId, api: this._api, auth: this._auth, dontThrow });
+		const msg = 'Getting device information...';
+		const operation = getDevice({ id: deviceId, api: this._api, auth: this._auth, dontThrow });
+		return spin(operation, msg);
 	}
 
 	_getNetwork(networkId) {
