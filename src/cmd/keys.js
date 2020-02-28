@@ -329,28 +329,45 @@ module.exports = class KeysCommand {
 		return addressBuf;
 	}
 
-	writeServerPublicKey(filename, { host, port, protocol } = {}) {
+	writeServerPublicKey({ filename, outputFilename, host, port, protocol, deviceType } = {}) {
 		if (filename && !fs.existsSync(filename)) {
 			// TODO UsageError
 			throw new VError('Please specify a server key in DER format.');
 		}
 
+		let skipDFU = false;
+		if (deviceType) {
+			skipDFU = true;
+			this.dfu.dfuId = Object.keys(deviceSpecs).filter(key => deviceSpecs[key].productName.toLowerCase() === deviceType.toLowerCase())[0];
+		}
+
 		return Promise.resolve().then(() => {
-			return this.dfu.isDfuUtilInstalled();
-		}).then(() => {
-			return this.dfu.findCompatibleDFU();
-		}).then(() => {
-			return this.validateDeviceProtocol({ protocol });
+			if (!skipDFU) {
+				return this.dfu.isDfuUtilInstalled()
+				.then(() => {
+					return this.dfu.findCompatibleDFU();
+				}).then(() => {
+					return this.validateDeviceProtocol({ protocol });
+				})
+			} else {
+				return protocol;
+			}
 		}).then(_protocol => {
 			protocol = _protocol;
 			return this._getDERPublicKey(filename, { protocol });
 		}).then(derFile => {
-			return this._formatPublicKey(derFile, host, port, { protocol });
+			return this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
 		}).then(bufferFile => {
 			let segment = this._getServerKeySegmentName({ protocol });
-			return this.dfu.write(bufferFile, segment, false);
+			if (!skipDFU) {
+				return this.dfu.write(bufferFile, segment, false);
+			}
 		}).then(() => {
-			console.log('Okay!  New keys in place, your device will not restart.');
+			if (!skipDFU) {
+				console.log('Okay!  New keys in place, your device will not restart.');
+			} else {
+				console.log('Okay!  Formated server key file generated for this type of device.');
+			}
 		}).catch(err => {
 			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
 		});
@@ -559,7 +576,7 @@ module.exports = class KeysCommand {
 		return path.join(__dirname, `../../assets/keys/${basename}.pub.der`);
 	}
 
-	_formatPublicKey(filename, ipOrDomain, port, { protocol }) {
+	_formatPublicKey(filename, ipOrDomain, port, { protocol, outputFilename }) {
 		let segment = this._getServerKeySegment({ protocol });
 		if (!segment) {
 			throw new VError('No device specs');
@@ -569,6 +586,9 @@ module.exports = class KeysCommand {
 		if (ipOrDomain) {
 			let alg = segment.alg || 'rsa';
 			let fileWithAddress = `${utilities.filenameNoExt(filename)}-${utilities.replaceAll(ipOrDomain, '.', '_')}-${alg}.der`;
+			if (outputFilename) {
+				fileWithAddress = outputFilename;
+			}
 			let addressBuf = this._createAddressBuffer(ipOrDomain);
 
 			// To generate a file like this, just add a type-length-value (TLV) encoded IP or domain beginning 384 bytes into the file—on external flash the address begins at 0x1180.
@@ -604,6 +624,9 @@ module.exports = class KeysCommand {
 		let stats = fs.statSync(filename);
 		if (stats.size < segment.size) {
 			let fileWithSize = `${utilities.filenameNoExt(filename)}-padded.der`;
+			if (outputFilename) {
+				fileWithSize = outputFilename;
+			}
 			if (!fs.existsSync(fileWithSize)) {
 				buf = new Buffer(segment.size);
 
