@@ -64,7 +64,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(keys, 'server', 'Switch server public keys.', {
 		epilogue: 'Defaults to the Particle public cloud or you can provide another key in DER format and the server hostname or IP and port',
-		params: '[filename]',
+		params: '[filename] [outputFilename]',
 		options: Object.assign({}, protocolOption, {
 			'host': {
 				description: 'Hostname or IP address of the server to add to the key'
@@ -72,11 +72,14 @@ module.exports = ({ commandProcessor, root }) => {
 			'port': {
 				number: true,
 				description: 'Port number of the server to add to the key'
+			},
+			'deviceType': {
+				description: 'Generate key file for the provided device type'
 			}
 		}),
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().writeServerPublicKey(args.params.filename, args);
+			return new KeysCommand().writeServerPublicKey({ ...args.params, ...args });
 		}
 	});
 
