@@ -329,7 +329,7 @@ module.exports = class KeysCommand {
 		return addressBuf;
 	}
 
-	writeServerPublicKey({ filename, outputFilename, host, port, protocol, deviceType } = {}) {
+	writeServerPublicKey({ protocol, host, port, deviceType, params: { filename, outputFilename } } = {}) {
 		if (filename && !fs.existsSync(filename)) {
 			// TODO UsageError
 			throw new VError('Please specify a server key in DER format.');
@@ -338,39 +338,49 @@ module.exports = class KeysCommand {
 		let skipDFU = false;
 		if (deviceType) {
 			skipDFU = true;
-			this.dfu.dfuId = Object.keys(deviceSpecs).filter(key => deviceSpecs[key].productName.toLowerCase() === deviceType.toLowerCase())[0];
+
+			// Lookup the DFU ID string that matches the provided deviceType:
+			this.dfu.dfuId = Object.keys(deviceSpecs)
+				.filter(key => deviceSpecs[key].productName.toLowerCase() === deviceType.toLowerCase())[0];
 		}
 
-		return Promise.resolve().then(() => {
-			if (!skipDFU) {
-				return this.dfu.isDfuUtilInstalled()
-				.then(() => {
-					return this.dfu.findCompatibleDFU();
-				}).then(() => {
-					return this.validateDeviceProtocol({ protocol });
-				})
-			} else {
-				return protocol;
-			}
-		}).then(_protocol => {
-			protocol = _protocol;
-			return this._getDERPublicKey(filename, { protocol });
-		}).then(derFile => {
-			return this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
-		}).then(bufferFile => {
-			let segment = this._getServerKeySegmentName({ protocol });
-			if (!skipDFU) {
-				return this.dfu.write(bufferFile, segment, false);
-			}
-		}).then(() => {
-			if (!skipDFU) {
-				console.log('Okay!  New keys in place, your device will not restart.');
-			} else {
-				console.log('Okay!  Formated server key file generated for this type of device.');
-			}
-		}).catch(err => {
-			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
-		});
+		return Promise.resolve()
+			.then(() => {
+				if (!skipDFU) {
+					return this.dfu.isDfuUtilInstalled()
+						.then(() => {
+							return this.dfu.findCompatibleDFU();
+						})
+						.then(() => {
+							return this.validateDeviceProtocol({ protocol });
+						});
+				} else {
+					return protocol;
+				}
+			})
+			.then(_protocol => {
+				protocol = _protocol;
+				return this._getDERPublicKey(filename, { protocol });
+			})
+			.then(derFile => {
+				return this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
+			})
+			.then(bufferFile => {
+				let segment = this._getServerKeySegmentName({ protocol });
+				if (!skipDFU) {
+					return this.dfu.write(bufferFile, segment, false);
+				}
+			})
+			.then(() => {
+				if (!skipDFU) {
+					console.log('Okay!  New keys in place, your device will not restart.');
+				} else {
+					console.log('Okay!  Formated server key file generated for this type of device.');
+				}
+			})
+			.catch(err => {
+				throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
+			});
 	}
 
 	readServerAddress({ protocol }) {
