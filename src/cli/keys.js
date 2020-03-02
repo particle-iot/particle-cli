@@ -79,7 +79,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().writeServerPublicKey({ ...args.params, ...args });
+			return new KeysCommand().writeServerPublicKey({ ...args });
 		}
 	});
 
