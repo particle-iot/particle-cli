@@ -94,7 +94,7 @@ describe('USB Commands [@device]', () => {
 		expect(subproc.exitCode).to.equal(1);
 	});
 
-	it('Sets and clears the setup done flag', async function test() {
+	it('Sets and clears the setup done flag', async () => {
 		await cli.run(['usb', 'setup-done', '--reset']);
 		await delay(2000);
 
@@ -111,5 +111,32 @@ describe('USB Commands [@device]', () => {
 		expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
 		expect(subproc.stderr).to.equal('');
 		expect(subproc.exitCode).to.equal(0);
+	});
+
+	it('Enters DFU mode with confirmation', async () => {
+		await cli.run(['usb', 'dfu', DEVICE_ID]);
+
+		const platform = capitalize(DEVICE_PLATFORM_NAME);
+		const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
+		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, DFU)`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+
+		await cli.run(['usb', 'reset']);
+		await delay(2000);
+
+		const subproc = await cli.run(['usb', 'list']);
+		expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+		expect(subproc.stderr).to.equal('');
+		expect(subproc.exitCode).to.equal(0);
+	});
+
+	it('Fails to enter DFU mode when device is unrecognized', async () => {
+		const device = 'DOESNOTEXIST';
+		const { stdout, stderr, exitCode } = await cli.run(['usb', 'dfu', device]);
+
+		expect(stdout).to.equal(`Device not found: ${device}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
 	});
 });
