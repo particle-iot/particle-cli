@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0 - 3 March 2020
+
+* Update `particle-usb` dependency so the `particle usb dfu` command confirms device is in DFU mode before exiting ([PR #555](https://github.com/particle-iot/particle-cli/pull/555))
+* Update `wiring-preprocessor` dependency to have `Particle.h` included when running `particle preprocess` ([PR #554](https://github.com/particle-iot/particle-cli/pull/554))
+
 ## 2.1.1 - 7 February 2020
 
 * Fix device transfer prompt in `particle cloud claim` command ([PR #549](https://github.com/particle-iot/particle-cli/pull/549))
