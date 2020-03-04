@@ -1559,7 +1559,7 @@ module.exports = class SerialCommand {
 					message: 'Which device did you mean?',
 					choices: devices.map((d) => {
 						return {
-							name: d.port + ' - ' + d.type,
+							name: d.port + ' - ' + d.type + ' - ' + d.deviceId,
 							value: d
 						};
 					})
