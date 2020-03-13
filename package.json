@@ -22,6 +22,7 @@
     "eslint-config-particle": "^2.2.1",
     "execa": "^4.0.0",
     "fs-extra": "^8.1.0",
+    "github-api": "^3.3.0",
     "lerna": "^3.20.2",
     "mocha": "^7.1.0",
     "nyc": "^15.0.0",
