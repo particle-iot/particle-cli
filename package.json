@@ -5,7 +5,10 @@
   "author": "Particle Industries, Inc",
   "license": "UNLICENSED",
   "private": true,
-  "scripts": {},
+  "scripts": {
+    "lint": "eslint . --ext .js --ignore-path .gitignore",
+    "lint:fix": "npm run lint -- --fix"
+  },
   "dependencies": {},
   "devDependencies": {
     "eslint": "^6.8.0",
