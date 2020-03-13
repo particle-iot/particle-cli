@@ -4060,6 +4060,12 @@
         }
       }
     },
+    "eslint-config-particle": {
+      "version": "2.2.1",
+      "resolved": "https://registry.npmjs.org/eslint-config-particle/-/eslint-config-particle-2.2.1.tgz",
+      "integrity": "sha512-vSF+LHGWgQcLmtxs0QCbHMjr7PyQ/izoW7GJAIu73LPXSdhH7f51ayY8XILrhrnOm+DGizy+CJX7R8wg+GCHpw==",
+      "dev": true
+    },
     "eslint-scope": {
       "version": "5.0.0",
       "resolved": "https://registry.npmjs.org/eslint-scope/-/eslint-scope-5.0.0.tgz",
