@@ -1,0 +1,10 @@
+{
+  "name": "cli-monorepo",
+  "description": "Tools and packages used to power the Particle CLI",
+  "version": "1.0.0",
+  "author": "Particle Industries, Inc",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {},
+  "dependencies": {}
+}
