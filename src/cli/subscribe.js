@@ -15,6 +15,9 @@ module.exports = ({ commandProcessor, root }) => {
 			'max': {
 				number: true,
 				describe: 'Listen until we see this many events'
+			},
+			'product': {
+				description: 'Target a device within the given Product ID or Slug'
 			}
 		},
 		handler: (args) => {
