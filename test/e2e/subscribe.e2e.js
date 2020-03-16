@@ -64,10 +64,9 @@ describe('Subscribe Commands [@device]', () => {
 		subprocess.cancel(); // CTRL-C
 
 		const { all, isCanceled } = await subprocess;
-		const [subscribe, listen, ...events] = all.split('\n');
+		const [subscribe,,, ...events] = all.split('\n');
 
 		expect(subscribe).to.equal(`Subscribing to all events from ${DEVICE_ID}'s stream`);
-		expect(listen).to.equal(`Listening to: /v1/devices/${DEVICE_ID}/events`);
 		expect(events).to.have.lengthOf.above(2);
 		expect(isCanceled).to.equal(true);
 
