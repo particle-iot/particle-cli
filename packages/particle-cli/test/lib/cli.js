@@ -17,6 +17,7 @@ const cliBinPath = path.join(PATH_REPO_DIR, 'dist', 'index.js');
 module.exports.run = (args = [], options = {}) => {
 	const opts = Object.assign({
 		cwd: PATH_REPO_DIR,
+		all: true,
 		reject: false
 	}, options);
 

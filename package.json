@@ -6,8 +6,26 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
+    "postinstall": "npm run bootstrap",
+    "bootstrap": "lerna bootstrap",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "test": "npm run lint && lerna run test",
+    "test:ci": "npm run lint && lerna run test:ci",
+    "test:unit": "lerna run test:unit",
+    "test:unit:ci": "lerna run test:unit:ci",
+    "test:unit:watch": "lerna run test:unit:watch",
+    "test:integration": "lerna run test:integration",
+    "test:integration:ci": "lerna run test:integration:ci",
+    "test:integration:watch": "lerna run test:integration:watch",
+    "test:e2e": "lerna run test:e2e -- -- ",
+    "test:e2e:ci": "lerna run test:e2e:ci",
+    "test:e2e:watch": "lerna run test:e2e:watch",
+    "build": "lerna run compile",
+    "clean": "lerna run clean",
+    "clean:modules": "lerna run clean:modules",
+    "todo": "git grep -e 'TODO (.*)' --ignore-case --heading --break --context=2 --full-name --line-number -- :^./package.json",
+    "reinstall": "npm run clean:modules && npm run bootstrap"
   },
   "dependencies": {},
   "devDependencies": {
