@@ -134,8 +134,15 @@ module.exports = class ParticleApi {
 		});
 	}
 
-	getEventStream(deviceId, name){
-		return this.api.getEventStream({ deviceId, name, auth: this.accessToken });
+	getEventStream(deviceId, name, product){
+		return this._wrap(
+			this.api.getEventStream({
+				name,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	publishEvent(name, data, isPrivate){
