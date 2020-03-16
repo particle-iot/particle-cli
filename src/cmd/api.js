@@ -144,7 +144,7 @@ module.exports = class ParticleApi {
 
 	_wrap(promise){
 		return Promise.resolve(promise)
-			.then(result => result.body)
+			.then(result => result.body || result)
 			.catch(this._checkToken);
 	}
 
