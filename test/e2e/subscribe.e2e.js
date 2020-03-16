@@ -64,10 +64,9 @@ describe('Subscribe Commands [@device]', () => {
 		subprocess.cancel(); // CTRL-C
 
 		const { all, isCanceled } = await subprocess;
-		const [subscribe, listen, ...events] = all.split('\n');
+		const [subscribe,,, ...events] = all.split('\n');
 
 		expect(subscribe).to.equal(`Subscribing to all events from ${DEVICE_ID}'s stream`);
-		expect(listen).to.equal(`Listening to: /v1/devices/${DEVICE_ID}/events`);
 		expect(events).to.have.lengthOf.above(2);
 		expect(isCanceled).to.equal(true);
 
@@ -98,7 +97,6 @@ describe('Subscribe Commands [@device]', () => {
 		});
 		expect(stdout).to.include(`Subscribing to all events from ${DEVICE_ID}'s stream`);
 		expect(stdout).to.include(`This command will exit after receiving ${count} event(s)...`);
-		expect(stdout).to.include(`Listening to: /v1/devices/${DEVICE_ID}/events`);
 		expect(stdout).to.include(`${count} event(s) received. Exiting...`);
 		expect(stderr).to.include('');
 		expect(exitCode).to.equal(0);
@@ -119,7 +117,6 @@ describe('Subscribe Commands [@device]', () => {
 		});
 		expect(stdout).to.include(`Subscribing to all events from ${DEVICE_ID}'s stream`);
 		expect(stdout).to.include(`This command will exit after receiving event data matching: '${data}'`);
-		expect(stdout).to.include(`Listening to: /v1/devices/${DEVICE_ID}/events`);
 		expect(stdout).to.include('Matching event received. Exiting...');
 		expect(stderr).to.include('');
 		expect(exitCode).to.equal(0);
