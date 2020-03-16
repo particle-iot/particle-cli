@@ -3,7 +3,9 @@ const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
-	DEVICE_NAME
+	DEVICE_NAME,
+	PRODUCT_01_ID,
+	PRODUCT_01_DEVICE_01_ID
 } = require('../lib/env');
 
 
@@ -17,8 +19,9 @@ describe('Subscribe Commands [@device]', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --all     Listen to all events instead of just those from my devices  [boolean]',
-		'  --device  Listen to events from this device only  [string]',
+		'  --all      Listen to all events instead of just those from my devices  [boolean]',
+		'  --device   Listen to events from this device only  [string]',
+		'  --product  Target a device within the given Product ID or Slug  [string]',
 		'',
 		'Examples:',
 		'  particle subscribe             Subscribe to all event published by my devices',
@@ -79,6 +82,37 @@ describe('Subscribe Commands [@device]', () => {
 		expect(event2).to.have.property('name', 'led');
 		expect(event2).to.have.property('data').match(/ON|OFF/);
 		expect(event2).to.have.property('coreid', DEVICE_ID);
+	});
+
+	// TODO (mirande): need to ensure device is running expected firmware and online
+	// once flashing product devices is implemented - as it is, the expectation
+	// is that your product device is running the `stroby` firmware found in:
+	// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
+	it('Subscribes to a product device\'s events', async () => {
+		await cli.run(['call', PRODUCT_01_DEVICE_01_ID, 'start', '--product', PRODUCT_01_ID], { reject: true });
+
+		const args = ['subscribe', '--device', PRODUCT_01_DEVICE_01_ID, '--product', PRODUCT_01_ID];
+		const subprocess = cli.run(args);
+
+		await delay(5000);
+		subprocess.cancel(); // CTRL-C
+
+		const { all, isCanceled } = await subprocess;
+		const [subscribe,,, ...events] = all.split('\n');
+
+		expect(subscribe).to.equal(`Subscribing to all events from ${PRODUCT_01_DEVICE_01_ID}'s stream`);
+		expect(events).to.have.lengthOf.above(2);
+		expect(isCanceled).to.equal(true);
+
+		const event1 = JSON.parse(events[0]);
+		const event2 = JSON.parse(events[1]);
+
+		expect(event1).to.have.property('name', 'led');
+		expect(event1).to.have.property('data').match(/ON|OFF/);
+		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event2).to.have.property('name', 'led');
+		expect(event2).to.have.property('data').match(/ON|OFF/);
+		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
 	});
 });
 
