@@ -8,6 +8,9 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'device': {
 				describe: 'Listen to events from this device only'
+			},
+			'product': {
+				description: 'Target a device within the given Product ID or Slug'
 			}
 		},
 		handler: (args) => {
