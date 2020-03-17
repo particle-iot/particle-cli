@@ -12,6 +12,7 @@ module.exports.platformsById = {
 	23: 'B SoM',
 	24: 'X SoM',
 	25: 'B5 SoM',
+	26: 'Asset Tracker',
 	31: 'Raspberry Pi',
 	88: 'Duo',
 	103: 'Bluz'

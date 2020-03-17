@@ -799,6 +799,71 @@ const specs = {
 		},
 		defaultProtocol: 'udp',
 		productId: 25,
+	},
+	'2b04:d01a': {
+		productName: 'Asset Tracker',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			variant: 'gen3',
+			addressOffset: 192,
+			portOffset: 258
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
+		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
+		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
+		},
+		knownApps: {
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c01a'
+		},
+		defaultProtocol: 'udp',
+		productId: 26,
 	}
 };
 
