@@ -2848,9 +2848,9 @@
       "optional": true
     },
     "binary-version-reader": {
-      "version": "0.7.4",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-0.7.4.tgz",
-      "integrity": "sha512-H0ToVv41KD57gC0tjWzIpMTsqnrJwSgh7Tao5GXGD/jl1PaILHnO4nPHf42PEWUxhL6zmhwlm5hpYaZkNLtZPw==",
+      "version": "0.8.2",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-0.8.2.tgz",
+      "integrity": "sha512-7NUhdbSRAFl1pa3iwuyIvYhM27AZdI/zHNAH8Jglll3me05iOdNI2n8n/Ev5UgYSulLubWBLSmdwrdQ09tlh2Q==",
       "requires": {
         "buffer-crc32": "^0.2.5",
         "h5.buffers": "^0.1.1",
