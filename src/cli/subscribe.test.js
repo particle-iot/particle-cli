@@ -16,7 +16,7 @@ describe('Subscribe Command-Line Interface', () => {
 		it('Handles `subscribe` command', () => {
 			const argv = commandProcessor.parse(root, ['subscribe']);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ event: [] });
+			expect(argv.params).to.eql({ event: undefined });
 			expect(argv.all).to.equal(false);
 			expect(argv.device).to.equal(undefined);
 			expect(argv.until).to.equal(undefined);
@@ -26,7 +26,7 @@ describe('Subscribe Command-Line Interface', () => {
 		it('Parses optional params', () => {
 			const argv = commandProcessor.parse(root, ['subscribe', 'test']);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ event: ['test'] });
+			expect(argv.params).to.eql({ event: 'test' });
 			expect(argv.all).to.equal(false);
 			expect(argv.device).to.equal(undefined);
 			expect(argv.until).to.equal(undefined);
@@ -37,7 +37,7 @@ describe('Subscribe Command-Line Interface', () => {
 			const args = ['subscribe', 'test', '--all', '--device', 'my-device', '--until', 'my-data', '--max', '3'];
 			const argv = commandProcessor.parse(root, args);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ event: ['test'] });
+			expect(argv.params).to.eql({ event: 'test' });
 			expect(argv.all).to.equal(true);
 			expect(argv.device).to.equal('my-device');
 			expect(argv.until).to.equal('my-data');
@@ -50,7 +50,7 @@ describe('Subscribe Command-Line Interface', () => {
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
 					'Listen to device event stream',
-					'Usage: particle subscribe [options] [event...]',
+					'Usage: particle subscribe [options] [event]',
 					'',
 					'Options:',
 					'  --all      Listen to all events instead of just those from my devices  [boolean]',
