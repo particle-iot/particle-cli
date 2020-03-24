@@ -16,13 +16,13 @@ describe('Subscribe Command-Line Interface', () => {
 		it('Handles `subscribe` command', () => {
 			const argv = commandProcessor.parse(root, ['subscribe']);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ event: [] });
+			expect(argv.params).to.eql({ event: undefined });
 		});
 
 		it('Parses optional arguments', () => {
 			const argv = commandProcessor.parse(root, ['subscribe', 'test', '--device', 'my-device']);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ event: ['test'] });
+			expect(argv.params).to.eql({ event: 'test' });
 			expect(argv.device).to.equal('my-device');
 		});
 
@@ -32,7 +32,7 @@ describe('Subscribe Command-Line Interface', () => {
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
 					'Listen to device event stream',
-					'Usage: particle subscribe [options] [event...]',
+					'Usage: particle subscribe [options] [event]',
 					'',
 					'Options:',
 					'  --all      Listen to all events instead of just those from my devices  [boolean]',
