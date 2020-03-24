@@ -92,11 +92,12 @@ describe('Compile Commands', () => {
 	});
 
 	it('Compiles a project using the `--target` flag', async () => {
-		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath, '--target', '1.2.1'];
+		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath, '--target', '1.4.4'];
 		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args);
 		const file = await fs.stat(strobyBinPath);
 		const log = [
 			'Compiling code for argon',
+			'Targeting version: 1.4.4',
 			'',
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
@@ -105,7 +106,7 @@ describe('Compile Commands', () => {
 			`saving to: ${strobyBinPath}`,
 			'Memory use: ',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   7948\t    112\t   1088\t   9148\t   23bc\t/workspace/target/workspace.elf',
+			'   8332\t    112\t   1112\t   9556\t   2554\t/workspace/target/workspace.elf',
 			'',
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
