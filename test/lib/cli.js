@@ -24,6 +24,20 @@ module.exports.run = (args = [], options = {}) => {
 	return execa(cliBinPath, [...args], opts);
 };
 
+module.exports.runWithRetry = async (args = [], options = {}, { attempts = 3 } = {}) => {
+	const { run, runWithRetry } = module.exports;
+
+	try {
+		return await run(args, options);
+	} catch (error){
+		if (attempts <= 0){
+			throw error;
+		}
+		await delay(500);
+		return runWithRetry(args, options, { attempts: attempts - 1 });
+	}
+};
+
 module.exports.debug = (...args) => {
 	const subprocess = module.exports.run(...args);
 	subprocess.stdout.pipe(process.stdout);
@@ -127,6 +141,26 @@ module.exports.flashStrobyFirmwareOTAForTest = async () => {
 	const { flashTestFirmwareOTAWithConfirmation } = module.exports;
 	const variable = { name: 'name', value: 'stroby' };
 	await flashTestFirmwareOTAWithConfirmation(PATH_PROJ_STROBY_INO, variable);
+};
+
+module.exports.callStrobyStart = async (deviceID, productID) => {
+	const { runWithRetry } = module.exports;
+	const args = ['call', deviceID, 'start'];
+
+	if (productID){
+		args.push('--product', productID);
+	}
+	return runWithRetry(args, { reject: true });
+};
+
+module.exports.callStrobyStop = async (deviceID, productID) => {
+	const { runWithRetry } = module.exports;
+	const args = ['call', deviceID, 'stop'];
+
+	if (productID){
+		args.push('--product', productID);
+	}
+	return runWithRetry(args, { reject: true });
 };
 
 module.exports.removeDeviceFromMeshNetwork = () => {
