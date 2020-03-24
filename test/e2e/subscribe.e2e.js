@@ -12,7 +12,7 @@ const {
 describe('Subscribe Commands [@device]', () => {
 	const help = [
 		'Listen to device event stream',
-		'Usage: particle subscribe [options] [event...]',
+		'Usage: particle subscribe [options] [event]',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
