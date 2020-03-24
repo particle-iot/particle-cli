@@ -3,15 +3,16 @@
 // ------------
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
-String name = "stroby";
-int version = 42;
+String deviceID = System.deviceID();
+String appName = "stroby";
+int appVersion = 42;
 int blinkState = 0;
 int led1 = D7;
 
 void setup() {
   pinMode(led1, OUTPUT);
-  Particle.variable("name", &name, STRING);
-  Particle.variable("version", &version, INT);
+  Particle.variable("name", &appName, STRING);
+  Particle.variable("version", &appVersion, INT);
   Particle.variable("blinking", &blinkState, INT);
   Particle.function("check", check);
   Particle.function("stop", stop);
@@ -31,6 +32,7 @@ void loop(){
   digitalWrite(led1, LOW);
   Particle.publish("led", "OFF", 60, PRIVATE);
   delay(500);
+  Particle.publish(deviceID.substring(0, 6), "active", 60, PUBLIC);
 }
 
 int start(String){
