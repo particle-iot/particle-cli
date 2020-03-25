@@ -1,6 +1,7 @@
 const os = require('os');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
+const { PRODUCT_01_ID } = require('../lib/env');
 
 
 describe('Publish Commands', () => {
@@ -16,9 +17,11 @@ describe('Publish Commands', () => {
 		'Options:',
 		'  --private  Publish to the private stream  [boolean] [default: true]',
 		'  --public   Publish to the public stream  [boolean]',
+		'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
 		'',
 		'Examples:',
-		'  particle publish temperature 25.0  Publish a temperature event to your private event stream'
+		'  particle publish temp 25.0                  Publish a temp event to your private event stream',
+		'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
 	];
 
 	before(async () => {
@@ -81,11 +84,38 @@ describe('Publish Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
+	it('Publishes a product event', async () => {
+		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Publishes a private product event', async () => {
+		const args = ['publish', eventName, '--product', PRODUCT_01_ID, '--private'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Publishes a public product event', async () => {
+		const args = ['publish', eventName, '--product', PRODUCT_01_ID, '--public'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include(`Published public event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
 	it('Fails when user is signed-out', async () => {
 		await cli.logout();
 		const { stdout, stderr, exitCode } = await cli.run(['publish', eventName]);
 
-		expect(stdout).to.include('Error publishing event: HTTP error 400 from https://api.particle.io/v1/devices/events - The access token was not found');
+		expect(stdout).to.include('Error publishing event: The access token was not found');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

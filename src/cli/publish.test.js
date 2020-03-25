@@ -26,11 +26,12 @@ describe('Publish Command-Line Interface', () => {
 		});
 
 		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['publish', 'my-event', '--private', '--public']);
+			const argv = commandProcessor.parse(root, ['publish', 'my-event', '--private', '--public', '--product', '12345']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ event: 'my-event', data: undefined });
 			expect(argv.private).to.equal(true);
 			expect(argv.public).to.equal(true);
+			expect(argv.product).to.equal('12345');
 		});
 
 		it('Errors when required `device` argument is missing', () => {
@@ -40,6 +41,11 @@ describe('Publish Command-Line Interface', () => {
 			expect(argv.clierror).to.have.property('data', 'event');
 			expect(argv.clierror).to.have.property('isUsageError', true);
 			expect(argv.params).to.eql({});
+		});
+
+		it('Throws when option flag is malformed', () => {
+			expect(() => commandProcessor.parse(root, ['publish', 'my-event', '--product']))
+				.to.throw('Not enough arguments following: product');
 		});
 
 		it('Includes help with examples', () => {
@@ -53,9 +59,11 @@ describe('Publish Command-Line Interface', () => {
 					'Options:',
 					'  --private  Publish to the private stream  [boolean] [default: true]',
 					'  --public   Publish to the public stream  [boolean]',
+					'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
 					'',
 					'Examples:',
-					'  particle publish temperature 25.0  Publish a temperature event to your private event stream',
+					'  particle publish temp 25.0                  Publish a temp event to your private event stream',
+					'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
 					''
 				].join(os.EOL));
 			});
