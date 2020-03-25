@@ -10,6 +10,9 @@ module.exports = ({ commandProcessor, root }) => {
 			'public': {
 				boolean: true,
 				description: 'Publish to the public stream'
+			},
+			'product': {
+				description: 'Publish to the given Product ID or Slug\'s stream'
 			}
 		},
 		handler: (args) => {
@@ -17,7 +20,8 @@ module.exports = ({ commandProcessor, root }) => {
 			return new PublishCommand().publishEvent(args);
 		},
 		examples: {
-			'$0 $command temperature 25.0': 'Publish a temperature event to your private event stream'
+			'$0 $command temp 25.0': 'Publish a temp event to your private event stream',
+			'$0 $command temp 25.0 --product 12345': 'Publish a temp event to your product 12345\'s event stream'
 		}
 	});
 };
