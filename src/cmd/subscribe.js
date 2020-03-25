@@ -22,46 +22,43 @@ module.exports = class SubscribeCommand {
 	}
 
 	startListening({ device, all, product, params: { event } }){
-		// legacy argument order
-		let eventName = event[0];
-		let deviceId = event[1] || device;
-
-		// if they typed: "particle subscribe mine"
-		if (eventName === 'mine'){
-			eventName = null;
+		if (all && !event){
+			throw usageError(
+				'`event` parameter is required when `--all` flag is set'
+			);
 		}
 
-		let eventLabel = eventName;
-		if (eventLabel){
-			eventLabel = '"' + eventLabel + '"';
+		const msg = ['Subscribing to'];
+
+		if (!device && !product && !all){
+			device = 'mine';
+		}
+
+		if (event){
+			msg.push(`"${event}"`);
+		} else if (all){
+			msg.push('public events');
 		} else {
-			eventLabel = 'all events';
+			msg.push('all events');
 		}
 
-		if (!deviceId && !all){
-			deviceId = 'mine';
-		}
-
-		if (product){
-			if (!device){
-				throw usageError(
-					'`device` parameter is required when `--product` flag is set'
-				);
-			}
-		}
-
-		if (!deviceId){
-			this.ui.stdout.write(`Subscribing to ${eventLabel} from the firehose (all devices) and my personal stream (my devices)${os.EOL}`);
-		} else if (deviceId === 'mine'){
-			this.ui.stdout.write(`Subscribing to ${eventLabel} from my personal stream (my devices only)${os.EOL}`);
+		if (all){
+			msg.push('from the firehose (all devices) and my personal stream (my devices)');
+		} else if (device && product){
+			msg.push(`from product ${product} device ${device}'s stream`);
+		} else if (product){
+			msg.push(`from product ${product}'s stream`);
+		} else if (device){
+			const source = device === 'mine' ? 'my devices' : `device ${device}'s stream`;
+			msg.push(`from ${source}`);
 		} else {
-			this.ui.stdout.write(`Subscribing to ${eventLabel} from ${deviceId}'s stream${os.EOL}`);
+			msg.push('from my personal stream (my devices)');
 		}
 
-		const msg = 'Fetching event stream...';
-		const fetchStream = createAPI().getEventStream(deviceId, eventName, product);
+		this.ui.stdout.write(msg.join(' ') + os.EOL);
+		const fetchStream = createAPI().getEventStream(device, event, product);
 		const onEvent = (event) => this.ui.stdout.write(`${JSON.stringify(event)}${os.EOL}`);
-		return this.showBusySpinnerUntilResolved(msg, fetchStream)
+		return this.showBusySpinnerUntilResolved('Fetching event stream...', fetchStream)
 			.then(stream => {
 				this.ui.stdout.write(os.EOL);
 				return stream;
