@@ -1,9 +1,10 @@
+const os = require('os');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 
 
 describe('Publish Commands', () => {
-	const eventName = 'teste2eevent';
+	const eventName = 'test-e2e-event';
 	const help = [
 		'Publish an event to the cloud',
 		'Usage: particle publish [options] <event> [data]',
@@ -33,7 +34,7 @@ describe('Publish Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['help', 'publish']);
 
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -41,7 +42,7 @@ describe('Publish Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run('publish');
 
 		expect(stdout).to.equal('Parameter \'event\' is required.');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(1);
 	});
 
@@ -49,7 +50,7 @@ describe('Publish Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['publish', '--help']);
 
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -57,7 +58,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal(`Published private event: ${eventName}${'\n'}`);
+		expect(stdout).to.include(`Published private event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -66,7 +67,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName, '--private'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal(`Published private event: ${eventName}${'\n'}`);
+		expect(stdout).to.include(`Published private event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -75,9 +76,18 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName, '--public'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal(`Published public event: ${eventName}${'\n'}`);
+		expect(stdout).to.include(`Published public event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
+	});
+
+	it('Fails when user is signed-out', async () => {
+		await cli.logout();
+		const { stdout, stderr, exitCode } = await cli.run(['publish', eventName]);
+
+		expect(stdout).to.include('Error publishing event: HTTP error 400 from https://api.particle.io/v1/devices/events - The access token was not found');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
 	});
 });
 
