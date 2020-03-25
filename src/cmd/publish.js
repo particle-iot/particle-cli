@@ -20,11 +20,16 @@ module.exports = class PublishCommand {
 		spinnerMixin(this);
 	}
 
-	publishEvent({ private: isPrivate, public: isPublic, params: { event, data } }){
+	publishEvent({ private: isPrivate, public: isPublic, product, params: { event, data } }){
 		const setPrivate = isPublic ? false : isPrivate;
 		const visibility = setPrivate ? 'private' : 'public';
-		const epilogue = `${visibility} event: ${event}`;
-		const publishEvent = createAPI().publishEvent(event, data, setPrivate);
+		let epilogue = `${visibility} event: ${event}`;
+
+		if (product){
+			epilogue += ` to product: ${product}`;
+		}
+
+		const publishEvent = createAPI().publishEvent(event, data, setPrivate, product);
 		return this.showBusySpinnerUntilResolved(`Publishing ${epilogue}`, publishEvent)
 			.then(() => this.ui.stdout.write(`Published ${epilogue}${os.EOL}${os.EOL}`))
 			.catch(error => {
