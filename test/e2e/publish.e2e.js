@@ -102,11 +102,11 @@ describe('Publish Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Publishes a public product event', async () => {
+	it('Ignores `--public` flag when publishing a product event', async () => {
 		const args = ['publish', eventName, '--product', PRODUCT_01_ID, '--public'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include(`Published public event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
