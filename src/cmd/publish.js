@@ -21,15 +21,15 @@ module.exports = class PublishCommand {
 	}
 
 	publishEvent({ private: isPrivate, public: isPublic, product, params: { event, data } }){
-		const setPrivate = isPublic ? false : isPrivate;
-		const visibility = setPrivate ? 'private' : 'public';
+		isPrivate = (isPublic && !product) ? false : isPrivate; // `isPrivate: true` by default see: src/cli/publish.js
+		const visibility = isPrivate ? 'private' : 'public';
 		let epilogue = `${visibility} event: ${event}`;
 
 		if (product){
 			epilogue += ` to product: ${product}`;
 		}
 
-		const publishEvent = createAPI().publishEvent(event, data, setPrivate, product);
+		const publishEvent = createAPI().publishEvent(event, data, isPrivate, product);
 		return this.showBusySpinnerUntilResolved(`Publishing ${epilogue}`, publishEvent)
 			.then(() => this.ui.stdout.write(`Published ${epilogue}${os.EOL}${os.EOL}`))
 			.catch(error => {
