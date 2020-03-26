@@ -1,6 +1,7 @@
 const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
+const fs = require('../lib/fs');
 const {
 	PATH_TMP_DIR,
 	PATH_PROJ_STROBY_INO,
@@ -11,6 +12,7 @@ const {
 
 describe('Compile Commands', () => {
 	const strobyBinPath = path.join(PATH_TMP_DIR, 'photon-stroby-updated.bin');
+	const minBinSize = 4000;
 	const help = [
 		'Compile a source file, or directory using the cloud compiler',
 		'Usage: particle compile [options] <deviceType> [files...]',
@@ -66,7 +68,8 @@ describe('Compile Commands', () => {
 
 	it('Compiles a project', async () => {
 		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args);
+		const file = await fs.stat(strobyBinPath);
 		const log = [
 			'Compiling code for argon',
 			'',
@@ -81,6 +84,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${strobyBinPath}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -88,7 +93,8 @@ describe('Compile Commands', () => {
 
 	it('Compiles a project using the `--target` flag', async () => {
 		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath, '--target', '1.2.1'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args);
+		const file = await fs.stat(strobyBinPath);
 		const log = [
 			'Compiling code for argon',
 			'',
@@ -105,6 +111,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${strobyBinPath}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -116,7 +124,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -134,6 +143,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -145,7 +156,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -163,6 +175,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -174,7 +188,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, 'main', '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -192,6 +207,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -203,7 +220,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -221,6 +239,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stdout).to.not.include('nope.cpp');
 		expect(stdout).to.not.include('nope.h');
@@ -234,7 +254,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'legacy-flat');
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, '*', '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd, shell: true });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd, shell: true });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -252,6 +273,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -263,7 +286,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'multiple-header-extensions');
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -288,6 +312,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -299,7 +325,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'symlink', 'main-project');
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, '--saveTo', destination, '--followSymlinks'];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'Including:',
@@ -309,6 +336,8 @@ describe('Compile Commands', () => {
 			'    project.properties',
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -320,7 +349,8 @@ describe('Compile Commands', () => {
 		const cwd = PATH_FIXTURES_PROJECTS_DIR;
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, 'legacy-flat', '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -338,6 +368,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -349,7 +381,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, '.', '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -368,6 +401,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -379,7 +414,8 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_LIBRARIES_DIR, 'valid', '0.0.2');
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
 		const args = ['compile', platform, 'examples/blink-an-led', '--saveTo', destination];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -400,6 +436,8 @@ describe('Compile Commands', () => {
 			`Saved firmware to: ${destination}`
 		];
 
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
@@ -485,5 +523,12 @@ describe('Compile Commands', () => {
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
+
+	async function cliRunWithTimer(...args){
+		const start = Date.now();
+		const { stdout, stderr, exitCode } = await cli.run(...args);
+		const end = Date.now();
+		return { stdout, stderr, exitCode, start, end };
+	}
 });
 
