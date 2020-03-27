@@ -14,12 +14,8 @@
 #
 # Core
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="607[df]", GROUP="plugdev", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1"
-# Photon/P1/Electron
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="2b04", ATTRS{idProduct}=="[cd]00[68a]", GROUP="plugdev", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1"
-# Argon/Boron/Xenon
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="2b04", ATTRS{idProduct}=="[cd]00[cde]", GROUP="plugdev", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1"
-# Argon/Boron/Xenon (SoM)
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="2b04", ATTRS{idProduct}=="[cd]01[678]", GROUP="plugdev", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1"
+# Gen 2 (Photon/P1/Electron), Gen 3 (Argon/Boron/Xenon, SoM)
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="2b04", ATTRS{idProduct}=="[cd]0??", GROUP="plugdev", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1"
 # Particle Programmer Shield v1.0
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", GROUP="plugdev", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1"
 # Particle Debugger
