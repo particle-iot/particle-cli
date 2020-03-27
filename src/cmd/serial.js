@@ -84,6 +84,11 @@ module.exports = class SerialCommand {
 						};
 					}
 
+					// Populate the Device ID based on the ports serial number:
+					if (device && port.serialNumber && typeof device.deviceId == 'undefined') {
+						device.deviceId = port.serialNumber;
+					}
+
 					const matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
 
 					if (!device && matchesManufacturer){
@@ -123,7 +128,7 @@ module.exports = class SerialCommand {
 				}
 
 				console.log('Found', chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device'), 'connected via serial:');
-				devices.forEach((device) => console.log(`${device.port} - ${device.type}`));
+				devices.forEach((device) => console.log(`${device.port} - ${device.type} - ${device.deviceId}`));
 			});
 	}
 
@@ -1554,7 +1559,7 @@ module.exports = class SerialCommand {
 					message: 'Which device did you mean?',
 					choices: devices.map((d) => {
 						return {
-							name: d.port + ' - ' + d.type,
+							name: d.port + ' - ' + d.type + ' - ' + d.deviceId,
 							value: d
 						};
 					})

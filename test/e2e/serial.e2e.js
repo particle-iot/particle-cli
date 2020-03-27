@@ -68,7 +68,7 @@ describe('Serial Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['serial', 'list']);
 
 		expect(stdout).to.include('Found 1 device connected via serial');
-		expect(stdout).to.include(platform);
+		expect(stdout).to.include(`${platform} - ${DEVICE_ID}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
