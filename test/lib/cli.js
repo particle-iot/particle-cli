@@ -83,9 +83,14 @@ module.exports.stopListeningMode = () => {
 	return run(['usb', 'stop-listening', DEVICE_ID], { reject: true });
 };
 
-module.exports.enterDFUMode = async () => {
+module.exports.enterDFUMode = async (device = DEVICE_ID) => {
 	const { run } = module.exports;
-	await run(['usb', 'dfu', DEVICE_ID], { reject: true });
+	return run(['usb', 'dfu', device], { reject: true });
+};
+
+module.exports.resetDevice = async (device = DEVICE_ID) => {
+	const { run } = module.exports;
+	await run(['usb', 'reset', device], { reject: true });
 	await delay(2000);
 };
 

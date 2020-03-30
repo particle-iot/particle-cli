@@ -122,8 +122,7 @@ describe('USB Commands [@device]', () => {
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
-		await cli.run(['usb', 'reset']);
-		await delay(2000);
+		await cli.resetDevice();
 
 		const subproc = await cli.run(['usb', 'list']);
 		expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
