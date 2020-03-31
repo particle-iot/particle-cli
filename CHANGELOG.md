@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.3.0 - 30 March 2020
+
+* Updated binaries for DeviceOS 1.5.0
+
 ## 2.2.0 - 3 March 2020
 
 * Update `particle-usb` dependency so the `particle usb dfu` command confirms device is in DFU mode before exiting ([PR #555](https://github.com/particle-iot/particle-cli/pull/555))
