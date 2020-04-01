@@ -53,14 +53,14 @@ describe('Monitor Commands [@device]', () => {
 		const args = ['monitor', DEVICE_ID, 'version'];
 		const subprocess = cli.run(args);
 
-		await delay(6000);
+		await delay(8000);
 		subprocess.cancel(); // CTRL-C
 
 		const { all, isCanceled } = await subprocess;
 		const [msg, ...results] = all.split('\n');
 
 		expect(msg).to.equal('Hit CTRL-C to stop!');
-		expect(results).to.have.lengthOf.above(3);
+		expect(results).to.have.lengthOf.above(2);
 		expect(isCanceled).to.equal(true);
 	});
 
@@ -68,14 +68,14 @@ describe('Monitor Commands [@device]', () => {
 		const args = ['monitor', DEVICE_ID, 'version', '--delay', 1500];
 		const subprocess = cli.run(args);
 
-		await delay(6000);
+		await delay(10000);
 		subprocess.cancel(); // CTRL-C
 
 		const { all, isCanceled } = await subprocess;
 		const [msg, ...results] = all.split('\n');
 
 		expect(msg).to.equal('Hit CTRL-C to stop!');
-		expect(results).to.have.lengthOf.above(1);
+		expect(results).to.have.lengthOf.above(2);
 		expect(isCanceled).to.equal(true);
 	});
 });

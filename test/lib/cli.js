@@ -88,10 +88,11 @@ module.exports.enterDFUMode = async (device = DEVICE_ID) => {
 	return run(['usb', 'dfu', device], { reject: true });
 };
 
+// TODO (mirande): add w/ `cli.waitForDeviceToGetOnline()` helper
 module.exports.resetDevice = async (device = DEVICE_ID) => {
 	const { run } = module.exports;
 	await run(['usb', 'reset', device], { reject: true });
-	await delay(2000);
+	await delay(45 * 1000);
 };
 
 module.exports.compileBlankFirmwareForTest = async (platform = 'photon') => {
