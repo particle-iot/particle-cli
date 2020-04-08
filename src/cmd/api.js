@@ -1,4 +1,3 @@
-const fs = require('fs');
 const url = require('url');
 const _ = require('lodash');
 const chalk = require('chalk');
@@ -41,6 +40,14 @@ module.exports = class ParticleApi {
 			});
 	}
 
+	getUserInfo(){
+		return this._wrap(
+			this.api.getUserInfo({
+				auth: this.accessToken
+			})
+		);
+	}
+
 	listDevices(options){
 		return this._wrap(
 			this.api.listDevices(
@@ -73,7 +80,14 @@ module.exports = class ParticleApi {
 	}
 
 	claimDevice(deviceId, requestTransfer){
-		return this._wrap(this.api.claimDevice({ deviceId, requestTransfer, auth: this.accessToken }));
+		return this._wrap(
+			this.api.claimDevice({
+				// TODO (mirande): push these tweaks upstream to `particle-api-js`
+				deviceId: (deviceId || '').toLowerCase(),
+				requestTransfer: requestTransfer ? true : undefined,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	removeDevice(deviceId, product){
@@ -87,7 +101,25 @@ module.exports = class ParticleApi {
 	}
 
 	renameDevice(deviceId, name){
-		return this._wrap(this.api.renameDevice({ deviceId, name, auth: this.accessToken }));
+		return this._wrap(
+			this.api.renameDevice({
+				deviceId,
+				name,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	flashDevice(deviceId, files, targetVersion){
+		return this._wrap(
+			this.api.flashDevice({
+				deviceId,
+				// TODO (mirande): callers should provide an object like: { [filename]: filepath }
+				files: files.map || files,
+				targetVersion,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	signalDevice(deviceId, signal){
@@ -95,11 +127,24 @@ module.exports = class ParticleApi {
 	}
 
 	listBuildTargets(onlyFeatured){
-		return this._wrap(this.api.listBuildTargets({ onlyFeatured, auth: this.accessToken }));
+		return this._wrap(
+			this.api.listBuildTargets({
+				onlyFeatured,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	compileCode(files, platformId, targetVersion){
-		return this._wrap(this.api.compileCode({ files, platformId, targetVersion, auth: this.accessToken }));
+		return this._wrap(
+			this.api.compileCode({
+				platformId,
+				targetVersion,
+				// TODO (mirande): callers should provide an object like: { [filename]: filepath }
+				files: files.map || files,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	getVariable(deviceId, name, product){
@@ -125,13 +170,13 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	downloadFirmwareBinary(binaryId, downloadPath){
-		return new Promise((resolve, reject) => {
-			const req = this.api.downloadFirmwareBinary({ binaryId, auth: this.accessToken });
-			req.pipe(fs.createWriteStream(downloadPath))
-				.on('error', reject)
-				.on('finish', resolve);
-		});
+	downloadFirmwareBinary(binaryId){
+		return this._wrap(
+			this.api.downloadFirmwareBinary({
+				binaryId,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	getEventStream(deviceId, name, product){
