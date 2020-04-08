@@ -8220,9 +8220,9 @@
       }
     },
     "particle-api-js": {
-      "version": "8.2.0",
-      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-8.2.0.tgz",
-      "integrity": "sha512-Mvdnlu/rzHfOI0vFCRf/T4habvxGMAf8wwnW+6wazLjFIwHAx8KAGs7jmbuEK1yeofAoj14ekXtQWqv+YbTWEg==",
+      "version": "8.3.0",
+      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-8.3.0.tgz",
+      "integrity": "sha512-xS4P6WbzoNgZcKe3E9HtcSf7ZB62IL/k3xUxK3WFQj1YJwXqkUNiIw1xJmDw4b5FLJZ3/lj0dYJ5hDW5sxd4yA==",
       "requires": {
         "babel-runtime": "^6.9.2",
         "form-data": ">2.2.0",
