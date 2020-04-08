@@ -79,7 +79,7 @@ describe('Flash Commands [@device]', () => {
 			'    src/stroby.ino',
 			'    project.properties',
 			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK:  Update started'
+			'Flash device OK: Update started'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -116,7 +116,7 @@ describe('Flash Commands [@device]', () => {
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
 			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK:  Update started'
+			'Flash device OK: Update started'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -134,7 +134,7 @@ describe('Flash Commands [@device]', () => {
 			'Including:',
 			`    ${bin}`,
 			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK:  Update started'
+			'Flash device OK: Update started'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);

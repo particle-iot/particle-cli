@@ -44,8 +44,8 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  whoami      prints signed-in username'
 	];
 
-	const allCmds = ['binary inspect', 'binary', 'call', 'cloud claim',
-		'cloud list', 'cloud remove', 'cloud name', 'cloud flash',
+	const allCmds = ['binary inspect', 'binary', 'call', 'cloud list',
+		'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile', 'config', 'device add', 'device remove',
 		'device rename', 'device doctor', 'device', 'doctor', 'flash',
