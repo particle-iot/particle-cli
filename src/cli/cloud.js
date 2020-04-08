@@ -61,12 +61,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'flash', 'Pass a binary, source file, or source directory to a device!', {
 		params: '<device> [files...]',
-		options: Object.assign({}, compileOptions, {
-			'yes': {
-				boolean: true,
-				description: 'Answer yes to all questions'
-			}
-		}),
+		options: Object.assign({}, compileOptions),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands().flashDevice(args);

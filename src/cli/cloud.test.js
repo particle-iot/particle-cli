@@ -194,7 +194,6 @@ describe('Cloud Command-Line Interface', () => {
 			const argv = commandProcessor.parse(root, ['cloud', 'flash', 'my-device']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ device: 'my-device', files: [] });
-			expect(argv.yes).to.equal(false);
 			expect(argv.followSymlinks).to.equal(false);
 			expect(argv.target).to.equal(undefined);
 		});
@@ -206,7 +205,6 @@ describe('Cloud Command-Line Interface', () => {
 			expect(argv.clierror).to.have.property('data', 'device');
 			expect(argv.clierror).to.have.property('isUsageError', true);
 			expect(argv.params).to.eql({});
-			expect(argv.yes).to.equal(false);
 			expect(argv.followSymlinks).to.equal(false);
 			expect(argv.target).to.equal(undefined);
 		});
@@ -215,16 +213,14 @@ describe('Cloud Command-Line Interface', () => {
 			const argv = commandProcessor.parse(root, ['cloud', 'flash', 'my-device', 'blink.ino']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ device: 'my-device', files: ['blink.ino'] });
-			expect(argv.yes).to.equal(false);
 			expect(argv.followSymlinks).to.equal(false);
 			expect(argv.target).to.equal(undefined);
 		});
 
 		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['cloud', 'flash', 'my-device', '--yes', '--followSymlinks', '--target', '2.0.0']);
+			const argv = commandProcessor.parse(root, ['cloud', 'flash', 'my-device', '--followSymlinks', '--target', '2.0.0']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ device: 'my-device', files: [] });
-			expect(argv.yes).to.equal(true);
 			expect(argv.followSymlinks).to.equal(true);
 			expect(argv.target).to.equal('2.0.0');
 		});
@@ -240,7 +236,6 @@ describe('Cloud Command-Line Interface', () => {
 					'Options:',
 					'  --target          The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
 					'  --followSymlinks  Follow symlinks when collecting files  [boolean]',
-					'  --yes             Answer yes to all questions  [boolean]',
 					'',
 					'Examples:',
 					'  particle cloud flash blue                 Compile the source code in the current directory in the cloud and flash to device blue',
