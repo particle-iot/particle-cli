@@ -28,7 +28,7 @@ module.exports = class FlashCommand {
 		} else if (serial){
 			result = this.flashYModem({ binary, port, yes });
 		} else {
-			result = this.flashCloud({ device, files, target, yes });
+			result = this.flashCloud({ device, files, target });
 		}
 
 		return result.then(() => {
@@ -36,9 +36,9 @@ module.exports = class FlashCommand {
 		});
 	}
 
-	flashCloud({ device, files, target, yes }){
+	flashCloud({ device, files, target }){
 		const CloudCommands = require('../cmd/cloud');
-		const args = { target, yes, params: { device, files } };
+		const args = { target, params: { device, files } };
 		return new CloudCommands().flashDevice(args);
 	}
 
