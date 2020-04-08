@@ -5,10 +5,12 @@ const prompt = require('inquirer').prompt;
 
 const settings = require('../../settings');
 const specs = require('../lib/deviceSpecs');
-const ApiClient = require('../lib/api-client');
+const ApiClient = require('../lib/api-client'); // TODO (mirande): remove in favor of `ParticleAPI`
+const { normalizedApiError } = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 const spinnerMixin = require('../lib/spinner-mixin');
 const ensureError = require('../lib/utilities').ensureError;
+const ParticleAPI = require('./api');
 const UI = require('../lib/ui');
 const prompts = require('../lib/prompts');
 
@@ -55,10 +57,10 @@ module.exports = class CloudCommand {
 		spinnerMixin(this);
 	}
 
-	listDevices({ params: { filter } }) {
+	listDevices({ params: { filter } }){
 		return this.getAllDeviceAttributes(filter)
 			.then((devices) => {
-				if (!devices) {
+				if (!devices){
 					return;
 				}
 				this.ui.logDeviceDetail(devices);
@@ -69,15 +71,16 @@ module.exports = class CloudCommand {
 	}
 
 	claimDevice({ params: { deviceID } }){
-		const api = new ApiClient();
-		api.ensureToken();
+		const api = createAPI();
 
 		this.ui.stdout.write(`Claiming device ${deviceID}${os.EOL}`);
 
 		return api.claimDevice(deviceID)
 			.then(() => this.ui.stdout.write(`Successfully claimed device ${deviceID}${os.EOL}`))
 			.catch((err) => {
-				if (err && typeof err[0] === 'string' && err[0].includes('That belongs to someone else.')) {
+				const error = formatAPIErrorMessage(err);
+
+				if (error.canRequestTransfer){
 					const question = {
 						type: 'confirm',
 						name: 'transfer',
@@ -87,7 +90,7 @@ module.exports = class CloudCommand {
 
 					return prompt(question)
 						.then(({ transfer }) => {
-							if (transfer) {
+							if (transfer){
 								return api.claimDevice(deviceID, true)
 									.then(() => this.ui.stdout.write(`Transfer requested. You will receive an email if your transfer is approved or denied.${os.EOL}`));
 							}
@@ -95,20 +98,18 @@ module.exports = class CloudCommand {
 						});
 				}
 
-				throw ensureError(err);
+				throw error;
 			})
-			.catch((err) => {
-				throw new VError(ensureError(err), 'Failed to claim device');
+			.catch((error) => {
+				const message = 'Failed to claim device';
+				throw createAPIErrorResult({ error, message });
 			});
 	}
 
-	removeDevice({ yes, params: { device } }) {
-		const api = new ApiClient();
-		api.ensureToken();
-
+	removeDevice({ yes, params: { device } }){
 		return Promise.resolve()
 			.then(() => {
-				if (yes) {
+				if (yes){
 					return true;
 				}
 				const question = {
@@ -120,55 +121,51 @@ module.exports = class CloudCommand {
 				return prompt(question).then(({ remove }) => remove);
 			})
 			.then(remove => {
-				if (!remove) {
+				if (!remove){
 					throw new Error('Not confirmed');
 				}
-				return api.removeDevice(device);
+				this.ui.stdout.write(`releasing device ${device}${os.EOL}`);
+				return createAPI().removeDevice(device);
 			})
 			.then(() => this.ui.stdout.write(`Okay!${os.EOL}`))
-			.catch((err) => {
-				throw new VError(ensureError(err), "Didn't remove the device");
+			.catch((error) => {
+				const message = 'Didn\'t remove the device';
+				throw createAPIErrorResult({ error, message });
 			});
 	}
 
-	renameDevice({ params: { device, name } }) {
-		const api = new ApiClient();
-		api.ensureToken();
-
+	renameDevice({ params: { device, name } }){
 		this.ui.stdout.write(`Renaming device ${device}${os.EOL}`);
-
 		return Promise.resolve()
-			.then(() => api.renameDevice(device, name))
+			.then(() => createAPI().renameDevice(device, name))
 			.catch(err => {
-				if (err.info && err.info.includes('I didn\'t recognize that device name or ID')) {
+				if (err.info && err.info.includes('I didn\'t recognize that device name or ID')){
 					throw new Error('Device not found');
 				}
 				throw err;
 			})
 			.then(() => this.ui.stdout.write(`Successfully renamed device ${device} to: ${name}${os.EOL}`))
-			.catch(err => {
-				throw new VError(ensureError(err), `Failed to rename ${device}`);
+			.catch((error) => {
+				const message = `Failed to rename ${device}`;
+				throw createAPIErrorResult({ error, message });
 			});
 	}
 
-	flashDevice({ target, followSymlinks, params: { device, files } }) {
+	flashDevice({ target, followSymlinks, params: { device, files } }){
 		return Promise.resolve()
 			.then(() => {
-				if (files.length === 0) {
+				if (files.length === 0){
 					// default to current directory
 					files.push('.');
 				}
 
-				const api = new ApiClient();
-				api.ensureToken();
-
-				if (!fs.existsSync(files[0])) {
-					return this._flashKnownApp({ api, deviceId: device, filePath: files[0] });
+				if (!fs.existsSync(files[0])){
+					return this._flashKnownApp({ deviceId: device, filePath: files[0] });
 				}
 
 				const targetVersion = target === 'latest' ? null : target;
 
-				if (targetVersion) {
+				if (targetVersion){
 					this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);
 					this.ui.stdout.write(os.EOL);
 				}
@@ -176,67 +173,71 @@ module.exports = class CloudCommand {
 				return Promise.resolve()
 					.then(() => {
 						const fileMapping = this._handleMultiFileArgs(files, { followSymlinks });
-						api._populateFileMapping(fileMapping);
+						populateFileMapping(fileMapping);
 						return fileMapping;
 					})
 					.then((fileMapping) => {
-						if (Object.keys(fileMapping.map).length === 0) {
+						if (Object.keys(fileMapping.map).length === 0){
 							throw new Error('no files included');
 						}
 
-						if (settings.showIncludedSourceFiles) {
+						if (settings.showIncludedSourceFiles){
 							const list = _.values(fileMapping.map);
 
 							this.ui.stdout.write(`Including:${os.EOL}`);
 
-							for (let i = 0, n = list.length; i < n; i++) {
+							for (let i = 0, n = list.length; i < n; i++){
 								this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
 							}
+
+							this.ui.stdout.write(os.EOL);
 						}
 
-						return this._doFlash({ api, deviceId: device, fileMapping, targetVersion });
+						return this._doFlash({ deviceId: device, fileMapping, targetVersion });
 					});
 			})
-			.catch((err) => {
-				throw new VError(ensureError(err), 'Flash device failed');
+			.catch((error) => {
+				const message = `Failed to flash ${device}`;
+				throw createAPIErrorResult({ error, message });
 			});
 	}
 
-	_doFlash({ api, deviceId, fileMapping, targetVersion }) {
+	_doFlash({ deviceId, fileMapping, targetVersion }){
 		return Promise.resolve()
 			.then(() => {
-				return api.flashDevice(deviceId, fileMapping, targetVersion);
+				this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
+				return createAPI().flashDevice(deviceId, fileMapping, targetVersion);
 			})
 			.then((resp) => {
-				if (resp.status || resp.message) {
+				if (resp.status || resp.message){
 					this.ui.stdout.write(`Flash device OK: ${resp.status || resp.message}${os.EOL}`);
-				} else if (resp.output === 'Compiler timed out or encountered an error') {
+				} else if (resp.output === 'Compiler timed out or encountered an error'){
 					this.ui.stdout.write(`${os.EOL}${(resp.errors && resp.errors[0])}${os.EOL}`);
 					throw new Error('Compiler encountered an error');
 				} else {
-					throw api.normalizedApiError(resp);
+					throw normalizedApiError(resp);
 				}
 			})
 			.catch(err => {
-				throw api.normalizedApiError(err);
+				throw normalizedApiError(err);
 			});
 	}
 
-	_flashKnownApp({ api, deviceId, filePath }) {
-		if (!settings.knownApps[filePath]) {
+	_flashKnownApp({ deviceId, filePath }){
+		if (!settings.knownApps[filePath]){
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 
-		return api.getAttributes(deviceId)
+		return createAPI().getDeviceAttributes(deviceId)
 			.then((attrs) => {
 				const spec = _.find(specs, { productId: attrs.product_id });
 
-				if (spec) {
-					if (spec.knownApps[filePath]) {
-						return api._populateFileMapping({ list: [spec.knownApps[filePath]] });
+				if (spec){
+					if (spec.knownApps[filePath]){
+						return populateFileMapping({ list: [spec.knownApps[filePath]] });
 					}
 
-					if (spec.productName) {
+					if (spec.productName){
 						throw new VError(`I don't have a ${filePath} binary for ${spec.productName}.`);
 					}
 				}
@@ -256,7 +257,7 @@ module.exports = class CloudCommand {
 						const spec = _.find(specs, { productName: type });
 						const binary = spec && spec.knownApps[filePath];
 
-						if (!binary) {
+						if (!binary){
 							throw new VError(`I don't have a ${filePath} binary for ${type}.`);
 						}
 
@@ -264,30 +265,30 @@ module.exports = class CloudCommand {
 					});
 			})
 			.then((fileMapping) => {
-				return this._doFlash({ api, deviceId, fileMapping });
+				return this._doFlash({ deviceId, fileMapping });
 			});
 	}
 
-	_getDownloadPath(deviceType, saveTo) {
-		if (saveTo) {
+	_getDownloadPath(deviceType, saveTo){
+		if (saveTo){
 			return saveTo;
 		}
 
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }) {
-		let api;
+	compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
 		let platformId;
 		let targetVersion;
 
 		return Promise.resolve()
+			.then(() => ensureAPIToken())
 			.then(() => {
-				if (files.length === 0) {
+				if (files.length === 0){
 					files.push('.'); // default to current directory
 				}
 
-				if (deviceType in PLATFORMS) {
+				if (deviceType in PLATFORMS){
 					platformId = PLATFORMS[deviceType];
 				} else {
 					throw new Error([
@@ -297,25 +298,22 @@ module.exports = class CloudCommand {
 					].join('\n'));
 				}
 
-				api = new ApiClient();
-				api.ensureToken();
-
 				this.ui.stdout.write(`${os.EOL}Compiling code for ${deviceType}${os.EOL}`);
 
-				if (target) {
-					if (target === 'latest') {
+				if (target){
+					if (target === 'latest'){
 						return;
 					}
 
-					return api.getBuildTargets()
+					return createAPI().listBuildTargets(true /* onlyFeatured */)
 						.catch(err => {
-							throw api.normalizedApiError(err);
+							throw normalizedApiError(err);
 						})
 						.then((data) => {
 							const validTargets = data.targets.filter((t) => t.platforms.includes(platformId));
 							const validTarget = validTargets.filter((t) => t.version === target);
 
-							if (!validTarget.length) {
+							if (!validTarget.length){
 								throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.map(validTargets, 'version')).join('\n'));
 							}
 
@@ -329,62 +327,71 @@ module.exports = class CloudCommand {
 
 				this.ui.stdout.write(os.EOL);
 
-				if (!fs.existsSync(filePath)) {
+				if (!fs.existsSync(filePath)){
 					throw new VError(`I couldn't find that: ${filePath}`);
 				}
 
 				return this._handleMultiFileArgs(files, { followSymlinks });
 			})
 			.then((fileMapping) => {
-				if (!fileMapping) {
+				if (!fileMapping){
 					return;
 				}
 
 				const list = _.values(fileMapping.map);
 
-				if (list.length === 0) {
+				if (list.length === 0){
 					throw new VError('No source to compile!');
 				}
 
-				if (settings.showIncludedSourceFiles) {
+				if (settings.showIncludedSourceFiles){
 					this.ui.stdout.write(`Including:${os.EOL}`);
-					for (let i = 0, n = list.length; i < n; i++) {
+
+					for (let i = 0, n = list.length; i < n; i++){
 						this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
 					}
+
+					this.ui.stdout.write(os.EOL);
 				}
 
 				const filename = this._getDownloadPath(deviceType, saveTo);
-				return this._compileAndDownload(api, fileMapping, platformId, filename, targetVersion);
+				return this._compileAndDownload(fileMapping, platformId, filename, targetVersion);
 			})
-			.catch((err) => {
-				throw new VError(ensureError(err), 'Compile failed');
+			.catch((error) => {
+				const message = 'Compile failed';
+				throw createAPIErrorResult({ error, message });
 			});
 	}
 
-	_compileAndDownload(api, fileMapping, platformId, filename, targetVersion) {
+	_compileAndDownload(fileMapping, platformId, filename, targetVersion){
 		return Promise.resolve()
 			.then(() => {
-				// compile
-				return api.compileCode(fileMapping, platformId, targetVersion);
+				this.ui.stdout.write(`attempting to compile firmware${os.EOL}`);
+				return createAPI().compileCode(fileMapping, platformId, targetVersion);
 			})
 			.then(resp => {
-				//download
-				if (resp && resp.binary_url) {
-					return api.downloadBinary(resp.binary_url, filename).then(() => {
-						return resp.sizeInfo;
-					});
-				} else if (resp && resp.output === 'Compiler timed out or encountered an error') {
+				if (resp && resp.binary_url && resp.binary_id){
+					this.ui.stdout.write(`downloading binary from: ${resp.binary_url}${os.EOL}`);
+					return createAPI().downloadFirmwareBinary(resp.binary_id)
+						.then(data => {
+							this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
+							return fs.promises.writeFile(filename, data);
+						})
+						.then(() => {
+							return resp.sizeInfo;
+						});
+				} else if (resp && resp.output === 'Compiler timed out or encountered an error'){
 					this.ui.stdout.write(`${os.EOL}${(resp && resp.errors && resp.errors[0])}${os.EOL}`);
 					throw new Error('Compiler encountered an error');
 				} else {
-					throw api.normalizedApiError(resp);
+					throw normalizedApiError(resp);
 				}
 			})
 			.catch(err => {
-				throw api.normalizedApiError(err);
+				throw normalizedApiError(err);
 			})
 			.then((sizeInfo) => {
-				if (sizeInfo) {
+				if (sizeInfo){
 					this.ui.stdout.write(`Memory use:${os.EOL}`);
 					this.ui.stdout.write(`${sizeInfo}${os.EOL}`);
 				}
@@ -393,7 +400,7 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	login({ username, password, token, otp } = {}) {
+	login({ username, password, token, otp } = {}){
 		const shouldRetry = !((username && password) || token && !this.tries);
 
 		return Promise.resolve()
@@ -413,14 +420,14 @@ module.exports = class CloudCommand {
 				this.newSpin('Sending login details...').start();
 				this._usernameProvided = username;
 
-				if (token) {
+				if (token){
 					return this.stopSpinAfterPromise(api.getUser(token).then((response) => {
 						return { token, username: response.username };
 					}));
 				}
 				return this.stopSpinAfterPromise(api.login(settings.clientId, username, password))
 					.catch((error) => {
-						if (error.error === 'mfa_required') {
+						if (error.error === 'mfa_required'){
 							this.tries = 0;
 							return this.enterOtp({ otp, mfaToken: error.mfa_token, shouldRetry });
 						}
@@ -434,7 +441,7 @@ module.exports = class CloudCommand {
 				this.ui.stdout.write(`${arrow} Successfully completed login!${os.EOL}`);
 				settings.override(null, 'access_token', token);
 
-				if (username) {
+				if (username){
 					settings.override(null, 'username', username);
 				}
 
@@ -455,15 +462,15 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	enterOtp({ otp, mfaToken, shouldRetry = true }) {
+	enterOtp({ otp, mfaToken, shouldRetry = true }){
 		return Promise.resolve()
 			.then(() => {
-				if (!this.tries) {
+				if (!this.tries){
 					this.ui.stdout.write(`Use your authenticator app on your mobile device to get a login code.${os.EOL}`);
 					this.ui.stdout.write(`Lost access to your phone? Visit https://login.particle.io/account-info${os.EOL}`);
 				}
 
-				if (otp) {
+				if (otp){
 					return otp;
 				}
 				return prompts.getOtp();
@@ -486,12 +493,12 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	doLogout(keep, password) {
+	doLogout(keep, password){
 		const api = new ApiClient();
 
 		return Promise.resolve()
 			.then(() => {
-				if (!keep) {
+				if (!keep){
 					return api.removeAccessToken(settings.username, password, settings.access_token);
 				}
 				this.ui.stdout.write(`${arrow} Leaving your token intact.${os.EOL}`);
@@ -506,13 +513,13 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	logout(noPrompt) {
-		if (!settings.access_token) {
+	logout(noPrompt){
+		if (!settings.access_token){
 			this.ui.stdout.write(`You were already logged out.${os.EOL}`);
 			return;
 		}
 
-		if (noPrompt) {
+		if (noPrompt){
 			return this.doLogout(true);
 		}
 
@@ -550,18 +557,18 @@ module.exports = class CloudCommand {
 				return api.listDevices();
 			})
 			.then(devices => {
-				if (!devices || (devices.length === 0) || (typeof devices === 'string')) {
+				if (!devices || (devices.length === 0) || (typeof devices === 'string')){
 					this.ui.stdout.write(`No devices found.${os.EOL}`);
 				} else {
 					this.newSpin('Retrieving device functions and variables...').start();
 					const promises = [];
 					devices.forEach((device) => {
-						if (!device.id || (filter && !filterFunc(device))) {
+						if (!device.id || (filter && !filterFunc(device))){
 							// Don't request attributes from unnecessary devices...
 							return;
 						}
 
-						if (device.connected) {
+						if (device.connected){
 							promises.push(api.getAttributes(device.id).then((attrs) => {
 								return extend(device, attrs);
 							}));
@@ -573,7 +580,7 @@ module.exports = class CloudCommand {
 					return this.stopSpinAfterPromise(Promise.all(promises).then(fullDevices => {
 						//sort alphabetically
 						fullDevices = fullDevices.sort((a, b) => {
-							if (a.connected && !b.connected) {
+							if (a.connected && !b.connected){
 								return 1;
 							}
 
@@ -587,27 +594,27 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	nyanMode({ params: { device, onOff } }) {
+	nyanMode({ params: { device, onOff } }){
 		const api = new ApiClient();
 		api.ensureToken();
 
-		if (!onOff || (onOff === '') || (onOff === 'on')) {
+		if (!onOff || (onOff === '') || (onOff === 'on')){
 			onOff = true;
-		} else if (onOff === 'off') {
+		} else if (onOff === 'off'){
 			onOff = false;
 		}
 
-		if ((device === '') || (device === 'all')) {
+		if ((device === '') || (device === 'all')){
 			device = null;
-		} else if (device === 'on') {
+		} else if (device === 'on'){
 			device = null;
 			onOff = true;
-		} else if (device === 'off') {
+		} else if (device === 'off'){
 			device = null;
 			onOff = false;
 		}
 
-		if (device) {
+		if (device){
 			return api.signalDevice(device, onOff)
 				.catch((err) => {
 					throw api.normalizedApiError(err);
@@ -615,13 +622,13 @@ module.exports = class CloudCommand {
 		} else {
 			return Promise.resolve(() => api.listDevices())
 				.then(devices => {
-					if (!devices || (devices.length === 0)) {
+					if (!devices || (devices.length === 0)){
 						this.ui.stdout.write(`No devices found.${os.EOL}`);
 						return;
 					} else {
 						const promises = [];
 						devices.forEach((device) => {
-							if (!device.connected) {
+							if (!device.connected){
 								promises.push(Promise.resolve(device));
 								return;
 							}
@@ -654,12 +661,12 @@ module.exports = class CloudCommand {
 			map: {}
 		};
 
-		for (let i = 0; i < filenames.length; i++) {
+		for (let i = 0; i < filenames.length; i++){
 			const filename = filenames[i];
 			const ext = utilities.getFilenameExt(filename).toLowerCase();
 			const alwaysIncludeThisFile = ((ext === '.bin') && (i === 0) && (filenames.length === 1));
 
-			if (filename.indexOf('--') === 0) {
+			if (filename.indexOf('--') === 0){
 				// go over the argument
 				i++;
 				continue;
@@ -668,21 +675,21 @@ module.exports = class CloudCommand {
 			let filestats;
 			try {
 				filestats = fs.statSync(filename);
-			} catch (ex) {
+			} catch (ex){
 				console.error("I couldn't find the file " + filename);
 				return null;
 			}
 
-			if (filestats.isDirectory()) {
+			if (filestats.isDirectory()){
 				this._processDirIncludes(fileMapping, filename, { followSymlinks });
 				continue;
 			}
 
-			if (!alwaysIncludeThisFile && settings.notSourceExtensions.includes(ext)) {
+			if (!alwaysIncludeThisFile && settings.notSourceExtensions.includes(ext)){
 				continue;
 			}
 
-			if (!alwaysIncludeThisFile && filestats.size > settings.MAX_FILE_SIZE) {
+			if (!alwaysIncludeThisFile && filestats.size > settings.MAX_FILE_SIZE){
 				console.log('Skipping ' + filename + " it's too big! " + filestats.size);
 				continue;
 			}
@@ -725,7 +732,7 @@ module.exports = class CloudCommand {
 			'project.properties'
 		];
 
-		if (fs.existsSync(includesFile)) {
+		if (fs.existsSync(includesFile)){
 			//grab and process all the files in the include file.
 
 			includes = utilities.trimBlankLinesAndComments(
@@ -737,7 +744,7 @@ module.exports = class CloudCommand {
 
 		let files = utilities.globList(dirname, includes, { followSymlinks });
 
-		if (fs.existsSync(ignoreFile)) {
+		if (fs.existsSync(ignoreFile)){
 			const ignores = utilities.trimBlankLinesAndComments(
 				utilities.readAndTrimLines(ignoreFile)
 			);
@@ -754,7 +761,7 @@ module.exports = class CloudCommand {
 			// If using an include file, only base names are supported since people are using those to
 			// link across relative folders
 			let target;
-			if (hasIncludeFile) {
+			if (hasIncludeFile){
 				target = path.basename(file);
 			} else {
 				target = path.relative(dirname, file);
@@ -769,17 +776,72 @@ module.exports = class CloudCommand {
 	 * @param {Object} fileMapping Object mapping from filenames seen by the compile server to local filenames,
 	 *                             relative to a base path
 	 */
-	_handleLibraryExample(fileMapping) {
+	_handleLibraryExample(fileMapping){
 		return Promise.resolve().then(() => {
 			const list = _.values(fileMapping.map);
-			if (list.length === 1) {
+			if (list.length === 1){
 				return require('particle-library-manager').isLibraryExample(list[0]);
 			}
 		}).then(example => {
-			if (example) {
+			if (example){
 				return example.buildFiles(fileMapping);
 			}
 		});
 	}
 };
 
+
+// UTILS //////////////////////////////////////////////////////////////////////
+function createAPI(){
+	return new ParticleAPI(settings.apiUrl, {
+		accessToken: settings.access_token
+	});
+}
+
+function createAPIErrorResult({ error: e, message, json }){
+	const error = new VError(formatAPIErrorMessage(e), message);
+	error.asJSON = json;
+	return error;
+}
+
+// TODO (mirande): reconcile this w/ `normalizedApiError()` and `ensureError()`
+// utilities and pull the result into cmd/api.js
+function formatAPIErrorMessage(error){
+	error = normalizedApiError(error);
+
+	if (error.body){
+		if (typeof error.body.error === 'string'){
+			error.message = error.body.error;
+		} else if (Array.isArray(error.body.errors)){
+			if (error.body.errors.length === 1){
+				error.message = error.body.errors[0];
+			}
+		}
+	}
+
+	if (error.message.includes('That belongs to someone else.')){
+		error.canRequestTransfer = true;
+	}
+
+	return error;
+}
+
+// TODO (mirande): refactor cmd/api.js to do this check by default when appropriate
+function ensureAPIToken(){
+	if (!settings.access_token){
+		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
+	}
+}
+
+function populateFileMapping(fileMapping){
+	if (!fileMapping.map){
+		fileMapping.map = {};
+		if (fileMapping.list){
+			for (let i = 0; i < fileMapping.list.length; i++){
+				let item = fileMapping.list[i];
+				fileMapping.map[item] = item;
+			}
+		}
+	}
+	return fileMapping;
+}

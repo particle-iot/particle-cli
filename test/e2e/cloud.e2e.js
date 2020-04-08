@@ -179,7 +179,7 @@ describe('Cloud Commands [@device]', () => {
 				'',
 				'Including:',
 				`    ${PATH_PROJ_STROBY_INO}`,
-				'attempting to compile firmware ',
+				'attempting to compile firmware',
 				'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 				`saving to: ${strobyBinPath}`,
 				'Memory use:',
