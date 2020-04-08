@@ -15,7 +15,6 @@ const prompts = require('../lib/prompts');
 const fs = require('fs');
 const path = require('path');
 const extend = require('xtend');
-const util = require('util');
 const chalk = require('chalk');
 
 const arrow = chalk.green('>');
@@ -153,7 +152,7 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	flashDevice({ target, followSymlinks, yes, params: { device, files } }) {
+	flashDevice({ target, followSymlinks, params: { device, files } }) {
 		return Promise.resolve()
 			.then(() => {
 				if (files.length === 0) {
@@ -278,7 +277,7 @@ module.exports = class CloudCommand {
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	compileCode({ target, followSymlinks, yes, saveTo, params: { deviceType, files } }) {
+	compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }) {
 		let api;
 		let platformId;
 		let targetVersion;
