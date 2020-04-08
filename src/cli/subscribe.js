@@ -12,7 +12,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'until': {
 				describe: 'Listen until we see an event exactly matching this data'
 			},
-			'count': {
+			'max': {
 				number: true,
 				describe: 'Listen until we see this many events'
 			}
@@ -27,7 +27,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --device x': 'Subscribe to all events published by device x',
 			'$0 $command --all': 'Subscribe to public events and all events published by my devices',
 			'$0 $command --until x': 'Subscribe to all events and exit when an event has data matching x',
-			'$0 $command --count x': 'Subscribe to all events and exit after seeing x events'
+			'$0 $command --max x': 'Subscribe to all events and exit after seeing x events'
 		}
 	});
 };
