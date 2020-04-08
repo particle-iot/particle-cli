@@ -3,7 +3,7 @@ const ApiClient = require('../lib/api-client');
 
 
 module.exports = class SubscribeCommand {
-	startListening(event, { device, all }) {
+	startListening(event, { device, all, until, max }) {
 		const api = new ApiClient();
 		api.ensureToken();
 
@@ -35,6 +35,16 @@ module.exports = class SubscribeCommand {
 			console.log('Subscribing to ' + eventLabel + ' from ' + deviceId + "'s stream");
 		}
 
+		if (until) {
+			console.log(`This command will exit after receiving event data matching: '${until}'`);
+		}
+
+		let eventCount = 0;
+		if (max) {
+			max = Math.abs(max);
+			console.log(`This command will exit after receiving ${max} event(s)...`);
+		}
+
 		let chunks = [];
 		function appendToQueue(arr) {
 			for (let i = 0; i < arr.length; i++) {
@@ -64,6 +74,19 @@ module.exports = class SubscribeCommand {
 			}
 
 			console.log(JSON.stringify(obj));
+
+			if (until && until === obj.data) {
+				console.log('Matching event received. Exiting...');
+				process.exit(1); // One matching event
+			}
+
+			if (max) {
+				eventCount = eventCount + 1;
+				if (eventCount === max) {
+					console.log(`${eventCount} event(s) received. Exiting...`);
+					process.exit(eventCount); // Number of events we received
+				}
+			}
 		}
 
 		return api.getEventStream(eventName, deviceId, (event) => {
