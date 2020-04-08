@@ -77,14 +77,14 @@ module.exports = class SubscribeCommand {
 
 			if (until && until === obj.data) {
 				console.log('Matching event received. Exiting...');
-				process.exit(1); // One matching event
+				process.exit(0);
 			}
 
 			if (max) {
 				eventCount = eventCount + 1;
 				if (eventCount === max) {
 					console.log(`${eventCount} event(s) received. Exiting...`);
-					process.exit(eventCount); // Number of events we received
+					process.exit(0);
 				}
 			}
 		}
