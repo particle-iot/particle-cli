@@ -29,8 +29,8 @@ describe('Cloud Command-Line Interface', () => {
 					'Help:  particle help cloud <command>',
 					'',
 					'Commands:',
-					'  claim    Register a device with your user account with the cloud',
 					'  list     Display a list of your devices, as well as their variables and functions',
+					'  claim    Register a device with your user account with the cloud',
 					'  remove   Release a device from your account so that another user may claim it',
 					'  name     Give a device a name!',
 					'  flash    Pass a binary, source file, or source directory to a device!',
@@ -38,6 +38,34 @@ describe('Cloud Command-Line Interface', () => {
 					'  nyan     Make your device shout rainbows',
 					'  login    Login to the cloud and store an access token locally',
 					'  logout   Log out of your session and clear your saved access token',
+					''
+				].join(os.EOL));
+			});
+		});
+	});
+
+	describe('`cloud list` Namespace', () => {
+		it('Handles `list` command', () => {
+			const argv = commandProcessor.parse(root, ['cloud', 'list']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ filter: undefined });
+		});
+
+		it('Parses optional arguments', () => {
+			const argv = commandProcessor.parse(root, ['cloud', 'list', 'photon']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ filter: 'photon' });
+		});
+
+		it('Includes help', () => {
+			const termWidth = null; // don't right-align option type labels so testing is easier
+			commandProcessor.parse(root, ['cloud', 'list', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Display a list of your devices, as well as their variables and functions',
+					'Usage: particle cloud list [options] [filter]',
+					'',
+					'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name',
 					''
 				].join(os.EOL));
 			});
@@ -70,34 +98,6 @@ describe('Cloud Command-Line Interface', () => {
 					'',
 					'Examples:',
 					'  particle cloud claim 123456789  Claim device by id to your account',
-					''
-				].join(os.EOL));
-			});
-		});
-	});
-
-	describe('`cloud list` Namespace', () => {
-		it('Handles `list` command', () => {
-			const argv = commandProcessor.parse(root, ['cloud', 'list']);
-			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ filter: undefined });
-		});
-
-		it('Parses optional arguments', () => {
-			const argv = commandProcessor.parse(root, ['cloud', 'list', 'photon']);
-			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ filter: 'photon' });
-		});
-
-		it('Includes help', () => {
-			const termWidth = null; // don't right-align option type labels so testing is easier
-			commandProcessor.parse(root, ['cloud', 'list', '--help'], termWidth);
-			commandProcessor.showHelp((helpText) => {
-				expect(helpText).to.equal([
-					'Display a list of your devices, as well as their variables and functions',
-					'Usage: particle cloud list [options] [filter]',
-					'',
-					'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name',
 					''
 				].join(os.EOL));
 			});

@@ -182,7 +182,7 @@ describe('Cloud Commands [@device]', () => {
 				'attempting to compile firmware ',
 				'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 				`saving to: ${strobyBinPath}`,
-				'Memory use: ',
+				'Memory use:',
 				'', // don't assert against memory stats since they may change based on current default Device OS version
 				'Compile succeeded.',
 				`Saved firmware to: ${strobyBinPath}`
@@ -223,7 +223,7 @@ describe('Cloud Commands [@device]', () => {
 				'Including:',
 				`    ${PATH_PROJ_STROBY_INO}`,
 				`attempting to flash firmware to your device ${DEVICE_NAME}`,
-				'Flash device OK:  Update started'
+				'Flash device OK: Update started'
 			];
 
 			expect(stdout.split('\n')).to.include.members(log);
@@ -350,6 +350,33 @@ describe('Cloud Commands [@device]', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
+	});
+
+	it('Fails to name an unknown device', async () => {
+		const invalidDeviceID = '1234567890';
+		const args = ['cloud', 'name', invalidDeviceID, 'NOPE'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const log = [
+			`Renaming device ${invalidDeviceID}`,
+			`Failed to rename ${invalidDeviceID}: Permission Denied`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Fails to name a device owned by someone else', async () => {
+		const args = ['cloud', 'name', FOREIGN_DEVICE_ID, 'NOPE'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const log = [
+			`Renaming device ${FOREIGN_DEVICE_ID}`,
+			`Failed to rename ${FOREIGN_DEVICE_ID}: Permission Denied`
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
 	});
 });
 

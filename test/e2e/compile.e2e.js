@@ -78,7 +78,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
@@ -104,7 +104,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
-			'Memory use: ',
+			'Memory use:',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
 			'   8332\t    112\t   1112\t   9556\t   2554\t/workspace/target/workspace.elf',
 			'',
@@ -138,7 +138,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -170,7 +170,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -202,7 +202,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -234,7 +234,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -268,7 +268,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -307,7 +307,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -363,7 +363,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -396,7 +396,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -431,7 +431,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -456,7 +456,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware ',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`

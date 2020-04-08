@@ -38,7 +38,8 @@ module.exports = class FlashCommand {
 
 	flashCloud({ device, files, target, yes }){
 		const CloudCommands = require('../cmd/cloud');
-		return new CloudCommands().flashDevice(device, files, { target, yes });
+		const args = { target, yes, params: { device, files } };
+		return new CloudCommands().flashDevice(args);
 	}
 
 	flashYModem({ binary, port, yes }){
