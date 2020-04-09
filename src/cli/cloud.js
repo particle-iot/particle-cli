@@ -61,7 +61,11 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'flash', 'Pass a binary, source file, or source directory to a device!', {
 		params: '<device> [files...]',
-		options: Object.assign({}, compileOptions),
+		options: Object.assign({}, compileOptions, {
+			'product': {
+				description: 'Target a device within the given Product ID or Slug'
+			}
+		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands().flashDevice(args);
@@ -71,6 +75,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command green tinker': 'Flash the default Tinker app to device green',
 			'$0 $command red blink.ino': 'Compile blink.ino in the cloud and flash to device red',
 			'$0 $command orange firmware.bin': 'Flash the pre-compiled binary to device orange',
+			'$0 $command blue --product 12345': 'Compile the source code in the current directory in the cloud and flash to device blue within product 12345'
 		}
 	});
 
