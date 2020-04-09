@@ -6,7 +6,7 @@ const {
 	DEVICE_ID,
 	DEVICE_NAME,
 	PRODUCT_01_ID,
-	PRODUCT_01_DEVICE_01_ID
+	PRODUCT_01_DEVICE_02_ID
 } = require('../lib/env');
 
 
@@ -39,7 +39,7 @@ describe('Subscribe Commands [@device]', () => {
 	after(async () => {
 		await cli.setTestProfileAndLogin();
 		await cli.callStrobyStop(DEVICE_NAME);
-		await cli.callStrobyStop(PRODUCT_01_DEVICE_01_ID, PRODUCT_01_ID);
+		await cli.callStrobyStop(PRODUCT_01_DEVICE_02_ID, PRODUCT_01_ID);
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -143,6 +143,7 @@ describe('Subscribe Commands [@device]', () => {
 	});
 
 	it('Subscribes to `--all` events with partial matching', async () => {
+		await cli.callStrobyStart(DEVICE_NAME);
 		const eventName = 't';
 		const args = ['subscribe', '--all', eventName];
 		const subprocess = cli.run(args);
@@ -228,9 +229,10 @@ describe('Subscribe Commands [@device]', () => {
 	});
 
 	it('Subscribes to a device\'s events using `--max` flag', async () => {
+		await cli.callStrobyStart(DEVICE_NAME);
+
 		const count = 5;
 		const eventName = 'led';
-		await cli.runWithRetry(['call', DEVICE_NAME, 'start'], { reject: true });
 		const args = ['subscribe', eventName, '--device', DEVICE_ID, '--max', count];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const events = stdout.split('\n').slice(3, 8);
@@ -250,9 +252,10 @@ describe('Subscribe Commands [@device]', () => {
 	});
 
 	it('Subscribes to a device\'s events using `--until` flag', async () => {
+		await cli.callStrobyStart(DEVICE_NAME);
+
 		const data = 'ON';
 		const eventName = 'led';
-		await cli.runWithRetry(['call', DEVICE_NAME, 'start'], { reject: true });
 		const args = ['subscribe', eventName, '--device', DEVICE_ID, '--until', data];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const events = stdout.split('\n').slice(3).filter(e => e.startsWith('{'));
@@ -275,7 +278,7 @@ describe('Subscribe Commands [@device]', () => {
 	// is that your product device is running the `stroby` firmware found in:
 	// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
 	it('Subscribes to a product\'s events', async () => {
-		await cli.callStrobyStart(PRODUCT_01_DEVICE_01_ID, PRODUCT_01_ID);
+		await cli.callStrobyStart(PRODUCT_01_DEVICE_02_ID, PRODUCT_01_ID);
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID];
@@ -295,10 +298,10 @@ describe('Subscribe Commands [@device]', () => {
 
 		expect(event1).to.have.property('name', 'led');
 		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 		expect(event2).to.have.property('name', 'led');
 		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 	});
 
 	// TODO (mirande): need to ensure device is running expected firmware and online
@@ -306,7 +309,7 @@ describe('Subscribe Commands [@device]', () => {
 	// is that your product device is running the `stroby` firmware found in:
 	// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
 	it('Subscribes to a product\'s events by name', async () => {
-		await cli.callStrobyStart(PRODUCT_01_DEVICE_01_ID, PRODUCT_01_ID);
+		await cli.callStrobyStart(PRODUCT_01_DEVICE_02_ID, PRODUCT_01_ID);
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID, eventName];
@@ -326,10 +329,10 @@ describe('Subscribe Commands [@device]', () => {
 
 		expect(event1).to.have.property('name', 'led');
 		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 		expect(event2).to.have.property('name', 'led');
 		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 	});
 
 	// TODO (mirande): need to ensure device is running expected firmware and online
@@ -337,10 +340,10 @@ describe('Subscribe Commands [@device]', () => {
 	// is that your product device is running the `stroby` firmware found in:
 	// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
 	it('Subscribes to a product device\'s events', async () => {
-		await cli.callStrobyStart(PRODUCT_01_DEVICE_01_ID, PRODUCT_01_ID);
+		await cli.callStrobyStart(PRODUCT_01_DEVICE_02_ID, PRODUCT_01_ID);
 
 		const eventName = 'led';
-		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_01_ID];
+		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_02_ID];
 		const subprocess = cli.run(args);
 
 		await delay(5000);
@@ -349,7 +352,7 @@ describe('Subscribe Commands [@device]', () => {
 		const { all, isCanceled } = await subprocess;
 		const [subscribe,,, ...events] = all.split('\n');
 
-		expect(subscribe).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_01_ID}'s stream`);
+		expect(subscribe).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
 		expect(events).to.have.lengthOf.at.least(2);
 		expect(isCanceled).to.equal(true);
 
@@ -357,10 +360,10 @@ describe('Subscribe Commands [@device]', () => {
 
 		expect(event1).to.have.property('name', 'led');
 		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 		expect(event2).to.have.property('name', 'led');
 		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 	});
 
 	// TODO (mirande): need to ensure device is running expected firmware and online
@@ -368,10 +371,10 @@ describe('Subscribe Commands [@device]', () => {
 	// is that your product device is running the `stroby` firmware found in:
 	// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
 	it('Subscribes to a product device\'s event by name', async () => {
-		await cli.callStrobyStart(PRODUCT_01_DEVICE_01_ID, PRODUCT_01_ID);
+		await cli.callStrobyStart(PRODUCT_01_DEVICE_02_ID, PRODUCT_01_ID);
 
 		const eventName = 'led';
-		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_01_ID, eventName];
+		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_02_ID, eventName];
 		const subprocess = cli.run(args);
 
 		await delay(5000);
@@ -380,7 +383,7 @@ describe('Subscribe Commands [@device]', () => {
 		const { all, isCanceled } = await subprocess;
 		const [subscribe,,, ...events] = all.split('\n');
 
-		expect(subscribe).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_01_ID}'s stream`);
+		expect(subscribe).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
 		expect(events).to.have.lengthOf.at.least(2);
 		expect(isCanceled).to.equal(true);
 
@@ -388,10 +391,10 @@ describe('Subscribe Commands [@device]', () => {
 
 		expect(event1).to.have.property('name', 'led');
 		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 		expect(event2).to.have.property('name', 'led');
 		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_01_ID);
+		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 	});
 
 	it('Fails when user is signed-out', async () => {

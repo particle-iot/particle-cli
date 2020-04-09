@@ -6,7 +6,7 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	PRODUCT_01_ID,
-	PRODUCT_01_DEVICE_01_ID,
+	PRODUCT_01_DEVICE_02_ID,
 	PRODUCT_01_DEVICE_01_NAME
 } = require('../lib/env');
 
@@ -95,7 +95,7 @@ describe('Function Commands [@device]', () => {
 	// is that your product device is running the `stroby` firmware found in:
 	// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
 	it('Calls a function on a product device', async () => {
-		const args = ['function', 'call', PRODUCT_01_DEVICE_01_ID, fn, '--product', PRODUCT_01_ID];
+		const args = ['function', 'call', PRODUCT_01_DEVICE_02_ID, fn, '--product', PRODUCT_01_ID];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
 		expect(stdout.slice(-3)).to.equal('200');
