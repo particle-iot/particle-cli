@@ -14,7 +14,7 @@ const ParticleAPI = require('./api');
 const UI = require('../lib/ui');
 const prompts = require('../lib/prompts');
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
@@ -152,7 +152,7 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	flashDevice({ target, followSymlinks, params: { device, files } }){
+	flashDevice({ target, followSymlinks, product, params: { device, files } }){
 		return Promise.resolve()
 			.then(() => {
 				if (files.length === 0){
@@ -161,7 +161,7 @@ module.exports = class CloudCommand {
 				}
 
 				if (!fs.existsSync(files[0])){
-					return this._flashKnownApp({ deviceId: device, filePath: files[0] });
+					return this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
 				}
 
 				const targetVersion = target === 'latest' ? null : target;
@@ -194,7 +194,7 @@ module.exports = class CloudCommand {
 							this.ui.stdout.write(os.EOL);
 						}
 
-						return this._doFlash({ deviceId: device, fileMapping, targetVersion });
+						return this._doFlash({ product, deviceId: device, fileMapping, targetVersion });
 					});
 			})
 			.catch((error) => {
@@ -203,11 +203,18 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	_doFlash({ deviceId, fileMapping, targetVersion }){
+	_doFlash({ product, deviceId, fileMapping, targetVersion }){
 		return Promise.resolve()
 			.then(() => {
+				if (!product){
+					return;
+				}
+				this.ui.stdout.write(`marking device ${deviceId} as a development device${os.EOL}`);
+				return createAPI().markAsDevelopmentDevice(deviceId, true, product);
+			})
+			.then(() => {
 				this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
-				return createAPI().flashDevice(deviceId, fileMapping, targetVersion);
+				return createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
 			})
 			.then((resp) => {
 				if (resp.status || resp.message){
@@ -219,12 +226,22 @@ module.exports = class CloudCommand {
 					throw normalizedApiError(resp);
 				}
 			})
+			.then(() => {
+				if (!product){
+					return;
+				}
+				[
+					`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+					'to resume normal updates, please visit:',
+					`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
+				].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
+			})
 			.catch(err => {
 				throw normalizedApiError(err);
 			});
 	}
 
-	_flashKnownApp({ deviceId, filePath }){
+	_flashKnownApp({ product, deviceId, filePath }){
 		if (!settings.knownApps[filePath]){
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
@@ -266,7 +283,7 @@ module.exports = class CloudCommand {
 					});
 			})
 			.then((fileMapping) => {
-				return this._doFlash({ deviceId, fileMapping });
+				return this._doFlash({ product, deviceId, fileMapping });
 			});
 	}
 
@@ -376,7 +393,7 @@ module.exports = class CloudCommand {
 					return createAPI().downloadFirmwareBinary(resp.binary_id)
 						.then(data => {
 							this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
-							return fs.promises.writeFile(filename, data);
+							return fs.writeFile(filename, data);
 						})
 						.then(() => {
 							return resp.sizeInfo;

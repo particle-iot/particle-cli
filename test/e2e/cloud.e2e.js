@@ -13,6 +13,7 @@ const {
 	PRODUCT_01_DEVICE_01_ID,
 	PRODUCT_01_DEVICE_01_NAME,
 	PATH_TMP_DIR,
+	PATH_PROJ_BLANK_INO,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR
 } = require('../lib/env');
@@ -257,6 +258,27 @@ describe('Cloud Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 
 			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForDeviceToGetOnline()` helper
+		});
+
+		it('Flashes a product device', async () => {
+			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_ID, PATH_PROJ_BLANK_INO, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				'Including:',
+				`    ${PATH_PROJ_BLANK_INO}`,
+				`marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
+				`attempting to flash firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
+				'Flash device OK: Update started',
+				`device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'to resume normal updates, please visit:',
+				`https://console.particle.io/${PRODUCT_01_ID}/devices/unmark-development/${PRODUCT_01_DEVICE_01_ID}`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForProductVariable()` helper
 		});
 	});
 
