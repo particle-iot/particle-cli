@@ -122,8 +122,15 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	signalDevice(deviceId, signal){
-		return this._wrap(this.api.signalDevice({ deviceId, signal, auth: this.accessToken }));
+	signalDevice(deviceId, signal, product){
+		return this._wrap(
+			this.api.signalDevice({
+				deviceId,
+				product,
+				signal,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	listBuildTargets(onlyFeatured){
