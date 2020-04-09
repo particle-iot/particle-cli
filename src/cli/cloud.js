@@ -95,9 +95,19 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'nyan', 'Make your device shout rainbows', {
 		params: '<device> [onOff]',
+		options: {
+			'product': {
+				description: 'Target a device within the given Product ID or Slug'
+			}
+		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands().nyanMode(args);
+		},
+		examples: {
+			'$0 $command green': 'Make the device named `blue` start signaling',
+			'$0 $command green off': 'Make the device named `blue` stop signaling',
+			'$0 $command blue --product 12345': 'Make the device named `blue` within product `12345` start signaling'
 		}
 	});
 
