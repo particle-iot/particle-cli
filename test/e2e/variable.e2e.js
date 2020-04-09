@@ -8,7 +8,7 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	PRODUCT_01_ID,
-	PRODUCT_01_DEVICE_01_ID
+	PRODUCT_01_DEVICE_02_ID
 } = require('../lib/env');
 
 
@@ -145,7 +145,7 @@ describe('Variable Commands [@device]', () => {
 		// is that your product device is running the `stroby` firmware found in:
 		// test/__fixtures__/projects/stroby - see: cli.flashStrobyFirmwareOTAForTest()
 		it('Gets a variable from a product device by name', async () => {
-			const args = ['get', PRODUCT_01_DEVICE_01_ID, 'version', '--product', PRODUCT_01_ID];
+			const args = ['get', PRODUCT_01_DEVICE_02_ID, 'version', '--product', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout.slice(-2)).to.equal('42');
@@ -163,7 +163,7 @@ describe('Variable Commands [@device]', () => {
 		});
 
 		it('Fails to get a variable from a product device when `variableName` param is not provided', async () => {
-			const args = ['get', PRODUCT_01_DEVICE_01_ID, '--product', PRODUCT_01_ID];
+			const args = ['get', PRODUCT_01_DEVICE_02_ID, '--product', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.include(`\`variableName\` parameter is required when \`--product\` flag is set. To view available variables, run: particle product device list ${PRODUCT_01_ID}`);

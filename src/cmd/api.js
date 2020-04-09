@@ -79,6 +79,17 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	markAsDevelopmentDevice(deviceId, development, product){
+		return this._wrap(
+			this.api.markAsDevelopmentDevice({
+				development,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
+	}
+
 	claimDevice(deviceId, requestTransfer){
 		return this._wrap(
 			this.api.claimDevice({
@@ -110,10 +121,11 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	flashDevice(deviceId, files, targetVersion){
+	flashDevice(deviceId, files, targetVersion, product){
 		return this._wrap(
 			this.api.flashDevice({
 				deviceId,
+				product,
 				// TODO (mirande): callers should provide an object like: { [filename]: filepath }
 				files: files.map || files,
 				targetVersion,
