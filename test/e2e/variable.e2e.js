@@ -175,7 +175,7 @@ describe('Variable Commands [@device]', () => {
 		});
 	});
 
-	describe('Variable Get Subcommand', () => {
+	describe('Variable Monitor Subcommand', () => {
 		it('Monitors a variable', async () => {
 			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1000];
 			const subprocess = cli.run(args);
