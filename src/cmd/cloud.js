@@ -595,9 +595,8 @@ module.exports = class CloudCommand {
 			});
 	}
 
-	nyanMode({ params: { device, onOff } }){
-		const api = new ApiClient();
-		api.ensureToken();
+	nyanMode({ product, params: { device, onOff } }){
+		const api = createAPI();
 
 		if (!onOff || (onOff === '') || (onOff === 'on')){
 			onOff = true;
@@ -615,33 +614,35 @@ module.exports = class CloudCommand {
 			onOff = false;
 		}
 
-		if (device){
-			return api.signalDevice(device, onOff)
-				.catch((err) => {
-					throw api.normalizedApiError(err);
-				});
-		} else {
-			return Promise.resolve(() => api.listDevices())
-				.then(devices => {
-					if (!devices || (devices.length === 0)){
-						this.ui.stdout.write(`No devices found.${os.EOL}`);
-						return;
-					} else {
-						const promises = [];
-						devices.forEach((device) => {
-							if (!device.connected){
-								promises.push(Promise.resolve(device));
+		return Promise.resolve()
+			.then(() => {
+				if (device){
+					return api.signalDevice(device, onOff, product);
+				} else {
+					return Promise.resolve()
+						.then(() => api.listDevices())
+						.then(devices => {
+							if (!devices || (devices.length === 0)){
+								this.ui.stdout.write(`No devices found.${os.EOL}`);
 								return;
+							} else {
+								const promises = [];
+								devices.forEach((device) => {
+									if (!device.connected){
+										promises.push(Promise.resolve(device));
+										return;
+									}
+									promises.push(api.signalDevice(device.id, onOff, product));
+								});
+								return Promise.all(promises);
 							}
-							promises.push(api.signalDevice(device.id, onOff));
 						});
-						return Promise.all(promises);
-					}
-				})
-				.catch(err => {
-					throw api.normalizedApiError(err);
-				});
-		}
+				}
+			})
+			.catch((error) => {
+				const message = 'Signaling failed';
+				throw createAPIErrorResult({ error, message });
+			});
 	}
 
 	/**

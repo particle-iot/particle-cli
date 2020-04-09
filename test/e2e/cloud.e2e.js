@@ -9,6 +9,9 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	FOREIGN_DEVICE_ID,
+	PRODUCT_01_ID,
+	PRODUCT_01_DEVICE_01_ID,
+	PRODUCT_01_DEVICE_01_NAME,
 	PATH_TMP_DIR,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR
@@ -43,9 +46,13 @@ describe('Cloud Commands [@device]', () => {
 		await cli.flashBlankFirmwareOTAForTest();
 	});
 
-	after(async () => {
+	afterEach(async () => {
 		await cli.claimTestDevice();
 		await cli.revertDeviceName();
+	});
+
+	after(async () => {
+		await cli.run(['cloud', 'nyan', 'all', 'off'], { reject: true });
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -248,6 +255,8 @@ describe('Cloud Commands [@device]', () => {
 			expect(stdout.split('\n')).to.include.members(log);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+
+			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForDeviceToGetOnline()` helper
 		});
 	});
 
@@ -376,6 +385,71 @@ describe('Cloud Commands [@device]', () => {
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
+	it('Starts a device signaling', async () => {
+		const args = ['cloud', 'nyan', DEVICE_NAME];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.equal('');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Stops a device signaling', async () => {
+		const args = ['cloud', 'nyan', DEVICE_NAME, 'off'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.equal('');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	// TODO (mirande): this currently includes all product devices..?
+	it('Starts all devices signaling', async () => {
+		const args = ['cloud', 'nyan', 'all'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.equal('');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Stops all devices signaling', async () => {
+		const args = ['cloud', 'nyan', 'all', 'off'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.equal('');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Starts a product device signaling', async () => {
+		const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, '--product', PRODUCT_01_ID];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.equal('');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Stops a product device signaling', async () => {
+		const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, 'off', '--product', PRODUCT_01_ID];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.equal('');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	// TODO (mirande): seems like a bug..?
+	it('Fails to start a product device signaling when called with device name', async () => {
+		const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_NAME, '--product', PRODUCT_01_ID];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.equal('Signaling failed: Device not found.');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
