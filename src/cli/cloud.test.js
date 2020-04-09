@@ -334,6 +334,13 @@ describe('Cloud Command-Line Interface', () => {
 			expect(argv.params).to.eql({ device: 'my-device', onOff: 'off' });
 		});
 
+		it('Parses options', () => {
+			const argv = commandProcessor.parse(root, ['cloud', 'nyan', 'my-device', '--product', '12345']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ device: 'my-device', onOff: undefined });
+			expect(argv.product).to.equal('12345');
+		});
+
 		it('Includes help', () => {
 			const termWidth = null; // don't right-align option type labels so testing is easier
 			commandProcessor.parse(root, ['cloud', 'nyan', '--help'], termWidth);
@@ -341,6 +348,14 @@ describe('Cloud Command-Line Interface', () => {
 				expect(helpText).to.equal([
 					'Make your device shout rainbows',
 					'Usage: particle cloud nyan [options] <device> [onOff]',
+					'',
+					'Options:',
+					'  --product  Target a device within the given Product ID or Slug  [string]',
+					'',
+					'Examples:',
+					'  particle cloud nyan green                 Make the device named `blue` start signaling',
+					'  particle cloud nyan green off             Make the device named `blue` stop signaling',
+					'  particle cloud nyan blue --product 12345  Make the device named `blue` within product `12345` start signaling',
 					''
 				].join(os.EOL));
 			});
