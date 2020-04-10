@@ -49,12 +49,12 @@ module.exports = {
 			})
 			.map((foundLine) => {
 				let dfuId = foundLine.match(/\[(.*:.*)\]/)[1];
-				let serial = foundLine.match(/serial=\"(.*)\"/)[1];
+				let serial = foundLine.match(/serial="(.*)"/)[1];
 				return {
 					dfuId,
 					serial // Device ID for Particle devices
-				}
-			})
+				};
+			});
 		return _.uniqWith(dfuDevices, _.isEqual);
 	},
 
@@ -111,7 +111,7 @@ module.exports = {
 						specs: specs[dfuId],
 						deviceId: d.serial
 					};
-				})
+				});
 
 				resolve(dfuDevices);
 			});
@@ -129,8 +129,8 @@ module.exports = {
 						// Look for the requested device
 						let matchingDevices = dfuDevices.filter((d) => {
 							return d.deviceId === deviceId;
-						})
-						
+						});
+
 						// Too many or too few matches means something is wrong
 						if (matchingDevices.length === 0) {
 							return Promise.reject('No DFU device found matching the provided Device ID');
@@ -186,7 +186,7 @@ module.exports = {
 				module.exports.dfuId = dfuId;
 				log.verbose('Found DFU device %s', dfuId);
 				return targetDevice;
-			})
+			});
 	},
 
 	isDfuUtilInstalled() {

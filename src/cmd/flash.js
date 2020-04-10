@@ -29,29 +29,29 @@ module.exports = class FlashCommand {
 		if (usb){
 			if (files.length > 0) {
 				// If both a device and a binary were provided, the binary will come in as the
-				// first element in the files array and device will be accurate
+				// first element in the files array
 				binary = files[0];
-
-				// Lookup the Device ID based on the provided Device Name
-				if (!isDeviceId(device)) {
-					const api = new ParticleApi(settings.apiUrl, { accessToken: settings.access_token }).api;
-
-					let deviceInfo
-					try {
-						deviceInfo = await getDevice({ id: device, api, auth: settings.access_token});
-					} catch (err) {
-						throw VError(ensureError(err), 'Device ID lookup failed');
-					}
-
-					if (deviceInfo && deviceInfo.id) {
-						device = deviceInfo.id;
-					} else {
-						throw VError('Device ID lookup failed');
-					}
-				}
 			} else {
 				// Otherwise, no device has been provided so unset the inaccurate value
 				device = undefined;
+			}
+
+			// Lookup the Device ID based on the provided Device Name
+			if (device && !isDeviceId(device)) {
+				const api = new ParticleApi(settings.apiUrl, { accessToken: settings.access_token }).api;
+
+				let deviceInfo;
+				try {
+					deviceInfo = await getDevice({ id: device, api, auth: settings.access_token });
+				} catch (err) {
+					throw new VError(ensureError(err), 'Device ID lookup failed');
+				}
+
+				if (deviceInfo && deviceInfo.id) {
+					device = deviceInfo.id;
+				} else {
+					throw new VError('Device ID lookup failed');
+				}
 			}
 
 			result = this.flashDfu({ device, binary, factory, force });
@@ -83,7 +83,7 @@ module.exports = class FlashCommand {
 		return Promise.resolve()
 			.then(() => dfu.isDfuUtilInstalled())
 			.then(async () => {
-				targetDevice = await dfu.findCompatibleDFU({ deviceId: device })
+				targetDevice = await dfu.findCompatibleDFU({ deviceId: device });
 			})
 			.then(() => {
 				//only match against knownApp if file is not found
