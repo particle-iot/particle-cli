@@ -1,6 +1,9 @@
 const fs = require('fs');
 const VError = require('verror');
 const dfu = require('../lib/dfu');
+const settings = require('../../settings');
+const ParticleApi = require('./api');
+const { getDevice, isDeviceId } = require('./device-util');
 const ModuleParser = require('binary-version-reader').HalModuleParser;
 const ModuleInfo = require('binary-version-reader').ModuleInfo;
 const deviceSpecs = require('../lib/deviceSpecs');
@@ -15,7 +18,7 @@ const systemModuleIndexToString = {
 
 
 module.exports = class FlashCommand {
-	flash(device, binary, files, { usb, serial, factory, force, target, port, yes }){
+	async flash(device, binary, files, { usb, serial, factory, force, target, port, yes }){
 		if (!device && !binary){
 			// if no device nor files are passed, show help
 			// TODO: Replace by UsageError
@@ -24,16 +27,42 @@ module.exports = class FlashCommand {
 
 		let result;
 		if (usb){
-			result = this.flashDfu({ binary, factory, force });
+			if (files.length > 0) {
+				// If both a device and a binary were provided, the binary will come in as the
+				// first element in the files array and device will be accurate
+				binary = files[0];
+
+				// Lookup the Device ID based on the provided Device Name
+				if (!isDeviceId(device)) {
+					const api = new ParticleApi(settings.apiUrl, { accessToken: settings.access_token }).api;
+
+					let deviceInfo
+					try {
+						deviceInfo = await getDevice({ id: device, api, auth: settings.access_token});
+					} catch (err) {
+						throw VError(ensureError(err), 'Device ID lookup failed');
+					}
+
+					if (deviceInfo && deviceInfo.id) {
+						device = deviceInfo.id;
+					} else {
+						throw VError('Device ID lookup failed');
+					}
+				}
+			} else {
+				// Otherwise, no device has been provided so unset the inaccurate value
+				device = undefined;
+			}
+
+			result = this.flashDfu({ device, binary, factory, force });
 		} else if (serial){
 			result = this.flashYModem({ binary, port, yes });
 		} else {
 			result = this.flashCloud({ device, files, target });
 		}
 
-		return result.then(() => {
-			console.log ('\nFlash success!');
-		});
+		await result;
+		console.log ('\nFlash success!');
 	}
 
 	flashCloud({ device, files, target }){
@@ -47,12 +76,15 @@ module.exports = class FlashCommand {
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
-	flashDfu({ binary, factory, force, requestLeave }){
+	flashDfu({ device, binary, factory, force, requestLeave }){
 		let specs, destSegment, destAddress;
 		let flashingKnownApp = false;
+		let targetDevice = {};
 		return Promise.resolve()
 			.then(() => dfu.isDfuUtilInstalled())
-			.then(() => dfu.findCompatibleDFU())
+			.then(async () => {
+				targetDevice = await dfu.findCompatibleDFU({ deviceId: device })
+			})
 			.then(() => {
 				//only match against knownApp if file is not found
 				let stats;
@@ -148,7 +180,7 @@ module.exports = class FlashCommand {
 				const alt = 0;
 				// todo - leave on factory firmware write too?
 				const leave = requestLeave !== undefined ? requestLeave : (destSegment === 'userFirmware');
-				return dfu.writeDfu(alt, finalBinary, destAddress, leave);
+				return dfu.writeDfu(alt, finalBinary, destAddress, leave, targetDevice);
 			})
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Error writing firmware');

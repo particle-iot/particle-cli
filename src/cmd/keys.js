@@ -107,7 +107,7 @@ module.exports = class KeysCommand {
 			.then(() => {
 				return Promise.resolve()
 					.then(() => this.dfu.isDfuUtilInstalled())
-					.then(() => this.dfu.findCompatibleDFU(showHelp))
+					.then(() => this.dfu.findCompatibleDFU({ showHelp }))
 					.catch((err) => {
 						if (protocol){
 							alg = this.keyAlgorithmForProtocol(protocol);

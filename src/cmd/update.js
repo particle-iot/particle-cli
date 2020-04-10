@@ -13,11 +13,13 @@ const spin = new Spinner('Updating system firmware on the device...');
 
 module.exports = class UpdateCommand {
 	updateDevice() {
-		return dfu.findCompatibleDFU().then((deviceId) => {
-			return doUpdate(deviceId);
-		}).catch((err) => {
-			return dfuError(err);
-		});
+		return dfu.findCompatibleDFU()
+			.then((targetDevice) => {
+				return doUpdate(targetDevice.dfuId);
+			})
+			.catch((err) => {
+				return dfuError(err);
+			});
 	}
 };
 

@@ -40,6 +40,24 @@ const prompt = inquirer.prompt;
 
 
 module.exports = {
+
+	_dfuInfoFromDfuOutput(stdout) {
+		let dfuDevices = stdout
+			.split('\n')
+			.filter((line) => {
+				return (line.indexOf('Found DFU') >= 0);
+			})
+			.map((foundLine) => {
+				let dfuId = foundLine.match(/\[(.*:.*)\]/)[1];
+				let serial = foundLine.match(/serial=\"(.*)\"/)[1];
+				return {
+					dfuId,
+					serial // Device ID for Particle devices
+				}
+			})
+		return _.uniqWith(dfuDevices, _.isEqual);
+	},
+
 	_dfuIdsFromDfuOutput(stdout) {
 		// find DFU devices that match specs
 		let dfuIds =
@@ -59,7 +77,7 @@ module.exports = {
 
 	dfuId: undefined,
 	listDFUDevices() {
-		const { getCommand, _dfuIdsFromDfuOutput, _missingDevicePermissions } = module.exports;
+		const { getCommand, _dfuInfoFromDfuOutput, _missingDevicePermissions } = module.exports;
 
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => reject(new Error('Timed out attempting to list DFU devices')), 6000);
@@ -83,57 +101,92 @@ module.exports = {
 
 				// find DFU devices that match specs
 				stdout = stdout || '';
-				let dfuIds = _dfuIdsFromDfuOutput(stdout);
-				let dfuDevices = dfuIds.map((d) => {
+				let dfuInfo = _dfuInfoFromDfuOutput(stdout);
+
+				let dfuDevices = dfuInfo.map((d) => {
+					let dfuId = d.dfuId;
 					return {
-						type: specs[d].productName,
-						dfuId: d,
-						specs: specs[d]
+						type: specs[dfuId].productName,
+						dfuId: dfuId,
+						specs: specs[dfuId],
+						deviceId: d.serial
 					};
-				});
+				})
 
 				resolve(dfuDevices);
 			});
 		});
 	},
 
-	findCompatibleDFU(showHelp = true) {
+	findCompatibleDFU({ showHelp = true, deviceId } = {}){
 		const { listDFUDevices, showDfuModeHelp } = module.exports;
 
 		return listDFUDevices()
 			.then((dfuDevices) => {
 				if (dfuDevices.length > 1) {
-					const question = {
-						type: 'list',
-						name: 'device',
-						message: 'Which device would you like to select?',
-						choices() {
-							return dfuDevices.map((d) => {
+					// Multiple devices in DFU mode
+					if (deviceId) {
+						// Look for the requested device
+						let matchingDevices = dfuDevices.filter((d) => {
+							return d.deviceId === deviceId;
+						})
+						
+						// Too many or too few matches means something is wrong
+						if (matchingDevices.length === 0) {
+							return Promise.reject('No DFU device found matching the provided Device ID');
+						} else if (matchingDevices.length > 1) {
+							return Promise.reject('More than one DFU device found matching the provided Device ID');
+						}
+
+						return {
+							dfuId: matchingDevices[0].dfuId,
+							deviceId
+						};
+					} else {
+						// Ask which device to flash
+						const question = {
+							type: 'list',
+							name: 'device',
+							message: 'Which device would you like to select?',
+							choices() {
+								return dfuDevices.map((d) => {
+									return {
+										name: d.type,
+										value: d
+									};
+								});
+							}
+						};
+						return prompt([question])
+							.then((ans) => {
 								return {
-									name: d.type,
-									value: d.dfuId
+									dfuId: ans.device.dfuId,
+									deviceId: ans.device.deviceId
 								};
 							});
-						}
-					};
-					return prompt([question])
-						.then((ans) => {
-							const dfuId = ans.device;
-							module.exports.dfuId = dfuId;
-							return dfuId;
-						});
+					}
 				} else if (dfuDevices.length === 1) {
-					const dfuId = dfuDevices[0].dfuId;
-					module.exports.dfuId = dfuId;
-					log.verbose('Found DFU device %s', dfuId);
-					return dfuId;
+					// One device in DFU mode. Skip flash if it does not match the requested device
+					if (deviceId && dfuDevices[0].deviceId !== deviceId) {
+						return Promise.reject('No DFU device found matching the provided Device ID');
+					}
+					return {
+						dfuId: dfuDevices[0].dfuId,
+						deviceId: dfuDevices[0].deviceId
+					};
 				} else {
 					if (showHelp) {
 						showDfuModeHelp();
 					}
 					return Promise.reject('No DFU device found');
 				}
-			});
+			})
+			.then((targetDevice) => {
+				const dfuId = targetDevice.dfuId; // This was previously const so it's staying a const when we export it
+				module.exports.dfuId = dfuId;
+				log.verbose('Found DFU device %s', dfuId);
+				return targetDevice;
+			})
 	},
 
 	isDfuUtilInstalled() {
@@ -151,17 +204,32 @@ module.exports = {
 		return utilities.deferredChildProcess(cmd);
 	},
 
-	writeDfu(memoryInterface, binaryPath, firmwareAddress, leave) {
+	writeDfu(memoryInterface, binaryPath, firmwareAddress, leave, targetDevice) {
 		const { dfuId, checkBinaryAlignment } = module.exports;
 		let leaveStr = (leave) ? ':leave' : '';
 		let cmd = 'dfu-util';
-		let args = [
-			'-d', dfuId,
+		let args = [];
+
+		// Pass the -S flag if we can. If more than one device is in DFU mode, flashing will fail without it
+		if (targetDevice && targetDevice.dfuId && targetDevice.deviceId) {
+			args = args.concat([
+				'-d', targetDevice.dfuId,
+				'-S', targetDevice.deviceId
+			]);
+		} else {
+			args = [
+				'-d', dfuId,
+			];
+		}
+
+		args = args.concat([
 			'-a', memoryInterface,
 			'-i', '0',
 			'-s', firmwareAddress + leaveStr,
 			'-D', binaryPath
-		];
+		]);
+
+		log.debug('dfu-util arguments: ', args);
 
 		if (settings.useSudoForDfu) {
 			cmd = 'sudo';
