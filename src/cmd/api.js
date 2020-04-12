@@ -32,6 +32,31 @@ module.exports = class ParticleApi {
 		return Promise.resolve();
 	}
 
+	listAccessTokens(username, password){
+		return this._wrap(
+			this.api.listAccessTokens({
+				username,
+				password,
+				auth: this.accessToken
+			}));
+	}
+
+	deleteAccessToken(username, password, token){
+		return this._wrap(
+			this.api.deleteAccessToken({
+				username,
+				password,
+				token,
+				auth: this.accessToken
+			}))
+			.then((res) => {
+				if (token === this.accessToken){
+					delete this.accessToken;
+				}
+				return res;
+			});
+	}
+
 	removeAccessToken(username, password, token){
 		return this.api.removeAccessToken({ username, password, token })
 			.then(() => {

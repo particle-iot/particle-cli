@@ -2,9 +2,9 @@ module.exports = ({ commandProcessor, root }) => {
 	const token = commandProcessor.createCategory(root, 'token', 'Manage access tokens (require username/password)');
 
 	commandProcessor.createCommand(token, 'list', 'List all access tokens for your account', {
-		handler: () => {
+		handler: (args) => {
 			const AccessTokenCommands = require('../cmd/token');
-			return new AccessTokenCommands().listAccessTokens();
+			return new AccessTokenCommands().listAccessTokens(args);
 		}
 	});
 
@@ -18,7 +18,13 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const AccessTokenCommands = require('../cmd/token');
-			return new AccessTokenCommands().revokeAccessToken(args.params.tokens, args);
+			return new AccessTokenCommands().revokeAccessToken(args);
+		},
+		examples: {
+			'$0 $command 1234': 'Revoke your access token `1234`',
+			'$0 $command 1234 5678': 'Revoke your access tokens `1234` and `5678`',
+			'$0 $command 1234 --force': 'Revoke your access token `1234` even if it is currently used by this CLI',
+			'$0 $command all': 'Revoke all of your access tokens',
 		}
 	});
 
