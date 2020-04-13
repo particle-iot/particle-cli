@@ -15,6 +15,7 @@ const PATH_PARTICLE_LIBRARIES_DIR = path.join(PATH_PARTICLE_PUBLIC_DIR, 'communi
 const PATH_PARTICLE_PROFILE = path.join(PATH_PARTICLE_DIR, 'particle.config.json');
 const PATH_PROJ_BLANK_INO = path.join(PATH_FIXTURES_PROJECTS_DIR, 'blank', 'src', 'blank.ino');
 const PATH_PROJ_STROBY_INO = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby', 'src', 'stroby.ino');
+const PATH_CLI_CONFIG_JSON = path.join(PATH_PARTICLE_DIR, 'e2e.config.json');
 
 process.env.HOME = PATH_HOME_DIR;
 require('dotenv').config({ path: path.join(PATH_TEST_DIR, '.env') });
@@ -58,6 +59,7 @@ module.exports = {
 	PATH_PARTICLE_LIBRARIES_DIR,
 	PATH_PARTICLE_PROFILE,
 	PATH_PROJ_BLANK_INO,
-	PATH_PROJ_STROBY_INO
+	PATH_PROJ_STROBY_INO,
+	PATH_CLI_CONFIG_JSON
 };
 

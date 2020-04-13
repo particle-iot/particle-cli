@@ -83,10 +83,16 @@ module.exports.stopListeningMode = () => {
 	return run(['usb', 'stop-listening', DEVICE_ID], { reject: true });
 };
 
-module.exports.enterDFUMode = async () => {
+module.exports.enterDFUMode = async (device = DEVICE_ID) => {
 	const { run } = module.exports;
-	await run(['usb', 'dfu', DEVICE_ID], { reject: true });
-	await delay(2000);
+	return run(['usb', 'dfu', device], { reject: true });
+};
+
+// TODO (mirande): add w/ `cli.waitForDeviceToGetOnline()` helper
+module.exports.resetDevice = async (device = DEVICE_ID) => {
+	const { run } = module.exports;
+	await run(['usb', 'reset', device], { reject: true });
+	await delay(45 * 1000);
 };
 
 module.exports.compileBlankFirmwareForTest = async (platform = 'photon') => {

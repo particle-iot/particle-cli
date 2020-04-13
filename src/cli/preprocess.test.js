@@ -42,9 +42,14 @@ describe('preprocess command-line interface', () => {
 	});
 
 	it('includes help with examples', () => {
-		commandProcessor.parse(root, ['preprocess', '--help']);
+		const termWidth = null; // don't right-align option type labels so testing is easier
+		commandProcessor.parse(root, ['preprocess', '--help'], termWidth);
 		commandProcessor.showHelp((helpText) => {
 			expect(helpText).to.include('Preprocess a Wiring file (ino) into a C++ file (cpp)');
+			expect(helpText).to.include('Options:');
+			expect(helpText).to.include('  --name    Filename and path to include in the preprocessed file. Default to the input file name  [string]');
+			expect(helpText).to.include('  --saveTo  Filename for the preprocessed file  [string]');
+			expect(helpText).to.include('Examples:');
 			expect(helpText).to.include('particle preprocess app.ino');
 			expect(helpText).to.include('particle preprocess - --name app.ino --saveTo -');
 		});

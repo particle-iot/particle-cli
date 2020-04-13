@@ -3,8 +3,10 @@ const { delay } = require('../lib/mocha-utils');
 const matches = require('../lib/capture-matches');
 const stripANSI = require('../lib/ansi-strip');
 const cli = require('../lib/cli');
+const fs = require('../lib/fs');
 const {
-	PASSWORD
+	PASSWORD,
+	PATH_CLI_CONFIG_JSON
 } = require('../lib/env');
 
 
@@ -129,6 +131,39 @@ describe('Token Commands', () => {
 		expect(msg).to.include(`successfully deleted ${token}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
+	});
+
+	it('Fails to revoke a token if the CLI is using it', async () => {
+		const { access_token: token } = await fs.readJson(PATH_CLI_CONFIG_JSON);
+		const { stdout, stderr, exitCode } = await cli.run(['token', 'revoke', token]);
+
+		expect(stdout).to.include(`WARNING: ${token} is this CLI's access token`);
+		expect(stdout).to.include('use --force to delete it');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Revokes the CLI\'s token when `--force` flag is set', async () => {
+		const { access_token: token } = await fs.readJson(PATH_CLI_CONFIG_JSON);
+		const subprocess = cli.run(['token', 'revoke', token, '--force']);
+
+		await delay(1000);
+		subprocess.stdin.write(PASSWORD);
+		subprocess.stdin.end('\n');
+
+		const { stdout, stderr, exitCode } = await subprocess;
+		const [msg] = stripANSI(stdout).split('\n').slice(-1).map(t => t.trim());
+		const cliConfig = await fs.readJson(PATH_CLI_CONFIG_JSON);
+
+		// TODO (mirande): some ascii code nonsense is preventing the logging of:
+		// expect(stdout).to.include(`WARNING: ${token} is this CLI's access token`);
+		// expect(stdout).to.include('**forcing**');
+		expect(msg).to.include(`successfully deleted ${token}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+		expect(cliConfig).have.property('access_token', null);
+
+		await cli.login();
 	});
 
 	it('Lists tokens', async () => {

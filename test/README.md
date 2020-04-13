@@ -16,6 +16,10 @@ E2E_DEVICE_ID=<your test device's id>
 E2E_DEVICE_NAME=<your test device's name>
 E2E_DEVICE_PLATFORM_ID=<the platform id of your test device>
 E2E_DEVICE_PLATFORM_NAME=<the platform name of your test device>
+E2E_FOREIGN_DEVICE_ID=<id for 3rd-party device the test user DOES NOT own>
+E2E_FOREIGN_DEVICE_NAME=<name for 3rd-party device>
+E2E_FOREIGN_DEVICE_PLATFORM_ID=<platform id for 3rd-party device>
+E2E_FOREIGN_DEVICE_PLATFORM_NAME=<platform name for 3rd-party device>
 ```
 
 _NOTE: Your device will be flashed, etc. Test failures may leave it in a bad state. **Please DO NOT use a mission-critical device!**_
