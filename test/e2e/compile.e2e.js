@@ -443,6 +443,30 @@ describe('Compile Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
+	it('Compiles a project for the `core` platform', async () => {
+		const args = ['compile', 'core', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath];
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args);
+		const file = await fs.stat(strobyBinPath);
+		const log = [
+			'Compiling code for core',
+			'',
+			'Including:',
+			`    ${PATH_PROJ_STROBY_INO}`,
+			'attempting to compile firmware ',
+			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
+			`saving to: ${strobyBinPath}`,
+			'Memory use: ',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
+			'Compile succeeded.',
+			`Saved firmware to: ${strobyBinPath}`
+		];
+
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
 	it('Fails to compile when platform is unrecognized', async () => {
 		const platform = 'WATNOPE';
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR);
