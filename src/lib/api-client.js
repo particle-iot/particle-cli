@@ -723,7 +723,11 @@ module.exports = class ApiClient {
 				includePath: true
 			});
 		}
-		form.append('platform_id', platformId);
+
+		if (platformId != null){
+			form.append('platform_id', platformId);
+		}
+
 		if (targetVersion){
 			form.append('build_target_version', targetVersion);
 		} else {
