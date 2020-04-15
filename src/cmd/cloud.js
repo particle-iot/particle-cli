@@ -632,16 +632,6 @@ module.exports = class CloudCommand {
 			onOff = false;
 		}
 
-		if ((device === '') || (device === 'all')){
-			device = null;
-		} else if (device === 'on'){
-			device = null;
-			onOff = true;
-		} else if (device === 'off'){
-			device = null;
-			onOff = false;
-		}
-
 		return Promise.resolve()
 			.then(() => {
 				if (device){
