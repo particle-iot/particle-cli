@@ -81,5 +81,48 @@ describe('Subscribe Commands [@device]', () => {
 		expect(event2).to.have.property('data').match(/ON|OFF/);
 		expect(event2).to.have.property('coreid', DEVICE_ID);
 	});
+
+	it('Subscribes to a device\'s events using `--max` flag', async () => {
+		const count = 5;
+		await cli.run(['call', DEVICE_NAME, 'start'], { reject: true });
+		const args = ['subscribe', '--device', DEVICE_ID, '--max', count];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const events = stdout.split('\n').slice(3, 8);
+
+		expect(events).to.have.lengthOf(count);
+		events.forEach(e => {
+			const data = JSON.parse(e);
+			expect(data).to.have.property('name', 'led');
+			expect(data).to.have.property('data').match(/ON|OFF/);
+			expect(data).to.have.property('coreid', DEVICE_ID);
+		});
+		expect(stdout).to.include(`Subscribing to all events from ${DEVICE_ID}'s stream`);
+		expect(stdout).to.include(`This command will exit after receiving ${count} event(s)...`);
+		expect(stdout).to.include(`Listening to: /v1/devices/${DEVICE_ID}/events`);
+		expect(stdout).to.include(`${count} event(s) received. Exiting...`);
+		expect(stderr).to.include('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Subscribes to a device\'s events using `--until` flag', async () => {
+		const data = 'ON';
+		await cli.run(['call', DEVICE_NAME, 'start'], { reject: true });
+		const args = ['subscribe', '--device', DEVICE_ID, '--until', data];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const events = stdout.split('\n').slice(3).filter(e => e.startsWith('{'));
+
+		events.forEach(e => {
+			const data = JSON.parse(e);
+			expect(data).to.have.property('name', 'led');
+			expect(data).to.have.property('data').match(/ON|OFF/);
+			expect(data).to.have.property('coreid', DEVICE_ID);
+		});
+		expect(stdout).to.include(`Subscribing to all events from ${DEVICE_ID}'s stream`);
+		expect(stdout).to.include(`This command will exit after receiving event data matching: '${data}'`);
+		expect(stdout).to.include(`Listening to: /v1/devices/${DEVICE_ID}/events`);
+		expect(stdout).to.include('Matching event received. Exiting...');
+		expect(stderr).to.include('');
+		expect(exitCode).to.equal(0);
+	});
 });
 
