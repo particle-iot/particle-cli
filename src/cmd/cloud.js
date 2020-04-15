@@ -232,6 +232,8 @@ module.exports = class CloudCommand {
 				[
 					`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
 					'to resume normal updates, please visit:',
+					// TODO (mirande): replace w/ instructions on how to unmark
+					// via the CLI once that command is available
 					`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
 				].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
 			})
@@ -247,7 +249,8 @@ module.exports = class CloudCommand {
 
 		return createAPI().getDeviceAttributes(deviceId)
 			.then((attrs) => {
-				const spec = _.find(specs, { productId: attrs.product_id });
+				const productId = product ? attrs.platform_id :attrs.product_id;
+				const spec = _.find(specs, { productId });
 
 				if (spec){
 					if (spec.knownApps[filePath]){
@@ -258,28 +261,6 @@ module.exports = class CloudCommand {
 						throw new VError(`I don't have a ${filePath} binary for ${spec.productName}.`);
 					}
 				}
-
-				// TODO (mirande): fix this
-				// TODO: this shouldn't be necessary. Just look at the attrs.platform_id instead of
-				// product_id above
-				const question = {
-					name: 'type',
-					type: 'list',
-					message: 'Which type of device?',
-					choices: ['Photon', 'Core', 'P1', 'Electron']
-				};
-
-				return prompt(question)
-					.then(({ type }) => {
-						const spec = _.find(specs, { productName: type });
-						const binary = spec && spec.knownApps[filePath];
-
-						if (!binary){
-							throw new VError(`I don't have a ${filePath} binary for ${type}.`);
-						}
-
-						return { map: { binary: binary } };
-					});
 			})
 			.then((fileMapping) => {
 				return this._doFlash({ product, deviceId, fileMapping });
