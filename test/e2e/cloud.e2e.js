@@ -53,7 +53,10 @@ describe('Cloud Commands [@device]', () => {
 	});
 
 	after(async () => {
-		await cli.run(['cloud', 'nyan', 'all', 'off'], { reject: true });
+		await Promise.all(
+			[DEVICE_ID, PRODUCT_01_DEVICE_01_ID]
+				.map(id => cli.run(['cloud', 'nyan', id, 'off'], { reject: true }))
+		);
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -421,25 +424,6 @@ describe('Cloud Commands [@device]', () => {
 
 	it('Stops a device signaling', async () => {
 		const args = ['cloud', 'nyan', DEVICE_NAME, 'off'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	// TODO (mirande): this currently includes all product devices..?
-	it('Starts all devices signaling', async () => {
-		const args = ['cloud', 'nyan', 'all'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	it('Stops all devices signaling', async () => {
-		const args = ['cloud', 'nyan', 'all', 'off'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
 		expect(stdout).to.equal('');
