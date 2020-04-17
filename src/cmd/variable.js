@@ -7,26 +7,16 @@ const find = require('lodash/find');
 const filter = require('lodash/filter');
 const prompt = require('inquirer').prompt;
 const settings = require('../../settings');
-const { errors: { usageError } } = require('../app/command-processor');
-const spinnerMixin = require('../lib/spinner-mixin');
 const LegacyApiClient = require('../lib/api-client');
 const ParticleAPI = require('./api');
-const UI = require('../lib/ui');
+const CLICommandBase = require('./base');
 
 const { normalizedApiError } = LegacyApiClient;
 
 
-module.exports = class VariableCommand {
-	constructor({
-		stdin = process.stdin,
-		stdout = process.stdout,
-		stderr = process.stderr
-	} = {}) {
-		this.stdin = stdin;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.ui = new UI({ stdin, stdout, stderr });
-		spinnerMixin(this);
+module.exports = class VariableCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 	}
 
 	listVariables(){
@@ -40,13 +30,13 @@ module.exports = class VariableCommand {
 	getValue({ time, product, params: { device, variableName } }){
 		if (product){
 			if (!device){
-				throw usageError(
+				return this.showUsageError(
 					'`device` parameter is required when `--product` flag is set'
 				);
 			}
 
 			if (!variableName){
-				throw usageError(
+				return this.showUsageError(
 					`\`variableName\` parameter is required when \`--product\` flag is set. To view available variables, run: particle product device list ${product}`
 				);
 			}
