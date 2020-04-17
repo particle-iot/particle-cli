@@ -167,14 +167,15 @@ module.exports = class KeysCommand {
 			});
 	}
 
-	saveKeyFromDevice({ force, params: { filename } }){
+	saveKeyFromDevice({ force, device, params: { filename } }){
 		filename = utilities.filenameNoExt(filename) + '.der';
-		return this._saveKeyFromDevice({ filename, force });
+		return this._saveKeyFromDevice({ filename, force, deviceId: device });
 	}
 
-	_saveKeyFromDevice({ filename, force }){
+	_saveKeyFromDevice({ filename, force, deviceId }) {
 		const { tryDelete, filenameNoExt, deferredChildProcess } = utilities;
 		let protocol;
+		let targetDevice = {};
 
 		if (!force && fs.existsSync(filename)){
 			throw new VError('This file already exists, please specify a different file, or use the --force flag.');
@@ -187,12 +188,15 @@ module.exports = class KeysCommand {
 
 		return Promise.resolve()
 			.then(() => this.dfu.isDfuUtilInstalled())
-			.then(() => this.dfu.findCompatibleDFU())
+			.then(() => this.dfu.findCompatibleDFU({ deviceId }))
+			.then((compatibleDevice) => {
+				targetDevice = compatibleDevice;
+			})
 			.then(() => this.validateDeviceProtocol())
 			.then(_protocol => {
 				protocol = _protocol;
 				let segment = this._getPrivateKeySegmentName({ protocol });
-				return this.dfu.read(filename, segment, false);
+				return this.dfu.read(filename, segment, false, targetDevice);
 			})
 			.then(() => {
 				let pubPemFilename = filenameNoExt(filename) + '.pub.pem';
@@ -328,19 +332,20 @@ module.exports = class KeysCommand {
 		return addressBuf;
 	}
 
-	writeServerPublicKey({ protocol, host, port, deviceType, params: { filename, outputFilename } }){
+	writeServerPublicKey({ protocol, host, port, device, deviceType, params: { filename, outputFilename } }){
 		if (deviceType && !filename){
 			throw usageError(
 				'`filename` parameter is required when `--deviceType` is set'
 			);
 		}
 
-		if (filename && !fs.existsSync(filename)){
+		if (filename && !fs.existsSync(filename)) {
 			// TODO UsageError
 			throw new VError('Please specify a server key in DER format.');
 		}
 
 		let skipDFU = false;
+
 		if (deviceType){
 			skipDFU = true;
 
@@ -349,13 +354,18 @@ module.exports = class KeysCommand {
 				.filter(key => deviceSpecs[key].productName.toLowerCase() === deviceType.toLowerCase())[0];
 		}
 
+		let targetDevice = {};
+
 		return Promise.resolve()
 			.then(() => {
 				if (skipDFU){
 					return protocol;
 				}
 				return this.dfu.isDfuUtilInstalled()
-					.then(() => this.dfu.findCompatibleDFU())
+					.then(() => this.dfu.findCompatibleDFU({ deviceId: device }))
+					.then((compatibleDevice) => {
+						targetDevice = compatibleDevice;
+					})
 					.then(() => this.validateDeviceProtocol({ protocol }));
 			})
 			.then(_protocol => {
@@ -367,8 +377,9 @@ module.exports = class KeysCommand {
 			})
 			.then(bufferFile => {
 				let segment = this._getServerKeySegmentName({ protocol });
+
 				if (!skipDFU){
-					return this.dfu.write(bufferFile, segment, false);
+					return this.dfu.write(bufferFile, segment, false, targetDevice);
 				}
 			})
 			.then(() => {
@@ -383,12 +394,16 @@ module.exports = class KeysCommand {
 			});
 	}
 
-	readServerAddress({ protocol }){
+	readServerAddress({ protocol, device }) {
 		let keyBuf, serverKeySeg;
+		let targetDevice = {};
 
 		return Promise.resolve()
 			.then(() => this.dfu.isDfuUtilInstalled())
-			.then(() => this.dfu.findCompatibleDFU())
+			.then(() => this.dfu.findCompatibleDFU({ deviceId: device }))
+			.then((compatibleDevice) => {
+				targetDevice = compatibleDevice;
+			})
 			.then(() => this.validateDeviceProtocol({ protocol }))
 			.then(_protocol => {
 				protocol = _protocol;
@@ -396,12 +411,13 @@ module.exports = class KeysCommand {
 			})
 			.then(() => {
 				let segment = this._getServerKeySegmentName({ protocol });
-				return this.dfu.readBuffer(segment, false)
+				return this.dfu.readBuffer(segment, false, targetDevice)
 					.then((buf) => {
 						keyBuf = buf;
 					});
 			})
 			.then(() => {
+				// TODO (mirande): extract this and unit test...
 				let offset = serverKeySeg.addressOffset || 384;
 				let portOffset = serverKeySeg.portOffset || 450;
 				let type = keyBuf[offset];

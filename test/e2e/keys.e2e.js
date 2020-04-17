@@ -147,7 +147,9 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			'  -q, --quiet    Decreases how much logging to display  [count]',
 			'',
 			'Options:',
-			'  --force  Force overwriting of <filename> if it exists  [boolean] [default: false]'
+			'  --force  Force overwriting of <filename> if it exists  [boolean] [default: false]',
+			'  --device  Device ID of the target device  [string]',
+			''
 		];
 
 		it('Saves device keys', async () => {

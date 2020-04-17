@@ -143,7 +143,8 @@ describe('Keys Command-Line Interface', () => {
 					'Usage: particle keys save [options] <filename>',
 					'',
 					'Options:',
-					'  --force  Force overwriting of <filename> if it exists  [boolean] [default: false]',
+					'  --force   Force overwriting of <filename> if it exists  [boolean] [default: false]',
+					'  --device  Device ID of the target device  [string]',
 					''
 				].join(os.EOL));
 			});
@@ -286,6 +287,7 @@ describe('Keys Command-Line Interface', () => {
 					'  --protocol    Communication protocol for the device using the key. tcp or udp  [string]',
 					'  --host        Hostname or IP address of the server to add to the key  [string]',
 					'  --port        Port number of the server to add to the key  [number]',
+					'  --device      Device ID of the target device  [string]',
 					'  --deviceType  Generate key file for the provided device type  [string]',
 					'',
 					'Defaults to the Particle public cloud or you can provide another key in DER format and the server hostname or IP and port',
@@ -320,6 +322,7 @@ describe('Keys Command-Line Interface', () => {
 					'',
 					'Options:',
 					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
+					'  --device    Device ID of the target device  [string]',
 					'',
 				].join(os.EOL));
 			});

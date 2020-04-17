@@ -196,12 +196,40 @@ module.exports = {
 		return utilities.replaceDfdResults(installCheck, 'Installed', 'dfu-util is not installed');
 	},
 
-	readDfu(memoryInterface, destination, firmwareAddress, leave) {
+	readDfu(memoryInterface, destination, firmwareAddress, leave, targetDevice) {
 		const { dfuId, getCommand } = module.exports;
-		let prefix = `${getCommand()} -d ${dfuId}`;
 		let leaveStr = leave ? ':leave' : '';
-		let cmd = `${prefix} -a ${memoryInterface} -s ${firmwareAddress}${leaveStr} -U ${destination}`;
-		return utilities.deferredChildProcess(cmd);
+		let cmd = getCommand();
+		let args = [];
+
+		// Pass the -S flag if we can. If more than one device is in DFU mode, reading will fail without it
+		if (targetDevice && targetDevice.dfuId && targetDevice.deviceId) {
+			args = args.concat([
+				'-d', targetDevice.dfuId,
+				'-S', targetDevice.deviceId
+			]);
+		} else {
+			args = [
+				'-d', dfuId,
+			];
+		}
+
+		args = args.concat([
+			'-a', memoryInterface,
+			'-s', firmwareAddress + leaveStr,
+			'-U', destination
+		]);
+
+		// cmd = `${cmd} ${args.join(' ')}`;
+		// return utilities.deferredChildProcess(cmd);
+
+		return utilities.deferredSpawnProcess(cmd, args)
+			.then((output) => {
+				return Promise.resolve(output.stdout.join('\n'));
+			})
+			.catch((output) => {
+				return Promise.reject(output.stderr.join('\n'));
+			});
 	},
 
 	writeDfu(memoryInterface, binaryPath, firmwareAddress, leave, targetDevice) {
@@ -359,7 +387,7 @@ module.exports = {
 		return { error: null, specs: params };
 	},
 
-	read(destination, segmentName, leave) {
+	read(destination, segmentName, leave, targetDevice) {
 		const { readDfu, _validateSegmentSpecs } = module.exports;
 		let segment = _validateSegmentSpecs(segmentName);
 		let address;
@@ -378,15 +406,16 @@ module.exports = {
 			segment.specs.alt,
 			destination,
 			address,
-			leave
+			leave,
+			targetDevice
 		);
 	},
 
-	readBuffer(segmentName, leave) {
+	readBuffer(segmentName, leave, targetDevice) {
 		const { read } = module.exports;
 		let filename = temp.path({ suffix: '.bin' });
 
-		return read(filename, segmentName, leave)
+		return read(filename, segmentName, leave, targetDevice)
 			.then(() => utilities.readFile(filename))
 			.then((buf) => buf)
 			.finally(() => {
@@ -396,7 +425,7 @@ module.exports = {
 			});
 	},
 
-	write(binaryPath, segmentName, leave) {
+	write(binaryPath, segmentName, leave, targetDevice) {
 		const { writeDfu, _validateSegmentSpecs } = module.exports;
 		let segment = _validateSegmentSpecs(segmentName);
 
@@ -408,7 +437,8 @@ module.exports = {
 			segment.specs.alt,
 			binaryPath,
 			segment.specs.address,
-			leave
+			leave,
+			targetDevice
 		);
 	},
 
