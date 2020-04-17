@@ -55,7 +55,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new CloudCommands().renameDevice(args);
 		},
 		examples: {
-			'$0 $command red green': 'Rename red device to green'
+			'$0 $command red green': 'Rename device `red` to `green`'
 		}
 	});
 
@@ -71,11 +71,11 @@ module.exports = ({ commandProcessor, root }) => {
 			return new CloudCommands().flashDevice(args);
 		},
 		examples: {
-			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device blue',
-			'$0 $command green tinker': 'Flash the default Tinker app to device green',
-			'$0 $command red blink.ino': 'Compile blink.ino in the cloud and flash to device red',
-			'$0 $command orange firmware.bin': 'Flash the pre-compiled binary to device orange',
-			'$0 $command blue --product 12345': 'Compile the source code in the current directory in the cloud and flash to device blue within product 12345'
+			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device `blue`',
+			'$0 $command green tinker': 'Flash the default `tinker` app to device `green`',
+			'$0 $command red blink.ino': 'Compile `blink.ino` in the cloud and flash to device `red`',
+			'$0 $command orange firmware.bin': 'Flash a pre-compiled `firmware.bin` binary to device `orange`',
+			'$0 $command 0123456789abcdef01234567 --product 12345': 'Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`'
 		}
 	});
 
@@ -91,8 +91,8 @@ module.exports = ({ commandProcessor, root }) => {
 			return new CloudCommands().compileCode(args);
 		},
 		examples: {
-			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a Photon',
-			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
+			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a `photon`',
+			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 		},
 		// TODO: get the platforms from config and document in epilogue
 		epilogue: 'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc'
@@ -117,11 +117,6 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
-		examples: {
-			'$0 $command': 'prompt for credentials and log in',
-			'$0 $command --username user@example.com --password test': 'log in with credentials provided on the command line',
-			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line'
-		},
 		options: {
 			u: {
 				description: 'your username',
@@ -142,6 +137,11 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands().login(args);
+		},
+		examples: {
+			'$0 $command': 'prompt for credentials and log in',
+			'$0 $command --username user@example.com --password test': 'log in with credentials provided on the command line',
+			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line'
 		}
 	});
 
