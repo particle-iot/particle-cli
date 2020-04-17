@@ -27,9 +27,9 @@ module.exports = ({ commandProcessor, root }) => {
 			return new VariableCommand().getValue(args);
 		},
 		examples: {
-			'$0 $command basement temperature': 'Read the temperature variable from the device basement',
-			'$0 $command basement temperature --product 12345': 'Read the temperature variable from the device basement within product 12345',
-			'$0 $command all temperature': 'Read the temperature variable from all my devices'
+			'$0 $command basement temperature': 'Read the `temperature` variable from the device `basement`',
+			'$0 $command 0123456789abcdef01234567 temperature --product 12345': 'Read the `temperature` variable from the device with id `0123456789abcdef01234567` within product `12345`',
+			'$0 $command all temperature': 'Read the `temperature` variable from all my devices'
 		}
 	});
 
