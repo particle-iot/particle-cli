@@ -1,3 +1,4 @@
+const os = require('os');
 const path = require('path');
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
@@ -94,6 +95,8 @@ describe('Cloud Commands [@device]', () => {
 		});
 
 		it('Lists devices', async () => {
+			const args = ['cloud', 'list'];
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
@@ -227,6 +230,27 @@ describe('Cloud Commands [@device]', () => {
 	});
 
 	describe('Cloud Flash Subcommand', () => {
+		const help = [
+			'Pass a binary, source file, or source directory to a device!',
+			'Usage: particle cloud flash [options] <device> [files...]',
+			'',
+			'Global Options:',
+			'  -v, --verbose  Increases how much logging to display  [count]',
+			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --target          The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
+			'  --followSymlinks  Follow symlinks when collecting files  [boolean]',
+			'  --product         Target a device within the given Product ID or Slug  [string]',
+			'',
+			'Examples:',
+			'  particle cloud flash blue                                      Compile the source code in the current directory in the cloud and flash to device `blue`',
+			'  particle cloud flash green tinker                              Flash the default `tinker` app to device `green`',
+			'  particle cloud flash red blink.ino                             Compile `blink.ino` in the cloud and flash to device `red`',
+			'  particle cloud flash orange firmware.bin                       Flash a pre-compiled `firmware.bin` binary to device `orange`',
+			'  particle cloud flash 0123456789abcdef01234567 --product 12345  Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`',
+		];
+
 		it('Flashes firmware', async () => {
 			const args = ['cloud', 'flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -301,6 +325,15 @@ describe('Cloud Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 
 			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForProductFunction()` helper
+		});
+
+		it('Fails to flash a product device when `device` param is not an id', async () => {
+			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_NAME, PATH_PROJ_BLANK_INO, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`\`device\` must be an id when \`--product\` flag is set - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
 		});
 	});
 
@@ -404,79 +437,97 @@ describe('Cloud Commands [@device]', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
+
+		it('Fails to name an unknown device', async () => {
+			const invalidDeviceID = '1234567890';
+			const args = ['cloud', 'name', invalidDeviceID, 'NOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`Renaming device ${invalidDeviceID}`,
+				`Failed to rename ${invalidDeviceID}: Permission Denied`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to name a device owned by someone else', async () => {
+			const args = ['cloud', 'name', FOREIGN_DEVICE_ID, 'NOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`Renaming device ${FOREIGN_DEVICE_ID}`,
+				`Failed to rename ${FOREIGN_DEVICE_ID}: Permission Denied`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
 	});
 
-	it('Fails to name an unknown device', async () => {
-		const invalidDeviceID = '1234567890';
-		const args = ['cloud', 'name', invalidDeviceID, 'NOPE'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const log = [
-			`Renaming device ${invalidDeviceID}`,
-			`Failed to rename ${invalidDeviceID}: Permission Denied`
+	describe('Cloud Nyan Subcommand', () => {
+		const help = [
+			'Make your device shout rainbows',
+			'Usage: particle cloud nyan [options] <device> [onOff]',
+			'',
+			'Global Options:',
+			'  -v, --verbose  Increases how much logging to display  [count]',
+			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --product  Target a device within the given Product ID or Slug  [string]',
+			'',
+			'Examples:',
+			'  particle cloud nyan green                 Make the device named `blue` start signaling',
+			'  particle cloud nyan green off             Make the device named `blue` stop signaling',
+			'  particle cloud nyan blue --product 12345  Make the device named `blue` within product `12345` start signaling',
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(1);
-	});
+		it('Starts a device signaling', async () => {
+			const args = ['cloud', 'nyan', DEVICE_NAME];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-	it('Fails to name a device owned by someone else', async () => {
-		const args = ['cloud', 'name', FOREIGN_DEVICE_ID, 'NOPE'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const log = [
-			`Renaming device ${FOREIGN_DEVICE_ID}`,
-			`Failed to rename ${FOREIGN_DEVICE_ID}: Permission Denied`
-		];
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 
-		expect(stdout.split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(1);
-	});
+		it('Stops a device signaling', async () => {
+			const args = ['cloud', 'nyan', DEVICE_NAME, 'off'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-	it('Starts a device signaling', async () => {
-		const args = ['cloud', 'nyan', DEVICE_NAME];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
+		it('Starts a product device signaling', async () => {
+			const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-	it('Stops a device signaling', async () => {
-		const args = ['cloud', 'nyan', DEVICE_NAME, 'off'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
+		it('Stops a product device signaling', async () => {
+			const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, 'off', '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-	it('Starts a product device signaling', async () => {
-		const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, '--product', PRODUCT_01_ID];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
+		it('Fails to start a product device signaling when `device` param is not an id', async () => {
+			const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_NAME, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-	it('Stops a product device signaling', async () => {
-		const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, 'off', '--product', PRODUCT_01_ID];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	// TODO (mirande): seems like a bug..?
-	it('Fails to start a product device signaling when called with device name', async () => {
-		const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_NAME, '--product', PRODUCT_01_ID];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.equal('Signaling failed: Device not found.');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(1);
+			expect(stdout).to.include(`\`device\` must be an id when \`--product\` flag is set - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
+		});
 	});
 });
 
