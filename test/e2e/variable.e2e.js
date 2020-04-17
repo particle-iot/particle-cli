@@ -43,7 +43,7 @@ describe('Variable Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['help', 'variable']);
 
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -51,7 +51,7 @@ describe('Variable Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run('variable');
 
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -59,7 +59,7 @@ describe('Variable Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['variable', '--help']);
 
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -92,7 +92,7 @@ describe('Variable Commands [@device]', () => {
 			const subprocess = cli.run(['variable', 'get', DEVICE_ID]);
 
 			await delay(1000);
-			subprocess.stdin.end('\n');
+			subprocess.stdin.end(os.EOL);
 
 			const { stdout, stderr, exitCode } = await subprocess;
 			const log = stripANSI(stdout);
@@ -179,17 +179,45 @@ describe('Variable Commands [@device]', () => {
 		it('Monitors a variable', async () => {
 			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1000];
 			const subprocess = cli.run(args);
+			const received = [];
 
-			await delay(5000);
-			subprocess.cancel(); // CTRL-C
+			await waitForResult(subprocess, (data) => {
+				const log = data.toString('utf8').trim();
 
-			const { all, isCanceled } = await subprocess;
-			const [msg, ...results] = all.split('\n');
+				received.push(log);
+
+				if (received.length > 3){
+					return true;
+				}
+				return false;
+			});
+
+			const { isCanceled } = await subprocess;
+			const [msg, ...results] = received;
 
 			expect(msg).to.equal('Hit CTRL-C to stop!');
 			expect(results).to.have.lengthOf.above(2);
 			expect(isCanceled).to.equal(true);
 		});
 	});
+
+	function waitForResult(subprocess, isFinished){
+		return new Promise((resolve, reject) => {
+			subprocess.all.on('data', (data) => {
+				if (isFinished(data)){
+					subprocess.cancel();
+					resolve();
+				}
+			});
+			subprocess.all.on('error', (error) => {
+				subprocess.cancel();
+				reject(error);
+			});
+			subprocess.all.on('close', () => {
+				subprocess.cancel();
+				resolve();
+			});
+		});
+	}
 });
 
