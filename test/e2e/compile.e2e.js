@@ -27,10 +27,10 @@ describe('Compile Commands', () => {
 		'  --saveTo          Filename for the compiled binary  [string]',
 		'',
 		'Examples:',
-		'  particle compile photon                                  Compile the source code in the current directory in the cloud for a Photon',
-		'  particle compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
+		'  particle compile photon                                  Compile the source code in the current directory in the cloud for a `photon`',
+		'  particle compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 		'',
-		'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc'
+		'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc',
 	];
 
 	before(async () => {

@@ -182,7 +182,7 @@ describe('Cloud Command-Line Interface', () => {
 					'Usage: particle cloud name [options] <device> <name>',
 					'',
 					'Examples:',
-					'  particle cloud name red green  Rename red device to green',
+					'  particle cloud name red green  Rename device `red` to `green`',
 					''
 				].join(os.EOL));
 			});
@@ -241,11 +241,11 @@ describe('Cloud Command-Line Interface', () => {
 					'  --product         Target a device within the given Product ID or Slug  [string]',
 					'',
 					'Examples:',
-					'  particle cloud flash blue                  Compile the source code in the current directory in the cloud and flash to device blue',
-					'  particle cloud flash green tinker          Flash the default Tinker app to device green',
-					'  particle cloud flash red blink.ino         Compile blink.ino in the cloud and flash to device red',
-					'  particle cloud flash orange firmware.bin   Flash the pre-compiled binary to device orange',
-					'  particle cloud flash blue --product 12345  Compile the source code in the current directory in the cloud and flash to device blue within product 12345',
+					'  particle cloud flash blue                                      Compile the source code in the current directory in the cloud and flash to device `blue`',
+					'  particle cloud flash green tinker                              Flash the default `tinker` app to device `green`',
+					'  particle cloud flash red blink.ino                             Compile `blink.ino` in the cloud and flash to device `red`',
+					'  particle cloud flash orange firmware.bin                       Flash a pre-compiled `firmware.bin` binary to device `orange`',
+					'  particle cloud flash 0123456789abcdef01234567 --product 12345  Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`',
 					''
 				].join(os.EOL));
 			});
@@ -306,8 +306,8 @@ describe('Cloud Command-Line Interface', () => {
 					'  --saveTo          Filename for the compiled binary  [string]',
 					'',
 					'Examples:',
-					'  particle cloud compile photon                                  Compile the source code in the current directory in the cloud for a Photon',
-					'  particle cloud compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
+					'  particle cloud compile photon                                  Compile the source code in the current directory in the cloud for a `photon`',
+					'  particle cloud compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 					'',
 					'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc',
 					''

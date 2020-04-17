@@ -8,11 +8,10 @@ const specs = require('../lib/deviceSpecs');
 const ApiClient = require('../lib/api-client'); // TODO (mirande): remove in favor of `ParticleAPI`
 const { normalizedApiError } = require('../lib/api-client');
 const utilities = require('../lib/utilities');
-const spinnerMixin = require('../lib/spinner-mixin');
 const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
-const UI = require('../lib/ui');
 const prompts = require('../lib/prompts');
+const CLICommandBase = require('./base');
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -44,17 +43,9 @@ const PLATFORMS = extend(utilities.knownPlatforms(), {
 });
 
 
-module.exports = class CloudCommand {
-	constructor({
-		stdin = process.stdin,
-		stdout = process.stdout,
-		stderr = process.stderr
-	} = {}){
-		this.stdin = stdin;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.ui = new UI({ stdin, stdout, stderr });
-		spinnerMixin(this);
+module.exports = class CloudCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 	}
 
 	listDevices({ params: { filter } }){
@@ -152,6 +143,12 @@ module.exports = class CloudCommand {
 	}
 
 	flashDevice({ target, followSymlinks, product, params: { device, files } }){
+		if (product){
+			if (!this.isDeviceId(device)){
+				return this.showProductDeviceNameUsageError(device);
+			}
+		}
+
 		return Promise.resolve()
 			.then(() => {
 				if (files.length === 0){
@@ -593,6 +590,12 @@ module.exports = class CloudCommand {
 	}
 
 	nyanMode({ product, params: { device, onOff } }){
+		if (product){
+			if (!this.isDeviceId(device)){
+				return this.showProductDeviceNameUsageError(device);
+			}
+		}
+
 		const api = createAPI();
 
 		if (!onOff || (onOff === '') || (onOff === 'on')){
