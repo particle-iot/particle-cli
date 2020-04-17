@@ -33,6 +33,8 @@ module.exports = class VariableCommand extends CLICommandBase {
 				return this.showUsageError(
 					'`device` parameter is required when `--product` flag is set'
 				);
+			} else if (!this.isDeviceId(device)){
+				return this.showProductDeviceNameUsageError(device);
 			}
 
 			if (!variableName){
@@ -98,7 +100,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 					const result = results[i];
 
 					if (result.error){
-						console.log('Error:', result.error);
+						this.ui.stdout.write(`Error: ${result.error}${os.EOL}`);
 						hasErrors = true;
 						continue;
 					}
@@ -112,7 +114,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 					}
 
 					parts.push(result.result);
-					console.log(parts.join(', '));
+					this.ui.stdout.write(`${parts.join(', ')}${os.EOL}`);
 				}
 
 				if (hasErrors){
@@ -138,9 +140,9 @@ module.exports = class VariableCommand extends CLICommandBase {
 			.then(({ deviceIds, variableName }) => {
 				if (delay < settings.minimumApiDelay){
 					delay = settings.minimumApiDelay;
-					console.error(`Delay was too short, resetting to ${settings.minimumApiDelay}ms`);
+					this.ui.stderr.write(`Delay was too short, resetting to ${settings.minimumApiDelay}ms${os.EOL}`);
 				}
-				console.error('Hit CTRL-C to stop!');
+				this.ui.stderr.write(`Hit CTRL-C to stop!${os.EOL}`);
 				return this._pollForVariable(deviceIds, variableName, { delay, time });
 			})
 			.catch(err => {
@@ -215,7 +217,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 			return Promise.resolve(this._cachedVariableList);
 		}
 
-		console.error('polling server to see what devices are online, and what variables are available');
+		this.ui.stderr.write(`polling server to see what devices are online, and what variables are available${os.EOL}`);
 
 		const api = new LegacyApiClient();
 		api.ensureToken();
@@ -224,7 +226,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 			.then(() => api.listDevices())
 			.then(devices => {
 				if (!devices || (devices.length === 0)){
-					console.log('No devices found.');
+					this.ui.stderr.write(`No devices found.${os.EOL}`);
 					this._cachedVariableList = null;
 				} else {
 					const promises = [];

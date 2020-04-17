@@ -9,7 +9,8 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	PRODUCT_01_ID,
-	PRODUCT_01_DEVICE_02_ID
+	PRODUCT_01_DEVICE_02_ID,
+	PRODUCT_01_DEVICE_02_NAME
 } = require('../lib/env');
 
 
@@ -118,9 +119,9 @@ describe('Variable Commands [@device]', () => {
 			'  --product  Target a device within the given Product ID or Slug  [string]',
 			'',
 			'Examples:',
-			'  particle get basement temperature                  Read the temperature variable from the device basement',
-			'  particle get basement temperature --product 12345  Read the temperature variable from the device basement within product 12345',
-			'  particle get all temperature                       Read the temperature variable from all my devices'
+			'  particle get basement temperature                                  Read the `temperature` variable from the device `basement`',
+			'  particle get 0123456789abcdef01234567 temperature --product 12345  Read the `temperature` variable from the device with id `0123456789abcdef01234567` within product `12345`',
+			'  particle get all temperature                                       Read the `temperature` variable from all my devices'
 		];
 
 		it('Gets a variable by name', async () => {
@@ -143,6 +144,31 @@ describe('Variable Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 		});
 
+		it('Uses default when `--delay` is too short', async () => {
+			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1];
+			const subprocess = cli.run(args);
+			const received = [];
+
+			await waitForResult(subprocess, (data) => {
+				const log = data.toString('utf8').trim();
+
+				received.push(log);
+
+				if (received.length > 3){
+					return true;
+				}
+				return false;
+			});
+
+			const { isCanceled } = await subprocess;
+			const [alert, msg, ...results] = received;
+
+			expect(alert).to.equal('Delay was too short, resetting to 500ms');
+			expect(msg).to.equal('Hit CTRL-C to stop!');
+			expect(results).to.have.lengthOf.above(1);
+			expect(isCanceled).to.equal(true);
+		});
+
 		// TODO (mirande): need to ensure device is running expected firmware and online
 		// once flashing product devices is implemented - as it is, the expectation
 		// is that your product device is running the `stroby` firmware found in:
@@ -156,11 +182,33 @@ describe('Variable Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 		});
 
+		it('Fails to get an unknown variable', async () => {
+			const args = ['get', DEVICE_NAME, 'NOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const msg = [
+				'Error: Unknown Variable: NOPE',
+				'Error while reading value: Some variables could not be read'
+			].join(os.EOL);
+
+			expect(stdout).to.include(msg);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
 		it('Fails to get a variable from a product device when `device` param is not provided', async () => {
 			const args = ['get', '--product', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.include('`device` parameter is required when `--product` flag is set');
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to get a variable from a product device when `device` param is not an id', async () => {
+			const args = ['get', PRODUCT_01_DEVICE_02_NAME, 'version', '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`\`device\` must be an id when \`--product\` flag is set - received: ${PRODUCT_01_DEVICE_02_NAME}`);
 			expect(stderr.split(os.EOL)).to.include.members(help);
 			expect(exitCode).to.equal(1);
 		});
