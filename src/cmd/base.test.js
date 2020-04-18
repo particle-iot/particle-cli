@@ -31,7 +31,7 @@ describe('CLI Command Base Class', () => {
 		expect(cmd.isDeviceId('0123456789ABCDEF01234567')).to.equal(true);
 	});
 
-	it('Show a usage error', async () => {
+	it('Shows a usage error', async () => {
 		const promise = cmd.showUsageError('test');
 
 		expect(promise).to.be.an.instanceof(Promise);
@@ -48,7 +48,7 @@ describe('CLI Command Base Class', () => {
 		expect(error).to.have.property('message', 'test');
 	});
 
-	it('Show a product device name usage error', async () => {
+	it('Shows a product device name usage error', async () => {
 		const promise = cmd.showProductDeviceNameUsageError('my-device-name');
 
 		expect(promise).to.be.an.instanceof(Promise);
