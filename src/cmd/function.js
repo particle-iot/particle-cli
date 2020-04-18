@@ -2,24 +2,15 @@ const os = require('os');
 const VError = require('verror');
 const ParticleAPI = require('./api');
 const LegacyApiClient = require('../lib/api-client');
-const spinnerMixin = require('../lib/spinner-mixin');
 const settings = require('../../settings');
-const UI = require('../lib/ui');
+const CLICommandBase = require('./base');
 
 const { normalizedApiError } = LegacyApiClient;
 
 
-module.exports = class FunctionCommand {
-	constructor({
-		stdin = process.stdin,
-		stdout = process.stdout,
-		stderr = process.stderr
-	} = {}){
-		this.stdin = stdin;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.ui = new UI({ stdin, stdout, stderr });
-		spinnerMixin(this);
+module.exports = class FunctionCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 	}
 
 	listFunctions(){
@@ -34,6 +25,12 @@ module.exports = class FunctionCommand {
 	}
 
 	callFunction({ product, params: { device, function: fn, argument: arg } }){
+		if (product){
+			if (!this.isDeviceId(device)){
+				return this.showProductDeviceNameUsageError(device);
+			}
+		}
+
 		let msg = `Calling function ${fn} from device ${device}`;
 
 		if (product){
