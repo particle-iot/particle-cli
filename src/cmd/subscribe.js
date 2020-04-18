@@ -1,31 +1,27 @@
 const os = require('os');
 const VError = require('verror');
 const settings = require('../../settings');
-const spinnerMixin = require('../lib/spinner-mixin');
 const { normalizedApiError } = require('../lib/api-client');
-const { errors: { usageError } } = require('../app/command-processor');
+const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
-const UI = require('../lib/ui');
 
 
-module.exports = class SubscribeCommand {
-	constructor({
-		stdin = process.stdin,
-		stdout = process.stdout,
-		stderr = process.stderr
-	} = {}){
-		this.stdin = stdin;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.ui = new UI({ stdin, stdout, stderr });
-		spinnerMixin(this);
+module.exports = class SubscribeCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 	}
 
 	startListening({ device, all, until, max, product, params: { event } }){
 		if (all && !event){
-			throw usageError(
+			return this.showUsageError(
 				'`event` parameter is required when `--all` flag is set'
 			);
+		}
+
+		if (product && device){
+			if (!this.isDeviceId(device)){
+				return this.showProductDeviceNameUsageError(device);
+			}
 		}
 
 		const msg = ['Subscribing to'];
