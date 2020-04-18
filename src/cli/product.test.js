@@ -91,9 +91,9 @@ describe('Product Command-Line Interface', () => {
 					'  --json        Output JSON formatted data (experimental)  [boolean]',
 					'',
 					'Examples:',
-					'  particle product device list 12345                           Lists devices in Product 12345',
-					'  particle product device list 12345 5a8ef38cb85f8720edce631a  Get details for device 5a8ef38cb85f8720edce631a within in product 12345',
-					'  particle product device list 12345 --groups foo bar          Lists devices in Product which are assigned the `foo` or `bar` groups',
+					'  particle product device list 12345                           Lists devices in product `12345`',
+					'  particle product device list 12345 0123456789abcdef01234567  Get details for device with id `0123456789abcdef01234567` within in product `12345`',
+					'  particle product device list 12345 --groups foo bar          Lists devices in product which are assigned the `foo` or `bar` groups',
 					''
 				].join(os.EOL));
 			});
@@ -128,8 +128,8 @@ describe('Product Command-Line Interface', () => {
 					'  --file, -f  Path to single column .txt file with list of IDs, S/Ns, IMEIs, or ICCIDs of the devices to add  [string]',
 					'',
 					'Examples:',
-					'  particle product device add 12345 5a8ef38cb85f8720edce631a         Add device id 5a8ef38cb85f8720edce631a into product 12345',
-					'  particle product device add 12345 --file ./path/to/device_ids.txt  Adds a list of devices into product 12345',
+					'  particle product device add 12345 0123456789abcdef01234567         Add device id `0123456789abcdef01234567` into product `12345`',
+					'  particle product device add 12345 --file ./path/to/device_ids.txt  Adds a list of devices into product `12345`',
 					''
 				].join(os.EOL));
 			});

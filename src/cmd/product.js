@@ -5,22 +5,13 @@ const settings = require('../../settings');
 const { errors: { usageError } } = require('../app/command-processor');
 const ParticleAPI = require('./api');
 const { normalizedApiError } = require('../lib/api-client');
-const spinnerMixin = require('../lib/spinner-mixin');
 const { JSONResult } = require('../lib/json-result');
-const UI = require('../lib/ui');
+const CLICommandBase = require('./base');
 
 
-module.exports = class ProductCommand {
-	constructor({
-		stdin = process.stdin,
-		stdout = process.stdout,
-		stderr = process.stderr
-	} = {}) {
-		this.stdin = stdin;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.ui = new UI({ stdin, stdout, stderr });
-		spinnerMixin(this);
+module.exports = class ProductCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 	}
 
 	addDevice({ params: { product, device } }){
@@ -39,6 +30,9 @@ module.exports = class ProductCommand {
 		}
 
 		if (device){
+			if (!this.isDeviceId(device)){
+				return this.showUsageError(`\`device\` parameter must be an id - received: ${device}`);
+			}
 			return this.addDevice({ params: { product, device } });
 		}
 
