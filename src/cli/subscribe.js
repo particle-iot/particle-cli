@@ -26,11 +26,12 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command': 'Subscribe to all event published by my devices',
-			'$0 $command update': 'Subscribe to events starting with update from my devices',
-			'$0 $command --device x': 'Subscribe to all events published by device x',
+			'$0 $command update': 'Subscribe to events starting with `update` from my devices',
+			'$0 $command --product 12345': 'Subscribe to all events published by devices within product `12345`',
+			'$0 $command --device blue': 'Subscribe to all events published by device `blue`',
 			'$0 $command --all': 'Subscribe to public events and all events published by my devices',
-			'$0 $command --until x': 'Subscribe to all events and exit when an event has data matching x',
-			'$0 $command --max x': 'Subscribe to all events and exit after seeing x events'
+			'$0 $command --until data': 'Subscribe to all events and exit when an event has data matching `data`',
+			'$0 $command --max 4': 'Subscribe to all events and exit after seeing `4` events'
 		}
 	});
 };
