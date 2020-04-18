@@ -68,7 +68,7 @@ describe('Subscribe Commands [@device]', () => {
 		await cli.callStrobyStart(DEVICE_NAME);
 
 		const args = ['subscribe'];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
 		expect(msg).to.equal('Subscribing to all events from my devices');
 		expect(events).to.have.lengthOf.above(2);
@@ -86,7 +86,7 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', eventName];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
 		expect(msg).to.equal(`Subscribing to "${eventName}" from my devices`);
 		expect(events).to.have.lengthOf.above(2);
@@ -104,7 +104,8 @@ describe('Subscribe Commands [@device]', () => {
 		const eventName = DEVICE_ID.substring(0, 6);
 		const eventData = 'active';
 		const args = ['subscribe', '--all', eventName];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { received: [msg, ...data], isCanceled } = await runAndCollectEventOutput(args);
+		const events = getPublishedEventsByName(data, eventName);
 
 		expect(msg).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
 		expect(events).to.have.lengthOf.above(2);
@@ -120,7 +121,7 @@ describe('Subscribe Commands [@device]', () => {
 		await cli.callStrobyStart(DEVICE_NAME);
 		const eventName = 't';
 		const args = ['subscribe', '--all', eventName];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
 		expect(msg).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
 		expect(events).to.have.lengthOf.above(2);
@@ -144,7 +145,7 @@ describe('Subscribe Commands [@device]', () => {
 		await cli.callStrobyStart(DEVICE_NAME);
 
 		const args = ['subscribe', '--device', DEVICE_ID];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
 		expect(msg).to.equal(`Subscribing to all events from device ${DEVICE_ID}'s stream`);
 		expect(events).to.have.lengthOf.above(2);
@@ -162,7 +163,7 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--device', DEVICE_ID, eventName];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
 		expect(msg).to.equal(`Subscribing to "${eventName}" from device ${DEVICE_ID}'s stream`);
 		expect(events).to.have.lengthOf.above(2);
@@ -226,7 +227,7 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID];
-		const { received: [msg, ...data], isCanceled } = await collectEventOutput(args);
+		const { received: [msg, ...data], isCanceled } = await runAndCollectEventOutput(args);
 		const events = getPublishedEventsByName(data, eventName);
 
 		expect(msg).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID}'s stream`);
@@ -248,7 +249,7 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID, eventName];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
 		expect(msg).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID}'s stream`);
 		expect(events).to.have.lengthOf.above(2);
@@ -267,8 +268,10 @@ describe('Subscribe Commands [@device]', () => {
 	it('Subscribes to a product device\'s events', async () => {
 		await cli.callStrobyStart(PRODUCT_01_DEVICE_02_ID, PRODUCT_01_ID);
 
+		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_02_ID];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { received: [msg, ...data], isCanceled } = await runAndCollectEventOutput(args);
+		const events = getPublishedEventsByName(data, eventName);
 
 		expect(msg).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
 		expect(events).to.have.lengthOf.above(2);
@@ -289,7 +292,7 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_02_ID, eventName];
-		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
+		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
 		expect(msg).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
 		expect(events).to.have.lengthOf.above(2);
@@ -333,7 +336,7 @@ describe('Subscribe Commands [@device]', () => {
 	}
 
 	// TODO (mirande): capture stdout and stderr independently
-	async function collectEventOutput(...args){
+	async function runAndCollectEventOutput(...args){
 		const subprocess = cli.run(...args);
 		const received = [];
 
