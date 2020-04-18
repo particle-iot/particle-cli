@@ -30,9 +30,9 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		examples: {
-			'$0 $command 12345': 'Lists devices in Product 12345',
-			'$0 $command 12345 5a8ef38cb85f8720edce631a': 'Get details for device 5a8ef38cb85f8720edce631a within in product 12345',
-			'$0 $command 12345 --groups foo bar': 'Lists devices in Product which are assigned the `foo` or `bar` groups'
+			'$0 $command 12345': 'Lists devices in product `12345`',
+			'$0 $command 12345 0123456789abcdef01234567': 'Get details for device with id `0123456789abcdef01234567` within in product `12345`',
+			'$0 $command 12345 --groups foo bar': 'Lists devices in product which are assigned the `foo` or `bar` groups'
 		},
 		handler: (args) => {
 			const ProdCmd = require('../cmd/product');
@@ -49,8 +49,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		examples: {
-			'$0 $command 12345 5a8ef38cb85f8720edce631a': 'Add device id 5a8ef38cb85f8720edce631a into product 12345',
-			'$0 $command 12345 --file ./path/to/device_ids.txt': 'Adds a list of devices into product 12345',
+			'$0 $command 12345 0123456789abcdef01234567': 'Add device id `0123456789abcdef01234567` into product `12345`',
+			'$0 $command 12345 --file ./path/to/device_ids.txt': 'Adds a list of devices into product `12345`',
 		},
 		handler: (args) => {
 			const ProdCmd = require('../cmd/product');
