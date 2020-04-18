@@ -1,12 +1,12 @@
 const os = require('os');
 const { expect } = require('../setup');
-const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
 	DEVICE_NAME,
 	PRODUCT_01_ID,
-	PRODUCT_01_DEVICE_02_ID
+	PRODUCT_01_DEVICE_02_ID,
+	PRODUCT_01_DEVICE_02_NAME
 } = require('../lib/env');
 
 
@@ -25,10 +25,14 @@ describe('Subscribe Commands [@device]', () => {
 		'  --product  Target a device within the given Product ID or Slug  [string]',
 		'',
 		'Examples:',
-		'  particle subscribe             Subscribe to all event published by my devices',
-		'  particle subscribe update      Subscribe to events starting with update from my devices',
-		'  particle subscribe --device x  Subscribe to all events published by device x',
-		'  particle subscribe --all       Subscribe to public events and all events published by my devices'
+		'  particle subscribe                  Subscribe to all event published by my devices',
+		'  particle subscribe update           Subscribe to events starting with `update` from my devices',
+		'  particle subscribe --product 12345  Subscribe to all events published by devices within product `12345`',
+		'  particle subscribe --device blue    Subscribe to all events published by device `blue`',
+		'  particle subscribe --all            Subscribe to public events and all events published by my devices',
+		'  particle subscribe --until data     Subscribe to all events and exit when an event has data matching `data`',
+		'  particle subscribe --max 4          Subscribe to all events and exit after seeing `4` events',
+		''
 	];
 
 	before(async () => {
@@ -63,28 +67,18 @@ describe('Subscribe Commands [@device]', () => {
 	it('Subscribes to user events', async () => {
 		await cli.callStrobyStart(DEVICE_NAME);
 
-		const eventName = 'led';
 		const args = ['subscribe'];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal('Subscribing to all events from my devices');
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal('Subscribing to all events from my devices');
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			const namePtn = new RegExp(`led|${DEVICE_ID.substring(0, 6)}`);
+			expect(event).to.have.property('name').match(namePtn);
+			expect(event).to.have.property('data').match(/ON|OFF|active/);
+			expect(event).to.have.property('coreid', DEVICE_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', eventName);
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', DEVICE_ID);
-		expect(event2).to.have.property('name', eventName);
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', DEVICE_ID);
 	});
 
 	it('Subscribes to user events by name', async () => {
@@ -92,26 +86,16 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', eventName];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to "${eventName}" from my devices`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to "${eventName}" from my devices`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			expect(event).to.have.property('name', eventName);
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', DEVICE_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', eventName);
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', DEVICE_ID);
-		expect(event2).to.have.property('name', eventName);
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', DEVICE_ID);
 	});
 
 	it('Subscribes to `--all` events', async () => {
@@ -120,51 +104,33 @@ describe('Subscribe Commands [@device]', () => {
 		const eventName = DEVICE_ID.substring(0, 6);
 		const eventData = 'active';
 		const args = ['subscribe', '--all', eventName];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			expect(event).to.have.property('name', eventName);
+			expect(event).to.have.property('data').to.equal(eventData);
+			expect(event).to.have.property('coreid', DEVICE_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', eventName);
-		expect(event1).to.have.property('data').to.equal(eventData);
-		expect(event1).to.have.property('coreid', DEVICE_ID);
-		expect(event2).to.have.property('name', eventName);
-		expect(event2).to.have.property('data').to.equal(eventData);
-		expect(event2).to.have.property('coreid', DEVICE_ID);
 	});
 
 	it('Subscribes to `--all` events with partial matching', async () => {
 		await cli.callStrobyStart(DEVICE_NAME);
 		const eventName = 't';
 		const args = ['subscribe', '--all', eventName];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
-		expect(events).to.have.lengthOf.at.least(2);
-		expect(isCanceled).to.equal(true);
-
-		events.forEach(e => {
-			const event = JSON.parse(e);
+		expect(msg).to.equal(`Subscribing to "${eventName}" from the firehose (all devices) and my personal stream (my devices)`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
 			expect(event).to.have.property('name');
 			expect(event.name.startsWith(eventName)).to.equal(true);
 			expect(event).to.have.property('data');
 			expect(event).to.have.property('coreid');
 		});
+		expect(isCanceled).to.equal(true);
 	});
 
 	it('Fails when `--all` flag is set but event name is not provided', async () => {
@@ -177,28 +143,18 @@ describe('Subscribe Commands [@device]', () => {
 	it('Subscribes to device\'s events', async () => {
 		await cli.callStrobyStart(DEVICE_NAME);
 
-		const eventName = 'led';
 		const args = ['subscribe', '--device', DEVICE_ID];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to all events from device ${DEVICE_ID}'s stream`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to all events from device ${DEVICE_ID}'s stream`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			const namePtn = new RegExp(`led|${DEVICE_ID.substring(0, 6)}`, 'i');
+			expect(event).to.have.property('name').match(namePtn);
+			expect(event).to.have.property('data').match(/ON|OFF|active/);
+			expect(event).to.have.property('coreid', DEVICE_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', 'led');
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', DEVICE_ID);
-		expect(event2).to.have.property('name', 'led');
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', DEVICE_ID);
 	});
 
 	it('Subscribes to a device\'s event by name', async () => {
@@ -206,26 +162,16 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--device', DEVICE_ID, eventName];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to "${eventName}" from device ${DEVICE_ID}'s stream`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to "${eventName}" from device ${DEVICE_ID}'s stream`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			expect(event).to.have.property('name', 'led');
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', DEVICE_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', 'led');
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', DEVICE_ID);
-		expect(event2).to.have.property('name', 'led');
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', DEVICE_ID);
 	});
 
 	it('Subscribes to a device\'s events using `--max` flag', async () => {
@@ -235,14 +181,13 @@ describe('Subscribe Commands [@device]', () => {
 		const eventName = 'led';
 		const args = ['subscribe', eventName, '--device', DEVICE_ID, '--max', count];
 		const { stdout, stderr, exitCode } = await cli.run(args);
-		const events = stdout.split('\n').slice(3, 8);
+		const events = getPublishedEventsByName(stdout.split('\n'), eventName);
 
 		expect(events).to.have.lengthOf(count);
-		events.forEach(e => {
-			const data = JSON.parse(e);
-			expect(data).to.have.property('name', 'led');
-			expect(data).to.have.property('data').match(/ON|OFF/);
-			expect(data).to.have.property('coreid', DEVICE_ID);
+		events.forEach(event => {
+			expect(event).to.have.property('name', 'led');
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', DEVICE_ID);
 		});
 		expect(stdout).to.include(`Subscribing to "${eventName}" from device ${DEVICE_ID}'s stream`);
 		expect(stdout).to.include(`This command will exit after receiving ${count} event(s)...`);
@@ -258,13 +203,12 @@ describe('Subscribe Commands [@device]', () => {
 		const eventName = 'led';
 		const args = ['subscribe', eventName, '--device', DEVICE_ID, '--until', data];
 		const { stdout, stderr, exitCode } = await cli.run(args);
-		const events = stdout.split('\n').slice(3).filter(e => e.startsWith('{'));
+		const events = getPublishedEventsByName(stdout.split('\n'), eventName);
 
-		events.forEach(e => {
-			const data = JSON.parse(e);
-			expect(data).to.have.property('name', 'led');
-			expect(data).to.have.property('data').match(/ON|OFF/);
-			expect(data).to.have.property('coreid', DEVICE_ID);
+		events.forEach(event => {
+			expect(event).to.have.property('name', 'led');
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', DEVICE_ID);
 		});
 		expect(stdout).to.include(`Subscribing to "${eventName}" from device ${DEVICE_ID}'s stream`);
 		expect(stdout).to.include(`This command will exit after receiving event data matching: '${data}'`);
@@ -282,26 +226,17 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID];
-		const subprocess = cli.run(args);
+		const { received: [msg, ...data], isCanceled } = await collectEventOutput(args);
+		const events = getPublishedEventsByName(data, eventName);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID}'s stream`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID}'s stream`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			expect(event).to.have.property('name', 'led');
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', 'led');
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
-		expect(event2).to.have.property('name', 'led');
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 	});
 
 	// TODO (mirande): need to ensure device is running expected firmware and online
@@ -313,26 +248,16 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID, eventName];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID}'s stream`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID}'s stream`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			expect(event).to.have.property('name', 'led');
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', 'led');
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
-		expect(event2).to.have.property('name', 'led');
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 	});
 
 	// TODO (mirande): need to ensure device is running expected firmware and online
@@ -342,28 +267,17 @@ describe('Subscribe Commands [@device]', () => {
 	it('Subscribes to a product device\'s events', async () => {
 		await cli.callStrobyStart(PRODUCT_01_DEVICE_02_ID, PRODUCT_01_ID);
 
-		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_02_ID];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to all events from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			expect(event).to.have.property('name', 'led');
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
+		});
 		expect(isCanceled).to.equal(true);
-
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
-
-		expect(event1).to.have.property('name', 'led');
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
-		expect(event2).to.have.property('name', 'led');
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
 	});
 
 	// TODO (mirande): need to ensure device is running expected firmware and online
@@ -375,26 +289,25 @@ describe('Subscribe Commands [@device]', () => {
 
 		const eventName = 'led';
 		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_02_ID, eventName];
-		const subprocess = cli.run(args);
+		const { events, received: [msg], isCanceled } = await collectEventOutput(args);
 
-		await delay(5000);
-		subprocess.cancel(); // CTRL-C
-
-		const { all, isCanceled } = await subprocess;
-		const [subscribe,,, ...events] = all.split('\n');
-
-		expect(subscribe).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
-		expect(events).to.have.lengthOf.at.least(2);
+		expect(msg).to.equal(`Subscribing to "${eventName}" from product ${PRODUCT_01_ID} device ${PRODUCT_01_DEVICE_02_ID}'s stream`);
+		expect(events).to.have.lengthOf.above(2);
+		events.forEach(event => {
+			expect(event).to.have.property('name', 'led');
+			expect(event).to.have.property('data').match(/ON|OFF/);
+			expect(event).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
+		});
 		expect(isCanceled).to.equal(true);
+	});
 
-		const [event1, event2] = getPublishedEventsByName(events, eventName);
+	it('Fails to subscribe to a product device\'s events when `device` param is not an id', async () => {
+		const args = ['subscribe', '--product', PRODUCT_01_ID, '--device', PRODUCT_01_DEVICE_02_NAME];
+		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(event1).to.have.property('name', 'led');
-		expect(event1).to.have.property('data').match(/ON|OFF/);
-		expect(event1).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
-		expect(event2).to.have.property('name', 'led');
-		expect(event2).to.have.property('data').match(/ON|OFF/);
-		expect(event2).to.have.property('coreid', PRODUCT_01_DEVICE_02_ID);
+		expect(stdout).to.include(`\`device\` must be an id when \`--product\` flag is set - received: ${PRODUCT_01_DEVICE_02_NAME}`);
+		expect(stderr.split(os.EOL)).to.include.members(help);
+		expect(exitCode).to.equal(1);
 	});
 
 	it('Fails when user is signed-out', async () => {
@@ -407,7 +320,56 @@ describe('Subscribe Commands [@device]', () => {
 	});
 
 	function getPublishedEventsByName(events, name){
-		return events.map(e => JSON.parse(e)).filter(e => e.name === name);
+		return parseEvents(events).filter(e => e.name === name);
+	}
+
+	function parseEvents(results){
+		if (!Array.isArray(results) || !results.length){
+			return;
+		}
+		return results
+			.filter(str => str.trim().startsWith('{'))
+			.map(data => JSON.parse(data));
+	}
+
+	// TODO (mirande): capture stdout and stderr independently
+	async function collectEventOutput(...args){
+		const subprocess = cli.run(...args);
+		const received = [];
+
+		await waitForResult(subprocess, (data) => {
+			const log = data.toString('utf8').trim();
+
+			received.push(log);
+
+			if (received.length > 10){
+				return true;
+			}
+			return false;
+		});
+
+		const { isCanceled } = await subprocess;
+		const events = parseEvents(received);
+		return { events, received, isCanceled };
+	}
+
+	function waitForResult(subprocess, isFinished){
+		return new Promise((resolve, reject) => {
+			subprocess.all.on('data', (data) => {
+				if (isFinished(data)){
+					subprocess.cancel();
+					resolve();
+				}
+			});
+			subprocess.all.on('error', (error) => {
+				subprocess.cancel();
+				reject(error);
+			});
+			subprocess.all.on('close', () => {
+				subprocess.cancel();
+				resolve();
+			});
+		});
 	}
 });
 

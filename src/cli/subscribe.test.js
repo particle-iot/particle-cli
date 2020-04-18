@@ -60,12 +60,13 @@ describe('Subscribe Command-Line Interface', () => {
 					'  --product  Target a device within the given Product ID or Slug  [string]',
 					'',
 					'Examples:',
-					'  particle subscribe             Subscribe to all event published by my devices',
-					'  particle subscribe update      Subscribe to events starting with update from my devices',
-					'  particle subscribe --device x  Subscribe to all events published by device x',
-					'  particle subscribe --all       Subscribe to public events and all events published by my devices',
-					'  particle subscribe --until x   Subscribe to all events and exit when an event has data matching x',
-					'  particle subscribe --max x     Subscribe to all events and exit after seeing x events',
+					'  particle subscribe                  Subscribe to all event published by my devices',
+					'  particle subscribe update           Subscribe to events starting with `update` from my devices',
+					'  particle subscribe --product 12345  Subscribe to all events published by devices within product `12345`',
+					'  particle subscribe --device blue    Subscribe to all events published by device `blue`',
+					'  particle subscribe --all            Subscribe to public events and all events published by my devices',
+					'  particle subscribe --until data     Subscribe to all events and exit when an event has data matching `data`',
+					'  particle subscribe --max 4          Subscribe to all events and exit after seeing `4` events',
 					''
 				].join(os.EOL));
 			});
