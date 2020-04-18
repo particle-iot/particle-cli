@@ -107,9 +107,9 @@ describe('Function Command-Line Interface', () => {
 					'  --product  Target a device within the given Product ID or Slug  [string]',
 					'',
 					'Examples:',
-					'  particle function call coffee brew                  Call the brew function on the coffee device',
-					'  particle function call board digitalWrite D7=HIGH   Call the digitalWrite function with argument D7=HIGH on the board device',
-					'  particle function call coffee brew --product 12345  Call the brew function on the coffee device within product 12345',
+					'  particle function call coffee brew                                    Call the `brew` function on the `coffee` device',
+					'  particle function call board digitalWrite D7=HIGH                     Call the `digitalWrite` function with argument `D7=HIGH` on the `board` device',
+					'  particle function call 0123456789abcdef01234567 brew --product 12345  Call the `brew` function on the device with id `0123456789abcdef01234567` within product `12345`',
 					''
 				].join(os.EOL));
 			});
