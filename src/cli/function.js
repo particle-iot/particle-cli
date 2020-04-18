@@ -21,9 +21,9 @@ module.exports = ({ commandProcessor, root }) => {
 
 		},
 		examples: {
-			'$0 $command coffee brew': 'Call the brew function on the coffee device',
-			'$0 $command board digitalWrite D7=HIGH': 'Call the digitalWrite function with argument D7=HIGH on the board device',
-			'$0 $command coffee brew --product 12345': 'Call the brew function on the coffee device within product 12345'
+			'$0 $command coffee brew': 'Call the `brew` function on the `coffee` device',
+			'$0 $command board digitalWrite D7=HIGH': 'Call the `digitalWrite` function with argument `D7=HIGH` on the `board` device',
+			'$0 $command 0123456789abcdef01234567 brew --product 12345': 'Call the `brew` function on the device with id `0123456789abcdef01234567` within product `12345`'
 		}
 	});
 
