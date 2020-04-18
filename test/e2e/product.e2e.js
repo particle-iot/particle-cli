@@ -279,8 +279,8 @@ describe('Product Commands', () => {
 			'  --file, -f  Path to single column .txt file with list of IDs, S/Ns, IMEIs, or ICCIDs of the devices to add  [string]',
 			'',
 			'Examples:',
-			'  particle product device add 12345 5a8ef38cb85f8720edce631a         Add device id 5a8ef38cb85f8720edce631a into product 12345',
-			'  particle product device add 12345 --file ./path/to/device_ids.txt  Adds a list of devices into product 12345'
+			'  particle product device add 12345 0123456789abcdef01234567         Add device id `0123456789abcdef01234567` into product `12345`',
+			'  particle product device add 12345 --file ./path/to/device_ids.txt  Adds a list of devices into product `12345`'
 		];
 
 		before(async () => {
@@ -328,6 +328,15 @@ describe('Product Commands', () => {
 			expect(exitCode).to.equal(1);
 		});
 
+		it('Fails to add a single device when `device` param is not an id', async () => {
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_NAME];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`\`device\` parameter must be an id - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
+		});
+
 		it('Fails to add a single device when `product` is unknown', async () => {
 			const args = ['product', 'device', 'add', 'LOLWUTNOPE', PRODUCT_01_DEVICE_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -338,12 +347,12 @@ describe('Product Commands', () => {
 		});
 
 		it('Fails to add a single device when `device` is unknown', async () => {
-			const args = ['product', 'device', 'add', PRODUCT_01_ID, 'LOLWUTNOPE'];
+			const args = ['product', 'device', 'add', PRODUCT_01_ID, '000000000000000000000001'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			// for an unknown reason the API does .toLowerCase() on the ID
 			expect(stdout).to.include('Skipped Invalid IDs:');
-			expect(stdout).to.include('  lolwutnope');
+			expect(stdout).to.include('  000000000000000000000001');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
