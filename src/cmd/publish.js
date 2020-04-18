@@ -1,23 +1,14 @@
 const os = require('os');
 const VError = require('verror');
 const settings = require('../../settings');
-const spinnerMixin = require('../lib/spinner-mixin');
 const { normalizedApiError } = require('../lib/api-client');
 const ParticleAPI = require('./api');
-const UI = require('../lib/ui');
+const CLICommandBase = require('./base');
 
 
-module.exports = class PublishCommand {
-	constructor({
-		stdin = process.stdin,
-		stdout = process.stdout,
-		stderr = process.stderr
-	} = {}){
-		this.stdin = stdin;
-		this.stdout = stdout;
-		this.stderr = stderr;
-		this.ui = new UI({ stdin, stdout, stderr });
-		spinnerMixin(this);
+module.exports = class PublishCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 	}
 
 	publishEvent({ private: isPrivate, public: isPublic, product, params: { event, data } }){
