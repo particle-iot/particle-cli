@@ -148,10 +148,9 @@ module.exports = class SerialCommand {
 		const handleClose = () => {
 			if (follow && !cleaningUp){
 				console.log(chalk.bold.white('Serial connection closed.  Attempting to reconnect...'));
-				reconnect();
-			} else {
-				console.log(chalk.bold.white('Serial connection closed.'));
+				return reconnect();
 			}
+			console.log(chalk.bold.white('Serial connection closed.'));
 		};
 
 		// Handle interrupts and close the port gracefully
@@ -164,6 +163,7 @@ module.exports = class SerialCommand {
 				if (serialPort && serialPort.isOpen){
 					serialPort.close();
 				}
+				process.exit(0);
 			}
 		};
 
@@ -219,6 +219,7 @@ module.exports = class SerialCommand {
 
 		process.on('SIGINT', handleInterrupt);
 		process.on('SIGQUIT', handleInterrupt);
+		process.on('SIGBREAK', handleInterrupt);
 		process.on('SIGTERM', handleInterrupt);
 		process.on('exit', () => handleInterrupt(true));
 
