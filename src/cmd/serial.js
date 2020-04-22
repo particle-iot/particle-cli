@@ -1,3 +1,4 @@
+const os = require('os');
 const fs = require('fs');
 const _ = require('lodash');
 const path = require('path');
@@ -146,12 +147,12 @@ module.exports = class SerialCommand {
 
 		// Called when port closes
 		const handleClose = () => {
+			console.log(os.EOL);
 			if (follow && !cleaningUp){
 				console.log(chalk.bold.white('Serial connection closed.  Attempting to reconnect...'));
-				reconnect();
-			} else {
-				console.log(chalk.bold.white('Serial connection closed.'));
+				return reconnect();
 			}
+			console.log(chalk.bold.white('Serial connection closed.'));
 		};
 
 		// Handle interrupts and close the port gracefully
@@ -164,6 +165,7 @@ module.exports = class SerialCommand {
 				if (serialPort && serialPort.isOpen){
 					serialPort.close();
 				}
+				process.exit(0);
 			}
 		};
 
@@ -219,6 +221,7 @@ module.exports = class SerialCommand {
 
 		process.on('SIGINT', handleInterrupt);
 		process.on('SIGQUIT', handleInterrupt);
+		process.on('SIGBREAK', handleInterrupt);
 		process.on('SIGTERM', handleInterrupt);
 		process.on('exit', () => handleInterrupt(true));
 
