@@ -65,10 +65,11 @@ describe('USB Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	describe('Device Listing', async () => {
-		let platform, args;
+	describe('List Subcommand', () => {
+		const platform = capitalize(DEVICE_PLATFORM_NAME);
+		let args;
+
 		beforeEach(() => {
-			platform = capitalize(DEVICE_PLATFORM_NAME);
 			args = ['usb', 'list'];
 		});
 
@@ -80,165 +81,170 @@ describe('USB Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 		});
 
-		describe('Filter by Platform Name', () => {
-			it('Shows matching devices', async () => {
-				args.push(DEVICE_PLATFORM_NAME);
-				const { stdout, stderr, exitCode } = await cli.run(args);
+		it('Lists connected devices filtered by platform name', async () => {
+			args.push(DEVICE_PLATFORM_NAME);
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
-
-			it('Filters out non-matching devices', async () => {
-				// Likely platforms being used with e2e testing
-				const testPlatforms = [
-					'photon',
-					'electron',
-					'argon',
-					'boron'
-				];
-
-				// Derive platform name NOT matching those claimed by E2E test profile
-				// (i.e. find single, valid inversion of DEVICE_PLATFORM_NAME)
-				const nonE2EDevicePlatform = testPlatforms.filter((platform) => {
-					return platform !== DEVICE_PLATFORM_NAME;
-				})[0];
-
-				args.push(nonE2EDevicePlatform);
-				const { stdout, stderr, exitCode } = await cli.run(args);
-
-				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 
-		describe('Filter by Device Name', () => {
-			it('Shows matching devices', async () => {
-				args.push(DEVICE_NAME);
-				const { stdout, stderr, exitCode } = await cli.run(args);
+		it('Lists connected devices filtered by platform name omitting test device', async () => {
+			const { knownPlatforms } = require('../../settings');
+			const platformNames = Object.entries(knownPlatforms)
+				.map(({ 1: name }) => name.replace(/\s/, '').toLowerCase());
+			// Derive platform name NOT matching those claimed by E2E test profile
+			// (i.e. find single, valid inversion of DEVICE_PLATFORM_NAME)
+			const nonE2EDevicePlatform = platformNames.filter(name => name !== DEVICE_PLATFORM_NAME);
 
-				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
+			args.push(nonE2EDevicePlatform);
+			const { stdout, stderr, exitCode } = await cli.debug(args);
 
-			it('Filters out non-matching devices', async () => {
-				args.push('non-existent-device-name');
-				const { stdout, stderr, exitCode } = await cli.run(args);
-
-				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
+			expect(stdout).to.not.include(DEVICE_NAME);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 
-		describe('Filter by Device ID', () => {
-			it('Shows matching devices', async () => {
-				args.push(DEVICE_ID);
-				const { stdout, stderr, exitCode } = await cli.run(args);
+		it('Lists connected devices filtered by device name', async () => {
+			args.push(DEVICE_NAME);
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
-
-			it('Filters out non-matching devices', async () => {
-				args.push('non-existent-device-id');
-				const { stdout, stderr, exitCode } = await cli.run(args);
-
-				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 
-		describe('Filter by online', () => {
-			it('Shows online devices', async () => {
-				args.push('online');
-				const { stdout, stderr, exitCode } = await cli.run(args);
+		it('Lists connected devices filtered by device name omitting test device', async () => {
+			args.push('non-existent-device-name');
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
+			expect(stdout).to.not.include(DEVICE_NAME);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 
-		describe('Filter by offline', () => {
-			it('Does not show online devices', async () => {
-				args.push('offline');
-				const { stdout, stderr, exitCode } = await cli.run(args);
+		it('Lists connected devices filtered by device id', async () => {
+			args.push(DEVICE_ID);
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-				expect(stderr).to.equal('');
-				expect(exitCode).to.equal(0);
-			});
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists connected devices filtered by device id omitting test device', async () => {
+			args.push('non-existent-device-id');
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.not.include(DEVICE_NAME);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists connected devices filtered by `online` state', async () => {
+			args.push('online');
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists connected devices filtered by `offline` state', async () => {
+			args.push('offline');
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.not.include(DEVICE_NAME);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 	});
 
-	it('Starts & stops listening', async () => {
-		await cli.run(['usb', 'start-listening']);
-		await delay(2000);
+	describe('Start-Listening Subcommand', () => {
+		afterEach(async () => {
+			await cli.run(['usb', 'stop-listening']);
+			await delay(2000);
+		});
 
-		const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
-		expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
-		expect(stdout).to.include('Your system firmware version is');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+		it('Starts listening', async () => {
+			await cli.run(['usb', 'start-listening']);
+			await delay(2000);
 
-		await cli.run(['usb', 'stop-listening']);
-		await delay(2000);
+			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
 
-		// TODO (mirande): need a way to ask the device what 'mode' it is in
-		const subproc = await cli.run(['serial', 'identify']);
-		expect(subproc.stdout).to.equal('Serial timed out'); // TODO (mirande): should be stderr?
-		expect(subproc.stderr).to.equal('');
-		expect(subproc.exitCode).to.equal(1);
+			expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
+			expect(stdout).to.include('Your system firmware version is');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Sets and clears the setup done flag', async () => {
-		await cli.run(['usb', 'setup-done', '--reset']);
-		await delay(2000);
+	describe('Stop-Listening Subcommand', () => {
+		beforeEach(async () => {
+			await cli.run(['usb', 'start-listening']);
+			await delay(2000);
+		});
 
-		const platform = capitalize(DEVICE_PLATFORM_NAME);
-		const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
-		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, LISTENING)`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+		it('Stops listening', async () => {
+			await cli.run(['usb', 'stop-listening']);
+			await delay(2000);
 
-		await cli.run(['usb', 'setup-done']);
-		await delay(2000);
+			// TODO (mirande): need a way to ask the device what 'mode' it is in
+			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
 
-		const subproc = await cli.run(['usb', 'list']);
-		expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-		expect(subproc.stderr).to.equal('');
-		expect(subproc.exitCode).to.equal(0);
+			expect(stdout).to.equal('Serial timed out'); // TODO (mirande): should be stderr?
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
 	});
 
-	it('Enters DFU mode with confirmation', async () => {
-		await cli.run(['usb', 'dfu', DEVICE_ID]);
+	describe('Setup-Done Subcommand', () => {
+		it('Sets and clears the setup done flag', async () => {
+			await cli.run(['usb', 'setup-done', '--reset']);
+			await delay(2000);
 
-		const platform = capitalize(DEVICE_PLATFORM_NAME);
-		const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
-		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, DFU)`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
+			const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, LISTENING)`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 
-		await cli.resetDevice();
+			await cli.run(['usb', 'setup-done']);
+			await delay(2000);
 
-		const subproc = await cli.run(['usb', 'list']);
-		expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-		expect(subproc.stderr).to.equal('');
-		expect(subproc.exitCode).to.equal(0);
+			const subproc = await cli.run(['usb', 'list']);
+			expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(subproc.stderr).to.equal('');
+			expect(subproc.exitCode).to.equal(0);
+		});
 	});
 
-	it('Fails to enter DFU mode when device is unrecognized', async () => {
-		const device = 'DOESNOTEXIST';
-		const { stdout, stderr, exitCode } = await cli.run(['usb', 'dfu', device]);
+	describe('DFU Subcommand', () => {
+		it('Enters DFU mode with confirmation', async () => {
+			await cli.run(['usb', 'dfu', DEVICE_ID]);
 
-		expect(stdout).to.equal(`Device not found: ${device}`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(1);
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
+			const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, DFU)`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await cli.resetDevice();
+
+			const subproc = await cli.run(['usb', 'list']);
+			expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(subproc.stderr).to.equal('');
+			expect(subproc.exitCode).to.equal(0);
+		});
+
+		it('Fails to enter DFU mode when device is unrecognized', async () => {
+			const device = 'DOESNOTEXIST';
+			const { stdout, stderr, exitCode } = await cli.run(['usb', 'dfu', device]);
+
+			expect(stdout).to.equal(`Device not found: ${device}`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
 	});
 });
