@@ -249,6 +249,29 @@ describe('Keys Commands [@device]', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
+
+		it('Saves server public keys locally when `--deviceType` flag is set', async () => {
+			const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}-test.der`);
+			await cli.run(['keys', 'new', filename, '--protocol', 'udp'], { reject: true });
+			const args = ['keys', 'server', filename, '--deviceType', DEVICE_PLATFORM_NAME];
+			const { stdout, stderr, exitCode } = await cli.debug(args);
+
+			expect(stdout).to.equal('Okay!  Formated server key file generated for this type of device.');
+			// TODO (mirande): fix `(node:3228) [DEP0005] DeprecationWarning:
+			// Buffer() is deprecated due to security and usability issues.
+			// Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from()
+			// methods instead.
+			expect(stderr).to.exist;
+			expect(exitCode).to.equal(0);
+		}).timeout(extendedTimeout);
+
+		it('Fails when `--deviceType` is set but `filename` param is omitted', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'server', '--deviceType', 'Electron']);
+
+			expect(stdout).to.equal('`filename` parameter is required when `--deviceType` is set');
+			expect(stderr).to.include('Usage: particle keys server [options] [filename] [outputFilename]');
+			expect(exitCode).to.equal(1);
+		});
 	});
 
 	describe('Address Subcommand', () => {

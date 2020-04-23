@@ -7,6 +7,7 @@ const utilities = require('../lib/utilities');
 const ApiClient = require('../lib/api-client');
 const deviceSpecs = require('../lib/deviceSpecs');
 const ensureError = require('../lib/utilities').ensureError;
+const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
 
 /**
@@ -328,6 +329,12 @@ module.exports = class KeysCommand {
 	}
 
 	writeServerPublicKey({ protocol, host, port, deviceType, params: { filename, outputFilename } }){
+		if (deviceType && !filename){
+			throw usageError(
+				'`filename` parameter is required when `--deviceType` is set'
+			);
+		}
+
 		if (filename && !fs.existsSync(filename)){
 			// TODO UsageError
 			throw new VError('Please specify a server key in DER format.');
