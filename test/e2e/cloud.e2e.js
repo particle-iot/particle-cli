@@ -74,14 +74,121 @@ describe('Cloud Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Lists devices', async () => {
-		const args = ['cloud', 'list'];
-		const platform = capitalize(DEVICE_PLATFORM_NAME);
-		const { stdout, stderr, exitCode } = await cli.run(args);
+	describe('Device Listing', async () => {
+		let platform, args;
+		before(async () => {
+			await cli.revertDeviceName();
+		});
 
-		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+		beforeEach(async () => {
+			platform = capitalize(DEVICE_PLATFORM_NAME);
+			args = ['cloud', 'list'];
+		});
+
+		it('Lists devices', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		describe('Filter by Platform Name', () => {
+			it('Shows matching devices', async () => {
+				args.push(DEVICE_PLATFORM_NAME);
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+
+			it('Filters out non-matching devices', async () => {
+				// Likely platforms being used with e2e testing
+				const testPlatforms = [
+					'photon',
+					'electron',
+					'argon',
+					'boron'
+				];
+
+				// Derive platform name NOT matching those claimed by E2E test profile
+				// (i.e. find single, valid inversion of DEVICE_PLATFORM_NAME)
+				const nonE2EDevicePlatform = testPlatforms.filter((platform) => {
+					return platform !== DEVICE_PLATFORM_NAME;
+				})[0];
+
+				args.push(nonE2EDevicePlatform);
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+		});
+
+		describe('Filter by Device Name', () => {
+			it('Shows matching devices', async () => {
+				args.push(DEVICE_NAME);
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+
+			it('Filters out non-matching devices', async () => {
+				args.push('non-existent-device-name');
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+		});
+
+		describe('Filter by Device ID', () => {
+			it('Shows matching devices', async () => {
+				args.push(DEVICE_ID);
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+
+			it('Filters out non-matching devices', async () => {
+				args.push('non-existent-device-id');
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+		});
+
+		describe('Filter by online', () => {
+			it('Shows online devices', async () => {
+				args.push('online');
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+		});
+
+		describe('Filter by offline', () => {
+			it('Does not show online devices', async () => {
+				args.push('offline');
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.not.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			});
+		});
+
 	});
 
 	it('Compiles firmware', async () => {

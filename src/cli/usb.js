@@ -25,7 +25,8 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			return usbCommand().list(args);
-		}
+		},
+		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
 	});
 
 	// Common options for start-listening, stop-listening, safe-mode, dfu and reset

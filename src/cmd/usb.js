@@ -1,5 +1,5 @@
 const { spin } = require('../app/ui');
-const { asyncMapSeries, knownPlatforms } = require('../lib/utilities');
+const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { getUsbDevices, openUsbDevice, openUsbDeviceById } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
@@ -18,27 +18,7 @@ module.exports = class UsbCommand {
 		const excludeDfu = args['exclude-dfu'];
 		const filter = args.params.filter;
 
-		let filterFunc = null;
-		if (filter){
-			const platforms = knownPlatforms();
-			if (filter === 'online') {
-				filterFunc = (d) => {
-					return d.connected;
-				};
-			} else if (filter === 'offline') {
-				filterFunc = (d) => {
-					return !d.connected;
-				};
-			} else if (Object.keys(platforms).indexOf(filter) >= 0) {
-				filterFunc = (d) => {
-					return d.platform_id === platforms[filter];
-				};
-			} else {
-				filterFunc = (d) => {
-					return d.id === filter || d.name === filter;
-				};
-			}
-		}
+		const filterFunc = buildDeviceFilter(filter);
 
 		// Enumerate USB devices
 		return getUsbDevices({ dfuMode: !excludeDfu })
@@ -99,7 +79,7 @@ module.exports = class UsbCommand {
 						console.log('No devices found.');
 					} else {
 						devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
-						
+
 						if (filter) {
 							devices = devices.filter(filterFunc);
 						}

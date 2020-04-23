@@ -492,31 +492,11 @@ class CloudCommand {
 
 
 	getAllDeviceAttributes(filter) {
+		const { buildDeviceFilter } = utilities;
 		const api = new ApiClient();
 		api.ensureToken();
 
-		let filterFunc = null;
-
-		if (filter){
-			const platforms = utilities.knownPlatforms();
-			if (filter === 'online') {
-				filterFunc = (d) => {
-					return d.connected;
-				};
-			} else if (filter === 'offline') {
-				filterFunc = (d) => {
-					return !d.connected;
-				};
-			} else if (Object.keys(platforms).indexOf(filter) >= 0) {
-				filterFunc = (d) => {
-					return d.product_id === platforms[filter];
-				};
-			} else {
-				filterFunc = (d) => {
-					return d.id === filter || d.name === filter;
-				};
-			}
-		}
+		let filterFunc = buildDeviceFilter(filter);
 
 		return Promise.resolve().then(() => {
 			return api.listDevices();
