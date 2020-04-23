@@ -6,12 +6,16 @@ const openSSL = require('../lib/open-ssl');
 const cli = require('../lib/cli');
 const fs = require('../lib/fs');
 const {
+	DEVICE_ID,
 	DEVICE_NAME,
-	PATH_TMP_DIR
+	PATH_TMP_DIR,
+	DEVICE_PLATFORM_NAME
 } = require('../lib/env');
 
 
 describe('Keys Commands [@device]', () => {
+	const extendedTimeout = 5 * 60 * 1000;
+
 	const help = [
 		'Manage your device\'s key pair and server public key',
 		'Usage: particle keys <command>',
@@ -43,6 +47,11 @@ describe('Keys Commands [@device]', () => {
 
 	before(async () => {
 		await Promise.all([openSSL.ensureExists(), dfuUtil.ensureExists()]);
+	});
+
+	after(async () => {
+		await cli.logout();
+		await cli.setDefaultProfile();
 	});
 
 	it('Shows `help` content', async () => {
@@ -181,15 +190,44 @@ describe('Keys Commands [@device]', () => {
 		});
 	});
 
-	describe('Server Subcommand', () => {
+	describe('Doctor Subcommand', () => {
 		before(async () => {
 			await cli.setTestProfileAndLogin();
 			await cli.flashStrobyFirmwareOTAForTest();
 		});
 
-		after(async () => {
-			await cli.logout();
-			await cli.setDefaultProfile();
+		it('Fixes devices keys', async () => {
+			await cli.enterDFUMode();
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'doctor', DEVICE_ID]);
+			const log = [
+				'New Key Created!',
+				'Saved!',
+				'Saved!',
+				`attempting to add a new public key for device ${DEVICE_ID}`,
+				'submitting public key succeeded!',
+				'Okay!  New keys in place, your device should restart.',
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await cli.waitForVariable('name', 'stroby');
+		}).timeout(extendedTimeout);
+
+		it('Fails to fix device keys when device is not in DFU mode', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'doctor', DEVICE_ID]);
+
+			expect(stdout.split('\n')).to.include.members(dfuInstructions);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('Server Subcommand', () => {
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+			await cli.flashStrobyFirmwareOTAForTest();
 		});
 
 		it('Switches server public keys', async () => {
@@ -202,10 +240,78 @@ describe('Keys Commands [@device]', () => {
 
 			await cli.resetDevice();
 			await cli.waitForVariable('name', 'stroby');
-		}).timeout(5 * 60 * 1000);
+		}).timeout(extendedTimeout);
 
 		it('Fails to switch server public keys when device is not in DFU mode', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'server']);
+
+			expect(stdout.split('\n')).to.include.members(dfuInstructions);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Saves server public keys locally when `--deviceType` flag is set', async () => {
+			const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}-test.der`);
+			await cli.run(['keys', 'new', filename, '--protocol', 'udp'], { reject: true });
+			const args = ['keys', 'server', filename, '--deviceType', DEVICE_PLATFORM_NAME];
+			const { stdout, stderr, exitCode } = await cli.debug(args);
+
+			expect(stdout).to.equal('Okay!  Formated server key file generated for this type of device.');
+			// TODO (mirande): fix `(node:3228) [DEP0005] DeprecationWarning:
+			// Buffer() is deprecated due to security and usability issues.
+			// Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from()
+			// methods instead.
+			expect(stderr).to.exist;
+			expect(exitCode).to.equal(0);
+		}).timeout(extendedTimeout);
+
+		it('Fails when `--deviceType` is set but `filename` param is omitted', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'server', '--deviceType', 'Electron']);
+
+			expect(stdout).to.equal('`filename` parameter is required when `--deviceType` is set');
+			expect(stderr).to.include('Usage: particle keys server [options] [filename] [outputFilename]');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('Address Subcommand', () => {
+		it('Reads server address from device\'s server public key', async () => {
+			await cli.enterDFUMode();
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'address']);
+			const addressPtn = /(udp|tcp):\/\/(\$id\.udp\.particle\.io|\$id\.udp-mesh\.particle\.io|device\.spark\.io):?(\d{1,5})?/;
+
+			expect(stdout.trim()).to.match(addressPtn);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await cli.resetDevice();
+		}).timeout(extendedTimeout);
+
+		it('Fails to save device keys when device is not in DFU mode', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'address']);
+
+			expect(stdout.split('\n')).to.include.members(dfuInstructions);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('Protocol Subcommand', () => {
+		it('Reads server address from device\'s server public key', async () => {
+			await cli.enterDFUMode();
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'protocol']);
+			const protocolPtn = /(udp|tcp)$/;
+
+			expect(stdout).to.include('Device protocol is set to ');
+			expect(stdout.trim()).to.match(protocolPtn);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await cli.resetDevice();
+		}).timeout(extendedTimeout);
+
+		it('Fails to save device keys when device is not in DFU mode', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['keys', 'protocol']);
 
 			expect(stdout.split('\n')).to.include.members(dfuInstructions);
 			expect(stderr).to.equal('');

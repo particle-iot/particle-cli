@@ -1,10 +1,10 @@
 language: node_js
-sudo: false
 
 node_js:
   - 8
   - 10
   - 12
+  - node
 
 os:
   - osx
@@ -19,9 +19,13 @@ before_install:
 
 script:
   - npm run test:ci
+
+after_success:
   - npm run coverage
 
 jobs:
+  allow_failures:
+    - node_js: node
   include:
     - stage: npm release
       script: echo "Deploying to npm..."

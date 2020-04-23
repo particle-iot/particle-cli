@@ -12,7 +12,7 @@ module.exports = ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().makeNewKey(args.params.filename, args);
+			return new KeysCommand().makeNewKey(args);
 		}
 	});
 
@@ -20,7 +20,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<filename>',
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().writeKeyToDevice(args.params.filename);
+			return new KeysCommand().writeKeyToDevice(args);
 		}
 	});
 
@@ -35,7 +35,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().saveKeyFromDevice(args.params.filename, args);
+			return new KeysCommand().saveKeyFromDevice(args);
 		}
 	});
 
@@ -49,7 +49,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().sendPublicKeyToServer(args.params.deviceID, args.params.filename, args);
+			return new KeysCommand().sendPublicKeyToServer(args);
 		}
 	});
 
@@ -58,13 +58,13 @@ module.exports = ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().keyDoctor(args.params.deviceID, args);
+			return new KeysCommand().keyDoctor(args);
 		}
 	});
 
 	commandProcessor.createCommand(keys, 'server', 'Switch server public keys.', {
 		epilogue: 'Defaults to the Particle public cloud or you can provide another key in DER format and the server hostname or IP and port',
-		params: '[filename]',
+		params: '[filename] [outputFilename]',
 		options: Object.assign({}, protocolOption, {
 			'host': {
 				description: 'Hostname or IP address of the server to add to the key'
@@ -72,11 +72,14 @@ module.exports = ({ commandProcessor, root }) => {
 			'port': {
 				number: true,
 				description: 'Port number of the server to add to the key'
+			},
+			'deviceType': {
+				description: 'Generate key file for the provided device type'
 			}
 		}),
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().writeServerPublicKey(args.params.filename, args);
+			return new KeysCommand().writeServerPublicKey(args);
 		}
 	});
 
