@@ -1,5 +1,7 @@
+const os = require('os');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
+const stripANSI = require('../lib/ansi-strip');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
@@ -86,8 +88,10 @@ describe('Variable Commands [@device]', () => {
 		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
+		const log = stripANSI(stdout);
 
-		expect(stdout).to.include('Which variable did you want? (Use arrow keys)');
+		expect(log).to.include('Which variable did you want?');
+		expect(log).to.include(`name (string)${os.EOL}stroby`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
