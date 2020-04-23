@@ -704,16 +704,6 @@ function unknownParametersError(params){
 	);
 }
 
-const errors = {
-	unknownCommandError,
-	unknownArgumentError,
-	requiredParameterError,
-	variadicParameterRequiredError,
-	variadicParameterPositionError,
-	requiredParameterPositionError,
-	unknownParametersError
-};
-
 function showHelp(cb){
 	Yargs.showHelp(cb);
 }
@@ -725,7 +715,16 @@ module.exports = {
 	createAppCategory,
 	createErrorHandler,
 	showHelp,
-	errors,
+	errors: {
+		usageError,
+		unknownCommandError,
+		unknownArgumentError,
+		requiredParameterError,
+		variadicParameterRequiredError,
+		variadicParameterPositionError,
+		requiredParameterPositionError,
+		unknownParametersError
+	},
 	test: {
 		consoleErrorLogger
 	}
