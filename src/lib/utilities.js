@@ -351,6 +351,39 @@ module.exports = {
 		};
 	},
 
+	/**
+	 * Generates a filter function to be used with `Array.filter()` when filtering a list of Devices
+	 * by some value. Supports `online`, `offline`, Platform Name, Device ID, or Device Name
+	 *
+	 * @param {string} filter - Filter value to use for filtering a list of devices
+	 * @returns {function|null}
+	 */
+	buildDeviceFilter(filter) {
+		const { knownPlatforms } = module.exports;
+		let filterFunc = null;
+		if (filter){
+			const platforms = knownPlatforms();
+			if (filter === 'online') {
+				filterFunc = (d) => {
+					return d.connected;
+				};
+			} else if (filter === 'offline') {
+				filterFunc = (d) => {
+					return !d.connected;
+				};
+			} else if (Object.keys(platforms).indexOf(filter) >= 0) {
+				filterFunc = (d) => {
+					return d.platform_id === platforms[filter];
+				};
+			} else {
+				filterFunc = (d) => {
+					return d.id === filter || d.name === filter;
+				};
+			}
+		}
+		return filterFunc;
+	},
+
 	ensureError(err){
 		if (!_.isError(err) && !(err instanceof VError)){
 			return new Error(_.isArray(err) ? err.join('\n') : err);

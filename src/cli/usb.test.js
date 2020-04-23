@@ -48,7 +48,7 @@ describe('USB Command-Line Interface', () => {
 		it('Handles `list` command', () => {
 			const argv = commandProcessor.parse(root, ['usb', 'list']);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({});
+			expect(argv.params).to.eql({ filter: undefined });
 		});
 
 		it('Includes help', () => {
@@ -56,11 +56,13 @@ describe('USB Command-Line Interface', () => {
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
 					'List the devices connected to the host computer',
-					'Usage: particle usb list [options]',
+					'Usage: particle usb list [options] [filter]',
 					'',
 					'Options:',
 					'  --exclude-dfu  Do not list devices which are in DFU mode  [boolean]',
 					'  --ids-only     Print only device IDs  [boolean]',
+					'',
+					'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name',
 					''
 				].join(os.EOL));
 			});

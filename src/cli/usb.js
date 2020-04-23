@@ -12,6 +12,7 @@ module.exports = ({ commandProcessor, root }) => {
 	const usb = commandProcessor.createCategory(root, 'usb', 'Control USB devices');
 
 	commandProcessor.createCommand(usb, 'list', 'List the devices connected to the host computer', {
+		params: '[filter]',
 		options: {
 			'exclude-dfu': {
 				description: 'Do not list devices which are in DFU mode',
@@ -24,7 +25,8 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			return usbCommand().list(args);
-		}
+		},
+		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
 	});
 
 	// Common options for start-listening, stop-listening, safe-mode, dfu and reset
