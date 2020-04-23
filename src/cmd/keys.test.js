@@ -53,7 +53,7 @@ describe('Key Command', () => {
 
 	it('Can create device key', () => {
 		setupCommand();
-		return key.makeNewKey('', {}).then(() => {
+		return key.makeNewKey({ params: {} }).then(() => {
 			expect(utilities.deferredChildProcess).to.have.property('callCount', 3);
 		});
 	});
@@ -78,9 +78,9 @@ describe('Key Command', () => {
 		key._makeNewKey = sinon.stub();
 		key._writeKeyToDevice = sinon.stub();
 		key._sendPublicKeyToServer = sinon.stub();
-		return key.keyDoctor('ABcd', {}).then(() => {
+		return key.keyDoctor({ params: { deviceID: 'ABcd' } }).then(() => {
 			expect(key._sendPublicKeyToServer).to.be.calledWith({
-				deviceId: 'abcd', filename: 'abcd_rsa_new', algorithm: 'rsa'
+				deviceID: 'abcd', filename: 'abcd_rsa_new', algorithm: 'rsa'
 			});
 		});
 	});
@@ -150,7 +150,7 @@ describe('Key Command', () => {
 			dfu.write = sinon.stub();
 			key.validateDeviceProtocol = sinon.stub().returns('tcp');
 			filename = key.serverKeyFilename({ alg: 'rsa' });
-			return key.writeKeyToDevice(filename)
+			return key.writeKeyToDevice({ params: { filename } })
 				.then(() => {
 					expect(key.validateDeviceProtocol).to.have.been.called;
 					expect(dfu.write).to.have.been.calledWith(filename, 'tcpPrivateKey', false);
@@ -166,7 +166,7 @@ describe('Key Command', () => {
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
 			transport.push(0x00);
-			return key.saveKeyFromDevice(filename, {})
+			return key.saveKeyFromDevice({ params: { filename } })
 				.then(() => {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);
@@ -176,7 +176,7 @@ describe('Key Command', () => {
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', () => {
 			transport.push(0xFF);
 
-			return key.saveKeyFromDevice(filename, {})
+			return key.saveKeyFromDevice({ params: { filename } })
 				.then(() => {
 					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'udpPrivateKey', false);
@@ -186,7 +186,7 @@ describe('Key Command', () => {
 		it('raises an error when the protocol is not recognized', () => {
 			key.validateDeviceProtocol = sinon.stub().returns('zip');
 
-			return key.saveKeyFromDevice(filename, {})
+			return key.saveKeyFromDevice({ params: { filename } })
 				.catch((err) => {
 					expect(err).to.equal('Error saving key from device... The device does not support the protocol zip. It has support for udp, tcp');
 				});
@@ -196,7 +196,7 @@ describe('Key Command', () => {
 			key.validateDeviceProtocol = sinon.stub().returns('tcp');
 			key.fetchDeviceProtocol = sinon.stub();
 
-			return key.saveKeyFromDevice(filename, {})
+			return key.saveKeyFromDevice({ params: { filename } })
 				.then(() => {
 					expect(key.fetchDeviceProtocol).to.not.have.been.called;
 					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);

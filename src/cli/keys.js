@@ -12,7 +12,7 @@ module.exports = ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().makeNewKey(args.params.filename, args);
+			return new KeysCommand().makeNewKey(args);
 		}
 	});
 
@@ -20,7 +20,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<filename>',
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().writeKeyToDevice(args.params.filename);
+			return new KeysCommand().writeKeyToDevice(args);
 		}
 	});
 
@@ -35,7 +35,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().saveKeyFromDevice(args.params.filename, args);
+			return new KeysCommand().saveKeyFromDevice(args);
 		}
 	});
 
@@ -49,7 +49,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().sendPublicKeyToServer(args.params.deviceID, args.params.filename, args);
+			return new KeysCommand().sendPublicKeyToServer(args);
 		}
 	});
 
@@ -58,7 +58,7 @@ module.exports = ({ commandProcessor, root }) => {
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().keyDoctor(args.params.deviceID, args);
+			return new KeysCommand().keyDoctor(args);
 		}
 	});
 
@@ -79,7 +79,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().writeServerPublicKey({ ...args });
+			return new KeysCommand().writeServerPublicKey(args);
 		}
 	});
 
