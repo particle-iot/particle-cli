@@ -802,6 +802,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
+			tinker: 'tinker-1.5.0-b5som.bin'
 		},
 		serial: {
 			vid: '2b04',
