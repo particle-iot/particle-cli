@@ -364,21 +364,13 @@ module.exports = {
 		if (filter){
 			const platforms = knownPlatforms();
 			if (filter === 'online') {
-				filterFunc = (d) => {
-					return d.connected;
-				};
+				filterFunc = (d) => d.connected;
 			} else if (filter === 'offline') {
-				filterFunc = (d) => {
-					return !d.connected;
-				};
+				filterFunc = (d) => !d.connected;
 			} else if (Object.keys(platforms).indexOf(filter) >= 0) {
-				filterFunc = (d) => {
-					return d.platform_id === platforms[filter];
-				};
+				filterFunc = (d) => d.platform_id === platforms[filter];
 			} else {
-				filterFunc = (d) => {
-					return d.id === filter || d.name === filter;
-				};
+				filterFunc = (d) => d.id === filter || d.name === filter;
 			}
 		}
 		return filterFunc;
