@@ -41,6 +41,7 @@ function openUsbDevice(usbDevice, { dfuMode = false } = {}){
  * @param {String} [options.displayName] Device name as shown to the user.
  * @return {Promise}
  */
+// TODO (mirande): name is confusing since it handles opening by device id OR name
 function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null }){
 	return Promise.resolve()
 		.then(() => {
