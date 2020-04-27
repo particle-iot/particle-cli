@@ -18,12 +18,14 @@ describe('USB Commands [@device]', () => {
 		'Commands:',
 		'  list             List the devices connected to the host computer',
 		'  start-listening  Put a device into the listening mode',
+		'  listen           alias for start-listening',
 		'  stop-listening   Make a device exit the listening mode',
 		'  safe-mode        Put a device into the safe mode',
 		'  dfu              Put a device into the DFU mode',
 		'  reset            Reset a device',
 		'  setup-done       Set the setup done flag',
 		'  configure        Update the system USB configuration',
+		'  cloud-status     Check a device\'s cloud connection state',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
@@ -247,4 +249,43 @@ describe('USB Commands [@device]', () => {
 			expect(exitCode).to.equal(1);
 		});
 	});
+
+	describe('Cloud Status Subcommand', () => {
+		it('Reports current cloud connection status', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_NAME]);
+
+			expect(stdout).to.equal('connected');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Reports current cloud connection status for device id', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_ID]);
+
+			expect(stdout).to.equal('connected');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Polls cloud connection status using the `--until` flag', async () => {
+			await cli.run(['usb', 'reset', DEVICE_ID]);
+
+			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('connected');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails with timeout error when polling cloud connection status using the `--until` flag', async () => {
+			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'disconnecting', '--timeout', 2 * 1000];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('timed-out waiting for status...');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
 });
+
