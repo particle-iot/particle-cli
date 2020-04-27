@@ -83,16 +83,14 @@ module.exports.stopListeningMode = () => {
 	return run(['usb', 'stop-listening', DEVICE_ID], { reject: true });
 };
 
-module.exports.enterDFUMode = async (device = DEVICE_ID) => {
+module.exports.enterDFUMode = async () => {
 	const { run } = module.exports;
-	return run(['usb', 'dfu', device], { reject: true });
+	return run(['usb', 'dfu', DEVICE_ID], { reject: true });
 };
 
-// TODO (mirande): add w/ `cli.waitForDeviceToGetOnline()` helper
-module.exports.resetDevice = async (device = DEVICE_ID) => {
+module.exports.resetDevice = async () => {
 	const { run } = module.exports;
-	await run(['usb', 'reset', device], { reject: true });
-	await delay(45 * 1000);
+	await run(['usb', 'reset', DEVICE_ID], { reject: true });
 };
 
 module.exports.compileBlankFirmwareForTest = async (platform = 'photon') => {
@@ -138,6 +136,18 @@ module.exports.getNameVariable = async () => {
 	const { run } = module.exports;
 	const { stdout } = await run(['get', DEVICE_NAME, 'name'], { reject: true });
 	return stdout;
+};
+
+module.exports.getCloudConnectionStatus = async () => {
+	const { run } = module.exports;
+	const args = ['usb', 'cloud-status', DEVICE_ID];
+	return run(args, { reject: true });
+};
+
+module.exports.waitUntilOnline = async () => {
+	const { run } = module.exports;
+	const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected', '--timeout', 5 * 60 * 1000];
+	return run(args, { reject: true });
 };
 
 module.exports.waitForVariable = async (name, value) => {
