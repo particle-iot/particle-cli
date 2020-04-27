@@ -137,6 +137,11 @@ module.exports = ({ commandProcessor, root }) => {
 					'connected',
 					'disconnecting'
 				]
+			},
+			'timeout': {
+				description: 'How long should polling wait (in ms) for the requested status?',
+				number: true,
+				default: 1 * 60 * 1000
 			}
 		},
 		examples: {

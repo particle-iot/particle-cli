@@ -169,9 +169,8 @@ module.exports = class UsbCommand {
 			.then(() => console.log('Done.'));
 	}
 
-	cloudStatus(args, defaultTimeout = 1 * 60 * 1000, started = Date.now()){
-		const timeout = defaultTimeout; // TODO (mirande): add `--timeout` flag
-		const { until, params: { device } } = args;
+	cloudStatus(args, started = Date.now()){
+		const { until, timeout, params: { device } } = args;
 
 		if (Date.now() - (started + timeout) > 0){
 			throw new Error('timed-out waiting for status...');
@@ -211,7 +210,7 @@ module.exports = class UsbCommand {
 			.catch(error => {
 				if (until){
 					return deviceMgr.close()
-						.then(() => this.cloudStatus(args, timeout, started));
+						.then(() => this.cloudStatus(args, started));
 				}
 				throw error;
 			})

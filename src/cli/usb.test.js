@@ -346,6 +346,7 @@ describe('USB Command-Line Interface', () => {
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ device: 'my-device' });
 			expect(argv.until).to.equal(undefined);
+			expect(argv.timeout).to.equal(60000);
 		});
 
 		it('Errors when required `device` argument is missing', () => {
@@ -356,13 +357,15 @@ describe('USB Command-Line Interface', () => {
 			expect(argv.clierror).to.have.property('isUsageError', true);
 			expect(argv.params).to.eql({});
 			expect(argv.until).to.equal(undefined);
+			expect(argv.timeout).to.equal(60000);
 		});
 
 		it('Parses options flags', () => {
-			const argv = commandProcessor.parse(root, ['usb', 'cloud-status', 'my-device', '--until', 'disconnected']);
+			const argv = commandProcessor.parse(root, ['usb', 'cloud-status', 'my-device', '--until', 'disconnected', '--timeout', '2000']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ device: 'my-device' });
 			expect(argv.until).to.equal('disconnected');
+			expect(argv.timeout).to.equal(2000);
 		});
 
 		it('Errors when invalid option value is provided', () => {
@@ -373,6 +376,7 @@ describe('USB Command-Line Interface', () => {
 			expect(argv.clierror).to.include('Argument: until, Given: "NOPE", Choices: "unknown", "disconnected", "connecting", "connected", "disconnecting"');
 			expect(argv.params).to.eql({ device: 'my-device' });
 			expect(argv.until).to.equal('NOPE');
+			expect(argv.timeout).to.equal(60000);
 		});
 
 		it('Includes help with examples', () => {
@@ -383,7 +387,8 @@ describe('USB Command-Line Interface', () => {
 					'Usage: particle usb cloud-status [options] <device>',
 					'',
 					'Options:',
-					'  --until  Poll your device for a specific connection state and then exit  [string] [choices: "unknown", "disconnected", "connecting", "connected", "disconnecting"]',
+					'  --until    Poll your device for a specific connection state and then exit  [string] [choices: "unknown", "disconnected", "connecting", "connected", "disconnecting"]',
+					'  --timeout  How long should polling wait (in ms) for the requested status?  [number] [default: 60000]',
 					'',
 					'Examples:',
 					'  particle usb cloud-status blue                   Check the cloud connection status for the device named `blue`',
