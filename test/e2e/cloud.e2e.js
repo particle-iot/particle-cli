@@ -272,6 +272,7 @@ describe('Cloud Commands [@device]', () => {
 	});
 
 	describe('Claim Subcommand', () => {
+		// TODO (mirande): unclaim beforeEach..?
 		it('Claims device', async () => {
 			const id = DEVICE_ID.toLowerCase();
 			const args = ['cloud', 'claim', id];

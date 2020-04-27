@@ -1,5 +1,4 @@
 const { expect } = require('../setup');
-const { runForAtLeast } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID
@@ -24,11 +23,12 @@ describe('Identify Commands [@device]', () => {
 		await cli.startListeningMode();
 	});
 
-	after(runForAtLeast(15, async () => {
+	after(async () => {
 		await cli.stopListeningMode();
+		await cli.waitUntilOnline();
 		await cli.logout();
 		await cli.setDefaultProfile();
-	}));
+	});
 
 	it('Shows `help` content', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['help', 'identify']);

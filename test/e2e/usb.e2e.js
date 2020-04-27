@@ -9,7 +9,9 @@ const {
 } = require('../lib/env');
 
 
-describe('USB Commands [@device]', () => {
+describe('USB Commands [@device]', function cliUSBCommands(){
+	this.timeout(5 * 60 * 1000);
+
 	const help = [
 		'Control USB devices',
 		'Usage: particle usb <command>',
@@ -38,7 +40,7 @@ describe('USB Commands [@device]', () => {
 
 	after(async () => {
 		await cli.run(['usb', 'setup-done']);
-		await delay(2000);
+		await cli.waitUntilOnline();
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -145,6 +147,7 @@ describe('USB Commands [@device]', () => {
 		});
 
 		it('Lists connected devices filtered by `online` state', async () => {
+			await cli.waitUntilOnline();
 			args.push('online');
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
@@ -154,6 +157,7 @@ describe('USB Commands [@device]', () => {
 		});
 
 		it('Lists connected devices filtered by `offline` state', async () => {
+			await cli.waitUntilOnline();
 			args.push('offline');
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
@@ -166,7 +170,7 @@ describe('USB Commands [@device]', () => {
 	describe('Start-Listening Subcommand', () => {
 		afterEach(async () => {
 			await cli.run(['usb', 'stop-listening']);
-			await delay(2000);
+			await cli.waitUntilOnline();
 		});
 
 		it('Starts listening', async () => {
@@ -188,16 +192,20 @@ describe('USB Commands [@device]', () => {
 			await delay(2000);
 		});
 
+		afterEach(async () => {
+			await cli.resetDevice();
+			await cli.waitUntilOnline();
+		});
+
 		it('Stops listening', async () => {
 			await cli.run(['usb', 'stop-listening']);
-			await delay(2000);
 
-			// TODO (mirande): need a way to ask the device what 'mode' it is in
-			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
+			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.equal('Serial timed out'); // TODO (mirande): should be stderr?
+			expect(stdout).to.equal('connected');
 			expect(stderr).to.equal('');
-			expect(exitCode).to.equal(1);
+			expect(exitCode).to.equal(0);
 		});
 	});
 
@@ -213,7 +221,7 @@ describe('USB Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 
 			await cli.run(['usb', 'setup-done']);
-			await delay(2000);
+			await cli.waitUntilOnline();
 
 			const subproc = await cli.run(['usb', 'list']);
 			expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
@@ -223,6 +231,11 @@ describe('USB Commands [@device]', () => {
 	});
 
 	describe('DFU Subcommand', () => {
+		after(async () => {
+			await cli.resetDevice();
+			await cli.waitUntilOnline();
+		});
+
 		it('Enters DFU mode with confirmation', async () => {
 			await cli.run(['usb', 'dfu', DEVICE_ID]);
 
@@ -233,6 +246,7 @@ describe('USB Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 
 			await cli.resetDevice();
+			await cli.waitUntilOnline();
 
 			const subproc = await cli.run(['usb', 'list']);
 			expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
@@ -268,7 +282,7 @@ describe('USB Commands [@device]', () => {
 		});
 
 		it('Polls cloud connection status using the `--until` flag', async () => {
-			await cli.run(['usb', 'reset', DEVICE_ID]);
+			await cli.resetDevice();
 
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
