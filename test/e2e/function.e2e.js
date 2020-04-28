@@ -55,32 +55,36 @@ describe('Function Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Lists available functions', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['function', 'list']);
+	describe('Function List Subcommand', () => {
+		it('Lists available functions', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['function', 'list']);
 
-		expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
-		expect(stdout).to.include('int toggle(String args)');
-		expect(stdout).to.include('int check(String args)');
-		expect(stderr).to.include('polling server to see what devices are online, and what functions are available');
-		expect(exitCode).to.equal(0);
+			expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
+			expect(stdout).to.include('int toggle(String args)');
+			expect(stdout).to.include('int check(String args)');
+			expect(stderr).to.include('polling server to see what devices are online, and what functions are available');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Calls a function', async () => {
-		const args = ['function', 'call', DEVICE_NAME, 'check'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+	describe('Function Call Subcommand', () => {
+		it('Calls a function', async () => {
+			const args = ['function', 'call', DEVICE_NAME, 'check'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal('200');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
+			expect(stdout).to.equal('200');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 
-	it('Fails when attempting to call an unknown function', async () => {
-		const args = ['function', 'call', DEVICE_NAME, 'WATNOPE'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+		it('Fails when attempting to call an unknown function', async () => {
+			const args = ['function', 'call', DEVICE_NAME, 'WATNOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal('Function call failed: Function WATNOPE not found');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(1);
+			expect(stdout).to.equal('Function call failed: Function WATNOPE not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
 	});
 });
 

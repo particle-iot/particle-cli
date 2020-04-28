@@ -69,7 +69,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		expect(exitCode).to.equal(0);
 	});
 
-	describe('List Subcommand', () => {
+	describe('USB List Subcommand', () => {
 		const platform = capitalize(DEVICE_PLATFORM_NAME);
 		let args;
 
@@ -167,7 +167,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 	});
 
-	describe('Start-Listening Subcommand', () => {
+	describe('USB Start-Listening Subcommand', () => {
 		afterEach(async () => {
 			await cli.run(['usb', 'stop-listening']);
 			await cli.waitUntilOnline();
@@ -186,7 +186,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 	});
 
-	describe('Stop-Listening Subcommand', () => {
+	describe('USB Stop-Listening Subcommand', () => {
 		beforeEach(async () => {
 			await cli.run(['usb', 'start-listening']);
 			await delay(2000);
@@ -209,7 +209,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 	});
 
-	describe('Setup-Done Subcommand', () => {
+	describe('USB Setup-Done Subcommand', () => {
 		it('Sets and clears the setup done flag', async () => {
 			await cli.run(['usb', 'setup-done', '--reset']);
 			await delay(2000);
@@ -230,7 +230,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 	});
 
-	describe('DFU Subcommand', () => {
+	describe('USB DFU Subcommand', () => {
 		after(async () => {
 			await cli.resetDevice();
 			await cli.waitUntilOnline();
@@ -264,7 +264,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 	});
 
-	describe('Cloud Status Subcommand', () => {
+	describe('USB Cloud Status Subcommand', () => {
 		it('Reports current cloud connection status', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_NAME]);
 

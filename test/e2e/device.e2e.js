@@ -58,44 +58,50 @@ describe('Device Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Removes device', async () => {
-		const args = ['device', 'remove', DEVICE_NAME, '--yes'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const log = [
-			`releasing device ${DEVICE_NAME}`,
-			'Okay!'
-		];
+	describe('Device Remove Subcommand', () => {
+		it('Removes device', async () => {
+			const args = ['device', 'remove', DEVICE_NAME, '--yes'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`releasing device ${DEVICE_NAME}`,
+				'Okay!'
+			];
 
-		expect(stdout.split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Claims device', async () => {
-		const args = ['device', 'add', DEVICE_ID];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const log = [
-			`Claiming device ${DEVICE_ID}`,
-			`Successfully claimed device ${DEVICE_ID}`
-		];
+	describe('Device Claim Subcommand', () => {
+		it('Claims device', async () => {
+			const args = ['device', 'add', DEVICE_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`Claiming device ${DEVICE_ID}`,
+				`Successfully claimed device ${DEVICE_ID}`
+			];
 
-		expect(stdout.split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Names a device', async () => {
-		const name = `${DEVICE_NAME}-updated`;
-		const args = ['device', 'rename', DEVICE_ID, name];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const log = [
-			`Renaming device ${DEVICE_ID}`,
-			`Successfully renamed device ${DEVICE_ID} to: ${name}`
-		];
+	describe('Device Rename Subcommand', () => {
+		it('Renames a device', async () => {
+			const name = `${DEVICE_NAME}-updated`;
+			const args = ['device', 'rename', DEVICE_ID, name];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`Renaming device ${DEVICE_ID}`,
+				`Successfully renamed device ${DEVICE_ID} to: ${name}`
+			];
 
-		expect(stdout.split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 });
 

@@ -74,7 +74,7 @@ describe('Cloud Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	describe('List Subcommand', () => {
+	describe('Cloud List Subcommand', () => {
 		const platform = capitalize(DEVICE_PLATFORM_NAME);
 		let args;
 
@@ -170,7 +170,7 @@ describe('Cloud Commands [@device]', () => {
 		});
 	});
 
-	describe('Compile Subcommand', () => {
+	describe('Cloud Compile Subcommand', () => {
 		it('Compiles firmware', async () => {
 			const args = ['cloud', 'compile', 'photon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath];
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -215,7 +215,7 @@ describe('Cloud Commands [@device]', () => {
 		});
 	});
 
-	describe('Flash Subcommand', () => {
+	describe('Cloud Flash Subcommand', () => {
 		it('Flashes firmware', async () => {
 			const args = ['cloud', 'flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -251,7 +251,7 @@ describe('Cloud Commands [@device]', () => {
 		});
 	});
 
-	describe('Remove Subcommand', () => {
+	describe('Cloud Remove Subcommand', () => {
 		afterEach(async () => {
 			await cli.run(['cloud', 'claim', DEVICE_ID], { reject: true });
 			await delay(5000);
@@ -271,7 +271,7 @@ describe('Cloud Commands [@device]', () => {
 		});
 	});
 
-	describe('Claim Subcommand', () => {
+	describe('Cloud Claim Subcommand', () => {
 		// TODO (mirande): unclaim beforeEach..?
 		it('Claims device', async () => {
 			const id = DEVICE_ID.toLowerCase();
@@ -333,7 +333,7 @@ describe('Cloud Commands [@device]', () => {
 		});
 	});
 
-	describe('Name Subcommand', () => {
+	describe('Cloud Name Subcommand', () => {
 		afterEach(async () => {
 			await cli.revertDeviceName();
 		});

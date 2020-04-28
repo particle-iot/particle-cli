@@ -77,7 +77,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		expect(exitCode).to.equal(0);
 	});
 
-	describe('New Subcommand', () => {
+	describe('Keys New Subcommand', () => {
 		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}.pem`);
 		const expectedKeys = [`${DEVICE_NAME}.der`, `${DEVICE_NAME}.pem`, `${DEVICE_NAME}.pub.pem`];
 
@@ -135,7 +135,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		});
 	});
 
-	describe('Save Subcommand', () => {
+	describe('Keys Save Subcommand', () => {
 		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}.pem`);
 		const expectedKeys = [`${DEVICE_NAME}.der`, `${DEVICE_NAME}.pub.pem`];
 		const help = [
@@ -183,7 +183,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		});
 	});
 
-	describe('Doctor Subcommand', () => {
+	describe('Keys Doctor Subcommand', () => {
 		before(async () => {
 			await cli.setTestProfileAndLogin();
 		});
@@ -216,7 +216,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		});
 	});
 
-	describe('Server Subcommand', () => {
+	describe('Keys Server Subcommand', () => {
 		before(async () => {
 			await cli.setTestProfileAndLogin();
 		});
@@ -265,7 +265,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		});
 	});
 
-	describe('Address Subcommand', () => {
+	describe('Keys Address Subcommand', () => {
 		it('Reads server address from device\'s server public key', async () => {
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'address']);
@@ -288,7 +288,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		});
 	});
 
-	describe('Protocol Subcommand', () => {
+	describe('Keys Protocol Subcommand', () => {
 		it('Reads server address from device\'s server public key', async () => {
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'protocol']);
