@@ -125,6 +125,34 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(usb, 'cloud-status', 'Check a device\'s cloud connection state', {
+		params: '<device>',
+		options: {
+			'until': {
+				description: 'Poll your device for a specific connection state and then exit',
+				choices: [
+					'unknown',
+					'disconnected',
+					'connecting',
+					'connected',
+					'disconnecting'
+				]
+			},
+			'timeout': {
+				description: 'How long should polling wait (in ms) for the requested status?',
+				number: true,
+				default: 1 * 60 * 1000
+			}
+		},
+		examples: {
+			'$0 $command blue': 'Check the cloud connection status for the device named `blue`',
+			'$0 $command red --until connected': 'Poll cloud connection status for the device named `red` until it reports `connected`'
+		},
+		handler: (args) => {
+			return usbCommand().cloudStatus(args);
+		}
+	});
+
 	return usb;
 };
 

@@ -169,6 +169,54 @@ module.exports = class UsbCommand {
 			.then(() => console.log('Done.'));
 	}
 
+	cloudStatus(args, started = Date.now()){
+		const { until, timeout, params: { device } } = args;
+
+		if (Date.now() - (started + timeout) > 0){
+			throw new Error('timed-out waiting for status...');
+		}
+
+		const deviceMgr = {
+			_: null,
+			set(usbDevice){
+				this._ = usbDevice || null;
+				return this;
+			},
+			close(){
+				const { _: usbDevice } = this;
+				return usbDevice ? usbDevice.close() : Promise.resolve();
+			},
+			status(){
+				const { _: usbDevice } = this;
+				let getStatus = usbDevice
+					? usbDevice.getCloudConnectionStatus()
+					: Promise.resolve('unknown');
+
+				return getStatus.then(status => status.toLowerCase());
+			}
+		};
+
+		const options = { id: device, api: this._api, auth: this._auth };
+		const queryDevice = openUsbDeviceById(options)
+			.then(usbDevice => deviceMgr.set(usbDevice).status());
+
+		return spin(queryDevice, 'Querying device...')
+			.then(status => {
+				if (until && until !== status){
+					throw new Error(`Unexpected status: ${status}`);
+				}
+				console.log(status);
+			})
+			.catch(error => {
+				if (until){
+					return deviceMgr.close()
+						.then(() => this.cloudStatus(args, started));
+				}
+				throw error;
+			})
+			.finally(() => deviceMgr.close());
+	}
+
 	_forEachUsbDevice(args, func, { dfuMode = false } = {}){
 		const msg = 'Getting device information...';
 		const operation = this._openUsbDevices(args, { dfuMode });

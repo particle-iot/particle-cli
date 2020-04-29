@@ -38,6 +38,7 @@ describe('USB Command-Line Interface', () => {
 					'  reset            Reset a device',
 					'  setup-done       Set the setup done flag',
 					'  configure        Update the system USB configuration',
+					'  cloud-status     Check a device\'s cloud connection state',
 					''
 				].join(os.EOL));
 			});
@@ -333,6 +334,65 @@ describe('USB Command-Line Interface', () => {
 				expect(helpText).to.equal([
 					'Update the system USB configuration',
 					'Usage: particle usb configure [options]',
+					''
+				].join(os.EOL));
+			});
+		});
+	});
+
+	describe('Handles `usb cloud-status` Command', () => {
+		it('Parses arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'cloud-status', 'my-device']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ device: 'my-device' });
+			expect(argv.until).to.equal(undefined);
+			expect(argv.timeout).to.equal(60000);
+		});
+
+		it('Errors when required `device` argument is missing', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'cloud-status']);
+			expect(argv.clierror).to.be.an.instanceof(Error);
+			expect(argv.clierror).to.have.property('message', 'Parameter \'device\' is required.');
+			expect(argv.clierror).to.have.property('data', 'device');
+			expect(argv.clierror).to.have.property('isUsageError', true);
+			expect(argv.params).to.eql({});
+			expect(argv.until).to.equal(undefined);
+			expect(argv.timeout).to.equal(60000);
+		});
+
+		it('Parses options flags', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'cloud-status', 'my-device', '--until', 'disconnected', '--timeout', '2000']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ device: 'my-device' });
+			expect(argv.until).to.equal('disconnected');
+			expect(argv.timeout).to.equal(2000);
+		});
+
+		it('Errors when invalid option value is provided', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'cloud-status', 'my-device', '--until', 'NOPE']);
+			// TODO (mirande): should this be an error?
+			expect(argv.clierror).to.not.be.an.instanceof(Error);
+			expect(argv.clierror).to.include('Invalid values:');
+			expect(argv.clierror).to.include('Argument: until, Given: "NOPE", Choices: "unknown", "disconnected", "connecting", "connected", "disconnecting"');
+			expect(argv.params).to.eql({ device: 'my-device' });
+			expect(argv.until).to.equal('NOPE');
+			expect(argv.timeout).to.equal(60000);
+		});
+
+		it('Includes help with examples', () => {
+			commandProcessor.parse(root, ['usb', 'cloud-status', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Check a device\'s cloud connection state',
+					'Usage: particle usb cloud-status [options] <device>',
+					'',
+					'Options:',
+					'  --until    Poll your device for a specific connection state and then exit  [string] [choices: "unknown", "disconnected", "connecting", "connected", "disconnecting"]',
+					'  --timeout  How long should polling wait (in ms) for the requested status?  [number] [default: 60000]',
+					'',
+					'Examples:',
+					'  particle usb cloud-status blue                   Check the cloud connection status for the device named `blue`',
+					'  particle usb cloud-status red --until connected  Poll cloud connection status for the device named `red` until it reports `connected`',
 					''
 				].join(os.EOL));
 			});
