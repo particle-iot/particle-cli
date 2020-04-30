@@ -33,8 +33,6 @@ module.exports = class VariableCommand extends CLICommandBase {
 				return this.showUsageError(
 					'`device` parameter is required when `--product` flag is set'
 				);
-			} else if (!this.isDeviceId(device)){
-				return this.showProductDeviceNameUsageError(device);
 			}
 
 			if (!variableName){
@@ -42,17 +40,41 @@ module.exports = class VariableCommand extends CLICommandBase {
 					`\`variableName\` parameter is required when \`--product\` flag is set. To view available variables, run: particle product device list ${product}`
 				);
 			}
-
-			const msg = `Fetching variable ${variableName} from device ${device} in product ${product}`;
-			const fetchVar = createAPI().getVariable(device, variableName, product);
-			return this.showBusySpinnerUntilResolved(msg, fetchVar)
-				.then(res => {
-					this.ui.stdout.write(`${res.result}${os.EOL}`);
-				})
-				.catch(error => {
-					const message = `Error fetching variable: \`${variableName}\``;
-					throw createAPIErrorResult({ error, message });
-				});
+			let deviceId;
+			return Promise.resolve().then(() => {
+				if (this.isDeviceId(device)){
+					deviceId = device;
+				} else {
+					return createAPI().listDevices({ deviceName: device, product }).then((results) => {
+						const resultCount = results.meta.total_records;
+						const matchingDevices = results.devices.filter((resultDevice) => {
+							return resultDevice.name === device && !device.quarantined;
+						});
+						if (matchingDevices.length === 1){
+							deviceId = matchingDevices[0].id;
+						} else if(resultCount === 0){
+							return this.showUsageError(
+								`Device ${device} is not part of product ${product}. To view available devices, run: particle product device list ${product}`
+							);
+						} else {
+							return this.showUsageError(
+								`Device ${device} does not uniquely identify a device in in product ${product}. Ensure product devices have unique names or use device id to disambiguate. To view available devices, run: particle product device list ${product}`
+							);
+						}
+					});
+				}
+			}).then(() => {
+				const msg = `Fetching variable ${variableName} from device ${device} in product ${product}`;
+				const fetchVar = createAPI().getVariable(deviceId, variableName, product);
+				return this.showBusySpinnerUntilResolved(msg, fetchVar)
+					.then(res => {
+						this.ui.stdout.write(`${res.result}${os.EOL}`);
+					})
+					.catch(error => {
+						const message = `Error fetching variable: \`${variableName}\``;
+						throw createAPIErrorResult({ error, message });
+					});
+			});
 		}
 
 		return Promise.resolve()
