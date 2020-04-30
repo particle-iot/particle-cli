@@ -1,6 +1,5 @@
 const path = require('path');
 const { expect } = require('../setup');
-const { delay } = require('../lib/mocha-utils');
 const dfuUtil = require('../lib/dfu-util');
 const openSSL = require('../lib/open-ssl');
 const cli = require('../lib/cli');
@@ -13,8 +12,8 @@ const {
 } = require('../lib/env');
 
 
-describe('Keys Commands [@device]', () => {
-	const extendedTimeout = 5 * 60 * 1000;
+describe('Keys Commands [@device]', function cliKeysCommands(){
+	this.timeout(5 * 60 * 1000);
 
 	const help = [
 		'Manage your device\'s key pair and server public key',
@@ -78,12 +77,13 @@ describe('Keys Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	describe('New Subcommand', () => {
+	describe('Keys New Subcommand', () => {
 		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}.pem`);
 		const expectedKeys = [`${DEVICE_NAME}.der`, `${DEVICE_NAME}.pem`, `${DEVICE_NAME}.pub.pem`];
 
 		afterEach(async () => {
 			await cli.resetDevice();
+			await cli.waitUntilOnline();
 		});
 
 		it('Generate a new set of keys for your device', async () => {
@@ -135,7 +135,7 @@ describe('Keys Commands [@device]', () => {
 		});
 	});
 
-	describe('Save Subcommand', () => {
+	describe('Keys Save Subcommand', () => {
 		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}.pem`);
 		const expectedKeys = [`${DEVICE_NAME}.der`, `${DEVICE_NAME}.pub.pem`];
 		const help = [
@@ -150,16 +150,6 @@ describe('Keys Commands [@device]', () => {
 			'  --force  Force overwriting of <filename> if it exists  [boolean] [default: false]'
 		];
 
-		afterEach(async () => {
-			await cli.resetDevice();
-		});
-
-		after(async () => {
-			// TODO (mirande): replace w/ `cli.waitForDeviceToGetOnline()`
-			// helper when available
-			await delay(30 * 1000);
-		});
-
 		it('Saves device keys', async () => {
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'save', filename]);
@@ -171,6 +161,9 @@ describe('Keys Commands [@device]', () => {
 				const stats = await fs.stat(path.join(PATH_TMP_DIR, key));
 				expect(stats.size).to.be.above(100);
 			}
+
+			await cli.resetDevice();
+			await cli.waitUntilOnline();
 		});
 
 		it('Fails to save device keys when device is not in DFU mode', async () => {
@@ -190,10 +183,9 @@ describe('Keys Commands [@device]', () => {
 		});
 	});
 
-	describe('Doctor Subcommand', () => {
+	describe('Keys Doctor Subcommand', () => {
 		before(async () => {
 			await cli.setTestProfileAndLogin();
-			await cli.flashStrobyFirmwareOTAForTest();
 		});
 
 		it('Fixes devices keys', async () => {
@@ -212,8 +204,8 @@ describe('Keys Commands [@device]', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 
-			await cli.waitForVariable('name', 'stroby');
-		}).timeout(extendedTimeout);
+			await cli.waitUntilOnline();
+		});
 
 		it('Fails to fix device keys when device is not in DFU mode', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'doctor', DEVICE_ID]);
@@ -224,10 +216,9 @@ describe('Keys Commands [@device]', () => {
 		});
 	});
 
-	describe('Server Subcommand', () => {
+	describe('Keys Server Subcommand', () => {
 		before(async () => {
 			await cli.setTestProfileAndLogin();
-			await cli.flashStrobyFirmwareOTAForTest();
 		});
 
 		it('Switches server public keys', async () => {
@@ -239,8 +230,8 @@ describe('Keys Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 
 			await cli.resetDevice();
-			await cli.waitForVariable('name', 'stroby');
-		}).timeout(extendedTimeout);
+			await cli.waitUntilOnline();
+		});
 
 		it('Fails to switch server public keys when device is not in DFU mode', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'server']);
@@ -254,7 +245,7 @@ describe('Keys Commands [@device]', () => {
 			const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}-test.der`);
 			await cli.run(['keys', 'new', filename, '--protocol', 'udp'], { reject: true });
 			const args = ['keys', 'server', filename, '--deviceType', DEVICE_PLATFORM_NAME];
-			const { stdout, stderr, exitCode } = await cli.debug(args);
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.equal('Okay!  Formated server key file generated for this type of device.');
 			// TODO (mirande): fix `(node:3228) [DEP0005] DeprecationWarning:
@@ -263,7 +254,7 @@ describe('Keys Commands [@device]', () => {
 			// methods instead.
 			expect(stderr).to.exist;
 			expect(exitCode).to.equal(0);
-		}).timeout(extendedTimeout);
+		});
 
 		it('Fails when `--deviceType` is set but `filename` param is omitted', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'server', '--deviceType', 'Electron']);
@@ -274,7 +265,7 @@ describe('Keys Commands [@device]', () => {
 		});
 	});
 
-	describe('Address Subcommand', () => {
+	describe('Keys Address Subcommand', () => {
 		it('Reads server address from device\'s server public key', async () => {
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'address']);
@@ -285,7 +276,8 @@ describe('Keys Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 
 			await cli.resetDevice();
-		}).timeout(extendedTimeout);
+			await cli.waitUntilOnline();
+		});
 
 		it('Fails to save device keys when device is not in DFU mode', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'address']);
@@ -296,7 +288,7 @@ describe('Keys Commands [@device]', () => {
 		});
 	});
 
-	describe('Protocol Subcommand', () => {
+	describe('Keys Protocol Subcommand', () => {
 		it('Reads server address from device\'s server public key', async () => {
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'protocol']);
@@ -308,7 +300,8 @@ describe('Keys Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 
 			await cli.resetDevice();
-		}).timeout(extendedTimeout);
+			await cli.waitUntilOnline();
+		});
 
 		it('Fails to save device keys when device is not in DFU mode', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'protocol']);

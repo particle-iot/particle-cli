@@ -87,7 +87,7 @@ describe('Library Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	describe('Search Subcommand', () => {
+	describe('Library Search Subcommand', () => {
 		after(async () => {
 			await cli.setTestProfileAndLogin();
 		});
@@ -182,7 +182,7 @@ describe('Library Commands', () => {
 		});
 	});
 
-	describe('View Subcommand', () => {
+	describe('Library View Subcommand', () => {
 		after(async () => {
 			await cli.setTestProfileAndLogin();
 		});
@@ -377,7 +377,7 @@ describe('Library Commands', () => {
 		});
 	});
 
-	describe('List Subcommand', () => {
+	describe('Library List Subcommand', () => {
 		after(async () => {
 			await cli.setTestProfileAndLogin();
 		});
@@ -512,7 +512,7 @@ describe('Library Commands', () => {
 		});
 	});
 
-	describe('Add Subcommand', () => {
+	describe('Library Add Subcommand', () => {
 		const libDirPath = path.join(PATH_TMP_DIR, 'lib-valid');
 
 		beforeEach(async () => {
@@ -632,7 +632,7 @@ describe('Library Commands', () => {
 		});
 	});
 
-	describe('Copy Subcommand', () => {
+	describe('Library Copy Subcommand', () => {
 		it('Copies a library to a project', async () => {
 			const opts = { cwd: projPath };
 			const args = ['library', 'copy', 'dotstar'];
@@ -699,7 +699,7 @@ describe('Library Commands', () => {
 		});
 	});
 
-	describe('Install Subcommand', () => {
+	describe('Library Install Subcommand', () => {
 		it('Installs a library to a project', async () => {
 			const name = 'dotstar';
 			const opts = { cwd: projPath };
@@ -801,7 +801,7 @@ describe('Library Commands', () => {
 		});
 	});
 
-	describe('Create Subcommand', () => {
+	describe('Library Create Subcommand', () => {
 		it('Creates a library', async () => {
 			const name = 'testlib';
 			const version = '1.0.0';
@@ -938,7 +938,7 @@ describe('Library Commands', () => {
 		});
 	});
 
-	describe('Migrate Subcommand', () => {
+	describe('Library Migrate Subcommand', () => {
 		const { libraryTestResources } = require('particle-commands');
 		const libV1Path = path.join(PATH_TMP_DIR, 'lib-v1');
 		const libV2Path = path.join(PATH_TMP_DIR, 'lib-v2');

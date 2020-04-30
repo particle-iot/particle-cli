@@ -88,7 +88,7 @@ test
 
 ### Naming
 
-Your top-level `describe()` title should be formatted like `<cmd> Commands [<tags>]` where `cmd` is the 1st level command you are testing (e.g. "Cloud", "Call", etc) and `tags` are a comma-delimited set of tokens prefixed with `@` (e.g. `@device`).
+Tests should be grouped by command. Your top-level `describe()` title should be formatted like `<cmd> Commands [<tags>]` where `cmd` is the 1st level command you are testing (e.g. "Cloud", "Call", etc) and `tags` are a comma-delimited set of tokens prefixed with `@` (e.g. `@device`). Nested `describe()` titles should be formatted like `<subcmd> Subcommand`. Avoid deeply nesting `describe()` calls (2 levels is ideal).
 
 `describe()` titles should be title-case, `it()` names should be sentence-case.
 
@@ -96,9 +96,11 @@ Your top-level `describe()` title should be formatted like `<cmd> Commands [<tag
 For example:
 
 ```js
-describe('Mesh Commands [@device]', () => {
-	it('Removes device from network', async () => {
-		//...
+describe('USB Commands [@device]', () => {
+	describe('USB DFU Subcommand', () => {
+		it('Enters DFU mode with confirmation', async () => {
+			//...
+		});
 	});
 });
 
@@ -112,7 +114,7 @@ Tags provide an easy way to filter tests using use mocha's `--grep` feature ([do
 
 ## Known Issues
 
-* tests run somewhat slowly (~10m) and are generally less stable than unitish tests
+* tests run somewhat slowly (~30m) and are generally less stable than unitish tests
 * currently known to work under macOS _only_ when running with a device
-* tests should run in docker
+* tests should run in docker to acheive proper isolation
 

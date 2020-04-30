@@ -1,5 +1,4 @@
 const { expect } = require('../setup');
-const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
@@ -53,7 +52,7 @@ describe('Update Commands [@device]', () => {
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
-		await delay(5000);
+		await cli.waitUntilOnline();
 		const cmd = await cli.run(['usb', 'list']);
 
 		expect(cmd.stdout).to.include(DEVICE_ID);

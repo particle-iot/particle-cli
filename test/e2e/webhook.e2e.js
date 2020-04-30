@@ -63,68 +63,74 @@ describe('Webhook Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Creates a webhook', async () => {
-		const args = ['webhook', 'create', event, url];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+	describe('Webhook Create Subcommand', () => {
+		it('Creates a webhook', async () => {
+			const args = ['webhook', 'create', event, url];
+			const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.include('Successfully created webhook with ID');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			expect(stdout).to.include('Successfully created webhook with ID');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Lists all webhooks', async () => {
-		await cli.run(['webhook', 'create', event, url]);
+	describe('Webhook List Subcommand', () => {
+		it('Lists all webhooks', async () => {
+			await cli.run(['webhook', 'create', event, url]);
 
-		const { stdout, stderr, exitCode } = await cli.run(['webhook', 'list']);
-		const hookIDs = matches(stdout, /Hook ID (.*) is watching for "test-event"/g);
+			const { stdout, stderr, exitCode } = await cli.run(['webhook', 'list']);
+			const hookIDs = matches(stdout, /Hook ID (.*) is watching for "test-event"/g);
 
-		expect(hookIDs).to.have.lengthOf.at.least(1);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			expect(hookIDs).to.have.lengthOf.at.least(1);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
-	it('Deletes a webhook by ID', async () => {
-		const args = ['webhook', 'create', event, url];
-		await cli.run(args);
-		const { stdout: log } = await cli.run(args);
-		const id = matches(log, /Successfully created webhook with ID (.*)$/g)[0];
-		await cli.run(args);
+	describe('Webhook Delete Subcommand', () => {
+		it('Deletes a webhook by ID', async () => {
+			const args = ['webhook', 'create', event, url];
+			await cli.run(args);
+			const { stdout: log } = await cli.run(args);
+			const id = matches(log, /Successfully created webhook with ID (.*)$/g)[0];
+			await cli.run(args);
 
-		expect(id).to.be.a('string').with.lengthOf.above(10);
+			expect(id).to.be.a('string').with.lengthOf.above(10);
 
-		const { stdout, stderr, exitCode } = await cli.run(['webhook', 'delete', id]);
+			const { stdout, stderr, exitCode } = await cli.run(['webhook', 'delete', id]);
 
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 
-		const { stdout: list } = await cli.run(['webhook', 'list']);
-		const hookIDs = matches(list, /Hook ID (.*) is watching for "test-event"/g);
+			const { stdout: list } = await cli.run(['webhook', 'list']);
+			const hookIDs = matches(list, /Hook ID (.*) is watching for "test-event"/g);
 
-		expect(hookIDs).to.not.include(id);
-	});
+			expect(hookIDs).to.not.include(id);
+		});
 
-	// TODO (mirande): only deletes one hook at a time - fix!
-	it.skip('BUG: Deletes all webhooks', async () => {
-		const { stdout: log } = await cli.run(['webhook', 'create', event, url]);
+		// TODO (mirande): only deletes one hook at a time - fix!
+		it.skip('BUG: Deletes all webhooks', async () => {
+			const { stdout: log } = await cli.run(['webhook', 'create', event, url]);
 
-		expect(log).to.include('Successfully created webhook with ID');
+			expect(log).to.include('Successfully created webhook with ID');
 
-		const subprocess = cli.run(['webhook', 'delete', 'all']);
+			const subprocess = cli.run(['webhook', 'delete', 'all']);
 
-		await delay(1000);
-		subprocess.stdin.write('y');
-		subprocess.stdin.end('\n');
+			await delay(1000);
+			subprocess.stdin.write('y');
+			subprocess.stdin.end('\n');
 
-		const { stdout, stderr, exitCode } = await subprocess;
+			const { stdout, stderr, exitCode } = await subprocess;
 
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 
-		const { stdout: list } = await cli.run(['webhook', 'list']);
+			const { stdout: list } = await cli.run(['webhook', 'list']);
 
-		expect(list).to.include('Found 0 hooks registered');
+			expect(list).to.include('Found 0 hooks registered');
+		});
 	});
 });
 

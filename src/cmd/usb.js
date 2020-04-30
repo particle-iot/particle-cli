@@ -56,7 +56,7 @@ module.exports = class UsbCommand {
 								type.push('DFU');
 							}
 
-							if (mode && mode !== 'UNKNOWN'){
+							if (mode && (mode !== 'UNKNOWN' && mode !== 'NORMAL')){
 								type.push(mode);
 							}
 
