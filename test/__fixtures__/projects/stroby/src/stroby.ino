@@ -1,18 +1,20 @@
 // ------------
 // Strobe an LED
 // ------------
+
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
+String name = "stroby";
 String deviceID = System.deviceID();
-String appName = "stroby";
-int appVersion = 42;
+String deviceShortID = deviceID.substring(0, 6);
+int version = 42;
 int blinkState = 0;
-int led1 = D7;
+int led1 = D0; // DO for gen2, D7 for gen3
 
 void setup() {
   pinMode(led1, OUTPUT);
-  Particle.variable("name", &appName, STRING);
-  Particle.variable("version", &appVersion, INT);
+  Particle.variable("name", &name, STRING);
+  Particle.variable("version", &version, INT);
   Particle.variable("blinking", &blinkState, INT);
   Particle.function("check", check);
   Particle.function("stop", stop);
@@ -27,21 +29,24 @@ void loop(){
   }
 
   digitalWrite(led1, HIGH);
+  Serial.printlnf("%s - active", deviceShortID.c_str());
+  Particle.publish(deviceShortID, "active", 60, PUBLIC);
   Particle.publish("led", "ON", 60, PRIVATE);
   delay(500);
   digitalWrite(led1, LOW);
-  Particle.publish("led", "OFF", 60, PRIVATE);
+  Particle.publish("led", "OFF", 60, PRIVATE); 
   delay(500);
-  Particle.publish(deviceID.substring(0, 6), "active", 60, PUBLIC);
 }
 
 int start(String){
   blinkState = 1;
+  Serial.printlnf("%s - start", deviceShortID.c_str());
   return blinkState;
 }
 
 int stop(String){
   blinkState = 0;
+  Serial.printlnf("%s - stop", deviceShortID.c_str());
   return blinkState;
 }
 
@@ -57,4 +62,5 @@ int toggleBlink(String){
 int check(String){
   return 200;
 }
+
 

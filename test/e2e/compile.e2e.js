@@ -106,7 +106,7 @@ describe('Compile Commands', () => {
 			`saving to: ${strobyBinPath}`,
 			'Memory use:',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   8332\t    112\t   1112\t   9556\t   2554\t/workspace/target/workspace.elf',
+			'   8604\t    108\t   1136\t   9848\t   2678\t/workspace/target/workspace.elf',
 			'',
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
