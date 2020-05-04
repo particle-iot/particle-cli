@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.4.0 - 4 May 2020
+
+* Add `particle usb cloud-status` command to query the device via USB and return its cloud connection status ([PR #577](https://github.com/particle-iot/particle-cli/pull/577))
+* Update `particle usb list` to optionally accept a `filter` param ([PR #564](https://github.com/particle-iot/particle-cli/pull/564))
+* Update `particle subscribe` command w/ `--max` flag to exit after N events are received ([PR #563](https://github.com/particle-iot/particle-cli/pull/563))
+* Update `particle subscribe` command w/ `--until` flag to exit after specifc event data is received ([PR #563](https://github.com/particle-iot/particle-cli/pull/563))
+* Update `particle keys server` command to optionally save server keys locally when `--deviceType` flag is set ([PR #556](https://github.com/particle-iot/particle-cli/pull/556))
+* Recognize Asset Tracker platform ([PR #579](https://github.com/particle-iot/particle-cli/pull/579))
+* Fix `particle serial monitor --follow` exit signal event handling (`ctrl+c`, etc) ([PR #574](https://github.com/particle-iot/particle-cli/pull/574))
+* Fix cloud compilation & flashing for `core` ([PR #569](https://github.com/particle-iot/particle-cli/pull/569))
+* Fix `tinker` app flashing for `b5som` ([PR #576](https://github.com/particle-iot/particle-cli/pull/576))
+
 ## 2.3.0 - 30 March 2020
 
 * Updated binaries for DeviceOS 1.5.0
