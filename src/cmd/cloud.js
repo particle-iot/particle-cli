@@ -34,6 +34,7 @@ const PLATFORMS = extend(utilities.knownPlatforms(), {
 	'b-series': 23,
 	'x-series': 24,
 	'b5som': 25,
+	'tracker': 26,
 	'o': 82,
 	'd': 88,
 	'bl': 103,

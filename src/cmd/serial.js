@@ -66,13 +66,11 @@ module.exports = class SerialCommand {
 						}
 						const vid = deviceSpec.serial.vid;
 						const pid = deviceSpec.serial.pid;
-						const serialNumber = deviceSpec.serial.serialNumber;
 
 						const usbMatches = (port.vendorId === vid.toLowerCase() && port.productId === pid.toLowerCase());
 						const pnpMatches = !!(port.pnpId && (port.pnpId.indexOf('VID_' + vid.toUpperCase()) >= 0) && (port.pnpId.indexOf('PID_' + pid.toUpperCase()) >= 0));
-						const serialNumberMatches = port.serialNumber && port.serialNumber.indexOf(serialNumber) >= 0;
 
-						return !!(usbMatches || pnpMatches || serialNumberMatches);
+						return !!(usbMatches || pnpMatches);
 
 					});
 

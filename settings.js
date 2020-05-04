@@ -84,6 +84,7 @@ var settings = {
 		23: 'B SoM',
 		24: 'X SoM',
 		25: 'B5 SoM',
+		26: 'Asset Tracker',
 		88: 'Duo',
 		103: 'Bluz'
 	},

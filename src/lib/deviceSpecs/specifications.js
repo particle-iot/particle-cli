@@ -44,7 +44,6 @@ const specs = {
 		serial: {
 			vid: '1d50',
 			pid: '607d',
-			serialNumber: 'Spark_Core',
 			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'tcp',
@@ -123,7 +122,6 @@ const specs = {
 		serial: {
 			vid: '2b04',
 			pid: 'c006',
-			serialNumber: 'Particle_Photon',
 			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'tcp',
@@ -201,7 +199,6 @@ const specs = {
 		serial: {
 			vid: '2b04',
 			pid: 'c008',
-			serialNumber: 'Particle_P1',
 			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'tcp',
@@ -287,7 +284,6 @@ const specs = {
 		serial: {
 			vid: '2b04',
 			pid: 'c00a',
-			serialNumber: 'Particle_Electron',
 			deviceId: deviceIdFromSerialNumber
 		},
 		defaultProtocol: 'udp',
@@ -337,8 +333,7 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c058',
-			serialNumber: 'RedBear_Duo'
+			pid: 'c058'
 		},
 		defaultProtocol: 'tcp',
 		productId: 88,
@@ -407,8 +402,7 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c00c',
-			serialNumber: 'Particle_Argon'
+			pid: 'c00c'
 		},
 		defaultProtocol: 'udp',
 		productId: 12,
@@ -473,8 +467,7 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c016',
-			serialNumber: 'Particle_Argon'
+			pid: 'c016'
 		},
 		defaultProtocol: 'udp',
 		productId: 22,
@@ -540,8 +533,7 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c00d',
-			serialNumber: 'Particle_Boron'
+			pid: 'c00d'
 		},
 		defaultProtocol: 'udp',
 		productId: 13,
@@ -606,8 +598,7 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c017',
-			serialNumber: 'Particle_Boron'
+			pid: 'c017'
 		},
 		defaultProtocol: 'udp',
 		productId: 23,
@@ -673,8 +664,7 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c00e',
-			serialNumber: 'Particle_Xenon'
+			pid: 'c00e'
 		},
 		defaultProtocol: 'udp',
 		productId: 14,
@@ -739,8 +729,7 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c018',
-			serialNumber: 'Particle_Xenon'
+			pid: 'c018'
 		},
 		defaultProtocol: 'udp',
 		productId: 24,
@@ -806,11 +795,75 @@ const specs = {
 		},
 		serial: {
 			vid: '2b04',
-			pid: 'c019',
-			serialNumber: 'Particle_B_SoM'
+			pid: 'c019'
 		},
 		defaultProtocol: 'udp',
 		productId: 25,
+	},
+	'2b04:d01a': {
+		productName: 'Asset Tracker',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			variant: 'gen3',
+			addressOffset: 192,
+			portOffset: 258
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
+		},
+		userFirmware: {
+			address: '0x000D4000',
+			alt: '0'
+		},
+		systemFirmwareOne: {
+			address: '0x00030000',
+			alt: '0'
+		},
+		otaRegion: {
+			address: '0x80289000',
+			alt: '2'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
+		},
+		radioStack: {
+			address: '0x00001000',
+			alt: '0'
+		},
+		knownApps: {
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c01a'
+		},
+		defaultProtocol: 'udp',
+		productId: 26,
 	}
 };
 
@@ -825,27 +878,3 @@ Object.keys(specs).forEach((id) => {
 
 module.exports = specs;
 
-// device spec "model"
-// key: "vendor:device" ID
-// var model = {
-// 	tcpServerKey: {
-// 		address: String,
-// 		size: String,
-// 		format: String,
-// 		alt: String
-// 	},
-// 	tcpPrivateKey: {
-// 		address: String,
-// 		size: String,
-// 		format: String,
-// 		alt: String
-// 	},
-// 	factoryReset: {
-// 		address: String,
-// 		alt: String
-// 	},
-// 	userFirmware: {
-// 		address: String,
-// 		alt: String
-// 	}
-// };
