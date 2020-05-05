@@ -6,6 +6,8 @@ const {
 	PASSWORD,
 	DEVICE_ID,
 	DEVICE_NAME,
+	FOREIGN_USERNAME,
+	FOREIGN_PASSWORD,
 	PATH_TMP_DIR,
 	PATH_REPO_DIR,
 	PATH_PROJ_BLANK_INO,
@@ -34,6 +36,11 @@ module.exports.debug = (...args) => {
 module.exports.login = () => {
 	const { run } = module.exports;
 	return run(['login', '-u', USERNAME, '-p', PASSWORD], { reject: true });
+};
+
+module.exports.loginToForeignAcct = () => {
+	const { run } = module.exports;
+	return run(['login', '-u', FOREIGN_USERNAME, '-p', FOREIGN_PASSWORD], { reject: true });
 };
 
 module.exports.logout = () => {

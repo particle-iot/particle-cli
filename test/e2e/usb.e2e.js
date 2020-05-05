@@ -77,6 +77,10 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args = ['usb', 'list'];
 		});
 
+		after(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
 		it('Lists connected devices', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
@@ -164,6 +168,24 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			expect(stdout).to.not.include(DEVICE_NAME);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists connected devices when signed-in to a foreign account', async () => {
+			await cli.loginToForeignAcct();
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`<no name> [${DEVICE_ID}] (${platform})`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to list devices when signed-out', async () => {
+			await cli.logout();
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('The access token was not found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
 		});
 	});
 

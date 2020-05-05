@@ -49,6 +49,7 @@ module.exports = class UsbCommand {
 							return Promise.all(info);
 						})
 						.then(([device, isInDfuMode, mode]) => {
+							const { name, platform_id: platformID, connected } = device || {};
 							const platform = platformsById[usbDevice.platformId];
 							const type = [platform];
 
@@ -62,10 +63,10 @@ module.exports = class UsbCommand {
 
 							return {
 								id: usbDevice.id,
-								name: (device && device.name) ? device.name : '',
+								name: name || '',
 								type: `${type.join(', ')}`,
-								platform_id: device.platform_id,
-								connected: device.connected
+								platform_id: platformID || '',
+								connected: !!connected
 							};
 						})
 						.finally(() => usbDevice.close());
