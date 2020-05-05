@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.4.1 - 5 May 2020
+
+* Fix `particle usb list` when connected device(s) are not associated w/ signed-in account ([PR #580](https://github.com/particle-iot/particle-cli/pull/580))
+
 ## 2.4.0 - 4 May 2020
 
 * Add `particle usb cloud-status` command to query the device via USB and return its cloud connection status ([PR #577](https://github.com/particle-iot/particle-cli/pull/577))
