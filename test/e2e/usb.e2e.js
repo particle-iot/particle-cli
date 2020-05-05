@@ -89,6 +89,15 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			expect(exitCode).to.equal(0);
 		});
 
+		it('Lists connected device ids using the `--ids-only` flag', async () => {
+			args.push('--ids-only');
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal(DEVICE_ID);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
 		it('Lists connected devices filtered by platform name', async () => {
 			args.push(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(args);
