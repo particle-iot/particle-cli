@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.0 - 6 May 2020
+
+* Updated binaries for DeviceOS 1.5.1
+
 ## 2.4.1 - 5 May 2020
 
 * Fix `particle usb list` when connected device(s) are not associated w/ signed-in account ([PR #580](https://github.com/particle-iot/particle-cli/pull/580))
