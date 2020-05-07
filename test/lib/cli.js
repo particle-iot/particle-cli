@@ -192,16 +192,27 @@ module.exports.waitUntilOnline = async () => {
 };
 
 module.exports.waitForVariable = async (name, value) => {
-	const { run } = module.exports;
-	await delay(2000);
-	const subprocess = run(['monitor', DEVICE_NAME, name, '--delay', 500]);
-	return new Promise((resolve, reject) => {
-		subprocess.all.on('data', (data) => {
-			const received = data.toString('utf8');
+	const { waitForResult } = module.exports;
+	const args = ['monitor', DEVICE_NAME, name, '--delay', 500];
+	const isFinished = (data) => data.toString('utf8').trim() === value;
+	return delay(2000).then(() => waitForResult(args, isFinished));
+};
 
-			if (received.trim() === value){
+module.exports.waitForResult = async (args = [], options = {}, isFinished) => {
+	const { run } = module.exports;
+
+	if (typeof options === 'function'){
+		isFinished = options;
+		options = {};
+	}
+
+	return new Promise((resolve, reject) => {
+		const subprocess = run(args, options);
+
+		subprocess.all.on('data', (data) => {
+			if (isFinished(data)){
 				subprocess.cancel();
-				resolve();
+				resolve(subprocess);
 			}
 		});
 		subprocess.all.on('error', (error) => {
@@ -210,7 +221,7 @@ module.exports.waitForVariable = async (name, value) => {
 		});
 		subprocess.all.on('close', () => {
 			subprocess.cancel();
-			resolve();
+			resolve(subprocess);
 		});
 	});
 };

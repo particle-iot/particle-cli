@@ -337,10 +337,8 @@ describe('Subscribe Commands [@device]', () => {
 
 	// TODO (mirande): capture stdout and stderr independently
 	async function runAndCollectEventOutput(...args){
-		const subprocess = cli.run(...args);
 		const received = [];
-
-		await waitForResult(subprocess, (data) => {
+		const { isCanceled } = await cli.waitForResult(...args, (data) => {
 			const log = data.toString('utf8').trim();
 
 			received.push(log);
@@ -350,29 +348,8 @@ describe('Subscribe Commands [@device]', () => {
 			}
 			return false;
 		});
-
-		const { isCanceled } = await subprocess;
 		const events = parseEvents(received);
 		return { events, received, isCanceled };
-	}
-
-	function waitForResult(subprocess, isFinished){
-		return new Promise((resolve, reject) => {
-			subprocess.all.on('data', (data) => {
-				if (isFinished(data)){
-					subprocess.cancel();
-					resolve();
-				}
-			});
-			subprocess.all.on('error', (error) => {
-				subprocess.cancel();
-				reject(error);
-			});
-			subprocess.all.on('close', () => {
-				subprocess.cancel();
-				resolve();
-			});
-		});
 	}
 });
 

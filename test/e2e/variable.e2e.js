@@ -145,11 +145,9 @@ describe('Variable Commands [@device]', () => {
 		});
 
 		it('Uses default when `--delay` is too short', async () => {
-			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1];
-			const subprocess = cli.run(args);
 			const received = [];
-
-			await waitForResult(subprocess, (data) => {
+			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1];
+			const { isCanceled } = await cli.waitForResult(args, (data) => {
 				const log = data.toString('utf8').trim();
 
 				received.push(log);
@@ -159,8 +157,6 @@ describe('Variable Commands [@device]', () => {
 				}
 				return false;
 			});
-
-			const { isCanceled } = await subprocess;
 			const [alert, msg, ...results] = received;
 
 			expect(alert).to.equal('Delay was too short, resetting to 500ms');
@@ -225,11 +221,9 @@ describe('Variable Commands [@device]', () => {
 
 	describe('Variable Monitor Subcommand', () => {
 		it('Monitors a variable', async () => {
-			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1000];
-			const subprocess = cli.run(args);
 			const received = [];
-
-			await waitForResult(subprocess, (data) => {
+			const args = ['variable', 'monitor', DEVICE_ID, 'version', '--delay', 1000];
+			const { isCanceled } = await cli.waitForResult(args, (data) => {
 				const log = data.toString('utf8').trim();
 
 				received.push(log);
@@ -239,8 +233,6 @@ describe('Variable Commands [@device]', () => {
 				}
 				return false;
 			});
-
-			const { isCanceled } = await subprocess;
 			const [msg, ...results] = received;
 
 			expect(msg).to.equal('Hit CTRL-C to stop!');
@@ -248,24 +240,5 @@ describe('Variable Commands [@device]', () => {
 			expect(isCanceled).to.equal(true);
 		});
 	});
-
-	function waitForResult(subprocess, isFinished){
-		return new Promise((resolve, reject) => {
-			subprocess.all.on('data', (data) => {
-				if (isFinished(data)){
-					subprocess.cancel();
-					resolve();
-				}
-			});
-			subprocess.all.on('error', (error) => {
-				subprocess.cancel();
-				reject(error);
-			});
-			subprocess.all.on('close', () => {
-				subprocess.cancel();
-				resolve();
-			});
-		});
-	}
 });
 
