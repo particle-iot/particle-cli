@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.6.0 - 20 May 2020
+
+* Updated binaries for DeviceOS 1.5.2
+
 ## 2.5.0 - 6 May 2020
 
 * Updated binaries for DeviceOS 1.5.1
