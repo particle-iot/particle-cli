@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.7.0 - 26 May 2020
+
+* Add `particle product` namespace
+* Add `particle product device list` command to list devices in a product
+* Add `particle product device add` command to facilitate adding device to a product
+* Update `particle variable get` to accept `--product <id>` flag in order to fetch a variable from a product device
+* Update `particle function call` to accept `--product <id>` flag in order to call a function on a product device
+* Update `particle subscribe` to accept `--product <id>` flag in order to listen for events on a product device
+* Update `particle publish` to accept `--product <id>` flag in order to send events to a product's event stream
+* Update `particle cloud flash` to accept `--product <id>` flag in order to facilitate flashing a product device
+
+_To learn more about these commands, append the `--help` flag and run the desired command - e.g. `particle product --help`_
+
 ## 2.6.0 - 20 May 2020
 
 * Updated binaries for DeviceOS 1.5.2
