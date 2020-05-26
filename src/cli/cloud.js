@@ -11,24 +11,24 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	};
 
-	commandProcessor.createCommand(cloud, 'claim', 'Register a device with your user account with the cloud', {
-		params: '<deviceID>',
-		handler: (args) => {
-			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().claimDevice(args.params.deviceID);
-		},
-		examples: {
-			'$0 $command 123456789': 'Claim device by id to your account'
-		}
-	});
-
 	commandProcessor.createCommand(cloud, 'list', 'Display a list of your devices, as well as their variables and functions', {
 		params: '[filter]',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().listDevices(args.params.filter);
+			return new CloudCommands().listDevices(args);
 		},
 		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
+	});
+
+	commandProcessor.createCommand(cloud, 'claim', 'Register a device with your user account with the cloud', {
+		params: '<deviceID>',
+		handler: (args) => {
+			const CloudCommands = require('../cmd/cloud');
+			return new CloudCommands().claimDevice(args);
+		},
+		examples: {
+			'$0 $command 123456789': 'Claim device by id to your account'
+		}
 	});
 
 	commandProcessor.createCommand(cloud, 'remove', 'Release a device from your account so that another user may claim it', {
@@ -41,7 +41,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().removeDevice(args.params.device, args);
+			return new CloudCommands().removeDevice(args);
 		},
 		examples: {
 			'$0 $command 0123456789ABCDEFGHI': 'Remove device by id from your account'
@@ -52,30 +52,30 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<device> <name>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().renameDevice(args.params.device, args.params.name);
+			return new CloudCommands().renameDevice(args);
 		},
 		examples: {
-			'$0 $command red green': 'Rename red device to green'
+			'$0 $command red green': 'Rename device `red` to `green`'
 		}
 	});
 
 	commandProcessor.createCommand(cloud, 'flash', 'Pass a binary, source file, or source directory to a device!', {
 		params: '<device> [files...]',
 		options: Object.assign({}, compileOptions, {
-			'yes': {
-				boolean: true,
-				description: 'Answer yes to all questions'
+			'product': {
+				description: 'Target a device within the given Product ID or Slug'
 			}
 		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().flashDevice(args.params.device, args.params.files, args);
+			return new CloudCommands().flashDevice(args);
 		},
 		examples: {
-			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device blue',
-			'$0 $command green tinker': 'Flash the default Tinker app to device green',
-			'$0 $command red blink.ino': 'Compile blink.ino in the cloud and flash to device red',
-			'$0 $command orange firmware.bin': 'Flash the pre-compiled binary to device orange',
+			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device `blue`',
+			'$0 $command green tinker': 'Flash the default `tinker` app to device `green`',
+			'$0 $command red blink.ino': 'Compile `blink.ino` in the cloud and flash to device `red`',
+			'$0 $command orange firmware.bin': 'Flash a pre-compiled `firmware.bin` binary to device `orange`',
+			'$0 $command 0123456789abcdef01234567 --product 12345': 'Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`'
 		}
 	});
 
@@ -88,11 +88,11 @@ module.exports = ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().compileCode(args.params.deviceType, args.params.files, args);
+			return new CloudCommands().compileCode(args);
 		},
 		examples: {
-			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a Photon',
-			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
+			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a `photon`',
+			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 		},
 		// TODO: get the platforms from config and document in epilogue
 		epilogue: 'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc'
@@ -100,18 +100,23 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(cloud, 'nyan', 'Make your device shout rainbows', {
 		params: '<device> [onOff]',
+		options: {
+			'product': {
+				description: 'Target a device within the given Product ID or Slug'
+			}
+		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().nyanMode(args.params.device, args.params.onOff);
+			return new CloudCommands().nyanMode(args);
+		},
+		examples: {
+			'$0 $command green': 'Make the device named `blue` start signaling',
+			'$0 $command green off': 'Make the device named `blue` stop signaling',
+			'$0 $command blue --product 12345': 'Make the device named `blue` within product `12345` start signaling'
 		}
 	});
 
 	commandProcessor.createCommand(cloud, 'login', 'Login to the cloud and store an access token locally', {
-		examples: {
-			'$0 $command': 'prompt for credentials and log in',
-			'$0 $command --username user@example.com --password test': 'log in with credentials provided on the command line',
-			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line'
-		},
 		options: {
 			u: {
 				description: 'your username',
@@ -132,6 +137,11 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands().login(args);
+		},
+		examples: {
+			'$0 $command': 'prompt for credentials and log in',
+			'$0 $command --username user@example.com --password test': 'log in with credentials provided on the command line',
+			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line'
 		}
 	});
 

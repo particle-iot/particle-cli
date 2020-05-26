@@ -18,12 +18,26 @@ const cliBinPath = path.join(PATH_REPO_DIR, 'dist', 'index.js');
 
 module.exports.run = (args = [], options = {}) => {
 	const opts = Object.assign({
-		cwd: PATH_REPO_DIR,
+		cwd: PATH_TMP_DIR,
 		reject: false
 	}, options);
 
 	args = Array.isArray(args) ? args : [args];
 	return execa(cliBinPath, [...args], opts);
+};
+
+module.exports.runWithRetry = async (args = [], options = {}, { attempts = 3 } = {}) => {
+	const { run, runWithRetry } = module.exports;
+
+	try {
+		return await run(args, options);
+	} catch (error){
+		if (attempts <= 0){
+			throw error;
+		}
+		await delay(500);
+		return runWithRetry(args, options, { attempts: attempts - 1 });
+	}
 };
 
 module.exports.debug = (...args) => {
@@ -134,6 +148,26 @@ module.exports.flashStrobyFirmwareOTAForTest = async () => {
 	await flashTestFirmwareOTAWithConfirmation(PATH_PROJ_STROBY_INO, variable);
 };
 
+module.exports.callStrobyStart = async (deviceID, productID) => {
+	const { runWithRetry } = module.exports;
+	const args = ['call', deviceID, 'start'];
+
+	if (productID){
+		args.push('--product', productID);
+	}
+	return runWithRetry(args, { reject: true });
+};
+
+module.exports.callStrobyStop = async (deviceID, productID) => {
+	const { runWithRetry } = module.exports;
+	const args = ['call', deviceID, 'stop'];
+
+	if (productID){
+		args.push('--product', productID);
+	}
+	return runWithRetry(args, { reject: true });
+};
+
 module.exports.removeDeviceFromMeshNetwork = () => {
 	const { run } = module.exports;
 	return run(['mesh', 'remove', DEVICE_ID, '--yes'], { reject: true });
@@ -158,16 +192,27 @@ module.exports.waitUntilOnline = async () => {
 };
 
 module.exports.waitForVariable = async (name, value) => {
-	const { run } = module.exports;
-	await delay(2000);
-	const subprocess = run(['monitor', DEVICE_NAME, name, '--delay', 500]);
-	return new Promise((resolve, reject) => {
-		subprocess.all.on('data', (data) => {
-			const received = data.toString('utf8');
+	const { waitForResult } = module.exports;
+	const args = ['monitor', DEVICE_NAME, name, '--delay', 500];
+	const isFinished = (data) => data.toString('utf8').trim() === value;
+	return delay(2000).then(() => waitForResult(args, isFinished));
+};
 
-			if (received.trim() === value){
+module.exports.waitForResult = async (args = [], options = {}, isFinished) => {
+	const { run } = module.exports;
+
+	if (typeof options === 'function'){
+		isFinished = options;
+		options = {};
+	}
+
+	return new Promise((resolve, reject) => {
+		const subprocess = run(args, options);
+
+		subprocess.all.on('data', (data) => {
+			if (isFinished(data)){
 				subprocess.cancel();
-				resolve();
+				resolve(subprocess);
 			}
 		});
 		subprocess.all.on('error', (error) => {
@@ -176,7 +221,7 @@ module.exports.waitForVariable = async (name, value) => {
 		});
 		subprocess.all.on('close', () => {
 			subprocess.cancel();
-			resolve();
+			resolve(subprocess);
 		});
 	});
 };

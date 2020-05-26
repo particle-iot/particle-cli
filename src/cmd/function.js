@@ -1,52 +1,72 @@
+const os = require('os');
 const VError = require('verror');
-const ApiClient = require('../lib/api-client');
-const ensureError = require('../lib/utilities').ensureError;
+const ParticleAPI = require('./api');
+const LegacyApiClient = require('../lib/api-client');
+const settings = require('../../settings');
+const CLICommandBase = require('./base');
+
+const { normalizedApiError } = LegacyApiClient;
 
 
-module.exports = class FunctionCommand {
-	listFunctions() {
-		const api = new ApiClient();
-		api.ensureToken();
-
-		return api.getAllAttributes().then(devices => {
-			let lines = [];
-			for (let i = 0; i < devices.length; i++) {
-
-				const device = devices[i];
-				const available = [];
-				if (device.functions) {
-
-					for (let idx = 0; idx < device.functions.length; idx++) {
-						const name = device.functions[idx];
-						available.push('  int ' + name + '(String args) ');
-					}
-				}
-
-				let status = device.name + ' (' + device.id + ') has ' + available.length + ' functions ';
-				if (available.length === 0) {
-					status += ' (or is offline) ';
-				}
-
-				lines.push(status);
-				lines = lines.concat(available);
-			}
-			console.log(lines.join('\n'));
-		});
+module.exports = class FunctionCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
 	}
 
-	callFunction(deviceId, functionName, funcParam) {
-		const api = new ApiClient();
+	listFunctions(){
+		const api = new LegacyApiClient();
 		api.ensureToken();
 
-		return api.callFunction(deviceId, functionName, funcParam).then(result => {
-			if (result && result.hasOwnProperty('return_value')) {
-				console.log(result.return_value);
-			} else {
-				throw api.normalizedApiError(result);
+		return api.getAllAttributes()
+			.then(devices => this.ui.logDeviceDetail(devices, { fnsOnly: true }))
+			.catch(err => {
+				throw new VError(normalizedApiError(err), 'Error while listing variables');
+			});
+	}
+
+	callFunction({ product, params: { device, function: fn, argument: arg } }){
+		if (product){
+			if (!this.isDeviceId(device)){
+				return this.showProductDeviceNameUsageError(device);
 			}
-		}).catch(err => {
-			throw new VError(ensureError(err), 'Function call failed');
-		});
+		}
+
+		let msg = `Calling function ${fn} from device ${device}`;
+
+		if (product){
+			msg += ` in product ${product}`;
+		}
+
+		const fetchVar = createAPI().callFunction(device, fn, arg, product);
+		return this.showBusySpinnerUntilResolved(msg, fetchVar)
+			.then(res => {
+				if (!res || !res.hasOwnProperty('return_value')){
+					throw res;
+				}
+				this.ui.stdout.write(`${res.return_value}${os.EOL}`);
+			})
+			.catch(error => {
+				let message = `Error calling function: \`${fn}\``;
+
+				if (error && error.statusCode === 404){
+					message = `Function call failed: Function \`${fn}\` not found`;
+				}
+				throw createAPIErrorResult({ error, message });
+			});
 	}
 };
+
+// UTILS //////////////////////////////////////////////////////////////////////
+function createAPI(){
+	return new ParticleAPI(settings.apiUrl, {
+		accessToken: settings.access_token
+	});
+}
+
+function createAPIErrorResult({ error: e, message, json }){
+	const error = new VError(normalizedApiError(e), message);
+	error.asJSON = json;
+	return error;
+}
+
 

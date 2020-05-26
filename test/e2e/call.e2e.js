@@ -14,9 +14,13 @@ describe('Call Commands [@device]', () => {
 		'  -v, --verbose  Increases how much logging to display  [count]',
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
+		'Options:',
+		'  --product  Target a device within the given Product ID or Slug  [string]',
+		'',
 		'Examples:',
-		'  particle call coffee brew                 Call the brew function on the coffee device',
-		'  particle call board digitalWrite D7=HIGH  Call the digitalWrite function with argument D7=HIGH on the board device'
+		'  particle call coffee brew                                    Call the `brew` function on the `coffee` device',
+		'  particle call board digitalWrite D7=HIGH                     Call the `digitalWrite` function with argument `D7=HIGH` on the `board` device',
+		'  particle call 0123456789abcdef01234567 brew --product 12345  Call the `brew` function on the device with id `0123456789abcdef01234567` within product `12345`',
 	];
 
 	before(async () => {
@@ -57,7 +61,7 @@ describe('Call Commands [@device]', () => {
 		const args = ['call', DEVICE_NAME, 'check'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal('200');
+		expect(stdout.slice(-3)).to.equal('200');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -66,7 +70,7 @@ describe('Call Commands [@device]', () => {
 		const args = ['call', DEVICE_NAME, 'WATNOPE'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal('Function call failed: Function WATNOPE not found');
+		expect(stdout).to.include('Function call failed: Function `WATNOPE` not found');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

@@ -1,11 +1,13 @@
 const os = require('os');
+const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const stripANSI = require('../lib/ansi-strip');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
-	DEVICE_NAME
+	DEVICE_NAME,
+	DEVICE_PLATFORM_NAME
 } = require('../lib/env');
 
 
@@ -19,11 +21,13 @@ describe('Get Commands [@device]', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --time  Show the time when the variable was received  [boolean]',
+		'  --time     Show the time when the variable was received  [boolean]',
+		'  --product  Target a device within the given Product ID or Slug  [string]',
 		'',
 		'Examples:',
-		'  particle get basement temperature  Read the temperature variable from the device basement',
-		'  particle get all temperature       Read the temperature variable from all my devices'
+		'  particle get basement temperature                                  Read the `temperature` variable from the device `basement`',
+		'  particle get 0123456789abcdef01234567 temperature --product 12345  Read the `temperature` variable from the device with id `0123456789abcdef01234567` within product `12345`',
+		'  particle get all temperature                                       Read the `temperature` variable from all my devices'
 	];
 
 	before(async () => {
@@ -53,9 +57,10 @@ describe('Get Commands [@device]', () => {
 	});
 
 	it('Lists all available variables', async () => {
+		const platform = capitalize(DEVICE_PLATFORM_NAME);
 		const { stdout, stderr, exitCode } = await cli.run('get');
 
-		expect(stdout).to.include(`${DEVICE_NAME} (${DEVICE_ID}) has`);
+		expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
 		expect(stdout).to.include('version (int32)');
 		expect(stderr).to.include('polling server to see what devices are online, and what variables are available');
 		expect(exitCode).to.equal(0);

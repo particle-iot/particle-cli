@@ -28,6 +28,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  monitor     Connect and display messages from a device',
 		'  nyan        Make your device shout rainbows',
 		'  preprocess  Preprocess a Wiring file (ino) into a C++ file (cpp)',
+		'  product     Access Particle Product functionality [BETA]',
 		'  project     Manage application projects',
 		'  publish     Publish an event to the cloud',
 		'  serial      Simple serial interface to your devices',
@@ -43,8 +44,8 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  whoami      prints signed-in username'
 	];
 
-	const allCmds = ['binary inspect', 'binary', 'call', 'cloud claim',
-		'cloud list', 'cloud remove', 'cloud name', 'cloud flash',
+	const allCmds = ['binary inspect', 'binary', 'call', 'cloud list',
+		'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile', 'config', 'device add', 'device remove',
 		'device rename', 'device doctor', 'device', 'doctor', 'flash',
@@ -55,7 +56,8 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'library search', 'library upload', 'library publish', 'library view',
 		'library', 'list', 'login', 'logout', 'mesh create', 'mesh add',
 		'mesh remove', 'mesh list', 'mesh info', 'mesh scan', 'mesh', 'monitor',
-		'nyan', 'preprocess', 'project create', 'project', 'publish',
+		'nyan', 'preprocess', 'product device list', 'product device add',
+		'product device', 'product', 'project create', 'project', 'publish',
 		'serial list', 'serial monitor', 'serial identify', 'serial wifi',
 		'serial mac', 'serial inspect', 'serial flash', 'serial claim',
 		'serial', 'setup', 'subscribe', 'token list', 'token revoke',

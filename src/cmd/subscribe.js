@@ -1,100 +1,114 @@
+const os = require('os');
 const VError = require('verror');
-const ApiClient = require('../lib/api-client');
+const settings = require('../../settings');
+const { normalizedApiError } = require('../lib/api-client');
+const CLICommandBase = require('./base');
+const ParticleAPI = require('./api');
 
 
-module.exports = class SubscribeCommand {
-	startListening(event, { device, all, until, max }) {
-		const api = new ApiClient();
-		api.ensureToken();
+module.exports = class SubscribeCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
+	}
 
-		// legacy argument order
-		let eventName = event[0];
-		let deviceId = event[1] || device;
-
-		// if they typed: "particle subscribe mine"
-		if (eventName === 'mine') {
-			eventName = null;
+	startListening({ device, all, until, max, product, params: { event } }){
+		if (all && !event){
+			return this.showUsageError(
+				'`event` parameter is required when `--all` flag is set'
+			);
 		}
 
-		let eventLabel = eventName;
-		if (eventLabel) {
-			eventLabel = '"' + eventLabel + '"';
+		if (product && device){
+			if (!this.isDeviceId(device)){
+				return this.showProductDeviceNameUsageError(device);
+			}
+		}
+
+		const msg = ['Subscribing to'];
+
+		if (!device && !product && !all){
+			device = 'mine';
+		}
+
+		if (event){
+			msg.push(`"${event}"`);
+		} else if (all){
+			msg.push('public events');
 		} else {
-			eventLabel = 'all events';
+			msg.push('all events');
 		}
 
-		if (!deviceId && !all) {
-			deviceId = 'mine';
-		}
-
-		if (!deviceId) {
-			console.log('Subscribing to ' + eventLabel + ' from the firehose (all devices) and my personal stream (my devices)');
-		} else if (deviceId === 'mine') {
-			console.log('Subscribing to ' + eventLabel + ' from my personal stream (my devices only) ');
+		if (all){
+			msg.push('from the firehose (all devices) and my personal stream (my devices)');
+		} else if (device && product){
+			msg.push(`from product ${product} device ${device}'s stream`);
+		} else if (product){
+			msg.push(`from product ${product}'s stream`);
+		} else if (device){
+			const source = device === 'mine' ? 'my devices' : `device ${device}'s stream`;
+			msg.push(`from ${source}`);
 		} else {
-			console.log('Subscribing to ' + eventLabel + ' from ' + deviceId + "'s stream");
+			msg.push('from my personal stream (my devices)');
 		}
 
-		if (until) {
-			console.log(`This command will exit after receiving event data matching: '${until}'`);
+		this.ui.stdout.write(msg.join(' ') + os.EOL);
+
+		if (until){
+			this.ui.stdout.write(`This command will exit after receiving event data matching: '${until}'${os.EOL}`);
 		}
 
-		let eventCount = 0;
-		if (max) {
+		if (max){
 			max = Math.abs(max);
-			console.log(`This command will exit after receiving ${max} event(s)...`);
+			this.ui.stdout.write(`This command will exit after receiving ${max} event(s)...${os.EOL}`);
 		}
 
-		let chunks = [];
-		function appendToQueue(arr) {
-			for (let i = 0; i < arr.length; i++) {
-				const line = (arr[i] || '').trim();
-				if (!line) {
-					continue;
-				}
-				chunks.push(line);
-				if (line.indexOf('data:') === 0) {
-					processItem(chunks);
-					chunks = [];
-				}
-			}
-		}
+		const fetchStream = createAPI().getEventStream(device, event, product);
+		return this.showBusySpinnerUntilResolved('Fetching event stream...', fetchStream)
+			.then(stream => {
+				this.ui.stdout.write(os.EOL);
+				return stream;
+			})
+			.then(stream => stream.on('event', this.createEventHandler(until, max)))
+			.catch(error => {
+				const message = 'Error fetching event stream';
+				throw createAPIErrorResult({ error, message });
+			});
+	}
 
-		function processItem(arr) {
-			const obj = {};
-			for (let i=0;i<arr.length;i++) {
-				let line = arr[i];
+	createEventHandler(until, max){
+		let eventCount = 0;
 
-				if (line.indexOf('event:') === 0) {
-					obj.name = line.replace('event:', '').trim();
-				} else if (line.indexOf('data:') === 0) {
-					line = line.replace('data:', '');
-					Object.assign(obj, JSON.parse(line));
-				}
-			}
+		return (event) => {
+			this.ui.stdout.write(`${JSON.stringify(event)}${os.EOL}`);
 
-			console.log(JSON.stringify(obj));
-
-			if (until && until === obj.data) {
-				console.log('Matching event received. Exiting...');
+			if (until && until === event.data) {
+				this.ui.stdout.write('Matching event received. Exiting...');
 				process.exit(0);
 			}
 
-			if (max) {
+			if (max){
 				eventCount = eventCount + 1;
+
 				if (eventCount === max) {
-					console.log(`${eventCount} event(s) received. Exiting...`);
+					this.ui.stdout.write(`${eventCount} event(s) received. Exiting...`);
 					process.exit(0);
 				}
 			}
-		}
-
-		return api.getEventStream(eventName, deviceId, (event) => {
-			const chunk = event.toString();
-			appendToQueue(chunk.split('\n'));
-		}).catch(err => {
-			throw new VError(api.normalizedApiError(err), 'Error subscribing to event stream');
-		});
+		};
 	}
 };
+
+
+// UTILS //////////////////////////////////////////////////////////////////////
+function createAPI(){
+	return new ParticleAPI(settings.apiUrl, {
+		accessToken: settings.access_token
+	});
+}
+
+function createAPIErrorResult({ error: e, message, json }){
+	const error = new VError(normalizedApiError(e), message);
+	error.asJSON = json;
+	return error;
+}
 

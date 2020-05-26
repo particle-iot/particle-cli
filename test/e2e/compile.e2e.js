@@ -27,10 +27,10 @@ describe('Compile Commands', () => {
 		'  --saveTo          Filename for the compiled binary  [string]',
 		'',
 		'Examples:',
-		'  particle compile photon                                  Compile the source code in the current directory in the cloud for a Photon',
-		'  particle compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for a Electron and save it to electron.bin',
+		'  particle compile photon                                  Compile the source code in the current directory in the cloud for a `photon`',
+		'  particle compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 		'',
-		'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc'
+		'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc',
 	];
 
 	before(async () => {
@@ -75,10 +75,10 @@ describe('Compile Commands', () => {
 			'',
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
@@ -92,20 +92,21 @@ describe('Compile Commands', () => {
 	});
 
 	it('Compiles a project using the `--target` flag', async () => {
-		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath, '--target', '1.2.1'];
+		const args = ['compile', 'argon', PATH_PROJ_STROBY_INO, '--saveTo', strobyBinPath, '--target', '1.4.4'];
 		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args);
 		const file = await fs.stat(strobyBinPath);
 		const log = [
 			'Compiling code for argon',
+			'Targeting version: 1.4.4',
 			'',
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
-			'Memory use: ',
+			'Memory use:',
 			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   7948\t    112\t   1088\t   9148\t   23bc\t/workspace/target/workspace.elf',
+			'   8604\t    108\t   1136\t   9848\t   2678\t/workspace/target/workspace.elf',
 			'',
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
@@ -134,10 +135,10 @@ describe('Compile Commands', () => {
 			'    app.ino',
 			'    helper.cpp',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -166,10 +167,10 @@ describe('Compile Commands', () => {
 			'    app.ino',
 			'    helper/helper.cpp',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -198,10 +199,10 @@ describe('Compile Commands', () => {
 			'    helper/helper.cpp',
 			'    helper/helper.h',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -230,10 +231,10 @@ describe('Compile Commands', () => {
 			'    helper.cpp',
 			'    helper.h',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -264,10 +265,10 @@ describe('Compile Commands', () => {
 			'    app.ino',
 			'    helper.cpp',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -303,10 +304,10 @@ describe('Compile Commands', () => {
 			'    src/helper/h2.cpp',
 			'    src/helper/h3.cpp',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -359,10 +360,10 @@ describe('Compile Commands', () => {
 			'    legacy-flat/app.ino',
 			'    legacy-flat/helper.cpp',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -392,10 +393,10 @@ describe('Compile Commands', () => {
 			'    src/helper/helper.cpp',
 			'    project.properties',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -427,10 +428,10 @@ describe('Compile Commands', () => {
 			'    src/test-library-publish.h',
 			'    src/uber-library-example/uber-library-example.h',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${destination}`
@@ -452,10 +453,10 @@ describe('Compile Commands', () => {
 			'',
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 			`saving to: ${strobyBinPath}`,
-			'Memory use: ',
+			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
@@ -512,13 +513,14 @@ describe('Compile Commands', () => {
 			'    app.ino',
 			'    helper.cpp',
 			'',
-			'attempting to compile firmware ',
+			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`
+			`saving to: ${destination}`,
+			`Compile failed: ENOENT: no such file or directory, open '${destination}'`
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
-		expect(stderr).to.include(`Error: ENOENT: no such file or directory, open '${destination}'`);
+		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
 
@@ -529,8 +531,8 @@ describe('Compile Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
 
 		expect(stdout).to.include('Compiling code for photon');
+		expect(stdout).to.include('Compile failed: make -C ../modules/photon/user-part all');
 		expect(stdout).to.include('error: \'asdfjasfjdkl\' does not name a type');
-		expect(stdout).to.include('Compile failed: Compiler encountered an error');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

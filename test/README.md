@@ -22,6 +22,18 @@ E2E_FOREIGN_DEVICE_ID=<id for 3rd-party device the test user DOES NOT own>
 E2E_FOREIGN_DEVICE_NAME=<name for 3rd-party device>
 E2E_FOREIGN_DEVICE_PLATFORM_ID=<platform id for 3rd-party device>
 E2E_FOREIGN_DEVICE_PLATFORM_NAME=<platform name for 3rd-party device>
+E2E_PRODUCT_01_ID=<id for product owned by test user>
+E2E_PRODUCT_01_NAME=<product name>
+E2E_PRODUCT_01_DEVICE_01_ID=<id for 1st device in product>
+E2E_PRODUCT_01_DEVICE_01_NAME=<name for 1st device in product>
+E2E_PRODUCT_01_DEVICE_01_GROUP=<1st device's group - should be unique>
+E2E_PRODUCT_01_DEVICE_01_PLATFORM_ID=<platform id of your 1st product device>
+E2E_PRODUCT_01_DEVICE_01_PLATFORM_NAME=<platform name of your 1st product device>
+E2E_PRODUCT_01_DEVICE_02_ID=<id for 2nd device in product>
+E2E_PRODUCT_01_DEVICE_02_NAME=<name for 2nd device in product>
+E2E_PRODUCT_01_DEVICE_02_GROUP=<2nd device's group - should be unique>
+E2E_PRODUCT_01_DEVICE_02_PLATFORM_ID=<platform id of your 1st product device>
+E2E_PRODUCT_01_DEVICE_02_PLATFORM_NAME=<platform name of your 1st product device>
 ```
 
 _NOTE: Your device will be flashed, etc. Test failures may leave it in a bad state. **Please DO NOT use a mission-critical device!**_

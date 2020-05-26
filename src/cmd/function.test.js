@@ -1,31 +1,35 @@
-const proxyquire = require('proxyquire');
+const os = require('os');
+const stream = require('stream');
+const ParticleAPI = require('./api');
 const { expect, sinon } = require('../../test/setup');
-const { withConsoleStubs } = require('../../test/lib/mocha-utils');
-
-const stubs = {
-	api: {
-		ensureToken: () => {},
-		callFunction: () => {},
-		normalizedApiError: (resp) => new Error(resp.error),
-	},
-	ApiClient: function ApiClient(){
-		return stubs.api;
-	}
-};
-
-const FunctionCommand = proxyquire('./function', {
-	'../lib/api-client': stubs.ApiClient
-});
+const FunctionCommand = require('./function');
 
 
 describe('Function Command', () => {
 	const sandbox = sinon.createSandbox();
-	let deviceId, functionName, functionParam;
+	let command, stdin, stdout, stderr, device, fn, arg, product;
 
 	beforeEach(() => {
-		deviceId = 'test-device';
-		functionName = 'fn';
-		functionParam = 'param';
+		sandbox.stub(ParticleAPI.prototype, 'callFunction');
+
+		stdin = new stream.Readable();
+		stdout = new stream.Writable({
+			write: function write(chunk, encoding, callback){
+				this.content = (this.content || '') + chunk;
+				callback();
+			}
+		});
+		stderr = new stream.Writable({
+			write: function write(chunk, encoding, callback){
+				this.errorContent = (this.errorContent || '') + chunk;
+				callback();
+			}
+		});
+
+		command = new FunctionCommand({ stdin, stdout, stderr });
+		device = 'test-device';
+		fn = 'fn';
+		arg = 'param';
 	});
 
 	afterEach(() => {
@@ -33,50 +37,44 @@ describe('Function Command', () => {
 	});
 
 	describe('when the function succeeds', () => {
-		it('prints the return value', withConsoleStubs(sandbox, () => {
-			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
-			api.callFunction.resolves({ ok: true, return_value: 42 });
+		it('prints the return value', () => {
+			ParticleAPI.prototype.callFunction.resolves({ ok: true, return_value: 42 });
+			return command.callFunction({ params: { device, function: fn, argument: arg } })
+				.then(() => {
+					expect(stdout.content).to.eql(`42${os.EOL}`);
+					expect(product).to.equal(undefined);
+					expect(ParticleAPI.prototype.callFunction)
+						.to.have.property('callCount', 1);
+					expect(ParticleAPI.prototype.callFunction.firstCall.args)
+						.to.eql([device, fn, arg, product]);
+				});
+		});
 
-			return func.callFunction(deviceId, functionName, functionParam)
-				.then(() => expectSuccessMessage(42));
-		}));
-
-		it('prints the return value of 0', withConsoleStubs(sandbox, () => {
-			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
-			api.callFunction.resolves({ ok: true, return_value: 0 });
-
-			return func.callFunction(deviceId, functionName, functionParam)
-				.then(() => expectSuccessMessage(0));
-		}));
+		it('prints the return value of 0', () => {
+			ParticleAPI.prototype.callFunction.resolves({ ok: true, return_value: 0 });
+			return command.callFunction({ params: { device, function: fn, argument: arg } })
+				.then(() => {
+					expect(stdout.content).to.eql(`0${os.EOL}`);
+					expect(product).to.equal(undefined);
+					expect(ParticleAPI.prototype.callFunction)
+						.to.have.property('callCount', 1);
+					expect(ParticleAPI.prototype.callFunction.firstCall.args)
+						.to.eql([device, fn, arg, product]);
+				});
+		});
 	});
 
 	describe('when the function does not exist', () => {
 		it('rejects with an error',() => {
-			const { func, api } = stubForFunction(new FunctionCommand(), stubs);
-			api.callFunction.resolves({
-				ok: false,
-				error: `Function ${functionName} not found`
-			});
-
-			return func.callFunction(deviceId, functionName, functionParam).then(() => {
-				throw new Error('expected promise to be rejected');
-			}).catch(error => {
-				expect(error).to.have.property('message', `Function call failed: Function ${functionName} not found`);
-			});
+			ParticleAPI.prototype.callFunction.resolves({ ok: false, error: `Function ${fn} not found` });
+			return command.callFunction({ params: { device, function: fn, argument: arg } })
+				.then(() => {
+					throw new Error('expected promise to be rejected');
+				})
+				.catch(error => {
+					expect(error).to.have.property('message', `Error calling function: \`${fn}\`: Function fn not found`);
+				});
 		});
 	});
-
-	function expectSuccessMessage(value){
-		expect(process.stdout.write).to.have.property('callCount', 1);
-		expect(process.stdout.write.firstCall.args[0])
-			.to.match(new RegExp(`${value}\\n$`));
-	}
-
-	function stubForFunction(func, stubs){
-		const { api } = stubs;
-		sandbox.stub(api, 'ensureToken');
-		sandbox.stub(api, 'callFunction');
-		return { func, api };
-	}
 });
 

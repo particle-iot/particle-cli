@@ -1,3 +1,4 @@
+const os = require('os');
 const path = require('path');
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
@@ -9,7 +10,11 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	FOREIGN_DEVICE_ID,
+	PRODUCT_01_ID,
+	PRODUCT_01_DEVICE_01_ID,
+	PRODUCT_01_DEVICE_01_NAME,
 	PATH_TMP_DIR,
+	PATH_PROJ_BLANK_INO,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR
 } = require('../lib/env');
@@ -43,9 +48,16 @@ describe('Cloud Commands [@device]', () => {
 		await cli.flashBlankFirmwareOTAForTest();
 	});
 
-	after(async () => {
+	afterEach(async () => {
 		await cli.claimTestDevice();
 		await cli.revertDeviceName();
+	});
+
+	after(async () => {
+		await Promise.all(
+			[DEVICE_ID, PRODUCT_01_DEVICE_01_ID]
+				.map(id => cli.run(['cloud', 'nyan', id, 'off'], { reject: true }))
+		);
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -83,6 +95,8 @@ describe('Cloud Commands [@device]', () => {
 		});
 
 		it('Lists devices', async () => {
+			const args = ['cloud', 'list'];
+			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
@@ -179,10 +193,10 @@ describe('Cloud Commands [@device]', () => {
 				'',
 				'Including:',
 				`    ${PATH_PROJ_STROBY_INO}`,
-				'attempting to compile firmware ',
+				'attempting to compile firmware',
 				'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
 				`saving to: ${strobyBinPath}`,
-				'Memory use: ',
+				'Memory use:',
 				'', // don't assert against memory stats since they may change based on current default Device OS version
 				'Compile succeeded.',
 				`Saved firmware to: ${strobyBinPath}`
@@ -216,6 +230,27 @@ describe('Cloud Commands [@device]', () => {
 	});
 
 	describe('Cloud Flash Subcommand', () => {
+		const help = [
+			'Pass a binary, source file, or source directory to a device!',
+			'Usage: particle cloud flash [options] <device> [files...]',
+			'',
+			'Global Options:',
+			'  -v, --verbose  Increases how much logging to display  [count]',
+			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --target          The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
+			'  --followSymlinks  Follow symlinks when collecting files  [boolean]',
+			'  --product         Target a device within the given Product ID or Slug  [string]',
+			'',
+			'Examples:',
+			'  particle cloud flash blue                                      Compile the source code in the current directory in the cloud and flash to device `blue`',
+			'  particle cloud flash green tinker                              Flash the default `tinker` app to device `green`',
+			'  particle cloud flash red blink.ino                             Compile `blink.ino` in the cloud and flash to device `red`',
+			'  particle cloud flash orange firmware.bin                       Flash a pre-compiled `firmware.bin` binary to device `orange`',
+			'  particle cloud flash 0123456789abcdef01234567 --product 12345  Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`',
+		];
+
 		it('Flashes firmware', async () => {
 			const args = ['cloud', 'flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -223,7 +258,7 @@ describe('Cloud Commands [@device]', () => {
 				'Including:',
 				`    ${PATH_PROJ_STROBY_INO}`,
 				`attempting to flash firmware to your device ${DEVICE_NAME}`,
-				'Flash device OK:  Update started'
+				'Flash device OK: Update started'
 			];
 
 			expect(stdout.split('\n')).to.include.members(log);
@@ -248,6 +283,57 @@ describe('Cloud Commands [@device]', () => {
 			expect(stdout.split('\n')).to.include.members(log);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+
+			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForDeviceToGetOnline()` helper
+		});
+
+		it('Flashes a product device', async () => {
+			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_ID, PATH_PROJ_BLANK_INO, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				'Including:',
+				`    ${PATH_PROJ_BLANK_INO}`,
+				`marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
+				`attempting to flash firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
+				'Flash device OK: Update started',
+				`device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'to resume normal updates, please visit:',
+				`https://console.particle.io/${PRODUCT_01_ID}/devices/unmark-development/${PRODUCT_01_DEVICE_01_ID}`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForProductVariable()` helper
+		});
+
+		it('Flashes a `known app` on to a product device', async () => {
+			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_ID, 'tinker', '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
+				`attempting to flash firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
+				'Flash device OK: Update started',
+				`device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'to resume normal updates, please visit:',
+				`https://console.particle.io/${PRODUCT_01_ID}/devices/unmark-development/${PRODUCT_01_DEVICE_01_ID}`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForProductFunction()` helper
+		});
+
+		it('Fails to flash a product device when `device` param is not an id', async () => {
+			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_NAME, PATH_PROJ_BLANK_INO, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`\`device\` must be an id when \`--product\` flag is set - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
 		});
 	});
 
@@ -350,6 +436,97 @@ describe('Cloud Commands [@device]', () => {
 			expect(stdout.split('\n')).to.include.members(log);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to name an unknown device', async () => {
+			const invalidDeviceID = '1234567890';
+			const args = ['cloud', 'name', invalidDeviceID, 'NOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`Renaming device ${invalidDeviceID}`,
+				`Failed to rename ${invalidDeviceID}: Permission Denied`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to name a device owned by someone else', async () => {
+			const args = ['cloud', 'name', FOREIGN_DEVICE_ID, 'NOPE'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`Renaming device ${FOREIGN_DEVICE_ID}`,
+				`Failed to rename ${FOREIGN_DEVICE_ID}: Permission Denied`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('Cloud Nyan Subcommand', () => {
+		const help = [
+			'Make your device shout rainbows',
+			'Usage: particle cloud nyan [options] <device> [onOff]',
+			'',
+			'Global Options:',
+			'  -v, --verbose  Increases how much logging to display  [count]',
+			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --product  Target a device within the given Product ID or Slug  [string]',
+			'',
+			'Examples:',
+			'  particle cloud nyan green                 Make the device named `blue` start signaling',
+			'  particle cloud nyan green off             Make the device named `blue` stop signaling',
+			'  particle cloud nyan blue --product 12345  Make the device named `blue` within product `12345` start signaling',
+		];
+
+		it('Starts a device signaling', async () => {
+			const args = ['cloud', 'nyan', DEVICE_NAME];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Stops a device signaling', async () => {
+			const args = ['cloud', 'nyan', DEVICE_NAME, 'off'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Starts a product device signaling', async () => {
+			const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Stops a product device signaling', async () => {
+			const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_ID, 'off', '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to start a product device signaling when `device` param is not an id', async () => {
+			const args = ['cloud', 'nyan', PRODUCT_01_DEVICE_01_NAME, '--product', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`\`device\` must be an id when \`--product\` flag is set - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
 		});
 	});
 });

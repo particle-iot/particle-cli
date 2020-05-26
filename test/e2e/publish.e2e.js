@@ -1,9 +1,11 @@
+const os = require('os');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
+const { PRODUCT_01_ID } = require('../lib/env');
 
 
 describe('Publish Commands', () => {
-	const eventName = 'teste2eevent';
+	const eventName = 'test-e2e-event';
 	const help = [
 		'Publish an event to the cloud',
 		'Usage: particle publish [options] <event> [data]',
@@ -15,9 +17,11 @@ describe('Publish Commands', () => {
 		'Options:',
 		'  --private  Publish to the private stream  [boolean] [default: true]',
 		'  --public   Publish to the public stream  [boolean]',
+		'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
 		'',
 		'Examples:',
-		'  particle publish temperature 25.0  Publish a temperature event to your private event stream'
+		'  particle publish temp 25.0                  Publish a temp event to your private event stream',
+		'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
 	];
 
 	before(async () => {
@@ -33,7 +37,7 @@ describe('Publish Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['help', 'publish']);
 
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -41,7 +45,7 @@ describe('Publish Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run('publish');
 
 		expect(stdout).to.equal('Parameter \'event\' is required.');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(1);
 	});
 
@@ -49,7 +53,7 @@ describe('Publish Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['publish', '--help']);
 
 		expect(stdout).to.equal('');
-		expect(stderr.split('\n')).to.include.members(help);
+		expect(stderr.split(os.EOL)).to.include.members(help);
 		expect(exitCode).to.equal(0);
 	});
 
@@ -57,7 +61,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal(`Published private event: ${eventName}${'\n'}`);
+		expect(stdout).to.include(`Published private event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -66,7 +70,7 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName, '--private'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal(`Published private event: ${eventName}${'\n'}`);
+		expect(stdout).to.include(`Published private event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
@@ -75,9 +79,45 @@ describe('Publish Commands', () => {
 		const args = ['publish', eventName, '--public'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
-		expect(stdout).to.equal(`Published public event: ${eventName}${'\n'}`);
+		expect(stdout).to.include(`Published public event: ${eventName}${os.EOL}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
+	});
+
+	it('Publishes a product event', async () => {
+		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Publishes a private product event', async () => {
+		const args = ['publish', eventName, '--product', PRODUCT_01_ID, '--private'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Ignores `--public` flag when publishing a product event', async () => {
+		const args = ['publish', eventName, '--product', PRODUCT_01_ID, '--public'];
+		const { stdout, stderr, exitCode } = await cli.run(args);
+
+		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('Fails when user is signed-out', async () => {
+		await cli.logout();
+		const { stdout, stderr, exitCode } = await cli.run(['publish', eventName]);
+
+		expect(stdout).to.include('Error publishing event: The access token was not found');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
 	});
 });
 

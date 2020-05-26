@@ -17,14 +17,19 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(variable, 'get', 'Retrieve a value from your device', {
 		params: '[device] [variableName]',
-		options: timeOption,
+		options: Object.assign({}, timeOption, {
+			'product': {
+				description: 'Target a device within the given Product ID or Slug'
+			}
+		}),
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand().getValue(args.params.device, args.params.variableName, args);
+			return new VariableCommand().getValue(args);
 		},
 		examples: {
-			'$0 $command basement temperature': 'Read the temperature variable from the device basement',
-			'$0 $command all temperature': 'Read the temperature variable from all my devices',
+			'$0 $command basement temperature': 'Read the `temperature` variable from the device `basement`',
+			'$0 $command 0123456789abcdef01234567 temperature --product 12345': 'Read the `temperature` variable from the device with id `0123456789abcdef01234567` within product `12345`',
+			'$0 $command all temperature': 'Read the `temperature` variable from all my devices'
 		}
 	});
 
@@ -39,7 +44,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const VariableCommand = require('../cmd/variable');
-			return new VariableCommand().monitorVariables(args.params.device, args.params.variableName, args);
+			return new VariableCommand().monitorVariables(args);
 		},
 		examples: {
 			'$0 $command up temp --delay 2000': 'Read the temp variable from the device up every 2 seconds'

@@ -1,4 +1,3 @@
-const fs = require('fs');
 const url = require('url');
 const _ = require('lodash');
 const chalk = require('chalk');
@@ -41,66 +40,198 @@ module.exports = class ParticleApi {
 			});
 	}
 
-	listDevices(){
-		return this._wrap(this.api.listDevices({ auth: this.accessToken }));
+	getUserInfo(){
+		return this._wrap(
+			this.api.getUserInfo({
+				auth: this.accessToken
+			})
+		);
 	}
 
-	getDeviceAttributes(deviceId){
-		return this._wrap(this.api.getDevice({ deviceId, auth: this.accessToken }));
+	listDevices(options){
+		return this._wrap(
+			this.api.listDevices(
+				Object.assign({
+					auth: this.accessToken
+				}, options)
+			)
+		);
+	}
+
+	getDeviceAttributes(deviceId, product){
+		return this._wrap(
+			this.api.getDevice({
+				product,
+				deviceId,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	addDeviceToProduct(deviceId, product, file){
+		return this._wrap(
+			this.api.addDeviceToProduct({
+				product,
+				deviceId,
+				file,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	markAsDevelopmentDevice(deviceId, development, product){
+		return this._wrap(
+			this.api.markAsDevelopmentDevice({
+				development,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	claimDevice(deviceId, requestTransfer){
-		return this._wrap(this.api.claimDevice({ deviceId, requestTransfer, auth: this.accessToken }));
+		return this._wrap(
+			this.api.claimDevice({
+				// TODO (mirande): push these tweaks upstream to `particle-api-js`
+				deviceId: (deviceId || '').toLowerCase(),
+				requestTransfer: requestTransfer ? true : undefined,
+				auth: this.accessToken
+			})
+		);
 	}
 
-	removeDevice(deviceId){
-		return this._wrap(this.api.removeDevice({ deviceId, auth: this.accessToken }));
+	removeDevice(deviceId, product){
+		return this._wrap(
+			this.api.removeDevice({
+				product,
+				deviceId,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	renameDevice(deviceId, name){
-		return this._wrap(this.api.renameDevice({ deviceId, name, auth: this.accessToken }));
+		return this._wrap(
+			this.api.renameDevice({
+				deviceId,
+				name,
+				auth: this.accessToken
+			})
+		);
 	}
 
-	signalDevice(deviceId, signal){
-		return this._wrap(this.api.signalDevice({ deviceId, signal, auth: this.accessToken }));
+	flashDevice(deviceId, files, targetVersion, product){
+		return this._wrap(
+			this.api.flashDevice({
+				deviceId,
+				product,
+				// TODO (mirande): callers should provide an object like: { [filename]: filepath }
+				files: files.map || files,
+				targetVersion,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	signalDevice(deviceId, signal, product){
+		return this._wrap(
+			this.api.signalDevice({
+				deviceId,
+				product,
+				signal,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	listBuildTargets(onlyFeatured){
-		return this._wrap(this.api.listBuildTargets({ onlyFeatured, auth: this.accessToken }));
+		return this._wrap(
+			this.api.listBuildTargets({
+				onlyFeatured,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	compileCode(files, platformId, targetVersion){
-		return this._wrap(this.api.compileCode({ files, platformId, targetVersion, auth: this.accessToken }));
+		return this._wrap(
+			this.api.compileCode({
+				platformId,
+				targetVersion,
+				// TODO (mirande): callers should provide an object like: { [filename]: filepath }
+				files: files.map || files,
+				auth: this.accessToken
+			})
+		);
 	}
 
-	downloadFirmwareBinary(binaryId, downloadPath){
-		return new Promise((resolve, reject) => {
-			const req = this.api.downloadFirmwareBinary({ binaryId, auth: this.accessToken });
-			req.pipe(fs.createWriteStream(downloadPath))
-				.on('error', reject)
-				.on('finish', resolve);
-		});
+	getVariable(deviceId, name, product){
+		return this._wrap(
+			this.api.getVariable({
+				name,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
 	}
 
-	getEventStream(deviceId, name){
-		return this.api.getEventStream({ deviceId, name, auth: this.accessToken });
+	callFunction(deviceId, name, argument, product){
+		return this._wrap(
+			this.api.callFunction({
+				name,
+				argument,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
 	}
 
-	publishEvent(name, data, isPrivate){
-		return this.api.publishEvent({ name, data, isPrivate, auth: this.accessToken });
+	downloadFirmwareBinary(binaryId){
+		return this._wrap(
+			this.api.downloadFirmwareBinary({
+				binaryId,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	getEventStream(deviceId, name, product){
+		return this._wrap(
+			this.api.getEventStream({
+				name,
+				deviceId,
+				product,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	publishEvent(name, data, isPrivate, product){
+		return this._wrap(
+			this.api.publishEvent({
+				name,
+				data,
+				product,
+				isPrivate,
+				auth: this.accessToken
+			})
+		);
 	}
 
 	_wrap(promise){
 		return Promise.resolve(promise)
-			.then(result => result.body)
+			.then(result => result.body || result)
 			.catch(this._checkToken);
 	}
 
 	_checkToken(err){
 		const { UnauthorizedError } = module.exports;
 
-		if (err.statusCode === 401){
-			return Promise.reject(new UnauthorizedError());
+		if ([400, 401].includes(err.statusCode)){
+			return Promise.reject(new UnauthorizedError(err.shortErrorDescription));
 		}
 		return Promise.reject(err);
 	}

@@ -26,7 +26,7 @@ module.exports = class UI {
 		stderr.write(data + EOL);
 	}
 
-	logDeviceDetail(devices){
+	logDeviceDetail(devices, { varsOnly = false, fnsOnly = false } = {}){
 		const { EOL, chalk } = this;
 		const deviceList = Array.isArray(devices) ? devices : [devices];
 		const lines = [];
@@ -34,7 +34,8 @@ module.exports = class UI {
 		for (let i = 0; i < deviceList.length; i++){
 			const device = deviceList[i];
 			const deviceType = platformsById[device.product_id] || `Product ${device.product_id}`;
-			const connectedState = device.connected ? 'online' : 'offline';
+			const connected = device.connected || device.online;
+			const connectedState = connected ? 'online' : 'offline';
 			let name;
 
 			if (!device.name || device.name === 'null'){
@@ -43,7 +44,7 @@ module.exports = class UI {
 				name = device.name;
 			}
 
-			if (device.connected){
+			if (connected){
 				name = chalk.cyan.bold(name);
 			} else {
 				name = chalk.cyan.dim(name);
@@ -51,8 +52,14 @@ module.exports = class UI {
 
 			const status = `${name} [${device.id}] (${deviceType}) is ${connectedState}`;
 			lines.push(status);
-			formatVariables(device.variables, lines);
-			formatFunctions(device.functions, lines);
+
+			if (!fnsOnly){
+				formatVariables(device.variables, lines);
+			}
+
+			if (!varsOnly){
+				formatFunctions(device.functions, lines);
+			}
 		}
 
 		this.write(lines.join(EOL));
