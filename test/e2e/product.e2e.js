@@ -16,7 +16,7 @@ const {
 
 describe('Product Commands', () => {
 	const help = [
-		'Access Particle Product functionality',
+		'Access Particle Product functionality [BETA]',
 		'Usage: particle product <command>',
 		'Help:  particle help product <command>',
 		'',

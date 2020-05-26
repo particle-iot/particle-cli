@@ -1,5 +1,5 @@
 module.exports = ({ commandProcessor, root }) => {
-	const product = commandProcessor.createCategory(root, 'product', 'Access Particle Product functionality');
+	const product = commandProcessor.createCategory(root, 'product', 'Access Particle Product functionality [BETA]');
 	const device = commandProcessor.createCategory(product, 'device', 'Manage the devices associated with your product');
 
 	commandProcessor.createCommand(device, 'list', 'List all devices that are part of a product', {

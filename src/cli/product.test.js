@@ -23,7 +23,7 @@ describe('Product Command-Line Interface', () => {
 			commandProcessor.parse(root, ['product', '--help']);
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
-					'Access Particle Product functionality',
+					'Access Particle Product functionality [BETA]',
 					'Usage: particle product <command>',
 					'Help:  particle help product <command>',
 					'',

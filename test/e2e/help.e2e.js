@@ -28,7 +28,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  monitor     Connect and display messages from a device',
 		'  nyan        Make your device shout rainbows',
 		'  preprocess  Preprocess a Wiring file (ino) into a C++ file (cpp)',
-		'  product     Access Particle Product functionality',
+		'  product     Access Particle Product functionality [BETA]',
 		'  project     Manage application projects',
 		'  publish     Publish an event to the cloud',
 		'  serial      Simple serial interface to your devices',
