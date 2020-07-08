@@ -58,6 +58,9 @@ describe('Product Commands', () => {
 	});
 
 	describe('Device List Subcommand', () => {
+		const device01Label = `${PRODUCT_01_DEVICE_01_NAME} [${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID})`;
+		const device02Label = `${PRODUCT_01_DEVICE_02_NAME} [${PRODUCT_01_DEVICE_02_ID}] (Product ${PRODUCT_01_ID})`;
+
 		// TODO (mirande): sometimes entity includes: `desired_firmware_version`
 		const summaryDeviceFieldNames = ['denied',
 			'development', 'firmware_product_id', 'groups', 'iccid', 'id', 'imei',
@@ -68,17 +71,21 @@ describe('Product Commands', () => {
 
 		// TODO (mirande): sometimes entity includes: `pinned_build_target`
 		const detailedDeviceFieldNames = ['cellular', 'connected',
-			'current_build_target', 'default_build_target', 'functions', 'groups',
-			'iccid', 'id', 'imei', 'last_app', 'last_heard', 'last_iccid',
-			'last_ip_address', 'mobile_secret', 'name', 'notes', 'platform_id',
-			'product_id', 'serial_number', 'status', 'system_firmware_version',
+			'current_build_target', 'default_build_target', 'denied',
+			'desired_firmware_version', 'development', 'firmware_product_id',
+			'firmware_updates_enabled', 'firmware_updates_forced',
+			'firmware_version', 'functions', 'groups', 'iccid', 'id', 'imei',
+			'last_handshake_at', 'last_heard', 'last_iccid', 'last_ip_address',
+			'mobile_secret', 'name', 'notes', 'online', 'owner',
+			'pinned_build_target', 'platform_id', 'product_id', 'quarantined',
+			'serial_number', 'status', 'system_firmware_version',
 			'targeted_firmware_release_version', 'variables'];
 
 		it('Lists devices', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
-			expect(stdout).to.include(`${PRODUCT_01_DEVICE_01_NAME} [${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID})`);
-			expect(stdout).to.include(`${PRODUCT_01_DEVICE_02_NAME} [${PRODUCT_01_DEVICE_02_ID}] (Product ${PRODUCT_01_ID})`);
+			expect(stdout).to.include(device01Label);
+			expect(stdout).to.include(device02Label);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -86,8 +93,8 @@ describe('Product Commands', () => {
 		it('Lists devices using the `--name` flag', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID, '--name', PRODUCT_01_DEVICE_02_NAME];
 			const { stdout, stderr, exitCode } = await cli.run(args);
-			expect(stdout).to.include(`${PRODUCT_01_DEVICE_02_NAME} [${PRODUCT_01_DEVICE_02_ID}] (Product ${PRODUCT_01_ID})`);
-			expect(stdout.split(os.EOL)).to.have.lengthOf(1);
+			expect(stdout).to.not.include(device01Label);
+			expect(stdout).to.include(device02Label);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -95,8 +102,15 @@ describe('Product Commands', () => {
 		it('Lists devices using the `--limit` flag', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID, '--limit', 1];
 			const { stdout, stderr, exitCode } = await cli.run(args);
-			expect(stdout).to.include(`(Product ${PRODUCT_01_ID})`);
-			expect(stdout.split(os.EOL)).to.have.lengthOf(1);
+
+			// expect one or the other but not both
+			try {
+				expect(stdout).to.not.include(device01Label);
+				expect(stdout).to.include(device02Label);
+			} catch (error){
+				expect(stdout).to.include(device01Label);
+				expect(stdout).to.not.include(device02Label);
+			}
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -104,8 +118,8 @@ describe('Product Commands', () => {
 		it('Lists devices using the `--groups` flag', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID, '--groups', PRODUCT_01_DEVICE_02_GROUP];
 			const { stdout, stderr, exitCode } = await cli.run(args);
-			expect(stdout).to.include(`${PRODUCT_01_DEVICE_02_NAME} [${PRODUCT_01_DEVICE_02_ID}] (Product ${PRODUCT_01_ID})`);
-			expect(stdout.split(os.EOL)).to.have.lengthOf(1);
+			expect(stdout).to.not.include(device01Label);
+			expect(stdout).to.include(device02Label);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -135,7 +149,7 @@ describe('Product Commands', () => {
 		it('Shows device detail', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
-			expect(stdout).to.include(`${PRODUCT_01_DEVICE_01_NAME} [${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID})`);
+			expect(stdout).to.include(device01Label);
 			expect(stdout).to.include('Functions:');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
