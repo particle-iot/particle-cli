@@ -22,7 +22,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const SubscribeCommand = require('../cmd/subscribe');
-			return new SubscribeCommand().startListening(args);
+			return new SubscribeCommand(args).startListening(args);
 		},
 		examples: {
 			'$0 $command': 'Subscribe to all event published by my devices',

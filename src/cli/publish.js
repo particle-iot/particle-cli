@@ -17,7 +17,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const PublishCommand = require('../cmd/publish');
-			return new PublishCommand().publishEvent(args);
+			return new PublishCommand(args).publishEvent(args);
 		},
 		examples: {
 			'$0 $command temp 25.0': 'Publish a temp event to your private event stream',

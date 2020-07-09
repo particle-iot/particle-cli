@@ -102,6 +102,15 @@ describe('Function Commands [@device]', () => {
 			expect(exitCode).to.equal(0);
 		});
 
+		it('Calls a function with `--quiet` flag', async () => {
+			const args = ['function', 'call', DEVICE_NAME, fn, '--quiet'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('200');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
 		// TODO (mirande): need to ensure device is running expected firmware and online
 		// once flashing product devices is implemented - as it is, the expectation
 		// is that your product device is running the `stroby` firmware found in:

@@ -1,4 +1,5 @@
 const stream = require('stream');
+const Spinner = require('cli-spinner').Spinner;
 const { expect, sinon } = require('../../../test/setup');
 const UI = require('./index');
 
@@ -45,6 +46,44 @@ describe('UI', () => {
 			ui.error(msg);
 
 			expect(stderr.content).to.equal(msg + ui.EOL);
+		});
+	});
+
+	describe('Spinner helpers', () => {
+		beforeEach(() => {
+			sandbox.spy(Spinner.prototype, 'start');
+			sandbox.spy(Spinner.prototype, 'stop');
+		});
+
+		it('Shows a spinner until promise is resolved', async () => {
+			const message = 'testing...';
+			const promise = delay(200, 'ok');
+			const x = await ui.showBusySpinnerUntilResolved(message, promise);
+
+			expect(x).to.equal('ok');
+			expect(stdout.content).to.include('\u001b[2K\u001b[1G▌ testing...');
+			expect(Spinner.prototype.start).to.have.property('callCount', 1);
+			expect(Spinner.prototype.stop).to.have.property('callCount', 1);
+		});
+
+		it('Shows a spinner until promise is rejected', async () => {
+			let error = null;
+			const message = 'testing...';
+			const promise = delay(200).then(() => {
+				throw new Error('nope!');
+			});
+
+			try {
+				await ui.showBusySpinnerUntilResolved(message, promise);
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'nope!');
+			expect(stdout.content).to.include('\u001b[2K\u001b[1G▌ testing...');
+			expect(Spinner.prototype.start).to.have.property('callCount', 1);
+			expect(Spinner.prototype.stop).to.have.property('callCount', 1);
 		});
 	});
 
@@ -254,6 +293,10 @@ describe('UI', () => {
 			].join(ui.EOL));
 		});
 	});
+
+	function delay(ms, value){
+		return new Promise((resolve) => setTimeout(() => resolve(value), ms));
+	}
 
 	function getDeviceList(){
 		return [

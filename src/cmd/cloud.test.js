@@ -96,8 +96,7 @@ describe('Cloud Commands', () => {
 				.then(t => {
 					expect(t).to.equal(fakeToken);
 					expect(prompts.getCredentials).to.have.property('callCount', 1);
-					expect(cloud.newSpin).to.have.property('callCount', 1);
-					expect(cloud.stopSpin).to.have.property('callCount', 1);
+					expect(cloud.ui.showBusySpinnerUntilResolved).to.have.property('callCount', 1);
 					expect(api.login).to.have.property('callCount', 1);
 					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
 					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
@@ -190,8 +189,7 @@ describe('Cloud Commands', () => {
 					expect(t).to.equal(fakeToken);
 					expect(prompts.getCredentials).to.have.property('callCount', 1);
 					expect(prompts.getOtp).to.have.property('callCount', 1);
-					expect(cloud.newSpin).to.have.property('callCount', 2);
-					expect(cloud.stopSpin).to.have.property('callCount', 2);
+					expect(cloud.ui.showBusySpinnerUntilResolved).to.have.property('callCount', 2);
 					expect(api.login).to.have.property('callCount', 1);
 					expect(api.login.firstCall).to.have.property('args').lengthOf(3);
 					expect(api.login.firstCall.args[0]).to.equal(stubs.settings.clientId);
@@ -238,9 +236,7 @@ describe('Cloud Commands', () => {
 		const { api, prompts, settings } = stubs;
 		sandbox.spy(cloud, 'login');
 		sandbox.spy(cloud, 'enterOtp');
-		sandbox.stub(cloud, 'newSpin');
-		sandbox.stub(cloud, 'stopSpin');
-		cloud.newSpin.returns({ start: sandbox.stub() });
+		sandbox.stub(cloud.ui, 'showBusySpinnerUntilResolved').callsFake((_, p) => p);
 		sandbox.stub(api, 'login');
 		sandbox.stub(api, 'sendOtp');
 		sandbox.stub(api, 'getUser');

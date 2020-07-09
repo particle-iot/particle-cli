@@ -411,17 +411,17 @@ module.exports = class CloudCommand extends CLICommandBase {
 			})
 			.then(credentials => {
 				const { token, username, password } = credentials;
+				const msg = 'Sending login details...';
 				const api = new ApiClient();
 
-				this.newSpin('Sending login details...').start();
 				this._usernameProvided = username;
 
 				if (token){
-					return this.stopSpinAfterPromise(api.getUser(token).then((response) => {
-						return { token, username: response.username };
-					}));
+					return this.ui.showBusySpinnerUntilResolved(msg, api.getUser(token))
+						.then(response => ({ token, username: response.username }));
 				}
-				return this.stopSpinAfterPromise(api.login(settings.clientId, username, password))
+				const login = api.login(settings.clientId, username, password);
+				return this.ui.showBusySpinnerUntilResolved(msg, login)
 					.catch((error) => {
 						if (error.error === 'mfa_required'){
 							this.tries = 0;
@@ -473,9 +473,10 @@ module.exports = class CloudCommand extends CLICommandBase {
 			})
 			.then(_otp => {
 				otp = _otp;
-				this.newSpin('Sending login code...').start();
 				const api = new ApiClient();
-				return this.stopSpinAfterPromise(api.sendOtp(settings.clientId, mfaToken, otp));
+				const msg = 'Sending login code...';
+				const sendOtp = api.sendOtp(settings.clientId, mfaToken, otp);
+				return this.ui.showBusySpinnerUntilResolved(msg, sendOtp);
 			})
 			.catch(error => {
 				this.ui.stdout.write(`${alert} This login code didn't work. ${shouldRetry ? "Let's try again." : ''}${os.EOL}`);
@@ -549,15 +550,14 @@ module.exports = class CloudCommand extends CLICommandBase {
 		let filterFunc = buildDeviceFilter(filter);
 
 		return Promise.resolve()
-			.then(() => {
-				return api.listDevices();
-			})
+			.then(() => api.listDevices())
 			.then(devices => {
 				if (!devices || (devices.length === 0) || (typeof devices === 'string')){
 					this.ui.stdout.write(`No devices found.${os.EOL}`);
 				} else {
-					this.newSpin('Retrieving device functions and variables...').start();
+					const msg = 'Retrieving device functions and variables...';
 					const promises = [];
+
 					devices.forEach((device) => {
 						if (!device.id || (filter && !filterFunc(device))){
 							// Don't request attributes from unnecessary devices...
@@ -565,25 +565,23 @@ module.exports = class CloudCommand extends CLICommandBase {
 						}
 
 						if (device.connected){
-							promises.push(api.getAttributes(device.id).then((attrs) => {
-								return extend(device, attrs);
-							}));
+							promises.push(
+								api.getAttributes(device.id)
+									.then(attrs => extend(device, attrs))
+							);
 						} else {
 							promises.push(Promise.resolve(device));
 						}
 					});
 
-					return this.stopSpinAfterPromise(Promise.all(promises).then(fullDevices => {
-						//sort alphabetically
-						fullDevices = fullDevices.sort((a, b) => {
+					return this.ui.showBusySpinnerUntilResolved(msg, Promise.all(promises))
+						.then(fullDevices => fullDevices.sort((a, b) => {
 							if (a.connected && !b.connected){
 								return 1;
 							}
 
 							return (a.name || '').localeCompare(b.name);
-						});
-						return fullDevices;
-					}));
+						}));
 				}
 			}).catch(err => {
 				throw api.normalizedApiError(err);

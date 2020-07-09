@@ -63,7 +63,7 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 		}
 
 		const fetchStream = createAPI().getEventStream(device, event, product);
-		return this.showBusySpinnerUntilResolved('Fetching event stream...', fetchStream)
+		return this.ui.showBusySpinnerUntilResolved('Fetching event stream...', fetchStream)
 			.then(stream => {
 				this.ui.stdout.write(os.EOL);
 				return stream;

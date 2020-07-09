@@ -1,5 +1,6 @@
 const os = require('os');
 const Chalk = require('chalk').constructor;
+const Spinner = require('cli-spinner').Spinner;
 const platformsById = require('../../cmd/constants').platformsById;
 
 
@@ -7,11 +8,13 @@ module.exports = class UI {
 	constructor({
 		stdin = process.stdin,
 		stdout = process.stdout,
-		stderr = process.stderr
+		stderr = process.stderr,
+		quiet = false
 	} = {}){
 		this.stdin = stdin;
 		this.stdout = stdout;
 		this.stderr = stderr;
+		this.quiet = quiet;
 		this.chalk = new Chalk(); // TODO (mirande): explicitly enable / disable colors
 		this.EOL = os.EOL;
 	}
@@ -24,6 +27,27 @@ module.exports = class UI {
 	error(data){
 		const { stderr, EOL } = this;
 		stderr.write(data + EOL);
+	}
+
+	showBusySpinnerUntilResolved(text, promise){
+		if (this.quiet){
+			return promise;
+		}
+
+		const spinner = new Spinner({ text, stream: this.stdout });
+		const clear = true;
+
+		spinner.start();
+
+		return promise
+			.then(value => {
+				spinner.stop(clear);
+				return value;
+			})
+			.catch(error => {
+				spinner.stop(clear);
+				throw error;
+			});
 	}
 
 	logDeviceDetail(devices, { varsOnly = false, fnsOnly = false } = {}){

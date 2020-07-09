@@ -37,6 +37,10 @@ describe('Function Command', () => {
 	});
 
 	describe('when the function succeeds', () => {
+		beforeEach(() => {
+			sandbox.stub(command.ui, 'showBusySpinnerUntilResolved').callsFake((_, p) => p);
+		});
+
 		it('prints the return value', () => {
 			ParticleAPI.prototype.callFunction.resolves({ ok: true, return_value: 42 });
 			return command.callFunction({ params: { device, function: fn, argument: arg } })

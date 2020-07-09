@@ -14,6 +14,7 @@ describe('CLI Command Base Class', () => {
 		expect(cmd).to.have.property('stdin', process.stdin);
 		expect(cmd).to.have.property('stdout', process.stdout);
 		expect(cmd).to.have.property('stderr', process.stderr);
+		expect(cmd).to.have.property('quiet', false);
 		expect(cmd).to.have.property('ui').that.is.an.instanceof(UI);
 		expect(cmd).to.respondTo('showUsageError');
 		expect(cmd).to.respondTo('isDeviceId');
