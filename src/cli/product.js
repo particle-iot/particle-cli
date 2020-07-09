@@ -36,7 +36,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const ProdCmd = require('../cmd/product');
-			return new ProdCmd().showDeviceList(args);
+			return new ProdCmd(args).showDeviceList(args);
 		}
 	});
 
@@ -54,7 +54,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const ProdCmd = require('../cmd/product');
-			return new ProdCmd().addDevices(args);
+			return new ProdCmd(args).addDevices(args);
 		}
 	});
 

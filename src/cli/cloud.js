@@ -15,7 +15,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filter]',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().listDevices(args);
+			return new CloudCommands(args).listDevices(args);
 		},
 		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
 	});
@@ -24,7 +24,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<deviceID>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().claimDevice(args);
+			return new CloudCommands(args).claimDevice(args);
 		},
 		examples: {
 			'$0 $command 123456789': 'Claim device by id to your account'
@@ -41,7 +41,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().removeDevice(args);
+			return new CloudCommands(args).removeDevice(args);
 		},
 		examples: {
 			'$0 $command 0123456789ABCDEFGHI': 'Remove device by id from your account'
@@ -52,7 +52,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<device> <name>',
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().renameDevice(args);
+			return new CloudCommands(args).renameDevice(args);
 		},
 		examples: {
 			'$0 $command red green': 'Rename device `red` to `green`'
@@ -68,7 +68,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().flashDevice(args);
+			return new CloudCommands(args).flashDevice(args);
 		},
 		examples: {
 			'$0 $command blue': 'Compile the source code in the current directory in the cloud and flash to device `blue`',
@@ -88,7 +88,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}),
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().compileCode(args);
+			return new CloudCommands(args).compileCode(args);
 		},
 		examples: {
 			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a `photon`',
@@ -107,7 +107,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().nyanMode(args);
+			return new CloudCommands(args).nyanMode(args);
 		},
 		examples: {
 			'$0 $command green': 'Make the device named `blue` start signaling',
@@ -136,7 +136,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().login(args);
+			return new CloudCommands(args).login(args);
 		},
 		examples: {
 			'$0 $command': 'prompt for credentials and log in',
@@ -146,9 +146,9 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(cloud, 'logout', 'Log out of your session and clear your saved access token', {
-		handler: () => {
+		handler: (args) => {
 			const CloudCommands = require('../cmd/cloud');
-			return new CloudCommands().logout();
+			return new CloudCommands(args).logout();
 		}
 	});
 
