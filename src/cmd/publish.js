@@ -21,7 +21,7 @@ module.exports = class PublishCommand extends CLICommandBase {
 		}
 
 		const publishEvent = createAPI().publishEvent(event, data, isPrivate, product);
-		return this.showBusySpinnerUntilResolved(`Publishing ${epilogue}`, publishEvent)
+		return this.ui.showBusySpinnerUntilResolved(`Publishing ${epilogue}`, publishEvent)
 			.then(() => this.ui.stdout.write(`Published ${epilogue}${os.EOL}${os.EOL}`))
 			.catch(error => {
 				const message = 'Error publishing event';

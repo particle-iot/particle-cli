@@ -45,7 +45,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 
 			const msg = `Fetching variable ${variableName} from device ${device} in product ${product}`;
 			const fetchVar = createAPI().getVariable(device, variableName, product);
-			return this.showBusySpinnerUntilResolved(msg, fetchVar)
+			return this.ui.showBusySpinnerUntilResolved(msg, fetchVar)
 				.then(res => {
 					this.ui.stdout.write(`${res.result}${os.EOL}`);
 				})

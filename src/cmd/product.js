@@ -18,7 +18,7 @@ module.exports = class ProductCommand extends CLICommandBase {
 		const identifiers = [device];
 		const msg = `Adding device ${device} to product ${product}`;
 		const upload = uploadProductDevices(product, identifiers);
-		return this.showBusySpinnerUntilResolved(msg, upload)
+		return this.ui.showBusySpinnerUntilResolved(msg, upload)
 			.then(result => this.showDeviceAddResult(result));
 	}
 
@@ -38,7 +38,7 @@ module.exports = class ProductCommand extends CLICommandBase {
 
 		const msg = `Adding devices in ${file} to product ${product}`;
 		const upload = readDeviceListFile(file).then((identifiers) => uploadProductDevices(product, identifiers));
-		return this.showBusySpinnerUntilResolved(msg, upload)
+		return this.ui.showBusySpinnerUntilResolved(msg, upload)
 			.then(result => this.showDeviceAddResult(result));
 	}
 
@@ -84,7 +84,7 @@ module.exports = class ProductCommand extends CLICommandBase {
 	showDeviceDetail({ json, params: { product, device } }){
 		const msg = `Fetching device ${device} detail`;
 		const fetchData = createAPI().getDeviceAttributes(device, product);
-		return (json ? fetchData : this.showBusySpinnerUntilResolved(msg, fetchData))
+		return (json ? fetchData : this.ui.showBusySpinnerUntilResolved(msg, fetchData))
 			.then(res => {
 				if (json){
 					this.ui.stdout.write(
@@ -106,7 +106,7 @@ module.exports = class ProductCommand extends CLICommandBase {
 		}
 		const msg = `Fetching product ${product} device list`;
 		const fetchData = createAPI().listDevices({ product, page, groups, perPage: limit, deviceName: name });
-		return (json ? fetchData : this.showBusySpinnerUntilResolved(msg, fetchData))
+		return (json ? fetchData : this.ui.showBusySpinnerUntilResolved(msg, fetchData))
 			.then(res => {
 				if (json){
 					this.ui.stdout.write(
