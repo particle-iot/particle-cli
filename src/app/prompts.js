@@ -7,7 +7,7 @@ module.exports = {
 			default: username,
 			validate: (value) => {
 				if (!value) {
-					return 'You need an email address to log in, silly!';
+					return 'You need an email address to log in';
 				}
 				return true;
 			}
@@ -21,7 +21,7 @@ module.exports = {
 			message: msg || 'Please enter your password:',
 			validate: (value) => {
 				if (!value) {
-					return 'You need a password to log in, silly!';
+					return 'You need a password to log in';
 				}
 				return true;
 			}
