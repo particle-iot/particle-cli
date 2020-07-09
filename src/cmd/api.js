@@ -231,7 +231,14 @@ module.exports = class ParticleApi {
 		const { UnauthorizedError } = module.exports;
 
 		if ([400, 401].includes(err.statusCode)){
-			return Promise.reject(new UnauthorizedError(err.shortErrorDescription));
+			const { body = {}, errorDescription, shortErrorDescription, } = err;
+			let msg = shortErrorDescription;
+
+			if (!msg){
+				msg = body.error_description || body.error || errorDescription;
+			}
+
+			return Promise.reject(new UnauthorizedError(msg));
 		}
 		return Promise.reject(err);
 	}

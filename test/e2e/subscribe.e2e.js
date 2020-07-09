@@ -317,7 +317,7 @@ describe('Subscribe Commands [@device]', () => {
 		await cli.logout();
 		const { stdout, stderr, exitCode } = await cli.run(['subscribe']);
 
-		expect(stdout).to.include('Error fetching event stream: Invalid access token');
+		expect(stdout).to.include('Error fetching event stream: The access token provided is invalid.');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
