@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.7.1 - 9 July 2020
+
+* improve api error messaging
+* ensure `particle function call` respects the `--quiet` flag
+* remove `silly!` in vaidation error messsage when prompting for `username`
+* update wiring-preprocessor to `v2.2.0` to fix `enum class` syntax handling
+
 ## 2.7.0 - 26 May 2020
 
 * Add `particle product` namespace
