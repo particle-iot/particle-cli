@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.7.2 - 13 July 2020
+
+* Handle unresponsive devices when running `particle usb list`
+
 ## 2.7.1 - 9 July 2020
 
 * improve api error messaging
