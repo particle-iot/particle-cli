@@ -4,7 +4,8 @@ const {
 	getDevices,
 	openDeviceById,
 	NotFoundError,
-	NotAllowedError
+	NotAllowedError,
+	TimeoutError
 } = require('../lib/require-optional')('particle-usb');
 
 
@@ -105,6 +106,7 @@ function handleDeviceOpenError(err){
 module.exports = {
 	openUsbDevice,
 	openUsbDeviceById,
-	getUsbDevices
+	getUsbDevices,
+	TimeoutError
 };
 

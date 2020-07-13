@@ -1,7 +1,7 @@
 const { spin } = require('../app/ui');
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceById } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceById, TimeoutError } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformsById } = require('./constants');
 const ParticleApi = require('./api');
@@ -43,7 +43,15 @@ module.exports = class UsbCommand {
 							let info = [device, usbDevice.isInDfuMode];
 
 							if (!usbDevice.isInDfuMode){
-								info.push(usbDevice.getDeviceMode());
+								info.push(
+									usbDevice.getDeviceMode({ timeout: 10 * 1000 })
+										.catch(error => {
+											if (error instanceof TimeoutError){
+												return 'UNKNOWN';
+											}
+											throw error;
+										})
+								);
 							}
 
 							return Promise.all(info);
