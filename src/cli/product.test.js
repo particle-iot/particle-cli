@@ -51,8 +51,9 @@ describe('Product Command-Line Interface', () => {
 					'Help:  particle help product device <command>',
 					'',
 					'Commands:',
-					'  list  List all devices that are part of a product',
-					'  add   Adds one or more devices into a Product',
+					'  list    List all devices that are part of a product',
+					'  add     Adds one or more devices into a Product',
+					'  remove  Removes a device from a Product',
 					''
 				].join(os.EOL));
 			});

@@ -81,6 +81,27 @@ module.exports = class ProductCommand extends CLICommandBase {
 		return this.ui.write(message.join(os.EOL));
 	}
 
+	removeDevice({ params: { product, deviceID } }){
+		if (!this.isDeviceId(deviceID)){
+			return this.showUsageError(`\`deviceID\` parameter must be an id - received: ${deviceID}`);
+		}
+
+		const msg = `Removing device ${deviceID} from product ${product}`;
+		const remove = createAPI()
+			.removeDevice(deviceID, product)
+			.catch(error => {
+				const message = 'Error removing device from product';
+				throw createAPIErrorResult({ error, message, json: false });
+			});
+
+		return this.ui.showBusySpinnerUntilResolved(msg, remove)
+			.then(() => this.showDeviceRemoveResult({ product, deviceID }));
+	}
+
+	showDeviceRemoveResult({ product, deviceID }){
+		return this.ui.write(`Success! Removed device ${deviceID} from product ${product}${os.EOL}`);
+	}
+
 	showDeviceDetail({ json, params: { product, device } }){
 		const msg = `Fetching device ${device} detail`;
 		const fetchData = createAPI().getDeviceAttributes(device, product);
