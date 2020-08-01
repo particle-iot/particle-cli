@@ -14,26 +14,26 @@ module.exports = class ProductCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	addDevice({ params: { product, device } }){
-		const identifiers = [device];
-		const msg = `Adding device ${device} to product ${product}`;
+	addDevice({ params: { product, deviceID } }){
+		const identifiers = [deviceID];
+		const msg = `Adding device ${deviceID} to product ${product}`;
 		const upload = uploadProductDevices(product, identifiers);
 		return this.ui.showBusySpinnerUntilResolved(msg, upload)
 			.then(result => this.showDeviceAddResult(result));
 	}
 
-	addDevices({ file, params: { product, device } }){
-		if (!device && !file){
+	addDevices({ file, params: { product, deviceID } }){
+		if (!deviceID && !file){
 			throw usageError(
-				'`device` parameter or `--file` option is required'
+				'`deviceID` parameter or `--file` option is required'
 			);
 		}
 
-		if (device){
-			if (!this.isDeviceId(device)){
-				return this.showUsageError(`\`device\` parameter must be an id - received: ${device}`);
+		if (deviceID){
+			if (!this.isDeviceId(deviceID)){
+				return this.showUsageError(`\`deviceID\` parameter must be an id - received: ${deviceID}`);
 			}
-			return this.addDevice({ params: { product, device } });
+			return this.addDevice({ params: { product, deviceID } });
 		}
 
 		const msg = `Adding devices in ${file} to product ${product}`;

@@ -41,7 +41,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(device, 'add', 'Adds one or more devices into a Product', {
-		params: '<product> [device]',
+		params: '<product> [deviceID]',
 		options: {
 			file: {
 				alias: 'f',

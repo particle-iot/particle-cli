@@ -283,7 +283,7 @@ describe('Product Commands', () => {
 		const deviceIDsEmptyFilePath = path.join(PATH_TMP_DIR, 'product-device-ids-empty.txt');
 		const help = [
 			'Adds one or more devices into a Product',
-			'Usage: particle product device add [options] <product> [device]',
+			'Usage: particle product device add [options] <product> [deviceID]',
 			'',
 			'Global Options:',
 			'  -v, --verbose  Increases how much logging to display  [count]',
@@ -333,20 +333,20 @@ describe('Product Commands', () => {
 			expect(exitCode).to.equal(0);
 		});
 
-		it('Fails to add a single device when `device` param or `--file` flag is not provided', async () => {
+		it('Fails to add a single device when `deviceID` param or `--file` flag is not provided', async () => {
 			const args = ['product', 'device', 'add', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('`device` parameter or `--file` option is required');
+			expect(stdout).to.include('`deviceID` parameter or `--file` option is required');
 			expect(stderr.split(os.EOL)).to.include.members(help);
 			expect(exitCode).to.equal(1);
 		});
 
-		it('Fails to add a single device when `device` param is not an id', async () => {
+		it('Fails to add a single device when `deviceID` param is not an id', async () => {
 			const args = ['product', 'device', 'add', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_NAME];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`\`device\` parameter must be an id - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stdout).to.include(`\`deviceID\` parameter must be an id - received: ${PRODUCT_01_DEVICE_01_NAME}`);
 			expect(stderr.split(os.EOL)).to.include.members(help);
 			expect(exitCode).to.equal(1);
 		});
