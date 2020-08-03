@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.0 - 3 August 2020
+
+* Add `particle product device remove` command to remove a device from a product (see `--help` for details)
+
 ## 2.7.2 - 13 July 2020
 
 * Handle unresponsive devices when running `particle usb list`
