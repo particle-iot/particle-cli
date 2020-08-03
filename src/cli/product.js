@@ -41,7 +41,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(device, 'add', 'Adds one or more devices into a Product', {
-		params: '<product> [device]',
+		params: '<product> [deviceID]',
 		options: {
 			file: {
 				alias: 'f',
@@ -58,5 +58,15 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(device, 'remove', 'Removes a device from a Product', {
+		params: '<product> <deviceID>',
+		examples: {
+			'$0 $command 12345 0123456789abcdef01234567': 'Remove device id `0123456789abcdef01234567` from product `12345`',
+		},
+		handler: (args) => {
+			const ProdCmd = require('../cmd/product');
+			return new ProdCmd(args).removeDevice(args);
+		}
+	});
 	return product;
 };

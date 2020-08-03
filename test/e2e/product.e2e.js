@@ -72,14 +72,14 @@ describe('Product Commands', () => {
 		// TODO (mirande): sometimes entity includes: `pinned_build_target`
 		const detailedDeviceFieldNames = ['cellular', 'connected',
 			'current_build_target', 'default_build_target', 'denied',
-			'desired_firmware_version', 'development', 'firmware_product_id',
-			'firmware_updates_enabled', 'firmware_updates_forced',
-			'firmware_version', 'functions', 'groups', 'iccid', 'id', 'imei',
-			'last_handshake_at', 'last_heard', 'last_iccid', 'last_ip_address',
-			'mobile_secret', 'name', 'notes', 'online', 'owner',
-			'pinned_build_target', 'platform_id', 'product_id', 'quarantined',
-			'serial_number', 'status', 'system_firmware_version',
-			'targeted_firmware_release_version', 'variables'];
+			'development', 'firmware_product_id', 'firmware_updates_enabled',
+			'firmware_updates_forced', 'firmware_version', 'functions', 'groups',
+			'iccid', 'id', 'imei', 'last_handshake_at', 'last_heard',
+			'last_iccid', 'last_ip_address', 'mobile_secret', 'name', 'notes',
+			'online', 'owner', 'pinned_build_target', 'platform_id',
+			'product_id', 'quarantined', 'serial_number', 'status',
+			'system_firmware_version', 'targeted_firmware_release_version',
+			'variables'];
 
 		it('Lists devices', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID];
@@ -283,7 +283,7 @@ describe('Product Commands', () => {
 		const deviceIDsEmptyFilePath = path.join(PATH_TMP_DIR, 'product-device-ids-empty.txt');
 		const help = [
 			'Adds one or more devices into a Product',
-			'Usage: particle product device add [options] <product> [device]',
+			'Usage: particle product device add [options] <product> [deviceID]',
 			'',
 			'Global Options:',
 			'  -v, --verbose  Increases how much logging to display  [count]',
@@ -333,20 +333,20 @@ describe('Product Commands', () => {
 			expect(exitCode).to.equal(0);
 		});
 
-		it('Fails to add a single device when `device` param or `--file` flag is not provided', async () => {
+		it('Fails to add a single device when `deviceID` param or `--file` flag is not provided', async () => {
 			const args = ['product', 'device', 'add', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include('`device` parameter or `--file` option is required');
+			expect(stdout).to.include('`deviceID` parameter or `--file` option is required');
 			expect(stderr.split(os.EOL)).to.include.members(help);
 			expect(exitCode).to.equal(1);
 		});
 
-		it('Fails to add a single device when `device` param is not an id', async () => {
+		it('Fails to add a single device when `deviceID` param is not an id', async () => {
 			const args = ['product', 'device', 'add', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_NAME];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`\`device\` parameter must be an id - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stdout).to.include(`\`deviceID\` parameter must be an id - received: ${PRODUCT_01_DEVICE_01_NAME}`);
 			expect(stderr.split(os.EOL)).to.include.members(help);
 			expect(exitCode).to.equal(1);
 		});
@@ -435,6 +435,73 @@ describe('Product Commands', () => {
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.include('missing.txt does not exist');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('Device Remove Subcommand', () => {
+		const help = [
+			'Removes a device from a Product',
+			'Usage: particle product device remove [options] <product> <deviceID>',
+			'',
+			'Global Options:',
+			'  -v, --verbose  Increases how much logging to display  [count]',
+			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Examples:',
+			'  particle product device remove 12345 0123456789abcdef01234567  Remove device id `0123456789abcdef01234567` from product `12345`'
+		];
+
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
+		after(async () => {
+			await cli.run(['product', 'device', 'add', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_ID]);
+		});
+
+		it('Removes a device', async () => {
+			const args = ['product', 'device', 'remove', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`Success! Removed device ${PRODUCT_01_DEVICE_01_ID} from product ${PRODUCT_01_ID}${os.EOL}`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fails to remove a device when `deviceID` param is not provided', async () => {
+			const args = ['product', 'device', 'remove', PRODUCT_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('Parameter \'deviceID\' is required.');
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to remove a device when `deviceID` param is not an id', async () => {
+			const args = ['product', 'device', 'remove', PRODUCT_01_ID, PRODUCT_01_DEVICE_01_NAME];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`\`deviceID\` parameter must be an id - received: ${PRODUCT_01_DEVICE_01_NAME}`);
+			expect(stderr.split(os.EOL)).to.include.members(help);
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to remove a device when `product` is unknown', async () => {
+			const args = ['product', 'device', 'remove', 'LOLWUTNOPE', PRODUCT_01_DEVICE_01_ID];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('HTTP error 404');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
+		it('Fails to remove a device when `device` is unknown', async () => {
+			const args = ['product', 'device', 'remove', PRODUCT_01_ID, '000000000000000000000001'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include('Error removing device from product: Device not found for this product');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});

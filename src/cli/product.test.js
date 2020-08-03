@@ -51,8 +51,9 @@ describe('Product Command-Line Interface', () => {
 					'Help:  particle help product device <command>',
 					'',
 					'Commands:',
-					'  list  List all devices that are part of a product',
-					'  add   Adds one or more devices into a Product',
+					'  list    List all devices that are part of a product',
+					'  add     Adds one or more devices into a Product',
+					'  remove  Removes a device from a Product',
 					''
 				].join(os.EOL));
 			});
@@ -104,7 +105,7 @@ describe('Product Command-Line Interface', () => {
 		it('Parses arguments', () => {
 			const argv = commandProcessor.parse(root, ['product', 'device', 'add', '12345', '5a8ef38cb85f8720edce631a']);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({ product: '12345', device: '5a8ef38cb85f8720edce631a' });
+			expect(argv.params).to.eql({ product: '12345', deviceID: '5a8ef38cb85f8720edce631a' });
 		});
 
 		it('Errors when required arguments are missing', () => {
@@ -122,7 +123,7 @@ describe('Product Command-Line Interface', () => {
 			commandProcessor.showHelp((helpText) => {
 				expect(helpText).to.equal([
 					'Adds one or more devices into a Product',
-					'Usage: particle product device add [options] <product> [device]',
+					'Usage: particle product device add [options] <product> [deviceID]',
 					'',
 					'Options:',
 					'  --file, -f  Path to single column .txt file with list of IDs, S/Ns, IMEIs, or ICCIDs of the devices to add  [string]',
