@@ -119,7 +119,8 @@ describe('Subscribe Commands [@device]', () => {
 
 	it('Subscribes to `--all` events with partial matching', async () => {
 		await cli.callStrobyStart(DEVICE_NAME);
-		const eventName = 't';
+
+		const eventName = DEVICE_ID.substring(0, 4);
 		const args = ['subscribe', '--all', eventName];
 		const { events, received: [msg], isCanceled } = await runAndCollectEventOutput(args);
 
