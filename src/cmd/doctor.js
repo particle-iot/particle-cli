@@ -349,7 +349,7 @@ module.exports = class DoctorCommand {
 			.then(() => this._verifyDeviceOwnership())
 			.then(() => this._enterDfuMode())
 			.then(() => {
-				return this.command('keys').writeServerPublicKey();
+				return this.command('keys').writeServerPublicKey({ params: {} });
 				// keys servers doesn't cause the device to reset so it is still in DFU mode
 			})
 			.then(() => {
@@ -357,7 +357,11 @@ module.exports = class DoctorCommand {
 					console.log(chalk.red('!'), 'Skipping device key because it does not report its device ID over USB');
 					return;
 				}
-				return this.command('keys').keyDoctor(this.device.deviceId);
+				return this.command('keys').keyDoctor({
+					params: {
+						deviceID: this.device.deviceId
+					}
+				});
 			})
 			.catch(this._catchSkipStep);
 	}
