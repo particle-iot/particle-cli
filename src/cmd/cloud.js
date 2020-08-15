@@ -247,7 +247,22 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		return createAPI().getDeviceAttributes(deviceId)
 			.then((attrs) => {
-				const productId = product ? attrs.platform_id :attrs.product_id;
+				let productId;
+
+				if (product || attrs.platform_id !== attrs.product_id){
+					if (!product){
+						product = attrs.product_id;
+					}
+
+					if (!this.isDeviceId(deviceId)){
+						deviceId = attrs.id;
+					}
+
+					productId = attrs.platform_id;
+				} else {
+					productId = attrs.product_id;
+				}
+
 				const spec = _.find(specs, { productId });
 
 				if (spec){
@@ -258,6 +273,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 					if (spec.productName){
 						throw new VError(`I don't have a ${filePath} binary for ${spec.productName}.`);
 					}
+				} else {
+					throw new Error(`Unable to find ${filePath} for platform ${productId}`);
 				}
 			})
 			.then((fileMapping) => {

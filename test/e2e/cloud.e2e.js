@@ -327,6 +327,25 @@ describe('Cloud Commands [@device]', () => {
 			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForProductFunction()` helper
 		});
 
+		it('Flashes a `known app` on to a product device using legacy command', async () => {
+			const args = ['flash', PRODUCT_01_DEVICE_01_NAME, 'tinker'];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const log = [
+				`marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
+				`attempting to flash firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
+				'Flash device OK: Update started',
+				`device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'to resume normal updates, please visit:',
+				`https://console.particle.io/${PRODUCT_01_ID}/devices/unmark-development/${PRODUCT_01_DEVICE_01_ID}`
+			];
+
+			expect(stdout.split('\n')).to.include.members(log);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await delay(40 * 1000); // TODO (mirande): replace w/ `cli.waitForProductFunction()` helper
+		});
+
 		it('Fails to flash a product device when `device` param is not an id', async () => {
 			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_NAME, PATH_PROJ_BLANK_INO, '--product', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
