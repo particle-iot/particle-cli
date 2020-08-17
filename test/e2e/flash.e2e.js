@@ -89,6 +89,27 @@ describe('Flash Commands [@device]', () => {
 		await cli.waitForVariable('name', 'stroby');
 	});
 
+	it('Flashes a project with an example', async () => {
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'lib-with-example');
+		const args = ['flash', DEVICE_NAME];
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const log = [
+			'Including:',
+			'    lib/Particle_TEST_E2E_CLI_LIB/src/Particle_TEST_E2E_CLI_LIB.h',
+			'    lib/Particle_TEST_E2E_CLI_LIB/examples/one.ino',
+			'    src/app.ino',
+			'    project.properties',
+			`attempting to flash firmware to your device ${DEVICE_NAME}`,
+			'Flash device OK: Update started'
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+
+		await cli.waitForVariable('name', 'lib-with-example');
+	});
+
 	// TODO (mirande): need a better way to confirm device is back online after
 	// flashing - in this case, the current hackaround doesn't work b/c tinker
 	// doesn't expose a `name` variable
