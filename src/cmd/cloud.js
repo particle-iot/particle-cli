@@ -247,7 +247,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		return createAPI().getDeviceAttributes(deviceId)
 			.then((attrs) => {
-				let productId;
+				let productId = attrs.platform_id; // b/c legacy naming
 
 				if (product || attrs.platform_id !== attrs.product_id){
 					if (!product){
@@ -257,10 +257,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 					if (!this.isDeviceId(deviceId)){
 						deviceId = attrs.id;
 					}
-
-					productId = attrs.platform_id;
-				} else {
-					productId = attrs.product_id;
 				}
 
 				const spec = _.find(specs, { productId });
