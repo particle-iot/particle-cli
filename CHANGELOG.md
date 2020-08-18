@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.8.1 - 18 August 2020
+
+* Fix `particle doctor` destructuring error ([PR #591](https://github.com/particle-iot/particle-cli/pull/591))
+* Fix `particle flash <my-device> tinker` when `<my-device>` is in a product ([PR #592](https://github.com/particle-iot/particle-cli/pull/592))
+
 ## 2.8.0 - 3 August 2020
 
 * Add `particle product device remove` command to remove a device from a product (see `--help` for details)
