@@ -185,7 +185,7 @@ describe('Flash Commands [@device]', () => {
 		await cli.waitForVariable('name', 'blank');
 	});
 
-	it('Fails to flash missing or unrecognized` app', async () => {
+	it('Fails to flash missing or unrecognized app', async () => {
 		const args = ['flash', DEVICE_NAME, 'WATNOPE.bin'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
@@ -197,7 +197,7 @@ describe('Flash Commands [@device]', () => {
 		expect(exitCode).to.equal(1);
 	});
 
-	it('Fails to flash missing or unrecognized` app when using usb', async () => {
+	it('Fails to flash missing or unrecognized app when using usb', async () => {
 		await cli.enterDFUMode();
 		const args = ['flash', 'WATNOPE.bin', '--usb'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
@@ -210,4 +210,3 @@ describe('Flash Commands [@device]', () => {
 		expect(exitCode).to.equal(1);
 	});
 });
-
