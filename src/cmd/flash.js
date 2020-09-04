@@ -59,12 +59,12 @@ module.exports = class FlashCommand {
 
 				try {
 					stats = fs.statSync(binary);
-				} catch (ex){
+				} catch (error){
 					// file does not exist
 					binary = dfu.checkKnownApp(binary);
 
 					if (binary === undefined){
-						throw new Error('file does not exist and no known app found.');
+						throw new Error(`file does not exist and no known app found. tried: \`${error.path}\``);
 					} else {
 						flashingKnownApp = true;
 						return binary;
