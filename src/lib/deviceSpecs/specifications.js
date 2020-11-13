@@ -595,6 +595,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
+			tinker: 'tinker-1.1.0-rc.1-bsom.bin'
 		},
 		serial: {
 			vid: '2b04',
