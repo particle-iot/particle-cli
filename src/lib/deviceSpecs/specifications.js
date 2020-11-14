@@ -34,12 +34,12 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
-			'tinker': 'core_tinker.bin',
-			'doctor': 'core_doctor.bin',
-			'cc3000': 'cc3000-patch-programmer.bin',
-			'cc3000_1_14': 'cc3000-patch-programmer_1_14.bin',
-			'voodoo': 'voodoospark.bin',
-			'deep_update_2014_06': 'deep_update_2014_06.bin'
+			tinker: 'core_tinker.bin',
+			doctor: 'core_doctor.bin',
+			cc3000: 'cc3000-patch-programmer.bin',
+			cc3000_1_14: 'cc3000-patch-programmer_1_14.bin',
+			voodoo: 'voodoospark.bin',
+			deep_update_2014_06: 'deep_update_2014_06.bin'
 		},
 		serial: {
 			vid: '1d50',
@@ -115,9 +115,9 @@ const specs = {
 			size: '1'
 		},
 		knownApps: {
-			'tinker': 'tinker-0.4.5-photon.bin',
-			'doctor': 'photon_doctor.bin',
-			'voodoo': 'voodoospark.bin'
+			tinker: 'tinker-0.4.5-photon.bin',
+			doctor: 'photon_doctor.bin',
+			voodoo: 'voodoospark.bin'
 		},
 		serial: {
 			vid: '2b04',
@@ -192,9 +192,9 @@ const specs = {
 			size: '1'
 		},
 		knownApps: {
-			'tinker': 'tinker-0.4.5-p1.bin',
-			'doctor': 'p1_doctor.bin',
-			'voodoo': 'voodoospark.bin'
+			tinker: 'tinker-0.4.5-p1.bin',
+			doctor: 'p1_doctor.bin',
+			voodoo: 'voodoospark.bin'
 		},
 		serial: {
 			vid: '2b04',
@@ -277,8 +277,8 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
-			'tinker': 'electron_tinker.bin',
-			'doctor': 'electron_doctor.bin',
+			tinker: 'electron_tinker.bin',
+			doctor: 'electron_doctor.bin',
 			'tinker-usb-debugging': 'tinker-usb-debugging-0.6.0-electron.bin'
 		},
 		serial: {
@@ -398,7 +398,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
-			'tinker': 'tinker-0.8.0-rc.27-argon.bin'
+			tinker: 'tinker-0.8.0-rc.27-argon.bin'
 		},
 		serial: {
 			vid: '2b04',
@@ -529,7 +529,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
-			'tinker': 'tinker-0.8.0-rc.27-boron.bin'
+			tinker: 'tinker-0.8.0-rc.27-boron.bin'
 		},
 		serial: {
 			vid: '2b04',
@@ -595,6 +595,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
+			tinker: 'tinker-1.1.0-rc.1-bsom.bin'
 		},
 		serial: {
 			vid: '2b04',
@@ -660,7 +661,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
-			'tinker': 'tinker-0.8.0-rc.27-xenon.bin'
+			tinker: 'tinker-0.8.0-rc.27-xenon.bin'
 		},
 		serial: {
 			vid: '2b04',
