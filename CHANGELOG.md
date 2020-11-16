@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.8.2 - 16 November 2020
+
+* Fix `particle flash --usb tinker` when targeting a `bsom` ([PR #596](https://github.com/particle-iot/particle-cli/pull/596))
+
 ## 2.8.1 - 18 August 2020
 
 * Fix `particle doctor` destructuring error ([PR #591](https://github.com/particle-iot/particle-cli/pull/591))
