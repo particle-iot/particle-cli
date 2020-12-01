@@ -101,14 +101,17 @@ module.exports = class YModem {
 				}
 
 				// wait for initial response
+				const readyMsg = "Waiting for the binary file to be sent ... (press 'a' to abort)";
+				const linebreakPtn = /\r?\n/;
 				let line = '';
 				function cmdResponse(){
 					let data = self.port.read();
 					self._logData(data);
 					line += data.toString();
+					const lines = line.split(linebreakPtn);
 					// if not in listening mode, we get CRC16 back
-					// if in listening mode, we get this string
-					if (data[0] === ymodem.CRC16 || line.trim() === "Waiting for the binary file to be sent ... (press 'a' to abort)"){
+					// if in listening mode, we get the ready message
+					if (data[0] === ymodem.CRC16 || (lines.length > 1 && lines.some(l => l === readyMsg))){
 						self.port.removeListener('readable', cmdResponse);
 						return resolve();
 					}
