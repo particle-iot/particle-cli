@@ -101,14 +101,17 @@ module.exports = class YModem {
 				}
 
 				// wait for initial response
+				const readyMsg = "Waiting for the binary file to be sent ... (press 'a' to abort)";
+				const linebreakPtn = /\r?\n/;
 				let line = '';
 				function cmdResponse(){
 					let data = self.port.read();
 					self._logData(data);
 					line += data.toString();
+					const lines = line.split(linebreakPtn);
 					// if not in listening mode, we get CRC16 back
-					// if in listening mode, we get this string
-					if (data[0] === ymodem.CRC16 || line.trim() === "Waiting for the binary file to be sent ... (press 'a' to abort)"){
+					// if in listening mode, we get the ready message
+					if (data[0] === ymodem.CRC16 || (lines.length > 1 && lines.some(l => l === readyMsg))){
 						self.port.removeListener('readable', cmdResponse);
 						return resolve();
 					}
@@ -169,28 +172,28 @@ module.exports = class YModem {
 				return send();
 			})
 			.then(() => {
-				let buf = new Buffer([ymodem.EOT]);
+				let buf = Buffer.from([ymodem.EOT]);
 				log.verbose('write', self.seq, buf, buf.length);
 				return self._sendRawPacket(buf);
 			});
 	}
 
 	_sendFileHeader(name, length){
-		let buf = new Buffer(name + '\0' + length + ' ');
+		let buf = Buffer.from(name + '\0' + length + ' ');
 		return this._sendPacket(buf);
 	}
 
 	_sendPacket(packet){
 		if (packet.length < this.options.packetLength){
-			let filler = new Buffer(this.options.packetLength - packet.length);
+			let filler = Buffer.alloc(this.options.packetLength - packet.length);
 			filler.fill(0);
 			packet = Buffer.concat([packet, filler], this.options.packetLength);
 		}
 
 		let seqchr = this.seq & 0xFF;
 		let seqchrNeg = (-this.seq - 1) & 0xFF;
-		let header = new Buffer([this.mark, seqchr, seqchrNeg]);
-		let crc16 = new Buffer([0, 0]);
+		let header = Buffer.from([this.mark, seqchr, seqchrNeg]);
+		let crc16 = Buffer.from([0, 0]);
 		packet = Buffer.concat([header, packet, crc16]);
 		log.verbose('write', this.seq, header, packet.length);
 
@@ -200,7 +203,7 @@ module.exports = class YModem {
 	_sendRawPacket(packet){
 		const self = this;
 		const response = new Promise((resolve, reject) => {
-			let resp = new Buffer([]);
+			let resp = Buffer.from([]);
 			function writeResponse(){
 				let data = self.port.read();
 
