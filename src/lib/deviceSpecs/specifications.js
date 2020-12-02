@@ -858,6 +858,7 @@ const specs = {
 			alt: '0'
 		},
 		knownApps: {
+			tinker: 'tracker-tinker@1.5.4-rc.1.bin'
 		},
 		serial: {
 			vid: '2b04',
