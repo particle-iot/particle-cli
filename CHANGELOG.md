@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.9.0 - 3 December 2020
+
+* Fix intermittent failures with `particle flash --usb serial` on windows ([PR #598](https://github.com/particle-iot/particle-cli/pull/598))
+* Silence `UnhandledPromiseRejectionWarning` and `Buffer() is deprecated` warnings
+* Updated binaries for DeviceOS 2.0.0
+
 ## 2.8.2 - 16 November 2020
 
 * Fix `particle flash --usb tinker` when targeting a `bsom` ([PR #596](https://github.com/particle-iot/particle-cli/pull/596))
