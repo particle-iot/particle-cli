@@ -7,21 +7,30 @@ const CloudCommand = require('./cloud');
 
 
 module.exports = class AccessTokenCommands {
-	getCredentials() {
+	getCredentials({ includeOTP = false } = {}) {
 		if (!settings.username){
 			return prompts.getCredentials();
 		}
 
-		const question = {
+		const questions = [{
 			type: 'password',
 			name: 'password',
 			message: 'Using account ' + settings.username + '\nPlease enter your password:'
-		};
+		}];
 
-		return inquirer.prompt([question])
+		if (includeOTP){
+			questions.push({
+				type: 'input',
+				name: 'otp',
+				message: 'Please enter a login code [optional]'
+			});
+		}
+
+		return inquirer.prompt(questions)
 			.then((answers) => ({
 				username: settings.username,
-				password: answers.password
+				password: answers.password,
+				otp: answers.otp
 			}));
 	}
 
@@ -34,13 +43,16 @@ module.exports = class AccessTokenCommands {
 			});
 		};
 
-		return Promise.resolve().then(() => {
-			return this.getCredentials();
-		}).then(creds => {
-			return api.listTokens(creds.username, creds.password);
-		}).then(tokens => {
-			return sortTokens(tokens);
-		});
+		return Promise.resolve()
+			.then(() => {
+				return this.getCredentials({ includeOTP: true });
+			})
+			.then(({ username, password, otp = '' }) => {
+				return api.listTokens(username, password, otp);
+			})
+			.then(tokens => {
+				return sortTokens(tokens);
+			});
 	}
 
 	listAccessTokens () {

@@ -332,7 +332,7 @@ module.exports = class ApiClient {
 	}
 
 	//GET /v1/access_tokens
-	listTokens(username, password){
+	listTokens(username, password, otp){
 		const { request } = this;
 		let self = this;
 
@@ -344,6 +344,7 @@ module.exports = class ApiClient {
 					username: username,
 					password: password
 				},
+				qs: otp ? { otp } : undefined,
 				json: true
 			};
 
