@@ -170,7 +170,8 @@ describe('Token Commands', () => {
 		const subprocess = cli.run(['token', 'list']);
 
 		await delay(1000);
-		subprocess.stdin.write(PASSWORD);
+		subprocess.stdin.write(PASSWORD + '\n');
+		await delay(500);
 		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
