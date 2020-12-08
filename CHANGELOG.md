@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.1 - 8 December 2020
+
+* `particle token list` command prompts for OTP to support users with MFA enabled ([PR #601](https://github.com/particle-iot/particle-cli/pull/601))
+
 ## 2.9.0 - 3 December 2020
 
 * Fix intermittent failures with `particle flash --usb serial` on windows ([PR #598](https://github.com/particle-iot/particle-cli/pull/598))
