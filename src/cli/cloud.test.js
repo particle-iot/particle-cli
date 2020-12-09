@@ -357,8 +357,8 @@ describe('Cloud Command-Line Interface', () => {
 					'  --product  Target a device within the given Product ID or Slug  [string]',
 					'',
 					'Examples:',
-					'  particle cloud nyan green                 Make the device named `blue` start signaling',
-					'  particle cloud nyan green off             Make the device named `blue` stop signaling',
+					'  particle cloud nyan blue                  Make the device named `blue` start signaling',
+					'  particle cloud nyan blue off              Make the device named `blue` stop signaling',
 					'  particle cloud nyan blue --product 12345  Make the device named `blue` within product `12345` start signaling',
 					''
 				].join(os.EOL));

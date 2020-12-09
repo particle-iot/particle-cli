@@ -110,8 +110,8 @@ module.exports = ({ commandProcessor, root }) => {
 			return new CloudCommands(args).nyanMode(args);
 		},
 		examples: {
-			'$0 $command green': 'Make the device named `blue` start signaling',
-			'$0 $command green off': 'Make the device named `blue` stop signaling',
+			'$0 $command blue': 'Make the device named `blue` start signaling',
+			'$0 $command blue off': 'Make the device named `blue` stop signaling',
 			'$0 $command blue --product 12345': 'Make the device named `blue` within product `12345` start signaling'
 		}
 	});
