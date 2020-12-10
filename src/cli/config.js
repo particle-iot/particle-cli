@@ -14,7 +14,8 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command company': 'Switch to a profile called company',
 			'$0 $command particle': 'Switch back to the default profile',
-			'$0 $command set apiUrl http://localhost:9090': 'Change the apiUrl setting for the current profile'
+			'$0 $command set apiUrl http://localhost:9090': 'Change the apiUrl setting for the current profile',
+			'$0 $command set proxyUrl http://proxy:8080': 'Change the proxyUrl setting for the current profile'
 		}
 	});
 };
