@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.10.0 - 17 December 2020
+
+* Updated binaries for DeviceOS 2.0.1
+
 ## 2.9.1 - 8 December 2020
 
 * `particle token list` command prompts for OTP to support users with MFA enabled ([PR #601](https://github.com/particle-iot/particle-cli/pull/601))
