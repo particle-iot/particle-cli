@@ -427,7 +427,7 @@ function consoleErrorLogger(console, yargs, exit, error){
 	const verbose = (global.verboseLevel || 0) > 1;
 
 	if (usage){
-		yargs.showHelp();
+		yargs.showHelp('log');
 	}
 
 	if (error){
