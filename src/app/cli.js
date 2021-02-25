@@ -141,7 +141,7 @@ module.exports = class CLI {
 		}
 
 		if (argv.help){
-			commandProcessor.showHelp();
+			commandProcessor.showHelp('log');
 		} else if (argv.clierror){
 			throw argv.clierror;
 		} else if (argv.clicommand){
