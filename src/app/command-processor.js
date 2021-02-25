@@ -253,7 +253,7 @@ class CLICommandItem {
 	}
 
 	showHelp(){
-		Yargs.showHelp();
+		Yargs.showHelp('log');
 	}
 
 	addInheritedOptions(target){
