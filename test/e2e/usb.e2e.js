@@ -188,6 +188,16 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			expect(exitCode).to.equal(0);
 		});
 
+		it('Lists connected devices filtered by platform name when signed-in to a foreign account', async () => {
+			await cli.loginToForeignAcct();
+			args.push(DEVICE_PLATFORM_NAME);
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.include(`<no name> [${DEVICE_ID}] (${platform})`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
 		it('Fails to list devices when signed-out', async () => {
 			await cli.logout();
 			const { stdout, stderr, exitCode } = await cli.run(args);

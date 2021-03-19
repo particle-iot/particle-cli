@@ -73,7 +73,7 @@ module.exports = class UsbCommand {
 								id: usbDevice.id,
 								name: name || '',
 								type: `${type.join(', ')}`,
-								platform_id: platformID || '',
+								platform_id: platformID || usbDevice.platformId,
 								connected: !!connected
 							};
 						})
