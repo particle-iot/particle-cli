@@ -399,9 +399,9 @@ describe('Product Commands', () => {
 			expect(stdout).to.include(`  ${PRODUCT_01_DEVICE_02_ID}${os.EOL}`);
 			expect(stdout).to.not.include('Skipped Non-Member IDs:');
 			expect(stdout).to.include(`Skipped Invalid IDs:${os.EOL}`);
-			expect(stdout).to.include(`  wat${os.EOL}`);
-			expect(stdout).to.include(`  nope${os.EOL}`);
-			expect(stdout).to.include(`  lol${os.EOL}`);
+			expect(stdout).to.include(`  WAT${os.EOL}`);
+			expect(stdout).to.include(`  NOPE${os.EOL}`);
+			expect(stdout).to.include(`  LOL${os.EOL}`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
