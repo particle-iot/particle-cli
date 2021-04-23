@@ -184,6 +184,7 @@ function envValueBoolean(varName, defaultValue) {
 
 settings.findHomePath = () => {
 	let envVars = [
+		'XDG_DATA_HOME',
 		'home',
 		'HOME',
 		'HOMEPATH',
