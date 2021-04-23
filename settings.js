@@ -201,7 +201,12 @@ settings.findHomePath = () => {
 };
 
 settings.ensureFolder = () => {
-	let particleDir = path.join(settings.findHomePath(), '.particle');
+	let base = '.particle';
+	let dir = process.env['XDG_DATA_HOME'];
+	if (dir && fs.existsSync(dir)) {
+		base = 'particle';
+	}
+	let particleDir = path.join(settings.findHomePath(), base);
 	if (!fs.existsSync(particleDir)) {
 		fs.mkdirSync(particleDir);
 	}
