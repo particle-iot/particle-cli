@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.11.0 - 29 April 2021
+
+* Updated binaries for DeviceOS 2.1.0
+
 ## 2.10.1 - 24 March 2021
 
 * Fix filtering by `platform` (e.g. `tracker`) in `particle usb list` command
