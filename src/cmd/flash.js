@@ -113,6 +113,11 @@ module.exports = class FlashCommand {
 								break;
 							case ModuleInfo.FunctionType.USER_PART:
 								// use existing destSegment for userFirmware/factoryReset
+								// Use destination address from the module prefix if flashing
+								// into normal location
+								if (!factory) {
+									destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
+								}
 								break;
 							case ModuleInfo.FunctionType.RADIO_STACK:
 								destSegment = 'radioStack';
