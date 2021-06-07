@@ -1,5 +1,11 @@
 # Changelog
 
+
+## 2.12.0 - 7 June 2021
+
+* flash user applications into the location indicated by the module prefix
+* bump `binary-version-reader` dependency to `v1.0.1`
+
 ## 2.11.0 - 29 April 2021
 
 * Updated binaries for DeviceOS 2.1.0
