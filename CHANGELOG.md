@@ -1,6 +1,10 @@
 # Changelog
 
 
+## 2.13.0 - 8 July 2021
+
+* remove deprecated `mesh` namespace and associated commands - for background, see: [docs](https://docs.particle.io/reference/discontinued/mesh/#what-happens-in-march-2021-), [blog post](https://blog.particle.io/mesh-deprecation/)
+
 ## 2.12.0 - 7 June 2021
 
 * flash user applications into the location indicated by the module prefix
