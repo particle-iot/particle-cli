@@ -168,11 +168,6 @@ module.exports.callStrobyStop = async (deviceID, productID) => {
 	return runWithRetry(args, { reject: true });
 };
 
-module.exports.removeDeviceFromMeshNetwork = () => {
-	const { run } = module.exports;
-	return run(['mesh', 'remove', DEVICE_ID, '--yes'], { reject: true });
-};
-
 module.exports.getNameVariable = async () => {
 	const { run } = module.exports;
 	const { stdout } = await run(['get', DEVICE_NAME, 'name'], { reject: true });
