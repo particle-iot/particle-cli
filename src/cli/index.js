@@ -23,7 +23,6 @@ const variable = require('./variable');
 const version = require('./version');
 const webhook = require('./webhook');
 const whoami = require('./whoami');
-const mesh = require('./mesh');
 const usb = require('./usb');
 
 /**
@@ -66,7 +65,6 @@ module.exports = function registerAllCommands(context) {
 	version(context);
 	webhook(context);
 	whoami(context);
-	mesh(context);
 	usb(context);
 	alias(context);
 };
