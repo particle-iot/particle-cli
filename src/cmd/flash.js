@@ -1,11 +1,12 @@
 const fs = require('fs');
 const VError = require('verror');
-const dfu = require('../lib/dfu');
+const temp = require('temp').track();
 const ModuleParser = require('binary-version-reader').HalModuleParser;
 const ModuleInfo = require('binary-version-reader').ModuleInfo;
 const deviceSpecs = require('../lib/deviceSpecs');
 const ensureError = require('../lib/utilities').ensureError;
-const temp = require('temp').track();
+const dfu = require('../lib/dfu');
+const CLICommandBase = require('./base');
 
 const systemModuleIndexToString = {
 	1: 'systemFirmwareOne',
@@ -14,13 +15,18 @@ const systemModuleIndexToString = {
 };
 
 
-module.exports = class FlashCommand {
+module.exports = class FlashCommand extends CLICommandBase {
+	constructor(...args){
+		super(...args);
+	}
 	flash(device, binary, files, { usb, serial, factory, force, target, port, yes }){
 		if (!device && !binary){
 			// if no device nor files are passed, show help
 			// TODO: Replace by UsageError
 			return Promise.reject();
 		}
+
+		this.ui.logFirstTimeFlashWarning();
 
 		let result;
 		if (usb){
@@ -32,7 +38,7 @@ module.exports = class FlashCommand {
 		}
 
 		return result.then(() => {
-			console.log ('\nFlash success!');
+			this.ui.write('\nFlash success!');
 		});
 	}
 
@@ -89,7 +95,7 @@ module.exports = class FlashCommand {
 					})
 					.then(info => {
 						if (info.suffixInfo.suffixSize === 65535){
-							console.log('warn: unable to verify binary info');
+							this.ui.write('warn: unable to verify binary info');
 							return;
 						}
 

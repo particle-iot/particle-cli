@@ -210,6 +210,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				return createAPI().markAsDevelopmentDevice(deviceId, true, product);
 			})
 			.then(() => {
+				this.ui.logFirstTimeFlashWarning();
 				this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
 				return createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
 			})
