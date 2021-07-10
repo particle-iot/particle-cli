@@ -55,10 +55,10 @@ module.exports = class UI {
 		if (settings.flashWarningShownOn){
 			return;
 		}
-		this.write(':::: WARNING!');
-		this.write(':::: Your first flash may take up to 10m to complete with');
-		this.write(':::: your device rapidly blinking magenta as Device OS');
-		this.write(':::: upgrades are applied. Please be patient!');
+		this.write(':::: NOTICE:');
+		this.write(':::: Your first flash may take up to 10m to complete - during');
+		this.write(':::: this time, your device may regularly change LED states');
+		this.write(':::: as Device OS upgrades are applied.');
 		settings.override(settings.profile, 'flashWarningShownOn', Date.now());
 	}
 
