@@ -37,6 +37,7 @@ var settings = {
 	access_token: null,
 	minimumApiDelay: 500,
 	useSudoForDfu: false,
+	flashWarningShownOn: null,
 	// TODO set to false once we give flags to control this
 	disableUpdateCheck: envValueBoolean('PARTICLE_DISABLE_UPDATE', false),
 	updateCheckInterval: 24 * 60 * 60 * 1000, // 24 hours

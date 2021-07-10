@@ -2,6 +2,7 @@ const os = require('os');
 const Chalk = require('chalk').constructor;
 const Spinner = require('cli-spinner').Spinner;
 const platformsById = require('../../cmd/constants').platformsById;
+const settings = require('../../../settings');
 
 
 module.exports = class UI {
@@ -48,6 +49,17 @@ module.exports = class UI {
 				spinner.stop(clear);
 				throw error;
 			});
+	}
+
+	logFirstTimeFlashWarning(){
+		if (settings.flashWarningShownOn){
+			return;
+		}
+		this.write(':::: WARNING!');
+		this.write(':::: Your first flash may take up to 10m to complete with');
+		this.write(':::: your device rapidly blinking magenta as Device OS');
+		this.write(':::: upgrades are applied. Please be patient!');
+		settings.override(settings.profile, 'flashWarningShownOn', Date.now());
 	}
 
 	logDeviceDetail(devices, { varsOnly = false, fnsOnly = false } = {}){
