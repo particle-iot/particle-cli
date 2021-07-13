@@ -1,9 +1,13 @@
 # Changelog
 
 
+## 2.14.0 - 13 July 2021
+
+* Added first-time flash notice to inform users of potential latency related to [Safe Mode Healer](https://docs.particle.io/tutorials/device-os/device-os/#safe-mode-healer) ([PR #613](https://github.com/particle-iot/particle-cli/pull/613))
+
 ## 2.13.0 - 8 July 2021
 
-* remove deprecated `mesh` namespace and associated commands - for background, see: [docs](https://docs.particle.io/reference/discontinued/mesh/#what-happens-in-march-2021-), [blog post](https://blog.particle.io/mesh-deprecation/)
+* Remove deprecated `mesh` namespace and associated commands - for background, see: [docs](https://docs.particle.io/reference/discontinued/mesh/#what-happens-in-march-2021-), [blog post](https://blog.particle.io/mesh-deprecation/)
 
 ## 2.12.0 - 7 June 2021
 
