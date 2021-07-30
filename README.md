@@ -37,6 +37,20 @@ The Particle CLI is a powerful tool for interacting with your IoT devices and th
 
 For end-users, the most up-to-date installation instructions can be found here: [macOS / Linux](https://docs.particle.io/tutorials/developer-tools/cli/#using-macos-or-linux) | [Windows](https://docs.particle.io/tutorials/developer-tools/cli/#using-windows)
 
+Note: On some platforms (e.g. `arm`), additional manual steps are required:
+
+>  particle-cli uses npm packages [`node-usb`](https://github.com/tessel/node-usb) and [`node-serialport`](https://github.com/serialport/node-serialport).
+>  On some environments (ie: Raspberry Pi and Apple M1), `node-serialport` [does not provide prebuild environments](https://github.com/serialport/node-serialport/issues/2292),
+>  so their npm install script relies on creating a prebuild using node-gyp (See
+>  [node-gyp requirements](https://github.com/nodejs/node-gyp#on-unix)), and libudev (See [node-usb installation](https://github.com/tessel/node-usb#installation).
+>  And these must be installed in order for their npm install script to succeed.  As well, particle-cli uses dfu-util and openssl.
+>
+>  As an example, to install these dependencies on Raspbian/Debian/Ubuntu:
+>  ```bash
+>  sudo apt update && sudo apt upgrade
+>  sudo apt install build-essential libudev-dev python3 dfu-util openssl
+>  ```
+
 
 ## Getting Started
 
@@ -88,25 +102,14 @@ For the full list of commands, please see the [CLI command reference](https://do
 
 # Development
 
+_Currently development is supported on macOS only!_
+
 
 ## Installing
 
 1. Install Node.js [`node@12.x` and `npm@6.x` are required]
 1. Clone this repository `$ git clone git@github.com:particle-iot/particle-cli.git && cd ./particle-cli`
-1. Install dependencies required by some of particle-cli's npm dependencies
-
-   >  particle-cli uses npm packages [`node-usb`](https://github.com/tessel/node-usb) and [`node-serialport`](https://github.com/serialport/node-serialport).
-   >  On some environments (ie: Raspberry Pi and Apple M1), `node-serialport` [does not provide prebuild environments](https://github.com/serialport/node-serialport/issues/2292),
-   >  so their npm install script relies on creating a prebuild using node-gyp (See
-   >  [node-gyp requirements](https://github.com/nodejs/node-gyp#on-unix)), and libudev (See [node-usb installation](https://github.com/tessel/node-usb#installation).
-   >  And these must be installed in order for their npm install script to succeed.  As well, particle-cli uses dfu-util and openssl.
-   >
-   >  As an example, to install these dependencies on Raspbian/Debian/Ubuntu:
-   >  ```bash
-   >  sudo apt update && sudo apt upgrade
-   >  sudo apt install build-essential libudev-dev python3 dfu-util openssl
-   >  ```
-
+1. Install external tools: `dfu-util` and `openssl` (e.g. `brew install openssl`)
 1. Install dependencies `$ npm install`
 1. View available commands `$ npm run`
 1. Run the tests `$ npm test`
