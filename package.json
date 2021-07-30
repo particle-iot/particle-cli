@@ -106,7 +106,7 @@
     "serialport": "^8.0.5"
   },
   "engines": {
-    "node": "=12",
+    "node": ">=8",
     "npm": ">=6"
   },
   "homepage": "https://github.com/particle-iot/particle-cli/",
