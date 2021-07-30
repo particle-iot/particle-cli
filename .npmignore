@@ -34,5 +34,6 @@ es6
 .babelrc.js
 .eslintrc.js
 .travis.yml
+.nvmrc
 appveyor.yml
 development.md
