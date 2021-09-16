@@ -1,6 +1,10 @@
 # Changelog
 
 
+## 2.15.0 - 16 September 2021
+
+* Updated binaries for DeviceOS 2.2.0
+
 ## 2.14.0 - 13 July 2021
 
 * Added first-time flash notice to inform users of potential latency related to [Safe Mode Healer](https://docs.particle.io/tutorials/device-os/device-os/#safe-mode-healer) ([PR #613](https://github.com/particle-iot/particle-cli/pull/613))
