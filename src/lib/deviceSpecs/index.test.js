@@ -1,9 +1,14 @@
 const fs = require('fs-extra');
 const { expect } = require('../../../test/setup');
 const deviceSpecs = require('./index');
+const specs2 = deviceSpecs.specs2;
 
 
 describe('Device Specs', () => {
+
+	it('contains entries where the keys are the DFU vendor and product IDs', () => {
+		expect(Object.keys(specs2)).to.include('2b04:d006');
+	});
 
 	describe('deviceId', () => {
 		it('returns the deviceId from a serial number', () => {

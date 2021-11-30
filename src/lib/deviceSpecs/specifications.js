@@ -1,10 +1,106 @@
 const path = require('path');
+const deviceConstants = require('@particle/device-constants');
 
 function deviceIdFromSerialNumber(serialNumber) {
 	const found = /[0-9A-Fa-f]{24}/.exec(serialNumber);
 	if (found) {
 		return found[0].toLowerCase();
 	}
+}
+
+/* Device specs have the following shape:
+
+	'2b04:d006': { // USB vendor and product IDs
+		productName: 'Photon',
+		tcpServerKey: {
+			address: '2082',
+			size: 512,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa',
+			addressOffset: 384,
+			portOffset: 450
+		},
+		udpServerKey: {
+			address: '3298',
+			size: 320,
+			format: 'der',
+			alt: '1',
+			alg: 'ec',
+			addressOffset: 192,
+			portOffset: 258
+		},
+		tcpPrivateKey: {
+			address: '34',
+			size: 612,
+			format: 'der',
+			alt: '1',
+			alg: 'rsa'
+		},
+		udpPrivateKey: {
+			address: '3106',
+			size: 192,
+			format: 'der',
+			alt: '1',
+			alg: 'ec'
+		},
+		factoryReset: {
+			address: '0x080E0000',
+			alt: '0'
+		},
+		userFirmware: {
+			address: '0x080A0000',
+			alt: '0',
+			size: 128*1024
+		},
+		systemFirmwareOne: {
+			address: '0x08020000',
+			alt: '0'
+		},
+		systemFirmwareTwo: {
+			address: '0x08060000',
+			alt: '0'
+		},
+		otaRegion: {
+			address: '0x080C0000',
+			alt: '0'
+		},
+		otaFlag: {
+			address: '1753',
+			alt: '1',
+			size: '1'
+		},
+		knownApps: {
+			tinker: 'tinker-0.4.5-photon.bin',
+			doctor: 'photon_doctor.bin',
+			voodoo: 'voodoospark.bin'
+		},
+		serial: {
+			vid: '2b04',
+			pid: 'c006',
+			deviceId: deviceIdFromSerialNumber
+		},
+		defaultProtocol: 'tcp',
+		productId: 6,
+		features: [
+			'wifi',
+			'system-firmware',
+			'antenna-selection',
+			'softap',
+		],
+	}
+*/
+
+function generateDeviceSpecs(deviceConstants) {
+	const cliDevices = Object.values(deviceConstants).filter(d => d.public && Number(d.dfu.vendorId) > 0);
+
+	return cliDevices.reduce((specs, device) => {
+		const key = `${device.usb.vendorId.replace(/0x/, '')}:${device.dfu.productId.replace(/0x/, '')}`;
+
+		specs[key] = {};
+
+		return specs;
+	}, {});
 }
 
 const specs = {
@@ -879,4 +975,6 @@ Object.keys(specs).forEach((id) => {
 });
 
 module.exports = specs;
+
+module.exports.specs2 = generateDeviceSpecs(deviceConstants);
 
