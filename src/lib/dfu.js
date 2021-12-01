@@ -33,7 +33,7 @@ const childProcess = require('child_process');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('../cmd/udev');
 const settings = require('../../settings');
 const utilities = require('./utilities');
-const specs = require('./deviceSpecs');
+const deviceSpecs = require('./device-specs');
 const log = require('./log');
 
 const prompt = inquirer.prompt;
@@ -52,7 +52,7 @@ module.exports = {
 					return foundLine.match(/\[(.*:.*)\]/)[1];
 				})
 				.filter((dfuId) => {
-					return dfuId && specs[dfuId];
+					return dfuId && deviceSpecs[dfuId];
 				});
 		return _.uniq(dfuIds);
 	},
@@ -86,9 +86,9 @@ module.exports = {
 				let dfuIds = _dfuIdsFromDfuOutput(stdout);
 				let dfuDevices = dfuIds.map((d) => {
 					return {
-						type: specs[d].productName,
+						type: deviceSpecs[d].productName,
 						dfuId: d,
-						specs: specs[d]
+						specs: deviceSpecs[d]
 					};
 				});
 
@@ -168,8 +168,8 @@ module.exports = {
 			args.unshift('dfu-util');
 		}
 
-		let deviceSpecs = specs[dfuId] || { };
-		checkBinaryAlignment(binaryPath, deviceSpecs);
+		let specs = deviceSpecs[dfuId] || { };
+		checkBinaryAlignment(binaryPath, specs);
 		return utilities.deferredSpawnProcess(cmd, args)
 			.then((output) => {
 				return Promise.resolve(output.stdout.join('\n'));
@@ -272,13 +272,13 @@ module.exports = {
 
 	_validateSegmentSpecs(segmentName) {
 		const { dfuId } = module.exports;
-		let deviceSpecs = specs[dfuId] || {};
-		let params = deviceSpecs[segmentName];
+		let specs = deviceSpecs[dfuId] || {};
+		let params = specs[segmentName];
 		let err = null;
 
 		if (!segmentName) {
 			err = "segmentName required. Don't know where to read/write.";
-		} else if (!deviceSpecs) {
+		} else if (!specs) {
 			err = "dfuId has no specification. Don't know how to read/write.";
 		} else if (!params) {
 			err = `segment ${segmentName} has no specs. Not aware of this segment.`;
@@ -365,10 +365,10 @@ module.exports = {
 
 	specsForPlatform(platformID) {
 		let result = {};
-		Object.keys(specs).forEach((id) => {
-			let deviceSpecs = specs[id];
-			if (deviceSpecs.productId===platformID) {
-				result = deviceSpecs;
+		Object.keys(deviceSpecs).forEach((id) => {
+			let specs = deviceSpecs[id];
+			if (specs.productId===platformID) {
+				result = specs;
 			}
 		});
 		return result;

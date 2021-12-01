@@ -5,7 +5,7 @@ const prompt = require('inquirer').prompt;
 
 const deviceConstants = require('@particle/device-constants');
 const settings = require('../../settings');
-const specs = require('../lib/deviceSpecs');
+const deviceSpecs = require('../lib/device-specs');
 const ApiClient = require('../lib/api-client'); // TODO (mirande): remove in favor of `ParticleAPI`
 const { normalizedApiError } = require('../lib/api-client');
 const utilities = require('../lib/utilities');
@@ -250,15 +250,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 					}
 				}
 
-				const spec = _.find(specs, { productId });
+				const specs = _.find(deviceSpecs, { productId });
 
-				if (spec){
-					if (spec.knownApps[filePath]){
-						return populateFileMapping({ list: [spec.knownApps[filePath]] });
+				if (specs){
+					if (specs.knownApps[filePath]){
+						return populateFileMapping({ list: [specs.knownApps[filePath]] });
 					}
 
-					if (spec.productName){
-						throw new VError(`I don't have a ${filePath} binary for ${spec.productName}.`);
+					if (specs.productName){
+						throw new VError(`I don't have a ${filePath} binary for ${specs.productName}.`);
 					}
 				} else {
 					throw new Error(`Unable to find ${filePath} for platform ${productId}`);
