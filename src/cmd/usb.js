@@ -150,7 +150,7 @@ module.exports = class UsbCommand {
 	setSetupDone(args) {
 		const done = !args.reset;
 		return this._forEachUsbDevice(args, usbDevice => {
-			if (usbDevice.isMeshDevice) {
+			if (usbDevice.isGen3Device) {
 				return usbDevice.setSetupDone(done)
 					.then(() => {
 						if (done) {
