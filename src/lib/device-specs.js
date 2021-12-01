@@ -10,7 +10,7 @@ const deviceConstants = require('@particle/device-constants');
 			address: '2082',
 			size: 512,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'rsa',
 			addressOffset: 384,
 			portOffset: 450
@@ -19,7 +19,7 @@ const deviceConstants = require('@particle/device-constants');
 			address: '3298',
 			size: 320,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'ec',
 			addressOffset: 192,
 			portOffset: 258
@@ -28,40 +28,40 @@ const deviceConstants = require('@particle/device-constants');
 			address: '34',
 			size: 612,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'rsa'
 		},
 		udpPrivateKey: {
 			address: '3106',
 			size: 192,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'ec'
 		},
 		factoryReset: {
 			address: '0x080e0000',
-			alt: '0'
+			alt: 0
 		},
 		userFirmware: {
 			address: '0x080a0000',
-			alt: '0',
+			alt: 0,
 			size: 128*1024
 		},
 		systemFirmwareOne: {
 			address: '0x08020000',
-			alt: '0'
+			alt: 0
 		},
 		systemFirmwareTwo: {
 			address: '0x08060000',
-			alt: '0'
+			alt: 0
 		},
 		otaRegion: {
 			address: '0x080c0000',
-			alt: '0'
+			alt: 0
 		},
 		otaFlag: {
 			address: '1753',
-			alt: '1',
+			alt: 1,
 			size: 1
 		},
 		knownApps: {
@@ -88,7 +88,7 @@ const keysDctOffsets = {
 			address: '0x00001000',
 			size: 2048,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			addressOffset: 384,
 			portOffset: 450
 		},
@@ -96,7 +96,7 @@ const keysDctOffsets = {
 			address: '0x00002000',
 			size: 1024,
 			format: 'der',
-			alt: '1'
+			alt: 1
 		}
 	},
 	laterGenerations: {
@@ -104,7 +104,7 @@ const keysDctOffsets = {
 			address: '2082',
 			size: 512,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'rsa',
 			addressOffset: 384,
 			portOffset: 450
@@ -113,7 +113,7 @@ const keysDctOffsets = {
 			address: '3298',
 			size: 320,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'ec',
 			addressOffset: 192,
 			portOffset: 258
@@ -122,14 +122,14 @@ const keysDctOffsets = {
 			address: '34',
 			size: 612,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'rsa'
 		},
 		udpPrivateKey: {
 			address: '3106',
 			size: 192,
 			format: 'der',
-			alt: '1',
+			alt: 1,
 			alg: 'ec'
 		}
 	}
