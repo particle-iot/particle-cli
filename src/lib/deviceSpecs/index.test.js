@@ -5,9 +5,63 @@ const specs2 = deviceSpecs.specs2;
 
 
 describe('Device Specs', () => {
-
 	it('contains entries where the keys are the DFU vendor and product IDs', () => {
 		expect(Object.keys(specs2)).to.include('2b04:d006');
+	});
+
+	it('has a productName on each entry', () => {
+		for (const device of Object.values(specs2)) {
+			expect(device).to.haveOwnProperty('productName');
+		}
+	});
+
+	describe('platforms', () => {
+		function ignoreFields(specs) {
+			// eslint-disable-next-line no-unused-vars
+			const { features, generation, ...rest } = specs;
+			return rest;
+		}
+
+		it('matches Core', () => {
+			const dfuId = '1d50:607f';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches Photon', () => {
+			const dfuId = '2b04:d006';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches P1', () => {
+			const dfuId = '2b04:d008';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches Electron', () => {
+			const dfuId = '2b04:d00a';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches Argon', () => {
+			const dfuId = '2b04:d00c';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches Boron', () => {
+			const dfuId = '2b04:d00d';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches Xenon', () => {
+			const dfuId = '2b04:d00e';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches B SoM', () => {
+			const dfuId = '2b04:d017';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches B5 SoM', () => {
+			const dfuId = '2b04:d019';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
+		it('matches Asset Tracker', () => {
+			const dfuId = '2b04:d01a';
+			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+		});
 	});
 
 	describe('deviceId', () => {
