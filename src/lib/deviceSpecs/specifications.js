@@ -91,8 +91,8 @@ function deviceIdFromSerialNumber(serialNumber) {
 	}
 */
 
-const dctOffsets = {
-	1: {
+const keysDctOffsets = {
+	generation1: {
 		tcpServerKey: {
 			address: '0x00001000',
 			size: 2048,
@@ -108,7 +108,7 @@ const dctOffsets = {
 			alt: '1'
 		}
 	},
-	2: {
+	laterGenerations: {
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -126,41 +126,6 @@ const dctOffsets = {
 			alg: 'ec',
 			addressOffset: 192,
 			portOffset: 258
-		},
-		tcpPrivateKey: {
-			address: '34',
-			size: 612,
-			format: 'der',
-			alt: '1',
-			alg: 'rsa'
-		},
-		udpPrivateKey: {
-			address: '3106',
-			size: 192,
-			format: 'der',
-			alt: '1',
-			alg: 'ec'
-		}
-	},
-	3: {
-		tcpServerKey: {
-			address: '2082',
-			size: 512,
-			format: 'der',
-			alt: '1',
-			alg: 'rsa',
-			addressOffset: 384,
-			portOffset: 450
-		},
-		udpServerKey: {
-			address: '3298',
-			size: 320,
-			format: 'der',
-			alt: '1',
-			alg: 'ec',
-			addressOffset: 192,
-			portOffset: 258,
-			variant: 'gen3'
 		},
 		tcpPrivateKey: {
 			address: '34',
@@ -288,7 +253,7 @@ const additionalSpecs = {
 			alt: '1',
 			size: '1'
 		},
-	},
+	}
 };
 
 // Walk the assets/knownApps/${name} directory to find known app binaries for this platform
@@ -334,9 +299,11 @@ function generateDeviceSpecs(deviceConstants) {
 				// older gen 1 & 2 devices don't report their device id in the serial number
 				...(device.generation <= 2 && { deviceId: deviceIdFromSerialNumber })
 			},
+
 			knownApps: knownAppsForPlatform(device.name),
-			// add the offsets to keys in DCT
-			...dctOffsets[device.generation],
+
+			// add the offsets to server and device keys in DCT
+			...(device.generation === 1 ? keysDctOffsets.generation1 : keysDctOffsets.laterGenerations),
 
 			// generation 3+ all have the same addresses
 			...(device.generation >= 3 && generation3Addresses),
@@ -701,7 +668,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -768,7 +734,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -834,7 +799,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -901,7 +865,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -968,7 +931,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -1035,7 +997,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -1101,7 +1062,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
@@ -1168,7 +1128,6 @@ const specs = {
 			format: 'der',
 			alt: '1',
 			alg: 'ec',
-			variant: 'gen3',
 			addressOffset: 192,
 			portOffset: 258
 		},
