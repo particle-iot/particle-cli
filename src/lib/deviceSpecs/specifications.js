@@ -73,7 +73,6 @@ function deviceIdFromSerialNumber(serialNumber) {
 		knownApps: {
 			tinker: 'tinker-0.4.5-photon.bin',
 			doctor: 'photon_doctor.bin',
-			voodoo: 'voodoospark.bin'
 		},
 		serial: {
 			vid: '2b04',
@@ -247,7 +246,6 @@ const additionalSpecs = {
 		knownApps: {
 			tinker: 'core_tinker.bin',
 			doctor: 'core_doctor.bin',
-			voodoo: 'voodoospark.bin',
 			deep_update_2014_06: 'deep_update_2014_06.bin'
 		},
 		writePadding: 2,
@@ -257,7 +255,6 @@ const additionalSpecs = {
 		knownApps: {
 			tinker: 'tinker-0.4.5-photon.bin',
 			doctor: 'photon_doctor.bin',
-			voodoo: 'voodoospark.bin'
 		},
 	},
 	p1: {
@@ -265,7 +262,6 @@ const additionalSpecs = {
 		knownApps: {
 			tinker: 'tinker-0.4.5-p1.bin',
 			doctor: 'p1_doctor.bin',
-			voodoo: 'voodoospark.bin'
 		},
 	},
 	electron: {
@@ -403,7 +399,6 @@ const specs = {
 		knownApps: {
 			tinker: 'core_tinker.bin',
 			doctor: 'core_doctor.bin',
-			voodoo: 'voodoospark.bin',
 			deep_update_2014_06: 'deep_update_2014_06.bin'
 		},
 		serial: {
@@ -481,7 +476,6 @@ const specs = {
 		knownApps: {
 			tinker: 'tinker-0.4.5-photon.bin',
 			doctor: 'photon_doctor.bin',
-			voodoo: 'voodoospark.bin'
 		},
 		serial: {
 			vid: '2b04',
@@ -560,7 +554,6 @@ const specs = {
 		knownApps: {
 			tinker: 'tinker-0.4.5-p1.bin',
 			doctor: 'p1_doctor.bin',
-			voodoo: 'voodoospark.bin'
 		},
 		serial: {
 			vid: '2b04',

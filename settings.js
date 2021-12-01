@@ -68,8 +68,7 @@ var settings = {
 
 	knownApps: {
 		'deep_update_2014_06': true,
-		'tinker': true,
-		'voodoo': true
+		'tinker': true
 	},
 	knownPlatforms: {
 		0: 'Core',
