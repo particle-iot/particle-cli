@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const deviceConstants = require('@particle/device-constants');
 
 function deviceIdFromSerialNumber(serialNumber) {
@@ -243,25 +244,13 @@ const additionalSpecs = {
 			address: '0x08005000',
 			alt: '0'
 		},
-		knownApps: {
-			tinker: 'core_tinker.bin',
-			doctor: 'core_doctor.bin',
-		},
 		writePadding: 2,
 	},
 	photon: {
 		...photonP1Addresses,
-		knownApps: {
-			tinker: 'tinker-0.4.5-photon.bin',
-			doctor: 'photon_doctor.bin',
-		},
 	},
 	p1: {
 		...photonP1Addresses,
-		knownApps: {
-			tinker: 'tinker-0.4.5-p1.bin',
-			doctor: 'p1_doctor.bin',
-		},
 	},
 	electron: {
 		alternativeProtocol: 'tcp',
@@ -299,43 +288,32 @@ const additionalSpecs = {
 			alt: '1',
 			size: '1'
 		},
-		knownApps: {
-			tinker: 'electron_tinker.bin',
-			doctor: 'electron_doctor.bin',
-			'tinker-usb-debugging': 'tinker-usb-debugging-0.6.0-electron.bin'
-		},
 	},
-	argon: {
-		knownApps: {
-			tinker: 'tinker-0.8.0-rc.27-argon.bin'
-		}
-	},
-	boron: {
-		knownApps: {
-			tinker: 'tinker-0.8.0-rc.27-boron.bin'
-		}
-	},
-	xenon: {
-		knownApps: {
-			tinker: 'tinker-0.8.0-rc.27-xenon.bin'
-		}
-	},
-	bsom: {
-		knownApps: {
-			tinker: 'tinker-1.1.0-rc.1-bsom.bin'
-		}
-	},
-	b5som: {
-		knownApps: {
-			tinker: 'tinker-1.5.0-b5som.bin'
-		}
-	},
-	tracker: {
-		knownApps: {
-			tinker: 'tracker-tinker@1.5.4-rc.1.bin'
-		}
-	}
 };
+
+// Walk the assets/knownApps/${name} directory to find known app binaries for this platform
+function knownAppsForPlatform(name) {
+	const platformKnownAppsPath = path.join(__dirname, '../../../assets/knownApps', name);
+	try {
+		return fs.readdirSync(platformKnownAppsPath).reduce((knownApps, appName) => {
+			try {
+				const appPath = path.join(platformKnownAppsPath, appName);
+				const binaries = fs.readdirSync(appPath);
+				const appBinary = binaries.filter(filename => filename.match(/\.bin$/))[0];
+				if (appBinary) {
+					knownApps[appName] = path.join(appPath, appBinary);
+				}
+			} catch (e) {
+				// ignore errors
+			}
+
+			return knownApps;
+		}, {});
+	} catch (e) {
+		// no known apps for this platform
+		return {};
+	}
+}
 
 function generateDeviceSpecs(deviceConstants) {
 	const cliDevices = Object.values(deviceConstants).filter(d => d.public && Number(d.dfu.vendorId) > 0);
@@ -344,6 +322,7 @@ function generateDeviceSpecs(deviceConstants) {
 		const key = `${device.dfu.vendorId.replace(/0x/, '')}:${device.dfu.productId.replace(/0x/, '')}`;
 
 		specs[key] = {
+			name: device.name,
 			productName: device.displayName,
 			productId: device.id, // platform ID
 			generation: device.generation,
@@ -355,6 +334,7 @@ function generateDeviceSpecs(deviceConstants) {
 				// older gen 1 & 2 devices don't report their device id in the serial number
 				...(device.generation <= 2 && { deviceId: deviceIdFromSerialNumber })
 			},
+			knownApps: knownAppsForPlatform(device.name),
 			// add the offsets to keys in DCT
 			...dctOffsets[device.generation],
 
@@ -373,6 +353,7 @@ const specs = {
 	// key is DFU id shown in dfu-util -l
 	'1d50:607f': {
 		productName: 'Core',
+		name: 'core',
 		tcpServerKey: {
 			address: '0x00001000',
 			size: 2048,
@@ -413,6 +394,7 @@ const specs = {
 	},
 	'2b04:d006': {
 		productName: 'Photon',
+		name: 'photon',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -491,6 +473,7 @@ const specs = {
 	},
 	'2b04:d008': {
 		productName: 'P1',
+		name: 'p1',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -567,6 +550,7 @@ const specs = {
 	},
 	'2b04:d00a': {
 		productName: 'Electron',
+		name: 'electron',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -653,6 +637,7 @@ const specs = {
 	},
 	// '2b04:d058': {
 	// 	productName: 'Duo',
+	//  name: 'duo',
 	// 	tcpServerKey: {
 	// 		address: '2082',
 	// 		size: 512,
@@ -700,6 +685,7 @@ const specs = {
 	// },
 	'2b04:d00c': {
 		productName: 'Argon',
+		name: 'argon',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -766,6 +752,7 @@ const specs = {
 	},
 	'2b04:d016': {
 		productName: 'A SoM',
+		name: 'asom',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -831,6 +818,7 @@ const specs = {
 	},
 	'2b04:d00d': {
 		productName: 'Boron',
+		name: 'boron',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -897,6 +885,7 @@ const specs = {
 	},
 	'2b04:d017': {
 		productName: 'B SoM',
+		name: 'bsom',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -963,6 +952,7 @@ const specs = {
 	},
 	'2b04:d00e': {
 		productName: 'Xenon',
+		name: 'xenon',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -1029,6 +1019,7 @@ const specs = {
 	},
 	'2b04:d018': {
 		productName: 'X SoM',
+		name: 'xsom',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -1094,6 +1085,7 @@ const specs = {
 	},
 	'2b04:d019': {
 		productName: 'B5 SoM',
+		name: 'b5som',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -1160,6 +1152,7 @@ const specs = {
 	},
 	'2b04:d01a': {
 		productName: 'Asset Tracker',
+		name: 'tracker',
 		tcpServerKey: {
 			address: '2082',
 			size: 512,
@@ -1232,14 +1225,15 @@ function fixKnownAppsPaths(specs) {
 		const deviceSpecs = specs[id];
 		const knownApps = deviceSpecs['knownApps'];
 		for (let appName in knownApps) {
-			knownApps[appName] = path.join(__dirname, '../../../assets/binaries', knownApps[appName]);
+			knownApps[appName] = path.join(__dirname, '../../../assets/knownApps', deviceSpecs['name'], appName, knownApps[appName]);
 		}
 	});
 
 	return specs;
 }
 
+
 module.exports = fixKnownAppsPaths(specs);
 
-module.exports.specs2 = fixKnownAppsPaths(generateDeviceSpecs(deviceConstants));
+module.exports.specs2 = generateDeviceSpecs(deviceConstants);
 
