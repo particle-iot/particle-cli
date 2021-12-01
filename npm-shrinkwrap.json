@@ -2853,9 +2853,9 @@
       "optional": true
     },
     "binary-version-reader": {
-      "version": "1.0.1",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-1.0.1.tgz",
-      "integrity": "sha512-Dhn3W9eRuWSiK+2VOxVu+8aMmTl8jzKD1MngEJpJ/cF0BcPXWFYJHMeCKf35wq2SJGO66duChxKYnYzI1HEgvg==",
+      "version": "1.1.1",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-1.1.1.tgz",
+      "integrity": "sha512-hVzfUs9rfjh0Vm7i7xVFltsCwLy44X0NO8GZQRiIVPb63ySvIKsdglz6ZFXhWHU+wPZ/rAtZFeein2luAQVijA==",
       "requires": {
         "buffer-crc32": "^0.2.5",
         "when": "^3.7.3",
