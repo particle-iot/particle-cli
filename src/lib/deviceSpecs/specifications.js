@@ -2,13 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const deviceConstants = require('@particle/device-constants');
 
-function deviceIdFromSerialNumber(serialNumber) {
-	const found = /[0-9A-Fa-f]{24}/.exec(serialNumber);
-	if (found) {
-		return found[0].toLowerCase();
-	}
-}
-
 /* Device specs have the following shape:
 
 	'2b04:d006': { // USB vendor and product IDs
@@ -145,116 +138,22 @@ const keysDctOffsets = {
 };
 
 // additional specs that are not included in the device constants library
-
-const photonP1Addresses = {
-	factoryReset: {
-		address: '0x080E0000',
-		alt: '0'
-	},
-	userFirmware: {
-		address: '0x080A0000',
-		alt: '0',
-		size: 128 * 1024
-	},
-	systemFirmwareOne: {
-		address: '0x08020000',
-		alt: '0'
-	},
-	systemFirmwareTwo: {
-		address: '0x08060000',
-		alt: '0'
-	},
-	otaRegion: {
-		address: '0x080C0000',
-		alt: '0'
-	},
-	otaFlag: {
-		address: '1753',
-		alt: '1',
-		size: '1'
-	}
-};
-const generation3Addresses = {
-	userFirmware: {
-		address: '0x000D4000',
-		alt: '0'
-	},
-	systemFirmwareOne: {
-		address: '0x00030000',
-		alt: '0'
-	},
-	otaRegion: {
-		address: '0x80289000',
-		alt: '2'
-	},
-	otaFlag: {
-		address: '1753',
-		alt: '1',
-		size: '1'
-	},
-	radioStack: {
-		address: '0x00001000',
-		alt: '0'
-	}
-};
-
-// TODO: (Julien) extract addresses to device constants
 const additionalSpecs = {
 	core: {
-		factoryReset: {
-			address: '0x00020000',
-			alt: '1'
-		},
-		userFirmware: {
-			address: '0x08005000',
-			alt: '0'
-		},
 		writePadding: 2,
 	},
-	photon: {
-		...photonP1Addresses,
-	},
-	p1: {
-		...photonP1Addresses,
-	},
 	electron: {
-		alternativeProtocol: 'tcp',
-		transport: {
-			address: 2977,
-			size: 1,
-			alt: '1'
-		},
-		factoryReset: {
-			address: '0x080A0000',
-			alt: '0'
-		},
-		userFirmware: {
-			address: '0x08080000',
-			alt: '0'
-		},
-		systemFirmwareOne: {
-			address: '0x08020000',
-			alt: '0'
-		},
-		systemFirmwareTwo: {
-			address: '0x08040000',
-			alt: '0'
-		},
-		systemFirmwareThree: {
-			address: '0x08060000',
-			alt: '0'
-		},
-		otaRegion: {
-			address: '0x080C0000',
-			alt: '0'
-		},
-		otaFlag: {
-			address: '1753',
-			alt: '1',
-			size: '1'
-		},
+		alternativeProtocol: 'tcp'
 	}
 };
+
+// Devices running older Device OS don't set the USB serial number to the device ID so check the format
+function deviceIdFromSerialNumber(serialNumber) {
+	const found = /[0-9A-Fa-f]{24}/.exec(serialNumber);
+	if (found) {
+		return found[0].toLowerCase();
+	}
+}
 
 // Walk the assets/knownApps/${name} directory to find known app binaries for this platform
 function knownAppsForPlatform(name) {
@@ -296,7 +195,6 @@ function generateDeviceSpecs(deviceConstants) {
 			serial: {
 				vid: device.usb.vendorId.replace(/0x/, ''),
 				pid: device.usb.productId.replace(/0x/, ''),
-				// older gen 1 & 2 devices don't report their device id in the serial number
 				...(device.generation <= 2 && { deviceId: deviceIdFromSerialNumber })
 			},
 
@@ -305,8 +203,8 @@ function generateDeviceSpecs(deviceConstants) {
 			// add the offsets to server and device keys in DCT
 			...(device.generation === 1 ? keysDctOffsets.generation1 : keysDctOffsets.laterGenerations),
 
-			// generation 3+ all have the same addresses
-			...(device.generation >= 3 && generation3Addresses),
+			// add the segments where DFU can read/write
+			...device.dfu.segments,
 
 			// add platform specific specs
 			...additionalSpecs[device.name]
