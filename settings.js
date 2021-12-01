@@ -68,8 +68,6 @@ var settings = {
 
 	knownApps: {
 		'deep_update_2014_06': true,
-		'cc3000': true,
-		'cc3000_1_14': true,
 		'tinker': true,
 		'voodoo': true
 	},

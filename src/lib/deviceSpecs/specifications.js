@@ -247,8 +247,6 @@ const additionalSpecs = {
 		knownApps: {
 			tinker: 'core_tinker.bin',
 			doctor: 'core_doctor.bin',
-			cc3000: 'cc3000-patch-programmer.bin',
-			cc3000_1_14: 'cc3000-patch-programmer_1_14.bin',
 			voodoo: 'voodoospark.bin',
 			deep_update_2014_06: 'deep_update_2014_06.bin'
 		},
@@ -405,8 +403,6 @@ const specs = {
 		knownApps: {
 			tinker: 'core_tinker.bin',
 			doctor: 'core_doctor.bin',
-			cc3000: 'cc3000-patch-programmer.bin',
-			cc3000_1_14: 'cc3000-patch-programmer_1_14.bin',
 			voodoo: 'voodoospark.bin',
 			deep_update_2014_06: 'deep_update_2014_06.bin'
 		},
@@ -419,8 +415,7 @@ const specs = {
 		productId: 0,
 		writePadding: 2,
 		features: [
-			'wifi',
-			'cc3000',
+			'wifi'
 		],
 	},
 	'2b04:d006': {

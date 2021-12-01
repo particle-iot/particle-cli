@@ -29,7 +29,6 @@ module.exports = class DoctorCommand {
 			.then(this._findDevice.bind(this))
 			.then(this._nameDevice.bind(this))
 			.then(this._updateSystemFirmware.bind(this))
-			.then(this._updateCC3000.bind(this))
 			.then(this._flashDoctor.bind(this))
 			.then(this._selectAntenna.bind(this))
 			.then(this._selectIP.bind(this))
@@ -155,31 +154,6 @@ module.exports = class DoctorCommand {
 		return this._enterDfuMode()
 			.then(() => {
 				return this.command('update').updateDevice();
-			})
-			.catch(this._catchSkipStep);
-	}
-
-	_updateCC3000(){
-		if (!(this._deviceGeneration() === 1)){
-			return;
-		}
-
-		this._displayStepTitle('Updating CC3000 firmware');
-
-		return this._enterDfuMode()
-			.then(() => {
-				return this.command('flash').flashDfu({ binary: 'cc3000' });
-			})
-			.then(() => {
-				console.log('Applying update...');
-				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
-
-				return prompt([{
-					type: 'list',
-					name: 'choice',
-					message: 'Press ENTER when ready',
-					choices: ['Continue']
-				}]);
 			})
 			.catch(this._catchSkipStep);
 	}
