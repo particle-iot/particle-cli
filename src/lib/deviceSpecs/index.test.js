@@ -1,16 +1,16 @@
 const fs = require('fs-extra');
 const { expect } = require('../../../test/setup');
 const deviceSpecs = require('./index');
-const specs2 = deviceSpecs.specs2;
-
+const specsOld = deviceSpecs.old;
+delete deviceSpecs.old;
 
 describe('Device Specs', () => {
 	it('contains entries where the keys are the DFU vendor and product IDs', () => {
-		expect(Object.keys(specs2)).to.include('2b04:d006');
+		expect(Object.keys(deviceSpecs)).to.include('2b04:d006');
 	});
 
 	it('has a productName on each entry', () => {
-		for (const device of Object.values(specs2)) {
+		for (const device of Object.values(deviceSpecs)) {
 			expect(device).to.haveOwnProperty('productName');
 		}
 	});
@@ -24,43 +24,43 @@ describe('Device Specs', () => {
 
 		it('matches Core', () => {
 			const dfuId = '1d50:607f';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches Photon', () => {
 			const dfuId = '2b04:d006';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches P1', () => {
 			const dfuId = '2b04:d008';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches Electron', () => {
 			const dfuId = '2b04:d00a';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches Argon', () => {
 			const dfuId = '2b04:d00c';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches Boron', () => {
 			const dfuId = '2b04:d00d';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches Xenon', () => {
 			const dfuId = '2b04:d00e';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches B SoM', () => {
 			const dfuId = '2b04:d017';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches B5 SoM', () => {
 			const dfuId = '2b04:d019';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 		it('matches Asset Tracker', () => {
 			const dfuId = '2b04:d01a';
-			expect(ignoreFields(specs2[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
+			expect(ignoreFields(specsOld[dfuId])).to.deep.eql(ignoreFields(deviceSpecs[dfuId]));
 		});
 	});
 
@@ -93,7 +93,7 @@ describe('Device Specs', () => {
 
 	describe('knownApps', () => {
 		it('includes `tinker` in `known apps` for offical platforms', async () => {
-			const unsupported = ['Core', 'Duo', 'A SoM', 'X SoM', 'Asset Tracker'];
+			const unsupported = ['Asset Tracker', 'P2'];
 
 			for (const spec of Object.values(deviceSpecs)){
 				const { productName, knownApps } = spec;

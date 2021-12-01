@@ -4,7 +4,7 @@ const deviceConstants = require('@particle/device-constants');
 
 /* Device specs have the following shape:
 
-	'2b04:d006': { // USB vendor and product IDs
+	'2b04:d006': { // DFU vendor and product IDs, as reported by dfu-util -l
 		productName: 'Photon',
 		tcpServerKey: {
 			address: '2082',
@@ -39,11 +39,11 @@ const deviceConstants = require('@particle/device-constants');
 			alg: 'ec'
 		},
 		factoryReset: {
-			address: '0x080E0000',
+			address: '0x080e0000',
 			alt: '0'
 		},
 		userFirmware: {
-			address: '0x080A0000',
+			address: '0x080a0000',
 			alt: '0',
 			size: 128*1024
 		},
@@ -56,13 +56,13 @@ const deviceConstants = require('@particle/device-constants');
 			alt: '0'
 		},
 		otaRegion: {
-			address: '0x080C0000',
+			address: '0x080c0000',
 			alt: '0'
 		},
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		knownApps: {
 			tinker: 'tinker-0.4.5-photon.bin',
@@ -77,9 +77,7 @@ const deviceConstants = require('@particle/device-constants');
 		productId: 6,
 		features: [
 			'wifi',
-			'system-firmware',
-			'antenna-selection',
-			'softap',
+			'tcp'
 		],
 	}
 */
@@ -293,11 +291,11 @@ const specs = {
 			alg: 'ec'
 		},
 		factoryReset: {
-			address: '0x080E0000',
+			address: '0x080e0000',
 			alt: '0'
 		},
 		userFirmware: {
-			address: '0x080A0000',
+			address: '0x080a0000',
 			alt: '0',
 			size: 128*1024
 		},
@@ -310,13 +308,13 @@ const specs = {
 			alt: '0'
 		},
 		otaRegion: {
-			address: '0x080C0000',
+			address: '0x080c0000',
 			alt: '0'
 		},
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		knownApps: {
 			tinker: 'tinker-0.4.5-photon.bin',
@@ -372,11 +370,11 @@ const specs = {
 			alg: 'ec'
 		},
 		factoryReset: {
-			address: '0x080E0000',
+			address: '0x080e0000',
 			alt: '0'
 		},
 		userFirmware: {
-			address: '0x080A0000',
+			address: '0x080a0000',
 			alt: '0',
 			size: 128*1024
 		},
@@ -389,13 +387,13 @@ const specs = {
 			alt: '0'
 		},
 		otaRegion: {
-			address: '0x080C0000',
+			address: '0x080c0000',
 			alt: '0'
 		},
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		knownApps: {
 			tinker: 'tinker-0.4.5-p1.bin',
@@ -449,7 +447,7 @@ const specs = {
 			alg: 'ec'
 		},
 		transport: {
-			address: 2977,
+			address: '2977',
 			size: 1,
 			alt: '1'
 		},
@@ -466,20 +464,20 @@ const specs = {
 			alt: '0'
 		},
 		otaRegion: {
-			address: '0x080C0000',
+			address: '0x080c0000',
 			alt: '0'
 		},
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		userFirmware: {
 			address: '0x08080000',
 			alt: '0'
 		},
 		factoryReset: {
-			address: '0x080A0000',
+			address: '0x080a0000',
 			alt: '0'
 		},
 		knownApps: {
@@ -524,7 +522,7 @@ const specs = {
 	// 		alt: '2'
 	// 	},
 	// 	userFirmware: {
-	// 		address: '0x080C0000',
+	// 		address: '0x080c0000',
 	// 		alt: '0'
 	// 	},
 	// 	systemFirmwareOne: {
@@ -584,7 +582,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -598,7 +596,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -650,7 +648,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -664,7 +662,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -715,7 +713,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -729,7 +727,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -781,7 +779,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -795,7 +793,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -847,7 +845,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -861,7 +859,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -913,7 +911,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -927,7 +925,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -978,7 +976,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -992,7 +990,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -1044,7 +1042,7 @@ const specs = {
 			alg: 'ec'
 		},
 		userFirmware: {
-			address: '0x000D4000',
+			address: '0x000d4000',
 			alt: '0'
 		},
 		systemFirmwareOne: {
@@ -1058,7 +1056,7 @@ const specs = {
 		otaFlag: {
 			address: '1753',
 			alt: '1',
-			size: '1'
+			size: 1
 		},
 		radioStack: {
 			address: '0x00001000',
@@ -1090,7 +1088,7 @@ function fixKnownAppsPaths(specs) {
 }
 
 
-module.exports = fixKnownAppsPaths(specs);
+module.exports = generateDeviceSpecs(deviceConstants);
 
-module.exports.specs2 = generateDeviceSpecs(deviceConstants);
+module.exports.old = fixKnownAppsPaths(specs);
 
