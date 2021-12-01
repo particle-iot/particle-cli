@@ -246,7 +246,6 @@ const additionalSpecs = {
 		knownApps: {
 			tinker: 'core_tinker.bin',
 			doctor: 'core_doctor.bin',
-			deep_update_2014_06: 'deep_update_2014_06.bin'
 		},
 		writePadding: 2,
 	},
@@ -399,7 +398,6 @@ const specs = {
 		knownApps: {
 			tinker: 'core_tinker.bin',
 			doctor: 'core_doctor.bin',
-			deep_update_2014_06: 'deep_update_2014_06.bin'
 		},
 		serial: {
 			vid: '1d50',
