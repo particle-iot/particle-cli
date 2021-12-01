@@ -146,7 +146,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_updateSystemFirmware(){
-		if (!this._deviceHasFeature('system-firmware')){
+		if (!(this._deviceGeneration() > 1)){
 			return;
 		}
 
@@ -160,7 +160,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_updateCC3000(){
-		if (!this._deviceHasFeature('cc3000')){
+		if (!(this._deviceGeneration() === 1)){
 			return;
 		}
 
@@ -204,7 +204,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_selectAntenna(){
-		if (!this._deviceHasFeature('antenna-selection')){
+		if (!(this._deviceHasFeature('wifi') && this._deviceGeneration() > 1)){
 			return;
 		}
 
@@ -302,7 +302,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_resetSoftAPPrefix(){
-		if (!this._deviceHasFeature('softap')){
+		if (!(this._deviceHasFeature('wifi') && this._deviceGeneration() > 1)){
 			return;
 		}
 
@@ -448,6 +448,10 @@ module.exports = class DoctorCommand {
 	_deviceHasFeature(feature){
 		const features = (this.device && this.device.specs && this.device.specs.features) || [];
 		return _.includes(features, feature);
+	}
+
+	_deviceGeneration() {
+		return (this.device && this.device.specs && this.device.specs.generation) || 0;
 	}
 
 	_showDoctorGoodbye(){
