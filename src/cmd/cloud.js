@@ -3,6 +3,7 @@ const _ = require('lodash');
 const VError = require('verror');
 const prompt = require('inquirer').prompt;
 
+const deviceConstants = require('@particle/device-constants');
 const settings = require('../../settings');
 const specs = require('../lib/deviceSpecs');
 const ApiClient = require('../lib/api-client'); // TODO (mirande): remove in favor of `ParticleAPI`
@@ -22,25 +23,14 @@ const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
 
 // Use known platforms and add shortcuts
-const PLATFORMS = extend(utilities.knownPlatforms(), {
-	'c': 0,
-	'p': 6,
-	'e': 10,
-	'pi': 31,
-	'raspberry-pi': 31,
-	'a': 12,
-	'b': 13,
-	'x': 14,
-	'a-series': 22,
-	'b-series': 23,
-	'x-series': 24,
-	'b5som': 25,
-	'tracker': 26,
-	'o': 82,
-	'd': 88,
-	'bl': 103,
-	'bg': 269,
-	'bb': 270
+const PLATFORMS = extend(utilities.knownPlatformIds(), {
+	'c': deviceConstants.core.id,
+	'p': deviceConstants.photon.id,
+	'e': deviceConstants.electron.id,
+	'a': deviceConstants.argon.id,
+	'b': deviceConstants.boron.id,
+	'x': deviceConstants.xenon.id,
+	'assettracker': deviceConstants.tracker.id
 });
 
 
@@ -242,7 +232,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	_flashKnownApp({ product, deviceId, filePath }){
-		if (!settings.knownApps[filePath]){
+		if (!settings.cloudKnownApps[filePath]){
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 

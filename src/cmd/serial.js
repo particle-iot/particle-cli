@@ -17,7 +17,7 @@ const YModem = require('../lib/ymodem');
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
-const ensureError = require('../lib/utilities').ensureError;
+const { ensureError, knownPlatformDisplayForId } = require('../lib/utilities');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -322,7 +322,7 @@ module.exports = class SerialCommand {
 				const modules = parser.getModules(d);
 
 				if (d.p !== undefined){
-					const platformName = settings.knownPlatforms[d.p];
+					const platformName = knownPlatformDisplayForId()[d.p];
 					console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
 				}
 

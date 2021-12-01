@@ -75,7 +75,7 @@ class BinaryCommand {
 	}
 
 	_showPlatform(fileInfo){
-		const platforms = utilities.knownPlatforms();
+		const platforms = utilities.knownPlatformIds();
 		let platformName;
 
 		for (const k in platforms){
