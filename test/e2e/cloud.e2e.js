@@ -114,9 +114,8 @@ describe('Cloud Commands [@device]', () => {
 		});
 
 		it('Lists devices filtered by platform name omitting test device', async () => {
-			const { knownPlatforms } = require('../../settings');
-			const platformNames = Object.entries(knownPlatforms)
-				.map(({ 1: name }) => name.replace(/\s/, '').toLowerCase());
+			const { knownPlatformIds } = require('../../src/lib/utilities');
+			const platformNames = Object.keys(knownPlatformIds());
 			// Derive platform name NOT matching those claimed by E2E test profile
 			// (i.e. find single, valid inversion of DEVICE_PLATFORM_NAME)
 			const nonE2EDevicePlatform = platformNames.filter(name => name !== DEVICE_PLATFORM_NAME);

@@ -32,6 +32,7 @@ const path = require('path');
 const glob = require('glob');
 const VError = require('verror');
 const childProcess = require('child_process');
+const deviceConstants = require('@particle/device-constants');
 const log = require('./log');
 
 
@@ -328,28 +329,24 @@ module.exports = {
 		return module.exports.__banner;
 	},
 
-	// todo - factor from/to constants.js
-	knownPlatforms(){
-		return {
-			'core': 0,
-			'photon': 6,
-			'p1': 8,
-			'electron': 10,
-			'raspberrypi': 31,
-			'argon': 12,
-			'boron': 13,
-			'xenon': 14,
-			'asom': 22,
-			'bsom': 23,
-			'xsom': 24,
-			'b5som': 25,
-			'tracker': 26,
-			'oak': 82,
-			'duo': 88,
-			'bluz': 103,
-			'bluz-gateway': 269,
-			'bluz-beacon': 270
-		};
+	// generates an object like { photon: 6, electron: 10 }
+	knownPlatformIds(){
+		return Object.values(deviceConstants).reduce((platforms, platform) => {
+			if (!['esp32', 'gcc'].includes(platform.name)) {
+				platforms[platform.name] = platform.id;
+			}
+			return platforms;
+		}, {});
+	},
+
+	// generates an object like { 6: 'Photon', 10: 'Electron' }
+	knownPlatformDisplayForId(){
+		return Object.values(deviceConstants).reduce((platforms, platform) => {
+			if (!['esp32', 'gcc'].includes(platform.name)) {
+				platforms[platform.id] = platform.displayName;
+			}
+			return platforms;
+		}, {});
 	},
 
 	/**
@@ -360,10 +357,10 @@ module.exports = {
 	 * @returns {function|null}
 	 */
 	buildDeviceFilter(filter) {
-		const { knownPlatforms } = module.exports;
+		const { knownPlatformIds } = module.exports;
 		let filterFunc = null;
 		if (filter){
-			const platforms = knownPlatforms();
+			const platforms = knownPlatformIds();
 			if (filter === 'online') {
 				filterFunc = (d) => d.connected;
 			} else if (filter === 'offline') {

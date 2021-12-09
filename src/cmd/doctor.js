@@ -29,7 +29,6 @@ module.exports = class DoctorCommand {
 			.then(this._findDevice.bind(this))
 			.then(this._nameDevice.bind(this))
 			.then(this._updateSystemFirmware.bind(this))
-			.then(this._updateCC3000.bind(this))
 			.then(this._flashDoctor.bind(this))
 			.then(this._selectAntenna.bind(this))
 			.then(this._selectIP.bind(this))
@@ -146,7 +145,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_updateSystemFirmware(){
-		if (!this._deviceHasFeature('system-firmware')){
+		if (!(this._deviceGeneration() > 1)){
 			return;
 		}
 
@@ -155,31 +154,6 @@ module.exports = class DoctorCommand {
 		return this._enterDfuMode()
 			.then(() => {
 				return this.command('update').updateDevice();
-			})
-			.catch(this._catchSkipStep);
-	}
-
-	_updateCC3000(){
-		if (!this._deviceHasFeature('cc3000')){
-			return;
-		}
-
-		this._displayStepTitle('Updating CC3000 firmware');
-
-		return this._enterDfuMode()
-			.then(() => {
-				return this.command('flash').flashDfu({ binary: 'cc3000' });
-			})
-			.then(() => {
-				console.log('Applying update...');
-				console.log('Wait until the device stops blinking ' + chalk.bold.magenta('magenta') + ' and starts blinking ' + chalk.bold.yellow('yellow'));
-
-				return prompt([{
-					type: 'list',
-					name: 'choice',
-					message: 'Press ENTER when ready',
-					choices: ['Continue']
-				}]);
 			})
 			.catch(this._catchSkipStep);
 	}
@@ -204,7 +178,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_selectAntenna(){
-		if (!this._deviceHasFeature('antenna-selection')){
+		if (!(this._deviceHasFeature('wifi') && this._deviceGeneration() > 1)){
 			return;
 		}
 
@@ -302,7 +276,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_resetSoftAPPrefix(){
-		if (!this._deviceHasFeature('softap')){
+		if (!(this._deviceHasFeature('wifi') && this._deviceGeneration() > 1)){
 			return;
 		}
 
@@ -448,6 +422,10 @@ module.exports = class DoctorCommand {
 	_deviceHasFeature(feature){
 		const features = (this.device && this.device.specs && this.device.specs.features) || [];
 		return _.includes(features, feature);
+	}
+
+	_deviceGeneration() {
+		return (this.device && this.device.specs && this.device.specs.generation) || 0;
 	}
 
 	_showDoctorGoodbye(){

@@ -3,6 +3,54 @@ const util = require('./utilities');
 
 
 describe('Utilities', () => {
+	describe('knownPlatformIds', () => {
+		it('returns a hash of platform ids', () => {
+			expect(util.knownPlatformIds()).to.eql({
+				'core': 0,
+				'photon': 6,
+				'p1': 8,
+				'electron': 10,
+				'argon': 12,
+				'boron': 13,
+				'xenon': 14,
+				'asom': 22,
+				'bsom': 23,
+				'xsom': 24,
+				'b5som': 25,
+				'tracker': 26,
+				'raspi': 31,
+				'p2': 32,
+				'oak': 82,
+				'duo': 88,
+				'bluz': 103
+			});
+		});
+	});
+
+	describe('knownPlatformDisplayForId', () => {
+		it('returns a hash of platform display names', () => {
+			expect(util.knownPlatformDisplayForId()).to.eql({
+				0: 'Core',
+				6: 'Photon',
+				8: 'P1',
+				10: 'Electron',
+				12: 'Argon',
+				13: 'Boron',
+				14: 'Xenon',
+				22: 'A SoM',
+				23: 'B SoM',
+				24: 'X SoM',
+				25: 'B5 SoM',
+				26: 'Asset Tracker',
+				31: 'Raspberry Pi',
+				32: 'P2',
+				82: 'Oak',
+				88: 'Duo',
+				103: 'Bluz'
+			});
+		});
+	});
+
 	describe('arrayToHashSet()', () => {
 		it('converts an array to an object', () => {
 			const arr = ['foo', 'bar', 'baz'];

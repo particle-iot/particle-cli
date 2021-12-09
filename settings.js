@@ -66,28 +66,8 @@ var settings = {
 	dirIncludeFilename: 'particle.include',
 	dirExcludeFilename: 'particle.ignore',
 
-	knownApps: {
-		'deep_update_2014_06': true,
-		'cc3000': true,
-		'cc3000_1_14': true,
-		'tinker': true,
-		'voodoo': true
-	},
-	knownPlatforms: {
-		0: 'Core',
-		6: 'Photon',
-		8: 'P1',
-		10: 'Electron',
-		12: 'Argon',
-		13: 'Boron',
-		14: 'Xenon',
-		22: 'A SoM',
-		23: 'B SoM',
-		24: 'X SoM',
-		25: 'B5 SoM',
-		26: 'Asset Tracker',
-		88: 'Duo',
-		103: 'Bluz'
+	cloudKnownApps: {
+		'tinker': true
 	},
 	updates: {
 		'2b04:d006': {
