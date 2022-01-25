@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.1.0 - 16 January 2022
+
+* Updated binaries for DeviceOS 2.3.0
+
 ## 3.0.0 - 9 December 2021
 
 * BREAKING: Remove support for Redbear Duo. To use the CLI with a Duo, install the latest version 2: `npm install -g particle-cli@2`
