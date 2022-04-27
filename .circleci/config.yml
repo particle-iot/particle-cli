@@ -5,12 +5,15 @@ orbs:
 
 jobs:
   test:
+    parameters:
+      node-version:
+        type: string
     machine:
       image: ubuntu-2004:202201-02
     steps:
       - checkout
       - node/install:
-          node-version: '12'
+          node-version: << parameters.node-version >>
       - run:
           name: Configure NPM Token
           command: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
@@ -24,5 +27,8 @@ workflows:
   test:
     jobs:
       - test:
-          name: 'test'
-          context: particle-ci-private
+          context:
+            - particle-ci-private
+          matrix:
+            parameters:
+              node-version: ["8", "10", "12"]
