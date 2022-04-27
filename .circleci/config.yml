@@ -42,4 +42,4 @@ workflows:
           matrix:
             parameters:
               os: [linux, macos]
-              node-version: ["10", "12", "14", "latest"]
+              node-version: ["10", "12", "14"]
