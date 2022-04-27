@@ -4,6 +4,9 @@ executors:
   linux:
     docker:
       - image: cimg/base:2022.04
+  macos:
+    macos:
+      xcode: 13
 
 orbs:
   node: circleci/node@5.0.2
@@ -37,5 +40,5 @@ workflows:
             - particle-ci-private
           matrix:
             parameters:
-              os: [linux]
+              os: [linux, macos]
               node-version: ["8", "10", "12"]
