@@ -1,15 +1,21 @@
 version: 2.1
 
+executors:
+  linux:
+    docker:
+      - image: cimg/base:2022.04
+
 orbs:
   node: circleci/node@5.0.2
 
 jobs:
   test:
     parameters:
+      os:
+        type: executor
       node-version:
         type: string
-    machine:
-      image: ubuntu-2004:202201-02
+    executor: << parameters.os >>
     steps:
       - checkout
       - node/install:
@@ -31,4 +37,5 @@ workflows:
             - particle-ci-private
           matrix:
             parameters:
+              os: [linux]
               node-version: ["8", "10", "12"]
