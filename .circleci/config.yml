@@ -1,0 +1,28 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.0.2
+
+jobs:
+  test:
+    machine:
+      image: ubuntu-2004:202201-02
+    steps:
+      - checkout
+      - node/install:
+          node-version: '12'
+      - run:
+          name: Configure NPM Token
+          command: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+      - node/install-packages
+      - run:
+          name: Run Tests
+          command: npm run test:unit:ci
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test:
+          name: 'test'
+          context: particle-ci-private
