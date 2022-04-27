@@ -30,7 +30,7 @@ jobs:
           cache-path: node_modules
       - run:
           name: Run Tests
-          command: npm run test:unit:ci
+          command: npm run test:ci
 
 workflows:
   version: 2
