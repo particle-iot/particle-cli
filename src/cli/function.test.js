@@ -1,4 +1,3 @@
-const os = require('os');
 const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const func = require('./function');
