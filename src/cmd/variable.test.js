@@ -1,3 +1,4 @@
+const os = require('os');
 const { expect, sinon } = require('../../test/setup');
 const { withConsoleStubs } = require('../../test/lib/mocha-utils');
 const VariableCommand = require('./variable');
@@ -24,7 +25,7 @@ describe('Variable Command', () => {
 
 			const messages = process.stderr.write.args.map(a => a[0]);
 
-			expect(messages[0]).to.equal('Hit CTRL-C to stop!\n');
+			expect(messages[0]).to.equal(`Hit CTRL-C to stop!${os.EOL}`);
 			expect(cmd._pollForVariable).to.have.property('callCount', 1);
 
 			const args = cmd._pollForVariable.firstCall.args;

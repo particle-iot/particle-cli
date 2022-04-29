@@ -39,7 +39,7 @@ describe('Cloud Command-Line Interface', () => {
 					'  login    Login to the cloud and store an access token locally',
 					'  logout   Log out of your session and clear your saved access token',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -67,7 +67,7 @@ describe('Cloud Command-Line Interface', () => {
 					'',
 					'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -99,7 +99,7 @@ describe('Cloud Command-Line Interface', () => {
 					'Examples:',
 					'  particle cloud claim 123456789  Claim device by id to your account',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -143,7 +143,7 @@ describe('Cloud Command-Line Interface', () => {
 					'Examples:',
 					'  particle cloud remove 0123456789ABCDEFGHI  Remove device by id from your account',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -184,7 +184,7 @@ describe('Cloud Command-Line Interface', () => {
 					'Examples:',
 					'  particle cloud name red green  Rename device `red` to `green`',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -247,7 +247,7 @@ describe('Cloud Command-Line Interface', () => {
 					'  particle cloud flash orange firmware.bin                       Flash a pre-compiled `firmware.bin` binary to device `orange`',
 					'  particle cloud flash 0123456789abcdef01234567 --product 12345  Compile the source code in the current directory in the cloud and flash to device `0123456789abcdef01234567` within product `12345`',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -311,7 +311,7 @@ describe('Cloud Command-Line Interface', () => {
 					'',
 					'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -361,7 +361,7 @@ describe('Cloud Command-Line Interface', () => {
 					'  particle cloud nyan blue off              Make the device named `blue` stop signaling',
 					'  particle cloud nyan blue --product 12345  Make the device named `blue` within product `12345` start signaling',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -407,7 +407,7 @@ describe('Cloud Command-Line Interface', () => {
 					'  particle cloud login --username user@example.com --password test  log in with credentials provided on the command line',
 					'  particle cloud login --token <my-api-token>                       log in with an access token provided on the command line',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -431,7 +431,7 @@ describe('Cloud Command-Line Interface', () => {
 					'Log out of your session and clear your saved access token',
 					'Usage: particle cloud logout [options]',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});

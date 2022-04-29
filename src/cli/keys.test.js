@@ -38,7 +38,7 @@ describe('Keys Command-Line Interface', () => {
 					'  address   Read server configured in device server public key',
 					'  protocol  Retrieve or change transport protocol the device uses to communicate with the cloud',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -75,7 +75,7 @@ describe('Keys Command-Line Interface', () => {
 					'Options:',
 					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -104,7 +104,7 @@ describe('Keys Command-Line Interface', () => {
 					'Load a key saved in a file onto your device',
 					'Usage: particle keys load [options] <filename>',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -145,7 +145,7 @@ describe('Keys Command-Line Interface', () => {
 					'Options:',
 					'  --force  Force overwriting of <filename> if it exists  [boolean] [default: false]',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -196,7 +196,7 @@ describe('Keys Command-Line Interface', () => {
 					'Options:',
 					'  --product_id  The product ID to use when provisioning a new device  [number]',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -237,7 +237,7 @@ describe('Keys Command-Line Interface', () => {
 					'Options:',
 					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
 					'',
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -290,7 +290,7 @@ describe('Keys Command-Line Interface', () => {
 					'',
 					'Defaults to the Particle public cloud or you can provide another key in DER format and the server hostname or IP and port',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -321,7 +321,7 @@ describe('Keys Command-Line Interface', () => {
 					'Options:',
 					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
 					'',
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -352,7 +352,7 @@ describe('Keys Command-Line Interface', () => {
 					'Options:',
 					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
 					'',
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});

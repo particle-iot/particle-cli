@@ -40,7 +40,7 @@ describe('USB Command-Line Interface', () => {
 					'  configure        Update the system USB configuration',
 					'  cloud-status     Check a device\'s cloud connection state',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -65,7 +65,7 @@ describe('USB Command-Line Interface', () => {
 					'',
 					'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -106,7 +106,7 @@ describe('USB Command-Line Interface', () => {
 					'  particle usb start-listening my_device  Put a device named "my_device" into the listening mode',
 					'  particle usb start-listening --all      Put all devices connected to the host computer into the listening mode',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -147,7 +147,7 @@ describe('USB Command-Line Interface', () => {
 					'  particle usb stop-listening my_device  Make a device named "my_device" exit the listening mode',
 					'  particle usb stop-listening --all      Make all devices connected to the host computer exit the listening mode',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -188,7 +188,7 @@ describe('USB Command-Line Interface', () => {
 					'  particle usb safe-mode my_device  Put a device named "my_device" into the safe mode',
 					'  particle usb safe-mode --all      Put all devices connected to the host computer into the safe mode',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -229,7 +229,7 @@ describe('USB Command-Line Interface', () => {
 					'  particle usb dfu my_device  Put a device named "my_device" into the DFU mode',
 					'  particle usb dfu --all      Put all devices connected to the host computer into the DFU mode',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -270,7 +270,7 @@ describe('USB Command-Line Interface', () => {
 					'  particle usb reset my_device  Reset a device named "my_device"',
 					'  particle usb reset --all      Reset all devices connected to the host computer',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -316,7 +316,7 @@ describe('USB Command-Line Interface', () => {
 					'  particle usb setup-done --reset my_device  Clear the setup done flag on the device "my_device"',
 					'  particle usb setup-done --all              Set the setup done flag on all devices connected to the host computer',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -335,7 +335,7 @@ describe('USB Command-Line Interface', () => {
 					'Update the system USB configuration',
 					'Usage: particle usb configure [options]',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -394,7 +394,7 @@ describe('USB Command-Line Interface', () => {
 					'  particle usb cloud-status blue                   Check the cloud connection status for the device named `blue`',
 					'  particle usb cloud-status red --until connected  Poll cloud connection status for the device named `red` until it reports `connected`',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
