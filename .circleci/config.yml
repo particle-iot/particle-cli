@@ -10,9 +10,10 @@ executors:
 
 orbs:
   node: circleci/node@5.0.2
+  win: circleci/windows@4.1.1
 
 jobs:
-  test:
+  test-unix:
     parameters:
       os:
         type: executor
@@ -31,15 +32,43 @@ jobs:
       - run:
           name: Run Tests
           command: npm run test:ci
+  test-windows:
+    parameters:
+      node-version:
+        type: string
+    executor: win/default
+    steps:
+      - checkout
+      - run:
+          name: Install Node
+          command: |
+            nvm install --lts << parameters.node-version >>
+            nvm use << parameters.node-version >>
+      - run:
+          name: Configure NPM Token
+          command: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+      - run:
+          name: Install packages
+          command: npm ci
+      - run:
+          name: Run Tests
+          command: npm run test:ci:windows
 
 workflows:
   version: 2
   test:
     jobs:
-      - test:
+      - test-unix:
           context:
             - particle-ci-private
           matrix:
             parameters:
               os: [linux, macos]
-              node-version: ["10", "12", "14"]
+              node-version: ["10", "12", "14", "16"]
+      - test-windows:
+          context:
+            - particle-ci-private
+          matrix:
+            parameters:
+              node-version: ["10", "12", "14", "16"]
+
