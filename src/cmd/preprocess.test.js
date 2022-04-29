@@ -42,8 +42,8 @@ describe('Preprocess Command', () => {
 		});
 
 		it('transforms an absolute input file name to cpp', () => {
-			const output = command.outputFilename('/home/user/app.ino');
-			expect(output).to.eql('/home/user/app.cpp');
+			const output = command.outputFilename(path.normalize('/home/user/app.ino'));
+			expect(output).to.eql(path.normalize('/home/user/app.cpp'));
 		});
 	});
 
