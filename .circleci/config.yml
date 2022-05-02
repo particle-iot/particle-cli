@@ -84,28 +84,28 @@ workflows:
             parameters:
               os: [linux, macos]
               node-version: ["10", "12", "14", "16"]
-      - test-windows:
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              node-version: ["10", "12", "14", "16"]
-      - test-e2e:
-          name: test-e2e-linux
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              os: [linux]
-              node-version: ["12"]
-      - test-e2e:
-          name: test-e2e-macos
-          requires:
-            - test-e2e-linux
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              os: [macos]
-              node-version: ["12"]
+      # - test-windows:
+      #     context:
+      #       - particle-ci-private
+      #     matrix:
+      #       parameters:
+      #         node-version: ["10", "12", "14", "16"]
+      # - test-e2e:
+      #     name: test-e2e-linux
+      #     context:
+      #       - particle-ci-private
+      #     matrix:
+      #       parameters:
+      #         os: [linux]
+      #         node-version: ["12"]
+      # - test-e2e:
+      #     name: test-e2e-macos
+      #     requires:
+      #       - test-e2e-linux
+      #     context:
+      #       - particle-ci-private
+      #     matrix:
+      #       parameters:
+      #         os: [macos]
+      #         node-version: ["12"]
 
