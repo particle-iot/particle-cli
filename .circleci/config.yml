@@ -84,12 +84,12 @@ workflows:
             parameters:
               os: [linux, macos]
               node-version: ["10", "12", "14", "16"]
-      # - test-windows:
-      #     context:
-      #       - particle-ci-private
-      #     matrix:
-      #       parameters:
-      #         node-version: ["10", "12", "14", "16"]
+      - test-windows:
+          context:
+            - particle-ci-private
+          matrix:
+            parameters:
+              node-version: ["10", "12", "14", "16"]
       # - test-e2e:
       #     name: test-e2e-linux
       #     context:
