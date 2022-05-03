@@ -15,14 +15,12 @@ orbs:
   node: circleci/node@5.0.2
   win: circleci/windows@4.1.1
 
-jobs:
-  test-unix:
+commands:
+  run-tests:
+    description: "A command to install node and run tests"
     parameters:
-      os:
-        type: executor
       node-version:
         type: string
-    executor: << parameters.os >>
     steps:
       - checkout
       - node/install:
@@ -35,6 +33,18 @@ jobs:
       - run:
           name: Run Tests
           command: npm run test:ci
+
+jobs:
+  test-unix:
+    parameters:
+      os:
+        type: executor
+      node-version:
+        type: string
+    executor: << parameters.os >>
+    steps:
+      - run-tests:
+          node-version: << parameters.node-version >>
   test-windows:
     parameters:
       node-version:
