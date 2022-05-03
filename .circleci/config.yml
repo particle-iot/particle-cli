@@ -72,6 +72,26 @@ jobs:
       - run:
           name: Run E2E Tests
           command: npm run test:e2e:ci
+  test-coverage:
+    parameters:
+      os:
+        type: executor
+      node-version:
+        type: string
+    executor: << parameters.os >>
+    steps:
+      - checkout
+      - node/install:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Configure NPM Token
+          command: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+      - node/install-packages:
+          cache-path: node_modules
+      - run:
+          name: Generate Coverage Report
+          command: npm run coverage
+
 
 workflows:
   version: 2
@@ -107,5 +127,12 @@ workflows:
           matrix:
             parameters:
               os: [macos]
+              node-version: ["12"]
+      - test-coverage:
+          context:
+            - particle-ci-private
+          matrix:
+            parameters:
+              os: [linux]
               node-version: ["12"]
 
