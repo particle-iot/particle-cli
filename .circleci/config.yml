@@ -4,6 +4,9 @@ executors:
   linux:
     docker:
       - image: cimg/base:2022.04
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
   macos:
     macos:
       xcode: 13
