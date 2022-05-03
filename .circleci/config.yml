@@ -96,12 +96,33 @@ jobs:
           command: npm run coverage
       - store_artifacts:
           path: coverage
-
-
+  # Copied from following repos
+  # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml
+  # https://github.com/particle-iot-inc/app-metrics/blob/034e6dd5d77ce3b0683310c81e6f6994be2d1c80/.circleci/config.yml
+  # https://github.com/particle-iot-inc/device-service-discovery/blob/d1f4dbcdcab1efba7ba92794670c6e4e973e6265/.circleci/config.yml
+  publish-npm:
+    working_directory: ~/repo
+    docker:
+      - image: cimg/node:12.22 # Primary execution image
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Authenticate with NPM
+          command: npm config set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+      - run:
+          name: Publish package
+          command: |
+            # Publish as beta for pre-release tags like v1.2.3-pre.1
+            [[ $CIRCLE_TAG =~ ^v.*- ]] && NPM_TAG=--tag=beta
+            npm publish $NPM_TAG
 
 workflows:
   version: 2
-  test:
+  test-and-publish:
     jobs:
       - test-unix:
           context:
@@ -141,4 +162,17 @@ workflows:
             parameters:
               os: [linux]
               node-version: ["12"]
+      - publish-npm:
+          requires:
+            - test-unix
+            - test-windows
+            - test-e2e
+          context:
+            - particle-ci-private
+          # publish for tags only
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
 
