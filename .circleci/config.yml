@@ -98,14 +98,14 @@ workflows:
             parameters:
               os: [linux]
               node-version: ["12"]
-      # - test-e2e:
-      #     name: test-e2e-macos
-      #     requires:
-      #       - test-e2e-linux
-      #     context:
-      #       - particle-ci-private
-      #     matrix:
-      #       parameters:
-      #         os: [macos]
-      #         node-version: ["12"]
+      - test-e2e:
+          name: test-e2e-macos
+          requires:
+            - test-e2e-linux
+          context:
+            - particle-ci-private
+          matrix:
+            parameters:
+              os: [macos]
+              node-version: ["12"]
 
