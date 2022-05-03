@@ -91,6 +91,9 @@ jobs:
       - run:
           name: Generate Coverage Report
           command: npm run coverage
+      - store_artifacts:
+          path: coverage
+
 
 
 workflows:
