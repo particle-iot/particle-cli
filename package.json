@@ -156,7 +156,7 @@
     "coverage:unit": "nyc npm run test:unit:silent",
     "coverage:integration": "nyc --no-clean npm run test:integration:silent",
     "coverage:e2e": "nyc npm run test:e2e:silent",
-    "coverage:report": "nyc report --reporter=text-lcov | coveralls",
+    "coverage:report": "nyc report --reporter=html",
     "compile": "npm run clean && babel src --out-dir ./dist",
     "clean": "rimraf ./dist",
     "clean:modules": "rimraf ./node_modules",
