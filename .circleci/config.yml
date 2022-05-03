@@ -166,7 +166,8 @@ workflows:
           requires:
             - test-unix
             - test-windows
-            - test-e2e
+            - test-e2e-linux
+            - test-e2e-macos
           context:
             - particle-ci-private
           # publish for tags only
