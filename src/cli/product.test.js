@@ -1,4 +1,3 @@
-const os = require('os');
 const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const product = require('./product');
@@ -30,7 +29,7 @@ describe('Product Command-Line Interface', () => {
 					'Commands:',
 					'  device  Manage the devices associated with your product',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -55,7 +54,7 @@ describe('Product Command-Line Interface', () => {
 					'  add     Adds one or more devices into a Product',
 					'  remove  Removes a device from a Product',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -96,7 +95,7 @@ describe('Product Command-Line Interface', () => {
 					'  particle product device list 12345 0123456789abcdef01234567  Get details for device with id `0123456789abcdef01234567` within in product `12345`',
 					'  particle product device list 12345 --groups foo bar          Lists devices in product which are assigned the `foo` or `bar` groups',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -132,7 +131,7 @@ describe('Product Command-Line Interface', () => {
 					'  particle product device add 12345 0123456789abcdef01234567         Add device id `0123456789abcdef01234567` into product `12345`',
 					'  particle product device add 12345 --file ./path/to/device_ids.txt  Adds a list of devices into product `12345`',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});

@@ -1,4 +1,3 @@
-const os = require('os');
 const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const publish = require('./publish');
@@ -65,7 +64,7 @@ describe('Publish Command-Line Interface', () => {
 					'  particle publish temp 25.0                  Publish a temp event to your private event stream',
 					'  particle publish temp 25.0 --product 12345  Publish a temp event to your product 12345\'s event stream',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});

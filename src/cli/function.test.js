@@ -1,4 +1,3 @@
-const os = require('os');
 const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const func = require('./function');
@@ -32,7 +31,7 @@ describe('Function Command-Line Interface', () => {
 					'  list  Show functions provided by your device(s)',
 					'  call  Call a particular function on a device',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -51,7 +50,7 @@ describe('Function Command-Line Interface', () => {
 					'Show functions provided by your device(s)',
 					'Usage: particle function list [options]',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -111,7 +110,7 @@ describe('Function Command-Line Interface', () => {
 					'  particle function call board digitalWrite D7=HIGH                     Call the `digitalWrite` function with argument `D7=HIGH` on the `board` device',
 					'  particle function call 0123456789abcdef01234567 brew --product 12345  Call the `brew` function on the device with id `0123456789abcdef01234567` within product `12345`',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});

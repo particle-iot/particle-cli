@@ -3,7 +3,7 @@
 
 	As you are working on your changes, be aware of the following:
 	- Development Guide: https://github.com/particle-iot/particle-cli#development
-	- CI (travis) Reports: https://travis-ci.org/particle-iot/particle-cli
+	- CI (CircleCI) Reports: https://app.circleci.com/pipelines/github/particle-iot/particle-cli
 	- Helpful commands:
 		> list available commands: `npm run`
 		> run the CI tests locally: `npm run test:ci`

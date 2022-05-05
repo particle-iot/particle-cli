@@ -1,4 +1,3 @@
-const os = require('os');
 const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const variable = require('./variable');
@@ -33,7 +32,7 @@ describe('Variable Command-Line Interface', () => {
 					'  get      Retrieve a value from your device',
 					'  monitor  Connect and display messages from a device',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -52,7 +51,7 @@ describe('Variable Command-Line Interface', () => {
 					'Show variables provided by your device(s)',
 					'Usage: particle variable list [options]',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -95,7 +94,7 @@ describe('Variable Command-Line Interface', () => {
 					'  particle variable get 0123456789abcdef01234567 temperature --product 12345  Read the `temperature` variable from the device with id `0123456789abcdef01234567` within product `12345`',
 					'  particle variable get all temperature                                       Read the `temperature` variable from all my devices',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});
@@ -137,7 +136,7 @@ describe('Variable Command-Line Interface', () => {
 					'Examples:',
 					'  particle variable monitor up temp --delay 2000  Read the temp variable from the device up every 2 seconds',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});

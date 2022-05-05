@@ -1,4 +1,5 @@
 const proxyquire = require('proxyquire');
+const os = require('os');
 const { expect } = require('../../test/setup');
 const sandbox = require('sinon').createSandbox();
 
@@ -123,7 +124,7 @@ describe('Cloud Commands', () => {
 
 					expect(cloud.login).to.have.property('callCount', 3);
 					expect(settings.override).to.have.property('callCount', 0);
-					expect(lastLog[0]).to.match(/There was an error logging you in! Let's try again.\n$/);
+					expect(lastLog[0]).to.match(new RegExp(`There was an error logging you in! Let's try again.${os.EOL}$`));
 					expect(process.stderr.write).to.have.property('callCount', 3);
 					expect(error).to.have.property('message', 'It seems we\'re having trouble with logging in.');
 				});
@@ -143,7 +144,7 @@ describe('Cloud Commands', () => {
 
 					expect(cloud.login).to.have.property('callCount', 1);
 					expect(settings.override).to.have.property('callCount', 0);
-					expect(lastLog[0]).to.match(/There was an error logging you in! \n$/);
+					expect(lastLog[0]).to.match(new RegExp(`There was an error logging you in! ${os.EOL}$`));
 					expect(process.stderr.write).to.have.property('callCount', 1);
 					expect(error).to.have.property('message', 'It seems we\'re having trouble with logging in.');
 				});
@@ -224,7 +225,7 @@ describe('Cloud Commands', () => {
 					expect(cloud.login).to.have.property('callCount', 1);
 					expect(cloud.enterOtp).to.have.property('callCount', 3);
 					expect(settings.override).to.have.property('callCount', 0);
-					expect(lastLog[0]).to.match(/There was an error logging you in! Let's try again.\n$/);
+					expect(lastLog[0]).to.match(new RegExp(`There was an error logging you in! Let's try again.${os.EOL}$`));
 					expect(process.stderr.write).to.have.property('callCount', 4);
 					expect(error).to.have.property('message', 'It seems we\'re having trouble with logging in.');
 				});

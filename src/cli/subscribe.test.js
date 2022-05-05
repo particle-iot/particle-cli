@@ -1,4 +1,3 @@
-const os = require('os');
 const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const subscribe = require('./subscribe');
@@ -68,7 +67,7 @@ describe('Subscribe Command-Line Interface', () => {
 					'  particle subscribe --until data     Subscribe to all events and exit when an event has data matching `data`',
 					'  particle subscribe --max 4          Subscribe to all events and exit after seeing `4` events',
 					''
-				].join(os.EOL));
+				].join('\n'));
 			});
 		});
 	});

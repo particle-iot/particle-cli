@@ -37,3 +37,4 @@ es6
 .nvmrc
 appveyor.yml
 development.md
+.circleci

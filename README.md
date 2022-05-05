@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli)[![Build Status](https://travis-ci.org/particle-iot/particle-cli.svg?branch=master)](https://travis-ci.org/particle-iot/particle-cli)[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square)](https://github.com/particle-iot/particle-cli/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli) [![Build Status](https://circleci.com/gh/particle-iot/particle-cli/tree/master.svg?style=svg)](https://circleci.com/gh/particle-iot/particle-cli/tree/master) [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square)](https://github.com/particle-iot/particle-cli/blob/master/LICENSE)
 
 Particle's full-stack Internet of Things (IoT) device platform
 gives you everything you need to securely and reliably connect
@@ -148,7 +148,7 @@ The Particle CLI has a number of automated test suites and related commands. The
 
 All tests use [mocha](https://mochajs.org), [chai](https://www.chaijs.com), and [sinon](https://sinonjs.org/) with coverage handled by [nyc](https://github.com/istanbuljs/nyc).
 
-We recommend running locally if you can as it greatly shortens your feedback loop. However, CI also runs against every PR and [error reporting is publicly available](https://travis-ci.org/particle-iot/particle-cli).
+We recommend running locally if you can as it greatly shortens your feedback loop. However, CI also runs against every PR and [error reporting is publicly available](https://app.circleci.com/pipelines/github/particle-iot/particle-cli).
 
 
 ## Updating system firmware

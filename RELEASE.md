@@ -14,7 +14,7 @@
 
 	- This will push the commits and tag created in the previous steps.
 
-- Travis will publish to npm when the build succeeds.
+- CircleCI will publish to npm when the build succeeds.
 
 - Create a release on GitHub with the notes from the `CHANGELOG.md`
 
