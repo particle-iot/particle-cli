@@ -2129,9 +2129,9 @@
       "integrity": "sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw=="
     },
     "@particle/device-constants": {
-      "version": "1.5.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-1.5.0.tgz",
-      "integrity": "sha512-0bTXbp2hSJQPxYT1/jxQ4hNsHftIllAPMZ6UvTh7htmEaQuL6tze/vPNaInV2/7afwGE/vCRMe/D8q6YcXWUgw=="
+      "version": "1.7.0",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-1.7.0.tgz",
+      "integrity": "sha512-tRWR+uIGmpZP2V3BMdevn7ukrAJMmIpyttGMfGQbyJdRmpwr57MBv4HvHXVOUIWjIQcWKgk+V5kySHzycqleSg=="
     },
     "@protobufjs/aspromise": {
       "version": "1.1.2",
