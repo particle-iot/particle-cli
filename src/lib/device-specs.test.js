@@ -20,6 +20,7 @@ describe('Device Specs', () => {
 			'bsom',
 			'b5som',
 			'tracker',
+			'trackerm',
 			'p2'
 		]);
 	});
@@ -72,7 +73,7 @@ describe('Device Specs', () => {
 
 	describe('knownApps', () => {
 		it('includes `tinker` in `known apps` for offical platforms', async () => {
-			const unsupported = ['Asset Tracker', 'P2', 'E SoM X'];
+			const unsupported = ['Asset Tracker', 'Tracker M', 'P2', 'E SoM X'];
 
 			for (const specs of Object.values(deviceSpecs)){
 				const { productName, knownApps } = specs;
