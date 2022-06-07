@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.0 - 7 June 2022
+
+* Add initial support for new `esomx` and `trackerm` platforms
+* Tune internal development tooling + CI/CD
+
 ## 3.1.0 - 16 January 2022
 
 * Updated binaries for DeviceOS 2.3.0
