@@ -128,7 +128,6 @@ jobs:
             npm publish $NPM_TAG
 
 workflows:
-  version: 2
   test-and-publish:
     jobs:
       - test-unix:
