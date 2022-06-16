@@ -4,7 +4,7 @@ const temp = require('temp').track();
 const ModuleParser = require('binary-version-reader').HalModuleParser;
 const ModuleInfo = require('binary-version-reader').ModuleInfo;
 const deviceSpecs = require('../lib/device-specs');
-const ensureError = require('../lib/utilities').ensureError;
+const { dfuInterfaceForFirmwareModule, ensureError } = require('../lib/utilities');
 const dfu = require('../lib/dfu');
 const CLICommandBase = require('./base');
 
@@ -54,8 +54,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	flashDfu({ binary, factory, force, requestLeave }){
-		let specs, destSegment, destAddress;
-		let flashingKnownApp = false;
+		let destAddress, alt;
 		return Promise.resolve()
 			.then(() => dfu.isDfuUtilInstalled())
 			.then(() => dfu.findCompatibleDFU())
@@ -71,10 +70,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 					if (binary === undefined){
 						throw new Error(`file does not exist and no known app found. tried: \`${error.path}\``);
-					} else {
-						flashingKnownApp = true;
-						return binary;
 					}
+					return binary;
 				}
 
 				if (!stats.isFile()){
@@ -82,12 +79,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 				}
 			})
 			.then(() => {
-				destSegment = factory ? 'factoryReset' : 'userFirmware';
-
-				if (flashingKnownApp){
-					return binary;
-				}
-
 				const parser = new ModuleParser();
 				return parser.parseFile(binary)
 					.catch(err => {
@@ -103,37 +94,33 @@ module.exports = class FlashCommand extends CLICommandBase {
 							throw new Error('CRC is invalid, use --force to override');
 						}
 
-						specs = deviceSpecs[dfu.dfuId];
+						const specs = deviceSpecs[dfu.dfuId];
 						if (info.prefixInfo.platformID !== specs.productId && !force){
 							throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
 						}
 
-						switch (info.prefixInfo.moduleFunction){
-							case ModuleInfo.FunctionType.MONO_FIRMWARE:
-								// only override if modular capable
-								destSegment = specs.systemFirmwareOne ? 'systemFirmwareOne' : destSegment;
-								break;
-							case ModuleInfo.FunctionType.SYSTEM_PART:
-								destSegment = systemModuleIndexToString[info.prefixInfo.moduleIndex];
-								destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
-								break;
-							case ModuleInfo.FunctionType.USER_PART:
-								// use existing destSegment for userFirmware/factoryReset
-								// Use destination address from the module prefix if flashing
-								// into normal location
-								if (!factory) {
-									destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
-								}
-								break;
-							case ModuleInfo.FunctionType.RADIO_STACK:
-								destSegment = 'radioStack';
-								destAddress = '0x0' + info.prefixInfo.moduleStartAddy;
-								break;
-							default:
-								if (!force){
-									throw new Error('unknown module function ' + info.prefixInfo.moduleFunction + ', use --force to override');
-								}
-								break;
+						if (factory) {
+							if (info.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.USER_PART) {
+								throw new Error('Cannot flash a non-application binary to the factory reset location');
+							}
+							const spec = specs.factoryReset;
+							if (!spec || spec.address === undefined || spec.alt === undefined) {
+								throw new Error('The platform does not support a factory reset application');
+							}
+							destAddress = spec.address;
+							alt = spec.alt;
+						} else {
+							alt = dfuInterfaceForFirmwareModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
+									info.prefixInfo.platformID);
+							if (alt === null) {
+								throw new Error('A firmware module of this type cannot be flashed via DFU');
+							}
+							destAddress = '0x' + info.prefixInfo.moduleStartAddy;
+						}
+
+						if (requestLeave === undefined) {
+							// todo - leave on factory firmware write too?
+							requestLeave = (!factory && info.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART);
 						}
 
 						if (info.prefixInfo.moduleFlags & ModuleInfo.Flags.DROP_MODULE_INFO){
@@ -144,22 +131,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 					});
 			})
 			.then((finalBinary) => {
-				if (!destAddress && destSegment){
-					const segment = dfu._validateSegmentSpecs(destSegment);
-					if (segment.error){
-						throw new Error('dfu.write: ' + segment.error);
-					}
-					destAddress = segment.specs.address;
-				}
-
-				if (!destAddress){
-					throw new Error('Unknown destination');
-				}
-
-				const alt = 0;
-				// todo - leave on factory firmware write too?
-				const leave = requestLeave !== undefined ? requestLeave : (destSegment === 'userFirmware');
-				return dfu.writeDfu(alt, finalBinary, destAddress, leave);
+				return dfu.writeDfu(alt, finalBinary, destAddress, leave: requestLeave);
 			})
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Error writing firmware');

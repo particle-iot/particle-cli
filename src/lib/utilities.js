@@ -33,8 +33,11 @@ const glob = require('glob');
 const VError = require('verror');
 const childProcess = require('child_process');
 const deviceConstants = require('@particle/device-constants');
+const { ModuleInfo } = require('binary-version-reader');
 const log = require('./log');
 
+const platforms = deviceConstants.filter(p => p.public);
+const platformsById = platforms.reduce((map, p) => map.set(p.id, p), new Map());
 
 module.exports = {
 	deferredChildProcess(exec){
@@ -331,20 +334,16 @@ module.exports = {
 
 	// generates an object like { photon: 6, electron: 10 }
 	knownPlatformIds(){
-		return Object.values(deviceConstants).reduce((platforms, platform) => {
-			if (!['esp32', 'gcc'].includes(platform.name)) {
-				platforms[platform.name] = platform.id;
-			}
+		return platforms.reduce((platforms, platform) => {
+			platforms[platform.name] = platform.id;
 			return platforms;
 		}, {});
 	},
 
 	// generates an object like { 6: 'Photon', 10: 'Electron' }
 	knownPlatformDisplayForId(){
-		return Object.values(deviceConstants).reduce((platforms, platform) => {
-			if (!['esp32', 'gcc'].includes(platform.name)) {
-				platforms[platform.id] = platform.displayName;
-			}
+		return platforms.reduce((platforms, platform) => {
+			platforms[platform.id] = platform.displayName;
 			return platforms;
 		}, {});
 	},
@@ -379,6 +378,77 @@ module.exports = {
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}
 		return err;
+	}
+
+	/**
+	 * Get the number of the DFU interface that can be used to flash a firmware module of the
+	 * specified type.
+	 *
+	 * @param {Number} moduleFunc The module type as defined by the `FunctionType` enum of the
+	 *        binary-version-reader package.
+	 * @param {Number} moduleIndex The module index.
+	 * @param {Number} platformId The platform ID.
+	 * @returns {?Number} The number of the DFU interface or `null` if the module cannot be flashed
+	 *          via DFU.
+	 */
+	dfuInterfaceForFirmwareModule(moduleFunc, moduleIndex, platformId) {
+		let modType; // Module type as defined in device-constants
+		switch (moduleFunc) {
+			case ModuleInfo.FunctionType.SYSTEM_PART:
+			case ModuleInfo.FunctionType.MONO_FIRMWARE:
+				modType = 'systemPart';
+				break;
+			case ModuleInfo.FunctionType.USER_PART:
+				modType = 'userPart';
+				break;
+			case ModuleInfo.FunctionType.NCP_FIRMWARE:
+				modType = 'ncpFirmware';
+				break;
+			case ModuleInfo.FunctionType.RADIO_STACK:
+				modType = 'radioStack';
+				break;
+			case ModuleInfo.FunctionType.BOOTLOADER:
+			case ModuleInfo.FunctionType.RESOURCE:
+			case ModuleInfo.FunctionType.SETTINGS:
+				return null;
+			default:
+				throw new Error('Unknown module type');
+		}
+		const platform = platformsById.get(platformId);
+		if (!platform) {
+			throw new Error('Unknown platform');
+		}
+		const mods = platform.firmwareModules.filter((m) => m.type === modType);
+		if (!mods.length) {
+			return null;
+		}
+		let mod;
+		if (moduleFunc === ModuleInfo.FunctionType.MONO_FIRMWARE) {
+			// It is assumed here that a monolithic firmware uses the same storage as system part modules.
+			// As a sanity check, if there are multiple system part modules defined for the platform,
+			// ensure that all of them use the same storage
+			mod = mod[0];
+			if (!mods.every((m) => m.storage === mod.storage)) {
+				throw new Error('Cannot determine storage for a monolithic firmware');
+			}
+		} else if (mods.length === 1) {
+			// The module index is optional in device-constants if only one module of the given type is
+			// defined for the platform
+			mod = mod[0];
+			if (mod.index !== undefined && mod.index !== moduleIndex) {
+				return null;
+			}
+		} else {
+			mod = mods.find((m) => m.index === moduleIndex);
+			if (!mod) {
+				return null;
+			}
+		}
+		const storage = platform.dfu.storage.find((s) => s.type === mod.storage);
+		if (!storage) {
+			return null;
+		}
+		return storage.alt;
 	}
 };
 

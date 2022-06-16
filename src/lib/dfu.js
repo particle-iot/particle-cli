@@ -119,7 +119,7 @@ module.exports = {
 					return prompt([question])
 						.then((ans) => {
 							const dfuId = ans.device;
-							module.exports.dfuId = dfuId;
+							module.exports.dfuId = dfuId; // Ok, now this is weird
 							return dfuId;
 						});
 				} else if (dfuDevices.length === 1) {
