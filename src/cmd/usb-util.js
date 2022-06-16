@@ -8,6 +8,20 @@ const {
 	TimeoutError
 } = require('../lib/require-optional')('particle-usb');
 
+/**
+ * USB permissions error.
+ */
+class UsbPermissionsError extends Error {
+	/**
+	 * Construct an error instance.
+	 *
+	 * @param {String} message Error message.
+	 */
+	constructor(message) {
+		super(message);
+		this.name = this.constructor.name;
+	}
+}
 
 /**
  * Open a USB device.
@@ -29,26 +43,53 @@ function openUsbDevice(usbDevice, { dfuMode = false } = {}){
 }
 
 /**
- * Open a USB device with the specified device ID or name.
+ * Open a USB device with the specified device ID.
  *
  * This function checks whether the user has necessary permissions to access the device.
  * Use this function instead of particle-usb's openDeviceById().
  *
- * @param {Object} options Options.
- * @param {String} options.id Device ID or name.
- * @param {Object} options.api API client.
- * @param {String} options.auth Access token.
- * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
+ * @param {String} id Device ID.
+ * @param {Object} [options] Options.
  * @param {String} [options.displayName] Device name as shown to the user.
+ * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
  * @return {Promise}
  */
-// TODO (mirande): name is confusing since it handles opening by device id OR name
-function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null }){
+async function openUsbDeviceById(id, { displayName, dfuMode = false } = {}) {
+	let dev;
+	try {
+		dev = await openDeviceById(id);
+	} catch (err) {
+		if (err instanceof NotFoundError) {
+			throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);
+		}
+		await handleDeviceOpenError(err); // Throws the original error or a UsbPermissionsError
+	}
+	if (dev.isInDfuMode && !dfuMode) {
+		await dev.close();
+		throw new Error('The device should not be in DFU mode');
+	}
+	return dev;
+}
+
+/**
+ * Open a USB device with the specified device ID or name.
+ *
+ * This function checks whether the user has necessary permissions to access the device.
+ *
+ * @param {String} idOrName Device ID or name.
+ * @param {Object} api API client.
+ * @param {String} auth Access token.
+ * @param {Object} [options] Options.
+ * @param {String} [options.displayName] Device name as shown to the user.
+ * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
+ * @return {Promise}
+ */
+function openUsbDeviceByIdOrName(idOrName, api, auth, { displayName, dfuMode = false } = {}) {
 	return Promise.resolve()
 		.then(() => {
-			if (isDeviceId(id)){
+			if (isDeviceId(idOrName)) {
 				// Try to open the device straight away
-				return openDeviceById(id).catch(e => {
+				return openDeviceById(idOrName).catch(e => {
 					if (!(e instanceof NotFoundError)){
 						return handleDeviceOpenError(e);
 					}
@@ -57,15 +98,15 @@ function openUsbDeviceById({ id, api, auth, dfuMode = false, displayName = null 
 		})
 		.then(usbDevice => {
 			if (!usbDevice){
-				return getDevice({ id, api, auth, displayName }).then(device => {
-					if (device.id === id){
+				return getDevice({ id: idOrName, api, auth, displayName }).then(device => {
+					if (device.id === idOrName){
 						throw new NotFoundError();
 					}
 					return openDeviceById(device.id).catch(e => handleDeviceOpenError(e));
 				})
 					.catch(e => {
 						if (e instanceof NotFoundError){
-							throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);
+							throw new Error(`Unable to connect to the device ${displayName || idOrName}. Make sure the device is connected to the host computer via USB`);
 						}
 						throw e;
 					});
@@ -95,9 +136,11 @@ function getUsbDevices({ dfuMode = true } = {}){
 
 function handleDeviceOpenError(err){
 	if (err instanceof NotAllowedError){
-		err = new Error('Missing permissions to access the USB device');
+		err = new UsbPermissionsError('Missing permissions to access the USB device');
 		if (systemSupportsUdev()){
-			return promptAndInstallUdevRules(err);
+			return promptAndInstallUdevRules(err).catch(err => {
+				throw new UsbPermissionsError(err.message);
+			});
 		}
 	}
 	return Promise.reject(err);
@@ -106,7 +149,8 @@ function handleDeviceOpenError(err){
 module.exports = {
 	openUsbDevice,
 	openUsbDeviceById,
+	openUsbDeviceByIdOrName,
 	getUsbDevices,
+	UsbPermissionsError,
 	TimeoutError
 };
-

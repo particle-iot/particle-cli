@@ -1,7 +1,7 @@
 const { spin } = require('../app/ui');
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceById, TimeoutError } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformsById } = require('./constants');
 const ParticleApi = require('./api');
@@ -205,8 +205,7 @@ module.exports = class UsbCommand {
 			}
 		};
 
-		const options = { id: device, api: this._api, auth: this._auth };
-		const queryDevice = openUsbDeviceById(options)
+		const queryDevice = openUsbDeviceByIdOrName(device, this._api, this._auth)
 			.then(usbDevice => deviceMgr.set(usbDevice).status());
 
 		return spin(queryDevice, 'Querying device...')
@@ -277,7 +276,7 @@ module.exports = class UsbCommand {
 				}
 
 				return asyncMapSeries(deviceIds, (id) => {
-					return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
+					return openUsbDeviceByIdOrName(id, this._api, this._auth, { dfuMode })
 						.then(usbDevice => usbDevice);
 				});
 			});

@@ -25,13 +25,14 @@
   ******************************************************************************
  */
 
+const { PlatformId } = require('./src/cmd/constants');
 
-var fs = require('fs');
-var path = require('path');
-var extend = require('xtend');
-var _ = require('lodash');
+const fs = require('fs');
+const path = require('path');
+const extend = require('xtend');
+const _ = require('lodash');
 
-var settings = {
+const settings = {
 	apiUrl: 'https://api.particle.io',
 	clientId: 'CLI2',
 	access_token: null,
@@ -70,80 +71,65 @@ var settings = {
 		'tinker': true
 	},
 	updates: {
-		'2b04:d006': {
-			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
-			// because as soon as the system parts are flashed they will change the location
-			// of DFU read/write functions which live in system firmware.
-			otaRegion: 'photon-bootloader@2.3.0+lto.bin',
-			otaFlag: 'ota-flag-a5.bin',
-			systemFirmwareOne: 'photon-system-part1@2.3.0.bin',
-			systemFirmwareTwo: 'photon-system-part2@2.3.0.bin'
-		},
-		'2b04:d008': {
-			// Need to flash Bootloader and OTA Flag before system parts for Photon/P1
-			// because as soon as the system parts are flashed they will change the location
-			// of DFU read/write functions which live in system firmware.
-			otaRegion: 'p1-bootloader@2.3.0+lto.bin',
-			otaFlag: 'ota-flag-a5.bin',
-			systemFirmwareOne: 'p1-system-part1@2.3.0.bin',
-			systemFirmwareTwo: 'p1-system-part2@2.3.0.bin'
-		},
-		'2b04:d00a': {
-			// The bin files MUST be in this order to be flashed to the correct memory locations
-			systemFirmwareOne:   'electron-system-part2@2.3.0.bin',
-			systemFirmwareTwo:   'electron-system-part3@2.3.0.bin',
-			systemFirmwareThree: 'electron-system-part1@2.3.0.bin',
-			otaRegion: 'electron-bootloader@2.3.0+lto.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d00c': {
-			systemFirmwareOne: 'argon-system-part1@2.3.0.bin',
-			radioStack: 'argon-softdevice@2.3.0.bin',
-			otaRegion: 'argon-bootloader@2.3.0.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d00d': {
-			systemFirmwareOne: 'boron-system-part1@2.3.0.bin',
-			radioStack: 'boron-softdevice@2.3.0.bin',
-			otaRegion: 'boron-bootloader@2.3.0.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d00e': {
-			systemFirmwareOne: 'xenon-system-part1@1.5.2.bin',
-			radioStack: 'xenon-softdevice@1.5.2.bin',
-			otaRegion: 'xenon-bootloader@1.5.2.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d016': {
-			systemFirmwareOne: 'asom-system-part1@1.4.4.bin',
-			radioStack: 'asom-softdevice@1.4.4.bin',
-			otaRegion: 'asom-bootloader@1.4.4.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d017': {
-			systemFirmwareOne: 'bsom-system-part1@2.3.0.bin',
-			radioStack: 'bsom-softdevice@2.3.0.bin',
-			otaRegion: 'bsom-bootloader@2.3.0.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d018': {
-			systemFirmwareOne: 'xsom-system-part1@1.4.4.bin',
-			radioStack: 'xsom-softdevice@1.4.4.bin',
-			otaRegion: 'xsom-bootloader@1.4.4.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d019': {
-			systemFirmwareOne: 'b5som-system-part1@2.3.0.bin',
-			radioStack: 'b5som-softdevice@2.3.0.bin',
-			otaRegion: 'b5som-bootloader@2.3.0.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
-		'2b04:d01a': {
-			systemFirmwareOne: 'tracker-system-part1@2.3.0.bin',
-			radioStack: 'tracker-softdevice@2.3.0.bin',
-			otaRegion: 'tracker-bootloader@2.3.0.bin',
-			otaFlag: 'ota-flag-a5.bin'
-		},
+		// TODO: The firmware binaries are flashed in the order in which they're listed here. Ideally,
+		// the order should be determined based on the module dependency tree. For now, make sure the
+		// bootloader is flashed first, then radio stack, system part modules and finally NCP firmware
+		[PlatformId.PHOTON]: [
+			'photon-bootloader@2.3.0+lto.bin',
+			'photon-system-part1@2.3.0.bin',
+			'photon-system-part2@2.3.0.bin'
+		],
+		[PlatformId.P1]: [
+			'p1-bootloader@2.3.0+lto.bin',
+			'p1-system-part1@2.3.0.bin',
+			'p1-system-part2@2.3.0.bin'
+		],
+		[PlatformId.ELECTRON]: [
+			'electron-bootloader@2.3.0+lto.bin',
+			'electron-system-part1@2.3.0.bin',
+			'electron-system-part2@2.3.0.bin',
+			'electron-system-part3@2.3.0.bin'
+		],
+		[PlatformId.ARGON]: [
+			'argon-bootloader@2.3.0.bin',
+			'argon-softdevice@2.3.0.bin',
+			'argon-system-part1@2.3.0.bin'
+		],
+		[PlatformId.BORON]: [
+			'boron-bootloader@2.3.0.bin',
+			'boron-softdevice@2.3.0.bin',
+			'boron-system-part1@2.3.0.bin'
+		],
+		[PlatformId.XENON]: [
+			'xenon-bootloader@1.5.2.bin',
+			'xenon-softdevice@1.5.2.bin',
+			'xenon-system-part1@1.5.2.bin'
+		],
+		[PlatformId.ASOM]: [
+			'asom-bootloader@1.4.4.bin',
+			'asom-softdevice@1.4.4.bin',
+			'asom-system-part1@1.4.4.bin'
+		],
+		[PlatformId.BSOM]: [
+			'bsom-bootloader@2.3.0.bin',
+			'bsom-softdevice@2.3.0.bin',
+			'bsom-system-part1@2.3.0.bin'
+		],
+		[PlatformId.XSOM]: [
+			'xsom-bootloader@1.4.4.bin',
+			'xsom-softdevice@1.4.4.bin',
+			'xsom-system-part1@1.4.4.bin'
+		],
+		[PlatformId.B5SOM]: [
+			'b5som-bootloader@2.3.0.bin',
+			'b5som-softdevice@2.3.0.bin',
+			'b5som-system-part1@2.3.0.bin'
+		],
+		[PlatformId.TRACKER]: [
+			'tracker-bootloader@2.3.0.bin',
+			'tracker-softdevice@2.3.0.bin',
+			'tracker-system-part1@2.3.0.bin'
+		],
 	},
 };
 

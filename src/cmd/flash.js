@@ -131,7 +131,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 					});
 			})
 			.then((finalBinary) => {
-				return dfu.writeDfu(alt, finalBinary, destAddress, leave: requestLeave);
+				return dfu.writeDfu(alt, finalBinary, destAddress, requestLeave);
 			})
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Error writing firmware');

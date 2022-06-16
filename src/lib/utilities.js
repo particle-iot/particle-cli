@@ -36,7 +36,7 @@ const deviceConstants = require('@particle/device-constants');
 const { ModuleInfo } = require('binary-version-reader');
 const log = require('./log');
 
-const platforms = deviceConstants.filter(p => p.public);
+const platforms = Object.values(deviceConstants).filter(p => p.public);
 const platformsById = platforms.reduce((map, p) => map.set(p.id, p), new Map());
 
 module.exports = {
@@ -378,7 +378,7 @@ module.exports = {
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}
 		return err;
-	}
+	},
 
 	/**
 	 * Get the number of the DFU interface that can be used to flash a firmware module of the
@@ -427,14 +427,14 @@ module.exports = {
 			// It is assumed here that a monolithic firmware uses the same storage as system part modules.
 			// As a sanity check, if there are multiple system part modules defined for the platform,
 			// ensure that all of them use the same storage
-			mod = mod[0];
+			mod = mods[0];
 			if (!mods.every((m) => m.storage === mod.storage)) {
 				throw new Error('Cannot determine storage for a monolithic firmware');
 			}
 		} else if (mods.length === 1) {
 			// The module index is optional in device-constants if only one module of the given type is
 			// defined for the platform
-			mod = mod[0];
+			mod = mods[0];
 			if (mod.index !== undefined && mod.index !== moduleIndex) {
 				return null;
 			}
