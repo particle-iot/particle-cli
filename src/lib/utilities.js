@@ -32,12 +32,9 @@ const path = require('path');
 const glob = require('glob');
 const VError = require('verror');
 const childProcess = require('child_process');
-const deviceConstants = require('@particle/device-constants');
 const { ModuleInfo } = require('binary-version-reader');
+const { platformForId, PLATFORMS } = require('./platform');
 const log = require('./log');
-
-const platforms = Object.values(deviceConstants).filter(p => p.public);
-const platformsById = platforms.reduce((map, p) => map.set(p.id, p), new Map());
 
 module.exports = {
 	deferredChildProcess(exec){
@@ -334,7 +331,7 @@ module.exports = {
 
 	// generates an object like { photon: 6, electron: 10 }
 	knownPlatformIds(){
-		return platforms.reduce((platforms, platform) => {
+		return PLATFORMS.reduce((platforms, platform) => {
 			platforms[platform.name] = platform.id;
 			return platforms;
 		}, {});
@@ -342,7 +339,7 @@ module.exports = {
 
 	// generates an object like { 6: 'Photon', 10: 'Electron' }
 	knownPlatformDisplayForId(){
-		return platforms.reduce((platforms, platform) => {
+		return PLATFORMS.reduce((platforms, platform) => {
 			platforms[platform.id] = platform.displayName;
 			return platforms;
 		}, {});
@@ -414,10 +411,7 @@ module.exports = {
 			default:
 				throw new Error('Unknown module type');
 		}
-		const platform = platformsById.get(platformId);
-		if (!platform) {
-			throw new Error('Unknown platform');
-		}
+		const platform = platformForId(platformId);
 		const mods = platform.firmwareModules.filter((m) => m.type === modType);
 		if (!mods.length) {
 			return null;

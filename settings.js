@@ -25,14 +25,14 @@
   ******************************************************************************
  */
 
-const { PlatformId } = require('./src/cmd/constants');
+const { PlatformId } = require('./src/lib/platform');
 
 const fs = require('fs');
 const path = require('path');
 const extend = require('xtend');
 const _ = require('lodash');
 
-const settings = {
+let settings = {
 	apiUrl: 'https://api.particle.io',
 	clientId: 'CLI2',
 	access_token: null,

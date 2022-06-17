@@ -3,7 +3,7 @@ const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
-const { platformsById } = require('./constants');
+const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
 
 
@@ -58,7 +58,8 @@ module.exports = class UsbCommand {
 						})
 						.then(([device, isInDfuMode, mode]) => {
 							const { name, platform_id: platformID, connected } = device || {};
-							const platform = platformsById[usbDevice.platformId];
+							const platform = isKnownPlatformId(usbDevice.platformId) ? platformForId(usbDevice.platformId).displayName :
+									`Platform ${usbDevice.platformId}`;
 							const type = [platform];
 
 							if (isInDfuMode){

@@ -1,7 +1,7 @@
 const os = require('os');
 const Chalk = require('chalk').constructor;
 const Spinner = require('cli-spinner').Spinner;
-const platformsById = require('../../cmd/constants').platformsById;
+const { platformForId, isKnownPlatformId } = require('../platform');
 const settings = require('../../../settings');
 
 
@@ -69,7 +69,8 @@ module.exports = class UI {
 
 		for (let i = 0; i < deviceList.length; i++){
 			const device = deviceList[i];
-			const deviceType = platformsById[device.product_id] || `Product ${device.product_id}`;
+			const deviceType = isKnownPlatformId(device.product_id) ? platformForId(device.product_id).displayName :
+				`Product ${device.product_id}`;
 			const connected = device.connected || device.online;
 			const connectedState = connected ? 'online' : 'offline';
 			let name;
