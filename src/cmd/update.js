@@ -1,5 +1,6 @@
 const FlashCommand = require('./flash');
 const { openUsbDeviceById, getUsbDevices, UsbPermissionsError } = require('./usb-util');
+const { spin } = require('../app/ui');
 const { dfuInterfaceForFirmwareModule, delay } = require('../lib/utilities');
 const settings = require('../../settings');
 
@@ -9,23 +10,18 @@ const chalk = require('chalk');
 const path = require('path');
 const fs = require('fs');
 
-const Spinner = require('cli-spinner').Spinner;
-
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
 // Default timeout when opening a USB device
 const OPEN_TIMEOUT = 3000;
 
-// This timeout should be long enough to allow the bootloader apply the update when flashing via
-// control requests
+// Timeout when reopening a USB device after an update via control requests. This timeout should be
+// long enough to allow the bootloader apply the update
 const REOPEN_TIMEOUT = 60000;
 
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 3000;
-
-Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
-const spin = new Spinner('Updating system firmware on the device...');
 
 async function openDevice(deviceId, { timeout = OPEN_TIMEOUT } = {}) {
 	const t2 = Date.now() + timeout;
@@ -57,31 +53,27 @@ async function canFlashInDfuMode(file) {
 }
 
 async function doUpdate(deviceId, files) {
-	let isOpen = false;
 	let openDelay = 0;
 	let openTimeout = OPEN_TIMEOUT;
 	let dev;
 	files = [...files];
 	try {
 		while (files.length) {
-			if (!isOpen) {
-				await delay(openDelay);
-				dev = await openDevice(deviceId, { timeout: openTimeout });
-				openDelay = 0;
-				openTimeout = OPEN_TIMEOUT;
-				isOpen = true;
-			}
+			await delay(openDelay);
+			dev = await openDevice(deviceId, { timeout: openTimeout });
 			const file = files.shift();
 			if (await canFlashInDfuMode(file)) {
 				// Use DFU
 				if (!dev.isInDfuMode) {
 					await dev.enterDfuMode();
 				}
+				// Close the device before flashing it via dfu-util
 				await dev.close();
-				isOpen = false;
 				const flashCmd = new FlashCommand();
 				// TODO: Use the serial number or bus/port numbers to identify the device
 				await flashCmd.flashDfu({ binary: file, requestLeave: !files.length });
+				openDelay = 0;
+				openTimeout = OPEN_TIMEOUT;
 			} else {
 				// Use control requests
 				if (dev.isInDfuMode) {
@@ -93,15 +85,17 @@ async function doUpdate(deviceId, files) {
 				const data = fs.readFileSync(file);
 				await dev.updateFirmware(data, { timeout: FLASH_TIMEOUT });
 				await dev.close(); // Device is about to reset
-				isOpen = false;
 				openDelay = REOPEN_DELAY;
 				openTimeout = REOPEN_TIMEOUT;
 			}
 		}
 	} finally {
-		if (isOpen) {
-			await dev.close();
-			isOpen = false;
+		if (dev && dev.isOpen) {
+			try {
+				await dev.close();
+			} catch (err) {
+				// Ignore
+			}
 		}
 	}
 }
@@ -126,31 +120,22 @@ module.exports = class UpdateCommand {
 		console.log(chalk.cyan('>'), 'This process can take a few minutes. Here it goes!');
 		console.log();
 
-		if (global.verboseLevel > 0) {
-			spin.start();
-		}
-
 		files = files.map(f => path.resolve(__dirname, '../../assets/updates', f));
 		try {
-			await doUpdate(dev.id, files);
-
-			spin.stop(true);
+			await spin(doUpdate(dev.id, files), 'Updating system firmware on the device...');
 
 			console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
 			console.log();
 			console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
 			console.log();
-
 		} catch (err) {
-			spin.stop(true);
-
-			console.log();
 			console.log(chalk.red('!'), 'An error occurred while attempting to update the system firmware of your device:');
 			console.log();
 			console.log(chalk.bold.white(err.toString()));
 			console.log();
 			console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
 			console.log(chalk.bold.white('https://community.particle.io/'));
+			console.log();
 		}
 	}
 };
