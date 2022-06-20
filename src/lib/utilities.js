@@ -32,9 +32,9 @@ const path = require('path');
 const glob = require('glob');
 const VError = require('verror');
 const childProcess = require('child_process');
-const { ModuleInfo } = require('binary-version-reader');
-const { platformForId, PLATFORMS } = require('./platform');
+const { PLATFORMS } = require('./platform');
 const log = require('./log');
+
 
 module.exports = {
 	deferredChildProcess(exec){
@@ -375,74 +375,6 @@ module.exports = {
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}
 		return err;
-	},
-
-	/**
-	 * Get the number of the DFU interface that can be used to flash a firmware module of the
-	 * specified type.
-	 *
-	 * @param {Number} moduleFunc The module type as defined by the `FunctionType` enum of the
-	 *        binary-version-reader package.
-	 * @param {Number} moduleIndex The module index.
-	 * @param {Number} platformId The platform ID.
-	 * @returns {?Number} The number of the DFU interface or `null` if the module cannot be flashed
-	 *          via DFU.
-	 */
-	dfuInterfaceForFirmwareModule(moduleFunc, moduleIndex, platformId) {
-		let modType; // Module type as defined in device-constants
-		switch (moduleFunc) {
-			case ModuleInfo.FunctionType.SYSTEM_PART:
-			case ModuleInfo.FunctionType.MONO_FIRMWARE:
-				modType = 'systemPart';
-				break;
-			case ModuleInfo.FunctionType.USER_PART:
-				modType = 'userPart';
-				break;
-			case ModuleInfo.FunctionType.NCP_FIRMWARE:
-				modType = 'ncpFirmware';
-				break;
-			case ModuleInfo.FunctionType.RADIO_STACK:
-				modType = 'radioStack';
-				break;
-			case ModuleInfo.FunctionType.BOOTLOADER:
-			case ModuleInfo.FunctionType.RESOURCE:
-			case ModuleInfo.FunctionType.SETTINGS:
-				return null;
-			default:
-				throw new Error('Unknown module type');
-		}
-		const platform = platformForId(platformId);
-		const mods = platform.firmwareModules.filter((m) => m.type === modType);
-		if (!mods.length) {
-			return null;
-		}
-		let mod;
-		if (moduleFunc === ModuleInfo.FunctionType.MONO_FIRMWARE) {
-			// It is assumed here that a monolithic firmware uses the same storage as system part modules.
-			// As a sanity check, if there are multiple system part modules defined for the platform,
-			// ensure that all of them use the same storage
-			mod = mods[0];
-			if (!mods.every((m) => m.storage === mod.storage)) {
-				throw new Error('Cannot determine storage for a monolithic firmware');
-			}
-		} else if (mods.length === 1) {
-			// The module index is optional in device-constants if only one module of the given type is
-			// defined for the platform
-			mod = mods[0];
-			if (mod.index !== undefined && mod.index !== moduleIndex) {
-				return null;
-			}
-		} else {
-			mod = mods.find((m) => m.index === moduleIndex);
-			if (!mod) {
-				return null;
-			}
-		}
-		const storage = platform.dfu.storage.find((s) => s.type === mod.storage);
-		if (!storage) {
-			return null;
-		}
-		return storage.alt;
 	}
 };
 

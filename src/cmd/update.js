@@ -1,7 +1,7 @@
-const FlashCommand = require('./flash');
 const { openUsbDeviceById, getUsbDevices, UsbPermissionsError } = require('./usb-util');
+const dfu = require('../lib/dfu');
 const { spin } = require('../app/ui');
-const { dfuInterfaceForFirmwareModule, delay } = require('../lib/utilities');
+const { delay } = require('../lib/utilities');
 const settings = require('../../settings');
 
 const { HalModuleParser } = require('binary-version-reader');
@@ -47,8 +47,8 @@ async function openDevice(deviceId, { timeout = OPEN_TIMEOUT } = {}) {
 async function canFlashInDfuMode(file) {
 	const parser = new HalModuleParser();
 	const info = await parser.parseFile(file);
-	const alt = dfuInterfaceForFirmwareModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
-			info.prefixInfo.platformID);
+	const alt = dfu.interfaceForModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
+		info.prefixInfo.platformID);
 	return alt !== null;
 }
 
@@ -69,9 +69,7 @@ async function doUpdate(deviceId, files) {
 				}
 				// Close the device before flashing it via dfu-util
 				await dev.close();
-				const flashCmd = new FlashCommand();
-				// TODO: Use the serial number or bus/port numbers to identify the device
-				await flashCmd.flashDfu({ binary: file, requestLeave: !files.length });
+				await dfu.writeModule(file, { vendorId: dev.vendorId, productId: dev.productId, serial: deviceId, leave: !files.length });
 				openDelay = 0;
 				openTimeout = OPEN_TIMEOUT;
 			} else {
@@ -139,45 +137,3 @@ module.exports = class UpdateCommand {
 		}
 	}
 };
-
-/*
-function dfuError(err) {
-	if (err === 'No DFU device found') {
-		// do nothing
-	} else if (err.code === 127) {
-		dfuInstall(true);
-	} else {
-		dfuInstall(false);
-		console.log(
-			chalk.cyan('!!!'),
-			'You may also find our community forums helpful:\n',
-			chalk.bold.white('https://community.particle.io/'),
-			'\n'
-		);
-		console.log(
-			chalk.red.bold('>'),
-			'Error code:',
-			chalk.bold.white(err.code || 'unknown'),
-			'\n'
-		);
-	}
-	process.exit(1);
-}
-
-function dfuInstall(noent) {
-
-	if (noent) {
-		console.log(chalk.red('!!!'), "It doesn't seem like DFU utilities are installed...");
-	} else {
-		console.log(chalk.red('!!!'), 'There was an error trying execute DFU utilities.');
-	}
-	console.log('');
-	console.log(
-		chalk.cyan('!!!'),
-		'For help with installing DFU Utilities, please see:\n',
-		chalk.bold.white('https://docs.particle.io/guide/tools-and-features/cli/#advanced-install')
-	);
-	console.log();
-}
-
-*/

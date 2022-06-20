@@ -1,19 +1,11 @@
 const fs = require('fs');
 const VError = require('verror');
-const temp = require('temp').track();
 const ModuleParser = require('binary-version-reader').HalModuleParser;
 const ModuleInfo = require('binary-version-reader').ModuleInfo;
 const deviceSpecs = require('../lib/device-specs');
-const { dfuInterfaceForFirmwareModule, ensureError } = require('../lib/utilities');
+const ensureError = require('../lib/utilities').ensureError;
 const dfu = require('../lib/dfu');
 const CLICommandBase = require('./base');
-
-const systemModuleIndexToString = {
-	1: 'systemFirmwareOne',
-	2: 'systemFirmwareTwo',
-	3: 'systemFirmwareThree'
-};
-
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args){
@@ -54,7 +46,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	flashDfu({ binary, factory, force, requestLeave }){
-		let destAddress, alt;
 		return Promise.resolve()
 			.then(() => dfu.isDfuUtilInstalled())
 			.then(() => dfu.findCompatibleDFU())
@@ -71,7 +62,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 					if (binary === undefined){
 						throw new Error(`file does not exist and no known app found. tried: \`${error.path}\``);
 					}
-					return binary;
+					return;
 				}
 
 				if (!stats.isFile()){
@@ -83,71 +74,44 @@ module.exports = class FlashCommand extends CLICommandBase {
 				return parser.parseFile(binary)
 					.catch(err => {
 						throw new VError(ensureError(err), `Could not parse ${binary}`);
-					})
-					.then(info => {
-						if (info.suffixInfo.suffixSize === 65535){
-							this.ui.write('warn: unable to verify binary info');
-							return;
-						}
-
-						if (!info.crc.ok && !force){
-							throw new Error('CRC is invalid, use --force to override');
-						}
-
-						const specs = deviceSpecs[dfu.dfuId];
-						if (info.prefixInfo.platformID !== specs.productId && !force){
-							throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
-						}
-
-						if (factory) {
-							if (info.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.USER_PART) {
-								throw new Error('Cannot flash a non-application binary to the factory reset location');
-							}
-							const spec = specs.factoryReset;
-							if (!spec || spec.address === undefined || spec.alt === undefined) {
-								throw new Error('The platform does not support a factory reset application');
-							}
-							destAddress = spec.address;
-							alt = spec.alt;
-						} else {
-							alt = dfuInterfaceForFirmwareModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
-									info.prefixInfo.platformID);
-							if (alt === null) {
-								throw new Error('A firmware module of this type cannot be flashed via DFU');
-							}
-							destAddress = '0x' + info.prefixInfo.moduleStartAddy;
-						}
-
-						if (requestLeave === undefined) {
-							// todo - leave on factory firmware write too?
-							requestLeave = (!factory && info.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART);
-						}
-
-						if (info.prefixInfo.moduleFlags & ModuleInfo.Flags.DROP_MODULE_INFO){
-							return this._dropModuleInfo(binary);
-						}
-
-						return binary;
 					});
 			})
-			.then((finalBinary) => {
-				return dfu.writeDfu(alt, finalBinary, destAddress, requestLeave);
+			.then(info => {
+				if (info.suffixInfo.suffixSize === 65535){
+					this.ui.write('warn: unable to verify binary info');
+					return;
+				}
+
+				if (!info.crc.ok && !force){
+					throw new Error('CRC is invalid, use --force to override');
+				}
+
+				const specs = deviceSpecs[dfu.dfuId];
+				if (info.prefixInfo.platformID !== specs.productId && !force){
+					throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
+				}
+
+				let segmentName;
+				if (factory) {
+					if (info.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.USER_PART) {
+						throw new Error('Cannot flash a non-application binary to the factory reset location');
+					}
+					segmentName = 'factoryReset';
+					if (!specs[segmentName]) {
+						throw new Error('The platform does not support a factory reset application');
+					}
+				}
+
+				if (requestLeave === undefined) {
+					// todo - leave on factory firmware write too?
+					requestLeave = (!factory && info.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART);
+				}
+
+				return dfu.writeModule(binary, { segmentName, leave: requestLeave });
 			})
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Error writing firmware');
 			});
-	}
-
-	_dropModuleInfo(binary){
-		// Creates a temporary binary with module info stripped out and returns the path to it
-
-		return new Promise((resolve, reject) => {
-			const rStream = fs.createReadStream(binary, { start: ModuleInfo.HEADER_SIZE });
-			const wStream = temp.createWriteStream({ suffix: '.bin' });
-			rStream.pipe(wStream)
-				.on('error', reject)
-				.on('finish', () => resolve(wStream.path));
-		});
 	}
 };
 

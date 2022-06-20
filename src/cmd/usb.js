@@ -59,7 +59,7 @@ module.exports = class UsbCommand {
 						.then(([device, isInDfuMode, mode]) => {
 							const { name, platform_id: platformID, connected } = device || {};
 							const platform = isKnownPlatformId(usbDevice.platformId) ? platformForId(usbDevice.platformId).displayName :
-									`Platform ${usbDevice.platformId}`;
+								`Platform ${usbDevice.platformId}`;
 							const type = [platform];
 
 							if (isInDfuMode){

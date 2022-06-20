@@ -14,17 +14,11 @@ describe('Utilities', () => {
 				'boron': 13,
 				'xenon': 14,
 				'esomx': 15,
-				'asom': 22,
 				'bsom': 23,
-				'xsom': 24,
 				'b5som': 25,
 				'tracker': 26,
 				'trackerm': 28,
-				'raspi': 31,
 				'p2': 32,
-				'oak': 82,
-				'duo': 88,
-				'bluz': 103
 			});
 		});
 	});
@@ -40,17 +34,11 @@ describe('Utilities', () => {
 				13: 'Boron',
 				14: 'Xenon',
 				15: 'E SoM X',
-				22: 'A SoM',
 				23: 'B SoM',
-				24: 'X SoM',
 				25: 'B5 SoM',
 				26: 'Asset Tracker',
 				28: 'Tracker M',
-				31: 'Raspberry Pi',
 				32: 'P2',
-				82: 'Oak',
-				88: 'Duo',
-				103: 'Bluz'
 			});
 		});
 	});

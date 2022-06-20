@@ -26,18 +26,34 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 const fs = require('fs');
 const _ = require('lodash');
-const temp = require('temp');
+const temp = require('temp').track();
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const childProcess = require('child_process');
+const { HalModuleParser, ModuleInfo } = require('binary-version-reader');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('../cmd/udev');
 const settings = require('../../settings');
 const utilities = require('./utilities');
 const deviceSpecs = require('./device-specs');
+const { platformForId } = require('./platform');
 const log = require('./log');
 
 const prompt = inquirer.prompt;
 
+// Creates a temporary binary with module info stripped out and returns the path to it
+function dropModuleInfo(binary) {
+	return new Promise((resolve, reject) => {
+		const rStream = fs.createReadStream(binary, { start: ModuleInfo.HEADER_SIZE });
+		const wStream = temp.createWriteStream({ suffix: '.bin' });
+		rStream.pipe(wStream)
+			.on('error', reject)
+			.on('finish', () => resolve(wStream.path));
+	});
+}
+
+function makeDfuId(vendorId, productId) {
+	return vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+}
 
 module.exports = {
 	_dfuIdsFromDfuOutput(stdout) {
@@ -151,8 +167,9 @@ module.exports = {
 		return utilities.deferredChildProcess(cmd);
 	},
 
-	writeDfu(memoryInterface, binaryPath, firmwareAddress, leave) {
-		const { dfuId, checkBinaryAlignment } = module.exports;
+	writeDfu(memoryInterface, binaryPath, firmwareAddress, leave, { vendorId, productId, serial } = {}) {
+		const dfuId = (vendorId && productId) ? makeDfuId(vendorId, productId) : module.exports.dfuId;
+		const { checkBinaryAlignment } = module.exports;
 		let leaveStr = (leave) ? ':leave' : '';
 		let cmd = 'dfu-util';
 		let args = [
@@ -162,6 +179,9 @@ module.exports = {
 			'-s', firmwareAddress + leaveStr,
 			'-D', binaryPath
 		];
+		if (serial) {
+			args.push('-S', serial);
+		}
 
 		if (settings.useSudoForDfu) {
 			cmd = 'sudo';
@@ -357,6 +377,122 @@ module.exports = {
 						});
 					});
 			});
+	},
+
+	/**
+	 * Write a firmware module.
+	 *
+	 * @param {String} binaryPath The path to the module binary.
+	 * @param {Object} [options] The options.
+	 * @param {Number} [options.vendorId] The USB vendor ID. If not specified, the device discovered
+	 *        via a prior call to `findCompatibleDFU()` will be used.
+	 * @param {Number} [options.productId] The USB product ID.
+	 * @param {String} [options.serial] The serial number.
+	 * @param {String} [options.segmentName] The segment name. This parameter can be used to override
+	 *        the destination address of the module.
+	 * @param {Boolean} [options.leave] Whether to leave DFU mode after writing. If not specified,
+	 *        the device will stay in DFU mode.
+	 */
+	async writeModule(binaryPath, { vendorId, productId, serial, segmentName, leave } = {}) {
+		const parser = new HalModuleParser();
+		const info = await parser.parseFile(binaryPath);
+		let alt;
+		let address;
+		if (segmentName) {
+			const dfuId = (vendorId && productId) ? makeDfuId(vendorId, productId) : module.exports.dfuId;
+			let spec = deviceSpecs[dfuId];
+			if (!spec) {
+				throw new Error('Missing device specification');
+			}
+			spec = spec[segmentName];
+			if (!spec) {
+				throw new Error('Unknown segment name');
+			}
+			if (spec.alt === undefined || spec.address === undefined) {
+				throw new Error('Invalid device specification');
+			}
+			alt = spec.alt;
+			address = spec.address;
+		} else {
+			alt = module.exports.interfaceForModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
+				info.prefixInfo.platformID);
+			if (alt === null) {
+				throw new Error('Firmware module of this type cannot be flashed via DFU');
+			}
+			address = '0x' + info.prefixInfo.moduleStartAddy;
+		}
+		if (info.prefixInfo.moduleFlags & ModuleInfo.Flags.DROP_MODULE_INFO) {
+			binaryPath = await dropModuleInfo(binaryPath);
+		}
+		await module.exports.writeDfu(alt, binaryPath, address, leave, { vendorId, productId, serial });
+	},
+
+	/**
+	 * Get the number of the DFU interface that can be used to flash a firmware module of the
+	 * specified type.
+	 *
+	 * @param {Number} moduleFunc The module type as defined by the `FunctionType` enum of the
+	 *        binary-version-reader package.
+	 * @param {Number} moduleIndex The module index.
+	 * @param {Number} platformId The platform ID.
+	 * @returns {?Number} The number of the DFU interface or `null` if the module cannot be flashed
+	 *          via DFU.
+	 */
+	interfaceForModule(moduleFunc, moduleIndex, platformId) {
+		let modType; // Module type as defined in device-constants
+		switch (moduleFunc) {
+			case ModuleInfo.FunctionType.SYSTEM_PART:
+			case ModuleInfo.FunctionType.MONO_FIRMWARE:
+				modType = 'systemPart';
+				break;
+			case ModuleInfo.FunctionType.USER_PART:
+				modType = 'userPart';
+				break;
+			case ModuleInfo.FunctionType.NCP_FIRMWARE:
+				modType = 'ncpFirmware';
+				break;
+			case ModuleInfo.FunctionType.RADIO_STACK:
+				modType = 'radioStack';
+				break;
+			case ModuleInfo.FunctionType.BOOTLOADER:
+			case ModuleInfo.FunctionType.RESOURCE:
+			case ModuleInfo.FunctionType.SETTINGS:
+				return null;
+			default:
+				throw new Error('Unknown module type');
+		}
+		const platform = platformForId(platformId);
+		const mods = platform.firmwareModules.filter((m) => m.type === modType);
+		if (!mods.length) {
+			return null;
+		}
+		let mod;
+		if (moduleFunc === ModuleInfo.FunctionType.MONO_FIRMWARE) {
+			// It is assumed here that a monolithic firmware uses the same storage as system part modules.
+			// As a sanity check, if there are multiple system part modules defined for the platform,
+			// ensure that all of them use the same storage
+			mod = mods[0];
+			if (!mods.every((m) => m.storage === mod.storage)) {
+				throw new Error('Cannot determine storage for a monolithic firmware');
+			}
+		} else if (mods.length === 1) {
+			// The module index is optional in device-constants if only one module of the given type is
+			// defined for the platform
+			mod = mods[0];
+			if (mod.index !== undefined && mod.index !== moduleIndex) {
+				return null;
+			}
+		} else {
+			mod = mods.find((m) => m.index === moduleIndex);
+			if (!mod) {
+				return null;
+			}
+		}
+		const storage = platform.dfu.storage.find((s) => s.type === mod.storage);
+		if (!storage) {
+			return null;
+		}
+		return storage.alt;
 	},
 
 	_missingDevicePermissions(stderr) {
