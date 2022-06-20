@@ -39,7 +39,7 @@ function openUsbDevice(usbDevice, { dfuMode = false } = {}){
 		return Promise.reject(new Error('The device should not be in DFU mode'));
 	}
 	return Promise.resolve().then(() => usbDevice.open())
-		.catch(e => handleDeviceOpenError(e));
+		.catch(e => handleUsbError(e));
 }
 
 /**
@@ -62,7 +62,7 @@ async function openUsbDeviceById(id, { displayName, dfuMode = false } = {}) {
 		if (err instanceof NotFoundError) {
 			throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);
 		}
-		await handleDeviceOpenError(err); // Throws the original error or a UsbPermissionsError
+		await handleUsbError(err); // Throws the original error or a UsbPermissionsError
 	}
 	if (dev.isInDfuMode && !dfuMode) {
 		await dev.close();
@@ -91,7 +91,7 @@ function openUsbDeviceByIdOrName(idOrName, api, auth, { displayName, dfuMode = f
 				// Try to open the device straight away
 				return openDeviceById(idOrName).catch(e => {
 					if (!(e instanceof NotFoundError)){
-						return handleDeviceOpenError(e);
+						return handleUsbError(e);
 					}
 				});
 			}
@@ -102,7 +102,7 @@ function openUsbDeviceByIdOrName(idOrName, api, auth, { displayName, dfuMode = f
 					if (device.id === idOrName){
 						throw new NotFoundError();
 					}
-					return openDeviceById(device.id).catch(e => handleDeviceOpenError(e));
+					return openDeviceById(device.id).catch(e => handleUsbError(e));
 				})
 					.catch(e => {
 						if (e instanceof NotFoundError){
@@ -127,14 +127,16 @@ function openUsbDeviceByIdOrName(idOrName, api, auth, { displayName, dfuMode = f
  * Get the list of USB devices attached to the host.
  *
  * @param {Object} options Options.
- * @param {Boolean} [options.dfuMode] Set to `false` to exclude devices in DFU mode.
+ * @param {Boolean} [options.dfuMode] Set to `true` to include devices in DFU mode.
  * @return {Promise}
  */
-function getUsbDevices({ dfuMode = true } = {}){
-	return Promise.resolve().then(() => getDevices({ includeDfu: dfuMode }));
+function getUsbDevices({ dfuMode = false } = {}){
+	return Promise.resolve()
+		.then(() => getDevices({ includeDfu: dfuMode }))
+		.catch((err) => handleUsbError(err));
 }
 
-function handleDeviceOpenError(err){
+function handleUsbError(err){
 	if (err instanceof NotAllowedError){
 		err = new UsbPermissionsError('Missing permissions to access the USB device');
 		if (systemSupportsUdev()){

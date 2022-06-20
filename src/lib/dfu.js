@@ -156,7 +156,7 @@ module.exports = {
 		const { getCommand } = module.exports;
 		let cmd = getCommand() + ' -l';
 		let installCheck = utilities.deferredChildProcess(cmd);
-		return utilities.replaceDfdResults(installCheck, 'Installed', 'dfu-util is not installed');
+		return utilities.replaceDfdResults(installCheck, true, false);
 	},
 
 	readDfu(memoryInterface, destination, firmwareAddress, leave) {

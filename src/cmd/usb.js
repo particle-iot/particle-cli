@@ -252,7 +252,7 @@ module.exports = class UsbCommand {
 		return Promise.resolve()
 			.then(() => {
 				if (args.all){
-					return getUsbDevices()
+					return getUsbDevices({ dfuMode: true })
 						.then(usbDevices => {
 							return asyncMapSeries(usbDevices, (usbDevice) => {
 								return openUsbDevice(usbDevice, { dfuMode })
@@ -262,7 +262,7 @@ module.exports = class UsbCommand {
 				}
 
 				if (deviceIds.length === 0){
-					return getUsbDevices()
+					return getUsbDevices({ dfuMode: true })
 						.then(usbDevices => {
 							if (usbDevices.length === 0){
 								throw new Error('No devices found');

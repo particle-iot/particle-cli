@@ -1,10 +1,12 @@
-const { openUsbDeviceById, getUsbDevices, UsbPermissionsError } = require('./usb-util');
+const { openUsbDevice, openUsbDeviceById, getUsbDevices, UsbPermissionsError } = require('./usb-util');
 const dfu = require('../lib/dfu');
 const { spin } = require('../app/ui');
+const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const { delay } = require('../lib/utilities');
 const settings = require('../../settings');
 
 const { HalModuleParser } = require('binary-version-reader');
+const { prompt } = require('inquirer');
 const chalk = require('chalk');
 
 const path = require('path');
@@ -22,6 +24,36 @@ const REOPEN_TIMEOUT = 60000;
 
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 3000;
+
+async function selectDevice() {
+	const devs = await getUsbDevices({ dfuMode: true });
+	const devInfo = [];
+	for (const dev of devs) {
+		// Open the device to get its ID
+		await openUsbDevice(dev, { dfuMode: true });
+		devInfo.push({ id: dev.id, platformId: dev.platformId });
+		await dev.close();
+	}
+	if (!devInfo.length) {
+		throw new Error('No devices found');
+	}
+	if (devInfo.length === 1) {
+		return devInfo[0];
+	}
+	const answer = await prompt({
+		type: 'list',
+		name: 'device',
+		message: 'Which device would you like to update?',
+		choices: devInfo.map((d) => {
+			const platformName = isKnownPlatformId(d.platformId) ? platformForId(d.platformId).displayName : `Platform ${d.platformId}`;
+			return {
+				name: `${d.id} (${platformName})`,
+				value: d
+			};
+		})
+	});
+	return answer.device;
+}
 
 async function openDevice(deviceId, { timeout = OPEN_TIMEOUT } = {}) {
 	const t2 = Date.now() + timeout;
@@ -100,18 +132,22 @@ async function doUpdate(deviceId, files) {
 
 module.exports = class UpdateCommand {
 	async updateDevice() {
-		const devs = await getUsbDevices();
-		if (!devs.length) {
-			throw new Error('No devices found');
+		if (!(await dfu.isDfuUtilInstalled())) {
+			console.log(chalk.red('!!!'), "It doesn't seem like DFU utilities are installed...");
+			console.log();
+			console.log(chalk.cyan('!!!'), 'For help with installing DFU utilities, please see:\n' +
+				chalk.bold.white('https://docs.particle.io/guide/tools-and-features/cli/#advanced-install'));
+			console.log();
+			process.exit(1);
+			return;
 		}
-		let dev = devs[0];
-		let files = settings.updates[dev.platformId];
+
+		const devInfo = await selectDevice();
+		let files = settings.updates[devInfo.platformId];
 		if (!files) {
 			console.log(chalk.cyan('!'), 'There are currently no system firmware updates available for this device.');
 			return;
 		}
-		await dev.open();
-		await dev.close(); // FIXME
 
 		console.log();
 		console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
@@ -120,7 +156,7 @@ module.exports = class UpdateCommand {
 
 		files = files.map(f => path.resolve(__dirname, '../../assets/updates', f));
 		try {
-			await spin(doUpdate(dev.id, files), 'Updating system firmware on the device...');
+			await spin(doUpdate(devInfo.id, files), 'Updating system firmware on the device...');
 
 			console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
 			console.log();
@@ -130,10 +166,14 @@ module.exports = class UpdateCommand {
 			console.log(chalk.red('!'), 'An error occurred while attempting to update the system firmware of your device:');
 			console.log();
 			console.log(chalk.bold.white(err.toString()));
+			if (err.code) {
+				console.log('Error code:', err.code);
+			}
 			console.log();
 			console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
 			console.log(chalk.bold.white('https://community.particle.io/'));
 			console.log();
+			process.exit(1);
 		}
 	}
 };
