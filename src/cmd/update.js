@@ -7,6 +7,7 @@ const settings = require('../../settings');
 
 const { HalModuleParser } = require('binary-version-reader');
 const { prompt } = require('inquirer');
+const semver = require('semver');
 const chalk = require('chalk');
 
 const path = require('path');
@@ -76,6 +77,16 @@ async function openDevice(deviceId, { timeout = OPEN_TIMEOUT } = {}) {
 	}
 }
 
+async function disconnectDevice(device) {
+	if (semver.gte(device.firmwareVersion, '2.0.0')) {
+		// Device OS 2.0.0 and higher supports the "force" option that allows disconnecting the device
+		// from the cloud even if its system thread is blocked
+		await device.disconnectFromCloud({ force: true });
+	} else {
+		await device.enterListeningMode();
+	}
+}
+
 async function canFlashInDfuMode(file) {
 	const parser = new HalModuleParser();
 	const info = await parser.parseFile(file);
@@ -112,6 +123,9 @@ async function doUpdate(deviceId, files) {
 					await delay(REOPEN_DELAY);
 					dev = await openDevice(deviceId);
 				}
+				// Disconnect the device from the network/cloud to unblock its system thread before the
+				// update. This is mostly helpful for Gen 2 devices
+				await disconnectDevice(dev);
 				const data = fs.readFileSync(file);
 				await dev.updateFirmware(data, { timeout: FLASH_TIMEOUT });
 				await dev.close(); // Device is about to reset
