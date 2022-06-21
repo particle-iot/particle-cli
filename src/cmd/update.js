@@ -1,4 +1,5 @@
-const { openUsbDevice, openUsbDeviceById, getUsbDevices, UsbPermissionsError } = require('./usb-util');
+const { openUsbDevice, openUsbDeviceById, openUsbDeviceByIdOrName, getUsbDevices, UsbPermissionsError } = require('./usb-util');
+const ParticleApi = require('./api');
 const dfu = require('../lib/dfu');
 const { spin } = require('../app/ui');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
@@ -78,13 +79,16 @@ async function openDevice(deviceId, { timeout = OPEN_TIMEOUT } = {}) {
 }
 
 async function disconnectDevice(device) {
-	if (semver.gte(device.firmwareVersion, '2.0.0')) {
+	const gen3OrHigher = isKnownPlatformId(device.platformId) && platformForId(device.platformId).generation >= 3;
+	if (gen3OrHigher && semver.gte(device.firmwareVersion, '2.0.0')) {
 		// Device OS 2.0.0 and higher supports the "force" option that allows disconnecting the device
 		// from the cloud even if its system thread is blocked
 		await device.disconnectFromCloud({ force: true });
 	} else {
+		// This works more reliably with Gen 2 devices than disconnectFromCloud()
 		await device.enterListeningMode();
 	}
+	await delay(500);
 }
 
 async function canFlashInDfuMode(file) {
@@ -108,6 +112,8 @@ async function doUpdate(deviceId, files) {
 			if (await canFlashInDfuMode(file)) {
 				// Use DFU
 				if (!dev.isInDfuMode) {
+					// Disconnect the device from the network/cloud to ensure its system thread is unblocked
+					await disconnectDevice(dev);
 					await dev.enterDfuMode();
 				}
 				// Close the device before flashing it via dfu-util
@@ -123,8 +129,6 @@ async function doUpdate(deviceId, files) {
 					await delay(REOPEN_DELAY);
 					dev = await openDevice(deviceId);
 				}
-				// Disconnect the device from the network/cloud to unblock its system thread before the
-				// update. This is mostly helpful for Gen 2 devices
 				await disconnectDevice(dev);
 				const data = fs.readFileSync(file);
 				await dev.updateFirmware(data, { timeout: FLASH_TIMEOUT });
@@ -145,7 +149,7 @@ async function doUpdate(deviceId, files) {
 }
 
 module.exports = class UpdateCommand {
-	async updateDevice() {
+	async updateDevice(args) {
 		if (!(await dfu.isDfuUtilInstalled())) {
 			console.log(chalk.red('!!!'), "It doesn't seem like DFU utilities are installed...");
 			console.log();
@@ -156,7 +160,17 @@ module.exports = class UpdateCommand {
 			return;
 		}
 
-		const devInfo = await selectDevice();
+		let devInfo;
+		if (args.params.device) {
+			const auth = settings.access_token;
+			const { api } = new ParticleApi(settings.apiUrl, { accessToken: auth });
+			const dev = await spin(openUsbDeviceByIdOrName(args.params.device, api, auth, { dfuMode: true }), 'Getting device information...');
+			devInfo = { id: dev.id, platformId: dev.platformId };
+			await dev.close();
+		} else {
+			devInfo = await selectDevice();
+		}
+
 		let files = settings.updates[devInfo.platformId];
 		if (!files) {
 			console.log(chalk.cyan('!'), 'There are currently no system firmware updates available for this device.');
@@ -171,11 +185,6 @@ module.exports = class UpdateCommand {
 		files = files.map(f => path.resolve(__dirname, '../../assets/updates', f));
 		try {
 			await spin(doUpdate(devInfo.id, files), 'Updating system firmware on the device...');
-
-			console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
-			console.log();
-			console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
-			console.log();
 		} catch (err) {
 			console.log(chalk.red('!'), 'An error occurred while attempting to update the system firmware of your device:');
 			console.log();
@@ -189,5 +198,10 @@ module.exports = class UpdateCommand {
 			console.log();
 			process.exit(1);
 		}
+
+		console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
+		console.log();
+		console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
+		console.log();
 	}
 };
