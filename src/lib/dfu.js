@@ -43,7 +43,7 @@ const prompt = inquirer.prompt;
 // Creates a temporary binary with module info stripped out and returns the path to it
 function dropModuleInfo(binary) {
 	return new Promise((resolve, reject) => {
-		const rStream = fs.createReadStream(binary, { start: ModuleInfo.HEADER_SIZE });
+		const rStream = fs.createReadStream(binary, { start: ModuleInfo.MODULE_PREFIX_SIZE });
 		const wStream = temp.createWriteStream({ suffix: '.bin' });
 		rStream.pipe(wStream)
 			.on('error', reject)
@@ -400,7 +400,7 @@ module.exports = {
 		let address;
 		if (segmentName) {
 			const dfuId = (vendorId && productId) ? makeDfuId(vendorId, productId) : module.exports.dfuId;
-			let spec = deviceSpecs[dfuId];
+			let spec = module.exports._deviceSpecForDfuId(dfuId);
 			if (!spec) {
 				throw new Error('Missing device specification');
 			}
@@ -424,7 +424,7 @@ module.exports = {
 		if (info.prefixInfo.moduleFlags & ModuleInfo.Flags.DROP_MODULE_INFO) {
 			binaryPath = await dropModuleInfo(binaryPath);
 		}
-		await module.exports.writeDfu(alt, binaryPath, address, leave, { vendorId, productId, serial });
+		await module.exports.writeDfu(alt, binaryPath, address, !!leave, { vendorId, productId, serial });
 	},
 
 	/**
@@ -461,7 +461,7 @@ module.exports = {
 			default:
 				throw new Error('Unknown module type');
 		}
-		const platform = platformForId(platformId);
+		const platform = module.exports._platformForId(platformId);
 		const mods = platform.firmwareModules.filter((m) => m.type === modType);
 		if (!mods.length) {
 			return null;
@@ -493,6 +493,14 @@ module.exports = {
 			return null;
 		}
 		return storage.alt;
+	},
+
+	_platformForId(id) { // Mocked in unit tests
+		return platformForId(id);
+	},
+
+	_deviceSpecForDfuId(id) { // Mocked in unit tests
+		return deviceSpecs[id];
 	},
 
 	_missingDevicePermissions(stderr) {
