@@ -179,7 +179,7 @@ module.exports = class UpdateCommand {
 
 		console.log();
 		console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
-		console.log(chalk.cyan('>'), 'This process can take a few minutes. Here it goes!');
+		console.log(chalk.cyan('>'), 'This process may take a few minutes. Here it goes!');
 		console.log();
 
 		files = files.map(f => path.resolve(__dirname, '../../assets/updates', f));
