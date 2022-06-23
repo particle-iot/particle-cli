@@ -2,22 +2,28 @@ const deviceConstants = require('@particle/device-constants');
 
 /**
  * Array of description objects for all supported platforms.
- *
- * @see https://github.com/particle-iot-inc/device-constants/blob/main/src/constants.json
  */
 const PLATFORMS = Object.values(deviceConstants).filter(p => p.public);
 
 const PLATFORMS_BY_ID = PLATFORMS.reduce((map, p) => map.set(p.id, p), new Map());
 
 /**
- * Enum-like object defining supported platform IDs.
+ * Supported platform IDs.
  *
- * Example usage:
- * ```
- * if (platformId === PlatformId.ELECTRON) {
- *   console.log('This device is an Electron');
- * }
- * ```
+ * @enum {Number}
+ * @property {Number} CORE
+ * @property {Number} PHOTON
+ * @property {Number} P1
+ * @property {Number} ELECTRON
+ * @property {Number} ARGON
+ * @property {Number} BORON
+ * @property {Number} XENON
+ * @property {Number} ESOMX
+ * @property {Number} BSOM
+ * @property {Number} B5SOM
+ * @property {Number} TRACKER
+ * @property {Number} TRACKERM
+ * @property {Number} P2
  */
 const PlatformId = PLATFORMS.reduce((out, p) => {
 	out[p.name.toUpperCase()] = p.id;

@@ -30,13 +30,12 @@ const REOPEN_DELAY = 3000;
 module.exports = class UpdateCommand {
 	async updateDevice(args) {
 		if (!(await dfu.isDfuUtilInstalled())) {
-			console.log(chalk.red('!!!'), "It doesn't seem like DFU utilities are installed...");
+			console.log(chalk.red('!'), "It doesn't seem like DFU utilities are installed...");
 			console.log();
-			console.log(chalk.cyan('!!!'), 'For help with installing DFU utilities, please see:\n' +
+			console.log(chalk.cyan('!'), 'For help with installing DFU utilities, please see:\n' +
 				chalk.bold.white('https://docs.particle.io/guide/tools-and-features/cli/#advanced-install'));
 			console.log();
 			process.exit(1);
-			return;
 		}
 
 		let devInfo;
