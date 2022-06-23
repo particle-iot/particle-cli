@@ -105,20 +105,10 @@ let settings = {
 			'xenon-softdevice@1.5.2.bin',
 			'xenon-system-part1@1.5.2.bin'
 		],
-		[PlatformId.ASOM]: [
-			'asom-bootloader@1.4.4.bin',
-			'asom-softdevice@1.4.4.bin',
-			'asom-system-part1@1.4.4.bin'
-		],
 		[PlatformId.BSOM]: [
 			'bsom-bootloader@2.3.0.bin',
 			'bsom-softdevice@2.3.0.bin',
 			'bsom-system-part1@2.3.0.bin'
-		],
-		[PlatformId.XSOM]: [
-			'xsom-bootloader@1.4.4.bin',
-			'xsom-softdevice@1.4.4.bin',
-			'xsom-system-part1@1.4.4.bin'
 		],
 		[PlatformId.B5SOM]: [
 			'b5som-bootloader@2.3.0.bin',
