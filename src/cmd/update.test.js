@@ -330,29 +330,28 @@ describe('UpdateCommand', () => {
 		});
 
 		it('Device OS < 2.0.0', async () => {
-			stubs.usb.getUsbDevices.resolves([new UsbDeviceMock(DEVICE_ID, '1.4.2')]);
+			const dev = new UsbDeviceMock(DEVICE_ID, '1.4.2');
+			dev.isInDfuMode = true;
+			stubs.usb.getUsbDevices.resolves([dev]);
 			const cmd = new UpdateCommand();
 			await cmd.updateDevice();
-			expect(device).to.be.ok;
-			expect(device.enterListeningMode).to.be.calledTwice;
-			expect(device.updateFirmware).to.be.calledOnce;
-			expect(device.enterDfuMode).to.be.calledOnce;
-			expect(device.updateFirmware.firstCall).to.be.calledAfter(device.enterListeningMode.firstCall);
-			expect(device.enterDfuMode.firstCall).to.be.calledAfter(device.enterListeningMode.secondCall);
+			expect(dev.enterListeningMode).to.be.calledOnce;
+			expect(dev.updateFirmware).to.be.calledOnce;
+			expect(dev.updateFirmware.firstCall).to.be.calledAfter(dev.enterListeningMode.firstCall);
 		});
 
 		it('Device OS >= 2.0.0', async () => {
-			stubs.usb.getUsbDevices.resolves([new UsbDeviceMock(DEVICE_ID, '3.2.0')]);
+			const dev = new UsbDeviceMock(DEVICE_ID, '3.2.0');
+			stubs.usb.getUsbDevices.resolves([dev]);
 			const cmd = new UpdateCommand();
 			await cmd.updateDevice();
-			expect(device).to.be.ok;
-			expect(device.disconnectFromCloud).to.be.calledTwice;
-			expect(device.disconnectFromCloud.firstCall).to.be.calledWith({ force: true });
-			expect(device.disconnectFromCloud.secondCall).to.be.calledWith({ force: true });
-			expect(device.updateFirmware).to.be.calledOnce;
-			expect(device.enterDfuMode).to.be.calledOnce;
-			expect(device.updateFirmware.firstCall).to.be.calledAfter(device.disconnectFromCloud.firstCall);
-			expect(device.enterDfuMode.firstCall).to.be.calledAfter(device.disconnectFromCloud.secondCall);
+			expect(dev.disconnectFromCloud).to.be.calledTwice;
+			expect(dev.disconnectFromCloud.firstCall).to.be.calledWith({ force: true });
+			expect(dev.disconnectFromCloud.secondCall).to.be.calledWith({ force: true });
+			expect(dev.updateFirmware).to.be.calledOnce;
+			expect(dev.enterDfuMode).to.be.calledOnce;
+			expect(dev.updateFirmware.firstCall).to.be.calledAfter(dev.disconnectFromCloud.firstCall);
+			expect(dev.enterDfuMode.firstCall).to.be.calledAfter(dev.disconnectFromCloud.secondCall);
 		});
 	});
 

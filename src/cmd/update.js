@@ -30,7 +30,7 @@ const REOPEN_DELAY = 3000;
 module.exports = class UpdateCommand {
 	async updateDevice(args) {
 		if (!(await dfu.isDfuUtilInstalled())) {
-			console.log(chalk.red('!'), "It doesn't seem like DFU utilities are installed...");
+			console.log(chalk.red('!'), 'It doesn\'t seem like DFU utilities are installed...');
 			console.log();
 			console.log(chalk.cyan('!'), 'For help with installing DFU utilities, please see:\n' +
 				chalk.bold.white('https://docs.particle.io/guide/tools-and-features/cli/#advanced-install'));
@@ -39,14 +39,20 @@ module.exports = class UpdateCommand {
 		}
 
 		let devInfo;
-		if (args && args.params.device) {
-			const auth = settings.access_token;
-			const { api } = new ParticleApi(settings.apiUrl, { accessToken: auth });
-			const dev = await spin(openUsbDeviceByIdOrName(args.params.device, api, auth, { dfuMode: true }), 'Getting device information...');
-			devInfo = { id: dev.id, platformId: dev.platformId };
-			await dev.close();
-		} else {
-			devInfo = await this._selectDevice();
+		try {
+			devInfo = await this._getDeviceInfo(args && args.params.device);
+		} catch (err) {
+			console.log(chalk.red('!'), 'An error occured while opening the device:');
+			console.log();
+			console.log(chalk.bold.white(err.toString()));
+			console.log();
+			console.log(chalk.cyan('>'), 'Please check that the device is connected to the computer via USB.');
+			console.log(chalk.cyan('>'), 'If the device is connected, switching it into DFU mode may help.');
+			console.log();
+			console.log(chalk.cyan('>'), 'You can also visit our community forums for help with this error:');
+			console.log(chalk.bold.white('https://community.particle.io/'));
+			console.log();
+			process.exit(1);
 		}
 
 		let files = settings.updates[devInfo.platformId];
@@ -55,12 +61,33 @@ module.exports = class UpdateCommand {
 			return;
 		}
 
+		if (!devInfo.inDfuMode && (!devInfo.version || semver.lt(devInfo.version, '2.0.0'))) {
+			// The support for control requests is somewhat inconsistent in pre-LTS versions of Device OS
+			console.log(chalk.red('!'), 'The version of Device OS that is running on the device is too old.');
+			console.log(chalk.red('!'), 'Please switch the device into DFU mode and try again.');
+			console.log();
+			process.exit(1);
+		}
+
+		for (let i = 0; i < files.length; ++i) {
+			const file = path.resolve(__dirname, '../../assets/updates', files[i]);
+			const useDfuMode = await this._canFlashInDfuMode(file);
+			files[i] = { path: file, useDfuMode };
+		}
+		if (devInfo.inDfuMode) {
+			// If the device is in DFU mode, we can't know what firmware version it's running and thus
+			// there's no guarantee that we'll be able to flash it using control requests before the
+			// system firmware is updated.
+			//
+			// Reorder the files so that the modules that can be flashed via DFU will be flashed first
+			files = files.filter(f => f.useDfuMode).concat(files.filter(f => !f.useDfuMode));
+		}
+
 		console.log();
 		console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
 		console.log(chalk.cyan('>'), 'This process may take a few minutes. Here it goes!');
 		console.log();
 
-		files = files.map(f => path.resolve(__dirname, '../../assets/updates', f));
 		try {
 			await spin(this._doUpdate(devInfo.id, files), 'Updating system firmware on the device...');
 		} catch (err) {
@@ -93,7 +120,7 @@ module.exports = class UpdateCommand {
 				await delay(openDelay);
 				dev = await this._openDevice(deviceId, { timeout: openTimeout });
 				const file = files.shift();
-				if (await this._canFlashInDfuMode(file)) {
+				if (file.useDfuMode) {
 					// Use DFU
 					if (!dev.isInDfuMode) {
 						// Disconnect the device from the network/cloud to ensure its system thread is unblocked
@@ -102,7 +129,7 @@ module.exports = class UpdateCommand {
 					}
 					// Close the device before flashing it via dfu-util
 					await dev.close();
-					await dfu.writeModule(file, { vendorId: dev.vendorId, productId: dev.productId, serial: deviceId, leave: !files.length });
+					await dfu.writeModule(file.path, { vendorId: dev.vendorId, productId: dev.productId, serial: deviceId, leave: !files.length });
 					openDelay = 0;
 					openTimeout = OPEN_TIMEOUT;
 				} else {
@@ -114,7 +141,7 @@ module.exports = class UpdateCommand {
 						dev = await this._openDevice(deviceId);
 					}
 					await this._disconnectDevice(dev);
-					const data = fs.readFileSync(file);
+					const data = fs.readFileSync(file.path);
 					await dev.updateFirmware(data, { timeout: FLASH_TIMEOUT });
 					await dev.close(); // Device is about to reset
 					openDelay = REOPEN_DELAY;
@@ -132,13 +159,30 @@ module.exports = class UpdateCommand {
 		}
 	}
 
-	async _selectDevice() {
+	async _getDeviceInfo(idOrName) {
+		if (idOrName) {
+			const { api, auth } = this._particleApi();
+			const dev = await spin(openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true }), 'Getting device information...');
+			const devInfo = {
+				id: dev.id,
+				platformId: dev.platformId,
+				version: dev.firmwareVersion,
+				inDfuMode: dev.isInDfuMode
+			};
+			await dev.close();
+			return devInfo;
+		}
 		const devs = await getUsbDevices({ dfuMode: true });
 		const devInfo = [];
 		for (const dev of devs) {
 			// Open the device to get its ID
 			await openUsbDevice(dev, { dfuMode: true });
-			devInfo.push({ id: dev.id, platformId: dev.platformId });
+			devInfo.push({
+				id: dev.id,
+				platformId: dev.platformId,
+				version: dev.firmwareVersion,
+				inDfuMode: dev.isInDfuMode
+			});
 			await dev.close();
 		}
 		if (!devInfo.length) {
@@ -185,7 +229,7 @@ module.exports = class UpdateCommand {
 
 	async _disconnectDevice(device) {
 		const gen3OrHigher = isKnownPlatformId(device.platformId) && platformForId(device.platformId).generation >= 3;
-		if (gen3OrHigher && semver.gte(device.firmwareVersion, '2.0.0')) {
+		if (gen3OrHigher && device.firmwareVersion && semver.gte(device.firmwareVersion, '2.0.0')) {
 			// Device OS 2.0.0 and higher supports the "force" option that allows disconnecting the device
 			// from the cloud even if its system thread is blocked
 			await device.disconnectFromCloud({ force: true });
@@ -202,5 +246,11 @@ module.exports = class UpdateCommand {
 		const alt = dfu.interfaceForModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
 			info.prefixInfo.platformID);
 		return alt !== null;
+	}
+
+	_particleApi() {
+		const auth = settings.access_token;
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
+		return { api: api.api, auth };
 	}
 };
