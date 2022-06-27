@@ -61,9 +61,8 @@ module.exports = class UpdateCommand {
 			return;
 		}
 
-		if (!devInfo.inDfuMode && (!devInfo.version || semver.lt(devInfo.version, '2.0.0'))) {
+		if (!devInfo.isInDfuMode && (!devInfo.version || semver.lt(devInfo.version, '2.0.0'))) {
 			// The support for control requests is somewhat inconsistent in pre-LTS versions of Device OS
-			console.log(chalk.red('!'), 'The version of Device OS that is running on the device is too old.');
 			console.log(chalk.red('!'), 'Please switch the device into DFU mode and try again.');
 			console.log();
 			process.exit(1);
@@ -74,7 +73,7 @@ module.exports = class UpdateCommand {
 			const useDfuMode = await this._canFlashInDfuMode(file);
 			files[i] = { path: file, useDfuMode };
 		}
-		if (devInfo.inDfuMode) {
+		if (devInfo.isInDfuMode) {
 			// If the device is in DFU mode, we can't know what firmware version it's running and thus
 			// there's no guarantee that we'll be able to flash it using control requests before the
 			// system firmware is updated.
@@ -167,7 +166,7 @@ module.exports = class UpdateCommand {
 				id: dev.id,
 				platformId: dev.platformId,
 				version: dev.firmwareVersion,
-				inDfuMode: dev.isInDfuMode
+				isInDfuMode: dev.isInDfuMode
 			};
 			await dev.close();
 			return devInfo;
@@ -181,7 +180,7 @@ module.exports = class UpdateCommand {
 				id: dev.id,
 				platformId: dev.platformId,
 				version: dev.firmwareVersion,
-				inDfuMode: dev.isInDfuMode
+				isInDfuMode: dev.isInDfuMode
 			});
 			await dev.close();
 		}
