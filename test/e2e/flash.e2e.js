@@ -189,7 +189,7 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', DEVICE_NAME, 'WATNOPE.bin'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'Failed to flash argonatronix: I couldn\'t find that file: WATNOPE.bin'
+			`Failed to flash ${DEVICE_NAME}: I couldn't find that file: WATNOPE.bin`
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
