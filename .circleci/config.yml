@@ -9,7 +9,7 @@ executors:
           password: $DOCKERHUB_PASSWORD
   macos:
     macos:
-      xcode: 13
+      xcode: 13.4.1
 
 orbs:
   node: circleci/node@5.0.2
