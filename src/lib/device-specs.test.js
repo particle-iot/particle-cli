@@ -38,12 +38,6 @@ describe('Device Specs', () => {
 		}
 	});
 
-	it('contains at least the user application DFU segment for each platform', () => {
-		for (const specs of Object.values(deviceSpecs)) {
-			expect(specs).to.haveOwnProperty('userFirmware').that.is.an('object');
-		}
-	});
-
 	describe('deviceId', () => {
 		it('returns the deviceId from a serial number', () => {
 			const photonSpecs = deviceSpecs['2b04:d006'];
