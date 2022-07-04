@@ -2129,9 +2129,9 @@
       "integrity": "sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw=="
     },
     "@particle/device-constants": {
-      "version": "1.8.0-rc.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-1.8.0-rc.0.tgz",
-      "integrity": "sha512-Ts1wJHs11df0PaELL1oKKofH1Xl7kwhsNZjSpCsNlaSXPWGZ2PCLtRqOder/mn5LwNNIRj6hhhHGNGnCh5YneQ=="
+      "version": "2.0.0",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-2.0.0.tgz",
+      "integrity": "sha512-GGcebFK/A7trvUnXhyq3sWq6XvX/GSO6AJsjFFiDm9Qs+UtgmlVuPdLW6xaZR7gZgMT+siBhnxvZg+iDTEfTsg=="
     },
     "@protobufjs/aspromise": {
       "version": "1.1.2",
