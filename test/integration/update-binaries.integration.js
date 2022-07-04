@@ -24,9 +24,6 @@ describe('the update firmware binaries are all valid', () => {
 				});
 
 				it('has a valid crc ', () => {
-					if (filename.endsWith('ota-flag-a5.bin') && getFilesizeInBytes(filename) === 1) {
-						return 0; // this special file is valid
-					}
 					return new Parser().parseFile(filename).then(fileInfo => {
 						if (fileInfo.suffixInfo.suffixSize === 65535) {
 							throw new Error(fileInfo.filename + ' does not contain inspection information');
