@@ -11,7 +11,7 @@ const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
 const prompts = require('../lib/prompts');
-const { PlatformId } = require('../lib/platform');
+const { PlatformId } = require('../../platform');
 const CLICommandBase = require('./base');
 
 const fs = require('fs-extra');

@@ -1,3 +1,6 @@
+// TODO (mirande): need to find a better home for this file
+// see: https://app.shortcut.com/particle/story/107005
+
 const deviceConstants = require('@particle/device-constants');
 
 /**
