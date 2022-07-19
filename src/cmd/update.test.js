@@ -48,7 +48,7 @@ const stubs = {
 const UpdateCommand = proxyquire('./update', {
 	'./usb-util': { ...stubs.usb }, // proxyquire modifies stub objects
 	'../lib/dfu': { ...stubs.dfu },
-	'../lib/platform': { ...stubs.platform },
+	'../../platform': { ...stubs.platform },
 	'../app/ui': { ...stubs.ui },
 	'../lib/utilities': { ...stubs.util },
 	'binary-version-reader': { ...stubs.binaryVersionReader },
