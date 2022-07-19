@@ -3,7 +3,6 @@ const _ = require('lodash');
 const VError = require('verror');
 const prompt = require('inquirer').prompt;
 
-const deviceConstants = require('@particle/device-constants');
 const settings = require('../../settings');
 const deviceSpecs = require('../lib/device-specs');
 const ApiClient = require('../lib/api-client'); // TODO (mirande): remove in favor of `ParticleAPI`
@@ -12,6 +11,7 @@ const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
 const prompts = require('../lib/prompts');
+const { PlatformId } = require('../lib/platform');
 const CLICommandBase = require('./base');
 
 const fs = require('fs-extra');
@@ -24,13 +24,13 @@ const alert = chalk.yellow('!');
 
 // Use known platforms and add shortcuts
 const PLATFORMS = extend(utilities.knownPlatformIds(), {
-	'c': deviceConstants.core.id,
-	'p': deviceConstants.photon.id,
-	'e': deviceConstants.electron.id,
-	'a': deviceConstants.argon.id,
-	'b': deviceConstants.boron.id,
-	'x': deviceConstants.xenon.id,
-	'assettracker': deviceConstants.tracker.id
+	'c': PlatformId.CORE,
+	'p': PlatformId.PHOTON,
+	'e': PlatformId.ELECTRON,
+	'a': PlatformId.ARGON,
+	'b': PlatformId.BORON,
+	'x': PlatformId.XENON,
+	'assettracker': PlatformId.TRACKER
 });
 
 

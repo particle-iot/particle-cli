@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const deviceConstants = require('@particle/device-constants');
+const { PLATFORMS } = require('./platform');
 
 /* Device specs have the following shape:
 
@@ -177,10 +177,8 @@ function knownAppsForPlatform(name) {
 	}
 }
 
-function generateDeviceSpecs(deviceConstants) {
-	const cliDevices = Object.values(deviceConstants).filter(d => d.public && Number(d.dfu.vendorId) > 0);
-
-	return cliDevices.reduce((specs, device) => {
+function generateDeviceSpecs() {
+	return PLATFORMS.reduce((specs, device) => {
 		const key = `${device.dfu.vendorId.replace(/0x/, '')}:${device.dfu.productId.replace(/0x/, '')}`;
 
 		specs[key] = {
@@ -212,4 +210,4 @@ function generateDeviceSpecs(deviceConstants) {
 	}, {});
 }
 
-module.exports = generateDeviceSpecs(deviceConstants);
+module.exports = generateDeviceSpecs();

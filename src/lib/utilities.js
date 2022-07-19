@@ -32,7 +32,7 @@ const path = require('path');
 const glob = require('glob');
 const VError = require('verror');
 const childProcess = require('child_process');
-const deviceConstants = require('@particle/device-constants');
+const { PLATFORMS } = require('./platform');
 const log = require('./log');
 
 
@@ -331,20 +331,16 @@ module.exports = {
 
 	// generates an object like { photon: 6, electron: 10 }
 	knownPlatformIds(){
-		return Object.values(deviceConstants).reduce((platforms, platform) => {
-			if (!['esp32', 'gcc'].includes(platform.name)) {
-				platforms[platform.name] = platform.id;
-			}
+		return PLATFORMS.reduce((platforms, platform) => {
+			platforms[platform.name] = platform.id;
 			return platforms;
 		}, {});
 	},
 
 	// generates an object like { 6: 'Photon', 10: 'Electron' }
 	knownPlatformDisplayForId(){
-		return Object.values(deviceConstants).reduce((platforms, platform) => {
-			if (!['esp32', 'gcc'].includes(platform.name)) {
-				platforms[platform.id] = platform.displayName;
-			}
+		return PLATFORMS.reduce((platforms, platform) => {
+			platforms[platform.id] = platform.displayName;
 			return platforms;
 		}, {});
 	},

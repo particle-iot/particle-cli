@@ -1,9 +1,9 @@
 const { spin } = require('../app/ui');
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceById, TimeoutError } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
-const { platformsById } = require('./constants');
+const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
 
 
@@ -58,7 +58,8 @@ module.exports = class UsbCommand {
 						})
 						.then(([device, isInDfuMode, mode]) => {
 							const { name, platform_id: platformID, connected } = device || {};
-							const platform = platformsById[usbDevice.platformId];
+							const platform = isKnownPlatformId(usbDevice.platformId) ? platformForId(usbDevice.platformId).displayName :
+								`Platform ${usbDevice.platformId}`;
 							const type = [platform];
 
 							if (isInDfuMode){
@@ -205,8 +206,7 @@ module.exports = class UsbCommand {
 			}
 		};
 
-		const options = { id: device, api: this._api, auth: this._auth };
-		const queryDevice = openUsbDeviceById(options)
+		const queryDevice = openUsbDeviceByIdOrName(device, this._api, this._auth)
 			.then(usbDevice => deviceMgr.set(usbDevice).status());
 
 		return spin(queryDevice, 'Querying device...')
@@ -252,7 +252,7 @@ module.exports = class UsbCommand {
 		return Promise.resolve()
 			.then(() => {
 				if (args.all){
-					return getUsbDevices()
+					return getUsbDevices({ dfuMode: true })
 						.then(usbDevices => {
 							return asyncMapSeries(usbDevices, (usbDevice) => {
 								return openUsbDevice(usbDevice, { dfuMode })
@@ -262,7 +262,7 @@ module.exports = class UsbCommand {
 				}
 
 				if (deviceIds.length === 0){
-					return getUsbDevices()
+					return getUsbDevices({ dfuMode: true })
 						.then(usbDevices => {
 							if (usbDevices.length === 0){
 								throw new Error('No devices found');
@@ -277,7 +277,7 @@ module.exports = class UsbCommand {
 				}
 
 				return asyncMapSeries(deviceIds, (id) => {
-					return openUsbDeviceById({ id, dfuMode, api: this._api, auth: this._auth })
+					return openUsbDeviceByIdOrName(id, this._api, this._auth, { dfuMode })
 						.then(usbDevice => usbDevice);
 				});
 			});
