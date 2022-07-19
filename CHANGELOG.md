@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.0 - 19 July 2022
+
+* Improve `update` command: Flash using control requests, tune module update order so bootloader is first, automatically enter DFU mode when possible
+
 ## 3.2.0 - 7 June 2022
 
 * Add initial support for new `esomx` and `trackerm` platforms
