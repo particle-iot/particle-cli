@@ -1,5 +1,10 @@
 version: 2.1
 
+tag_filters: &tag_filters
+  filters:
+    tags:
+      only: /^v.*/
+
 executors:
   linux:
     docker:
@@ -131,6 +136,7 @@ workflows:
   test-and-publish:
     jobs:
       - test-unix:
+          <<: *tag_filters
           context:
             - particle-ci-private
           matrix:
@@ -138,12 +144,14 @@ workflows:
               os: [linux, macos]
               node-version: ["10", "12", "14", "16"]
       - test-windows:
+          <<: *tag_filters
           context:
             - particle-ci-private
           matrix:
             parameters:
               node-version: ["10", "12", "14", "16"]
       - test-e2e:
+          <<: *tag_filters
           name: test-e2e-linux
           context:
             - particle-ci-private
@@ -152,6 +160,7 @@ workflows:
               os: [linux]
               node-version: ["12"]
       - test-e2e:
+          <<: *tag_filters
           name: test-e2e-macos
           requires:
             - test-e2e-linux
@@ -162,6 +171,7 @@ workflows:
               os: [macos]
               node-version: ["12"]
       - test-coverage:
+          <<: *tag_filters
           context:
             - particle-ci-private
           matrix:
