@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.1 - 19 July 2022
+
+* Fix `ERROR: Cannot find module './src/lib/platform'`
+
 ## 3.3.0 - 19 July 2022
 
 * Improve `update` command: Flash using control requests, tune module update order so bootloader is first, automatically enter DFU mode when possible
