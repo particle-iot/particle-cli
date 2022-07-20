@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.2 - 20 July 2022
+
+* Validate changes to CI pipeline
+
 ## 3.3.1 - 19 July 2022
 
 * Fix `ERROR: Cannot find module './src/lib/platform'`
