@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.3 - 21 July 2022
+
+* More fixes to CI pipeline
+
 ## 3.3.2 - 20 July 2022
 
 * Validate changes to CI pipeline
