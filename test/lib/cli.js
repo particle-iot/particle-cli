@@ -13,7 +13,7 @@ const {
 	PATH_PROJ_BLANK_INO,
 	PATH_PROJ_STROBY_INO
 } = require('./env');
-const cliBinPath = path.join(PATH_REPO_DIR, 'dist', 'index.js');
+const cliBinPath = path.join(PATH_REPO_DIR, 'src', 'index.js');
 
 
 module.exports.run = (args = [], options = {}) => {

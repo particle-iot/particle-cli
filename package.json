@@ -4,7 +4,7 @@
   "version": "3.3.3",
   "author": "David Middlecamp",
   "bin": {
-    "particle": "./dist/index.js"
+    "particle": "./src/index.js"
   },
   "bugs": {
     "url": "https://github.com/particle-iot/particle-cli/issues"
@@ -121,31 +121,30 @@
     "spark"
   ],
   "license": "Apache-2.0",
-  "main": "./dist/index.js",
+  "main": "./src/index.js",
   "preferGlobal": true,
   "repository": {
     "type": "git",
     "url": "https://github.com/particle-iot/particle-cli"
   },
   "scripts": {
-    "start": "node --require @babel/register ./src/index.js",
+    "start": "node ./src/index.js",
     "version": "npm run update-changelog",
-    "prepare": "npm run compile",
     "lint": "eslint . --ext .js --ignore-path .gitignore --format unix",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm run lint && npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:ci": "npm run lint && npm run test:unit:ci && npm run test:integration:ci",
-    "test:unit": "mocha 'src/**/*.test.js' --exclude 'test/**/*.e2e.js' --require @babel/register",
+    "test:unit": "mocha 'src/**/*.test.js' --exclude 'test/**/*.e2e.js'",
     "test:unit:ci": "npm run test:unit -- --forbid-only",
     "test:unit:watch": "npm run test:unit -- --watch --watch-extensions js,json",
     "test:unit:inspect": "npm test:unit -- --inspect-brk",
     "test:unit:silent": "PARTICLE_NOOP=$(npm run test:unit:ci)",
-    "test:integration": "mocha test/integration --require @babel/register",
+    "test:integration": "mocha test/integration",
     "test:integration:ci": "npm run test:integration -- --forbid-only",
     "test:integration:watch": "npm run test:integration -- --watch --watch-extensions js,json",
     "test:integration:inspect": "npm test:integration -- --inspect-brk",
     "test:integration:silent": "PARTICLE_NOOP=$(npm run test:integration:ci)",
-    "test:e2e": "npm run compile && mocha 'test/**/*.e2e.js' --require @babel/register --timeout 120000 --exit",
+    "test:e2e": "mocha 'test/**/*.e2e.js' --timeout 120000 --exit",
     "test:e2e:ci": "npm run test:e2e:no-device -- --forbid-only",
     "test:e2e:no-device": "npm run test:e2e -- --grep @device --invert",
     "test:e2e:watch": "npm run test:e2e -- --watch --watch-extensions js,json",
@@ -157,12 +156,11 @@
     "coverage:integration": "nyc --no-clean npm run test:integration:silent",
     "coverage:e2e": "nyc npm run test:e2e:silent",
     "coverage:report": "nyc report --reporter=html",
-    "compile": "npm run clean && babel src --out-dir ./dist",
-    "clean": "rimraf ./dist",
+    "clean": "npm run clean:modules",
     "clean:modules": "rimraf ./node_modules",
     "update-firmware-binaries": "node scripts/update-firmware-binaries.js",
     "update-changelog": "VERSION=`node --print --eval \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md",
-    "reinstall": "npm run clean && npm run clean:modules && npm i",
+    "reinstall": "npm run clean && npm i",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
     "todo": "git grep -e 'TODO (.*)' --ignore-case --heading --break --context=2 --full-name --line-number -- :^./package.json"
   },
