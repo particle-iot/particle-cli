@@ -82,10 +82,6 @@
     "yeoman-generator": "^1.1.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.7.4",
-    "@babel/core": "^7.7.4",
-    "@babel/preset-env": "^7.7.4",
-    "@babel/register": "^7.7.4",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "doctoc": "^1.4.0",
