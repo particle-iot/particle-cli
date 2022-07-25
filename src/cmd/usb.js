@@ -3,7 +3,7 @@ const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
-const { platformForId, isKnownPlatformId } = require('../../platform');
+const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
 
 

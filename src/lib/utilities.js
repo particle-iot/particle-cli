@@ -32,7 +32,7 @@ const path = require('path');
 const glob = require('glob');
 const VError = require('verror');
 const childProcess = require('child_process');
-const { PLATFORMS } = require('../../platform');
+const { PLATFORMS } = require('./platform');
 const log = require('./log');
 
 

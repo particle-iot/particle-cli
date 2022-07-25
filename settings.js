@@ -3,12 +3,11 @@
 // Due to how the cli is packaged and distributed, we cannot require files ////
 // from the `./src` directory /////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-const { PlatformId } = require('./platform');
-
 const fs = require('fs');
 const path = require('path');
 const extend = require('xtend');
 const _ = require('lodash');
+const { PlatformId } = require('./src/lib/platform');
 
 let settings = {
 	apiUrl: 'https://api.particle.io',

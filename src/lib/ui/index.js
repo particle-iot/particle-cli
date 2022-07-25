@@ -1,7 +1,7 @@
 const os = require('os');
 const Chalk = require('chalk').constructor;
 const Spinner = require('cli-spinner').Spinner;
-const { platformForId, isKnownPlatformId } = require('../../../platform');
+const { platformForId, isKnownPlatformId } = require('../platform');
 const settings = require('../../../settings');
 
 
