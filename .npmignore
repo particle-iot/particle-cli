@@ -1,38 +1,14 @@
-lib-cov
-*.seed
-*.log
-*.csv
-*.dat
-*.out
-*.pid
-*.gz
-*.tgz
+# ignore everything
+**/*
 
-pids
-logs
-results
-coverage
-scripts
-accept
-test
-**/*.test.js
+# except us :)
+!src/**/*
+!assets/**/*
+!settings.js
+!CHANGELOG.md
+!CONTRIBUTING.md
+!README.md
 
-npm-debug.log
-node_modules
-
-.DS_Store
-es6
-
+# but don't forget to also ignore us
+.DS_Store*
 .env
-.idea
-*.sw?
-
-.github
-.nyc_output
-.babelrc.js
-.eslintrc.js
-.travis.yml
-.nvmrc
-appveyor.yml
-development.md
-.circleci
