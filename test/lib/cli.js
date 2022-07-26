@@ -19,7 +19,8 @@ const cliBinPath = path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', 'par
 module.exports.run = (args = [], options = {}) => {
 	const opts = Object.assign({
 		cwd: PATH_TMP_DIR,
-		reject: false
+		reject: false,
+		all: true
 	}, options);
 
 	args = Array.isArray(args) ? args : [args];
