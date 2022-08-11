@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.4.0 - 11 August 2022
+
+* Refactor project to no longer require a build step
+
 ## 3.3.3 - 21 July 2022
 
 * More fixes to CI pipeline
