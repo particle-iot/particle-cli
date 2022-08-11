@@ -1,6 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const { PLATFORMS } = require('../../platform');
+const { PLATFORMS } = require('./platform');
 
 /* Device specs have the following shape:
 

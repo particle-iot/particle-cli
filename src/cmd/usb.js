@@ -1,9 +1,9 @@
 const { spin } = require('../app/ui');
-const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
+const { delay, asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
-const { platformForId, isKnownPlatformId } = require('../../platform');
+const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
 
 
@@ -219,6 +219,7 @@ module.exports = class UsbCommand {
 			.catch(error => {
 				if (until){
 					return deviceMgr.close()
+						.then(() => delay(1000))
 						.then(() => this.cloudStatus(args, started));
 				}
 				throw error;

@@ -9,17 +9,18 @@ const {
 	FOREIGN_USERNAME,
 	FOREIGN_PASSWORD,
 	PATH_TMP_DIR,
-	PATH_REPO_DIR,
 	PATH_PROJ_BLANK_INO,
-	PATH_PROJ_STROBY_INO
+	PATH_PROJ_STROBY_INO,
+	PATH_FIXTURES_PKG_DIR
 } = require('./env');
-const cliBinPath = path.join(PATH_REPO_DIR, 'dist', 'index.js');
+const cliBinPath = path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', 'particle');
 
 
 module.exports.run = (args = [], options = {}) => {
 	const opts = Object.assign({
 		cwd: PATH_TMP_DIR,
-		reject: false
+		reject: false,
+		all: true
 	}, options);
 
 	args = Array.isArray(args) ? args : [args];

@@ -35,7 +35,7 @@ const { systemSupportsUdev, promptAndInstallUdevRules } = require('../cmd/udev')
 const settings = require('../../settings');
 const utilities = require('./utilities');
 const deviceSpecs = require('./device-specs');
-const { platformForId } = require('../../platform');
+const { platformForId } = require('./platform');
 const log = require('./log');
 
 const prompt = inquirer.prompt;

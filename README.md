@@ -119,20 +119,17 @@ _Currently development is supported on macOS only!_
 
 ## Running
 
-To ensure compatibility with a wide range of NodeJS versions, the CLI's source is transpiled using Babel.
-
 **When developing, run individual commands using:**
 
 `$ npm start -- <command> <options>` - e.g. `$ npm start -- library view dotstar --readme`
 
-Anything after the `--` delimiter is passed directly to the CLI ([docs](https://docs.npmjs.com/cli/run-script)), source code is transpiled on-demand.
+Anything after the `--` delimiter is passed directly to the CLI ([docs](https://docs.npmjs.com/cli/run-script)).
 
 
-**To test the transpiled source as it will be published:**
+**To test the source as it will be published:**
 
-1. Compile: `$ npm run compile`
 1. Register the `particle` command globally: `$ npm link`
-1. Run commands: `$ particle --help` (using standard argument formatting)
+2. Run commands: `$ particle --help` (using standard argument formatting)
 
 
 ## Testing

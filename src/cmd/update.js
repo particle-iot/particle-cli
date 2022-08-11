@@ -2,7 +2,7 @@ const { openUsbDevice, openUsbDeviceById, openUsbDeviceByIdOrName, getUsbDevices
 const ParticleApi = require('./api');
 const dfu = require('../lib/dfu');
 const { spin } = require('../app/ui');
-const { platformForId, isKnownPlatformId } = require('../../platform');
+const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const { delay } = require('../lib/utilities');
 const settings = require('../../settings');
 
