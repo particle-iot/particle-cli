@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.5.0 - 30 August 2022
+
+* Updated binaries for DeviceOS 4.0.0
+
 ## 3.4.0 - 11 August 2022
 
 * Refactor project to no longer require a build step
