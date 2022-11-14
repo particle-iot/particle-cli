@@ -48,30 +48,30 @@ let settings = {
 		// the order should be determined based on the module dependency tree. For now, make sure the
 		// bootloader is flashed first, then radio stack, system part modules and finally NCP firmware
 		[PlatformId.PHOTON]: [
-			'photon-bootloader@2.3.0+lto.bin',
-			'photon-system-part1@2.3.0.bin',
-			'photon-system-part2@2.3.0.bin'
+			'photon-bootloader@2.3.1+lto.bin',
+			'photon-system-part1@2.3.1.bin',
+			'photon-system-part2@2.3.1.bin'
 		],
 		[PlatformId.P1]: [
-			'p1-bootloader@2.3.0+lto.bin',
-			'p1-system-part1@2.3.0.bin',
-			'p1-system-part2@2.3.0.bin'
+			'p1-bootloader@2.3.1+lto.bin',
+			'p1-system-part1@2.3.1.bin',
+			'p1-system-part2@2.3.1.bin'
 		],
 		[PlatformId.ELECTRON]: [
-			'electron-bootloader@2.3.0+lto.bin',
-			'electron-system-part1@2.3.0.bin',
-			'electron-system-part2@2.3.0.bin',
-			'electron-system-part3@2.3.0.bin'
+			'electron-bootloader@2.3.1+lto.bin',
+			'electron-system-part1@2.3.1.bin',
+			'electron-system-part2@2.3.1.bin',
+			'electron-system-part3@2.3.1.bin'
 		],
 		[PlatformId.ARGON]: [
-			'argon-bootloader@4.0.0.bin',
-			'argon-softdevice@4.0.0.bin',
-			'argon-system-part1@4.0.0.bin'
+			'argon-bootloader@4.0.1.bin',
+			'argon-softdevice@4.0.1.bin',
+			'argon-system-part1@4.0.1.bin'
 		],
 		[PlatformId.BORON]: [
-			'boron-bootloader@4.0.0.bin',
-			'boron-softdevice@4.0.0.bin',
-			'boron-system-part1@4.0.0.bin'
+			'boron-bootloader@4.0.1.bin',
+			'boron-softdevice@4.0.1.bin',
+			'boron-system-part1@4.0.1.bin'
 		],
 		[PlatformId.XENON]: [
 			'xenon-bootloader@1.5.2.bin',
@@ -79,24 +79,24 @@ let settings = {
 			'xenon-system-part1@1.5.2.bin'
 		],
 		[PlatformId.BSOM]: [
-			'bsom-bootloader@4.0.0.bin',
-			'bsom-softdevice@4.0.0.bin',
-			'bsom-system-part1@4.0.0.bin'
+			'bsom-bootloader@4.0.1.bin',
+			'bsom-softdevice@4.0.1.bin',
+			'bsom-system-part1@4.0.1.bin'
 		],
 		[PlatformId.B5SOM]: [
-			'b5som-bootloader@4.0.0.bin',
-			'b5som-softdevice@4.0.0.bin',
-			'b5som-system-part1@4.0.0.bin'
+			'b5som-bootloader@4.0.1.bin',
+			'b5som-softdevice@4.0.1.bin',
+			'b5som-system-part1@4.0.1.bin'
 		],
 		[PlatformId.TRACKER]: [
-			'tracker-bootloader@4.0.0.bin',
-			'tracker-softdevice@4.0.0.bin',
-			'tracker-system-part1@4.0.0.bin'
+			'tracker-bootloader@4.0.1.bin',
+			'tracker-softdevice@4.0.1.bin',
+			'tracker-system-part1@4.0.1.bin'
 		],
 		[PlatformId.ESOMX]: [
-			'esomx-bootloader@4.0.0.bin',
-			'esomx-softdevice@4.0.0.bin',
-			'esomx-system-part1@4.0.0.bin'
+			'esomx-bootloader@4.0.1.bin',
+			'esomx-softdevice@4.0.1.bin',
+			'esomx-system-part1@4.0.1.bin'
 		],
 	},
 };
