@@ -80,7 +80,7 @@ let settings = {
 		],
 		[PlatformId.BSOM]: [
 			'bsom-bootloader@4.0.2.bin',
-			'bsom-softdevice@4.0..bin',
+			'bsom-softdevice@4.0.2.bin',
 			'bsom-system-part1@4.0.2.bin'
 		],
 		[PlatformId.B5SOM]: [
@@ -95,7 +95,7 @@ let settings = {
 		],
 		[PlatformId.ESOMX]: [
 			'esomx-bootloader@4.0.2.bin',
-			'esomx-softdevice@4.0..bin',
+			'esomx-softdevice@4.0.2.bin',
 			'esomx-system-part1@4.0.2.bin'
 		],
 	},
