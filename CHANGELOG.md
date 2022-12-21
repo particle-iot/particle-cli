@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.7.0 - 21 December 2022
+
+* Updated binaries for DeviceOS 4.0.2
+
 ## 3.6.0 - 16 November 2022
 
 * Updated binaries for DeviceOS 4.0.1 and 2.3.1
