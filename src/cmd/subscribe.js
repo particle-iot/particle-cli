@@ -79,10 +79,23 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 		let eventCount = 0;
 
 		return (event) => {
-			this.ui.stdout.write(`${JSON.stringify(event)}${os.EOL}`);
+			// make sure the event fields are ordered nicely for humans
+			const { name, data, published_at: publishedAt, coreid, ttl } = event;
+			const { chalk, stdout } = this.ui;
+			const coloredEvent = [
+				'{ ',
+				`"name": ${chalk.red(JSON.stringify(name))}, `,
+				`"data": ${chalk.yellow(JSON.stringify(data))}, `,
+				`"published_at": ${chalk.green(JSON.stringify(publishedAt))}, `,
+				`"coreid": ${chalk.blue(JSON.stringify(coreid))}, `,
+				`"ttl": ${ttl}`,
+				' }'
+			].join('');
+
+			stdout.write(`${coloredEvent}${os.EOL}`);
 
 			if (until && until === event.data) {
-				this.ui.stdout.write('Matching event received. Exiting...');
+				stdout.write('Matching event received. Exiting...');
 				process.exit(0);
 			}
 
@@ -90,7 +103,7 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 				eventCount = eventCount + 1;
 
 				if (eventCount === max) {
-					this.ui.stdout.write(`${eventCount} event(s) received. Exiting...`);
+					stdout.write(`${eventCount} event(s) received. Exiting...`);
 					process.exit(0);
 				}
 			}
