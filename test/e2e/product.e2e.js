@@ -73,7 +73,7 @@ describe('Product Commands', () => {
 		const detailedDeviceFieldNames = ['cellular', 'connected',
 			'current_build_target', 'default_build_target', 'denied',
 			'development', 'firmware_product_id', 'firmware_updates_enabled',
-			'firmware_updates_forced', 'firmware_version', 'functions', 'groups',
+			'firmware_updates_forced', 'functions', 'groups',
 			'iccid', 'id', 'imei', 'last_handshake_at', 'last_heard',
 			'last_iccid', 'last_ip_address', 'mobile_secret', 'name', 'notes',
 			'online', 'owner', 'pinned_build_target', 'platform_id',
