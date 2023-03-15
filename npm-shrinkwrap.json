@@ -529,9 +529,15 @@
       "optional": true
     },
     "@types/node": {
-      "version": "18.6.1",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-18.6.1.tgz",
-      "integrity": "sha512-z+2vB6yDt1fNwKOeGbckpmirO+VBDuQqecXkgeIqDlaOtmKn6hPR/viQ8cxCfqLU4fTlvM3+YjM367TukWdxpg==",
+      "version": "18.15.3",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-18.15.3.tgz",
+      "integrity": "sha512-p6ua9zBxz5otCmbpb5D3U4B5Nanw6Pk3PPyX05xnxbB/fRv71N7CPmORg7uAD5P70T0xmx1pzAx/FUfa5X+3cw==",
+      "optional": true
+    },
+    "@types/w3c-web-usb": {
+      "version": "1.0.6",
+      "resolved": "https://registry.npmjs.org/@types/w3c-web-usb/-/w3c-web-usb-1.0.6.tgz",
+      "integrity": "sha512-cSjhgrr8g4KbPnnijAr/KJDNKa/bBa+ixYkywFRvrhvi9n1WEl7yYbtRyzE6jqNQiSxxJxoAW3STaOQwJHndaw==",
       "optional": true
     },
     "acorn": {
@@ -889,9 +895,9 @@
       }
     },
     "binary-version-reader": {
-      "version": "1.1.1",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-1.1.1.tgz",
-      "integrity": "sha512-hVzfUs9rfjh0Vm7i7xVFltsCwLy44X0NO8GZQRiIVPb63ySvIKsdglz6ZFXhWHU+wPZ/rAtZFeein2luAQVijA==",
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-2.0.1.tgz",
+      "integrity": "sha512-cLnttzayEmmjstGOjstxOTBegFz8AdEvp3Zhs/JlcE2OlELFCZA/RZyPJXvi9y11smmqoEyfKbwvbGkknMNaoA==",
       "requires": {
         "buffer-crc32": "^0.2.5",
         "when": "^3.7.3",
@@ -987,7 +993,7 @@
     "buffer-crc32": {
       "version": "0.2.13",
       "resolved": "https://registry.npmjs.org/buffer-crc32/-/buffer-crc32-0.2.13.tgz",
-      "integrity": "sha1-DTM+PwDqxQqhRUq9MO+MKl2ackI="
+      "integrity": "sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ=="
     },
     "buffer-from": {
       "version": "1.1.1",
@@ -4878,9 +4884,9 @@
       }
     },
     "node-addon-api": {
-      "version": "4.3.0",
-      "resolved": "https://registry.npmjs.org/node-addon-api/-/node-addon-api-4.3.0.tgz",
-      "integrity": "sha512-73sE9+3UaLYYFmDsFZnqCInzPyh3MqIwZO9cw58yIqAZhONrrabrYyYe3TuIqtIiOuTXVhsGau8hcrhhwSsDIQ==",
+      "version": "5.1.0",
+      "resolved": "https://registry.npmjs.org/node-addon-api/-/node-addon-api-5.1.0.tgz",
+      "integrity": "sha512-eh0GgfEkpnoWDq+VY8OyvYhFEzBk6jIYbRKdIlyTiAXIVJ8PyBaKb0rp7oDtoddbdoHWhq8wwr+XZ81F1rpNdA==",
       "optional": true
     },
     "node-environment-flags": {
@@ -4902,9 +4908,9 @@
       }
     },
     "node-gyp-build": {
-      "version": "4.5.0",
-      "resolved": "https://registry.npmjs.org/node-gyp-build/-/node-gyp-build-4.5.0.tgz",
-      "integrity": "sha512-2iGbaQBV+ITgCz76ZEjmhUKAKVf7xfY1sRl4UiKQspfZMH2h06SyhNsnSVy50cwkFQDGLyif6m/6uFXHkOZ6rg==",
+      "version": "4.6.0",
+      "resolved": "https://registry.npmjs.org/node-gyp-build/-/node-gyp-build-4.6.0.tgz",
+      "integrity": "sha512-NTZVKn9IylLwUzaKjkas1e4u2DLNcV4rdYagA4PWdPwW87Bi7z+BznyKSRwS/761tV/lzCGXplWsiaMjLqP2zQ==",
       "optional": true
     },
     "node-rsa": {
@@ -5838,14 +5844,14 @@
       }
     },
     "particle-usb": {
-      "version": "2.1.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.1.1.tgz",
-      "integrity": "sha512-qJDDm1ssKlkPmSHxp8lhtnZlpmajfhzLzhHwd0Q+63V0BIk98iGNOoon3rhxZT+j5/xmIrupeGaw1YQEEWzXSQ==",
+      "version": "2.2.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.2.0.tgz",
+      "integrity": "sha512-f5YE6ZhOsyFuHQaMYwAkPa3ExHpIVQfmyxSxshwRCjmk2oezrfeakC6aydNSA29lu+22UzF8pWeTBel9dDtJLw==",
       "optional": true,
       "requires": {
-        "@particle/device-os-protobuf": "^1.1.0",
-        "protobufjs": "^6.11.2",
-        "usb": "1.9.2"
+        "@particle/device-os-protobuf": "^1.2.1",
+        "protobufjs": "^6.11.3",
+        "usb": "^2.5.0"
       }
     },
     "pascalcase": {
@@ -7886,13 +7892,14 @@
       }
     },
     "usb": {
-      "version": "1.9.2",
-      "resolved": "https://registry.npmjs.org/usb/-/usb-1.9.2.tgz",
-      "integrity": "sha512-dryNz030LWBPAf6gj8vyq0Iev3vPbCLHCT8dBw3gQRXRzVNsIdeuU+VjPp3ksmSPkeMAl1k+kQ14Ij0QHyeiAg==",
+      "version": "2.8.3",
+      "resolved": "https://registry.npmjs.org/usb/-/usb-2.8.3.tgz",
+      "integrity": "sha512-yWr888N/pWZfvPbEMz5lR5jqSoPLp/+6okpOWMocgLmJ1CsOwkAR+poUHwrAsPNKgFwwkzguYL+4NUDJtxkWhQ==",
       "optional": true,
       "requires": {
-        "node-addon-api": "^4.2.0",
-        "node-gyp-build": "^4.3.0"
+        "@types/w3c-web-usb": "^1.0.6",
+        "node-addon-api": "^5.0.0",
+        "node-gyp-build": "^4.5.0"
       }
     },
     "use": {
