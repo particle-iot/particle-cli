@@ -4884,9 +4884,9 @@
       }
     },
     "node-addon-api": {
-      "version": "5.1.0",
-      "resolved": "https://registry.npmjs.org/node-addon-api/-/node-addon-api-5.1.0.tgz",
-      "integrity": "sha512-eh0GgfEkpnoWDq+VY8OyvYhFEzBk6jIYbRKdIlyTiAXIVJ8PyBaKb0rp7oDtoddbdoHWhq8wwr+XZ81F1rpNdA==",
+      "version": "6.0.0",
+      "resolved": "https://registry.npmjs.org/node-addon-api/-/node-addon-api-6.0.0.tgz",
+      "integrity": "sha512-GyHvgPvUXBvAkXa0YvYnhilSB1A+FRYMpIVggKzPZqdaZfevZOuzfWzyvgzOwRLHBeo/MMswmJFsrNF4Nw1pmA==",
       "optional": true
     },
     "node-environment-flags": {
@@ -5844,9 +5844,9 @@
       }
     },
     "particle-usb": {
-      "version": "2.2.0",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.2.0.tgz",
-      "integrity": "sha512-f5YE6ZhOsyFuHQaMYwAkPa3ExHpIVQfmyxSxshwRCjmk2oezrfeakC6aydNSA29lu+22UzF8pWeTBel9dDtJLw==",
+      "version": "2.2.1",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.2.1.tgz",
+      "integrity": "sha512-BFDTvPopjsPmCxVqruMqqOJKjr4VvbljGT7hezJtCATUn0vlth/RIADx9bm88kdGtsvZZ6Sz1aaTM54wnBGasQ==",
       "optional": true,
       "requires": {
         "@particle/device-os-protobuf": "^1.2.1",
@@ -7892,13 +7892,13 @@
       }
     },
     "usb": {
-      "version": "2.8.3",
-      "resolved": "https://registry.npmjs.org/usb/-/usb-2.8.3.tgz",
-      "integrity": "sha512-yWr888N/pWZfvPbEMz5lR5jqSoPLp/+6okpOWMocgLmJ1CsOwkAR+poUHwrAsPNKgFwwkzguYL+4NUDJtxkWhQ==",
+      "version": "2.9.0",
+      "resolved": "https://registry.npmjs.org/usb/-/usb-2.9.0.tgz",
+      "integrity": "sha512-G0I/fPgfHUzWH8xo2KkDxTTFruUWfppgSFJ+bQxz/kVY2x15EQ/XDB7dqD1G432G4gBG4jYQuF3U7j/orSs5nw==",
       "optional": true,
       "requires": {
         "@types/w3c-web-usb": "^1.0.6",
-        "node-addon-api": "^5.0.0",
+        "node-addon-api": "^6.0.0",
         "node-gyp-build": "^4.5.0"
       }
     },
