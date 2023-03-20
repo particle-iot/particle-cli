@@ -30,6 +30,7 @@ const PLATFORMS = extend(utilities.knownPlatformIds(), {
 	'a': PlatformId.ARGON,
 	'b': PlatformId.BORON,
 	'x': PlatformId.XENON,
+	'photon2': PlatformId.P2,
 	'assettracker': PlatformId.TRACKER
 });
 

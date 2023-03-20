@@ -19,6 +19,7 @@ describe('Utilities', () => {
 				'tracker': 26,
 				'trackerm': 28,
 				'p2': 32,
+				'muon': 35
 			});
 		});
 	});
@@ -38,7 +39,8 @@ describe('Utilities', () => {
 				25: 'B5 SoM',
 				26: 'Asset Tracker',
 				28: 'Tracker M',
-				32: 'P2',
+				32: 'Photon 2 / P2',
+				35: 'Muon'
 			});
 		});
 	});
