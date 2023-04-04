@@ -52,8 +52,8 @@
     }
   ],
   "dependencies": {
-    "@particle/device-constants": "^3.1.6",
-    "binary-version-reader": "^2.0.1",
+    "@particle/device-constants": "^3.1.8",
+    "binary-version-reader": "^2.0.2",
     "chalk": "^2.4.2",
     "cli-spinner": "^0.2.10",
     "cli-table": "^0.3.1",
@@ -98,7 +98,7 @@
     "sinon-chai": "^3.3.0"
   },
   "optionalDependencies": {
-    "particle-usb": "^2.2.1",
+    "particle-usb": "^2.2.2",
     "serialport": "^8.0.5"
   },
   "engines": {

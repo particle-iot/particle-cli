@@ -2,7 +2,7 @@
 
 ## 3.7.0 - 21 December 2022
 
-* Add initial support for `muon` platform
+* Add initial support for `M SoM` platform
 
 ## 3.7.0 - 21 December 2022
 
