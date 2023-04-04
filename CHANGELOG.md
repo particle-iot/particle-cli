@@ -1,8 +1,12 @@
 # Changelog
 
-## 3.7.0 - 21 December 2022
+## 3.8.1 - 5 April 2023
 
-* Add initial support for `M SoM` platform
+* Addressed renaming `Muon` -> `M SoM` platform
+
+## 3.8.0 - 27 March 2023
+
+* Add initial support for `muon` platform
 
 ## 3.7.0 - 21 December 2022
 
