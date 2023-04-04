@@ -24,7 +24,7 @@ const PLATFORMS_BY_ID = PLATFORMS.reduce((map, p) => map.set(p.id, p), new Map()
  * @property {Number} TRACKER
  * @property {Number} TRACKERM
  * @property {Number} P2
- * @property {Number} MUON
+ * @property {Number} MSOM
  */
 const PlatformId = PLATFORMS.reduce((out, p) => {
 	out[p.name.toUpperCase()] = p.id;
