@@ -232,9 +232,9 @@
       "integrity": "sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw=="
     },
     "@particle/device-constants": {
-      "version": "3.1.6",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.1.6.tgz",
-      "integrity": "sha512-qiWU3G5Wu3DrGwn5CiQAYJTsCI9ROeUTnL4wb8U6mp7eJxzcPcev7UAw1EhP5cGr0LwK/MOIC1LOYMLnZ1Nu7g=="
+      "version": "3.1.8",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.1.8.tgz",
+      "integrity": "sha512-LSmd16a353BxM7G1ek6Vrv6v8IIiAXUUS5zVuQTFtlKljrFDz06WFEm2UkX0bP2z//f2aROLPZ82rXBwcMOUSQ=="
     },
     "@particle/device-os-protobuf": {
       "version": "1.2.1",
@@ -529,9 +529,9 @@
       "optional": true
     },
     "@types/node": {
-      "version": "18.15.3",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-18.15.3.tgz",
-      "integrity": "sha512-p6ua9zBxz5otCmbpb5D3U4B5Nanw6Pk3PPyX05xnxbB/fRv71N7CPmORg7uAD5P70T0xmx1pzAx/FUfa5X+3cw==",
+      "version": "18.15.11",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-18.15.11.tgz",
+      "integrity": "sha512-E5Kwq2n4SbMzQOn6wnmBjuK9ouqlURrcZDVfbo9ftDDTFt3nk7ZKK4GMOzoYgnpQJKcxwQw+lGaBvvlMo0qN/Q==",
       "optional": true
     },
     "@types/w3c-web-usb": {
@@ -895,9 +895,9 @@
       }
     },
     "binary-version-reader": {
-      "version": "2.0.1",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-2.0.1.tgz",
-      "integrity": "sha512-cLnttzayEmmjstGOjstxOTBegFz8AdEvp3Zhs/JlcE2OlELFCZA/RZyPJXvi9y11smmqoEyfKbwvbGkknMNaoA==",
+      "version": "2.0.2",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-2.0.2.tgz",
+      "integrity": "sha512-iJ0p0AWl/P1CytCM+DOnkwYJavSUizYzSXEGtaaNaBnVd8o0XBjF2dg4W3DQ5yn90mj81edzlDh1D7U4X+vmdQ==",
       "requires": {
         "buffer-crc32": "^0.2.5",
         "when": "^3.7.3",
@@ -5844,9 +5844,9 @@
       }
     },
     "particle-usb": {
-      "version": "2.2.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.2.1.tgz",
-      "integrity": "sha512-BFDTvPopjsPmCxVqruMqqOJKjr4VvbljGT7hezJtCATUn0vlth/RIADx9bm88kdGtsvZZ6Sz1aaTM54wnBGasQ==",
+      "version": "2.2.2",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.2.2.tgz",
+      "integrity": "sha512-omsw5sY18qLcSUIoyUjNDIYV9uaTe5+rWQxZraf3mlZizkz6PvBofSzvyOKnZ4WAjLWELVsz7DrK/LNUCdCdgw==",
       "optional": true,
       "requires": {
         "@particle/device-os-protobuf": "^1.2.1",
