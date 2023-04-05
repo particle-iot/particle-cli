@@ -1,4 +1,5 @@
 const settings = require('../../settings');
+const utilities = require('../lib/utilities');
 
 function usbCommand() {
 	if (!usbCommand._instance) {
@@ -26,7 +27,7 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			return usbCommand().list(args);
 		},
-		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
+		epilogue: `Param filter can be: online, offline, a platform name (${Object.keys(utilities.knownPlatformIds()).join(', ')}), a device ID or name`
 	});
 
 	// Common options for start-listening, stop-listening, safe-mode, dfu and reset

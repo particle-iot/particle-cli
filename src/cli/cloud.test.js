@@ -64,7 +64,7 @@ describe('Cloud Command-Line Interface', () => {
 					'Display a list of your devices, as well as their variables and functions',
 					'Usage: particle cloud list [options] [filter]',
 					'',
-					'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name',
+					'Param filter can be: online, offline, a platform name (core, photon, p1, electron, argon, boron, xenon, esomx, bsom, b5som, tracker, trackerm, p2, msom), a device ID or name',
 					''
 				].join('\n'));
 			});
@@ -308,7 +308,7 @@ describe('Cloud Command-Line Interface', () => {
 					'  particle cloud compile photon                                  Compile the source code in the current directory in the cloud for a `photon`',
 					'  particle cloud compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 					'',
-					'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc',
+					'Param deviceType can be: core, c, photon, p, p1, electron, e, argon, a, boron, b, xenon, x, esomx, bsom, b5som, tracker, assettracker, trackerm, p2, photon2, msom, muon',
 					''
 				].join('\n'));
 			});
