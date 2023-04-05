@@ -232,9 +232,9 @@
       "integrity": "sha512-shAmDyaQC4H92APFoIaVDHCx5bStIocgvbwQyxPRrbUY20V1EYTbSDchWbuwlMG3V17cprZhA6+78JfB+3DTPw=="
     },
     "@particle/device-constants": {
-      "version": "3.1.8",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.1.8.tgz",
-      "integrity": "sha512-LSmd16a353BxM7G1ek6Vrv6v8IIiAXUUS5zVuQTFtlKljrFDz06WFEm2UkX0bP2z//f2aROLPZ82rXBwcMOUSQ=="
+      "version": "3.1.9",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.1.9.tgz",
+      "integrity": "sha512-YwmPa0UoVLbNSPBnxqhplVGp1pMwGZS1bKHursGpouRbDkWgNxedCn9xIczLw0V1H73Iggn8d0Css3hyQJMS6A=="
     },
     "@particle/device-os-protobuf": {
       "version": "1.2.1",
