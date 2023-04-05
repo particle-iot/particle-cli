@@ -11,7 +11,6 @@ const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
 const prompts = require('../lib/prompts');
-const { PlatformId } = require('../lib/platform');
 const CLICommandBase = require('./base');
 
 const fs = require('fs-extra');
@@ -23,17 +22,7 @@ const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
 
 // Use known platforms and add shortcuts
-const PLATFORMS = extend(utilities.knownPlatformIds(), {
-	'c': PlatformId.CORE,
-	'p': PlatformId.PHOTON,
-	'e': PlatformId.ELECTRON,
-	'a': PlatformId.ARGON,
-	'b': PlatformId.BORON,
-	'x': PlatformId.XENON,
-	'photon2': PlatformId.P2,
-	'assettracker': PlatformId.TRACKER
-});
-
+const PLATFORMS = utilities.knownPlatformIdsWithAliases();
 
 module.exports = class CloudCommand extends CLICommandBase {
 	constructor(...args){

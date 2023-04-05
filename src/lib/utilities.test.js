@@ -24,6 +24,36 @@ describe('Utilities', () => {
 		});
 	});
 
+	describe('knownPlatformIdsWithAliases', () => {
+		it('returns a hash of platform ids with aliases', () => {
+			expect(util.knownPlatformIdsWithAliases()).to.eql({
+				'core': 0,
+				'c': 0,
+				'photon': 6,
+				'p': 6,
+				'p1': 8,
+				'electron': 10,
+				'e': 10,
+				'argon': 12,
+				'a': 12,
+				'boron': 13,
+				'b': 13,
+				'xenon': 14,
+				'x': 14,
+				'esomx': 15,
+				'bsom': 23,
+				'b5som': 25,
+				'tracker': 26,
+				'assettracker': 26,
+				'trackerm': 28,
+				'p2': 32,
+				'photon2': 32,
+				'msom': 35,
+				'muon': 35
+			});
+		});
+	});
+
 	describe('knownPlatformDisplayForId', () => {
 		it('returns a hash of platform display names', () => {
 			expect(util.knownPlatformDisplayForId()).to.eql({

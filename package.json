@@ -52,7 +52,7 @@
     }
   ],
   "dependencies": {
-    "@particle/device-constants": "^3.1.8",
+    "@particle/device-constants": "^3.1.9",
     "binary-version-reader": "^2.0.2",
     "chalk": "^2.4.2",
     "cli-spinner": "^0.2.10",
