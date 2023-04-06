@@ -62,7 +62,7 @@ describe('USB Command-Line Interface', () => {
 					'  --exclude-dfu  Do not list devices which are in DFU mode  [boolean]',
 					'  --ids-only     Print only device IDs  [boolean]',
 					'',
-					'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name',
+					'Param filter can be: online, offline, a platform name (core, photon, p1, electron, argon, boron, xenon, esomx, bsom, b5som, tracker, trackerm, p2, msom), a device ID or name',
 					''
 				].join('\n'));
 			});

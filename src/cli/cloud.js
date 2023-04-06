@@ -1,3 +1,5 @@
+const utilities = require('../lib/utilities');
+
 module.exports = ({ commandProcessor, root }) => {
 	const cloud = commandProcessor.createCategory(root, 'cloud', 'Access Particle cloud functionality');
 
@@ -17,7 +19,7 @@ module.exports = ({ commandProcessor, root }) => {
 			const CloudCommands = require('../cmd/cloud');
 			return new CloudCommands(args).listDevices(args);
 		},
-		epilogue: 'Param filter can be: online, offline, a platform name (photon, electron, etc), a device ID or name'
+		epilogue: `Param filter can be: online, offline, a platform name (${Object.keys(utilities.knownPlatformIds()).join(', ')}), a device ID or name`
 	});
 
 	commandProcessor.createCommand(cloud, 'claim', 'Register a device with your user account with the cloud', {
@@ -94,8 +96,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a `photon`',
 			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 		},
-		// TODO: get the platforms from config and document in epilogue
-		epilogue: 'Param deviceType can be: core, photon, p1, electron, argon, asom, boron, bsom, xenon, xsom, etc'
+		epilogue: `Param deviceType can be: ${Object.keys(utilities.knownPlatformIdsWithAliases()).join(', ')}`
 	});
 
 	commandProcessor.createCommand(cloud, 'nyan', 'Make your device shout rainbows', {
