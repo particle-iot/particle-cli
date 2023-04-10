@@ -131,6 +131,10 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'an existing Particle access token to use',
 				alias: 'token'
 			},
+			sso: {
+				description: 'Enterprise sso login',
+				boolean: true
+			},
 			otp: {
 				description: 'the login code if two-step authentication is enabled'
 			}
@@ -142,7 +146,8 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command': 'prompt for credentials and log in',
 			'$0 $command --username user@example.com --password test': 'log in with credentials provided on the command line',
-			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line'
+			'$0 $command --token <my-api-token>': 'log in with an access token provided on the command line',
+			'$0 $command --sso ': 'log in with Enterprise sso'
 		}
 	});
 

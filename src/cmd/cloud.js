@@ -390,11 +390,16 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	login({ username, password, token, otp } = {}){
-		const shouldRetry = !((username && password) || token && !this.tries);
+	login({ username, password, token, otp, sso } = {}){
+
+		const shouldRetry = !((username && password) || (token || sso) && !this.tries);
+
 
 		return Promise.resolve()
 			.then(() => {
+				if (sso) {
+					return { sso };
+				}
 				if (token){
 					return { token, username, password };
 				}
@@ -404,11 +409,21 @@ module.exports = class CloudCommand extends CLICommandBase {
 				return prompts.getCredentials(username, password);
 			})
 			.then(credentials => {
-				const { token, username, password } = credentials;
+				const { token, username, password, sso } = credentials;
 				const msg = 'Sending login details...';
 				const api = new ApiClient();
 
 				this._usernameProvided = username;
+				const fn1 = () => {
+					return new Promise(resolve => setTimeout(resolve, 10000)).
+						then(() => ({ token: 'xxx', username: 'username+sso@particle.io' }));
+				};
+
+				if (sso) {
+					// TODO: put the code that calls sso fn1 is the function to be called
+					return this.ui.showBusySpinnerUntilResolved(msg, fn1())
+						.then(response => ({ token: response.token, username: response.username }));
+				}
 
 				if (token){
 					return this.ui.showBusySpinnerUntilResolved(msg, api.getUser(token))
