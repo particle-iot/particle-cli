@@ -66,7 +66,7 @@ const _waitForLogin = async ({ deviceCode })  => {
 
 const _printLoginMessage = ({ verificationUriComplete }) => {
 	console.log('\n' +
-		'Attempting to automatically open the SSO authorization page in your default browser.\n' +
+		'Opening the SSO authorization page in your default browser.\n' +
 		'If the browser does not open or you wish to use a different device to authorize this request, open the following URL:\n' +
 		'\n' +
 		verificationUriComplete);
