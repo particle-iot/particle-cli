@@ -206,6 +206,21 @@ settings.saveProfileData = () => {
 	fs.writeFileSync(proFile, JSON.stringify(settings.profile_json, null, 2), { mode: '600' });
 };
 
+settings.ssoAuthConfig = () => {
+	const isProduction = settings.apiUrl === 'https://api.particle.io';
+	if (isProduction) {
+		return {
+			ssoAuthUri: 'https://id.particle.io/oauth2/default/v1',
+			ssoClientId: '0oa19uiy26XIs3XW55d7'
+		};
+	} else {
+		return {
+			ssoAuthUri: 'https://id.staging.particle.io/oauth2/default/v1',
+			ssoClientId: '0oa19umyki69O4Kvb5d7'
+		};
+	}
+};
+
 // this is here instead of utilities to prevent a require-loop
 // when files that utilties requires need settings
 function matchKey(needle, obj, caseInsensitive) {
