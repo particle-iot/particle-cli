@@ -1,5 +1,6 @@
 const request = require('request');
 const jose = require('jose');
+const openurl = require('openurl');
 const settings = require('../../settings');
 
 
@@ -35,7 +36,7 @@ const _validateJwtToken = async (accessToken, url) => {
 	return jose.jwtVerify(accessToken, getKeySet(url));
 };
 
-const _waitForLogin = async ({ deviceCode })  => {
+const _waitForLogin = async ({ deviceCode }) => {
 	let canRequest = true;
 	const ssoConfig = settings.ssoAuthConfig();
 	const url = `${ssoConfig.ssoAuthUri}/token`;
@@ -87,10 +88,9 @@ const ssoLogin = async () => {
 	});
 
 	_printLoginMessage({ verificationUriComplete: response.verification_uri_complete });
+	openurl.open(response.verification_uri_complete);
 
-	const data = await _waitForLogin({ deviceCode: response.device_code });
-	console.log(data);
-	return data;
+	return await _waitForLogin({ deviceCode: response.device_code });
 };
 
 
