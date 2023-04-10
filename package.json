@@ -67,6 +67,7 @@
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "node-wifiscanner2": "^1.2.0",
+    "openurl": "^1.1.1",
     "particle-api-js": "^9.1.2",
     "particle-commands": "0.3.0",
     "particle-library-manager": "^0.1.14",
