@@ -17,6 +17,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
+const { ssoLogin } = require('../lib/sso');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -414,14 +415,10 @@ module.exports = class CloudCommand extends CLICommandBase {
 				const api = new ApiClient();
 
 				this._usernameProvided = username;
-				const fn1 = () => {
-					return new Promise(resolve => setTimeout(resolve, 10000)).
-						then(() => ({ token: 'xxx', username: 'username+sso@particle.io' }));
-				};
 
 				if (sso) {
 					// TODO: put the code that calls sso fn1 is the function to be called
-					return this.ui.showBusySpinnerUntilResolved(msg, fn1())
+					return this.ui.showBusySpinnerUntilResolved(msg, ssoLogin())
 						.then(response => ({ token: response.token, username: response.username }));
 				}
 
