@@ -417,8 +417,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 				this._usernameProvided = username;
 
 				if (sso) {
-					// TODO: put the code that calls sso fn1 is the function to be called
-					return this.ui.showBusySpinnerUntilResolved(msg, ssoLogin())
+					const ssoMessage = 'SSO login in progress...';
+					return this.ui.showBusySpinnerUntilResolved(ssoMessage, ssoLogin())
 						.then(response => ({ token: response.token, username: response.username }));
 				}
 
