@@ -6,15 +6,15 @@ const WAIT_BETWEEN_REQUESTS = 5000;
 
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const _makeRequest = async ({ url, method,  form }) => {
+const _makeRequest = async ({ url, method, form }) => {
 	return new Promise((resolve, reject) => {
 		const requestData = { url, method, form };
 
 		request(requestData, function cb(error, response, body) {
 			if (error) {
-				reject(error);
+				return reject(error);
 			}
-			resolve(JSON.parse(body));
+			return resolve(JSON.parse(body));
 		});
 
 	});
@@ -28,7 +28,7 @@ const _validateJwtToken = async (accessToken, url) => {
 	return jose.jwtVerify(accessToken, _getKeySet(url));
 };
 
-const _waitForLogin = async ({ deviceCode }) => {
+const _waitForLogin = async ({ deviceCode, waitTime }) => {
 	let canRequest = true;
 	const ssoConfig = settings.ssoAuthConfig();
 	const url = `${ssoConfig.ssoAuthUri}/token`;
@@ -40,9 +40,9 @@ const _waitForLogin = async ({ deviceCode }) => {
 	};
 
 	while (canRequest) {
-		const response = await _makeRequest({ url, form, method: 'POST', urlEncoded: true });
+		const response = await _makeRequest({ url, form, method: 'POST' });
 		if (response.error === 'authorization_pending') {
-			await sleep(WAIT_BETWEEN_REQUESTS);
+			await sleep(waitTime || WAIT_BETWEEN_REQUESTS);
 		} else {
 			canRequest = false;
 			if (response.error) {
@@ -52,7 +52,7 @@ const _waitForLogin = async ({ deviceCode }) => {
 				const { payload } = await _validateJwtToken(response.access_token, ssoConfig.ssoAuthUri);
 				return { token: payload.particle_profile, username: payload.sub };
 			}
-			throw new Error('Invalid data received');
+			throw new Error('Unable to login through sso. Try again');
 		}
 	}
 };
@@ -66,7 +66,6 @@ const _printLoginMessage = ({ verificationUriComplete }) => {
 };
 
 const ssoLogin = async () => {
-	// TODO: login with sso
 	const ssoConfig = settings.ssoAuthConfig();
 	const form = {
 		client_id: ssoConfig.ssoClientId,
@@ -88,5 +87,8 @@ const ssoLogin = async () => {
 
 
 module.exports = {
-	ssoLogin
+	ssoLogin,
+	_makeRequest,
+	_waitForLogin
+
 };
