@@ -2,38 +2,30 @@ const request = require('request');
 const jose = require('jose');
 const openurl = require('openurl');
 const settings = require('../../settings');
+const WAIT_BETWEEN_REQUESTS = 5000;
 
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const _makeRequest = async ({ url, method, formData, body, urlEncoded }) => {
+const _makeRequest = async ({ url, method,  form }) => {
 	return new Promise((resolve, reject) => {
-		if (urlEncoded) {
-			request.post({ url, form: { ...body } }, function cb(error, response, body) {
-				if (error) {
-					reject(error);
-				}
-				resolve(JSON.parse(body));
-			});
-		} else {
-			request({ url: url, method: method, formData: formData }, function cb(error, response, body) {
-				if (error) {
-					reject(error);
-				}
-				resolve(JSON.parse(body));
-			});
-		}
+		const requestData = { url, method, form };
+
+		request(requestData, function cb(error, response, body) {
+			if (error) {
+				reject(error);
+			}
+			resolve(JSON.parse(body));
+		});
+
 	});
 };
 
-const getKeySet = (url) => {
-	if (!this.jwks) {
-		this.jwks = jose.createRemoteJWKSet(new URL(`${url}/keys`));
-	}
-	return this.jwks;
+const _getKeySet = (url) => {
+	return jose.createRemoteJWKSet(new URL(`${url}/keys`));
 };
 
 const _validateJwtToken = async (accessToken, url) => {
-	return jose.jwtVerify(accessToken, getKeySet(url));
+	return jose.jwtVerify(accessToken, _getKeySet(url));
 };
 
 const _waitForLogin = async ({ deviceCode }) => {
@@ -41,16 +33,16 @@ const _waitForLogin = async ({ deviceCode }) => {
 	const ssoConfig = settings.ssoAuthConfig();
 	const url = `${ssoConfig.ssoAuthUri}/token`;
 	const clientId = ssoConfig.ssoClientId;
-	const body = {
+	const form = {
 		device_code: deviceCode,
 		grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
 		client_id: clientId,
 	};
 
 	while (canRequest) {
-		const response = await _makeRequest({ url, body, method: 'POST', urlEncoded: true });
+		const response = await _makeRequest({ url, form, method: 'POST', urlEncoded: true });
 		if (response.error === 'authorization_pending') {
-			await sleep(5000);
+			await sleep(WAIT_BETWEEN_REQUESTS);
 		} else {
 			canRequest = false;
 			if (response.error) {
@@ -76,14 +68,14 @@ const _printLoginMessage = ({ verificationUriComplete }) => {
 const ssoLogin = async () => {
 	// TODO: login with sso
 	const ssoConfig = settings.ssoAuthConfig();
-	const formData = {
+	const form = {
 		client_id: ssoConfig.ssoClientId,
 		scope: 'openid profile'
 	};
 
 	const response =  await _makeRequest({
 		url: `${ssoConfig.ssoAuthUri}/device/authorize`,
-		formData: formData,
+		form,
 		method: 'POST'
 	});
 
