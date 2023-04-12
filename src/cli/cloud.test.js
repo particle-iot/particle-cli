@@ -399,12 +399,14 @@ describe('Cloud Command-Line Interface', () => {
 					'  -u, --username  your username  [string]',
 					'  -p, --password  your password  [string]',
 					'  -t, --token     an existing Particle access token to use  [string]',
+					'  --sso           Enterprise sso login  [boolean]',
 					'  --otp           the login code if two-step authentication is enabled  [string]',
 					'',
 					'Examples:',
 					'  particle cloud login                                              prompt for credentials and log in',
 					'  particle cloud login --username user@example.com --password test  log in with credentials provided on the command line',
 					'  particle cloud login --token <my-api-token>                       log in with an access token provided on the command line',
+					'  particle cloud login --sso                                        log in with Enterprise sso',
 					''
 				].join('\n'));
 			});

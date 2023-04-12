@@ -17,6 +17,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
+const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -390,11 +391,16 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	login({ username, password, token, otp } = {}){
-		const shouldRetry = !((username && password) || token && !this.tries);
+	login({ username, password, token, otp, sso } = {}){
+
+		const shouldRetry = !((username && password) || (token || sso) && !this.tries);
+
 
 		return Promise.resolve()
 			.then(() => {
+				if (sso) {
+					return { sso };
+				}
 				if (token){
 					return { token, username, password };
 				}
@@ -404,11 +410,22 @@ module.exports = class CloudCommand extends CLICommandBase {
 				return prompts.getCredentials(username, password);
 			})
 			.then(credentials => {
-				const { token, username, password } = credentials;
+				const { token, username, password, sso } = credentials;
 				const msg = 'Sending login details...';
 				const api = new ApiClient();
 
 				this._usernameProvided = username;
+
+				if (sso) {
+					const ssoMessage = 'SSO login in progress...';
+					return ssoLogin().then(({ deviceCode, verificationUriComplete }) => {
+						getLoginMessage(verificationUriComplete).map(msg => {
+							this.ui.stdout.write(`${msg}${os.EOL}`);
+						});
+						return this.ui.showBusySpinnerUntilResolved(ssoMessage, waitForLogin({ deviceCode }))
+							.then(response => ({ token: response.token, username: response.username }));
+					});
+				}
 
 				if (token){
 					return this.ui.showBusySpinnerUntilResolved(msg, api.getUser(token))

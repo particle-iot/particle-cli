@@ -143,14 +143,14 @@ workflows:
           matrix:
             parameters:
               os: [linux, macos]
-              node-version: ["10", "12", "14", "16"]
+              node-version: ["12", "16"] # Node 18 doesn't work due to serialport dependency
       - test-windows:
           <<: *tag_filters
           context:
             - particle-ci-private
           matrix:
             parameters:
-              node-version: ["10", "12", "14", "16"]
+              node-version: ["12", "16"] # Node 18 doesn't work due to serialport dependency
       - test-e2e:
           <<: *tag_filters
           name: test-e2e-linux
