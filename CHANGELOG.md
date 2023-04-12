@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.9.0 - 12 April 2023
+
+* Add `login` with `sso` feature
+
 ## 3.8.1 - 5 April 2023
 
 * Addressed renaming `Muon` -> `M SoM` platform
