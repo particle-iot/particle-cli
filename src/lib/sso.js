@@ -28,7 +28,7 @@ const _validateJwtToken = async (accessToken, url) => {
 	return jose.jwtVerify(accessToken, _getKeySet(url));
 };
 
-const _waitForLogin = async ({ deviceCode, waitTime }) => {
+const waitForLogin = async ({ deviceCode, waitTime }) => {
 	let canRequest = true;
 	const ssoConfig = settings.ssoAuthConfig();
 	const url = `${ssoConfig.ssoAuthUri}/token`;
@@ -57,12 +57,12 @@ const _waitForLogin = async ({ deviceCode, waitTime }) => {
 	}
 };
 
-const _printLoginMessage = ({ verificationUriComplete }) => {
-	console.log('\n' +
-		'Opening the SSO authorization page in your default browser.\n' +
-		'If the browser does not open or you wish to use a different device to authorize this request, open the following URL:\n' +
-		'\n' +
-		verificationUriComplete);
+const getLoginMessage = (verificationUriComplete) => {
+	return [
+		'Opening the SSO authorization page in your default browser.',
+		'If the browser does not open or you wish to use a different device to authorize this request, open the following URL:',
+		verificationUriComplete
+	];
 };
 
 const ssoLogin = async () => {
@@ -78,10 +78,9 @@ const ssoLogin = async () => {
 		method: 'POST'
 	});
 
-	_printLoginMessage({ verificationUriComplete: response.verification_uri_complete });
 	openurl.open(response.verification_uri_complete);
 
-	return await _waitForLogin({ deviceCode: response.device_code });
+	return { deviceCode: response.device_code, verificationUriComplete: response.verification_uri_complete };
 };
 
 
@@ -89,6 +88,7 @@ const ssoLogin = async () => {
 module.exports = {
 	ssoLogin,
 	_makeRequest,
-	_waitForLogin
+	waitForLogin,
+	getLoginMessage
 
 };

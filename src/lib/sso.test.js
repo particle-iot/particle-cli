@@ -3,7 +3,7 @@ const jose = require('jose');
 const openurl = require('openurl');
 const { sinon, expect } = require('../../test/setup');
 const sandbox = sinon.createSandbox();
-const { _makeRequest, _waitForLogin, ssoLogin } = require('./sso');
+const { _makeRequest, waitForLogin, ssoLogin } = require('./sso');
 
 describe('_makeRequest', () => {
 	it('make a request', async () => {
@@ -36,7 +36,7 @@ describe('_makeRequest', () => {
 	});
 });
 
-describe('_waitForLogin', () => {
+describe('waitForLogin', () => {
 
 	afterEach(() => {
 		sandbox.restore();
@@ -63,7 +63,7 @@ describe('_waitForLogin', () => {
 			.intercept('/token', 'POST')
 			.reply(200, accessTokenResponse);
 
-		const response = await _waitForLogin({ deviceCode: 'XXAABBCC', waitTime: 1 });
+		const response = await waitForLogin({ deviceCode: 'XXAABBCC', waitTime: 1 });
 		expect(response.token).to.equal('my-token');
 		expect(response.username).to.equal('username');
 	});
@@ -88,7 +88,7 @@ describe('_waitForLogin', () => {
 			.reply(200, expiredResponse);
 
 		try {
-			await _waitForLogin({ deviceCode: 'XXAABBCC', waitTime: 1 });
+			await waitForLogin({ deviceCode: 'XXAABBCC', waitTime: 1 });
 		} catch (error) {
 			expect(error.message).to.equal('the device code is expired');
 		}
@@ -110,7 +110,7 @@ describe('_waitForLogin', () => {
 			.replyWithError(unhandledError);
 
 		try {
-			await _waitForLogin({ deviceCode: 'XXAABBCC', waitTime: 1 });
+			await waitForLogin({ deviceCode: 'XXAABBCC', waitTime: 1 });
 		} catch (error) {
 			expect(error.message).to.equal(unhandledError);
 		}
@@ -123,10 +123,6 @@ describe('ssoLogin', () => {
 	});
 
 	it('send login request over sso', async() => {
-		const expectedMessage = '\n' + 'Opening the SSO authorization page in your default browser.\n' +
-			'If the browser does not open or you wish to use a different device to authorize this request, open the following URL:\n' +
-			'\n' +
-			'https://id.particle.io/activate?user_code=STHWXLHB';
 		const authorize = {
 			verification_uri_complete: 'https://id.particle.io/activate?user_code=STHWXLHB',
 			device_code: 'STHWXLHB'
@@ -138,7 +134,6 @@ describe('ssoLogin', () => {
 		sandbox.stub(jose, 'jwtVerify').value(() => ({ payload: { particle_profile: 'my-token', sub: 'username' } }));
 		sandbox.stub(openurl, 'open').value(() => {});
 		const openUrlSpy = sandbox.spy(openurl, 'open');
-		const consoleSpy = sandbox.spy(console, 'log');
 
 		nock('https://id.particle.io/oauth2/default/v1', )
 			.intercept('/device/authorize', 'POST')
@@ -148,9 +143,8 @@ describe('ssoLogin', () => {
 			.intercept('/token', 'POST')
 			.reply(200, accessTokenResponse);
 		const response = await ssoLogin();
-		expect(consoleSpy).to.be.calledWith(expectedMessage);
 		expect(openUrlSpy).to.be.calledWith('https://id.particle.io/activate?user_code=STHWXLHB');
-		expect(response.token).to.equal('my-token');
-		expect(response.username).to.equal('username');
+		expect(response.deviceCode).to.equal('STHWXLHB');
+		expect(response.verificationUriComplete).to.equal('https://id.particle.io/activate?user_code=STHWXLHB');
 	});
 });

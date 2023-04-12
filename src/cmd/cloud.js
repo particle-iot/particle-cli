@@ -17,7 +17,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
-const { ssoLogin } = require('../lib/sso');
+const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -418,8 +418,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 				if (sso) {
 					const ssoMessage = 'SSO login in progress...';
-					return this.ui.showBusySpinnerUntilResolved(ssoMessage, ssoLogin())
-						.then(response => ({ token: response.token, username: response.username }));
+					return ssoLogin().then(({ deviceCode, verificationUriComplete }) => {
+						getLoginMessage(verificationUriComplete).map(msg => {
+							this.ui.stdout.write(`${msg}${os.EOL}`);
+						});
+						return this.ui.showBusySpinnerUntilResolved(ssoMessage, waitForLogin({ deviceCode }))
+							.then(response => ({ token: response.token, username: response.username }));
+					});
 				}
 
 				if (token){
