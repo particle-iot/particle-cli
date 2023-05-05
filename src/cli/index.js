@@ -1,6 +1,7 @@
 const help = require('./help');
 const alias = require('./alias');
 const binary = require('./binary');
+const bundle = require('./bundle');
 const cloud = require('./cloud');
 const config = require('./config');
 const doctor = require('./doctor');
@@ -43,6 +44,7 @@ module.exports = function registerAllCommands(context) {
 	help(context);
 
 	binary(context);
+	bundle(context);
 	cloud(context);
 	config(context);
 	doctor(context);

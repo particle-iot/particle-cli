@@ -224,5 +224,35 @@ describe('Utilities', () => {
 
 		});
 	});
+
+	describe('filenameNoExt()', () => {
+		it('returns the filename without the extension', () => {
+			expect(util.filenameNoExt('foo')).to.eql('foo');
+			expect(util.filenameNoExt('foo.bar')).to.eql('foo');
+			expect(util.filenameNoExt('foo.bar.baz')).to.eql('foo.bar');
+		});
+
+		it('returns expected result when empty string is passed', () => {
+			expect(util.filenameNoExt('')).to.eql('');
+		});
+	});
+
+	describe('getFilenameExt()', () => {
+		it('returns the filename extension', () => {
+			expect(util.getFilenameExt('foo')).to.eql('');
+			expect(util.getFilenameExt('foo.bar')).to.eql('.bar');
+			expect(util.getFilenameExt('foo.bar.baz')).to.eql('.baz');
+		});
+
+		it('returns the filename extension in lowercase', () => {
+			expect(util.getFilenameExt('foo.BAR')).to.eql('.bar');
+			expect(util.getFilenameExt('foo.BAR.bAz')).to.eql('.baz');
+		});
+
+		it('returns expected result when empty string is passed', () => {
+			expect(util.getFilenameExt('')).to.eql('');
+		});
+	});
+
 });
 
