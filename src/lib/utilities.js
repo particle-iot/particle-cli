@@ -120,25 +120,16 @@ module.exports = {
 			return filename;
 		}
 
-		let idx = filename.lastIndexOf('.');
-		if (idx >= 0){
-			return filename.substr(0, idx);
-		} else {
-			return filename;
-		}
+		return filename.replace(/\.[^/.]+$/, '');
 	},
 
 	getFilenameExt(filename){
 		if (!filename || (filename.length === 0)){
 			return filename;
 		}
-
-		let idx = filename.lastIndexOf('.');
-		if (idx >= 0){
-			return filename.substr(idx);
-		} else {
-			return filename;
-		}
+		filename = filename.toString();
+		const ext = filename.match(/\.[^/.]+$/);
+		return ext ? ext.toString().toLowerCase() : '';
 	},
 
 	// TODO (mirande): replace w/ @particle/async-utils

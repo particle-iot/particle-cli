@@ -665,7 +665,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		for (let i = 0; i < filenames.length; i++){
 			const filename = filenames[i];
-			const ext = utilities.getFilenameExt(filename).toLowerCase();
+			const ext = utilities.getFilenameExt(filename);
 			const alwaysIncludeThisFile = ((ext === '.bin') && (i === 0) && (filenames.length === 1));
 
 			if (filename.indexOf('--') === 0){
