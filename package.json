@@ -102,7 +102,7 @@
   },
   "optionalDependencies": {
     "particle-usb": "^2.2.2",
-    "serialport": "^8.0.5"
+    "serialport": "^9.2.8"
   },
   "engines": {
     "node": ">=12",
