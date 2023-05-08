@@ -102,10 +102,10 @@
   },
   "optionalDependencies": {
     "particle-usb": "^2.2.2",
-    "serialport": "^8.0.5"
+    "serialport": "^9.2.8"
   },
   "engines": {
-    "node": ">=8",
+    "node": ">=12",
     "npm": ">=6"
   },
   "homepage": "https://github.com/particle-iot/particle-cli/",
@@ -142,7 +142,7 @@
     "test:integration:watch": "npm run test:integration -- --watch --watch-extensions js,json",
     "test:integration:inspect": "npm test:integration -- --inspect-brk",
     "test:integration:silent": "PARTICLE_NOOP=$(npm run test:integration:ci)",
-    "test:e2e": "mocha 'test/**/*.e2e.js' --timeout 120000 --exit",
+    "test:e2e": "mocha 'test/{,!(__fixtures__)/**}/*.e2e.js' --timeout 120000 --exit",
     "test:e2e:ci": "npm run test:e2e:no-device -- --forbid-only",
     "test:e2e:no-device": "npm run test:e2e -- --grep @device --invert",
     "test:e2e:watch": "npm run test:e2e -- --watch --watch-extensions js,json",

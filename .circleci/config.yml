@@ -116,7 +116,7 @@ jobs:
   # https://github.com/particle-iot-inc/device-service-discovery/blob/d1f4dbcdcab1efba7ba92794670c6e4e973e6265/.circleci/config.yml
   publish-npm:
     docker:
-      - image: cimg/node:12.22 # Primary execution image
+      - image: cimg/node:16.16 # Primary execution image
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD

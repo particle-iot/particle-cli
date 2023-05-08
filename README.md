@@ -107,7 +107,7 @@ _Currently development is supported on macOS only!_
 
 ## Installing
 
-1. Install Node.js [`node@12.x` and `npm@6.x` are required]
+1. Install Node.js [`node@16.x` and `npm@8.x` are required]
 1. Clone this repository `$ git clone git@github.com:particle-iot/particle-cli.git && cd ./particle-cli`
 1. Install external tools: `dfu-util` and `openssl` (e.g. `brew install openssl`)
 1. Install dependencies `$ npm install`
