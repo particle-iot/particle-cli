@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.10.0 - 8 May 2023
+
+* Update node version from `v12` to `v16`
+* Update `serialport` dependencies
+
 ## 3.9.0 - 12 April 2023
 
 * Add `login` with `sso` feature
