@@ -1,5 +1,5 @@
 module.exports = ({ commandProcessor, root }) => {
-	commandProcessor.createCommand(root, 'bundle', 'Prints the assets given to the cli', {
+	commandProcessor.createCommand(root, 'bundle', 'Creates a bundle of application binary and assets. \nIf --assets option is not specified, the default /assets folder in the current directory is used if available.', {
 		params: '<appBinary>',
 		options: {
 			'saveTo': {
@@ -13,6 +13,11 @@ module.exports = ({ commandProcessor, root }) => {
 			const BundleCommands = require('../cmd/bundle');
 			return new BundleCommands(args).createBundle(args);
 		},
-		epilogue: 'Creates a bundle of the application binary and assets.'
+		examples: {
+			'$0 $command appBinary.bin --assets /path/to/assets': 'Creates a bundle of application binary and assets from the /path/to/assets folder',
+			'$0 $command appBinary.bin': 'Creates a bundle of application binary and assets from the default /assets folder in the current directory if available',
+			'$0 $command appBinary.bin --assets /path/to/assets --saveTo myApp.zip': 'Creates a bundle of application binary and assets from the /path/to/assets folder and saves it to the myApp.zip file',
+			'$0 $command appBinary.bin --saveTo myApp.zip': 'Creates a bundle of application binary and assets from the default /assets folder in the current directory if available, and saves the bundle to the myApp.zip file'
+		}
 	});
 };
