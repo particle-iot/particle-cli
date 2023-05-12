@@ -8,7 +8,6 @@ const specialFiles = [
 	'.DS_Store',
 	'Thumbs.db',
 	'desktop.ini',
-	'Icon\r',
 	'__MACOSX'
 ];
 module.exports = class BundleCommands extends CLICommandBase {
