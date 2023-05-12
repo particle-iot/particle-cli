@@ -345,13 +345,13 @@ describe('BundleCommands', () => {
 		it('returns system generated name if --saveTo argument lacks .zip extension', async () => {
 			const { _getDownloadBundlePath } = new BundleCommands();
 			const res = await _getDownloadBundlePath('test', 'test.bin');
-			expect(res).to.equal('bundle_test_' + Date.now() + '.zip');
+			expect(res).to.match(/^bundle_test_\d+\.zip$/);
 		});
 
 		it('returns system generated name if --saveTo argument is blank', async () => {
 			const { _getDownloadBundlePath } = new BundleCommands();
 			const res = await _getDownloadBundlePath(undefined, 'test.bin');
-			expect(res).to.equal('bundle_test_' + Date.now() + '.zip');
+			expect(res).to.match(/^bundle_test_\d+\.zip$/);
 		});
 
 	});
