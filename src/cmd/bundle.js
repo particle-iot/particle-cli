@@ -3,41 +3,39 @@ const path = require('path');
 const CLICommandBase = require('./base');
 const { createApplicationAndAssetBundle } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
+
+const specialFiles = [
+	'.DS_Store',
+	'Thumbs.db',
+	'desktop.ini',
+	'Icon\r',
+	'__MACOSX'
+];
 module.exports = class BundleCommands extends CLICommandBase {
 	constructor(...args){
 		super(...args);
 	}
 
-	createBundle({ saveTo, assets, params: { appBinary } }) {
-		if (!appBinary) {
-			// if no device nor files are passed, show help
-			// TODO: Replace by UsageError
-			return Promise.reject();
+	async createBundle({ saveTo, assets, params: { appBinary } }) { // use async await for this full function
+
+		if (!await fs.exists(appBinary)) {
+			throw new Error(`The file ${appBinary} does not exist!`);
+		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
+			throw new Error(`The file ${appBinary} is not a valid binary`);
 		}
-		if (!fs.existsSync(appBinary)) {
-			return Promise.reject('The file ' + appBinary + ' does not exist!');
-		} else if (utilities.getFilenameExt(appBinary) !== '.bin'){
-			return Promise.reject('The file ' + appBinary + ' is not a valid binary');
-		}
+
+		// if (!fs.existsSync(appBinary)) {
+		// 	return Promise.reject('The file ' + appBinary + ' does not exist!');
+		// } else if (utilities.getFilenameExt(appBinary) !== '.bin'){
+		// 	return Promise.reject('The file ' + appBinary + ' is not a valid binary');
+		// })
 
 		if (!assets) {
 			// If no assets folder is specified, use the default assets folder
 			assets = path.join(process.cwd(), 'assets');
 		}
-		if (!fs.existsSync(assets)) {
-			return Promise.reject('The folder ' + assets + ' does not exist!');
-		}
 
-		// Gets the assets only from the main folder and any sub-folders are ignored
-		// 'assets' is the folder path of assets to be bundled
-		const assetsInFolder = fs.readdirSync(assets).map(f => path.join(assets, f));
-		if (assetsInFolder.length === 0) {
-			return Promise.reject('No assets found in ' + assets);
-		}
-
-		const assetsList = assetsInFolder.map(f => {
-			return { data: fs.readFileSync(f), name: path.basename(f) };
-		});
+		const assetsList = await this.getAssets(assets);
 
 		let downloadFilename;
 		return Promise.resolve()
@@ -53,6 +51,28 @@ module.exports = class BundleCommands extends CLICommandBase {
 			.catch(err => {
 				this.ui.stderr.write(err.message);
 			});
+	}
+
+	async getAssets(assets) {
+		if (!await fs.exists(assets)) {
+			throw new Error(`The folder ${assets} does not exist!`);
+		}
+
+		// Gets the assets only from the main folder and any sub-folders are ignored
+		// 'assets' is the folder path of assets to be bundled
+		const assetsInFolder = await fs.readdir(assets);	// .map(f => path.join(assets, f));
+		const assetFiles = await Promise.all(assetsInFolder.map(async (f) => {
+			const filepath = path.join(assets, f);
+			const stat = await fs.stat(filepath);
+			if (stat.isDirectory() || f.startsWith('.') || specialFiles.includes(f)) {
+				return null;
+			}
+			return {
+				data: await fs.readFile(filepath),
+				name: f
+			};
+		}));
+		return assetFiles.filter(f => f !== null);
 	}
 
 	_getDownloadBundlePath(saveTo, appBinaryPath) {
