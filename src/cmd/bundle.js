@@ -16,19 +16,13 @@ module.exports = class BundleCommands extends CLICommandBase {
 		super(...args);
 	}
 
-	async createBundle({ saveTo, assets, params: { appBinary } }) { // use async await for this full function
+	async createBundle({ saveTo, assets, params: { appBinary } }) {
 
 		if (!await fs.exists(appBinary)) {
-			throw new Error(`The file ${appBinary} does not exist!`);
+			throw new Error(`The file ${appBinary} does not exist`);
 		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
 			throw new Error(`The file ${appBinary} is not a valid binary`);
 		}
-
-		// if (!fs.existsSync(appBinary)) {
-		// 	return Promise.reject('The file ' + appBinary + ' does not exist!');
-		// } else if (utilities.getFilenameExt(appBinary) !== '.bin'){
-		// 	return Promise.reject('The file ' + appBinary + ' is not a valid binary');
-		// })
 
 		if (!assets) {
 			// If no assets folder is specified, use the default assets folder
@@ -38,26 +32,21 @@ module.exports = class BundleCommands extends CLICommandBase {
 		const assetsList = await this.getAssets(assets);
 
 		let downloadFilename;
-		return Promise.resolve()
-			.then(() => createApplicationAndAssetBundle(appBinary, assetsList))
-			.then((bundle) => {
-				downloadFilename = this._getDownloadBundlePath(saveTo, appBinary);
-				return fs.writeFile(downloadFilename, bundle);
-			})
-			.then(() => {
-				this.ui.stdout.write(`Success! Created bundle ${downloadFilename}\n`);
-				return downloadFilename;
-			})
-			.catch(err => {
-				this.ui.stderr.write(err.message);
-			});
+		try {
+			const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
+			downloadFilename = this._getDownloadBundlePath(saveTo, appBinary);
+			await fs.promises.writeFile(downloadFilename, bundle);
+			this.ui.stdout.write(`Success! Created bundle ${downloadFilename}\n`);
+			return downloadFilename;
+		} catch (error) {
+			throw new Error(error);
+		}
 	}
 
 	async getAssets(assets) {
 		if (!await fs.exists(assets)) {
 			throw new Error(`The folder ${assets} does not exist!`);
 		}
-
 		// Gets the assets only from the main folder and any sub-folders are ignored
 		// 'assets' is the folder path of assets to be bundled
 		const assetsInFolder = await fs.readdir(assets);	// .map(f => path.join(assets, f));
