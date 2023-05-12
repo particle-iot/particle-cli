@@ -191,7 +191,7 @@ module.exports.waitForVariable = async (name, value) => {
 	const { waitForResult } = module.exports;
 	const args = ['monitor', DEVICE_NAME, name, '--delay', 500];
 	const isFinished = (data) => data.toString('utf8').trim() === value;
-	return delay(2000).then(() => waitForResult(args, isFinished));
+	return delay(10000).then(() => waitForResult(args, isFinished));
 };
 
 module.exports.waitForResult = async (args = [], options = {}, isFinished) => {
