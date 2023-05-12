@@ -25,7 +25,7 @@ describe('BundleCommands', () => {
 			});
 	});
 
-	it('should throw an error if the app binary provided does not exist',  () => {
+	it('should throw an error if the app binary provided does not exist', () => {
 		const bundleCommands = new BundleCommands();
 		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'fake_app.bin');
 		const args = {
@@ -100,7 +100,7 @@ describe('BundleCommands', () => {
 			saveTo: 'app_bundle_test.zip'
 		};
 		const fakeCwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
-		cwdStub = sinon.stub(process, 'cwd')
+		cwdStub = sinon.stub(process, 'cwd');
 		cwdStub.returns(fakeCwd);
 
 		return new BundleCommands().createBundle(args)
@@ -129,7 +129,7 @@ describe('BundleCommands', () => {
 			saveTo: 'app_bundle_test.zip'
 		};
 		const fakeCwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_no_assets');
-		cwdStub = sinon.stub(process, 'cwd')
+		cwdStub = sinon.stub(process, 'cwd');
 		cwdStub.returns(fakeCwd);
 
 		return new BundleCommands().createBundle(args)
@@ -193,7 +193,6 @@ describe('BundleCommands', () => {
 	});
 
 	it('should return a .zip file with the name given by user if saveTo argument has .zip extension', () => {
-		const bundleCommands = new BundleCommands();
 		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 		const args = {
