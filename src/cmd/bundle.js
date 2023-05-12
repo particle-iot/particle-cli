@@ -8,42 +8,46 @@ module.exports = class BundleCommands extends CLICommandBase {
 		super(...args);
 	}
 
-	async createBundle({ saveTo, assets, params: { appBinary } }) {
+	createBundle({ saveTo, assets, params: { appBinary } }) {
+		if (!appBinary) {
+			// if no device nor files are passed, show help
+			// TODO: Replace by UsageError
+			return Promise.reject();
+		}
 		if (!fs.existsSync(appBinary)) {
-			throw new Error('The file ' + appBinary + ' does not exist!');
-		} else {
-			const ext = utilities.getFilenameExt(appBinary);
-			if (ext !== '.bin') {
-				throw new Error('The file ' + appBinary + ' is not a valid binary');
-			}
+			return Promise.reject('The file ' + appBinary + ' does not exist!');
+		} else if (utilities.getFilenameExt(appBinary) !== '.bin'){
+			return Promise.reject('The file ' + appBinary + ' is not a valid binary');
 		}
 
 		if (!assets) {
 			// If no assets folder is specified, use the default assets folder
 			assets = path.join(process.cwd(), 'assets');
 		}
-
 		if (!fs.existsSync(assets)) {
-			throw new Error('The folder ' + assets + ' does not exist!');
+			return Promise.reject('The folder ' + assets + ' does not exist!');
 		}
 
 		// Gets the assets only from the main folder and any sub-folders are ignored
 		// 'assets' is the folder path of assets to be bundled
 		const assetsInFolder = fs.readdirSync(assets).map(f => path.join(assets, f));
 		if (assetsInFolder.length === 0) {
-			throw new Error('No assets found in ' + assets);
+			return Promise.reject('No assets found in ' + assets);
 		}
 
-		const assetsList = assetsInFolder.map(f => { return { data: fs.readFileSync(f), name: path.basename(f) }});
+		const assetsList = assetsInFolder.map(f => {
+			return { data: fs.readFileSync(f), name: path.basename(f) };
+		});
 
 		let downloadFilename;
-		return createApplicationAndAssetBundle(appBinary, assetsList)
+		return Promise.resolve()
+			.then(() => createApplicationAndAssetBundle(appBinary, assetsList))
 			.then((bundle) => {
 				downloadFilename = this._getDownloadBundlePath(saveTo, appBinary);
 				return fs.writeFile(downloadFilename, bundle);
 			})
 			.then(() => {
-				this.ui.stdout.write(`Success! Downloaded bundle to ${downloadFilename}\n`);
+				this.ui.stdout.write(`Success! Created bundle ${downloadFilename}\n`);
 				return downloadFilename;
 			})
 			.catch(err => {
