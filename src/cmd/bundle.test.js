@@ -1,7 +1,6 @@
 const path = require('path');
 const { expect, sinon } = require('../../test/setup');
 const BundleCommands = require('./bundle');
-const fs = require('fs');
 const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
 
 describe('BundleCommands', () => {
@@ -143,8 +142,7 @@ describe('BundleCommands', () => {
 			let downloadFilename;
 			try {
 				downloadFilename = await bundleCommands.createBundle(args);
-			}
-			catch (_error) {
+			} catch (_error) {
 				error = _error;
 			}
 
@@ -173,7 +171,7 @@ describe('BundleCommands', () => {
 				error = _error;
 			}
 			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', `RangeError: Empty asset dependency list`);
+			expect(error).to.have.property('message', 'RangeError: Empty asset dependency list');
 			// TODO: clean up
 		});
 
