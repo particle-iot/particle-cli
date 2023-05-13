@@ -16,7 +16,9 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	async createBundle({ saveTo, assets, params: { appBinary } }) {
-
+		if (!appBinary) {
+			throw new Error('The application binary is required');
+		}
 		if (!await fs.exists(appBinary)) {
 			throw new Error(`The file ${appBinary} does not exist`);
 		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {

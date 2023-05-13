@@ -4,6 +4,9 @@ const BundleCommands = require('./bundle');
 const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
 
 describe('BundleCommands', () => {
+	afterEach(() => {
+		sinon.restore();
+	});
 
 	describe('createBundle', () => {
 		let cwdStub;
@@ -24,7 +27,7 @@ describe('BundleCommands', () => {
 				error = _error;
 			}
 			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', 'The file undefined does not exist');
+			expect(error).to.have.property('message', 'The application binary is required');
 		});
 
 		it('throws an error if the app binary provided does not exist', async () => {

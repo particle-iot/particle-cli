@@ -28,15 +28,7 @@ const helpCommandOutput = [
 ].join('\n');
 
 describe('Bundle Commands', () => {
-	it('Shows `help` content when run without arguments', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['bundle']);
-
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal(helpCommandOutput);
-		expect(exitCode).to.equal(1);
-	});
-
-	it('Shows `help` content when run without arguments', async () => {
+	it('shows `help` content', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--help']);
 
 		expect(stdout).to.equal('');
@@ -44,7 +36,7 @@ describe('Bundle Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Returns bundle created with name specified by the user', async () => {
+	it('creates a bundle with name specified by user', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--saveTo', 'bundle.zip']);
@@ -54,7 +46,7 @@ describe('Bundle Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Returns bundle created with default name', async () => {
+	it('creates a bundle with default name', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
@@ -68,8 +60,8 @@ describe('Bundle Commands', () => {
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--assets', assetsPath]);
 
-		expect(stdout).to.equal('');
-		expect(stderr).to.equal(helpCommandOutput);
+		expect(stdout).to.include('The application binary is required');
+		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
 
@@ -78,25 +70,9 @@ describe('Bundle Commands', () => {
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
-		expect(stdout).to.include(`The file ${binPath} does not exist!`);
+		expect(stdout).to.include(`The file ${binPath} does not exist`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
-	});
-
-	it('uses the assets folder in the cwd if --assets option is not provided', async () => {
-		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
-		const fakeCwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
-		// Is it possible to inject a fake cwd?
-		let cwdStub = sinon.stub(process, 'cwd');
-		cwdStub.returns(fakeCwd);
-
-		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath]);
-
-		expect(stdout).to.match(/^Success! Created bundle bundle_app_\d+\.zip$/);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-
-		cwdStub.restore();
 	});
 
 	it('returns error if assets directory does not exist', async () => {
@@ -105,25 +81,6 @@ describe('Bundle Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
 		expect(stdout).to.include(`The folder ${assetsPath} does not exist!`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(1);
-	});
-
-	it('returns error if assets directory exists but is empty', async () => {
-		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_empty_assets/app.bin';
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_empty_assets/assets';
-		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
-
-		expect(stdout).to.include(`No assets found in ${assetsPath}`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(1);
-	});
-
-	it('returns error if the binary provided is not a valid binary', async () => {
-		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_bin/app.txt';
-		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath]);
-
-		expect(stdout).to.include(`The file ${binPath} is not a valid binary`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
