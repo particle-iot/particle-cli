@@ -170,7 +170,7 @@ workflows:
           matrix:
             parameters:
               os: [linux]
-              node-version: ["12", "16"]
+              node-version: ["16"]
       - test-e2e-macos:
           <<: *tag_filters
           name: test-e2e-mac-os
@@ -181,7 +181,7 @@ workflows:
           matrix:
             parameters:
               os: [macos]
-              node-version: ["12", "16"]
+              node-version: ["16"]
       - test-coverage:
           <<: *tag_filters
           context:

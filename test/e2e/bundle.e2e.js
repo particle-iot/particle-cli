@@ -1,9 +1,8 @@
-const { expect, sinon } = require('../setup');
+const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
 	PATH_FIXTURES_THIRDPARTY_OTA_DIR
 } = require('../lib/env');
-const path = require('path');
 
 const helpCommandOutput = [
 	'Creates a bundle of application binary and assets',
