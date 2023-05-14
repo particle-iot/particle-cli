@@ -9,6 +9,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 	const commandList = [
 		'Commands:',
 		'  binary      Inspect binaries',
+		'  bundle      Creates a bundle of application binary and assets',
 		'  call        Call a particular function on a device',
 		'  cloud       Access Particle cloud functionality',
 		'  compile     Compile a source file, or directory using the cloud compiler',
@@ -43,7 +44,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  whoami      prints signed-in username'
 	];
 
-	const allCmds = ['binary inspect', 'binary', 'call', 'cloud list',
+	const allCmds = ['binary inspect', 'binary', 'bundle', 'call', 'cloud list',
 		'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile', 'config', 'device add', 'device remove',

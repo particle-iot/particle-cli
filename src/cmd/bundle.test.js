@@ -1,10 +1,13 @@
 const path = require('path');
 const { expect, sinon } = require('../../test/setup');
 const BundleCommands = require('./bundle');
-const fs = require('fs');
 const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
+const fs = require('fs-extra');
 
 describe('BundleCommands', () => {
+	afterEach(() => {
+		sinon.restore();
+	});
 
 	describe('createBundle', () => {
 		let cwdStub;
@@ -25,7 +28,7 @@ describe('BundleCommands', () => {
 				error = _error;
 			}
 			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', 'The file undefined does not exist');
+			expect(error).to.have.property('message', 'The application binary is required');
 		});
 
 		it('throws an error if the app binary provided does not exist', async () => {
@@ -95,7 +98,8 @@ describe('BundleCommands', () => {
 			expect(downloadFilename).to.eq('app_bundle_test.zip');
 			expect(error).to.not.be.an.instanceof(Error);
 
-			// TODO: clean up
+			// TODO: add error handling for this
+			await fs.unlink('app_bundle_test.zip');
 		});
 
 		it('uses the assets in the assets folder when --assets option is not specified', async () => {
@@ -124,7 +128,8 @@ describe('BundleCommands', () => {
 			expect(downloadFilename).to.eq('app_bundle_test.zip');
 			expect(error).to.not.be.an.instanceof(Error);
 
-			// TODO: clean up
+			// TODO: add error handling for this
+			await fs.unlink('app_bundle_test.zip');
 		});
 
 		it('uses the assets in the assets folder when --assets option is specified', async () => {
@@ -143,15 +148,15 @@ describe('BundleCommands', () => {
 			let downloadFilename;
 			try {
 				downloadFilename = await bundleCommands.createBundle(args);
-			}
-			catch (_error) {
+			} catch (_error) {
 				error = _error;
 			}
 
 			expect(downloadFilename).to.eq('app_bundle_test.zip');
 			expect(error).to.not.be.an.instanceof(Error);
 
-			// TODO: clean up
+			// TODO: add error handling for this
+			await fs.unlink('app_bundle_test.zip');
 		});
 
 		it('returns error if there are no assets in the assets folder', async () => {
@@ -173,8 +178,7 @@ describe('BundleCommands', () => {
 				error = _error;
 			}
 			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', `RangeError: Empty asset dependency list`);
-			// TODO: clean up
+			expect(error).to.have.property('message', 'RangeError: Empty asset dependency list');
 		});
 
 		it('returns bundle with the name given by user using --saveTo', async () => {
@@ -200,6 +204,7 @@ describe('BundleCommands', () => {
 			expect(downloadFilename).to.eq(args.saveTo);
 			expect(error).to.not.be.an.instanceof(Error);
 			// TODO: clean up
+			await fs.unlink(downloadFilename);
 		});
 
 		it('returns bundle with the default name if saveTo argument does not have .zip extension', async () => {
@@ -224,24 +229,10 @@ describe('BundleCommands', () => {
 
 			expect(downloadFilename).to.match(/^bundle_app_\d+\.zip$/);
 			expect(error).to.not.be.an.instanceof(Error);
-			// TODO: clean up
-			//
-			//
-			// return new BundleCommands().createBundle(args)
-			// 	.then(result => {
-			// 		// Use regex because of the time mismatch between the test and
-			// 		// the actual execution of the following line
-			// 		expect(result).to.match(/^bundle_app_\d+\.zip$/);
-			// 	})
-			// 	.catch((error) => {
-			// 		throw new Error(error);
-			// 	})
-			// 	.finally(() => {
-			// 		const files = fs.readdirSync('.');
-			// 		const regex = /^bundle_app_\d+\.zip$/;
-			// 		const zipFile = files.find(file => regex.test(file));
-			// 		fs.unlinkSync(zipFile);
-			// 	});
+			// TODO: add error handling for this
+			if (await fs.pathExists(downloadFilename)) {
+				await fs.unlink(downloadFilename);
+			}
 		});
 
 		it('returns bundle with the default name if saveTo argument is not provided', async () => {
@@ -266,23 +257,10 @@ describe('BundleCommands', () => {
 
 			expect(downloadFilename).to.match(/^bundle_app_\d+\.zip$/);
 			expect(error).to.not.be.an.instanceof(Error);
-			// TODO: clean up
-			//
-			// return new BundleCommands().createBundle(args)
-			// 	.then(result => {
-			// 		// Use regex because of the time mismatch between the test and
-			// 		// the actual execution of the following line
-			// 		expect(result).to.match(/^bundle_app_\d+\.zip$/);
-			// 	})
-			// 	.catch((error) => {
-			// 		throw new Error(error);
-			// 	})
-			// 	.finally(() => {
-			// 		const files = fs.readdirSync('.');
-			// 		const regex = /^bundle_app_\d+\.zip$/;
-			// 		const zipFile = files.find(file => regex.test(file));
-			// 		fs.unlinkSync(zipFile);
-			// 	});
+			// TODO: add error handling for this
+			if (await fs.pathExists(downloadFilename)) {
+				await fs.unlink(downloadFilename);
+			}
 		});
 
 		it('returns any other errors', () => {
@@ -347,13 +325,13 @@ describe('BundleCommands', () => {
 		it('returns system generated name if --saveTo argument lacks .zip extension', async () => {
 			const { _getDownloadBundlePath } = new BundleCommands();
 			const res = await _getDownloadBundlePath('test', 'test.bin');
-			expect(res).to.equal('bundle_test_' + Date.now() + '.zip');
+			expect(res).to.match(/^bundle_test_\d+\.zip$/);
 		});
 
 		it('returns system generated name if --saveTo argument is blank', async () => {
 			const { _getDownloadBundlePath } = new BundleCommands();
 			const res = await _getDownloadBundlePath(undefined, 'test.bin');
-			expect(res).to.equal('bundle_test_' + Date.now() + '.zip');
+			expect(res).to.match(/^bundle_test_\d+\.zip$/);
 		});
 
 	});

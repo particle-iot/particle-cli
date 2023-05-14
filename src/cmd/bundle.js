@@ -1,14 +1,13 @@
 const fs = require('fs-extra');
 const path = require('path');
 const CLICommandBase = require('./base');
-const { createApplicationAndAssetBundle } = require('binary-version-reader');
+const { createApplicationAndAssetBundle, unpackApplicationAndAssetBundle } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 
 const specialFiles = [
 	'.DS_Store',
 	'Thumbs.db',
 	'desktop.ini',
-	'Icon\r',
 	'__MACOSX'
 ];
 module.exports = class BundleCommands extends CLICommandBase {
@@ -17,7 +16,9 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	async createBundle({ saveTo, assets, params: { appBinary } }) {
-
+		if (!appBinary) {
+			throw new Error('The application binary is required');
+		}
 		if (!await fs.exists(appBinary)) {
 			throw new Error(`The file ${appBinary} does not exist`);
 		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
@@ -37,6 +38,15 @@ module.exports = class BundleCommands extends CLICommandBase {
 			downloadFilename = this._getDownloadBundlePath(saveTo, appBinary);
 			await fs.promises.writeFile(downloadFilename, bundle);
 			this.ui.stdout.write(`Success! Created bundle ${downloadFilename}\n`);
+
+			// Get the list of bundled assets to display to the user
+			const unpacked = await unpackApplicationAndAssetBundle(bundle);
+			let bundledAssetsNames = [];
+			unpacked.assets.forEach((asset) => {
+				bundledAssetsNames.push(asset.name);
+			});
+			bundledAssetsNames = bundledAssetsNames.map((asset) => `- ${asset}`);
+			this.ui.stdout.write(`Bundled assets:\n${bundledAssetsNames.join('\n')}\n`);
 			return downloadFilename;
 		} catch (error) {
 			throw new Error(error);
