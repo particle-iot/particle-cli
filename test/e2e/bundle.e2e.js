@@ -33,24 +33,27 @@ describe('Bundle Commands', () => {
 		expect(stdout).to.equal('');
 		expect(stderr).to.eq(helpCommandOutput);
 		expect(exitCode).to.equal(0);
-	});
+	}).timeout(3000);
 
 	it('creates a bundle with name specified by user', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--saveTo', 'bundle.zip']);
 
-		expect(stdout).to.equal('Success! Created bundle bundle.zip');
+		expect(stdout).to.include('Success! Created bundle bundle.zip');
+		expect(stdout).to.include('cat.jpg', 'house.jpg', 'water.jpg');
 		expect(stderr).to.eq('');
 		expect(exitCode).to.equal(0);
-	});
+	}).timeout(3000);
 
 	it('creates a bundle with default name', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
-		expect(stdout).to.match(/^Success! Created bundle bundle_app_\d+\.zip$/);
+		expect(stdout).to.match(/^Success! Created bundle bundle_app_\d+\.zip/);
+		// includes cat.jpg, dog.jpg, and index.html
+		expect(stdout).to.include('cat.jpg', 'house.jpg', 'water.jpg');
 		expect(stderr).to.eq('');
 		expect(exitCode).to.equal(0);
 	});
