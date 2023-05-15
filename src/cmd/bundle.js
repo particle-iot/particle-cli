@@ -59,7 +59,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 		}
 		// Gets the assets only from the main folder and any sub-folders are ignored
 		// 'assets' is the folder path of assets to be bundled
-		const assetsInFolder = await fs.readdir(assets);	// .map(f => path.join(assets, f));
+		const assetsInFolder = await fs.readdir(assets);
 		const assetFiles = await Promise.all(assetsInFolder.map(async (f) => {
 			const filepath = path.join(assets, f);
 			const stat = await fs.stat(filepath);
