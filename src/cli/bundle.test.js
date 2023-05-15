@@ -4,7 +4,7 @@ const bundle = require('./bundle');
 
 const helpCommandOutput = [
 	'Creates a bundle of application binary and assets',
-	'Usage: particle bundle [options] [appBinary]',
+	'Usage: particle bundle [options] <appBinary>',
 	'',
 	'Options:',
 	'  --saveTo  Filename for the compiled binary  [string]',
@@ -33,7 +33,6 @@ describe('Bundle Command-Line Interface', () => {
 		it('Handles `bundle` command', () => {
 			const argv = commandProcessor.parse(root, ['bundle']);
 			expect(argv.clierror).to.equal(undefined);
-			console.log('argv', argv);
 			expect(argv.params.appBinary).to.equal(undefined);
 		});
 
