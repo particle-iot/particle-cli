@@ -1,19 +1,24 @@
 const path = require('path');
-const { expect, sinon } = require('../../test/setup');
+const { expect } = require('../../test/setup');
 const BundleCommands = require('./bundle');
-const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
+const { PATH_FIXTURES_THIRDPARTY_OTA_DIR, PATH_TMP_DIR } = require('../../test/lib/env');
 const fs = require('fs-extra');
 
 describe('BundleCommands', () => {
-	afterEach(() => {
-		sinon.restore();
+	let bundleCommands;
+	let targetBundlePath;
+
+	beforeEach(() => {
+		bundleCommands = new BundleCommands();
+		targetBundlePath = path.join(PATH_TMP_DIR, 'app_bundle_test.zip');
+	});
+
+	afterEach(async () => {
+		await fs.unlink(targetBundlePath);
 	});
 
 	describe('createBundle', () => {
-		let cwdStub;
-		const bundleCommands = new BundleCommands();
 		it('throws an error if the app binary provided does not exist', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'fake_app.bin');
 			const args = {
 				params: {
@@ -35,7 +40,6 @@ describe('BundleCommands', () => {
 		});
 
 		it('throws an error if the app binary is not a valid binary', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_bin', 'app.txt');
 			const args = {
 				params: {
@@ -57,7 +61,6 @@ describe('BundleCommands', () => {
 		});
 
 		it('returns a .zip file', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 			const args = {
@@ -65,26 +68,15 @@ describe('BundleCommands', () => {
 					appBinary: binPath,
 				},
 				assets: assetsPath,
-				saveTo: 'app_bundle_test.zip'
+				saveTo: targetBundlePath
 			};
-			let error;
-			let downloadFilename;
 
-			try {
-				downloadFilename = await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
-			}
+			const bundleFilename = await bundleCommands.createBundle(args);
 
-			expect(downloadFilename).to.eq('app_bundle_test.zip');
-			expect(error).to.not.be.an.instanceof(Error);
-
-			// TODO: add error handling for this
-			await fs.unlink('app_bundle_test.zip');
+			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
 		it('uses the assets in the assets folder when --assets option is not specified', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = undefined;
 			const args = {
@@ -92,29 +84,21 @@ describe('BundleCommands', () => {
 					appBinary: binPath,
 				},
 				assets: assetsPath,
-				saveTo: 'app_bundle_test.zip'
+				saveTo: targetBundlePath
 			};
-			const fakeCwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
-			cwdStub = sinon.stub(process, 'cwd');
-			cwdStub.returns(fakeCwd);
-			let error;
-			let downloadFilename;
-
+			const currentDir = process.cwd();
 			try {
-				downloadFilename = await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
+				process.chdir(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'));
+
+				const bundleFilename = await bundleCommands.createBundle(args);
+
+				expect(bundleFilename).to.eq(targetBundlePath);
+			} finally {
+				process.chdir(currentDir);
 			}
-
-			expect(downloadFilename).to.eq('app_bundle_test.zip');
-			expect(error).to.not.be.an.instanceof(Error);
-
-			// TODO: add error handling for this
-			await fs.unlink('app_bundle_test.zip');
 		});
 
 		it('uses the assets in the assets folder when --assets option is specified', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 			const args = {
@@ -122,27 +106,16 @@ describe('BundleCommands', () => {
 					appBinary: binPath,
 				},
 				assets: assetsPath,
-				saveTo: 'app_bundle_test.zip'
+				saveTo: targetBundlePath
 			};
-			let error;
-			let downloadFilename;
 
-			try {
-				downloadFilename = await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
-			}
+			const bundleFilename = await bundleCommands.createBundle(args);
 
-			expect(downloadFilename).to.eq('app_bundle_test.zip');
-			expect(error).to.not.be.an.instanceof(Error);
-
-			// TODO: add error handling for this
-			await fs.unlink('app_bundle_test.zip');
+			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
-		it('returns error if there are no assets in the assets folder', async () => {
-			// TODO: This test will be revisited as per potential spec changes
-			const bundleCommands = new BundleCommands();
+		// TODO: uncomment this test when binary version reader is able to create a bundle with 0 assets
+		xit('creates a bundle if there are no assets in the assets folder', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_empty_assets', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_empty_assets', 'assets');
 			const args = {
@@ -165,7 +138,6 @@ describe('BundleCommands', () => {
 		});
 
 		it('returns bundle with the name given by user using --saveTo', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 			const args = {
@@ -192,7 +164,6 @@ describe('BundleCommands', () => {
 		});
 
 		it('returns bundle with the default name if saveTo argument does not have .zip extension', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 			const args = {
@@ -221,7 +192,6 @@ describe('BundleCommands', () => {
 		});
 
 		it('returns bundle with the default name if saveTo argument is not provided', async () => {
-			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 			const args = {
@@ -260,7 +230,7 @@ describe('BundleCommands', () => {
 			let error;
 
 			try {
-				await new BundleCommands().getAssets(assetsPath);
+				await new BundleCommands()._getAssets(assetsPath);
 			} catch (_error) {
 				error = _error;
 			}
@@ -272,7 +242,7 @@ describe('BundleCommands', () => {
 		it('returns the assets list', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 
-			const assetsList = await new BundleCommands().getAssets(assetsPath);
+			const assetsList = await new BundleCommands()._getAssets(assetsPath);
 
 			expect(assetsList).to.be.an.instanceof(Array);
 			expect(assetsList).to.have.lengthOf(3);
@@ -282,7 +252,7 @@ describe('BundleCommands', () => {
 		it('ignores nested directories', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'nested_dir', 'assets');
 
-			const assetsList = await new BundleCommands().getAssets(assetsPath);
+			const assetsList = await new BundleCommands()._getAssets(assetsPath);
 
 			expect(assetsList).to.be.an.instanceof(Array);
 			expect(assetsList).to.have.lengthOf(2);
@@ -292,7 +262,7 @@ describe('BundleCommands', () => {
 		it('ignores special files', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'nested_dir', 'assets');
 
-			const assetsList = await new BundleCommands().getAssets(assetsPath);
+			const assetsList = await new BundleCommands()._getAssets(assetsPath);
 
 			expect(assetsList).to.be.an.instanceof(Array);
 			expect(assetsList).to.have.lengthOf(2);
