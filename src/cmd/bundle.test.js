@@ -17,6 +17,17 @@ describe('BundleCommands', () => {
 		await fs.unlink(targetBundlePath).catch(() => {}); // ignore missing file
 	});
 
+	async function runInDirectory(dir, handler) {
+		const currentDir = process.cwd();
+		try {
+			process.chdir(dir);
+
+			return await handler();
+		} finally {
+			process.chdir(currentDir);
+		}
+	}
+
 	describe('createBundle', () => {
 		it('throws an error if the app binary provided does not exist', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'fake_app.bin');
@@ -108,16 +119,12 @@ describe('BundleCommands', () => {
 				assets: assetsPath,
 				saveTo: targetBundlePath
 			};
-			const currentDir = process.cwd();
-			try {
-				process.chdir(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'));
 
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
 				const bundleFilename = await bundleCommands.createBundle(args);
 
 				expect(bundleFilename).to.eq(targetBundlePath);
-			} finally {
-				process.chdir(currentDir);
-			}
+			});
 		});
 
 		it('uses the assets in the assets folder when --assets option is specified', async () => {
@@ -163,26 +170,14 @@ describe('BundleCommands', () => {
 				assets: assetsPath,
 				saveTo: undefined
 			};
-			let error;
-			let downloadFilename;
 
-			try {
-				downloadFilename = await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
-			}
+			await runInDirectory(PATH_TMP_DIR, async () => {
+				const bundleFilename = await bundleCommands.createBundle(args);
 
-			expect(downloadFilename).to.match(/^bundle_app_\d+\.zip$/);
-			expect(error).to.not.be.an.instanceof(Error);
+				expect(bundleFilename).to.match(/^bundle_app_\d+\.zip$/);
 
-			// TODO: add error handling for this
-			if (await fs.pathExists(downloadFilename)) {
-				await fs.unlink(downloadFilename);
-			}
-		});
-
-		it('returns any other errors', () => {
-			expect(true).to.eq(true);
+				await fs.unlink(bundleFilename).catch(() => {});
+			});
 		});
 	});
 
@@ -247,5 +242,3 @@ describe('BundleCommands', () => {
 		});
 	});
 });
-
-
