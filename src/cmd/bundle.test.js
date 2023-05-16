@@ -8,8 +8,9 @@ describe('BundleCommands', () => {
 	let bundleCommands ;
 	let targetBundlePath;
 
-	beforeEach(() => {
+	beforeEach(async () => {
 		bundleCommands = new BundleCommands();
+		await fs.ensureDir(PATH_TMP_DIR);
 		targetBundlePath = path.join(PATH_TMP_DIR, 'app_bundle_test.zip');
 	});
 
