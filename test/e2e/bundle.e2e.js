@@ -6,7 +6,7 @@ const {
 
 const helpCommandOutput = [
 	'Creates a bundle of application binary and assets',
-	'Usage: particle bundle [options] [appBinary]',
+	'Usage: particle bundle [options] <appBinary>',
 	'',
 	'Global Options:',
 	'  -v, --verbose  Increases how much logging to display  [count]',
@@ -40,8 +40,9 @@ describe('Bundle Commands', () => {
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--saveTo', 'bundle.zip']);
 
-		expect(stdout).to.include('Success! Created bundle bundle.zip');
+		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
 		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
+		expect(stdout).to.include('Bundling successful.\nSaved bundle to: bundle.zip');
 		expect(stderr).to.eq('');
 		expect(exitCode).to.equal(0);
 	}).timeout(3000);
@@ -51,9 +52,11 @@ describe('Bundle Commands', () => {
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
-		expect(stdout).to.match(/^Success! Created bundle bundle_app_\d+\.zip/);
-		// includes assets
+		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
 		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
+		expect(stdout).to.include('Bundling successful');
+		expect(stdout).to.match(/Saved bundle to: bundle_app_\d+\.zip/);
+
 		expect(stderr).to.eq('');
 		expect(exitCode).to.equal(0);
 	});
@@ -62,8 +65,8 @@ describe('Bundle Commands', () => {
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--assets', assetsPath]);
 
-		expect(stdout).to.include('The application binary is required');
-		expect(stderr).to.equal('');
+		expect(stdout).to.include('Parameter \'appBinary\' is required.');
+		expect(stderr).to.equal(helpCommandOutput);
 		expect(exitCode).to.equal(1);
 	});
 
@@ -82,7 +85,7 @@ describe('Bundle Commands', () => {
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_no_assets/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
-		expect(stdout).to.include(`The folder ${assetsPath} does not exist!`);
+		expect(stdout).to.include(`The assets folder ${assetsPath} does not exist`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
