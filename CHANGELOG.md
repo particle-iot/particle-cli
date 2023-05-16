@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.1 - 16 May 2023
+
+* Fix implementation of library upload so it works in Node 16
+
 ## 3.10.0 - 8 May 2023
 
 * Update node version from `v12` to `v16`
