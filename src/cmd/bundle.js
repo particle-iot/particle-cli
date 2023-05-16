@@ -16,7 +16,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	async createBundle({ saveTo, assets, params: { appBinary } }) {
-		const { assetsPath, assetsList, bundleFilename } = await this._prepareBundle({ appBinary, saveTo, assets });
+		const { assetsPath, bundleFilename } = await this._validateArguments({ appBinary, saveTo, assets });
+		const assetsList = await this._getAssets({ assetsPath });
 		this._displayAssets({ appBinary, assetsPath, assetsList });
 		await this._generateBundle({ assetsList, appBinary, bundleFilename });
 		this._displaySuccess({ bundleFilename });
@@ -24,7 +25,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 		return bundleFilename;
 	}
 
-	async _prepareBundle({ appBinary, saveTo, assets }) {
+	async _validateArguments({ appBinary, saveTo, assets }) {
 		if (!await fs.exists(appBinary)) {
 			throw new Error(`The file ${appBinary} does not exist`);
 		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
@@ -33,14 +34,11 @@ module.exports = class BundleCommands extends CLICommandBase {
 			throw new Error(`The target file ${saveTo} must be a .zip file`);
 		}
 
-		let assetsPath = assets;
-		if (!assetsPath) {
-			// If no assets folder is specified, use the default assets folder in the current directory
-			assetsPath = 'assets';
-		}
-		const assetsList = await this._getAssets({ assetsPath });
+		// If no assets folder is specified, use the default assets folder in the current directory
+		let assetsPath = assets ? assets : 'assets';
+
 		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
-		return { assetsPath, assetsList, bundleFilename };
+		return { assetsPath, bundleFilename };
 	}
 
 	async _getAssets({ assetsPath }) {
