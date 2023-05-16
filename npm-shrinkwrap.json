@@ -27,7 +27,7 @@
         "openurl": "^1.1.1",
         "particle-api-js": "^9.1.2",
         "particle-commands": "0.3.0",
-        "particle-library-manager": "^0.1.14",
+        "particle-library-manager": "^0.1.15",
         "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
         "safe-buffer": "^5.2.0",
         "semver": "^6.3.0",
@@ -7131,9 +7131,9 @@
       }
     },
     "node_modules/particle-library-manager": {
-      "version": "0.1.14",
-      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-0.1.14.tgz",
-      "integrity": "sha512-XLl0+CYnKePzixB6z1LHitiVJVQO2VIrNDpLwYHqhYBFmAk7aEsrFzQ7/6hmdWZWvQIF094P+Rt2yiZv/JqV6A==",
+      "version": "0.1.15",
+      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-0.1.15.tgz",
+      "integrity": "sha512-ejHT8m/V0WZgG51KaaNEUu1B7W59Vvxm45xaOn+kYjssEVrWush/RgqJKVBJheyMsNrF4iHKZ3Ost98qhG5syQ==",
       "dependencies": {
         "app-root-path": "^2.0.1",
         "async": "^2.0.0-rc.4",
@@ -16453,9 +16453,9 @@
       }
     },
     "particle-library-manager": {
-      "version": "0.1.14",
-      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-0.1.14.tgz",
-      "integrity": "sha512-XLl0+CYnKePzixB6z1LHitiVJVQO2VIrNDpLwYHqhYBFmAk7aEsrFzQ7/6hmdWZWvQIF094P+Rt2yiZv/JqV6A==",
+      "version": "0.1.15",
+      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-0.1.15.tgz",
+      "integrity": "sha512-ejHT8m/V0WZgG51KaaNEUu1B7W59Vvxm45xaOn+kYjssEVrWush/RgqJKVBJheyMsNrF4iHKZ3Ost98qhG5syQ==",
       "requires": {
         "app-root-path": "^2.0.1",
         "async": "^2.0.0-rc.4",
