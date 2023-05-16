@@ -3,6 +3,7 @@ const path = require('path');
 const CLICommandBase = require('./base');
 const { createApplicationAndAssetBundle } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
+const os = require('os');
 
 const specialFiles = [
 	'.DS_Store',
@@ -70,9 +71,9 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	_displayAssets({ appBinary, assetsPath, assetsList }) {
-		this.ui.stdout.write(`Bundling ${appBinary} with ${assetsPath}:\n`);
+		this.ui.stdout.write(`Bundling ${appBinary} with ${assetsPath}:${os.EOL}`);
 		assetsList.forEach((asset) => {
-			this.ui.stdout.write(`  ${asset.name}\n`);
+			this.ui.stdout.write(`  ${asset.name}${os.EOL}`);
 		});
 	}
 
@@ -82,6 +83,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	_displaySuccess({ bundleFilename }) {
-		this.ui.stdout.write(`Bundle ${bundleFilename} successfully generated\n`);
+		this.ui.stdout.write(`Bundling successful.${os.EOL}`);
+		this.ui.stdout.write(`Saved bundle to: ${bundleFilename}${os.EOL}`);
 	}
 };
