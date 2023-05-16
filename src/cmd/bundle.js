@@ -29,25 +29,20 @@ module.exports = class BundleCommands extends CLICommandBase {
 
 		const assetsList = await this.getAssets(assets);
 
-		let bundleFilename;
-		try {
-			const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
-			const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
-			await fs.promises.writeFile(bundleFilename, bundle);
-			this.ui.stdout.write(`Success! Created bundle ${bundleFilename}\n`);
+		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
+		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
+		await fs.promises.writeFile(bundleFilename, bundle);
+		this.ui.stdout.write(`Success! Created bundle ${bundleFilename}\n`);
 
-			// Get the list of bundled assets to display to the user
-			const unpacked = await unpackApplicationAndAssetBundle(bundle);
-			let bundledAssetsNames = [];
-			unpacked.assets.forEach((asset) => {
-				bundledAssetsNames.push(asset.name);
-			});
-			bundledAssetsNames = bundledAssetsNames.map((asset) => `- ${asset}`);
-			this.ui.stdout.write(`Bundled assets:\n${bundledAssetsNames.join('\n')}\n`);
-			return bundleFilename;
-		} catch (error) {
-			throw new Error(error);
-		}
+		// Get the list of bundled assets to display to the user
+		const unpacked = await unpackApplicationAndAssetBundle(bundle);
+		let bundledAssetsNames = [];
+		unpacked.assets.forEach((asset) => {
+			bundledAssetsNames.push(asset.name);
+		});
+		bundledAssetsNames = bundledAssetsNames.map((asset) => `- ${asset}`);
+		this.ui.stdout.write(`Bundled assets:\n${bundledAssetsNames.join('\n')}\n`);
+		return bundleFilename;
 	}
 
 	async getAssets(assets) {
