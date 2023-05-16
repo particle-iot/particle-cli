@@ -246,7 +246,7 @@ describe('BundleCommands', () => {
 
 			expect(assetsList).to.be.an.instanceof(Array);
 			expect(assetsList).to.have.lengthOf(3);
-			expect(assetsList.map(asset => asset.name)).to.eql(['cat.jpg', 'house.jpg', 'water.jpg']);
+			expect(assetsList.map(asset => asset.name)).to.eql(['cat.txt', 'house.txt', 'water.txt']);
 		});
 
 		it('ignores nested directories', async () => {

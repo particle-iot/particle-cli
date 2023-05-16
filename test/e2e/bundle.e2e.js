@@ -41,7 +41,7 @@ describe('Bundle Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--saveTo', 'bundle.zip']);
 
 		expect(stdout).to.include('Success! Created bundle bundle.zip');
-		expect(stdout).to.include('cat.jpg', 'house.jpg', 'water.jpg');
+		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
 		expect(stderr).to.eq('');
 		expect(exitCode).to.equal(0);
 	}).timeout(3000);
@@ -52,8 +52,8 @@ describe('Bundle Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
 		expect(stdout).to.match(/^Success! Created bundle bundle_app_\d+\.zip/);
-		// includes cat.jpg, dog.jpg, and index.html
-		expect(stdout).to.include('cat.jpg', 'house.jpg', 'water.jpg');
+		// includes assets
+		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
 		expect(stderr).to.eq('');
 		expect(exitCode).to.equal(0);
 	});
