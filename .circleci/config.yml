@@ -84,18 +84,7 @@ jobs:
       - run:
           name: Run Tests
           command: npm run test:ci
-  test-e2e-linux:
-    parameters:
-      os:
-        type: executor
-      node-version:
-        type: string
-    executor: << parameters.os >>
-    steps:
-      - run-tests:
-          node-version: << parameters.node-version >>
-          test-command: test:e2e:ci
-  test-e2e-macos:
+  test-e2e:
     parameters:
       os:
         type: executor
@@ -154,26 +143,26 @@ workflows:
           matrix:
             parameters:
               os: [linux, macos]
-              node-version: ["12", "16"] # Node 18 doesn't work due to serialport dependency
+              node-version: ["16"] # Node 18 doesn't work due to serialport dependency
       - test-windows:
           <<: *tag_filters
           context:
             - particle-ci-private
           matrix:
             parameters:
-              node-version: ["12", "16"] # Node 18 doesn't work due to serialport dependency
-      - test-e2e-linux:
+              node-version: ["16"] # Node 18 doesn't work due to serialport dependency
+      - test-e2e:
           <<: *tag_filters
-          name: test-e2e-linux-os
+          name: test-e2e-linux
           context:
             - particle-ci-private
           matrix:
             parameters:
               os: [linux]
               node-version: ["16"]
-      - test-e2e-macos:
+      - test-e2e:
           <<: *tag_filters
-          name: test-e2e-mac-os
+          name: test-e2e-macos
           requires:
             - test-e2e-linux
           context:
@@ -189,7 +178,7 @@ workflows:
           matrix:
             parameters:
               os: [linux]
-              node-version: ["12", "16"]
+              node-version: ["16"]
       - publish-npm:
           requires:
             - test-unix
