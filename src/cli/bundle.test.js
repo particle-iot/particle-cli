@@ -31,9 +31,9 @@ describe('Bundle Command-Line Interface', () => {
 
 	describe('Top-Level `bundle` Namespace', () => {
 		it('Handles `bundle` command', () => {
-			const argv = commandProcessor.parse(root, ['bundle']);
+			const argv = commandProcessor.parse(root, ['bundle', 'app.bin']);
 			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params.appBinary).to.equal(undefined);
+			expect(argv.params.appBinary).to.equal('app.bin');
 		});
 
 		it('Includes help', () => {

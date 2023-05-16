@@ -1,6 +1,6 @@
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'bundle', 'Creates a bundle of application binary and assets', {
-		params: '[appBinary]',
+		params: '<appBinary>',
 		options: {
 			'saveTo': {
 				description: 'Filename for the compiled binary'

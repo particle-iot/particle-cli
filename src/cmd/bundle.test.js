@@ -12,26 +12,6 @@ describe('BundleCommands', () => {
 	describe('createBundle', () => {
 		let cwdStub;
 		const bundleCommands = new BundleCommands();
-		it('throws an error if the app binary is not provided', async () => {
-			const args = {
-				params: {
-					appBinary: undefined
-				},
-				assets: undefined,
-				saveTo: undefined
-			};
-			let error;
-
-			try {
-				await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', 'The application binary is required');
-		});
-
 		it('throws an error if the app binary provided does not exist', async () => {
 			const bundleCommands = new BundleCommands();
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'fake_app.bin');
@@ -323,25 +303,25 @@ describe('BundleCommands', () => {
 
 	describe('_getDownloadBundlePath', () => {
 		it ('returns --saveTo argument if it has .zip extension', async () => {
-			const { _getDownloadBundlePath } = new BundleCommands();
+			const { _getBundleSavePath } = new BundleCommands();
 
-			const res = await _getDownloadBundlePath('test.zip', 'test.bin');
+			const res = await _getBundleSavePath('test.zip', 'test.bin');
 
 			expect(res).to.equal('test.zip');
 		});
 
 		it('returns system generated name if --saveTo argument lacks .zip extension', async () => {
-			const { _getDownloadBundlePath } = new BundleCommands();
+			const { _getBundleSavePath } = new BundleCommands();
 
-			const res = await _getDownloadBundlePath('test', 'test.bin');
+			const res = await _getBundleSavePath('test', 'test.bin');
 
 			expect(res).to.match(/^bundle_test_\d+\.zip$/);
 		});
 
 		it('returns system generated name if --saveTo argument is blank', async () => {
-			const { _getDownloadBundlePath } = new BundleCommands();
+			const { _getBundleSavePath } = new BundleCommands();
 
-			const res = await _getDownloadBundlePath(undefined, 'test.bin');
+			const res = await _getBundleSavePath(undefined, 'test.bin');
 
 			expect(res).to.match(/^bundle_test_\d+\.zip$/);
 		});

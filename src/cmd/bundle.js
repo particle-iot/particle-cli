@@ -16,9 +16,6 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	async createBundle({ saveTo, assets, params: { appBinary } }) {
-		if (!appBinary) {
-			throw new Error('The application binary is required');
-		}
 		if (!await fs.exists(appBinary)) {
 			throw new Error(`The file ${appBinary} does not exist`);
 		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
@@ -32,12 +29,12 @@ module.exports = class BundleCommands extends CLICommandBase {
 
 		const assetsList = await this.getAssets(assets);
 
-		let downloadFilename;
+		let bundleFilename;
 		try {
 			const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
-			downloadFilename = this._getDownloadBundlePath(saveTo, appBinary);
-			await fs.promises.writeFile(downloadFilename, bundle);
-			this.ui.stdout.write(`Success! Created bundle ${downloadFilename}\n`);
+			const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
+			await fs.promises.writeFile(bundleFilename, bundle);
+			this.ui.stdout.write(`Success! Created bundle ${bundleFilename}\n`);
 
 			// Get the list of bundled assets to display to the user
 			const unpacked = await unpackApplicationAndAssetBundle(bundle);
@@ -47,7 +44,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 			});
 			bundledAssetsNames = bundledAssetsNames.map((asset) => `- ${asset}`);
 			this.ui.stdout.write(`Bundled assets:\n${bundledAssetsNames.join('\n')}\n`);
-			return downloadFilename;
+			return bundleFilename;
 		} catch (error) {
 			throw new Error(error);
 		}
@@ -74,7 +71,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 		return assetFiles.filter(f => f !== null);
 	}
 
-	_getDownloadBundlePath(saveTo, appBinaryPath) {
+	_getBundleSavePath(saveTo, appBinaryPath) {
 		if (saveTo){
 			const ext = utilities.getFilenameExt(saveTo);
 			if (ext === '.zip') {
