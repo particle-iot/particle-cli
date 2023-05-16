@@ -5,7 +5,7 @@ const { PATH_FIXTURES_THIRDPARTY_OTA_DIR, PATH_TMP_DIR } = require('../../test/l
 const fs = require('fs-extra');
 
 describe('BundleCommands', () => {
-	let bundleCommands;
+	let bundleCommands ;
 	let targetBundlePath;
 
 	beforeEach(() => {
@@ -14,7 +14,7 @@ describe('BundleCommands', () => {
 	});
 
 	afterEach(async () => {
-		await fs.unlink(targetBundlePath);
+		await fs.unlink(targetBundlePath).catch(() => {}); // ignore missing file
 	});
 
 	describe('createBundle', () => {
@@ -58,6 +58,28 @@ describe('BundleCommands', () => {
 
 			expect(error).to.be.an.instanceof(Error);
 			expect(error).to.have.property('message', `The file ${binPath} is not a valid binary`);
+		});
+
+		it('throws an error if the saveTo parameter is not a zip file', async () => {
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
+			const args = {
+				params: {
+					appBinary: binPath
+				},
+				assets: assetsPath,
+				saveTo: 'bundle.txt'
+			};
+			let error;
+
+			try {
+				await bundleCommands.createBundle(args);
+			} catch (_error) {
+				error = _error;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'The target file bundle.txt must be a .zip file');
 		});
 
 		it('returns a .zip file', async () => {
@@ -116,79 +138,19 @@ describe('BundleCommands', () => {
 
 		// TODO: uncomment this test when binary version reader is able to create a bundle with 0 assets
 		xit('creates a bundle if there are no assets in the assets folder', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_empty_assets', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_empty_assets', 'assets');
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'assets');
 			const args = {
 				params: {
 					appBinary: binPath,
 				},
 				assets: assetsPath,
-				saveTo: 'app_bundle_test.zip'
+				saveTo: targetBundlePath
 			};
-			let error;
 
-			try {
-				await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
-			}
+			const bundleFilename = await bundleCommands.createBundle(args);
 
-			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', 'RangeError: Empty asset dependency list');
-		});
-
-		it('returns bundle with the name given by user using --saveTo', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
-			const args = {
-				params: {
-					appBinary: binPath,
-				},
-				assets: assetsPath,
-				saveTo: 'app_bundle_test.zip'
-			};
-			let error;
-			let downloadFilename;
-
-			try {
-				downloadFilename = await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(downloadFilename).to.eq(args.saveTo);
-			expect(error).to.not.be.an.instanceof(Error);
-
-			// TODO: clean up
-			await fs.unlink(downloadFilename);
-		});
-
-		it('returns bundle with the default name if saveTo argument does not have .zip extension', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
-			const args = {
-				params: {
-					appBinary: binPath,
-				},
-				assets: assetsPath,
-				saveTo: 'app'
-			};
-			let error;
-			let downloadFilename;
-
-			try {
-				downloadFilename = await bundleCommands.createBundle(args);
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(downloadFilename).to.match(/^bundle_app_\d+\.zip$/);
-			expect(error).to.not.be.an.instanceof(Error);
-
-			// TODO: add error handling for this
-			if (await fs.pathExists(downloadFilename)) {
-				await fs.unlink(downloadFilename);
-			}
+			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
 		it('returns bundle with the default name if saveTo argument is not provided', async () => {
@@ -230,19 +192,19 @@ describe('BundleCommands', () => {
 			let error;
 
 			try {
-				await new BundleCommands()._getAssets(assetsPath);
+				await bundleCommands._getAssets({ assetsPath });
 			} catch (_error) {
 				error = _error;
 			}
 
 			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.eql(`The folder ${assetsPath} does not exist!`);
+			expect(error.message).to.eql(`The assets folder ${assetsPath} does not exist`);
 		});
 
 		it('returns the assets list', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
 
-			const assetsList = await new BundleCommands()._getAssets(assetsPath);
+			const assetsList = await bundleCommands._getAssets({ assetsPath });
 
 			expect(assetsList).to.be.an.instanceof(Array);
 			expect(assetsList).to.have.lengthOf(3);
@@ -252,7 +214,7 @@ describe('BundleCommands', () => {
 		it('ignores nested directories', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'nested_dir', 'assets');
 
-			const assetsList = await new BundleCommands()._getAssets(assetsPath);
+			const assetsList = await bundleCommands._getAssets({ assetsPath });
 
 			expect(assetsList).to.be.an.instanceof(Array);
 			expect(assetsList).to.have.lengthOf(2);
@@ -262,7 +224,7 @@ describe('BundleCommands', () => {
 		it('ignores special files', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'nested_dir', 'assets');
 
-			const assetsList = await new BundleCommands()._getAssets(assetsPath);
+			const assetsList = await bundleCommands._getAssets({ assetsPath });
 
 			expect(assetsList).to.be.an.instanceof(Array);
 			expect(assetsList).to.have.lengthOf(2);
@@ -271,33 +233,19 @@ describe('BundleCommands', () => {
 
 	});
 
-	describe('_getDownloadBundlePath', () => {
-		it ('returns --saveTo argument if it has .zip extension', async () => {
-			const { _getBundleSavePath } = new BundleCommands();
-
-			const res = await _getBundleSavePath('test.zip', 'test.bin');
+	describe('_getBundleSavePath', () => {
+		it ('returns --saveTo argument if provided', async () => {
+			const res = await bundleCommands._getBundleSavePath('test.zip', 'test.bin');
 
 			expect(res).to.equal('test.zip');
 		});
 
-		it('returns system generated name if --saveTo argument lacks .zip extension', async () => {
-			const { _getBundleSavePath } = new BundleCommands();
-
-			const res = await _getBundleSavePath('test', 'test.bin');
-
-			expect(res).to.match(/^bundle_test_\d+\.zip$/);
-		});
-
 		it('returns system generated name if --saveTo argument is blank', async () => {
-			const { _getBundleSavePath } = new BundleCommands();
-
-			const res = await _getBundleSavePath(undefined, 'test.bin');
+			const res = await bundleCommands._getBundleSavePath(undefined, 'test.bin');
 
 			expect(res).to.match(/^bundle_test_\d+\.zip$/);
 		});
-
 	});
-
 });
 
 

@@ -15,35 +15,37 @@ module.exports = class BundleCommands extends CLICommandBase {
 		super(...args);
 	}
 
-	async createBundle({ saveTo, assets: assetsPath, params: { appBinary } }) {
-		if (!await fs.exists(appBinary)) {
-			throw new Error(`The file ${appBinary} does not exist`);
-		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
-			throw new Error(`The file ${appBinary} is not a valid binary`);
-		}
-
-		if (!assetsPath) {
-			// If no assets folder is specified, use the default assets folder
-			assetsPath = path.join(process.cwd(), 'assets');
-		}
-
-		const { bundleFilename, assetsList } = await this._generateBundle({ assetsPath, appBinary, saveTo });
-		this._displayAssets({ assetsPath, bundleFilename, assetsList });
+	async createBundle({ saveTo, assets, params: { appBinary } }) {
+		const { assetsPath, assetsList, bundleFilename } = await this._prepareBundle({ appBinary, saveTo, assets });
+		this._displayAssets({ appBinary, assetsPath, assetsList });
+		await this._generateBundle({ assetsList, appBinary, bundleFilename });
+		this._displaySuccess({ bundleFilename });
 
 		return bundleFilename;
 	}
 
-	async _generateBundle({ assetsPath, appBinary, saveTo }) {
-		const assetsList = await this._getAssets(assetsPath);
-		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
+	async _prepareBundle({ appBinary, saveTo, assets }) {
+		if (!await fs.exists(appBinary)) {
+			throw new Error(`The file ${appBinary} does not exist`);
+		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
+			throw new Error(`The file ${appBinary} is not a valid binary`);
+		} else if (saveTo && utilities.getFilenameExt(saveTo) !== '.zip') {
+			throw new Error(`The target file ${saveTo} must be a .zip file`);
+		}
+
+		let assetsPath = assets;
+		if (!assetsPath) {
+			// If no assets folder is specified, use the default assets folder in the current directory
+			assetsPath = 'assets';
+		}
+		const assetsList = await this._getAssets({ assetsPath });
 		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
-		await fs.writeFile(bundleFilename, bundle);
-		return { bundleFilename, assetsList };
+		return { assetsPath, assetsList, bundleFilename };
 	}
 
-	async _getAssets(assetsPath) {
+	async _getAssets({ assetsPath }) {
 		if (!await fs.exists(assetsPath)) {
-			throw new Error(`The folder ${assetsPath} does not exist!`);
+			throw new Error(`The assets folder ${assetsPath} does not exist`);
 		}
 		// Only get the assets from the folder itself, ignoring any sub-folders
 		const assetsInFolder = await fs.readdir(assetsPath);
@@ -62,17 +64,26 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	_getBundleSavePath(saveTo, appBinaryPath) {
-		if (saveTo){
-			const ext = utilities.getFilenameExt(saveTo);
-			if (ext === '.zip') {
-				return saveTo;
-			}
+		if (saveTo) {
+			return saveTo;
 		}
 		const appBinaryName = path.basename(appBinaryPath);
-		return 'bundle_' + utilities.filenameNoExt(appBinaryName) + '_' + Date.now() + '.zip';
+		return `bundle_${utilities.filenameNoExt(appBinaryName)}_${Date.now()}.zip`;
 	}
 
-	_displayAssets({ assetsPath, bundleFilename, assetsList }) {
+	_displayAssets({ appBinary, assetsPath, assetsList }) {
+		this.ui.stdout.write(`Bundling ${appBinary} with ${assetsPath}:\n`);
+		assetsList.forEach((asset) => {
+			this.ui.stdout.write(`  ${asset.name}\n`);
+		});
+	}
 
+	async _generateBundle({ assetsList, appBinary, bundleFilename }) {
+		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
+		await fs.writeFile(bundleFilename, bundle);
+	}
+
+	_displaySuccess({ bundleFilename }) {
+		this.ui.stdout.write(`Bundle ${bundleFilename} successfully generated\n`);
 	}
 };
