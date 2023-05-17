@@ -279,13 +279,13 @@ describe('Cloud Commands', () => {
 		it('returns path to assets folder', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const dirPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid';
-			expect(cloud._checkForAssets(dirPath)).to.equal(path.join(dirPath, 'assets'));
+			expect(cloud._checkForAssets([dirPath])).to.equal(path.join(dirPath, 'assets'));
 		});
 
 		it('returns undefined if assets folder is missing', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const dirPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_no_assets';
-			expect(cloud._checkForAssets(dirPath)).to.equal(undefined);
+			expect(cloud._checkForAssets([dirPath])).to.equal(undefined);
 		});
 	});
 });

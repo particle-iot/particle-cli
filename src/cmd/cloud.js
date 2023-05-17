@@ -271,6 +271,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
 		let platformId;
 		let targetVersion;
+		let assetsPath;
 
 		return Promise.resolve()
 			.then(() => ensureAPIToken())
@@ -321,7 +322,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				if (!fs.existsSync(filePath)){
 					throw new VError(`I couldn't find that: ${filePath}`);
 				}
-				this._checkForAssets(filePath);
+				assetsPath = this._checkForAssets(files);
 				return this._handleMultiFileArgs(files, { followSymlinks });
 			})
 			.then((fileMapping) => {
@@ -651,12 +652,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 	 * @returns {string} path to assets directory if it exists, otherwise undefined
 	 * @private
 	 */
-	_checkForAssets(filePath) {
-		// first check if the assets directory exists in the given filepath specified by `filenames` argument
-		// If it does, get the path to assets directory
-		const assetsDir = path.join(filePath, 'assets');
-		if (fs.existsSync(assetsDir)) {
-			return assetsDir;
+	_checkForAssets(files) {
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+			if (fs.statSync(file).isDirectory()) {
+				const assetsDir = path.join(file, 'assets');
+				if (fs.existsSync(assetsDir)) {
+					return assetsDir;
+				}
+			}
 		}
 	}
 
