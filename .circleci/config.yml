@@ -143,14 +143,14 @@ workflows:
           matrix:
             parameters:
               os: [linux, macos]
-              node-version: ["12", "16"] # Node 18 doesn't work due to serialport dependency
+              node-version: ["16"] # Node 18 doesn't work due to serialport dependency
       - test-windows:
           <<: *tag_filters
           context:
             - particle-ci-private
           matrix:
             parameters:
-              node-version: ["12", "16"] # Node 18 doesn't work due to serialport dependency
+              node-version: ["16"] # Node 18 doesn't work due to serialport dependency
       - test-e2e:
           <<: *tag_filters
           name: test-e2e-linux
@@ -159,7 +159,7 @@ workflows:
           matrix:
             parameters:
               os: [linux]
-              node-version: ["12"]
+              node-version: ["16"]
       - test-e2e:
           <<: *tag_filters
           name: test-e2e-macos
@@ -170,7 +170,7 @@ workflows:
           matrix:
             parameters:
               os: [macos]
-              node-version: ["12"]
+              node-version: ["16"]
       - test-coverage:
           <<: *tag_filters
           context:
@@ -178,7 +178,7 @@ workflows:
           matrix:
             parameters:
               os: [linux]
-              node-version: ["12"]
+              node-version: ["16"]
       - publish-npm:
           requires:
             - test-unix
