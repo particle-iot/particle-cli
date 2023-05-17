@@ -321,7 +321,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				if (!fs.existsSync(filePath)){
 					throw new VError(`I couldn't find that: ${filePath}`);
 				}
-
+				this._checkForAssets(filePath);
 				return this._handleMultiFileArgs(files, { followSymlinks });
 			})
 			.then((fileMapping) => {
@@ -646,6 +646,21 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	/**
+	 * Checks if the given filepath contains an assets directory
+	 * @param filePath
+	 * @returns {string} path to assets directory if it exists, otherwise undefined
+	 * @private
+	 */
+	_checkForAssets(filePath) {
+		// first check if the assets directory exists in the given filepath specified by `filenames` argument
+		// If it does, get the path to assets directory
+		const assetsDir = path.join(filePath, 'assets');
+		if (fs.existsSync(assetsDir)) {
+			return assetsDir;
+		}
+	}
+
+	/**
 	 * Recursively adds files to compile to an object mapping between relative path on the compile server and
 	 * path on the local filesystem
 	 * @param {Array<string>} filenames  Array of filenames or directory names to include
@@ -662,7 +677,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 			basePath: process.cwd(),
 			map: {}
 		};
-
 		for (let i = 0; i < filenames.length; i++){
 			const filename = filenames[i];
 			const ext = utilities.getFilenameExt(filename);

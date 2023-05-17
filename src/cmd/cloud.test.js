@@ -1,7 +1,9 @@
 const proxyquire = require('proxyquire');
 const os = require('os');
+const path = require('path');
 const { expect } = require('../../test/setup');
 const sandbox = require('sinon').createSandbox();
+const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
 
 const stubs = {
 	api: {
@@ -272,5 +274,19 @@ describe('Cloud Commands', () => {
 			return result;
 		};
 	}
+
+	describe('_checkForAssets', () => {
+		it('returns path to assets folder', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const dirPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid';
+			expect(cloud._checkForAssets(dirPath)).to.equal(path.join(dirPath, 'assets'));
+		});
+
+		it('returns undefined if assets folder is missing', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const dirPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_no_assets';
+			expect(cloud._checkForAssets(dirPath)).to.equal(undefined);
+		});
+	});
 });
 
