@@ -80,6 +80,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 	async _generateBundle({ assetsList, appBinary, bundleFilename }) {
 		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
 		await fs.writeFile(bundleFilename, bundle);
+		return bundle;
 	}
 
 	_displaySuccess({ bundleFilename }) {

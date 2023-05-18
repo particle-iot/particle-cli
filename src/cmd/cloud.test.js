@@ -288,5 +288,68 @@ describe('Cloud Commands', () => {
 			expect(cloud._checkForAssets([dirPath])).to.equal(undefined);
 		});
 	});
+
+	describe('_getDownloadPathForBin', () => {
+		it('returns default name if saveTo is not provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', undefined);
+			expect(res).to.match(/argon_firmware_\d+.bin/);
+		});
+
+		it('returns saveTo.bin', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', 'myApp.bin');
+			expect(res).to.equal('myApp.bin');
+		});
+
+		it('returns myApp.bin if myApp is provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', 'myApp');
+			expect(res).to.equal('myApp.bin');
+		});
+
+		it('returns myApp.bin if myApp.txt is provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', 'myApp.txt');
+			expect(res).to.equal('myApp.bin');
+		});
+	});
+
+	describe('_getDownloadPathForZip', () => {
+		it('returns undefined if assets are not provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForZip('argon');
+			expect(res).to.equal(undefined);
+		});
+
+		it('returns default name if saveTo is not provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const assets = 'fakeAssets';
+			const res = cloud._getDownloadPathForZip('argon', undefined, assets);
+			expect(res).to.match(/argon_firmware_\d+.zip/);
+		});
+
+		it('returns saveTo.zip if assets are present', () => {
+			const assets = 'fakeAssets';
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForZip('argon', 'myApp.zip', assets);
+			expect(res).to.equal('myApp.zip');
+		});
+
+		it('returns error if saveTo does not have .zip extension', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const assets = 'fakeAssets';
+			let error;
+
+			try {
+				cloud._getDownloadPathForZip('argon', 'myApp', assets);
+			} catch (_error) {
+				error = _error;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'saveTo must have a .zip extension');
+		});
+	});
 });
 

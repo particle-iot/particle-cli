@@ -6,12 +6,14 @@ const {
 	PATH_TMP_DIR,
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR,
-	PATH_FIXTURES_LIBRARIES_DIR
+	PATH_FIXTURES_LIBRARIES_DIR, PATH_FIXTURES_THIRDPARTY_OTA_DIR
 } = require('../lib/env');
+const { unpackApplicationAndAssetBundle } = require('binary-version-reader');
 
 
 describe('Compile Commands', () => {
 	const strobyBinPath = path.join(PATH_TMP_DIR, 'photon-stroby-updated.bin');
+	const strobyZipPath = path.join(PATH_TMP_DIR, 'photon-stroby-updated.zip');
 	const minBinSize = 3500;
 	const help = [
 		'Compile a source file, or directory using the cloud compiler',
@@ -548,6 +550,89 @@ describe('Compile Commands', () => {
 		expect(stdout).to.include('Compile failed: You\'re not logged in. Please login using particle cloud login before using this command');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
+	});
+
+	it ('Creates a bundle with legacy flat project', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
+		const destinationZip = path.join(PATH_TMP_DIR, 'bundle.zip');
+		const args = ['compile', platform, '--saveTo', destinationZip];
+		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
+		const file = await fs.stat(destinationZip);
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    src/stroby.ino',
+			'    project.properties',
+			'',
+			'Including:',
+			'    cat.txt',
+			'    house.txt',
+			'    water.txt',
+			'',
+			'attempting to compile firmware',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
+			'Memory use:',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
+			'Compile succeeded and bundle created.',
+			`Saved bundle to: ${destinationZip}`
+		];
+
+		expect(file.size).to.be.above(minBinSize);
+		expect(file.mtimeMs).to.be.within(start, end);
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it ('verifies bundle', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
+		const destination = path.join(PATH_TMP_DIR, 'bundle.zip');
+		const args = ['compile', platform, '--saveTo', destination];
+		let assetNames = [];
+
+		await cliRunWithTimer(args, { cwd });
+		const unpacked = await unpackApplicationAndAssetBundle(destination);
+		unpacked.assets.forEach((asset) => {
+			assetNames.push(asset.name);
+		});
+
+		expect(unpacked).to.have.keys('application', 'assets');
+		expect(assetNames).to.include.members(['cat.txt', 'house.txt', 'water.txt']);
+		expect(unpacked.application.name).to.equal('bundle.bin');
+	});
+
+	it ('Creates a bundle with legacy flat project with default name', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
+		const args = ['compile', platform];
+		const { stdout, stderr, exitCode } = await cliRunWithTimer(args, { cwd });
+
+		const log = [
+			`Compiling code for ${platform}`,
+			'',
+			'Including:',
+			'    src/stroby.ino',
+			'    project.properties',
+			'',
+			'Including:',
+			'    cat.txt',
+			'    house.txt',
+			'    water.txt',
+			'',
+			'attempting to compile firmware',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
+			'Memory use:',
+			'', // don't assert against memory stats since they may change based on current default Device OS version
+			'Compile succeeded and bundle created.',
+		];
+
+		expect(stdout.split('\n')).to.include.members(log);
+		expect(stdout).to.match(/[\s\S]*photon_firmware_\d+.zip/);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
 	});
 
 	async function cliRunWithTimer(...args){

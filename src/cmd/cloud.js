@@ -18,6 +18,7 @@ const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
 const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
+const BundleCommands  = require('./bundle');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -260,18 +261,32 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	_getDownloadPath(deviceType, saveTo){
-		if (saveTo){
+	_getDownloadPathForBin(deviceType, saveTo){
+		if (saveTo) {
+			// If saveTo has a .bin extension, use it. Otherwise,
+			// remove any existing extension and append .bin to the filename.
+			return (utilities.getFilenameExt(saveTo) === '.bin') ? saveTo : (utilities.filenameNoExt(saveTo) + '.bin');
+		}
+		return deviceType + '_firmware_' + Date.now() + '.bin';
+	}
+
+	_getDownloadPathForZip(deviceType, saveTo, assets){
+		if (!assets) {
+			return;
+		}
+		if (!saveTo){
+			return deviceType + '_firmware_' + Date.now() + '.zip';
+		} else if (path.extname(saveTo) !== '.zip'){
+			throw new Error('saveTo must have a .zip extension');
+		} else {
 			return saveTo;
 		}
-
-		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
 	compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
 		let platformId;
 		let targetVersion;
-		let assetsPath;
+		let assets;
 
 		return Promise.resolve()
 			.then(() => ensureAPIToken())
@@ -322,7 +337,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 				if (!fs.existsSync(filePath)){
 					throw new VError(`I couldn't find that: ${filePath}`);
 				}
-				assetsPath = this._checkForAssets(files);
+
+				const assetsPath = this._checkForAssets(files);
+				if (assetsPath) {
+					return new BundleCommands()._getAssets({ assetsPath });
+				}
+			})
+			.then((result) => {
+				// If assets are not present, assets will be undefined and any future 'if' checks will fail
+				assets = result;
 				return this._handleMultiFileArgs(files, { followSymlinks });
 			})
 			.then((fileMapping) => {
@@ -342,12 +365,19 @@ module.exports = class CloudCommand extends CLICommandBase {
 					for (let i = 0, n = list.length; i < n; i++){
 						this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
 					}
+					if (assets) {
+						this.ui.stdout.write(`Including assets:${os.EOL}`);
+						_.values(assets).forEach((asset) => {
+							this.ui.stdout.write(`    ${asset.name}${os.EOL}`);
+						});
+					}
 
 					this.ui.stdout.write(os.EOL);
 				}
 
-				const filename = this._getDownloadPath(deviceType, saveTo);
-				return this._compileAndDownload(fileMapping, platformId, filename, targetVersion);
+				let filename = this._getDownloadPathForBin(deviceType, saveTo);
+				const bundleFilename = this._getDownloadPathForZip(deviceType, saveTo, assets);
+				return this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
 			})
 			.catch((error) => {
 				const message = 'Compile failed';
@@ -355,7 +385,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	_compileAndDownload(fileMapping, platformId, filename, targetVersion){
+	_compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename){
+		let respSizeInfo;
 		return Promise.resolve()
 			.then(() => {
 				this.ui.stdout.write(`attempting to compile firmware${os.EOL}`);
@@ -366,7 +397,9 @@ module.exports = class CloudCommand extends CLICommandBase {
 					this.ui.stdout.write(`downloading binary from: ${resp.binary_url}${os.EOL}`);
 					return createAPI().downloadFirmwareBinary(resp.binary_id)
 						.then(data => {
-							this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
+							if (!assets) {
+								this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
+							}
 							return fs.writeFile(filename, data);
 						})
 						.then(() => {
@@ -379,16 +412,31 @@ module.exports = class CloudCommand extends CLICommandBase {
 					throw normalizedApiError(resp);
 				}
 			})
-			.catch(err => {
-				throw normalizedApiError(err);
-			})
 			.then((sizeInfo) => {
-				if (sizeInfo){
-					this.ui.stdout.write(`Memory use:${os.EOL}`);
-					this.ui.stdout.write(`${sizeInfo}${os.EOL}`);
+				respSizeInfo = sizeInfo;
+				if (assets) {
+					return new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
 				}
-				this.ui.stdout.write(`Compile succeeded.${os.EOL}`);
-				this.ui.stdout.write(`Saved firmware to: ${path.resolve(filename)}${os.EOL}`);
+			})
+			.then((bundle) => {
+				if (respSizeInfo){
+					this.ui.stdout.write(`Memory use:${os.EOL}`);
+					this.ui.stdout.write(`${respSizeInfo}${os.EOL}`);
+				}
+				if (bundle) {
+					if (fs.existsSync(filename)){
+						fs.unlinkSync(filename);
+					}
+					// TODO: Verify that the bundle is created with the correct files
+					this.ui.stdout.write(`Compile succeeded and bundle created.${os.EOL}`);
+					this.ui.stdout.write(`Saved bundle to: ${path.resolve(bundleFilename)}${os.EOL}`);
+				} else {
+					this.ui.stdout.write(`Compile succeeded.${os.EOL}`);
+					this.ui.stdout.write(`Saved firmware to: ${path.resolve(filename)}${os.EOL}`);
+				}
+			})
+			.catch((err) => {
+				throw normalizedApiError(err);
 			});
 	}
 
