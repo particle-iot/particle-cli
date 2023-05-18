@@ -13,7 +13,6 @@ const { unpackApplicationAndAssetBundle } = require('binary-version-reader');
 
 describe('Compile Commands', () => {
 	const strobyBinPath = path.join(PATH_TMP_DIR, 'photon-stroby-updated.bin');
-	const strobyZipPath = path.join(PATH_TMP_DIR, 'photon-stroby-updated.zip');
 	const minBinSize = 3500;
 	const help = [
 		'Compile a source file, or directory using the cloud compiler',
