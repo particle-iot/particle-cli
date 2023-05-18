@@ -34,11 +34,11 @@ describe('Compile Commands', () => {
 		'Param deviceType can be: core, c, photon, p, p1, electron, e, argon, a, boron, b, xenon, x, esomx, bsom, b5som, tracker, assettracker, trackerm, p2, photon2, msom, muon',
 	];
 
-	before(async () => {
+	beforeEach(async () => {
 		await cli.setTestProfileAndLogin();
 	});
 
-	after(async () => {
+	afterEach(async () => {
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -583,6 +583,10 @@ describe('Compile Commands', () => {
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
+
+		if (await fs.exists(destinationZip)) {
+			await fs.unlink(destinationZip);
+		}
 	});
 
 	it ('verifies bundle', async () => {
@@ -601,6 +605,10 @@ describe('Compile Commands', () => {
 		expect(unpacked).to.have.keys('application', 'assets');
 		expect(assetNames).to.include.members(['cat.txt', 'house.txt', 'water.txt']);
 		expect(unpacked.application.name).to.equal('bundle.bin');
+
+		if (await fs.exists(destination)) {
+			await fs.unlink(destination);
+		}
 	});
 
 	it ('Creates a bundle with legacy flat project with default name', async () => {
@@ -608,7 +616,6 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
 		const args = ['compile', platform];
 		const { stdout, stderr, exitCode } = await cliRunWithTimer(args, { cwd });
-
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
@@ -632,6 +639,13 @@ describe('Compile Commands', () => {
 		expect(stdout).to.match(/[\s\S]*photon_firmware_\d+.zip/);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
+
+		const files = await fs.readdir(cwd);
+		const defaultName = stdout.match(/photon_firmware_\d+.zip/)[0];
+		const defaultNameExists = files.includes(defaultName);
+		if (defaultNameExists) {
+			await fs.unlink(path.join(cwd, defaultName));
+		}
 	});
 
 	async function cliRunWithTimer(...args){
