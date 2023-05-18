@@ -648,6 +648,23 @@ describe('Compile Commands', () => {
 		}
 	});
 
+	it ('checks that the .bin file does not exist outside of the bundle', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
+		const args = ['compile', platform];
+		await cliRunWithTimer(args, { cwd });
+		const files = await fs.readdir(cwd);
+
+		files.forEach( async (file) => {
+			if (file.match(/photon_firmware_\d+.bin/)) {
+				expect(false).to.be.true;
+			}
+			if (file.match(/photon_firmware_\d+.zip/)) {
+				await fs.unlink(path.join(cwd, file));
+			}
+		});
+	});
+
 	async function cliRunWithTimer(...args){
 		const start = Date.now();
 		const { stdout, stderr, exitCode } = await cli.run(...args);
