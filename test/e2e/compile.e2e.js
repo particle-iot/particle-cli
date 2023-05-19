@@ -517,7 +517,7 @@ describe('Compile Commands', () => {
 			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			`saving to: ${destination}`,
-			`Compile failed: Error: ENOENT: no such file or directory, open '${destination}'`
+			`Compile failed: ENOENT: no such file or directory, open '${destination}'`
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -532,7 +532,7 @@ describe('Compile Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
 
 		expect(stdout).to.include('Compiling code for photon');
-		expect(stdout).to.include('Compile failed: Error: make -C ../modules/photon/user-part all');
+		expect(stdout).to.include('Compile failed: make -C ../modules/photon/user-part all');
 		expect(stdout).to.include('error: \'asdfjasfjdkl\' does not name a type');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
