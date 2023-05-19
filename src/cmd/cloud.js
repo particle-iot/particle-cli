@@ -265,7 +265,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		if (saveTo) {
 			// If saveTo has a .bin extension, use it. Otherwise,
 			// remove any existing extension and append .bin to the filename.
-			return (utilities.getFilenameExt(saveTo) === '.bin') ? saveTo : (utilities.filenameNoExt(saveTo) + '.bin');
+			return (utilities.getFilenameExt(saveTo) === '.zip') ? (utilities.filenameNoExt(saveTo) + '.bin') : saveTo;
 		}
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
