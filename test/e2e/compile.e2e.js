@@ -551,6 +551,18 @@ describe('Compile Commands', () => {
 		expect(exitCode).to.equal(1);
 	});
 
+	it('Fails to compile there are no sources to compile', async () => {
+		const platform = 'photon';
+		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby-no-sources');
+		const args = ['compile', platform, '.'];
+
+		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+
+		expect(stdout).to.include('Compile failed: No source to compile!');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
 	it ('Creates a bundle with legacy flat project', async () => {
 		const platform = 'photon';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');

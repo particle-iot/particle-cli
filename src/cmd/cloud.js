@@ -372,7 +372,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 		let filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
 		try {
-			console.log('TP0');
 			await this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
 		} catch (error) {
 			throw normalizedApiError(error);
