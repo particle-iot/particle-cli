@@ -277,7 +277,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		if (!saveTo){
 			return deviceType + '_firmware_' + Date.now() + '.zip';
 		} else if (path.extname(saveTo) !== '.zip'){
-			throw new Error('saveTo must have a .zip extension');
+			throw new Error('saveTo must have a .zip extension when project includes assets');
 		} else {
 			return saveTo;
 		}
