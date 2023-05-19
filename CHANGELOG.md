@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.10.2 - 19 May 2023
+
+* Support for bundle command to bundle assets and app binary
+
 ## 3.10.1 - 16 May 2023
 
 * Fix implementation of library upload so it works in Node 16
