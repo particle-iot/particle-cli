@@ -263,14 +263,12 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	_getDownloadPathForBin(deviceType, saveTo){
 		if (saveTo) {
-			// If saveTo has a .bin extension, use it. Otherwise,
-			// remove any existing extension and append .bin to the filename.
 			return (utilities.getFilenameExt(saveTo) === '.zip') ? (utilities.filenameNoExt(saveTo) + '.bin') : saveTo;
 		}
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	_getDownloadPathForZip(deviceType, saveTo, assets){
+	_getBundleSavePath(deviceType, saveTo, assets){
 		if (!assets) {
 			return;
 		}
@@ -366,9 +364,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 						this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
 					}
 					if (assets) {
-						this.ui.stdout.write(`Including assets:${os.EOL}`);
 						_.values(assets).forEach((asset) => {
-							this.ui.stdout.write(`    ${asset.name}${os.EOL}`);
+							this.ui.stdout.write(`    ${asset.path}${os.EOL}`);
 						});
 					}
 
@@ -376,7 +373,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 
 				let filename = this._getDownloadPathForBin(deviceType, saveTo);
-				const bundleFilename = this._getDownloadPathForZip(deviceType, saveTo, assets);
+				const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
 				return this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
 			})
 			.catch((error) => {
@@ -412,6 +409,9 @@ module.exports = class CloudCommand extends CLICommandBase {
 					throw normalizedApiError(resp);
 				}
 			})
+			.catch((err) => {
+				throw normalizedApiError(err);
+			})
 			.then((sizeInfo) => {
 				respSizeInfo = sizeInfo;
 				if (assets) {
@@ -427,7 +427,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 					if (fs.existsSync(filename)){
 						fs.unlinkSync(filename);
 					}
-					// TODO: Verify that the bundle is created with the correct files
 					this.ui.stdout.write(`Compile succeeded and bundle created.${os.EOL}`);
 					this.ui.stdout.write(`Saved bundle to: ${path.resolve(bundleFilename)}${os.EOL}`);
 				} else {
@@ -436,7 +435,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 			})
 			.catch((err) => {
-				throw normalizedApiError(err);
+				throw new Error(err);
 			});
 	}
 
@@ -703,13 +702,24 @@ module.exports = class CloudCommand extends CLICommandBase {
 	_checkForAssets(files) {
 		for (let i = 0; i < files.length; i++) {
 			const file = files[i];
+			if (this._isAssetsDir(file)) {
+				return path.join(file, 'assets');
+			}
+		}
+	}
+
+	_isAssetsDir(file) {
+		try {
 			if (fs.statSync(file).isDirectory()) {
 				const assetsDir = path.join(file, 'assets');
 				if (fs.existsSync(assetsDir)) {
-					return assetsDir;
+					return true;
 				}
 			}
+		} catch (e) {
+			// TODO: error handling
 		}
+		return false;
 	}
 
 	/**

@@ -305,34 +305,34 @@ describe('Cloud Commands', () => {
 		it('returns myApp.bin if myApp is provided', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const res = cloud._getDownloadPathForBin('argon', 'myApp');
-			expect(res).to.equal('myApp.bin');
+			expect(res).to.equal('myApp');
 		});
 
 		it('returns myApp.bin if myApp.txt is provided', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const res = cloud._getDownloadPathForBin('argon', 'myApp.txt');
-			expect(res).to.equal('myApp.bin');
+			expect(res).to.equal('myApp.txt');
 		});
 	});
 
-	describe('_getDownloadPathForZip', () => {
+	describe('_getBundleSavePath', () => {
 		it('returns undefined if assets are not provided', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
-			const res = cloud._getDownloadPathForZip('argon');
+			const res = cloud._getBundleSavePath('argon');
 			expect(res).to.equal(undefined);
 		});
 
 		it('returns default name if saveTo is not provided', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const assets = 'fakeAssets';
-			const res = cloud._getDownloadPathForZip('argon', undefined, assets);
+			const res = cloud._getBundleSavePath('argon', undefined, assets);
 			expect(res).to.match(/argon_firmware_\d+.zip/);
 		});
 
 		it('returns saveTo.zip if assets are present', () => {
 			const assets = 'fakeAssets';
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
-			const res = cloud._getDownloadPathForZip('argon', 'myApp.zip', assets);
+			const res = cloud._getBundleSavePath('argon', 'myApp.zip', assets);
 			expect(res).to.equal('myApp.zip');
 		});
 
@@ -342,13 +342,13 @@ describe('Cloud Commands', () => {
 			let error;
 
 			try {
-				cloud._getDownloadPathForZip('argon', 'myApp', assets);
+				cloud._getBundleSavePath('argon', 'myApp', assets);
 			} catch (_error) {
 				error = _error;
 			}
 
 			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', 'saveTo must have a .zip extension');
+			expect(error).to.have.property('message', 'saveTo must have a .zip extension when project includes assets');
 		});
 	});
 });

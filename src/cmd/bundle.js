@@ -56,7 +56,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 			}
 			return {
 				data: await fs.readFile(filepath),
-				name: f
+				name: f,
+				path: path.join(assetsPath, f)
 			};
 		}));
 		return assetFiles.filter(f => f !== null);
