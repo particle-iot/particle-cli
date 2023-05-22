@@ -56,7 +56,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 			}
 			return {
 				data: await fs.readFile(filepath),
-				name: f
+				name: f,
+				path: path.join(assetsPath, f)
 			};
 		}));
 		return assetFiles.filter(f => f !== null);
@@ -80,6 +81,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 	async _generateBundle({ assetsList, appBinary, bundleFilename }) {
 		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
 		await fs.writeFile(bundleFilename, bundle);
+		return bundle;
 	}
 
 	_displaySuccess({ bundleFilename }) {

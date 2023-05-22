@@ -18,6 +18,7 @@ const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
 const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
+const BundleCommands  = require('./bundle');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -260,135 +261,168 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	_getDownloadPath(deviceType, saveTo){
-		if (saveTo){
-			return saveTo;
+	_getDownloadPathForBin(deviceType, saveTo){
+		if (saveTo) {
+			return (utilities.getFilenameExt(saveTo) === '.zip') ? (utilities.filenameNoExt(saveTo) + '.bin') : saveTo;
 		}
-
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
-		let platformId;
-		let targetVersion;
-
-		return Promise.resolve()
-			.then(() => ensureAPIToken())
-			.then(() => {
-				if (files.length === 0){
-					files.push('.'); // default to current directory
-				}
-
-				if (deviceType in PLATFORMS){
-					platformId = PLATFORMS[deviceType];
-				} else {
-					throw new Error([
-						`Target device ${deviceType} is not valid`,
-						'	eg. particle compile core xxx',
-						'	eg. particle compile photon xxx'
-					].join('\n'));
-				}
-
-				this.ui.stdout.write(`${os.EOL}Compiling code for ${deviceType}${os.EOL}`);
-
-				if (target){
-					if (target === 'latest'){
-						return;
-					}
-
-					return createAPI().listBuildTargets(true /* onlyFeatured */)
-						.catch(err => {
-							throw normalizedApiError(err);
-						})
-						.then((data) => {
-							const validTargets = data.targets.filter((t) => t.platforms.includes(platformId));
-							const validTarget = validTargets.filter((t) => t.version === target);
-
-							if (!validTarget.length){
-								throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.map(validTargets, 'version')).join('\n'));
-							}
-
-							targetVersion = validTarget[0].version;
-							this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);
-						});
-				}
-			})
-			.then(() => {
-				const filePath = files[0];
-
-				this.ui.stdout.write(os.EOL);
-
-				if (!fs.existsSync(filePath)){
-					throw new VError(`I couldn't find that: ${filePath}`);
-				}
-
-				return this._handleMultiFileArgs(files, { followSymlinks });
-			})
-			.then((fileMapping) => {
-				if (!fileMapping){
-					return;
-				}
-
-				const list = _.values(fileMapping.map);
-
-				if (list.length === 0){
-					throw new VError('No source to compile!');
-				}
-
-				if (settings.showIncludedSourceFiles){
-					this.ui.stdout.write(`Including:${os.EOL}`);
-
-					for (let i = 0, n = list.length; i < n; i++){
-						this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
-					}
-
-					this.ui.stdout.write(os.EOL);
-				}
-
-				const filename = this._getDownloadPath(deviceType, saveTo);
-				return this._compileAndDownload(fileMapping, platformId, filename, targetVersion);
-			})
-			.catch((error) => {
-				const message = 'Compile failed';
-				throw createAPIErrorResult({ error, message });
-			});
+	_getBundleSavePath(deviceType, saveTo, assets){
+		if (!assets) {
+			return;
+		}
+		if (!saveTo){
+			return deviceType + '_firmware_' + Date.now() + '.zip';
+		} else if (path.extname(saveTo) !== '.zip'){
+			throw new Error('saveTo must have a .zip extension when project includes assets');
+		} else {
+			return saveTo;
+		}
 	}
 
-	_compileAndDownload(fileMapping, platformId, filename, targetVersion){
-		return Promise.resolve()
-			.then(() => {
-				this.ui.stdout.write(`attempting to compile firmware${os.EOL}`);
-				return createAPI().compileCode(fileMapping, platformId, targetVersion);
-			})
-			.then(resp => {
-				if (resp && resp.binary_url && resp.binary_id){
-					this.ui.stdout.write(`downloading binary from: ${resp.binary_url}${os.EOL}`);
-					return createAPI().downloadFirmwareBinary(resp.binary_id)
-						.then(data => {
-							this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
-							return fs.writeFile(filename, data);
-						})
-						.then(() => {
-							return resp.sizeInfo;
-						});
-				} else if (resp && resp.output === 'Compiler timed out or encountered an error'){
-					this.ui.stdout.write(`${os.EOL}${(resp && resp.errors && resp.errors[0])}${os.EOL}`);
-					throw new Error('Compiler encountered an error');
-				} else {
-					throw normalizedApiError(resp);
+	// create a new function that handles errors from compileCode function
+	async compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
+		try {
+			return await this.compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } });
+		} catch (error) {
+			const message = 'Compile failed';
+			throw createAPIErrorResult({ error, message });
+		}
+	}
+
+	async compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } }) {
+		let platformId, targetVersion, assets;
+
+		ensureAPIToken();
+		if (files.length === 0) {
+			files.push('.'); // default to current directory
+		}
+
+		if (deviceType in PLATFORMS) {
+			platformId = PLATFORMS[deviceType];
+		} else {
+			throw new Error([
+				`Target device ${deviceType} is not valid`,
+				'	eg. particle compile core xxx',
+				'	eg. particle compile photon xxx'
+			].join('\n'));
+		}
+
+		this.ui.stdout.write(`${os.EOL}Compiling code for ${deviceType}${os.EOL}`);
+
+		if (target) {
+			if (target === 'latest') {
+				return;
+			}
+
+			let data;
+			try {
+				data = await createAPI().listBuildTargets(true /* onlyFeatured */);
+			} catch (error) {
+				throw normalizedApiError(error);
+			}
+
+			const validTargets = data.targets.filter((t) => t.platforms.includes(platformId));
+			const validTarget = validTargets.filter((t) => t.version === target);
+			if (!validTarget.length) {
+				throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.map(validTargets, 'version')).join('\n'));
+			}
+			targetVersion = validTarget[0].version;
+			this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);
+		}
+
+		const filePath = files[0];
+		this.ui.stdout.write(os.EOL);
+
+		if (!await fs.exists(filePath)) {
+			throw new VError(`I couldn't find that: ${filePath}`);
+		}
+
+		const assetsPath = await this._checkForAssets(files);
+		if (assetsPath) {
+			assets = await new BundleCommands()._getAssets({ assetsPath });
+		}
+
+		const fileMapping = await this._handleMultiFileArgs(files, { followSymlinks });
+		if (!fileMapping) {
+			return;
+		}
+		const list = _.values(fileMapping.map);
+		if (list.length === 0) {
+			throw new VError('No source to compile!');
+		}
+
+		if (settings.showIncludedSourceFiles) {
+			this.ui.stdout.write(`Including:${os.EOL}`);
+
+			for (const sourceFile of list) {
+				this.ui.stdout.write(`    ${sourceFile}${os.EOL}`);
+			}
+			if (assets) {
+				for (const asset of assets) {
+					this.ui.stdout.write(`    ${asset.path}${os.EOL}`);
 				}
-			})
-			.catch(err => {
-				throw normalizedApiError(err);
-			})
-			.then((sizeInfo) => {
-				if (sizeInfo){
-					this.ui.stdout.write(`Memory use:${os.EOL}`);
-					this.ui.stdout.write(`${sizeInfo}${os.EOL}`);
-				}
-				this.ui.stdout.write(`Compile succeeded.${os.EOL}`);
-				this.ui.stdout.write(`Saved firmware to: ${path.resolve(filename)}${os.EOL}`);
-			});
+			}
+
+			this.ui.stdout.write(os.EOL);
+		}
+
+		let filename = this._getDownloadPathForBin(deviceType, saveTo);
+		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
+		await this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
+	}
+
+	async _compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename){
+		let respSizeInfo, bundle, resp;
+
+		this.ui.stdout.write(`attempting to compile firmware${os.EOL}`);
+		try {
+			resp = await createAPI().compileCode(fileMapping, platformId, targetVersion);
+		} catch (error) {
+			throw normalizedApiError(error);
+		}
+
+		if (resp && resp.binary_url && resp.binary_id) {
+			this.ui.stdout.write(`downloading binary from: ${resp.binary_url}${os.EOL}`);
+			let data;
+			try {
+				data = await createAPI().downloadFirmwareBinary(resp.binary_id);
+			} catch (error) {
+				throw normalizedApiError(error);
+			}
+
+			if (!assets) {
+				this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
+			}
+			await fs.writeFile(filename, data);
+			respSizeInfo = resp.sizeInfo;
+		} else if (resp && resp.output === 'Compiler timed out or encountered an error'){
+			this.ui.stdout.write(`${os.EOL}${(resp && resp.errors && resp.errors[0])}${os.EOL}`);
+			throw new Error('Compiler encountered an error');
+		} else {
+			throw normalizedApiError(resp);
+		}
+
+		if (assets) {
+			bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
+		}
+
+		if (respSizeInfo){
+			this.ui.stdout.write(`Memory use:${os.EOL}`);
+			this.ui.stdout.write(`${respSizeInfo}${os.EOL}`);
+		}
+
+		if (bundle) {
+			if (await fs.exists(filename)){
+				await fs.unlink(filename);
+			}
+			this.ui.stdout.write(`Compile succeeded and bundle created.${os.EOL}`);
+			this.ui.stdout.write(`Saved bundle to: ${path.resolve(bundleFilename)}${os.EOL}`);
+		} else {
+			this.ui.stdout.write(`Compile succeeded.${os.EOL}`);
+			this.ui.stdout.write(`Saved firmware to: ${path.resolve(filename)}${os.EOL}`);
+		}
 	}
 
 	login({ username, password, token, otp, sso } = {}){
@@ -646,6 +680,34 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	/**
+	 * Checks if the given filepath contains an assets directory
+	 * @param filePath
+	 * @returns {string} path to assets directory if it exists, otherwise undefined
+	 * @private
+	 */
+	async _checkForAssets(files) {
+		for (const file of files) {
+			if (await this._isAssetsDir(file)) {
+				return path.join(file, 'assets');
+			}
+		}
+	}
+
+	async _isAssetsDir(file) {
+		try {
+			if ((await fs.stat(file)).isDirectory()) {
+				const assetsDir = path.join(file, 'assets');
+				if ((await fs.stat(assetsDir)).isDirectory()) {
+					return true;
+				}
+			}
+		} catch (e) {
+			// ignore missing files
+		}
+		return false;
+	}
+
+	/**
 	 * Recursively adds files to compile to an object mapping between relative path on the compile server and
 	 * path on the local filesystem
 	 * @param {Array<string>} filenames  Array of filenames or directory names to include
@@ -656,13 +718,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 	 * compile someFile
 	 * compile File1 File2 File3 output.bin
 	 * compile File1 File2 File3 --saveTo anotherPlace.bin
+	 * TODO: Rework this to be async
 	 */
 	_handleMultiFileArgs(filenames, { followSymlinks } = {}){
 		const fileMapping = {
 			basePath: process.cwd(),
 			map: {}
 		};
-
 		for (let i = 0; i < filenames.length; i++){
 			const filename = filenames[i];
 			const ext = utilities.getFilenameExt(filename);

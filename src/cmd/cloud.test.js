@@ -1,7 +1,9 @@
 const proxyquire = require('proxyquire');
 const os = require('os');
+const path = require('path');
 const { expect } = require('../../test/setup');
 const sandbox = require('sinon').createSandbox();
+const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
 
 const stubs = {
 	api: {
@@ -272,5 +274,82 @@ describe('Cloud Commands', () => {
 			return result;
 		};
 	}
+
+	describe('_checkForAssets', () => {
+		it('returns path to assets folder', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
+			expect(await cloud._checkForAssets([dirPath])).to.equal(path.join(dirPath, 'assets'));
+		});
+
+		it('returns undefined if assets folder is missing', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_no_assets');
+			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
+		});
+	});
+
+	describe('_getDownloadPathForBin', () => {
+		it('returns default name if saveTo is not provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', undefined);
+			expect(res).to.match(/argon_firmware_\d+.bin/);
+		});
+
+		it('returns saveTo.bin', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', 'myApp.bin');
+			expect(res).to.equal('myApp.bin');
+		});
+
+		it('returns myApp.bin if myApp is provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', 'myApp');
+			expect(res).to.equal('myApp');
+		});
+
+		it('returns myApp.bin if myApp.txt is provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getDownloadPathForBin('argon', 'myApp.txt');
+			expect(res).to.equal('myApp.txt');
+		});
+	});
+
+	describe('_getBundleSavePath', () => {
+		it('returns undefined if assets are not provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getBundleSavePath('argon');
+			expect(res).to.equal(undefined);
+		});
+
+		it('returns default name if saveTo is not provided', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const assets = 'fakeAssets';
+			const res = cloud._getBundleSavePath('argon', undefined, assets);
+			expect(res).to.match(/argon_firmware_\d+.zip/);
+		});
+
+		it('returns saveTo.zip if assets are present', () => {
+			const assets = 'fakeAssets';
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const res = cloud._getBundleSavePath('argon', 'myApp.zip', assets);
+			expect(res).to.equal('myApp.zip');
+		});
+
+		it('returns error if saveTo does not have .zip extension', () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const assets = 'fakeAssets';
+			let error;
+
+			try {
+				cloud._getBundleSavePath('argon', 'myApp', assets);
+			} catch (_error) {
+				error = _error;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'saveTo must have a .zip extension when project includes assets');
+		});
+	});
 });
 
