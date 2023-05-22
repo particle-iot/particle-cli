@@ -294,7 +294,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	async compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } }) {
 		let platformId, targetVersion, assets;
 
-		await ensureAPIToken();
+		ensureAPIToken();
 		if (files.length === 0) {
 			files.push('.'); // default to current directory
 		}
@@ -320,8 +320,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			try {
 				data = await createAPI().listBuildTargets(true /* onlyFeatured */);
 			} catch (error) {
-				throw new Error(error);
-
+				throw normalizedApiError(error);
 			}
 
 			const validTargets = data.targets.filter((t) => t.platforms.includes(platformId));
@@ -340,7 +339,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw new VError(`I couldn't find that: ${filePath}`);
 		}
 
-		const assetsPath = this._checkForAssets(files);
+		const assetsPath = await this._checkForAssets(files);
 		if (assetsPath) {
 			assets = await new BundleCommands()._getAssets({ assetsPath });
 		}
@@ -357,13 +356,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 		if (settings.showIncludedSourceFiles) {
 			this.ui.stdout.write(`Including:${os.EOL}`);
 
-			for (let i = 0, n = list.length; i < n; i++) {
-				this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
+			for (const sourceFile of list) {
+				this.ui.stdout.write(`    ${sourceFile}${os.EOL}`);
 			}
 			if (assets) {
-				_.values(assets).forEach((asset) => {
+				for (const asset of assets) {
 					this.ui.stdout.write(`    ${asset.path}${os.EOL}`);
-				});
+				}
 			}
 
 			this.ui.stdout.write(os.EOL);
@@ -371,11 +370,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		let filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
-		try {
-			await this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
-		} catch (error) {
-			throw normalizedApiError(error);
-		}
+		await this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
 	}
 
 	async _compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename){
@@ -388,9 +383,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw normalizedApiError(error);
 		}
 
-		if (resp && resp.binary_url && resp.binary_id){
+		if (resp && resp.binary_url && resp.binary_id) {
 			this.ui.stdout.write(`downloading binary from: ${resp.binary_url}${os.EOL}`);
-			const data = await createAPI().downloadFirmwareBinary(resp.binary_id);
+			let data;
+			try {
+				data = await createAPI().downloadFirmwareBinary(resp.binary_id);
+			} catch (error) {
+				throw normalizedApiError(error);
+			}
+
 			if (!assets) {
 				this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
 			}
@@ -404,11 +405,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		if (assets) {
-			try {
-				bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
-			} catch (error) {
-				throw new Error(error);
-			}
+			bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
 		}
 
 		if (respSizeInfo){
@@ -688,25 +685,24 @@ module.exports = class CloudCommand extends CLICommandBase {
 	 * @returns {string} path to assets directory if it exists, otherwise undefined
 	 * @private
 	 */
-	_checkForAssets(files) {
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i];
-			if (this._isAssetsDir(file)) {
+	async _checkForAssets(files) {
+		for (const file of files) {
+			if (await this._isAssetsDir(file)) {
 				return path.join(file, 'assets');
 			}
 		}
 	}
 
-	_isAssetsDir(file) {
+	async _isAssetsDir(file) {
 		try {
-			if (fs.statSync(file).isDirectory()) {
+			if ((await fs.stat(file)).isDirectory()) {
 				const assetsDir = path.join(file, 'assets');
-				if (fs.existsSync(assetsDir)) {
+				if ((await fs.stat(assetsDir)).isDirectory()) {
 					return true;
 				}
 			}
 		} catch (e) {
-			// TODO: error handling
+			// ignore missing files
 		}
 		return false;
 	}

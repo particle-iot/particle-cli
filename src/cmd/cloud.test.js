@@ -276,16 +276,16 @@ describe('Cloud Commands', () => {
 	}
 
 	describe('_checkForAssets', () => {
-		it('returns path to assets folder', () => {
+		it('returns path to assets folder', async () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
-			const dirPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid';
-			expect(cloud._checkForAssets([dirPath])).to.equal(path.join(dirPath, 'assets'));
+			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
+			expect(await cloud._checkForAssets([dirPath])).to.equal(path.join(dirPath, 'assets'));
 		});
 
-		it('returns undefined if assets folder is missing', () => {
+		it('returns undefined if assets folder is missing', async () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
-			const dirPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_no_assets';
-			expect(cloud._checkForAssets([dirPath])).to.equal(undefined);
+			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_no_assets');
+			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
 		});
 	});
 
