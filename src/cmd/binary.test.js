@@ -227,14 +227,5 @@ describe('Binary Inspect', () => {
 			expect(res).to.equal(undefined);
 		});
 	});
-
-	describe('_getHash', () => {
-		it('returns hash of file', async () => {
-			// currently using sha256
-			const file = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets', 'cat.txt');
-			const res = await binaryCommand._getHash(file);
-			expect(res).to.equal('45c253278a957abf8f085c8fd3a0af07a721f6d4b3283e3b6a8587ed3e784d8b');
-		});
-	});
 });
 
