@@ -37,6 +37,16 @@ describe('Binary Inspect', () => {
 	});
 
 	describe('_extractFiles', () => {
+		afterEach(async () => {
+			await fs.readdir('.', (err, files) => {
+				files.forEach(async (file) => {
+					if (file.startsWith('temp-dir-for-assets')) {
+						await fs.remove(file);
+					}
+				});
+			});
+		});
+
 		it('errors if file is not .zip or .bin', async () => {
 			let error;
 
@@ -65,13 +75,6 @@ describe('Binary Inspect', () => {
 			assets.forEach((asset) => {
 				expect(path.basename(asset)).to.be.oneOf(['cat.txt', 'house.txt', 'water.txt']);
 			});
-
-			try {
-				const tempDir = path.dirname(bin);
-				await fs.remove(tempDir);
-			} catch (err) {
-				// ignore error
-			}
 		});
 
 		it('extracts a .bin file', async () => {
@@ -98,10 +101,21 @@ describe('Binary Inspect', () => {
 
 			expect(bin).to.equal(undefined);
 			expect(assets.length).to.equal(0);
+
 		});
 	});
 
 	describe('__extractZip', () => {
+		afterEach(async () => {
+			await fs.readdir('.', (err, files) => {
+				files.forEach(async (file) => {
+					if (file.startsWith('temp-dir-for-assets')) {
+						await fs.remove(file);
+					}
+				});
+			});
+		});
+
 		it('checks if the file is a zip file', async () => {
 			let error;
 
@@ -126,8 +140,6 @@ describe('Binary Inspect', () => {
 			}
 
 			expect(path.basename(resDir)).to.match(/^temp-dir-for-assets/);
-
-			await fs.remove(resDir).catch(() => {});
 		});
 
 		it('returns error if fails to unzip', async () => {
@@ -144,8 +156,6 @@ describe('Binary Inspect', () => {
 
 			expect(error).to.be.an.instanceof(Error);
 			expect(error.message).to.include(`Could not extract ${zipPath}`);
-
-			await fs.remove(resDir).catch(() => {});
 		});
 	});
 
