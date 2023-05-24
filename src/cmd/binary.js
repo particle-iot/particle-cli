@@ -28,28 +28,25 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 const fs = require('fs-extra');
 const path = require('path');
 const VError = require('verror');
-const crypto = require('crypto');
 const chalk = require('chalk');
-const Parser = require('binary-version-reader').HalModuleParser;
+const { HalModuleParser: Parser, unpackApplicationAndAssetBundle, isAssetValid } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
-const decompress = require('decompress');
 
 const INVALID_SUFFIX_SIZE = 65535;
 const DEFAULT_PRODUCT_ID = 65535;
 const DEFAULT_PRODUCT_VERSION = 65535;
-let tmpDir;
 
 class BinaryCommand {
 	async inspectBinary(file) {
 		await this._checkFile(file);
-		const [binaryFile, assets] = await this._extractFiles(file);
-		const parsedBinaryInfo = await this._parseBinaryFile(binaryFile);
-		await this._verifyBundle(parsedBinaryInfo, assets);
-		await this._cleanup(tmpDir);
+		const extractedFiles = await this._extractFiles(file);
+		const parsedBinaryInfo = await this._parseApplicationBinary(extractedFiles.application);
+		await this._verifyBundle(parsedBinaryInfo, extractedFiles.assets);
 	}
 
 	async _checkFile(file) {
+		// TODO: what happens if this is removed? What kind of error do we get?
 		try {
 			await fs.access(file);
 		} catch (error) {
@@ -59,61 +56,23 @@ class BinaryCommand {
 	}
 
 	async _extractFiles(file) {
-		if (utilities.getFilenameExt(file) !== '.bin' && utilities.getFilenameExt(file) !== '.zip') {
+		if (utilities.getFilenameExt(file) === '.zip') {
+			return unpackApplicationAndAssetBundle(file);
+		} else if (utilities.getFilenameExt(file) === '.bin') {
+			const data = await fs.readFile(file);
+			return { application: { name: path.basename(file), data }, assets: [] };
+		} else {
 			throw new VError(`File must be a .bin or .zip file: ${file}`);
 		}
-
-		if (utilities.getFilenameExt(file) === '.zip') {
-			let binaryFile;
-			let assets = [];
-			const unzipped = await this._extractZip(file);
-
-			const files = await fs.readdir(unzipped);
-			for (const file of files) {
-				if (file === 'assets') {
-					const fullPathAssets = path.join(unzipped,file);
-					if ((await fs.stat(fullPathAssets)).isDirectory()) {
-						const assetFiles = await fs.readdir(fullPathAssets);
-						assetFiles.forEach((assetFile) => {
-							assets.push(path.join(fullPathAssets, assetFile));
-						});
-					}
-				}
-				if (utilities.getFilenameExt(file) === '.bin') {
-					binaryFile = path.join(unzipped, file);
-				}
-			}
-			return [binaryFile, assets];
-		} else {
-			return [file, []];
-		}
 	}
 
-	async _extractZip(file) {
-		if (utilities.getFilenameExt(file) !== '.zip') {
-			throw new VError(`File must be a .zip file: ${file}`);
-		}
-
-		tmpDir = await fs.mkdtemp('temp-dir-for-assets');
-		try {
-			await decompress(file, tmpDir);
-			return tmpDir;
-		} catch (err) {
-			throw new VError(ensureError(err), `Could not extract ${file}`);
-		}
-	}
-
-	async _parseBinaryFile(file) {
-		await this._checkFile(file);
-		if (utilities.getFilenameExt(file) !== '.bin') {
-			throw new VError(`File must be a .bin file: ${file}`);
-		}
+	async _parseApplicationBinary(applicationBinary) {
 		const parser = new Parser();
 		let fileInfo;
 		try {
-			fileInfo = await parser.parseFile(file);
+			fileInfo = await parser.parseBuffer({ filename: applicationBinary.name, fileBuffer: applicationBinary.data });
 		} catch (err) {
-			throw new VError(ensureError(err), `Could not parse ${file}`);
+			throw new VError(ensureError(err), `Could not parse ${applicationBinary.name}`);
 		}
 
 		const filename = path.basename(fileInfo.filename);
@@ -128,41 +87,23 @@ class BinaryCommand {
 	}
 
 	async _verifyBundle(binaryFileInfo, assets) {
-		const assetNames = assets.map((asset) => {
-			return path.basename(asset);
-		});
-
 		if (binaryFileInfo.assets && assets.length){
 			console.log('It depends on assets:');
-			let assetHashes = {};
-			for (const asset of binaryFileInfo.assets) {
-				assetHashes[asset.name] = asset.hash;
-				if (assetNames.includes(asset.name)) {
-					const file = assets.find((file) => {
-						return path.basename(file) === asset.name;
-					});
-					const fileRead = await fs.readFile(file);
-					const hash = this._getHash(fileRead);
-					if (asset.hash === hash) {
-						console.log(' ' + chalk.bold(asset.name) + ' in bundle' + ' (hash ' + asset.hash + ')');
-					} else if (asset.hash !== hash) {
-						console.log(chalk.red(' ' + asset.name + ' failed' + ' (hash should be ' + asset.hash + ' but is ' + hash + ')'));
+			for (const assetInfo of binaryFileInfo.assets) {
+				const asset = assets.find((asset) => asset.name === assetInfo.name);
+
+				if (asset) {
+					const valid = isAssetValid(assetInfo, asset.data);
+
+					if (valid) {
+						console.log(' ' + chalk.bold(assetInfo.name) + ' (hash ' + assetInfo.hash + ')');
+					} else {
+						console.log(chalk.red(' ' + assetInfo.name + ' failed' + ' (hash should be ' + assetInfo.hash + ')'));
 					}
 				} else {
-					console.log(chalk.red(' ' + asset.name + ' failed' + ' (hash should be ' + asset.hash + ' but is not in the bundle)'));
+					console.log(chalk.red(' ' + assetInfo.name + ' failed' + ' (hash should be ' + assetInfo.hash + ' but is not in the bundle)'));
 				}
 			}
-			return true;
-		}
-	}
-
-	_getHash(file) {
-		return crypto.createHash('sha256').update(file).digest('hex');
-	}
-
-	async _cleanup(tmpDir) {
-		if (tmpDir) {
-			await fs.remove(tmpDir);
 		}
 	}
 

@@ -37,19 +37,6 @@ describe('Binary Inspect', () => {
 	});
 
 	describe('_extractFiles', () => {
-		afterEach(async () => {
-			await fs.readdir('.', (err, files) => {
-				if (err) {
-					// ignore error
-				}
-				files.forEach(async (file) => {
-					if (file.startsWith('temp-dir-for-assets')) {
-						await fs.remove(file);
-					}
-				});
-			});
-		});
-
 		it('errors if file is not .zip or .bin', async () => {
 			let error;
 
@@ -65,34 +52,25 @@ describe('Binary Inspect', () => {
 
 		it('extracts a .zip file', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
-			let bin;
-			let assets;
 
-			try {
-				[bin, assets] = await binaryCommand._extractFiles(zipPath);
-			} catch (err) {
-				// ignore error
-			}
+			const binaryInfo = await binaryCommand._extractFiles(zipPath);
 
-			expect(path.basename(bin)).to.equal('app.bin');
-			assets.forEach((asset) => {
-				expect(path.basename(asset)).to.be.oneOf(['cat.txt', 'house.txt', 'water.txt']);
-			});
+			expect(binaryInfo).to.have.property('application').with.property('name', 'app.bin');
+			expect(binaryInfo).to.have.property('assets').with.lengthOf(3);
+			expect(binaryInfo.assets.map(a => a.name)).to.eql(['cat.txt', 'house.txt', 'water.txt']);
+		});
+
+		xit('errors out if the .zip file does not contain a .bin', async () => {
+			// TODO
 		});
 
 		it('extracts a .bin file', async () => {
 			const binPath = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin');
-			let bin;
-			let assets;
 
-			try {
-				[bin, assets] = await binaryCommand._extractFiles(binPath);
-			} catch (err) {
-				// ignore error
-			}
+			const binaryInfo = await binaryCommand._extractFiles(binPath);
 
-			expect(path.basename(bin)).to.equal('argon_stroby.bin');
-			expect(assets.length).to.equal(0);
+			expect(binaryInfo).to.have.property('application').with.property('name', 'argon_stroby.bin');
+			expect(binaryInfo).to.have.property('assets').with.lengthOf(0);
 		});
 
 		it('handles if zip file does not have a binary or assets', async () => {
@@ -108,66 +86,13 @@ describe('Binary Inspect', () => {
 		});
 	});
 
-	describe('__extractZip', () => {
-		afterEach(async () => {
-			await fs.readdir('.', (err, files) => {
-				if (err) {
-					// ignore error
-				}
-				files.forEach(async (file) => {
-					if (file.startsWith('temp-dir-for-assets')) {
-						await fs.remove(file);
-					}
-				});
-			});
-		});
-
-		it('checks if the file is a zip file', async () => {
-			let error;
-
-			try {
-				await binaryCommand._extractZip('not-a-zip-file');
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.equal('File must be a .zip file: not-a-zip-file');
-		});
-
-		it('extracts a .zip file', async () => {
-			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
-			let resDir;
-
-			try {
-				resDir = await binaryCommand._extractZip(zipPath);
-			} catch (err) {
-				// ignore error
-			}
-
-			expect(path.basename(resDir)).to.match(/^temp-dir-for-assets/);
-		});
-
-		it('returns error if fails to unzip', async () => {
-			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'random-bad-bundle.zip');
-			let error;
-
-			try {
-				await binaryCommand._extractZip(zipPath);
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.include(`Could not extract ${zipPath}`);
-		});
-	});
-
-	describe('_parseBinaryFile', () => {
+	describe('_parseApplicationBinary', () => {
 		it('parses a .bin file', async () => {
-			const binPath = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin');
+			const name = 'argon_stroby.bin';
+			const data = await fs.readFile(path.join(PATH_FIXTURES_BINARIES_DIR, name));
+			const applicationBinary = { name, data };
 
-			const res = await binaryCommand._parseBinaryFile(binPath);
+			const res = await binaryCommand._parseApplicationBinary(applicationBinary);
 
 			expect(path.basename(res.filename)).to.equal('argon_stroby.bin');
 			expect(res.crc.ok).to.equal(true);
@@ -175,45 +100,26 @@ describe('Binary Inspect', () => {
 			expect(res).to.have.property('suffixInfo');
 		});
 
-		it('errors if file does not exist', async () => {
-			const binPath = '';
-			let error;
+		it('errors if the binary is not valid', async () => {
+			const applicationBinary = { name: 'junk', data: Buffer.from('junk') };
 
+			let error;
 			try {
-				await binaryCommand._parseBinaryFile(binPath);
+				await binaryCommand._parseApplicationBinary(applicationBinary);
 			} catch (_error) {
 				error = _error;
 			}
 
 			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.equal(`File does not exist: ${binPath}`);
+			expect(error.message).to.match(/Could not parse junk/);
 		});
-
-		it('errors if file is not a .bin', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_bin', 'app.txt');
-			let error;
-
-			try {
-				await binaryCommand._parseBinaryFile(binPath);
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.equal(`File must be a .bin file: ${binPath}`);
-		});
-
-		it('errors for  non valid binary', async () => {
-			// TODO: return error 'Could not parse'
-		});
-
 	});
 
 	describe('_verifyBundle', () => {
 		it('verifies bundle with asset info', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
 			const [bin, assets] = await binaryCommand._extractFiles(zipPath);
-			const parsedBinaryInfo = await binaryCommand._parseBinaryFile(bin);
+			const parsedBinaryInfo = await binaryCommand._parseApplicationBinary(bin);
 
 			const res = await binaryCommand._verifyBundle(parsedBinaryInfo, assets);
 
