@@ -25,18 +25,35 @@ To use the `binary.js` command module, you can run the following commands:
 1. Inspecting a binary file such as tinker.bin:
 
 ```
-TODO: Add example
+particle binary inspect p2_app.bin 
+
+> particle-cli@3.10.2 start
+> node ./src/index.js binary inspect /path/to/p2_app.bin
+
+p2_app.bin
+ CRC is ok (6e2abf80)
+ Compiled for p2
+ This is an application module number 1 at version 6
+ It depends on a system module number 1 at version 5302
 ```
 
-2. Inspecting a binary file with baked-in asset dependencies
+2. Inspecting a zip file whose app firmware has baked-in asset dependencies:
 
 ```
-TODO: Add example
-```
+$ npm start -- binary inspect /path/to/bundle.zip 
 
-3. Inspecting a zip file
+> particle-cli@3.10.2 start
+> node ./src/index.js binary inspect /path/to/bundle.zip
 
-```
-TODO: Add example
+app.bin
+ CRC is ok (7fa30408)
+ Compiled for argon
+ This is an application module number 2 at version 6
+ It is firmware for product id 12 at version 3
+ It depends on a system module number 1 at version 4006
+It depends on assets:
+ cat.txt in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)
+ house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)
+ water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)
 ```
 

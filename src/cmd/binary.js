@@ -132,7 +132,7 @@ class BinaryCommand {
 			return path.basename(asset);
 		});
 
-		if (binaryFileInfo.assets){
+		if (binaryFileInfo.assets && assets.length){
 			console.log('It depends on assets:');
 			let assetHashes = {};
 			for (const asset of binaryFileInfo.assets) {

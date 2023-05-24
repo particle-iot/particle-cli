@@ -156,12 +156,6 @@ describe('Binary Commands', () => {
 		it('Inspect a bundle with assets', async () => {
 			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
 			const args = ['binary', 'inspect', bundle];
-			const { stdout, stderr, exitCode } = await cli.run(args);
-
-			console.log('stdout', stdout);
-			console.log('stderr', stderr);
-			console.log('exitCode', exitCode);
-
 			const expected = [
 				'app.bin',
 				' CRC is ok (7fa30408)',
@@ -174,6 +168,9 @@ describe('Binary Commands', () => {
 				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
 				' water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
 			];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
 			expect(stdout.split('\n')).to.include.members(expected);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
@@ -182,7 +179,6 @@ describe('Binary Commands', () => {
 		it('Inspect a bundle with assets which do not match the hash', async () => {
 			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle-asset-hash-no-match.zip');
 			const args = ['binary', 'inspect', bundle];
-			const { stdout, stderr, exitCode } = await cli.run(args);
 			const expected = [
 				'app.bin',
 				' CRC is ok (7fa30408)',
@@ -195,6 +191,9 @@ describe('Binary Commands', () => {
 				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
 				' water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
 			];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
 			expect(stdout.split('\n')).to.include.members(expected);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
@@ -203,7 +202,6 @@ describe('Binary Commands', () => {
 		it('Inspects a bundle with missing assets', async () => {
 			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle-missing-assets.zip');
 			const args = ['binary', 'inspect', bundle];
-			const { stdout, stderr, exitCode } = await cli.run(args);
 			const expected = [
 				'app.bin',
 				' CRC is ok (7fa30408)',
@@ -216,6 +214,9 @@ describe('Binary Commands', () => {
 				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
 				' water.txt failed (hash should be 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591 but is not in the bundle)'
 			];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
 			expect(stdout.split('\n')).to.include.members(expected);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
