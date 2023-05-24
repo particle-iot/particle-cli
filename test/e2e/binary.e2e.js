@@ -2,7 +2,7 @@ const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
-	PATH_FIXTURES_BINARIES_DIR
+	PATH_FIXTURES_BINARIES_DIR, PATH_FIXTURES_THIRDPARTY_OTA_DIR
 } = require('../lib/env');
 
 
@@ -145,12 +145,77 @@ describe('Binary Commands', () => {
 				const bin = path.join(PATH_FIXTURES_BINARIES_DIR, file);
 				const args = ['binary', 'inspect', bin];
 				const { stdout, stderr, exitCode } = await cli.run(args);
-
 				expect(stdout.split('\n')).to.include.members(contents);
 				expect(stderr).to.equal('');
 				expect(exitCode).to.equal(0);
 			});
 		});
+	});
+
+	describe('Binary Inspect Subcommand for Bundle', () => {
+		it('Inspect a bundle with assets', async () => {
+			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+			const args = ['binary', 'inspect', bundle];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const expected = [
+				'\u001b[1mapp.bin\u001b[22m',
+				'\u001b[32m CRC is ok (7fa30408)\u001b[39m',
+				' Compiled for \u001b[1margon\u001b[22m',
+				' This is \u001b[1man application module\u001b[22m number \u001b[1m2\u001b[22m at version \u001b[1m6\u001b[22m',
+				' It is firmware for \u001b[1mproduct id 12\u001b[22m at version \u001b[1m3\u001b[22m',
+				' It depends on \u001b[1ma system module\u001b[22m number \u001b[1m1\u001b[22m at version \u001b[1m4006\u001b[22m',
+				'It depends on assets:',
+				' \u001b[1mcat.txt\u001b[22m in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' \u001b[1mhouse.txt\u001b[22m in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' \u001b[1mwater.txt\u001b[22m in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+			];
+			expect(stdout.split('\n')).to.include.members(expected);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Inspect a bundle with assets which do not match the hash', async () => {
+			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle-asset-hash-no-match.zip');
+			const args = ['binary', 'inspect', bundle];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const expected = [
+				'\u001b[1mapp.bin\u001b[22m',
+				'\u001b[32m CRC is ok (7fa30408)\u001b[39m',
+				' Compiled for \u001b[1margon\u001b[22m',
+				' This is \u001b[1man application module\u001b[22m number \u001b[1m2\u001b[22m at version \u001b[1m6\u001b[22m',
+				' It is firmware for \u001b[1mproduct id 12\u001b[22m at version \u001b[1m3\u001b[22m',
+				' It depends on \u001b[1ma system module\u001b[22m number \u001b[1m1\u001b[22m at version \u001b[1m4006\u001b[22m',
+				'It depends on assets:',
+				'\u001b[31m cat.txt failed (hash should be b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106 but is 24b9e28f85f09da4956ae53c89ab80754ff22ba8895b8664507d0e689af4fc69)\u001b[39m',
+				' \u001b[1mhouse.txt\u001b[22m in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' \u001b[1mwater.txt\u001b[22m in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+			];
+			expect(stdout.split('\n')).to.include.members(expected);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Inspects a bundle with missing assets', async () => {
+			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle-missing-assets.zip');
+			const args = ['binary', 'inspect', bundle];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			const expected = [
+				'\u001b[1mapp.bin\u001b[22m',
+				'\u001b[32m CRC is ok (7fa30408)\u001b[39m',
+				' Compiled for \u001b[1margon\u001b[22m',
+				' This is \u001b[1man application module\u001b[22m number \u001b[1m2\u001b[22m at version \u001b[1m6\u001b[22m',
+				' It is firmware for \u001b[1mproduct id 12\u001b[22m at version \u001b[1m3\u001b[22m',
+				' It depends on \u001b[1ma system module\u001b[22m number \u001b[1m1\u001b[22m at version \u001b[1m4006\u001b[22m',
+				'It depends on assets:',
+				' \u001b[1mcat.txt\u001b[22m in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' \u001b[1mhouse.txt\u001b[22m in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				'\u001b[31m water.txt failed (hash should be 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591 but is not in the bundle)\u001b[39m'
+			];
+			expect(stdout.split('\n')).to.include.members(expected);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
 	});
 });
 
