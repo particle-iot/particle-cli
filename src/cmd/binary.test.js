@@ -39,6 +39,9 @@ describe('Binary Inspect', () => {
 	describe('_extractFiles', () => {
 		afterEach(async () => {
 			await fs.readdir('.', (err, files) => {
+				if (err) {
+					// ignore error
+				}
 				files.forEach(async (file) => {
 					if (file.startsWith('temp-dir-for-assets')) {
 						await fs.remove(file);
@@ -108,6 +111,9 @@ describe('Binary Inspect', () => {
 	describe('__extractZip', () => {
 		afterEach(async () => {
 			await fs.readdir('.', (err, files) => {
+				if (err) {
+					// ignore error
+				}
 				files.forEach(async (file) => {
 					if (file.startsWith('temp-dir-for-assets')) {
 						await fs.remove(file);
@@ -145,11 +151,9 @@ describe('Binary Inspect', () => {
 		it('returns error if fails to unzip', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'random-bad-bundle.zip');
 			let error;
-			let resDir;
-
 
 			try {
-				resDir = await binaryCommand._extractZip(zipPath);
+				await binaryCommand._extractZip(zipPath);
 			} catch (_error) {
 				error = _error;
 			}
