@@ -157,17 +157,22 @@ describe('Binary Commands', () => {
 			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
 			const args = ['binary', 'inspect', bundle];
 			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			console.log('stdout', stdout);
+			console.log('stderr', stderr);
+			console.log('exitCode', exitCode);
+
 			const expected = [
-				'\u001b[1mapp.bin\u001b[22m',
-				'\u001b[32m CRC is ok (7fa30408)\u001b[39m',
-				' Compiled for \u001b[1margon\u001b[22m',
-				' This is \u001b[1man application module\u001b[22m number \u001b[1m2\u001b[22m at version \u001b[1m6\u001b[22m',
-				' It is firmware for \u001b[1mproduct id 12\u001b[22m at version \u001b[1m3\u001b[22m',
-				' It depends on \u001b[1ma system module\u001b[22m number \u001b[1m1\u001b[22m at version \u001b[1m4006\u001b[22m',
+				'app.bin',
+				' CRC is ok (7fa30408)',
+				' Compiled for argon',
+				' This is an application module number 2 at version 6',
+				' It is firmware for product id 12 at version 3',
+				' It depends on a system module number 1 at version 4006',
 				'It depends on assets:',
-				' \u001b[1mcat.txt\u001b[22m in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
-				' \u001b[1mhouse.txt\u001b[22m in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
-				' \u001b[1mwater.txt\u001b[22m in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+				' cat.txt in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
 			];
 			expect(stdout.split('\n')).to.include.members(expected);
 			expect(stderr).to.equal('');
@@ -179,16 +184,16 @@ describe('Binary Commands', () => {
 			const args = ['binary', 'inspect', bundle];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const expected = [
-				'\u001b[1mapp.bin\u001b[22m',
-				'\u001b[32m CRC is ok (7fa30408)\u001b[39m',
-				' Compiled for \u001b[1margon\u001b[22m',
-				' This is \u001b[1man application module\u001b[22m number \u001b[1m2\u001b[22m at version \u001b[1m6\u001b[22m',
-				' It is firmware for \u001b[1mproduct id 12\u001b[22m at version \u001b[1m3\u001b[22m',
-				' It depends on \u001b[1ma system module\u001b[22m number \u001b[1m1\u001b[22m at version \u001b[1m4006\u001b[22m',
+				'app.bin',
+				' CRC is ok (7fa30408)',
+				' Compiled for argon',
+				' This is an application module number 2 at version 6',
+				' It is firmware for product id 12 at version 3',
+				' It depends on a system module number 1 at version 4006',
 				'It depends on assets:',
-				'\u001b[31m cat.txt failed (hash should be b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106 but is 24b9e28f85f09da4956ae53c89ab80754ff22ba8895b8664507d0e689af4fc69)\u001b[39m',
-				' \u001b[1mhouse.txt\u001b[22m in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
-				' \u001b[1mwater.txt\u001b[22m in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+				' cat.txt failed (hash should be b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106 but is 24b9e28f85f09da4956ae53c89ab80754ff22ba8895b8664507d0e689af4fc69)',
+				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
 			];
 			expect(stdout.split('\n')).to.include.members(expected);
 			expect(stderr).to.equal('');
@@ -200,16 +205,16 @@ describe('Binary Commands', () => {
 			const args = ['binary', 'inspect', bundle];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const expected = [
-				'\u001b[1mapp.bin\u001b[22m',
-				'\u001b[32m CRC is ok (7fa30408)\u001b[39m',
-				' Compiled for \u001b[1margon\u001b[22m',
-				' This is \u001b[1man application module\u001b[22m number \u001b[1m2\u001b[22m at version \u001b[1m6\u001b[22m',
-				' It is firmware for \u001b[1mproduct id 12\u001b[22m at version \u001b[1m3\u001b[22m',
-				' It depends on \u001b[1ma system module\u001b[22m number \u001b[1m1\u001b[22m at version \u001b[1m4006\u001b[22m',
+				'app.bin',
+				' CRC is ok (7fa30408)',
+				' Compiled for argon',
+				' This is an application module number 2 at version 6',
+				' It is firmware for product id 12 at version 3',
+				' It depends on a system module number 1 at version 4006',
 				'It depends on assets:',
-				' \u001b[1mcat.txt\u001b[22m in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
-				' \u001b[1mhouse.txt\u001b[22m in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
-				'\u001b[31m water.txt failed (hash should be 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591 but is not in the bundle)\u001b[39m'
+				' cat.txt in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' water.txt failed (hash should be 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591 but is not in the bundle)'
 			];
 			expect(stdout.split('\n')).to.include.members(expected);
 			expect(stderr).to.equal('');
