@@ -230,7 +230,7 @@ module.exports = {
 			//is the filesize even?
 			//console.log(filepath, ' stats are ', stats);
 			if ((stats.size % 2) !== 0) {
-				let buf = new Buffer(1);
+				let buf = Buffer.alloc(1);
 				buf[0] = 0;
 
 				fs.appendFileSync(filepath, buf);

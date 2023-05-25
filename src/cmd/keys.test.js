@@ -103,7 +103,7 @@ describe('Key Command', () => {
 			});
 			return Promise.resolve(key.sendPublicKeyToServer(deviceID, filename, {}))
 				.then(() => {
-					expect(api.sendPublicKey).has.been.calledWith(deviceID.toLowerCase(), new Buffer([]), 'rsa');
+					expect(api.sendPublicKey).has.been.calledWith(deviceID.toLowerCase(), Buffer.from([]), 'rsa');
 				})
 				.finally(() => {
 					if (tempfile) {
@@ -210,14 +210,14 @@ describe('Key Command', () => {
 		it('updates the device protocol to tcp', () => {
 			dfu.writeBuffer = sinon.stub();
 			return key.changeTransportProtocol('tcp').then(() => {
-				expect(dfu.writeBuffer).has.been.calledWith(new Buffer([0x00]), 'transport', false);
+				expect(dfu.writeBuffer).has.been.calledWith(Buffer.from([0x00]), 'transport', false);
 			});
 		});
 
 		it('updates the device protocol to udp', () => {
 			dfu.writeBuffer = sinon.stub();
 			return key.changeTransportProtocol('udp').then(() => {
-				expect(dfu.writeBuffer).has.been.calledWith(new Buffer([0xFF]), 'transport', false);
+				expect(dfu.writeBuffer).has.been.calledWith(Buffer.from([0xFF]), 'transport', false);
 			});
 		});
 

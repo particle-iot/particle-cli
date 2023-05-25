@@ -59,7 +59,7 @@ module.exports = class KeysCommand {
 					throw new VError('Protocol cannot be changed for this device');
 				}
 
-				let flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
+				let flagValue = specs.defaultProtocol === protocol ? Buffer.from([255]) : Buffer.from([0]);
 				return this.dfu.writeBuffer(flagValue, 'transport', false);
 			})
 			.then(() => {
@@ -308,7 +308,7 @@ module.exports = class KeysCommand {
 		const isIpAddress = /^[0-9.]*$/.test(ipOrDomain);
 
 		// create a version of this key that points to a particular server or domain
-		const addressBuf = new Buffer(ipOrDomain.length + 2);
+		const addressBuf = Buffer.alloc(ipOrDomain.length + 2);
 		addressBuf[0] = (isIpAddress) ? 0 : 1;
 		addressBuf[1] = (isIpAddress) ? 4 : ipOrDomain.length;
 
@@ -632,7 +632,7 @@ module.exports = class KeysCommand {
 			// the IP or domain name. If the length of the domain name is odd,
 			// add a zero byte to get the file length to be even as usual.
 
-			buf = new Buffer(segment.size);
+			buf = Buffer.alloc(segment.size);
 
 			//copy in the key
 			fileBuf = fs.readFileSync(filename);
@@ -665,7 +665,7 @@ module.exports = class KeysCommand {
 			}
 
 			if (!fs.existsSync(fileWithSize)){
-				buf = new Buffer(segment.size);
+				buf = Buffer.alloc(segment.size);
 				fileBuf = fs.readFileSync(filename);
 				fileBuf.copy(buf, 0, 0, fileBuf.length);
 				buf.fill(255, fileBuf.length);

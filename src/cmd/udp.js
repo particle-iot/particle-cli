@@ -4,7 +4,7 @@ const dgram = require('dgram');
 module.exports = class UdpCommands {
 	sendUdpPacket({ host, port, message }) {
 		const client = dgram.createSocket('udp4');
-		const buf = new Buffer(message);
+		const buf = Buffer.from(message);
 
 		console.log('Sending "' + message + '" to', host, 'at port', port);
 		return new Promise((resolve, reject) => {
