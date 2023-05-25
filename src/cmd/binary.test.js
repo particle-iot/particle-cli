@@ -75,13 +75,11 @@ describe('Binary Inspect', () => {
 
 		it('handles if zip file does not have a binary or assets', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid-bundle.zip');
-			let bin;
-			let assets;
 
-			[bin, assets] = await binaryCommand._extractFiles(zipPath);
+			const binaryInfo = await binaryCommand._extractFiles(zipPath);
 
-			expect(bin).to.equal(undefined);
-			expect(assets.length).to.equal(0);
+			expect(binaryInfo).to.have.property('application').with.property('name', 'app.txt');
+			expect(binaryInfo).to.have.property('assets').with.lengthOf(0);
 
 		});
 	});
@@ -118,19 +116,12 @@ describe('Binary Inspect', () => {
 	describe('_verifyBundle', () => {
 		it('verifies bundle with asset info', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
-			const [bin, assets] = await binaryCommand._extractFiles(zipPath);
-			const parsedBinaryInfo = await binaryCommand._parseApplicationBinary(bin);
+			const res = await binaryCommand._extractFiles(zipPath);
+			const parsedBinaryInfo = await binaryCommand._parseApplicationBinary(res.application);
 
-			const res = await binaryCommand._verifyBundle(parsedBinaryInfo, assets);
+			const verify = await binaryCommand._verifyBundle(parsedBinaryInfo, res.assets);
 
-			expect(res).to.equal(true);
-		});
-
-		it('checks only if assets are present', async () => {
-			const assets = [];
-			const res = await binaryCommand._verifyBundle('', assets);
-
-			expect(res).to.equal(undefined);
+			expect(verify).to.equal(true);
 		});
 	});
 });

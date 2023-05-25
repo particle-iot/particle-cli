@@ -144,8 +144,7 @@ describe('BundleCommands', () => {
 			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
-		// TODO: uncomment this test when binary version reader is able to create a bundle with 0 assets
-		xit('creates a bundle if there are no assets in the assets folder', async () => {
+		it('creates a bundle if there are no assets in the assets folder', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'assets');
 			const args = {

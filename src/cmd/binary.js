@@ -91,9 +91,8 @@ class BinaryCommand {
 			console.log('It depends on assets:');
 			for (const assetInfo of binaryFileInfo.assets) {
 				const asset = assets.find((asset) => asset.name === assetInfo.name);
-
 				if (asset) {
-					const valid = isAssetValid(assetInfo, asset.data);
+					const valid = isAssetValid(asset.data, assetInfo);
 
 					if (valid) {
 						console.log(' ' + chalk.bold(assetInfo.name) + ' (hash ' + assetInfo.hash + ')');
@@ -105,6 +104,7 @@ class BinaryCommand {
 				}
 			}
 		}
+		return true;
 	}
 
 	_showCrc(fileInfo){
