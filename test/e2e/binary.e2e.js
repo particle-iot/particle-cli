@@ -222,6 +222,17 @@ describe('Binary Commands', () => {
 			expect(exitCode).to.equal(0);
 		});
 
+		it('errors for zip bundle without binary file', async () => {
+			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid-bundle.zip');
+			const args = ['binary', 'inspect', bundle];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('Could not parse app.txt: Attempt to access memory outside buffer bounds');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+
 	});
 });
 

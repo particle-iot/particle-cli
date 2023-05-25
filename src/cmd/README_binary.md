@@ -52,8 +52,8 @@ app.bin
  It is firmware for product id 12 at version 3
  It depends on a system module number 1 at version 4006
 It depends on assets:
- cat.txt in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)
- house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)
- water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)
+ cat.txt (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)
+ house.txt (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)
+ water.txt (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)
 ```
 
