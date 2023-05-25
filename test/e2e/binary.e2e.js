@@ -164,9 +164,9 @@ describe('Binary Commands', () => {
 				' It is firmware for product id 12 at version 3',
 				' It depends on a system module number 1 at version 4006',
 				'It depends on assets:',
-				' cat.txt in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
-				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
-				' water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+				' cat.txt (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' house.txt (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' water.txt (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
 			];
 
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -187,9 +187,9 @@ describe('Binary Commands', () => {
 				' It is firmware for product id 12 at version 3',
 				' It depends on a system module number 1 at version 4006',
 				'It depends on assets:',
-				' cat.txt failed (hash should be b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106 but is 24b9e28f85f09da4956ae53c89ab80754ff22ba8895b8664507d0e689af4fc69)',
-				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
-				' water.txt in bundle (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+				' cat.txt failed (hash should be b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' house.txt (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' water.txt (hash 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
 			];
 
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -210,8 +210,8 @@ describe('Binary Commands', () => {
 				' It is firmware for product id 12 at version 3',
 				' It depends on a system module number 1 at version 4006',
 				'It depends on assets:',
-				' cat.txt in bundle (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
-				' house.txt in bundle (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' cat.txt (hash b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' house.txt (hash a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
 				' water.txt failed (hash should be 3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591 but is not in the bundle)'
 			];
 
