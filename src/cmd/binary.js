@@ -46,7 +46,6 @@ class BinaryCommand {
 	}
 
 	async _checkFile(file) {
-		// TODO: what happens if this is removed? What kind of error do we get?
 		try {
 			await fs.access(file);
 		} catch (error) {
