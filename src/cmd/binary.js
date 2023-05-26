@@ -25,11 +25,11 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************
  */
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const VError = require('verror');
 const chalk = require('chalk');
-const Parser = require('binary-version-reader').HalModuleParser;
+const { HalModuleParser: Parser, unpackApplicationAndAssetBundle, isAssetValid } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
 
@@ -38,30 +38,73 @@ const DEFAULT_PRODUCT_ID = 65535;
 const DEFAULT_PRODUCT_VERSION = 65535;
 
 class BinaryCommand {
-	inspectBinary(binaryFile){
-		return Promise.resolve().then(() => {
-			if (!fs.existsSync(binaryFile)){
-				throw new VError(`Binary file not found ${binaryFile}`);
-			}
+	async inspectBinary(file) {
+		await this._checkFile(file);
+		const extractedFiles = await this._extractFiles(file);
+		const parsedBinaryInfo = await this._parseApplicationBinary(extractedFiles.application);
+		await this._verifyBundle(parsedBinaryInfo, extractedFiles.assets);
+	}
 
-			const parser = new Parser();
+	async _checkFile(file) {
+		// TODO: what happens if this is removed? What kind of error do we get?
+		try {
+			await fs.access(file);
+		} catch (error) {
+			throw new Error(`File does not exist: ${file}`);
+		}
+		return true;
+	}
 
-			return parser.parseFile(binaryFile)
-				.catch(err => {
-					throw new VError(ensureError(err), `Could not parse ${binaryFile}`);
-				})
-				.then(fileInfo => {
-					if (fileInfo.suffixInfo.suffixSize === INVALID_SUFFIX_SIZE){
-						throw new VError(`${binaryFile} does not contain inspection information`);
+	async _extractFiles(file) {
+		if (utilities.getFilenameExt(file) === '.zip') {
+			return unpackApplicationAndAssetBundle(file);
+		} else if (utilities.getFilenameExt(file) === '.bin') {
+			const data = await fs.readFile(file);
+			return { application: { name: path.basename(file), data }, assets: [] };
+		} else {
+			throw new VError(`File must be a .bin or .zip file: ${file}`);
+		}
+	}
+
+	async _parseApplicationBinary(applicationBinary) {
+		const parser = new Parser();
+		let fileInfo;
+		try {
+			fileInfo = await parser.parseBuffer({ filename: applicationBinary.name, fileBuffer: applicationBinary.data });
+		} catch (err) {
+			throw new VError(ensureError(err), `Could not parse ${applicationBinary.name}`);
+		}
+
+		const filename = path.basename(fileInfo.filename);
+		if (fileInfo.suffixInfo.suffixSize === INVALID_SUFFIX_SIZE){
+			throw new VError(`${filename} does not contain inspection information`);
+		}
+		console.log(chalk.bold(filename));
+		this._showCrc(fileInfo);
+		this._showPlatform(fileInfo);
+		this._showModuleInfo(fileInfo);
+		return fileInfo;
+	}
+
+	async _verifyBundle(binaryFileInfo, assets) {
+		if (binaryFileInfo.assets && assets.length){
+			console.log('It depends on assets:');
+			for (const assetInfo of binaryFileInfo.assets) {
+				const asset = assets.find((asset) => asset.name === assetInfo.name);
+				if (asset) {
+					const valid = isAssetValid(asset.data, assetInfo);
+
+					if (valid) {
+						console.log(' ' + chalk.bold(assetInfo.name) + ' (hash ' + assetInfo.hash + ')');
+					} else {
+						console.log(chalk.red(' ' + assetInfo.name + ' failed' + ' (hash should be ' + assetInfo.hash + ')'));
 					}
-
-					console.log(chalk.bold(path.basename(binaryFile)));
-
-					this._showCrc(fileInfo);
-					this._showPlatform(fileInfo);
-					this._showModuleInfo(fileInfo);
-				});
-		});
+				} else {
+					console.log(chalk.red(' ' + assetInfo.name + ' failed' + ' (hash should be ' + assetInfo.hash + ' but is not in the bundle)'));
+				}
+			}
+		}
+		return true;
 	}
 
 	_showCrc(fileInfo){

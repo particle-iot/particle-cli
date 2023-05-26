@@ -10,7 +10,7 @@
       "license": "Apache-2.0",
       "dependencies": {
         "@particle/device-constants": "^3.1.9",
-        "binary-version-reader": "^2.1.0",
+        "binary-version-reader": "^2.2.0",
         "chalk": "^2.4.2",
         "cli-spinner": "^0.2.10",
         "cli-table": "^0.3.1",
@@ -1284,9 +1284,9 @@
       }
     },
     "node_modules/binary-version-reader": {
-      "version": "2.1.0",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-2.1.0.tgz",
-      "integrity": "sha512-KFD1inhk5Sy1uV2QBweMwJxxbzoJlMfrwavW6TElzQdal0Io7LW17znX2ii3fRs9MsA1fopAcjreymjaLXNfDA==",
+      "version": "2.2.0",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-2.2.0.tgz",
+      "integrity": "sha512-BcGb3yoMHxhctMk2u9+537QpwE3vclhoelF/V4FS0yC3NvfT755+okoWNw2pOZrD2wkdpndkvt3XmdB+kYpH2Q==",
       "dependencies": {
         "archiver": "^5.3.1",
         "buffer-crc32": "^0.2.5",
@@ -12033,9 +12033,9 @@
       }
     },
     "binary-version-reader": {
-      "version": "2.1.0",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-2.1.0.tgz",
-      "integrity": "sha512-KFD1inhk5Sy1uV2QBweMwJxxbzoJlMfrwavW6TElzQdal0Io7LW17znX2ii3fRs9MsA1fopAcjreymjaLXNfDA==",
+      "version": "2.2.0",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-2.2.0.tgz",
+      "integrity": "sha512-BcGb3yoMHxhctMk2u9+537QpwE3vclhoelF/V4FS0yC3NvfT755+okoWNw2pOZrD2wkdpndkvt3XmdB+kYpH2Q==",
       "requires": {
         "archiver": "^5.3.1",
         "buffer-crc32": "^0.2.5",
