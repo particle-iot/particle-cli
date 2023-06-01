@@ -64,14 +64,14 @@ let settings = {
 			'electron-system-part3@2.3.1.bin'
 		],
 		[PlatformId.ARGON]: [
-			'argon-bootloader@4.0.2.bin',
-			'argon-softdevice@4.0.2.bin',
-			'argon-system-part1@4.0.2.bin'
+			'argon-bootloader@4.1.0.bin',
+			'argon-softdevice@4.1.0.bin',
+			'argon-system-part1@4.1.0.bin'
 		],
 		[PlatformId.BORON]: [
-			'boron-bootloader@4.0.2.bin',
-			'boron-softdevice@4.0.2.bin',
-			'boron-system-part1@4.0.2.bin'
+			'boron-bootloader@4.1.0.bin',
+			'boron-softdevice@4.1.0.bin',
+			'boron-system-part1@4.1.0.bin'
 		],
 		[PlatformId.XENON]: [
 			'xenon-bootloader@1.5.2.bin',
@@ -79,24 +79,24 @@ let settings = {
 			'xenon-system-part1@1.5.2.bin'
 		],
 		[PlatformId.BSOM]: [
-			'bsom-bootloader@4.0.2.bin',
-			'bsom-softdevice@4.0.2.bin',
-			'bsom-system-part1@4.0.2.bin'
+			'bsom-bootloader@4.1.0.bin',
+			'bsom-softdevice@4.1.0.bin',
+			'bsom-system-part1@4.1.0.bin'
 		],
 		[PlatformId.B5SOM]: [
-			'b5som-bootloader@4.0.2.bin',
-			'b5som-softdevice@4.0.2.bin',
-			'b5som-system-part1@4.0.2.bin'
+			'b5som-bootloader@4.1.0.bin',
+			'b5som-softdevice@4.1.0.bin',
+			'b5som-system-part1@4.1.0.bin'
 		],
 		[PlatformId.TRACKER]: [
-			'tracker-bootloader@4.0.2.bin',
-			'tracker-softdevice@4.0.2.bin',
-			'tracker-system-part1@4.0.2.bin'
+			'tracker-bootloader@4.1.0.bin',
+			'tracker-softdevice@4.1.0.bin',
+			'tracker-system-part1@4.1.0.bin'
 		],
 		[PlatformId.ESOMX]: [
-			'esomx-bootloader@4.0.2.bin',
-			'esomx-softdevice@4.0.2.bin',
-			'esomx-system-part1@4.0.2.bin'
+			'esomx-bootloader@4.1.0.bin',
+			'esomx-softdevice@4.1.0.bin',
+			'esomx-system-part1@4.1.0.bin'
 		],
 	},
 };
