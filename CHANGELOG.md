@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.11.0 - Jun 1 2023
+
+* Support for compile command to bundle assets and app binary
+* Updated binaries for DeviceOS 4.1.0
+
 ## 3.10.2 - 19 May 2023
 
 * Support for bundle command to bundle assets and app binary
