@@ -749,7 +749,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				continue;
 			}
 
-			if (!alwaysIncludeThisFile && settings.notSourceExtensions.includes(ext)){
+			if (!alwaysIncludeThisFile && settings.notSourceExtensions.includes(ext)){	// not source files
 				continue;
 			}
 
@@ -780,38 +780,38 @@ module.exports = class CloudCommand extends CLICommandBase {
 	_processDirIncludes(fileMapping, dirname, { followSymlinks } = {}){
 		dirname = path.resolve(dirname);
 
+		let files = this._getDefaultIncludes(dirname, { followSymlinks });
+
+		files.push(this._getCustomIncludes(dirname, { followSymlinks }));
+
+		files = utilities.compliment(files, _getIgnoredFiles(dirname, { followSymlinks }));
+
+		// get the full list of particle.include files
+		// add the contents of each with basename to the files variable
+
+
 		const includesFile = path.join(dirname, settings.dirIncludeFilename);
 		const ignoreFile = path.join(dirname, settings.dirExcludeFilename);
+		console.log('includesFile: ', includesFile);
+		console.log('ignoreFile: ', ignoreFile);
 		let hasIncludeFile = false;
-
-		// Recursively find source files
-		let includes = [
-			'**/*.h',
-			'**/*.hpp',
-			'**/*.hh',
-			'**/*.hxx',
-			'**/*.ino',
-			'**/*.cpp',
-			'**/*.c',
-			'project.properties'
-		];
 
 		if (fs.existsSync(includesFile)){
 			//grab and process all the files in the include file.
-
-			includes = utilities.trimBlankLinesAndComments(
+			console.log('includes file exists');
+			moreIncludes = utilities.trimBlankLinesAndComments(
 				utilities.readAndTrimLines(includesFile)
 			);
 			hasIncludeFile = true;
 
 		}
-
-		let files = utilities.globList(dirname, includes, { followSymlinks });
+		console.log('moreIncludes: ', moreIncludes);
 
 		if (fs.existsSync(ignoreFile)){
 			const ignores = utilities.trimBlankLinesAndComments(
 				utilities.readAndTrimLines(ignoreFile)
 			);
+			console.log('ignores: ', ignores);
 
 			const ignoredFiles = utilities.globList(dirname, ignores, { followSymlinks });
 			files = utilities.compliment(files, ignoredFiles);
@@ -832,6 +832,63 @@ module.exports = class CloudCommand extends CLICommandBase {
 			}
 			fileMapping.map[target] = source;
 		});
+		console.log('files in _processDirIncludes', files);
+		console.log('fileMapping in _processDirIncludes', fileMapping);
+	}
+
+	_getDefaultIncludes(dirname, { followSymlinks }) {
+		// Recursively find source files
+		let includes = [
+			'**/*.h',
+			'**/*.hpp',
+			'**/*.hh',
+			'**/*.hxx',
+			'**/*.ino',
+			'**/*.cpp',
+			'**/*.c',
+			'**/build.mk',
+			'project.properties'
+		];
+
+		return utilities.globList(dirname, includes, { followSymlinks });
+	}
+
+	// _getCustomIncludes(dirname, { followSymlinks }) {
+	// 	// Use globlist to recursively find all the particle.include files
+	// 	let includeFiles = utilities.globList(dirname, ['**/particle.include'], { followSymlinks });
+	// 	const res = [];
+	// 	for (const includeFile of includeFiles) {
+	// 		const includeDir = path.dirname(includeFile);
+	// 		// get the contents of each include file
+	// 		const globsToInclude = utilities.trimBlankLinesAndComments(
+	// 			utilities.readAndTrimLines(includeFile)
+	// 		);
+	// 		let glob = [];
+	// 		for (const g of globsToInclude) {
+	// 			glob.push(g);
+	// 		}
+	// 		res.push(utilities.globList(includeDir, glob, { followSymlinks }));
+	// 	}
+	// 	// flatten out res and remove duplicates
+	// 	return _.uniq(_.flatten(res));
+	// }
+
+	_getCustomIncludes(dirname, { followSymlinks }) {
+		const includeFiles = utilities.globList(dirname, ['**/particle.include'], { followSymlinks });
+		const result = [];
+
+		for (const includeFile of includeFiles) {
+			const includeDir = path.dirname(includeFile);
+			const globsToInclude = utilities.trimBlankLinesAndComments(utilities.readAndTrimLines(includeFile));
+			if (!globsToInclude || !globsToInclude.length) {
+				continue;
+			}
+			const globList = globsToInclude.map(g => g);
+			const includePaths = utilities.globList(includeDir, globList, { followSymlinks });
+			result.push(...includePaths);
+		}
+
+		return [...new Set(result)];
 	}
 
 
