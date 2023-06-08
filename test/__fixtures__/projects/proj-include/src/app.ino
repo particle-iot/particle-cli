@@ -1,5 +1,5 @@
-// Demo app with a nested structure
-#include "helper/helper.h"
+// Demo app with a flat structure
+#include "helper.h"
 
 void setup() {
   if (DOIT) {

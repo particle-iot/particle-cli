@@ -152,21 +152,23 @@ describe('Compile Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Compiles a legacy nested project', async () => {
-		const name = 'legacy-nested';
+	it('Compiles a project which uses `particle.include` file', async () => {
+		const name = 'proj-include';
 		const platform = 'photon';
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
-		const args = ['compile', platform, '--saveTo', destination];
+		const args = ['compile', platform, cwd, '--saveTo', destination];
 		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
 		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    helper/helper.h',
-			'    app.ino',
-			'    helper/helper.cpp',
+			'    lib/helper/src/helper.h',
+			'    src/app.ino',
+			'    lib/helper/src/helper.cpp',
+			'    project.properties',
+			'    lib/helper/src/helper.def',
 			'',
 			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
@@ -184,21 +186,22 @@ describe('Compile Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Compiles a legacy project which uses `particle.include` file', async () => {
-		const name = 'legacy-include';
+	it('Compiles a project which uses `particle.ignore` file', async () => {
+		const name = 'proj-ignore';
 		const platform = 'photon';
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, name);
 		const destination = path.join(PATH_TMP_DIR, `${name}-${platform}.bin`);
-		const args = ['compile', platform, 'main', '--saveTo', destination];
+		const args = ['compile', platform, cwd, '--saveTo', destination];
 		const { stdout, stderr, exitCode, start, end } = await cliRunWithTimer(args, { cwd });
 		const file = await fs.stat(destination);
 		const log = [
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    main/app.ino',
-			'    helper/helper.cpp',
-			'    helper/helper.h',
+			'    lib/helper/src/helper.h',
+			'    src/app.ino',
+			'    lib/helper/src/helper.cpp',
+			'    project.properties',
 			'',
 			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version

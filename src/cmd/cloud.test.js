@@ -365,9 +365,9 @@ describe('Cloud Commands', () => {
 				await cloud._processDirIncludes(fileMapping, dir);
 
 				expect(fileMapping.map).to.eql({
-					'src/app.cpp': 'src/app.cpp',
-					'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
-					'lib/spi/src/spi.h': 'lib/spi/src/spi.h'
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h')
 				});
 			});
 		});
@@ -397,12 +397,12 @@ describe('Cloud Commands', () => {
 				await cloud._processDirIncludes(fileMapping, dir);
 
 				expect(fileMapping.map).to.eql({
-					'src/app.cpp': 'src/app.cpp',
-					'src/app.def': 'src/app.def',
-					'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
-					'lib/spi/src/spi.h': 'lib/spi/src/spi.h',
-					'lib/spi/src/spi.def': 'lib/spi/src/spi.def',
-					'lib/spi/src/spi.cmd': 'lib/spi/src/spi.cmd',
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('src/app.def')]: path.join('src/app.def'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.def')]: path.join('lib/spi/src/spi.def'),
+					[path.join('lib/spi/src/spi.cmd')]: path.join('lib/spi/src/spi.cmd')
 				});
 			});
 		});
@@ -420,9 +420,9 @@ describe('Cloud Commands', () => {
 				await cloud._processDirIncludes(fileMapping, dir);
 
 				expect(fileMapping.map).to.eql({
-					'src/app.cpp': 'src/app.cpp',
-					'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
-					'lib/spi/src/spi.h': 'lib/spi/src/spi.h'
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h')
 				});
 			});
 		});
@@ -443,10 +443,10 @@ describe('Cloud Commands', () => {
 				await cloud._processDirIncludes(fileMapping, dir);
 
 				expect(fileMapping.map).to.eql({
-					'src/app.cpp': 'src/app.cpp',
-					'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
-					'lib/spi/src/spi.h': 'lib/spi/src/spi.h',
-					'lib/spi/src/spi.txt': 'lib/spi/src/spi.txt'
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.txt')]: path.join('lib/spi/src/spi.txt')
 				});
 			});
 		});
@@ -469,10 +469,10 @@ describe('Cloud Commands', () => {
 				await cloud._processDirIncludes(fileMapping, dir);
 
 				expect(fileMapping.map).to.eql({
-					'src/app.cpp': 'src/app.cpp',
-					'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
-					'lib/spi/src/spi.h': 'lib/spi/src/spi.h',
-					'lib/spi/src/spi.txt': 'lib/spi/src/spi.txt'
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.txt')]: path.join('lib/spi/src/spi.txt')
 				});
 			});
 		});
@@ -495,9 +495,9 @@ describe('Cloud Commands', () => {
 				await cloud._processDirIncludes(fileMapping, dir);
 
 				expect(fileMapping.map).to.eql({
-					'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
-					'lib/spi/src/spi.h': 'lib/spi/src/spi.h',
-					'lib/spi/src/spi.txt': 'lib/spi/src/spi.txt'
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.txt')]: path.join('lib/spi/src/spi.txt')
 				});
 			});
 		});
@@ -517,13 +517,11 @@ describe('Cloud Commands', () => {
 
 				cloud._getDefaultIncludes(files, dir, {});
 
-				// files is a Set
-				// check files has so and so members
 				expect([...files]).to.have.same.members([
-					path.join(dir, 'src/app.cpp'),
-					path.join(dir, 'lib/spi/src/spi.c'),
-					path.join(dir, 'lib/spi/src/spi.h'),
-					path.join(dir, 'lib/spi/src/build.mk')
+					path.resolve(dir, 'src/app.cpp'),
+					path.resolve(dir, 'lib/spi/src/spi.c'),
+					path.resolve(dir, 'lib/spi/src/spi.h'),
+					path.resolve(dir, 'lib/spi/src/build.mk')
 				]);
 			});
 		});
@@ -543,9 +541,9 @@ describe('Cloud Commands', () => {
 				cloud._getDefaultIncludes(files, dir, {} );
 
 				expect([...files]).to.have.same.members([
-					path.join(dir, 'src/app.cpp'),
-					path.join(dir, 'lib/spi/src/spi.c'),
-					path.join(dir, 'lib/spi/src/spi.h')
+					path.resolve(dir, 'src/app.cpp'),
+					path.resolve(dir, 'lib/spi/src/spi.c'),
+					path.resolve(dir, 'lib/spi/src/spi.h')
 				]);
 			});
 		});
@@ -567,7 +565,7 @@ describe('Cloud Commands', () => {
 				cloud._getCustomIncludes(files, dir, {} );
 
 				expect([...files]).to.have.same.members([
-					path.join(dir, 'src/app.def')
+					path.resolve(dir, 'src/app.def')
 				]);
 			});
 		});
@@ -592,8 +590,8 @@ describe('Cloud Commands', () => {
 				cloud._getCustomIncludes(files, dir, {} );
 
 				expect([...files]).to.have.same.members([
-					path.join(dir, 'src/app.def'),
-					path.join(dir, 'src/file.txt')
+					path.resolve(dir, 'src/app.def'),
+					path.resolve(dir, 'src/file.txt')
 				]);
 			});
 		});
@@ -619,9 +617,9 @@ describe('Cloud Commands', () => {
 				cloud._getCustomIncludes(files, dir, {} );
 
 				expect([...files]).to.have.same.members([
-					path.join(dir, 'src/app.def'),
-					path.join(dir, 'lib/file.txt'),
-					path.join(dir, 'lib/file.def')
+					path.resolve(dir, 'src/app.def'),
+					path.resolve(dir, 'lib/file.txt'),
+					path.resolve(dir, 'lib/file.def')
 				]);
 			});
 		});
@@ -647,9 +645,9 @@ describe('Cloud Commands', () => {
 				cloud._getCustomIncludes(files, dir, {} );
 
 				expect([...files]).to.have.same.members([
-					path.join(dir, 'src/app.def'),
-					path.join(dir, 'lib/file.txt'),
-					path.join(dir, 'lib/file.def')
+					path.resolve(dir, 'src/app.def'),
+					path.resolve(dir, 'lib/file.txt'),
+					path.resolve(dir, 'lib/file.def')
 				]);
 			});
 		});
@@ -668,7 +666,7 @@ describe('Cloud Commands', () => {
 
 				cloud._getCustomIncludes(files, dir, {} );
 
-				expect([...files]).to.have.same.members([]);
+				expect([...files]).to.be.empty;
 			});
 		});
 
@@ -691,7 +689,7 @@ describe('Cloud Commands', () => {
 				cloud._getCustomIncludes(files, dir, {} );
 
 				expect([...files]).to.have.same.members([
-					path.join(dir, 'src/app.def')
+					path.resolve(dir, 'src/app.def')
 				]);
 			});
 		});
@@ -714,7 +712,7 @@ describe('Cloud Commands', () => {
 
 				cloud._getCustomIncludes(files, dir, {} );
 
-				expect([...files]).to.have.same.members([]);
+				expect([...files]).to.be.empty;
 			});
 		});
 
@@ -733,7 +731,7 @@ describe('Cloud Commands', () => {
 
 				cloud._getCustomIncludes(files, dir, {} );
 
-				expect([...files]).to.have.same.members([]);
+				expect([...files]).to.be.empty;
 			});
 		});
 	});

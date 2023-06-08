@@ -28,6 +28,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 const fs = require('fs');
 const _ = require('lodash');
+const os = require('os');
 const path = require('path');
 const glob = require('glob');
 const VError = require('verror');
@@ -205,6 +206,10 @@ module.exports = {
 				line = path.join(basepath, line);
 			}
 			found = glob.sync(line, { nodir: true, follow: !!followSymlinks });
+			if (os.platform() === 'win32') {
+				// because glob pattern is always in posix format
+				found = found.map(file => path.win32.normalize(file));
+			}
 
 			if (found && (found.length > 0)){
 				files = files.concat(found);
