@@ -780,60 +780,23 @@ module.exports = class CloudCommand extends CLICommandBase {
 	_processDirIncludes(fileMapping, dirname, { followSymlinks } = {}){
 		dirname = path.resolve(dirname);
 
-		let files = this._getDefaultIncludes(dirname, { followSymlinks });
+		let includeFiles = this._getDefaultIncludes(dirname, { followSymlinks });
+		includeFiles.push(this._getCustomIncludes(dirname, { followSymlinks }));
+		includeFiles = _.uniq(_.flatten(includeFiles));
 
-		files.push(this._getCustomIncludes(dirname, { followSymlinks }));
+		let ignoredFiles = this._getDefaultIgnores(dirname, { followSymlinks });
+		ignoredFiles.push(this._getCustomIgnores(dirname, { followSymlinks }));
+		ignoredFiles = _.uniq(_.flatten(ignoredFiles));
 
-		files = utilities.compliment(files, _getIgnoredFiles(dirname, { followSymlinks }));
-
-		// get the full list of particle.include files
-		// add the contents of each with basename to the files variable
-
-
-		const includesFile = path.join(dirname, settings.dirIncludeFilename);
-		const ignoreFile = path.join(dirname, settings.dirExcludeFilename);
-		console.log('includesFile: ', includesFile);
-		console.log('ignoreFile: ', ignoreFile);
-		let hasIncludeFile = false;
-
-		if (fs.existsSync(includesFile)){
-			//grab and process all the files in the include file.
-			console.log('includes file exists');
-			moreIncludes = utilities.trimBlankLinesAndComments(
-				utilities.readAndTrimLines(includesFile)
-			);
-			hasIncludeFile = true;
-
-		}
-		console.log('moreIncludes: ', moreIncludes);
-
-		if (fs.existsSync(ignoreFile)){
-			const ignores = utilities.trimBlankLinesAndComments(
-				utilities.readAndTrimLines(ignoreFile)
-			);
-			console.log('ignores: ', ignores);
-
-			const ignoredFiles = utilities.globList(dirname, ignores, { followSymlinks });
-			files = utilities.compliment(files, ignoredFiles);
-		}
+		const files = utilities.compliment(includeFiles, ignoredFiles);
 
 		// Add files to fileMapping
 		files.forEach((file) => {
 			// source relative to the base directory of the fileMapping (current directory)
 			const source = path.relative(fileMapping.basePath, file);
-
-			// If using an include file, only base names are supported since people are using those to
-			// link across relative folders
-			let target;
-			if (hasIncludeFile){
-				target = path.basename(file);
-			} else {
-				target = path.relative(dirname, file);
-			}
+			const target = path.relative(dirname, file);
 			fileMapping.map[target] = source;
 		});
-		console.log('files in _processDirIncludes', files);
-		console.log('fileMapping in _processDirIncludes', fileMapping);
 	}
 
 	_getDefaultIncludes(dirname, { followSymlinks }) {
@@ -853,26 +816,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 		return utilities.globList(dirname, includes, { followSymlinks });
 	}
 
-	// _getCustomIncludes(dirname, { followSymlinks }) {
-	// 	// Use globlist to recursively find all the particle.include files
-	// 	let includeFiles = utilities.globList(dirname, ['**/particle.include'], { followSymlinks });
-	// 	const res = [];
-	// 	for (const includeFile of includeFiles) {
-	// 		const includeDir = path.dirname(includeFile);
-	// 		// get the contents of each include file
-	// 		const globsToInclude = utilities.trimBlankLinesAndComments(
-	// 			utilities.readAndTrimLines(includeFile)
-	// 		);
-	// 		let glob = [];
-	// 		for (const g of globsToInclude) {
-	// 			glob.push(g);
-	// 		}
-	// 		res.push(utilities.globList(includeDir, glob, { followSymlinks }));
-	// 	}
-	// 	// flatten out res and remove duplicates
-	// 	return _.uniq(_.flatten(res));
-	// }
-
 	_getCustomIncludes(dirname, { followSymlinks }) {
 		const includeFiles = utilities.globList(dirname, ['**/particle.include'], { followSymlinks });
 		const result = [];
@@ -886,6 +829,33 @@ module.exports = class CloudCommand extends CLICommandBase {
 			const globList = globsToInclude.map(g => g);
 			const includePaths = utilities.globList(includeDir, globList, { followSymlinks });
 			result.push(...includePaths);
+		}
+
+		return [...new Set(result)];
+	}
+
+	_getDefaultIgnores(dirname, { followSymlinks }) {
+		// Recursively find default ignore files
+		let ignores = [
+			'lib/*/examples/**/*.*'
+		];
+
+		return utilities.globList(dirname, ignores, { followSymlinks });
+	}
+
+	_getCustomIgnores(dirname, { followSymlinks }) {
+		const ignoreFiles = utilities.globList(dirname, ['**/particle.ignore'], { followSymlinks });
+		const result = [];
+
+		for (const ignoreFile of ignoreFiles) {
+			const ignoreDir = path.dirname(ignoreFile);
+			const globsToIgnore = utilities.trimBlankLinesAndComments(utilities.readAndTrimLines(ignoreFile));
+			if (!globsToIgnore || !globsToIgnore.length) {
+				continue;
+			}
+			const globList = globsToIgnore.map(g => g);
+			const ignoredPaths = utilities.globList(ignoreDir, globList, { followSymlinks });
+			result.push(...ignoredPaths);
 		}
 
 		return [...new Set(result)];
