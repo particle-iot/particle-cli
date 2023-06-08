@@ -781,15 +781,10 @@ module.exports = class CloudCommand extends CLICommandBase {
 		dirname = path.resolve(dirname);
 		let files = new Set();
 
-		const defaultIncludes = this._getDefaultIncludes(dirname, { followSymlinks })
-		const customIncludes = this._getCustomIncludes(dirname, { followSymlinks });
-		defaultIncludes.forEach(item => files.add(item));
-		customIncludes.forEach(item => files.add(item));
-
-		const defaultIgnores = this._getDefaultIgnores(dirname, { followSymlinks });
-		const customIgnores = this._getCustomIgnores(dirname, { followSymlinks });
-		defaultIgnores.forEach(item => files.delete(item));
-		customIgnores.forEach(item => files.delete(item));
+		this._getDefaultIncludes(files, dirname, { followSymlinks });
+		this._getCustomIncludes(files, dirname, { followSymlinks });
+		this._getDefaultIgnores(files, dirname, { followSymlinks });
+		this._getCustomIgnores(files, dirname, { followSymlinks });
 
 		// Add files to fileMapping
 		Array.from(files.values()).sort();
@@ -801,7 +796,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		});
 	}
 
-	_getDefaultIncludes(dirname, { followSymlinks }) {
+	_getDefaultIncludes(files, dirname, { followSymlinks }) {
 		// Recursively find source files
 		let includes = [
 			'**/*.h',
@@ -815,10 +810,11 @@ module.exports = class CloudCommand extends CLICommandBase {
 			'project.properties'
 		];
 
-		return utilities.globList(dirname, includes, { followSymlinks });
+		const result = utilities.globList(dirname, includes, { followSymlinks });
+		result.forEach((file) => files.add(file));
 	}
 
-	_getCustomIncludes(dirname, { followSymlinks }) {
+	_getCustomIncludes(files, dirname, { followSymlinks }) {
 		const includeFiles = utilities.globList(dirname, ['**/particle.include'], { followSymlinks });
 		const result = [];
 
@@ -833,19 +829,20 @@ module.exports = class CloudCommand extends CLICommandBase {
 			result.push(...includePaths);
 		}
 
-		return [...new Set(result)];
+		result.forEach((file) => files.add(file));
 	}
 
-	_getDefaultIgnores(dirname, { followSymlinks }) {
+	_getDefaultIgnores(files, dirname, { followSymlinks }) {
 		// Recursively find default ignore files
 		let ignores = [
 			'lib/*/examples/**/*.*'
 		];
 
-		return utilities.globList(dirname, ignores, { followSymlinks });
+		const result = utilities.globList(dirname, ignores, { followSymlinks });
+		result.forEach((file) => files.delete(file));
 	}
 
-	_getCustomIgnores(dirname, { followSymlinks }) {
+	_getCustomIgnores(files, dirname, { followSymlinks }) {
 		const ignoreFiles = utilities.globList(dirname, ['**/particle.ignore'], { followSymlinks });
 		const result = [];
 
@@ -859,8 +856,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			const ignoredPaths = utilities.globList(ignoreDir, globList, { followSymlinks });
 			result.push(...ignoredPaths);
 		}
-
-		return [...new Set(result)];
+		result.forEach((file) => files.delete(file));
 	}
 
 

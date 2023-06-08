@@ -513,10 +513,13 @@ describe('Cloud Commands', () => {
 				'lib/spi/src/build.mk'
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
+				let files = new Set();
 
-				const files = cloud._getDefaultIncludes(dir, {} );
+				cloud._getDefaultIncludes(files, dir, {});
 
-				expect(files).to.have.same.members([
+				// files is a Set
+				// check files has so and so members
+				expect([...files]).to.have.same.members([
 					path.join(dir, 'src/app.cpp'),
 					path.join(dir, 'lib/spi/src/spi.c'),
 					path.join(dir, 'lib/spi/src/spi.h'),
@@ -535,10 +538,11 @@ describe('Cloud Commands', () => {
 				'lib/spi/src/spi.txt',
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
+				let files = new Set();
 
-				const files = cloud._getDefaultIncludes(dir, {} );
+				cloud._getDefaultIncludes(files, dir, {} );
 
-				expect(files).to.have.same.members([
+				expect([...files]).to.have.same.members([
 					path.join(dir, 'src/app.cpp'),
 					path.join(dir, 'lib/spi/src/spi.c'),
 					path.join(dir, 'lib/spi/src/spi.h')
@@ -558,9 +562,11 @@ describe('Cloud Commands', () => {
 				'src/app.def'
 			], { 'particle.include': '**/*.def' }, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
 					path.join(dir, 'src/app.def')
 				]);
 			});
@@ -581,9 +587,11 @@ describe('Cloud Commands', () => {
 				'src/particle.include': '**/*.txt\n**/*.def'
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
 					path.join(dir, 'src/app.def'),
 					path.join(dir, 'src/file.txt')
 				]);
@@ -606,9 +614,11 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': '**/*.txt\n**/*.def'
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
 					path.join(dir, 'src/app.def'),
 					path.join(dir, 'lib/file.txt'),
 					path.join(dir, 'lib/file.def')
@@ -632,9 +642,11 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': '**/*.txt\n**/*.def'
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
 					path.join(dir, 'src/app.def'),
 					path.join(dir, 'lib/file.txt'),
 					path.join(dir, 'lib/file.def')
@@ -652,9 +664,11 @@ describe('Cloud Commands', () => {
 				'src/app.def'
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([]);
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([]);
 			});
 		});
 
@@ -672,9 +686,11 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': ''
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
 					path.join(dir, 'src/app.def')
 				]);
 			});
@@ -694,9 +710,11 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': ''
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([]);
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([]);
 			});
 		});
 
@@ -711,9 +729,11 @@ describe('Cloud Commands', () => {
 				'particle.include': '**/*.def',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIncludes(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([]);
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([]);
 			});
 		});
 	});
@@ -728,11 +748,14 @@ describe('Cloud Commands', () => {
 				'lib/spi/examples/sensor/init.ino'
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getDefaultIgnores(dir, {} );
-
-				expect(files).to.have.same.members([
+				// hardcode a set with 'lib/spi/examples/sensor/init.ino'
+				let files = new Set([
 					path.join(dir, 'lib/spi/examples/sensor/init.ino')
 				]);
+
+				cloud._getDefaultIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
 			});
 		});
 	});
@@ -749,11 +772,13 @@ describe('Cloud Commands', () => {
 				'particle.ignore': '**/*.cpp',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIgnores(dir, {} );
-
-				expect(files).to.have.same.members([
+				let files = new Set([
 					path.join(dir, 'src/app.cpp')
 				]);
+
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
 			});
 		});
 
@@ -770,12 +795,14 @@ describe('Cloud Commands', () => {
 				'lib/particle.ignore': '**/*.h',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIgnores(dir, {} );
-
-				expect(files).to.have.same.members([
+				let files = new Set([
 					path.join(dir, 'src/app.cpp'),
 					path.join(dir, 'lib/spi/src/spi.h')
 				]);
+
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
 			});
 		});
 
@@ -790,9 +817,11 @@ describe('Cloud Commands', () => {
 				'particle.ignore': '',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIgnores(dir, {} );
+				let files = new Set();
 
-				expect(files).to.have.same.members([]);
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
 			});
 		});
 
@@ -809,11 +838,13 @@ describe('Cloud Commands', () => {
 				'lib/particle.ignore': ''
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				const files = cloud._getCustomIgnores(dir, {} );
-
-				expect(files).to.have.same.members([
+				let files = new Set([
 					path.join(dir, 'src/app.cpp')
 				]);
+
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
 			});
 		});
 	});
