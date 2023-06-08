@@ -353,28 +353,59 @@ describe('Cloud Commands', () => {
 	});
 
 	describe('_processDirIncludes', () => {
-		it('gets the list of files to include from that directory', () => {
+		it('gets the list of files to include from that directory', async () => {
+			await createTmpDir(['src/app.cpp', 'lib/spi/src/spi.c', 'lib/spi/src/spi.h'], {}, async (dir) => {
+				const fileMapping = { basePath: dir, map: {} };
 
+				await _processDirIncludes(fileMapping, dir);
+
+				expect(fileMapping.map).to.eql({
+					'src/app.cpp': 'src/app.cpp',
+					'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
+					'lib/spi/src/spi.h': 'lib/spi/src/spi.h'
+				});
+			});
 		});
 	});
 
 	describe('_getDefaultIncludes', () => {
-		it('gets the list of files to include by default', () => {
-			// _getDefaultIncludes()
+		it('gets the list of files to include by default', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h'
+			], {}, async (dir) => {
+				dir = path.resolve(dir);
 
+				const files = cloud._getDefaultIncludes(dir, {} );
+
+				expect(files).to.have.same.members([
+					path.join(dir, 'src/app.cpp'),
+					path.join(dir, 'lib/spi/src/spi.c'),
+					path.join(dir, 'lib/spi/src/spi.h')
+				]);
+			});
 		});
-	});
 
-	it('returns the files from default include list', async () => {
-		await createTmpDir(['src/app.cpp', 'lib/spi/src/spi.c', 'lib/spi/src/spi.h'], {}, async (dir) => {
-			const fileMapping = { basePath: dir, map: {} };
+		it('filters out files which are not in the default blob', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'src/app.txt',
+				'lib/spi/src/spi.txt',
+			], {}, async (dir) => {
+				dir = path.resolve(dir);
 
-			await _processDirIncludes(fileMapping, dir);
+				const files = cloud._getDefaultIncludes(dir, {} );
 
-			expect(fileMapping.map).to.eql({
-				'src/app.cpp': 'src/app.cpp',
-				'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
-				'lib/spi/src/spi.h': 'lib/spi/src/spi.h'
+				expect(files).to.have.same.members([
+					path.join(dir, 'src/app.cpp'),
+					path.join(dir, 'lib/spi/src/spi.c'),
+					path.join(dir, 'lib/spi/src/spi.h')
+				]);
 			});
 		});
 	});
@@ -382,15 +413,15 @@ describe('Cloud Commands', () => {
 	async function createTmpDir(files, fileContents, handler) {
 		const tmpDir = path.join(PATH_TMP_DIR, 'tmpDir');
 		await fs.mkdir(tmpDir);
-
 		for (const file of files) {
 			const filePath = path.join(tmpDir, file);
 			await fs.outputFile(filePath, fileContents[file] || '');
-			try {
-				await handler(tmpDir);
-			} finally {
-				await fs.remove(tmpDir);
-			}
+		}
+
+		try {
+			await handler(tmpDir);
+		} finally {
+			await fs.remove(tmpDir);
 		}
 	}
 });
