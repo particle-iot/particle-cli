@@ -1,9 +1,10 @@
 const proxyquire = require('proxyquire');
 const os = require('os');
 const path = require('path');
+const fs = require('fs-extra');
 const { expect } = require('../../test/setup');
 const sandbox = require('sinon').createSandbox();
-const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
+const { PATH_FIXTURES_THIRDPARTY_OTA_DIR, PATH_TMP_DIR } = require('../../test/lib/env');
 
 const stubs = {
 	api: {
@@ -234,7 +235,6 @@ describe('Cloud Commands', () => {
 		}));
 	});
 
-
 	function stubForLogin(cloud, stubs){
 		const { api, prompts, settings } = stubs;
 		sandbox.spy(cloud, 'login');
@@ -351,5 +351,47 @@ describe('Cloud Commands', () => {
 			expect(error).to.have.property('message', 'saveTo must have a .zip extension when project includes assets');
 		});
 	});
+
+	describe('_processDirIncludes', () => {
+		it('gets the list of files to include from that directory', () => {
+
+		});
+	});
+
+	describe('_getDefaultIncludes', () => {
+		it('gets the list of files to include by default', () => {
+			// _getDefaultIncludes()
+
+		});
+	});
+
+	it('returns the files from default include list', async () => {
+		await createTmpDir(['src/app.cpp', 'lib/spi/src/spi.c', 'lib/spi/src/spi.h'], {}, async (dir) => {
+			const fileMapping = { basePath: dir, map: {} };
+
+			await _processDirIncludes(fileMapping, dir);
+
+			expect(fileMapping.map).to.eql({
+				'src/app.cpp': 'src/app.cpp',
+				'lib/spi/src/spi.c': 'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h': 'lib/spi/src/spi.h'
+			});
+		});
+	});
+
+	async function createTmpDir(files, fileContents, handler) {
+		const tmpDir = path.join(PATH_TMP_DIR, 'tmpDir');
+		await fs.mkdir(tmpDir);
+
+		for (const file of files) {
+			const filePath = path.join(tmpDir, file);
+			await fs.outputFile(filePath, fileContents[file] || '');
+			try {
+				await handler(tmpDir);
+			} finally {
+				await fs.remove(tmpDir);
+			}
+		}
+	}
 });
 
