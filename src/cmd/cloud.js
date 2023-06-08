@@ -779,18 +779,20 @@ module.exports = class CloudCommand extends CLICommandBase {
 	 */
 	_processDirIncludes(fileMapping, dirname, { followSymlinks } = {}){
 		dirname = path.resolve(dirname);
+		let files = new Set();
 
-		let includeFiles = this._getDefaultIncludes(dirname, { followSymlinks });
-		includeFiles.push(this._getCustomIncludes(dirname, { followSymlinks }));
-		includeFiles = _.uniq(_.flatten(includeFiles));
+		const defaultIncludes = this._getDefaultIncludes(dirname, { followSymlinks })
+		const customIncludes = this._getCustomIncludes(dirname, { followSymlinks });
+		defaultIncludes.forEach(item => files.add(item));
+		customIncludes.forEach(item => files.add(item));
 
-		let ignoredFiles = this._getDefaultIgnores(dirname, { followSymlinks });
-		ignoredFiles.push(this._getCustomIgnores(dirname, { followSymlinks }));
-		ignoredFiles = _.uniq(_.flatten(ignoredFiles));
-
-		const files = utilities.compliment(includeFiles, ignoredFiles);
+		const defaultIgnores = this._getDefaultIgnores(dirname, { followSymlinks });
+		const customIgnores = this._getCustomIgnores(dirname, { followSymlinks });
+		defaultIgnores.forEach(item => files.delete(item));
+		customIgnores.forEach(item => files.delete(item));
 
 		// Add files to fileMapping
+		Array.from(files.values()).sort();
 		files.forEach((file) => {
 			// source relative to the base directory of the fileMapping (current directory)
 			const source = path.relative(fileMapping.basePath, file);
