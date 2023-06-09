@@ -868,7 +868,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	_handleLibraryExample(fileMapping){
 		return Promise.resolve().then(() => {
 			const list = _.values(fileMapping.map);
-			if (list.length === 1){
+			if (list.length >= 1){
 				return require('particle-library-manager').isLibraryExample(list[0]);
 			}
 		}).then(example => {
