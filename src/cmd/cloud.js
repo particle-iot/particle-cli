@@ -749,7 +749,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				continue;
 			}
 
-			if (!alwaysIncludeThisFile && settings.notSourceExtensions.includes(ext)){	// not source files
+			if (!alwaysIncludeThisFile && settings.notSourceExtensions.includes(ext)){
 				continue;
 			}
 

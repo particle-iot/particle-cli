@@ -507,7 +507,11 @@ describe('Cloud Commands', () => {
 		it('gets the list of files to include by default', async () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			await createTmpDir([
+				'src/app.ino',
 				'src/app.cpp',
+				'src/app.hpp',
+				'src/app.hh',
+				'src/app.hxx',
 				'lib/spi/src/spi.c',
 				'lib/spi/src/spi.h',
 				'lib/spi/src/build.mk'
@@ -518,7 +522,11 @@ describe('Cloud Commands', () => {
 				cloud._getDefaultIncludes(files, dir, {});
 
 				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.ino'),
 					path.resolve(dir, 'src/app.cpp'),
+					path.resolve(dir, 'src/app.hpp'),
+					path.resolve(dir, 'src/app.hh'),
+					path.resolve(dir, 'src/app.hxx'),
 					path.resolve(dir, 'lib/spi/src/spi.c'),
 					path.resolve(dir, 'lib/spi/src/spi.h'),
 					path.resolve(dir, 'lib/spi/src/build.mk')
