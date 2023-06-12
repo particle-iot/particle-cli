@@ -782,13 +782,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 		let files = new Set();
 
 		this._getDefaultIncludes(files, dirname, { followSymlinks });
-		this._getCustomIncludes(files, dirname, { followSymlinks });
 		this._getDefaultIgnores(files, dirname, { followSymlinks });
+		this._getCustomIncludes(files, dirname, { followSymlinks });
 		this._getCustomIgnores(files, dirname, { followSymlinks });
 
 		// Add files to fileMapping
-		Array.from(files.values()).sort();
-		files.forEach((file) => {
+		const sortedFiles = Array.from(files.values()).sort();
+		sortedFiles.forEach((file) => {
 			// source relative to the base directory of the fileMapping (current directory)
 			const source = path.relative(fileMapping.basePath, file);
 			const target = path.relative(dirname, file);
@@ -816,7 +816,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	_getCustomIncludes(files, dirname, { followSymlinks }) {
 		const includeFiles = utilities.globList(dirname, ['**/particle.include'], { followSymlinks });
-		const result = [];
 
 		for (const includeFile of includeFiles) {
 			const includeDir = path.dirname(includeFile);
@@ -824,12 +823,9 @@ module.exports = class CloudCommand extends CLICommandBase {
 			if (!globsToInclude || !globsToInclude.length) {
 				continue;
 			}
-			const globList = globsToInclude.map(g => g);
-			const includePaths = utilities.globList(includeDir, globList, { followSymlinks });
-			result.push(...includePaths);
+			const includePaths = utilities.globList(includeDir, globsToInclude, { followSymlinks });
+			includePaths.forEach((file) => files.add(file));
 		}
-
-		result.forEach((file) => files.add(file));
 	}
 
 	_getDefaultIgnores(files, dirname, { followSymlinks }) {
@@ -844,7 +840,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	_getCustomIgnores(files, dirname, { followSymlinks }) {
 		const ignoreFiles = utilities.globList(dirname, ['**/particle.ignore'], { followSymlinks });
-		const result = [];
 
 		for (const ignoreFile of ignoreFiles) {
 			const ignoreDir = path.dirname(ignoreFile);
@@ -854,9 +849,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			}
 			const globList = globsToIgnore.map(g => g);
 			const ignoredPaths = utilities.globList(ignoreDir, globList, { followSymlinks });
-			result.push(...ignoredPaths);
+			ignoredPaths.forEach((file) => files.delete(file));
 		}
-		result.forEach((file) => files.delete(file));
 	}
 
 
