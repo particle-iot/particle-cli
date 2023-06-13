@@ -779,11 +779,24 @@ module.exports = class CloudCommand extends CLICommandBase {
 	 */
 	_processDirIncludes(fileMapping, dirname, { followSymlinks } = {}){
 		dirname = path.resolve(dirname);
+		let files = new Set();
 
-		const includesFile = path.join(dirname, settings.dirIncludeFilename);
-		const ignoreFile = path.join(dirname, settings.dirExcludeFilename);
-		let hasIncludeFile = false;
+		this._getDefaultIncludes(files, dirname, { followSymlinks });
+		this._getDefaultIgnores(files, dirname, { followSymlinks });
+		this._getCustomIncludes(files, dirname, { followSymlinks });
+		this._getCustomIgnores(files, dirname, { followSymlinks });
 
+		// Add files to fileMapping
+		const sortedFiles = Array.from(files.values()).sort();
+		sortedFiles.forEach((file) => {
+			// source relative to the base directory of the fileMapping (current directory)
+			const source = path.relative(fileMapping.basePath, file);
+			const target = path.relative(dirname, file);
+			fileMapping.map[target] = source;
+		});
+	}
+
+	_getDefaultIncludes(files, dirname, { followSymlinks }) {
 		// Recursively find source files
 		let includes = [
 			'**/*.h',
@@ -793,45 +806,51 @@ module.exports = class CloudCommand extends CLICommandBase {
 			'**/*.ino',
 			'**/*.cpp',
 			'**/*.c',
+			'**/build.mk',
 			'project.properties'
 		];
 
-		if (fs.existsSync(includesFile)){
-			//grab and process all the files in the include file.
+		const result = utilities.globList(dirname, includes, { followSymlinks });
+		result.forEach((file) => files.add(file));
+	}
 
-			includes = utilities.trimBlankLinesAndComments(
-				utilities.readAndTrimLines(includesFile)
-			);
-			hasIncludeFile = true;
+	_getCustomIncludes(files, dirname, { followSymlinks }) {
+		const includeFiles = utilities.globList(dirname, ['**/particle.include'], { followSymlinks });
 
-		}
-
-		let files = utilities.globList(dirname, includes, { followSymlinks });
-
-		if (fs.existsSync(ignoreFile)){
-			const ignores = utilities.trimBlankLinesAndComments(
-				utilities.readAndTrimLines(ignoreFile)
-			);
-
-			const ignoredFiles = utilities.globList(dirname, ignores, { followSymlinks });
-			files = utilities.compliment(files, ignoredFiles);
-		}
-
-		// Add files to fileMapping
-		files.forEach((file) => {
-			// source relative to the base directory of the fileMapping (current directory)
-			const source = path.relative(fileMapping.basePath, file);
-
-			// If using an include file, only base names are supported since people are using those to
-			// link across relative folders
-			let target;
-			if (hasIncludeFile){
-				target = path.basename(file);
-			} else {
-				target = path.relative(dirname, file);
+		for (const includeFile of includeFiles) {
+			const includeDir = path.dirname(includeFile);
+			const globsToInclude = utilities.trimBlankLinesAndComments(utilities.readAndTrimLines(includeFile));
+			if (!globsToInclude || !globsToInclude.length) {
+				continue;
 			}
-			fileMapping.map[target] = source;
-		});
+			const includePaths = utilities.globList(includeDir, globsToInclude, { followSymlinks });
+			includePaths.forEach((file) => files.add(file));
+		}
+	}
+
+	_getDefaultIgnores(files, dirname, { followSymlinks }) {
+		// Recursively find default ignore files
+		let ignores = [
+			'lib/*/examples/**/*.*'
+		];
+
+		const result = utilities.globList(dirname, ignores, { followSymlinks });
+		result.forEach((file) => files.delete(file));
+	}
+
+	_getCustomIgnores(files, dirname, { followSymlinks }) {
+		const ignoreFiles = utilities.globList(dirname, ['**/particle.ignore'], { followSymlinks });
+
+		for (const ignoreFile of ignoreFiles) {
+			const ignoreDir = path.dirname(ignoreFile);
+			const globsToIgnore = utilities.trimBlankLinesAndComments(utilities.readAndTrimLines(ignoreFile));
+			if (!globsToIgnore || !globsToIgnore.length) {
+				continue;
+			}
+			const globList = globsToIgnore.map(g => g);
+			const ignoredPaths = utilities.globList(ignoreDir, globList, { followSymlinks });
+			ignoredPaths.forEach((file) => files.delete(file));
+		}
 	}
 
 
@@ -843,7 +862,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	_handleLibraryExample(fileMapping){
 		return Promise.resolve().then(() => {
 			const list = _.values(fileMapping.map);
-			if (list.length === 1){
+			if (list.length >= 1){
 				return require('particle-library-manager').isLibraryExample(list[0]);
 			}
 		}).then(example => {

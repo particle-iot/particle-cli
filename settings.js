@@ -37,9 +37,6 @@ let settings = {
 	],
 	showIncludedSourceFiles: true,
 
-	dirIncludeFilename: 'particle.include',
-	dirExcludeFilename: 'particle.ignore',
-
 	cloudKnownApps: {
 		'tinker': true
 	},

@@ -1,9 +1,10 @@
 const proxyquire = require('proxyquire');
 const os = require('os');
 const path = require('path');
+const fs = require('fs-extra');
 const { expect } = require('../../test/setup');
 const sandbox = require('sinon').createSandbox();
-const { PATH_FIXTURES_THIRDPARTY_OTA_DIR } = require('../../test/lib/env');
+const { PATH_FIXTURES_THIRDPARTY_OTA_DIR, PATH_TMP_DIR } = require('../../test/lib/env');
 
 const stubs = {
 	api: {
@@ -234,7 +235,6 @@ describe('Cloud Commands', () => {
 		}));
 	});
 
-
 	function stubForLogin(cloud, stubs){
 		const { api, prompts, settings } = stubs;
 		sandbox.spy(cloud, 'login');
@@ -351,5 +351,523 @@ describe('Cloud Commands', () => {
 			expect(error).to.have.property('message', 'saveTo must have a .zip extension when project includes assets');
 		});
 	});
+
+	describe('_processDirIncludes', () => {
+		it('gets the list of files', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h'
+			], {}, async (dir) => {
+				const fileMapping = { basePath: dir, map: {} };
+
+				await cloud._processDirIncludes(fileMapping, dir);
+
+				expect(fileMapping.map).to.eql({
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h')
+				});
+			});
+		});
+
+		it('gets the list of files with include and ignore configs', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'src/app.def',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/spi/src/spi.def',
+				'lib/spi/src/spi.cmd',
+				'lib/spi/examples/sensor/spi_example.cpp',
+				'lib/spi/examples/sensor/spi_example.h',
+				'lib/spi/particle.include',
+				'lib/i2c/src/i2c.c',
+				'lib/i2c/particle.ignore'
+			], {
+				'particle.include': '**/*.def',
+				'lib/spi/particle.include': '**/*.cmd',
+				'lib/i2c/particle.ignore': '**/*.c'
+			}, async (dir) => {
+				const fileMapping = { basePath: dir, map: {} };
+
+				await cloud._processDirIncludes(fileMapping, dir);
+
+				expect(fileMapping.map).to.eql({
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('src/app.def')]: path.join('src/app.def'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.def')]: path.join('lib/spi/src/spi.def'),
+					[path.join('lib/spi/src/spi.cmd')]: path.join('lib/spi/src/spi.cmd')
+				});
+			});
+		});
+
+		it('does not return files that are not included', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/spi/src/spi.txt'
+			], {}, async (dir) => {
+				const fileMapping = { basePath: dir, map: {} };
+
+				await cloud._processDirIncludes(fileMapping, dir);
+
+				expect(fileMapping.map).to.eql({
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h')
+				});
+			});
+		});
+
+		it('returns files that are included', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/spi/src/spi.txt',
+				'lib/particle.include'
+			], {
+				'lib/particle.include': '**/*.txt'
+			}, async (dir) => {
+				const fileMapping = { basePath: dir, map: {} };
+
+				await cloud._processDirIncludes(fileMapping, dir);
+
+				expect(fileMapping.map).to.eql({
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.txt')]: path.join('lib/spi/src/spi.txt')
+				});
+			});
+		});
+
+		it('removes duplicates if included multiple times', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/spi/src/spi.txt',
+				'lib/particle.include'
+			], {
+				'particle.include': '**/*.cpp',
+				'lib/particle.include': '**/*.txt'
+			}, async (dir) => {
+				const fileMapping = { basePath: dir, map: {} };
+
+				await cloud._processDirIncludes(fileMapping, dir);
+
+				expect(fileMapping.map).to.eql({
+					[path.join('src/app.cpp')]: path.join('src/app.cpp'),
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.txt')]: path.join('lib/spi/src/spi.txt')
+				});
+			});
+		});
+
+		it('removes files which are in ignore list', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.ignore',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/spi/src/spi.txt',
+				'lib/particle.include'
+			], {
+				'particle.ignore': '**/*.cpp',
+				'lib/particle.include': '**/*.txt'
+			}, async (dir) => {
+				const fileMapping = { basePath: dir, map: {} };
+
+				await cloud._processDirIncludes(fileMapping, dir);
+
+				expect(fileMapping.map).to.eql({
+					[path.join('lib/spi/src/spi.c')]: path.join('lib/spi/src/spi.c'),
+					[path.join('lib/spi/src/spi.h')]: path.join('lib/spi/src/spi.h'),
+					[path.join('lib/spi/src/spi.txt')]: path.join('lib/spi/src/spi.txt')
+				});
+			});
+		});
+	});
+
+	describe('_getDefaultIncludes', () => {
+		it('gets the list of files to include by default', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.ino',
+				'src/app.cpp',
+				'src/app.hpp',
+				'src/app.hh',
+				'src/app.hxx',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/spi/src/build.mk'
+			], {}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getDefaultIncludes(files, dir, {});
+
+				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.ino'),
+					path.resolve(dir, 'src/app.cpp'),
+					path.resolve(dir, 'src/app.hpp'),
+					path.resolve(dir, 'src/app.hh'),
+					path.resolve(dir, 'src/app.hxx'),
+					path.resolve(dir, 'lib/spi/src/spi.c'),
+					path.resolve(dir, 'lib/spi/src/spi.h'),
+					path.resolve(dir, 'lib/spi/src/build.mk')
+				]);
+			});
+		});
+
+		it('filters out files which are not in the default blob', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'src/app.txt',
+				'lib/spi/src/spi.txt',
+			], {}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getDefaultIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.cpp'),
+					path.resolve(dir, 'lib/spi/src/spi.c'),
+					path.resolve(dir, 'lib/spi/src/spi.h')
+				]);
+			});
+		});
+	});
+
+	describe('_getCustomIncludes', () => {
+		it('gets the list of files to include via particle.include', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'src/app.def'
+			], { 'particle.include': '**/*.def' }, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.def')
+				]);
+			});
+		});
+
+		it('gets the list of nested files to include via particle.include', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'src/app.def',
+				'src/file.txt',
+				'src/particle.include',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h'
+			], {
+				'particle.include': '**/*.def',
+				'src/particle.include': '**/*.txt\n**/*.def'
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.def'),
+					path.resolve(dir, 'src/file.txt')
+				]);
+			});
+		});
+
+		it('gets the list of files from nested directories', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'src/app.def',
+				'lib/particle.include',
+				'lib/file.txt',
+				'lib/file.def',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h'
+			], {
+				'particle.include': '**/*.def',
+				'lib/particle.include': '**/*.txt\n**/*.def'
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.def'),
+					path.resolve(dir, 'lib/file.txt'),
+					path.resolve(dir, 'lib/file.def')
+				]);
+			});
+		});
+
+		it('handles repeated files from nested directories', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'src/app.def',
+				'lib/particle.include',
+				'lib/file.txt',
+				'lib/file.def',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h'
+			], {
+				'particle.include': '**/*.def',
+				'lib/particle.include': '**/*.txt\n**/*.def'
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.def'),
+					path.resolve(dir, 'lib/file.txt'),
+					path.resolve(dir, 'lib/file.def')
+				]);
+			});
+		});
+
+		it('handles an empty particle.include', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'src/app.def'
+			], {}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+
+		it('handles empty particle.include in a nested dir', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'src/app.def',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/particle.include'
+			], {
+				'particle.include': '**/*.def',
+				'lib/particle.include': ''
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.have.same.members([
+					path.resolve(dir, 'src/app.def')
+				]);
+			});
+		});
+
+		it('handles multiple empty particle.include files', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'src/app.def',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/particle.include'
+			], {
+				'particle.include': '',
+				'lib/particle.include': ''
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+
+		it('should not error if files are not found', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.include',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+			], {
+				'particle.include': '**/*.def',
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIncludes(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+	});
+
+	describe('_getDefaultIgnores', () => {
+		it('gets the list of files to ignore', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/spi/examples/sensor/init.ino'
+			], {}, async (dir) => {
+				dir = path.resolve(dir);
+				// hardcode a set with 'lib/spi/examples/sensor/init.ino'
+				let files = new Set([
+					path.join(dir, 'lib/spi/examples/sensor/init.ino')
+				]);
+
+				cloud._getDefaultIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+	});
+
+	describe('_getCustomIgnores', () => {
+		it('gets the list of files to ignore', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.ignore',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+			], {
+				'particle.ignore': '**/*.cpp',
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set([
+					path.join(dir, 'src/app.cpp')
+				]);
+
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+
+		it('handles multiple particle.ignore files', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.ignore',
+				'lib/particle.ignore',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+			], {
+				'particle.ignore': '**/*.cpp',
+				'lib/particle.ignore': '**/*.h',
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set([
+					path.join(dir, 'src/app.cpp'),
+					path.join(dir, 'lib/spi/src/spi.h')
+				]);
+
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+
+		it('handles an empty particle.ignore', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.ignore',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+			], {
+				'particle.ignore': '',
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set();
+
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+
+		it('handles empty particle.ignore in a nested dir', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			await createTmpDir([
+				'particle.ignore',
+				'src/app.cpp',
+				'lib/spi/src/spi.c',
+				'lib/spi/src/spi.h',
+				'lib/particle.ignore'
+			], {
+				'particle.ignore': '**/*.cpp',
+				'lib/particle.ignore': ''
+			}, async (dir) => {
+				dir = path.resolve(dir);
+				let files = new Set([
+					path.join(dir, 'src/app.cpp')
+				]);
+
+				cloud._getCustomIgnores(files, dir, {} );
+
+				expect([...files]).to.be.empty;
+			});
+		});
+	});
+
+	async function createTmpDir(files, fileContents, handler) {
+		const tmpDir = path.join(PATH_TMP_DIR, 'tmpDir');
+		await fs.mkdir(tmpDir);
+		for (const file of files) {
+			const filePath = path.join(tmpDir, file);
+			await fs.outputFile(filePath, fileContents[file] || '');
+		}
+
+		try {
+			await handler(tmpDir);
+		} finally {
+			await fs.remove(tmpDir);
+		}
+	}
 });
 
