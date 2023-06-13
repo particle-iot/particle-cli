@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.11.1 - Jun 13 2023
+
+* Rework functionality of particle.include and particle.ignore files
+
 ## 3.11.0 - Jun 1 2023
 
 * Support for compile command to bundle assets and app binary
