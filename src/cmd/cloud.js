@@ -2,6 +2,7 @@ const os = require('os');
 const _ = require('lodash');
 const VError = require('verror');
 const prompt = require('inquirer').prompt;
+const propertiesParser = require('properties-parser');
 
 const settings = require('../../settings');
 const deviceSpecs = require('../lib/device-specs');
@@ -687,24 +688,22 @@ module.exports = class CloudCommand extends CLICommandBase {
 	 */
 	async _checkForAssets(files) {
 		for (const file of files) {
-			if (await this._isAssetsDir(file)) {
-				return path.join(file, 'assets');
-			}
-		}
-	}
+			const propPath = path.join(file, 'project.properties');
+			try {
+				const savedProp = await fs.readFile(propPath, 'utf8');
+				const savedPropObj = propertiesParser.parse(savedProp);
 
-	async _isAssetsDir(file) {
-		try {
-			if ((await fs.stat(file)).isDirectory()) {
-				const assetsDir = path.join(file, 'assets');
-				if ((await fs.stat(assetsDir)).isDirectory()) {
-					return true;
+				if (savedPropObj.assetOtaFolder && savedPropObj.assetOtaFolder !== '') {
+					const assetsDir = path.join(file, savedPropObj.assetOtaFolder);
+					const stats = await fs.stat(assetsDir);
+					if (stats.isDirectory()) {
+						return assetsDir;
+					}
 				}
+			} catch (error) {
+				// Ignore file read or stat errors
 			}
-		} catch (e) {
-			// ignore missing files
 		}
-		return false;
 	}
 
 	/**
