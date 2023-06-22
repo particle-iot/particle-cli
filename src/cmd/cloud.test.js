@@ -287,6 +287,36 @@ describe('Cloud Commands', () => {
 			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_no_assets');
 			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
 		});
+
+		it('returns undefined if project.properties is missing', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop');
+			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
+		});
+
+		it('returns undefined if project.properties does not have ossetOtaFolder', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop');
+			const projectPropertiesPath = path.join(dirPath, 'project.properties');
+			const projectPropertiesContent = 'project.name=valid-no-proj-prop\nassetOtaFolder=';
+			await fs.writeFile(projectPropertiesPath, projectPropertiesContent);
+
+			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
+
+			await fs.unlink(projectPropertiesPath);
+		});
+
+		it('returns undefined if project.properties does not have a valid ossetOtaFolder', async () => {
+			const { cloud } = stubForLogin(new CloudCommands(), stubs);
+			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop');
+			const projectPropertiesPath = path.join(dirPath, 'project.properties');
+			const projectPropertiesContent = 'project.name=valid-no-proj-prop\nassetOtaFolder=foo';
+			await fs.writeFile(projectPropertiesPath, projectPropertiesContent);
+
+			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
+
+			await fs.unlink(projectPropertiesPath);
+		});
 	});
 
 	describe('_getDownloadPathForBin', () => {
