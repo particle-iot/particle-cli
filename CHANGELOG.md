@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.11.2 - Jun 23 2023
+
+* Add support for project properties to bundle assets
+
 ## 3.11.1 - Jun 13 2023
 
 * Rework functionality of particle.include and particle.ignore files
