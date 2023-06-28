@@ -288,7 +288,7 @@ describe('Cloud Commands', () => {
 			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
 		});
 
-		it('returns undefined if project.properties is missing', async () => {
+		it('returns asset path if project.properties is missing', async () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop');
 			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
@@ -298,7 +298,7 @@ describe('Cloud Commands', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop');
 			const projectPropertiesPath = path.join(dirPath, 'project.properties');
-			const projectPropertiesContent = 'project.name=valid-no-proj-prop\nassetOtaFolder=';
+			const projectPropertiesContent = 'project.name=valid-no-proj-prop\nassetOtaDir=';
 			await fs.writeFile(projectPropertiesPath, projectPropertiesContent);
 
 			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
@@ -310,10 +310,10 @@ describe('Cloud Commands', () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop');
 			const projectPropertiesPath = path.join(dirPath, 'project.properties');
-			const projectPropertiesContent = 'project.name=valid-no-proj-prop\nassetOtaFolder=foo';
+			const projectPropertiesContent = 'project.name=valid-no-proj-prop\nassetOtaDir=foo';
 			await fs.writeFile(projectPropertiesPath, projectPropertiesContent);
 
-			expect(await cloud._checkForAssets([dirPath])).to.equal(undefined);
+			expect(await cloud._checkForAssets([dirPath])).to.equal(path.join(dirPath, 'foo'));
 
 			await fs.unlink(projectPropertiesPath);
 		});

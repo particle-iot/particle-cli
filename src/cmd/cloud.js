@@ -691,12 +691,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			try {
 				const savedPropObj = await utilities.parsePropertyFile(propPath);
 
-				if (savedPropObj.assetOtaFolder && savedPropObj.assetOtaFolder !== '') {
-					const assetsDir = path.join(file, savedPropObj.assetOtaFolder);
-					const stats = await fs.stat(assetsDir);
-					if (stats.isDirectory()) {
-						return assetsDir;
-					}
+				if (savedPropObj.assetOtaDir && savedPropObj.assetOtaDir !== '') {
+					return path.join(file, savedPropObj.assetOtaDir);
 				}
 			} catch (error) {
 				// Ignore parsing or stat errors

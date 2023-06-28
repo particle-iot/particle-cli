@@ -51,7 +51,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 					return assets;
 				}
 			}
-			throw new Error(`The assets folder ${assets} does not exist`);
+			throw new Error(`The assets dir ${assets} does not exist`);
 		}
 		const projectPropertiesPath = path.join(process.cwd(), 'project.properties');
 		return this._getAssetsPathFromProjectProperties(projectPropertiesPath);
@@ -63,27 +63,25 @@ module.exports = class BundleCommands extends CLICommandBase {
 				'Please specify the assets directory using --assets option');
 		}
 		const propFile = await utilities.parsePropertyFile(projectPropertiesPath);
-		if (propFile.assetOtaFolder && propFile.assetOtaFolder !== '') {
-			// get the assets folder relative to the project.properties file
-			return path.join(path.dirname(projectPropertiesPath), propFile.assetOtaFolder);
-		} else if (propFile.assetOtaFolder === '') {
-			throw new Error('assetOtaFolder property in project.properties is empty.');
-		} else if (!propFile.assetOtaFolder) {
-			throw new Error('No assetOtaFolder property found in project.properties.');
+		if (propFile.assetOtaDir && propFile.assetOtaDir !== '') {
+			// get the assets dir relative to the project.properties file
+			return path.join(path.dirname(projectPropertiesPath), propFile.assetOtaDir);
+		} else if (!propFile.assetOtaDir) {
+			throw new Error('Add assetOtaDir to your project.properties in order to bundle assets');
 		}
 	}
 
 	async _getAssets({ assetsPath }) {
 		if (!await fs.exists(assetsPath)) {
-			throw new Error(`The assets folder ${assetsPath} does not exist`);
+			throw new Error(`The assets dir ${assetsPath} does not exist`);
 		}
 		const fileStat = await fs.stat(assetsPath);
 		if (!fileStat.isDirectory()) {
 			throw new Error(`The assets path ${assetsPath} is not a directory`);
 		}
-		// Only get the assets from the folder itself, ignoring any sub-folders
-		const assetsInFolder = await fs.readdir(assetsPath);
-		const assetFiles = await Promise.all(assetsInFolder.map(async (f) => {
+		// Only get the assets from the dir itself, ignoring any sub-dir
+		const assetsInDir = await fs.readdir(assetsPath);
+		const assetFiles = await Promise.all(assetsInDir.map(async (f) => {
 			const filepath = path.join(assetsPath, f);
 			const stat = await fs.stat(filepath);
 			if (stat.isDirectory() || f.startsWith('.') || specialFiles.includes(f)) {

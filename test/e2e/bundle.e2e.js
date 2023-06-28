@@ -14,23 +14,23 @@ const helpCommandOutput = [
 	'  -q, --quiet    Decreases how much logging to display  [count]',
 	'',
 	'Options:',
-	'  --saveTo  Filename for the compiled binary  [string]',
-	'  --assets  The folder path of assets to be bundled  [string]',
+	'  --saveTo  Specify the filename for the compiled binary  [string]',
+	'  --assets  Optional. Specify the assets directory using --assets /path/to/assets or --assets /path/to/project.properties. If not specified, assets are obtained from the assetOtaDir property in the project.properties file  [string]',
 	'',
 	'Examples:',
-	'  particle bundle myApp.bin --assets /path/to/assets                     Creates a bundle of application binary and assets from the /path/to/assets folder',
-	'  particle bundle myApp.bin                                              Creates a bundle of application binary and assets from the default /assets folder in the current directory if available',
-	'  particle bundle myApp.bin --assets /path/to/assets --saveTo myApp.zip  Creates a bundle of application binary and assets from the /path/to/assets folder and saves it to the myApp.zip file',
-	'  particle bundle myApp.bin --saveTo myApp.zip                           Creates a bundle of application binary and assets from the default /assets folder in the current directory if available, and saves the bundle to the myApp.zip file',
+	'  particle bundle myApp.bin                                       Creates a bundle of application binary and assets. The assets are obtained from the project.properties in the current directory',
+	'  particle bundle myApp.bin --assets /path/to/assets              Creates a bundle of application binary and assets. The assets are obtained from /path/to/assets directory',
+	'  particle bundle myApp.bin --assets /path/to/project.properties  Creates a bundle of application binary and assets. The assets are picked up from the provided project.properties file',
+	'  particle bundle myApp.bin --assets /path/ --saveTo myApp.zip    Creates a bundle of application binary and assets, and saves it to the myApp.zip file',
+	'  particle bundle myApp.bin --saveTo myApp.zip                    Creates a bundle of application binary and assets as specified in the assetOtaDir if available, and saves the bundle to the myApp.zip file',
 	'',
-	'If --assets option is not specified, the folder named \'assets\' in the current directory is used',
+	'Add assetOtaDir=assets to your project.properties file to bundle assets from the asset directory. The assets path should be relative to the project root.',
 	''
 ].join('\n');
 
 describe('Bundle Commands', () => {
 	it('shows `help` content', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--help']);
-
 		expect(stdout).to.equal('');
 		expect(stderr).to.eq(helpCommandOutput);
 		expect(exitCode).to.equal(0);
@@ -86,7 +86,7 @@ describe('Bundle Commands', () => {
 		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/invalid_no_assets/assets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
-		expect(stdout).to.include(`The assets folder ${assetsPath} does not exist`);
+		expect(stdout).to.include(`The assets dir ${assetsPath} does not exist`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
@@ -113,7 +113,7 @@ describe('Bundle Commands', () => {
 
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath], { cwd });
 
-		expect(stdout).to.include('No assetOtaFolder property found in project.properties.');
+		expect(stdout).to.include('Add assetOtaDir to your project.properties in order to bundle assets');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

@@ -261,7 +261,7 @@ describe('Utilities', () => {
 		it('parses a property file', async () => {
 			const tmpFile = path.join(PATH_TMP_DIR, 'project.properties');
 			try {
-				fs.writeFileSync(tmpFile, 'name=my_project\nassetOtaFolder=my_assets_folder\n');
+				fs.writeFileSync(tmpFile, 'name=my_project\nassetOtaDir=my_assets_folder\n');
 			} catch (e) {
 				expect(e).to.be.null;
 			}
@@ -269,7 +269,7 @@ describe('Utilities', () => {
 			const result = await util.parsePropertyFile(tmpFile);
 			expect(result).to.eql({
 				name: 'my_project',
-				assetOtaFolder: 'my_assets_folder'
+				assetOtaDir: 'my_assets_folder'
 			});
 
 			try {

@@ -110,7 +110,7 @@ describe('BundleCommands', () => {
 			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
-		it('uses the assets from the project.properties folder when --assets option is not specified', async () => {
+		it('uses the assets from the project.properties file when --assets option is not specified', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = undefined;
 			const args = {
@@ -128,7 +128,7 @@ describe('BundleCommands', () => {
 			});
 		});
 
-		it('uses the assets in the assets folder when --assets option is specified', async () => {
+		it('uses the assets in the assets dir when --assets option is specified', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
 			const args = {
@@ -144,7 +144,7 @@ describe('BundleCommands', () => {
 			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
-		it('creates a bundle if there are no assets in the assets folder', async () => {
+		it('creates a bundle if there are no assets in the assets dir', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'assets');
 			const args = {
@@ -182,7 +182,7 @@ describe('BundleCommands', () => {
 	});
 
 	describe('getAssets', () => {
-		it('throws an error when assets folder is not present', async () => {
+		it('throws an error when assets dir is not present', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_no_assets', 'assets');
 			let error;
 
@@ -193,7 +193,7 @@ describe('BundleCommands', () => {
 			}
 
 			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.eql(`The assets folder ${assetsPath} does not exist`);
+			expect(error.message).to.eql(`The assets dir ${assetsPath} does not exist`);
 		});
 
 		it('returns the assets list', async () => {
@@ -257,7 +257,7 @@ describe('BundleCommands', () => {
 			});
 		});
 
-		it('returns undefined if --assets is not provided and project.properties is not present', async () => {
+		it('returns error if --assets is not provided and project.properties is not present', async () => {
 			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop'), async () => {
 				let error;
 				try {
@@ -281,7 +281,7 @@ describe('BundleCommands', () => {
 	});
 
 	describe('_getAssetsPathFromProjectProperties', () => {
-		it('returns the value of assetOtaFolder property', async () => {
+		it('returns the value of assetOtaDir property', async () => {
 			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
 				const assetsPath = await bundleCommands._getAssetsPathFromProjectProperties('project.properties');
 
@@ -303,7 +303,7 @@ describe('BundleCommands', () => {
 			});
 		});
 
-		it('returns undefined if assetOtaFolder property is not present', async () => {
+		it('returns undefined if assetOtaDir property is not present', async () => {
 			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-prop'), async () => {
 				let error;
 				try {
@@ -313,7 +313,7 @@ describe('BundleCommands', () => {
 				}
 
 				expect(error).to.be.an.instanceof(Error);
-				expect(error.message).to.eql('No assetOtaFolder property found in project.properties.');
+				expect(error.message).to.eql('Add assetOtaDir to your project.properties in order to bundle assets');
 			});
 		});
 	});
