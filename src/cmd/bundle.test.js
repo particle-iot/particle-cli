@@ -1,6 +1,4 @@
 const path = require('path');
-const sinon = require('sinon');
-const sandbox = sinon.createSandbox();
 const { expect } = require('../../test/setup');
 const BundleCommands = require('./bundle');
 const { PATH_FIXTURES_THIRDPARTY_OTA_DIR, PATH_TMP_DIR } = require('../../test/lib/env');
@@ -18,7 +16,6 @@ describe('BundleCommands', () => {
 
 	afterEach(async () => {
 		await fs.unlink(targetBundlePath).catch(() => {}); // ignore missing file
-		sandbox.restore();
 	});
 
 	async function runInDirectory(dir, handler) {
@@ -308,9 +305,15 @@ describe('BundleCommands', () => {
 
 		it('returns undefined if assetOtaFolder property is not present', async () => {
 			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-prop'), async () => {
-				const assetsPath = await bundleCommands._getAssetsPathFromProjectProperties('project.properties');
+				let error;
+				try {
+					await bundleCommands._getAssetsPathFromProjectProperties('project.properties');
+				} catch (_error) {
+					error = _error;
+				}
 
-				expect(assetsPath).to.equal(undefined);
+				expect(error).to.be.an.instanceof(Error);
+				expect(error.message).to.eql('No assetOtaFolder property found in project.properties.');
 			});
 		});
 	});

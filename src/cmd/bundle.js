@@ -65,15 +65,19 @@ module.exports = class BundleCommands extends CLICommandBase {
 		const propFile = await utilities.parsePropertyFile(projectPropertiesPath);
 		if (propFile.assetOtaFolder && propFile.assetOtaFolder !== '') {
 			// get the assets folder relative to the project.properties file
-			const assetsDir = path.join(path.dirname(projectPropertiesPath), propFile.assetOtaFolder);
-			const stats = await fs.stat(assetsDir);
-			if (stats.isDirectory()) {
-				return assetsDir;
-			}
+			return path.join(path.dirname(projectPropertiesPath), propFile.assetOtaFolder);
+		} else if (propFile.assetOtaFolder === '') {
+			throw new Error('assetOtaFolder property in project.properties is empty.');
+		} else if (!propFile.assetOtaFolder) {
+			throw new Error('No assetOtaFolder property found in project.properties.');
 		}
 	}
 
 	async _getAssets({ assetsPath }) {
+		const fileStat = await fs.stat(assetsPath);
+		if(!fileStat.isDirectory()) {
+			throw new Error(`The assets path ${assetsPath} is not a directory`);
+		}
 		if (!await fs.exists(assetsPath)) {
 			throw new Error(`The assets folder ${assetsPath} does not exist`);
 		}
