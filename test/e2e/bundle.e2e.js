@@ -107,13 +107,13 @@ describe('Bundle Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('returns undefined if project.properties does not have the property for assets', async () => {
+	it('returns error if project.properties does not have the property for assets', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid-no-prop/app.bin';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-prop');
 
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath], { cwd });
 
-		expect(stdout).to.include('The assets folder undefined does not exist');
+		expect(stdout).to.include('No assetOtaFolder property found in project.properties.');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

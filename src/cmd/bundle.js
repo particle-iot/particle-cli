@@ -74,12 +74,12 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	async _getAssets({ assetsPath }) {
-		const fileStat = await fs.stat(assetsPath);
-		if(!fileStat.isDirectory()) {
-			throw new Error(`The assets path ${assetsPath} is not a directory`);
-		}
 		if (!await fs.exists(assetsPath)) {
 			throw new Error(`The assets folder ${assetsPath} does not exist`);
+		}
+		const fileStat = await fs.stat(assetsPath);
+		if (!fileStat.isDirectory()) {
+			throw new Error(`The assets path ${assetsPath} is not a directory`);
 		}
 		// Only get the assets from the folder itself, ignoring any sub-folders
 		const assetsInFolder = await fs.readdir(assetsPath);
