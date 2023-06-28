@@ -1,5 +1,8 @@
 const { expect } = require('../../test/setup');
 const util = require('./utilities');
+const path = require('path');
+const fs = require('fs');
+const { PATH_TMP_DIR } = require('../../test/lib/env');
 
 
 describe('Utilities', () => {
@@ -252,6 +255,57 @@ describe('Utilities', () => {
 		it('returns expected result when empty string is passed', () => {
 			expect(util.getFilenameExt('')).to.eql('');
 		});
+	});
+
+	describe('parsePropertyFile()', () => {
+		it('parses a property file', async () => {
+			const tmpFile = path.join(PATH_TMP_DIR, 'project.properties');
+			try {
+				fs.writeFileSync(tmpFile, 'name=my_project\nassetOtaFolder=my_assets_folder\n');
+			} catch (e) {
+				expect(e).to.be.null;
+			}
+
+			const result = await util.parsePropertyFile(tmpFile);
+			expect(result).to.eql({
+				name: 'my_project',
+				assetOtaFolder: 'my_assets_folder'
+			});
+
+			try {
+				fs.removeSync(tmpFile);
+			} catch (e) {
+				// ignore
+			}
+		});
+
+		it('returns an empty object if the file is empty', async () => {
+			const tmpFile = path.join(PATH_TMP_DIR, 'project.properties');
+			try {
+				fs.writeFileSync(tmpFile, '');
+			} catch (e) {
+				expect(e).to.be.null;
+			}
+
+			const result = await util.parsePropertyFile(tmpFile);
+			expect(result).to.eql({});
+
+			try {
+				fs.removeSync(tmpFile);
+			} catch (e) {
+				// ignore
+			}
+		});
+
+		it('returns an error if the file does not exist', async () => {
+			const tmpFile = 'fake-file';
+			try {
+				await util.parsePropertyFile(tmpFile);
+			} catch (e) {
+				expect(e).to.have.property('message', 'ENOENT: no such file or directory, open \'fake-file\'');
+			}
+		});
+
 	});
 
 });

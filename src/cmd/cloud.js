@@ -2,7 +2,6 @@ const os = require('os');
 const _ = require('lodash');
 const VError = require('verror');
 const prompt = require('inquirer').prompt;
-const propertiesParser = require('properties-parser');
 
 const settings = require('../../settings');
 const deviceSpecs = require('../lib/device-specs');
@@ -690,8 +689,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		for (const file of files) {
 			const propPath = path.join(file, 'project.properties');
 			try {
-				const savedProp = await fs.readFile(propPath, 'utf8');
-				const savedPropObj = propertiesParser.parse(savedProp);
+				const savedPropObj = await utilities.parsePropertyFile(propPath);
 
 				if (savedPropObj.assetOtaFolder && savedPropObj.assetOtaFolder !== '') {
 					const assetsDir = path.join(file, savedPropObj.assetOtaFolder);
@@ -701,7 +699,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 					}
 				}
 			} catch (error) {
-				// Ignore file read or stat errors
+				// Ignore parsing or stat errors
 			}
 		}
 	}

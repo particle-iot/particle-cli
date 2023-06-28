@@ -1,4 +1,5 @@
 const { expect } = require('../setup');
+const path = require('path');
 const cli = require('../lib/cli');
 const {
 	PATH_FIXTURES_THIRDPARTY_OTA_DIR
@@ -37,7 +38,7 @@ describe('Bundle Commands', () => {
 
 	it('creates a bundle with name specified by user', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
+		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--saveTo', 'bundle.zip']);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
@@ -49,12 +50,12 @@ describe('Bundle Commands', () => {
 
 	it('creates a bundle with default name', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
+		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
 		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
-		expect(stdout).to.include('Bundling successful');
+		expect(stdout).to.include('Bundling successful.');
 		expect(stdout).to.match(/Saved bundle to: bundle_app_\d+\.zip/);
 
 		expect(stderr).to.eq('');
@@ -62,7 +63,7 @@ describe('Bundle Commands', () => {
 	});
 
 	it('Returns error if app binary is not specified', async () => {
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
+		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--assets', assetsPath]);
 
 		expect(stdout).to.include('Parameter \'appBinary\' is required.');
@@ -72,7 +73,7 @@ describe('Bundle Commands', () => {
 
 	it('Returns error if app binary does not exist', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/fake_app.bin';
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/assets';
+		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
 		expect(stdout).to.include(`The file ${binPath} does not exist`);
@@ -86,6 +87,32 @@ describe('Bundle Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
 
 		expect(stdout).to.include(`The assets folder ${assetsPath} does not exist`);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(1);
+	});
+
+	it('uses assets from project.properties if assets option does not exist', async () => {
+		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
+
+		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath], { cwd });
+
+		expect(stdout).to.include(`Bundling ${binPath} with otaAssets:`);
+		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
+		expect(stdout).to.include('Bundling successful.');
+		expect(stdout).to.match(/Saved bundle to: bundle_app_\d+\.zip/);
+
+		expect(stderr).to.eq('');
+		expect(exitCode).to.equal(0);
+	});
+
+	it('returns undefined if project.properties does not have the property for assets', async () => {
+		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid-no-prop/app.bin';
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-prop');
+
+		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath], { cwd });
+
+		expect(stdout).to.include('The assets folder undefined does not exist');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

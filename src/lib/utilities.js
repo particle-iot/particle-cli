@@ -28,6 +28,7 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
 
 const fs = require('fs');
 const _ = require('lodash');
+const propertiesParser = require('properties-parser');
 const os = require('os');
 const path = require('path');
 const glob = require('glob');
@@ -382,6 +383,12 @@ module.exports = {
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}
 		return err;
+	},
+
+	parsePropertyFile(propPath) {
+		const savedProp = fs.readFileSync(propPath, 'utf8');
+		const parsedPropFile = propertiesParser.parse(savedProp);
+		return parsedPropFile;
 	}
 };
 

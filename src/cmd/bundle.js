@@ -35,11 +35,42 @@ module.exports = class BundleCommands extends CLICommandBase {
 			throw new Error(`The target file ${saveTo} must be a .zip file`);
 		}
 
-		// If no assets folder is specified, use the default assets folder in the current directory
-		let assetsPath = assets ? assets : 'assets';
-
+		let assetsPath = await this._getAssetsPath(assets);
 		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
 		return { assetsPath, bundleFilename };
+	}
+
+	async _getAssetsPath(assets) {
+		if (assets) {
+			if (await fs.exists(assets)) {
+				// check if assets is a project.properties file
+				const stat = await fs.stat(assets);
+				if (stat.isFile() && utilities.getFilenameExt(assets) === '.properties') {
+					return this._getAssetsPathFromProjectProperties(assets);
+				} else {
+					return assets;
+				}
+			}
+			throw new Error(`The assets folder ${assets} does not exist`);
+		}
+		const projectPropertiesPath = path.join(process.cwd(), 'project.properties');
+		return this._getAssetsPathFromProjectProperties(projectPropertiesPath);
+	}
+
+	async _getAssetsPathFromProjectProperties(projectPropertiesPath) {
+		if (!await fs.exists(projectPropertiesPath)) {
+			throw new Error('No project.properties file found in the current directory. ' +
+				'Please specify the assets directory using --assets option');
+		}
+		const propFile = await utilities.parsePropertyFile(projectPropertiesPath);
+		if (propFile.assetOtaFolder && propFile.assetOtaFolder !== '') {
+			// get the assets folder relative to the project.properties file
+			const assetsDir = path.join(path.dirname(projectPropertiesPath), propFile.assetOtaFolder);
+			const stats = await fs.stat(assetsDir);
+			if (stats.isDirectory()) {
+				return path.basename(assetsDir);
+			}
+		}
 	}
 
 	async _getAssets({ assetsPath }) {

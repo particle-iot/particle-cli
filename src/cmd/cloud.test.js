@@ -279,7 +279,7 @@ describe('Cloud Commands', () => {
 		it('returns path to assets folder', async () => {
 			const { cloud } = stubForLogin(new CloudCommands(), stubs);
 			const dirPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
-			expect(await cloud._checkForAssets([dirPath])).to.equal(path.join(dirPath, 'assets'));
+			expect(await cloud._checkForAssets([dirPath])).to.equal(path.join(dirPath, 'otaAssets'));
 		});
 
 		it('returns undefined if assets folder is missing', async () => {
