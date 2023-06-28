@@ -349,13 +349,8 @@ module.exports = class SetupCommand {
 						tryScan();
 					}
 				});
-			} else if (device.type === 'Electron') {
-				detectedPrompt(device.type, function setupElectronChoice(ans) {
-					if (ans.setup) {
-						return self.setupElectron(device);
-					}
-					goodbye();
-				});
+			} else {
+				self.unsupportedDevice(device.type);
 			}
 		}
 
@@ -462,13 +457,18 @@ module.exports = class SetupCommand {
 			});
 	}
 
-	setupElectron() {
+	unsupportedDevice(name) {
+		console.log(
+			arrow,
+			'I have detected a',
+			chalk.cyan(name),
+			'connected via USB.'
+		);
+
 		console.log();
-		console.log(alert, 'Electron(s) cannot be setup via the CLI.');
-		console.log();
-		console.log(alert, 'We need to collect billing information, which we cannot do securely via the command line.');
-		console.log(alert, 'Please visit', chalk.bold.cyan('https://setup.particle.io'), 'to setup your Electron.');
-		process.exit(0);
+
+		console.log(alert, 'This device cannot be setup via the CLI.');
+		console.log(alert, 'Please visit', chalk.bold.cyan('https://setup.particle.io'), 'to setup your', chalk.cyan(name), '.');
 	}
 
 	prompt(prompts) {
