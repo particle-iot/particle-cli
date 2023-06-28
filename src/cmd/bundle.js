@@ -68,7 +68,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 			const assetsDir = path.join(path.dirname(projectPropertiesPath), propFile.assetOtaFolder);
 			const stats = await fs.stat(assetsDir);
 			if (stats.isDirectory()) {
-				return path.basename(assetsDir);
+				return assetsDir;
 			}
 		}
 	}

@@ -256,7 +256,7 @@ describe('BundleCommands', () => {
 		it ('returns path from project.properties if --assets path/to/project.properties is provided', async () => {
 			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
 				const assetsPath = await bundleCommands._getAssetsPath(undefined);
-				expect(assetsPath).to.equal('otaAssets');
+				expect(assetsPath).to.equal(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets'));
 			});
 		});
 
@@ -278,7 +278,7 @@ describe('BundleCommands', () => {
 			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
 				const assetsPath = await bundleCommands._getAssetsPath(undefined);
 
-				expect(assetsPath).to.equal('otaAssets');
+				expect(assetsPath).to.equal(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets'));
 			});
 		});
 	});

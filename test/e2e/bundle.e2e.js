@@ -94,10 +94,11 @@ describe('Bundle Commands', () => {
 	it('uses assets from project.properties if assets option does not exist', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
+		const assetsPath = path.join(cwd, 'otaAssets');
 
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath], { cwd });
 
-		expect(stdout).to.include(`Bundling ${binPath} with otaAssets:`);
+		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
 		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
 		expect(stdout).to.include('Bundling successful.');
 		expect(stdout).to.match(/Saved bundle to: bundle_app_\d+\.zip/);
