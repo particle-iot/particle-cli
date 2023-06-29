@@ -73,7 +73,7 @@
     "particle-library-manager": "^0.1.15",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.2.0",
-    "semver": "^6.3.0",
+    "semver": "^7.5.2",
     "softap-setup": "^4.1.0",
     "temp": "^0.9.1",
     "verror": "^1.10.0",
