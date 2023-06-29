@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.11.3 - Jun 29 2023
+
+* Rework particle bundle command to read project.propertie file
+
 ## 3.11.2 - Jun 23 2023
 
 * Add support for project properties to bundle assets
