@@ -96,7 +96,7 @@ describe('BundleCommands', () => {
 
 		it('returns a .zip file', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
 			const args = {
 				params: {
 					appBinary: binPath,
@@ -110,7 +110,7 @@ describe('BundleCommands', () => {
 			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
-		it('uses the assets in the assets folder when --assets option is not specified', async () => {
+		it('uses the assets from the project.properties file when --assets option is not specified', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
 			const assetsPath = undefined;
 			const args = {
@@ -128,9 +128,9 @@ describe('BundleCommands', () => {
 			});
 		});
 
-		it('uses the assets in the assets folder when --assets option is specified', async () => {
+		it('uses the assets in the assets dir when --assets option is specified', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
 			const args = {
 				params: {
 					appBinary: binPath,
@@ -144,7 +144,7 @@ describe('BundleCommands', () => {
 			expect(bundleFilename).to.eq(targetBundlePath);
 		});
 
-		it('creates a bundle if there are no assets in the assets folder', async () => {
+		it('creates a bundle if there are no assets in the assets dir', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets', 'assets');
 			const args = {
@@ -162,7 +162,7 @@ describe('BundleCommands', () => {
 
 		it('returns bundle with the default name if saveTo argument is not provided', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
 			const args = {
 				params: {
 					appBinary: binPath,
@@ -182,7 +182,7 @@ describe('BundleCommands', () => {
 	});
 
 	describe('getAssets', () => {
-		it('throws an error when assets folder is not present', async () => {
+		it('throws an error when assets dir is not present', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_no_assets', 'assets');
 			let error;
 
@@ -193,11 +193,11 @@ describe('BundleCommands', () => {
 			}
 
 			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.eql(`The assets folder ${assetsPath} does not exist`);
+			expect(error.message).to.eql(`The assets dir ${assetsPath} does not exist`);
 		});
 
 		it('returns the assets list', async () => {
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'assets');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
 
 			const assetsList = await bundleCommands._getAssets({ assetsPath });
 
@@ -239,6 +239,82 @@ describe('BundleCommands', () => {
 			const res = await bundleCommands._getBundleSavePath(undefined, 'test.bin');
 
 			expect(res).to.match(/^bundle_test_\d+\.zip$/);
+		});
+	});
+
+	describe('_getAssetsPath', () => {
+		it('returns assets directory if --assets directory is provided', async () => {
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
+				const assetsPath = await bundleCommands._getAssetsPath(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets'));
+				expect(assetsPath).to.equal(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets'));
+			});
+		});
+
+		it ('returns path from project.properties if --assets path/to/project.properties is provided', async () => {
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
+				const assetsPath = await bundleCommands._getAssetsPath(undefined);
+				expect(assetsPath).to.equal(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets'));
+			});
+		});
+
+		it('returns error if --assets is not provided and project.properties is not present', async () => {
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop'), async () => {
+				let error;
+				try {
+					await bundleCommands._getAssetsPath(undefined);
+				} catch (_error) {
+					error = _error;
+				}
+
+				expect(error).to.be.an.instanceof(Error);
+				expect(error.message).to.eql('No project.properties file found in the current directory. Please specify the assets directory using --assets option');
+			});
+		});
+
+		it('returns assets from project.properties even if project.properties is not specified', async () => {
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
+				const assetsPath = await bundleCommands._getAssetsPath(undefined);
+
+				expect(assetsPath).to.equal(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets'));
+			});
+		});
+	});
+
+	describe('_getAssetsPathFromProjectProperties', () => {
+		it('returns the value of assetOtaDir property', async () => {
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid'), async () => {
+				const assetsPath = await bundleCommands._getAssetsPathFromProjectProperties('project.properties');
+
+				expect(assetsPath).to.equal('otaAssets');
+			});
+		});
+
+		it('returns undefined if project.properties file is not present', async () => {
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-proj-prop'), async () => {
+				let error;
+				try {
+					await bundleCommands._getAssetsPathFromProjectProperties(undefined);
+				} catch (_error) {
+					error = _error;
+				}
+
+				expect(error).to.be.an.instanceof(Error);
+				expect(error.message).to.eql('No project.properties file found in the current directory. Please specify the assets directory using --assets option');
+			});
+		});
+
+		it('returns undefined if assetOtaDir property is not present', async () => {
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-prop'), async () => {
+				let error;
+				try {
+					await bundleCommands._getAssetsPathFromProjectProperties('project.properties');
+				} catch (_error) {
+					error = _error;
+				}
+
+				expect(error).to.be.an.instanceof(Error);
+				expect(error.message).to.eql('Add assetOtaDir to your project.properties in order to bundle assets');
+			});
 		});
 	});
 });

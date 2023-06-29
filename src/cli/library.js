@@ -42,7 +42,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'copy': {
 				boolean: true,
 				alias: 'vendored',
-				description: 'install the library by copying the library sources into the project\'s lib folder'
+				description: 'install the library by copying the library sources into the project\'s lib directory'
 			},
 			'adapter': { // hidden
 				boolean: true,
