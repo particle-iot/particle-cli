@@ -152,9 +152,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 				return Promise.resolve()
 					.then(() => {
-						const fileMapping = this._handleMultiFileArgs(files, { followSymlinks });
-						populateFileMapping(fileMapping);
-						return fileMapping;
+						return this._handleMultiFileArgs(files, { followSymlinks });
 					})
 					.then((fileMapping) => {
 						if (Object.keys(fileMapping.map).length === 0){
@@ -246,7 +244,12 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 				if (specs){
 					if (specs.knownApps[filePath]){
-						return populateFileMapping({ list: [specs.knownApps[filePath]] });
+						const app = specs.knownApps[filePath];
+						return {
+							map: {
+								[app]: app
+							}
+						};
 					}
 
 					if (specs.productName){
@@ -304,8 +307,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 		} else {
 			throw new Error([
 				`Target device ${deviceType} is not valid`,
-				'	eg. particle compile core xxx',
-				'	eg. particle compile photon xxx'
+				'	eg. particle compile boron xxx',
+				'	eg. particle compile p2 xxx'
 			].join('\n'));
 		}
 
@@ -907,17 +910,4 @@ function ensureAPIToken(){
 	if (!settings.access_token){
 		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
 	}
-}
-
-function populateFileMapping(fileMapping){
-	if (!fileMapping.map){
-		fileMapping.map = {};
-		if (fileMapping.list){
-			for (let i = 0; i < fileMapping.list.length; i++){
-				let item = fileMapping.list[i];
-				fileMapping.map[item] = item;
-			}
-		}
-	}
-	return fileMapping;
 }
