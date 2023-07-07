@@ -125,143 +125,127 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	flashDevice({ target, followSymlinks, product, params: { device, files } }){
+	async flashDevice({ target, followSymlinks, product, params: { device, files } }){
 		if (product){
 			if (!this.isDeviceId(device)){
-				return this.showProductDeviceNameUsageError(device);
+				await this.showProductDeviceNameUsageError(device);
 			}
 		}
 
-		return Promise.resolve()
-			.then(() => {
-				if (files.length === 0){
-					// default to current directory
-					files.push('.');
+		try {
+			if (files.length === 0) {
+				// default to current directory
+				files.push('.');
+			}
+
+			if (!await fs.exists(files[0])) {
+				await this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
+				return;
+			}
+
+			const targetVersion = target === 'latest' ? null : target;
+
+			if (targetVersion) {
+				this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);
+				this.ui.stdout.write(os.EOL);
+			}
+
+			const fileMapping = await this._handleMultiFileArgs(files, { followSymlinks });
+			if (Object.keys(fileMapping.map).length === 0) {
+				throw new Error('no files included');
+			}
+
+			if (settings.showIncludedSourceFiles) {
+				const list = _.values(fileMapping.map);
+
+				this.ui.stdout.write(`Including:${os.EOL}`);
+
+				for (let i = 0, n = list.length; i < n; i++) {
+					this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
 				}
 
-				if (!fs.existsSync(files[0])){
-					return this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
-				}
+				this.ui.stdout.write(os.EOL);
+			}
 
-				const targetVersion = target === 'latest' ? null : target;
-
-				if (targetVersion){
-					this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);
-					this.ui.stdout.write(os.EOL);
-				}
-
-				return Promise.resolve()
-					.then(() => {
-						return this._handleMultiFileArgs(files, { followSymlinks });
-					})
-					.then((fileMapping) => {
-						if (Object.keys(fileMapping.map).length === 0){
-							throw new Error('no files included');
-						}
-
-						if (settings.showIncludedSourceFiles){
-							const list = _.values(fileMapping.map);
-
-							this.ui.stdout.write(`Including:${os.EOL}`);
-
-							for (let i = 0, n = list.length; i < n; i++){
-								this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
-							}
-
-							this.ui.stdout.write(os.EOL);
-						}
-
-						return this._doFlash({ product, deviceId: device, fileMapping, targetVersion });
-					});
-			})
-			.catch((error) => {
-				const message = `Failed to flash ${device}`;
-				throw createAPIErrorResult({ error, message });
-			});
+			await this._doFlash({ product, deviceId: device, fileMapping, targetVersion });
+		} catch (error) {
+			const message = `Failed to flash ${device}`;
+			throw createAPIErrorResult({ error, message });
+		}
 	}
 
-	_doFlash({ product, deviceId, fileMapping, targetVersion }){
-		return Promise.resolve()
-			.then(() => {
-				if (!product){
-					return;
-				}
-				this.ui.stdout.write(`marking device ${deviceId} as a development device${os.EOL}`);
-				return createAPI().markAsDevelopmentDevice(deviceId, true, product);
-			})
-			.then(() => {
-				this.ui.logFirstTimeFlashWarning();
-				this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
-				return createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
-			})
-			.then((resp) => {
-				if (resp.status || resp.message){
-					this.ui.stdout.write(`Flash device OK: ${resp.status || resp.message}${os.EOL}`);
-				} else if (resp.output === 'Compiler timed out or encountered an error'){
-					this.ui.stdout.write(`${os.EOL}${(resp.errors && resp.errors[0])}${os.EOL}`);
-					throw new Error('Compiler encountered an error');
-				} else {
-					throw normalizedApiError(resp);
-				}
-			})
-			.then(() => {
-				if (!product){
-					return;
-				}
-				[
-					`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
-					'to resume normal updates, please visit:',
-					// TODO (mirande): replace w/ instructions on how to unmark
-					// via the CLI once that command is available
-					`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
-				].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
-			})
-			.catch(err => {
-				throw normalizedApiError(err);
-			});
+	async _doFlash({ product, deviceId, fileMapping, targetVersion }){
+		try {
+			if (!product) {
+				return;
+			}
+			this.ui.stdout.write(`marking device ${deviceId} as a development device${os.EOL}`);
+			await createAPI().markAsDevelopmentDevice(deviceId, true, product);
+
+			this.ui.logFirstTimeFlashWarning();
+			this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
+
+			const resp = await createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
+			if (resp.status || resp.message) {
+				this.ui.stdout.write(`Flash device OK: ${resp.status || resp.message}${os.EOL}`);
+			} else if (resp.output === 'Compiler timed out or encountered an error') {
+				this.ui.stdout.write(`${os.EOL}${(resp.errors && resp.errors[0])}${os.EOL}`);
+				throw new Error('Compiler encountered an error');
+			} else {
+				throw normalizedApiError(resp);
+			}
+
+			if (!product) {
+				return;
+			}
+
+			[
+				`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'to resume normal updates, please visit:',
+				// TODO (mirande): replace w/ instructions on how to unmark
+				// via the CLI once that command is available
+				`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
+			].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
+		} catch (err) {
+			throw normalizedApiError(err);
+		}
 	}
 
-	_flashKnownApp({ product, deviceId, filePath }){
+	async _flashKnownApp({ product, deviceId, filePath }){
 		if (!settings.cloudKnownApps[filePath]){
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 
-		return createAPI().getDeviceAttributes(deviceId)
-			.then((attrs) => {
-				let productId = attrs.platform_id; // b/c legacy naming
+		const attrs = await createAPI().getDeviceAttributes(deviceId);
+		let productId = attrs.platform_id; // b/c legacy naming
 
-				if (product || attrs.platform_id !== attrs.product_id){
-					if (!product){
-						product = attrs.product_id;
-					}
+		if (product || attrs.platform_id !== attrs.product_id){
+			if (!product){
+				product = attrs.product_id;
+			}
 
-					if (!this.isDeviceId(deviceId)){
-						deviceId = attrs.id;
-					}
-				}
+			if (!this.isDeviceId(deviceId)){
+				deviceId = attrs.id;
+			}
+		}
 
-				const specs = _.find(deviceSpecs, { productId });
+		let fileMapping;
+		const specs = _.find(deviceSpecs, { productId });
 
-				if (specs){
-					if (specs.knownApps[filePath]){
-						const app = specs.knownApps[filePath];
-						return {
-							map: {
-								[app]: app
-							}
-						};
-					}
+		if (specs){
+			if (specs.knownApps[filePath]){
+				const app = specs.knownApps[filePath];
+				fileMapping = { map: { [app]: app } };
+			}
 
-					if (specs.productName){
-						throw new VError(`I don't have a ${filePath} binary for ${specs.productName}.`);
-					}
-				} else {
-					throw new Error(`Unable to find ${filePath} for platform ${productId}`);
-				}
-			})
-			.then((fileMapping) => {
-				return this._doFlash({ product, deviceId, fileMapping });
-			});
+			if (specs.productName){
+				throw new VError(`I don't have a ${filePath} binary for ${specs.productName}.`);
+			}
+		} else {
+			throw new Error(`Unable to find ${filePath} for platform ${productId}`);
+		}
+
+		await this._doFlash({ product, deviceId, fileMapping });
 	}
 
 	_getDownloadPathForBin(deviceType, saveTo){

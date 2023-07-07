@@ -22,12 +22,12 @@ module.exports = class CLICommandBase {
 		return DEVICE_ID_PTN.test(x);
 	}
 
-	showUsageError(msg){
-		return Promise.reject(usageError(msg));
+	async showUsageError(msg){
+		throw usageError(msg);
 	}
 
-	showProductDeviceNameUsageError(device){
-		return this.showUsageError(
+	async showProductDeviceNameUsageError(device){
+		await this.showUsageError(
 			`\`device\` must be an id when \`--product\` flag is set - received: ${device}`
 		);
 	}
