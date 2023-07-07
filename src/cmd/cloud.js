@@ -17,6 +17,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
+const temp = require('temp').track();
 const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
 const BundleCommands  = require('./bundle');
 
@@ -25,6 +26,7 @@ const alert = chalk.yellow('!');
 
 // Use known platforms and add shortcuts
 const PLATFORMS = utilities.knownPlatformIdsWithAliases();
+const PLATFORMS_ID_TO_NAME = _.invert(utilities.knownPlatformIds());
 
 module.exports = class CloudCommand extends CLICommandBase {
 	constructor(...args){
@@ -143,31 +145,16 @@ module.exports = class CloudCommand extends CLICommandBase {
 				return;
 			}
 
-			const targetVersion = target === 'latest' ? null : target;
+			const attrs = await createAPI().getDeviceAttributes(device);
+			let platformId = attrs.platform_id;
+			const deviceType = PLATFORMS_ID_TO_NAME[platformId];
+			const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 
-			if (targetVersion) {
-				this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);
-				this.ui.stdout.write(os.EOL);
-			}
+			const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } });
 
-			const fileMapping = await this._handleMultiFileArgs(files, { followSymlinks });
-			if (Object.keys(fileMapping.map).length === 0) {
-				throw new Error('no files included');
-			}
+			const fileMapping = { map: { [compiledFilename]: compiledFilename } };
 
-			if (settings.showIncludedSourceFiles) {
-				const list = _.values(fileMapping.map);
-
-				this.ui.stdout.write(`Including:${os.EOL}`);
-
-				for (let i = 0, n = list.length; i < n; i++) {
-					this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
-				}
-
-				this.ui.stdout.write(os.EOL);
-			}
-
-			await this._doFlash({ product, deviceId: device, fileMapping, targetVersion });
+			await this._doFlash({ product, deviceId: device, fileMapping });
 		} catch (error) {
 			const message = `Failed to flash ${device}`;
 			throw createAPIErrorResult({ error, message });
@@ -176,11 +163,10 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	async _doFlash({ product, deviceId, fileMapping, targetVersion }){
 		try {
-			if (!product) {
-				return;
+			if (product) {
+				this.ui.stdout.write(`marking device ${deviceId} as a development device${os.EOL}`);
+				await createAPI().markAsDevelopmentDevice(deviceId, true, product);
 			}
-			this.ui.stdout.write(`marking device ${deviceId} as a development device${os.EOL}`);
-			await createAPI().markAsDevelopmentDevice(deviceId, true, product);
 
 			this.ui.logFirstTimeFlashWarning();
 			this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
@@ -195,17 +181,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 				throw normalizedApiError(resp);
 			}
 
-			if (!product) {
-				return;
+			if (product) {
+				[
+					`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+					'to resume normal updates, please visit:',
+					// TODO (mirande): replace w/ instructions on how to unmark
+					// via the CLI once that command is available
+					`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
+				].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
 			}
-
-			[
-				`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
-				'to resume normal updates, please visit:',
-				// TODO (mirande): replace w/ instructions on how to unmark
-				// via the CLI once that command is available
-				`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
-			].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
 		} catch (err) {
 			throw normalizedApiError(err);
 		}
@@ -217,7 +201,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		const attrs = await createAPI().getDeviceAttributes(deviceId);
-		let productId = attrs.platform_id; // b/c legacy naming
+		let platformId = attrs.platform_id;
 
 		if (product || attrs.platform_id !== attrs.product_id){
 			if (!product){
@@ -230,7 +214,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		let fileMapping;
-		const specs = _.find(deviceSpecs, { productId });
+		const specs = _.find(deviceSpecs, { productId: platformId }); // b/c legacy naming
 
 		if (specs){
 			if (specs.knownApps[filePath]){
@@ -242,7 +226,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				throw new VError(`I don't have a ${filePath} binary for ${specs.productName}.`);
 			}
 		} else {
-			throw new Error(`Unable to find ${filePath} for platform ${productId}`);
+			throw new Error(`Unable to find ${filePath} for platform ${platformId}`);
 		}
 
 		await this._doFlash({ product, deviceId, fileMapping });
@@ -357,7 +341,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		let filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
-		await this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
+		return this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
 	}
 
 	async _compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename){
@@ -400,16 +384,20 @@ module.exports = class CloudCommand extends CLICommandBase {
 			this.ui.stdout.write(`${respSizeInfo}${os.EOL}`);
 		}
 
+		let compiledFilename;
 		if (bundle) {
 			if (await fs.exists(filename)){
 				await fs.unlink(filename);
 			}
+			compiledFilename = path.resolve(bundleFilename);
 			this.ui.stdout.write(`Compile succeeded and bundle created.${os.EOL}`);
-			this.ui.stdout.write(`Saved bundle to: ${path.resolve(bundleFilename)}${os.EOL}`);
+			this.ui.stdout.write(`Saved bundle to: ${compiledFilename}${os.EOL}`);
 		} else {
+			compiledFilename = path.resolve(filename);
 			this.ui.stdout.write(`Compile succeeded.${os.EOL}`);
-			this.ui.stdout.write(`Saved firmware to: ${path.resolve(filename)}${os.EOL}`);
+			this.ui.stdout.write(`Saved firmware to: ${compiledFilename}${os.EOL}`);
 		}
+		return compiledFilename;
 	}
 
 	login({ username, password, token, otp, sso } = {}){
