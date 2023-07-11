@@ -140,19 +140,30 @@ module.exports = class CloudCommand extends CLICommandBase {
 				files.push('.');
 			}
 
-			if (!await fs.exists(files[0])) {
+			const filename = files[0];
+
+			if (!await fs.exists(filename)) {
 				await this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
 				return;
 			}
 
-			const attrs = await createAPI().getDeviceAttributes(device);
-			let platformId = attrs.platform_id;
-			const deviceType = PLATFORMS_ID_TO_NAME[platformId];
-			const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
+			let fileMapping;
+			// check if extension is .bin or .zip
+			const ext = path.extname(filename);
+			if (['.bin', '.zip'].includes(ext)) {
+				fileMapping = { map: { [filename]: filename } };
+			} else {
+				this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
 
-			const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } });
+				const attrs = await createAPI().getDeviceAttributes(device);
+				let platformId = attrs.platform_id;
+				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
+				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 
-			const fileMapping = { map: { [compiledFilename]: compiledFilename } };
+				const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+
+				fileMapping = { map: { [compiledFilename]: compiledFilename } };
+			}
 
 			await this._doFlash({ product, deviceId: device, fileMapping });
 		} catch (error) {
@@ -164,26 +175,21 @@ module.exports = class CloudCommand extends CLICommandBase {
 	async _doFlash({ product, deviceId, fileMapping, targetVersion }){
 		try {
 			if (product) {
-				this.ui.stdout.write(`marking device ${deviceId} as a development device${os.EOL}`);
+				this.ui.stdout.write(`Marking device ${deviceId} as a development device${os.EOL}`);
 				await createAPI().markAsDevelopmentDevice(deviceId, true, product);
 			}
 
 			this.ui.logFirstTimeFlashWarning();
-			this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
+			this.ui.stdout.write(`Flashing firmware to your device ${deviceId}${os.EOL}`);
 
 			const resp = await createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
-			if (resp.status || resp.message) {
-				this.ui.stdout.write(`Flash device OK: ${resp.status || resp.message}${os.EOL}`);
-			} else if (resp.output === 'Compiler timed out or encountered an error') {
-				this.ui.stdout.write(`${os.EOL}${(resp.errors && resp.errors[0])}${os.EOL}`);
-				throw new Error('Compiler encountered an error');
-			} else {
+			if (!resp.status && !resp.message) {
 				throw normalizedApiError(resp);
 			}
 
 			if (product) {
 				[
-					`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+					`Device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
 					'to resume normal updates, please visit:',
 					// TODO (mirande): replace w/ instructions on how to unmark
 					// via the CLI once that command is available
@@ -220,9 +226,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			if (specs.knownApps[filePath]){
 				const app = specs.knownApps[filePath];
 				fileMapping = { map: { [app]: app } };
-			}
-
-			if (specs.productName){
+			} else {
 				throw new VError(`I don't have a ${filePath} binary for ${specs.productName}.`);
 			}
 		} else {
@@ -255,32 +259,36 @@ module.exports = class CloudCommand extends CLICommandBase {
 	// create a new function that handles errors from compileCode function
 	async compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
 		try {
-			return await this.compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } });
+			if (files.length === 0) {
+				files.push('.'); // default to current directory
+			}
+
+			let platformId;
+			if (deviceType in PLATFORMS) {
+				platformId = PLATFORMS[deviceType];
+			} else {
+				throw new Error([
+					`Target device ${deviceType} is not valid`,
+					'	eg. particle compile boron xxx',
+					'	eg. particle compile p2 xxx'
+				].join('\n'));
+			}
+
+			this.ui.stdout.write(`Compiling code for ${deviceType}${os.EOL}`);
+
+			const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files, showMemoryStats: true });
+
+			this.ui.stdout.write(`Saved firmware to: ${compiledFilename}${os.EOL}`);
 		} catch (error) {
 			const message = 'Compile failed';
 			throw createAPIErrorResult({ error, message });
 		}
 	}
 
-	async compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } }) {
-		let platformId, targetVersion, assets;
+	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files, showMemoryStats = false }) {
+		let targetVersion, assets;
 
 		ensureAPIToken();
-		if (files.length === 0) {
-			files.push('.'); // default to current directory
-		}
-
-		if (deviceType in PLATFORMS) {
-			platformId = PLATFORMS[deviceType];
-		} else {
-			throw new Error([
-				`Target device ${deviceType} is not valid`,
-				'	eg. particle compile boron xxx',
-				'	eg. particle compile p2 xxx'
-			].join('\n'));
-		}
-
-		this.ui.stdout.write(`${os.EOL}Compiling code for ${deviceType}${os.EOL}`);
 
 		if (target) {
 			if (target === 'latest') {
@@ -341,13 +349,12 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		let filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
-		return this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
+		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename, showMemoryStats });
 	}
 
-	async _compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename){
+	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename, showMemoryStats }){
 		let respSizeInfo, bundle, resp;
 
-		this.ui.stdout.write(`attempting to compile firmware${os.EOL}`);
 		try {
 			resp = await createAPI().compileCode(fileMapping, platformId, targetVersion);
 		} catch (error) {
@@ -355,7 +362,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		if (resp && resp.binary_url && resp.binary_id) {
-			this.ui.stdout.write(`downloading binary from: ${resp.binary_url}${os.EOL}`);
 			let data;
 			try {
 				data = await createAPI().downloadFirmwareBinary(resp.binary_id);
@@ -363,9 +369,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 				throw normalizedApiError(error);
 			}
 
-			if (!assets) {
-				this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
-			}
 			await fs.writeFile(filename, data);
 			respSizeInfo = resp.sizeInfo;
 		} else if (resp && resp.output === 'Compiler timed out or encountered an error'){
@@ -375,29 +378,25 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw normalizedApiError(resp);
 		}
 
+		this.ui.stdout.write(`Compile succeeded.${os.EOL}${os.EOL}`);
+
 		if (assets) {
 			bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
 		}
 
-		if (respSizeInfo){
+		if (showMemoryStats && respSizeInfo){
 			this.ui.stdout.write(`Memory use:${os.EOL}`);
 			this.ui.stdout.write(`${respSizeInfo}${os.EOL}`);
 		}
 
-		let compiledFilename;
 		if (bundle) {
 			if (await fs.exists(filename)){
 				await fs.unlink(filename);
 			}
-			compiledFilename = path.resolve(bundleFilename);
-			this.ui.stdout.write(`Compile succeeded and bundle created.${os.EOL}`);
-			this.ui.stdout.write(`Saved bundle to: ${compiledFilename}${os.EOL}`);
+			return path.resolve(bundleFilename);
 		} else {
-			compiledFilename = path.resolve(filename);
-			this.ui.stdout.write(`Compile succeeded.${os.EOL}`);
-			this.ui.stdout.write(`Saved firmware to: ${compiledFilename}${os.EOL}`);
+			return path.resolve(filename);
 		}
-		return compiledFilename;
 	}
 
 	login({ username, password, token, otp, sso } = {}){

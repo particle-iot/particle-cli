@@ -30,7 +30,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 
 		return result.then(() => {
-			this.ui.write('\nFlash success!');
+			this.ui.write('Flash success!');
 		});
 	}
 
