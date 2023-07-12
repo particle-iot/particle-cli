@@ -276,7 +276,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Compiling code for ${deviceType}${os.EOL}`);
 
-			const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files, showMemoryStats: true });
+			const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
 
 			this.ui.stdout.write(`Saved firmware to: ${compiledFilename}${os.EOL}`);
 		} catch (error) {
@@ -285,7 +285,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 	}
 
-	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files, showMemoryStats = false }) {
+	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files }) {
 		let targetVersion, assets;
 
 		ensureAPIToken();
@@ -349,10 +349,10 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		let filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
-		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename, showMemoryStats });
+		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename });
 	}
 
-	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename, showMemoryStats }){
+	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename }){
 		let respSizeInfo, bundle, resp;
 
 		try {
@@ -384,9 +384,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
 		}
 
-		if (showMemoryStats && respSizeInfo){
-			this.ui.stdout.write(`Memory use:${os.EOL}`);
-			this.ui.stdout.write(`${respSizeInfo}${os.EOL}`);
+		if (respSizeInfo){
+			this._showMemoryStats(respSizeInfo);
 		}
 
 		if (bundle) {
@@ -397,6 +396,45 @@ module.exports = class CloudCommand extends CLICommandBase {
 		} else {
 			return path.resolve(filename);
 		}
+	}
+
+	_showMemoryStats(sizeInfo) {
+		const stats = this._parseMemoryStats(sizeInfo);
+		if (stats) {
+			const rightAlign = (str, len) => `${' '.repeat(len - str.length)}${str}`;
+
+			this.ui.stdout.write(`Memory use:${os.EOL}`);
+			this.ui.stdout.write(rightAlign('Flash', 9) + rightAlign('RAM', 9) + os.EOL);
+			this.ui.stdout.write(rightAlign(stats.flash.toString(), 9) + rightAlign(stats.ram.toString(), 9) + os.EOL);
+			this.ui.stdout.write(os.EOL);
+		}
+	}
+
+	_parseMemoryStats(sizeInfo) {
+		if (!sizeInfo) {
+			return null;
+		}
+		const lines = sizeInfo.split('\n');
+		if (lines.length < 2) {
+			return null;
+		}
+
+		const fields = lines[0].replace(/^\s+/, '').split(/\s+/);
+		const values = lines[1].replace(/^\s+/, '').split(/\s+/);
+
+		const sizes = {};
+		for (let i = 0; i < fields.length && i < 4; i++) {
+			sizes[fields[i]] = parseInt(values[i], 10);
+		}
+
+		if (!('text' in sizes && 'data' in sizes && 'bss' in sizes)) {
+			return null;
+		}
+
+		return {
+			flash: sizes.text + sizes.data, // text is code, data is the constant data
+			ram: sizes.bss + sizes.data // bss is non-initialized or 0 initialized ram, data is ram initialized from values in flash
+		};
 	}
 
 	login({ username, password, token, otp, sso } = {}){
