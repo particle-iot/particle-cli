@@ -76,9 +76,7 @@ describe('Compile Commands', () => {
 			'',
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
-			'attempting to compile firmware',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
-			`saving to: ${strobyBinPath}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -102,12 +100,10 @@ describe('Compile Commands', () => {
 			'',
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
-			'attempting to compile firmware',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
-			`saving to: ${strobyBinPath}`,
 			'Memory use:',
-			'   text\t   data\t    bss\t    dec\t    hex\tfilename',
-			'   8604\t    108\t   1136\t   9848\t   2678\t/workspace/target/workspace.elf',
+			'    Flash      RAM',
+			'     8712     1244',
 			'',
 			'Compile succeeded.',
 			`Saved firmware to: ${strobyBinPath}`
@@ -132,13 +128,11 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    helper.h',
 			'    app.ino',
 			'    helper.cpp',
+			'    helper.h',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -164,15 +158,13 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    lib/helper/src/helper.h',
-			'    src/app.ino',
 			'    lib/helper/src/helper.cpp',
-			'    project.properties',
 			'    lib/helper/src/helper.def',
+			'    lib/helper/src/helper.h',
+			'    project.properties',
+			'    src/app.ino',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -198,14 +190,12 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    lib/helper/src/helper.h',
-			'    src/app.ino',
 			'    lib/helper/src/helper.cpp',
+			'    lib/helper/src/helper.h',
 			'    project.properties',
+			'    src/app.ino',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -235,9 +225,7 @@ describe('Compile Commands', () => {
 			'    helper.cpp',
 			'    helper.h',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -265,13 +253,11 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    helper.h',
 			'    app.ino',
 			'    helper.cpp',
+			'    helper.h',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -298,19 +284,17 @@ describe('Compile Commands', () => {
 			'',
 			'Including:',
 			'    project.properties',
-			'    src/helper/h0.h',
-			'    src/helper/h1.hpp',
-			'    src/helper/h3.hh',
-			'    src/helper/h2.hxx',
 			'    src/app.ino',
 			'    src/helper/h0.cpp',
+			'    src/helper/h0.h',
 			'    src/helper/h1.cpp',
+			'    src/helper/h1.hpp',
 			'    src/helper/h2.cpp',
+			'    src/helper/h2.hxx',
 			'    src/helper/h3.cpp',
+			'    src/helper/h3.hh',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -335,10 +319,10 @@ describe('Compile Commands', () => {
 		const log = [
 			`Compiling code for ${platform}`,
 			'Including:',
-			'    shared/sub_dir/helper.h',
 			'    app.ino',
-			'    shared/sub_dir/helper.cpp',
 			'    project.properties',
+			'    shared/sub_dir/helper.h',
+			'    shared/sub_dir/helper.cpp',
 		];
 
 		expect(file.size).to.be.above(minBinSize);
@@ -360,13 +344,11 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    legacy-flat/helper.h',
 			'    legacy-flat/app.ino',
 			'    legacy-flat/helper.cpp',
+			'    legacy-flat/helper.h',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -392,14 +374,12 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    src/helper/helper.h',
 			'    src/app.ino',
 			'    src/helper/helper.cpp',
+			'    src/helper/helper.h',
 			'    project.properties',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -432,9 +412,7 @@ describe('Compile Commands', () => {
 			'    src/test-library-publish.h',
 			'    src/uber-library-example/uber-library-example.h',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -457,9 +435,7 @@ describe('Compile Commands', () => {
 			'',
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
-			'attempting to compile firmware',
 			'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
-			`saving to: ${strobyBinPath}`,
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Compile succeeded.',
@@ -479,8 +455,8 @@ describe('Compile Commands', () => {
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
 		const log = [
 			'Compile failed: Target device WATNOPE is not valid',
-			'	eg. particle compile core xxx',
-			'	eg. particle compile photon xxx'
+			'	eg. particle compile boron xxx',
+			'	eg. particle compile p2 xxx'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -513,13 +489,11 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    helper.h',
 			'    app.ino',
 			'    helper.cpp',
+			'    helper.h',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
-			`saving to: ${destination}`,
 			`Compile failed: ENOENT: no such file or directory, open '${destination}'`
 		];
 
@@ -583,7 +557,6 @@ describe('Compile Commands', () => {
 			'    assets/house.txt',
 			'    assets/water.txt',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
@@ -633,13 +606,12 @@ describe('Compile Commands', () => {
 			`Compiling code for ${platform}`,
 			'',
 			'Including:',
-			'    src/stroby.ino',
 			'    project.properties',
+			'    src/stroby.ino',
 			'    assets/cat.txt',
 			'    assets/house.txt',
 			'    assets/water.txt',
 			'',
-			'attempting to compile firmware',
 			'', // don't assert against memory stats since they may change based on current default Device OS version
 			'Memory use:',
 			'', // don't assert against memory stats since they may change based on current default Device OS version

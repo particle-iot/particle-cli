@@ -160,9 +160,9 @@ module.exports = class CloudCommand extends CLICommandBase {
 				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
 				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 
-				const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+				const { filename } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
 
-				fileMapping = { map: { [compiledFilename]: compiledFilename } };
+				fileMapping = { map: { [filename]: filename } };
 			}
 
 			await this._doFlash({ product, deviceId: device, fileMapping });
@@ -276,9 +276,9 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Compiling code for ${deviceType}${os.EOL}`);
 
-			const compiledFilename = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+			const { filename, isBundle } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
 
-			this.ui.stdout.write(`Saved firmware to: ${compiledFilename}${os.EOL}`);
+			this.ui.stdout.write(`Saved ${isBundle ? 'bundle' : 'firmware' } to: ${filename}${os.EOL}`);
 		} catch (error) {
 			const message = 'Compile failed';
 			throw createAPIErrorResult({ error, message });
@@ -378,11 +378,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw normalizedApiError(resp);
 		}
 
-		this.ui.stdout.write(`Compile succeeded.${os.EOL}${os.EOL}`);
-
+		let message = 'Compile succeeded.';
 		if (assets) {
 			bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
+			message = 'Compile succeeded and bundle created.';
 		}
+
+		this.ui.stdout.write(`${message}${os.EOL}${os.EOL}`);
 
 		if (respSizeInfo){
 			this._showMemoryStats(respSizeInfo);
@@ -392,9 +394,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 			if (await fs.exists(filename)){
 				await fs.unlink(filename);
 			}
-			return path.resolve(bundleFilename);
+			return {
+				isBundle: true,
+				filename: path.resolve(bundleFilename)
+			};
 		} else {
-			return path.resolve(filename);
+			return {
+				isBundle: false,
+				filename: path.resolve(filename)
+			};
 		}
 	}
 
