@@ -17,6 +17,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const extend = require('xtend');
 const chalk = require('chalk');
+const temp = require('temp').track();
 const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
 const BundleCommands  = require('./bundle');
 
@@ -25,6 +26,7 @@ const alert = chalk.yellow('!');
 
 // Use known platforms and add shortcuts
 const PLATFORMS = utilities.knownPlatformIdsWithAliases();
+const PLATFORMS_ID_TO_NAME = _.invert(utilities.knownPlatformIds());
 
 module.exports = class CloudCommand extends CLICommandBase {
 	constructor(...args){
@@ -125,140 +127,113 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	flashDevice({ target, followSymlinks, product, params: { device, files } }){
+	async flashDevice({ target, followSymlinks, product, params: { device, files } }){
 		if (product){
 			if (!this.isDeviceId(device)){
-				return this.showProductDeviceNameUsageError(device);
+				await this.showProductDeviceNameUsageError(device);
 			}
 		}
 
-		return Promise.resolve()
-			.then(() => {
-				if (files.length === 0){
-					// default to current directory
-					files.push('.');
-				}
+		try {
+			if (files.length === 0) {
+				// default to current directory
+				files.push('.');
+			}
 
-				if (!fs.existsSync(files[0])){
-					return this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
-				}
+			const filename = files[0];
 
-				const targetVersion = target === 'latest' ? null : target;
+			if (!await fs.exists(filename)) {
+				await this._flashKnownApp({ product, deviceId: device, filePath: files[0] });
+				return;
+			}
 
-				if (targetVersion){
-					this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);
-					this.ui.stdout.write(os.EOL);
-				}
+			let fileMapping;
+			// check if extension is .bin or .zip
+			const ext = path.extname(filename);
+			if (['.bin', '.zip'].includes(ext)) {
+				fileMapping = { map: { [filename]: filename } };
+			} else {
+				this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
 
-				return Promise.resolve()
-					.then(() => {
-						const fileMapping = this._handleMultiFileArgs(files, { followSymlinks });
-						populateFileMapping(fileMapping);
-						return fileMapping;
-					})
-					.then((fileMapping) => {
-						if (Object.keys(fileMapping.map).length === 0){
-							throw new Error('no files included');
-						}
+				const attrs = await createAPI().getDeviceAttributes(device);
+				let platformId = attrs.platform_id;
+				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
+				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 
-						if (settings.showIncludedSourceFiles){
-							const list = _.values(fileMapping.map);
+				const { filename } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
 
-							this.ui.stdout.write(`Including:${os.EOL}`);
+				fileMapping = { map: { [filename]: filename } };
+			}
 
-							for (let i = 0, n = list.length; i < n; i++){
-								this.ui.stdout.write(`    ${list[i]}${os.EOL}`);
-							}
-
-							this.ui.stdout.write(os.EOL);
-						}
-
-						return this._doFlash({ product, deviceId: device, fileMapping, targetVersion });
-					});
-			})
-			.catch((error) => {
-				const message = `Failed to flash ${device}`;
-				throw createAPIErrorResult({ error, message });
-			});
+			await this._doFlash({ product, deviceId: device, fileMapping });
+		} catch (error) {
+			const message = `Failed to flash ${device}`;
+			throw createAPIErrorResult({ error, message });
+		}
 	}
 
-	_doFlash({ product, deviceId, fileMapping, targetVersion }){
-		return Promise.resolve()
-			.then(() => {
-				if (!product){
-					return;
-				}
-				this.ui.stdout.write(`marking device ${deviceId} as a development device${os.EOL}`);
-				return createAPI().markAsDevelopmentDevice(deviceId, true, product);
-			})
-			.then(() => {
-				this.ui.logFirstTimeFlashWarning();
-				this.ui.stdout.write(`attempting to flash firmware to your device ${deviceId}${os.EOL}`);
-				return createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
-			})
-			.then((resp) => {
-				if (resp.status || resp.message){
-					this.ui.stdout.write(`Flash device OK: ${resp.status || resp.message}${os.EOL}`);
-				} else if (resp.output === 'Compiler timed out or encountered an error'){
-					this.ui.stdout.write(`${os.EOL}${(resp.errors && resp.errors[0])}${os.EOL}`);
-					throw new Error('Compiler encountered an error');
-				} else {
-					throw normalizedApiError(resp);
-				}
-			})
-			.then(() => {
-				if (!product){
-					return;
-				}
+	async _doFlash({ product, deviceId, fileMapping, targetVersion }){
+		try {
+			if (product) {
+				this.ui.stdout.write(`Marking device ${deviceId} as a development device${os.EOL}`);
+				await createAPI().markAsDevelopmentDevice(deviceId, true, product);
+			}
+
+			this.ui.logFirstTimeFlashWarning();
+			this.ui.stdout.write(`Flashing firmware to your device ${deviceId}${os.EOL}`);
+
+			const resp = await createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
+			if (!resp.status && !resp.message) {
+				throw normalizedApiError(resp);
+			}
+
+			if (product) {
 				[
-					`device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+					`Device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
 					'to resume normal updates, please visit:',
 					// TODO (mirande): replace w/ instructions on how to unmark
 					// via the CLI once that command is available
 					`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
 				].forEach(line => this.ui.stdout.write(`${line}${os.EOL}`));
-			})
-			.catch(err => {
-				throw normalizedApiError(err);
-			});
+			}
+		} catch (err) {
+			throw normalizedApiError(err);
+		}
 	}
 
-	_flashKnownApp({ product, deviceId, filePath }){
+	async _flashKnownApp({ product, deviceId, filePath }){
 		if (!settings.cloudKnownApps[filePath]){
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 
-		return createAPI().getDeviceAttributes(deviceId)
-			.then((attrs) => {
-				let productId = attrs.platform_id; // b/c legacy naming
+		const attrs = await createAPI().getDeviceAttributes(deviceId);
+		let platformId = attrs.platform_id;
 
-				if (product || attrs.platform_id !== attrs.product_id){
-					if (!product){
-						product = attrs.product_id;
-					}
+		if (product || attrs.platform_id !== attrs.product_id){
+			if (!product){
+				product = attrs.product_id;
+			}
 
-					if (!this.isDeviceId(deviceId)){
-						deviceId = attrs.id;
-					}
-				}
+			if (!this.isDeviceId(deviceId)){
+				deviceId = attrs.id;
+			}
+		}
 
-				const specs = _.find(deviceSpecs, { productId });
+		let fileMapping;
+		const specs = _.find(deviceSpecs, { productId: platformId }); // b/c legacy naming
 
-				if (specs){
-					if (specs.knownApps[filePath]){
-						return populateFileMapping({ list: [specs.knownApps[filePath]] });
-					}
+		if (specs){
+			if (specs.knownApps[filePath]){
+				const app = specs.knownApps[filePath];
+				fileMapping = { map: { [app]: app } };
+			} else {
+				throw new VError(`I don't have a ${filePath} binary for ${specs.productName}.`);
+			}
+		} else {
+			throw new Error(`Unable to find ${filePath} for platform ${platformId}`);
+		}
 
-					if (specs.productName){
-						throw new VError(`I don't have a ${filePath} binary for ${specs.productName}.`);
-					}
-				} else {
-					throw new Error(`Unable to find ${filePath} for platform ${productId}`);
-				}
-			})
-			.then((fileMapping) => {
-				return this._doFlash({ product, deviceId, fileMapping });
-			});
+		await this._doFlash({ product, deviceId, fileMapping });
 	}
 
 	_getDownloadPathForBin(deviceType, saveTo){
@@ -284,32 +259,36 @@ module.exports = class CloudCommand extends CLICommandBase {
 	// create a new function that handles errors from compileCode function
 	async compileCode({ target, followSymlinks, saveTo, params: { deviceType, files } }){
 		try {
-			return await this.compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } });
+			if (files.length === 0) {
+				files.push('.'); // default to current directory
+			}
+
+			let platformId;
+			if (deviceType in PLATFORMS) {
+				platformId = PLATFORMS[deviceType];
+			} else {
+				throw new Error([
+					`Target device ${deviceType} is not valid`,
+					'	eg. particle compile boron xxx',
+					'	eg. particle compile p2 xxx'
+				].join('\n'));
+			}
+
+			this.ui.stdout.write(`Compiling code for ${deviceType}${os.EOL}`);
+
+			const { filename, isBundle } = await this.compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files });
+
+			this.ui.stdout.write(`Saved ${isBundle ? 'bundle' : 'firmware' } to: ${filename}${os.EOL}`);
 		} catch (error) {
 			const message = 'Compile failed';
 			throw createAPIErrorResult({ error, message });
 		}
 	}
 
-	async compileCodeImpl({ target, followSymlinks, saveTo, params: { deviceType, files } }) {
-		let platformId, targetVersion, assets;
+	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files }) {
+		let targetVersion, assets;
 
 		ensureAPIToken();
-		if (files.length === 0) {
-			files.push('.'); // default to current directory
-		}
-
-		if (deviceType in PLATFORMS) {
-			platformId = PLATFORMS[deviceType];
-		} else {
-			throw new Error([
-				`Target device ${deviceType} is not valid`,
-				'	eg. particle compile core xxx',
-				'	eg. particle compile photon xxx'
-			].join('\n'));
-		}
-
-		this.ui.stdout.write(`${os.EOL}Compiling code for ${deviceType}${os.EOL}`);
 
 		if (target) {
 			if (target === 'latest') {
@@ -370,13 +349,12 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		let filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
-		await this._compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename);
+		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename });
 	}
 
-	async _compileAndDownload(fileMapping, platformId, filename, targetVersion, assets, bundleFilename){
+	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename }){
 		let respSizeInfo, bundle, resp;
 
-		this.ui.stdout.write(`attempting to compile firmware${os.EOL}`);
 		try {
 			resp = await createAPI().compileCode(fileMapping, platformId, targetVersion);
 		} catch (error) {
@@ -384,7 +362,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		if (resp && resp.binary_url && resp.binary_id) {
-			this.ui.stdout.write(`downloading binary from: ${resp.binary_url}${os.EOL}`);
 			let data;
 			try {
 				data = await createAPI().downloadFirmwareBinary(resp.binary_id);
@@ -392,9 +369,6 @@ module.exports = class CloudCommand extends CLICommandBase {
 				throw normalizedApiError(error);
 			}
 
-			if (!assets) {
-				this.ui.stdout.write(`saving to: ${filename}${os.EOL}`);
-			}
 			await fs.writeFile(filename, data);
 			respSizeInfo = resp.sizeInfo;
 		} else if (resp && resp.output === 'Compiler timed out or encountered an error'){
@@ -404,25 +378,71 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw normalizedApiError(resp);
 		}
 
+		let message = 'Compile succeeded.';
 		if (assets) {
 			bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename });
+			message = 'Compile succeeded and bundle created.';
 		}
 
+		this.ui.stdout.write(`${message}${os.EOL}${os.EOL}`);
+
 		if (respSizeInfo){
-			this.ui.stdout.write(`Memory use:${os.EOL}`);
-			this.ui.stdout.write(`${respSizeInfo}${os.EOL}`);
+			this._showMemoryStats(respSizeInfo);
 		}
 
 		if (bundle) {
 			if (await fs.exists(filename)){
 				await fs.unlink(filename);
 			}
-			this.ui.stdout.write(`Compile succeeded and bundle created.${os.EOL}`);
-			this.ui.stdout.write(`Saved bundle to: ${path.resolve(bundleFilename)}${os.EOL}`);
+			return {
+				isBundle: true,
+				filename: path.resolve(bundleFilename)
+			};
 		} else {
-			this.ui.stdout.write(`Compile succeeded.${os.EOL}`);
-			this.ui.stdout.write(`Saved firmware to: ${path.resolve(filename)}${os.EOL}`);
+			return {
+				isBundle: false,
+				filename: path.resolve(filename)
+			};
 		}
+	}
+
+	_showMemoryStats(sizeInfo) {
+		const stats = this._parseMemoryStats(sizeInfo);
+		if (stats) {
+			const rightAlign = (str, len) => `${' '.repeat(len - str.length)}${str}`;
+
+			this.ui.stdout.write(`Memory use:${os.EOL}`);
+			this.ui.stdout.write(rightAlign('Flash', 9) + rightAlign('RAM', 9) + os.EOL);
+			this.ui.stdout.write(rightAlign(stats.flash.toString(), 9) + rightAlign(stats.ram.toString(), 9) + os.EOL);
+			this.ui.stdout.write(os.EOL);
+		}
+	}
+
+	_parseMemoryStats(sizeInfo) {
+		if (!sizeInfo) {
+			return null;
+		}
+		const lines = sizeInfo.split('\n');
+		if (lines.length < 2) {
+			return null;
+		}
+
+		const fields = lines[0].replace(/^\s+/, '').split(/\s+/);
+		const values = lines[1].replace(/^\s+/, '').split(/\s+/);
+
+		const sizes = {};
+		for (let i = 0; i < fields.length && i < 4; i++) {
+			sizes[fields[i]] = parseInt(values[i], 10);
+		}
+
+		if (!('text' in sizes && 'data' in sizes && 'bss' in sizes)) {
+			return null;
+		}
+
+		return {
+			flash: sizes.text + sizes.data, // text is code, data is the constant data
+			ram: sizes.bss + sizes.data // bss is non-initialized or 0 initialized ram, data is ram initialized from values in flash
+		};
 	}
 
 	login({ username, password, token, otp, sso } = {}){
@@ -907,17 +927,4 @@ function ensureAPIToken(){
 	if (!settings.access_token){
 		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
 	}
-}
-
-function populateFileMapping(fileMapping){
-	if (!fileMapping.map){
-		fileMapping.map = {};
-		if (fileMapping.list){
-			for (let i = 0; i < fileMapping.list.length; i++){
-				let item = fileMapping.list[i];
-				fileMapping.map[item] = item;
-			}
-		}
-	}
-	return fileMapping;
 }

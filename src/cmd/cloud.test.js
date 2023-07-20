@@ -885,6 +885,36 @@ describe('Cloud Commands', () => {
 		});
 	});
 
+	describe('_parseMemoryStats', () => {
+		let cloud;
+		beforeEach(() => {
+			cloud = new CloudCommands();
+		});
+
+		it('parses memory stats', () => {
+			let statsText = '   text	   data	    bss	    dec	    hex	filename\n' +
+				'3308	    112	   1356	   4776	   12a8	/workspace/target/workspace.elf';
+
+			const stats = cloud._parseMemoryStats(statsText);
+
+			expect(stats).to.eql({ flash: 3308 + 112, ram: 1356 + 112 });
+		});
+
+		it('returns null when stats are missing', () => {
+			const stats = cloud._parseMemoryStats(null);
+
+			expect(stats).to.eql(null);
+		});
+
+		it('returns null when stats are invalid', () => {
+			let statsText = 'invalid';
+
+			const stats = cloud._parseMemoryStats(statsText);
+
+			expect(stats).to.eql(null);
+		});
+	});
+
 	async function createTmpDir(files, fileContents, handler) {
 		const tmpDir = path.join(PATH_TMP_DIR, 'tmpDir');
 		await fs.mkdir(tmpDir);
