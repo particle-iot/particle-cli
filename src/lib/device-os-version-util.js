@@ -26,6 +26,7 @@ function downloadFile(url, directory, filename) {
 			.get(url)
 			.pipe(file)
 			.on('error', (err) => {
+				file.close();
 				reject(err);
 			});
 	});

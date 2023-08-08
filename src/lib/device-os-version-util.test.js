@@ -18,7 +18,6 @@ describe('downloadDeviceOsVersionBinaries', () => {
 	});
 	afterEach(() => {
 		process.env = originalEnv;
-		fs.removeSync(PATH_TMP_DIR);
 		sinon.restore();
 	});
 	it('should download the binaries for the given platform and version by default the latest version is downloaded', async () => {
