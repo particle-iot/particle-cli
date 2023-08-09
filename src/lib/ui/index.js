@@ -3,6 +3,7 @@ const Chalk = require('chalk').constructor;
 const Spinner = require('cli-spinner').Spinner;
 const { platformForId, isKnownPlatformId } = require('../platform');
 const settings = require('../../../settings');
+const cliProgress = require('cli-progress');
 
 
 module.exports = class UI {
@@ -25,9 +26,18 @@ module.exports = class UI {
 		stdout.write(data + EOL);
 	}
 
+	isOutputMuted(){
+		return !this.stdout.isTTY;
+	}
+
 	error(data){
 		const { stderr, EOL } = this;
 		stderr.write(data + EOL);
+	}
+	createProgressBar(description) {
+		return new cliProgress.SingleBar({
+			format: `${description} ['{bar}'] {percentage}% | ETA: {eta}s | {value}/{total}`,
+		}, cliProgress.Presets.shades_classic);
 	}
 
 	showBusySpinnerUntilResolved(text, promise){
@@ -129,6 +139,8 @@ module.exports = class UI {
 				}
 			}
 		}
+
+
 	}
 };
 
