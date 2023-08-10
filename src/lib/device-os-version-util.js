@@ -13,7 +13,7 @@ const { HalModuleParser } = require('binary-version-reader');
  * @param progressBar - an instance of ProgressBar to use for progress updates
  * @returns {Promise<unknown>} - a promise that resolves when the file is downloaded
  */
-async function downloadFile(url, directory, filename, progressBar) {
+async function downloadFile({ url, directory, filename, progressBar }) {
 	let file, totalBytes = 0;
 	try {
 		filename = filename || url.match(/.*\/(.*)/)[1];
@@ -72,8 +72,8 @@ async function downloadFile(url, directory, filename, progressBar) {
  * @returns {string} - the path to the binaries
  */
 function getBinaryPath(version, platformName) {
-	const basePath = ensureFolder();
-	return path.join(basePath, 'device-os-flash/binaries/', version, platformName);
+	const particleDir = ensureFolder();
+	return path.join(particleDir, 'device-os-flash/binaries/', version, platformName);
 }
 /**
  * Download the binary for the given platform and module
@@ -85,25 +85,34 @@ function getBinaryPath(version, platformName) {
  * @param progressBar - an instance of ProgressBar to use for progress updates
  * @returns {Promise<string>} - the path to the binary
  */
-const downloadBinary = async ({ platformName, module, baseUrl, version, progressBar }) => {
+async function downloadBinary({ platformName, module, baseUrl, version, progressBar }) {
 	const binaryPath= getBinaryPath(version, platformName);
 	// fetch the binary
-	const uri = `${baseUrl}/${module.filename}`;
-	return downloadFile(uri, binaryPath, module.filename, progressBar);
-};
+	const url = `${baseUrl}/${module.filename}`;
+	return downloadFile({
+		url,
+		directory: binaryPath,
+		filename: module.filename,
+		progressBar
+	});
+}
 
-const isModuleDownloaded = async (module, version, platformName) => {
+async function isModuleDownloaded(module, version, platformName) {
 	// check if the module is already downloaded
 	const binaryPath = getBinaryPath(version, platformName);
 	const filePath = path.join(binaryPath, module.filename);
-	const exits = await fs.pathExists(filePath);
-	if (exits) {
-		const parser = new HalModuleParser();
-		const info = await parser.parseFile(filePath);
-		return info.crc.storedCrc === module.crc.storedCrc && info.crc.actualCrc === module.crc.actualCrc;
+	try {
+		const exits = await fs.pathExists(filePath);
+		if (exits) {
+			const parser = new HalModuleParser();
+			const info = await parser.parseFile(filePath);
+			return info.crc.storedCrc === module.crc.storedCrc && info.crc.actualCrc === module.crc.actualCrc;
+		}
+		return false;
+	} catch (error) {
+		return false;
 	}
-	return false;
-};
+}
 
 /**
  * Download the binaries for the given platform and version by default the latest version is downloaded
@@ -113,7 +122,7 @@ const isModuleDownloaded = async (module, version, platformName) => {
  * @param {Object} ui - allow us to interact in the console
  * @returns {Promise<*[]>} - true if successful
  */
-const downloadDeviceOsVersionBinaries = async ({ api, platformId, version='latest', ui }) => {
+async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui }){
 	try {
 		const downloadedBinaries = [];
 		// get platform by id from device-constants
@@ -142,7 +151,6 @@ const downloadDeviceOsVersionBinaries = async ({ api, platformId, version='lates
 				});
 				downloadedBinaries.push(path.join(binaryPath, downloadedBinaryName));
 			} else {
-				ui.write(`Skipping download of ${module.filename} as it is already downloaded`);
 				downloadedBinaries.push(path.join(binaryPath, module.filename));
 			}
 		}
@@ -154,7 +162,7 @@ const downloadDeviceOsVersionBinaries = async ({ api, platformId, version='lates
 		throw new Error('Error downloading binaries for platform: ' + platformId + ' version: ' + version + ' error: ' + error.message);
 	}
 
-};
+}
 
 module.exports = {
 	downloadDeviceOsVersionBinaries
