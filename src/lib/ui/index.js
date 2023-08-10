@@ -34,6 +34,7 @@ module.exports = class UI {
 		const { stderr, EOL } = this;
 		stderr.write(data + EOL);
 	}
+
 	createProgressBar(description) {
 		return new cliProgress.SingleBar({
 			format: `${description} ['{bar}'] {percentage}% | ETA: {eta}s | {value}/{total}`,
@@ -139,8 +140,6 @@ module.exports = class UI {
 				}
 			}
 		}
-
-
 	}
 };
 
