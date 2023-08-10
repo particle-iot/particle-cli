@@ -70,6 +70,19 @@ describe('UI', () => {
 			expect(error).to.be.an.instanceof(Error).with.property('message', 'Prompts are not allowed in non-interactive mode');
 		});
 
+		it('allows passing a custom non-interactive error message', async () => {
+			global.isInteractive = false;
+
+			let error;
+			try {
+				await ui.prompt([], { nonInteractiveError: 'Custom error message' });
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error).with.property('message', 'Custom error message');
+		});
+
 		it('creates a prompt in interactive mode', async () => {
 			global.isInteractive = true;
 			const stub = sinon.stub(inquirer, 'prompt').resolves();

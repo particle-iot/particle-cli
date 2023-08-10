@@ -7,6 +7,7 @@ const deviceSpecs = require('../lib/device-specs');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
+const { getOneUsbDevice } = require('./usb-util');
 const CLICommandBase = require('./base');
 const usbUtils = require('./usb-util');
 const particleUsb = require('particle-usb');
@@ -290,6 +291,17 @@ module.exports = class FlashCommand extends CLICommandBase {
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Error writing firmware');
 			});
+	}
+
+	async _getDeviceInfo() {
+		const device = await getOneUsbDevice();
+
+		return {
+			id: device.id,
+			platformId: device.platformId,
+			version: device.firmwareVersion,
+			isInDfuMode: device.isInDfuMode
+		};
 	}
 };
 

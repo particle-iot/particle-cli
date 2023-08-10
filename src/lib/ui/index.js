@@ -31,9 +31,9 @@ module.exports = class UI {
 		stderr.write(data + EOL);
 	}
 
-	async prompt(question) {
+	async prompt(question, { nonInteractiveError } = {}) {
 		if (!global.isInteractive){
-			throw new Error('Prompts are not allowed in non-interactive mode');
+			throw new Error(nonInteractiveError || 'Prompts are not allowed in non-interactive mode');
 		}
 		return inquirer.prompt(question);
 	}

@@ -1,14 +1,39 @@
-const { expect } = require('../../test/setup');
-const sinon = require('sinon');
+const { expect, sinon } = require('../../test/setup');
 const fs = require('fs-extra'); // Use fs-extra instead of fs
 const Flash = require('./flash');
 const usbUtils = require('./usb-util');
 const particleUsb = require('particle-usb');
 const platforms = require('@particle/device-constants');
-
+const { PlatformId } = require('../lib/platform');
 
 
 describe('flash', () => {
+	describe('_getDeviceInfo', () => {
+		let device;
+		beforeEach(() => {
+			device = {
+				id: '3c0021000947343432313031',
+				platformId: PlatformId.PHOTON,
+				version: '3.3.1',
+				isInDfuMode: false
+			};
+			// sinon.stub(usbUtil, 'getOneUsbDevice').resolves(device);
+		});
+
+		it('returns information about the device', async () => {
+			const flashCommand = new Flash();
+
+			const deviceInfo = await flashCommand._getDeviceInfo();
+
+			expect(deviceInfo).to.eql({
+				id: '3c0021000947343432313031',
+				platformId: PlatformId.PHOTON,
+				version: '3.3.1',
+				isInDfuMode: false
+			});
+		});
+	});
+	
 	describe('_parseLocalFlashArguments', () => {
 		let flash;
 
@@ -183,5 +208,41 @@ describe('flash', () => {
 		});
 
 
+=======
+const { expect, sinon } = require('../../test/setup');
+const FlashCommand = require('./flash');
+const usbUtil = require('./usb-util');
+const { PlatformId } = require('../lib/platform');
+
+describe('Flash Command', () => {
+	afterEach(() => {
+		sinon.restore();
+	});
+
+	describe('_getDeviceInfo', () => {
+		let device;
+		beforeEach(() => {
+			device = {
+				id: '3c0021000947343432313031',
+				platformId: PlatformId.PHOTON,
+				version: '3.3.1',
+				isInDfuMode: false
+			};
+			// sinon.stub(usbUtil, 'getOneUsbDevice').resolves(device);
+		});
+
+		it('returns information about the device', async () => {
+			const flashCommand = new FlashCommand();
+
+			const deviceInfo = await flashCommand._getDeviceInfo();
+
+			expect(deviceInfo).to.eql({
+				id: '3c0021000947343432313031',
+				platformId: PlatformId.PHOTON,
+				version: '3.3.1',
+				isInDfuMode: false
+			});
+		});
+>>>>>>> Get info about connected device
 	});
 });
