@@ -4,6 +4,7 @@ const ModuleParser = require('binary-version-reader').HalModuleParser;
 const ModuleInfo = require('binary-version-reader').ModuleInfo;
 const deviceSpecs = require('../lib/device-specs');
 const ensureError = require('../lib/utilities').ensureError;
+const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
 const CLICommandBase = require('./base');
 
@@ -11,27 +12,26 @@ module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args){
 		super(...args);
 	}
-	flash(device, binary, files, { usb, serial, factory, force, target, port, yes }){
-		if (!device && !binary){
+	async flash(device, binary, files, { local, usb, serial, factory, force, target, port, yes, 'application-only': applicationOnly }){
+		if (!device && !binary && !local){
 			// if no device nor files are passed, show help
-			// TODO: Replace by UsageError
-			return Promise.reject();
+			throw usageError('You must specify a device or a file');
 		}
 
 		this.ui.logFirstTimeFlashWarning();
 
-		let result;
 		if (usb){
-			result = this.flashDfu({ binary, factory, force });
+			await this.flashDfu({ binary, factory, force });
 		} else if (serial){
-			result = this.flashYModem({ binary, port, yes });
+			await this.flashYModem({ binary, port, yes });
+		} else if (local){
+			// TODO: implement local flash
+			applicationOnly;
 		} else {
-			result = this.flashCloud({ device, files, target });
+			await this.flashCloud({ device, files, target });
 		}
 
-		return result.then(() => {
-			this.ui.write('Flash success!');
-		});
+		this.ui.write('Flash success!');
 	}
 
 	flashCloud({ device, files, target }){
