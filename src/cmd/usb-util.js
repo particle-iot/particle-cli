@@ -1,5 +1,6 @@
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
+const ui = require('../lib/ui');
 const {
 	getDevices,
 	openDeviceById,
@@ -128,6 +129,37 @@ async function getUsbDevices({ dfuMode = false } = {}){
 		return await getDevices({ includeDfu: dfuMode });
 	} catch (err) {
 		await handleUsbError(err);
+	}
+}
+
+async function getOneUsbDevice() {
+	const devices = await getUsbDevices();
+
+	if (devices.length > 1) {
+		if (!global.isInteractive) {
+			throw new Error('Multiple devices found. Connect only one device when running in non-interactive mode.');
+		}
+
+		const question = {
+			type: 'list',
+			name: 'device',
+			message: 'Which device would you like to select?',
+			choices() {
+				return devices.map((d) => {
+					return {
+						name: d.type,
+						value: d
+					};
+				});
+			}
+		};
+
+		const ans = await ui.prompt([question])
+		return ans.device;
+	} else if (devices.length === 1) {
+		return devices[0];
+	} else {
+		throw new NotFoundError('No device found');
 	}
 }
 
