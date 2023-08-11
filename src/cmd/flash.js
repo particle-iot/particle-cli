@@ -1,4 +1,5 @@
-const fs = require('fs');
+const fs = require('fs-extra');
+const ParticleApi = require('./api');
 const VError = require('verror');
 const ModuleParser = require('binary-version-reader').HalModuleParser;
 const ModuleInfo = require('binary-version-reader').ModuleInfo;
@@ -12,6 +13,32 @@ module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args){
 		super(...args);
 	}
+
+	async _parseLocalFlashArguments({  binary, files }) {
+		const parsedFiles = [...files];
+		let device = undefined;
+		if (!binary && !files.length) {
+			parsedFiles.push('.');
+		} else {
+			try {
+				const stats = await fs.stat(binary);
+				if (stats.isFile() || stats.isDirectory()) {
+					parsedFiles.push(binary);
+					device = undefined; // Reset device if it's a file or directory
+				}
+			} catch (error) {
+				// file does not exist
+				device = binary;
+				parsedFiles.push('.');
+			}
+
+		}
+		return {
+			device: device,
+			files: parsedFiles,
+		};
+	}
+
 	async flash(device, binary, files, { local, usb, serial, factory, force, target, port, yes, 'application-only': applicationOnly }){
 		if (!device && !binary && !local){
 			// if no device nor files are passed, show help
@@ -26,7 +53,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 			await this.flashYModem({ binary, port, yes });
 		} else if (local){
 			// TODO: implement local flash
-			applicationOnly;
+			// Analyze argument list to determine user intent
+			const { device: deviceIdentifier, files: parsedFiles } = await this._parseLocalFlashArguments({ binary, files });
+
+			console.log(deviceIdentifier, parsedFiles, applicationOnly);
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
