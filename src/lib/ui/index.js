@@ -26,10 +26,6 @@ module.exports = class UI {
 		stdout.write(data + EOL);
 	}
 
-	isOutputMuted(){
-		return !this.stdout.isTTY;
-	}
-
 	error(data){
 		const { stderr, EOL } = this;
 		stderr.write(data + EOL);

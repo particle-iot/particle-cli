@@ -137,7 +137,7 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 			if (!isDownloaded) {
 				let progressBar;
 				// if is in silent mode don't create a progress bar
-				if (!ui.isOutputMuted()) {
+				if (global.isInteractive) {
 					progressBar = ui.createProgressBar(`Downloading ${module.filename}`);
 				} else {
 					ui.write(`Downloading ${module.filename}`);
