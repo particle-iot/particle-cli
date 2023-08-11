@@ -8,10 +8,56 @@ const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
 const CLICommandBase = require('./base');
+const { getUsbDevices, openUsbDeviceByIdOrName } = require('./usb-util');
+const { openDeviceById } = require('particle-usb');
+const platforms = require('@particle/device-constants');
+const settings = require('../../settings');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args){
 		super(...args);
+	}
+
+	// Should be part fo CLICommandBase??
+	_particleApi() {
+		const auth = settings.access_token;
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
+		return { api: api.api, auth };
+	}
+
+	// should be part of usb util?
+	async _getDeviceInfo(deviceIdentifier) {
+		let device;
+		const { api, auth } = this._particleApi();
+		if (deviceIdentifier) {
+			// return all devices if no device is specified
+			device = await openUsbDeviceByIdOrName(deviceIdentifier, api, auth, { dfuMode: true });
+		} else {
+			// TODO (hmontero): change it in favor of getOneUsbDevice
+			const devices = await getUsbDevices({ dfuMode: true });
+			if (devices.length === 0) {
+				throw new VError('No devices found.');
+			} else {
+				device = await openDeviceById(devices[0].id);
+			}
+		}
+		const deviceInfo = await this._extractDeviceInfo(device);
+		await device.close();
+		return deviceInfo;
+	}
+
+	// should be part of usb util?
+	async _extractDeviceInfo(device) {
+		const isDfuMode = device._info.dfu;
+		const deviceMode = isDfuMode ? 'DFU' : await device.getDeviceMode();
+		const platform = platforms[device._info.type];
+
+		return {
+			deviceId: device._id,
+			platform,
+			deviceOsVersion: device._fwVer,
+			deviceMode,
+		};
 	}
 
 	async _parseLocalFlashArguments({  binary, files }) {
@@ -57,6 +103,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const { device: deviceIdentifier, files: parsedFiles } = await this._parseLocalFlashArguments({ binary, files });
 
 			console.log(deviceIdentifier, parsedFiles, applicationOnly);
+			// Get device info
+			const { deviceId, platform, deviceMode , deviceOsVersion } = await this._getDeviceInfo(deviceIdentifier);
+			console.log('connected device', platform.name, deviceId, deviceMode, deviceOsVersion);
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
