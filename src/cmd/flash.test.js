@@ -66,5 +66,13 @@ describe('flash', () => {
 			expect(result.device).to.equal(binary);
 			expect(result.files).to.deep.equal(['.']);
 		});
+
+		it('should push just files if binary is a deviceId and files are specified', async () => {
+			const binary = '00fce68f15867a3c4762226';
+			const files = ['file1', 'file2'];
+			const result = await flash._parseLocalFlashArguments({ binary, files });
+			expect(result.device).to.equal(binary);
+			expect(result.files).to.deep.equal(files);
+		});
 	});
 });
