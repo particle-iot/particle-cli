@@ -8,10 +8,13 @@ const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
 const CLICommandBase = require('./base');
-const { getUsbDevices, openUsbDeviceByIdOrName } = require('./usb-util');
-const { openDeviceById } = require('particle-usb');
+const usbUtils = require('./usb-util');
+const particleUsb = require('particle-usb');
 const platforms = require('@particle/device-constants');
 const settings = require('../../settings');
+const path = require('path');
+const utilities = require('../lib/utilities');
+const CloudCommand = require('./cloud');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args){
@@ -25,22 +28,22 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return { api: api.api, auth };
 	}
 
-	// should be part of usb util?
-	async _getDeviceInfo(deviceIdentifier) {
-		let device;
+	async _getDevice(deviceIdentifier) {
 		const { api, auth } = this._particleApi();
 		if (deviceIdentifier) {
-			// return all devices if no device is specified
-			device = await openUsbDeviceByIdOrName(deviceIdentifier, api, auth, { dfuMode: true });
-		} else {
-			// TODO (hmontero): change it in favor of getOneUsbDevice
-			const devices = await getUsbDevices({ dfuMode: true });
-			if (devices.length === 0) {
-				throw new VError('No devices found.');
-			} else {
-				device = await openDeviceById(devices[0].id);
-			}
+			return usbUtils.openUsbDeviceByIdOrName(deviceIdentifier, api, auth, { dfuMode: true });
 		}
+		//TODO (hmontero): change it in favor of getOneUsbDevice
+		const devices = await usbUtils.getUsbDevices({ dfuMode: true });
+		if (devices.length === 0) {
+			throw new VError('No devices found.');
+		}
+
+		return particleUsb.openDeviceById(devices[0].id);
+	}
+	// should be part of usb util?
+	async _getDeviceInfo(deviceIdentifier) {
+		const device = await this._getDevice(deviceIdentifier);
 		const deviceInfo = await this._extractDeviceInfo(device);
 		await device.close();
 		return deviceInfo;
@@ -69,7 +72,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			try {
 				const stats = await fs.stat(binary);
 				if (stats.isFile() || stats.isDirectory()) {
-					parsedFiles.push(binary);
+					parsedFiles.unshift(binary);
 					device = undefined; // Reset device if it's a file or directory
 				}
 			} catch (error) {
@@ -79,12 +82,59 @@ module.exports = class FlashCommand extends CLICommandBase {
 					parsedFiles.push('.');
 				}
 			}
-
 		}
 		return {
 			device: device,
 			files: parsedFiles,
 		};
+	}
+
+	// I think this should be part of utilities
+	_getDefaultIncludes(dirname, includes, { followSymlinks }) {
+		// Recursively find source files
+		const set = new Set();
+		const result = utilities.globList(dirname, includes, { followSymlinks });
+		result.forEach((file) => set.add(file));
+		return set;
+	}
+
+	async _prepareFilesToFlash(files) {
+		const sourceExtensions = ['**/*.h', '**/*.hpp', '**/*.hh', '**/*.hxx', '**/*.ino', '**/*.cpp', '**/*.c',
+			'**/build.mk', 'project.properties'];
+		const binaryExtensions = ['**/*.bin', '**/.zip'];
+		const binaryFileExtensions = ['.zip', '.bin'];
+
+		const binary = files[0];
+		// check if is a known app
+		const binaryStats = await fs.stat(binary);
+		if (binaryStats.isFile()) {
+			if (binaryFileExtensions.includes(path.extname(binary))) {
+				try {
+					if (dfu.checkKnownApp(binary)) {
+						return { skipDeviceOSFlash: true, compile: false, files };
+					}
+				} catch (error) {
+					// unknown app
+					return { skipDeviceOSFlash: false, compile: false, files };
+				}
+			}
+			// send to compile
+			return { skipDeviceOSFlash: false, compile: true, files };
+		}
+
+		// check if is a directory
+		if (binaryStats.isDirectory()) {
+			// check if it has no sources
+			const binaries = this._getDefaultIncludes(binary, binaryExtensions, { followSymlinks: true });
+			const sources = this._getDefaultIncludes(binary, sourceExtensions, { followSymlinks: true });
+			if (binaries.length > 0 && sources.length === 0) {
+				return { skipDeviceOSFlash: false, compile: false, files: binaries };
+			}
+			if (sources.length > 0) {
+				return { skipDeviceOSFlash: false, compile: true, files };
+			}
+			return { skipDeviceOSFlash: true, compile: true, files };
+		}
 	}
 
 	async flash(device, binary, files, { local, usb, serial, factory, force, target, port, yes, 'application-only': applicationOnly }){
@@ -108,6 +158,16 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// Get device info
 			const { deviceId, platform, deviceMode , deviceOsVersion } = await this._getDeviceInfo(deviceIdentifier);
 			console.log('connected device', platform.name, deviceId, deviceMode, deviceOsVersion);
+			const preparedFiles = await this._prepareFilesToFlash(parsedFiles);
+			console.log('prepared files', preparedFiles);
+			if (preparedFiles.compile) {
+				const cloudCommand = new CloudCommand();
+				await cloudCommand.compileCode({
+					target,
+					saveTo: './name.bin',
+					params: { deviceType: platform.name, files }
+				});
+			}
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
