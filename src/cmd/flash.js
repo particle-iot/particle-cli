@@ -75,7 +75,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 			} catch (error) {
 				// file does not exist
 				device = binary;
-				parsedFiles.push('.');
+				if (!files.length){
+					parsedFiles.push('.');
+				}
 			}
 
 		}
