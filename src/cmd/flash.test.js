@@ -28,7 +28,7 @@ describe('flash', () => {
 			const result = await flash._parseLocalFlashArguments({ binary, files });
 
 			expect(result.device).to.be.undefined;
-			expect(result.files).to.deep.equal([...files, binary]);
+			expect(result.files).to.deep.equal([binary,...files]);
 		});
 
 		it('should parse local flash arguments with nonexistent binary', async () => {

@@ -15,6 +15,7 @@ const settings = require('../../settings');
 const path = require('path');
 const utilities = require('../lib/utilities');
 const CloudCommand = require('./cloud');
+const temp = require('temp').track();
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args){
@@ -43,10 +44,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 	// should be part of usb util?
 	async _getDeviceInfo(deviceIdentifier) {
-		const device = await this._getDevice(deviceIdentifier);
-		const deviceInfo = await this._extractDeviceInfo(device);
-		await device.close();
-		return deviceInfo;
+		try {
+			const device = await this._getDevice(deviceIdentifier);
+			const deviceInfo = await this._extractDeviceInfo(device);
+			await device.close();
+			return deviceInfo;
+		} catch (error) {
+			return null;
+		}
 	}
 
 	// should be part of usb util?
@@ -62,6 +67,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 			deviceMode,
 		};
 	}
+	async _isDirectoryOrFile(path) {
+		try {
+			const stats = await fs.stat(path);
+			return stats.isDirectory() || stats.isFile();
+		} catch (error) {
+			return false;
+		}
+	}
 
 	async _parseLocalFlashArguments({  binary, files }) {
 		const parsedFiles = [...files];
@@ -69,17 +82,27 @@ module.exports = class FlashCommand extends CLICommandBase {
 		if (!binary && !files.length) {
 			parsedFiles.push('.');
 		} else {
-			try {
-				const stats = await fs.stat(binary);
-				if (stats.isFile() || stats.isDirectory()) {
-					parsedFiles.unshift(binary);
-					device = undefined; // Reset device if it's a file or directory
-				}
-			} catch (error) {
-				// file does not exist
-				device = binary;
-				if (!files.length){
-					parsedFiles.push('.');
+			const isDirectoryOrFile = await this._isDirectoryOrFile(binary);
+			if (isDirectoryOrFile) {
+				parsedFiles.unshift(binary);
+				device = undefined; // Reset device if it's a file or directory
+			} else {
+				// maybe is a device?
+				try {
+					const foundDevice = await this._getDeviceInfo(binary);
+					if (foundDevice) {
+						device = foundDevice.deviceId;
+						if (!parsedFiles.length) {
+							parsedFiles.push('.');
+						}
+					} else {
+						// put as knwon app
+						device = undefined;
+						parsedFiles.unshift(binary);
+					}
+				} catch (error) {
+					device = undefined;
+					parsedFiles.unshift(binary); // maybe is known app
 				}
 			}
 		}
@@ -98,45 +121,66 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return set;
 	}
 
-	async _prepareFilesToFlash(files) {
+	async _prepareFilesToFlash({ binary, files, platform, target }) {
 		const sourceExtensions = ['**/*.h', '**/*.hpp', '**/*.hh', '**/*.hxx', '**/*.ino', '**/*.cpp', '**/*.c',
 			'**/build.mk', 'project.properties'];
 		const binaryExtensions = ['**/*.bin', '**/.zip'];
 		const binaryFileExtensions = ['.zip', '.bin'];
+		const cloudCommand = new CloudCommand();
+		const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 
-		const binary = files[0];
+		let binaryStats = undefined;
 		// check if is a known app
-		const binaryStats = await fs.stat(binary);
-		if (binaryStats.isFile()) {
-			if (binaryFileExtensions.includes(path.extname(binary))) {
-				try {
-					if (dfu.checkKnownApp(binary)) {
-						return { skipDeviceOSFlash: true, compile: false, files };
-					}
-				} catch (error) {
-					// unknown app
-					return { skipDeviceOSFlash: false, compile: false, files };
-				}
-			}
-			// send to compile
-			return { skipDeviceOSFlash: false, compile: true, files };
+		const knownApp = this._getKnownAppsFromPlatform(platform.name)[binary];
+
+		if (knownApp) {
+			return { skipDeviceOSFlash: true, files: [knownApp, ...files] };
+		}
+		if (binaryFileExtensions.includes(path.extname(binary))) {
+			// check binary info to target the right version
+			return { skipDeviceOSFlash: false, files: [binary, ...files] };
 		}
 
-		// check if is a directory
-		if (binaryStats.isDirectory()) {
-			// check if it has no sources
-			const binaries = this._getDefaultIncludes(binary, binaryExtensions, { followSymlinks: true });
-			const sources = this._getDefaultIncludes(binary, sourceExtensions, { followSymlinks: true });
-			if (binaries.length > 0 && sources.length === 0) {
-				return { skipDeviceOSFlash: false, compile: false, files: binaries };
+		try {
+			binaryStats = await fs.stat(binary);
+			// check if is a directory
+			if (binaryStats.isDirectory()) {
+				// check if it has no sources
+				const binaries = this._getDefaultIncludes(binary, binaryExtensions, { followSymlinks: true });
+				const sources = this._getDefaultIncludes(binary, sourceExtensions, { followSymlinks: true });
+				if (binaries.size > 0 && sources.size === 0) {
+					return { skipDeviceOSFlash: false, files: [... Array.from(binaries), ...files] };
+				}
 			}
-			if (sources.length > 0) {
-				return { skipDeviceOSFlash: false, compile: true, files };
+
+			// should compile??
+			const { filename } = await cloudCommand.compileCodeImpl({
+				target,
+				saveTo,
+				platformId: platform.id,
+				files: [binary, ...files]
+			});
+			return { skipDeviceOSFlash: false, files: [filename] };
+
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				throw new Error('file does not exist and no known app found.');
 			}
-			return { skipDeviceOSFlash: true, compile: true, files };
+			throw error;
 		}
 	}
 
+	/*
+		This function has to be created given that dfu.knownApps expect a device in dfu mode
+	 */
+	_getKnownAppsFromPlatform(platformName) {
+		const specs = Object.values(deviceSpecs);
+		const platformSpec = specs.find(spec => spec.name === platformName);
+		if (!platformSpec) {
+			throw new VError('Platform not supported');
+		}
+		return platformSpec.knownApps;
+	}
 	async flash(device, binary, files, { local, usb, serial, factory, force, target, port, yes, 'application-only': applicationOnly }){
 		if (!device && !binary && !local){
 			// if no device nor files are passed, show help
@@ -158,16 +202,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// Get device info
 			const { deviceId, platform, deviceMode , deviceOsVersion } = await this._getDeviceInfo(deviceIdentifier);
 			console.log('connected device', platform.name, deviceId, deviceMode, deviceOsVersion);
-			const preparedFiles = await this._prepareFilesToFlash(parsedFiles);
-			console.log('prepared files', preparedFiles);
-			if (preparedFiles.compile) {
-				const cloudCommand = new CloudCommand();
-				await cloudCommand.compileCode({
-					target,
-					saveTo: './name.bin',
-					params: { deviceType: platform.name, files }
-				});
-			}
+			const preparedFiles = await this._prepareFilesToFlash({
+				binary: parsedFiles.shift(),
+				files: parsedFiles,
+				platform,
+				target });
+			console.log(preparedFiles);
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
