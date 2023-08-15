@@ -9,8 +9,6 @@ const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
 const usbUtils = require('./usb-util');
 const CLICommandBase = require('./base');
-const particleUsb = require('particle-usb');
-const platforms = require('@particle/device-constants');
 const { platformForId } = require('../lib/platform');
 const settings = require('../../settings');
 const path = require('path');
@@ -143,6 +141,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const binariesToFlash = await this._prepareFilesToFlash({
 			knownApp,
 			parsedFiles,
+			platformId: deviceInfo.platformId,
 			platformName: deviceInfo.platformName,
 			target
 		});
@@ -221,7 +220,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return { api: api.api, auth };
 	}
 
-	async _prepareFilesToFlash({ knownApp, parsedFiles, platformName, target }) {
+	async _prepareFilesToFlash({ knownApp, parsedFiles, platformName, platformId, target }) {
 		if (knownApp) {
 			const knownAppPath = knownAppsForPlatform(platformName)[knownApp];
 			if (knownAppPath) {
@@ -251,7 +250,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else if (sources.length > 0) {
 				// this is a source directory so compile it
-				const compileResult = await this._compileCode({ parsedFiles, platformName, target });
+				const compileResult = await this._compileCode({ parsedFiles, platformId, target });
 				return { skipDeviceOSFlash: false, files: compileResult };
 			} else {
 				throw new Error('No files found to flash');
@@ -263,22 +262,23 @@ module.exports = class FlashCommand extends CLICommandBase {
 				const binaries = this._findBinaries(parsedFiles);
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else {
-				const compileResult = await this._compileCode({ parsedFiles, platformName, target });
+				const compileResult = await this._compileCode({ parsedFiles, platformId, target });
 				return { skipDeviceOSFlash: false, files: compileResult };
 			}
 		}
 	}
 
-	async _compileCode() {
+	async _compileCode({ parsedFiles, platformId, target }) {
 		const cloudCommand = new CloudCommand();
 		const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 		// should compile??
 		const { filename } = await cloudCommand.compileCodeImpl({
 			target,
 			saveTo,
-			platformId: platform.id,
-			files: [binary, ...files]
+			platformId,
+			files: parsedFiles
 		});
+		return [filename];
 	}
 
 	_findBinaries(parsedFiles) {
@@ -301,5 +301,4 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 		return Array.from(binaries);
 	}
-}
-
+};

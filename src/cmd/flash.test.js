@@ -4,8 +4,6 @@ const temp = require('temp').track();
 const path = require('path');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
-const particleUsb = require('particle-usb');
-const platforms = require('@particle/device-constants');
 const { PlatformId } = require('../lib/platform');
 
 describe('FlashCommand', () => {
@@ -37,6 +35,7 @@ describe('FlashCommand', () => {
 			expect(deviceInfo).to.eql({
 				id: '3c0021000947343432313031',
 				platformId: PlatformId.PHOTON,
+				platformName: 'photon',
 				version: '3.3.1',
 				isInDfuMode: false
 			});
