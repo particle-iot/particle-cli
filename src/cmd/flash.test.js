@@ -93,7 +93,7 @@ describe('FlashCommand', () => {
 			const knownApp = 'tinker';
 			const platformName = 'photon';
 
-			const result = await flash._prepareFilesToFlash({  knownApp, platformName });
+			const result = await flash._prepareFilesToFlash({ knownApp, platformName });
 
 			expect(result).to.have.property('skipDeviceOSFlash', true);
 			expect(result).to.have.property('files').with.lengthOf(1);

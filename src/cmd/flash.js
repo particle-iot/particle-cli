@@ -146,7 +146,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 			target
 		});
 
+		// TODO: flash
 		console.log(binariesToFlash);
+		applicationOnly;
 	}
 
 	async _analyzeFiles(files) {
@@ -224,7 +226,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return { api: api.api, auth };
 	}
 
-	async _prepareFilesToFlash({ knownApp, parsedFiles, platformName, platformId, target }) {
+	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target }) {
 		if (knownApp) {
 			const knownAppPath = knownAppsForPlatform(platformName)[knownApp];
 			if (knownAppPath) {
@@ -275,13 +277,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async _compileCode({ parsedFiles, platformId, target }) {
 		const cloudCommand = new CloudCommand();
 		const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
-		// should compile??
-		const { filename } = await cloudCommand.compileCodeImpl({
-			target,
-			saveTo,
-			platformId,
-			files: parsedFiles
-		});
+		const { filename } = await cloudCommand.compileCodeImpl({ target, saveTo, platformId, files: parsedFiles });
 		return [filename];
 	}
 

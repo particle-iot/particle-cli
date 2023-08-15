@@ -1,5 +1,3 @@
-const path = require('path');
-const fs = require('fs');
 const { PLATFORMS } = require('./platform');
 const { knownAppsForPlatform } = require('./known-apps');
 
