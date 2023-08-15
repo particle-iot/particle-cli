@@ -77,8 +77,13 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _parseLocalFlashArguments({  binary, files }) {
+		const knownAppNames = ['tinker', 'doctor']; // I was trying to avoid this, but I think it's the best way to go
 		const parsedFiles = [...files];
 		let device = undefined;
+		if (knownAppNames.includes(binary)) {
+			device = undefined;
+			parsedFiles.unshift(binary);
+		}
 		if (!binary && !files.length) {
 			parsedFiles.push('.');
 		} else {
@@ -87,22 +92,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 				parsedFiles.unshift(binary);
 				device = undefined; // Reset device if it's a file or directory
 			} else {
-				// maybe is a device?
-				try {
-					const foundDevice = await this._getDeviceInfo(binary);
-					if (foundDevice) {
-						device = foundDevice.deviceId;
-						if (!parsedFiles.length) {
-							parsedFiles.push('.');
-						}
-					} else {
-						// put as knwon app
-						device = undefined;
-						parsedFiles.unshift(binary);
-					}
-				} catch (error) {
-					device = undefined;
-					parsedFiles.unshift(binary); // maybe is known app
+				device = binary;
+				if (!files.length) {
+					parsedFiles.push('.');
 				}
 			}
 		}
@@ -197,17 +189,22 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// TODO: implement local flash
 			// Analyze argument list to determine user intent
 			const { device: deviceIdentifier, files: parsedFiles } = await this._parseLocalFlashArguments({ binary, files });
-
 			console.log(deviceIdentifier, parsedFiles, applicationOnly);
 			// Get device info
-			const { deviceId, platform, deviceMode , deviceOsVersion } = await this._getDeviceInfo(deviceIdentifier);
-			console.log('connected device', platform.name, deviceId, deviceMode, deviceOsVersion);
-			const preparedFiles = await this._prepareFilesToFlash({
-				binary: parsedFiles.shift(),
-				files: parsedFiles,
-				platform,
-				target });
-			console.log(preparedFiles);
+			const deviceInfo = await this._getDeviceInfo(deviceIdentifier);
+			if (deviceInfo) {
+				const platform = deviceInfo.platform;
+				console.log('connected device', platform.name, deviceInfo.deviceId, deviceInfo.deviceMode, deviceInfo.deviceOsVersion);
+				const preparedFiles = await this._prepareFilesToFlash({
+					binary: parsedFiles.shift(),
+					files: parsedFiles,
+					platform,
+					target });
+				console.log(preparedFiles);
+			} else {
+				throw new Error('No device found.');
+			}
+
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
