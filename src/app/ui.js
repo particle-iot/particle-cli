@@ -4,7 +4,7 @@ const log = require('../lib/log');
 
 Spinner.setDefaultSpinnerString(Spinner.spinners[7]);
 
-
+// TODO: migrate all usage prompt in src/app/ui to src/lib/ui
 module.exports.prompt = async (question) => {
 	if (!global.isInteractive){
 		throw new Error('Prompts are not allowed in non-interactive mode');

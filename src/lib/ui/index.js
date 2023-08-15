@@ -3,8 +3,8 @@ const Chalk = require('chalk').constructor;
 const Spinner = require('cli-spinner').Spinner;
 const { platformForId, isKnownPlatformId } = require('../platform');
 const settings = require('../../../settings');
+const inquirer = require('inquirer');
 const cliProgress = require('cli-progress');
-
 
 module.exports = class UI {
 	constructor({
@@ -26,13 +26,16 @@ module.exports = class UI {
 		stdout.write(data + EOL);
 	}
 
-	isOutputMuted(){
-		return !this.stdout.isTTY;
-	}
-
 	error(data){
 		const { stderr, EOL } = this;
 		stderr.write(data + EOL);
+	}
+
+	async prompt(question, { nonInteractiveError } = {}) {
+		if (!global.isInteractive){
+			throw new Error(nonInteractiveError || 'Prompts are not allowed in non-interactive mode');
+		}
+		return inquirer.prompt(question);
 	}
 
 	createProgressBar(description) {

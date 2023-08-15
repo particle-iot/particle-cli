@@ -2,10 +2,9 @@ const stream = require('stream');
 const Spinner = require('cli-spinner').Spinner;
 const { expect, sinon } = require('../../../test/setup');
 const UI = require('./index');
-
+const inquirer = require('inquirer');
 
 describe('UI', () => {
-	const sandbox = sinon.createSandbox();
 	let stdin, stdout, stderr, ui;
 
 	beforeEach(() => {
@@ -30,7 +29,7 @@ describe('UI', () => {
 	});
 
 	afterEach(() => {
-		sandbox.restore();
+		sinon.restore();
 	});
 
 	describe('Writing to `stdout` and `stderr`', () => {
@@ -49,10 +48,56 @@ describe('UI', () => {
 		});
 	});
 
+	describe('prompt', () => {
+		let mode;
+		beforeEach(() => {
+			mode = global.isInteractive;
+		});
+		afterEach(() => {
+			global.isInteractive = mode;
+		});
+
+		it('throws an error when in non-interactive mode', async () => {
+			global.isInteractive = false;
+
+			let error;
+			try {
+				await ui.prompt();
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error).with.property('message', 'Prompts are not allowed in non-interactive mode');
+		});
+
+		it('allows passing a custom non-interactive error message', async () => {
+			global.isInteractive = false;
+
+			let error;
+			try {
+				await ui.prompt([], { nonInteractiveError: 'Custom error message' });
+			} catch (e){
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error).with.property('message', 'Custom error message');
+		});
+
+		it('creates a prompt in interactive mode', async () => {
+			global.isInteractive = true;
+			const stub = sinon.stub(inquirer, 'prompt').resolves();
+			const question = { name: 'test', message: 'Do it?' };
+
+			await ui.prompt([question]);
+
+			expect(stub).to.have.been.calledWith([question]);
+		});
+	});
+
 	describe('Spinner helpers', () => {
 		beforeEach(() => {
-			sandbox.spy(Spinner.prototype, 'start');
-			sandbox.spy(Spinner.prototype, 'stop');
+			sinon.spy(Spinner.prototype, 'start');
+			sinon.spy(Spinner.prototype, 'stop');
 		});
 
 		it('Shows a spinner until promise is resolved', async () => {

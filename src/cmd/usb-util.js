@@ -1,5 +1,6 @@
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
+const ui = require('../lib/ui');
 const {
 	getDevices,
 	openDeviceById,
@@ -34,12 +35,15 @@ class UsbPermissionsError extends Error {
  * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
  * @return {Promise}
  */
-function openUsbDevice(usbDevice, { dfuMode = false } = {}){
+async function openUsbDevice(usbDevice, { dfuMode = false } = {}){
 	if (!dfuMode && usbDevice.isInDfuMode){
-		return Promise.reject(new Error('The device should not be in DFU mode'));
+		throw new Error('The device should not be in DFU mode');
 	}
-	return Promise.resolve().then(() => usbDevice.open())
-		.catch(e => handleUsbError(e));
+	try {
+		return await usbDevice.open();
+	} catch (err) {
+		await handleUsbError(err);
+	}
 }
 
 /**
@@ -80,47 +84,37 @@ async function openUsbDeviceById(id, { displayName, dfuMode = false } = {}) {
  * @param {Object} api API client.
  * @param {String} auth Access token.
  * @param {Object} [options] Options.
- * @param {String} [options.displayName] Device name as shown to the user.
  * @param {Boolean} [options.dfuMode] Set to `true` if the device can be in DFU mode.
  * @return {Promise}
  */
-function openUsbDeviceByIdOrName(idOrName, api, auth, { displayName, dfuMode = false } = {}) {
-	return Promise.resolve()
-		.then(() => {
-			if (isDeviceId(idOrName)) {
-				// Try to open the device straight away
-				return openDeviceById(idOrName).catch(e => {
-					if (!(e instanceof NotFoundError)){
-						return handleUsbError(e);
-					}
-				});
+async function openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode = false } = {}) {
+	let device;
+	if (isDeviceId(idOrName)) {
+		// Try to open the device straight away
+		try {
+			device = await openDeviceById(idOrName);
+		} catch (err) {
+			// continue if the device is not found
+			if (!(err instanceof NotFoundError)) {
+				await handleUsbError(err);
 			}
-		})
-		.then(usbDevice => {
-			if (!usbDevice){
-				return getDevice({ id: idOrName, api, auth, displayName }).then(device => {
-					if (device.id === idOrName){
-						throw new NotFoundError();
-					}
-					return openDeviceById(device.id).catch(e => handleUsbError(e));
-				})
-					.catch(e => {
-						if (e instanceof NotFoundError){
-							throw new Error(`Unable to connect to the device ${displayName || idOrName}. Make sure the device is connected to the host computer via USB`);
-						}
-						throw e;
-					});
-			}
-			return usbDevice;
-		})
-		.then(usbDevice => {
-			if (!dfuMode && usbDevice.isInDfuMode){
-				return usbDevice.close().then(() => {
-					throw new Error('The device should not be in DFU mode');
-				});
-			}
-			return usbDevice;
-		});
+		}
+	}
+
+	if (!device) {
+		let deviceInfo = await getDevice({ id: idOrName, api, auth });
+		try {
+			device = await openDeviceById(deviceInfo.id);
+		} catch (err) {
+			await handleUsbError(err);
+		}
+	}
+
+	if (!dfuMode && device.isInDfuMode){
+		await device.close();
+		throw new Error('The device should not be in DFU mode');
+	}
+	return device;
 }
 
 /**
@@ -130,22 +124,65 @@ function openUsbDeviceByIdOrName(idOrName, api, auth, { displayName, dfuMode = f
  * @param {Boolean} [options.dfuMode] Set to `true` to include devices in DFU mode.
  * @return {Promise}
  */
-function getUsbDevices({ dfuMode = false } = {}){
-	return Promise.resolve()
-		.then(() => getDevices({ includeDfu: dfuMode }))
-		.catch((err) => handleUsbError(err));
+async function getUsbDevices({ dfuMode = false } = {}){
+	try {
+		return await getDevices({ includeDfu: dfuMode });
+	} catch (err) {
+		await handleUsbError(err);
+	}
 }
 
-function handleUsbError(err){
-	if (err instanceof NotAllowedError){
+async function getOneUsbDevice(idOrName, api, auth) {
+	if (idOrName) {
+		return openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
+	}
+
+	const usbDevices = await getUsbDevices({ dfuMode: true });
+
+	let usbDevice;
+	if (usbDevices.length > 1) {
+		const question = {
+			type: 'list',
+			name: 'device',
+			message: 'Which device would you like to select?',
+			choices() {
+				return usbDevices.map((d) => {
+					return {
+						name: d.type,
+						value: d
+					};
+				});
+			}
+		};
+		const nonInteractiveError = 'Multiple devices found. Connect only one device when running in non-interactive mode.';
+		const ans = await ui.prompt([question], { nonInteractiveError });
+		usbDevice = ans.device;
+	} else if (usbDevices.length === 1) {
+		usbDevice = usbDevices[0];
+	} else {
+		throw new NotFoundError('No device found');
+	}
+
+	try {
+		await usbDevice.open();
+		return usbDevice;
+	} catch (err) {
+		await handleUsbError(err);
+	}
+}
+
+async function handleUsbError(err){
+	if (err instanceof NotAllowedError) {
 		err = new UsbPermissionsError('Missing permissions to access the USB device');
-		if (systemSupportsUdev()){
-			return promptAndInstallUdevRules(err).catch(err => {
+		if (systemSupportsUdev()) {
+			try {
+				await promptAndInstallUdevRules(err);
+			} catch (err) {
 				throw new UsbPermissionsError(err.message);
-			});
+			}
 		}
 	}
-	return Promise.reject(err);
+	throw err;
 }
 
 module.exports = {
@@ -153,6 +190,7 @@ module.exports = {
 	openUsbDeviceById,
 	openUsbDeviceByIdOrName,
 	getUsbDevices,
+	getOneUsbDevice,
 	UsbPermissionsError,
 	TimeoutError
 };
