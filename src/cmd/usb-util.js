@@ -132,7 +132,11 @@ async function getUsbDevices({ dfuMode = false } = {}){
 	}
 }
 
-async function getOneUsbDevice() {
+async function getOneUsbDevice(idOrName, api, auth) {
+	if (idOrName) {
+		return openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
+	}
+
 	const usbDevices = await getUsbDevices({ dfuMode: true });
 
 	let usbDevice;

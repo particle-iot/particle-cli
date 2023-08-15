@@ -20,6 +20,7 @@ const chalk = require('chalk');
 const temp = require('temp').track();
 const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
 const BundleCommands  = require('./bundle');
+const { sourcePatterns } = require('../lib/file-types');
 
 const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
@@ -811,19 +812,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	_getDefaultIncludes(files, dirname, { followSymlinks }) {
 		// Recursively find source files
-		let includes = [
-			'**/*.h',
-			'**/*.hpp',
-			'**/*.hh',
-			'**/*.hxx',
-			'**/*.ino',
-			'**/*.cpp',
-			'**/*.c',
-			'**/build.mk',
-			'project.properties'
-		];
-
-		const result = utilities.globList(dirname, includes, { followSymlinks });
+		const result = utilities.globList(dirname, sourcePatterns, { followSymlinks });
 		result.forEach((file) => files.add(file));
 	}
 

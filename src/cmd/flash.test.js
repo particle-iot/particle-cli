@@ -1,5 +1,7 @@
 const { expect, sinon } = require('../../test/setup');
 const fs = require('fs-extra'); // Use fs-extra instead of fs
+const temp = require('temp').track();
+const path = require('path');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const particleUsb = require('particle-usb');
@@ -23,10 +25,10 @@ describe('FlashCommand', () => {
 			device = {
 				id: '3c0021000947343432313031',
 				platformId: PlatformId.PHOTON,
-				version: '3.3.1',
+				firmwareVersion: '3.3.1',
 				isInDfuMode: false
 			};
-			// sinon.stub(usbUtil, 'getOneUsbDevice').resolves(device);
+			sinon.stub(usbUtils, 'getOneUsbDevice').resolves(device);
 		});
 
 		it('returns information about the device', async () => {
@@ -86,107 +88,111 @@ describe('FlashCommand', () => {
 		});
 	});
 
-	describe('_getDevice', async () => {
-		let flash;
-		beforeEach(() => {
-			flash = new FlashCommand();
+	describe('_prepareFilesToFlash', () => {
+		it('returns the known app binary if it exists', async () => {
+			const knownApp = 'tinker';
+			const platformName = 'photon';
+
+			const result = await flash._prepareFilesToFlash({  knownApp, platformName });
+
+			expect(result).to.have.property('skipDeviceOSFlash', true);
+			expect(result).to.have.property('files').with.lengthOf(1);
+			expect(result.files[0]).to.match(/tinker.*-photon.bin$/);
 		});
 
-		afterEach(() => {
-			sinon.restore();
-		});
+		it('throws an error if there is no known app binary for the platform', async () => {
+			const knownApp = 'doctor';
+			const platformName = 'p2';
 
-		it('should get a device by deviceIdentifier', async () => {
-			const mockDevice = { id: 'device123' };
-			const openUsbDeviceStub = sinon.stub(usbUtils, 'openUsbDeviceByIdOrName').resolves(mockDevice);
-
-			const result = await flash._getDevice('device123');
-
-			expect(openUsbDeviceStub).to.be.calledOnceWithExactly('device123', sinon.match.any, sinon.match.any, { dfuMode: true });
-			expect(result).to.deep.equal(mockDevice);
-		});
-
-		// TODO (hmontero) : should change once getOneDevice is ready
-		it('should get the first available device', async () => {
-			const mockDevices = [{ id: 'device123' }];
-			const getUsbDevicesStub = sinon.stub(usbUtils, 'getUsbDevices').resolves(mockDevices);
-			const openDeviceByIdStub = sinon.stub(particleUsb, 'openDeviceById').resolves(mockDevices[0]);
-
-			const result = await flash._getDevice();
-
-			expect(getUsbDevicesStub.calledOnceWithExactly({ dfuMode: true })).to.be.true;
-			expect(openDeviceByIdStub.calledOnceWithExactly('device123')).to.be.true;
-			expect(result).to.deep.equal(mockDevices[0]);
-		});
-
-		it('should throw an error if no devices are found', async () => {
-			sinon.stub(usbUtils, 'getUsbDevices').resolves([]);
-
+			let error;
 			try {
-				await flash._getDevice();
-			} catch (error) {
-				expect(error.message).to.equal('No devices found.');
+				await flash._prepareFilesToFlash({ knownApp, platformName });
+			} catch (e) {
+				error = e;
 			}
+
+			expect(error).to.have.property('message', 'Known app doctor is not available for p2');
 		});
 
-	});
+		it('returns a list of binaries in the directory if there are no source files', async () => {
+			const dir = await temp.mkdir();
+			await fs.writeFile(path.join(dir, 'firmware.bin'), 'binary data');
+			await fs.writeFile(path.join(dir, 'system-part1.bin'), 'binary data');
 
-	describe('_extractDeviceInfo', () => {
-		let flash;
-		beforeEach(() => {
-			flash = new FlashCommand();
-		});
+			const result = await flash._prepareFilesToFlash({ parsedFiles: [dir] });
 
-		afterEach(() => {
-			sinon.restore();
-		});
-
-		it('should extract device info from a device', async () => {
-			const mockDevice = {
-				_id: 'device123',
-				serialNumber: 'serial123',
-				_fwVer: '4.1.0',
-				_info: {
-					type: 'boron',
-					id: 12,
-					dfu: false,
-				},
-				getDeviceMode: sinon.stub().resolves('LISTENING'),
-			};
-
-			const result = await flash._extractDeviceInfo(mockDevice);
-
-			expect(result).to.deep.equal({
-				deviceId: mockDevice._id,
-				platform: platforms['boron'],
-				deviceOsVersion: '4.1.0',
-				deviceMode: 'LISTENING'
+			expect(result).to.eql({
+				skipDeviceOSFlash: false,
+				files: [
+					path.join(dir, 'firmware.bin'),
+					path.join(dir, 'system-part1.bin')
+				]
 			});
-			expect(mockDevice.getDeviceMode).to.be.calledOnce;
 		});
 
-		it('should extract device info from a device with dfu mode', async () => {
-			const mockDevice = {
-				_id: 'device123',
-				serialNumber: 'serial123',
-				_fwVer: null,
-				_info: {
-					type: 'boron',
-					id: 12,
-					dfu: true,
-				},
-				getDeviceMode: sinon.stub().rejects('DFU'),
-			};
+		it('compiles and returns the binary if there are source files in the directory', async () => {
+			const dir = await temp.mkdir();
+			await fs.writeFile(path.join(dir, 'firmware.bin'), 'binary data');
+			await fs.writeFile(path.join(dir, 'project.properties'), 'project');
+			const stub = sinon.stub(flash, '_compileCode').resolves(['compiled.bin']);
 
-			const result = await flash._extractDeviceInfo(mockDevice);
+			const result = await flash._prepareFilesToFlash({ parsedFiles: [dir] });
 
-			expect(result).to.deep.equal({
-				deviceId: mockDevice._id,
-				platform: platforms['boron'],
-				deviceOsVersion: null,
-				deviceMode: 'DFU'
+			expect(result).to.eql({
+				skipDeviceOSFlash: false,
+				files: [
+					'compiled.bin'
+				]
 			});
-			expect(mockDevice.getDeviceMode).to.not.be.called;
+			expect(stub).to.have.been.called;
+		});
+
+		it('throws an error if the directory is empty', async () => {
+			const dir = await temp.mkdir();
+
+			let error;
+			try {
+				await flash._prepareFilesToFlash({ parsedFiles: [dir] });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.have.property('message', 'No files found to flash');
+		});
+
+		it('returns a list of binaries if binaries are passed', async () => {
+			const bin = await temp.path({ suffix: '.bin' });
+			await fs.writeFile(bin, 'binary data');
+			const dir = await temp.mkdir();
+			await fs.writeFile(path.join(dir, 'system-part1.bin'), 'binary data');
+
+			const result = await flash._prepareFilesToFlash({ parsedFiles: [bin, dir] });
+
+			expect(result).to.eql({
+				skipDeviceOSFlash: false,
+				files: [
+					bin,
+					path.join(dir, 'system-part1.bin')
+				]
+			});
+		});
+
+		it('compiles and returns the binary if passed a source file', async () => {
+			const source = await temp.path({ suffix: '.cpp' });
+			await fs.writeFile(source, 'source code');
+			const dir = await temp.mkdir();
+			await fs.writeFile(path.join(dir, 'project.properties'), 'project');
+			const stub = sinon.stub(flash, '_compileCode').resolves(['compiled.bin']);
+
+			const result = await flash._prepareFilesToFlash({ parsedFiles: [source, dir] });
+
+			expect(result).to.eql({
+				skipDeviceOSFlash: false,
+				files: [
+					'compiled.bin'
+				]
+			});
+			expect(stub).to.have.been.called;
 		});
 	});
 });
