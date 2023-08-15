@@ -6,8 +6,17 @@ const particleUsb = require('particle-usb');
 const platforms = require('@particle/device-constants');
 const { PlatformId } = require('../lib/platform');
 
+describe('FlashCommand', () => {
+	let flash;
 
-describe('flash', () => {
+	beforeEach(() => {
+		flash = new FlashCommand();
+	});
+
+	afterEach(() => {
+		sinon.restore();
+	});
+
 	describe('_getDeviceInfo', () => {
 		let device;
 		beforeEach(() => {
@@ -21,8 +30,6 @@ describe('flash', () => {
 		});
 
 		it('returns information about the device', async () => {
-			const flash = new FlashCommand();
-
 			const deviceInfo = await flash._getDeviceInfo();
 
 			expect(deviceInfo).to.eql({
@@ -35,72 +42,47 @@ describe('flash', () => {
 	});
 
 	describe('_analyzeFiles', () => {
-		let flash;
+		it('returns the current directory if no arguments are passed', async () => {
+			const files = [];
 
-		beforeEach(() => {
-			flash = new FlashCommand();
+			const result = await flash._analyzeFiles(files);
+
+			expect(result).to.eql({ files: ['.'], device: null, knownApp: null });
 		});
 
-		afterEach(() => {
-			sinon.restore();
+		it('returns the known app if it is the first argument', async () => {
+			const files = ['tinker'];
+
+			const result = await flash._analyzeFiles(files);
+
+			expect(result).to.eql({ files: [], device: null, knownApp: 'tinker' });
 		});
 
-		it('should parse local flash arguments with valid binary', async () => {
-			const binary = 'path/to/binary';
-			const files = ['file1', 'file2'];
-			sinon.stub(fs, 'stat').resolves({ isFile: () => true, isDirectory: () => false });
+		it('returns the device name and known app if they are the first 2 arguments', async () => {
+			const files = ['my-device', 'tinker'];
 
-			const result = await flash._analyzeFiles({ binary, files });
+			const result = await flash._analyzeFiles(files);
 
-			expect(result.device).to.be.undefined;
-			expect(result.files).to.deep.equal([binary,...files]);
+			expect(result).to.eql({ files: [], device: 'my-device', knownApp: 'tinker' });
 		});
 
-		it('should parse local flash arguments with nonexistent binary', async () => {
+		it('returns the first argument as part of files if it exists in the filesystem', async () => {
+			const files = ['firmware.bin'];
+			sinon.stub(fs, 'stat');
 
-			const binary = 'e00fce68f15867a3c4762226';
-			const files = ['file1', 'file2'];
+			const result = await flash._analyzeFiles(files);
+
+			expect(result).to.eql({ files: ['firmware.bin'], device: null, knownApp: null });
+		});
+
+		it('returns the first argument as device if it does not exist in the filesystem', async () => {
+			const files = ['my-device', 'firmware.bin'];
 			const error = new Error('File not found');
 			sinon.stub(fs, 'stat').rejects(error);
 
-			const result = await flash._analyzeFiles({ binary, files });
+			const result = await flash._analyzeFiles(files);
 
-			expect(result.device).to.equal(binary);
-			expect(result.files).to.deep.equal(files);
-		});
-
-		it('should parse local flash arguments with missing binary and files', async () => {
-			const binary = undefined;
-			const files = [];
-			const result = await flash._analyzeFiles({ binary, files });
-
-			expect(result.device).to.be.undefined;
-			expect(result.files).to.deep.equal(['.']);
-		});
-
-		it('should parse local flash arguments without files', async () => {
-			const binary = './';
-			const files = [];
-			const result = await flash._analyzeFiles({ binary, files });
-
-			expect(result.device).to.be.undefined;
-			expect(result.files).to.deep.equal([binary]);
-		});
-
-		it('should parse local flash with deviceId and nothing else', async () => {
-			const binary = '00fce68f15867a3c4762226';
-			const files = [];
-			const result = await flash._analyzeFiles({ binary, files });
-			expect(result.device).to.equal(binary);
-			expect(result.files).to.deep.equal(['.']);
-		});
-
-		it('should push just files if binary is a deviceId and files are specified', async () => {
-			const binary = '00fce68f15867a3c4762226';
-			const files = ['file1', 'file2'];
-			const result = await flash._analyzeFiles({ binary, files });
-			expect(result.device).to.equal(binary);
-			expect(result.files).to.deep.equal(files);
+			expect(result).to.eql({ files: ['firmware.bin'], device: 'my-device', knownApp: null });
 		});
 	});
 
@@ -206,43 +188,5 @@ describe('flash', () => {
 			});
 			expect(mockDevice.getDeviceMode).to.not.be.called;
 		});
-
-
-=======
-const { expect, sinon } = require('../../test/setup');
-const FlashCommand = require('./flash');
-const usbUtil = require('./usb-util');
-const { PlatformId } = require('../lib/platform');
-
-describe('FlashCommand Command', () => {
-	afterEach(() => {
-		sinon.restore();
-	});
-
-	describe('_getDeviceInfo', () => {
-		let device;
-		beforeEach(() => {
-			device = {
-				id: '3c0021000947343432313031',
-				platformId: PlatformId.PHOTON,
-				version: '3.3.1',
-				isInDfuMode: false
-			};
-			// sinon.stub(usbUtil, 'getOneUsbDevice').resolves(device);
-		});
-
-		it('returns information about the device', async () => {
-			const flashCommand = new FlashCommand();
-
-			const deviceInfo = await flashCommand._getDeviceInfo();
-
-			expect(deviceInfo).to.eql({
-				id: '3c0021000947343432313031',
-				platformId: PlatformId.PHOTON,
-				version: '3.3.1',
-				isInDfuMode: false
-			});
-		});
->>>>>>> Get info about connected device
 	});
 });

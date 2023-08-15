@@ -17,6 +17,7 @@ const path = require('path');
 const utilities = require('../lib/utilities');
 const CloudCommand = require('./cloud');
 const temp = require('temp').track();
+const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args){
@@ -146,31 +147,56 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _analyzeFiles(files) {
-		const knownAppNames = ['tinker', 'doctor']; // I was trying to avoid this, but I think it's the best way to go
-		const parsedFiles = [...files];
-		let device = undefined;
-		if (knownAppNames.includes(binary)) {
-			device = undefined;
-			parsedFiles.unshift(binary);
+		const apps = knownAppNames();
+
+		// assume the user wants to compile/flash the current directory if no argument is passed
+		if (files.length === 0) {
+			return {
+				files: ['.'],
+				device: null,
+				knownApp: null
+			};
 		}
-		if (!binary && !files.length) {
-			parsedFiles.push('.');
-		} else {
-			const isDirectoryOrFile = await this._isDirectoryOrFile(binary);
-			if (isDirectoryOrFile) {
-				parsedFiles.unshift(binary);
-				device = undefined; // Reset device if it's a file or directory
-			} else {
-				device = binary;
-				if (!files.length) {
-					parsedFiles.push('.');
-				}
+
+		// check if the first argument is a known app
+		const [knownApp] = files;
+		if (apps.includes(knownApp)) {
+			return {
+				files: [],
+				device: null,
+				knownApp
+			};
+		}
+
+		// check if the second argument is a known app
+		if (files.length > 1) {
+			const [device, knownApp] = files;
+			if (apps.includes(knownApp)) {
+				return {
+					files: [],
+					device,
+					knownApp
+				};
 			}
 		}
-		return {
-			device: device,
-			files: parsedFiles,
-		};
+
+		// check if the first argument exists in the filesystem, regardless if it's a file or directory
+		try {
+			await fs.stat(files[0]);
+			return {
+				files,
+				device: null,
+				knownApp: null
+			};
+		} catch (error) {
+			// file doesn't exist, assume the first argument is a device
+			const [device, ...remainingFiles] = files;
+			return {
+				files: remainingFiles,
+				device,
+				knownApp: null
+			};
+		}
 	}
 
 	async _getDeviceInfo() {
@@ -258,7 +284,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		let binaryStats = undefined;
 		// check if is a known app
-		const knownApp = this._getKnownAppsFromPlatform(platform.name)[binary];
+		const knownApp = knownAppsForPlatform(platform.name)[binary];
 
 		if (knownApp) {
 			return { skipDeviceOSFlash: true, files: [knownApp, ...files] };
@@ -295,18 +321,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 			}
 			throw error;
 		}
-	}
-
-	/*
-		This function has to be created given that dfu.knownApps expect a device in dfu mode
-	 */
-	_getKnownAppsFromPlatform(platformName) {
-		const specs = Object.values(deviceSpecs);
-		const platformSpec = specs.find(spec => spec.name === platformName);
-		if (!platformSpec) {
-			throw new VError('Platform not supported');
-		}
-		return platformSpec.knownApps;
 	}
 };
 
