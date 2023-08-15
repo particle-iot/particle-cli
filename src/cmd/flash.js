@@ -145,6 +145,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			platformName: deviceInfo.platformName,
 			target
 		});
+
+		console.log(binariesToFlash);
 	}
 
 	async _analyzeFiles(files) {
@@ -200,17 +202,19 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async _getDeviceInfo(device) {
+	async _getDeviceInfo(idOrName) {
 		const { api, auth } = this._particleApi();
-		const deviceInfo = await usbUtils.getOneUsbDevice(device, api, auth);
+		const device = await usbUtils.getOneUsbDevice(idOrName, api, auth);
 
-		return {
-			id: deviceInfo.id,
-			platformId: deviceInfo.platformId,
-			platformName: platformForId(deviceInfo.platformId).name,
-			version: deviceInfo.firmwareVersion,
-			isInDfuMode: deviceInfo.isInDfuMode
+		const deviceInfo = {
+			id: device.id,
+			platformId: device.platformId,
+			platformName: platformForId(device.platformId).name,
+			version: device.firmwareVersion,
+			isInDfuMode: device.isInDfuMode
 		};
+		await device.close();
+		return deviceInfo;
 	}
 
 	// Should be part fo CLICommandBase??

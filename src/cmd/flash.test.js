@@ -24,7 +24,8 @@ describe('FlashCommand', () => {
 				id: '3c0021000947343432313031',
 				platformId: PlatformId.PHOTON,
 				firmwareVersion: '3.3.1',
-				isInDfuMode: false
+				isInDfuMode: false,
+				close: sinon.stub()
 			};
 			sinon.stub(usbUtils, 'getOneUsbDevice').resolves(device);
 		});
