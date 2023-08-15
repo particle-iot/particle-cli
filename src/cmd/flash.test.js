@@ -1,6 +1,6 @@
 const { expect, sinon } = require('../../test/setup');
 const fs = require('fs-extra'); // Use fs-extra instead of fs
-const Flash = require('./flash');
+const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const particleUsb = require('particle-usb');
 const platforms = require('@particle/device-constants');
@@ -21,9 +21,9 @@ describe('flash', () => {
 		});
 
 		it('returns information about the device', async () => {
-			const flashCommand = new Flash();
+			const flash = new FlashCommand();
 
-			const deviceInfo = await flashCommand._getDeviceInfo();
+			const deviceInfo = await flash._getDeviceInfo();
 
 			expect(deviceInfo).to.eql({
 				id: '3c0021000947343432313031',
@@ -33,12 +33,12 @@ describe('flash', () => {
 			});
 		});
 	});
-	
-	describe('_parseLocalFlashArguments', () => {
+
+	describe('_analyzeFiles', () => {
 		let flash;
 
 		beforeEach(() => {
-			flash = new Flash();
+			flash = new FlashCommand();
 		});
 
 		afterEach(() => {
@@ -50,7 +50,7 @@ describe('flash', () => {
 			const files = ['file1', 'file2'];
 			sinon.stub(fs, 'stat').resolves({ isFile: () => true, isDirectory: () => false });
 
-			const result = await flash._parseLocalFlashArguments({ binary, files });
+			const result = await flash._analyzeFiles({ binary, files });
 
 			expect(result.device).to.be.undefined;
 			expect(result.files).to.deep.equal([binary,...files]);
@@ -63,7 +63,7 @@ describe('flash', () => {
 			const error = new Error('File not found');
 			sinon.stub(fs, 'stat').rejects(error);
 
-			const result = await flash._parseLocalFlashArguments({ binary, files });
+			const result = await flash._analyzeFiles({ binary, files });
 
 			expect(result.device).to.equal(binary);
 			expect(result.files).to.deep.equal(files);
@@ -72,7 +72,7 @@ describe('flash', () => {
 		it('should parse local flash arguments with missing binary and files', async () => {
 			const binary = undefined;
 			const files = [];
-			const result = await flash._parseLocalFlashArguments({ binary, files });
+			const result = await flash._analyzeFiles({ binary, files });
 
 			expect(result.device).to.be.undefined;
 			expect(result.files).to.deep.equal(['.']);
@@ -81,7 +81,7 @@ describe('flash', () => {
 		it('should parse local flash arguments without files', async () => {
 			const binary = './';
 			const files = [];
-			const result = await flash._parseLocalFlashArguments({ binary, files });
+			const result = await flash._analyzeFiles({ binary, files });
 
 			expect(result.device).to.be.undefined;
 			expect(result.files).to.deep.equal([binary]);
@@ -90,7 +90,7 @@ describe('flash', () => {
 		it('should parse local flash with deviceId and nothing else', async () => {
 			const binary = '00fce68f15867a3c4762226';
 			const files = [];
-			const result = await flash._parseLocalFlashArguments({ binary, files });
+			const result = await flash._analyzeFiles({ binary, files });
 			expect(result.device).to.equal(binary);
 			expect(result.files).to.deep.equal(['.']);
 		});
@@ -98,7 +98,7 @@ describe('flash', () => {
 		it('should push just files if binary is a deviceId and files are specified', async () => {
 			const binary = '00fce68f15867a3c4762226';
 			const files = ['file1', 'file2'];
-			const result = await flash._parseLocalFlashArguments({ binary, files });
+			const result = await flash._analyzeFiles({ binary, files });
 			expect(result.device).to.equal(binary);
 			expect(result.files).to.deep.equal(files);
 		});
@@ -107,7 +107,7 @@ describe('flash', () => {
 	describe('_getDevice', async () => {
 		let flash;
 		beforeEach(() => {
-			flash = new Flash();
+			flash = new FlashCommand();
 		});
 
 		afterEach(() => {
@@ -152,7 +152,7 @@ describe('flash', () => {
 	describe('_extractDeviceInfo', () => {
 		let flash;
 		beforeEach(() => {
-			flash = new Flash();
+			flash = new FlashCommand();
 		});
 
 		afterEach(() => {
@@ -214,7 +214,7 @@ const FlashCommand = require('./flash');
 const usbUtil = require('./usb-util');
 const { PlatformId } = require('../lib/platform');
 
-describe('Flash Command', () => {
+describe('FlashCommand Command', () => {
 	afterEach(() => {
 		sinon.restore();
 	});

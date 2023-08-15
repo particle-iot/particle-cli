@@ -36,25 +36,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		} else if (serial){
 			await this.flashYModem({ binary, port, yes });
 		} else if (local){
-			// TODO: implement local flash
-			// Analyze argument list to determine user intent
-			const { device: deviceIdentifier, files: parsedFiles } = await this._parseLocalFlashArguments({ binary, files });
-			console.log(deviceIdentifier, parsedFiles, applicationOnly);
-			// Get device info
-			const deviceInfo = await this._getDeviceInfo(deviceIdentifier);
-			if (deviceInfo) {
-				const platform = deviceInfo.platform;
-				console.log('connected device', platform.name, deviceInfo.deviceId, deviceInfo.deviceMode, deviceInfo.deviceOsVersion);
-				const preparedFiles = await this._prepareFilesToFlash({
-					binary: parsedFiles.shift(),
-					files: parsedFiles,
-					platform,
-					target });
-				console.log(preparedFiles);
-			} else {
-				throw new Error('No device found.');
-			}
-
+			let allFiles = binary ? [binary, ...files] : files;
+			await this.flashLocal({ files: allFiles, applicationOnly, target });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
@@ -142,6 +125,54 @@ module.exports = class FlashCommand extends CLICommandBase {
 			});
 	}
 
+	async flashLocal({ files, applicationOnly, target }) {
+		const { device: deviceIdentifier, files: parsedFiles } = await this._analyzeFiles(files);
+		console.log(deviceIdentifier, parsedFiles, applicationOnly);
+		// Get device info
+		const deviceInfo = await this._getDeviceInfo(deviceIdentifier);
+		if (deviceInfo) {
+			const platform = deviceInfo.platform;
+			console.log('connected device', platform.name, deviceInfo.deviceId, deviceInfo.deviceMode, deviceInfo.deviceOsVersion);
+			const preparedFiles = await this._prepareFilesToFlash({
+				binary: parsedFiles.shift(),
+				files: parsedFiles,
+				platform,
+				target
+			});
+			console.log(preparedFiles);
+		} else {
+			throw new Error('No device found.');
+		}
+	}
+
+	async _analyzeFiles(files) {
+		const knownAppNames = ['tinker', 'doctor']; // I was trying to avoid this, but I think it's the best way to go
+		const parsedFiles = [...files];
+		let device = undefined;
+		if (knownAppNames.includes(binary)) {
+			device = undefined;
+			parsedFiles.unshift(binary);
+		}
+		if (!binary && !files.length) {
+			parsedFiles.push('.');
+		} else {
+			const isDirectoryOrFile = await this._isDirectoryOrFile(binary);
+			if (isDirectoryOrFile) {
+				parsedFiles.unshift(binary);
+				device = undefined; // Reset device if it's a file or directory
+			} else {
+				device = binary;
+				if (!files.length) {
+					parsedFiles.push('.');
+				}
+			}
+		}
+		return {
+			device: device,
+			files: parsedFiles,
+		};
+	}
+
 	async _getDeviceInfo() {
 		const device = await getOneUsbDevice();
 
@@ -173,17 +204,17 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return particleUsb.openDeviceById(devices[0].id);
 	}
 
-	// should be part of usb util?
-	async _getDeviceInfo(deviceIdentifier) {
-		try {
-			const device = await this._getDevice(deviceIdentifier);
-			const deviceInfo = await this._extractDeviceInfo(device);
-			await device.close();
-			return deviceInfo;
-		} catch (error) {
-			return null;
-		}
-	}
+	// // should be part of usb util?
+	// async _getDeviceInfo(deviceIdentifier) {
+	// 	try {
+	// 		const device = await this._getDevice(deviceIdentifier);
+	// 		const deviceInfo = await this._extractDeviceInfo(device);
+	// 		await device.close();
+	// 		return deviceInfo;
+	// 	} catch (error) {
+	// 		return null;
+	// 	}
+	// }
 
 	// should be part of usb util?
 	async _extractDeviceInfo(device) {
@@ -207,33 +238,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async _parseLocalFlashArguments({  binary, files }) {
-		const knownAppNames = ['tinker', 'doctor']; // I was trying to avoid this, but I think it's the best way to go
-		const parsedFiles = [...files];
-		let device = undefined;
-		if (knownAppNames.includes(binary)) {
-			device = undefined;
-			parsedFiles.unshift(binary);
-		}
-		if (!binary && !files.length) {
-			parsedFiles.push('.');
-		} else {
-			const isDirectoryOrFile = await this._isDirectoryOrFile(binary);
-			if (isDirectoryOrFile) {
-				parsedFiles.unshift(binary);
-				device = undefined; // Reset device if it's a file or directory
-			} else {
-				device = binary;
-				if (!files.length) {
-					parsedFiles.push('.');
-				}
-			}
-		}
-		return {
-			device: device,
-			files: parsedFiles,
-		};
-	}
 
 	// I think this should be part of utilities
 	_getDefaultIncludes(dirname, includes, { followSymlinks }) {
