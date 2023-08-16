@@ -19,6 +19,7 @@ const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
+const APP_MODULE_FUNCTION = 5;
 const semver = require('semver');
 
 module.exports = class FlashCommand extends CLICommandBase {
@@ -323,7 +324,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, files, firmwareVersion, platformId, applicationOnly }) {
 		const { particleApi } = this._particleApi();
-		const [binary] = files;
+		const { file: application, fileDependencyVersion } = await this._pickApplicationBinary(files);
+
+		if (!application) {
+			throw new Error('No application binary found');
+		}
 
 		// need to get the binary required version
 		if (applicationOnly || (!target && skipDeviceOSFlash)) {
@@ -343,21 +348,32 @@ module.exports = class FlashCommand extends CLICommandBase {
 				return [];
 			}
 		}
-		return this._downloadDeviceOsBinariesForUserPart({ api: particleApi, binary, platformId });
+		return downloadDeviceOsVersionBinaries({
+			api: particleApi,
+			platformId,
+			version: fileDependencyVersion,
+			ui: this.ui,
+		});
 	}
 
-	async _downloadDeviceOsBinariesForUserPart({ api, binary, platformId }) {
+	async _pickApplicationBinary(files) {
 		const binaryCommand = new BinaryCommand();
-		const binaryInfo = await binaryCommand._extractFiles(binary);
-		const applicationInfo = await binaryCommand._parseApplicationBinary(binaryInfo.application);
-		const deviceOsVersion = applicationInfo.prefixInfo.depModuleVersion;
-		return deviceOsUtils.downloadDeviceOsVersionBinaries({
-			api,
-			platformId,
-			version: deviceOsVersion,
-			ui: this.ui,
-			omitUserPart: true
-		});
+		for await (const file of files) {
+			// parse file and look for moduleFunction
+			try {
+				const binaryInfo = await binaryCommand._extractFiles(file);
+				const applicationInfo = await binaryCommand._parseApplicationBinary(binaryInfo.application);
+				if (applicationInfo.prefixInfo.moduleFunction === APP_MODULE_FUNCTION) {
+					return {
+						file,
+						fileDependencyVersion: applicationInfo.prefixInfo.depModuleVersion
+					};
+				}
+			} catch (error) {
+				// ignore error
+			}
+		}
+		return { file: null, fileDependencyVersion: null };
 	}
 
 	async _tmpCreateFlashSteps({ filesToFlash }) {

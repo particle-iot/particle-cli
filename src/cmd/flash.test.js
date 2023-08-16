@@ -190,31 +190,50 @@ describe('FlashCommand', () => {
 		});
 	});
 	describe('_getDeviceOsBinaries', () => {
+		it('throws an error if there is no application binary', async () => {
+			const file = path.join(__dirname, '../../test/__fixtures__/binaries/system-part1.bin');
+
+			let error;
+			try {
+				await flash._getDeviceOsBinaries({ files: [file] });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.have.property('message', 'No application binary found');
+		});
 		it('returns empty list if applicationOnly is true', async () => {
-			const binaries = await flash._getDeviceOsBinaries({ applicationOnly: true, files: [] });
+			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
+			const binaries = await flash._getDeviceOsBinaries({
+				applicationOnly: true,
+				files: ['not-found-app-other-app.bin', file]
+			});
 			expect(binaries).to.eql([]);
 		});
 
 		it('returns empty if the firmware version is the same than the target', async () => {
+			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				target: '0.7.0',
 				firmwareVersion: '0.7.0',
-				files: ['my-binary.bin']
+				files: [file]
 			});
 			expect(binaries).to.eql([]);
 		});
 
 		it('returns empty if there is no target and skipDeviceOSFlash is true', async () => {
+			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				skipDeviceOSFlash: true,
 				firmwareVersion: '0.7.0',
-				files: ['my-binary.bin']
+				files: [file]
 			});
 			expect(binaries).to.eql([]);
 		});
 
 		it('returns a list of files if there is a target', async () => {
 			const binary = await fs.readFile(path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin'));
+			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
 			nock('https://api.particle.io')
 				.intercept('/v1/device-os/versions/2.3.1?platform_id=6', 'GET')
 				.reply(200, {
@@ -234,7 +253,7 @@ describe('FlashCommand', () => {
 				.reply(200, binary);
 			const binaries = await flash._getDeviceOsBinaries({
 				target: '2.3.1',
-				files: ['my-binary.bin'],
+				files: [file],
 				platformId: 6
 			});
 			expect(binaries.some(file => file.includes('photon-bootloader@2.3.1+lto.bin'))).to.be.true;
@@ -294,7 +313,7 @@ describe('FlashCommand', () => {
 				.reply(200, binary);
 			const binaries = await flash._getDeviceOsBinaries({
 				platformId: 6,
-				files: [userPartPath],
+				files: ['non-existent-file', userPartPath],
 			});
 			expect(binaries.some(file => file.includes('photon-bootloader@4.1.0+lto.bin'))).to.be.true;
 			expect(binaries.some(file => file.includes('photon-system-part1@4.1.0.bin'))).to.be.true;
