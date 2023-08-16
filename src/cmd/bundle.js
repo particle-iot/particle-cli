@@ -1,9 +1,10 @@
 const fs = require('fs-extra');
 const path = require('path');
 const CLICommandBase = require('./base');
-const { createApplicationAndAssetBundle } = require('binary-version-reader');
+const { createApplicationAndAssetBundle, unpackApplicationAndAssetBundle, createAssetModule } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const os = require('os');
+const temp = require('temp').track();
 
 const specialFiles = [
 	'.DS_Store',
@@ -120,5 +121,22 @@ module.exports = class BundleCommands extends CLICommandBase {
 	_displaySuccess({ bundleFilename }) {
 		this.ui.stdout.write(`Bundling successful.${os.EOL}`);
 		this.ui.stdout.write(`Saved bundle to: ${bundleFilename}${os.EOL}`);
+	}
+
+	async extractModulesFromBundle({ bundleFilename }) {
+		const modulesDir = await temp.mkdir('modules');
+
+		const { application, assets } = await unpackApplicationAndAssetBundle(bundleFilename);
+
+		// Write the app binary and asset modules to disk
+		application.path = path.join(modulesDir, application.name);
+		await fs.writeFile(application.path, application.data);
+		for (const asset of assets) {
+			const assetModule = await createAssetModule(asset.data, asset.name);
+			asset.path = path.join(modulesDir, asset.name);
+			await fs.writeFile(asset.path, assetModule);
+		}
+
+		return [application.path, ...assets.map(asset => asset.path)];
 	}
 };
