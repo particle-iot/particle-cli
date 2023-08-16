@@ -1,9 +1,10 @@
 const fs = require('fs-extra');
 const path = require('path');
 const CLICommandBase = require('./base');
-const { createApplicationAndAssetBundle } = require('binary-version-reader');
+const { createApplicationAndAssetBundle, unpackApplicationAndAssetBundle, createAssetModule } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const os = require('os');
+const temp = require('temp').track();
 
 const specialFiles = [
 	'.DS_Store',
@@ -120,5 +121,37 @@ module.exports = class BundleCommands extends CLICommandBase {
 	_displaySuccess({ bundleFilename }) {
 		this.ui.stdout.write(`Bundling successful.${os.EOL}`);
 		this.ui.stdout.write(`Saved bundle to: ${bundleFilename}${os.EOL}`);
+	}
+
+	async extractModulesFromBundle(bundle) {
+		const modulesDir = await temp.mkdir('modules');
+
+		const unpacked = await unpackApplicationAndAssetBundle(bundle);
+		const app = unpacked.application;
+		const assets = [];
+		unpacked.assets.forEach((asset) => {
+			assets.push(asset);
+		});
+
+		const modules = await Promise.all(assets.map(async (asset) => {
+			const module = await createAssetModule(asset.data, asset.name);
+			return {
+				data: module,
+				name: asset.name
+			};
+		}));
+
+		// Write the app binary and asset modules to disk
+		await fs.writeFile(path.join(modulesDir, app.name), app.data);
+		for (const m of modules) {
+			await fs.writeFile(path.join(modulesDir, m.name), m.data);
+		}
+
+		const files = await fs.readdir(modulesDir);
+		let filePaths = [];
+		files.forEach((f) => {
+			filePaths.push(path.join(modulesDir, f));
+		});
+		return filePaths;
 	}
 };

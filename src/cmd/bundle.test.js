@@ -317,4 +317,17 @@ describe('BundleCommands', () => {
 			});
 		});
 	});
+
+	describe('extractModulesFromBundle',  () => {
+		it ('extracts modules from bundle', async () => {
+			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+			const expectedRes = ['app.bin', 'cat.txt', 'house.txt', 'water.txt'];
+
+			const res = await bundleCommands.extractModulesFromBundle(bundle);
+
+			expect(res).to.be.an.instanceof(Array);
+			expect(res).to.have.lengthOf(4);
+			expect(res.map(module => path.basename(module))).to.eql(expectedRes);
+		});
+	});
 });
