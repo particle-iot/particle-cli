@@ -2,6 +2,7 @@ const fs = require('fs-extra');
 const ParticleApi = require('./api');
 const VError = require('verror');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
+const BinaryCommand = require('../cmd/binary');
 const deviceSpecs = require('../lib/device-specs');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
@@ -17,6 +18,8 @@ const BundleCommand = require('./bundle');
 const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
+const deviceOsUtils = require('../lib/device-os-version-util');
+const semver = require('semver');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -150,16 +153,23 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		filesToFlash = await this._processBundle({ filesToFlash });
 
-		// TODO: flash
-		applicationOnly;
-		skipDeviceOSFlash;
+		const deviceOsBinaries = await this._getDeviceOsBinaries({
+			skipDeviceOSFlash,
+			target,
+			files: filesToFlash,
+			platformId: device.platformId,
+			applicationOnly
+		});
+		filesToFlash = [...filesToFlash, ...deviceOsBinaries];
 
 		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
 
 		await this._flashFiles({ device, flashSteps });
 
 		await device.close();
+		console.log(binaries);
 	}
+
 
 	async _analyzeFiles(files) {
 		const apps = knownAppNames();
@@ -218,7 +228,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	_particleApi() {
 		const auth = settings.access_token;
 		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		return { api: api.api, auth };
+		return { api: api.api, auth, particleApi: api };
 	}
 
 	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target }) {
@@ -308,6 +318,45 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}));
 
 		return processed.flat();
+	}
+
+	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, files, firmwareVersion, platformId, applicationOnly }) {
+		const { particleApi } = this._particleApi();
+		const [binary] = files;
+
+		// need to get the binary required version
+		if (applicationOnly || (!target && skipDeviceOSFlash)) {
+			return [];
+		}
+
+		if (target) {
+			if (!firmwareVersion || (semver.valid(firmwareVersion) && semver.lt(firmwareVersion, target))) {
+				return downloadDeviceOsVersionBinaries({
+					api: particleApi,
+					platformId,
+					version: target,
+					ui: this.ui,
+					omitUserPart: true
+				});
+			} else {
+				return [];
+			}
+		}
+		return this._downloadDeviceOsBinariesForUserPart({ api: particleApi, binary, platformId });
+	}
+
+	async _downloadDeviceOsBinariesForUserPart({ api, binary, platformId }) {
+		const binaryCommand = new BinaryCommand();
+		const binaryInfo = await binaryCommand._extractFiles(binary);
+		const applicationInfo = await binaryCommand._parseApplicationBinary(binaryInfo.application);
+		const deviceOsVersion = applicationInfo.prefixInfo.depModuleVersion;
+		return deviceOsUtils.downloadDeviceOsVersionBinaries({
+			api,
+			platformId,
+			version: deviceOsVersion,
+			ui: this.ui,
+			omitUserPart: true
+		});
 	}
 
 	async _tmpCreateFlashSteps({ filesToFlash }) {
