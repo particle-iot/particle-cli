@@ -122,16 +122,15 @@ async function isModuleDownloaded(module, version, platformName) {
  * @param {Object} ui - allow us to interact in the console
  * @returns {Promise<*[]>} - true if successful
  */
-async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui, omitUserPart=false }){
+async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui }){
 	try {
 		const downloadedBinaries = [];
 		// get platform by id from device-constants
 		const platform = Object.values(deviceConstants).filter(p => p.public).find(p => p.id === platformId);
 		// get the device os versions
 		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
-		if (omitUserPart) {
-			deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
-		}
+		// omit user part application
+		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
 
 		// download binaries for each module in the device os version
 		for await (const module of deviceOsVersion.modules) {
