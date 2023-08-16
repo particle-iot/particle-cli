@@ -320,14 +320,14 @@ describe('BundleCommands', () => {
 
 	describe('extractModulesFromBundle',  () => {
 		it ('extracts modules from bundle', async () => {
-			const bundle = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+			const bundleFilename = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
 			const expectedRes = ['app.bin', 'cat.txt', 'house.txt', 'water.txt'];
 
-			const res = await bundleCommands.extractModulesFromBundle(bundle);
+			const modulePaths = await bundleCommands.extractModulesFromBundle({ bundleFilename });
 
-			expect(res).to.be.an.instanceof(Array);
-			expect(res).to.have.lengthOf(4);
-			expect(res.map(module => path.basename(module))).to.eql(expectedRes);
+			expect(modulePaths).to.be.an.instanceof(Array);
+			expect(modulePaths).to.have.lengthOf(4);
+			expect(modulePaths.map(module => path.basename(module))).to.eql(expectedRes);
 		});
 	});
 });

@@ -123,35 +123,20 @@ module.exports = class BundleCommands extends CLICommandBase {
 		this.ui.stdout.write(`Saved bundle to: ${bundleFilename}${os.EOL}`);
 	}
 
-	async extractModulesFromBundle(bundle) {
+	async extractModulesFromBundle({ bundleFilename }) {
 		const modulesDir = await temp.mkdir('modules');
 
-		const unpacked = await unpackApplicationAndAssetBundle(bundle);
-		const app = unpacked.application;
-		const assets = [];
-		unpacked.assets.forEach((asset) => {
-			assets.push(asset);
-		});
-
-		const modules = await Promise.all(assets.map(async (asset) => {
-			const module = await createAssetModule(asset.data, asset.name);
-			return {
-				data: module,
-				name: asset.name
-			};
-		}));
+		const { application, assets } = await unpackApplicationAndAssetBundle(bundleFilename);
 
 		// Write the app binary and asset modules to disk
-		await fs.writeFile(path.join(modulesDir, app.name), app.data);
-		for (const m of modules) {
-			await fs.writeFile(path.join(modulesDir, m.name), m.data);
+		application.path = path.join(modulesDir, application.name);
+		await fs.writeFile(application.path, application.data);
+		for (const asset of assets) {
+			const assetModule = await createAssetModule(asset.data, asset.name);
+			asset.path = path.join(modulesDir, asset.name);
+			await fs.writeFile(asset.path, assetModule);
 		}
 
-		const files = await fs.readdir(modulesDir);
-		let filePaths = [];
-		files.forEach((f) => {
-			filePaths.push(path.join(modulesDir, f));
-		});
-		return filePaths;
+		return [application.path, ...assets.map(asset => asset.path)];
 	}
 };
