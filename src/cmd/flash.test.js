@@ -199,10 +199,10 @@ describe('FlashCommand', () => {
 
 	describe('_processBundle', () => {
 		it('returns a flat list of filenames after extracting bundles', async () => {
-			const binariesToFlash = ['system-part1.bin', 'bundle.zip', 'system-part2.bin'];
+			const filesToFlash = ['system-part1.bin', 'bundle.zip', 'system-part2.bin'];
 			sinon.stub(BundleCommand.prototype, 'extractModulesFromBundle').resolves(['application.bin', 'asset.txt']);
 
-			const result = await flash._processBundle({ binariesToFlash });
+			const result = await flash._processBundle({ filesToFlash });
 
 			expect(result).to.eql(['system-part1.bin', 'application.bin', 'asset.txt', 'system-part2.bin']);
 		});

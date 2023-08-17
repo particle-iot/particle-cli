@@ -1,8 +1,7 @@
 const fs = require('fs-extra');
 const ParticleApi = require('./api');
 const VError = require('verror');
-const ModuleParser = require('binary-version-reader').HalModuleParser;
-const ModuleInfo = require('binary-version-reader').ModuleInfo;
+const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const deviceSpecs = require('../lib/device-specs');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
@@ -139,7 +138,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashLocal({ files, applicationOnly, target }) {
 		const { files: parsedFiles, device, knownApp } = await this._analyzeFiles(files);
 		const deviceInfo = await this._getDeviceInfo(device);
-		let binariesToFlash = await this._prepareFilesToFlash({
+		let { skipDeviceOSFlash, files: filesToFlash } = await this._prepareFilesToFlash({
 			knownApp,
 			parsedFiles,
 			platformId: deviceInfo.platformId,
@@ -147,11 +146,17 @@ module.exports = class FlashCommand extends CLICommandBase {
 			target
 		});
 
-		binariesToFlash = await this._processBundle({ binariesToFlash });
+		filesToFlash = await this._processBundle({ filesToFlash });
 
 		// TODO: flash
-		console.log(binariesToFlash);
 		applicationOnly;
+		skipDeviceOSFlash;
+
+		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
+
+		await this._flashFiles({ device: deviceInfo.device, flashSteps });
+
+		await deviceInfo.device.close();
 	}
 
 	async _analyzeFiles(files) {
@@ -211,15 +216,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const { api, auth } = this._particleApi();
 		const device = await usbUtils.getOneUsbDevice(idOrName, api, auth);
 
-		const deviceInfo = {
+		return {
+			device,
 			id: device.id,
 			platformId: device.platformId,
 			platformName: platformForId(device.platformId).name,
 			version: device.firmwareVersion,
 			isInDfuMode: device.isInDfuMode
 		};
-		await device.close();
-		return deviceInfo;
 	}
 
 	// Should be part fo CLICommandBase??
@@ -305,9 +309,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return Array.from(binaries);
 	}
 
-	async _processBundle({ binariesToFlash }) {
+	async _processBundle({ filesToFlash }) {
 		const bundle = new BundleCommand();
-		const processed = await Promise.all(binariesToFlash.map(async (filename) => {
+		const processed = await Promise.all(filesToFlash.map(async (filename) => {
 			if (path.extname(filename) === '.zip') {
 				return bundle.extractModulesFromBundle({ bundleFilename: filename });
 			} else {
@@ -316,5 +320,61 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}));
 
 		return processed.flat();
+	}
+
+	async _tmpCreateFlashSteps({ filesToFlash }) {
+		const parser = new ModuleParser();
+		return Promise.all(filesToFlash.map(async (filename) => {
+			const moduleInfo = await parser.parseFile(filename);
+
+			let flashMode;
+			switch (moduleInfo.prefixInfo.moduleFunction) {
+				case ModuleInfo.FunctionType.BOOTLOADER:
+				case ModuleInfo.FunctionType.ASSET:
+					flashMode = 'normal';
+					break;
+				default:
+					flashMode = 'dfu';
+					break;
+			}
+
+			return {
+				name: path.basename(filename),
+				moduleInfo,
+				data: moduleInfo.fileBuffer,
+				flashMode
+			};
+		}));
+	}
+
+	async _flashFiles({ device, flashSteps }) {
+		for (const step of flashSteps) {
+			if (step.flashMode === 'normal') {
+				if (device.isInDfuMode) {
+					// put device in normal mode
+					this.ui.write('Putting device in normal mode');
+					await device.reset();
+					await device.close();
+					device = await usbUtils.openUsbDeviceById(device.id);
+				}
+
+				// flash the file in normal mode
+				this.ui.write(`Flashing file ${step.name}`);
+				await device.updateFirmware(step.data);
+			} else {
+				if (!device.isInDfuMode) {
+					// put device in dfu mode
+					this.ui.write('Putting device in DFU mode');
+					await device.enterDfuMode();
+					await device.close();
+					device = await usbUtils.openUsbDeviceById(device.id, { dfuMode: true });
+				}
+
+				// flash the file over DFU
+				this.ui.write(`Flashing file ${step.name}`);
+				await device.writeOverDfu(0, step.data, parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16));
+			}
+		}
+		await device.reset();
 	}
 };
