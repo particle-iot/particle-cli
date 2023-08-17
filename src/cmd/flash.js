@@ -14,6 +14,7 @@ const settings = require('../../settings');
 const path = require('path');
 const utilities = require('../lib/utilities');
 const CloudCommand = require('./cloud');
+const BundleCommand = require('./bundle');
 const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
@@ -138,13 +139,15 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashLocal({ files, applicationOnly, target }) {
 		const { files: parsedFiles, device, knownApp } = await this._analyzeFiles(files);
 		const deviceInfo = await this._getDeviceInfo(device);
-		const binariesToFlash = await this._prepareFilesToFlash({
+		let binariesToFlash = await this._prepareFilesToFlash({
 			knownApp,
 			parsedFiles,
 			platformId: deviceInfo.platformId,
 			platformName: deviceInfo.platformName,
 			target
 		});
+
+		binariesToFlash = await this._processBundle({ binariesToFlash });
 
 		// TODO: flash
 		console.log(binariesToFlash);
@@ -300,5 +303,18 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		}
 		return Array.from(binaries);
+	}
+
+	async _processBundle({ binariesToFlash }) {
+		const bundle = new BundleCommand();
+		const processed = await Promise.all(binariesToFlash.map(async (filename) => {
+			if (path.extname(filename) === '.zip') {
+				return bundle.extractModulesFromBundle({ bundleFilename: filename });
+			} else {
+				return filename;
+			}
+		}));
+
+		return processed.flat();
 	}
 };

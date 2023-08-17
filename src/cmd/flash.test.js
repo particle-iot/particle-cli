@@ -3,6 +3,7 @@ const fs = require('fs-extra'); // Use fs-extra instead of fs
 const temp = require('temp').track();
 const path = require('path');
 const FlashCommand = require('./flash');
+const BundleCommand = require('./bundle');
 const usbUtils = require('./usb-util');
 const { PlatformId } = require('../lib/platform');
 
@@ -193,6 +194,17 @@ describe('FlashCommand', () => {
 				]
 			});
 			expect(stub).to.have.been.called;
+		});
+	});
+
+	describe('_processBundle', () => {
+		it('returns a flat list of filenames after extracting bundles', async () => {
+			const binariesToFlash = ['system-part1.bin', 'bundle.zip', 'system-part2.bin'];
+			sinon.stub(BundleCommand.prototype, 'extractModulesFromBundle').resolves(['application.bin', 'asset.txt']);
+
+			const result = await flash._processBundle({ binariesToFlash });
+
+			expect(result).to.eql(['system-part1.bin', 'application.bin', 'asset.txt', 'system-part2.bin']);
 		});
 	});
 });
