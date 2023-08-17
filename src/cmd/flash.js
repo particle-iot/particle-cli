@@ -155,8 +155,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToFlash = await this._processBundle({ filesToFlash });
 
 		const deviceOsBinaries = await this._getDeviceOsBinaries({
+			currentDeviceOsVersion: device.version,
 			skipDeviceOSFlash,
-			firmwareVersion: device.version,
 			target,
 			files: filesToFlash,
 			platformId: device.platformId,
@@ -229,7 +229,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	// Should be part fo CLICommandBase??
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
 		return { api: api.api, auth, particleApi: api };
 	}
 
@@ -322,58 +322,59 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return processed.flat();
 	}
 
-	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, files, firmwareVersion, platformId, applicationOnly }) {
+	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, files, currentDeviceOsVersion, platformId, applicationOnly }) {
 		const { particleApi } = this._particleApi();
-		const { file: application, fileDependencyVersion } = await this._pickApplicationBinary(files);
+		const { file: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(files, particleApi);
 
 		if (!application) {
-			throw new Error('No application binary found');
-		}
-
-		// need to get the binary required version
-		if (applicationOnly || (!target && skipDeviceOSFlash)) {
 			return [];
 		}
 
-		if (target) {
-			if (!firmwareVersion || (semver.valid(firmwareVersion) && semver.lt(firmwareVersion, target))) {
-				return downloadDeviceOsVersionBinaries({
-					api: particleApi,
-					platformId,
-					version: target,
-					ui: this.ui,
-					omitUserPart: true
-				});
-			} else {
-				return [];
-			}
+		// need to get the binary required version
+		if (applicationOnly) {
+			return [];
 		}
-		return downloadDeviceOsVersionBinaries({
-			api: particleApi,
-			platformId,
-			version: fileDependencyVersion,
-			ui: this.ui,
-		});
+
+		// force to flash device os binaries if target is specified
+		if (target) {
+			return downloadDeviceOsVersionBinaries({
+				api: particleApi,
+				platformId,
+				version: target,
+				ui: this.ui,
+				omitUserPart: true
+			});
+		}
+
+		if (skipDeviceOSFlash) {
+			return [];
+		}
+
+		if (!currentDeviceOsVersion || semver.lt(currentDeviceOsVersion, applicationDeviceOsVersion)) {
+			return downloadDeviceOsVersionBinaries({
+				api: particleApi,
+				platformId,
+				version: applicationDeviceOsVersion,
+				ui: this.ui,
+			});
+		} else {
+			return [];
+		}
+
 	}
 
-	async _pickApplicationBinary(files) {
-		const binaryCommand = new BinaryCommand();
+	async _pickApplicationBinary(files, api) {
 		for await (const file of files) {
 			// parse file and look for moduleFunction
-			try {
-				const binaryInfo = await binaryCommand._extractFiles(file);
-				const applicationInfo = await binaryCommand._parseApplicationBinary(binaryInfo.application);
-				if (applicationInfo.prefixInfo.moduleFunction === APP_MODULE_FUNCTION) {
-					return {
-						file,
-						fileDependencyVersion: applicationInfo.prefixInfo.depModuleVersion
-					};
-				}
-			} catch (error) {
-				// ignore error
+			const parser = new ModuleParser();
+			const fileInfo = await parser.parseFile(file);
+			if (fileInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
+				const internalVersion = fileInfo.prefixInfo.depModuleVersion;
+				const applicationDeviceOsVersionData = await api.getDeviceOsVersions(fileInfo.prefixInfo.platformID, internalVersion);
+				return { file, applicationDeviceOsVersion: applicationDeviceOsVersionData.version };
 			}
 		}
-		return { file: null, fileDependencyVersion: null };
+		return { file: null, applicationDeviceOsVersion: null };
 	}
 
 	async _tmpCreateFlashSteps({ filesToFlash }) {

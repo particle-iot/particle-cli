@@ -190,42 +190,47 @@ describe('FlashCommand', () => {
 		});
 	});
 	describe('_getDeviceOsBinaries', () => {
-		it('throws an error if there is no application binary', async () => {
-			const file = path.join(__dirname, '../../test/__fixtures__/binaries/system-part1.bin');
-
+		it('returns empty if there is no application binary', async () => {
+			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon-system-part1@4.1.0.bin');
+			const deviceOsBinaries = await flash._getDeviceOsBinaries({ files: [file] });
+			expect(deviceOsBinaries).to.eql([]);
+		});
+		it ('fails if a file does not exist', async () => {
 			let error;
 			try {
-				await flash._getDeviceOsBinaries({ files: [file] });
+				await flash._getDeviceOsBinaries({
+					applicationOnly: true,
+					files: ['not-found-app-other-app.bin']
+				});
 			} catch (e) {
 				error = e;
 			}
-
-			expect(error).to.have.property('message', 'No application binary found');
+			expect(error).to.equal('not-found-app-other-app.bin doesn\'t exist');
 		});
 		it('returns empty list if applicationOnly is true', async () => {
+			nock('https://api.particle.io')
+				.intercept('/v1/device-os/versions/1213?platform_id=12', 'GET')
+				.reply(200, {
+					version: '2.3.1'
+				});
 			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				applicationOnly: true,
-				files: ['not-found-app-other-app.bin', file]
-			});
-			expect(binaries).to.eql([]);
-		});
-
-		it('returns empty if the firmware version is the same than the target', async () => {
-			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
-			const binaries = await flash._getDeviceOsBinaries({
-				target: '0.7.0',
-				firmwareVersion: '0.7.0',
 				files: [file]
 			});
 			expect(binaries).to.eql([]);
 		});
 
 		it('returns empty if there is no target and skipDeviceOSFlash is true', async () => {
+			nock('https://api.particle.io')
+				.intercept('/v1/device-os/versions/1213?platform_id=12', 'GET')
+				.reply(200, {
+					version: '2.3.1'
+				});
 			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				skipDeviceOSFlash: true,
-				firmwareVersion: '0.7.0',
+				currentDeviceOsVersion: '0.7.0',
 				files: [file]
 			});
 			expect(binaries).to.eql([]);
@@ -234,6 +239,11 @@ describe('FlashCommand', () => {
 		it('returns a list of files if there is a target', async () => {
 			const binary = await fs.readFile(path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin'));
 			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
+			nock('https://api.particle.io')
+				.intercept('/v1/device-os/versions/1213?platform_id=12', 'GET')
+				.reply(200, {
+					version: '2.3.1'
+				});
 			nock('https://api.particle.io')
 				.intercept('/v1/device-os/versions/2.3.1?platform_id=6', 'GET')
 				.reply(200, {
@@ -265,7 +275,12 @@ describe('FlashCommand', () => {
 			const userPartPath = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
 			const binary = await fs.readFile(path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin'));
 			nock('https://api.particle.io')
-				.intercept('/v1/device-os/versions/1213?platform_id=6', 'GET')
+				.intercept('/v1/device-os/versions/1213?platform_id=12', 'GET')
+				.reply(200, {
+					version: '1.2.3'
+				});
+			nock('https://api.particle.io')
+				.intercept('/v1/device-os/versions/1.2.3?platform_id=6', 'GET')
 				.reply(200, {
 					version: '1.2.3',
 					internal_version: 1213,
@@ -288,35 +303,6 @@ describe('FlashCommand', () => {
 			});
 			expect(binaries.some(file => file.includes('photon-bootloader@1.2.3+lto.bin'))).to.be.true;
 			expect(binaries.some(file => file.includes('photon-system-part1@1.2.3.bin'))).to.be.true;
-			expect(binaries).to.have.lengthOf(2);
-		});
-		it('returns a list of files depending on bundle dependency binary', async () => {
-			const userPartPath = path.join(__dirname, '../../test/__fixtures__/third_party_ota/bundle.zip');
-			const binary = await fs.readFile(path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin'));
-			nock('https://api.particle.io')
-				.intercept('/v1/device-os/versions/4006?platform_id=6', 'GET')
-				.reply(200, {
-					version: '4.1.0',
-					internal_version: 4006,
-					base_url: 'https://api.particle.io/v1/firmware/device-os/v4.1.0',
-					modules: [
-						{ filename: 'photon-bootloader@4.1.0+lto.bin', prefixInfo: { moduleFunction: 'bootloader' } },
-						{ filename: 'photon-system-part1@4.1.0.bin', prefixInfo: { moduleFunction: 'system-part1' } }
-					]
-				});
-
-			nock('https://api.particle.io')
-				.intercept('/v1/firmware/device-os/v4.1.0/photon-bootloader@4.1.0+lto.bin', 'GET')
-				.reply(200, binary);
-			nock('https://api.particle.io')
-				.intercept('/v1/firmware/device-os/v4.1.0/photon-system-part1@4.1.0.bin', 'GET')
-				.reply(200, binary);
-			const binaries = await flash._getDeviceOsBinaries({
-				platformId: 6,
-				files: ['non-existent-file', userPartPath],
-			});
-			expect(binaries.some(file => file.includes('photon-bootloader@4.1.0+lto.bin'))).to.be.true;
-			expect(binaries.some(file => file.includes('photon-system-part1@4.1.0.bin'))).to.be.true;
 			expect(binaries).to.have.lengthOf(2);
 		});
 	});
