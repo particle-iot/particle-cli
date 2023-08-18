@@ -3,7 +3,7 @@ const ParticleApi = require('./api');
 const VError = require('verror');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const deviceSpecs = require('../lib/device-specs');
-const ensureError = require('../lib/utilities').ensureError;
+const { ensureError, delay } = require('../lib/utilities');
 const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
 const usbUtils = require('./usb-util');
@@ -19,6 +19,8 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
+
+const FLASH_APPLY_DELAY = 3000;
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -152,6 +154,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		filesToFlash = await this._processBundle({ filesToFlash });
 
+		// TODO: process all the files with binary version reader
+		// const modulesToFlash = await this._parseModules({ filesToFlash });
+
+		// TODO: check that all the files are for the correct platform
+
 		const deviceOsBinaries = await this._getDeviceOsBinaries({
 			currentDeviceOsVersion: device.version,
 			skipDeviceOSFlash,
@@ -165,8 +172,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
 
 		await this._flashFiles({ device, flashSteps });
-
-		await device.close();
 	}
 
 
@@ -380,7 +385,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _tmpCreateFlashSteps({ filesToFlash }) {
 		const parser = new ModuleParser();
-		return Promise.all(filesToFlash.map(async (filename) => {
+		return Promise.all(filesToFlash.filter(filename => !(/prebootloader-mbr/.test(filename))).map(async (filename) => {
 			const moduleInfo = await parser.parseFile(filename);
 
 			let flashMode;
@@ -409,28 +414,31 @@ module.exports = class FlashCommand extends CLICommandBase {
 				if (device.isInDfuMode) {
 					// put device in normal mode
 					this.ui.write('Putting device in normal mode');
-					await device.reset();
-					await device.close();
-					device = await usbUtils.openUsbDeviceById(device.id);
+					device = await usbUtils.reopenInNormalMode(device);
 				}
 
 				// flash the file in normal mode
 				this.ui.write(`Flashing file ${step.name}`);
 				await device.updateFirmware(step.data);
+
+				// wait for the device to apply the firmware
+				await delay(FLASH_APPLY_DELAY);
+				device = await usbUtils.reopenInNormalMode(device);
 			} else {
 				if (!device.isInDfuMode) {
 					// put device in dfu mode
 					this.ui.write('Putting device in DFU mode');
-					await device.enterDfuMode();
-					await device.close();
-					device = await usbUtils.openUsbDeviceById(device.id, { dfuMode: true });
+					device = await usbUtils.reopenInDfuMode(device);
 				}
 
 				// flash the file over DFU
 				this.ui.write(`Flashing file ${step.name}`);
-				await device.writeOverDfu(0, step.data, parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16));
+				// CLI always flashes to internal flash which is the DFU alt setting 0
+				const dfuAlt = 0;
+				await device.writeOverDfu(dfuAlt, step.data, parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16));
 			}
 		}
 		await device.reset();
+		await device.close();
 	}
 };

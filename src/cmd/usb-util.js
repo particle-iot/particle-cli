@@ -1,6 +1,7 @@
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
 const ui = require('../lib/ui');
+const { delay } = require('../lib/utilities');
 const {
 	getDevices,
 	openDeviceById,
@@ -8,6 +9,12 @@ const {
 	NotAllowedError,
 	TimeoutError
 } = require('../lib/require-optional')('particle-usb');
+
+// When reopening a device that was about to reset, give it some time to boot into the firmware
+const REOPEN_DELAY = 3000;
+
+// This timeout should be long enough to allow the bootloader apply an update
+const REOPEN_TIMEOUT = 60000;
 
 /**
  * USB permissions error.
@@ -171,6 +178,37 @@ async function getOneUsbDevice(idOrName, api, auth) {
 	}
 }
 
+async function reopenInDfuMode(device) {
+	const { id } = device;
+	await device.enterDfuMode();
+	await device.close();
+	device = await openUsbDeviceById(id, { dfuMode: true });
+	return device;
+}
+
+async function reopenInNormalMode(device) {
+	const { id } = device;
+	if (device.isOpen) {
+		await device.reset();
+	}
+	await device.close();
+	const start = Date.now();
+	while (Date.now() - start < REOPEN_TIMEOUT) {
+		await delay(500);
+		try {
+			device = await openDeviceById(id);
+			if (device.isInDfuMode) {
+				await device.close();
+			} else {
+				return device;
+			}
+		} catch (err) {
+			// ignore error
+		}
+	}
+	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
+}
+
 async function handleUsbError(err){
 	if (err instanceof NotAllowedError) {
 		err = new UsbPermissionsError('Missing permissions to access the USB device');
@@ -191,6 +229,8 @@ module.exports = {
 	openUsbDeviceByIdOrName,
 	getUsbDevices,
 	getOneUsbDevice,
+	reopenInDfuMode,
+	reopenInNormalMode,
 	UsbPermissionsError,
 	TimeoutError
 };
