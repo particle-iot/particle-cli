@@ -5,8 +5,6 @@ const temp = require('temp').track();
 const path = require('path');
 const FlashCommand = require('./flash');
 const BundleCommand = require('./bundle');
-const usbUtils = require('./usb-util');
-const { PlatformId } = require('../lib/platform');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 
 describe('FlashCommand', () => {

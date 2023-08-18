@@ -2,7 +2,6 @@ const fs = require('fs-extra');
 const ParticleApi = require('./api');
 const VError = require('verror');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
-const BinaryCommand = require('../cmd/binary');
 const deviceSpecs = require('../lib/device-specs');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
@@ -19,7 +18,6 @@ const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
-const APP_MODULE_FUNCTION = 5;
 const semver = require('semver');
 
 module.exports = class FlashCommand extends CLICommandBase {
@@ -337,7 +335,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		// force to flash device os binaries if target is specified
 		if (target) {
-			return downloadDeviceOsVersionBinaries({
+			return deviceOsUtils.downloadDeviceOsVersionBinaries({
 				api: particleApi,
 				platformId,
 				version: target,
@@ -351,7 +349,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 
 		if (!currentDeviceOsVersion || semver.lt(currentDeviceOsVersion, applicationDeviceOsVersion)) {
-			return downloadDeviceOsVersionBinaries({
+			return deviceOsUtils.downloadDeviceOsVersionBinaries({
 				api: particleApi,
 				platformId,
 				version: applicationDeviceOsVersion,
