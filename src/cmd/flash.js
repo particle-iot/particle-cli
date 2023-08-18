@@ -21,6 +21,7 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
+const { DependencyWalker } = require('../lib/dependency-walker');
 
 const FLASH_APPLY_DELAY = 3000;
 
@@ -175,8 +176,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToFlash = [...deviceOsBinaries, ...filesToFlash];
 
 		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
+		const binaries = [...filesToFlash, ...deviceOsBinaries];
+		await this._sortFilesToFlash({ files: binaries, deviceMode: device.isInDfuMode ? 'DFU' : 'NORMAL' });
 
 		await this._flashFiles({ device, flashSteps });
+
 	}
 
 
@@ -531,5 +535,69 @@ module.exports = class FlashCommand extends CLICommandBase {
 					break;
 			}
 		};
+	}
+
+	async _sortFilesToFlash({ files, deviceMode }) {
+		const binaries = await this._sortBinariesByDependency(files);
+		console.log(binaries, deviceMode);
+
+	}
+
+	async _sortBinariesByDependency(files) {
+		const binariesWithDependencies = [];
+		// read every file and parse it
+		let binaries = await Promise.all(files.map(async (file) => {
+			const parser = new ModuleParser();
+			const binary = await parser.parseFile(file);
+			return {
+				filename: file,
+				...binary
+			};
+		}));
+		// generate binaries before
+
+		for (const binary of binaries) {
+			const binaryWithDependencies = {
+				...binary,
+				dependencies: []
+			};
+			if (binaryWithDependencies.prefixInfo.depModuleFunction !== 0) {
+				const binaryDependency =
+					binaries.find(b =>
+						b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.depModuleIndex &&
+						b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
+						b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
+					);
+				if (binaryDependency) {
+					binaryWithDependencies.dependencies.push({
+						func: binaryDependency.prefixInfo.moduleFunction,
+						index: binaryDependency.prefixInfo.moduleIndex,
+						version: binaryDependency.prefixInfo.moduleVersion
+					});
+				}
+			}
+
+			if (binary.prefixInfo.dep2ModuleFunction !== 0) {
+				const binary2Dependency =
+					binaries.find(b =>
+						b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.dep2ModuleIndex &&
+						b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
+						b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
+					);
+				if (binary2Dependency) {
+					binaryWithDependencies.dependencies.push({
+						func: binary2Dependency.prefixInfo.moduleFunction,
+						index: binary2Dependency.prefixInfo.moduleIndex,
+						version: binary2Dependency.prefixInfo.moduleVersion
+					});
+				}
+			}
+			binariesWithDependencies.push(binaryWithDependencies);
+		}
+		const dependencyWalker = new DependencyWalker({ modules: binariesWithDependencies });
+		const sortedDependencies = dependencyWalker.sortByDependencies(binariesWithDependencies);
+
+		return Array.from(sortedDependencies);
+
 	}
 };
