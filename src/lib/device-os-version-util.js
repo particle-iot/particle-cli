@@ -129,6 +129,9 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		const platform = Object.values(deviceConstants).filter(p => p.public).find(p => p.id === platformId);
 		// get the device os versions
 		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
+		// omit user part application
+		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
+
 		// download binaries for each module in the device os version
 		for await (const module of deviceOsVersion.modules) {
 			//TODO (hmontero) - make sure downloadedBinaries returns the full path to the binary

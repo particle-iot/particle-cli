@@ -34,8 +34,8 @@ describe('downloadDeviceOsVersionBinaries', () => {
 				version: '2.3.1',
 				base_url: 'https://api.particle.io/v1/firmware/device-os/v2.3.1',
 				modules: [
-					{ filename: 'photon-bootloader@2.3.1+lto.bin' },
-					{ filename: 'photon-system-part1@2.3.1.bin' }
+					{ filename: 'photon-bootloader@2.3.1+lto.bin', prefixInfo : { moduleFunction: 'bootloader' } },
+					{ filename: 'photon-system-part1@2.3.1.bin', prefixInfo : { moduleFunction: 'system-part' } }
 				]
 			})
 		};
@@ -63,8 +63,8 @@ describe('downloadDeviceOsVersionBinaries', () => {
 				version: '2.3.1',
 				base_url: 'https://api.particle.io/v1/firmware/device-os/v2.3.1',
 				modules: [
-					{ filename: 'photon-bootloader@2.3.1+lto.bin' },
-					{ filename: 'photon-system-part1@2.3.1.bin' }
+					{ filename: 'photon-bootloader@2.3.1+lto.bin', prefixInfo : { moduleFunction: 'bootloader' } },
+					{ filename: 'photon-system-part1@2.3.1.bin', prefixInfo: { moduleFunction: 'system-part' } }
 				]
 			})
 		};
@@ -106,8 +106,8 @@ describe('downloadDeviceOsVersionBinaries', () => {
 				version: '2.3.1',
 				base_url: 'http://url-that-does-not-exist.com',
 				modules: [
-					{ filename: 'photon-bootloader@2.3.1+lto.bin' },
-					{ filename: 'photon-system-part1@2.3.1.bin' }
+					{ filename: 'photon-bootloader@2.3.1+lto.bin', prefixInfo : { moduleFunction: 'bootloader' } },
+					{ filename: 'photon-system-part1@2.3.1.bin', prefixInfo: { moduleFunction: 'system-part' } }
 				]
 			})
 		};

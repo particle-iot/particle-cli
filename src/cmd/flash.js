@@ -17,6 +17,8 @@ const BundleCommand = require('./bundle');
 const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
+const deviceOsUtils = require('../lib/device-os-version-util');
+const semver = require('semver');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -150,9 +152,15 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		filesToFlash = await this._processBundle({ filesToFlash });
 
-		// TODO: flash
-		applicationOnly;
-		skipDeviceOSFlash;
+		const deviceOsBinaries = await this._getDeviceOsBinaries({
+			currentDeviceOsVersion: device.version,
+			skipDeviceOSFlash,
+			target,
+			files: filesToFlash,
+			platformId: device.platformId,
+			applicationOnly
+		});
+		filesToFlash = [...filesToFlash, ...deviceOsBinaries];
 
 		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
 
@@ -160,6 +168,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		await device.close();
 	}
+
 
 	async _analyzeFiles(files) {
 		const apps = knownAppNames();
@@ -217,8 +226,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 	// Should be part fo CLICommandBase??
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		return { api: api.api, auth };
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		return { api: api.api, auth, particleApi: api };
 	}
 
 	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target }) {
@@ -308,6 +317,65 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}));
 
 		return processed.flat();
+	}
+
+	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, files, currentDeviceOsVersion, platformId, applicationOnly }) {
+		const { particleApi } = this._particleApi();
+		const { file: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(files, particleApi);
+
+		// no application so no need to download Device OS binaries
+		if (!application) {
+			return [];
+		}
+
+		// need to get the binary required version
+		if (applicationOnly) {
+			return [];
+		}
+
+		// force to flash device os binaries if target is specified
+		if (target) {
+			return deviceOsUtils.downloadDeviceOsVersionBinaries({
+				api: particleApi,
+				platformId,
+				version: target,
+				ui: this.ui,
+				omitUserPart: true
+			});
+		}
+
+		// avoid downgrading Device OS for known application like Tinker compiled against older Device OS
+		if (skipDeviceOSFlash) {
+			return [];
+		}
+
+		// if Device OS needs to be upgraded, or we don't know the current Device OS version, download the binaries
+		if (!currentDeviceOsVersion || semver.lt(currentDeviceOsVersion, applicationDeviceOsVersion)) {
+			return deviceOsUtils.downloadDeviceOsVersionBinaries({
+				api: particleApi,
+				platformId,
+				version: applicationDeviceOsVersion,
+				ui: this.ui,
+			});
+		} else {
+			// Device OS is up to date, no need to download binaries
+			return [];
+		}
+	}
+
+	async _pickApplicationBinary(files, api) {
+		for (const file of files) {
+			// parse file and look for moduleFunction
+			const parser = new ModuleParser();
+			const fileInfo = await parser.parseFile(file);
+			if (fileInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
+				const internalVersion = fileInfo.prefixInfo.depModuleVersion;
+				// TODO: handle the case when the Device OS version is not available
+				const applicationDeviceOsVersionData = await api.getDeviceOsVersions(fileInfo.prefixInfo.platformID, internalVersion);
+				return { file, applicationDeviceOsVersion: applicationDeviceOsVersionData.version };
+			}
+		}
+		return { file: null, applicationDeviceOsVersion: null };
 	}
 
 	async _tmpCreateFlashSteps({ filesToFlash }) {
