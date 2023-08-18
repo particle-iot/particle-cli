@@ -136,13 +136,15 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async flashLocal({ files, applicationOnly, target }) {
-		const { files: parsedFiles, device, knownApp } = await this._analyzeFiles(files);
-		const deviceInfo = await this._getDeviceInfo(device);
+		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
+		const { api, auth } = this._particleApi();
+		const device = await usbUtils.getOneUsbDevice(deviceIdOrName, api, auth);
+
 		let { skipDeviceOSFlash, files: filesToFlash } = await this._prepareFilesToFlash({
 			knownApp,
 			parsedFiles,
-			platformId: deviceInfo.platformId,
-			platformName: deviceInfo.platformName,
+			platformId: device.platformId,
+			platformName: platformForId(device.platformId).name,
 			target
 		});
 
@@ -154,9 +156,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
 
-		await this._flashFiles({ device: deviceInfo.device, flashSteps });
+		await this._flashFiles({ device, flashSteps });
 
-		await deviceInfo.device.close();
+		await device.close();
 	}
 
 	async _analyzeFiles(files) {
@@ -166,7 +168,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		if (files.length === 0) {
 			return {
 				files: ['.'],
-				device: null,
+				deviceIdOrName: null,
 				knownApp: null
 			};
 		}
@@ -176,18 +178,18 @@ module.exports = class FlashCommand extends CLICommandBase {
 		if (apps.includes(knownApp)) {
 			return {
 				files: [],
-				device: null,
+				deviceIdOrName: null,
 				knownApp
 			};
 		}
 
 		// check if the second argument is a known app
 		if (files.length > 1) {
-			const [device, knownApp] = files;
+			const [deviceIdOrName, knownApp] = files;
 			if (apps.includes(knownApp)) {
 				return {
 					files: [],
-					device,
+					deviceIdOrName,
 					knownApp
 				};
 			}
@@ -198,32 +200,18 @@ module.exports = class FlashCommand extends CLICommandBase {
 			await fs.stat(files[0]);
 			return {
 				files,
-				device: null,
+				deviceIdOrName: null,
 				knownApp: null
 			};
 		} catch (error) {
 			// file doesn't exist, assume the first argument is a device
-			const [device, ...remainingFiles] = files;
+			const [deviceIdOrName, ...remainingFiles] = files;
 			return {
 				files: remainingFiles,
-				device,
+				deviceIdOrName,
 				knownApp: null
 			};
 		}
-	}
-
-	async _getDeviceInfo(idOrName) {
-		const { api, auth } = this._particleApi();
-		const device = await usbUtils.getOneUsbDevice(idOrName, api, auth);
-
-		return {
-			device,
-			id: device.id,
-			platformId: device.platformId,
-			platformName: platformForId(device.platformId).name,
-			version: device.firmwareVersion,
-			isInDfuMode: device.isInDfuMode
-		};
 	}
 
 	// Should be part fo CLICommandBase??
