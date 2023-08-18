@@ -4,8 +4,6 @@ const temp = require('temp').track();
 const path = require('path');
 const FlashCommand = require('./flash');
 const BundleCommand = require('./bundle');
-const usbUtils = require('./usb-util');
-const { PlatformId } = require('../lib/platform');
 
 describe('FlashCommand', () => {
 	let flash;
@@ -18,39 +16,13 @@ describe('FlashCommand', () => {
 		sinon.restore();
 	});
 
-	describe('_getDeviceInfo', () => {
-		let device;
-		beforeEach(() => {
-			device = {
-				id: '3c0021000947343432313031',
-				platformId: PlatformId.PHOTON,
-				firmwareVersion: '3.3.1',
-				isInDfuMode: false,
-				close: sinon.stub()
-			};
-			sinon.stub(usbUtils, 'getOneUsbDevice').resolves(device);
-		});
-
-		it('returns information about the device', async () => {
-			const deviceInfo = await flash._getDeviceInfo();
-
-			expect(deviceInfo).to.eql({
-				id: '3c0021000947343432313031',
-				platformId: PlatformId.PHOTON,
-				platformName: 'photon',
-				version: '3.3.1',
-				isInDfuMode: false
-			});
-		});
-	});
-
 	describe('_analyzeFiles', () => {
 		it('returns the current directory if no arguments are passed', async () => {
 			const files = [];
 
 			const result = await flash._analyzeFiles(files);
 
-			expect(result).to.eql({ files: ['.'], device: null, knownApp: null });
+			expect(result).to.eql({ files: ['.'], deviceIdOrName: null, knownApp: null });
 		});
 
 		it('returns the known app if it is the first argument', async () => {
@@ -58,7 +30,7 @@ describe('FlashCommand', () => {
 
 			const result = await flash._analyzeFiles(files);
 
-			expect(result).to.eql({ files: [], device: null, knownApp: 'tinker' });
+			expect(result).to.eql({ files: [], deviceIdOrName: null, knownApp: 'tinker' });
 		});
 
 		it('returns the device name and known app if they are the first 2 arguments', async () => {
@@ -66,7 +38,7 @@ describe('FlashCommand', () => {
 
 			const result = await flash._analyzeFiles(files);
 
-			expect(result).to.eql({ files: [], device: 'my-device', knownApp: 'tinker' });
+			expect(result).to.eql({ files: [], deviceIdOrName: 'my-device', knownApp: 'tinker' });
 		});
 
 		it('returns the first argument as part of files if it exists in the filesystem', async () => {
@@ -75,7 +47,7 @@ describe('FlashCommand', () => {
 
 			const result = await flash._analyzeFiles(files);
 
-			expect(result).to.eql({ files: ['firmware.bin'], device: null, knownApp: null });
+			expect(result).to.eql({ files: ['firmware.bin'], deviceIdOrName: null, knownApp: null });
 		});
 
 		it('returns the first argument as device if it does not exist in the filesystem', async () => {
@@ -85,7 +57,7 @@ describe('FlashCommand', () => {
 
 			const result = await flash._analyzeFiles(files);
 
-			expect(result).to.eql({ files: ['firmware.bin'], device: 'my-device', knownApp: null });
+			expect(result).to.eql({ files: ['firmware.bin'], deviceIdOrName: 'my-device', knownApp: null });
 		});
 	});
 
@@ -199,10 +171,10 @@ describe('FlashCommand', () => {
 
 	describe('_processBundle', () => {
 		it('returns a flat list of filenames after extracting bundles', async () => {
-			const binariesToFlash = ['system-part1.bin', 'bundle.zip', 'system-part2.bin'];
+			const filesToFlash = ['system-part1.bin', 'bundle.zip', 'system-part2.bin'];
 			sinon.stub(BundleCommand.prototype, 'extractModulesFromBundle').resolves(['application.bin', 'asset.txt']);
 
-			const result = await flash._processBundle({ binariesToFlash });
+			const result = await flash._processBundle({ filesToFlash });
 
 			expect(result).to.eql(['system-part1.bin', 'application.bin', 'asset.txt', 'system-part2.bin']);
 		});

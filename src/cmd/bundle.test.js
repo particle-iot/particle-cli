@@ -318,7 +318,7 @@ describe('BundleCommands', () => {
 		});
 	});
 
-	describe('extractModulesFromBundle',  () => {
+	describe('extractModulesFromBundle', () => {
 		it ('extracts modules from bundle', async () => {
 			const bundleFilename = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
 			const expectedRes = ['app.bin', 'cat.txt', 'house.txt', 'water.txt'];
