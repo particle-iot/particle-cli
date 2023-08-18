@@ -555,24 +555,33 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async _sortFilesToFlash({ modules, isInDfuMode, platformId }) {
 		const platform = PLATFORMS.find(p => p.id === platformId);
 		const binaries = await this._sortBinariesByDependency(modules);
-		const preparedModules = binaries.map(binary => {
+		const assetModules = [], normalModules = [], dfuModules = [];
+		binaries.forEach(binary => {
+			const data = binary.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? binary.fileBuffer.slice(binary.prefixInfo.prefixSize) : binary.fileBuffer;
+			const module = {
+				name: path.basename(binary.filename),
+				moduleInfo: { crc: binary.crc, prefixInfo: binary.prefixInfo, suffixInfo: binary.suffixInfo },
+				data
+			};
 			const moduleType = this.moduleTypeToString(binary.prefixInfo.moduleFunction);
 			const storage = platform.firmwareModules
 				.find(firmwareModule => firmwareModule.type === moduleType);
-			const data = binary.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? binary.fileBuffer.slice(binary.prefixInfo.prefixSize) : binary.fileBuffer;
-			return {
-				name: path.basename(binary.filename),
-				moduleInfo: { crc: binary.crc, prefixInfo: binary.prefixInfo, suffixInfo: binary.suffixInfo },
-				data,
-				flashMode: (moduleType === 'bootloader' || (storage && storage.storage === 'externalMcu') ) ? 'normal' : 'dfu'
-			};
+			if (moduleType === 'assets') {
+				module.flashMode = 'normal';
+				assetModules.push(module);
+			} else if (moduleType === 'bootloader' || storage.storage === 'external') {
+				module.flashMode = 'normal';
+				normalModules.push(module);
+			} else {
+				module.flashMode = 'dfu';
+				dfuModules.push(module);
+			}
 		});
-		const dfuModules = preparedModules.filter(module => module.flashMode === 'dfu');
-		const normalModules = preparedModules.filter(module => module.flashMode === 'normal');
+
 		if (isInDfuMode) {
-			return [...dfuModules, ...normalModules];
+			return [...dfuModules, ...normalModules, ...assetModules];
 		} else {
-			return [...normalModules, ...dfuModules];
+			return [...normalModules, ...dfuModules, ...assetModules];
 		}
 	}
 
@@ -638,6 +647,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 				return 'radioStack';
 			case ModuleInfo.FunctionType.NCP_FIRMWARE:
 				return 'ncpFirmware';
+			case ModuleInfo.FunctionType.ASSET:
+				return 'assets';
 			default:
 				throw new Error(`Unknown module type: ${str}`);
 		}
