@@ -10,7 +10,7 @@ const { errors: { usageError } } = require('../app/command-processor');
 const dfu = require('../lib/dfu');
 const usbUtils = require('./usb-util');
 const CLICommandBase = require('./base');
-const { platformForId } = require('../lib/platform');
+const { platformForId, PLATFORMS } = require('../lib/platform');
 const settings = require('../../settings');
 const path = require('path');
 const utilities = require('../lib/utilities');
@@ -173,13 +173,16 @@ module.exports = class FlashCommand extends CLICommandBase {
 			platformId: device.platformId,
 			applicationOnly
 		});
-		filesToFlash = [...deviceOsBinaries, ...filesToFlash];
 
-		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
-		const binaries = [...filesToFlash, ...deviceOsBinaries];
-		await this._sortFilesToFlash({ files: binaries, deviceMode: device.isInDfuMode ? 'DFU' : 'NORMAL' });
+		filesToFlash = [...filesToFlash, ...deviceOsBinaries];
+		const modulesToFlash = await this._parseModules({ files: filesToFlash });
+
+		// const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
+		const flashSteps = await this._sortFilesToFlash({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
+		console.log(flashSteps);
 
 		await this._flashFiles({ device, flashSteps });
+		await device.close();
 
 	}
 
@@ -537,16 +540,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		};
 	}
 
-	async _sortFilesToFlash({ files, deviceMode }) {
-		const binaries = await this._sortBinariesByDependency(files);
-		console.log(binaries, deviceMode);
-
-	}
-
-	async _sortBinariesByDependency(files) {
-		const binariesWithDependencies = [];
-		// read every file and parse it
-		let binaries = await Promise.all(files.map(async (file) => {
+	async _parseModules({ files }) {
+		return Promise.all(files.map(async (file) => {
 			const parser = new ModuleParser();
 			const binary = await parser.parseFile(file);
 			return {
@@ -554,16 +549,46 @@ module.exports = class FlashCommand extends CLICommandBase {
 				...binary
 			};
 		}));
-		// generate binaries before
 
-		for (const binary of binaries) {
+	}
+
+	async _sortFilesToFlash({ modules, isInDfuMode, platformId }) {
+		const platform = PLATFORMS.find(p => p.id === platformId);
+		const binaries = await this._sortBinariesByDependency(modules);
+		const preparedModules = binaries.map(binary => {
+			const moduleType = this.moduleTypeToString(binary.prefixInfo.moduleFunction);
+			const storage = platform.firmwareModules
+				.find(firmwareModule => firmwareModule.type === moduleType);
+			const data = binary.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? binary.fileBuffer.slice(binary.prefixInfo.prefixSize) : binary.fileBuffer;
+			return {
+				name: path.basename(binary.filename),
+				moduleInfo: { crc: binary.crc, prefixInfo: binary.prefixInfo, suffixInfo: binary.suffixInfo },
+				data,
+				flashMode: (moduleType === 'bootloader' || (storage && storage.storage === 'externalMcu') ) ? 'normal' : 'dfu'
+			};
+		});
+		const dfuModules = preparedModules.filter(module => module.flashMode === 'dfu');
+		const normalModules = preparedModules.filter(module => module.flashMode === 'normal');
+		if (isInDfuMode) {
+			return [...dfuModules, ...normalModules];
+		} else {
+			return [...normalModules, ...dfuModules];
+		}
+	}
+
+	async _sortBinariesByDependency(modules) {
+		const binariesWithDependencies = [];
+		// read every file and parse it
+
+		// generate binaries before
+		for (const binary of modules) {
 			const binaryWithDependencies = {
 				...binary,
 				dependencies: []
 			};
 			if (binaryWithDependencies.prefixInfo.depModuleFunction !== 0) {
 				const binaryDependency =
-					binaries.find(b =>
+					modules.find(b =>
 						b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.depModuleIndex &&
 						b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
 						b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
@@ -579,7 +604,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 			if (binary.prefixInfo.dep2ModuleFunction !== 0) {
 				const binary2Dependency =
-					binaries.find(b =>
+					modules.find(b =>
 						b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.dep2ModuleIndex &&
 						b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
 						b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
@@ -599,5 +624,22 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		return Array.from(sortedDependencies);
 
+	}
+
+	moduleTypeToString(str) {
+		switch (str) {
+			case ModuleInfo.FunctionType.BOOTLOADER:
+				return 'bootloader';
+			case ModuleInfo.FunctionType.SYSTEM_PART:
+				return 'systemPart';
+			case ModuleInfo.FunctionType.USER_PART:
+				return 'userPart';
+			case ModuleInfo.FunctionType.RADIO_STACK:
+				return 'radioStack';
+			case ModuleInfo.FunctionType.NCP_FIRMWARE:
+				return 'ncpFirmware';
+			default:
+				throw new Error(`Unknown module type: ${str}`);
+		}
 	}
 };
