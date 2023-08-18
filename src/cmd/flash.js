@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const fs = require('fs-extra');
 const ParticleApi = require('./api');
 const VError = require('verror');
@@ -167,7 +168,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			platformId: device.platformId,
 			applicationOnly
 		});
-		filesToFlash = [...filesToFlash, ...deviceOsBinaries];
+		filesToFlash = [...deviceOsBinaries, ...filesToFlash];
 
 		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
 
@@ -333,6 +334,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			return [];
 		}
 
+		// TODO: if files to flash include Device OS binaries, don't override them with the ones from the cloud
+
 		// need to get the binary required version
 		if (applicationOnly) {
 			return [];
@@ -385,7 +388,18 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _tmpCreateFlashSteps({ filesToFlash }) {
 		const parser = new ModuleParser();
-		return Promise.all(filesToFlash.filter(filename => !(/prebootloader-mbr/.test(filename))).map(async (filename) => {
+		filesToFlash = filesToFlash.filter(filename => !(/prebootloader-mbr/.test(filename)));
+		filesToFlash = _.sortBy(filesToFlash, filename => {
+			if (/bootloader/.test(filename)) {
+				return 1;
+			} else if (/system-part/.test(filename)) {
+				return 2;
+			} else {
+				return 3;
+			}
+		});
+
+		return Promise.all(filesToFlash.map(async (filename) => {
 			const moduleInfo = await parser.parseFile(filename);
 
 			let flashMode;
@@ -398,6 +412,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 					flashMode = 'dfu';
 					break;
 			}
+
+			// TODO: if module is a radio stack, drop the module header when setting data
 
 			return {
 				name: path.basename(filename),
@@ -423,7 +439,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 				// wait for the device to apply the firmware
 				await delay(FLASH_APPLY_DELAY);
-				device = await usbUtils.reopenInNormalMode(device);
+				device = await usbUtils.reopenInNormalMode(device, { reset: false });
 			} else {
 				if (!device.isInDfuMode) {
 					// put device in dfu mode

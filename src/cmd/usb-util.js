@@ -186,9 +186,9 @@ async function reopenInDfuMode(device) {
 	return device;
 }
 
-async function reopenInNormalMode(device) {
+async function reopenInNormalMode(device, { reset } = {}) {
 	const { id } = device;
-	if (device.isOpen) {
+	if (reset && device.isOpen) {
 		await device.reset();
 	}
 	await device.close();
