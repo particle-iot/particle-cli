@@ -167,7 +167,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		await this._flashFiles({ device, flashSteps });
 
 		await device.close();
-		console.log(binaries);
 	}
 
 
@@ -324,6 +323,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const { particleApi } = this._particleApi();
 		const { file: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(files, particleApi);
 
+		// no application so no need to download Device OS binaries
 		if (!application) {
 			return [];
 		}
@@ -344,10 +344,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 			});
 		}
 
+		// avoid downgrading Device OS for known application like Tinker compiled against older Device OS
 		if (skipDeviceOSFlash) {
 			return [];
 		}
 
+		// if Device OS needs to be upgraded, or we don't know the current Device OS version, download the binaries
 		if (!currentDeviceOsVersion || semver.lt(currentDeviceOsVersion, applicationDeviceOsVersion)) {
 			return deviceOsUtils.downloadDeviceOsVersionBinaries({
 				api: particleApi,
@@ -356,18 +358,19 @@ module.exports = class FlashCommand extends CLICommandBase {
 				ui: this.ui,
 			});
 		} else {
+			// Device OS is up to date, no need to download binaries
 			return [];
 		}
-
 	}
 
 	async _pickApplicationBinary(files, api) {
-		for await (const file of files) {
+		for (const file of files) {
 			// parse file and look for moduleFunction
 			const parser = new ModuleParser();
 			const fileInfo = await parser.parseFile(file);
 			if (fileInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
 				const internalVersion = fileInfo.prefixInfo.depModuleVersion;
+				// TODO: handle the case when the Device OS version is not available
 				const applicationDeviceOsVersionData = await api.getDeviceOsVersions(fileInfo.prefixInfo.platformID, internalVersion);
 				return { file, applicationDeviceOsVersion: applicationDeviceOsVersionData.version };
 			}
