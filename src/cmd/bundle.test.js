@@ -317,4 +317,17 @@ describe('BundleCommands', () => {
 			});
 		});
 	});
+
+	describe('extractModulesFromBundle', () => {
+		it ('extracts modules from bundle', async () => {
+			const bundleFilename = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+			const expectedRes = ['app.bin', 'cat.txt', 'house.txt', 'water.txt'];
+
+			const modulePaths = await bundleCommands.extractModulesFromBundle({ bundleFilename });
+
+			expect(modulePaths).to.be.an.instanceof(Array);
+			expect(modulePaths).to.have.lengthOf(4);
+			expect(modulePaths.map(module => path.basename(module))).to.eql(expectedRes);
+		});
+	});
 });

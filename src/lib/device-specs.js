@@ -1,6 +1,5 @@
-const path = require('path');
-const fs = require('fs');
 const { PLATFORMS } = require('./platform');
+const { knownAppsForPlatform } = require('./known-apps');
 
 /* Device specs have the following shape:
 
@@ -152,31 +151,6 @@ function deviceIdFromSerialNumber(serialNumber) {
 		return found[0].toLowerCase();
 	}
 }
-
-// Walk the assets/knownApps/${name} directory to find known app binaries for this platform
-function knownAppsForPlatform(name) {
-	const platformKnownAppsPath = path.join(__dirname, '../../assets/knownApps', name);
-	try {
-		return fs.readdirSync(platformKnownAppsPath).reduce((knownApps, appName) => {
-			try {
-				const appPath = path.join(platformKnownAppsPath, appName);
-				const binaries = fs.readdirSync(appPath);
-				const appBinary = binaries.filter(filename => filename.match(/\.bin$/))[0];
-				if (appBinary) {
-					knownApps[appName] = path.join(appPath, appBinary);
-				}
-			} catch (e) {
-				// ignore errors
-			}
-
-			return knownApps;
-		}, {});
-	} catch (e) {
-		// no known apps for this platform
-		return {};
-	}
-}
-
 function generateDeviceSpecs() {
 	return PLATFORMS.reduce((specs, device) => {
 		const key = `${device.dfu.vendorId.replace(/0x/, '')}:${device.dfu.productId.replace(/0x/, '')}`;

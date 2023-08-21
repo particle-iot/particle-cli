@@ -19,22 +19,32 @@ describe('Flash Commands [@device]', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --cloud    Flash over the air to the device. Default if no other flag provided  [boolean]',
-		'  --usb      Flash over USB using the DFU utility  [boolean]',
-		'  --serial   Flash over a virtual serial port  [boolean]',
-		'  --factory  Flash user application to the factory reset location. Only available for DFU  [boolean]',
-		'  --force    Flash even when binary does not pass pre-flash checks  [boolean]',
-		'  --yes      Answer yes to all questions  [boolean]',
-		'  --target   The firmware version to compile against. Defaults to latest version, or version on device for cellular.  [string]',
-		'  --port     Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial  [string]',
+		'  --cloud             Flash over the air to the device. Default if no other flag provided  [boolean]',
+		'  --local             Flash locally, updating Device OS as needed  [boolean]',
+		'  --usb               Flash over USB using the DFU utility  [boolean]',
+		'  --serial            Flash over a virtual serial port  [boolean]',
+		'  --factory           Flash user application to the factory reset location. Only available for DFU  [boolean]',
+		'  --force             Flash even when binary does not pass pre-flash checks  [boolean]',
+		'  --yes               Answer yes to all questions  [boolean]',
+		'  --target            The firmware version to compile against. Defaults to latest version.  [string]',
+		'  --application-only  Do not update Device OS  [boolean]',
+		'  --port              Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial  [string]',
 		'',
 		'Examples:',
 		'  particle flash red                          Compile the source code in the current directory in the cloud and flash to device red',
 		'  particle flash green tinker                 Flash the default Tinker app to device green',
-		'  particle flash blue app.ino --target 0.6.3  Compile app.ino in the cloud using the 0.6.3 firmware and flash to device blue',
+		'  particle flash blue app.ino --target 5.0.0  Compile app.ino in the cloud using the 5.0.0 firmware and flash to device blue',
 		'  particle flash cyan firmware.bin            Flash the pre-compiled binary to device cyan',
+		'  particle flash --local                      Compile the source code in the current directory in the cloud and flash to the device connected over USB',
+		'  particle flash --local --target 5.0.0       Compile the source code in the current directory in the cloud against the target version and flash to the device connected over USB',
+		'  particle flash --local application.bin      Flash the pre-compiled binary to the device connected over USB',
+		'  particle flash --local application.zip      Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
+		'  particle flash --local tinker               Flash the default Tinker app to the device connected over USB',
 		'  particle flash --usb firmware.bin           Flash the binary over USB. The device needs to be in DFU mode',
-		'  particle flash --serial firmware.bin        Flash the binary over virtual serial port. The device needs to be in listening mode'
+		'  particle flash --serial firmware.bin        Flash the binary over virtual serial port. The device needs to be in listening mode',
+		'',
+		'When passing the --local flag, Device OS will be updated if the version on the device is outdated.',
+		'When passing both the --local and --target flash, Device OS will be updated to the target version.'
 	];
 
 	before(async () => {
@@ -59,7 +69,7 @@ describe('Flash Commands [@device]', () => {
 	it('Shows `help` content when run without arguments', async () => {
 		const { stdout, stderr, exitCode } = await cli.run('flash');
 
-		expect(stdout).to.equal('');
+		expect(stdout).to.equal('You must specify a device or a file');
 		expect(stderr.split('\n')).to.include.members(help);
 		expect(exitCode).to.equal(1); // TODO (mirande): should be 0?
 	});

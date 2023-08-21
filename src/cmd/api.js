@@ -221,6 +221,15 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	getDeviceOsVersions(platformId, version) {
+		return this._wrap(
+			this.api.get({
+				uri: `/v1/device-os/versions/${version}?platform_id=${platformId}`,
+				auth: this.accessToken
+			})
+		);
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)

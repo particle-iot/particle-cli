@@ -3,14 +3,16 @@ const Chalk = require('chalk').constructor;
 const Spinner = require('cli-spinner').Spinner;
 const { platformForId, isKnownPlatformId } = require('../platform');
 const settings = require('../../../settings');
-
+const inquirer = require('inquirer');
+const cliProgress = require('cli-progress');
 
 module.exports = class UI {
 	constructor({
 		stdin = process.stdin,
 		stdout = process.stdout,
 		stderr = process.stderr,
-		quiet = false
+		quiet = false,
+		isInteractive = global.isInteractive
 	} = {}){
 		this.stdin = stdin;
 		this.stdout = stdout;
@@ -18,6 +20,7 @@ module.exports = class UI {
 		this.quiet = quiet;
 		this.chalk = new Chalk(); // TODO (mirande): explicitly enable / disable colors
 		this.EOL = os.EOL;
+		this.isInteractive = isInteractive;
 	}
 
 	write(data){
@@ -28,6 +31,19 @@ module.exports = class UI {
 	error(data){
 		const { stderr, EOL } = this;
 		stderr.write(data + EOL);
+	}
+
+	async prompt(question, { nonInteractiveError } = {}) {
+		if (!global.isInteractive){
+			throw new Error(nonInteractiveError || 'Prompts are not allowed in non-interactive mode');
+		}
+		return inquirer.prompt(question);
+	}
+
+	createProgressBar() {
+		return new cliProgress.SingleBar({
+			format: '[{bar}] {percentage}% | {description}',
+		}, cliProgress.Presets.shades_classic);
 	}
 
 	showBusySpinnerUntilResolved(text, promise){

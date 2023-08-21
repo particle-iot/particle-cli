@@ -99,7 +99,7 @@ module.exports = class CLI {
 			 * @param {*} argv The parsed command line arguments.
 			 */
 			parsed(argv) {
-				global.isInteractive = argv.interactive === true || (process.stdin.isTTY && !argv.nonInteractive);
+				global.isInteractive = process.stdin.isTTY && process.stdout.isTTY;
 				global.verboseLevel = argv.verbose+1-argv.quiet;
 				global.outputJson = argv.json;
 			}
