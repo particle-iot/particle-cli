@@ -168,7 +168,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			currentDeviceOsVersion: device.version,
 			skipDeviceOSFlash,
 			target,
-			files: fileModules,
+			modules: fileModules,
 			platformId: device.platformId,
 			applicationOnly
 		});
@@ -177,9 +177,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		modulesToFlash = await this._filterModulesToFlash({ modules: modulesToFlash, platformId: device.platformId });
 
 		const flashSteps = await this._createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
-		console.log(flashSteps);
-
-		//await this._flashFiles({ device, flashSteps });
+		await this._flashFiles({ device, flashSteps });
 		await device.close();
 
 	}
@@ -334,9 +332,16 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return processed.flat();
 	}
 
-	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, files, currentDeviceOsVersion, platformId, applicationOnly }) {
+	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {
 		const { particleApi } = this._particleApi();
-		const { file: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(files, particleApi);
+		const { file: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, particleApi);
+
+		// if we have specific deviceOs Binaries, don't download them from the cloud
+		const includedDeviceOsModuleFunctions = [ModuleInfo.FunctionType.SYSTEM_PART, ModuleInfo.FunctionType.BOOTLOADER];
+		const systemPartBinaries = modules.filter(m => includedDeviceOsModuleFunctions.includes(m.prefixInfo.moduleFunction));
+		if (systemPartBinaries.length) {
+			return [];
+		}
 
 		// no application so no need to download Device OS binaries
 		if (!application) {

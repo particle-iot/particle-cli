@@ -297,7 +297,7 @@ describe('FlashCommand', () => {
 		it('returns empty if there is no application binary', async () => {
 			const modules = await createModules();
 			const userPart = modules.find(m => m.filename === 'systemPart1.bin');
-			const deviceOsBinaries = await flash._getDeviceOsBinaries({ files: [userPart] });
+			const deviceOsBinaries = await flash._getDeviceOsBinaries({ modules: [userPart] });
 			expect(deviceOsBinaries).to.eql([]);
 		});
 		it('returns empty list if applicationOnly is true', async () => {
@@ -310,7 +310,7 @@ describe('FlashCommand', () => {
 			const userPart = modules.find(m => m.filename === 'userPart1.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				applicationOnly: true,
-				files: [userPart]
+				modules: [userPart]
 			});
 			expect(binaries).to.eql([]);
 		});
@@ -326,7 +326,7 @@ describe('FlashCommand', () => {
 			const binaries = await flash._getDeviceOsBinaries({
 				skipDeviceOSFlash: true,
 				currentDeviceOsVersion: '0.7.0',
-				files: [userPart]
+				modules: [userPart]
 			});
 			expect(binaries).to.eql([]);
 		});
@@ -345,7 +345,7 @@ describe('FlashCommand', () => {
 			]);
 			const binaries = await flash._getDeviceOsBinaries({
 				target: '4.1.0',
-				files: [userPart],
+				modules: [userPart],
 				platformId: 6
 			});
 			expect(binaries.some(file => file.includes('photon-bootloader@4.1.0+lto.bin'))).to.be.true;
@@ -368,7 +368,7 @@ describe('FlashCommand', () => {
 			]);
 			const binaries = await flash._getDeviceOsBinaries({
 				platformId: 6,
-				files: [userPart],
+				modules: [userPart],
 			});
 			expect(binaries.some(file => file.includes('photon-bootloader@4.1.0+lto.bin'))).to.be.true;
 			expect(binaries.some(file => file.includes('photon-system-part1@4.1.0.bin'))).to.be.true;
