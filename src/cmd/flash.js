@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const fs = require('fs-extra');
+const os = require('os');
 const ParticleApi = require('./api');
 const VError = require('verror');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
@@ -473,41 +474,60 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	_createFlashProgress({ flashSteps }) {
-		const progressBar = this.ui.createProgressBar();
-
-		// double the size to account for the erase and programming steps
-		const total = flashSteps.reduce((total, step) => total + step.data.length * 2, 0);
-
-		progressBar.start(total, 0, { description: 'Preparing to flash' });
+		const { isInteractive } = this.ui;
+		let progressBar;
+		if (isInteractive) {
+			progressBar = this.ui.createProgressBar();
+			// double the size to account for the erase and programming steps
+			const total = flashSteps.reduce((total, step) => total + step.data.length * 2, 0);
+			progressBar.start(total, 0, { description: 'Preparing to flash' });
+		}
 
 		let eraseSize = 0;
 		let currentStep = null;
+		let description;
 		return (payload) => {
 			switch (payload.event) {
 				case 'flash-file':
-					progressBar.update({ description: payload.filename });
+					description = `Flashing ${payload.filename}`;
+					if (isInteractive) {
+						progressBar.update({ description });
+					} else {
+						this.ui.stdout.write(`${description}${os.EOL}`);
+					}
 					currentStep = flashSteps.find(step => step.name === payload.filename);
 					eraseSize = 0;
 					break;
 				case 'switch-mode':
-					progressBar.update({ description: `Switching device to ${payload.mode} mode` });
+					description = `Switching device to ${payload.mode} mode`;
+					if (isInteractive) {
+						progressBar.update({ description });
+					} else {
+						this.ui.stdout.write(`${description}${os.EOL}`);
+					}
 					break;
 				case 'erased':
-					// In DFU, entire sectors are erased so the count of bytes can be higher than the actual size
-					// of the file. Ignore the extra bytes to avoid issues with the progress bar
-					if (currentStep && eraseSize + payload.bytes > currentStep.data.length) {
-						progressBar.increment(currentStep.data.length - eraseSize);
-						eraseSize = currentStep.data.length;
-					} else {
-						eraseSize += payload.bytes;
-						progressBar.increment(payload.bytes);
+					if (isInteractive) {
+						// In DFU, entire sectors are erased so the count of bytes can be higher than the actual size
+						// of the file. Ignore the extra bytes to avoid issues with the progress bar
+						if (currentStep && eraseSize + payload.bytes > currentStep.data.length) {
+							progressBar.increment(currentStep.data.length - eraseSize);
+							eraseSize = currentStep.data.length;
+						} else {
+							progressBar.increment(payload.bytes);
+							eraseSize += payload.bytes;
+						}
 					}
 					break;
 				case 'downloaded':
-					progressBar.increment(payload.bytes);
+					if (isInteractive) {
+						progressBar.increment(payload.bytes);
+					}
 					break;
 				case 'finish':
-					progressBar.stop();
+					if (isInteractive) {
+						progressBar.stop();
+					}
 					break;
 			}
 		};
