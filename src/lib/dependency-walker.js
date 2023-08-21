@@ -1,3 +1,5 @@
+const { ModuleInfo } = require('binary-version-reader');
+
 class DependencyWalker {
 	constructor({ modules, log }) {
 		this._log = log;
@@ -65,6 +67,79 @@ class DependencyWalker {
 
 }
 
+async function sortBinariesByDependency(modules) {
+	const binariesWithDependencies = [];
+	// read every file and parse it
+
+	// generate binaries before
+	for (const binary of modules) {
+		const binaryWithDependencies = {
+			...binary,
+			dependencies: []
+		};
+		if (binaryWithDependencies.prefixInfo.depModuleFunction !== 0) {
+			const binaryDependency =
+				modules.find(b =>
+					b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.depModuleIndex &&
+					b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
+					b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
+				);
+			if (binaryDependency) {
+				binaryWithDependencies.dependencies.push({
+					func: binaryDependency.prefixInfo.moduleFunction,
+					index: binaryDependency.prefixInfo.moduleIndex,
+					version: binaryDependency.prefixInfo.moduleVersion
+				});
+			}
+		}
+
+		if (binary.prefixInfo.dep2ModuleFunction !== 0) {
+			const binary2Dependency =
+				modules.find(b =>
+					b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.dep2ModuleIndex &&
+					b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
+					b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
+				);
+			if (binary2Dependency) {
+				binaryWithDependencies.dependencies.push({
+					func: binary2Dependency.prefixInfo.moduleFunction,
+					index: binary2Dependency.prefixInfo.moduleIndex,
+					version: binary2Dependency.prefixInfo.moduleVersion
+				});
+			}
+		}
+		binariesWithDependencies.push(binaryWithDependencies);
+	}
+	const dependencyWalker = new DependencyWalker({ modules: binariesWithDependencies });
+	const sortedDependencies = dependencyWalker.sortByDependencies(binariesWithDependencies);
+
+	return Array.from(sortedDependencies);
+
+}
+
+
+
+function moduleTypeToString(str) {
+	switch (str) {
+		case ModuleInfo.FunctionType.BOOTLOADER:
+			return 'bootloader';
+		case ModuleInfo.FunctionType.SYSTEM_PART:
+			return 'systemPart';
+		case ModuleInfo.FunctionType.USER_PART:
+			return 'userPart';
+		case ModuleInfo.FunctionType.RADIO_STACK:
+			return 'radioStack';
+		case ModuleInfo.FunctionType.NCP_FIRMWARE:
+			return 'ncpFirmware';
+		case ModuleInfo.FunctionType.ASSET:
+			return 'assets';
+		default:
+			throw new Error(`Unknown module type: ${str}`);
+	}
+}
+
 module.exports = {
-	DependencyWalker
+	DependencyWalker,
+	sortBinariesByDependency,
+	moduleTypeToString
 };

@@ -382,23 +382,6 @@ describe('FlashCommand', () => {
 		});
 	});
 
-	describe('_sortBinariesByDependency', () => {
-		it('returns a list of files sorted by dependency', async () => {
-			const modules = await createModules();
-			const expected = [
-				modules.find( m => m.filename === 'preBootloader.bin'),
-				modules.find( m => m.filename === 'bootloader.bin'),
-				modules.find( m => m.filename === 'systemPart1.bin'),
-				modules.find( m => m.filename === 'systemPart2.bin'),
-				modules.find( m => m.filename === 'userPart1.bin'),
-			];
-			const binaries = await flash._sortBinariesByDependency(modules);
-			binaries.forEach((binary, index) => {
-				expect(binary.filename).to.equal(expected[index].filename);
-			});
-		});
-	});
-
 	describe('_createFlashSteps', () => {
 		let preBootloaderStep, bootloaderStep, systemPart1Step, systemPart2Step, userPart1Step, modules, assetModules, asset1Step, asset2Step;
 		beforeEach(async() => {

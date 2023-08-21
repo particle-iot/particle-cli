@@ -21,7 +21,7 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
-const { DependencyWalker } = require('../lib/dependency-walker');
+const { moduleTypeToString, sortBinariesByDependency } = require('../lib/dependency-walker');
 
 const FLASH_APPLY_DELAY = 3000;
 
@@ -515,7 +515,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _createFlashSteps({ modules, isInDfuMode, platformId }) {
 		const platform = PLATFORMS.find(p => p.id === platformId);
-		const binaries = await this._sortBinariesByDependency(modules);
+		const binaries = await sortBinariesByDependency(modules);
 		const assetModules = [], normalModules = [], dfuModules = [];
 		binaries.forEach(binary => {
 			const data = binary.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? binary.fileBuffer.slice(binary.prefixInfo.prefixSize) : binary.fileBuffer;
@@ -524,7 +524,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				moduleInfo: { crc: binary.crc, prefixInfo: binary.prefixInfo, suffixInfo: binary.suffixInfo },
 				data
 			};
-			const moduleType = this.moduleTypeToString(binary.prefixInfo.moduleFunction);
+			const moduleType = moduleTypeToString(binary.prefixInfo.moduleFunction);
 			const storage = platform.firmwareModules
 				.find(firmwareModule => firmwareModule.type === moduleType);
 			if (moduleType === 'assets') {
@@ -543,75 +543,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 			return [...dfuModules, ...normalModules, ...assetModules];
 		} else {
 			return [...normalModules, ...dfuModules, ...assetModules];
-		}
-	}
-
-	async _sortBinariesByDependency(modules) {
-		const binariesWithDependencies = [];
-		// read every file and parse it
-
-		// generate binaries before
-		for (const binary of modules) {
-			const binaryWithDependencies = {
-				...binary,
-				dependencies: []
-			};
-			if (binaryWithDependencies.prefixInfo.depModuleFunction !== 0) {
-				const binaryDependency =
-					modules.find(b =>
-						b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.depModuleIndex &&
-						b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
-						b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
-					);
-				if (binaryDependency) {
-					binaryWithDependencies.dependencies.push({
-						func: binaryDependency.prefixInfo.moduleFunction,
-						index: binaryDependency.prefixInfo.moduleIndex,
-						version: binaryDependency.prefixInfo.moduleVersion
-					});
-				}
-			}
-
-			if (binary.prefixInfo.dep2ModuleFunction !== 0) {
-				const binary2Dependency =
-					modules.find(b =>
-						b.prefixInfo.moduleIndex === binaryWithDependencies.prefixInfo.dep2ModuleIndex &&
-						b.prefixInfo.moduleFunction === binaryWithDependencies.prefixInfo.depModuleFunction &&
-						b.prefixInfo.moduleVersion === binaryWithDependencies.prefixInfo.depModuleVersion
-					);
-				if (binary2Dependency) {
-					binaryWithDependencies.dependencies.push({
-						func: binary2Dependency.prefixInfo.moduleFunction,
-						index: binary2Dependency.prefixInfo.moduleIndex,
-						version: binary2Dependency.prefixInfo.moduleVersion
-					});
-				}
-			}
-			binariesWithDependencies.push(binaryWithDependencies);
-		}
-		const dependencyWalker = new DependencyWalker({ modules: binariesWithDependencies });
-		const sortedDependencies = dependencyWalker.sortByDependencies(binariesWithDependencies);
-
-		return Array.from(sortedDependencies);
-
-	}
-
-	moduleTypeToString(str) {
-		switch (str) {
-			case ModuleInfo.FunctionType.BOOTLOADER:
-				return 'bootloader';
-			case ModuleInfo.FunctionType.SYSTEM_PART:
-				return 'systemPart';
-			case ModuleInfo.FunctionType.USER_PART:
-				return 'userPart';
-			case ModuleInfo.FunctionType.RADIO_STACK:
-				return 'radioStack';
-			case ModuleInfo.FunctionType.NCP_FIRMWARE:
-				return 'ncpFirmware';
-			case ModuleInfo.FunctionType.ASSET:
-				return 'assets';
-			default:
-				throw new Error(`Unknown module type: ${str}`);
 		}
 	}
 };
