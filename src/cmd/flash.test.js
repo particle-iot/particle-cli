@@ -6,10 +6,119 @@ const path = require('path');
 const FlashCommand = require('./flash');
 const BundleCommand = require('./bundle');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
+const deviceOsUtils = require('../lib/device-os-version-util');
+const { firmwareTestHelper, ModuleInfo, HalModuleParser } = require('binary-version-reader');
 
 describe('FlashCommand', () => {
 	let flash;
 	const originalEnv = process.env;
+
+	// returns a list of HalModule objects
+	const createModules = async () => {
+		const parser = new HalModuleParser();
+		const preBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			platformId: 6,
+			moduleIndex: 0,
+			moduleVersion: 1200,
+			deps: []
+		});
+		const preBootloader = await parser.parseBuffer({ fileBuffer: preBootloaderBuffer });
+		const bootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			moduleIndex: 2,
+			platformId: 6,
+			moduleVersion: 1210,
+			deps: [
+				{ func: ModuleInfo.FunctionType.BOOTLOADER, index: 0, version: 1200 }
+			]
+		});
+		const bootloader = await parser.parseBuffer({ fileBuffer: bootloaderBuffer });
+		const systemPart1Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+			moduleIndex: 1,
+			platformId: 6,
+			moduleVersion: 4100,
+			deps: [
+				{ func: ModuleInfo.FunctionType.BOOTLOADER, index: 1, version: 1210 }
+			]
+		});
+		const systemPart1 = await parser.parseBuffer({ fileBuffer: systemPart1Buffer });
+		const systemPart2Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+			moduleIndex: 2,
+			platformId: 6,
+			moduleVersion: 4100,
+			deps: [
+				{ func: ModuleInfo.FunctionType.SYSTEM_PART, index: 1, version: 4100 }
+			]
+		});
+		const systemPart2 = await parser.parseBuffer({ fileBuffer: systemPart2Buffer });
+		const userPart1Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.USER_PART,
+			moduleIndex: 1,
+			platformId: 6,
+			moduleVersion: 4100,
+			deps: [
+				{ func: ModuleInfo.FunctionType.SYSTEM_PART, index: 2, version: 4100 }
+			]
+		});
+		const userPart1 = await parser.parseBuffer({ fileBuffer: userPart1Buffer });
+		return [
+			{ filename: 'preBootloader.bin', ...preBootloader },
+			{ filename: 'bootloader.bin', ...bootloader },
+			{ filename: 'systemPart1.bin', ...systemPart1 },
+			{ filename: 'systemPart2.bin', ...systemPart2 },
+			{ filename: 'userPart1.bin', ...userPart1 }
+		];
+	};
+
+	const createAssetModules = async() => {
+		const parser = new HalModuleParser();
+		const asset1Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.ASSET,
+			moduleIndex: 0,
+			deps: []
+		});
+		const asset1 = await parser.parseBuffer({ fileBuffer: asset1Buffer });
+		const asset2Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.ASSET,
+			moduleIndex: 1,
+			deps: []
+		});
+		const asset2 = await parser.parseBuffer({ fileBuffer: asset2Buffer });
+		return [
+			{ filename: 'asset1.bin', ...asset1 },
+			{ filename: 'asset2.bin', ...asset2 }
+		];
+	};
+
+	const createExtraModules = async () => {
+		const parser = new HalModuleParser();
+		const softDeviceBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.RADIO_STACK,
+			moduleIndex: 0,
+			deps: []
+		});
+		const softDevice = await parser.parseBuffer({ fileBuffer: softDeviceBuffer });
+		const ncpBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.NCP_FIRMWARE,
+			moduleIndex: 0,
+			deps: []
+		});
+		const ncp = await parser.parseBuffer({ fileBuffer: ncpBuffer });
+		const encryptedModuleBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			moduleIndex: 1,
+			deps: []
+		});
+		const encryptedModule = await parser.parseBuffer({ fileBuffer: encryptedModuleBuffer });
+		return {
+			softDevice: { filename: 'softDevice.bin', ...softDevice },
+			ncp: { filename: 'ncp.bin', ...ncp },
+			encryptedModule: { filename: 'encryptedModule.bin', ...encryptedModule }
+		};
+	};
 
 	beforeEach(() => {
 		process.env = {
@@ -187,34 +296,67 @@ describe('FlashCommand', () => {
 			expect(result).to.eql(['system-part1.bin', 'application.bin', 'asset.txt', 'system-part2.bin']);
 		});
 	});
-	describe('_getDeviceOsBinaries', () => {
-		it('returns empty if there is no application binary', async () => {
-			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon-system-part1@4.1.0.bin');
-			const deviceOsBinaries = await flash._getDeviceOsBinaries({ files: [file] });
-			expect(deviceOsBinaries).to.eql([]);
+
+	describe('_validateModulesForPlatform', async () => {
+		let modules;
+		beforeEach(async () => {
+			modules = await createModules();
 		});
-		it ('fails if a file does not exist', async () => {
+		it('throws an error if a module is not for the target platform', async () => {
 			let error;
 			try {
-				await flash._getDeviceOsBinaries({
-					applicationOnly: true,
-					files: ['not-found-app-other-app.bin']
-				});
+				await flash._validateModulesForPlatform({ modules, platformId: 32, platformName: 'p2' });
 			} catch (e) {
 				error = e;
 			}
-			expect(error).to.equal('not-found-app-other-app.bin doesn\'t exist');
+			expect(error).to.have.property('message', 'Module preBootloader.bin is not compatible with platform p2');
+		});
+		it('pass in case the modules are intended for the target platform', async () => {
+			let error;
+			try {
+				await flash._validateModulesForPlatform({ modules, platformId: 6, platformName: 'photon' });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.be.undefined;
+		});
+	});
+
+	describe('_filterModulesToFlash', () => {
+		let modules, assetModules, extraModules;
+		beforeEach( async () => {
+			modules = await createModules();
+			assetModules = await createAssetModules();
+			extraModules = await createExtraModules();
+		});
+		it('returns modules without ncp, softDevice and encrypted modules', async () => {
+			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32 });
+			expect(filteredModules).to.have.lengthOf(7);
+		});
+		it ('returns everything but encrypted modules if allowAll argument is passed', async () => {
+			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32, allowAll: true });
+			expect(filteredModules).to.have.lengthOf(9);
+		});
+	});
+
+	describe('_getDeviceOsBinaries', () => {
+		it('returns empty if there is no application binary', async () => {
+			const modules = await createModules();
+			const userPart = modules.find(m => m.filename === 'systemPart1.bin');
+			const deviceOsBinaries = await flash._getDeviceOsBinaries({ modules: [userPart] });
+			expect(deviceOsBinaries).to.eql([]);
 		});
 		it('returns empty list if applicationOnly is true', async () => {
 			nock('https://api.particle.io')
-				.intercept('/v1/device-os/versions/1213?platform_id=12', 'GET')
+				.intercept('/v1/device-os/versions/4100?platform_id=6', 'GET')
 				.reply(200, {
 					version: '2.3.1'
 				});
-			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
+			const modules = await createModules();
+			const userPart = modules.find(m => m.filename === 'userPart1.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				applicationOnly: true,
-				files: [file]
+				modules: [userPart]
 			});
 			expect(binaries).to.eql([]);
 		});
@@ -225,83 +367,196 @@ describe('FlashCommand', () => {
 				.reply(200, {
 					version: '2.3.1'
 				});
-			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
+			const modules = await createModules();
+			const userPart = modules.find(m => m.filename === 'userPart1.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				skipDeviceOSFlash: true,
 				currentDeviceOsVersion: '0.7.0',
-				files: [file]
+				modules: [userPart]
 			});
 			expect(binaries).to.eql([]);
 		});
 
 		it('returns a list of files if there is a target', async () => {
-			const binary = await fs.readFile(path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin'));
-			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
+			const modules = await createModules();
+			const userPart = modules.find(m => m.filename === 'userPart1.bin');
 			nock('https://api.particle.io')
-				.intercept('/v1/device-os/versions/1213?platform_id=12', 'GET')
+				.intercept('/v1/device-os/versions/4100?platform_id=6', 'GET')
 				.reply(200, {
-					version: '2.3.1'
+					version: '4.1.0'
 				});
-			nock('https://api.particle.io')
-				.intercept('/v1/device-os/versions/2.3.1?platform_id=6', 'GET')
-				.reply(200, {
-					version: '2.3.1',
-					internal_version: 2302,
-					base_url: 'https://api.particle.io/v1/firmware/device-os/v2.3.1',
-					modules: [
-						{ filename: 'photon-bootloader@2.3.1+lto.bin', prefixInfo: { moduleFunction: 'bootloader' } },
-						{ filename: 'photon-system-part1@2.3.1.bin', prefixInfo: { moduleFunction: 'system-part1' } }
-					]
-				});
-			nock('https://api.particle.io')
-				.intercept('/v1/firmware/device-os/v2.3.1/photon-bootloader@2.3.1+lto.bin', 'GET')
-				.reply(200, binary);
-			nock('https://api.particle.io')
-				.intercept('/v1/firmware/device-os/v2.3.1/photon-system-part1@2.3.1.bin', 'GET')
-				.reply(200, binary);
+			const stub = sinon.stub(deviceOsUtils, 'downloadDeviceOsVersionBinaries').returns([
+				'photon-bootloader@4.1.0+lto.bin',
+				'photon-system-part1@4.1.0.bin'
+			]);
 			const binaries = await flash._getDeviceOsBinaries({
-				target: '2.3.1',
-				files: [file],
+				target: '4.1.0',
+				modules: [userPart],
 				platformId: 6
 			});
-			expect(binaries.some(file => file.includes('photon-bootloader@2.3.1+lto.bin'))).to.be.true;
-			expect(binaries.some(file => file.includes('photon-system-part1@2.3.1.bin'))).to.be.true;
+			expect(binaries.some(file => file.includes('photon-bootloader@4.1.0+lto.bin'))).to.be.true;
+			expect(binaries.some(file => file.includes('photon-system-part1@4.1.0.bin'))).to.be.true;
 			expect(binaries).to.have.lengthOf(2);
+			expect(stub).to.have.been.calledOnce;
 		});
 
 		it('returns a list of files depending on user-part dependency binary', async () => {
-			const userPartPath = path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin');
-			const binary = await fs.readFile(path.join(__dirname, '../../test/__fixtures__/binaries/argon_stroby.bin'));
+			const modules = await createModules();
+			const userPart = modules.find(m => m.filename === 'userPart1.bin');
 			nock('https://api.particle.io')
-				.intercept('/v1/device-os/versions/1213?platform_id=12', 'GET')
+				.intercept('/v1/device-os/versions/4100?platform_id=6', 'GET')
 				.reply(200, {
-					version: '1.2.3'
+					version: '4.1.0'
 				});
-			nock('https://api.particle.io')
-				.intercept('/v1/device-os/versions/1.2.3?platform_id=6', 'GET')
-				.reply(200, {
-					version: '1.2.3',
-					internal_version: 1213,
-					base_url: 'https://api.particle.io/v1/firmware/device-os/v1.2.3',
-					modules: [
-						{ filename: 'photon-bootloader@1.2.3+lto.bin', prefixInfo: { moduleFunction: 'bootloader' } },
-						{ filename: 'photon-system-part1@1.2.3.bin', prefixInfo: { moduleFunction: 'system-part1' } }
-					]
-				});
-
-			nock('https://api.particle.io')
-				.intercept('/v1/firmware/device-os/v1.2.3/photon-bootloader@1.2.3+lto.bin', 'GET')
-				.reply(200, binary);
-			nock('https://api.particle.io')
-				.intercept('/v1/firmware/device-os/v1.2.3/photon-system-part1@1.2.3.bin', 'GET')
-				.reply(200, binary);
+			const stub = sinon.stub(deviceOsUtils, 'downloadDeviceOsVersionBinaries').returns([
+				'photon-bootloader@4.1.0+lto.bin',
+				'photon-system-part1@4.1.0.bin'
+			]);
 			const binaries = await flash._getDeviceOsBinaries({
 				platformId: 6,
-				files: [userPartPath],
+				modules: [userPart],
 			});
-			expect(binaries.some(file => file.includes('photon-bootloader@1.2.3+lto.bin'))).to.be.true;
-			expect(binaries.some(file => file.includes('photon-system-part1@1.2.3.bin'))).to.be.true;
+			expect(binaries.some(file => file.includes('photon-bootloader@4.1.0+lto.bin'))).to.be.true;
+			expect(binaries.some(file => file.includes('photon-system-part1@4.1.0.bin'))).to.be.true;
 			expect(binaries).to.have.lengthOf(2);
+			expect(stub).to.have.been.calledOnce;
+		});
+	});
+
+	describe('_createFlashSteps', () => {
+		let preBootloaderStep, bootloaderStep, systemPart1Step, systemPart2Step, userPart1Step, modules, assetModules, asset1Step, asset2Step;
+		beforeEach(async() => {
+			modules = await createModules();
+			assetModules = await createAssetModules();
+			const preBootloader = modules.find( m => m.filename === 'preBootloader.bin');
+			const bootloader = modules.find( m => m.filename === 'bootloader.bin');
+			const systemPart1 = modules.find( m => m.filename === 'systemPart1.bin');
+			const systemPart2 = modules.find( m => m.filename === 'systemPart2.bin');
+			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+			const asset1 = assetModules.find( m => m.filename === 'asset1.bin');
+			const asset2 = assetModules.find( m => m.filename === 'asset2.bin');
+			preBootloaderStep = {
+				name: preBootloader.filename,
+				moduleInfo: {
+					crc: preBootloader.crc,
+					prefixInfo: preBootloader.prefixInfo,
+					suffixInfo: preBootloader.suffixInfo
+				},
+				data: preBootloader.fileBuffer,
+				flashMode: 'normal'
+			};
+			bootloaderStep = {
+				name: bootloader.filename,
+				moduleInfo: {
+					crc: bootloader.crc,
+					prefixInfo: bootloader.prefixInfo,
+					suffixInfo: bootloader.suffixInfo
+				},
+				data: bootloader.fileBuffer,
+				flashMode: 'normal'
+			};
+			systemPart1Step = {
+				name: systemPart1.filename,
+				moduleInfo: {
+					crc: systemPart1.crc,
+					prefixInfo: systemPart1.prefixInfo,
+					suffixInfo: systemPart1.suffixInfo
+				},
+				data: systemPart1.fileBuffer,
+				flashMode: 'dfu'
+			};
+			systemPart2Step = {
+				name: systemPart2.filename,
+				moduleInfo: {
+					crc: systemPart2.crc,
+					prefixInfo: systemPart2.prefixInfo,
+					suffixInfo: systemPart2.suffixInfo
+				},
+				data: systemPart2.fileBuffer,
+				flashMode: 'dfu'
+			};
+			userPart1Step = {
+				name: userPart1.filename,
+				moduleInfo: {
+					crc: userPart1.crc,
+					prefixInfo: userPart1.prefixInfo,
+					suffixInfo: userPart1.suffixInfo
+				},
+				data: userPart1.fileBuffer,
+				flashMode: 'dfu'
+			};
+			asset1Step = {
+				name: asset1.filename,
+				moduleInfo: {
+					crc: asset1.crc,
+					prefixInfo: asset1.prefixInfo,
+					suffixInfo: asset1.suffixInfo
+				},
+				data: asset1.fileBuffer,
+				flashMode: 'normal'
+			};
+			asset2Step = {
+				name: asset2.filename,
+				moduleInfo: {
+					crc: asset2.crc,
+					prefixInfo: asset2.prefixInfo,
+					suffixInfo: asset2.suffixInfo
+				},
+				data: asset2.fileBuffer,
+				flashMode: 'normal'
+			};
+		});
+
+		it('returns a list of flash steps', async () => {
+			const steps = await flash._createFlashSteps({
+				modules,
+				platformId: 6,
+				isInDfuMode: false,
+			});
+
+			const expected = [
+				preBootloaderStep,
+				bootloaderStep,
+				systemPart1Step,
+				systemPart2Step,
+				userPart1Step,
+			];
+			expect(steps).to.deep.equal(expected);
+		});
+
+		it('returns first dfu steps if isInDfuMode is true', async () => {
+			const steps = await flash._createFlashSteps({
+				modules,
+				platformId: 6,
+				isInDfuMode: true,
+			});
+
+			const expected = [
+				systemPart1Step,
+				systemPart2Step,
+				userPart1Step,
+				preBootloaderStep,
+				bootloaderStep,
+			];
+			expect(steps).to.deep.equal(expected);
+		});
+
+		it('returns assets at the end of the list', async () => {
+			const steps = await flash._createFlashSteps({
+				modules: [...assetModules, ...modules],
+				platformId: 6,
+				isInDfuMode: false,
+			});
+			const expected = [
+				preBootloaderStep,
+				bootloaderStep,
+				systemPart1Step,
+				systemPart2Step,
+				userPart1Step,
+				asset2Step,
+				asset1Step,
+			];
+			expect(steps).to.deep.equal(expected);
 		});
 	});
 });
