@@ -11,10 +11,9 @@ const { HalModuleParser } = require('binary-version-reader');
  * @param url - the url to download from
  * @param directory - the directory to download to
  * @param filename - the filename to use
- * @param progress - a function to call when bytes are received
  * @returns {Promise<unknown>} - a promise that resolves when the file is downloaded
  */
-async function downloadFile({ url, directory, filename, progress }) {
+async function downloadFile({ url, directory, filename }) {
 	let file;
 	try {
 		filename = filename || url.match(/.*\/(.*)/)[1];
@@ -35,11 +34,6 @@ async function downloadFile({ url, directory, filename, progress }) {
 				}
 
 				response.pipe(file);
-				response.on('data', (chunk) => {
-					if (progress) {
-						progress(chunk.length);
-					}
-				});
 				response.on('end', () => {
 					file.end();
 					resolve(filename);
@@ -76,18 +70,16 @@ function getBinaryPath(version, platformName) {
  * @param module - the module object to download
  * @param baseUrl - the base url for the api
  * @param version - the version to download
- * @param progress - a function to call when bytes are received
  * @returns {Promise<string>} - the path to the binary
  */
-async function downloadBinary({ platformName, module, baseUrl, version, progress }) {
+async function downloadBinary({ platformName, module, baseUrl, version }) {
 	const binaryPath= getBinaryPath(version, platformName);
 	// fetch the binary
 	const url = `${baseUrl}/${module.filename}`;
 	return downloadFile({
 		url,
 		directory: binaryPath,
-		filename: module.filename,
-		progress
+		filename: module.filename
 	});
 }
 
@@ -138,15 +130,6 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		// download binaries for each missing module
 		if (modulesToDownload.length > 0) {
 			const description = `Downloading Device OS ${version}`;
-			// TODO: once module.size exists, put back the progress bar
-			// let progressBar;
-			// if (ui.isInteractive) {
-			// 	progressBar = ui.createProgressBar();
-			// 	const totalSize = modulesToDownload.reduce((total, module) => total + module.size, 0);
-			// 	progressBar.start(totalSize, 0, { description });
-			// } else {
-			// 	this.ui.stdout.write(`${description}${os.EOL}`);
-			// }
 
 			await ui.showBusySpinnerUntilResolved(description, Promise.all(modulesToDownload.map(async (module) => {
 				await downloadBinary({
@@ -154,14 +137,8 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 					module,
 					baseUrl: deviceOsVersion.base_url,
 					version: deviceOsVersion.version
-					// progress: (bytes) => {
-					// 	progressBar && progressBar.increment(bytes)
-					// }
 				});
 			})));
-			// if (ui.isInteractive) {
-			// 	progressBar.stop();
-			// }
 			ui.stdout.write(`Downloaded Device OS ${version}${os.EOL}`);
 		}
 
