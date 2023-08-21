@@ -177,8 +177,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToFlash = [...filesToFlash, ...deviceOsBinaries];
 		const modulesToFlash = await this._parseModules({ files: filesToFlash });
 
-		// const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
-		const flashSteps = await this._sortFilesToFlash({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
+		const flashSteps = await this._createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
 		console.log(flashSteps);
 
 		await this._flashFiles({ device, flashSteps });
@@ -402,44 +401,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return { file: null, applicationDeviceOsVersion: null };
 	}
 
-	async _tmpCreateFlashSteps({ filesToFlash }) {
-		const parser = new ModuleParser();
-		filesToFlash = filesToFlash.filter(filename => !(/prebootloader-mbr/.test(filename)));
-		filesToFlash = _.sortBy(filesToFlash, filename => {
-			if (/bootloader/.test(filename)) {
-				return 1;
-			} else if (/system-part/.test(filename)) {
-				return 2;
-			} else {
-				return 3;
-			}
-		});
-
-		return Promise.all(filesToFlash.map(async (filename) => {
-			const moduleInfo = await parser.parseFile(filename);
-
-			let flashMode;
-			switch (moduleInfo.prefixInfo.moduleFunction) {
-				case ModuleInfo.FunctionType.BOOTLOADER:
-				case ModuleInfo.FunctionType.ASSET:
-					flashMode = 'normal';
-					break;
-				default:
-					flashMode = 'dfu';
-					break;
-			}
-
-			// TODO: if module is a radio stack, drop the module header when setting data
-
-			return {
-				name: path.basename(filename),
-				moduleInfo,
-				data: moduleInfo.fileBuffer,
-				flashMode
-			};
-		}));
-	}
-
 	async _flashFiles({ device, flashSteps }) {
 		const progress = this._createFlashProgress({ flashSteps });
 
@@ -552,7 +513,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	}
 
-	async _sortFilesToFlash({ modules, isInDfuMode, platformId }) {
+	async _createFlashSteps({ modules, isInDfuMode, platformId }) {
 		const platform = PLATFORMS.find(p => p.id === platformId);
 		const binaries = await this._sortBinariesByDependency(modules);
 		const assetModules = [], normalModules = [], dfuModules = [];

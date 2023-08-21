@@ -6,10 +6,86 @@ const path = require('path');
 const FlashCommand = require('./flash');
 const BundleCommand = require('./bundle');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
+const { firmwareTestHelper, ModuleInfo, HalModuleParser } = require('binary-version-reader');
 
 describe('FlashCommand', () => {
 	let flash;
 	const originalEnv = process.env;
+
+	// returns a list of HalModule objects
+	const createModules = async () => {
+		const parser = new HalModuleParser();
+		const preBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			moduleIndex: 0,
+			moduleVersion: 1200,
+			deps: []
+		});
+		const preBootloader = await parser.parseBuffer({ fileBuffer: preBootloaderBuffer });
+		const bootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			moduleIndex: 1,
+			moduleVersion: 1210,
+			deps: [
+				{ func: ModuleInfo.FunctionType.BOOTLOADER, index: 0, version: 1200 }
+			]
+		});
+		const bootloader = await parser.parseBuffer({ fileBuffer: bootloaderBuffer });
+		const systemPart1Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+			moduleIndex: 1,
+			moduleVersion: 4100,
+			deps: [
+				{ func: ModuleInfo.FunctionType.BOOTLOADER, index: 1, version: 1210 }
+			]
+		});
+		const systemPart1 = await parser.parseBuffer({ fileBuffer: systemPart1Buffer });
+		const systemPart2Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+			moduleIndex: 2,
+			moduleVersion: 4100,
+			deps: [
+				{ func: ModuleInfo.FunctionType.SYSTEM_PART, index: 1, version: 4100 }
+			]
+		});
+		const systemPart2 = await parser.parseBuffer({ fileBuffer: systemPart2Buffer });
+		const userPart1Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.USER_PART,
+			moduleIndex: 1,
+			moduleVersion: 4100,
+			deps: [
+				{ func: ModuleInfo.FunctionType.SYSTEM_PART, index: 2, version: 4100 }
+			]
+		});
+		const userPart1 = await parser.parseBuffer({ fileBuffer: userPart1Buffer });
+		return [
+			{ filename: 'preBootloader.bin', ...preBootloader },
+			{ filename: 'bootloader.bin', ...bootloader },
+			{ filename: 'systemPart1.bin', ...systemPart1 },
+			{ filename: 'systemPart2.bin', ...systemPart2 },
+			{ filename: 'userPart1.bin', ...userPart1 }
+		];
+	};
+
+	const createAssetModules = async() => {
+		const parser = new HalModuleParser();
+		const asset1Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.ASSET,
+			moduleIndex: 0,
+			deps: []
+		});
+		const asset1 = await parser.parseBuffer({ fileBuffer: asset1Buffer });
+		const asset2Buffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.ASSET,
+			moduleIndex: 1,
+			deps: []
+		});
+		const asset2 = await parser.parseBuffer({ fileBuffer: asset2Buffer });
+		return [
+			{ filename: 'asset1.bin', ...asset1 },
+			{ filename: 'asset2.bin', ...asset2 }
+		];
+	};
 
 	beforeEach(() => {
 		process.env = {
@@ -187,6 +263,7 @@ describe('FlashCommand', () => {
 			expect(result).to.eql(['system-part1.bin', 'application.bin', 'asset.txt', 'system-part2.bin']);
 		});
 	});
+
 	describe('_getDeviceOsBinaries', () => {
 		it('returns empty if there is no application binary', async () => {
 			const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon-system-part1@4.1.0.bin');
@@ -302,6 +379,160 @@ describe('FlashCommand', () => {
 			expect(binaries.some(file => file.includes('photon-bootloader@1.2.3+lto.bin'))).to.be.true;
 			expect(binaries.some(file => file.includes('photon-system-part1@1.2.3.bin'))).to.be.true;
 			expect(binaries).to.have.lengthOf(2);
+		});
+	});
+
+	describe('_sortBinariesByDependency', () => {
+		it('returns a list of files sorted by dependency', async () => {
+			const modules = await createModules();
+			const expected = [
+				modules.find( m => m.filename === 'preBootloader.bin'),
+				modules.find( m => m.filename === 'bootloader.bin'),
+				modules.find( m => m.filename === 'systemPart1.bin'),
+				modules.find( m => m.filename === 'systemPart2.bin'),
+				modules.find( m => m.filename === 'userPart1.bin'),
+			];
+			const binaries = await flash._sortBinariesByDependency(modules);
+			binaries.forEach((binary, index) => {
+				expect(binary.filename).to.equal(expected[index].filename);
+			});
+		});
+	});
+
+	describe('_createFlashSteps', () => {
+		let preBootloaderStep, bootloaderStep, systemPart1Step, systemPart2Step, userPart1Step, modules, assetModules, asset1Step, asset2Step;
+		beforeEach(async() => {
+			modules = await createModules();
+			assetModules = await createAssetModules();
+			const preBootloader = modules.find( m => m.filename === 'preBootloader.bin');
+			const bootloader = modules.find( m => m.filename === 'bootloader.bin');
+			const systemPart1 = modules.find( m => m.filename === 'systemPart1.bin');
+			const systemPart2 = modules.find( m => m.filename === 'systemPart2.bin');
+			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+			const asset1 = assetModules.find( m => m.filename === 'asset1.bin');
+			const asset2 = assetModules.find( m => m.filename === 'asset2.bin');
+			preBootloaderStep = {
+				name: preBootloader.filename,
+				moduleInfo: {
+					crc: preBootloader.crc,
+					prefixInfo: preBootloader.prefixInfo,
+					suffixInfo: preBootloader.suffixInfo
+				},
+				data: preBootloader.fileBuffer,
+				flashMode: 'normal'
+			};
+			bootloaderStep = {
+				name: bootloader.filename,
+				moduleInfo: {
+					crc: bootloader.crc,
+					prefixInfo: bootloader.prefixInfo,
+					suffixInfo: bootloader.suffixInfo
+				},
+				data: bootloader.fileBuffer,
+				flashMode: 'normal'
+			};
+			systemPart1Step = {
+				name: systemPart1.filename,
+				moduleInfo: {
+					crc: systemPart1.crc,
+					prefixInfo: systemPart1.prefixInfo,
+					suffixInfo: systemPart1.suffixInfo
+				},
+				data: systemPart1.fileBuffer,
+				flashMode: 'dfu'
+			};
+			systemPart2Step = {
+				name: systemPart2.filename,
+				moduleInfo: {
+					crc: systemPart2.crc,
+					prefixInfo: systemPart2.prefixInfo,
+					suffixInfo: systemPart2.suffixInfo
+				},
+				data: systemPart2.fileBuffer,
+				flashMode: 'dfu'
+			};
+			userPart1Step = {
+				name: userPart1.filename,
+				moduleInfo: {
+					crc: userPart1.crc,
+					prefixInfo: userPart1.prefixInfo,
+					suffixInfo: userPart1.suffixInfo
+				},
+				data: userPart1.fileBuffer,
+				flashMode: 'dfu'
+			};
+			asset1Step = {
+				name: asset1.filename,
+				moduleInfo: {
+					crc: asset1.crc,
+					prefixInfo: asset1.prefixInfo,
+					suffixInfo: asset1.suffixInfo
+				},
+				data: asset1.fileBuffer,
+				flashMode: 'normal'
+			};
+			asset2Step = {
+				name: asset2.filename,
+				moduleInfo: {
+					crc: asset2.crc,
+					prefixInfo: asset2.prefixInfo,
+					suffixInfo: asset2.suffixInfo
+				},
+				data: asset2.fileBuffer,
+				flashMode: 'normal'
+			};
+		});
+
+		it('returns a list of flash steps', async () => {
+			const steps = await flash._createFlashSteps({
+				modules,
+				platformId: 6,
+				isInDfuMode: false,
+			});
+
+			const expected = [
+				preBootloaderStep,
+				bootloaderStep,
+				systemPart1Step,
+				systemPart2Step,
+				userPart1Step,
+			];
+			expect(steps).to.deep.equal(expected);
+		});
+
+		it('returns first dfu steps if isInDfuMode is true', async () => {
+			const steps = await flash._createFlashSteps({
+				modules,
+				platformId: 6,
+				isInDfuMode: true,
+			});
+
+			const expected = [
+				systemPart1Step,
+				systemPart2Step,
+				userPart1Step,
+				preBootloaderStep,
+				bootloaderStep,
+			];
+			expect(steps).to.deep.equal(expected);
+		});
+
+		it('returns assets at the end of the list', async () => {
+			const steps = await flash._createFlashSteps({
+				modules: [...assetModules, ...modules],
+				platformId: 6,
+				isInDfuMode: false,
+			});
+			const expected = [
+				preBootloaderStep,
+				bootloaderStep,
+				systemPart1Step,
+				systemPart2Step,
+				userPart1Step,
+				asset2Step,
+				asset1Step,
+			];
+			expect(steps).to.deep.equal(expected);
 		});
 	});
 });
