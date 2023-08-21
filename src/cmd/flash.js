@@ -161,7 +161,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
 
 		// TODO: process all the files with binary version reader
-		// const modulesToFlash = await this._parseModules({ filesToFlash });
+		const fileModules = await this._parseModules({ files: filesToFlash });
 
 		// TODO: check that all the files are for the correct platform
 
@@ -169,18 +169,17 @@ module.exports = class FlashCommand extends CLICommandBase {
 			currentDeviceOsVersion: device.version,
 			skipDeviceOSFlash,
 			target,
-			files: filesToFlash,
+			files: fileModules,
 			platformId: device.platformId,
 			applicationOnly
 		});
-
-		filesToFlash = [...filesToFlash, ...deviceOsBinaries];
-		const modulesToFlash = await this._parseModules({ files: filesToFlash });
+		const deviceOsModules = await this._parseModules({ files: deviceOsBinaries });
+		const modulesToFlash = [...fileModules, ...deviceOsModules];
 
 		const flashSteps = await this._createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
 		console.log(flashSteps);
 
-		await this._flashFiles({ device, flashSteps });
+		//await this._flashFiles({ device, flashSteps });
 		await device.close();
 
 	}
@@ -384,14 +383,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async _pickApplicationBinary(files, api) {
 		for (const file of files) {
 			// parse file and look for moduleFunction
-			const parser = new ModuleParser();
-			const fileInfo = await parser.parseFile(file);
-			if (fileInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
-				const internalVersion = fileInfo.prefixInfo.depModuleVersion;
+			if (file.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
+				const internalVersion = file.prefixInfo.depModuleVersion;
 				// TODO: handle the case when the Device OS version is not available
 				let applicationDeviceOsVersionData = { version: null };
 				try {
-					applicationDeviceOsVersionData = await api.getDeviceOsVersions(fileInfo.prefixInfo.platformID, internalVersion);
+					applicationDeviceOsVersionData = await api.getDeviceOsVersions(file.prefixInfo.platformID, internalVersion);
 				} catch (error) {
 					// ignore
 				}
