@@ -1,6 +1,5 @@
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
-const ui = require('../lib/ui');
 const { delay } = require('../lib/utilities');
 const {
 	getDevices,
@@ -9,9 +8,6 @@ const {
 	NotAllowedError,
 	TimeoutError
 } = require('../lib/require-optional')('particle-usb');
-
-// When reopening a device that was about to reset, give it some time to boot into the firmware
-const REOPEN_DELAY = 3000;
 
 // This timeout should be long enough to allow the bootloader apply an update
 const REOPEN_TIMEOUT = 60000;
@@ -139,7 +135,7 @@ async function getUsbDevices({ dfuMode = false } = {}){
 	}
 }
 
-async function getOneUsbDevice(idOrName, api, auth) {
+async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 	if (idOrName) {
 		return openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
 	}
@@ -186,9 +182,9 @@ async function reopenInDfuMode(device) {
 	return device;
 }
 
-async function reopenInNormalMode(device) {
+async function reopenInNormalMode(device, { reset } = {}) {
 	const { id } = device;
-	if (device.isOpen) {
+	if (reset && device.isOpen) {
 		await device.reset();
 	}
 	await device.close();

@@ -11,7 +11,8 @@ module.exports = class UI {
 		stdin = process.stdin,
 		stdout = process.stdout,
 		stderr = process.stderr,
-		quiet = false
+		quiet = false,
+		isInteractive = global.isInteractive
 	} = {}){
 		this.stdin = stdin;
 		this.stdout = stdout;
@@ -19,6 +20,7 @@ module.exports = class UI {
 		this.quiet = quiet;
 		this.chalk = new Chalk(); // TODO (mirande): explicitly enable / disable colors
 		this.EOL = os.EOL;
+		this.isInteractive = isInteractive;
 	}
 
 	write(data){
@@ -38,9 +40,9 @@ module.exports = class UI {
 		return inquirer.prompt(question);
 	}
 
-	createProgressBar(description) {
+	createProgressBar() {
 		return new cliProgress.SingleBar({
-			format: `${description} ['{bar}'] {percentage}% | ETA: {eta}s | {value}/{total}`,
+			format: '[{bar}] {percentage}% | {description}',
 		}, cliProgress.Presets.shades_classic);
 	}
 

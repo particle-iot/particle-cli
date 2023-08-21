@@ -1,6 +1,7 @@
 const { ensureFolder } = require('../../settings');
 const deviceConstants = require('@particle/device-constants');
 const path = require('path');
+const os = require('os');
 const request = require('request');
 const fs = require('fs-extra');
 const { HalModuleParser } = require('binary-version-reader');
@@ -10,11 +11,11 @@ const { HalModuleParser } = require('binary-version-reader');
  * @param url - the url to download from
  * @param directory - the directory to download to
  * @param filename - the filename to use
- * @param progressBar - an instance of ProgressBar to use for progress updates
+ * @param progress - a function to call when bytes are received
  * @returns {Promise<unknown>} - a promise that resolves when the file is downloaded
  */
-async function downloadFile({ url, directory, filename, progressBar }) {
-	let file, totalBytes = 0;
+async function downloadFile({ url, directory, filename, progress }) {
+	let file;
 	try {
 		filename = filename || url.match(/.*\/(.*)/)[1];
 		await fs.ensureDir(directory);
@@ -32,21 +33,14 @@ async function downloadFile({ url, directory, filename, progressBar }) {
 					req.abort();
 					reject(new Error('Failed to download file: ' + response.statusCode));
 				}
-				totalBytes = parseInt(response.headers['content-length'], 10);
-				if (progressBar) {
-					progressBar.description = filename;
-					progressBar.start(totalBytes, 0);
-				}
+
 				response.pipe(file);
 				response.on('data', (chunk) => {
-					if (progressBar) {
-						progressBar.increment(chunk.length);
+					if (progress) {
+						progress(chunk.length);
 					}
 				});
 				response.on('end', () => {
-					if (progressBar) {
-						progressBar.stop();
-					}
 					file.end();
 					resolve(filename);
 				});
@@ -82,10 +76,10 @@ function getBinaryPath(version, platformName) {
  * @param module - the module object to download
  * @param baseUrl - the base url for the api
  * @param version - the version to download
- * @param progressBar - an instance of ProgressBar to use for progress updates
+ * @param progress - a function to call when bytes are received
  * @returns {Promise<string>} - the path to the binary
  */
-async function downloadBinary({ platformName, module, baseUrl, version, progressBar }) {
+async function downloadBinary({ platformName, module, baseUrl, version, progress }) {
 	const binaryPath= getBinaryPath(version, platformName);
 	// fetch the binary
 	const url = `${baseUrl}/${module.filename}`;
@@ -93,7 +87,7 @@ async function downloadBinary({ platformName, module, baseUrl, version, progress
 		url,
 		directory: binaryPath,
 		filename: module.filename,
-		progressBar
+		progress
 	});
 }
 
@@ -124,40 +118,55 @@ async function isModuleDownloaded(module, version, platformName) {
  */
 async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui }){
 	try {
-		const downloadedBinaries = [];
 		// get platform by id from device-constants
 		const platform = Object.values(deviceConstants).filter(p => p.public).find(p => p.id === platformId);
 		// get the device os versions
+		// TODO: when the machine is not connected to the internet, return without any error
 		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
 		// omit user part application
 		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
 
-		// download binaries for each module in the device os version
-		for await (const module of deviceOsVersion.modules) {
-			//TODO (hmontero) - make sure downloadedBinaries returns the full path to the binary
+		// find the modules that don't already exist on this machine
+		const modulesToDownload = [];
+		for (const module of deviceOsVersion.modules) {
 			const isDownloaded = await isModuleDownloaded(module, deviceOsVersion.version, platform.name);
-			const binaryPath = getBinaryPath(deviceOsVersion.version, platform.name);
 			if (!isDownloaded) {
-				let progressBar;
-				// if is in silent mode don't create a progress bar
-				if (global.isInteractive) {
-					progressBar = ui.createProgressBar(`Downloading ${module.filename}`);
-				} else {
-					ui.write(`Downloading ${module.filename}`);
-				}
-				const downloadedBinaryName = await downloadBinary({
+				modulesToDownload.push(module);
+			}
+		}
+
+		// download binaries for each missing module
+		if (modulesToDownload.length > 0) {
+			const description = `Downloading Device OS ${version}`;
+			// TODO: once module.size exists, put back the progress bar
+			// let progressBar;
+			// if (ui.isInteractive) {
+			// 	progressBar = ui.createProgressBar();
+			// 	const totalSize = modulesToDownload.reduce((total, module) => total + module.size, 0);
+			// 	progressBar.start(totalSize, 0, { description });
+			// } else {
+			// 	this.ui.stdout.write(`${description}${os.EOL}`);
+			// }
+
+			await ui.showBusySpinnerUntilResolved(description, Promise.all(modulesToDownload.map(async (module) => {
+				await downloadBinary({
 					platformName: platform.name,
 					module,
 					baseUrl: deviceOsVersion.base_url,
-					version: deviceOsVersion.version,
-					progressBar,
+					version: deviceOsVersion.version
+					// progress: (bytes) => {
+					// 	progressBar && progressBar.increment(bytes)
+					// }
 				});
-				downloadedBinaries.push(path.join(binaryPath, downloadedBinaryName));
-			} else {
-				downloadedBinaries.push(path.join(binaryPath, module.filename));
-			}
+			})));
+			// if (ui.isInteractive) {
+			// 	progressBar.stop();
+			// }
+			ui.stdout.write(`Downloaded Device OS ${version}${os.EOL}`);
 		}
-		return downloadedBinaries;
+
+		const binaryPath = getBinaryPath(deviceOsVersion.version, platform.name);
+		return deviceOsVersion.modules.map(m => path.join(binaryPath, m.filename));
 	} catch (error) {
 		if (error.message.includes('404')) {
 			throw new Error(`Device OS version not found for platform: ${platformId} version: ${version}`);

@@ -1,4 +1,6 @@
+const _ = require('lodash');
 const fs = require('fs-extra');
+const os = require('os');
 const ParticleApi = require('./api');
 const VError = require('verror');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
@@ -142,17 +144,20 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashLocal({ files, applicationOnly, target }) {
 		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
 		const { api, auth } = this._particleApi();
-		const device = await usbUtils.getOneUsbDevice(deviceIdOrName, api, auth);
+		const device = await usbUtils.getOneUsbDevice({ deviceIdOrName, api, auth, ui: this.ui });
 
+		const platformName = platformForId(device.platformId).name;
 		let { skipDeviceOSFlash, files: filesToFlash } = await this._prepareFilesToFlash({
 			knownApp,
 			parsedFiles,
 			platformId: device.platformId,
-			platformName: platformForId(device.platformId).name,
+			platformName,
 			target
 		});
 
 		filesToFlash = await this._processBundle({ filesToFlash });
+
+		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
 
 		// TODO: process all the files with binary version reader
 		// const modulesToFlash = await this._parseModules({ filesToFlash });
@@ -167,7 +172,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			platformId: device.platformId,
 			applicationOnly
 		});
-		filesToFlash = [...filesToFlash, ...deviceOsBinaries];
+		filesToFlash = [...deviceOsBinaries, ...filesToFlash];
 
 		const flashSteps = await this._tmpCreateFlashSteps({ filesToFlash });
 
@@ -333,6 +338,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			return [];
 		}
 
+		// TODO: if files to flash include Device OS binaries, don't override them with the ones from the cloud
+
 		// need to get the binary required version
 		if (applicationOnly) {
 			return [];
@@ -376,7 +383,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 			if (fileInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
 				const internalVersion = fileInfo.prefixInfo.depModuleVersion;
 				// TODO: handle the case when the Device OS version is not available
-				const applicationDeviceOsVersionData = await api.getDeviceOsVersions(fileInfo.prefixInfo.platformID, internalVersion);
+				let applicationDeviceOsVersionData = { version: null };
+				try {
+					applicationDeviceOsVersionData = await api.getDeviceOsVersions(fileInfo.prefixInfo.platformID, internalVersion);
+				} catch (error) {
+					// ignore
+				}
 				return { file, applicationDeviceOsVersion: applicationDeviceOsVersionData.version };
 			}
 		}
@@ -385,7 +397,18 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _tmpCreateFlashSteps({ filesToFlash }) {
 		const parser = new ModuleParser();
-		return Promise.all(filesToFlash.filter(filename => !(/prebootloader-mbr/.test(filename))).map(async (filename) => {
+		filesToFlash = filesToFlash.filter(filename => !(/prebootloader-mbr/.test(filename)));
+		filesToFlash = _.sortBy(filesToFlash, filename => {
+			if (/bootloader/.test(filename)) {
+				return 1;
+			} else if (/system-part/.test(filename)) {
+				return 2;
+			} else {
+				return 3;
+			}
+		});
+
+		return Promise.all(filesToFlash.map(async (filename) => {
 			const moduleInfo = await parser.parseFile(filename);
 
 			let flashMode;
@@ -399,6 +422,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 					break;
 			}
 
+			// TODO: if module is a radio stack, drop the module header when setting data
+
 			return {
 				name: path.basename(filename),
 				moduleInfo,
@@ -409,36 +434,102 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _flashFiles({ device, flashSteps }) {
-		for (const step of flashSteps) {
-			if (step.flashMode === 'normal') {
-				if (device.isInDfuMode) {
-					// put device in normal mode
-					this.ui.write('Putting device in normal mode');
-					device = await usbUtils.reopenInNormalMode(device);
+		const progress = this._createFlashProgress({ flashSteps });
+
+		try {
+			for (const step of flashSteps) {
+				if (step.flashMode === 'normal') {
+					if (device.isInDfuMode) {
+						// put device in normal mode
+						progress({ event: 'switch-mode', mode: 'normal' });
+						device = await usbUtils.reopenInNormalMode(device);
+					}
+
+					// flash the file in normal mode
+					progress({ event: 'flash-file', filename: step.name });
+					await device.updateFirmware(step.data, { progress });
+
+					// wait for the device to apply the firmware
+					await delay(FLASH_APPLY_DELAY);
+					device = await usbUtils.reopenInNormalMode(device, { reset: false });
+				} else {
+					if (!device.isInDfuMode) {
+						// put device in dfu mode
+						progress({ event: 'switch-mode', mode: 'DFU' });
+						device = await usbUtils.reopenInDfuMode(device);
+					}
+
+					// flash the file over DFU
+					progress({ event: 'flash-file', filename: step.name });
+					// CLI always flashes to internal flash which is the DFU alt setting 0
+					const altSetting = 0;
+					await device.writeOverDfu(step.data, { altSetting, startAddr: parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16), progress });
 				}
-
-				// flash the file in normal mode
-				this.ui.write(`Flashing file ${step.name}`);
-				await device.updateFirmware(step.data);
-
-				// wait for the device to apply the firmware
-				await delay(FLASH_APPLY_DELAY);
-				device = await usbUtils.reopenInNormalMode(device);
-			} else {
-				if (!device.isInDfuMode) {
-					// put device in dfu mode
-					this.ui.write('Putting device in DFU mode');
-					device = await usbUtils.reopenInDfuMode(device);
-				}
-
-				// flash the file over DFU
-				this.ui.write(`Flashing file ${step.name}`);
-				// CLI always flashes to internal flash which is the DFU alt setting 0
-				const dfuAlt = 0;
-				await device.writeOverDfu(dfuAlt, step.data, parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16));
 			}
+		} finally {
+			progress({ event: 'finish' });
+			await device.reset();
+			await device.close();
 		}
-		await device.reset();
-		await device.close();
+	}
+
+	_createFlashProgress({ flashSteps }) {
+		const { isInteractive } = this.ui;
+		let progressBar;
+		if (isInteractive) {
+			progressBar = this.ui.createProgressBar();
+			// double the size to account for the erase and programming steps
+			const total = flashSteps.reduce((total, step) => total + step.data.length * 2, 0);
+			progressBar.start(total, 0, { description: 'Preparing to flash' });
+		}
+
+		let eraseSize = 0;
+		let currentStep = null;
+		let description;
+		return (payload) => {
+			switch (payload.event) {
+				case 'flash-file':
+					description = `Flashing ${payload.filename}`;
+					if (isInteractive) {
+						progressBar.update({ description });
+					} else {
+						this.ui.stdout.write(`${description}${os.EOL}`);
+					}
+					currentStep = flashSteps.find(step => step.name === payload.filename);
+					eraseSize = 0;
+					break;
+				case 'switch-mode':
+					description = `Switching device to ${payload.mode} mode`;
+					if (isInteractive) {
+						progressBar.update({ description });
+					} else {
+						this.ui.stdout.write(`${description}${os.EOL}`);
+					}
+					break;
+				case 'erased':
+					if (isInteractive) {
+						// In DFU, entire sectors are erased so the count of bytes can be higher than the actual size
+						// of the file. Ignore the extra bytes to avoid issues with the progress bar
+						if (currentStep && eraseSize + payload.bytes > currentStep.data.length) {
+							progressBar.increment(currentStep.data.length - eraseSize);
+							eraseSize = currentStep.data.length;
+						} else {
+							progressBar.increment(payload.bytes);
+							eraseSize += payload.bytes;
+						}
+					}
+					break;
+				case 'downloaded':
+					if (isInteractive) {
+						progressBar.increment(payload.bytes);
+					}
+					break;
+				case 'finish':
+					if (isInteractive) {
+						progressBar.stop();
+					}
+					break;
+			}
+		};
 	}
 };
