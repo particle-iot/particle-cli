@@ -38,9 +38,9 @@ module.exports = class UI {
 		return inquirer.prompt(question);
 	}
 
-	createProgressBar(description) {
+	createProgressBar() {
 		return new cliProgress.SingleBar({
-			format: `${description} ['{bar}'] {percentage}% | ETA: {eta}s | {value}/{total}`,
+			format: '[{bar}] {percentage}% | {description}',
 		}, cliProgress.Presets.shades_classic);
 	}
 

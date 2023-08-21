@@ -1,6 +1,5 @@
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
-const ui = require('../lib/ui');
 const { delay } = require('../lib/utilities');
 const {
 	getDevices,
@@ -139,7 +138,7 @@ async function getUsbDevices({ dfuMode = false } = {}){
 	}
 }
 
-async function getOneUsbDevice(idOrName, api, auth) {
+async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 	if (idOrName) {
 		return openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
 	}
