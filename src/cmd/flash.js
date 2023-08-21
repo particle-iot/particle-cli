@@ -147,6 +147,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const device = await usbUtils.getOneUsbDevice({ deviceIdOrName, api, auth, ui: this.ui });
 
 		const platformName = platformForId(device.platformId).name;
+		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
+
 		let { skipDeviceOSFlash, files: filesToFlash } = await this._prepareFilesToFlash({
 			knownApp,
 			parsedFiles,
@@ -157,9 +159,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		filesToFlash = await this._processBundle({ filesToFlash });
 
-		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
 		const fileModules = await this._parseModules({ files: filesToFlash });
-		// TODO: check that all the files are for the correct platform
 		await this._validateModulesForPlatform({ modules: fileModules, platformId: device.platformId, platformName });
 
 		const deviceOsBinaries = await this._getDeviceOsBinaries({
@@ -172,12 +172,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 		});
 		const deviceOsModules = await this._parseModules({ files: deviceOsBinaries });
 		let modulesToFlash = [...fileModules, ...deviceOsModules];
-		modulesToFlash = await this._filterModulesToFlash({ modules: modulesToFlash, platformId: device.platformId });
+		modulesToFlash = this._filterModulesToFlash({ modules: modulesToFlash, platformId: device.platformId });
 
 		const flashSteps = await this._createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
 		await this._flashFiles({ device, flashSteps });
-		await device.close();
-
 	}
 
 
@@ -341,9 +339,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {
 		const { particleApi } = this._particleApi();
-		const { file: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, particleApi);
+		const { module: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, particleApi);
 
-		// if we have specific deviceOs Binaries, don't download them from the cloud
+		// if files to flash include Device OS binaries, don't override them with the ones from the cloud
 		const includedDeviceOsModuleFunctions = [ModuleInfo.FunctionType.SYSTEM_PART, ModuleInfo.FunctionType.BOOTLOADER];
 		const systemPartBinaries = modules.filter(m => includedDeviceOsModuleFunctions.includes(m.prefixInfo.moduleFunction));
 		if (systemPartBinaries.length) {
@@ -354,8 +352,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		if (!application) {
 			return [];
 		}
-
-		// TODO: if files to flash include Device OS binaries, don't override them with the ones from the cloud
 
 		// need to get the binary required version
 		if (applicationOnly) {
@@ -392,22 +388,21 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async _pickApplicationBinary(files, api) {
-		for (const file of files) {
+	async _pickApplicationBinary(modules, api) {
+		for (const module of modules) {
 			// parse file and look for moduleFunction
-			if (file.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
-				const internalVersion = file.prefixInfo.depModuleVersion;
-				// TODO: handle the case when the Device OS version is not available
+			if (module.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART) {
+				const internalVersion = module.prefixInfo.depModuleVersion;
 				let applicationDeviceOsVersionData = { version: null };
 				try {
-					applicationDeviceOsVersionData = await api.getDeviceOsVersions(file.prefixInfo.platformID, internalVersion);
+					applicationDeviceOsVersionData = await api.getDeviceOsVersions(module.prefixInfo.platformID, internalVersion);
 				} catch (error) {
-					// ignore
+					// ignore if Device OS version from the application cannot be identified
 				}
-				return { file, applicationDeviceOsVersion: applicationDeviceOsVersionData.version };
+				return { module, applicationDeviceOsVersion: applicationDeviceOsVersionData.version };
 			}
 		}
-		return { file: null, applicationDeviceOsVersion: null };
+		return { module: null, applicationDeviceOsVersion: null };
 	}
 
 	async _flashFiles({ device, flashSteps }) {
@@ -522,7 +517,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	}
 
-	async _filterModulesToFlash({ modules, platformId, allowAll = false }) {
+	_filterModulesToFlash({ modules, platformId, allowAll = false }) {
 		const platform = PLATFORMS.find(p => p.id === platformId);
 		const filteredModules = [];
 		// remove encrypted files
@@ -542,30 +537,31 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _createFlashSteps({ modules, isInDfuMode, platformId }) {
 		const platform = PLATFORMS.find(p => p.id === platformId);
-		const binaries = await sortBinariesByDependency(modules);
+		const sortedModules = await sortBinariesByDependency(modules);
 		const assetModules = [], normalModules = [], dfuModules = [];
-		binaries.forEach(binary => {
-			const data = binary.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? binary.fileBuffer.slice(binary.prefixInfo.prefixSize) : binary.fileBuffer;
-			const module = {
-				name: path.basename(binary.filename),
-				moduleInfo: { crc: binary.crc, prefixInfo: binary.prefixInfo, suffixInfo: binary.suffixInfo },
+		sortedModules.forEach(module => {
+			const data = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
+			const flashStep = {
+				name: path.basename(module.filename),
+				moduleInfo: { crc: module.crc, prefixInfo: module.prefixInfo, suffixInfo: module.suffixInfo },
 				data
 			};
-			const moduleType = moduleTypeToString(binary.prefixInfo.moduleFunction);
+			const moduleType = moduleTypeToString(module.prefixInfo.moduleFunction);
 			const storage = platform.firmwareModules
 				.find(firmwareModule => firmwareModule.type === moduleType);
 			if (moduleType === 'assets') {
-				module.flashMode = 'normal';
-				assetModules.push(module);
+				flashStep.flashMode = 'normal';
+				assetModules.push(flashStep);
 			} else if (moduleType === 'bootloader' || storage.storage === 'external') {
-				module.flashMode = 'normal';
-				normalModules.push(module);
+				flashStep.flashMode = 'normal';
+				normalModules.push(flashStep);
 			} else {
-				module.flashMode = 'dfu';
-				dfuModules.push(module);
+				flashStep.flashMode = 'dfu';
+				dfuModules.push(flashStep);
 			}
 		});
 
+		// avoid switching to normal mode if device is already in DFU so a device with broken Device OS can get fixed
 		if (isInDfuMode) {
 			return [...dfuModules, ...normalModules, ...assetModules];
 		} else {

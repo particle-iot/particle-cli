@@ -114,7 +114,6 @@ async function sortBinariesByDependency(modules) {
 	const sortedDependencies = dependencyWalker.sortByDependencies(binariesWithDependencies);
 
 	return Array.from(sortedDependencies);
-
 }
 
 
