@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.12.0 - Aug 21 2023
+
+* Add local flash command with support for updating Device OS and flashing assets
+
 ## 3.11.3 - Jun 29 2023
 
 * Rework particle bundle command to read project.propertie file
