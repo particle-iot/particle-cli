@@ -165,7 +165,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		// TODO: check that all the files are for the correct platform
 
 		const deviceOsBinaries = await this._getDeviceOsBinaries({
-			currentDeviceOsVersion: device.version,
+			currentDeviceOsVersion: device.firmwareVersion,
 			skipDeviceOSFlash,
 			target,
 			modules: fileModules,
