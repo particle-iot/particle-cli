@@ -158,11 +158,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToFlash = await this._processBundle({ filesToFlash });
 
 		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
-
-		// TODO: process all the files with binary version reader
 		const fileModules = await this._parseModules({ files: filesToFlash });
-
 		// TODO: check that all the files are for the correct platform
+		await this._validateModulesForPlatform({ modules: fileModules, platformId: device.platformId, platformName });
 
 		const deviceOsBinaries = await this._getDeviceOsBinaries({
 			currentDeviceOsVersion: device.firmwareVersion,
@@ -330,6 +328,15 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}));
 
 		return processed.flat();
+	}
+
+	async _validateModulesForPlatform({ modules, platformId, platformName }) {
+		for (const moduleInfo of modules) {
+			if (moduleInfo.prefixInfo.platformID !== platformId) {
+				throw new Error(`Module ${moduleInfo.filename} is not compatible with platform ${platformName}`);
+			}
+		}
+
 	}
 
 	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {

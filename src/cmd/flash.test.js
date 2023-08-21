@@ -18,6 +18,7 @@ describe('FlashCommand', () => {
 		const parser = new HalModuleParser();
 		const preBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
 			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			platformId: 6,
 			moduleIndex: 0,
 			moduleVersion: 1200,
 			deps: []
@@ -26,6 +27,7 @@ describe('FlashCommand', () => {
 		const bootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
 			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
 			moduleIndex: 2,
+			platformId: 6,
 			moduleVersion: 1210,
 			deps: [
 				{ func: ModuleInfo.FunctionType.BOOTLOADER, index: 0, version: 1200 }
@@ -35,6 +37,7 @@ describe('FlashCommand', () => {
 		const systemPart1Buffer = await firmwareTestHelper.createFirmwareBinary({
 			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
 			moduleIndex: 1,
+			platformId: 6,
 			moduleVersion: 4100,
 			deps: [
 				{ func: ModuleInfo.FunctionType.BOOTLOADER, index: 1, version: 1210 }
@@ -44,6 +47,7 @@ describe('FlashCommand', () => {
 		const systemPart2Buffer = await firmwareTestHelper.createFirmwareBinary({
 			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
 			moduleIndex: 2,
+			platformId: 6,
 			moduleVersion: 4100,
 			deps: [
 				{ func: ModuleInfo.FunctionType.SYSTEM_PART, index: 1, version: 4100 }
@@ -293,6 +297,48 @@ describe('FlashCommand', () => {
 		});
 	});
 
+	describe('_validateModulesForPlatform', async () => {
+		let modules;
+		beforeEach(async () => {
+			modules = await createModules();
+		});
+		it('throws an error if a module is not for the target platform', async () => {
+			let error;
+			try {
+				await flash._validateModulesForPlatform({ modules, platformId: 32, platformName: 'p2' });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'Module preBootloader.bin is not compatible with platform p2');
+		});
+		it('pass in case the modules are intended for the target platform', async () => {
+			let error;
+			try {
+				await flash._validateModulesForPlatform({ modules, platformId: 6, platformName: 'photon' });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.be.undefined;
+		});
+	});
+
+	describe('_filterModulesToFlash', () => {
+		let modules, assetModules, extraModules;
+		beforeEach( async () => {
+			modules = await createModules();
+			assetModules = await createAssetModules();
+			extraModules = await createExtraModules();
+		});
+		it('returns modules without ncp, softDevice and encrypted modules', async () => {
+			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32 });
+			expect(filteredModules).to.have.lengthOf(7);
+		});
+		it ('returns everything but encrypted modules if allowAll argument is passed', async () => {
+			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32, allowAll: true });
+			expect(filteredModules).to.have.lengthOf(9);
+		});
+	});
+
 	describe('_getDeviceOsBinaries', () => {
 		it('returns empty if there is no application binary', async () => {
 			const modules = await createModules();
@@ -374,23 +420,6 @@ describe('FlashCommand', () => {
 			expect(binaries.some(file => file.includes('photon-system-part1@4.1.0.bin'))).to.be.true;
 			expect(binaries).to.have.lengthOf(2);
 			expect(stub).to.have.been.calledOnce;
-		});
-	});
-
-	describe('_filterModulesToFlash', () => {
-		let modules, assetModules, extraModules;
-		beforeEach( async () => {
-			modules = await createModules();
-			assetModules = await createAssetModules();
-			extraModules = await createExtraModules();
-		});
-		it('returns modules without ncp, softDevice and encrypted modules', async () => {
-			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32 });
-			expect(filteredModules).to.have.lengthOf(7);
-		});
-		it ('returns everything but encrypted modules if allowAll argument is passed', async () => {
-			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32, allowAll: true });
-			expect(filteredModules).to.have.lengthOf(9);
 		});
 	});
 
