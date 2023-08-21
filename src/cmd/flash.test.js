@@ -7,7 +7,7 @@ const FlashCommand = require('./flash');
 const BundleCommand = require('./bundle');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const deviceOsUtils = require('../lib/device-os-version-util');
-const { firmwareTestHelper, ModuleInfo, HalModuleParser } = require('binary-version-reader');
+const { firmwareTestHelper, createAssetModule, ModuleInfo, HalModuleParser } = require('binary-version-reader');
 
 describe('FlashCommand', () => {
 	let flash;
@@ -75,17 +75,9 @@ describe('FlashCommand', () => {
 
 	const createAssetModules = async() => {
 		const parser = new HalModuleParser();
-		const asset1Buffer = await firmwareTestHelper.createFirmwareBinary({
-			moduleFunction: ModuleInfo.FunctionType.ASSET,
-			moduleIndex: 0,
-			deps: []
-		});
+		const asset1Buffer = await createAssetModule(Buffer.from('asset1'), 'asset1.txt');
 		const asset1 = await parser.parseBuffer({ fileBuffer: asset1Buffer });
-		const asset2Buffer = await firmwareTestHelper.createFirmwareBinary({
-			moduleFunction: ModuleInfo.FunctionType.ASSET,
-			moduleIndex: 1,
-			deps: []
-		});
+		const asset2Buffer = await createAssetModule(Buffer.from('asset2'), 'asset2.txt');
 		const asset2 = await parser.parseBuffer({ fileBuffer: asset2Buffer });
 		return [
 			{ filename: 'asset1.bin', ...asset1 },
@@ -312,6 +304,16 @@ describe('FlashCommand', () => {
 			expect(error).to.have.property('message', 'Module preBootloader.bin is not compatible with platform p2');
 		});
 		it('pass in case the modules are intended for the target platform', async () => {
+			let error;
+			try {
+				await flash._validateModulesForPlatform({ modules, platformId: 6, platformName: 'photon' });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.be.undefined;
+		});
+		it('allows asset modules for any platform', async () => {
+			modules = await createAssetModules();
 			let error;
 			try {
 				await flash._validateModulesForPlatform({ modules, platformId: 6, platformName: 'photon' });
