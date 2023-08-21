@@ -25,7 +25,7 @@ describe('FlashCommand', () => {
 		const preBootloader = await parser.parseBuffer({ fileBuffer: preBootloaderBuffer });
 		const bootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
 			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
-			moduleIndex: 1,
+			moduleIndex: 2,
 			moduleVersion: 1210,
 			deps: [
 				{ func: ModuleInfo.FunctionType.BOOTLOADER, index: 0, version: 1200 }
@@ -87,6 +87,33 @@ describe('FlashCommand', () => {
 			{ filename: 'asset1.bin', ...asset1 },
 			{ filename: 'asset2.bin', ...asset2 }
 		];
+	};
+
+	const createExtraModules = async () => {
+		const parser = new HalModuleParser();
+		const softDeviceBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.RADIO_STACK,
+			moduleIndex: 0,
+			deps: []
+		});
+		const softDevice = await parser.parseBuffer({ fileBuffer: softDeviceBuffer });
+		const ncpBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.NCP_FIRMWARE,
+			moduleIndex: 0,
+			deps: []
+		});
+		const ncp = await parser.parseBuffer({ fileBuffer: ncpBuffer });
+		const encryptedModuleBuffer = await firmwareTestHelper.createFirmwareBinary({
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			moduleIndex: 1,
+			deps: []
+		});
+		const encryptedModule = await parser.parseBuffer({ fileBuffer: encryptedModuleBuffer });
+		return {
+			softDevice: { filename: 'softDevice.bin', ...softDevice },
+			ncp: { filename: 'ncp.bin', ...ncp },
+			encryptedModule: { filename: 'encryptedModule.bin', ...encryptedModule }
+		};
 	};
 
 	beforeEach(() => {
@@ -268,9 +295,8 @@ describe('FlashCommand', () => {
 
 	describe('_getDeviceOsBinaries', () => {
 		it('returns empty if there is no application binary', async () => {
-			//const file = path.join(__dirname, '../../test/__fixtures__/binaries/argon-system-part1@4.1.0.bin');
 			const modules = await createModules();
-			const userPart = modules.find(m => m.filename === 'userPart1.bin');
+			const userPart = modules.find(m => m.filename === 'systemPart1.bin');
 			const deviceOsBinaries = await flash._getDeviceOsBinaries({ files: [userPart] });
 			expect(deviceOsBinaries).to.eql([]);
 		});
@@ -348,6 +374,23 @@ describe('FlashCommand', () => {
 			expect(binaries.some(file => file.includes('photon-system-part1@4.1.0.bin'))).to.be.true;
 			expect(binaries).to.have.lengthOf(2);
 			expect(stub).to.have.been.calledOnce;
+		});
+	});
+
+	describe('_filterModulesToFlash', () => {
+		let modules, assetModules, extraModules;
+		beforeEach( async () => {
+			modules = await createModules();
+			assetModules = await createAssetModules();
+			extraModules = await createExtraModules();
+		});
+		it('returns modules without ncp, softDevice and encrypted modules', async () => {
+			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32 });
+			expect(filteredModules).to.have.lengthOf(7);
+		});
+		it ('returns everything but encrypted modules if allowAll argument is passed', async () => {
+			const filteredModules = await flash._filterModulesToFlash({ modules: [...modules, ...assetModules, extraModules.encryptedModule, extraModules.softDevice, extraModules.ncp], platformId: 32, allowAll: true });
+			expect(filteredModules).to.have.lengthOf(9);
 		});
 	});
 

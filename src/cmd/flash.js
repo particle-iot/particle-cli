@@ -1,4 +1,3 @@
-const _ = require('lodash');
 const fs = require('fs-extra');
 const os = require('os');
 const ParticleApi = require('./api');
@@ -174,7 +173,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			applicationOnly
 		});
 		const deviceOsModules = await this._parseModules({ files: deviceOsBinaries });
-		const modulesToFlash = [...fileModules, ...deviceOsModules];
+		let modulesToFlash = [...fileModules, ...deviceOsModules];
+		modulesToFlash = await this._filterModulesToFlash({ modules: modulesToFlash, platformId: device.platformId });
 
 		const flashSteps = await this._createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
 		console.log(flashSteps);
@@ -508,6 +508,24 @@ module.exports = class FlashCommand extends CLICommandBase {
 			};
 		}));
 
+	}
+
+	async _filterModulesToFlash({ modules, platformId, allowAll = false }) {
+		const platform = PLATFORMS.find(p => p.id === platformId);
+		const filteredModules = [];
+		// remove encrypted files
+		for (const moduleInfo of modules) {
+			const moduleType = moduleTypeToString(moduleInfo.prefixInfo.moduleFunction);
+			const platformModule = platform.firmwareModules.find(m => m.type === moduleType && m.index === moduleInfo.prefixInfo.moduleIndex);
+			// filter encrypted modules
+			const isEncrypted = platformModule && platformModule.encrypted;
+			const isRadioStack = moduleInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.RADIO_STACK;
+			const isNcpFirmware = moduleInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.NCP_FIRMWARE;
+			if (!isEncrypted && (!isRadioStack || allowAll) && (!isNcpFirmware || allowAll)) {
+				filteredModules.push(moduleInfo);
+			}
+		}
+		return filteredModules;
 	}
 
 	async _createFlashSteps({ modules, isInDfuMode, platformId }) {
