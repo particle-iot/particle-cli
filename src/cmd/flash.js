@@ -330,7 +330,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _validateModulesForPlatform({ modules, platformId, platformName }) {
 		for (const moduleInfo of modules) {
-			if (moduleInfo.prefixInfo.platformID !== platformId) {
+			if (moduleInfo.prefixInfo.platformID !== platformId && moduleInfo.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.ASSET) {
 				throw new Error(`Module ${moduleInfo.filename} is not compatible with platform ${platformName}`);
 			}
 		}
@@ -414,7 +414,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 					if (device.isInDfuMode) {
 						// put device in normal mode
 						progress({ event: 'switch-mode', mode: 'normal' });
-						device = await usbUtils.reopenInNormalMode(device);
+						device = await usbUtils.reopenInNormalMode(device, { reset: true });
 					}
 
 					// flash the file in normal mode
@@ -446,17 +446,19 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	_createFlashProgress({ flashSteps }) {
+		const NORMAL_MULTIPLIER = 10; // flashing in normal mode is slower so count each byte more
 		const { isInteractive } = this.ui;
 		let progressBar;
 		if (isInteractive) {
 			progressBar = this.ui.createProgressBar();
 			// double the size to account for the erase and programming steps
-			const total = flashSteps.reduce((total, step) => total + step.data.length * 2, 0);
+			const total = flashSteps.reduce((total, step) => total + step.data.length * 2 * (step.flashMode === 'normal' ? NORMAL_MULTIPLIER : 1), 0);
 			progressBar.start(total, 0, { description: 'Preparing to flash' });
 		}
 
+		let flashMultiplier = 1;
 		let eraseSize = 0;
-		let currentStep = null;
+		let step = null;
 		let description;
 		return (payload) => {
 			switch (payload.event) {
@@ -467,7 +469,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 					} else {
 						this.ui.stdout.write(`${description}${os.EOL}`);
 					}
-					currentStep = flashSteps.find(step => step.name === payload.filename);
+					step = flashSteps.find(step => step.name === payload.filename);
+					flashMultiplier = step.flashMode === 'normal' ? NORMAL_MULTIPLIER : 1;
 					eraseSize = 0;
 					break;
 				case 'switch-mode':
@@ -482,18 +485,18 @@ module.exports = class FlashCommand extends CLICommandBase {
 					if (isInteractive) {
 						// In DFU, entire sectors are erased so the count of bytes can be higher than the actual size
 						// of the file. Ignore the extra bytes to avoid issues with the progress bar
-						if (currentStep && eraseSize + payload.bytes > currentStep.data.length) {
-							progressBar.increment(currentStep.data.length - eraseSize);
-							eraseSize = currentStep.data.length;
+						if (step && eraseSize + payload.bytes > step.data.length) {
+							progressBar.increment((step.data.length - eraseSize) * flashMultiplier);
+							eraseSize = step.data.length;
 						} else {
-							progressBar.increment(payload.bytes);
+							progressBar.increment(payload.bytes * flashMultiplier);
 							eraseSize += payload.bytes;
 						}
 					}
 					break;
 				case 'downloaded':
 					if (isInteractive) {
-						progressBar.increment(payload.bytes);
+						progressBar.increment(payload.bytes * flashMultiplier);
 					}
 					break;
 				case 'finish':
