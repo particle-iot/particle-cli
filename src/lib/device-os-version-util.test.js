@@ -99,6 +99,8 @@ describe('downloadDeviceOsVersionBinaries', () => {
 		expect(error.message).to.equal('Device OS version not found for platform: 6 version: 2.3.1');
 	});
 
+	// FIXME (julien): this test was flaky so if it keeps failing, let's remove it.
+	// I looked for a missing await but I can't find one
 	it('should fail in case of an error', async() => {
 		let error;
 		const api = {

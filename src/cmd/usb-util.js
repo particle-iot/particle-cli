@@ -9,9 +9,6 @@ const {
 	TimeoutError
 } = require('../lib/require-optional')('particle-usb');
 
-// When reopening a device that was about to reset, give it some time to boot into the firmware
-const REOPEN_DELAY = 3000;
-
 // This timeout should be long enough to allow the bootloader apply an update
 const REOPEN_TIMEOUT = 60000;
 

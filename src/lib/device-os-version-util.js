@@ -135,8 +135,6 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 			}
 		}
 
-		const binaryPath = getBinaryPath(deviceOsVersion.version, platform.name);
-
 		// download binaries for each missing module
 		if (modulesToDownload.length > 0) {
 			const description = `Downloading Device OS ${version}`;
@@ -167,6 +165,7 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 			ui.stdout.write(`Downloaded Device OS ${version}${os.EOL}`);
 		}
 
+		const binaryPath = getBinaryPath(deviceOsVersion.version, platform.name);
 		return deviceOsVersion.modules.map(m => path.join(binaryPath, m.filename));
 	} catch (error) {
 		if (error.message.includes('404')) {
