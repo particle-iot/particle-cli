@@ -337,7 +337,7 @@ module.exports = {
 	knownPlatformIdsWithAliases(){
 		return PLATFORMS.reduce((platforms, platform) => {
 			platforms[platform.name] = platform.id;
-			(platform.aliases || []).reduce((platforms, alias) => {
+			(platform.compileAliases || []).reduce((platforms, alias) => {
 				platforms[alias] = platform.id;
 				return platforms;
 			}, platforms);

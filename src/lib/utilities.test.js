@@ -28,7 +28,7 @@ describe('Utilities', () => {
 	});
 
 	describe('knownPlatformIdsWithAliases', () => {
-		it('returns a hash of platform ids with aliases', () => {
+		it('returns a hash of platform ids with compile aliases', () => {
 			expect(util.knownPlatformIdsWithAliases()).to.eql({
 				'core': 0,
 				'c': 0,
