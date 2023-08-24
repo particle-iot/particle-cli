@@ -64,7 +64,7 @@ async function openUsbDevice(usbDevice, { dfuMode = false } = {}){
 async function openUsbDeviceById(id, { displayName, dfuMode = false } = {}) {
 	let dev;
 	try {
-		dev = await openDeviceById(id);
+		dev = await openDeviceById(id, { timeout: 10000 });
 	} catch (err) {
 		if (err instanceof NotFoundError) {
 			throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);

@@ -414,8 +414,15 @@ module.exports = class FlashCommand extends CLICommandBase {
 					if (device.isInDfuMode) {
 						// put device in normal mode
 						progress({ event: 'switch-mode', mode: 'normal' });
-						device = await usbUtils.reopenInNormalMode(device, { reset: true });
+						device = await usbUtils.reopenInNormalMode(device, { reset: true, timeout: 10000 });
 					}
+					// put the device in listening mode to prevent cloud connection
+					try {
+						await device.enterListeningMode();
+					} catch (error) {
+						// ignore if the device is already in listening mode
+					}
+
 
 					// flash the file in normal mode
 					progress({ event: 'flash-file', filename: step.name });
