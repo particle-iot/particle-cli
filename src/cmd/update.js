@@ -28,7 +28,7 @@ const REOPEN_TIMEOUT = 60000;
 const REOPEN_DELAY = 3000;
 
 module.exports = class UpdateCommand {
-	async updateDevice(args) {
+	async updateDevice(device, args) {
 		if (!(await dfu.isDfuUtilInstalled())) {
 			console.log(chalk.red('!'), 'It doesn\'t seem like DFU utilities are installed...');
 			console.log();
