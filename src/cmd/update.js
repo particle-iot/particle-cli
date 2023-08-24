@@ -1,19 +1,18 @@
-const { openUsbDevice, openUsbDeviceById, openUsbDeviceByIdOrName, getUsbDevices, UsbPermissionsError } = require('./usb-util');
 const ParticleApi = require('./api');
-const dfu = require('../lib/dfu');
-const { spin } = require('../app/ui');
-const { platformForId, isKnownPlatformId } = require('../lib/platform');
+const { platformForId, PLATFORMS } = require('../lib/platform');
 const { delay } = require('../lib/utilities');
 const settings = require('../../settings');
 
-const { HalModuleParser } = require('binary-version-reader');
-const { prompt } = require('inquirer');
-const semver = require('semver');
-const chalk = require('chalk');
+const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 
+const usbUtils = require('./usb-util');
+const deviceOsUtils = require('../lib/device-os-version-util');
+const CLICommandBase = require('./base');
+const { moduleTypeToString, sortBinariesByDependency } = require('../lib/dependency-walker');
 const path = require('path');
-const fs = require('fs');
+const os = require('os');
 
+const FLASH_APPLY_DELAY = 3000;
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
@@ -27,229 +26,211 @@ const REOPEN_TIMEOUT = 60000;
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 3000;
 
-module.exports = class UpdateCommand {
-	async updateDevice(device, args) {
-		if (!(await dfu.isDfuUtilInstalled())) {
-			console.log(chalk.red('!'), 'It doesn\'t seem like DFU utilities are installed...');
-			console.log();
-			console.log(chalk.cyan('!'), 'For help with installing DFU utilities, please see:\n' +
-				chalk.bold.white('https://docs.particle.io/guide/tools-and-features/cli/#advanced-install'));
-			console.log();
-			process.exit(1);
-		}
+module.exports = class UpdateCommand extends CLICommandBase {
 
-		let devInfo;
-		try {
-			devInfo = await this._getDeviceInfo(args && args.params.device);
-		} catch (err) {
-			console.log(chalk.red('!'), 'An error occured while opening the device:');
-			console.log();
-			console.log(chalk.bold.white(err.toString()));
-			console.log();
-			console.log(chalk.cyan('>'), 'Please check that the device is connected to the computer via USB.');
-			console.log(chalk.cyan('>'), 'If the device is connected, switching it into DFU mode may help.');
-			console.log();
-			console.log(chalk.cyan('>'), 'You can also visit our community forums for help with this error:');
-			console.log(chalk.bold.white('https://community.particle.io/'));
-			console.log();
-			process.exit(1);
-		}
-
-		let files = settings.updates[devInfo.platformId];
-		if (!files) {
-			console.log(chalk.cyan('!'), 'There are currently no system firmware updates available for this device.');
-			return;
-		}
-
-		if (!devInfo.isInDfuMode && (!devInfo.version || semver.lt(devInfo.version, '2.0.0'))) {
-			// The support for control requests is somewhat inconsistent in pre-LTS versions of Device OS
-			console.log(chalk.red('!'), 'Please switch the device into DFU mode and try again.');
-			console.log();
-			process.exit(1);
-		}
-
-		for (let i = 0; i < files.length; ++i) {
-			const file = path.resolve(__dirname, '../../assets/updates', files[i]);
-			const useDfuMode = await this._canFlashInDfuMode(file);
-			files[i] = { path: file, useDfuMode };
-		}
-		if (devInfo.isInDfuMode) {
-			// If the device is in DFU mode, we can't know what firmware version it's running and thus
-			// there's no guarantee that we'll be able to flash it using control requests before the
-			// system firmware is updated.
-			//
-			// Reorder the files so that the modules that can be flashed via DFU will be flashed first
-			files = files.filter(f => f.useDfuMode).concat(files.filter(f => !f.useDfuMode));
-		}
-
-		console.log();
-		console.log(chalk.cyan('>'), 'Your device is ready for a system update.');
-		console.log(chalk.cyan('>'), 'This process may take a few minutes. Here it goes!');
-		console.log();
-
-		try {
-			await spin(this._doUpdate(devInfo.id, files), 'Updating system firmware on the device...');
-		} catch (err) {
-			console.log(chalk.red('!'), 'An error occurred while attempting to update the system firmware of your device:');
-			console.log();
-			console.log(chalk.bold.white(err.toString()));
-			if (err.code) {
-				console.log('Error code:', err.code);
-			}
-			console.log();
-			console.log(chalk.cyan('>'), 'Please visit our community forums for help with this error:');
-			console.log(chalk.bold.white('https://community.particle.io/'));
-			console.log();
-			process.exit(1);
-		}
-
-		console.log(chalk.cyan('!'), 'System firmware update successfully completed!');
-		console.log();
-		console.log(chalk.cyan('>'), 'Your device should now restart automatically.');
-		console.log();
+	constructor(...args) {
+		super(...args);
 	}
 
-	async _doUpdate(deviceId, files) {
-		let openDelay = 0;
-		let openTimeout = OPEN_TIMEOUT;
-		let dev;
-		files = [...files];
+	async updateDevice(deviceIdOrName, { target }) {
+		const { api, auth , particleApi } = this._particleApi();
+		// get device info
+		const device = await usbUtils.getOneUsbDevice({ deviceIdOrName, api, auth, ui: this.ui });
+		const version = target || 'latest';
+		// get platform info
+		const platformName = platformForId(device.platformId).name;
+		this.ui.write(`Updating ${platformName} ${deviceIdOrName || device.id} with version ${version}`);
+		// get Device OS version
+		const deviceOsBinaries = await deviceOsUtils.downloadDeviceOsVersionBinaries({
+			api: particleApi,
+			platformId: device.platformId,
+			version,
+			ui: this.ui,
+			omitUserPart: true
+		});
+		const deviceOsModules = await this._parseModules({ files: deviceOsBinaries });
+		const modulesToFlash = this._filterModulesToFlash({ modules: deviceOsModules, platformId: device.platformId, allowAll: true });
+		const flashSteps = await this._createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
+		await this._flashFiles({ device, flashSteps });
+	}
+
+	async _parseModules({ files }) {
+		return Promise.all(files.map(async (file) => {
+			const parser = new ModuleParser();
+			const binary = await parser.parseFile(file);
+			return {
+				filename: file,
+				...binary
+			};
+		}));
+
+	}
+
+	_filterModulesToFlash({ modules, platformId, allowAll = false }) {
+		const platform = PLATFORMS.find(p => p.id === platformId);
+		const filteredModules = [];
+		// remove encrypted files
+		for (const moduleInfo of modules) {
+			const moduleType = moduleTypeToString(moduleInfo.prefixInfo.moduleFunction);
+			const platformModule = platform.firmwareModules.find(m => m.type === moduleType && m.index === moduleInfo.prefixInfo.moduleIndex);
+			// filter encrypted modules
+			const isEncrypted = platformModule && platformModule.encrypted;
+			const isRadioStack = moduleInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.RADIO_STACK;
+			const isNcpFirmware = moduleInfo.prefixInfo.moduleFunction === ModuleInfo.FunctionType.NCP_FIRMWARE;
+			if (!isEncrypted && (!isRadioStack || allowAll) && (!isNcpFirmware || allowAll)) {
+				filteredModules.push(moduleInfo);
+			}
+		}
+		return filteredModules;
+	}
+
+	async _createFlashSteps({ modules, isInDfuMode, platformId }) {
+		const platform = PLATFORMS.find(p => p.id === platformId);
+		const sortedModules = await sortBinariesByDependency(modules);
+		const assetModules = [], normalModules = [], dfuModules = [];
+		sortedModules.forEach(module => {
+			const data = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
+			const flashStep = {
+				name: path.basename(module.filename),
+				moduleInfo: { crc: module.crc, prefixInfo: module.prefixInfo, suffixInfo: module.suffixInfo },
+				data
+			};
+			const moduleType = moduleTypeToString(module.prefixInfo.moduleFunction);
+			const storage = platform.firmwareModules
+				.find(firmwareModule => firmwareModule.type === moduleType);
+			if (moduleType === 'assets') {
+				flashStep.flashMode = 'normal';
+				assetModules.push(flashStep);
+			} else if (moduleType === 'bootloader' || storage.storage === 'external') {
+				flashStep.flashMode = 'normal';
+				normalModules.push(flashStep);
+			} else {
+				flashStep.flashMode = 'dfu';
+				dfuModules.push(flashStep);
+			}
+		});
+
+		// avoid switching to normal mode if device is already in DFU so a device with broken Device OS can get fixed
+		if (isInDfuMode) {
+			return [...dfuModules, ...normalModules, ...assetModules];
+		} else {
+			return [...normalModules, ...dfuModules, ...assetModules];
+		}
+	}
+
+	async _flashFiles({ device, flashSteps }) {
+		const progress = this._createFlashProgress({ flashSteps });
+
 		try {
-			while (files.length) {
-				await delay(openDelay);
-				dev = await this._openDevice(deviceId, { timeout: openTimeout });
-				const file = files.shift();
-				if (file.useDfuMode) {
-					// Use DFU
-					if (!dev.isInDfuMode) {
-						// Disconnect the device from the network/cloud to ensure its system thread is unblocked
-						await this._disconnectDevice(dev);
-						await dev.enterDfuMode();
+			for (const step of flashSteps) {
+				if (step.flashMode === 'normal') {
+					if (device.isInDfuMode) {
+						// put device in normal mode
+						progress({ event: 'switch-mode', mode: 'normal' });
+						device = await usbUtils.reopenInNormalMode(device, { reset: true, timeout: 10000 });
 					}
-					// Close the device before flashing it via dfu-util
-					await dev.close();
-					await dfu.writeModule(file.path, { vendorId: dev.vendorId, productId: dev.productId, serial: deviceId, leave: !files.length });
-					openDelay = 0;
-					openTimeout = OPEN_TIMEOUT;
+					// put the device in listening mode to prevent cloud connection
+					try {
+						await device.enterListeningMode();
+					} catch (error) {
+						// ignore if the device is already in listening mode
+					}
+
+
+					// flash the file in normal mode
+					progress({ event: 'flash-file', filename: step.name });
+					await device.updateFirmware(step.data, { progress });
+
+					// wait for the device to apply the firmware
+					await delay(FLASH_APPLY_DELAY);
+					device = await usbUtils.reopenInNormalMode(device, { reset: false });
 				} else {
-					// Use control requests
-					if (dev.isInDfuMode) {
-						await dev.reset();
-						await dev.close();
-						await delay(REOPEN_DELAY);
-						dev = await this._openDevice(deviceId);
+					if (!device.isInDfuMode) {
+						// put device in dfu mode
+						progress({ event: 'switch-mode', mode: 'DFU' });
+						device = await usbUtils.reopenInDfuMode(device);
 					}
-					await this._disconnectDevice(dev);
-					const data = fs.readFileSync(file.path);
-					await dev.updateFirmware(data, { timeout: FLASH_TIMEOUT });
-					await dev.close(); // Device is about to reset
-					openDelay = REOPEN_DELAY;
-					openTimeout = REOPEN_TIMEOUT;
+
+					// flash the file over DFU
+					progress({ event: 'flash-file', filename: step.name });
+					// CLI always flashes to internal flash which is the DFU alt setting 0
+					const altSetting = 0;
+					await device.writeOverDfu(step.data, { altSetting, startAddr: parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16), progress });
 				}
 			}
 		} finally {
-			if (dev && dev.isOpen) {
-				try {
-					await dev.close();
-				} catch (err) {
-					// Ignore
-				}
+			progress({ event: 'finish' });
+			await device.reset();
+			await device.close();
+		}
+	}
+
+	_createFlashProgress({ flashSteps }) {
+		const NORMAL_MULTIPLIER = 10; // flashing in normal mode is slower so count each byte more
+		const { isInteractive } = this.ui;
+		let progressBar;
+		if (isInteractive) {
+			progressBar = this.ui.createProgressBar();
+			// double the size to account for the erase and programming steps
+			const total = flashSteps.reduce((total, step) => total + step.data.length * 2 * (step.flashMode === 'normal' ? NORMAL_MULTIPLIER : 1), 0);
+			progressBar.start(total, 0, { description: 'Preparing to flash' });
+		}
+
+		let flashMultiplier = 1;
+		let eraseSize = 0;
+		let step = null;
+		let description;
+		return (payload) => {
+			switch (payload.event) {
+				case 'flash-file':
+					description = `Flashing ${payload.filename}`;
+					if (isInteractive) {
+						progressBar.update({ description });
+					} else {
+						this.ui.stdout.write(`${description}${os.EOL}`);
+					}
+					step = flashSteps.find(step => step.name === payload.filename);
+					flashMultiplier = step.flashMode === 'normal' ? NORMAL_MULTIPLIER : 1;
+					eraseSize = 0;
+					break;
+				case 'switch-mode':
+					description = `Switching device to ${payload.mode} mode`;
+					if (isInteractive) {
+						progressBar.update({ description });
+					} else {
+						this.ui.stdout.write(`${description}${os.EOL}`);
+					}
+					break;
+				case 'erased':
+					if (isInteractive) {
+						// In DFU, entire sectors are erased so the count of bytes can be higher than the actual size
+						// of the file. Ignore the extra bytes to avoid issues with the progress bar
+						if (step && eraseSize + payload.bytes > step.data.length) {
+							progressBar.increment((step.data.length - eraseSize) * flashMultiplier);
+							eraseSize = step.data.length;
+						} else {
+							progressBar.increment(payload.bytes * flashMultiplier);
+							eraseSize += payload.bytes;
+						}
+					}
+					break;
+				case 'downloaded':
+					if (isInteractive) {
+						progressBar.increment(payload.bytes * flashMultiplier);
+					}
+					break;
+				case 'finish':
+					if (isInteractive) {
+						progressBar.stop();
+					}
+					break;
 			}
-		}
-	}
-
-	async _getDeviceInfo(idOrName) {
-		if (idOrName) {
-			const { api, auth } = this._particleApi();
-			const dev = await spin(openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true }), 'Getting device information...');
-			const devInfo = {
-				id: dev.id,
-				platformId: dev.platformId,
-				version: dev.firmwareVersion,
-				isInDfuMode: dev.isInDfuMode
-			};
-			await dev.close();
-			return devInfo;
-		}
-		const devs = await getUsbDevices({ dfuMode: true });
-		const devInfo = [];
-		for (const dev of devs) {
-			// Open the device to get its ID
-			await openUsbDevice(dev, { dfuMode: true });
-			devInfo.push({
-				id: dev.id,
-				platformId: dev.platformId,
-				version: dev.firmwareVersion,
-				isInDfuMode: dev.isInDfuMode
-			});
-			await dev.close();
-		}
-		if (!devInfo.length) {
-			throw new Error('No devices found');
-		}
-		if (devInfo.length === 1) {
-			return devInfo[0];
-		}
-		const answer = await prompt({
-			type: 'list',
-			name: 'device',
-			message: 'Which device would you like to update?',
-			choices: devInfo.map((d) => {
-				const platformName = isKnownPlatformId(d.platformId) ? platformForId(d.platformId).displayName : `Platform ${d.platformId}`;
-				return {
-					name: `${d.id} (${platformName})`,
-					value: d
-				};
-			})
-		});
-		return answer.device;
-	}
-
-	async _openDevice(deviceId, { timeout = OPEN_TIMEOUT } = {}) {
-		const t2 = Date.now() + timeout;
-		for (;;) {
-			try {
-				const dev = await openUsbDeviceById(deviceId, { dfuMode: true });
-				await delay(500);
-				return dev;
-			} catch (err) {
-				if (err instanceof UsbPermissionsError) {
-					throw err;
-				}
-				// Ignore other errors
-			}
-			const dt = t2 - Date.now();
-			if (dt <= 0) {
-				throw new Error('Unable to open USB device');
-			}
-			await delay(Math.min(500, dt));
-		}
-	}
-
-	async _disconnectDevice(device) {
-		const gen3OrHigher = isKnownPlatformId(device.platformId) && platformForId(device.platformId).generation >= 3;
-		if (gen3OrHigher && device.firmwareVersion && semver.gte(device.firmwareVersion, '2.0.0')) {
-			// Device OS 2.0.0 and higher supports the "force" option that allows disconnecting the device
-			// from the cloud even if its system thread is blocked
-			await device.disconnectFromCloud({ force: true });
-		} else {
-			// This works more reliably with Gen 2 devices than disconnectFromCloud()
-			await device.enterListeningMode();
-		}
-		await delay(500);
-	}
-
-	async _canFlashInDfuMode(file) {
-		const parser = new HalModuleParser();
-		const info = await parser.parseFile(file);
-		const alt = dfu.interfaceForModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
-			info.prefixInfo.platformID);
-		return alt !== null;
+		};
 	}
 
 	_particleApi() {
 		const auth = settings.access_token;
 		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		return { api: api.api, auth };
+		return { api: api.api, auth, particleApi: api };
 	}
 };
