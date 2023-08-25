@@ -7,19 +7,6 @@ const deviceOsUtils = require('../lib/device-os-version-util');
 const CLICommandBase = require('./base');
 const { parseModulesToFlash, filterModulesToFlash, createFlashSteps, flashFiles } = require('../lib/flash-helper');
 
-// Flashing an NCP firmware can take a few minutes
-const FLASH_TIMEOUT = 4 * 60000;
-
-// Default timeout when opening a USB device
-const OPEN_TIMEOUT = 3000;
-
-// Timeout when reopening a USB device after an update via control requests. This timeout should be
-// long enough to allow the bootloader apply the update
-const REOPEN_TIMEOUT = 60000;
-
-// When reopening a device that was about to reset, give it some time to boot into the firmware
-const REOPEN_DELAY = 3000;
-
 module.exports = class UpdateCommand extends CLICommandBase {
 
 	constructor(...args) {

@@ -6,6 +6,8 @@ const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-re
 const path = require('path');
 const os = require('os');
 const FLASH_APPLY_DELAY = 3000;
+// Flashing an NCP firmware can take a few minutes
+const FLASH_TIMEOUT = 4 * 60000;
 
 async function flashFiles({ device, flashSteps, ui }) {
 	const progress = _createFlashProgress({ flashSteps, ui });
@@ -15,7 +17,7 @@ async function flashFiles({ device, flashSteps, ui }) {
 				if (device.isInDfuMode) {
 					// put device in normal mode
 					progress({ event: 'switch-mode', mode: 'normal' });
-					device = await usbUtils.reopenInNormalMode(device, { reset: true, timeout: 10000 });
+					device = await usbUtils.reopenInNormalMode(device, { reset: true });
 				}
 				// put the device in listening mode to prevent cloud connection
 				try {
@@ -27,7 +29,7 @@ async function flashFiles({ device, flashSteps, ui }) {
 
 				// flash the file in normal mode
 				progress({ event: 'flash-file', filename: step.name });
-				await device.updateFirmware(step.data, { progress });
+				await device.updateFirmware(step.data, { progress, timeout: FLASH_TIMEOUT });
 
 				// wait for the device to apply the firmware
 				await delay(FLASH_APPLY_DELAY);
@@ -162,7 +164,7 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 		if (moduleType === 'assets') {
 			flashStep.flashMode = 'normal';
 			assetModules.push(flashStep);
-		} else if (moduleType === 'bootloader' || storage.storage === 'external') {
+		} else if (moduleType === 'bootloader' || storage.storage === 'externalMcu') {
 			flashStep.flashMode = 'normal';
 			normalModules.push(flashStep);
 		} else {

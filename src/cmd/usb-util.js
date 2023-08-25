@@ -9,8 +9,11 @@ const {
 	TimeoutError
 } = require('../lib/require-optional')('particle-usb');
 
-// This timeout should be long enough to allow the bootloader apply an update
-const REOPEN_TIMEOUT = 60000;
+// Timeout when reopening a USB device after an update via control requests. This timeout should be
+// long enough to allow the bootloader apply the update
+const REOPEN_TIMEOUT = 70000;
+// When reopening a device that was about to reset, give it some time to boot into the firmware
+const REOPEN_DELAY = 500;
 
 /**
  * USB permissions error.
@@ -176,10 +179,24 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 
 async function reopenInDfuMode(device) {
 	const { id } = device;
-	await device.enterDfuMode();
 	await device.close();
-	device = await openUsbDeviceById(id, { dfuMode: true });
-	return device;
+	const start = Date.now();
+	while (Date.now() - start < REOPEN_TIMEOUT) {
+		await delay(REOPEN_DELAY);
+		try {
+			device = await openUsbDeviceById(id, { dfuMode: true });
+			if (device.isOpen && device.isInDfuMode) {
+				return device;
+			}
+			if (device.isOpen) {
+				await device.enterDfuMode();
+				await device.close();
+			}
+		} catch (err) {
+			// ignore error
+		}
+	}
+	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
 }
 
 async function reopenInNormalMode(device, { reset } = {}) {
@@ -190,7 +207,7 @@ async function reopenInNormalMode(device, { reset } = {}) {
 	await device.close();
 	const start = Date.now();
 	while (Date.now() - start < REOPEN_TIMEOUT) {
-		await delay(500);
+		await delay(REOPEN_DELAY);
 		try {
 			device = await openDeviceById(id);
 			if (device.isInDfuMode) {
