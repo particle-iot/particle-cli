@@ -50,8 +50,14 @@ async function flashFiles({ device, flashSteps, ui }) {
 		}
 	} finally {
 		progress({ event: 'finish' });
-		await device.reset();
-		await device.close();
+		if (device.isOpen) {
+			try {
+				await device.reset();
+			} catch (error) {
+				// ignore error: when flashing ncp the device takes too long to connect back to make requests like reset device
+			}
+			await device.close();
+		}
 	}
 }
 

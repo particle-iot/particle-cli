@@ -11,7 +11,7 @@ const {
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
-const REOPEN_TIMEOUT = 70000;
+const REOPEN_TIMEOUT = 60000;
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 500;
 
@@ -67,7 +67,7 @@ async function openUsbDevice(usbDevice, { dfuMode = false } = {}){
 async function openUsbDeviceById(id, { displayName, dfuMode = false } = {}) {
 	let dev;
 	try {
-		dev = await openDeviceById(id, { timeout: 10000 });
+		dev = await openDeviceById(id);
 	} catch (err) {
 		if (err instanceof NotFoundError) {
 			throw new Error(`Unable to connect to the device ${displayName || id}. Make sure the device is connected to the host computer via USB`);
@@ -179,20 +179,19 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 
 async function reopenInDfuMode(device) {
 	const { id } = device;
-	await device.close();
 	const start = Date.now();
 	while (Date.now() - start < REOPEN_TIMEOUT) {
 		await delay(REOPEN_DELAY);
 		try {
+			await device.close();
 			device = await openUsbDeviceById(id, { dfuMode: true });
-			if (device.isOpen && device.isInDfuMode) {
-				return device;
-			}
-			if (device.isOpen) {
+			if (!device.isInDfuMode) {
 				await device.enterDfuMode();
 				await device.close();
+				device = await openUsbDeviceById(id);
 			}
-		} catch (err) {
+			return device;
+		} catch (error) {
 			// ignore error
 		}
 	}
@@ -204,7 +203,9 @@ async function reopenInNormalMode(device, { reset } = {}) {
 	if (reset && device.isOpen) {
 		await device.reset();
 	}
-	await device.close();
+	if (device.isOpen) {
+		await device.close();
+	}
 	const start = Date.now();
 	while (Date.now() - start < REOPEN_TIMEOUT) {
 		await delay(REOPEN_DELAY);
@@ -213,7 +214,10 @@ async function reopenInNormalMode(device, { reset } = {}) {
 			if (device.isInDfuMode) {
 				await device.close();
 			} else {
-				return device;
+				// check if we can communicate with the device
+				if (device.isOpen) {
+					return device;
+				}
 			}
 		} catch (err) {
 			// ignore error

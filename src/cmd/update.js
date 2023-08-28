@@ -33,9 +33,8 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		const modulesToFlash = filterModulesToFlash({ modules: deviceOsModules, platformId: device.platformId, allowAll: true });
 		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
 		await flashFiles({ device, flashSteps, ui: this.ui });
+		this.ui.write('Update success!');
 	}
-
-
 
 	_particleApi() {
 		const auth = settings.access_token;
