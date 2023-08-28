@@ -2,7 +2,7 @@ const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
-	DEVICE_NAME
+	DEVICE_NAME, DEVICE_PLATFORM_NAME
 } = require('../lib/env');
 
 
@@ -44,10 +44,8 @@ describe('Update Commands [@device]', () => {
 	it('Updates to latest default Device OS version', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['update']);
 
-		expect(stdout).to.include('> Your device is ready for a system update.');
-		expect(stdout).to.include('> This process may take a few minutes. Here it goes!');
-		expect(stdout).to.include('! System firmware update successfully completed!');
-		expect(stdout).to.include('> Your device should now restart automatically.');
+		expect(stdout).to.include(`Updating ${DEVICE_PLATFORM_NAME} ${DEVICE_ID} with version latest`);
+		expect(stdout).to.include('Update success!');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
