@@ -144,7 +144,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashLocal({ files, applicationOnly, target }) {
 		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
 		const { api, auth } = this._particleApi();
-		const device = await usbUtils.getOneUsbDevice({ deviceIdOrName, api, auth, ui: this.ui });
+		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
 
 		const platformName = platformForId(device.platformId).name;
 		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
