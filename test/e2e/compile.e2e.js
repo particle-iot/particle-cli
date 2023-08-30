@@ -541,7 +541,7 @@ describe('Compile Commands', () => {
 	});
 
 	it ('Creates a bundle with legacy flat project', async () => {
-		const platform = 'photon';
+		const platform = 'tracker';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
 		const destinationZip = path.join(PATH_TMP_DIR, 'bundle.zip');
 		const args = ['compile', platform, '--saveTo', destinationZip];
@@ -576,7 +576,7 @@ describe('Compile Commands', () => {
 	});
 
 	it ('verifies bundle', async () => {
-		const platform = 'photon';
+		const platform = 'tracker';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
 		const destination = path.join(PATH_TMP_DIR, 'bundle.zip');
 		const args = ['compile', platform, '--saveTo', destination];
@@ -598,7 +598,7 @@ describe('Compile Commands', () => {
 	});
 
 	it ('Creates a bundle with legacy flat project with default name', async () => {
-		const platform = 'photon';
+		const platform = 'tracker';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
 		const args = ['compile', platform];
 		const { stdout, stderr, exitCode } = await cliRunWithTimer(args, { cwd });
@@ -619,12 +619,12 @@ describe('Compile Commands', () => {
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
-		expect(stdout).to.match(/[\s\S]*photon_firmware_\d+.zip/);
+		expect(stdout).to.match(/[\s\S]*tracker_firmware_\d+.zip/);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
 		const files = await fs.readdir(cwd);
-		const defaultName = stdout.match(/photon_firmware_\d+.zip/)[0];
+		const defaultName = stdout.match(/tracker_firmware_\d+.zip/)[0];
 		const defaultNameExists = files.includes(defaultName);
 		if (defaultNameExists) {
 			await fs.unlink(path.join(cwd, defaultName));
@@ -632,17 +632,17 @@ describe('Compile Commands', () => {
 	});
 
 	it ('checks that the .bin file does not exist outside of the bundle', async () => {
-		const platform = 'photon';
+		const platform = 'tracker';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
 		const args = ['compile', platform];
 		await cliRunWithTimer(args, { cwd });
 		const files = await fs.readdir(cwd);
 
 		files.forEach( async (file) => {
-			if (file.match(/photon_firmware_\d+.bin/)) {
+			if (file.match(/tracker_firmware_\d+.bin/)) {
 				expect(false).to.be.true;
 			}
-			if (file.match(/photon_firmware_\d+.zip/)) {
+			if (file.match(/tracker_firmware_\d+.zip/)) {
 				await fs.unlink(path.join(cwd, file));
 			}
 		});
