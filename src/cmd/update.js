@@ -1,6 +1,7 @@
 const ParticleApi = require('./api');
 const { platformForId } = require('../lib/platform');
 const settings = require('../../settings');
+const semver = require('semver');
 
 const usbUtils = require('./usb-util');
 const deviceOsUtils = require('../lib/device-os-version-util');
@@ -15,9 +16,15 @@ module.exports = class UpdateCommand extends CLICommandBase {
 
 	async updateDevice(deviceIdOrName, { target }) {
 		const { api, auth , particleApi } = this._particleApi();
+		if (target && !semver.valid(target)) {
+			this.ui.write(`Invalid version: ${target}`);
+			return;
+		}
 		// get device info
-		const device = await usbUtils.getOneUsbDevice({ deviceIdOrName, api, auth, ui: this.ui });
+		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
+
 		const version = target || 'latest';
+
 		// get platform info
 		const platformName = platformForId(device.platformId).name;
 		this.ui.write(`Updating ${platformName} ${deviceIdOrName || device.id} with version ${version}`);
