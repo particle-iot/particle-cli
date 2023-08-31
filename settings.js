@@ -39,63 +39,7 @@ let settings = {
 
 	cloudKnownApps: {
 		'tinker': true
-	},
-	updates: {
-		// TODO: The firmware binaries are flashed in the order in which they're listed here. Ideally,
-		// the order should be determined based on the module dependency tree. For now, make sure the
-		// bootloader is flashed first, then radio stack, system part modules and finally NCP firmware
-		[PlatformId.PHOTON]: [
-			'photon-bootloader@2.3.1+lto.bin',
-			'photon-system-part1@2.3.1.bin',
-			'photon-system-part2@2.3.1.bin'
-		],
-		[PlatformId.P1]: [
-			'p1-bootloader@2.3.1+lto.bin',
-			'p1-system-part1@2.3.1.bin',
-			'p1-system-part2@2.3.1.bin'
-		],
-		[PlatformId.ELECTRON]: [
-			'electron-bootloader@2.3.1+lto.bin',
-			'electron-system-part1@2.3.1.bin',
-			'electron-system-part2@2.3.1.bin',
-			'electron-system-part3@2.3.1.bin'
-		],
-		[PlatformId.ARGON]: [
-			'argon-bootloader@4.1.0.bin',
-			'argon-softdevice@4.1.0.bin',
-			'argon-system-part1@4.1.0.bin'
-		],
-		[PlatformId.BORON]: [
-			'boron-bootloader@4.1.0.bin',
-			'boron-softdevice@4.1.0.bin',
-			'boron-system-part1@4.1.0.bin'
-		],
-		[PlatformId.XENON]: [
-			'xenon-bootloader@1.5.2.bin',
-			'xenon-softdevice@1.5.2.bin',
-			'xenon-system-part1@1.5.2.bin'
-		],
-		[PlatformId.BSOM]: [
-			'bsom-bootloader@4.1.0.bin',
-			'bsom-softdevice@4.1.0.bin',
-			'bsom-system-part1@4.1.0.bin'
-		],
-		[PlatformId.B5SOM]: [
-			'b5som-bootloader@4.1.0.bin',
-			'b5som-softdevice@4.1.0.bin',
-			'b5som-system-part1@4.1.0.bin'
-		],
-		[PlatformId.TRACKER]: [
-			'tracker-bootloader@4.1.0.bin',
-			'tracker-softdevice@4.1.0.bin',
-			'tracker-system-part1@4.1.0.bin'
-		],
-		[PlatformId.ESOMX]: [
-			'esomx-bootloader@4.1.0.bin',
-			'esomx-softdevice@4.1.0.bin',
-			'esomx-system-part1@4.1.0.bin'
-		],
-	},
+	}
 };
 
 function envValue(varName, defaultValue) {

@@ -157,7 +157,6 @@
     "coverage:report": "nyc report --reporter=html",
     "clean": "npm run clean:modules",
     "clean:modules": "rm -rf ./node_modules",
-    "update-firmware-binaries": "node scripts/update-firmware-binaries.js",
     "update-changelog": "VERSION=`node --print --eval \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md",
     "reinstall": "npm run clean && npm i",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
