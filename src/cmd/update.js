@@ -14,7 +14,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	async updateDevice(deviceIdOrName, { target }) {
+	async updateDevice(deviceIdOrName, { target } = {}) {
 		const { api, auth , particleApi } = this._particleApi();
 		if (target && !semver.valid(target)) {
 			this.ui.write(`Invalid version: ${target}`);
@@ -27,7 +27,8 @@ module.exports = class UpdateCommand extends CLICommandBase {
 
 		// get platform info
 		const platformName = platformForId(device.platformId).name;
-		this.ui.write(`Updating ${platformName} ${deviceIdOrName || device.id} with version ${version}`);
+		const versionText = version === 'latest' ? 'latest Device OS version' : `Device OS version ${version}`;
+		this.ui.write(`Updating ${platformName} ${deviceIdOrName || device.id} to ${versionText}`);
 		// get Device OS version
 		const deviceOsBinaries = await deviceOsUtils.downloadDeviceOsVersionBinaries({
 			api: particleApi,

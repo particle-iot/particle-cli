@@ -36,7 +36,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  subscribe   Listen to device event stream',
 		'  token       Manage access tokens (require username/password)',
 		'  udp         Talk UDP to repair devices, run patches, check Wi-Fi, and more!',
-		'  update      Update the system firmware of a device via USB',
+		'  update      Update Device OS on a device via USB',
 		'  update-cli  Update the Particle CLI to the latest version',
 		'  usb         Control USB devices',
 		'  variable    Retrieve and monitor variables on your device',

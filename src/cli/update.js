@@ -1,9 +1,9 @@
 module.exports = ({ commandProcessor, root }) => {
-	commandProcessor.createCommand(root, 'update', 'Update the system firmware of a device via USB', {
+	commandProcessor.createCommand(root, 'update', 'Update Device OS on a device via USB', {
 		params: '[device]',
 		options: {
 			'target': {
-				description: 'The firmware version to update. Defaults to latest version.',
+				description: 'The Device OS version to update. Defaults to latest version.',
 			}
 		},
 		handler: (args) => {
@@ -11,9 +11,9 @@ module.exports = ({ commandProcessor, root }) => {
 			return new UpdateCommand().updateDevice(args.params.device, args);
 		},
 		examples: {
-			'$0 $command red': 'Update the system firmware of device red',
-			'$0 $command --target 5.0.0 blue': 'Update the system firmware of device blue to version 5.0.0'
+			'$0 $command': 'Update Device OS on the device connected over USB',
+			'$0 $command red': 'Update Device OS on device red',
+			'$0 $command --target 5.0.0 blue': 'Update Device OS on device blue to version 5.0.0'
 		}
 	});
 };
-
