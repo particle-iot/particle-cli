@@ -2,8 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const extend = require('xtend');
 const _ = require('lodash');
-const { PlatformId } = require('./src/lib/platform');
-
 
 let settings = {
 	apiUrl: 'https://api.particle.io',
