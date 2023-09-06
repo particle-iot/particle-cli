@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.14.0 - Sep 6 2023
+
+* Update command uses local flash and can target any Device OS version
+
 # 3.13.0 - Aug 31 2023
 
 * Support asset bundle size limitation
