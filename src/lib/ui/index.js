@@ -43,6 +43,7 @@ module.exports = class UI {
 	createProgressBar() {
 		return new cliProgress.SingleBar({
 			format: '[{bar}] {percentage}% | {description}',
+			barsize: 25
 		}, cliProgress.Presets.shades_classic);
 	}
 

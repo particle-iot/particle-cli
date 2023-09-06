@@ -27,7 +27,6 @@ The Particle CLI is a powerful tool for interacting with your IoT devices and th
   - [Installing](#installing-1)
   - [Running](#running)
   - [Testing](#testing)
-  - [Updating system firmware](#updating-system-firmware)
   - [Releasing a new version](#releasing-a-new-version)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -75,19 +74,12 @@ $ particle help
 $ particle help keys
 ```
 
+### particle update
 
-## Updating Firmware
+If you wish to easily update Device OS on your device to a later version, you can use the `particle update` command.
+You can specify a version with the `--target` argument.
 
-
-### Photon/P1/Electron
-
-
-#### particle update
-
-If you wish to easily update the system firmware running on your device to a later version, you can use the `particle update` command. For the exact version it will update to, check the version of the files in the [updates folder](/assets/updates).
-
-1. Make sure you have [DFU-util](http://dfu-util.sourceforge.net/) installed.
-1. Connect your device via USB, and put it into [DFU mode](https://docs.particle.io/guide/getting-started/modes/#dfu-mode-device-firmware-upgrade-).
+1. Connect your device via USB
 1. Run `particle update`.
 
 
@@ -146,29 +138,6 @@ The Particle CLI has a number of automated test suites and related commands. The
 All tests use [mocha](https://mochajs.org), [chai](https://www.chaijs.com), and [sinon](https://sinonjs.org/) with coverage handled by [nyc](https://github.com/istanbuljs/nyc).
 
 We recommend running locally if you can as it greatly shortens your feedback loop. However, CI also runs against every PR and [error reporting is publicly available](https://app.circleci.com/pipelines/github/particle-iot/particle-cli).
-
-
-## Updating system firmware
-
-- `npm run update-firmware-binaries <version>`
-  where `<version>` is the newly released system firmware version like 0.7.0
-
-- Test on each platform by doing
-
-  ```
-  # Check old firmware version
-  bin/particle.js serial inspect
-
-  # Flash new system firmware
-  bin/particle.js update
-
-  # Verify new firmware version
-  bin/particle.js serial inspect
-  ```
-
-- Do not update the versions or CHANGELOG.md just yet!
-- Commit as something like "adds firmware binaries for 0.7.0" and proceed to release a new CLI version (below).
-
 
 ## Releasing a new version
 

@@ -9,8 +9,11 @@ const {
 	TimeoutError
 } = require('../lib/require-optional')('particle-usb');
 
-// This timeout should be long enough to allow the bootloader apply an update
+// Timeout when reopening a USB device after an update via control requests. This timeout should be
+// long enough to allow the bootloader apply the update
 const REOPEN_TIMEOUT = 60000;
+// When reopening a device that was about to reset, give it some time to boot into the firmware
+const REOPEN_DELAY = 500;
 
 /**
  * USB permissions error.
@@ -109,6 +112,7 @@ async function openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode = false } 
 		try {
 			device = await openDeviceById(deviceInfo.id);
 		} catch (err) {
+			// TODO: improve error message when device is not found. Currently it says Device is not found
 			await handleUsbError(err);
 		}
 	}
@@ -176,10 +180,23 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 
 async function reopenInDfuMode(device) {
 	const { id } = device;
-	await device.enterDfuMode();
-	await device.close();
-	device = await openUsbDeviceById(id, { dfuMode: true });
-	return device;
+	const start = Date.now();
+	while (Date.now() - start < REOPEN_TIMEOUT) {
+		await delay(REOPEN_DELAY);
+		try {
+			await device.close();
+			device = await openUsbDeviceById(id, { dfuMode: true });
+			if (!device.isInDfuMode) {
+				await device.enterDfuMode();
+				await device.close();
+				device = await openUsbDeviceById(id);
+			}
+			return device;
+		} catch (error) {
+			// ignore error
+		}
+	}
+	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
 }
 
 async function reopenInNormalMode(device, { reset } = {}) {
@@ -187,16 +204,21 @@ async function reopenInNormalMode(device, { reset } = {}) {
 	if (reset && device.isOpen) {
 		await device.reset();
 	}
-	await device.close();
+	if (device.isOpen) {
+		await device.close();
+	}
 	const start = Date.now();
 	while (Date.now() - start < REOPEN_TIMEOUT) {
-		await delay(500);
+		await delay(REOPEN_DELAY);
 		try {
 			device = await openDeviceById(id);
 			if (device.isInDfuMode) {
 				await device.close();
 			} else {
-				return device;
+				// check if we can communicate with the device
+				if (device.isOpen) {
+					return device;
+				}
 			}
 		} catch (err) {
 			// ignore error

@@ -191,7 +191,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			if (product) {
 				[
 					`Device ${deviceId} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
-					'to resume normal updates, please visit:',
+					'To resume normal updates, please visit:',
 					// TODO (mirande): replace w/ instructions on how to unmark
 					// via the CLI once that command is available
 					`https://console.particle.io/${product}/devices/unmark-development/${deviceId}`
