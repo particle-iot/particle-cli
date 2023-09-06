@@ -112,6 +112,7 @@ async function openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode = false } 
 		try {
 			device = await openDeviceById(deviceInfo.id);
 		} catch (err) {
+			// TODO: improve error message when device is not found. Currently it says Device is not found
 			await handleUsbError(err);
 		}
 	}
