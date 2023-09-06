@@ -63,23 +63,22 @@ describe('Product Commands', () => {
 
 		// TODO (mirande): sometimes entity includes: `desired_firmware_version`
 		const summaryDeviceFieldNames = ['denied',
-			'development', 'firmware_product_id', 'groups', 'iccid', 'id', 'imei',
-			'last_handshake_at', 'last_iccid', 'last_ip_address', 'name', 'notes',
+			'development', 'firmware_product_id', 'groups', 'id',
+			'last_handshake_at', 'last_ip_address', 'name',
 			'online', 'owner', 'platform_id', 'product_id', 'quarantined',
 			'serial_number', 'system_firmware_version',
-			'targeted_firmware_release_version', 'user_id'];
+			'targeted_firmware_release_version'];
 
 		// TODO (mirande): sometimes entity includes: `pinned_build_target`
 		const detailedDeviceFieldNames = ['cellular', 'connected',
 			'current_build_target', 'default_build_target', 'denied',
 			'development', 'firmware_product_id', 'firmware_updates_enabled',
-			'firmware_updates_forced', 'functions', 'groups',
-			'iccid', 'id', 'imei', 'last_handshake_at', 'last_heard',
-			'last_iccid', 'last_ip_address', 'mobile_secret', 'name', 'notes',
-			'online', 'owner', 'pinned_build_target', 'platform_id',
-			'product_id', 'quarantined', 'serial_number', 'status',
-			'system_firmware_version', 'targeted_firmware_release_version',
-			'variables'];
+			'firmware_updates_forced', 'groups',
+			'id', 'last_handshake_at', 'last_heard',
+			'last_ip_address', 'mobile_secret', 'name',
+			'online', 'owner', 'platform_id',
+			'product_id', 'quarantined', 'serial_number',
+			'system_firmware_version', 'targeted_firmware_release_version'];
 
 		it('Lists devices', async () => {
 			const args = ['product', 'device', 'list', PRODUCT_01_ID];
