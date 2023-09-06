@@ -192,12 +192,11 @@ describe('Cloud Commands [@device]', () => {
 				'',
 				'Including:',
 				`    ${PATH_PROJ_STROBY_INO}`,
-				'attempting to compile firmware',
-				'', // don't assert against binary info since it's always unique: e.g. 'downloading binary from: /v1/binaries/5d38f108bc91fb000130a3f9'
-				`saving to: ${strobyBinPath}`,
+				'',
+				'Compile succeeded.',
+				'',
 				'Memory use:',
 				'', // don't assert against memory stats since they may change based on current default Device OS version
-				'Compile succeeded.',
 				`Saved firmware to: ${strobyBinPath}`
 			];
 
@@ -254,10 +253,16 @@ describe('Cloud Commands [@device]', () => {
 			const args = ['cloud', 'flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const log = [
+				`Compiling code for ${DEVICE_NAME}`,
+				'',
 				'Including:',
 				`    ${PATH_PROJ_STROBY_INO}`,
-				`attempting to flash firmware to your device ${DEVICE_NAME}`,
-				'Flash device OK: Update started'
+				'',
+				'Compile succeeded.',
+				'',
+				'Memory use:',
+				'', // don't assert against memory stats since they may change based on current default Device OS version
+				`Flashing firmware to your device ${DEVICE_NAME}`,
 			];
 
 			expect(stdout.split('\n')).to.include.members(log);
@@ -290,13 +295,11 @@ describe('Cloud Commands [@device]', () => {
 			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_ID, PATH_PROJ_BLANK_INO, '--product', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const log = [
-				'Including:',
-				`    ${PATH_PROJ_BLANK_INO}`,
-				`marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
-				`attempting to flash firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
-				'Flash device OK: Update started',
-				`device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
-				'to resume normal updates, please visit:',
+				`Compiling code for ${PRODUCT_01_DEVICE_01_ID}`,
+				`Marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
+				`Flashing firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
+				`Device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'To resume normal updates, please visit:',
 				`https://console.particle.io/${PRODUCT_01_ID}/devices/unmark-development/${PRODUCT_01_DEVICE_01_ID}`
 			];
 
@@ -311,11 +314,10 @@ describe('Cloud Commands [@device]', () => {
 			const args = ['cloud', 'flash', PRODUCT_01_DEVICE_01_ID, 'tinker', '--product', PRODUCT_01_ID];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const log = [
-				`marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
-				`attempting to flash firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
-				'Flash device OK: Update started',
-				`device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
-				'to resume normal updates, please visit:',
+				`Marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
+				`Flashing firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
+				`Device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'To resume normal updates, please visit:',
 				`https://console.particle.io/${PRODUCT_01_ID}/devices/unmark-development/${PRODUCT_01_DEVICE_01_ID}`
 			];
 
@@ -330,11 +332,10 @@ describe('Cloud Commands [@device]', () => {
 			const args = ['flash', PRODUCT_01_DEVICE_01_NAME, 'tinker'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 			const log = [
-				`marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
-				`attempting to flash firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
-				'Flash device OK: Update started',
-				`device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
-				'to resume normal updates, please visit:',
+				`Marking device ${PRODUCT_01_DEVICE_01_ID} as a development device`,
+				`Flashing firmware to your device ${PRODUCT_01_DEVICE_01_ID}`,
+				`Device ${PRODUCT_01_DEVICE_01_ID} is now marked as a developement device and will NOT receive automatic product firmware updates.`,
+				'To resume normal updates, please visit:',
 				`https://console.particle.io/${PRODUCT_01_ID}/devices/unmark-development/${PRODUCT_01_DEVICE_01_ID}`
 			];
 
