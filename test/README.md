@@ -38,6 +38,11 @@ E2E_PRODUCT_01_DEVICE_02_PLATFORM_NAME=<platform name of your 1st product device
 
 _NOTE: Your device will be flashed, etc. Test failures may leave it in a bad state. **Please DO NOT use a mission-critical device!**_
 
+Additional details:
+* `E2E_USERNAME` must not have 2FA enabled
+* `E2E_DEVICE_NAME` should be claimed to your user and connected to your computer over USB
+  * It should be running firmware with a `check` function
+* The product 01 devices should be running firmware with the TBD functions
 
 ## How to Run
 
@@ -128,10 +133,9 @@ Tags provide an easy way to filter tests using use mocha's `--grep` feature ([do
 
 ## Known Issues
 
-* make sure the account user has no 2FA enabled for the tests to be able to login
 * tests run somewhat slowly (~30m) and are generally less stable than unitish tests
 * currently known to work under macOS _only_ when running with a device
-* tests should run in docker to acheive proper isolation
+* tests should run in docker to achieve proper isolation
 * some tests require two devices to be connected via USB or they will fail
-* when a test fails, make sure to let the "afterAll" hook still runs to return your account back to normal, or you might end with devices in an invalid state or modified products in console
+* when a test fails, make sure to let the "afterAll" hook still runs to return your account back to normal, or you might end up with devices in an invalid state or modified products in console
 
