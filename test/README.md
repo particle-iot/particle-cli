@@ -128,7 +128,10 @@ Tags provide an easy way to filter tests using use mocha's `--grep` feature ([do
 
 ## Known Issues
 
+* make sure the account user has no 2FA enabled for the tests to be able to login
 * tests run somewhat slowly (~30m) and are generally less stable than unitish tests
 * currently known to work under macOS _only_ when running with a device
 * tests should run in docker to acheive proper isolation
+* some tests require two devices to be connected via USB or they will fail
+* when a test fails, make sure to let the "afterAll" hook still runs to return your account back to normal, or you might end with devices in an invalid state or modified products in console
 
