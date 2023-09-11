@@ -174,6 +174,23 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 			flashStep.flashMode = 'normal';
 			normalModules.push(flashStep);
 		} else {
+			if (moduleType === 'userPart') {
+				const DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER = 3103;
+				if (platform.dfu.segments.formerUserPart && module.prefixInfo.depModuleVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
+					const moduleInfo = {
+						prefixInfo : {
+							moduleStartAddy : platform.dfu.segments.formerUserPart.address
+						}
+					};
+					const formerUserPartflashStep = {
+						name: 'invalidate-128k-user-part',
+						moduleInfo,
+						data: Buffer.alloc(platform.dfu.segments.formerUserPart.size, 0xFF),
+						flashMode: 'dfu'
+					};
+					dfuModules.push(formerUserPartflashStep);
+				}
+			}
 			flashStep.flashMode = 'dfu';
 			dfuModules.push(flashStep);
 		}
