@@ -185,19 +185,19 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 
 	const DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER = 3103;
 	// invalidate 128k user part for device-os 3.1 and later
-	if (platform.dfu.segments.formatUserPart && deviceOsVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
+	if (platform.dfu.segments.formerUserPart && deviceOsVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
 		const moduleInfo = {
 			prefixInfo : {
-				moduleStartAddy : platform.dfu.segments.formatUserPart.address
+				moduleStartAddy : platform.dfu.segments.formerUserPart.address
 			}
 		};
-		const formatUserPartflashStep = {
+		const formerUserPartflashStep = {
 			name: 'invalidate-128k-user-part',
 			moduleInfo,
-			data: Buffer.alloc(platform.dfu.segments.formatUserPart.minFormatSize, 0xFF)
+			data: Buffer.alloc(platform.dfu.segments.formerUserPart.size, 0xFF)
 		};
-		formatUserPartflashStep.flashMode = 'dfu';
-		dfuModules.push(formatUserPartflashStep);
+		formerUserPartflashStep.flashMode = 'dfu';
+		dfuModules.push(formerUserPartflashStep);
 	}
 
 	// avoid switching to normal mode if device is already in DFU so a device with broken Device OS can get fixed
