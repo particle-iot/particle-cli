@@ -176,29 +176,26 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 			normalModules.push(flashStep);
 		} else {
 			if (moduleType === 'userPart') {
-				deviceOsVersion = module.prefixInfo.depModuleVersion;
+				const DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER = 3103;
+				if (platform.dfu.segments.formerUserPart && module.prefixInfo.depModuleVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
+					const moduleInfo = {
+						prefixInfo : {
+							moduleStartAddy : platform.dfu.segments.formerUserPart.address
+						}
+					};
+					const formerUserPartflashStep = {
+						name: 'invalidate-128k-user-part',
+						moduleInfo,
+						data: Buffer.alloc(platform.dfu.segments.formerUserPart.size, 0xFF),
+						flashMode: 'dfu'
+					};
+					dfuModules.push(formerUserPartflashStep);
+				}
 			}
 			flashStep.flashMode = 'dfu';
 			dfuModules.push(flashStep);
 		}
 	});
-
-	const DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER = 3103;
-	// invalidate 128k user part for device-os 3.1 and later
-	if (platform.dfu.segments.formerUserPart && deviceOsVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
-		const moduleInfo = {
-			prefixInfo : {
-				moduleStartAddy : platform.dfu.segments.formerUserPart.address
-			}
-		};
-		const formerUserPartflashStep = {
-			name: 'invalidate-128k-user-part',
-			moduleInfo,
-			data: Buffer.alloc(platform.dfu.segments.formerUserPart.size, 0xFF)
-		};
-		formerUserPartflashStep.flashMode = 'dfu';
-		dfuModules.push(formerUserPartflashStep);
-	}
 
 	// avoid switching to normal mode if device is already in DFU so a device with broken Device OS can get fixed
 	if (isInDfuMode) {

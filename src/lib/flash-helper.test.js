@@ -279,8 +279,8 @@ describe('flash-helper', () => {
 				bootloaderStep,
 				systemPart1Step,
 				systemPart2Step,
-				userPart1Step,
-				userPartInvalidationStep
+				userPartInvalidationStep,
+				userPart1Step
 			];
 			expect(steps).to.deep.equal(expected);
 		});
