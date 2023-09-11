@@ -157,7 +157,6 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 	const platform = PLATFORMS.find(p => p.id === platformId);
 	const sortedModules = await sortBinariesByDependency(modules);
 	const assetModules = [], normalModules = [], dfuModules = [];
-	let deviceOsVersion = 0;
 	sortedModules.forEach(module => {
 		const data = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
 		const flashStep = {
