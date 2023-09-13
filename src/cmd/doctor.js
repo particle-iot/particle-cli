@@ -47,6 +47,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_showDoctorWelcome(){
+		console.log(chalk.bold.red('!!!') + chalk.bold.white('Warning: The Device Doctor does not work for Gen3 or the P2'));
 		console.log(chalk.bold.white('The Device Doctor will put your device back into a healthy state'));
 		console.log('It will:');
 		_.map([

@@ -70,73 +70,83 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
-	flashDfu({ binary, factory, force, requestLeave }) {
-		return Promise.resolve()
-			.then(() => dfu.isDfuUtilInstalled())
-			.then(() => dfu.findCompatibleDFU())
-			.then(() => {
-				//only match against knownApp if file is not found
-				let stats;
+	async flashDfu({ binary, factory, force, requestLeave }) {
+		let device = undefined;
+		let dfuId = undefined;
+		try {
+			device = await usbUtils.getOneUsbDevice({ ui: this.ui });
+			if (!device.isInDfuMode) {
+				device = await usbUtils.reopenInDfuMode(device);
+			}
+			const vendorId = device._info.vendorId;
+			const productId = device._info.productId;
+			// FIXME: Use existing makeDfuId method from dfu.js
+			dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+			dfu.setDfuId(dfuId);
+		} catch (err) {
+			throw new VError(ensureError(err), 'Error getting device');
+		}
 
-				try {
-					stats = fs.statSync(binary);
-				} catch (error) {
-					// file does not exist
-					binary = dfu.checkKnownApp(binary);
+		let stats;
+		try {
+			stats = fs.statSync(binary);
+		} catch (error) {
+			// file does not exist
+			binary = dfu.checkKnownApp(binary);
 
-					if (binary === undefined) {
-						throw new Error(`file does not exist and no known app found. tried: \`${error.path}\``);
-					}
-					return;
-				}
+			if (binary === undefined) {
+				throw new Error(`file does not exist and no known app found. tried: \`${error.path}\``);
+			}
+		}
 
-				if (!stats.isFile()) {
-					throw new Error('You cannot flash a directory over USB');
-				}
-			})
-			.then(() => {
-				const parser = new ModuleParser();
-				return parser.parseFile(binary)
-					.catch(err => {
-						throw new VError(ensureError(err), `Could not parse ${binary}`);
-					});
-			})
-			.then(info => {
-				if (info.suffixInfo.suffixSize === 65535) {
-					this.ui.write('warn: unable to verify binary info');
-					return;
-				}
+		if (stats && !stats.isFile()) {
+			throw new Error('You cannot flash a directory over USB');
+		}
 
-				if (!info.crc.ok && !force) {
-					throw new Error('CRC is invalid, use --force to override');
-				}
+		const parser = new ModuleParser();
+		let info = undefined;
+		try {
+			info = await parser.parseFile(binary);
+		} catch (err) {
+			throw new VError(ensureError(err), `Could not parse ${binary}`);
+		}
 
-				const specs = deviceSpecs[dfu.dfuId];
-				if (info.prefixInfo.platformID !== specs.productId && !force) {
-					throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
-				}
+		if (info.suffixInfo.suffixSize === 65535) {
+			this.ui.write('warn: unable to verify binary info');
+			return;
+		}
 
-				let segmentName;
-				if (factory) {
-					if (info.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.USER_PART) {
-						throw new Error('Cannot flash a non-application binary to the factory reset location');
-					}
-					segmentName = 'factoryReset';
-					if (!specs[segmentName]) {
-						throw new Error('The platform does not support a factory reset application');
-					}
-				}
+		if (!info.crc.ok && !force) {
+			throw new Error('CRC is invalid, use --force to override');
+		}
 
-				if (requestLeave === undefined) {
-					// todo - leave on factory firmware write too?
-					requestLeave = (!factory && info.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART);
-				}
+		const specs = deviceSpecs[dfuId];
+		if (info.prefixInfo.platformID !== specs.productId && !force) {
+			throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
+		}
 
-				return dfu.writeModule(binary, { segmentName, leave: requestLeave });
-			})
-			.catch((err) => {
-				throw new VError(ensureError(err), 'Error writing firmware');
-			});
+		let segmentName;
+		if (factory) {
+			if (info.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.USER_PART) {
+				throw new Error('Cannot flash a non-application binary to the factory reset location');
+			}
+			segmentName = 'factoryReset';
+			if (!specs[segmentName]) {
+				throw new Error('The platform does not support a factory reset application');
+			}
+		}
+
+		if (requestLeave === undefined) {
+			// todo - leave on factory firmware write too?
+			requestLeave = (!factory && info.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART);
+		}
+
+		try {
+			const res = await dfu.writeModule({ device, binaryPath: binary, segmentName, leave: requestLeave, ui: this.ui });
+			return res;
+		} catch (err) {
+			throw new VError(ensureError(err), 'Error writing firmware');
+		}
 	}
 
 	async flashLocal({ files, applicationOnly, target }) {
