@@ -129,7 +129,7 @@ async function parseModulesToFlash({ files }) {
 	}));
 }
 
-async function createFlashSteps({ modules, isInDfuMode, platformId }) {
+async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	const platform = PLATFORMS.find(p => p.id === platformId);
 	const sortedModules = await sortBinariesByDependency(modules);
 	const assetModules = [], normalModules = [], dfuModules = [];
@@ -141,12 +141,25 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 			data
 		};
 		const moduleType = moduleTypeToString(module.prefixInfo.moduleFunction);
-		const storage = platform.firmwareModules
+		const moduleDefinition = platform.firmwareModules
 			.find(firmwareModule => firmwareModule.type === moduleType);
+
+		let factoryAddress;
+		if (factory) {
+			if (moduleType !== 'userPart') {
+				throw new Error('Factory reset is only supported for user part');
+			}
+			const segment = _.get(platform, 'dfu.segments.factoryReset');
+			if (!segment) {
+				throw new Error('Factory reset is not supported for this platform');
+			}
+			factoryAddress = parseInt(segment.address, 16);
+		}
+
 		if (moduleType === 'assets') {
 			flashStep.flashMode = 'normal';
 			assetModules.push(flashStep);
-		} else if (moduleType === 'bootloader' || storage.storage === 'externalMcu') {
+		} else if (moduleType === 'bootloader' || moduleDefinition.storage === 'externalMcu') {
 			flashStep.flashMode = 'normal';
 			normalModules.push(flashStep);
 		} else {
@@ -156,7 +169,7 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 				if (formerUserPart && module.prefixInfo.depModuleVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
 					const formerUserPartflashStep = {
 						name: 'invalidate-128k-user-part',
-						address: parseInt(formerUserPart.address.replace('0x',''), 16),
+						address: parseInt(formerUserPart.address, 16),
 						data: Buffer.alloc(formerUserPart.size, 0xFF),
 						flashMode: 'dfu'
 					};
@@ -164,7 +177,7 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 				}
 			}
 			flashStep.flashMode = 'dfu';
-			flashStep.address = parseInt(module.prefixInfo.moduleStartAddy, 16);
+			flashStep.address = factoryAddress || parseInt(module.prefixInfo.moduleStartAddy, 16);
 			dfuModules.push(flashStep);
 		}
 	});
