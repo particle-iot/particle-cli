@@ -19,7 +19,7 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 			} else {
 				// CLI always flashes to internal flash which is the DFU alt setting 0
 				const altSetting = 0;
-				device = await flashDeviceInDfuMode(device, step.data, { name: step.name, altSetting: altSetting, startAddr: parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16), progress: progress });
+				device = await flashDeviceInDfuMode(device, step.data, { name: step.name, altSetting: altSetting, startAddr: step.address, progress: progress });
 			}
 		}
 	} finally {
@@ -154,14 +154,9 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 				const DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER = 3103;
 				const formerUserPart = _.get(platform, 'dfu.segments.formerUserPart');
 				if (formerUserPart && module.prefixInfo.depModuleVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
-					const moduleInfo = {
-						prefixInfo : {
-							moduleStartAddy : formerUserPart.address
-						}
-					};
 					const formerUserPartflashStep = {
 						name: 'invalidate-128k-user-part',
-						moduleInfo,
+						address: parseInt(formerUserPart.address.replace('0x',''), 16),
 						data: Buffer.alloc(formerUserPart.size, 0xFF),
 						flashMode: 'dfu'
 					};
@@ -169,6 +164,7 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 				}
 			}
 			flashStep.flashMode = 'dfu';
+			flashStep.address = parseInt(module.prefixInfo.moduleStartAddy, 16);
 			dfuModules.push(flashStep);
 		}
 	});

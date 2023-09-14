@@ -195,6 +195,7 @@ describe('flash-helper', () => {
 					prefixInfo: systemPart1.prefixInfo,
 					suffixInfo: systemPart1.suffixInfo
 				},
+				address: 0x8000000,
 				data: systemPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
@@ -205,6 +206,7 @@ describe('flash-helper', () => {
 					prefixInfo: systemPart2.prefixInfo,
 					suffixInfo: systemPart2.suffixInfo
 				},
+				address: 0x8000000,
 				data: systemPart2.fileBuffer,
 				flashMode: 'dfu'
 			};
@@ -215,16 +217,13 @@ describe('flash-helper', () => {
 					prefixInfo: userPart1.prefixInfo,
 					suffixInfo: userPart1.suffixInfo
 				},
+				address: 0x8000000,
 				data: userPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
 			userPartInvalidationStep = {
 				name: 'invalidate-128k-user-part',
-				moduleInfo: {
-					prefixInfo: {
-						'moduleStartAddy': '0xd4000'
-					}
-				},
+				address: 0xd4000,
 				data: Buffer.alloc(4096, 0xFF),
 				flashMode: 'dfu'
 			};
@@ -345,6 +344,7 @@ describe('flash-helper', () => {
 					prefixInfo: systemPart1.prefixInfo,
 					suffixInfo: systemPart1.suffixInfo
 				},
+				address: 0x8000000,
 				data: systemPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
@@ -355,6 +355,7 @@ describe('flash-helper', () => {
 					prefixInfo: userPart1.prefixInfo,
 					suffixInfo: userPart1.suffixInfo
 				},
+				address: 0x8000000,
 				data: userPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
