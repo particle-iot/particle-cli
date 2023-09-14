@@ -397,6 +397,7 @@ module.exports = {
 	async writeModule(device, binaryPath, { vendorId, productId, segmentName, leave } = {}) {
 		const parser = new HalModuleParser();
 		const info = await parser.parseFile(binaryPath);
+		let buffer = info.fileBuffer;
 		let alt;
 		let address;
 		if (segmentName) {
@@ -426,9 +427,10 @@ module.exports = {
 		}
 		if (info.prefixInfo.moduleFlags & ModuleInfo.Flags.DROP_MODULE_INFO) {
 			binaryPath = await dropModuleInfo(binaryPath);
+			buffer = fs.readFileSync(binaryPath);
 		}
 
-		await device.writeOverDfu(info.fileBuffer, { altSetting: alt, startAddr: address, leave: leave });
+		await device.writeOverDfu(buffer, { altSetting: alt, startAddr: address, leave: leave });
 	},
 
 	/**

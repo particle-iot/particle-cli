@@ -132,7 +132,7 @@ describe('DFU', () => {
 			const file = path.join(FIXTURES_DIR, 'binaries/boron_blank.bin');
 			await dfu.writeModule(mockDevice, file);
 			expect(mockDevice.writeOverDfu).to.have.been.calledOnce;
-			expect(mockDevice.writeOverDfu).to.be.calledWith(fileBuffer, {altSetting: 123, startAddr: startAddr, leave: undefined });
+			expect(mockDevice.writeOverDfu).to.be.calledWith(fileBuffer, { altSetting: 123, startAddr: startAddr, leave: undefined });
 		});
 
 		it('allows specifying vendor/product IDs and serial number of the target device explicitly', async () => {
@@ -140,7 +140,7 @@ describe('DFU', () => {
 			await dfu.writeModule(mockDevice, file, { vendorId: 0x1234, productId: 0x5678, serial: 'abc' });
 
 			expect(mockDevice.writeOverDfu).to.have.been.calledOnce;
-			expect(mockDevice.writeOverDfu).to.be.calledWith(fileBuffer, { altSetting: sinon.match.number, startAddr: startAddr, leave: undefined})
+			expect(mockDevice.writeOverDfu).to.be.calledWith(fileBuffer, { altSetting: sinon.match.number, startAddr: startAddr, leave: undefined });
 		});
 
 		it('can optionally write to the address and interface defined by a segment name', async () => {
@@ -158,20 +158,20 @@ describe('DFU', () => {
 			expect(mockDevice.writeOverDfu).to.be.calledWith(fileBuffer, { altSetting: 123, startAddr: 4660 /* 0x1234 */, leave: undefined });
 		});
 
-		// it('drops the module header if the corresponding flag is set in the module header', async () => {
-		// 	let file = path.join(FIXTURES_DIR, 'binaries/boron_blank.bin');
-		// 	const binary = fs.readFileSync(file);
-		// 	const parser = new HalModuleParser();
-		// 	const prefix = await parser.parsePrefix({ fileBuffer: binary });
-		// 	updateModulePrefix(binary, { ...prefix, moduleFlags: prefix.moduleFlags | ModuleInfo.Flags.DROP_MODULE_INFO });
-		// 	file = temp.openSync();
-		// 	fs.writeSync(file.fd, binary);
-		// 	fs.closeSync(file.fd);
-		// 	await dfu.writeModule(file.path);
-		// 	expect(dfu.writeDfu).to.be.called;
-		// 	const flashedBinary = fs.readFileSync(dfu.writeDfu.firstCall.args[1]);
-		// 	expect(flashedBinary.equals(binary.slice(ModuleInfo.MODULE_PREFIX_SIZE))).to.be.true;
-		// });
+		it('drops the module header if the corresponding flag is set in the module header', async () => {
+			let file = path.join(FIXTURES_DIR, 'binaries/boron_blank.bin');
+			const binary = fs.readFileSync(file);
+			const parser = new HalModuleParser();
+			const prefix = await parser.parsePrefix({ fileBuffer: binary });
+			updateModulePrefix(binary, { ...prefix, moduleFlags: prefix.moduleFlags | ModuleInfo.Flags.DROP_MODULE_INFO });
+			file = temp.openSync();
+			fs.writeSync(file.fd, binary);
+			fs.closeSync(file.fd);
+			await dfu.writeModule(mockDevice, file.path);
+			expect(mockDevice.writeOverDfu).to.be.called;
+			const flashedBinary = mockDevice.writeOverDfu.firstCall.args[0];
+			expect(flashedBinary.equals(binary.slice(ModuleInfo.MODULE_PREFIX_SIZE))).to.be.true;
+		});
 	});
 
 	describe('interfaceForModule', () => {
