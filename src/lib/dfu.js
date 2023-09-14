@@ -394,7 +394,7 @@ module.exports = {
 	 * @param {Boolean} [options.leave] Whether to leave DFU mode after writing. If not specified,
 	 *        the device will stay in DFU mode.
 	 */
-	async writeModule({ device, binaryPath, vendorId, productId, segmentName, leave }) {
+	async writeModule(device, binaryPath, { vendorId, productId, segmentName, leave } = {}) {
 		const parser = new HalModuleParser();
 		const info = await parser.parseFile(binaryPath);
 		let alt;
