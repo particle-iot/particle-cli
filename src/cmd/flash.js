@@ -63,7 +63,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashOverUsb({ binary, factory, force }) {
 		const parser = new HalModuleParser();
 		const moduleInfo = await parser.parseFile(binary);
-		if (moduleTypeToString(moduleInfo.prefixInfo.moduleFunction) === 'bootloader') {
+		if (utilities.getFilenameExt(binary) === '.zip') {
+			throw new Error("This command is not designed for flashing zip files. Please use 'particle flash --local' instead.");
+		} else if (moduleTypeToString(moduleInfo.prefixInfo.moduleFunction) === 'bootloader') {
 			await this.flashSerial({ binary: moduleInfo.fileBuffer });
 		} else {
 			await this.flashDfu({ binary, factory, force });
