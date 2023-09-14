@@ -28,7 +28,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		usb,
 		serial,
 		factory,
-		force,
 		target,
 		port,
 		yes,
@@ -42,7 +41,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.logFirstTimeFlashWarning();
 
 		if (usb) {
-			await this.flashOverUsb({ binary, factory, force });
+			await this.flashOverUsb({ binary, factory });
 		} else if (serial) {
 			await this.flashYModem({ binary, port, yes });
 		} else if (local) {
@@ -55,7 +54,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.write('Flash success!');
 	}
 
-	async flashOverUsb({ binary, force, factory }) {
+	async flashOverUsb({ binary, factory }) {
 		const device = await usbUtils.getOneUsbDevice({ ui: this.ui });
 		const platformName = platformForId(device.platformId).name;
 
@@ -67,7 +66,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 			files = [binary];
 		}
 		const modulesToFlash = await parseModulesToFlash({ files });
-		force; // TODO: look at force
 		await this._validateModulesForPlatform({ modules: modulesToFlash, platformId: device.platformId, platformName });
 		factory; // TODO: look at factory
 		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });

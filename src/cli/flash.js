@@ -24,10 +24,6 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true,
 				describe: 'Flash user application to the factory reset location. Only available for DFU'
 			},
-			'force': {
-				boolean: true,
-				describe: 'Flash even when binary does not pass pre-flash checks'
-			},
 			'yes': {
 				boolean: true,
 				description: 'Answer yes to all questions'
