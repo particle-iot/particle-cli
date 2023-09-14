@@ -143,6 +143,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		try {
 			const res = await dfu.writeModule(device, binary, { segmentName: segmentName, leave: requestLeave });
+			await device.close();
 			return res;
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error writing firmware');
