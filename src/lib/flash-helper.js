@@ -10,7 +10,7 @@ const FLASH_APPLY_DELAY = 3000;
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
-async function flashFiles({ device, flashSteps, ui }) {
+async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 	const progress = _createFlashProgress({ flashSteps, ui });
 	try {
 		for (const step of flashSteps) {
@@ -25,10 +25,12 @@ async function flashFiles({ device, flashSteps, ui }) {
 	} finally {
 		progress({ event: 'finish' });
 		if (device.isOpen) {
-			try {
-				await device.reset();
-			} catch (error) {
-				// ignore error: when flashing ncp the device takes too long to connect back to make requests like reset device
+			if (resetAfterFlash) {
+				try {
+					await device.reset();
+				} catch (error) {
+					// ignore error: when flashing ncp the device takes too long to connect back to make requests like reset device
+				}
 			}
 			await device.close();
 		}

@@ -55,6 +55,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async flashOverUsb({ binary, factory }) {
+		if (utilities.getFilenameExt(binary) === '.zip') {
+			throw new Error("Use 'particle flash --local' to flash a zipped bundle.");
+		}
+
 		const device = await usbUtils.getOneUsbDevice({ ui: this.ui });
 		const platformName = platformForId(device.platformId).name;
 
@@ -69,8 +73,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 		await this._validateModulesForPlatform({ modules: modulesToFlash, platformId: device.platformId, platformName });
 		factory; // TODO: look at factory
 		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
-		this.ui.write(`Flashing ${binary} to ${device.id}`);
-		await flashFiles({ device, flashSteps, ui: this.ui });
+		this.ui.write(`Flashing ${platformName} device ${device.id}`);
+
+		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
+		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 	}
 
 	flashCloud({ device, files, target }) {
@@ -208,7 +214,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 			if (binaries.length > 0 && sources.length === 0) {
 				// this is a binary directory so get all the binaries from all the parsedFiles
-				const binaries = this._findBinaries(parsedFiles);
+				const binaries = await this._findBinaries(parsedFiles);
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else if (sources.length > 0) {
 				// this is a source directory so compile it
@@ -221,7 +227,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// this is a file so figure out if it's a source file that should be compiled or a
 			// binary that should be flashed directly
 			if (binaryExtensions.includes(path.extname(filePath))) {
-				const binaries = this._findBinaries(parsedFiles);
+				const binaries = await this._findBinaries(parsedFiles);
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else {
 				const compileResult = await this._compileCode({ parsedFiles, platformId, target });
@@ -237,11 +243,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return [filename];
 	}
 
-	_findBinaries(parsedFiles) {
+	async _findBinaries(parsedFiles) {
 		const binaries = new Set();
 		for (const filePath of parsedFiles) {
 			try {
-				const stats = fs.statSync(filePath);
+				const stats = await fs.stat(filePath);
 				if (stats.isDirectory()) {
 					const found = utilities.globList(filePath, binaryPatterns);
 					for (const binary of found) {
