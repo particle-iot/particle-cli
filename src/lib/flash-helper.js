@@ -14,38 +14,11 @@ async function flashFiles({ device, flashSteps, ui }) {
 	try {
 		for (const step of flashSteps) {
 			if (step.flashMode === 'normal') {
-				if (device.isInDfuMode) {
-					// put device in normal mode
-					progress({ event: 'switch-mode', mode: 'normal' });
-					device = await usbUtils.reopenInNormalMode(device, { reset: true });
-				}
-				// put the device in listening mode to prevent cloud connection
-				try {
-					await device.enterListeningMode();
-				} catch (error) {
-					// ignore if the device is already in listening mode
-				}
-
-
-				// flash the file in normal mode
-				progress({ event: 'flash-file', filename: step.name });
-				await device.updateFirmware(step.data, { progress, timeout: FLASH_TIMEOUT });
-
-				// wait for the device to apply the firmware
-				await delay(FLASH_APPLY_DELAY);
-				device = await usbUtils.reopenInNormalMode(device, { reset: false });
+				device = await flashDeviceInNormalMode(device, step.data, { name: step.name, progress: progress });
 			} else {
-				if (!device.isInDfuMode) {
-					// put device in dfu mode
-					progress({ event: 'switch-mode', mode: 'DFU' });
-					device = await usbUtils.reopenInDfuMode(device);
-				}
-
-				// flash the file over DFU
-				progress({ event: 'flash-file', filename: step.name });
 				// CLI always flashes to internal flash which is the DFU alt setting 0
 				const altSetting = 0;
-				await device.writeOverDfu(step.data, { altSetting, startAddr: parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16), progress });
+				device = await flashDeviceInDfuMode(device, step.data, { name: step.name, altSetting: altSetting, startAddr: parseInt(step.moduleInfo.prefixInfo.moduleStartAddy, 16), progress: progress });
 			}
 		}
 	} finally {
@@ -204,9 +177,56 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 	}
 }
 
+
+async function flashDeviceInNormalMode(device, data, { name, progress } = {}) {
+	if (device.isInDfuMode) {
+		// put device in normal mode
+		if (progress) {
+			progress({ event: 'switch-mode', mode: 'normal' });
+		}
+		device = await usbUtils.reopenInNormalMode(device, { reset: true });
+	}
+	// put the device in listening mode to prevent cloud connection
+	try {
+		await device.enterListeningMode();
+	} catch (error) {
+		// ignore if the device is already in listening mode
+	}
+
+
+	// flash the file in normal mode
+	if (progress) {
+		progress({ event: 'flash-file', filename: name });
+	}
+	await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
+
+	// wait for the device to apply the firmware
+	await delay(FLASH_APPLY_DELAY);
+	device = await usbUtils.reopenInNormalMode(device, { reset: false });
+	return device;
+}
+
+async function flashDeviceInDfuMode(device, data, { name, altSetting, startAddr, progress } = {}) {
+	if (!device.isInDfuMode) {
+		// put device in dfu mode
+		if (progress) {
+			progress({ event: 'switch-mode', mode: 'DFU' });
+		}
+		device = await usbUtils.reopenInDfuMode(device);
+	}
+
+	// flash the file over DFU
+	if (progress) {
+		progress({ event: 'flash-file', filename: name });
+	}
+	await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
+}
+
 module.exports = {
 	flashFiles,
 	filterModulesToFlash,
 	parseModulesToFlash,
-	createFlashSteps
+	createFlashSteps,
+	flashDeviceInNormalMode,
+	flashDeviceInDfuMode
 };

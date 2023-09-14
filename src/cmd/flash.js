@@ -2,7 +2,7 @@ const fs = require('fs-extra');
 const os = require('os');
 const ParticleApi = require('./api');
 const VError = require('verror');
-const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
+const { HalModuleParser: ModuleParser, ModuleInfo, HalModuleParser } = require('binary-version-reader');
 const deviceSpecs = require('../lib/device-specs');
 const { ensureError } = require('../lib/utilities');
 const { errors: { usageError } } = require('../app/command-processor');
@@ -20,7 +20,8 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
-const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles } = require('../lib/flash-helper');
+const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles, flashDeviceInNormalMode } = require('../lib/flash-helper');
+const { moduleTypeToString } = require('../lib/dependency-walker');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -46,7 +47,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.logFirstTimeFlashWarning();
 
 		if (usb) {
-			await this.flashDfu({ binary, factory, force });
+			await this.flashOverUsb({ binary, factory, force });
 		} else if (serial) {
 			await this.flashYModem({ binary, port, yes });
 		} else if (local) {
@@ -59,10 +60,37 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.write('Flash success!');
 	}
 
+	async flashOverUsb({ binary, factory, force }) {
+		const parser = new HalModuleParser();
+		const moduleInfo = await parser.parseFile(binary);
+		if (moduleTypeToString(moduleInfo.prefixInfo.moduleFunction) === 'bootloader') {
+			await this.flashSerial({ binary: moduleInfo.fileBuffer });
+		} else {
+			await this.flashDfu({ binary, factory, force });
+		}
+	}
+
 	flashCloud({ device, files, target }) {
 		const CloudCommands = require('../cmd/cloud');
 		const args = { target, params: { device, files } };
 		return new CloudCommands().flashDevice(args);
+	}
+
+	async flashSerial({ binary }) {
+		let device;
+		try {
+			device = await usbUtils.getOneUsbDevice({ ui: this.ui });
+		} catch (err) {
+			throw new VError(ensureError(err), 'Error getting device');
+		}
+
+		try {
+			// assume it is the bootloader and correct file
+			device = await flashDeviceInNormalMode(device, binary);
+			await device.close();
+		} catch (err) {
+			throw new VError(ensureError(err), 'Error writing firmware');
+		}
 	}
 
 	flashYModem({ binary, port, yes }) {
