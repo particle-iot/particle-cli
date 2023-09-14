@@ -1,12 +1,8 @@
 const fs = require('fs-extra');
 const os = require('os');
 const ParticleApi = require('./api');
-const VError = require('verror');
-const { HalModuleParser: ModuleParser, ModuleInfo, HalModuleParser } = require('binary-version-reader');
-const deviceSpecs = require('../lib/device-specs');
-const { ensureError } = require('../lib/utilities');
+const { ModuleInfo } = require('binary-version-reader');
 const { errors: { usageError } } = require('../app/command-processor');
-const dfu = require('../lib/dfu');
 const usbUtils = require('./usb-util');
 const CLICommandBase = require('./base');
 const { platformForId } = require('../lib/platform');
@@ -20,8 +16,7 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
-const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles, flashDeviceInNormalMode } = require('../lib/flash-helper');
-const { moduleTypeToString } = require('../lib/dependency-walker');
+const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles } = require('../lib/flash-helper');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -60,16 +55,24 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.write('Flash success!');
 	}
 
-	async flashOverUsb({ binary, factory, force }) {
-		const parser = new HalModuleParser();
-		const moduleInfo = await parser.parseFile(binary);
-		if (utilities.getFilenameExt(binary) === '.zip') {
-			throw new Error("This command is not designed for flashing zip files. Please use 'particle flash --local' instead.");
-		} else if (moduleTypeToString(moduleInfo.prefixInfo.moduleFunction) === 'bootloader') {
-			await this.flashSerial({ binary: moduleInfo.fileBuffer });
+	async flashOverUsb({ binary, force, factory }) {
+		const device = await usbUtils.getOneUsbDevice({ ui: this.ui });
+		const platformName = platformForId(device.platformId).name;
+
+		let files;
+		const knownAppPath = knownAppsForPlatform(platformName)[binary];
+		if (knownAppPath) {
+			files = [knownAppPath];
 		} else {
-			await this.flashDfu({ binary, factory, force });
+			files = [binary];
 		}
+		const modulesToFlash = await parseModulesToFlash({ files });
+		force; // TODO: look at force
+		await this._validateModulesForPlatform({ modules: modulesToFlash, platformId: device.platformId, platformName });
+		factory; // TODO: look at factory
+		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
+		this.ui.write(`Flashing ${binary} to ${device.id}`);
+		await flashFiles({ device, flashSteps, ui: this.ui });
 	}
 
 	flashCloud({ device, files, target }) {
@@ -78,106 +81,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return new CloudCommands().flashDevice(args);
 	}
 
-	async flashSerial({ binary }) {
-		let device;
-		try {
-			device = await usbUtils.getOneUsbDevice({ ui: this.ui });
-		} catch (err) {
-			throw new VError(ensureError(err), 'Error getting device');
-		}
-
-		try {
-			// assume it is the bootloader and correct file
-			device = await flashDeviceInNormalMode(device, binary);
-			await device.close();
-		} catch (err) {
-			throw new VError(ensureError(err), 'Error writing firmware');
-		}
-	}
-
 	flashYModem({ binary, port, yes }) {
 		const SerialCommands = require('../cmd/serial');
 		return new SerialCommands().flashDevice(binary, { port, yes });
-	}
-
-	async flashDfu({ binary, factory, force, requestLeave }) {
-		let device = undefined;
-		let dfuId = undefined;
-		try {
-			device = await usbUtils.getOneUsbDevice({ ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-			const vendorId = device._info.vendorId;
-			const productId = device._info.productId;
-			// FIXME: Use existing makeDfuId method from dfu.js
-			dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
-			dfu.setDfuId(dfuId);
-		} catch (err) {
-			throw new VError(ensureError(err), 'Error getting device');
-		}
-
-		let stats;
-		try {
-			stats = fs.statSync(binary);
-		} catch (error) {
-			// file does not exist
-			binary = dfu.checkKnownApp(binary);
-
-			if (binary === undefined) {
-				throw new Error(`file does not exist and no known app found. tried: \`${error.path}\``);
-			}
-		}
-
-		if (stats && !stats.isFile()) {
-			throw new Error('You cannot flash a directory over USB');
-		}
-
-		const parser = new ModuleParser();
-		let info = undefined;
-		try {
-			info = await parser.parseFile(binary);
-		} catch (err) {
-			throw new VError(ensureError(err), `Could not parse ${binary}`);
-		}
-
-		if (info.suffixInfo.suffixSize === 65535) {
-			this.ui.write('warn: unable to verify binary info');
-			return;
-		}
-
-		if (!info.crc.ok && !force) {
-			throw new Error('CRC is invalid, use --force to override');
-		}
-
-		const specs = deviceSpecs[dfuId];
-		if (info.prefixInfo.platformID !== specs.productId && !force) {
-			throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
-		}
-
-		let segmentName;
-		if (factory) {
-			if (info.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.USER_PART) {
-				throw new Error('Cannot flash a non-application binary to the factory reset location');
-			}
-			segmentName = 'factoryReset';
-			if (!specs[segmentName]) {
-				throw new Error('The platform does not support a factory reset application');
-			}
-		}
-
-		if (requestLeave === undefined) {
-			// todo - leave on factory firmware write too?
-			requestLeave = (!factory && info.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART);
-		}
-
-		try {
-			const res = await dfu.writeModule(device, binary, { segmentName: segmentName, leave: requestLeave });
-			await device.close();
-			return res;
-		} catch (err) {
-			throw new VError(ensureError(err), 'Error writing firmware');
-		}
 	}
 
 	async flashLocal({ files, applicationOnly, target }) {

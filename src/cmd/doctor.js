@@ -165,7 +165,7 @@ module.exports = class DoctorCommand {
 		return this._enterDfuMode()
 			.then(() => {
 				// See the source code of the doctor app in binaries/doctor.ino
-				return this.command('flash').flashDfu({ binary: 'doctor' });
+				return this.command('flash').flashOverUsb({ binary: 'doctor' });
 			})
 			.then(() => {
 				return this._waitForSerialDevice(deviceTimeout);
@@ -311,7 +311,7 @@ module.exports = class DoctorCommand {
 
 		return this._enterDfuMode()
 			.then(() => {
-				return this.command('flash').flashDfu({ binary: 'tinker' });
+				return this.command('flash').flashOverUsb({ binary: 'tinker' });
 			})
 			.catch(this._catchSkipStep);
 	}

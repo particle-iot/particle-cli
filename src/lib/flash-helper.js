@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
 const { PLATFORMS } =require('./platform');
@@ -149,16 +150,17 @@ async function createFlashSteps({ modules, isInDfuMode, platformId }) {
 		} else {
 			if (moduleType === 'userPart') {
 				const DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER = 3103;
-				if (platform.dfu.segments.formerUserPart && module.prefixInfo.depModuleVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
+				const formerUserPart = _.get(platform, 'dfu.segments.formerUserPart');
+				if (formerUserPart && module.prefixInfo.depModuleVersion >= DEVICE_OS_MIN_VERSION_TO_FORMAT_128K_USER) {
 					const moduleInfo = {
 						prefixInfo : {
-							moduleStartAddy : platform.dfu.segments.formerUserPart.address
+							moduleStartAddy : formerUserPart.address
 						}
 					};
 					const formerUserPartflashStep = {
 						name: 'invalidate-128k-user-part',
 						moduleInfo,
-						data: Buffer.alloc(platform.dfu.segments.formerUserPart.size, 0xFF),
+						data: Buffer.alloc(formerUserPart.size, 0xFF),
 						flashMode: 'dfu'
 					};
 					dfuModules.push(formerUserPartflashStep);
@@ -193,7 +195,6 @@ async function flashDeviceInNormalMode(device, data, { name, progress } = {}) {
 		// ignore if the device is already in listening mode
 	}
 
-
 	// flash the file in normal mode
 	if (progress) {
 		progress({ event: 'flash-file', filename: name });
@@ -220,6 +221,7 @@ async function flashDeviceInDfuMode(device, data, { name, altSetting, startAddr,
 		progress({ event: 'flash-file', filename: name });
 	}
 	await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
+	return device;
 }
 
 module.exports = {
