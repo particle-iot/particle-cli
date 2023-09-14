@@ -70,11 +70,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 			files = [binary];
 		}
 		const modulesToFlash = await parseModulesToFlash({ files });
-		await this._validateModulesForPlatform({ modules: modulesToFlash, platformId: device.platformId, platformName });
-		factory; // TODO: look at factory
-		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
-		this.ui.write(`Flashing ${platformName} device ${device.id}`);
 
+		await this._validateModulesForPlatform({ modules: modulesToFlash, platformId: device.platformId, platformName });
+		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId, factory });
+
+		this.ui.write(`Flashing ${platformName} device ${device.id}`);
 		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
 		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 	}

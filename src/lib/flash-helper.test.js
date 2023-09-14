@@ -318,6 +318,59 @@ describe('flash-helper', () => {
 			];
 			expect(steps).to.deep.equal(expected);
 		});
+
+		it('puts the user part at the factory address when supported', async () => {
+			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+
+			const steps = await createFlashSteps({
+				modules: [userPart1],
+				platformId: 6,
+				isInDfuMode: false,
+				factory: true
+			});
+			const userPart1FactoryStep = {
+				...userPart1Step,
+				address: 0x80e0000
+			};
+			const expected = [
+				userPart1FactoryStep
+			];
+			expect(steps).to.deep.equal(expected);
+		});
+
+		it('rejects when requesting a system part at the factory location', async () => {
+			const systemPart1 = modules.find( m => m.filename === 'systemPart1.bin');
+
+			let error;
+			try {
+				await createFlashSteps({
+					modules: [systemPart1],
+					platformId: 6,
+					isInDfuMode: false,
+					factory: true
+				});
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'Factory reset is only supported for user part');
+		});
+
+		it('rejects when the platform has no factory location', async () => {
+			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+
+			let error;
+			try {
+				await createFlashSteps({
+					modules: [userPart1],
+					platformId: 32,
+					isInDfuMode: false,
+					factory: true
+				});
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'Factory reset is not supported for this platform');
+		});
 	});
 
 	describe('createFlashSteps for gen3 nRF based platform', () => {
