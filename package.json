@@ -69,7 +69,7 @@
     "moment": "^2.24.0",
     "node-wifiscanner2": "^1.2.0",
     "openurl": "^1.1.1",
-    "particle-api-js": "^9.1.2",
+    "particle-api-js": "^10.0.0",
     "particle-commands": "0.3.0",
     "particle-library-manager": "^0.1.15",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
