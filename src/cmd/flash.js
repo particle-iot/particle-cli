@@ -279,6 +279,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _validateModulesForPlatform({ modules, platformId, platformName }) {
 		for (const moduleInfo of modules) {
+			if (!moduleInfo.crc.ok) {
+				throw new Error(`CRC check failed for module ${moduleInfo.filename}`);
+			}
 			if (moduleInfo.prefixInfo.platformID !== platformId && moduleInfo.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.ASSET) {
 				throw new Error(`Module ${moduleInfo.filename} is not compatible with platform ${platformName}`);
 			}
