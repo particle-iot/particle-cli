@@ -283,7 +283,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 				throw new Error(`Module ${moduleInfo.filename} is not compatible with platform ${platformName}`);
 			}
 		}
-
 	}
 
 	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {

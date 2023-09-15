@@ -137,7 +137,6 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 		const data = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
 		const flashStep = {
 			name: path.basename(module.filename),
-			moduleInfo: { crc: module.crc, prefixInfo: module.prefixInfo, suffixInfo: module.suffixInfo },
 			data
 		};
 		const moduleType = moduleTypeToString(module.prefixInfo.moduleFunction);

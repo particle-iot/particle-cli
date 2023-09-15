@@ -170,53 +170,28 @@ describe('flash-helper', () => {
 			const asset2 = assetModules.find( m => m.filename === 'asset2.bin');
 			preBootloaderStep = {
 				name: preBootloader.filename,
-				moduleInfo: {
-					crc: preBootloader.crc,
-					prefixInfo: preBootloader.prefixInfo,
-					suffixInfo: preBootloader.suffixInfo
-				},
 				data: preBootloader.fileBuffer,
 				flashMode: 'normal'
 			};
 			bootloaderStep = {
 				name: bootloader.filename,
-				moduleInfo: {
-					crc: bootloader.crc,
-					prefixInfo: bootloader.prefixInfo,
-					suffixInfo: bootloader.suffixInfo
-				},
 				data: bootloader.fileBuffer,
 				flashMode: 'normal'
 			};
 			systemPart1Step = {
 				name: systemPart1.filename,
-				moduleInfo: {
-					crc: systemPart1.crc,
-					prefixInfo: systemPart1.prefixInfo,
-					suffixInfo: systemPart1.suffixInfo
-				},
 				address: 0x8000000,
 				data: systemPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
 			systemPart2Step = {
 				name: systemPart2.filename,
-				moduleInfo: {
-					crc: systemPart2.crc,
-					prefixInfo: systemPart2.prefixInfo,
-					suffixInfo: systemPart2.suffixInfo
-				},
 				address: 0x8000000,
 				data: systemPart2.fileBuffer,
 				flashMode: 'dfu'
 			};
 			userPart1Step = {
 				name: userPart1.filename,
-				moduleInfo: {
-					crc: userPart1.crc,
-					prefixInfo: userPart1.prefixInfo,
-					suffixInfo: userPart1.suffixInfo
-				},
 				address: 0x8000000,
 				data: userPart1.fileBuffer,
 				flashMode: 'dfu'
@@ -229,21 +204,11 @@ describe('flash-helper', () => {
 			};
 			asset1Step = {
 				name: asset1.filename,
-				moduleInfo: {
-					crc: asset1.crc,
-					prefixInfo: asset1.prefixInfo,
-					suffixInfo: asset1.suffixInfo
-				},
 				data: asset1.fileBuffer,
 				flashMode: 'normal'
 			};
 			asset2Step = {
 				name: asset2.filename,
-				moduleInfo: {
-					crc: asset2.crc,
-					prefixInfo: asset2.prefixInfo,
-					suffixInfo: asset2.suffixInfo
-				},
 				data: asset2.fileBuffer,
 				flashMode: 'normal'
 			};
@@ -382,32 +347,17 @@ describe('flash-helper', () => {
 			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
 			bootloaderStep = {
 				name: bootloader.filename,
-				moduleInfo: {
-					crc: bootloader.crc,
-					prefixInfo: bootloader.prefixInfo,
-					suffixInfo: bootloader.suffixInfo
-				},
 				data: bootloader.fileBuffer,
 				flashMode: 'normal'
 			};
 			systemPart1Step = {
 				name: systemPart1.filename,
-				moduleInfo: {
-					crc: systemPart1.crc,
-					prefixInfo: systemPart1.prefixInfo,
-					suffixInfo: systemPart1.suffixInfo
-				},
 				address: 0x8000000,
 				data: systemPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
 			userPart1Step = {
 				name: userPart1.filename,
-				moduleInfo: {
-					crc: userPart1.crc,
-					prefixInfo: userPart1.prefixInfo,
-					suffixInfo: userPart1.suffixInfo
-				},
 				address: 0x8000000,
 				data: userPart1.fileBuffer,
 				flashMode: 'dfu'
