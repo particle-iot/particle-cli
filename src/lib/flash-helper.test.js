@@ -170,81 +170,45 @@ describe('flash-helper', () => {
 			const asset2 = assetModules.find( m => m.filename === 'asset2.bin');
 			preBootloaderStep = {
 				name: preBootloader.filename,
-				moduleInfo: {
-					crc: preBootloader.crc,
-					prefixInfo: preBootloader.prefixInfo,
-					suffixInfo: preBootloader.suffixInfo
-				},
 				data: preBootloader.fileBuffer,
 				flashMode: 'normal'
 			};
 			bootloaderStep = {
 				name: bootloader.filename,
-				moduleInfo: {
-					crc: bootloader.crc,
-					prefixInfo: bootloader.prefixInfo,
-					suffixInfo: bootloader.suffixInfo
-				},
 				data: bootloader.fileBuffer,
 				flashMode: 'normal'
 			};
 			systemPart1Step = {
 				name: systemPart1.filename,
-				moduleInfo: {
-					crc: systemPart1.crc,
-					prefixInfo: systemPart1.prefixInfo,
-					suffixInfo: systemPart1.suffixInfo
-				},
+				address: 0x8000000,
 				data: systemPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
 			systemPart2Step = {
 				name: systemPart2.filename,
-				moduleInfo: {
-					crc: systemPart2.crc,
-					prefixInfo: systemPart2.prefixInfo,
-					suffixInfo: systemPart2.suffixInfo
-				},
+				address: 0x8000000,
 				data: systemPart2.fileBuffer,
 				flashMode: 'dfu'
 			};
 			userPart1Step = {
 				name: userPart1.filename,
-				moduleInfo: {
-					crc: userPart1.crc,
-					prefixInfo: userPart1.prefixInfo,
-					suffixInfo: userPart1.suffixInfo
-				},
+				address: 0x8000000,
 				data: userPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
 			userPartInvalidationStep = {
 				name: 'invalidate-128k-user-part',
-				moduleInfo: {
-					prefixInfo: {
-						'moduleStartAddy': '0xd4000'
-					}
-				},
+				address: 0xd4000,
 				data: Buffer.alloc(4096, 0xFF),
 				flashMode: 'dfu'
 			};
 			asset1Step = {
 				name: asset1.filename,
-				moduleInfo: {
-					crc: asset1.crc,
-					prefixInfo: asset1.prefixInfo,
-					suffixInfo: asset1.suffixInfo
-				},
 				data: asset1.fileBuffer,
 				flashMode: 'normal'
 			};
 			asset2Step = {
 				name: asset2.filename,
-				moduleInfo: {
-					crc: asset2.crc,
-					prefixInfo: asset2.prefixInfo,
-					suffixInfo: asset2.suffixInfo
-				},
 				data: asset2.fileBuffer,
 				flashMode: 'normal'
 			};
@@ -319,6 +283,59 @@ describe('flash-helper', () => {
 			];
 			expect(steps).to.deep.equal(expected);
 		});
+
+		it('puts the user part at the factory address when supported', async () => {
+			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+
+			const steps = await createFlashSteps({
+				modules: [userPart1],
+				platformId: 6,
+				isInDfuMode: false,
+				factory: true
+			});
+			const userPart1FactoryStep = {
+				...userPart1Step,
+				address: 0x80e0000
+			};
+			const expected = [
+				userPart1FactoryStep
+			];
+			expect(steps).to.deep.equal(expected);
+		});
+
+		it('rejects when requesting a system part at the factory location', async () => {
+			const systemPart1 = modules.find( m => m.filename === 'systemPart1.bin');
+
+			let error;
+			try {
+				await createFlashSteps({
+					modules: [systemPart1],
+					platformId: 6,
+					isInDfuMode: false,
+					factory: true
+				});
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'Factory reset is only supported for user part');
+		});
+
+		it('rejects when the platform has no factory location', async () => {
+			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+
+			let error;
+			try {
+				await createFlashSteps({
+					modules: [userPart1],
+					platformId: 32,
+					isInDfuMode: false,
+					factory: true
+				});
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'Factory reset is not supported for this platform');
+		});
 	});
 
 	describe('createFlashSteps for gen3 nRF based platform', () => {
@@ -330,31 +347,18 @@ describe('flash-helper', () => {
 			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
 			bootloaderStep = {
 				name: bootloader.filename,
-				moduleInfo: {
-					crc: bootloader.crc,
-					prefixInfo: bootloader.prefixInfo,
-					suffixInfo: bootloader.suffixInfo
-				},
 				data: bootloader.fileBuffer,
 				flashMode: 'normal'
 			};
 			systemPart1Step = {
 				name: systemPart1.filename,
-				moduleInfo: {
-					crc: systemPart1.crc,
-					prefixInfo: systemPart1.prefixInfo,
-					suffixInfo: systemPart1.suffixInfo
-				},
+				address: 0x8000000,
 				data: systemPart1.fileBuffer,
 				flashMode: 'dfu'
 			};
 			userPart1Step = {
 				name: userPart1.filename,
-				moduleInfo: {
-					crc: userPart1.crc,
-					prefixInfo: userPart1.prefixInfo,
-					suffixInfo: userPart1.suffixInfo
-				},
+				address: 0x8000000,
 				data: userPart1.fileBuffer,
 				flashMode: 'dfu'
 			};

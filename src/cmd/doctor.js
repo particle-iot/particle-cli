@@ -47,6 +47,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_showDoctorWelcome(){
+		console.log(chalk.bold.red('!!!') + chalk.bold.white('Warning: The Device Doctor does not work for Gen3 or the P2'));
 		console.log(chalk.bold.white('The Device Doctor will put your device back into a healthy state'));
 		console.log('It will:');
 		_.map([
@@ -164,7 +165,7 @@ module.exports = class DoctorCommand {
 		return this._enterDfuMode()
 			.then(() => {
 				// See the source code of the doctor app in binaries/doctor.ino
-				return this.command('flash').flashDfu({ binary: 'doctor' });
+				return this.command('flash').flashOverUsb({ binary: 'doctor' });
 			})
 			.then(() => {
 				return this._waitForSerialDevice(deviceTimeout);
@@ -310,7 +311,7 @@ module.exports = class DoctorCommand {
 
 		return this._enterDfuMode()
 			.then(() => {
-				return this.command('flash').flashDfu({ binary: 'tinker' });
+				return this.command('flash').flashOverUsb({ binary: 'tinker' });
 			})
 			.catch(this._catchSkipStep);
 	}

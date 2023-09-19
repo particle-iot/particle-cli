@@ -1,12 +1,8 @@
 const fs = require('fs-extra');
 const os = require('os');
 const ParticleApi = require('./api');
-const VError = require('verror');
-const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
-const deviceSpecs = require('../lib/device-specs');
-const { ensureError } = require('../lib/utilities');
+const { ModuleInfo } = require('binary-version-reader');
 const { errors: { usageError } } = require('../app/command-processor');
-const dfu = require('../lib/dfu');
 const usbUtils = require('./usb-util');
 const CLICommandBase = require('./base');
 const { platformForId } = require('../lib/platform');
@@ -32,7 +28,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		usb,
 		serial,
 		factory,
-		force,
 		target,
 		port,
 		yes,
@@ -46,7 +41,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.logFirstTimeFlashWarning();
 
 		if (usb) {
-			await this.flashDfu({ binary, factory, force });
+			await this.flashOverUsb({ binary, factory });
 		} else if (serial) {
 			await this.flashYModem({ binary, port, yes });
 		} else if (local) {
@@ -59,6 +54,31 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.write('Flash success!');
 	}
 
+	async flashOverUsb({ binary, factory }) {
+		if (utilities.getFilenameExt(binary) === '.zip') {
+			throw new Error("Use 'particle flash --local' to flash a zipped bundle.");
+		}
+
+		const device = await usbUtils.getOneUsbDevice({ ui: this.ui });
+		const platformName = platformForId(device.platformId).name;
+
+		let files;
+		const knownAppPath = knownAppsForPlatform(platformName)[binary];
+		if (knownAppPath) {
+			files = [knownAppPath];
+		} else {
+			files = [binary];
+		}
+		const modulesToFlash = await parseModulesToFlash({ files });
+
+		await this._validateModulesForPlatform({ modules: modulesToFlash, platformId: device.platformId, platformName });
+		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId, factory });
+
+		this.ui.write(`Flashing ${platformName} device ${device.id}`);
+		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
+		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
+	}
+
 	flashCloud({ device, files, target }) {
 		const CloudCommands = require('../cmd/cloud');
 		const args = { target, params: { device, files } };
@@ -68,75 +88,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 	flashYModem({ binary, port, yes }) {
 		const SerialCommands = require('../cmd/serial');
 		return new SerialCommands().flashDevice(binary, { port, yes });
-	}
-
-	flashDfu({ binary, factory, force, requestLeave }) {
-		return Promise.resolve()
-			.then(() => dfu.isDfuUtilInstalled())
-			.then(() => dfu.findCompatibleDFU())
-			.then(() => {
-				//only match against knownApp if file is not found
-				let stats;
-
-				try {
-					stats = fs.statSync(binary);
-				} catch (error) {
-					// file does not exist
-					binary = dfu.checkKnownApp(binary);
-
-					if (binary === undefined) {
-						throw new Error(`file does not exist and no known app found. tried: \`${error.path}\``);
-					}
-					return;
-				}
-
-				if (!stats.isFile()) {
-					throw new Error('You cannot flash a directory over USB');
-				}
-			})
-			.then(() => {
-				const parser = new ModuleParser();
-				return parser.parseFile(binary)
-					.catch(err => {
-						throw new VError(ensureError(err), `Could not parse ${binary}`);
-					});
-			})
-			.then(info => {
-				if (info.suffixInfo.suffixSize === 65535) {
-					this.ui.write('warn: unable to verify binary info');
-					return;
-				}
-
-				if (!info.crc.ok && !force) {
-					throw new Error('CRC is invalid, use --force to override');
-				}
-
-				const specs = deviceSpecs[dfu.dfuId];
-				if (info.prefixInfo.platformID !== specs.productId && !force) {
-					throw new Error(`Incorrect platform id (expected ${specs.productId}, parsed ${info.prefixInfo.platformID}), use --force to override`);
-				}
-
-				let segmentName;
-				if (factory) {
-					if (info.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.USER_PART) {
-						throw new Error('Cannot flash a non-application binary to the factory reset location');
-					}
-					segmentName = 'factoryReset';
-					if (!specs[segmentName]) {
-						throw new Error('The platform does not support a factory reset application');
-					}
-				}
-
-				if (requestLeave === undefined) {
-					// todo - leave on factory firmware write too?
-					requestLeave = (!factory && info.prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART);
-				}
-
-				return dfu.writeModule(binary, { segmentName, leave: requestLeave });
-			})
-			.catch((err) => {
-				throw new VError(ensureError(err), 'Error writing firmware');
-			});
 	}
 
 	async flashLocal({ files, applicationOnly, target }) {
@@ -263,7 +214,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 			if (binaries.length > 0 && sources.length === 0) {
 				// this is a binary directory so get all the binaries from all the parsedFiles
-				const binaries = this._findBinaries(parsedFiles);
+				const binaries = await this._findBinaries(parsedFiles);
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else if (sources.length > 0) {
 				// this is a source directory so compile it
@@ -276,7 +227,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// this is a file so figure out if it's a source file that should be compiled or a
 			// binary that should be flashed directly
 			if (binaryExtensions.includes(path.extname(filePath))) {
-				const binaries = this._findBinaries(parsedFiles);
+				const binaries = await this._findBinaries(parsedFiles);
 				return { skipDeviceOSFlash: false, files: binaries };
 			} else {
 				const compileResult = await this._compileCode({ parsedFiles, platformId, target });
@@ -292,11 +243,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return [filename];
 	}
 
-	_findBinaries(parsedFiles) {
+	async _findBinaries(parsedFiles) {
 		const binaries = new Set();
 		for (const filePath of parsedFiles) {
 			try {
-				const stats = fs.statSync(filePath);
+				const stats = await fs.stat(filePath);
 				if (stats.isDirectory()) {
 					const found = utilities.globList(filePath, binaryPatterns);
 					for (const binary of found) {
@@ -328,11 +279,13 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _validateModulesForPlatform({ modules, platformId, platformName }) {
 		for (const moduleInfo of modules) {
+			if (!moduleInfo.crc.ok) {
+				throw new Error(`CRC check failed for module ${moduleInfo.filename}`);
+			}
 			if (moduleInfo.prefixInfo.platformID !== platformId && moduleInfo.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.ASSET) {
 				throw new Error(`Module ${moduleInfo.filename} is not compatible with platform ${platformName}`);
 			}
 		}
-
 	}
 
 	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {

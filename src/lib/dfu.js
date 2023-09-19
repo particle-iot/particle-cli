@@ -382,6 +382,7 @@ module.exports = {
 	/**
 	 * Write a firmware module.
 	 *
+	 * @param {Object} device  Device handle in dfu mode.
 	 * @param {String} binaryPath The path to the module binary.
 	 * @param {Object} [options] The options.
 	 * @param {Number} [options.vendorId] The USB vendor ID. If not specified, the device discovered
@@ -393,9 +394,10 @@ module.exports = {
 	 * @param {Boolean} [options.leave] Whether to leave DFU mode after writing. If not specified,
 	 *        the device will stay in DFU mode.
 	 */
-	async writeModule(binaryPath, { vendorId, productId, serial, segmentName, leave } = {}) {
+	async writeModule(device, binaryPath, { vendorId, productId, segmentName, leave } = {}) {
 		const parser = new HalModuleParser();
 		const info = await parser.parseFile(binaryPath);
+		let buffer = info.fileBuffer;
 		let alt;
 		let address;
 		if (segmentName) {
@@ -412,19 +414,23 @@ module.exports = {
 				throw new Error('Invalid device specification');
 			}
 			alt = spec.alt;
-			address = spec.address;
+			address = parseInt(spec.address.split('0x')[1], 16);
+
 		} else {
 			alt = module.exports.interfaceForModule(info.prefixInfo.moduleFunction, info.prefixInfo.moduleIndex,
 				info.prefixInfo.platformID);
 			if (alt === null) {
 				throw new Error('Firmware module of this type cannot be flashed via DFU');
 			}
-			address = '0x' + info.prefixInfo.moduleStartAddy;
+			address = parseInt(info.prefixInfo.moduleStartAddy, 16);
+
 		}
 		if (info.prefixInfo.moduleFlags & ModuleInfo.Flags.DROP_MODULE_INFO) {
 			binaryPath = await dropModuleInfo(binaryPath);
+			buffer = fs.readFileSync(binaryPath);
 		}
-		await module.exports.writeDfu(alt, binaryPath, address, !!leave, { vendorId, productId, serial });
+
+		await device.writeOverDfu(buffer, { altSetting: alt, startAddr: address, leave: leave });
 	},
 
 	/**
@@ -516,6 +522,10 @@ module.exports = {
 			}
 		});
 		return result;
+	},
+
+	setDfuId(id) {
+		module.exports.dfuId = id;
 	}
 };
 

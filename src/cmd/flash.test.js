@@ -295,6 +295,16 @@ describe('FlashCommand', () => {
 			}
 			expect(error).to.be.undefined;
 		});
+		it('throws an error if a module fails the CRC check', async () => {
+			modules[0].crc.ok = false;
+			let error;
+			try {
+				await flash._validateModulesForPlatform({ modules, platformId: 32, platformName: 'p2' });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'CRC check failed for module preBootloader.bin');
+		});
 	});
 
 	describe('_getDeviceOsBinaries', () => {

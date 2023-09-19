@@ -14,7 +14,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'usb': {
 				boolean: true,
-				description: 'Flash over USB using the DFU utility'
+				description: 'Flash a single file over USB'
 			},
 			'serial': {
 				boolean: true,
@@ -22,11 +22,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'factory': {
 				boolean: true,
-				describe: 'Flash user application to the factory reset location. Only available for DFU'
-			},
-			'force': {
-				boolean: true,
-				describe: 'Flash even when binary does not pass pre-flash checks'
+				describe: 'Flash user application to the factory reset location. Only available for USB flash'
 			},
 			'yes': {
 				boolean: true,
@@ -37,7 +33,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'application-only': {
 				boolean: true,
-				description: 'Do not update Device OS'
+				description: 'Do not update Device OS when flashing locally'
 			},
 			'port': {
 				describe: 'Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial'
@@ -57,7 +53,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --local application.bin': 'Flash the pre-compiled binary to the device connected over USB',
 			'$0 $command --local application.zip': 'Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
 			'$0 $command --local tinker': 'Flash the default Tinker app to the device connected over USB',
-			'$0 $command --usb firmware.bin': 'Flash the binary over USB. The device needs to be in DFU mode',
+			'$0 $command --usb firmware.bin': 'Flash the binary over USB',
 			'$0 $command --serial firmware.bin': 'Flash the binary over virtual serial port. The device needs to be in listening mode'
 		},
 		epilogue: unindent(`
