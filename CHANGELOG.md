@@ -1,5 +1,12 @@
 # Changelog
 
+# 3.15.0 - Sep 19 2023
+
+* Rework `particle flash --usb` command to use the CLI flasher
+* Invalidate 128k user part when required
+* Use the latest version of `particle-api-js`
+* Add notes for e2e tests
+
 # 3.14.0 - Sep 6 2023
 
 * Update command uses local flash and can target any Device OS version
