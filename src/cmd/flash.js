@@ -325,8 +325,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			return [];
 		}
 
-		// if Device OS needs to be upgraded, or we don't know the current Device OS version, download the binaries
-		if (applicationDeviceOsVersion && (!currentDeviceOsVersion || semver.lt(currentDeviceOsVersion, applicationDeviceOsVersion))) {
+		// if Device OS needs to be upgraded, so download the binaries
+		if (applicationDeviceOsVersion && currentDeviceOsVersion && semver.lt(currentDeviceOsVersion, applicationDeviceOsVersion)) {
 			return deviceOsUtils.downloadDeviceOsVersionBinaries({
 				api: particleApi,
 				platformId,
@@ -334,7 +334,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				ui: this.ui,
 			});
 		} else {
-			// Device OS is up to date, no need to download binaries
+			// Device OS is up to date or we don't know the current Device OS version, so no need to download binaries
 			return [];
 		}
 	}
