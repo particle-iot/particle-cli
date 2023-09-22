@@ -310,8 +310,11 @@ describe('FlashCommand', () => {
 	describe('_getDeviceOsBinaries', () => {
 		it('returns empty if there is no application binary', async () => {
 			const modules = await createModules();
-			const userPart = modules.find(m => m.filename === 'systemPart1.bin');
-			const deviceOsBinaries = await flash._getDeviceOsBinaries({ modules: [userPart] });
+			const systemPart = modules.find(m => m.filename === 'systemPart1.bin');
+			const deviceOsBinaries = await flash._getDeviceOsBinaries({
+				currentDeviceOsVersion: '0.7.0',
+				modules: [systemPart]
+			});
 			expect(deviceOsBinaries).to.eql([]);
 		});
 		it('returns empty list if applicationOnly is true', async () => {
@@ -324,6 +327,7 @@ describe('FlashCommand', () => {
 			const userPart = modules.find(m => m.filename === 'userPart1.bin');
 			const binaries = await flash._getDeviceOsBinaries({
 				applicationOnly: true,
+				currentDeviceOsVersion: '0.7.0',
 				modules: [userPart]
 			});
 			expect(binaries).to.eql([]);
@@ -359,6 +363,7 @@ describe('FlashCommand', () => {
 			]);
 			const binaries = await flash._getDeviceOsBinaries({
 				target: '4.1.0',
+				currentDeviceOsVersion: '0.7.0',
 				modules: [userPart],
 				platformId: 6
 			});
@@ -368,7 +373,7 @@ describe('FlashCommand', () => {
 			expect(stub).to.have.been.calledOnce;
 		});
 
-		it('returns a list of files depending on user-part dependency binary', async () => {
+		it('returns a list of files if Device OS is outdated based on the user-part dependency binary', async () => {
 			const modules = await createModules();
 			const userPart = modules.find(m => m.filename === 'userPart1.bin');
 			nock('https://api.particle.io')
@@ -382,6 +387,7 @@ describe('FlashCommand', () => {
 			]);
 			const binaries = await flash._getDeviceOsBinaries({
 				platformId: 6,
+				currentDeviceOsVersion: '0.7.0',
 				modules: [userPart],
 			});
 			expect(binaries.some(file => file.includes('photon-bootloader@4.1.0+lto.bin'))).to.be.true;
@@ -389,6 +395,27 @@ describe('FlashCommand', () => {
 			expect(binaries).to.have.lengthOf(2);
 			expect(stub).to.have.been.calledOnce;
 		});
-	});
 
+		it('returns empty if Device OS is up to date based on the user-part dependency binary', async () => {
+			const modules = await createModules();
+			const userPart = modules.find(m => m.filename === 'userPart1.bin');
+			const binaries = await flash._getDeviceOsBinaries({
+				platformId: 6,
+				currentDeviceOsVersion: '4.1.0',
+				modules: [userPart],
+			});
+			expect(binaries).to.eql([]);
+		});
+
+		it('returns empty if the Device OS version is unknown', async () => {
+			const modules = await createModules();
+			const userPart = modules.find(m => m.filename === 'userPart1.bin');
+			const binaries = await flash._getDeviceOsBinaries({
+				platformId: 6,
+				currentDeviceOsVersion: null,
+				modules: [userPart],
+			});
+			expect(binaries).to.eql([]);
+		});
+	});
 });
