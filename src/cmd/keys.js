@@ -25,7 +25,7 @@ const ParticleApi = require('./api');
  */
 module.exports = class KeysCommand {
 	constructor(){
-		this.dfu = dfu;
+		this.dfuId = null;
 		this.auth = settings.access_token;
 		this.api = new ParticleApi(settings.apiUrl, { accessToken: this.auth }).api;
 		this.ui = new UI({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, quiet: false });
@@ -65,7 +65,7 @@ module.exports = class KeysCommand {
 			}
 
 			this._setDfuId(device);
-			const specs = deviceSpecs[this.dfu.dfuId];
+			const specs = deviceSpecs[this.dfuId];
 			if (!specs.transport){
 				throw new VError('Protocol cannot be changed for this device');
 			}
@@ -333,7 +333,7 @@ module.exports = class KeysCommand {
 			skipDFU = true;
 
 			// Lookup the DFU ID string that matches the provided deviceType:
-			this.dfu.dfuId = Object.keys(deviceSpecs)
+			this.dfuId = Object.keys(deviceSpecs)
 				.filter(key => deviceSpecs[key].productName.toLowerCase() === deviceType.toLowerCase())[0];
 		}
 
@@ -427,7 +427,7 @@ module.exports = class KeysCommand {
 	 */
 
 	async validateDeviceProtocol({ specs, protocol, device } = {}) {
-		specs = specs || deviceSpecs[this.dfu.dfuId];
+		specs = specs || deviceSpecs[this.dfuId];
 
 		if (protocol) {
 		  return protocol;
@@ -450,11 +450,11 @@ module.exports = class KeysCommand {
 
 
 	_getServerKeySegmentName({ protocol }){
-		if (!this.dfu.dfuId){
+		if (!this.dfuId){
 			return;
 		}
 
-		let specs = deviceSpecs[this.dfu.dfuId];
+		let specs = deviceSpecs[this.dfuId];
 
 		if (!specs){
 			return;
@@ -482,11 +482,11 @@ module.exports = class KeysCommand {
 	}
 
 	_getServerKeySegment({ protocol }){
-		if (!this.dfu.dfuId){
+		if (!this.dfuId){
 			return;
 		}
 
-		let specs = deviceSpecs[this.dfu.dfuId];
+		let specs = deviceSpecs[this.dfuId];
 		let segmentName = this._getServerKeySegmentName({ protocol });
 
 		if (!specs || !segmentName){
@@ -517,11 +517,11 @@ module.exports = class KeysCommand {
 	}
 
 	_getPrivateKeySegmentName({ protocol }){
-		if (!this.dfu.dfuId){
+		if (!this.dfuId){
 			return;
 		}
 
-		let specs = deviceSpecs[this.dfu.dfuId];
+		let specs = deviceSpecs[this.dfuId];
 
 		if (!specs){
 			return;
@@ -531,11 +531,11 @@ module.exports = class KeysCommand {
 	}
 
 	_getPrivateKeySegment({ protocol }){
-		if (!this.dfu.dfuId){
+		if (!this.dfuId){
 			return;
 		}
 
-		let specs = deviceSpecs[this.dfu.dfuId];
+		let specs = deviceSpecs[this.dfuId];
 		let segmentName = this._getPrivateKeySegmentName({ protocol });
 
 		if (!specs || !segmentName){
@@ -666,7 +666,7 @@ module.exports = class KeysCommand {
 	}
 
 	_validateSegmentSpecs(segmentName) {
-		let specs = deviceSpecs[this.dfu.dfuId] || {};
+		let specs = deviceSpecs[this.dfuId] || {};
 		let params = specs[segmentName];
 		let error = null;
 
@@ -684,7 +684,7 @@ module.exports = class KeysCommand {
 	_setDfuId(device) {
 		const vendorId = device._info.vendorId;
 		const productId = device._info.productId;
-		this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+		this.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
 	}
 };
 
