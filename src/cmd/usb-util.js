@@ -227,6 +227,32 @@ async function reopenInNormalMode(device, { reset } = {}) {
 	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
 }
 
+async function reopenDevice(device) {
+	const { id } = device;
+	if (device.isOpen) {
+		await device.close();
+	}
+	const start = Date.now();
+	while (Date.now() - start < REOPEN_TIMEOUT) {
+		await delay(REOPEN_DELAY);
+		try {
+			device = await openDeviceById(id);
+			// check if we can communicate with the device
+			if (device.isOpen) {
+				// attempt to make a request to the device to check if it responds
+				if (!device.isInDfuMode) {
+					await device.getDeviceMode({ timeout: 1500 });
+				}
+				return device;
+			}
+
+		} catch (err) {
+			// ignore error
+		}
+	}
+	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
+}
+
 async function handleUsbError(err){
 	if (err instanceof NotAllowedError) {
 		err = new UsbPermissionsError('Missing permissions to access the USB device');
@@ -249,6 +275,7 @@ module.exports = {
 	getOneUsbDevice,
 	reopenInDfuMode,
 	reopenInNormalMode,
+	reopenDevice,
 	UsbPermissionsError,
 	TimeoutError
 };

@@ -6,7 +6,6 @@ const { moduleTypeToString, sortBinariesByDependency } = require('./dependency-w
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const path = require('path');
 const os = require('os');
-const FLASH_APPLY_DELAY = 3000;
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
@@ -14,6 +13,7 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 	const progress = _createFlashProgress({ flashSteps, ui });
 	try {
 		for (const step of flashSteps) {
+			device = await prepareDeviceForFlash({ device, mode: step.flashMode, progress });
 			if (step.flashMode === 'normal') {
 				device = await _flashDeviceInNormalMode(device, step.data, { name: step.name, progress: progress });
 			} else {
@@ -38,29 +38,55 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 }
 
 async function _flashDeviceInNormalMode(device, data, { name, progress } = {}) {
-	if (device.isInDfuMode) {
-		// put device in normal mode
-		if (progress) {
-			progress({ event: 'switch-mode', mode: 'normal' });
-		}
-		device = await usbUtils.reopenInNormalMode(device, { reset: true });
-	}
-	// put the device in listening mode to prevent cloud connection
-	try {
-		await device.enterListeningMode();
-	} catch (error) {
-		// ignore if the device is already in listening mode
-	}
-
 	// flash the file in normal mode
 	if (progress) {
 		progress({ event: 'flash-file', filename: name });
 	}
-	await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
 
-	// wait for the device to apply the firmware
-	await delay(FLASH_APPLY_DELAY);
-	device = await usbUtils.reopenInNormalMode(device, { reset: false });
+	const start = Date.now();
+	while (Date.now() - start < FLASH_TIMEOUT) {
+		try {
+			device = await usbUtils.reopenDevice(device);
+			await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
+			return device;
+		} catch (error) {
+			// ignore error from attempts to flash to external flash
+		}
+	}
+	throw new Error('Unable to flash device');
+}
+
+async function prepareDeviceForFlash({ device, mode, progress }) {
+	if (device.isOpen) {
+		await device.close();
+	}
+	// check if open
+	device = await usbUtils.reopenDevice(device);
+	switch (mode) {
+		case 'normal':
+			if (device.isInDfuMode) {
+				// put device in normal mode
+				if (progress) {
+					progress({ event: 'switch-mode', mode: 'normal' });
+				}
+				device = await usbUtils.reopenInNormalMode(device, { reset: true });
+			}
+			try {
+				await device.enterListeningMode();
+				await delay(1000); // Just in case
+			} catch (error) {
+				// ignore
+			}
+			break;
+		case 'dfu':
+			if (!device.isInDfuMode) {
+				if (progress) {
+					progress({ event: 'switch-mode', mode: 'dfu' });
+				}
+				device = await usbUtils.reopenInDfuMode(device);
+			}
+			break;
+	}
 	return device;
 }
 
@@ -237,5 +263,6 @@ module.exports = {
 	flashFiles,
 	filterModulesToFlash,
 	parseModulesToFlash,
-	createFlashSteps
+	createFlashSteps,
+	prepareDeviceForFlash
 };
