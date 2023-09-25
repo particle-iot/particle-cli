@@ -96,7 +96,6 @@ module.exports = class DoctorCommand {
 			.findDevices()
 			.then(devices => {
 				if (devices.length === 0){
-					// Try to find a "DFU" mode device through dfu-util
 					return this.getDfuDevices();
 				} else {
 					return devices;
