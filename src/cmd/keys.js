@@ -39,12 +39,7 @@ module.exports = class KeysCommand {
 
 	async showTransportProtocol() {
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-
-			this._setDfuId(device);
+			let device = await this.getDfuDevice();
 			const protocol = await this.validateDeviceProtocol({ device });
 			console.log(`Device protocol is set to ${protocol}`);
 			await device.close();
@@ -59,12 +54,7 @@ module.exports = class KeysCommand {
 		}
 
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-
-			this._setDfuId(device);
+			let device = await this.getDfuDevice();
 			const specs = deviceSpecs[this.dfuId];
 			if (!specs.transport){
 				throw new VError('Protocol cannot be changed for this device');
@@ -109,12 +99,7 @@ module.exports = class KeysCommand {
 	async _makeNewKey({ filename, protocol }) {
 		let alg;
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-
-			this._setDfuId(device);
+			let device = await this.getDfuDevice();
 			await device.close();
 			// If protocol is provided, set the algorithm
 			if (protocol) {
@@ -141,11 +126,7 @@ module.exports = class KeysCommand {
 
 			//TODO: give the user a warning before doing this, since it'll bump their device offline.
 
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-			this._setDfuId(device);
+			let device = await this.getDfuDevice();
 			const protocol = await this.validateDeviceProtocol({ device });
 			let alg = this._getPrivateKeyAlgorithm({ protocol });
 			let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
@@ -181,11 +162,7 @@ module.exports = class KeysCommand {
 		}
 
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-			this._setDfuId(device);
+			let device = await this.getDfuDevice();
 			protocol = await this.validateDeviceProtocol({ device });
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
@@ -271,11 +248,7 @@ module.exports = class KeysCommand {
 
 		let algorithm, filename;
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-			this._setDfuId(device);
+			let device = await this.getDfuDevice();
 			await device.close();
 
 			protocol = await this.validateDeviceProtocol({ protocol });
@@ -339,11 +312,7 @@ module.exports = class KeysCommand {
 		let device;
 		try {
 			if (!skipDFU) {
-				device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-				if (!device.isInDfuMode) {
-					device = await usbUtils.reopenInDfuMode(device);
-				}
-				this._setDfuId(device);
+				device = await this.getDfuDevice();
 			}
 			protocol = await this.validateDeviceProtocol({ protocol, device });
 
@@ -371,11 +340,7 @@ module.exports = class KeysCommand {
 
 	async readServerAddress({ protocol }) {
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-			this._setDfuId(device);
+			let device = await this.getDfuDevice();
 
 			protocol = await this.validateDeviceProtocol({ protocol, device });
 
@@ -662,6 +627,18 @@ module.exports = class KeysCommand {
 		}
 
 		return filename;
+	}
+
+	async getDfuDevice() {
+		try {
+			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
+			if (!device.isInDfuMode) {
+				device = await usbUtils.reopenInDfuMode(device);
+			}
+			this._setDfuId(device);
+		} catch (err) {
+			throw new VError(ensureError(err), 'Unable to get DFU device');
+		}
 	}
 
 	_validateSegmentSpecs(segmentName) {
