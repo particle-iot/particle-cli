@@ -630,8 +630,9 @@ module.exports = class KeysCommand {
 	}
 
 	async getDfuDevice() {
+		let device;
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
+			device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
 			if (!device.isInDfuMode) {
 				device = await usbUtils.reopenInDfuMode(device);
 			}
@@ -639,6 +640,7 @@ module.exports = class KeysCommand {
 		} catch (err) {
 			throw new VError(ensureError(err), 'Unable to get DFU device');
 		}
+		return device;
 	}
 
 	_validateSegmentSpecs(segmentName) {
