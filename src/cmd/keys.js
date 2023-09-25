@@ -278,7 +278,7 @@ module.exports = class KeysCommand {
 			this._setDfuId(device);
 			await device.close();
 
-			const protocol = await this.validateDeviceProtocol({ protocol });
+			protocol = await this.validateDeviceProtocol({ protocol });
 
 			algorithm = this._getPrivateKeyAlgorithm({ protocol });
 			filename = `${deviceID}_${algorithm}_new`;
@@ -344,7 +344,7 @@ module.exports = class KeysCommand {
 				}
 				this._setDfuId(device);
 			}
-			const protocol = await this.validateDeviceProtocol({ protocol, device });
+			protocol = await this.validateDeviceProtocol({ protocol, device });
 
 			const { derFile } = await this._getDERPublicKey(filename, { protocol });
 			const bufferFile = await this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
