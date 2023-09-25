@@ -91,14 +91,6 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(keys, 'protocol', 'Retrieve or change transport protocol the device uses to communicate with the cloud', {
-		options: protocolOption,
-		handler: (args) => {
-			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().transportProtocol(args);
-		}
-	});
-
 	return keys;
 };
 

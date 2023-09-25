@@ -30,43 +30,6 @@ module.exports = class KeysCommand {
 		this.ui = new UI({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, quiet: false });
 	}
 
-	async transportProtocol({ protocol }){
-		return protocol
-			? await this.changeTransportProtocol(protocol)
-			: await this.showTransportProtocol();
-	}
-
-	async showTransportProtocol() {
-		try {
-			let device = await this.getDfuDevice();
-			const protocol = await this.validateDeviceProtocol({ device });
-			console.log(`Device protocol is set to ${protocol}`);
-			await device.close();
-		} catch (err) {
-			throw new VError(ensureError(err), 'Could not fetch device transport protocol');
-		}
-	}
-
-	async changeTransportProtocol(protocol) {
-		if (protocol !== 'udp' && protocol !== 'tcp'){
-			return new VError('Invalid protocol');
-		}
-
-		try {
-			let device = await this.getDfuDevice();
-			const specs = deviceSpecs[this.dfuId];
-			if (!specs.transport){
-				throw new VError('Protocol cannot be changed for this device');
-			}
-			let flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
-			let segment = this._validateSegmentSpecs('transport');
-			await device.writeOverDfu(flagValue, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: false });
-			console.log(`Protocol changed to ${protocol}`);
-		} catch (err) {
-			throw new VError(ensureError(err), 'Could not change device transport protocol');
-		}
-	}
-
 	async makeKeyOpenSSL(filename, alg, { protocol }) {
 		try {
 			const { filenameNoExt, deferredChildProcess } = utilities;

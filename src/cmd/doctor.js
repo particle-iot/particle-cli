@@ -91,6 +91,8 @@ module.exports = class DoctorCommand {
 	}
 
 	_findDevice(){
+		// TODO: Replace the serial commands to use usb-utils
+
 		// Try to find a "normal" mode device through the serial port
 		return this.command('serial')
 			.findDevices()
