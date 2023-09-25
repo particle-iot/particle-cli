@@ -10,7 +10,6 @@ const ApiClient = require('../lib/api-client');
 const deviceSpecs = require('../lib/device-specs');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
-const dfu = require('../lib/dfu');
 const UI = require('../lib/ui');
 const ParticleApi = require('./api');
 
@@ -181,7 +180,7 @@ module.exports = class KeysCommand {
 			await deferredChildProcess(`openssl ${alg} -in "${filename}" -inform DER -pubout -out ${pubPemFilename}`)
 				.catch((err) => {
 					throw new VError(err,
-					'Unable to generate a public key from the key downloaded from the device. This usually means you had a corrupt key on the device.');
+						'Unable to generate a public key from the key downloaded from the device. This usually means you had a corrupt key on the device.');
 				});
 			console.log('Saved existing key!');
 		} catch (err) {
@@ -394,23 +393,24 @@ module.exports = class KeysCommand {
 		specs = specs || deviceSpecs[this.dfuId];
 
 		if (protocol) {
-		  return protocol;
+			return protocol;
 		}
 
 		try {
-		  const detectedProtocol = await this.fetchDeviceProtocol({ specs, device });
-		  const supported = [specs.defaultProtocol];
-		  if (specs.alternativeProtocol) {
-			supported.push(specs.alternativeProtocol);
-		  }
-		  if (supported.indexOf(detectedProtocol) < 0) {
-			throw new VError(`The device does not support the protocol ${detectedProtocol}. It has support for ${supported.join(', ')}`);
-		  }
-		  return detectedProtocol;
+			const detectedProtocol = await this.fetchDeviceProtocol({ specs, device });
+			const supported = [specs.defaultProtocol];
+			// eslint-disable-next-line no-mixed-spaces-and-tabs
+			if (specs.alternativeProtocol) {
+				supported.push(specs.alternativeProtocol);
+			}
+			if (supported.indexOf(detectedProtocol) < 0) {
+				throw new VError(`The device does not support the protocol ${detectedProtocol}. It has support for ${supported.join(', ')}`);
+			}
+			return detectedProtocol;
 		} catch (err) {
-		  throw new VError(ensureError(err), 'Error validating device protocol');
+			throw new VError(ensureError(err), 'Error validating device protocol');
 		}
-	  }
+	}
 
 
 	_getServerKeySegmentName({ protocol }){
