@@ -154,7 +154,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'save', filename]);
 
-			expect(stdout).to.equal('Saved!');
+			expect(stdout).to.equal('Saved existing key!');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 			for (const key of expectedKeys){
@@ -193,8 +193,8 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'doctor', DEVICE_ID]);
 			const log = [
 				'New Key Created!',
-				'Saved!',
-				'Saved!',
+				'Saved existing key!',
+				'Key written to device!',
 				`attempting to add a new public key for device ${DEVICE_ID}`,
 				'submitting public key succeeded!',
 				'Okay!  New keys in place, your device should restart.',

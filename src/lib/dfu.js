@@ -290,6 +290,10 @@ module.exports = {
 		return segment.specs[appName];
 	},
 
+	validateSegmentSpecs(segmentName) {
+		return this._validateSegmentSpecs(segmentName);
+	},
+
 	_validateSegmentSpecs(segmentName) {
 		const { dfuId } = module.exports;
 		let specs = deviceSpecs[dfuId] || {};
