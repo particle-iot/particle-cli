@@ -6,6 +6,8 @@ const { moduleTypeToString, sortBinariesByDependency } = require('./dependency-w
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const path = require('path');
 const os = require('os');
+const semver = require('semver');
+
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
@@ -259,10 +261,19 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	}
 }
 
+function validateDFUSupport({ device, ui }) {
+	if (!device.isInDfuMode && (!device.firmwareVersion || semver.lt(device.firmwareVersion, '2.0.0'))) {
+		ui.error('DFU mode is not supported on this device os version.');
+		ui.error('Please switch the device into DFU mode and try again.');
+		throw new Error('DFU mode not supported');
+	}
+}
+
 module.exports = {
 	flashFiles,
 	filterModulesToFlash,
 	parseModulesToFlash,
 	createFlashSteps,
-	prepareDeviceForFlash
+	prepareDeviceForFlash,
+	validateDFUSupport
 };

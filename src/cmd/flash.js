@@ -16,7 +16,7 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
-const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles } = require('../lib/flash-helper');
+const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles, validateDFUSupport } = require('../lib/flash-helper');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -61,6 +61,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		const device = await usbUtils.getOneUsbDevice({ ui: this.ui });
 		const platformName = platformForId(device.platformId).name;
+		validateDFUSupport({ device, ui: this.ui });
 
 		let files;
 		const knownAppPath = knownAppsForPlatform(platformName)[binary];
@@ -96,7 +97,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
 
 		const platformName = platformForId(device.platformId).name;
+
 		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
+		validateDFUSupport({ device, ui: this.ui });
 
 		let { skipDeviceOSFlash, files: filesToFlash } = await this._prepareFilesToFlash({
 			knownApp,
