@@ -26,9 +26,9 @@ const ParticleApi = require('./api');
 module.exports = class KeysCommand {
 	constructor(){
 		this.dfu = dfu;
+		this.auth = settings.access_token;
+		this.api = new ParticleApi(settings.apiUrl, { accessToken: this.auth }).api;
 		this.ui = new UI({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, quiet: false });
-		this._auth = settings.access_token;
-		this._api = new ParticleApi(settings.apiUrl, { accessToken: this._auth }).api;
 	}
 
 	transportProtocol({ protocol }){
@@ -39,32 +39,22 @@ module.exports = class KeysCommand {
 
 	showTransportProtocol(){
 		return Promise.resolve()
-			//make sure our device is online and in dfu mode
-			.then(() => usbUtils.getOneUsbDevice({ api: this._api, auth: this._auth, ui: this.ui }))
+			.then(() => usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui }))
 			.then((device) => {
 				if (!device.isInDfuMode) {
-					// put device in dfu mode
-					// if (progress) {
-					// 	progress({ event: 'switch-mode', mode: 'DFU' });
-					// }
-					usbUtils.reopenInDfuMode(device)
-						.then((device) => {
-							return device;
-						});
+					return usbUtils.reopenInDfuMode(device);
 				} else {
 					return device;
 				}
 			})
 			.then((device) => {
-				const vendorId = device._info.vendorId;
-				const productId = device._info.productId;
-				this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+				this._setDfuId(device);
 				return device;
 			})
 			.then((device) => {
 				return this.validateDeviceProtocol({ device })
 					.then((p) => {
-						device.close();
+						device.close(); // FIXME
 						return p;
 					});
 			})
@@ -82,26 +72,16 @@ module.exports = class KeysCommand {
 		}
 
 		return Promise.resolve()
-			//make sure our device is online and in dfu mode
-			.then(() => usbUtils.getOneUsbDevice({ api: this._api, auth: this._auth, ui: this.ui }))
+			.then(() => usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui }))
 			.then((device) => {
 				if (!device.isInDfuMode) {
-					// put device in dfu mode
-					// if (progress) {
-					// 	progress({ event: 'switch-mode', mode: 'DFU' });
-					// }
-					usbUtils.reopenInDfuMode(device)
-						.then((device) => {
-							return device;
-						});
+					return usbUtils.reopenInDfuMode(device);
 				} else {
 					return device;
 				}
 			})
 			.then((device) => {
-				const vendorId = device._info.vendorId;
-				const productId = device._info.productId;
-				this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+				this._setDfuId(device);
 				return device;
 			})
 			.then((device) => {
@@ -111,7 +91,7 @@ module.exports = class KeysCommand {
 				}
 
 				let flagValue = specs.defaultProtocol === protocol ? new Buffer([255]) : new Buffer([0]);
-				let segment = this.dfu.validateSegmentSpecs('transport');
+				let segment = this._validateSegmentSpecs('transport');
 				return device.writeOverDfu(flagValue, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: false });
 			})
 			.then(() => {
@@ -157,26 +137,16 @@ module.exports = class KeysCommand {
 		return Promise.resolve()
 			.then(() => {
 				return Promise.resolve()
-					//make sure our device is online and in dfu mode
-					.then(() => usbUtils.getOneUsbDevice({ api: this._api, auth: this._auth, ui: this.ui }))
+					.then(() => usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui }))
 					.then((device) => {
 						if (!device.isInDfuMode) {
-							// put device in dfu mode
-							// if (progress) {
-							// 	progress({ event: 'switch-mode', mode: 'DFU' });
-							// }
-							usbUtils.reopenInDfuMode(device)
-								.then((device) => {
-									return device;
-								});
+							return usbUtils.reopenInDfuMode(device);
 						} else {
 							return device;
 						}
 					})
 					.then((device) => {
-						const vendorId = device._info.vendorId;
-						const productId = device._info.productId;
-						this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+						this._setDfuId(device);
 						device.close();
 					})
 					.catch((err) => {
@@ -212,25 +182,16 @@ module.exports = class KeysCommand {
 		//TODO: give the user a warning before doing this, since it'll bump their device offline.
 
 		return Promise.resolve()
-			//make sure our device is online and in dfu mode
-			.then(() => {
-				return usbUtils.getOneUsbDevice({ idOrName: deviceID, api: this._api, auth: this._auth, ui: this.ui })
-					.then((device) => {
-						if (!device.isInDfuMode) {
-							// put device in dfu mode
-							// if (progress) {
-							// 	progress({ event: 'switch-mode', mode: 'DFU' });
-							// }
-							return usbUtils.reopenInDfuMode(device);
-						} else {
-							return device;
-						}
-					});
+			.then(() => usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui }))
+			.then((device) => {
+				if (!device.isInDfuMode) {
+					return usbUtils.reopenInDfuMode(device);
+				} else {
+					return device;
+				}
 			})
 			.then((device) => {
-				const vendorId = device._info.vendorId;
-				const productId = device._info.productId;
-				this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+				this._setDfuId(device);
 				return device;
 			})
 			.then((device) => {
@@ -243,14 +204,14 @@ module.exports = class KeysCommand {
 							path.dirname(filename),
 							'backup_' + alg + '_' + path.basename(filename)
 						);
+						// Use closeDeviceAfterSaving flag to use the same device handle for the subsequence device calls
 						return this._saveKeyFromDevice({ filename: prefilename, force: true, closeDeviceAfterSaving: false })
-							.then(() => device); // Return the device object
+							.then(() => device);
 					});
 			})
 			.then((device) => {
 				let segmentName = this._getPrivateKeySegmentName({ protocol });
-				let segment = this.dfu.validateSegmentSpecs(segmentName);
-				// get buffer from file filename
+				let segment = this._validateSegmentSpecs(segmentName);
 				const buffer = fs.readFileSync(filename, 'binary');
 				return device.writeOverDfu(buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size, noErase: true, leave: leave })
 					.then(() => device.close());
@@ -278,26 +239,17 @@ module.exports = class KeysCommand {
 			tryDelete(filename);
 		}
 
-		//find this.dfu devices, make sure a device is connected
-		//pull the key down and save it there
-
 		return Promise.resolve()
-			.then(() => usbUtils.getOneUsbDevice({ api: this._api, auth: this._auth, ui: this.ui }))
+			.then(() => usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui }))
 			.then((device) => {
 				if (!device.isInDfuMode) {
-					// put device in dfu mode
-					// if (progress) {
-					// 	progress({ event: 'switch-mode', mode: 'DFU' });
-					// }
 					return usbUtils.reopenInDfuMode(device);
 				} else {
 					return device;
 				}
 			})
 			.then((device) => {
-				const vendorId = device._info.vendorId;
-				const productId = device._info.productId;
-				this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+				this._setDfuId(device);
 				return device;
 			})
 			.then((device) => {
@@ -305,12 +257,8 @@ module.exports = class KeysCommand {
 					.then(({ _protocol }) => {
 						protocol = _protocol;
 						let segmentName = this._getPrivateKeySegmentName({ protocol });
-						let segment = this.dfu.validateSegmentSpecs(segmentName);
-						return device.readOverDfu({
-							altSetting: segment.specs.alt,
-							startAddr: segment.specs.address,
-							size: segment.specs.size
-						})
+						let segment = this._validateSegmentSpecs(segmentName);
+						return device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size })
 							.then(buf => {
 								fs.writeFileSync(filename, buf, 'binary');
 								if (closeDeviceAfterSaving) {
@@ -399,7 +347,7 @@ module.exports = class KeysCommand {
 	}
 
 	keyDoctor({ protocol, params: { deviceID } }){
-		deviceID = deviceID.toLowerCase(); // make lowercase so that it's case insensitive
+		deviceID = deviceID.toLowerCase(); // make lowercase so that it's case-insensitive
 
 		if (deviceID.length < 24){
 			console.log('***************************************************************');
@@ -410,22 +358,16 @@ module.exports = class KeysCommand {
 
 		let algorithm, filename;
 		return Promise.resolve()
-			.then(() => usbUtils.getOneUsbDevice({ api: this._api, auth: this._auth, ui: this.ui }))
+			.then(() => usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui }))
 			.then((device) => {
 				if (!device.isInDfuMode) {
-					// put device in dfu mode
-					// if (progress) {
-					// 	progress({ event: 'switch-mode', mode: 'DFU' });
-					// }
 					return usbUtils.reopenInDfuMode(device);
 				} else {
 					return device;
 				}
 			})
 			.then((device) => {
-				const vendorId = device._info.vendorId;
-				const productId = device._info.productId;
-				this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+				this._setDfuId(device);
 				return device.close();
 			})
 			.then(() => this.validateDeviceProtocol({ protocol }))
@@ -495,13 +437,9 @@ module.exports = class KeysCommand {
 				if (skipDFU){
 					return protocol;
 				}
-				return usbUtils.getOneUsbDevice({ api: this._api, auth: this._auth, ui: this.ui })
+				return usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui })
 					.then((device) => {
 						if (!device.isInDfuMode) {
-							// put device in dfu mode
-							// if (progress) {
-							//   progress({ event: 'switch-mode', mode: 'DFU' });
-							// }
 							return usbUtils.reopenInDfuMode(device);
 						} else {
 							return device;
@@ -509,9 +447,7 @@ module.exports = class KeysCommand {
 					});
 			})
 			.then((device) => {
-				const vendorId = device._info.vendorId;
-				const productId = device._info.productId;
-				this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+				this._setDfuId(device);
 				return device;
 			})
 			.then((device) => {
@@ -529,15 +465,10 @@ module.exports = class KeysCommand {
 			})
 			.then(({ device, bufferFile }) => {
 				let segmentName = this._getServerKeySegmentName({ protocol });
-				let segment = this.dfu.validateSegmentSpecs(segmentName);
+				let segment = this._validateSegmentSpecs(segmentName);
 				if (!skipDFU) {
 					const buffer = fs.readFileSync(bufferFile);
-					return device.writeOverDfu(buffer, {
-						altSetting: segment.specs.alt,
-						startAddr: segment.specs.address,
-						leave: false,
-						noErase: true
-					})
+					return device.writeOverDfu(buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: false, noErase: true })
 						.then(() => device.close());
 				}
 			})
@@ -557,22 +488,16 @@ module.exports = class KeysCommand {
 		let keyBuf, serverKeySeg;
 
 		return Promise.resolve()
-			.then(() => usbUtils.getOneUsbDevice({ api: this._api, auth: this._auth, ui: this.ui }))
+			.then(() => usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui }))
 			.then((device) => {
 				if (!device.isInDfuMode) {
-					// put device in dfu mode
-					// if (progress) {
-					// 	progress({ event: 'switch-mode', mode: 'DFU' });
-					// }
 					return usbUtils.reopenInDfuMode(device);
 				} else {
 					return device;
 				}
 			})
 			.then((device) => {
-				const vendorId = device._info.vendorId;
-				const productId = device._info.productId;
-				this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+				this._setDfuId(device);
 				return device;
 			})
 			.then((device) => {
@@ -586,7 +511,7 @@ module.exports = class KeysCommand {
 			})
 			.then((device) => {
 				let segmentName = this._getServerKeySegmentName({ protocol });
-				let segment = this.dfu.validateSegmentSpecs(segmentName);
+				let segment = this._validateSegmentSpecs(segmentName);
 				return device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size })
 					.then((buf) => {
 						device.close(); // Close the device
@@ -871,6 +796,28 @@ module.exports = class KeysCommand {
 		}
 
 		return filename;
+	}
+
+	_validateSegmentSpecs(segmentName) {
+		let specs = deviceSpecs[this.dfu.dfuId] || {};
+		let params = specs[segmentName];
+		let error = null;
+
+		if (!segmentName) {
+			error = "segmentName required. Don't know where to read/write.";
+		} else if (!specs) {
+			error = "dfuId has no specification. Don't know how to read/write.";
+		} else if (!params) {
+			error = `segment ${segmentName} has no specs. Not aware of this segment.`;
+		}
+
+		return { error, specs: params };
+	}
+
+	_setDfuId(device) {
+		const vendorId = device._info.vendorId;
+		const productId = device._info.productId;
+		this.dfu.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
 	}
 };
 

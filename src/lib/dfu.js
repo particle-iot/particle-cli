@@ -56,6 +56,11 @@ function makeDfuId(vendorId, productId) {
 }
 
 module.exports = {
+
+	validateSegmentSpecs(segmentName) {
+		return this._validateSegmentSpecs(segmentName);
+	},
+
 	_dfuIdsFromDfuOutput(stdout) {
 		// find DFU devices that match specs
 		let dfuIds =
@@ -288,10 +293,6 @@ module.exports = {
 			throw new Error('App is unknown: ' + segment.error);
 		}
 		return segment.specs[appName];
-	},
-
-	validateSegmentSpecs(segmentName) {
-		return this._validateSegmentSpecs(segmentName);
 	},
 
 	_validateSegmentSpecs(segmentName) {

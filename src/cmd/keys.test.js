@@ -73,14 +73,14 @@ describe('Key Command', () => {
 	it.skip('Can read server address from key', () => {
 	});
 
-	it('key doctor deviceID is case-insensitive', () => {
+	it('key doctor deviceID is case-insensitive', () => { // FIX FOR ALGO
 		setupCommand();
 		key._makeNewKey = sinon.stub();
 		key._writeKeyToDevice = sinon.stub();
 		key._sendPublicKeyToServer = sinon.stub();
 		return key.keyDoctor({ params: { deviceID: 'ABcd' } }).then(() => {
 			expect(key._sendPublicKeyToServer).to.be.calledWith({
-				deviceID: 'abcd', filename: 'abcd_rsa_new', algorithm: 'rsa'
+				deviceID: 'abcd', filename: 'abcd_ec_new', algorithm: 'ec'
 			});
 		});
 	});
