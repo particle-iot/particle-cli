@@ -315,7 +315,7 @@ module.exports = class KeysCommand {
 		return addressBuf;
 	}
 
-	async writeServerPublicKey({ protocol, params: { filename, outputFilename } }) {
+	async writeServerPublicKey({ protocol, host, port, deviceType, params: { filename, outputFilename } }){
 		if (deviceType && !filename){
 			throw usageError(
 				'`filename` parameter is required when `--deviceType` is set'
@@ -336,9 +336,10 @@ module.exports = class KeysCommand {
 				.filter(key => deviceSpecs[key].productName.toLowerCase() === deviceType.toLowerCase())[0];
 		}
 
+		let device;
 		try {
 			if (!skipDFU) {
-				let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
+				device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
 				if (!device.isInDfuMode) {
 					device = await usbUtils.reopenInDfuMode(device);
 				}
@@ -346,7 +347,7 @@ module.exports = class KeysCommand {
 			}
 			protocol = await this.validateDeviceProtocol({ protocol, device });
 
-			const { derFile } = await this._getDERPublicKey(filename, { protocol });
+			const derFile = await this._getDERPublicKey(filename, { protocol });
 			const bufferFile = await this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
 
 			let segmentName = this._getServerKeySegmentName({ protocol });
