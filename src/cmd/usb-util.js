@@ -239,10 +239,6 @@ async function reopenDevice(device) {
 			device = await openDeviceById(id);
 			// check if we can communicate with the device
 			if (device.isOpen) {
-				// attempt to make a request to the device to check if it responds
-				if (!device.isInDfuMode) {
-					await device.getDeviceMode({ timeout: 1500 });
-				}
 				return device;
 			}
 
