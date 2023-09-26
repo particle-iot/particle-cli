@@ -28,7 +28,6 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		'  doctor    Creates and assigns a new key to your device, and uploads it to the cloud',
 		'  server    Switch server public keys.',
 		'  address   Read server configured in device server public key',
-		'  protocol  Retrieve or change transport protocol the device uses to communicate with the cloud',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',

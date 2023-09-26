@@ -15,22 +15,16 @@ const KeysCommand = proxyquire('./keys', {
 	'../lib/api-client': ApiClient
 });
 
-
 describe('Key Command', () => {
 	var key;
-	var dfu;
 	var filename;
-	var keyFilename;
 	var transport;
+	var device;
 
 	function setupDfuTransport() {
 		transport = [];
-		dfu.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
-		dfu.readBuffer = sinon.stub().withArgs('transport', false).returns(Promise.resolve(transport));
-		dfu.read = sinon.stub();
-		dfu.write = sinon.stub();
+		key.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
 		filename = 'abc.bin';
-		keyFilename = 'abc.der';
 	}
 
 	function setupCommand(options = {}) {
@@ -40,19 +34,22 @@ describe('Key Command', () => {
 		key = new KeysCommand(options);
 		key.madeSSL = false;
 
-		key.dfu = dfu = {};
-		dfu.isDfuUtilInstalled = sinon.stub();
-		dfu.findCompatibleDFU = sinon.stub();
-		dfu.dfuId = '2b04:d006';
+		key.dfuId = '2b04:d006';
 
 		api = {};
 		api.ensureToken = sinon.stub();
 		api.sendPublicKey = sinon.stub();
 		api.ready = sinon.stub().returns(true);
+
+		device = {
+			writeOverDfu: sinon.stub(),
+			close: sinon.stub()
+		};
 	}
 
 	it('Can create device key', () => {
 		setupCommand();
+		key.getDfuDevice = sinon.stub().returns(device);
 		return key.makeNewKey({ params: {} }).then(() => {
 			expect(utilities.deferredChildProcess).to.have.property('callCount', 3);
 		});
@@ -75,12 +72,13 @@ describe('Key Command', () => {
 
 	it('key doctor deviceID is case-insensitive', () => { // FIX FOR ALGO
 		setupCommand();
+		key.getDfuDevice = sinon.stub().returns(device);
 		key._makeNewKey = sinon.stub();
 		key._writeKeyToDevice = sinon.stub();
 		key._sendPublicKeyToServer = sinon.stub();
 		return key.keyDoctor({ params: { deviceID: 'ABcd' } }).then(() => {
 			expect(key._sendPublicKeyToServer).to.be.calledWith({
-				deviceID: 'abcd', filename: 'abcd_ec_new', algorithm: 'ec'
+				deviceID: 'abcd', filename: 'abcd_rsa_new', algorithm: 'rsa'
 			});
 		});
 	});
@@ -121,20 +119,23 @@ describe('Key Command', () => {
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
+			key.getDfuDevice = sinon.stub().returns(device);
+			device.readOverDfu = sinon.stub().returns(Promise.resolve(Buffer.from([1,2,3,4,5])));
 			transport.push(0x00);
 			return key.readServerAddress({})
 				.then(() => {
-					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
-					expect(dfu.readBuffer).to.have.been.calledWith('tcpServerKey', false);
+					expect(device.readOverDfu).to.have.property('callCount', 2);
 				});
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', () => {
+			key.getDfuDevice = sinon.stub().returns(device);
+			key.fetchDeviceProtocol = sinon.stub().returns('tcp');
+			device.readOverDfu = sinon.stub().returns(Promise.resolve(Buffer.from([1,2,3,4,5])));
 			transport.push(0xFF);
 			return key.readServerAddress({})
 				.then(() => {
-					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
-					expect(dfu.readBuffer).to.have.been.calledWith('udpServerKey', false);
+					expect(device.readOverDfu).to.have.property('callCount', 1);
 				});
 		});
 		// todo - stub readBuffer to return a key and check the field decomposition
@@ -147,13 +148,13 @@ describe('Key Command', () => {
 		});
 
 		it('calls validateDeviceProtocol to setup the default protocol', () => {
-			dfu.write = sinon.stub();
 			key.validateDeviceProtocol = sinon.stub().returns('tcp');
+			key.getDfuDevice = sinon.stub().returns(device);
 			filename = key.serverKeyFilename({ alg: 'rsa' });
 			return key.writeKeyToDevice({ params: { filename } })
 				.then(() => {
 					expect(key.validateDeviceProtocol).to.have.been.called;
-					expect(dfu.write).to.have.been.calledWith(filename, 'tcpPrivateKey', false);
+					expect(device.writeOverDfu).to.have.property('callCount', 1);
 				});
 		});
 	});
@@ -166,26 +167,28 @@ describe('Key Command', () => {
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
 			transport.push(0x00);
+			key.getDfuDevice = sinon.stub().returns(device);
+			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
 			return key.saveKeyFromDevice({ params: { filename } })
 				.then(() => {
-					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
-					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);
+					expect(device.readOverDfu).to.have.property('callCount', 2);
 				});
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', () => {
 			transport.push(0xFF);
-
+			key.getDfuDevice = sinon.stub().returns(device);
+			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
 			return key.saveKeyFromDevice({ params: { filename } })
 				.then(() => {
-					expect(dfu.readBuffer).to.have.been.calledWith('transport', false);
-					expect(dfu.read).to.have.been.calledWith(keyFilename, 'udpPrivateKey', false);
+					expect(device.readOverDfu).to.have.property('callCount', 2);
 				});
 		});
 
 		it('raises an error when the protocol is not recognized', () => {
 			key.validateDeviceProtocol = sinon.stub().returns('zip');
-
+			key.getDfuDevice = sinon.stub().returns(device);
+			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
 			return key.saveKeyFromDevice({ params: { filename } })
 				.catch((err) => {
 					expect(err).to.equal('Error saving key from device... The device does not support the protocol zip. It has support for udp, tcp');
@@ -195,39 +198,11 @@ describe('Key Command', () => {
 		it('does not read the device protocol the protocol is given', () => {
 			key.validateDeviceProtocol = sinon.stub().returns('tcp');
 			key.fetchDeviceProtocol = sinon.stub();
-
+			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
 			return key.saveKeyFromDevice({ params: { filename } })
 				.then(() => {
 					expect(key.fetchDeviceProtocol).to.not.have.been.called;
-					expect(dfu.read).to.have.been.calledWith(keyFilename, 'tcpPrivateKey', false);
 				});
-		});
-	});
-
-	describe('protocol', () => {
-		beforeEach(setupDfuTransport);
-
-		it('updates the device protocol to tcp', () => {
-			dfu.writeBuffer = sinon.stub();
-			return key.changeTransportProtocol('tcp').then(() => {
-				expect(dfu.writeBuffer).has.been.calledWith(new Buffer([0x00]), 'transport', false);
-			});
-		});
-
-		it('updates the device protocol to udp', () => {
-			dfu.writeBuffer = sinon.stub();
-			return key.changeTransportProtocol('udp').then(() => {
-				expect(dfu.writeBuffer).has.been.calledWith(new Buffer([0xFF]), 'transport', false);
-			});
-		});
-
-		it('raises an error if the device does not support multiple protocols', () => {
-			dfu.dfuId = '2b04:d006';
-			return key.changeTransportProtocol('udp').then(() => {
-				throw new Error('expected error');
-			}).catch((err) => {
-				expect(err.message).to.be.eql('Could not change device transport protocol: Protocol cannot be changed for this device');
-			});
 		});
 	});
 

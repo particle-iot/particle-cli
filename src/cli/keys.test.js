@@ -28,14 +28,13 @@ describe('Keys Command-Line Interface', () => {
 					'Help:  particle help keys <command>',
 					'',
 					'Commands:',
-					'  new       Generate a new set of keys for your device',
-					'  load      Load a key saved in a file onto your device',
-					'  save      Save a key from your device to a file',
-					'  send      Tell a server which key you\'d like to use by sending your public key in PEM format',
-					'  doctor    Creates and assigns a new key to your device, and uploads it to the cloud',
-					'  server    Switch server public keys.',
-					'  address   Read server configured in device server public key',
-					'  protocol  Retrieve or change transport protocol the device uses to communicate with the cloud',
+					'  new      Generate a new set of keys for your device',
+					'  load     Load a key saved in a file onto your device',
+					'  save     Save a key from your device to a file',
+					'  send     Tell a server which key you\'d like to use by sending your public key in PEM format',
+					'  doctor   Creates and assigns a new key to your device, and uploads it to the cloud',
+					'  server   Switch server public keys.',
+					'  address  Read server configured in device server public key',
 					''
 				].join('\n'));
 			});
@@ -316,37 +315,6 @@ describe('Keys Command-Line Interface', () => {
 				expect(helpText).to.equal([
 					'Read server configured in device server public key',
 					'Usage: particle keys address [options]',
-					'',
-					'Options:',
-					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
-					'',
-				].join('\n'));
-			});
-		});
-	});
-
-	describe('`keys protocol` Namespace', () => {
-		it('Handles `protocol` command', () => {
-			const argv = commandProcessor.parse(root, ['keys', 'protocol']);
-			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({});
-			expect(argv.protocol).to.equal(undefined);
-		});
-
-		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['keys', 'protocol', '--protocol', 'udp']);
-			expect(argv.clierror).to.equal(undefined);
-			expect(argv.params).to.eql({});
-			expect(argv.protocol).to.equal('udp');
-		});
-
-		it('Includes help', () => {
-			const termWidth = null; // don't right-align option type labels so testing is easier
-			commandProcessor.parse(root, ['keys', 'protocol', '--help'], termWidth);
-			commandProcessor.showHelp((helpText) => {
-				expect(helpText).to.equal([
-					'Retrieve or change transport protocol the device uses to communicate with the cloud',
-					'Usage: particle keys protocol [options]',
 					'',
 					'Options:',
 					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
