@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.15.1 - Sep 26 2023
+
+* Fix `particle flash --local` add retry logic for control request updates
+
 # 3.15.0 - Sep 19 2023
 
 * Rework `particle flash --usb` command to use the CLI flasher
