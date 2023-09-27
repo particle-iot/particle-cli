@@ -58,19 +58,24 @@ module.exports = class KeysCommand {
 		await this._makeNewKey({ filename: filename || 'device', protocol });
 	}
 
-	async _makeNewKey({ filename, protocol }) {
+	async _makeNewKey({ filename, protocol, deviceID }) {
 		let alg;
+		let device;
 		try {
-			let device = await this.getDfuDevice();
-			await device.close();
+			device = await this.getDfuDevice({ deviceID });
 			// If protocol is provided, set the algorithm
 			if (protocol) {
 				alg = this.keyAlgorithmForProtocol(protocol);
 			}
 			await this.makeKeyOpenSSL(filename, alg, { protocol });
+			await device.close();
 			console.log('New Key Created!');
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error creating keys');
+		} finally {
+			if (device) {
+				await device.close();
+			}
 		}
 	}
 
@@ -78,7 +83,8 @@ module.exports = class KeysCommand {
 		await this._writeKeyToDevice({ filename });
 	}
 
-	async _writeKeyToDevice({ filename, leave = false }) {
+	async _writeKeyToDevice({ filename, leave = false, deviceID }) {
+		let device;
 		try {
 			filename = utilities.filenameNoExt(filename) + '.der';
 
@@ -88,23 +94,23 @@ module.exports = class KeysCommand {
 
 			//TODO: give the user a warning before doing this, since it'll bump their device offline.
 
-			let device = await this.getDfuDevice();
+			device = await this.getDfuDevice({ deviceID });
 			const protocol = await this.validateDeviceProtocol({ device });
 			let alg = this._getPrivateKeyAlgorithm({ protocol });
 			let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
-
-			await this._saveKeyFromDevice({ filename: prefilename, force: true, keepDeviceOpen: true });
-
+			await this._saveKeyFromDevice({ filename: prefilename, force: true, device });
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
-			const buffer = fs.readFileSync(filename, 'binary');
-
+			const buffer = fs.readFileSync(filename, null); // 'null' to get the raw data
 			await device.writeOverDfu(buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size, noErase: true, leave: leave });
-			await device.close();
 
 			console.log('Key written to device!');
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error writing key to device.');
+		} finally {
+			if (device) {
+				await device.close();
+			}
 		}
 	}
 
@@ -113,30 +119,37 @@ module.exports = class KeysCommand {
 		await this._saveKeyFromDevice({ filename, force });
 	}
 
-	async _saveKeyFromDevice({ filename, force, keepDeviceOpen = false }) {
+	async _saveKeyFromDevice({ filename, force, device }) {
 		let protocol;
 		const { tryDelete, filenameNoExt, deferredChildProcess } = utilities;
 
-		if (!force && fs.existsSync(filename)){
+		if (!force && fs.existsSync(filename)) {
 			throw new VError('This file already exists, please specify a different file, or use the --force flag.');
-		} else if (fs.existsSync(filename)){
+		} else if (fs.existsSync(filename)) {
 			tryDelete(filename);
 		}
 
+		const keepDeviceOpen = device ? true : false;
+
 		try {
-			let device = await this.getDfuDevice();
+			if (!device) {
+				device = await this.getDfuDevice();
+			}
 			protocol = await this.validateDeviceProtocol({ device });
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
-			const buf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
+			let buf;
+			try {
+				buf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
+			} catch (err) {
+				// FIXME: first time read may fail so we retry
+				buf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
+			}
 
 			fs.writeFileSync(filename, buf, 'binary');
 
-			if (!keepDeviceOpen) {
-				await device.close();
-			}
 			let pubPemFilename = filenameNoExt(filename) + '.pub.pem';
-			if (force){
+			if (force) {
 				tryDelete(pubPemFilename);
 			}
 			let alg = this._getPrivateKeyAlgorithm({ protocol });
@@ -147,7 +160,12 @@ module.exports = class KeysCommand {
 				});
 			console.log('Saved existing key!');
 		} catch (err) {
+			await device.close();
 			return new VError(ensureError(err), 'Error saving key from device');
+		} finally {
+			if (device && !keepDeviceOpen) {
+				await device.close();
+			}
 		}
 	}
 
@@ -158,7 +176,7 @@ module.exports = class KeysCommand {
 	async _sendPublicKeyToServer({ deviceID, filename, productId, algorithm }) {
 		const { filenameNoExt, deferredChildProcess, readFile } = utilities;
 
-		if (!fs.existsSync(filename)){	 // FIX THIS
+		if (!fs.existsSync(filename)){
 			filename = filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)){
 				throw new VError("Couldn't find " + filename);
@@ -210,14 +228,14 @@ module.exports = class KeysCommand {
 
 		let algorithm, filename;
 		try {
-			let device = await this.getDfuDevice();
+			// TODO: add deviceID here
+			const device = await this.getDfuDevice({ deviceID });
 			await device.close();
 
 			protocol = await this.validateDeviceProtocol({ protocol });
-
 			algorithm = this._getPrivateKeyAlgorithm({ protocol });
 			filename = `${deviceID}_${algorithm}_new`;
-			await this._makeNewKey({ filename });
+			await this._makeNewKey({ filename, deviceID });
 			await this._writeKeyToDevice({ filename, leave: true, deviceID });
 			await this._sendPublicKeyToServer({ deviceID, filename, algorithm });
 			console.log('Okay!  New keys in place, your device should restart.');
@@ -287,22 +305,26 @@ module.exports = class KeysCommand {
 			if (!skipDFU) {
 				const buffer = fs.readFileSync(bufferFile);
 				await device.writeOverDfu(buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: false, noErase: true });
-				await device.close();
 			}
 
 			if (!skipDFU){
 				console.log('Okay!  New keys in place, your device will not restart.');
 			} else {
-				console.log('Okay!  Formated server key file generated for this type of device.');
+				console.log('Okay!  Formatted server key file generated for this type of device.');
 			}
 		} catch (err) {
 			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
+		} finally {
+			if (device) {
+				await device.close();
+			}
 		}
 	}
 
 	async readServerAddress({ protocol }) {
+		let device;
 		try {
-			let device = await this.getDfuDevice();
+			device = await this.getDfuDevice();
 
 			protocol = await this.validateDeviceProtocol({ protocol, device });
 
@@ -341,6 +363,10 @@ module.exports = class KeysCommand {
 			return result;
 		} catch (err) {
 			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
+		} finally {
+			if (device) {
+				await device.close();
+			}
 		}
 	}
 
@@ -592,9 +618,9 @@ module.exports = class KeysCommand {
 		return filename;
 	}
 
-	async getDfuDevice() {
+	async getDfuDevice({ deviceID } = {}) {
 		try {
-			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
+			let device = await usbUtils.getOneUsbDevice({ idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui });
 			if (!device.isInDfuMode) {
 				device = await usbUtils.reopenInDfuMode(device);
 			}
