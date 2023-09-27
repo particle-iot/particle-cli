@@ -93,7 +93,7 @@ module.exports = class KeysCommand {
 			let alg = this._getPrivateKeyAlgorithm({ protocol });
 			let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
 
-			await this._saveKeyFromDevice({ filename: prefilename, force: true, closeDeviceAfterSaving: false }); // FIXME: closeDeviceAfterSaving?
+			await this._saveKeyFromDevice({ filename: prefilename, force: true, keepDeviceOpen: true });
 
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
@@ -113,7 +113,7 @@ module.exports = class KeysCommand {
 		await this._saveKeyFromDevice({ filename, force });
 	}
 
-	async _saveKeyFromDevice({ filename, force, closeDeviceAfterSaving = true }) {
+	async _saveKeyFromDevice({ filename, force, keepDeviceOpen = false }) {
 		let protocol;
 		const { tryDelete, filenameNoExt, deferredChildProcess } = utilities;
 
@@ -132,7 +132,7 @@ module.exports = class KeysCommand {
 
 			fs.writeFileSync(filename, buf, 'binary');
 
-			if (closeDeviceAfterSaving) {
+			if (!keepDeviceOpen) {
 				await device.close();
 			}
 			let pubPemFilename = filenameNoExt(filename) + '.pub.pem';
@@ -498,7 +498,7 @@ module.exports = class KeysCommand {
 			if (!fs.existsSync(derFile)){
 				console.log('Creating DER format file');
 				try {
-					await deferredChildProcess(`openssl ${alg} -in "${filename}" -pubin -pubout -outform DER -out "${derFile}"`);
+					derFile = await deferredChildProcess(`openssl ${alg} -in "${filename}" -pubin -pubout -outform DER -out "${derFile}"`);
 					return derFile;
 				} catch (err) {
 					throw new VError(ensureError(err), 'Error creating a DER formatted version of that key.  Make sure you specified the public key');
@@ -593,17 +593,16 @@ module.exports = class KeysCommand {
 	}
 
 	async getDfuDevice() {
-		let device;
 		try {
-			device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
+			let device = await usbUtils.getOneUsbDevice({ api: this.api, auth: this.auth, ui: this.ui });
 			if (!device.isInDfuMode) {
 				device = await usbUtils.reopenInDfuMode(device);
 			}
 			this._setDfuId(device);
+			return device;
 		} catch (err) {
 			throw new VError(ensureError(err), 'Unable to get DFU device');
 		}
-		return device;
 	}
 
 	_validateSegmentSpecs(segmentName) {
@@ -623,6 +622,7 @@ module.exports = class KeysCommand {
 	}
 
 	_setDfuId(device) {
+		// TODO: Remove the usage of dfuId and use device-constants directly
 		const vendorId = device._info.vendorId;
 		const productId = device._info.productId;
 		this.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');

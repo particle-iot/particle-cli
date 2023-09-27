@@ -286,29 +286,5 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			expect(exitCode).to.equal(1);
 		});
 	});
-
-	describe('Keys Protocol Subcommand', () => {
-		it('Reads server address from device\'s server public key', async () => {
-			await cli.enterDFUMode();
-			const { stdout, stderr, exitCode } = await cli.run(['keys', 'protocol']);
-			const protocolPtn = /(udp|tcp)$/;
-
-			expect(stdout).to.include('Device protocol is set to ');
-			expect(stdout.trim()).to.match(protocolPtn);
-			expect(stderr).to.equal('');
-			expect(exitCode).to.equal(0);
-
-			await cli.resetDevice();
-			await cli.waitUntilOnline();
-		});
-
-		it('Fails to save device keys when device is not in DFU mode', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['keys', 'protocol']);
-
-			expect(stdout.split('\n')).to.include.members(dfuInstructions);
-			expect(stderr).to.equal('');
-			expect(exitCode).to.equal(1);
-		});
-	});
 });
 

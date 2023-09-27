@@ -85,6 +85,7 @@ module.exports = class DoctorCommand {
 	}
 
 	_getDfuId(device) {
+		// TODO: Remove the usage of dfuId and use device-constants
 		const vendorId = device._info.vendorId;
 		const productId = device._info.productId;
 		return vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');

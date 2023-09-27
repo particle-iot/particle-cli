@@ -42,6 +42,7 @@ describe('Key Command', () => {
 		device = {
 			writeOverDfu: sinon.stub(),
 			close: sinon.stub()
+			// readOverDfu is stubbed with in each test for specific return values
 		};
 	}
 
@@ -68,7 +69,7 @@ describe('Key Command', () => {
 	it.skip('Can read server address from key', () => {
 	});
 
-	it('key doctor deviceID is case-insensitive', () => { // FIX FOR ALGO
+	it('key doctor deviceID is case-insensitive', () => {
 		setupCommand();
 		key.getDfuDevice = sinon.stub().returns(device);
 		key._makeNewKey = sinon.stub();
@@ -114,12 +115,6 @@ describe('Key Command', () => {
 		beforeEach(() => {
 			setupCommand();
 			setupDfu();
-		});
-
-		afterEach(() => {
-			if (fs.existsSync(filename)) {
-				fs.unlinkSync(filename);
-			}
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
