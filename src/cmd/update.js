@@ -6,7 +6,7 @@ const semver = require('semver');
 const usbUtils = require('./usb-util');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const CLICommandBase = require('./base');
-const { parseModulesToFlash, filterModulesToFlash, createFlashSteps, flashFiles } = require('../lib/flash-helper');
+const { parseModulesToFlash, filterModulesToFlash, createFlashSteps, flashFiles, validateDFUSupport } = require('../lib/flash-helper');
 
 module.exports = class UpdateCommand extends CLICommandBase {
 
@@ -24,6 +24,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
 
 		const version = target || 'latest';
+		validateDFUSupport({ device, ui: this.ui });
 
 		// get platform info
 		const platformName = platformForId(device.platformId).name;
