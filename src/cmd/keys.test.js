@@ -18,11 +18,9 @@ const KeysCommand = proxyquire('./keys', {
 describe('Key Command', () => {
 	var key;
 	var filename;
-	var transport;
 	var device;
 
-	function setupDfuTransport() {
-		transport = [];
+	function setupDfu() {
 		key.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
 		filename = 'abc.bin';
 	}
@@ -115,13 +113,18 @@ describe('Key Command', () => {
 	describe('address', () => {
 		beforeEach(() => {
 			setupCommand();
-			setupDfuTransport();
+			setupDfu();
+		});
+
+		afterEach(() => {
+			if (fs.existsSync(filename)) {
+				fs.unlinkSync(filename);
+			}
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
 			key.getDfuDevice = sinon.stub().returns(device);
 			device.readOverDfu = sinon.stub().returns(Promise.resolve(Buffer.from([1,2,3,4,5])));
-			transport.push(0x00);
 			return key.readServerAddress({})
 				.then(() => {
 					expect(device.readOverDfu).to.have.property('callCount', 2);
@@ -132,7 +135,6 @@ describe('Key Command', () => {
 			key.getDfuDevice = sinon.stub().returns(device);
 			key.fetchDeviceProtocol = sinon.stub().returns('tcp');
 			device.readOverDfu = sinon.stub().returns(Promise.resolve(Buffer.from([1,2,3,4,5])));
-			transport.push(0xFF);
 			return key.readServerAddress({})
 				.then(() => {
 					expect(device.readOverDfu).to.have.property('callCount', 1);
@@ -144,7 +146,7 @@ describe('Key Command', () => {
 	describe('load', () => {
 		beforeEach(() => {
 			setupCommand();
-			setupDfuTransport();
+			setupDfu();
 		});
 
 		it('calls validateDeviceProtocol to setup the default protocol', () => {
@@ -162,11 +164,10 @@ describe('Key Command', () => {
 	describe('save', () => {
 		beforeEach(() => {
 			setupCommand();
-			setupDfuTransport();
+			setupDfu();
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
-			transport.push(0x00);
 			key.getDfuDevice = sinon.stub().returns(device);
 			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
 			return key.saveKeyFromDevice({ params: { filename } })
@@ -176,7 +177,6 @@ describe('Key Command', () => {
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', () => {
-			transport.push(0xFF);
 			key.getDfuDevice = sinon.stub().returns(device);
 			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
 			return key.saveKeyFromDevice({ params: { filename } })
