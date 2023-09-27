@@ -1,5 +1,6 @@
 const { expect, sinon } = require('../../test/setup');
 const { HalModuleParser, firmwareTestHelper, ModuleInfo, createAssetModule } = require('binary-version-reader');
+const chalk = require('chalk');
 const usbUtils = require('../cmd/usb-util');
 const { createFlashSteps, filterModulesToFlash, prepareDeviceForFlash, validateDFUSupport } = require('./flash-helper');
 
@@ -457,11 +458,15 @@ describe('flash-helper', () => {
 		});
 	});
 	describe('validateDFUSupport', () => {
+		let ui;
+		beforeEach(() => {
+			ui = {
+				write: sinon.stub(),
+				chalk
+			};
+		});
 		it('throws an error if the device os version does not support DFU', async () => {
 			let error;
-			const ui = {
-				error: sinon.stub(),
-			};
 			const device = {
 				isInDfuMode: false,
 				platformId: 32,
@@ -472,15 +477,10 @@ describe('flash-helper', () => {
 			} catch (e) {
 				error = e;
 			}
-			expect(error).to.have.property('message', 'DFU mode not supported');
-			expect(ui.error).to.have.been.calledWithMatch('DFU mode is not supported on this device os version.');
-			expect(ui.error).to.have.been.calledWithMatch('Please switch the device into DFU mode and try again.');
+			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
 		});
 		it('throws an error if the current device os is not defined and the device is not in DFU', async () => {
 			let error;
-			const ui = {
-				error: sinon.stub(),
-			};
 			const device = {
 				isInDfuMode: false,
 				platformId: 32,
@@ -490,15 +490,10 @@ describe('flash-helper', () => {
 			} catch (e) {
 				error = e;
 			}
-			expect(error).to.have.property('message', 'DFU mode not supported');
-			expect(ui.error).to.have.been.calledWithMatch('DFU mode is not supported on this device os version.');
-			expect(ui.error).to.have.been.calledWithMatch('Please switch the device into DFU mode and try again.');
+			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
 		});
 		it('passes if the device is in DFU mode', async () => {
 			let error;
-			const ui = {
-				error: sinon.stub(),
-			};
 			const device = {
 				isInDfuMode: true,
 				platformId: 32,
@@ -512,9 +507,6 @@ describe('flash-helper', () => {
 		});
 		it('passes if the current device OS is greater than - equals to 2.0.0', async () => {
 			let error;
-			const ui = {
-				error: sinon.stub(),
-			};
 			const device = {
 				isInDfuMode: false,
 				platformId: 32,

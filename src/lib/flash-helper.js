@@ -262,10 +262,34 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 }
 
 function validateDFUSupport({ device, ui }) {
-	if (!device.isInDfuMode && (!device.firmwareVersion || semver.lt(device.firmwareVersion, '2.0.0'))) {
-		ui.error('DFU mode is not supported on this device os version.');
-		ui.error('Please switch the device into DFU mode and try again.');
-		throw new Error('DFU mode not supported');
+	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0'))) {
+		const { chalk } = ui;
+		ui.write(`${chalk.red('!!!')} The device needs to be in DFU mode for this command.\n`);
+		ui.write(`${chalk.cyan('>')} This version of Device OS doesn't support automatically switching to DFU mode.`);
+		ui.write(`${chalk.cyan('>')} To put your device in DFU manually, please:\n`);
+		ui.write([
+			chalk.bold.white('1)'),
+			'Press and hold both the',
+			chalk.bold.cyan('RESET'),
+			'and',
+			chalk.bold.cyan('MODE/SETUP'),
+			'buttons simultaneously.\n'
+		].join(' '));
+		ui.write([
+			chalk.bold.white('2)'),
+			'Release only the',
+			chalk.bold.cyan('RESET'),
+			'button while continuing to hold the',
+			chalk.bold.cyan('MODE/SETUP'),
+			'button.\n'
+		].join(' '));
+		ui.write([
+			chalk.bold.white('3)'),
+			'Release the',
+			chalk.bold.cyan('MODE/SETUP'),
+			'button once the device begins to blink yellow.\n'
+		].join(' '));
+		throw new Error('Put the device in DFU mode and try again');
 	}
 }
 
