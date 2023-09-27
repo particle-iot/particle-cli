@@ -142,7 +142,7 @@ module.exports = class KeysCommand {
 			try {
 				buf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
 			} catch (err) {
-				// FIXME: first time read may fail so we retry
+				// FIXME: First time read may fail so we retry
 				buf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
 			}
 
@@ -160,7 +160,6 @@ module.exports = class KeysCommand {
 				});
 			console.log('Saved existing key!');
 		} catch (err) {
-			await device.close();
 			return new VError(ensureError(err), 'Error saving key from device');
 		} finally {
 			if (device && !keepDeviceOpen) {
