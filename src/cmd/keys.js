@@ -68,7 +68,6 @@ module.exports = class KeysCommand {
 				alg = this.keyAlgorithmForProtocol(protocol);
 			}
 			await this.makeKeyOpenSSL(filename, alg, { protocol });
-			await device.close();
 			console.log('New Key Created!');
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error creating keys');
@@ -333,7 +332,6 @@ module.exports = class KeysCommand {
 			let segment = this._validateSegmentSpecs(segmentName);
 
 			const keyBuf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
-			await device.close();
 
 			let offset = serverKeySeg.addressOffset || 384;
 			let portOffset = serverKeySeg.portOffset || 450;
