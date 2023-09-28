@@ -242,7 +242,7 @@ module.exports = class KeysCommand {
 			await this._sendPublicKeyToServer({ deviceID, filename, algorithm });
 			console.log('Okay!  New keys in place, your device should restart.');
 		} catch (err) {
-			throw new VError(ensureError(err), 'Make sure your device is connected to your computer, and that your computer is online.');
+			throw new VError(ensureError(err), 'Make sure your device is connected to your computer, and that your computer is online');
 		}
 	}
 
