@@ -84,7 +84,7 @@ const { knownAppsForPlatform } = require('./known-apps');
 const keysDctOffsets = {
 	generation1: {
 		tcpServerKey: {
-			address: '0x00001000',
+			address: 0x00001000,
 			size: 2048,
 			format: 'der',
 			alt: 1,
@@ -92,7 +92,7 @@ const keysDctOffsets = {
 			portOffset: 450
 		},
 		tcpPrivateKey: {
-			address: '0x00002000',
+			address: 0x00002000,
 			size: 1024,
 			format: 'der',
 			alt: 1
@@ -100,7 +100,7 @@ const keysDctOffsets = {
 	},
 	laterGenerations: {
 		tcpServerKey: {
-			address: '2082',
+			address: 2082,
 			size: 512,
 			format: 'der',
 			alt: 1,
@@ -109,7 +109,7 @@ const keysDctOffsets = {
 			portOffset: 450
 		},
 		udpServerKey: {
-			address: '3298',
+			address: 3298,
 			size: 320,
 			format: 'der',
 			alt: 1,
@@ -118,14 +118,14 @@ const keysDctOffsets = {
 			portOffset: 258
 		},
 		tcpPrivateKey: {
-			address: '34',
+			address: 34,
 			size: 612,
 			format: 'der',
 			alt: 1,
 			alg: 'rsa'
 		},
 		udpPrivateKey: {
-			address: '3106',
+			address: 3106,
 			size: 192,
 			format: 'der',
 			alt: 1,
