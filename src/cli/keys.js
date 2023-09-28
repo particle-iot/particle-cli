@@ -17,7 +17,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'load', 'Load a key saved in a file onto your device', {
-		params: '<filename>',
+		params: '[filename]',
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().writeKeyToDevice(args);
@@ -25,12 +25,12 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'save', 'Save a key from your device to a file', {
-		params: '<filename>',
+		params: '[filename]',
 		options: {
 			'force': {
 				boolean: true,
 				default: false,
-				description: 'Force overwriting of <filename> if it exists',
+				description: 'Force overwriting of filename if it exists',
 			}
 		},
 		handler: (args) => {
@@ -40,7 +40,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'send', "Tell a server which key you'd like to use by sending your public key in PEM format", {
-		params: '<deviceID> <filename>',
+		params: '[deviceID] [filename]',
 		options: {
 			'product_id': {
 				number: true,
@@ -54,7 +54,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'doctor', 'Creates and assigns a new key to your device, and uploads it to the cloud', {
-		params: '<deviceID>',
+		params: '[deviceID]',
 		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');

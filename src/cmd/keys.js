@@ -85,7 +85,9 @@ module.exports = class KeysCommand {
 	async _writeKeyToDevice({ filename, leave = false, deviceID }) {
 		let device;
 		try {
-			filename = utilities.filenameNoExt(filename) + '.der';
+			device = await this.getDfuDevice({ deviceID });
+
+			filename = utilities.filenameNoExt(filename || device.id) + '.der';
 
 			if (!fs.existsSync(filename)){
 				throw new VError("I couldn't find the file: " + filename);
@@ -93,7 +95,6 @@ module.exports = class KeysCommand {
 
 			//TODO: give the user a warning before doing this, since it'll bump their device offline.
 
-			device = await this.getDfuDevice({ deviceID });
 			const protocol = await this.validateDeviceProtocol({ device });
 			let alg = this._getPrivateKeyAlgorithm({ protocol });
 			let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
@@ -103,7 +104,7 @@ module.exports = class KeysCommand {
 			const buffer = fs.readFileSync(filename, null); // 'null' to get the raw data
 			await this._dfuWrite(device, buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: leave, noErase: true });
 
-			console.log('Key written to device!');
+			console.log(`Key ${filename} written to device`);
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error writing key to device.');
 		} finally {
@@ -114,8 +115,13 @@ module.exports = class KeysCommand {
 	}
 
 	async saveKeyFromDevice({ force, params: { filename } }){
-		filename = utilities.filenameNoExt(filename) + '.der';
-		await this._saveKeyFromDevice({ filename, force });
+		const device = await this.getDfuDevice();
+		filename = utilities.filenameNoExt(filename || device.id) + '.der';
+		try {
+			await this._saveKeyFromDevice({ filename, force, device });
+		} finally {
+			await device.close();
+		}
 	}
 
 	async _saveKeyFromDevice({ filename, force, device }) {
@@ -123,17 +129,12 @@ module.exports = class KeysCommand {
 		const { tryDelete, filenameNoExt, deferredChildProcess } = utilities;
 
 		if (!force && fs.existsSync(filename)) {
-			throw new VError('This file already exists, please specify a different file, or use the --force flag.');
+			throw new VError(`The file ${filename} already exists, please specify a different file, or use the --force flag.`);
 		} else if (fs.existsSync(filename)) {
 			tryDelete(filename);
 		}
 
-		const keepDeviceOpen = device ? true : false;
-
 		try {
-			if (!device) {
-				device = await this.getDfuDevice();
-			}
 			protocol = await this.validateDeviceProtocol({ device });
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
@@ -153,13 +154,9 @@ module.exports = class KeysCommand {
 					throw new VError(err,
 						'Unable to generate a public key from the key downloaded from the device. This usually means you had a corrupt key on the device.');
 				});
-			console.log('Saved existing key!');
+			console.log(`Saved existing key to ${filename}`);
 		} catch (err) {
 			return new VError(ensureError(err), 'Error saving key from device');
-		} finally {
-			if (device && !keepDeviceOpen) {
-				await device.close();
-			}
 		}
 	}
 
@@ -170,14 +167,22 @@ module.exports = class KeysCommand {
 	async _sendPublicKeyToServer({ deviceID, filename, productId, algorithm }) {
 		const { filenameNoExt, deferredChildProcess, readFile } = utilities;
 
+		if (!deviceID) {
+			// default to the connected device is deviceID is not passed
+			let device = await usbUtils.getOneUsbDevice({ ui: this.ui });
+			deviceID = device.id;
+			await device.close();
+		}
+
+		deviceID = deviceID.toLowerCase();
+		filename = filename || deviceID;
+
 		if (!fs.existsSync(filename)){
 			filename = filenameNoExt(filename) + '.pub.pem';
 			if (!fs.existsSync(filename)){
 				throw new VError("Couldn't find " + filename);
 			}
 		}
-
-		deviceID = deviceID.toLowerCase();
 
 		let api = new ApiClient();
 		api.ensureToken();
@@ -211,19 +216,22 @@ module.exports = class KeysCommand {
 	}
 
 	async keyDoctor({ protocol, params: { deviceID } }) {
-		deviceID = deviceID.toLowerCase(); // make lowercase so that it's case-insensitive
+		if (deviceID) {
+			deviceID = deviceID.toLowerCase(); // make lowercase so that it's case-insensitive
 
-		if (deviceID.length < 24){
-			console.log('***************************************************************');
-			console.log('   Warning! - device id was shorter than 24 characters - did you use something other than an id?');
-			console.log('   use particle identify to find your device id');
-			console.log('***************************************************************');
+			if (deviceID.length < 24){
+				console.log('***************************************************************');
+				console.log('   Warning! - device id was shorter than 24 characters - did you use something other than an id?');
+				console.log('   use particle identify to find your device id');
+				console.log('***************************************************************');
+			}
 		}
 
 		let algorithm, filename;
 		try {
 			// TODO: add deviceID here
 			const device = await this.getDfuDevice({ deviceID });
+			deviceID = device.id;
 			await device.close();
 
 			protocol = await this.validateDeviceProtocol({ protocol });
@@ -234,7 +242,7 @@ module.exports = class KeysCommand {
 			await this._sendPublicKeyToServer({ deviceID, filename, algorithm });
 			console.log('Okay!  New keys in place, your device should restart.');
 		} catch (err) {
-			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and that your computer is online.');
+			throw new VError(ensureError(err), 'Make sure your device is connected to your computer, and that your computer is online.');
 		}
 	}
 
