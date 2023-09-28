@@ -51,7 +51,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'device rename', 'device doctor', 'device', 'doctor', 'flash',
 		'function list', 'function call', 'function', 'get', 'identify',
 		'keys new', 'keys load', 'keys save', 'keys send', 'keys doctor',
-		'keys server', 'keys address', 'keys protocol', 'keys', 'library add',
+		'keys server', 'keys address', 'keys', 'library add',
 		'library create', 'library copy', 'library list', 'library migrate',
 		'library search', 'library upload', 'library publish', 'library view',
 		'library', 'list', 'login', 'logout', 'monitor', 'nyan', 'preprocess',

@@ -4,7 +4,8 @@ const VError = require('verror');
 const prompt = require('inquirer').prompt;
 const { delay } = require('../lib/utilities');
 const ApiClient = require('../lib/api-client');
-const dfu = require('../lib/dfu');
+const usbUtils = require('./usb-util');
+const deviceSpecs = require('../lib/device-specs');
 
 function EarlyReturnError(){
 }
@@ -67,14 +68,38 @@ module.exports = class DoctorCommand {
 		}
 	}
 
+	async getDfuDevices() {
+		const devices = await usbUtils.getUsbDevices({ dfuMode: true });
+		const dfuDevices = [];
+		for (const device of devices) {
+			if (device.isInDfuMode) {
+				const d = this._getDfuId(device);
+				dfuDevices.push({
+					type: deviceSpecs[d].productName,
+					dfuId: d,
+					specs: deviceSpecs[d]
+				});
+			}
+		}
+		return dfuDevices;
+	}
+
+	_getDfuId(device) {
+		// TODO: Remove the usage of dfuId and use device-constants
+		const vendorId = device._info.vendorId;
+		const productId = device._info.productId;
+		return vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+	}
+
 	_findDevice(){
+		// TODO: Replace the serial commands to use usb-utils
+
 		// Try to find a "normal" mode device through the serial port
 		return this.command('serial')
 			.findDevices()
 			.then(devices => {
 				if (devices.length === 0){
-					// Try to find a "DFU" mode device through dfu-util
-					return dfu.listDFUDevices();
+					return this.getDfuDevices();
 				} else {
 					return devices;
 				}
