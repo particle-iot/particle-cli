@@ -101,7 +101,7 @@ module.exports = class KeysCommand {
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
 			const buffer = fs.readFileSync(filename, null); // 'null' to get the raw data
-			await device.writeOverDfu(buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size, noErase: true, leave: leave });
+			await this._dfuWrite(device, buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: leave, noErase: true });
 
 			console.log('Key written to device!');
 		} catch (err) {
@@ -138,12 +138,8 @@ module.exports = class KeysCommand {
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
 			let buf;
-			try {
-				buf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
-			} catch (err) {
-				// FIXME: First time read may fail so we retry
-				buf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
-			}
+
+			buf = await this._dfuRead(device, { altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
 
 			fs.writeFileSync(filename, buf, 'binary');
 
@@ -302,7 +298,7 @@ module.exports = class KeysCommand {
 
 			if (!skipDFU) {
 				const buffer = fs.readFileSync(bufferFile);
-				await device.writeOverDfu(buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: false, noErase: true });
+				await this._dfuWrite(device, buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: false, noErase: true });
 			}
 
 			if (!skipDFU){
@@ -331,7 +327,7 @@ module.exports = class KeysCommand {
 			let segmentName = this._getServerKeySegmentName({ protocol });
 			let segment = this._validateSegmentSpecs(segmentName);
 
-			const keyBuf = await device.readOverDfu({ altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
+			const keyBuf = await this._dfuRead(device, { altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
 
 			let offset = serverKeySeg.addressOffset || 384;
 			let portOffset = serverKeySeg.portOffset || 450;
@@ -424,7 +420,7 @@ module.exports = class KeysCommand {
 	 */
 	async fetchDeviceProtocol({ specs, device }){
 		if (specs.transport && specs.alternativeProtocol){
-			const buf = await device.readOverDfu({ altSetting: specs.transport.alt, startAddr: specs.transport.address, size: specs.transport.size });
+			const buf = await this._dfuRead(device, { altSetting: specs.transport.alt, startAddr: specs.transport.address, size: specs.transport.size });
 			return buf[0] === 0xFF ? specs.defaultProtocol : specs.alternativeProtocol;
 		} else {
 			return specs.defaultProtocol;
@@ -642,6 +638,21 @@ module.exports = class KeysCommand {
 		}
 
 		return { error, specs: params };
+	}
+
+	async _dfuWrite(device, buffer, { altSetting, startAddr, leave, noErase }) {
+		await device.writeOverDfu(buffer, { altSetting, startAddr, leave, noErase });
+	}
+
+	async _dfuRead(device, { altSetting, startAddr, size }) {
+		let buf;
+		try {
+			buf = await device.readOverDfu({ altSetting, startAddr, size });
+		} catch (err) {
+			// FIXME: First time read may fail so we retry
+			buf = await device.readOverDfu({ altSetting, startAddr, size });
+		}
+		return buf;
 	}
 
 	_setDfuId(device) {
