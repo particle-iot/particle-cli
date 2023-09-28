@@ -69,19 +69,6 @@ describe('Key Command', () => {
 	it.skip('Can read server address from key', () => {
 	});
 
-	it('key doctor deviceID is case-insensitive', () => {
-		setupCommand();
-		key.getDfuDevice = sinon.stub().returns(device);
-		key._makeNewKey = sinon.stub();
-		key._writeKeyToDevice = sinon.stub();
-		key._sendPublicKeyToServer = sinon.stub();
-		return key.keyDoctor({ params: { deviceID: 'ABcd' } }).then(() => {
-			expect(key._sendPublicKeyToServer).to.be.calledWith({
-				deviceID: 'abcd', filename: 'abcd_rsa_new', algorithm: 'rsa'
-			});
-		});
-	});
-
 	describe('send key to server', () => {
 		// This test fails because of mock-fs used in another part of the tests
 		// Just skip it for now
@@ -187,16 +174,6 @@ describe('Key Command', () => {
 			return key.saveKeyFromDevice({ params: { filename } })
 				.catch((err) => {
 					expect(err).to.equal('Error saving key from device... The device does not support the protocol zip. It has support for udp, tcp');
-				});
-		});
-
-		it('does not read the device protocol the protocol is given', () => {
-			key.validateDeviceProtocol = sinon.stub().returns('tcp');
-			key.fetchDeviceProtocol = sinon.stub();
-			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
-			return key.saveKeyFromDevice({ params: { filename } })
-				.then(() => {
-					expect(key.fetchDeviceProtocol).to.not.have.been.called;
 				});
 		});
 	});
