@@ -1,6 +1,7 @@
 const fs = require('fs');
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/setup');
+const { filenameNoExt } = require('../lib/utilities');
 
 let api;
 function ApiClient() {
@@ -21,7 +22,7 @@ describe('Key Command', () => {
 	var device;
 
 	function setupDfu() {
-		key.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
+		key.platform = 'electron';
 		filename = 'abc.bin';
 	}
 
@@ -32,7 +33,7 @@ describe('Key Command', () => {
 		key = new KeysCommand(options);
 		key.madeSSL = false;
 
-		key.dfuId = '2b04:d006';
+		key.platform = 'photon';
 
 		api = {};
 		api.ensureToken = sinon.stub();
@@ -102,6 +103,13 @@ describe('Key Command', () => {
 		beforeEach(() => {
 			setupCommand();
 			setupDfu();
+		});
+
+		afterEach(() => {
+			const filenameDer = filenameNoExt(filename) + '.der';
+			if (fs.existsSync(filenameDer)) {
+				fs.unlinkSync(filenameDer);
+			}
 		});
 
 		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {

@@ -8,6 +8,7 @@ const temp = require('temp').track();
 const utilities = require('../lib/utilities');
 const ApiClient = require('../lib/api-client');
 const deviceSpecs = require('../lib/device-specs');
+const deviceConstants = require('@particle/device-constants');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
@@ -24,7 +25,7 @@ const ParticleApi = require('./api');
  */
 module.exports = class KeysCommand {
 	constructor(){
-		this.dfuId = null;
+		this.platform = null;
 		this.auth = settings.access_token;
 		this.api = new ParticleApi(settings.apiUrl, { accessToken: this.auth }).api;
 		this.ui = new UI({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, quiet: false });
@@ -100,9 +101,9 @@ module.exports = class KeysCommand {
 			let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
 			await this._saveKeyFromDevice({ filename: prefilename, force: true, device });
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
-			let segment = this._validateSegmentSpecs(segmentName);
+			let segment = this._validateSegments(segmentName);
 			const buffer = fs.readFileSync(filename, null); // 'null' to get the raw data
-			await this._dfuWrite(device, buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: leave, noErase: true });
+			await this._dfuWrite(device, buffer, { altSetting: segment.info.alt, startAddr: segment.info.address, leave: leave, noErase: true });
 
 			console.log(`Key ${filename} written to device`);
 		} catch (err) {
@@ -137,10 +138,10 @@ module.exports = class KeysCommand {
 		try {
 			protocol = await this.validateDeviceProtocol({ device });
 			let segmentName = this._getPrivateKeySegmentName({ protocol });
-			let segment = this._validateSegmentSpecs(segmentName);
+			let segment = this._validateSegments(segmentName);
 			let buf;
 
-			buf = await this._dfuRead(device, { altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
+			buf = await this._dfuRead(device, { altSetting: segment.info.alt, startAddr: segment.info.address, size: segment.info.size });
 
 			fs.writeFileSync(filename, buf, 'binary');
 
@@ -285,10 +286,6 @@ module.exports = class KeysCommand {
 		let skipDFU = false;
 		if (deviceType){
 			skipDFU = true;
-
-			// Lookup the DFU ID string that matches the provided deviceType:
-			this.dfuId = Object.keys(deviceSpecs)
-				.filter(key => deviceSpecs[key].productName.toLowerCase() === deviceType.toLowerCase())[0];
 		}
 
 		let device;
@@ -302,11 +299,11 @@ module.exports = class KeysCommand {
 			const bufferFile = await this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
 
 			let segmentName = this._getServerKeySegmentName({ protocol });
-			let segment = this._validateSegmentSpecs(segmentName);
+			let segment = this._validateSegments(segmentName);
 
 			if (!skipDFU) {
 				const buffer = fs.readFileSync(bufferFile);
-				await this._dfuWrite(device, buffer, { altSetting: segment.specs.alt, startAddr: segment.specs.address, leave: false, noErase: true });
+				await this._dfuWrite(device, buffer, { altSetting: segment.info.alt, startAddr: segment.info.address, leave: false, noErase: true });
 			}
 
 			if (!skipDFU){
@@ -333,9 +330,9 @@ module.exports = class KeysCommand {
 			const serverKeySeg = this._getServerKeySegment({ protocol });
 
 			let segmentName = this._getServerKeySegmentName({ protocol });
-			let segment = this._validateSegmentSpecs(segmentName);
+			let segment = this._validateSegments(segmentName);
 
-			const keyBuf = await this._dfuRead(device, { altSetting: segment.specs.alt, startAddr: segment.specs.address, size: segment.specs.size });
+			const keyBuf = await this._dfuRead(device, { altSetting: segment.info.alt, startAddr: segment.info.address, size: segment.info.size });
 
 			let offset = serverKeySeg.addressOffset || 384;
 			let portOffset = serverKeySeg.portOffset || 450;
@@ -375,23 +372,23 @@ module.exports = class KeysCommand {
 	 * Determines the protocol to use. If a protocol is set in options, that is used.
 	 * For single-protocol devices, the default protocol is used. For multi-protocol devices
 	 * the device is queried to find the current protocol, and that is used
-	 * @param specs The this.dfu device sepcs.
-	 * @returns {Promise.<String>}  The
+	 * @param protocol tcp or udp
+	 * @param device The usb dfu device obtained from usb utils
+	 * @returns {Promise.<String>} The protocol to use
 	 */
 
-	async validateDeviceProtocol({ specs, protocol, device } = {}) {
-		specs = specs || deviceSpecs[this.dfuId];
-
+	async validateDeviceProtocol({ protocol, device } = {}) {
 		if (protocol) {
 			return protocol;
 		}
 
 		try {
-			const detectedProtocol = await this.fetchDeviceProtocol({ specs, device });
-			const supported = [specs.defaultProtocol];
+			const detectedProtocol = await this.fetchDeviceProtocol({ device });
+			const supported = [this._getDefaultProtocol()];
 			// eslint-disable-next-line no-mixed-spaces-and-tabs
-			if (specs.alternativeProtocol) {
-				supported.push(specs.alternativeProtocol);
+			const alternativeProtocol = this._getAlternativeProtocol();
+			if (alternativeProtocol) {
+				supported.push(alternativeProtocol);
 			}
 			if (supported.indexOf(detectedProtocol) < 0) {
 				throw new VError(`The device does not support the protocol ${detectedProtocol}. It has support for ${supported.join(', ')}`);
@@ -404,17 +401,7 @@ module.exports = class KeysCommand {
 
 
 	_getServerKeySegmentName({ protocol }){
-		if (!this.dfuId){
-			return;
-		}
-
-		let specs = deviceSpecs[this.dfuId];
-
-		if (!specs){
-			return;
-		}
-
-		return `${protocol || specs.defaultProtocol || 'tcp'}ServerKey`;
+		return `${protocol || this._getDefaultProtocol() || 'tcp'}ServerKey`;
 	}
 
 	/**
@@ -423,31 +410,29 @@ module.exports = class KeysCommand {
 	 * that protocol is returned. For multi-protocol devices, the device is quried
 	 * to determine the currently active protocol.
 	 * Assumes that the this.dfu device has already been established.
-	 * @param specs The this.dfu specs for the device
+	 * @param device The usb dfu device obtained from usb utils
 	 * @returns {Promise.<String>} The protocol configured on the device.
 	 */
-	async fetchDeviceProtocol({ specs, device }){
-		if (specs.transport && specs.alternativeProtocol){
-			const buf = await this._dfuRead(device, { altSetting: specs.transport.alt, startAddr: specs.transport.address, size: specs.transport.size });
-			return buf[0] === 0xFF ? specs.defaultProtocol : specs.alternativeProtocol;
+	async fetchDeviceProtocol({ device }){
+		const dfuSegments = this._getDfuSegments();
+		if (dfuSegments && dfuSegments['transport'] && this._getAlternativeProtocol()) {
+			const transportSegment = dfuSegments['transport'];
+			const buf = await this._dfuRead(device, { altSetting: transportSegment.alt, startAddr: transportSegment.address, size: transportSegment.size });
+			return buf[0] === 0xFF ? this._getDefaultProtocol() : this._getAlternativeProtocol();
 		} else {
-			return specs.defaultProtocol;
+			return this._getDefaultProtocol();
 		}
 	}
 
 	_getServerKeySegment({ protocol }){
-		if (!this.dfuId){
-			return;
-		}
-
-		let specs = deviceSpecs[this.dfuId];
 		let segmentName = this._getServerKeySegmentName({ protocol });
 
-		if (!specs || !segmentName){
+		if (!segmentName){
 			return;
 		}
 
-		return specs[segmentName];
+		const segments = this._getDctKeySegments();
+		return segments[segmentName];
 	}
 
 	_getServerKeyAlgorithm({ protocol }){
@@ -471,32 +456,18 @@ module.exports = class KeysCommand {
 	}
 
 	_getPrivateKeySegmentName({ protocol }){
-		if (!this.dfuId){
-			return;
-		}
-
-		let specs = deviceSpecs[this.dfuId];
-
-		if (!specs){
-			return;
-		}
-
-		return `${protocol || specs.defaultProtocol || 'tcp'}PrivateKey`;
+		return `${protocol || this._getDefaultProtocol() || 'tcp'}PrivateKey`;
 	}
 
 	_getPrivateKeySegment({ protocol }){
-		if (!this.dfuId){
-			return;
-		}
-
-		let specs = deviceSpecs[this.dfuId];
 		let segmentName = this._getPrivateKeySegmentName({ protocol });
 
-		if (!specs || !segmentName){
+		if (!segmentName){
 			return;
 		}
 
-		return specs[segmentName];
+		const segments = this._getDctKeySegments();
+		return segments[segmentName];
 	}
 
 	_getPrivateKeyAlgorithm({ protocol }){
@@ -510,7 +481,7 @@ module.exports = class KeysCommand {
 		let alg = this._getServerKeyAlgorithm({ protocol });
 
 		if (!alg){
-			throw new VError('No device specs');
+			throw new VError('Unable to get the algorithm for that protocol');
 		}
 
 		let variant = this._getServerKeyVariant({ protocol });
@@ -547,7 +518,7 @@ module.exports = class KeysCommand {
 		let segment = this._getServerKeySegment({ protocol });
 
 		if (!segment){
-			throw new VError('No device specs');
+			throw new VError('No segment found for that protocol');
 		}
 
 		let buf, fileBuf;
@@ -625,27 +596,54 @@ module.exports = class KeysCommand {
 			if (!device.isInDfuMode) {
 				device = await usbUtils.reopenInDfuMode(device);
 			}
-			this._setDfuId(device);
+			this.platform = device._info.type;
 			return device;
 		} catch (err) {
 			throw new VError(ensureError(err), 'Unable to get DFU device');
 		}
 	}
 
-	_validateSegmentSpecs(segmentName) {
-		let specs = deviceSpecs[this.dfuId] || {};
-		let params = specs[segmentName];
+	_validateSegments(segmentName) {
+		let segments = this._getAllSegments() || {};
+		let params = segments[segmentName];
 		let error = null;
 
 		if (!segmentName) {
 			error = "segmentName required. Don't know where to read/write.";
-		} else if (!specs) {
-			error = "dfuId has no specification. Don't know how to read/write.";
+		} else if (!segments) {
+			error = "This device has no segments. Don't know how to read/write.";
 		} else if (!params) {
-			error = `segment ${segmentName} has no specs. Not aware of this segment.`;
+			error = `segment ${segmentName} is empty. Not aware of this segment.`;
 		}
 
-		return { error, specs: params };
+		return { error, info: params };
+	}
+
+	_getAllSegments() {
+		let dfuSegments = this._getDfuSegments() || {};
+		let dctSegments = this._getDctKeySegments() || {};
+		return { ...dfuSegments, ...dctSegments };
+	}
+	_getDfuSegments() {
+		return deviceConstants[this.platform].dfu.segments;
+	}
+
+	_getDctKeySegments() {
+		if (this.platform === 'core') {
+			return deviceSpecs.keysDctOffsets['generation1'];
+		} else {
+			return deviceSpecs.keysDctOffsets['laterGenerations'];
+		}
+	}
+
+	_getDefaultProtocol() {
+		return deviceConstants[this.platform].features.includes('tcp') ? 'tcp' : 'udp';
+	}
+
+	_getAlternativeProtocol() {
+		if (this.platform === 'electron') {
+			return 'tcp';
+		}
 	}
 
 	async _dfuWrite(device, buffer, { altSetting, startAddr, leave, noErase }) {
@@ -661,13 +659,6 @@ module.exports = class KeysCommand {
 			buf = await device.readOverDfu({ altSetting, startAddr, size });
 		}
 		return buf;
-	}
-
-	_setDfuId(device) {
-		// TODO: Remove the usage of dfuId and use device-constants directly
-		const vendorId = device._info.vendorId;
-		const productId = device._info.productId;
-		this.dfuId = vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
 	}
 };
 
