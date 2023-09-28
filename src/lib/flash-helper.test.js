@@ -1,7 +1,8 @@
 const { expect, sinon } = require('../../test/setup');
 const { HalModuleParser, firmwareTestHelper, ModuleInfo, createAssetModule } = require('binary-version-reader');
-const { createFlashSteps, filterModulesToFlash, prepareDeviceForFlash } = require('./flash-helper');
+const chalk = require('chalk');
 const usbUtils = require('../cmd/usb-util');
+const { createFlashSteps, filterModulesToFlash, prepareDeviceForFlash, validateDFUSupport } = require('./flash-helper');
 
 describe('flash-helper', () => {
 	const createModules = async () => {
@@ -454,6 +455,69 @@ describe('flash-helper', () => {
 			expect(reopenInDfuModeStub).to.not.have.been.called;
 			expect(reopenInNormalStub).to.not.have.been.called;
 			expect(device.enterListeningMode).to.not.have.been.called;
+		});
+	});
+	describe('validateDFUSupport', () => {
+		let ui;
+		beforeEach(() => {
+			ui = {
+				write: sinon.stub(),
+				chalk
+			};
+		});
+		it('throws an error if the device os version does not support DFU', async () => {
+			let error;
+			const device = {
+				isInDfuMode: false,
+				platformId: 32,
+				firmwareVersion: '1.0.0',
+			};
+			try {
+				await validateDFUSupport({ device, ui });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
+		});
+		it('throws an error if the current device os is not defined and the device is not in DFU', async () => {
+			let error;
+			const device = {
+				isInDfuMode: false,
+				platformId: 32,
+			};
+			try {
+				await validateDFUSupport({ device, ui });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
+		});
+		it('passes if the device is in DFU mode', async () => {
+			let error;
+			const device = {
+				isInDfuMode: true,
+				platformId: 32,
+			};
+			try {
+				await validateDFUSupport({ device, ui });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.be.undefined;
+		});
+		it('passes if the current device OS is greater than - equals to 2.0.0', async () => {
+			let error;
+			const device = {
+				isInDfuMode: false,
+				platformId: 32,
+				firmwareVersion: '2.0.0',
+			};
+			try {
+				await validateDFUSupport({ device, ui });
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.be.undefined;
 		});
 	});
 });
