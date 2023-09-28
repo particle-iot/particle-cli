@@ -186,18 +186,6 @@ describe('Key Command', () => {
 		});
 	});
 
-	describe('keyAlgorithmForProtocol', () => {
-		before(setupCommand);
-
-		it('returns rsa for TCP protocol', () => {
-			expect(key.keyAlgorithmForProtocol('tcp')).eql('rsa');
-		});
-
-		it('returns ec for UDP protocol', () => {
-			expect(key.keyAlgorithmForProtocol('udp')).eql('ec');
-		});
-	});
-
 	describe('serverKeyFilename', () => {
 		before(setupCommand);
 

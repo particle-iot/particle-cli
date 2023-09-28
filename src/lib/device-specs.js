@@ -5,6 +5,7 @@ const keysDctOffsets = {
 			size: 2048,
 			format: 'der',
 			alt: 1,
+			alg: 'rsa',
 			addressOffset: 384,
 			portOffset: 450
 		},
@@ -12,7 +13,8 @@ const keysDctOffsets = {
 			address: 0x00002000,
 			size: 1024,
 			format: 'der',
-			alt: 1
+			alt: 1,
+			alg: 'rsa'
 		}
 	},
 	laterGenerations: {
