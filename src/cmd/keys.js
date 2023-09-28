@@ -293,7 +293,7 @@ module.exports = class KeysCommand {
 				console.log('Okay!  Formatted server key file generated for this type of device.');
 			}
 		} catch (err) {
-			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
+			throw new VError(ensureError(err), 'Make sure your device is connected to your computer');
 		} finally {
 			if (device) {
 				await device.close();
@@ -337,7 +337,7 @@ module.exports = class KeysCommand {
 			console.log(url.format(result));
 			return result;
 		} catch (err) {
-			throw new VError(ensureError(err), 'Make sure your device is in DFU mode (blinking yellow), and is connected to your computer.');
+			throw new VError(ensureError(err), 'Make sure your device is connected to your computer');
 		} finally {
 			if (device) {
 				await device.close();
