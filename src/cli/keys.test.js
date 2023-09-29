@@ -56,10 +56,9 @@ describe('Keys Command-Line Interface', () => {
 		});
 
 		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['keys', 'new', '--protocol', 'udp']);
+			const argv = commandProcessor.parse(root, ['keys', 'new']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ filename: undefined });
-			expect(argv.protocol).to.equal('udp');
 		});
 
 		it('Includes help', () => {
@@ -69,9 +68,6 @@ describe('Keys Command-Line Interface', () => {
 				expect(helpText).to.equal([
 					'Generate a new set of keys for your device',
 					'Usage: particle keys new [options] [filename]',
-					'',
-					'Options:',
-					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
 					''
 				].join('\n'));
 			});
@@ -169,10 +165,9 @@ describe('Keys Command-Line Interface', () => {
 		});
 
 		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['keys', 'doctor', '1234', '--protocol', 'udp']);
+			const argv = commandProcessor.parse(root, ['keys', 'doctor', '1234']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ deviceID: '1234' });
-			expect(argv.protocol).to.equal('udp');
 		});
 
 		it('Includes help', () => {
@@ -182,9 +177,6 @@ describe('Keys Command-Line Interface', () => {
 				expect(helpText).to.equal([
 					'Creates and assigns a new key to your device, and uploads it to the cloud',
 					'Usage: particle keys doctor [options] [deviceID]',
-					'',
-					'Options:',
-					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
 					'',
 				].join('\n'));
 			});
@@ -213,11 +205,10 @@ describe('Keys Command-Line Interface', () => {
 		});
 
 		it('Parses options', () => {
-			const flags = ['--protocol', 'udp', '--host', 'example.com', '--port', '5050', '--deviceType', 'argon'];
+			const flags = ['--host', 'example.com', '--port', '5050', '--deviceType', 'argon'];
 			const argv = commandProcessor.parse(root, ['keys', 'server', ...flags]);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ filename: undefined, outputFilename: undefined });
-			expect(argv.protocol).to.equal('udp');
 			expect(argv.host).to.equal('example.com');
 			expect(argv.port).to.equal(5050);
 			expect(argv.deviceType).to.equal('argon');
@@ -232,7 +223,6 @@ describe('Keys Command-Line Interface', () => {
 					'Usage: particle keys server [options] [filename] [outputFilename]',
 					'',
 					'Options:',
-					'  --protocol    Communication protocol for the device using the key. tcp or udp  [string]',
 					'  --host        Hostname or IP address of the server to add to the key  [string]',
 					'  --port        Port number of the server to add to the key  [number]',
 					'  --deviceType  Generate key file for the provided device type  [string]',
@@ -253,10 +243,9 @@ describe('Keys Command-Line Interface', () => {
 		});
 
 		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['keys', 'address', '--protocol', 'udp']);
+			const argv = commandProcessor.parse(root, ['keys', 'address']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({});
-			expect(argv.protocol).to.equal('udp');
 		});
 
 		it('Includes help', () => {
@@ -266,9 +255,6 @@ describe('Keys Command-Line Interface', () => {
 				expect(helpText).to.equal([
 					'Read server configured in device server public key',
 					'Usage: particle keys address [options]',
-					'',
-					'Options:',
-					'  --protocol  Communication protocol for the device using the key. tcp or udp  [string]',
 					'',
 				].join('\n'));
 			});

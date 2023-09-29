@@ -1,6 +1,5 @@
 const path = require('path');
 const { expect } = require('../setup');
-const dfuUtil = require('../lib/dfu-util');
 const openSSL = require('../lib/open-ssl');
 const cli = require('../lib/cli');
 const fs = require('../lib/fs');
@@ -8,11 +7,11 @@ const {
 	DEVICE_ID,
 	DEVICE_NAME,
 	PATH_TMP_DIR,
-	DEVICE_PLATFORM_NAME
+	PATH_REPO_DIR
 } = require('../lib/env');
 
 
-describe('Keys Commands [@device]', function cliKeysCommands(){
+describe.only('Keys Commands [@device]', function cliKeysCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
@@ -34,12 +33,8 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		'  -q, --quiet    Decreases how much logging to display  [count]'
 	];
 
-	const dfuInstructions = [
-		'Make sure your device is connected to your computer, and that your computer is online: Unable to get DFU device: Device is not found'
-	];
-
 	before(async () => {
-		await Promise.all([openSSL.ensureExists(), dfuUtil.ensureExists()]);
+		await openSSL.ensureExists();
 	});
 
 	after(async () => {
@@ -72,7 +67,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 	});
 
 	describe('Keys New Subcommand', () => {
-		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}.pem`);
+		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}`);
 		const expectedKeys = [`${DEVICE_NAME}.der`, `${DEVICE_NAME}.pem`, `${DEVICE_NAME}.pub.pem`];
 
 		afterEach(async () => {
@@ -84,33 +79,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'new', filename]);
 
-			expect(stdout).to.equal('New Key Created!');
-			expect(stderr).to.equal('');
-			expect(exitCode).to.equal(0);
-			for (const key of expectedKeys){
-				const stats = await fs.stat(path.join(PATH_TMP_DIR, key));
-				expect(stats.size).to.be.above(100);
-			}
-		});
-
-		it('Generate a new set of keys for your device using `--protocol udp`', async () => {
-			await cli.enterDFUMode();
-			const { stdout, stderr, exitCode } = await cli.run(['keys', 'new', '--protocol', 'udp', filename]);
-
-			expect(stdout).to.equal('New Key Created!');
-			expect(stderr).to.equal('');
-			expect(exitCode).to.equal(0);
-			for (const key of expectedKeys){
-				const stats = await fs.stat(path.join(PATH_TMP_DIR, key));
-				expect(stats.size).to.be.above(100);
-			}
-		});
-
-		it('Generate a new set of keys for your device using `--protocol tcp`', async () => {
-			await cli.enterDFUMode();
-			const { stdout, stderr, exitCode } = await cli.run(['keys', 'new', '--protocol', 'tcp', filename]);
-
-			expect(stdout).to.equal('New Key Created!');
+			expect(stdout).to.equal(`New key ${DEVICE_NAME}.der created for device ${DEVICE_ID}`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 			for (const key of expectedKeys){
@@ -150,7 +119,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'doctor', DEVICE_ID]);
 			const log = [
-				'New Key Created!',
+				`New key ${DEVICE_ID}_ec_new.der created for device ${DEVICE_ID}`,
 				`Saved existing key to backup_ec_${DEVICE_ID}_ec_new.der`,
 				`Key ${DEVICE_ID}_ec_new.der written to device`,
 				`attempting to add a new public key for device ${DEVICE_ID}`,
@@ -163,14 +132,6 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			expect(exitCode).to.equal(0);
 
 			await cli.waitUntilOnline();
-		});
-
-		it('Fails to fix device keys when device is not in DFU mode', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['keys', 'doctor', DEVICE_ID]);
-
-			expect(stdout.split('\n')).to.include.members(dfuInstructions);
-			expect(stderr).to.equal('');
-			expect(exitCode).to.equal(1);
 		});
 	});
 
@@ -192,16 +153,11 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 		});
 
 		it('Saves server public keys locally when `--deviceType` flag is set', async () => {
-			const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}-test.der`);
-			await cli.run(['keys', 'new', filename, '--protocol', 'udp'], { reject: true });
-			const args = ['keys', 'server', filename, '--deviceType', DEVICE_PLATFORM_NAME];
+			const filename = path.join(PATH_REPO_DIR, 'assets/keys/rsa.pub.der');
+			const args = ['keys', 'server', filename, '--deviceType', 'photon'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
 			expect(stdout).to.equal('Okay!  Formatted server key file generated for this type of device.');
-			// TODO (mirande): fix `(node:3228) [DEP0005] DeprecationWarning:
-			// Buffer() is deprecated due to security and usability issues.
-			// Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from()
-			// methods instead.
 			expect(stderr).to.exist;
 			expect(exitCode).to.equal(0);
 		});

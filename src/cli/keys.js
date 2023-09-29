@@ -1,15 +1,8 @@
 module.exports = ({ commandProcessor, root }) => {
 	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key");
 
-	const protocolOption = {
-		'protocol': {
-			description: 'Communication protocol for the device using the key. tcp or udp'
-		}
-	};
-
 	commandProcessor.createCommand(keys, 'new', 'Generate a new set of keys for your device', {
 		params: '[filename]',
-		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().makeNewKey(args);
@@ -55,7 +48,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(keys, 'doctor', 'Creates and assigns a new key to your device, and uploads it to the cloud', {
 		params: '[deviceID]',
-		options: protocolOption,
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().keyDoctor(args);
@@ -65,7 +57,7 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(keys, 'server', 'Switch server public keys.', {
 		epilogue: 'Defaults to the Particle public cloud or you can provide another key in DER format and the server hostname or IP and port',
 		params: '[filename] [outputFilename]',
-		options: Object.assign({}, protocolOption, {
+		options: {
 			'host': {
 				description: 'Hostname or IP address of the server to add to the key'
 			},
@@ -76,7 +68,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'deviceType': {
 				description: 'Generate key file for the provided device type'
 			}
-		}),
+		},
 		handler: (args) => {
 			const KeysCommand = require('../cmd/keys');
 			return new KeysCommand().writeServerPublicKey(args);
@@ -84,10 +76,9 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(keys, 'address', 'Read server configured in device server public key', {
-		options: protocolOption,
-		handler: (args) => {
+		handler: () => {
 			const KeysCommand = require('../cmd/keys');
-			return new KeysCommand().readServerAddress(args);
+			return new KeysCommand().readServerAddress();
 		}
 	});
 

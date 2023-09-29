@@ -20,11 +20,6 @@ describe('Key Command', () => {
 	var filename;
 	var device;
 
-	function setupDfu() {
-		key.dfuId = '2b04:d00a'; // usbIDForPlatform('electron')
-		filename = 'abc.bin';
-	}
-
 	function setupCommand(options = {}) {
 		utilities.deferredChildProcess = sinon.stub().returns(Promise.resolve());
 
@@ -32,7 +27,7 @@ describe('Key Command', () => {
 		key = new KeysCommand(options);
 		key.madeSSL = false;
 
-		key.dfuId = '2b04:d006';
+		key.platform = 'photon';
 
 		api = {};
 		api.ensureToken = sinon.stub();
@@ -98,106 +93,11 @@ describe('Key Command', () => {
 		});
 	});
 
-	describe('address', () => {
-		beforeEach(() => {
-			setupCommand();
-			setupDfu();
-		});
-
-		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
-			key.getDfuDevice = sinon.stub().returns(device);
-			device.readOverDfu = sinon.stub().returns(Promise.resolve(Buffer.from([1,2,3,4,5])));
-			return key.readServerAddress({})
-				.then(() => {
-					expect(device.readOverDfu).to.have.property('callCount', 2);
-				});
-		});
-
-		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', () => {
-			key.getDfuDevice = sinon.stub().returns(device);
-			key.fetchDeviceProtocol = sinon.stub().returns('tcp');
-			device.readOverDfu = sinon.stub().returns(Promise.resolve(Buffer.from([1,2,3,4,5])));
-			return key.readServerAddress({})
-				.then(() => {
-					expect(device.readOverDfu).to.have.property('callCount', 1);
-				});
-		});
-		// todo - stub readBuffer to return a key and check the field decomposition
-	});
-
-	describe('load', () => {
-		beforeEach(() => {
-			setupCommand();
-			setupDfu();
-		});
-
-		it('calls validateDeviceProtocol to setup the default protocol', () => {
-			key.validateDeviceProtocol = sinon.stub().returns('tcp');
-			key.getDfuDevice = sinon.stub().returns(device);
-			filename = key.serverKeyFilename({ alg: 'rsa' });
-			return key.writeKeyToDevice({ params: { filename } })
-				.then(() => {
-					expect(key.validateDeviceProtocol).to.have.been.called;
-					expect(device.writeOverDfu).to.have.property('callCount', 1);
-				});
-		});
-	});
-
-	describe('save', () => {
-		beforeEach(() => {
-			setupCommand();
-			setupDfu();
-		});
-
-		it('reads device protocol when the device supports multiple protocols and no protocol is given, alternate protocol', () => {
-			key.getDfuDevice = sinon.stub().returns(device);
-			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
-			return key.saveKeyFromDevice({ params: { filename } })
-				.then(() => {
-					expect(device.readOverDfu).to.have.property('callCount', 2);
-				});
-		});
-
-		it('reads device protocol when the device supports multiple protocols and no protocol is given, default protocol', () => {
-			key.getDfuDevice = sinon.stub().returns(device);
-			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
-			return key.saveKeyFromDevice({ params: { filename } })
-				.then(() => {
-					expect(device.readOverDfu).to.have.property('callCount', 2);
-				});
-		});
-
-		it('raises an error when the protocol is not recognized', () => {
-			key.validateDeviceProtocol = sinon.stub().returns('zip');
-			key.getDfuDevice = sinon.stub().returns(device);
-			device.readOverDfu = sinon.stub().returns(Promise.resolve(0xFF));
-			return key.saveKeyFromDevice({ params: { filename } })
-				.catch((err) => {
-					expect(err).to.equal('Error saving key from device... The device does not support the protocol zip. It has support for udp, tcp');
-				});
-		});
-	});
-
-	describe('keyAlgorithmForProtocol', () => {
-		before(setupCommand);
-
-		it('returns rsa for TCP protocol', () => {
-			expect(key.keyAlgorithmForProtocol('tcp')).eql('rsa');
-		});
-
-		it('returns ec for UDP protocol', () => {
-			expect(key.keyAlgorithmForProtocol('udp')).eql('ec');
-		});
-	});
-
 	describe('serverKeyFilename', () => {
 		before(setupCommand);
 
-		it('returns name with algorithm only when no variant is provided', () => {
+		it('returns name with algorithm', () => {
 			expect(key.serverKeyFilename({ alg: 'ec' })).to.match(/ec.pub.der$/);
-		});
-		it('returns name with algorithm and variant when variant is provided', () => {
-			expect(key.serverKeyFilename({ alg: 'ec', variant: 'gen3' })).to.match(/ec-gen3.pub.der$/);
 		});
 	});
 });

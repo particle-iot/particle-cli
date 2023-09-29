@@ -5,7 +5,7 @@ const prompt = require('inquirer').prompt;
 const { delay } = require('../lib/utilities');
 const ApiClient = require('../lib/api-client');
 const usbUtils = require('./usb-util');
-const deviceSpecs = require('../lib/device-specs');
+const deviceConstants = require('@particle/device-constants');
 
 function EarlyReturnError(){
 }
@@ -73,22 +73,28 @@ module.exports = class DoctorCommand {
 		const dfuDevices = [];
 		for (const device of devices) {
 			if (device.isInDfuMode) {
-				const d = this._getDfuId(device);
 				dfuDevices.push({
-					type: deviceSpecs[d].productName,
-					dfuId: d,
-					specs: deviceSpecs[d]
+					type: this._getType(device),
+					specs: {
+						features: this._getFeatures(device),
+						generation: this._getGeneration(device),
+					}
 				});
 			}
 		}
 		return dfuDevices;
 	}
 
-	_getDfuId(device) {
-		// TODO: Remove the usage of dfuId and use device-constants
-		const vendorId = device._info.vendorId;
-		const productId = device._info.productId;
-		return vendorId.toString(16).padStart(4, '0') + ':' + productId.toString(16).padStart(4, '0');
+	_getFeatures(device) {
+		return deviceConstants[device.type].features;
+	}
+
+	_getType(device) {
+		return deviceConstants[device.type].displayName;
+	}
+
+	_getGeneration(device) {
+		return deviceConstants[device.type].generation;
 	}
 
 	_findDevice(){
@@ -460,7 +466,7 @@ module.exports = class DoctorCommand {
 		console.log(chalk.bold.white('https://community.particle.io/'));
 	}
 
-	_showDoctorError(e){
+	_showDoctorError(e) {
 		if (e instanceof EarlyReturnError){
 			return;
 		}
