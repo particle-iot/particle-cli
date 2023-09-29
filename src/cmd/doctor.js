@@ -76,7 +76,8 @@ module.exports = class DoctorCommand {
 				dfuDevices.push({
 					type: this._getType(device),
 					specs: {
-						features: this._getFeatures(device)
+						features: this._getFeatures(device),
+						generation: this._getGeneration(device),
 					}
 				});
 			}
@@ -90,6 +91,10 @@ module.exports = class DoctorCommand {
 
 	_getType(device) {
 		return deviceConstants[device.type].displayName;
+	}
+
+	_getGeneration(device) {
+		return deviceConstants[device.type].generation;
 	}
 
 	_findDevice(){
@@ -461,7 +466,7 @@ module.exports = class DoctorCommand {
 		console.log(chalk.bold.white('https://community.particle.io/'));
 	}
 
-	_showDoctorError(e){
+	_showDoctorError(e) {
 		if (e instanceof EarlyReturnError){
 			return;
 		}
