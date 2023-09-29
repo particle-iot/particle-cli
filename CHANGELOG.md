@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.16.0 - Sep 29 2023
+
+* Ask user to manually switch to DFU for Device OS < 2.0.0
+* Rework keys commands and remove usage of dfu-util
+
 # 3.15.1 - Sep 26 2023
 
 * Fix `particle flash --local` add retry logic for control request updates
