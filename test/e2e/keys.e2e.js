@@ -1,6 +1,5 @@
 const path = require('path');
 const { expect } = require('../setup');
-const dfuUtil = require('../lib/dfu-util');
 const openSSL = require('../lib/open-ssl');
 const cli = require('../lib/cli');
 const fs = require('../lib/fs');
@@ -35,7 +34,7 @@ describe.only('Keys Commands [@device]', function cliKeysCommands(){
 	];
 
 	before(async () => {
-		await Promise.all([openSSL.ensureExists(), dfuUtil.ensureExists()]);
+		await openSSL.ensureExists();
 	});
 
 	after(async () => {
