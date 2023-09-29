@@ -55,29 +55,46 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async flashOverUsb({ binary, factory }) {
-		if (utilities.getFilenameExt(binary) === '.zip') {
-			throw new Error("Use 'particle flash --local' to flash a zipped bundle.");
+		let device;
+		try {
+			if (utilities.getFilenameExt(binary) === '.zip') {
+				throw new Error("Use 'particle flash --local' to flash a zipped bundle.");
+			}
+
+			device = await usbUtils.getOneUsbDevice({ ui: this.ui });
+			const platformName = platformForId(device.platformId).name;
+			validateDFUSupport({ device, ui: this.ui });
+
+			let files;
+			const knownAppPath = knownAppsForPlatform(platformName)[binary];
+			if (knownAppPath) {
+				files = [knownAppPath];
+			} else {
+				files = [binary];
+			}
+
+			const modulesToFlash = await parseModulesToFlash({ files });
+
+			await this._validateModulesForPlatform({
+				modules: modulesToFlash,
+				platformId: device.platformId,
+				platformName
+			});
+			const flashSteps = await createFlashSteps({
+				modules: modulesToFlash,
+				isInDfuMode: device.isInDfuMode,
+				platformId: device.platformId,
+				factory
+			});
+
+			this.ui.write(`Flashing ${platformName} device ${device.id}`);
+			const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
+			await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
+		} catch (error) {
+			if (device) {
+				await device.close();
+			}
 		}
-
-		const device = await usbUtils.getOneUsbDevice({ ui: this.ui });
-		const platformName = platformForId(device.platformId).name;
-		validateDFUSupport({ device, ui: this.ui });
-
-		let files;
-		const knownAppPath = knownAppsForPlatform(platformName)[binary];
-		if (knownAppPath) {
-			files = [knownAppPath];
-		} else {
-			files = [binary];
-		}
-		const modulesToFlash = await parseModulesToFlash({ files });
-
-		await this._validateModulesForPlatform({ modules: modulesToFlash, platformId: device.platformId, platformName });
-		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId, factory });
-
-		this.ui.write(`Flashing ${platformName} device ${device.id}`);
-		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
-		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 	}
 
 	flashCloud({ device, files, target }) {
