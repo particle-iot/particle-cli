@@ -12,7 +12,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Keys Commands [@device]', function cliKeysCommands(){
+describe.only('Keys Commands [@device]', function cliKeysCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
@@ -68,7 +68,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 	});
 
 	describe('Keys New Subcommand', () => {
-		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}.pem`);
+		const filename = path.join(PATH_TMP_DIR, `${DEVICE_NAME}`);
 		const expectedKeys = [`${DEVICE_NAME}.der`, `${DEVICE_NAME}.pem`, `${DEVICE_NAME}.pub.pem`];
 
 		afterEach(async () => {
@@ -80,7 +80,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'new', filename]);
 
-			expect(stdout).to.equal(`New key created for device ${DEVICE_ID}`);
+			expect(stdout).to.equal(`New key ${DEVICE_NAME}.der created for device ${DEVICE_ID}`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 			for (const key of expectedKeys){
@@ -120,7 +120,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'doctor', DEVICE_ID]);
 			const log = [
-				`New key created for device ${DEVICE_ID}`,
+				`New key ${DEVICE_ID}_ec_new.der created for device ${DEVICE_ID}`,
 				`Saved existing key to backup_ec_${DEVICE_ID}_ec_new.der`,
 				`Key ${DEVICE_ID}_ec_new.der written to device`,
 				`attempting to add a new public key for device ${DEVICE_ID}`,

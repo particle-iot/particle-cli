@@ -13,6 +13,7 @@ const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
 const ParticleApi = require('./api');
+const { validateDFUSupport } = require('../lib/flash-helper');
 
 /**
  * Commands for managing encryption keys.
@@ -40,6 +41,7 @@ module.exports = class KeysCommand {
 
 			await deferredChildProcess(`openssl ${alg} -in "${filename}.pem" -pubout -out "${filename}.pub.pem"`);
 			await deferredChildProcess(`openssl ${alg} -in "${filename}.pem" -outform DER -out "${filename}.der"`);
+			return `${filename}.der`;
 		} catch (err) {
 			throw new VError(ensureError(err), 'Failed to generate key using OpenSSL');
 		}
@@ -55,8 +57,8 @@ module.exports = class KeysCommand {
 			device = await this.getDfuDevice({ deviceID });
 			const protocol = this._getDeviceProtocol();
 			const alg = this._getPrivateKeyAlgorithm({ protocol });
-			await this.makeKeyOpenSSL(filename || device.id, alg);
-			console.log(`New key created for device ${device.id}`);
+			filename = await this.makeKeyOpenSSL(filename || device.id, alg);
+			console.log(`New key ${path.basename(filename)} created for device ${device.id}`);
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error creating keys');
 		} finally {
@@ -477,16 +479,13 @@ module.exports = class KeysCommand {
 	}
 
 	async getDfuDevice({ deviceID } = {}) {
-		try {
-			let device = await usbUtils.getOneUsbDevice({ idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui });
-			if (!device.isInDfuMode) {
-				device = await usbUtils.reopenInDfuMode(device);
-			}
-			this.platform = device._info.type;
-			return device;
-		} catch (err) {
-			throw new VError(ensureError(err), 'Unable to get DFU device');
+		let device = await usbUtils.getOneUsbDevice({ idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui });
+		if (!device.isInDfuMode) {
+			validateDFUSupport({ device, ui: this.ui });
+			device = await usbUtils.reopenInDfuMode(device);
 		}
+		this.platform = device._info.type;
+		return device;
 	}
 
 	_getDctKeySegments() {
