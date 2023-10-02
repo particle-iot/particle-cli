@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.16.1 - Oct 2 2023
+
+* Revert unintentional change to particle serial commands
+
 # 3.16.0 - Sep 29 2023
 
 * Ask user to manually switch to DFU for Device OS < 2.0.0
