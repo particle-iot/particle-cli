@@ -23,7 +23,6 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	async createBundle({ saveTo, assets, params: { appBinary } }) {
-		await this._checkAssetSupport();
 		const { assetsPath, bundleFilename } = await this._validateArguments({ appBinary, saveTo, assets });
 		const assetsList = await this._getAssets({ assetsPath });
 		this._displayAssets({ appBinary, assetsPath, assetsList });
@@ -31,6 +30,22 @@ module.exports = class BundleCommands extends CLICommandBase {
 		this._displaySuccess({ bundleFilename });
 
 		return bundleFilename;
+	}
+
+	async _validateArguments({ appBinary, saveTo, assets }) {
+		if (!await fs.exists(appBinary)) {
+			throw new Error(`The file ${appBinary} does not exist`);
+		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
+			throw new Error(`The file ${appBinary} is not a valid binary`);
+		} else if (saveTo && utilities.getFilenameExt(saveTo) !== '.zip') {
+			throw new Error(`The target file ${saveTo} must be a .zip file`);
+		}
+
+		await this._checkAssetSupport(appBinary);
+
+		let assetsPath = await this._getAssetsPath(assets);
+		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
+		return { assetsPath, bundleFilename };
 	}
 
 	async _checkAssetSupport(appBinary) {
@@ -46,20 +61,6 @@ module.exports = class BundleCommands extends CLICommandBase {
 		if (version < MIN_ASSET_SUPPORT_VERSION) {
 			throw new Error('Asset support only available for device OS 5.5.0 and above');
 		}
-	}
-
-	async _validateArguments({ appBinary, saveTo, assets }) {
-		if (!await fs.exists(appBinary)) {
-			throw new Error(`The file ${appBinary} does not exist`);
-		} else if (utilities.getFilenameExt(appBinary) !== '.bin') {
-			throw new Error(`The file ${appBinary} is not a valid binary`);
-		} else if (saveTo && utilities.getFilenameExt(saveTo) !== '.zip') {
-			throw new Error(`The target file ${saveTo} must be a .zip file`);
-		}
-
-		let assetsPath = await this._getAssetsPath(assets);
-		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
-		return { assetsPath, bundleFilename };
 	}
 
 	async _getAssetsPath(assets) {
