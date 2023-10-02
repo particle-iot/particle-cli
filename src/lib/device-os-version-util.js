@@ -100,6 +100,63 @@ async function isModuleDownloaded(module, version, platformName) {
 	}
 }
 
+async function getCacheFile() {
+	const particleDir = ensureFolder();
+	const filePath =  path.join(particleDir, 'device-os-flash/binaries/device-os-version-cached.json');
+	let data = [];
+	try {
+		const exists = await fs.pathExists(filePath);
+		if (exists) {
+			const fileContent = await fs.readFile(filePath, 'utf8');
+			data = JSON.parse(fileContent);
+		} else {
+			await fs.writeJson(filePath, []);
+		}
+
+		return { data, cachePath: filePath };
+	} catch (error) {
+		// ignore
+		throw new Error(`Error opening or creating the cache file: ${error.message}`);
+	}
+}
+
+async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
+	let deviceOsVersion;
+	const { data: cachedData, cachePath } = await getCacheFile();
+	try {
+		deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
+		// save or update the cache with the new version
+		const cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
+		if (!cachedVersion) {
+			cachedData.push({
+				platformId,
+				version: deviceOsVersion.version,
+				internal_version: deviceOsVersion.internal_version,
+				base_url: deviceOsVersion.base_url,
+				modules: deviceOsVersion.modules,
+			});
+		} else {
+			cachedVersion.base_url = deviceOsVersion.base_url;
+			cachedVersion.modules = deviceOsVersion.modules;
+		}
+		await fs.writeJson(cachePath, cachedData);
+	} catch (error) {
+		// check if the error is internet related
+		if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND') || error.message.includes('Network error')) {
+			// check if the version is cached
+			const cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
+			if (cachedVersion) {
+				return cachedVersion;
+			}
+			throw new Error(`Device OS version not found in cache for platform: ${platformId} version: ${version} and there was an internet connection error`);
+
+		}
+		throw error;
+	}
+
+	return deviceOsVersion;
+}
+
 /**
  * Download the binaries for the given platform and version by default the latest version is downloaded
  * @param {Object} api - the api object
@@ -113,8 +170,7 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		// get platform by id from device-constants
 		const platform = Object.values(deviceConstants).filter(p => p.public).find(p => p.id === platformId);
 		// get the device os versions
-		// TODO: when the machine is not connected to the internet, return without any error
-		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
+		const deviceOsVersion = await downloadCachedDeviceOsVersion({ api, platformId, version });
 		// omit user part application
 		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
 
@@ -148,7 +204,7 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		if (error.message.includes('404')) {
 			throw new Error(`Device OS version not found for platform: ${platformId} version: ${version}`);
 		}
-		throw new Error('Error downloading binaries for platform: ' + platformId + ' version: ' + version + ' error: ' + error.message);
+		throw error;
 	}
 
 }
