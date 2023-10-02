@@ -121,12 +121,34 @@ async function getCacheFile() {
 }
 
 async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
-	let deviceOsVersion;
+	let deviceOsVersion, cachedVersion, latest=false;
 	const { data: cachedData, cachePath } = await getCacheFile();
 	try {
 		deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
-		// save or update the cache with the new version
-		const cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
+		if (version !== 'latest') {
+			const latestDeviceOsVersion = await api.getDeviceOsVersions(platformId, 'latest');
+			if (latestDeviceOsVersion.internal_version === deviceOsVersion.internal_version) {
+				latest = true;
+				// find the latest version in the cache and remove the flag
+				const latestCachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
+				if (latestCachedVersion && latestCachedVersion.version !== version) {
+					latestCachedVersion.latest = false;
+				}
+			}
+		} else {
+			latest = true;
+			const latestCachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
+			if (latestCachedVersion && latestCachedVersion.version !== deviceOsVersion.version) {
+				latestCachedVersion.latest = false;
+			}
+		}
+
+		if (version === 'latest') {
+			cachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
+		} else {
+			cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
+		}
+
 		if (!cachedVersion) {
 			cachedData.push({
 				platformId,
@@ -134,6 +156,7 @@ async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
 				internal_version: deviceOsVersion.internal_version,
 				base_url: deviceOsVersion.base_url,
 				modules: deviceOsVersion.modules,
+				latest
 			});
 		} else {
 			cachedVersion.base_url = deviceOsVersion.base_url;
@@ -143,8 +166,14 @@ async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
 	} catch (error) {
 		// check if the error is internet related
 		if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND') || error.message.includes('Network error')) {
+			let cachedVersion;
 			// check if the version is cached
-			const cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
+			if (version === 'latest') {
+				cachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
+			} else {
+				cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
+			}
+
 			if (cachedVersion) {
 				return cachedVersion;
 			}
