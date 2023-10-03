@@ -53,57 +53,25 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		if (error.message.includes('404')) {
 			throw new Error(`Device OS version not found for platform: ${platformId} version: ${version}`);
 		}
+		if (isInternetConnectionError(error)) {
+			throw new Error(`Device OS version not found in cache for platform: ${platformId} version: ${version} and there was an internet connection error`);
+		}
 		throw error;
 	}
 
 }
 
 async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
-	let deviceOsVersion, cachedVersion, latest=false;
 	const { data: cachedData, cachePath } = await getCacheFile();
 	try {
-		deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
-		if (version !== 'latest') {
-			const latestDeviceOsVersion = await api.getDeviceOsVersions(platformId, 'latest');
-			if (latestDeviceOsVersion.internal_version === deviceOsVersion.internal_version) {
-				latest = true;
-				// find the latest version in the cache and remove the flag
-				const latestCachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
-				if (latestCachedVersion && latestCachedVersion.version !== version) {
-					latestCachedVersion.latest = false;
-				}
-			}
-		} else {
-			latest = true;
-			const latestCachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
-			if (latestCachedVersion && latestCachedVersion.version !== deviceOsVersion.version) {
-				latestCachedVersion.latest = false;
-			}
-		}
-
-		if (version === 'latest') {
-			cachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
-		} else {
-			cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
-		}
-
-		if (!cachedVersion) {
-			cachedData.push({
-				platformId,
-				version: deviceOsVersion.version,
-				internal_version: deviceOsVersion.internal_version,
-				base_url: deviceOsVersion.base_url,
-				modules: deviceOsVersion.modules,
-				latest
-			});
-		} else {
-			cachedVersion.base_url = deviceOsVersion.base_url;
-			cachedVersion.modules = deviceOsVersion.modules;
-		}
+		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
+		const latestDeviceOsVersion = version === 'latest' ? deviceOsVersion : await api.getDeviceOsVersions(platformId, 'latest');
+		updateCachedData(cachedData, platformId, version, deviceOsVersion, latestDeviceOsVersion);
 		await fs.writeJson(cachePath, cachedData);
+		return deviceOsVersion;
 	} catch (error) {
 		// check if the error is internet related
-		if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND') || error.message.includes('Network error')) {
+		if (isInternetConnectionError(error)) {
 			let cachedVersion;
 			// check if the version is cached
 			if (version === 'latest') {
@@ -116,12 +84,55 @@ async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
 				return cachedVersion;
 			}
 			throw new Error(`Device OS version not found in cache for platform: ${platformId} version: ${version} and there was an internet connection error`);
-
 		}
 		throw error;
 	}
+}
 
-	return deviceOsVersion;
+function updateCachedData(cachedData, platformId, version, deviceOsVersion, latestDeviceOsVersion) {
+	const latest = isLatestVersion(deviceOsVersion, latestDeviceOsVersion);
+	const cachedVersion = getCachedVersion(cachedData, platformId, deviceOsVersion.version);
+
+	if (latest) {
+		updateOldLatestVersion(cachedData, platformId);
+	}
+	if (!cachedVersion) {
+		cachedData.push({
+			platformId,
+			version: deviceOsVersion.version,
+			internal_version: deviceOsVersion.internal_version,
+			base_url: deviceOsVersion.base_url,
+			modules: deviceOsVersion.modules,
+			latest,
+		});
+	} else {
+		cachedVersion.base_url = deviceOsVersion.base_url;
+		cachedVersion.modules = deviceOsVersion.modules;
+		cachedVersion.latest = latest;
+	}
+}
+
+function isLatestVersion(deviceOsVersion,latestDeviceOsVersion) {
+	return deviceOsVersion.internal_version === latestDeviceOsVersion.internal_version;
+}
+
+function getCachedVersion(cachedData, platformId, version) {
+	if (version === 'latest') {
+		return cachedData.find(v => v.latest === true && v.platformId === platformId);
+	} else {
+		return cachedData.find(v => v.version === version && v.platformId === platformId);
+	}
+}
+
+function updateOldLatestVersion(cachedData, platformId) {
+	const oldLatest = cachedData.find(v => v.latest === true && v.platformId === platformId);
+	if (oldLatest) {
+		oldLatest.latest = false;
+	}
+}
+
+function isInternetConnectionError(error) {
+	return error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND') || error.message.includes('Network error');
 }
 
 async function getCacheFile() {
