@@ -5,6 +5,7 @@ const os = require('os');
 const request = require('request');
 const fs = require('fs-extra');
 const { HalModuleParser } = require('binary-version-reader');
+const DeviceOsVersionCache = require('./device-os-version-cache');
 
 /**
  * Download the binaries for the given platform and version by default the latest version is downloaded
@@ -62,97 +63,47 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 }
 
 async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
-	const { data: cachedData, cachePath } = await getCacheFile();
+	const deviceOsVersionCache = new DeviceOsVersionCache();
+	await deviceOsVersionCache.init();
 	try {
 		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
 		const latestDeviceOsVersion = version === 'latest' ? deviceOsVersion : await api.getDeviceOsVersions(platformId, 'latest');
-		updateCachedData(cachedData, platformId, version, deviceOsVersion, latestDeviceOsVersion);
-		await fs.writeJson(cachePath, cachedData);
+		await updateCachedData(deviceOsVersionCache, platformId, version, deviceOsVersion, latestDeviceOsVersion);
 		return deviceOsVersion;
 	} catch (error) {
 		// check if the error is internet related
 		if (isInternetConnectionError(error)) {
-			let cachedVersion;
 			// check if the version is cached
-			if (version === 'latest') {
-				cachedVersion = cachedData.find(v => v.latest === true && v.platformId === platformId);
-			} else {
-				cachedVersion = cachedData.find(v => v.version === version && v.platformId === platformId);
+			const cachedDeviceOsVersion = deviceOsVersionCache.get(deviceOsVersionCache.generateKey(platformId, version));
+			if (cachedDeviceOsVersion) {
+				return cachedDeviceOsVersion;
 			}
 
-			if (cachedVersion) {
-				return cachedVersion;
-			}
 			throw new Error(`Device OS version not found in cache for platform: ${platformId} version: ${version} and there was an internet connection error`);
 		}
 		throw error;
 	}
 }
 
-function updateCachedData(cachedData, platformId, version, deviceOsVersion, latestDeviceOsVersion) {
+async function updateCachedData(deviceOsVersionCache, platformId, version, deviceOsVersion, latestDeviceOsVersion) {
 	const latest = isLatestVersion(deviceOsVersion, latestDeviceOsVersion);
-	const cachedVersion = getCachedVersion(cachedData, platformId, deviceOsVersion.version);
-
-	if (latest) {
-		updateOldLatestVersion(cachedData, platformId);
-	}
-	if (!cachedVersion) {
-		cachedData.push({
-			platformId,
-			version: deviceOsVersion.version,
-			internal_version: deviceOsVersion.internal_version,
-			base_url: deviceOsVersion.base_url,
-			modules: deviceOsVersion.modules,
-			latest,
-		});
-	} else {
-		cachedVersion.base_url = deviceOsVersion.base_url;
-		cachedVersion.modules = deviceOsVersion.modules;
-		cachedVersion.latest = latest;
-	}
+	const cachedDeviceOsVersion = {
+		platformId,
+		version: deviceOsVersion.version,
+		internal_version: deviceOsVersion.internal_version,
+		base_url: deviceOsVersion.base_url,
+		modules: deviceOsVersion.modules,
+		latest,
+	};
+	await deviceOsVersionCache.set(deviceOsVersionCache.generateKey(platformId, deviceOsVersion.version), cachedDeviceOsVersion);
 }
 
 function isLatestVersion(deviceOsVersion,latestDeviceOsVersion) {
 	return deviceOsVersion.internal_version === latestDeviceOsVersion.internal_version;
 }
 
-function getCachedVersion(cachedData, platformId, version) {
-	if (version === 'latest') {
-		return cachedData.find(v => v.latest === true && v.platformId === platformId);
-	} else {
-		return cachedData.find(v => v.version === version && v.platformId === platformId);
-	}
-}
-
-function updateOldLatestVersion(cachedData, platformId) {
-	const oldLatest = cachedData.find(v => v.latest === true && v.platformId === platformId);
-	if (oldLatest) {
-		oldLatest.latest = false;
-	}
-}
-
 function isInternetConnectionError(error) {
 	return error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND') || error.message.includes('Network error');
-}
-
-async function getCacheFile() {
-	const particleDir = ensureFolder();
-	const filePath =  path.join(particleDir, 'device-os-flash/binaries/device-os-version-cached.json');
-	let data = [];
-	try {
-		const exists = await fs.pathExists(filePath);
-		if (exists) {
-			const fileContent = await fs.readFile(filePath, 'utf8');
-			data = JSON.parse(fileContent);
-		} else {
-			await fs.writeJson(filePath, []);
-		}
-
-		return { data, cachePath: filePath };
-	} catch (error) {
-		// ignore
-		throw new Error(`Error opening or creating the cache file: ${error.message}`);
-	}
 }
 
 async function isModuleDownloaded(module, version, platformName) {

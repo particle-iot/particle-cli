@@ -3,6 +3,7 @@ const sinon = require('sinon');
 const fs = require('fs-extra');
 const path = require('path');
 const { downloadDeviceOsVersionBinaries } = require('./device-os-version-util');
+const DeviceOsVersionCache = require('./device-os-version-cache');
 const nock = require('nock');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const UI = require('./ui');
@@ -118,7 +119,9 @@ describe('downloadDeviceOsVersionBinaries', () => {
 	it('should download the binaries for the given platform and version from cache', async() => {
 		// create cache file
 		const particleDir = path.join(PATH_TMP_DIR, '.particle/device-os-flash/binaries');
-		const filePath =  path.join(particleDir, 'device-os-version-cached.json');
+		const deviceOsVersionCache = new DeviceOsVersionCache();
+		await deviceOsVersionCache.init();
+
 		const bootloaderPath = path.join(particleDir, '/2.3.1/photon');
 		const bootloaderFilePath = path.join(bootloaderPath, 'photon-bootloader@2.3.1+lto.bin');
 		const bootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
@@ -134,22 +137,21 @@ describe('downloadDeviceOsVersionBinaries', () => {
 		await fs.ensureDir(particleDir);
 		await fs.ensureDir(bootloaderPath);
 		await fs.writeFile(bootloaderFilePath, bootloaderBuffer);
-
-		const cachedData = [
-			{
-				platformId: 6,
-				version: '2.3.1',
-				internal_version: 2301,
-				base_url: 'https://api.particle.io/v1/firmware/device-os/v2.3.1',
-				modules: [
-					{ filename: 'photon-bootloader@2.3.1+lto.bin', ...bootloader }
-				]
-			}];
+		const cachedData = {
+			platformId: 6,
+			version: '2.3.1',
+			internal_version: 2301,
+			base_url: 'https://api.particle.io/v1/firmware/device-os/v2.3.1',
+			modules: [
+				{ filename: 'photon-bootloader@2.3.1+lto.bin', ...bootloader }
+			]
+		};
+		await deviceOsVersionCache.set(deviceOsVersionCache.generateKey(6, '2.3.1'), cachedData);
 
 		nock('https://api.particle.io/v1/device-os/versions/')
 			.intercept('2.3.1?platform_id=${platformId}', 'GET')
 			.replyWithError('ECONNREFUSED');
-		await fs.writeJson(filePath, cachedData);
+
 		const api = new ParticleApi(settings.apiUrl, {} );
 		const data = await downloadDeviceOsVersionBinaries({ api, platformId: 6, version: '2.3.1', ui });
 		expect(data).to.be.an('array').with.lengthOf(1);
