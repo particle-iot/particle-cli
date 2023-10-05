@@ -6,6 +6,7 @@ const CACHE_DIR_NAME = 'device-os-flash/binaries';
 
 
 class DeviceOsVersionCache {
+	// TODO (hmontero) : Transform it in more generic cache
 	constructor() {
 		this.cache = {};
 	}
