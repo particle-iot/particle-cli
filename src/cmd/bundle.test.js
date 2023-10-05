@@ -181,29 +181,14 @@ describe('BundleCommands', () => {
 		});
 	});
 
-	describe('_checkAssetSupport', () => {
-		it ('throws an error if platform is not supported', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'tinker_electron.bin');
-
-			let error;
-
-			try {
-				await bundleCommands._checkAssetSupport(binPath);
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(error).to.be.an.instanceof(Error);
-			expect(error).to.have.property('message', 'Assets not supported for this platform');
-		});
-
+	describe('_checkDeviceOsVersion', () => {
 		it ('throws an error if device-os version is not supported', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'tinker_argon_541.bin');
 
 			let error;
 
 			try {
-				await bundleCommands._checkAssetSupport(binPath);
+				await bundleCommands._checkDeviceOsVersion(binPath);
 			} catch (_error) {
 				error = _error;
 			}

@@ -6,9 +6,7 @@ const utilities = require('../lib/utilities');
 const os = require('os');
 const temp = require('temp').track();
 const { HalModuleParser } = require('binary-version-reader');
-const deviceConstants = require('@particle/device-constants');
 
-const platformsById = Object.values(deviceConstants).reduce((map, p) => map.set(p.id, p), new Map());
 const MIN_ASSET_SUPPORT_VERSION = 5500;
 
 const specialFiles = [
@@ -41,22 +39,17 @@ module.exports = class BundleCommands extends CLICommandBase {
 			throw new Error(`The target file ${saveTo} must be a .zip file`);
 		}
 
-		await this._checkAssetSupport(appBinary);
+		await this._checkDeviceOsVersion(appBinary);
 
 		let assetsPath = await this._getAssetsPath(assets);
 		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
 		return { assetsPath, bundleFilename };
 	}
 
-	async _checkAssetSupport(appBinary) {
+	async _checkDeviceOsVersion(appBinary) {
 		const parser = new HalModuleParser();
 		const { prefixInfo } = await parser.parseFile(appBinary);
-		const platform = platformsById.get(prefixInfo.platformID);
 		const version = prefixInfo.depModuleVersion;
-
-		if (!platform.assets) {
-			throw new Error('Assets not supported for this platform');
-		}
 
 		if (version < MIN_ASSET_SUPPORT_VERSION) {
 			throw new Error('Asset support only available for device OS 5.5.0 and above');
