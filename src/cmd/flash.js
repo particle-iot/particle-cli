@@ -17,6 +17,7 @@ const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/fil
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
 const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles, validateDFUSupport } = require('../lib/flash-helper');
+const createApiCache = require('../lib/api-cache');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -205,7 +206,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 	_particleApi() {
 		const auth = settings.access_token;
 		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
-		return { api: api.api, auth, particleApi: api };
+		const apiCache = createApiCache(api);
+		return { api: apiCache, auth };
 	}
 
 	async _prepareFilesToFlash({ knownApp, parsedFiles, platformId, platformName, target }) {
@@ -309,8 +311,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {
-		const { particleApi } = this._particleApi();
-		const { module: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, particleApi);
+		const { api } = this._particleApi();
+		const { module: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, api);
 
 		// if files to flash include Device OS binaries, don't override them with the ones from the cloud
 		const includedDeviceOsModuleFunctions = [ModuleInfo.FunctionType.SYSTEM_PART, ModuleInfo.FunctionType.BOOTLOADER];
@@ -332,7 +334,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		// force to flash device os binaries if target is specified
 		if (target) {
 			return deviceOsUtils.downloadDeviceOsVersionBinaries({
-				api: particleApi,
+				api,
 				platformId,
 				version: target,
 				ui: this.ui,
@@ -348,7 +350,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		// if Device OS needs to be upgraded, so download the binaries
 		if (applicationDeviceOsVersion && currentDeviceOsVersion && semver.lt(currentDeviceOsVersion, applicationDeviceOsVersion)) {
 			return deviceOsUtils.downloadDeviceOsVersionBinaries({
-				api: particleApi,
+				api: api,
 				platformId,
 				version: applicationDeviceOsVersion,
 				ui: this.ui,

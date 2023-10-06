@@ -7,6 +7,7 @@ const usbUtils = require('./usb-util');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const CLICommandBase = require('./base');
 const { parseModulesToFlash, filterModulesToFlash, createFlashSteps, flashFiles, validateDFUSupport } = require('../lib/flash-helper');
+const createApiCache = require('../lib/api-cache');
 
 module.exports = class UpdateCommand extends CLICommandBase {
 
@@ -15,7 +16,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 	}
 
 	async updateDevice(deviceIdOrName, { target } = {}) {
-		const { api, auth , particleApi } = this._particleApi();
+		const { api, auth } = this._particleApi();
 		if (target && !semver.valid(target)) {
 			this.ui.write(`Invalid version: ${target}`);
 			return;
@@ -32,7 +33,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		this.ui.write(`Updating ${platformName} ${deviceIdOrName || device.id} to ${versionText}`);
 		// get Device OS version
 		const deviceOsBinaries = await deviceOsUtils.downloadDeviceOsVersionBinaries({
-			api: particleApi,
+			api,
 			platformId: device.platformId,
 			version,
 			ui: this.ui,
@@ -48,6 +49,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 	_particleApi() {
 		const auth = settings.access_token;
 		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
-		return { api: api.api, auth, particleApi: api };
+		const apiCache = createApiCache(api);
+		return { api: apiCache, auth };
 	}
 };
