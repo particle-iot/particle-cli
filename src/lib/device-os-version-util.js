@@ -5,7 +5,6 @@ const os = require('os');
 const request = require('request');
 const fs = require('fs-extra');
 const { HalModuleParser } = require('binary-version-reader');
-const DeviceOsVersionCache = require('./device-os-version-cache');
 
 /**
  * Download the binaries for the given platform and version by default the latest version is downloaded
@@ -20,7 +19,7 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		// get platform by id from device-constants
 		const platform = Object.values(deviceConstants).filter(p => p.public).find(p => p.id === platformId);
 		// get the device os versions
-		const deviceOsVersion = await downloadCachedDeviceOsVersion({ api, platformId, version });
+		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
 		// omit user part application
 		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
 
@@ -54,56 +53,9 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		if (error.message.includes('404')) {
 			throw new Error(`Device OS version not found for platform: ${platformId} version: ${version}`);
 		}
-		if (isInternetConnectionError(error)) {
-			throw new Error(`Device OS version not found in cache for platform: ${platformId} version: ${version} and there was an internet connection error`);
-		}
 		throw error;
 	}
 
-}
-
-async function downloadCachedDeviceOsVersion({ api, platformId, version }) {
-	const deviceOsVersionCache = new DeviceOsVersionCache();
-	await deviceOsVersionCache.init();
-	try {
-		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
-		const latestDeviceOsVersion = version === 'latest' ? deviceOsVersion : await api.getDeviceOsVersions(platformId, 'latest');
-		await updateCachedData(deviceOsVersionCache, platformId, version, deviceOsVersion, latestDeviceOsVersion);
-		return deviceOsVersion;
-	} catch (error) {
-		// check if the error is internet related
-		if (isInternetConnectionError(error)) {
-			// check if the version is cached
-			const cachedDeviceOsVersion = deviceOsVersionCache.get(deviceOsVersionCache.generateKey(platformId, version));
-			if (cachedDeviceOsVersion) {
-				return cachedDeviceOsVersion;
-			}
-
-			throw new Error(`Device OS version not found in cache for platform: ${platformId} version: ${version} and there was an internet connection error`);
-		}
-		throw error;
-	}
-}
-
-async function updateCachedData(deviceOsVersionCache, platformId, version, deviceOsVersion, latestDeviceOsVersion) {
-	const latest = isLatestVersion(deviceOsVersion, latestDeviceOsVersion);
-	const cachedDeviceOsVersion = {
-		platformId,
-		version: deviceOsVersion.version,
-		internal_version: deviceOsVersion.internal_version,
-		base_url: deviceOsVersion.base_url,
-		modules: deviceOsVersion.modules,
-		latest,
-	};
-	await deviceOsVersionCache.set(deviceOsVersionCache.generateKey(platformId, deviceOsVersion.version), cachedDeviceOsVersion);
-}
-
-function isLatestVersion(deviceOsVersion,latestDeviceOsVersion) {
-	return deviceOsVersion.internal_version === latestDeviceOsVersion.internal_version;
-}
-
-function isInternetConnectionError(error) {
-	return error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND') || error.message.includes('Network error');
 }
 
 async function isModuleDownloaded(module, version, platformName) {
