@@ -10,7 +10,12 @@ class ParticleCache {
 	}
 
 	get(key) {
-		return fs.readJsonSync(path.join(this.path, `${key}.json`));
+		try {
+			return fs.readJsonSync(path.join(this.path, `${key}.json`));
+		} catch (error) {
+			return null;
+		}
+
 	}
 
 	set(key, value) {
