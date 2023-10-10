@@ -181,6 +181,23 @@ describe('BundleCommands', () => {
 		});
 	});
 
+	describe('_checkDeviceOsVersion', () => {
+		it ('throws an error if device-os version is not supported', async () => {
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'tinker_argon_541.bin');
+
+			let error;
+
+			try {
+				await bundleCommands._checkDeviceOsVersion(binPath);
+			} catch (_error) {
+				error = _error;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error).to.have.property('message', 'Asset support only available for device OS 5.5.0 and above');
+		});
+	});
+
 	describe('getAssets', () => {
 		it('throws an error when assets dir is not present', async () => {
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid_no_assets', 'assets');

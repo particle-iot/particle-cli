@@ -5,6 +5,9 @@ const { createApplicationAndAssetBundle, unpackApplicationAndAssetBundle, create
 const utilities = require('../lib/utilities');
 const os = require('os');
 const temp = require('temp').track();
+const { HalModuleParser } = require('binary-version-reader');
+
+const MIN_ASSET_SUPPORT_VERSION = 5500;
 
 const specialFiles = [
 	'.DS_Store',
@@ -36,9 +39,21 @@ module.exports = class BundleCommands extends CLICommandBase {
 			throw new Error(`The target file ${saveTo} must be a .zip file`);
 		}
 
+		await this._checkDeviceOsVersion(appBinary);
+
 		let assetsPath = await this._getAssetsPath(assets);
 		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
 		return { assetsPath, bundleFilename };
+	}
+
+	async _checkDeviceOsVersion(appBinary) {
+		const parser = new HalModuleParser();
+		const { prefixInfo } = await parser.parseFile(appBinary);
+		const version = prefixInfo.depModuleVersion;
+
+		if (version < MIN_ASSET_SUPPORT_VERSION) {
+			throw new Error('Asset support only available for device OS 5.5.0 and above');
+		}
 	}
 
 	async _getAssetsPath(assets) {
