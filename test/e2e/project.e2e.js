@@ -79,7 +79,7 @@ describe('Project Commands', () => {
 				'project.properties',
 				'src/test-proj.cpp',
 				'.gitignore',
-				'.github.workflows/main.yaml'
+				'.github/workflows/main.yaml'
 			]);
 		});
 
