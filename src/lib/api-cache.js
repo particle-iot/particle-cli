@@ -2,14 +2,14 @@ const ParticleCache = require('./particle-cache');
 
 class ApiCache {
 	constructor(api) {
-		this.particleApi = api;
+		this.api = api;
 		this.cache = new ParticleCache();
 	}
 
 	async getDeviceOsVersions(platformId, version) {
 		const key = this.cache._generateKey('device_os_version', { platformId, version });
 		try {
-			const deviceOsVersion = await this.particleApi.getDeviceOsVersions(platformId, version);
+			const deviceOsVersion = await this.api.getDeviceOsVersions(platformId, version);
 			this.cache.set(key, deviceOsVersion);
 			return deviceOsVersion;
 		} catch (error) {
@@ -28,7 +28,7 @@ class ApiCache {
 	async getDevice({ deviceId: id, auth }) {
 		const key = this.cache._generateKey('device', { deviceIdOrName: id });
 		try {
-			const device = await this.particleApi.api.getDevice({ deviceId: id, auth });
+			const device = await this.api.getDevice({ deviceId: id, auth });
 			this.cache.set(key, device);
 			return device;
 		} catch (error) {
@@ -52,10 +52,10 @@ const proxyHandler = {
 	get: (target, prop) => {
 		if (typeof target[prop] === 'function') {
 			return target[prop].bind(target);
-		} else if (typeof target.particleApi[prop] === 'function') {
-			return target.particleApi[prop].bind(target.particleApi);
-		} else if (target.particleApi.api && typeof target.particleApi.api[prop] === 'function') {
-			return target.particleApi.api[prop].bind(target.particleApi.api);
+		} else if (prop === 'api') {
+			return createApiCache(target.api);
+		} else if (typeof target.api[prop] === 'function') {
+			return target.api[prop].bind(target.api);
 		} else {
 			return target[prop];
 		}

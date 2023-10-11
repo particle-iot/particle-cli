@@ -46,24 +46,20 @@ describe('api-cache', () => {
 	describe('getDevice', () => {
 		it('create cache file for device os version if there is no error on getting data', async () => {
 			const api = {
-				api: {
-					getDevice: sinon.stub().resolves({})
-				}
+				getDevice: sinon.stub().resolves({})
 			};
 
 			const apiCache = createApiCache(api);
 			const expectedKey = apiCache.cache._generateKey('device', { deviceIdOrName: 'abc123' });
 			await apiCache.getDevice({ deviceId: 'abc123', auth: 'abc' });
-			expect(api.api.getDevice).to.have.been.calledWith({ deviceId: 'abc123', auth: 'abc' });
+			expect(api.getDevice).to.have.been.calledWith({ deviceId: 'abc123', auth: 'abc' });
 			expect(ParticleCache.prototype.set).to.have.been.calledWith(expectedKey, {});
 		});
 
 		it('calls cache get if there is an error on getting data', async () => {
 			let error;
 			const api = {
-				api: {
-					getDevice: sinon.stub().rejects(new Error('ECONNREFUSED'))
-				}
+				getDevice: sinon.stub().rejects(new Error('ECONNREFUSED'))
 			};
 			const apiCache = createApiCache(api);
 			const expectedKey = apiCache.cache._generateKey('device', { deviceIdOrName: 'abc123' });
@@ -72,7 +68,7 @@ describe('api-cache', () => {
 			} catch (_error) {
 				error = _error;
 			}
-			expect(api.api.getDevice).to.have.been.calledWith({ deviceId: 'abc123', auth: 'abc' });
+			expect(api.getDevice).to.have.been.calledWith({ deviceId: 'abc123', auth: 'abc' });
 			expect(ParticleCache.prototype.get).to.have.been.calledWith(expectedKey);
 			expect(error.message).to.equal('Device abc123 not found in cache and there was an internet connection error');
 		});
