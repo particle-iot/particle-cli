@@ -59,9 +59,6 @@ async function _flashDeviceInNormalMode(device, data, { name, progress } = {}) {
 }
 
 async function prepareDeviceForFlash({ device, mode, progress }) {
-	if (device.isOpen) {
-		await device.close();
-	}
 	// check if open
 	device = await usbUtils.reopenDevice(device);
 	switch (mode) {
