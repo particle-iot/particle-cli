@@ -78,7 +78,7 @@ describe('Project Commands', () => {
 				'README.md',
 				'project.properties',
 				'src/test-proj.cpp',
-				'.gitingore',
+				'.gitignore',
 				'.github.workflows/main.yaml'
 			]);
 		});
