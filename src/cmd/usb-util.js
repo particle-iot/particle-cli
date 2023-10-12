@@ -59,10 +59,13 @@ async function _getDeviceMode(device) {
 async function _getDeviceName({ id, api, auth, ui }) {
 	try {
 		const device = await getDevice({ id, api, auth, ui });
-		return device.name;
+		if (device && device.name) {
+			return device.name;
+		}
 	} catch (err) {
-		// ignore error
+		return '<unknown>';
 	}
+	return null;
 }
 
 /**
@@ -208,7 +211,7 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 					const mode = await _getDeviceMode(d);
 					const name = await _getDeviceName({ id, api, auth, ui });
 					return {
-						name: `${name? name: ''} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : ''})`,
+						name: `${name || '<no name>'} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : ''})`,
 						value: d
 					};
 				}));
