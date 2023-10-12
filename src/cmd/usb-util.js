@@ -16,36 +16,23 @@ const REOPEN_TIMEOUT = 60000;
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 500;
 
-
-async function _getDeviceId(device) {
+async function _getDeviceInfo(device) {
 	let id = null;
+	let mode = null;
 	try {
 		await device.open();
-		return device._id;
-	} catch (err) {
-		// ignore error
-	} finally {
-		if (device.isOpen) {
-			await device.close();
-		}
-	}
-	return id;
-}
-
-async function _getDeviceMode(device) {
-	if (device.isInDfuMode) {
-		return 'DFU';
-	}
-
-	try {
-		await device.open();
-		const mode = await device.getDeviceMode({ timeout: 10 * 1000 });
-		if (mode && (mode !== 'NORMAL')) {
-			return mode;
+		id = device._id;
+		if (device.isInDfuMode) {
+			mode = 'DFU';
+		} else {
+			const mode = await device.getDeviceMode({ timeout: 10 * 1000 });
+			if (mode && mode !== 'NORMAL') {
+				return { id, mode };
+			}
 		}
 	} catch (err) {
 		if (err instanceof TimeoutError) {
-			return 'UNKNOWN';
+			return { id, mode: 'UNKNOWN'};
 		} else {
 			throw new Error(`Unable to get device mode: ${err.message}`);
 		}
@@ -54,6 +41,7 @@ async function _getDeviceMode(device) {
 			await device.close();
 		}
 	}
+	return { id, mode };
 }
 
 async function _getDeviceName({ id, api, auth, ui }) {
@@ -207,8 +195,7 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 			message: 'Which device would you like to select?',
 			choices() {
 				return Promise.all(usbDevices.map(async (d) => {
-					const id = await _getDeviceId(d);
-					const mode = await _getDeviceMode(d);
+					const { id, mode } = await _getDeviceInfo(d);
 					const name = await _getDeviceName({ id, api, auth, ui });
 					return {
 						name: `${name || '<no name>'} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : ''})`,
