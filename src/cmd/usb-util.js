@@ -40,7 +40,6 @@ async function _getDeviceMode(device) {
 	try {
 		await device.open();
 		const mode = await device.getDeviceMode({ timeout: 10 * 1000 });
-		console.log('mode', mode);
 		if (mode && (mode !== 'NORMAL')) {
 			return mode;
 		}
@@ -54,6 +53,15 @@ async function _getDeviceMode(device) {
 		if (device.isOpen) {
 			await device.close();
 		}
+	}
+}
+
+async function _getDeviceName({ id, api, auth, ui }) {
+	try {
+		const device = await getDevice({ id, api, auth, ui });
+		return device.name;
+	} catch (err) {
+		// ignore error
 	}
 }
 
@@ -198,8 +206,9 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 				return Promise.all(usbDevices.map(async (d) => {
 					const id = await _getDeviceId(d);
 					const mode = await _getDeviceMode(d);
+					const name = await _getDeviceName({ id, api, auth, ui });
 					return {
-						name: `[${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : ''})`,
+						name: `${name? name: ''} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : ''})`,
 						value: d
 					};
 				}));
