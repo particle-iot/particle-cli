@@ -1,11 +1,12 @@
-const { expect } = require('../../test/setup');
-const sinon = require('sinon');
+const { expect, sinon } = require('../../test/setup');
 const fs = require('fs-extra');
 const path = require('path');
 const { downloadDeviceOsVersionBinaries } = require('./device-os-version-util');
 const nock = require('nock');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const UI = require('./ui');
+
+
 
 // stub: request, fs, api
 describe('downloadDeviceOsVersionBinaries', () => {

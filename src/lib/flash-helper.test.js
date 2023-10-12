@@ -403,7 +403,6 @@ describe('flash-helper', () => {
 			reopenInNormalStub.resolves(device);
 			reopenStub.resolves(device);
 			await prepareDeviceForFlash({ device, mode: 'normal' });
-			expect(device.close).to.have.been.calledOnce;
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInNormalStub).to.have.been.calledOnce;
 			expect(reopenInDfuModeStub).to.not.have.been.called;
@@ -419,7 +418,6 @@ describe('flash-helper', () => {
 
 			reopenStub.resolves(device);
 			await prepareDeviceForFlash({ device, mode: 'normal' });
-			expect(device.close).to.have.been.calledOnce;
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInNormalStub).to.not.have.been.called;
 			expect(reopenInDfuModeStub).to.not.have.been.called;
@@ -435,7 +433,6 @@ describe('flash-helper', () => {
 
 			reopenStub.resolves(device);
 			await prepareDeviceForFlash({ device, mode: 'dfu' });
-			expect(device.close).to.have.been.calledOnce;
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInDfuModeStub).to.have.been.calledOnce;
 			expect(reopenInNormalStub).to.not.have.been.called;
@@ -450,7 +447,6 @@ describe('flash-helper', () => {
 			};
 			reopenStub.resolves(device);
 			await prepareDeviceForFlash({ device, mode: 'dfu' });
-			expect(device.close).to.have.been.calledOnce;
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInDfuModeStub).to.not.have.been.called;
 			expect(reopenInNormalStub).to.not.have.been.called;

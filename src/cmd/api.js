@@ -230,6 +230,10 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	getDevice({ deviceId: id }) {
+		return this.api.getDevice({ deviceId: id, auth: this.accessToken });
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
