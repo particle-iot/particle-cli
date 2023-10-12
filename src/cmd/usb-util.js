@@ -32,7 +32,7 @@ async function _getDeviceInfo(device) {
 		}
 	} catch (err) {
 		if (err instanceof TimeoutError) {
-			return { id, mode: 'UNKNOWN'};
+			return { id, mode: 'UNKNOWN' };
 		} else {
 			throw new Error(`Unable to get device mode: ${err.message}`);
 		}
@@ -198,7 +198,7 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 					const { id, mode } = await _getDeviceInfo(d);
 					const name = await _getDeviceName({ id, api, auth, ui });
 					return {
-						name: `${name || '<no name>'} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : ''})`,
+						name: `${name || '<no name>'} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : '' })`,
 						value: d
 					};
 				}));
