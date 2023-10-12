@@ -15,6 +15,22 @@ const REOPEN_TIMEOUT = 60000;
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 500;
 
+
+async function _getDeviceId(device) {
+	let id = null;
+	try {
+		await device.open();
+		return device._id;
+	} catch (err) {
+		// ignore error
+	} finally {
+		if (device.isOpen) {
+			await device.close();
+		}
+	}
+	return id;
+}
+
 /**
  * USB permissions error.
  */
@@ -153,12 +169,13 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 			name: 'device',
 			message: 'Which device would you like to select?',
 			choices() {
-				return usbDevices.map((d) => {
+				return Promise.all(usbDevices.map(async (d) => {
+					const id = await _getDeviceId(d);
 					return {
-						name: d.type,
+						name: d.type + ' (' + id + ') ' + '[' + (d._info.dfu ? 'DFU' : 'normal mode') + ']', // Shows as "Photon (1234567890abcdef) [normal mode]"
 						value: d
 					};
-				});
+				}));
 			}
 		};
 		const nonInteractiveError = 'Multiple devices found. Connect only one device when running in non-interactive mode.';
