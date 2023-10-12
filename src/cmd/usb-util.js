@@ -1,6 +1,7 @@
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
 const { delay } = require('../lib/utilities');
+const { platformForId } = require('../lib/platform');
 const {
 	getDevices,
 	openDeviceById,
@@ -29,6 +30,31 @@ async function _getDeviceId(device) {
 		}
 	}
 	return id;
+}
+
+async function _getDeviceMode(device) {
+	if (device.isInDfuMode) {
+		return 'DFU';
+	}
+
+	try {
+		await device.open();
+		const mode = await device.getDeviceMode({ timeout: 10 * 1000 });
+		console.log('mode', mode);
+		if (mode && (mode !== 'NORMAL')) {
+			return mode;
+		}
+	} catch (err) {
+		if (err instanceof TimeoutError) {
+			return 'UNKNOWN';
+		} else {
+			throw new Error(`Unable to get device mode: ${err.message}`);
+		}
+	} finally {
+		if (device.isOpen) {
+			await device.close();
+		}
+	}
 }
 
 /**
@@ -171,8 +197,9 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 			choices() {
 				return Promise.all(usbDevices.map(async (d) => {
 					const id = await _getDeviceId(d);
+					const mode = await _getDeviceMode(d);
 					return {
-						name: d.type + ' (' + id + ') ' + '[' + (d._info.dfu ? 'DFU' : 'normal mode') + ']', // Shows as "Photon (1234567890abcdef) [normal mode]"
+						name: `[${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : ''})`,
 						value: d
 					};
 				}));
