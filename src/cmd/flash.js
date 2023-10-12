@@ -61,7 +61,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			if (utilities.getFilenameExt(binary) === '.zip') {
 				throw new Error("Use 'particle flash --local' to flash a zipped bundle.");
 			}
-			
+
 			const { api, auth } = this._particleApi();
 			device = await usbUtils.getOneUsbDevice({ api, auth, ui: this.ui });
 			const platformName = platformForId(device.platformId).name;
