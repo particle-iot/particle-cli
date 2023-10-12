@@ -6,7 +6,8 @@ const crypto = require('crypto');
 
 class ParticleCache {
 	constructor() {
-		this.path = path.join(settings.findHomePath(), '.particle', '.cache');
+		const particleDir = settings.ensureFolder();
+		this.path = path.join(particleDir, 'cli-cache');
 	}
 
 	get(key) {
