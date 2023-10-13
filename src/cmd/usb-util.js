@@ -24,12 +24,14 @@ async function _getDeviceInfo(device) {
 		id = device._id;
 		if (device.isInDfuMode) {
 			mode = 'DFU';
-		} else {
-			const mode = await device.getDeviceMode({ timeout: 10 * 1000 });
-			if (mode && mode !== 'NORMAL') {
-				return { id, mode };
-			}
+			return { id, mode };
 		}
+		mode = await device.getDeviceMode({ timeout: 10 * 1000 });
+		// not required to show NORMAL mode to the user
+		if (mode === 'NORMAL') {
+			mode = '';
+		}
+		return { id, mode };
 	} catch (err) {
 		if (err instanceof TimeoutError) {
 			return { id, mode: 'UNKNOWN' };
@@ -41,19 +43,15 @@ async function _getDeviceInfo(device) {
 			await device.close();
 		}
 	}
-	return { id, mode };
 }
 
 async function _getDeviceName({ id, api, auth, ui }) {
 	try {
 		const device = await getDevice({ id, api, auth, ui });
-		if (device && device.name) {
-			return device.name;
-		}
+		return device && device.name ? device.name : '<no name>';
 	} catch (err) {
 		return '<unknown>';
 	}
-	return null;
 }
 
 /**
@@ -198,7 +196,7 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 					const { id, mode } = await _getDeviceInfo(d);
 					const name = await _getDeviceName({ id, api, auth, ui });
 					return {
-						name: `${name || '<no name>'} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : '' })`,
+						name: `${name} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : '' })`,
 						value: d
 					};
 				}));
