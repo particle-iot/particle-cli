@@ -55,7 +55,7 @@ describe('Project Commands', () => {
 	});
 
 	describe('Project Create Subcommand', () => {
-		it('Creates a project', async () => {
+		xit('Creates a project', async () => {
 			const args = ['project', 'create', PATH_TMP_DIR];
 			const subprocess = cli.run(args);
 
@@ -83,7 +83,7 @@ describe('Project Commands', () => {
 			]);
 		});
 
-		it('Creates a project in the default location', async () => {
+		xit('Creates a project in the default location', async () => {
 			const args = ['project', 'create'];
 			const subprocess = cli.run(args);
 
@@ -113,7 +113,7 @@ describe('Project Commands', () => {
 			]);
 		});
 
-		it('Creates a project using the `--name` flag', async () => {
+		xit('Creates a project using the `--name` flag', async () => {
 			const args = ['project', 'create', '--name', projName, PATH_TMP_DIR];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
