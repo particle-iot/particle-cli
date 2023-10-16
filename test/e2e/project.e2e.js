@@ -79,6 +79,8 @@ describe('Project Commands', () => {
 				'project.properties',
 				'src/test-proj.cpp',
 				'.gitignore',
+				'.github',
+				'.github/workflows',
 				'.github/workflows/main.yaml'
 			]);
 		});
@@ -109,7 +111,11 @@ describe('Project Commands', () => {
 				'README.md',
 				'project.properties',
 				'src',
-				'src/test-proj.ino'
+				'src/test-proj.cpp',
+				'.gitignore',
+				'.github',
+				'.github/workflows',
+				'.github/workflows/main.yaml'
 			]);
 		});
 
@@ -130,7 +136,11 @@ describe('Project Commands', () => {
 				'README.md',
 				'project.properties',
 				'src',
-				'src/test-proj.ino'
+				'src/test-proj.cpp',
+				'.gitignore',
+				'.github',
+				'.github/workflows',
+				'.github/workflows/main.yaml'
 			]);
 		});
 	});
