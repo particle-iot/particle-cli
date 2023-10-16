@@ -1,6 +1,7 @@
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
 const { delay } = require('../lib/utilities');
+const { platformForId } = require('../lib/platform');
 const {
 	getDevices,
 	openDeviceById,
@@ -14,6 +15,44 @@ const {
 const REOPEN_TIMEOUT = 60000;
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 500;
+
+async function _getDeviceInfo(device) {
+	let id = null;
+	let mode = null;
+	try {
+		await device.open();
+		id = device._id;
+		if (device.isInDfuMode) {
+			mode = 'DFU';
+			return { id, mode };
+		}
+		mode = await device.getDeviceMode({ timeout: 10 * 1000 });
+		// not required to show NORMAL mode to the user
+		if (mode === 'NORMAL') {
+			mode = '';
+		}
+		return { id, mode };
+	} catch (err) {
+		if (err instanceof TimeoutError) {
+			return { id, mode: 'UNKNOWN' };
+		} else {
+			throw new Error(`Unable to get device mode: ${err.message}`);
+		}
+	} finally {
+		if (device.isOpen) {
+			await device.close();
+		}
+	}
+}
+
+async function _getDeviceName({ id, api, auth, ui }) {
+	try {
+		const device = await getDevice({ id, api, auth, ui });
+		return device && device.name ? device.name : '<no name>';
+	} catch (err) {
+		return '<unknown>';
+	}
+}
 
 /**
  * USB permissions error.
@@ -153,12 +192,14 @@ async function getOneUsbDevice({ idOrName, api, auth, ui }) {
 			name: 'device',
 			message: 'Which device would you like to select?',
 			choices() {
-				return usbDevices.map((d) => {
+				return Promise.all(usbDevices.map(async (d) => {
+					const { id, mode } = await _getDeviceInfo(d);
+					const name = await _getDeviceName({ id, api, auth, ui });
 					return {
-						name: d.type,
+						name: `${name} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : '' })`,
 						value: d
 					};
-				});
+				}));
 			}
 		};
 		const nonInteractiveError = 'Multiple devices found. Connect only one device when running in non-interactive mode.';
