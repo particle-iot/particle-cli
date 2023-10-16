@@ -2,6 +2,7 @@ const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
+	DEVICE_ID,
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	PATH_PROJ_STROBY_INO,
@@ -21,12 +22,12 @@ describe('Flash Commands [@device]', () => {
 		'Options:',
 		'  --cloud             Flash over the air to the device. Default if no other flag provided  [boolean]',
 		'  --local             Flash locally, updating Device OS as needed  [boolean]',
-		'  --usb               Flash over USB  [boolean]',
+		'  --usb               Flash a single file over USB  [boolean]',
 		'  --serial            Flash over a virtual serial port  [boolean]',
 		'  --factory           Flash user application to the factory reset location. Only available for USB flash  [boolean]',
 		'  --yes               Answer yes to all questions  [boolean]',
 		'  --target            The firmware version to compile against. Defaults to latest version.  [string]',
-		'  --application-only  Do not update Device OS  [boolean]',
+		'  --application-only  Do not update Device OS when flashing locally  [boolean]',
 		'  --port              Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial  [string]',
 		'',
 		'Examples:',
@@ -87,10 +88,13 @@ describe('Flash Commands [@device]', () => {
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
 		const log = [
 			'Including:',
-			'    src/stroby.ino',
 			'    project.properties',
-			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK: Update started'
+			'    src/stroby.ino',
+			'',
+			'Compile succeeded.',
+			'',
+			`Flashing firmware to your device ${DEVICE_NAME}`,
+			'Flash success!'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -107,11 +111,13 @@ describe('Flash Commands [@device]', () => {
 		const log = [
 			'Including:',
 			'    lib/Particle_TEST_E2E_CLI_LIB/src/Particle_TEST_E2E_CLI_LIB.h',
-			'    lib/Particle_TEST_E2E_CLI_LIB/examples/one.ino',
-			'    src/app.ino',
 			'    project.properties',
-			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK: Update started'
+			'    src/app.ino',
+			'',
+			'Compile succeeded.',
+			'',
+			`Flashing firmware to your device ${DEVICE_NAME}`,
+			'Flash success!'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -130,8 +136,11 @@ describe('Flash Commands [@device]', () => {
 		const log = [
 			'Including:',
 			`    ${PATH_PROJ_STROBY_INO}`,
-			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK: Update started'
+			'',
+			'Compile succeeded.',
+			'',
+			`Flashing firmware to your device ${DEVICE_NAME}`,
+			'Flash success!'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -145,10 +154,8 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'Including:',
-			`    ${PATH_PROJ_STROBY_INO}`,
-			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK: Update started'
+			`Flashing firmware to your device ${DEVICE_NAME}`,
+			'Flash success!'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -182,7 +189,8 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', bin, '--usb'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'',
+			`Flashing argon device ${DEVICE_ID}`,
+			'Flashing blank-argon.bin',
 			'Flash success!'
 		];
 
