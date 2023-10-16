@@ -5,6 +5,7 @@ const { PLATFORMS } =require('./platform');
 const { moduleTypeToString, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const path = require('path');
+const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
 
@@ -198,6 +199,25 @@ async function parseModulesToFlash({ files }) {
 	}));
 }
 
+async function getFileFlashInfo(file) {
+	// verify if exist the file in other case could be a knownApp
+	// we will check the file in flashSteps
+	if (!await fs.pathExists(file)) {
+		return { flashMode: 'DFU' };
+	}
+	const normalModules = ['assets', 'bootloader'];
+	const parser = new ModuleParser();
+	const binary = await parser.parseFile(file);
+	const moduleType = moduleTypeToString(binary.prefixInfo.moduleFunction);
+	const moduleDefinition = PLATFORMS.find(p => p.id === binary.prefixInfo.platformID).firmwareModules
+		.find(firmwareModule => firmwareModule.type === moduleType);
+
+	return {
+		flashMode: normalModules.includes(moduleType) || moduleDefinition.storage === 'externalMcu' ? 'NORMAL' : 'DFU',
+		platformId: binary.prefixInfo.platformID
+	};
+}
+
 async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	const platform = PLATFORMS.find(p => p.id === platformId);
 	const sortedModules = await sortBinariesByDependency(modules);
@@ -260,35 +280,11 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 
 function validateDFUSupport({ device, ui }) {
 	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0'))) {
-		const { chalk } = ui;
-		ui.write(`${chalk.red('!!!')} The device needs to be in DFU mode for this command.\n`);
-		ui.write(`${chalk.cyan('>')} This version of Device OS doesn't support automatically switching to DFU mode.`);
-		ui.write(`${chalk.cyan('>')} To put your device in DFU manually, please:\n`);
-		ui.write([
-			chalk.bold.white('1)'),
-			'Press and hold both the',
-			chalk.bold.cyan('RESET'),
-			'and',
-			chalk.bold.cyan('MODE/SETUP'),
-			'buttons simultaneously.\n'
-		].join(' '));
-		ui.write([
-			chalk.bold.white('2)'),
-			'Release only the',
-			chalk.bold.cyan('RESET'),
-			'button while continuing to hold the',
-			chalk.bold.cyan('MODE/SETUP'),
-			'button.\n'
-		].join(' '));
-		ui.write([
-			chalk.bold.white('3)'),
-			'Release the',
-			chalk.bold.cyan('MODE/SETUP'),
-			'button once the device begins to blink yellow.\n'
-		].join(' '));
+		ui.logDFUModeRequired(true);
 		throw new Error('Put the device in DFU mode and try again');
 	}
 }
+
 
 module.exports = {
 	flashFiles,
@@ -296,5 +292,6 @@ module.exports = {
 	parseModulesToFlash,
 	createFlashSteps,
 	prepareDeviceForFlash,
-	validateDFUSupport
+	validateDFUSupport,
+	getFileFlashInfo,
 };
