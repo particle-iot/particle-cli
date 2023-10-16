@@ -468,7 +468,9 @@ describe('flash-helper', () => {
 		beforeEach(() => {
 			ui = {
 				write: sinon.stub(),
-				chalk
+				chalk,
+				logDFUModeRequired: sinon.stub(),
+				logNormalModeRequired: sinon.stub()
 			};
 		});
 		it('throws an error if the device os version does not support DFU', async () => {
@@ -483,7 +485,8 @@ describe('flash-helper', () => {
 			} catch (e) {
 				error = e;
 			}
-			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
+			expect(ui.logDFUModeRequired).to.be.called;
+			expect(error.message).to.equal('Put the device in DFU mode and try again');
 		});
 		it('throws an error if the current device os is not defined and the device is not in DFU', async () => {
 			let error;
@@ -496,7 +499,8 @@ describe('flash-helper', () => {
 			} catch (e) {
 				error = e;
 			}
-			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
+			expect(ui.logDFUModeRequired).to.be.called;
+			expect(error.message).to.equal('Put the device in DFU mode and try again');
 		});
 		it('passes if the device is in DFU mode', async () => {
 			let error;
