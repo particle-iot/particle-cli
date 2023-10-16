@@ -280,7 +280,7 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 
 function validateDFUSupport({ device, ui }) {
 	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0'))) {
-		ui.logDFUModeRequired(true);
+		ui.logDFUModeRequired({ showVersionWarning: true });
 		throw new Error('Put the device in DFU mode and try again');
 	}
 }
