@@ -564,7 +564,7 @@ describe('Library Commands', () => {
 
 			const projProps = await fs.readFile(projPropsPath, 'utf8');
 
-			expect(projProps).to.equal(`name=test-proj\ndependencies.dotstar=${version}\n`);
+			expect(projProps).to.equal(`name=test-proj\n#assetOtaDir=assets\ndependencies.dotstar=${version}\n`);
 			expect(await fs.pathExists(libPath)).to.equal(false);
 		});
 
@@ -585,7 +585,7 @@ describe('Library Commands', () => {
 
 			const libProps = await fs.readFile(libPropsPath, 'utf8');
 			const expectedLibProps = [
-				'name=test-library-publish',
+				'name=test-proj\n#assetOtaDir=assets\n',
 				'version=0.0.2',
 				'license=MIT',
 				'author=Joe Goggins <joe@particle.io>',
@@ -649,7 +649,7 @@ describe('Library Commands', () => {
 			const contents = await fs.getDirectoryContents(libPath, { maxDepth: 2 });
 			const stripRoot = (x) => x.replace(projPath + path.sep, '');
 
-			expect(projProps).to.equal('name=test-proj\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
 			expect(contents.map(stripRoot)).to.include.members([
 				'lib/dotstar/library.properties',
 				'lib/dotstar/src/dotstar.cpp',
@@ -673,7 +673,7 @@ describe('Library Commands', () => {
 			const contents = await fs.getDirectoryContents(libPath, { maxDepth: 2 });
 			const stripRoot = (x) => x.replace(projPath + path.sep, '');
 
-			expect(projProps).to.equal('name=test-proj\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
 			expect(contents.map(stripRoot)).to.eql([
 				'lib/dotstar',
 				'lib/dotstar/LICENSE',
@@ -718,7 +718,7 @@ describe('Library Commands', () => {
 			const projPropsPath = path.join(projPath, 'project.properties');
 			const projProps = await fs.readFile(projPropsPath, 'utf8');
 
-			expect(projProps).to.equal('name=test-proj\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
 		});
 
 		it('Installs a library to a project using the `--copy` flag', async () => {
@@ -741,7 +741,7 @@ describe('Library Commands', () => {
 			const contents = await fs.getDirectoryContents(localLibPath, { maxDepth: 2 });
 			const stripRoot = (x) => x.replace(projPath + path.sep, '');
 
-			expect(projProps).to.equal('name=test-proj\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
 			expect(contents.map(stripRoot)).to.eql([
 				'lib/dotstar',
 				'lib/dotstar/.git',
@@ -790,7 +790,7 @@ describe('Library Commands', () => {
 			const stripRoot = (x) => x.replace(projPath + path.sep, '');
 
 			expect(projProps).to.equal([
-				'name=test-proj',
+				'name=test-proj\n#assetOtaDir=assets\n',
 				'dependencies.dotstar=0.0.5',
 				'dependencies.neopixel=1.0.0\n'
 			].join('\n'));
