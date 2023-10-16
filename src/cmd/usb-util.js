@@ -192,12 +192,15 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 		const { id, mode } = await _getDeviceInfo(d);
 		const name = await _getDeviceName({ id, api, auth, ui });
 		return {
+			id,
 			name: `${name} [${id}] (${(platformForId(d._info.id)).displayName}${mode ? ', ' + mode : '' })`,
 			platformId: d._info.id,
 			mode,
 			value: d
 		};
 	}));
+
+	devices = devices.sort((d1, d2) => d1.id.localeCompare(d2.id));
 
 	if (flashMode === 'DFU') {
 		devices = devices.filter(d => dfuModes.includes(d.mode));
