@@ -79,6 +79,46 @@ module.exports = class UI {
 		settings.override(settings.profile, 'flashWarningShownOn', Date.now());
 	}
 
+	logDFUModeRequired({ showVersionWarning } = {}) {
+		this.write(`${this.chalk.red('!!!')} The device needs to be in DFU mode for this command.\n`);
+		if (showVersionWarning ) {
+			this.write(`${this.chalk.cyan('>')} This version of Device OS doesn't support automatically switching to DFU mode.`);
+		}
+		this.write(`${this.chalk.cyan('>')} To put your device in DFU manually, please:\n`);
+		this.write([
+			this.chalk.bold.white('1)'),
+			'Press and hold both the',
+			this.chalk.bold.cyan('RESET'),
+			'and',
+			this.chalk.bold.cyan('MODE/SETUP'),
+			'buttons simultaneously.\n'
+		].join(' '));
+		this.write([
+			this.chalk.bold.white('2)'),
+			'Release only the',
+			this.chalk.bold.cyan('RESET'),
+			'button while continuing to hold the',
+			this.chalk.bold.cyan('MODE/SETUP'),
+			'button.\n'
+		].join(' '));
+		this.write([
+			this.chalk.bold.white('3)'),
+			'Release the',
+			this.chalk.bold.cyan('MODE/SETUP'),
+			'button once the device begins to blink yellow.\n'
+		].join(' '));
+	}
+
+	logNormalModeRequired() {
+		this.write(`${this.chalk.red('!!!')} The device needs to be in Normal mode for this command.\n`);
+		this.write(`${this.chalk.cyan('>')} To put your device in Normal mode manually, please:\n`);
+		this.write([
+			'Press the',
+			this.chalk.bold.cyan('RESET'),
+			'button and Release it'
+		].join(' '));
+	}
+
 	logDeviceDetail(devices, { varsOnly = false, fnsOnly = false } = {}){
 		const { EOL, chalk } = this;
 		const deviceList = Array.isArray(devices) ? devices : [devices];

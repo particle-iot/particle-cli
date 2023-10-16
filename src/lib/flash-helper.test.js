@@ -2,7 +2,17 @@ const { expect, sinon } = require('../../test/setup');
 const { HalModuleParser, firmwareTestHelper, ModuleInfo, createAssetModule } = require('binary-version-reader');
 const chalk = require('chalk');
 const usbUtils = require('../cmd/usb-util');
-const { createFlashSteps, filterModulesToFlash, prepareDeviceForFlash, validateDFUSupport } = require('./flash-helper');
+const {
+	createFlashSteps,
+	filterModulesToFlash,
+	prepareDeviceForFlash,
+	validateDFUSupport,
+	getFileFlashInfo
+} = require('./flash-helper');
+const { PATH_TMP_DIR } = require('../../test/lib/env');
+const path = require('path');
+const fs = require('fs-extra');
+const { ensureDir } = require('fs-extra/lib/mkdirs');
 
 describe('flash-helper', () => {
 	const createModules = async () => {
@@ -458,14 +468,16 @@ describe('flash-helper', () => {
 		beforeEach(() => {
 			ui = {
 				write: sinon.stub(),
-				chalk
+				chalk,
+				logDFUModeRequired: sinon.stub(),
+				logNormalModeRequired: sinon.stub()
 			};
 		});
 		it('throws an error if the device os version does not support DFU', async () => {
 			let error;
 			const device = {
 				isInDfuMode: false,
-				platformId: 32,
+				platformId: 6,
 				firmwareVersion: '1.0.0',
 			};
 			try {
@@ -473,20 +485,22 @@ describe('flash-helper', () => {
 			} catch (e) {
 				error = e;
 			}
-			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
+			expect(ui.logDFUModeRequired).to.be.called;
+			expect(error.message).to.equal('Put the device in DFU mode and try again');
 		});
 		it('throws an error if the current device os is not defined and the device is not in DFU', async () => {
 			let error;
 			const device = {
 				isInDfuMode: false,
-				platformId: 32,
+				platformId: 6,
 			};
 			try {
 				await validateDFUSupport({ device, ui });
 			} catch (e) {
 				error = e;
 			}
-			expect(error).to.have.property('message', 'Put the device in DFU mode and try again');
+			expect(ui.logDFUModeRequired).to.be.called;
+			expect(error.message).to.equal('Put the device in DFU mode and try again');
 		});
 		it('passes if the device is in DFU mode', async () => {
 			let error;
@@ -515,5 +529,53 @@ describe('flash-helper', () => {
 			}
 			expect(error).to.be.undefined;
 		});
+	});
+
+	describe('getFileFlashInfo', () => {
+		const createBinary = async (moduleFunction, platformId) => {
+			const tempPath = 'flash-mode/binaries';
+			const fileName = 'my-binary.bin';
+			const binary = firmwareTestHelper.createFirmwareBinary({
+				platformId: platformId,
+				moduleFunction: moduleFunction,
+			});
+			// save binary
+			const filePath = path.join(PATH_TMP_DIR, tempPath);
+			const file = path.join(filePath, fileName);
+			await ensureDir(filePath);
+			await fs.writeFile(file, binary);
+			return file;
+		};
+
+		afterEach(async () => {
+			await fs.remove(path.join(PATH_TMP_DIR, 'flash-mode/binaries'));
+		});
+
+		it('returns dfu for known apps', async() => {
+			const fileName = 'tinker';
+			const mode = await getFileFlashInfo(fileName);
+			expect(mode).to.deep.equal({ flashMode: 'DFU' });
+		});
+		it('returns dfu for system parts', async () => {
+			const p2PlatformId = 32;
+			const file = await createBinary(ModuleInfo.FunctionType.SYSTEM_PART, p2PlatformId);
+			const mode = await getFileFlashInfo(file);
+			expect(mode).to.deep.equal({ flashMode: 'DFU', platformId: 32 });
+		});
+
+		it('returns normal for bootloader', async() => {
+			const p2PlatformId = 32;
+			const file = await createBinary(ModuleInfo.FunctionType.BOOTLOADER, p2PlatformId);
+			const mode = await getFileFlashInfo(file);
+			expect(mode).to.deep.equal({ flashMode: 'NORMAL', platformId: 32 });
+		});
+
+		it ('returns normal for ncp', async() => {
+			const trackerPlatformId = 26;
+			const file = await createBinary(ModuleInfo.FunctionType.NCP_FIRMWARE, trackerPlatformId);
+			const mode = await getFileFlashInfo(file);
+			expect(mode).to.deep.equal({ flashMode: 'NORMAL', platformId: 26 });
+		});
+
 	});
 });
