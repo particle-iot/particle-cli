@@ -1,5 +1,13 @@
 # Changelog
 
+# 3.17.0 - Oct 16 2023
+
+* `particle flash --local` now works offline
+* Device selector on `particle flash` `particle flash --local` `particle update` now retrieve more information
+* Fix Pick wrong device to flash when multiple devices are connected
+* `particle flash --usb` is aware of the required device mode depending on the binary
+* Update `particle-usb` dependency to `2.4.1`
+
 # 3.16.1 - Oct 2 2023
 
 * Revert unintentional change to particle serial commands
