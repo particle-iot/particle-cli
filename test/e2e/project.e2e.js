@@ -77,8 +77,9 @@ describe('Project Commands', () => {
 			expect(contents.map(stripRoot)).to.eql([
 				'README.md',
 				'project.properties',
-				'src',
-				'src/test-proj.ino'
+				'src/test-proj.cpp',
+				'.gitignore',
+				'.github/workflows/main.yaml'
 			]);
 		});
 
