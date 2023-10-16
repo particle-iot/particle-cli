@@ -178,44 +178,85 @@ async function getUsbDevices({ dfuMode = false } = {}){
 	}
 }
 
-async function getOneUsbDevice({ idOrName, api, auth, ui }) {
+async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId }) {
+	let usbDevice;
+	const normalModes = ['NORMAL', 'LISTENING', ''];
+	const dfuModes = ['DFU'];
 	if (idOrName) {
-		return openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
+		const device = await openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
+		await checkFlashMode({ flashMode, device });
 	}
 
 	const usbDevices = await getUsbDevices({ dfuMode: true });
+	let devices = await Promise.all(usbDevices.map(async (d) => {
+		const { id, mode } = await _getDeviceInfo(d);
+		const name = await _getDeviceName({ id, api, auth, ui });
+		return {
+			name: `${name} [${id}] (${(platformForId(d._info.id)).displayName}${mode ? ', ' + mode : '' })`,
+			platformId: d._info.id,
+			mode,
+			value: d
+		};
+	}));
 
-	let usbDevice;
-	if (usbDevices.length > 1) {
+	if (flashMode === 'DFU') {
+		devices = devices.filter(d => dfuModes.includes(d.mode));
+	}
+	if (flashMode === 'NORMAL') {
+		devices = devices.filter(d => normalModes.includes(d.mode));
+	}
+	if (platformId) {
+		devices = devices.filter(d => d.platformId === platformId);
+	}
+
+	if (devices.length > 1) {
 		const question = {
 			type: 'list',
 			name: 'device',
 			message: 'Which device would you like to select?',
 			choices() {
-				return Promise.all(usbDevices.map(async (d) => {
-					const { id, mode } = await _getDeviceInfo(d);
-					const name = await _getDeviceName({ id, api, auth, ui });
-					return {
-						name: `${name} [${id}] (${platformForId(d._info.id).displayName}${mode ? ', ' + mode : '' })`,
-						value: d
-					};
-				}));
+				return devices;
 			}
 		};
 		const nonInteractiveError = 'Multiple devices found. Connect only one device when running in non-interactive mode.';
 		const ans = await ui.prompt([question], { nonInteractiveError });
 		usbDevice = ans.device;
-	} else if (usbDevices.length === 1) {
-		usbDevice = usbDevices[0];
+	} else if (!devices.length) {
+		if (flashMode === 'DFU') {
+			ui.logDFUModeRequired();
+		} else {
+			ui.logNormalModeRequired();
+		}
+		throw new Error('No devices found');
 	} else {
-		throw new NotFoundError('No device found');
+		usbDevice = devices[0].value;
 	}
+
 
 	try {
 		await usbDevice.open();
 		return usbDevice;
 	} catch (err) {
 		await handleUsbError(err);
+	}
+}
+
+async function checkFlashMode({ flashMode, device, ui }){
+	switch (flashMode) {
+		case 'DFU':
+			if (!device.isInDfuMode) {
+				ui.logDFUModeRequired();
+				throw new Error('Put the device in DFU mode and try again');
+			}
+			break;
+		case 'NORMAL':
+			if (device.isInDfuMode) {
+				ui.logNormalModeRequired();
+				throw new Error('Put the device in Normal mode and try again');
+			}
+			break;
+		default:
+			break;
 	}
 }
 

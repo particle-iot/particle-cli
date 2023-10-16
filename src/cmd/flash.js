@@ -16,7 +16,14 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
-const { createFlashSteps, filterModulesToFlash, parseModulesToFlash, flashFiles, validateDFUSupport } = require('../lib/flash-helper');
+const {
+	createFlashSteps,
+	filterModulesToFlash,
+	parseModulesToFlash,
+	flashFiles,
+	validateDFUSupport,
+	getFileFlashInfo
+} = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 
 module.exports = class FlashCommand extends CLICommandBase {
@@ -63,7 +70,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			}
 
 			const { api, auth } = this._particleApi();
-			device = await usbUtils.getOneUsbDevice({ api, auth, ui: this.ui });
+			const { flashMode, platformId } = await getFileFlashInfo(binary);
+			device = await usbUtils.getOneUsbDevice({ api, auth, ui: this.ui, flashMode, platformId });
 			const platformName = platformForId(device.platformId).name;
 			validateDFUSupport({ device, ui: this.ui });
 
@@ -96,6 +104,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			if (device && device.isOpen) {
 				await device.close();
 			}
+			throw error;
 		}
 	}
 
