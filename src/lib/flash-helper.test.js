@@ -477,7 +477,7 @@ describe('flash-helper', () => {
 			let error;
 			const device = {
 				isInDfuMode: false,
-				platformId: 32,
+				platformId: 6,
 				firmwareVersion: '1.0.0',
 			};
 			try {
@@ -492,7 +492,7 @@ describe('flash-helper', () => {
 			let error;
 			const device = {
 				isInDfuMode: false,
-				platformId: 32,
+				platformId: 6,
 			};
 			try {
 				await validateDFUSupport({ device, ui });

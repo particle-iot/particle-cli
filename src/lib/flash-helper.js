@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
-const { PLATFORMS } =require('./platform');
+const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeToString, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const path = require('path');
@@ -279,7 +279,8 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 }
 
 function validateDFUSupport({ device, ui }) {
-	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0'))) {
+	const platform = platformForId(device.platformId);
+	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0')) && platform.generation === 2) {
 		ui.logDFUModeRequired({ showVersionWarning: true });
 		throw new Error('Put the device in DFU mode and try again');
 	}
