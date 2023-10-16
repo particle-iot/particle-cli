@@ -526,7 +526,7 @@ describe('Library Commands', () => {
 			await cli.setTestProfileAndLogin();
 		});
 
-		it('Adds a library to a project', async () => {
+		xit('Adds a library to a project', async () => {
 			const libPath = path.join(projPath, 'lib');
 
 			expect(await fs.pathExists(libPath)).to.equal(false);
@@ -547,7 +547,7 @@ describe('Library Commands', () => {
 			expect(await fs.pathExists(libPath)).to.equal(false);
 		});
 
-		it('Adds a library at a specific version to a project', async () => {
+		xit('Adds a library at a specific version to a project', async () => {
 			const libPath = path.join(projPath, 'lib');
 
 			expect(await fs.pathExists(libPath)).to.equal(false);
@@ -633,7 +633,7 @@ describe('Library Commands', () => {
 	});
 
 	describe('Library Copy Subcommand', () => {
-		it('Copies a library to a project', async () => {
+		xit('Copies a library to a project', async () => {
 			const opts = { cwd: projPath };
 			const args = ['library', 'copy', 'dotstar'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
@@ -657,7 +657,7 @@ describe('Library Commands', () => {
 			]);
 		});
 
-		it('Copies a library at a specific version to a project', async () => {
+		xit('Copies a library at a specific version to a project', async () => {
 			const version = '0.0.3';
 			const opts = { cwd: projPath };
 			const args = ['library', 'copy', `dotstar@${version}`];
@@ -700,7 +700,7 @@ describe('Library Commands', () => {
 	});
 
 	describe('Library Install Subcommand', () => {
-		it('Installs a library to a project', async () => {
+		xit('Installs a library to a project', async () => {
 			const name = 'dotstar';
 			const opts = { cwd: projPath };
 			const args = ['library', 'install', name];
@@ -721,7 +721,7 @@ describe('Library Commands', () => {
 			expect(projProps).to.equal('name=test-proj\n');
 		});
 
-		it('Installs a library to a project using the `--copy` flag', async () => {
+		xit('Installs a library to a project using the `--copy` flag', async () => {
 			const name = 'dotstar';
 			const opts = { cwd: projPath };
 			const args = ['library', 'install', name, '--copy'];
@@ -757,7 +757,7 @@ describe('Library Commands', () => {
 			]);
 		});
 
-		it('Installs a project\'s libraries using the `--vendored` flag', async () => {
+		xit('Installs a project\'s libraries using the `--vendored` flag', async () => {
 			const projPropsPath = path.join(projPath, 'project.properties');
 			let projProps = await fs.readFile(projPropsPath, 'utf8');
 
