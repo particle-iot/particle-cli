@@ -188,6 +188,9 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 	}
 
 	const usbDevices = await getUsbDevices({ dfuMode: true });
+	if (!usbDevices.length) {
+		throw new Error('No devices found');
+	}
 	let devices = await Promise.all(usbDevices.map(async (d) => {
 		const { id, mode } = await _getDeviceInfo(d);
 		const name = await _getDeviceName({ id, api, auth, ui });
@@ -227,7 +230,7 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 	} else if (!devices.length) {
 		if (flashMode === 'DFU') {
 			ui.logDFUModeRequired();
-		} else {
+		} else if (flashMode === 'NORMAL') {
 			ui.logNormalModeRequired();
 		}
 		throw new Error('No devices found');
