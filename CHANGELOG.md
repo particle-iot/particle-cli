@@ -1,5 +1,13 @@
 # Changelog
 
+# 3.17.2 - Oct 17 2023
+
+* Fix wrong message when attempting to run `particle update` | `particle flash` | `particle flash --local` without connected devices
+
+# 3.17.1 - Oct 16 2023
+
+* Add notes for e2e tests
+
 # 3.17.0 - Oct 16 2023
 
 * `particle flash --local` now works offline
