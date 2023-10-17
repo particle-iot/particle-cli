@@ -55,7 +55,7 @@ describe('Project Commands', () => {
 	});
 
 	describe('Project Create Subcommand', () => {
-		xit('Creates a project', async () => {
+		it('Creates a project', async () => {
 			const args = ['project', 'create', PATH_TMP_DIR];
 			const subprocess = cli.run(args);
 
@@ -75,15 +75,18 @@ describe('Project Commands', () => {
 			const stripRoot = (x) => x.replace(localProjPath + path.sep, '');
 
 			expect(contents.map(stripRoot)).to.eql([
+				'.github',
+				'.github/workflows',
+				'.github/workflows/main.yaml',
+				'.gitignore',
 				'README.md',
 				'project.properties',
+				'src',
 				'src/test-proj.cpp',
-				'.gitignore',
-				'.github/workflows/main.yaml'
 			]);
 		});
 
-		xit('Creates a project in the default location', async () => {
+		it('Creates a project in the default location', async () => {
 			const args = ['project', 'create'];
 			const subprocess = cli.run(args);
 
@@ -106,14 +109,18 @@ describe('Project Commands', () => {
 			const stripRoot = (x) => x.replace(globalProjPath + path.sep, '');
 
 			expect(contents.map(stripRoot)).to.eql([
+				'.github',
+				'.github/workflows',
+				'.github/workflows/main.yaml',
+				'.gitignore',
 				'README.md',
 				'project.properties',
 				'src',
-				'src/test-proj.ino'
+				'src/test-proj.cpp'
 			]);
 		});
 
-		xit('Creates a project using the `--name` flag', async () => {
+		it('Creates a project using the `--name` flag', async () => {
 			const args = ['project', 'create', '--name', projName, PATH_TMP_DIR];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
@@ -127,10 +134,14 @@ describe('Project Commands', () => {
 			const stripRoot = (x) => x.replace(localProjPath + path.sep, '');
 
 			expect(contents.map(stripRoot)).to.eql([
+				'.github',
+				'.github/workflows',
+				'.github/workflows/main.yaml',
+				'.gitignore',
 				'README.md',
 				'project.properties',
 				'src',
-				'src/test-proj.ino'
+				'src/test-proj.cpp'
 			]);
 		});
 	});
