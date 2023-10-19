@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.17.3 - Oct 19 2023
+
+* Fix `particle flash --local` were not picking the deviceId from params
+* Update `particle-commands` dependency to `0.5.3`
+
 # 3.17.2 - Oct 17 2023
 
 * Fix wrong message when attempting to run `particle update` | `particle flash` | `particle flash --local` without connected devices
