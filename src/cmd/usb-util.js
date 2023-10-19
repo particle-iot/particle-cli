@@ -185,6 +185,7 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 	if (idOrName) {
 		const device = await openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode: true });
 		await checkFlashMode({ flashMode, device });
+		return device;
 	}
 
 	const usbDevices = await getUsbDevices({ dfuMode: true });
