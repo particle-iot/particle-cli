@@ -205,7 +205,7 @@ async function getFileFlashInfo(file) {
 	if (!await fs.pathExists(file)) {
 		return { flashMode: 'DFU' };
 	}
-	const normalModules = ['assets', 'bootloader'];
+	const normalModules = ['asset', 'bootloader'];
 	const parser = new ModuleParser();
 	const binary = await parser.parseFile(file);
 	const moduleType = moduleTypeFromNumber(binary.prefixInfo.moduleFunction);
@@ -244,7 +244,7 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 			factoryAddress = parseInt(segment.address, 16);
 		}
 
-		if (moduleType === 'assets') {
+		if (moduleType === 'asset') {
 			flashStep.flashMode = 'normal';
 			assetModules.push(flashStep);
 		} else if (moduleType === 'bootloader' || moduleDefinition.storage === 'externalMcu') {
