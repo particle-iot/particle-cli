@@ -118,27 +118,18 @@ async function sortBinariesByDependency(modules) {
 
 
 
-function moduleTypeToString(str) {
-	switch (str) {
-		case ModuleInfo.FunctionType.BOOTLOADER:
-			return 'bootloader';
-		case ModuleInfo.FunctionType.SYSTEM_PART:
-			return 'systemPart';
-		case ModuleInfo.FunctionType.USER_PART:
-			return 'userPart';
-		case ModuleInfo.FunctionType.RADIO_STACK:
-			return 'radioStack';
-		case ModuleInfo.FunctionType.NCP_FIRMWARE:
-			return 'ncpFirmware';
-		case ModuleInfo.FunctionType.ASSET:
-			return 'assets';
-		default:
-			throw new Error(`Unknown module type: ${str}`);
+function moduleTypeFromNumber(num) {
+	for (const typeStr of Object.keys(ModuleInfo.FunctionType)) {
+		if (ModuleInfo.FunctionType[typeStr] === num) {
+			// convert from capital to camel case. SYSTEM_PART => systemPart
+			return typeStr.toLowerCase().replace(/_(.)/g, (g) => g[1].toUpperCase());
+		}
 	}
+	throw new Error(`Unknown module type: ${num}`);
 }
 
 module.exports = {
 	DependencyWalker,
 	sortBinariesByDependency,
-	moduleTypeToString
+	moduleTypeFromNumber
 };
