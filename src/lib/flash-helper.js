@@ -2,7 +2,7 @@ const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
 const { PLATFORMS, platformForId } =require('./platform');
-const { moduleTypeToString, sortBinariesByDependency } = require('./dependency-walker');
+const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
@@ -175,7 +175,7 @@ function filterModulesToFlash({ modules, platformId, allowAll = false }) {
 	const filteredModules = [];
 	// remove encrypted files
 	for (const moduleInfo of modules) {
-		const moduleType = moduleTypeToString(moduleInfo.prefixInfo.moduleFunction);
+		const moduleType = moduleTypeFromNumber(moduleInfo.prefixInfo.moduleFunction);
 		const platformModule = platform.firmwareModules.find(m => m.type === moduleType && m.index === moduleInfo.prefixInfo.moduleIndex);
 		// filter encrypted modules
 		const isEncrypted = platformModule && platformModule.encrypted;
@@ -205,10 +205,10 @@ async function getFileFlashInfo(file) {
 	if (!await fs.pathExists(file)) {
 		return { flashMode: 'DFU' };
 	}
-	const normalModules = ['assets', 'bootloader'];
+	const normalModules = ['asset', 'bootloader'];
 	const parser = new ModuleParser();
 	const binary = await parser.parseFile(file);
-	const moduleType = moduleTypeToString(binary.prefixInfo.moduleFunction);
+	const moduleType = moduleTypeFromNumber(binary.prefixInfo.moduleFunction);
 	const moduleDefinition = PLATFORMS.find(p => p.id === binary.prefixInfo.platformID).firmwareModules
 		.find(firmwareModule => firmwareModule.type === moduleType);
 
@@ -228,9 +228,9 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 			name: path.basename(module.filename),
 			data
 		};
-		const moduleType = moduleTypeToString(module.prefixInfo.moduleFunction);
+		const moduleType = moduleTypeFromNumber(module.prefixInfo.moduleFunction);
 		const moduleDefinition = platform.firmwareModules
-			.find(firmwareModule => firmwareModule.type === moduleType);
+			.find(firmwareModule => firmwareModule.type === moduleType) || {};
 
 		let factoryAddress;
 		if (factory) {
@@ -244,7 +244,7 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 			factoryAddress = parseInt(segment.address, 16);
 		}
 
-		if (moduleType === 'assets') {
+		if (moduleType === 'asset') {
 			flashStep.flashMode = 'normal';
 			assetModules.push(flashStep);
 		} else if (moduleType === 'bootloader' || moduleDefinition.storage === 'externalMcu') {
