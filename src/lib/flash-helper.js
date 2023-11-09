@@ -212,7 +212,7 @@ async function getFileFlashInfo(file) {
 	const moduleDefinition = PLATFORMS.find(p => p.id === binary.prefixInfo.platformID).firmwareModules
 		.find(firmwareModule => firmwareModule.type === moduleType);
 	if (!moduleDefinition) {
-		throw new Error(`Module type ${moduleType} unsupported for ${PLATFORMS.find(p => p.id === binary.prefixInfo.platformID)}`);
+		throw new Error(`Module type ${moduleType} unsupported for ${PLATFORMS.find(p => p.id === binary.prefixInfo.platformID).name}`);
 	}
 	return {
 		flashMode: normalModules.includes(moduleType) || moduleDefinition.storage === 'externalMcu' ? 'NORMAL' : 'DFU',
