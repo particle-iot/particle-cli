@@ -577,5 +577,18 @@ describe('flash-helper', () => {
 			expect(mode).to.deep.equal({ flashMode: 'NORMAL', platformId: 26 });
 		});
 
+		it ('returns an error for mono builds', async() => {
+			const p2PlatformId = 32;
+			const file = await createBinary(ModuleInfo.FunctionType.MONO_FIRMWARE, p2PlatformId);
+			let error;
+			try {
+				await getFileFlashInfo(file);
+			} catch (e) {
+				error = e;
+			}
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error).to.have.property('message', 'Module type monoFirmware unsupported for p2');
+		});
+
 	});
 });
