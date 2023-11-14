@@ -234,6 +234,15 @@ module.exports = class ParticleApi {
 		return this.api.getDevice({ deviceId: id, auth: this.accessToken });
 	}
 
+	getLogicFunctionList({ org }) {
+		// XXX: listLogicFunctions also takes headers and context.
+		// Include those in the future as needed
+		return this.api.listLogicFunctions({
+			org: org,
+			auth: this.accessToken,
+		});
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)

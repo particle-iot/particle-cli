@@ -1,0 +1,85 @@
+{
+  "logic_functions": [
+    {
+      "id": "0021e8f4-64ee-416d-83f3-898aa909fb1b",
+      "owner_id": "user:5dccf215b8d97300012b9d62",
+      "version": 1,
+      "enabled": true,
+      "name": "LF1",
+      "description": "Logic Function 1 on SandBox",
+      "template_slug": null,
+      "source": {
+        "type": "JavaScript",
+        "code": "import Particle from 'particle:core';\nexport default function main({ event }) {\n   Particle.publish('logic-publish', event.eventData, { productId: 18552 });\n}"
+      },
+      "created_at": "2023-11-07T23:06:28.942405Z",
+      "updated_at": "2023-11-07T23:06:28.942405Z",
+      "created_by": "user:5dccf215b8d97300012b9d62",
+      "updated_by": "user:5dccf215b8d97300012b9d62",
+      "logic_triggers": [
+        {
+          "type": "Event",
+          "id": "36e618dc-62be-4d05-a6bd-213ca850182b",
+          "logic_function_id": "0021e8f4-64ee-416d-83f3-898aa909fb1b",
+          "enabled": true,
+          "product_id": 18552,
+          "event_name": "An event name"
+        }
+      ]
+    },
+    {
+      "id": "857238f2-575e-469a-8baa-807c775953b3",
+      "owner_id": "user:5dccf215b8d97300012b9d62",
+      "version": 4,
+      "enabled": true,
+      "name": "LF2",
+      "description": "Logic Function 2 on SandBox",
+      "template_slug": null,
+      "source": {
+        "type": "JavaScript",
+        "code": "import Particle from 'particle:core';\nexport default function main({ event }) {\n  Particle.publish('logic-publish', event.eventData, { productId: 18552 });\n}"
+      },
+      "created_at": "2023-10-18T20:02:51.457750Z",
+      "updated_at": "2023-10-19T19:48:05.425960Z",
+      "created_by": "user:5dccf215b8d97300012b9d62",
+      "updated_by": "user:5dccf215b8d97300012b9d62",
+      "logic_triggers": [
+        {
+          "type": "Event",
+          "id": "6b40092a-6992-471d-9af2-e175ec22188e",
+          "logic_function_id": "857238f2-575e-469a-8baa-807c775953b3",
+          "enabled": true,
+          "product_id": 18552,
+          "event_name": "temperature"
+        }
+      ]
+    },
+    {
+      "id": "d698f371-35e7-41c4-921d-818421145e0c",
+      "owner_id": "user:5dccf215b8d97300012b9d62",
+      "version": 2,
+      "enabled": true,
+      "name": "LF3",
+      "description": "Logic Function 3 on SandBox",
+      "template_slug": null,
+      "source": {
+        "type": "JavaScript",
+        "code": "import Particle from 'particle:core';\nexport default function main({ event }) {\n  Particle.publish('logic-publish', event.eventData, { productId: 18552 });\n}"
+      },
+      "created_at": "2023-11-08T07:01:20.134717Z",
+      "updated_at": "2023-11-08T17:47:03.887453Z",
+      "created_by": "user:5dccf215b8d97300012b9d62",
+      "updated_by": "user:5dccf215b8d97300012b9d62",
+      "logic_triggers": [
+        {
+          "type": "Event",
+          "id": "94ec48bb-63fd-443a-a187-e42ea240246c",
+          "logic_function_id": "d698f371-35e7-41c4-921d-818421145e0c",
+          "enabled": true,
+          "product_id": 18552,
+          "event_name": "Random Event"
+        }
+      ]
+    }
+  ]
+}

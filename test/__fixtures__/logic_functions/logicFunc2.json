@@ -1,0 +1,125 @@
+{
+    "logic_functions": [
+      {
+        "id": "ce8fda42-bd60-4823-b995-d4875e63b036",
+        "owner_id": "org:5da78eb005e79f00015bb3ac",
+        "version": 1,
+        "enabled": true,
+        "name": "LF4",
+        "description": "Logic Function 4 on Particle Org",
+        "template_slug": null,
+        "source": {
+          "type": "JavaScript",
+          "code": "import Particle from 'particle:core';\nexport default function main() {\n  console.log('Triggered', JSON.stringify(Particle.getContext(), null, 2));  \n}"
+        },
+        "created_at": "2023-08-22T17:02:06.132896Z",
+        "updated_at": "2023-08-22T17:02:06.132896Z",
+        "created_by": "user:53187f789072106ed300048f",
+        "updated_by": "user:53187f789072106ed300048f",
+        "logic_triggers": [
+          {
+            "type": "LedgerChange",
+            "id": "a6e48ac8-34aa-41a9-ad14-f94d7cf847d4",
+            "logic_function_id": "ce8fda42-bd60-4823-b995-d4875e63b036",
+            "enabled": true,
+            "change_type": "set",
+            "ledger_name": "productledger",
+            "instance_scope": null
+          }
+        ]
+      },
+      {
+        "id": "cf8412e3-5ffc-46af-8f7e-0e3ac3ebb740",
+        "owner_id": "org:5da78eb005e79f00015bb3ac",
+        "version": 3,
+        "enabled": true,
+        "name": "LF5",
+        "description": "Logic Function 5 on Particle Org",
+        "template_slug": null,
+        "source": {
+          "type": "JavaScript",
+          "code": "export default function main(context) {\n  // Do something here!\n}"
+        },
+        "created_at": "2023-10-19T22:04:41.902547Z",
+        "updated_at": "2023-11-09T20:53:16.939561Z",
+        "created_by": "user:629fa9aee70eb0c71e7a3c03",
+        "updated_by": "user:60401d41668a672f2c3b75e4",
+        "logic_triggers": [
+          {
+            "type": "Event",
+            "id": "93610199-01ee-462f-ac1e-62c2a3fc3f2a",
+            "logic_function_id": "cf8412e3-5ffc-46af-8f7e-0e3ac3ebb740",
+            "enabled": true,
+            "product_id": 18313,
+            "event_name": "trigger-me"
+          }
+        ]
+      },
+      {
+        "id": "dec866e3-3aae-4d42-b8cc-12466d71ca15",
+        "owner_id": "org:5da78eb005e79f00015bb3ac",
+        "version": 3,
+        "enabled": true,
+        "name": "LF6",
+        "description": "Logic Function 6 on Particle Org",
+        "template_slug": null,
+        "source": {
+          "type": "JavaScript",
+          "code": "import Particle from 'particle:core';\nexport default function main() {\n  const {.event } = Particle.getContext();\n  \n  // Something like \"wraithan/desk/temp\"\n  const name = event.eventName;\n  // Something like { \"tempF\": 79.16, \"tempC\": 26.2, \"humidity\": 44.2 }\n  const data = JSON.parse(event.eventData);\n  \n  console.log(`Received event: ${name} with data: ${JSON.stringify(data)}`);\n  \n  let deviceName = \"\";\n  const parts = name.split('/');\n  if (parts[0] == \"wraithan\" && parts[2] == \"temp\") {\n      deviceName = parts[1];\n  } else {\n      console.log(\"Invalid event name\", { name });\n      throw new Error(\"Invalid event name\");\n  }\n  \n  const payload = {\n      name: deviceName,\n      ...data\n  };\n  \n  Particle.publish(`wraithan/weather-window/update`, JSON.stringify(payload), { productId: 18840 });\n  \n}"
+        },
+        "created_at": "2023-08-01T23:27:42.153534Z",
+        "updated_at": "2023-09-07T15:25:37.069713Z",
+        "created_by": "user:5da8ac063c659300014484b0",
+        "updated_by": "user:5da8ac063c659300014484b0",
+        "logic_triggers": [
+          {
+            "type": "Event",
+            "id": "a1da5229-a02c-4728-ba72-b108accb06b1",
+            "logic_function_id": "dec866e3-3aae-4d42-b8cc-12466d71ca15",
+            "enabled": true,
+            "product_id": 18780,
+            "event_name": "wraithan/desk/temp"
+          },
+          {
+            "type": "Event",
+            "id": "f841a0c4-d15d-466a-91c0-48c15b6ce9a3",
+            "logic_function_id": "dec866e3-3aae-4d42-b8cc-12466d71ca15",
+            "enabled": true,
+            "product_id": 18780,
+            "event_name": "wraithan/lamp/temp"
+          }
+        ]
+      },
+      {
+        "id": "f825d819-bb51-4060-844d-895cd048fe58",
+        "owner_id": "org:5da78eb005e79f00015bb3ac",
+        "version": 8,
+        "enabled": true,
+        "name": "Publish every minute",
+        "description": "",
+        "template_slug": null,
+        "source": {
+          "type": "JavaScript",
+          "code": "import Particle from 'particle:core';\nexport default function main() {\n  Particle.publish(\"fromlogic\", {foo: \"bar\"}, { productId: 9372 });\n  \n  // Argon\n  const ledger9372 = Particle.ledger('productledger', { productId: 9372 });\n  ledger9372.set({\n    foo: 'bar',\n    baz: (new Date()).toString()\n  });\n  \n  // Boron\n  const ledger9439 = Particle.ledger('productledger', { productId: 9439 });\n  ledger9439.set({\n    foo: 'bar',\n    baz: (new Date()).toString()\n  });\n  \n  console.log('Done');  \n}"
+        },
+        "created_at": "2023-08-01T19:41:15.408760Z",
+        "updated_at": "2023-11-08T17:58:02.938929Z",
+        "created_by": "user:53187f789072106ed300048f",
+        "updated_by": "user:61425157945885830234b060",
+        "logic_triggers": [
+          {
+            "type": "Scheduled",
+            "id": "abc5a70d-740a-4be5-b03c-ea83d8e5bcc9",
+            "logic_function_id": "f825d819-bb51-4060-844d-895cd048fe58",
+            "enabled": true,
+            "version": 8,
+            "cron": "* * * * *",
+            "start_at": "2023-11-08T17:58:02.964052Z",
+            "end_at": null,
+            "last_scheduled_at": "2023-11-14T01:10:00Z",
+            "next_unscheduled_at": "2023-11-14T01:11:00Z"
+          }
+        ]
+      }
+    ]
+}

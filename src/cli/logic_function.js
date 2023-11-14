@@ -130,5 +130,5 @@ module.exports = ({ commandProcessor, root }) => {
         }
     });
 
-    return logic_functions;
+    return logic_function;
 };
