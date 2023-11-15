@@ -170,10 +170,8 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', DEVICE_NAME, bin];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'Including:',
-			`    ${bin}`,
-			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK: Update started'
+			`Flashing firmware to your device ${DEVICE_NAME}`,
+			'Flash success!'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
