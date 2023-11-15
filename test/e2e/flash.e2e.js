@@ -182,6 +182,7 @@ describe('Flash Commands [@device]', () => {
 	});
 
 	it('Flashes a `.bin` file using usb', async () => {
+		await cli.waitUntilOnline();
 		await cli.enterDFUMode();
 		const { bin } = await cli.compileBlankFirmwareForTest(DEVICE_PLATFORM_NAME);
 		const args = ['flash', bin, '--usb'];
