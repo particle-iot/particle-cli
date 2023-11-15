@@ -217,7 +217,7 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', 'WATNOPE.bin', '--usb'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'Error writing firmware: file does not exist and no known app found. tried: `WATNOPE.bin`'
+			'WATNOPE.bin doesn\'t exist'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
