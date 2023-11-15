@@ -195,8 +195,6 @@ describe('Flash Commands [@device]', () => {
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
-
-		await cli.resetDevice();
 		await cli.waitForVariable('name', 'blank');
 	});
 
