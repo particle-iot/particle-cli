@@ -133,7 +133,7 @@ Tags provide an easy way to filter tests using use mocha's `--grep` feature ([do
 
 ## Known Issues
 
-* tests run somewhat slowly (~30m) and are generally less stable than unitish tests
+* tests run somewhat slowly (~30m) and are generally less stable than unitish tests.
 * currently known to work under macOS _only_ when running with a device
 * tests should run in docker to achieve proper isolation
 * some tests require two devices to be connected via USB or they will fail
