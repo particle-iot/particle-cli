@@ -42,7 +42,46 @@ Additional details:
 * `E2E_USERNAME` must not have 2FA enabled
 * `E2E_DEVICE_NAME` should be claimed to your user and connected to your computer over USB
   * It should be running firmware with a `check` function
-* The product 01 devices should be running firmware with the TBD functions
+
+#### Requisites:
+* You should have 3 devices connected to the cloud.
+* two of them should belong to the same product and claimed by the user
+* one should be outside from any product and claimed by the user
+
+###### Configuring `E2E_DEVICE_*`:
+* Pick a device that will be connected to your computer over USB
+* This device should:
+  * be connected to the cloud
+  * be claimed to your `E2E_USERNAME`
+  * be running firmware `stroby` compile and flash `test/__fixtures__/projects/stroby`
+  * be outside from any product
+  * be named with `E2E_DEVICE_NAME`
+* Works better if the device is Gen3
+
+###### Configuring `E2E_FOREIGN_DEVICE_*`:
+* Pick a device that your `E2E_USERNAME` does not own and can't claim or have access (pick one from `connectivity-test-fleet@particle.io` sandbox)
+* This device should:
+  * Not required to be connected to the cloud (can be offline)
+  * be claimed to another user
+
+###### Configuring `E2E_PRODUCT_01_*`:
+* Create a product into your sandbox account (`E2E_USERNAME` sandbox account)
+* Add two devices to the product
+* Add a different group name to each device (unique ones)
+* This devices should:
+  * be connected to the cloud
+  * be claimed to your `E2E_USERNAME`
+  * be running firmware `stroby` compile and flash `test/__fixtures__/projects/stroby`
+  * be named with `E2E_PRODUCT_01_DEVICE_01_NAME` and `E2E_PRODUCT_01_DEVICE_02_NAME`
+  * not be connected to your computer over USB
+
+***IMPORTANT***
+
+  Every time you run the tests, the devices must be connected to the cloud.
+  If you have a device that is not connected to the cloud, some tests will fail.
+  
+  If for some reason a test fails try to run it using `it.only` expression,
+  this will run only the test and should pass (in case there is no real issue or regression).
 
 ## How to Run
 
