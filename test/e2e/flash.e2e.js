@@ -188,8 +188,8 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', bin, '--usb'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			`Flashing argon device ${DEVICE_ID}`,
-			'Flashing blank-argon.bin',
+			`Flashing ${DEVICE_PLATFORM_NAME} device ${DEVICE_ID}`,
+			`Flashing blank-${DEVICE_PLATFORM_NAME}.bin`,
 			'Flash success!'
 		];
 
