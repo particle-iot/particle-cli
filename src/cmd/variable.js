@@ -217,7 +217,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 			return Promise.resolve(this._cachedVariableList);
 		}
 
-		this.ui.stderr.write(`polling server to see what devices are online, and what variables are available${os.EOL}`);
+		this.ui.stdout.write(`polling server to see what devices are online, and what variables are available${os.EOL}`);
 
 		const api = new LegacyApiClient();
 		api.ensureToken();
@@ -226,7 +226,7 @@ module.exports = class VariableCommand extends CLICommandBase {
 			.then(() => api.listDevices())
 			.then(devices => {
 				if (!devices || (devices.length === 0)){
-					this.ui.stderr.write(`No devices found.${os.EOL}`);
+					this.ui.stdout.write(`No devices found.${os.EOL}`);
 					this._cachedVariableList = null;
 				} else {
 					const promises = [];
