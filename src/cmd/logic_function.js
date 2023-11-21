@@ -31,7 +31,7 @@ module.exports = class LogicFunctionsCommand {
 					console.log(`  - ${item.name} (${ item.enabled ? chalk.italic('enabled') : chalk.italic('disabled') })\n    - ID: ${item.id}\n    - ${item.logic_triggers[0].type} based trigger`);
 				});
 				console.log('\n');
-				console.log(`To view a Logic Function's code, see \`particle lf get\`.`);
+				console.log('To view a Logic Function\'s code, see `particle lf get`.');
 				console.log('\n');
 			}
 			return res;
@@ -41,32 +41,32 @@ module.exports = class LogicFunctionsCommand {
 	}
 
 	async get({ org, name, id }) {
-        // TODO
-    }
+		// TODO
+	}
 
-    async create({ org, params: { filepath } }) {
-        // TODO
-    }
+	async create({ org, params: { filepath } }) {
+		// TODO
+	}
 
-    async execute({ org, data, params: { filepath } }) {
-        // TODO
-    }
+	async execute({ org, data, params: { filepath } }) {
+		// TODO
+	}
 
-    async deploy({ org, params: { filepath }}) {
-        // TODO
-    }
+	async deploy({ org, params: { filepath } }) {
+		// TODO
+	}
 
-    async disable({ org, nane, id }) {
-        // TODO
-    }
+	async disable({ org, nane, id }) {
+		// TODO
+	}
 
-    async delete({ org, name, id }) {
-        // TODO
-    }
+	async delete({ org, name, id }) {
+		// TODO
+	}
 
-    async logs({ org, name, id, saveTo }) {
-        // TODO
-    }
+	async logs({ org, name, id, saveTo }) {
+		// TODO
+	}
 };
 
 // UTILS //////////////////////////////////////////////////////////////////////

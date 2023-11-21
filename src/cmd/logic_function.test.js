@@ -11,9 +11,9 @@ const { createAPI } = require('./logic_function');
 
 describe('LogicFunctionCommands', () => {
 	let logicFunctionCommands;
-    let logicFunc1 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc1.json'), 'utf-8');
+	let logicFunc1 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc1.json'), 'utf-8');
 	logicFunc1 = JSON.parse(logicFunc1);
-    let logicFunc2 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc2.json'), 'utf-8');
+	let logicFunc2 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc2.json'), 'utf-8');
 	logicFunc2 = JSON.parse(logicFunc2);
 
 	beforeEach(async () => {
@@ -21,7 +21,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	afterEach(async () => {
-        // TODO: Fill this out?
+		// TODO: Fill this out?
 	});
 
 	describe('list', () => {
@@ -53,7 +53,7 @@ describe('LogicFunctionCommands', () => {
 			expect (stub.isDone()).to.be.true;
 		});
 
-        it('shows relevant msg is no logic functions are found', async () => {
+		it('shows relevant msg is no logic functions are found', async () => {
 			const stub = nock('https://api.particle.io/v1', )
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: [] });
@@ -67,7 +67,7 @@ describe('LogicFunctionCommands', () => {
 			expect (stub.isDone()).to.be.true;
 		});
 
-        it('throws an error if API is not accessible', async () => {
+		it('throws an error if API is not accessible', async () => {
 			const stub = nock('https://api.particle.io/v1', )
 				.intercept('/logic/functions', 'GET')
 				.reply(500, { error: 'Internal Server Error' });
@@ -84,7 +84,7 @@ describe('LogicFunctionCommands', () => {
 			expect (stub.isDone()).to.be.true;
 		});
 
-        it('throws an error if org is not found', async () => {
+		it('throws an error if org is not found', async () => {
 			const stub = nock('https://api.particle.io/v1/orgs/particle')
 				.intercept('/logic/functions', 'GET')
 				.reply(404, { error: 'Organization Not Found' });
