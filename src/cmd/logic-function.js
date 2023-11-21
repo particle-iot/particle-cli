@@ -2,14 +2,16 @@ const ParticleAPI = require('./api');
 const VError = require('verror');
 const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
-const chalk = require('chalk');
+const CLICommandBase = require('./base');
+const os = require('os');
 
 /**
  * Commands for managing encryption keys.
  * @constructor
  */
-module.exports = class LogicFunctionsCommand {
-	constructor() {
+module.exports = class LogicFunctionsCommand extends CLICommandBase {
+	constructor(...args) {
+		super(...args);
 	}
 
 	async list({ org }) {
@@ -20,19 +22,19 @@ module.exports = class LogicFunctionsCommand {
 			const orgName = org ? org : 'Sandbox';
 			const list = res.body['logic_functions'];
 			if (list.length === 0) {
-				console.log(`No Logic Functions currently deployed in your ${orgName}.`);
-				console.log(`To create a Logic Function, see \`particle logic-function create\`.\n
-							To view Functions from an organization, use the \`--org\` option.\n
-							To download an existing Logic Function, see \`particle lf get\`.`);
+				this.ui.stdout.write(`No Logic Functions currently deployed in your ${orgName}.`);
+				this.ui.stdout.write(`To create a Logic Function, see \`particle logic-function create\`.${os.EOL}
+							To view Functions from an organization, use the \`--org\` option.${os.EOL}
+							To download an existing Logic Function, see \`particle lf get\`.${os.EOL}`);
 			} else {
-				console.log(`Logic Functions currently deployed in your ${orgName}:\n`);
+				this.ui.stdout.write(`Logic Functions currently deployed in your ${orgName}:${os.EOL}`);
 				list.forEach((item) => {
 					// We assume atleast one trigger
-					console.log(`  - ${item.name} (${ item.enabled ? chalk.italic('enabled') : chalk.italic('disabled') })\n    - ID: ${item.id}\n    - ${item.logic_triggers[0].type} based trigger`);
+					this.ui.stdout.write(`- ${item.name} (${ item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.grey('disabled') })${os.EOL}`);
+					this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
+					this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
 				});
-				console.log('\n');
-				console.log('To view a Logic Function\'s code, see `particle lf get`.');
-				console.log('\n');
+				this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`);
 			}
 			return res;
 		} catch (e) {
