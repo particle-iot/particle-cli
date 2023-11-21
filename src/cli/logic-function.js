@@ -8,7 +8,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().list(args);
 		}
 	});
@@ -26,7 +26,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().get(args);
 		}
 	});
@@ -39,7 +39,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().create(args);
 		}
 	});
@@ -55,7 +55,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().execute(args);
 		}
 	});
@@ -68,7 +68,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().deploy(args);
 		}
 	});
@@ -86,7 +86,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().disable(args);
 		}
 	});
@@ -104,7 +104,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().delete(args);
 		}
 	});
@@ -125,7 +125,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const LogicFunctionsCmd = require('../cmd/logic_function');
+			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().logs(args);
 		}
 	});

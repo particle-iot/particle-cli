@@ -1,11 +1,9 @@
-const { expect, sinon } = require('../../test/setup');
-const LogicFunctionCommands = require('./logic_function');
+const { expect } = require('../../test/setup');
+const LogicFunctionCommands = require('./logic-function');
 const fs = require('fs');
-const ParticleAPI = require('./api');
 const path = require('path');
 const nock = require('nock');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS } = require('../../test/lib/env');
-const { createAPI } = require('./logic_function');
 
 
 
@@ -85,7 +83,7 @@ describe('LogicFunctionCommands', () => {
 		});
 
 		it('throws an error if org is not found', async () => {
-			const stub = nock('https://api.particle.io/v1/orgs/particle')
+			nock('https://api.particle.io/v1/orgs/particle')
 				.intercept('/logic/functions', 'GET')
 				.reply(404, { error: 'Organization Not Found' });
 
