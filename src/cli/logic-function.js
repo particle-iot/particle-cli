@@ -1,7 +1,7 @@
 module.exports = ({ commandProcessor, root }) => {
-	const logic_function = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy logic functions');
+	const logicFunction = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy logic functions');
 
-	commandProcessor.createCommand(logic_function, 'list', 'Lists the deployed logic functions', {
+	commandProcessor.createCommand(logicFunction, 'list', 'Lists the deployed logic functions', {
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -13,7 +13,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logic_function, 'get', 'Downloads the logic function', {
+	commandProcessor.createCommand(logicFunction, 'get', 'Downloads the logic function', {
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -31,7 +31,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logic_function, 'create', 'Creates a logic function', {
+	commandProcessor.createCommand(logicFunction, 'create', 'Creates a logic function', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -44,7 +44,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logic_function, 'execute', 'Executes a logic function with user provided data', {
+	commandProcessor.createCommand(logicFunction, 'execute', 'Executes a logic function with user provided data', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -60,7 +60,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logic_function, 'deploy', 'Deploys a logic function to the cloud', {
+	commandProcessor.createCommand(logicFunction, 'deploy', 'Deploys a logic function to the cloud', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -73,7 +73,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logic_function, 'disable', 'Disables a logic function in the cloud', {
+	commandProcessor.createCommand(logicFunction, 'disable', 'Disables a logic function in the cloud', {
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -91,7 +91,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logic_function, 'delete', 'Deletes a logic function from the cloud', {
+	commandProcessor.createCommand(logicFunction, 'delete', 'Deletes a logic function from the cloud', {
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -109,7 +109,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logic_function, 'logs', 'Deletes a logic function from the cloud', {
+	commandProcessor.createCommand(logicFunction, 'logs', 'Deletes a logic function from the cloud', {
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -130,5 +130,5 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	return logic_function;
+	return logicFunction;
 };
