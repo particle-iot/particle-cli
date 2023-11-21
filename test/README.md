@@ -67,6 +67,7 @@ Additional details:
 ###### Configuring `E2E_PRODUCT_01_*`:
 * Create a product into your sandbox account (`E2E_USERNAME` sandbox account)
 * Add two devices to the product
+* Those devices must be sorted by name.
 * Add a different group name to each device (unique ones)
 * This devices should:
   * be connected to the cloud
