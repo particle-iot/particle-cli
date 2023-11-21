@@ -42,30 +42,37 @@ module.exports = class LogicFunctionsCommand {
 
 	async get({ org, name, id }) {
 		// TODO
+		console.log(org, name, id);
 	}
 
 	async create({ org, params: { filepath } }) {
 		// TODO
+		console.log(org, filepath);
 	}
 
 	async execute({ org, data, params: { filepath } }) {
 		// TODO
+		console.log(org, data, filepath);
 	}
 
 	async deploy({ org, params: { filepath } }) {
 		// TODO
+		console.log(org, filepath);
 	}
 
-	async disable({ org, nane, id }) {
+	async disable({ org, name, id }) {
 		// TODO
+		console.log(org, name, id);
 	}
 
 	async delete({ org, name, id }) {
 		// TODO
+		console.log(org, name, id);
 	}
 
 	async logs({ org, name, id, saveTo }) {
 		// TODO
+		console.log(org, name, id, saveTo);
 	}
 };
 
