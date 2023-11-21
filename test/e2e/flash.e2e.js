@@ -170,10 +170,8 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', DEVICE_NAME, bin];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'Including:',
-			`    ${bin}`,
-			`attempting to flash firmware to your device ${DEVICE_NAME}`,
-			'Flash device OK: Update started'
+			`Flashing firmware to your device ${DEVICE_NAME}`,
+			'Flash success!'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
@@ -184,21 +182,20 @@ describe('Flash Commands [@device]', () => {
 	});
 
 	it('Flashes a `.bin` file using usb', async () => {
+		await cli.waitUntilOnline();
 		await cli.enterDFUMode();
 		const { bin } = await cli.compileBlankFirmwareForTest(DEVICE_PLATFORM_NAME);
 		const args = ['flash', bin, '--usb'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			`Flashing argon device ${DEVICE_ID}`,
-			'Flashing blank-argon.bin',
+			`Flashing ${DEVICE_PLATFORM_NAME} device ${DEVICE_ID}`,
+			`Flashing blank-${DEVICE_PLATFORM_NAME}.bin`,
 			'Flash success!'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
-
-		await cli.resetDevice();
 		await cli.waitForVariable('name', 'blank');
 	});
 
@@ -219,7 +216,7 @@ describe('Flash Commands [@device]', () => {
 		const args = ['flash', 'WATNOPE.bin', '--usb'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'Error writing firmware: file does not exist and no known app found. tried: `WATNOPE.bin`'
+			'WATNOPE.bin doesn\'t exist'
 		];
 
 		expect(stdout.split('\n')).to.include.members(log);

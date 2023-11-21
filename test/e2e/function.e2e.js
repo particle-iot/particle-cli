@@ -69,7 +69,8 @@ describe('Function Commands [@device]', () => {
 			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
 			expect(stdout).to.include('int toggle (String args)');
 			expect(stdout).to.include('int check (String args)');
-			expect(stderr).to.include('polling server to see what devices are online, and what functions are available');
+			expect(stdout).to.include('polling server to see what devices are online, and what functions are available');
+			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 	});

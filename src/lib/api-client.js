@@ -864,7 +864,7 @@ module.exports = class ApiClient {
 			return Promise.resolve(this._attributeCache);
 		}
 
-		console.error('polling server to see what devices are online, and what functions are available');
+		console.log('polling server to see what devices are online, and what functions are available');
 
 		return this.listDevices()
 			.then(devices => {

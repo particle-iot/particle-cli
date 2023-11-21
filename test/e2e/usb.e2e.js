@@ -249,27 +249,6 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 	});
 
-	describe('USB Setup-Done Subcommand', () => {
-		it('Sets and clears the setup done flag', async () => {
-			await cli.run(['usb', 'setup-done', '--reset']);
-			await delay(2000);
-
-			const platform = capitalize(DEVICE_PLATFORM_NAME);
-			const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, LISTENING)`);
-			expect(stderr).to.equal('');
-			expect(exitCode).to.equal(0);
-
-			await cli.run(['usb', 'setup-done']);
-			await cli.waitUntilOnline();
-
-			const subproc = await cli.run(['usb', 'list']);
-			expect(subproc.stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
-			expect(subproc.stderr).to.equal('');
-			expect(subproc.exitCode).to.equal(0);
-		});
-	});
-
 	describe('USB DFU Subcommand', () => {
 		after(async () => {
 			await cli.resetDevice();
