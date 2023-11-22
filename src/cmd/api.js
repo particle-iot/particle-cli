@@ -235,12 +235,10 @@ module.exports = class ParticleApi {
 	}
 
 	getLogicFunctionList({ org }) {
-		// XXX: listLogicFunctions also takes headers and context.
-		// Include those in the future as needed
-		return this.api.listLogicFunctions({
+		return this._wrap(this.api.listLogicFunctions({
 			org: org,
 			auth: this.accessToken,
-		});
+		}));
 	}
 
 	_wrap(promise){

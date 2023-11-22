@@ -16,11 +16,10 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async list({ org }) {
 		const api = createAPI();
-		let res;
 		try {
-			res = await api.getLogicFunctionList({ org });
-			const orgName = org ? org : 'Sandbox';
-			const list = res.body['logic_functions'];
+			const logicFunctions = await api.getLogicFunctionList({ org });
+			const orgName = getOrgName(org);
+			const list = logicFunctions['logic_functions'];
 			if (list.length === 0) {
 				this.ui.stdout.write(`No Logic Functions currently deployed in your ${orgName}.`);
 				this.ui.stdout.write(`To create a Logic Function, see \`particle logic-function create\`.${os.EOL}
@@ -36,11 +35,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				});
 				this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`);
 			}
-			return res;
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
 		}
 	}
+
 
 	async get({ org, name, id }) {
 		// TODO
@@ -89,6 +88,11 @@ function createAPIErrorResult({ error: e, message, json }){
 	const error = new VError(formatAPIErrorMessage(e), message);
 	error.asJSON = json;
 	return error;
+}
+
+// get org name from org slug
+function getOrgName(org) {
+	return org || 'Staging';
 }
 
 // TODO (mirande): reconcile this w/ `normalizedApiError()` and `ensureError()`
