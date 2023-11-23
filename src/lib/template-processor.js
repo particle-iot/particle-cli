@@ -5,6 +5,7 @@ async function copyAndReplaceTemplate({ templatePath, destinationPath, replaceme
 	const files = await fs.readdir(templatePath);
 	const createdFiles = [];
 	// ensure destination path exists
+
 	await fs.ensureDir(destinationPath);
 	for (const file of files){
 		const templateFile = path.join(templatePath, file);
@@ -19,6 +20,20 @@ async function copyAndReplaceTemplate({ templatePath, destinationPath, replaceme
 	return createdFiles;
 }
 
+async function hasTemplateFiles({ templatePath, destinationPath }){
+	const files = await fs.readdir(templatePath);
+	for (const file of files){
+		const fileName = file.replace('.template', '');
+		const destinationFile = path.join(destinationPath, fileName);
+		try {
+			await fs.stat(destinationFile);
+			return true; // File exists in the destination path
+		} catch (error) {
+			// File doesn't exist, continue checking other files
+		}
+	}
+	return false;
+}
 
 function replace(content, replacements){
 	let result = content;
@@ -30,5 +45,6 @@ function replace(content, replacements){
 }
 
 module.exports = {
-	copyAndReplaceTemplate
+	copyAndReplaceTemplate,
+	hasTemplateFiles
 };
