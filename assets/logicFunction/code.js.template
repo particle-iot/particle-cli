@@ -1,0 +1,9 @@
+import Particle from 'particle:core';
+import Encoding from 'particle:encoding';
+
+/**
+ * @param {import('particle:core').FunctionContext} context */
+ */
+export default function main({ context }) {
+    // Add your code here
+}

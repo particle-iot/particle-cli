@@ -1,0 +1,12 @@
+{
+    "$schema": "schemas/logic_function.schema.json",
+    "logic_function": {
+        "name": "${name}",
+        "description": "${description}",
+        "source": {
+            "type": "JavaScript",
+        },
+        "enabled": true,
+        "logic_triggers": []
+    }
+}
