@@ -5,6 +5,7 @@ const nock = require('nock');
 const { expect, sinon } = require('../../test/setup');
 const LogicFunctionCommands = require('./logic-function');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS, PATH_TMP_DIR } = require('../../test/lib/env');
+const templateProcessor = require('../lib/template-processor');
 
 
 
@@ -124,8 +125,11 @@ describe('LogicFunctionCommands', () => {
 			const filePaths = await logicFunctionCommands.create({
 				params: { filepath: PATH_TMP_DIR }
 			});
-			const expectedFiles = ['logic-func-1/code.js', 'logic-func-1/configuration.json'];
-			// Iterate through each file path and check inclusion
+			expect(filePaths.length).to.equal(2);
+			const expectedFiles = [
+				path.join('logic-func-1', 'code.js'),
+				path.join('logic-func-1', 'configuration.json')
+			];
 			for (const expectedFile of expectedFiles) {
 				const includesExpected = filePaths.some(value => value.includes(expectedFile));
 				expect(includesExpected, `File path "${expectedFile}" does not include expected values`).to.be.true;
@@ -150,8 +154,7 @@ describe('LogicFunctionCommands', () => {
 			nock('https://api.particle.io/v1', )
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: [] });
-			fs.createFileSync(path.join(PATH_TMP_DIR, 'logicFunc1', 'code.js'));
-			fs.createFileSync(path.join(PATH_TMP_DIR, 'logicFunc1', 'configuration.json'));
+			sinon.stub(templateProcessor, 'hasTemplateFiles').resolves(true);
 			logicFunctionCommands.ui.prompt = sinon.stub();
 			logicFunctionCommands.ui.prompt.onCall(0).resolves({ name: 'logicFunc1' });
 			logicFunctionCommands.ui.prompt.onCall(1).resolves({ description: 'Logic Function 1' });

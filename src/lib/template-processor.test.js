@@ -7,7 +7,7 @@ const path = require('path');
 describe('template-processor', () => {
 	describe('copyAndReplaceTemplate', () => {
 		it('copies template files to destination', async () => {
-			const templatePath = __dirname + '/../../assets/logicFunction';
+			const templatePath = path.join(__dirname, '..', '..', 'assets', 'logicFunction');
 			const destinationPath = path.join(PATH_TMP_DIR, 'tmp-logic-function');
 			const replacements = {
 				name: 'My Logic Function',
@@ -35,7 +35,7 @@ describe('template-processor', () => {
 		});
 
 		it('returns true if template files exist in destination', async () => {
-			const templatePath = __dirname + '/../../assets/logicFunction';
+			const templatePath = path.join(__dirname, '..', '..', 'assets', 'logicFunction');
 			const destinationPath = path.join(PATH_TMP_DIR, logicFunctionPath);
 			const replacements = {
 				name: 'My Logic Function',
@@ -46,7 +46,7 @@ describe('template-processor', () => {
 			expect(hasFiles).to.be.true;
 		});
 		it('returns false if template files do not exist in destination', async () => {
-			const templatePath = __dirname + '/../../assets/logicFunction';
+			const templatePath = path.join(__dirname, '..', '..', 'assets', 'logicFunction');
 			const destinationPath = path.join(PATH_TMP_DIR, logicFunctionPath);
 			const hasFiles = await hasTemplateFiles({ templatePath, destinationPath });
 			expect(hasFiles).to.be.false;

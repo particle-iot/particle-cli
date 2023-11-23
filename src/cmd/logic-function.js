@@ -5,9 +5,9 @@ const CLICommandBase = require('./base');
 const VError = require('verror');
 const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
-const { copyAndReplaceTemplate, hasTemplateFiles } = require('../lib/template-processor');
+const templateProcessor = require('../lib/template-processor');
 
-const logicFunctionTemplatePath = __dirname + '/../../assets/logicFunction';
+const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 
 /**
  * Commands for managing encryption keys.
@@ -83,7 +83,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		await this._validateExistingName({ api, org, name });
 		await this._validateExistingFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
 
-		const createdFiles = await copyAndReplaceTemplate({
+		const createdFiles = await templateProcessor.copyAndReplaceTemplate({
 			templatePath: logicFunctionTemplatePath,
 			destinationPath: path.join(filepath, slugName),
 			replacements: {
@@ -119,7 +119,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _validateExistingFiles({ templatePath, destinationPath }){
-		const filesAlreadyExist = await hasTemplateFiles({
+		const filesAlreadyExist = await templateProcessor.hasTemplateFiles({
 			templatePath,
 			destinationPath
 		});
