@@ -37,7 +37,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	afterEach(async () => {
-		// TODO: Fill this out?
+		sinon.restore();
 		logicFunctionCommands.ui = originalUi;
 		// remove tmp dir
 		fs.emptyDirSync(PATH_TMP_DIR);
