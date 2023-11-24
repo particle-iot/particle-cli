@@ -56,7 +56,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		// 3. Download it to files. Take care of formatting
 
-		// 4. 
+		// 4.
 
 	}
 
@@ -64,10 +64,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const orgName = getOrgName(org);
 		const api = createAPI();
 		// get name from filepath
-		if (!filepath) {
-			// use default directory
-			filepath = '.';
-		}
+		const logicPath = getFilePath(filepath);
 		if (!name) {
 			const question = {
 				type: 'input',
@@ -88,7 +85,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const result =  await this.ui.prompt([question]);
 		const description = result.description;
 		const slugName = slugify(name);
-		const destinationPath = path.join(filepath, slugName);
+		const destinationPath = path.join(logicPath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
 		await this._validateExistingName({ api, org, name });
@@ -100,7 +97,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			templatePath: logicFunctionTemplatePath,
 			destinationPath: path.join(filepath, slugName)
 		});
-		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(filepath)}${os.EOL}`);
+		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(logicPath)}${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
 		createdFiles.forEach((file) => {
 			this.ui.stdout.write(`- ${file}${os.EOL}`);
@@ -227,6 +224,14 @@ function createAPIErrorResult({ error: e, message, json }){
 // get org name from org slug
 function getOrgName(org) {
 	return org || 'Sandbox';
+}
+
+function getFilePath(filepath) {
+	return filepath || '.';
+}
+
+function findFilesByExtension(files, extension) {
+	return files.filter((file) => file.endsWith(`.${extension}`));
 }
 
 // TODO (mirande): reconcile this w/ `normalizedApiError()` and `ensureError()`
