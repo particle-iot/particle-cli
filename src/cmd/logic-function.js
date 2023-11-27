@@ -230,7 +230,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				this.ui.stdout.write(`	${index + 1}.- ${JSON.stringify(log)}${os.EOL}`);
 			});
 			if (result.err) {
-				this.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
+				this.ui.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
 				this.ui.stdout.write(`${result.err}${os.EOL}`);
 			} else {
 				this.ui.stdout.write(this.ui.chalk.cyanBright(`No errors during Execution.${os.EOL}`));

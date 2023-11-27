@@ -27,11 +27,13 @@ describe('LogicFunctionCommands', () => {
 			stderr: {
 				write: sinon.stub()
 			},
+			prompt: sinon.stub(),
 			chalk: {
 				bold: sinon.stub(),
 				cyanBright: sinon.stub(),
 				yellow: sinon.stub(),
 				grey: sinon.stub(),
+				red: sinon.stub()
 			},
 		};
 	});
@@ -177,10 +179,9 @@ describe('LogicFunctionCommands', () => {
 			logicFunctionCommands.ui.prompt.onCall(1).resolves({ description: 'Logic Function 1' });
 			let error;
 			try {
-				const files = await logicFunctionCommands.create({
+				await logicFunctionCommands.create({
 					params: { filepath: PATH_TMP_DIR }
 				});
-				console.log(files);
 			} catch (e) {
 				error = e;
 			}
@@ -188,5 +189,64 @@ describe('LogicFunctionCommands', () => {
 			expect(error.message).to.equal('Error: Logic Function with name LF1 already exists.');
 		});
 
+	});
+
+	describe('execute', () => {
+		it('executes a logic function with user provided data', async () => {
+			nock('https://api.particle.io/v1', )
+				.intercept('/logic/execute', 'POST')
+				.reply(200, { result: { status: 'Success', logs: [] } });
+			await logicFunctionCommands.execute({
+				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
+				data: { foo: 'bar' }
+			});
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(4);
+			expect(logicFunctionCommands.ui.chalk.bold.callCount).to.equal(1);
+			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
+			expect(logicFunctionCommands.ui.chalk.cyanBright.callCount).to.equal(2);
+			expect(logicFunctionCommands.ui.chalk.cyanBright.firstCall.args[0]).to.equal('Success');
+			expect(logicFunctionCommands.ui.chalk.cyanBright.secondCall.args[0]).to.equal(`No errors during Execution.${os.EOL}`);
+		});
+		it('executes a logic function with user provided data from file', async () => {
+			nock('https://api.particle.io/v1', )
+				.intercept('/logic/execute', 'POST')
+				.reply(200, { result: { status: 'Success', logs: [] } });
+			await logicFunctionCommands.execute({
+				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
+				dataPath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj', 'sample', 'data.json')
+			});
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(4);
+			expect(logicFunctionCommands.ui.chalk.bold.callCount).to.equal(1);
+			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
+			expect(logicFunctionCommands.ui.chalk.cyanBright.callCount).to.equal(2);
+			expect(logicFunctionCommands.ui.chalk.cyanBright.firstCall.args[0]).to.equal('Success');
+			expect(logicFunctionCommands.ui.chalk.cyanBright.secondCall.args[0]).to.equal(`No errors during Execution.${os.EOL}`);
+		});
+		it('executes a logic function with user provided data from file and shows error', async () => {
+			nock('https://api.particle.io/v1', )
+				.intercept('/logic/execute', 'POST')
+				.reply(200, { result: { status: 'Exception', logs: [], err: 'Error message' } });
+			await logicFunctionCommands.execute({
+				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
+				dataPath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj', 'sample', 'data.json')
+			});
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(5);
+			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
+			expect(logicFunctionCommands.ui.stdout.write.lastCall.args[0]).to.equal(`Error message${os.EOL}`);
+		});
+		it('prompts if found multiple files', async () => {
+			nock('https://api.particle.io/v1', )
+				.intercept('/logic/execute', 'POST')
+				.reply(200, { result: { status: 'Success', logs: [] } });
+			logicFunctionCommands.ui.prompt = sinon.stub();
+			logicFunctionCommands.ui.prompt.onCall(0).resolves({ file: 'code.js' });
+			await logicFunctionCommands.execute({
+				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf2_proj') },
+				data: { foo: 'bar' }
+			});
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(1);
+			expect(logicFunctionCommands.ui.prompt.firstCall.lastArg[0].choices[0].name).to.equal('code.js');
+			expect(logicFunctionCommands.ui.prompt.firstCall.lastArg[0].choices[1].name).to.equal('code2.js');
+		});
 	});
 });
