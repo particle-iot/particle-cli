@@ -69,6 +69,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const result =  await this.ui.prompt([question]);
 			name = result.name;
 		}
+		// trim name
+		name = name.trim();
 		// ask for description
 		const question = {
 			type: 'input',
