@@ -127,8 +127,8 @@ describe('LogicFunctionCommands', () => {
 			});
 			expect(filePaths.length).to.equal(2);
 			const expectedFiles = [
-				path.join('logic-func-1', 'code.js'),
-				path.join('logic-func-1', 'configuration.json')
+				path.join('logic-func-1', 'logic-func-1.js'),
+				path.join('logic-func-1', 'logic-func-1.logic.json')
 			];
 			for (const expectedFile of expectedFiles) {
 				const includesExpected = filePaths.some(value => value.includes(expectedFile));
