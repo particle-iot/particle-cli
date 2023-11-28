@@ -1,0 +1,5 @@
+import Particle from 'particle:core';
+
+export default function process({ functionInfo, trigger, event }) {
+  // Add your code here
+}

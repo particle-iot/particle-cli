@@ -4,7 +4,7 @@
         "name": "${name}",
         "description": "${description}",
         "source": {
-            "type": "JavaScript",
+            "type": "JavaScript"
         },
         "enabled": true,
         "logic_triggers": []
