@@ -5,6 +5,9 @@ const fs = require('fs-extra');
 const path = require('path');
 
 describe('template-processor', () => {
+	afterEach(async () => {
+		await fs.emptyDir(PATH_TMP_DIR);
+	});
 	describe('copyAndReplaceTemplate', () => {
 		it('copies template files to destination', async () => {
 			const templatePath = path.join(__dirname, '..', '..', 'assets', 'logicFunction');

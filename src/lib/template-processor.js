@@ -4,13 +4,14 @@ const path = require('path');
 
 
 async function copyAndReplaceTemplate({ fileNameReplacements, file, templatePath, destinationPath, replacements }) {
+	// ensure destination path exists
+	await fs.ensureDir(destinationPath);
 	const templateFile = path.join(templatePath, file);
 	const fileName = replace(file, fileNameReplacements, { stringMatch: true }).replace('.template', '');
 	const destinationFile = path.join(destinationPath, fileName);
 	const templateContent = await fs.readFile(templateFile, 'utf8');
 	const destinationContent = replace(templateContent, replacements);
 	await fs.writeFile(destinationFile, destinationContent);
-
 	return destinationFile;
 }
 
