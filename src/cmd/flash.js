@@ -1,7 +1,7 @@
 const fs = require('fs-extra');
 const os = require('os');
 const ParticleApi = require('./api');
-const { ModuleInfo } = require('binary-version-reader');
+const { ModuleInfo, unwrapAssetModule } = require('binary-version-reader');
 const { errors: { usageError } } = require('../app/command-processor');
 const usbUtils = require('./usb-util');
 const CLICommandBase = require('./base');
@@ -16,13 +16,14 @@ const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const semver = require('semver');
+const crypto = require('crypto');
 const {
 	createFlashSteps,
 	filterModulesToFlash,
 	parseModulesToFlash,
 	flashFiles,
 	validateDFUSupport,
-	getFileFlashInfo
+	getFileFlashInfo, prepareDeviceForFlash
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 
@@ -141,24 +142,59 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToFlash = await this._processBundle({ filesToFlash });
 
 		const fileModules = await parseModulesToFlash({ files: filesToFlash });
-		await this._validateModulesForPlatform({ modules: fileModules, platformId: device.platformId, platformName });
+
+		const eligibleModules = await this._filterAvailableAssets(device, fileModules);
+
+		await this._validateModulesForPlatform({ modules: eligibleModules, platformId: device.platformId, platformName });
 
 		const deviceOsBinaries = await this._getDeviceOsBinaries({
 			currentDeviceOsVersion: device.firmwareVersion,
 			skipDeviceOSFlash,
 			target,
-			modules: fileModules,
+			modules: eligibleModules,
 			platformId: device.platformId,
 			applicationOnly
 		});
 		const deviceOsModules = await parseModulesToFlash({ files: deviceOsBinaries });
-		let modulesToFlash = [...fileModules, ...deviceOsModules];
+		let modulesToFlash = [...eligibleModules, ...deviceOsModules];
 		modulesToFlash = filterModulesToFlash({ modules: modulesToFlash, platformId: device.platformId });
 
 		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
 		await flashFiles({ device, flashSteps, ui: this.ui });
 	}
 
+	async _filterAvailableAssets(device, modules) {
+		if (device.isInDfuMode) {
+			device = await usbUtils.reopenInNormalMode(device, { reset: true });
+		}
+		const { available } = await device.getAssetInfo();
+		const availableAssetsArr = Array.from(available || []);
+
+		const filteredModules = await Promise.all(
+			modules.map(async (module) => {
+				if (module.prefixInfo.moduleFunction !== ModuleInfo.FunctionType.ASSET) {
+					return module; // Keep non-asset modules
+				}
+
+				const hashAssetToBeFlashed = await this._get256Hash({ module });
+
+				if (availableAssetsArr.some((asset) => hashAssetToBeFlashed === asset.hash)) {
+					this.ui.write(`Skipping asset ${path.basename(module.filename)} because it is already on the device`);
+					return null;
+				}
+
+				return module;
+			})
+		);
+
+		return filteredModules.filter(Boolean); // Remove null values
+	}
+
+
+	async _get256Hash({ module }) {
+		const assetModule = await unwrapAssetModule(module.fileBuffer);
+		return crypto.createHash('sha256').update(assetModule).digest('hex');
+	}
 
 	async _analyzeFiles(files) {
 		const apps = knownAppNames();
