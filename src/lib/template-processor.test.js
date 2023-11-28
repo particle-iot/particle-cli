@@ -13,7 +13,17 @@ describe('template-processor', () => {
 				name: 'My Logic Function',
 				description: 'My Logic Function Description',
 			};
-			const createdFiles = await copyAndReplaceTemplate({ templatePath, destinationPath, replacements });
+			const templates = await fs.readdir(templatePath);
+			const createdFiles = [];
+			for (const template of templates){
+				const createdFile = await copyAndReplaceTemplate({
+					file: template,
+					templatePath,
+					destinationPath,
+					replacements
+				});
+				createdFiles.push(createdFile);
+			}
 			// check files were copied
 			const files = await fs.readdir(destinationPath);
 			const templateFiles = await fs.readdir(templatePath);
@@ -22,7 +32,7 @@ describe('template-processor', () => {
 			const templateFileNames = templateFiles.map((file) => file.replace('.template', ''));
 			expect(files).to.have.all.members(templateFileNames);
 			// check content was replaced
-			const codeContent = await fs.readFile(path.join(destinationPath, 'configuration.json'), 'utf8');
+			const codeContent = await fs.readFile(path.join(destinationPath, 'logic_function_name.logic.json'), 'utf8');
 			expect(codeContent).to.include(replacements.name);
 			expect(codeContent).to.include(replacements.description);
 		});
@@ -41,7 +51,15 @@ describe('template-processor', () => {
 				name: 'My Logic Function',
 				description: 'My Logic Function Description',
 			};
-			await copyAndReplaceTemplate({ templatePath, destinationPath, replacements });
+			const templates = await fs.readdir(templatePath);
+			for (const template of templates){
+				await copyAndReplaceTemplate({
+					file: template,
+					templatePath,
+					destinationPath,
+					replacements
+				});
+			}
 			const hasFiles = await hasTemplateFiles({ templatePath, destinationPath });
 			expect(hasFiles).to.be.true;
 		});
