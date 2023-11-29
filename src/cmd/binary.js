@@ -94,7 +94,6 @@ class BinaryCommand {
 				const asset = assets.find((bundleAsset) => bundleAsset.name === appAsset.name);
 				if (asset) {
 					const valid = isAssetValid(asset.data, appAsset);
-					// isAssetValid();
 
 					if (valid) {
 						console.log(' ' + chalk.bold(appAsset.name) + ' (hash ' + appAsset.hash + ')');

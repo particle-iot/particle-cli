@@ -3,11 +3,12 @@ const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
 const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
-const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
+const { HalModuleParser: ModuleParser, ModuleInfo, unwrapAssetModule } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
+const crypto = require('crypto');
 
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
@@ -18,7 +19,7 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 		for (const step of flashSteps) {
 			device = await prepareDeviceForFlash({ device, mode: step.flashMode, progress });
 			if (step.flashMode === 'normal') {
-				device = await _flashDeviceInNormalMode(device, step.data, { name: step.name, progress: progress });
+				device = await _flashDeviceInNormalMode(device, step.data, { name: step.name, progress: progress, checkSkip: step.checkSkip });
 			} else {
 				// CLI always flashes to internal flash which is the DFU alt setting 0
 				const altSetting = 0;
@@ -40,7 +41,7 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 	}
 }
 
-async function _flashDeviceInNormalMode(device, data, { name, progress } = {}) {
+async function _flashDeviceInNormalMode(device, data, { name, progress, checkSkip } = {}) {
 	// flash the file in normal mode
 	if (progress) {
 		progress({ event: 'flash-file', filename: name });
@@ -50,6 +51,12 @@ async function _flashDeviceInNormalMode(device, data, { name, progress } = {}) {
 	while (Date.now() - start < FLASH_TIMEOUT) {
 		try {
 			device = await usbUtils.reopenDevice(device);
+			if (checkSkip && await checkSkip(device)) {
+				if (progress) {
+					progress({ event: 'skip-file', filename: name, bytes: 2*data.length });
+				}
+				return device;
+			}
 			await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
 			return device;
 		} catch (error) {
@@ -156,6 +163,15 @@ function _createFlashProgress({ flashSteps, ui }) {
 					}
 				}
 				break;
+			case 'skip-file':
+				description = `Skipping ${payload.filename} because it already exists on the device`;
+				if (isInteractive) {
+					progressBar.update({ description });
+					progressBar.increment(payload.bytes * flashMultiplier);
+				} else {
+					ui.stdout.write(`${description}${os.EOL}`);
+				}
+				break;
 			case 'downloaded':
 				if (isInteractive) {
 					progressBar.increment(payload.bytes * flashMultiplier);
@@ -224,6 +240,8 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	const platform = PLATFORMS.find(p => p.id === platformId);
 	const sortedModules = await sortBinariesByDependency(modules);
 	const assetModules = [], normalModules = [], dfuModules = [];
+	let availableAssets;
+
 	sortedModules.forEach(module => {
 		const data = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
 		const flashStep = {
@@ -248,6 +266,15 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 
 		if (moduleType === 'asset') {
 			flashStep.flashMode = 'normal';
+			flashStep.checkSkip = async (device) => {
+				if (availableAssets === undefined) {
+					const { available } = await device.getAssetInfo().catch(() => ({
+						available: []
+					}));
+					availableAssets = available;
+				}
+				return _skipAsset(module, availableAssets);
+			};
 			assetModules.push(flashStep);
 		} else if (moduleType === 'bootloader' || moduleDefinition.storage === 'externalMcu') {
 			flashStep.flashMode = 'normal';
@@ -280,6 +307,20 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	}
 }
 
+async function _skipAsset(module, existingAssets) {
+	const hashAssetToBeFlashed = await _get256Hash(module);
+	return existingAssets.some((asset) => {
+		return hashAssetToBeFlashed === asset.hash;
+	});
+}
+
+async function _get256Hash(module) {
+	if (module && module.fileBuffer) {
+		const assetModule = await unwrapAssetModule(module.fileBuffer);
+		return crypto.createHash('sha256').update(assetModule).digest('hex');
+	}
+}
+
 function validateDFUSupport({ device, ui }) {
 	const platform = platformForId(device.platformId);
 	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0')) && platform.generation === 2) {
@@ -297,4 +338,6 @@ module.exports = {
 	prepareDeviceForFlash,
 	validateDFUSupport,
 	getFileFlashInfo,
+	_get256Hash,
+	_skipAsset
 };

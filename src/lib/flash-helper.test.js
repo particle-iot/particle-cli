@@ -7,7 +7,9 @@ const {
 	filterModulesToFlash,
 	prepareDeviceForFlash,
 	validateDFUSupport,
-	getFileFlashInfo
+	getFileFlashInfo,
+	_get256Hash,
+	_skipAsset
 } = require('./flash-helper');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const path = require('path');
@@ -15,6 +17,7 @@ const fs = require('fs-extra');
 const { ensureDir } = require('fs-extra/lib/mkdirs');
 
 describe('flash-helper', () => {
+	const sandbox = sinon.createSandbox();
 	const createModules = async () => {
 		const parser = new HalModuleParser();
 		const preBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
@@ -293,6 +296,13 @@ describe('flash-helper', () => {
 				asset2Step,
 				asset1Step,
 			];
+			// remove checkSkip property for easier comparison
+			steps.forEach( step => {
+				if (step.checkSkip) {
+					delete step.checkSkip;
+				}
+			});
+
 			expect(steps).to.deep.equal(expected);
 		});
 
@@ -463,6 +473,7 @@ describe('flash-helper', () => {
 			expect(device.enterListeningMode).to.not.have.been.called;
 		});
 	});
+
 	describe('validateDFUSupport', () => {
 		let ui;
 		beforeEach(() => {
@@ -589,6 +600,46 @@ describe('flash-helper', () => {
 			expect(error).to.be.an.instanceOf(Error);
 			expect(error).to.have.property('message', 'Module type monoFirmware unsupported for p2');
 		});
+	});
 
+	describe('_get256Hash', () => {
+		it ('returns the hash of the file', async () => {
+			const assetModules = await createAssetModules();
+
+			const hash = await _get256Hash(assetModules[0]);
+			expect(hash).to.equal('8e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2');
+		});
+
+		it ('returns if module is not available', async () => {
+			const hash = await _get256Hash();
+
+			expect(hash).to.equal(undefined);
+		});
+	});
+
+	describe('_skipAsset', () => {
+		it('returns true if the asset is not available', async () => {
+			const modules = await createAssetModules();
+			const asset = modules.filter(m => m.filename === 'asset1.bin');
+			const existingAssets = [
+				{
+					name: 'asset1.bin',
+					hash: '7030bbcf1fde23d19170b04ea1717965105a813dc95fddaa0da41baff7a24f5f',
+					size: 1096327,
+					storageSize: 3385
+				},
+				{
+					name: 'asset2.bin',
+					hash: '41903ec06c23f2eb4e9ff97c9886b0cf41ef15d1bff90b6d8793dd9cc0024d2d',
+					size: 1096975,
+					storageSize: 3389
+				}
+			];
+			sandbox.stub('_get256Hash').returns(undefined);
+
+			const res = await _skipAsset(asset, existingAssets);
+
+			expect(res).to.equal(false);
+		});
 	});
 });
