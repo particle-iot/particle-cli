@@ -8,7 +8,6 @@ const BundleCommand = require('./bundle');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const { firmwareTestHelper, createAssetModule, ModuleInfo, HalModuleParser } = require('binary-version-reader');
-const usbUtils = require('./usb-util');
 
 describe('FlashCommand', () => {
 	let flash;
@@ -417,90 +416,6 @@ describe('FlashCommand', () => {
 				modules: [userPart],
 			});
 			expect(binaries).to.eql([]);
-		});
-	});
-
-	describe('_filterAssetsOnDevice and returns eligible modules to be flashed',() => {
-		let fwModules;
-		let assetModules;
-		beforeEach(async () => {
-			fwModules = await createModules();
-			assetModules = await createAssetModules();
-		});
-
-		it('returns all firmware modules', async () => {
-			const device = {
-				isInDfuMode: false,
-				getAssetInfo: sinon.stub().resolves({ available: [] }),
-			};
-
-			const eligibleModules = await flash._filterAssetsOnDevice(device, fwModules);
-
-			expect(eligibleModules).to.eql(fwModules);
-		});
-
-		it('returns all firmware and asset modules', async () => {
-			const device = {
-				isInDfuMode: false,
-				getAssetInfo: sinon.stub().resolves({ available: [] }),
-			};
-			const modules = [...fwModules, ...assetModules];
-
-			const eligibleModules = await flash._filterAssetsOnDevice(device, modules);
-
-			expect(eligibleModules).to.eql(modules);
-		});
-
-		it('returns all firmware modules and the assets which are not on the device', async () => {
-			const hash = [
-				'9e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2',
-				'8e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2'
-			];
-			const device = {
-				isInDfuMode: false,
-				getAssetInfo: sinon.stub().resolves({
-					available: [
-						{ name: 'asset1.bin', hash: hash[0], size: 16, storageSize: 8 }
-					]
-				})
-			};
-			const modules = [...fwModules, ...assetModules];
-			const expectedModules = [...fwModules, assetModules[1]];
-			sinon.stub(flash, '_get256Hash').callsFake(() => {
-				const callCnt = flash._get256Hash.callCount;
-				return Promise.resolve(hash[callCnt - 1]);
-			});
-
-			const eligibleModules = await flash._filterAssetsOnDevice(device, modules);
-
-			expect(eligibleModules).to.eql(expectedModules);
-		});
-
-		it('checks if device is in Dfu mode', async () => {
-			const device = {
-				isInDfuMode: true,
-				getAssetInfo: sinon.stub().resolves({ available: [] })
-			};
-			const reopen = sinon.stub(usbUtils, 'reopenInNormalMode').resolves(device);
-
-			await flash._filterAssetsOnDevice(device, fwModules);
-
-			expect(reopen).to.have.been.calledOnce;
-		});
-	});
-
-	describe('_get256Hash', () => {
-		it ('returns the hash of the file', async () => {
-			const assetModules = await createAssetModules();
-
-			const hash = await flash._get256Hash(assetModules[0]);
-			expect(hash).to.equal('8e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2');
-		});
-
-		it ('returns if module is not available', async () => {
-			const hash = await flash._get256Hash();
-
-			expect(hash).to.equal(undefined);
 		});
 	});
 });

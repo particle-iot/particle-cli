@@ -17,7 +17,6 @@ const fs = require('fs-extra');
 const { ensureDir } = require('fs-extra/lib/mkdirs');
 
 describe('flash-helper', () => {
-	const sandbox = sinon.createSandbox();
 	const createModules = async () => {
 		const parser = new HalModuleParser();
 		const preBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
@@ -635,7 +634,6 @@ describe('flash-helper', () => {
 					storageSize: 3389
 				}
 			];
-			sandbox.stub('_get256Hash').returns(undefined);
 
 			const res = await _skipAsset(asset, existingAssets);
 
