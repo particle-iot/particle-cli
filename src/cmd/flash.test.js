@@ -466,7 +466,6 @@ describe('FlashCommand', () => {
 			};
 			const modules = [...fwModules, ...assetModules];
 			const expectedModules = [...fwModules, assetModules[1]];
-
 			sinon.stub(flash, '_get256Hash').callsFake(() => {
 				const callCnt = flash._get256Hash.callCount;
 				return Promise.resolve(hash[callCnt - 1]);
@@ -495,11 +494,13 @@ describe('FlashCommand', () => {
 			const assetModules = await createAssetModules();
 
 			const hash = await flash._get256Hash(assetModules[0]);
+			
 			expect(hash).to.equal('8e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2');
 		});
 
 		it ('returns if module is not available', async () => {
 			const hash = await flash._get256Hash();
+			
 			expect(hash).to.equal(undefined);
 		});
 	});
