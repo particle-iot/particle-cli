@@ -482,7 +482,7 @@ describe('FlashCommand', () => {
 				isInDfuMode: true,
 				getAssetInfo: sinon.stub().resolves({ available: [] })
 			};
-			const reopen = sinon.spy(usbUtils, 'reopenInNormalMode');
+			const reopen = sinon.stub(usbUtils, 'reopenInNormalMode').resolves(device);
 
 			await flash._filterAssetsOnDevice(device, fwModules);
 
