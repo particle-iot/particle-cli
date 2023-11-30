@@ -8,7 +8,6 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
-const crypto = require('crypto');
 
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
@@ -307,18 +306,21 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	}
 }
 
-async function _skipAsset(module, existingAssets) {
-	const hashAssetToBeFlashed = await _get256Hash(module);
+function _skipAsset(module, existingAssets) {
+	const hashAssetToBeFlashed = _get256Hash(module);
 	return existingAssets.some((asset) => {
 		return hashAssetToBeFlashed === asset.hash;
 	});
 }
 
-async function _get256Hash(module) {
-	if (module && module.fileBuffer) {
-		const assetModule = await unwrapAssetModule(module.fileBuffer);
-		return crypto.createHash('sha256').update(assetModule).digest('hex');
-	}
+function _get256Hash(module) {
+	const suffixInfoExtensions = module.suffixInfo.extensions;
+
+	const moduleInfo = suffixInfoExtensions.filter((extension) => {
+		return extension.type === ModuleInfo.ModuleInfoExtension.HASH;
+	});
+
+	return moduleInfo[0].hash;
 }
 
 function validateDFUSupport({ device, ui }) {

@@ -623,7 +623,7 @@ describe('flash-helper', () => {
 			const existingAssets = [
 				{
 					name: 'asset1.bin',
-					hash: '7030bbcf1fde23d19170b04ea1717965105a813dc95fddaa0da41baff7a24f5f',
+					hash: '8e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2',
 					size: 1096327,
 					storageSize: 3385
 				},
