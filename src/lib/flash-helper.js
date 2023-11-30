@@ -308,9 +308,7 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 
 function _skipAsset(module, existingAssets) {
 	const hashAssetToBeFlashed = _get256Hash(module);
-	return existingAssets.some((asset) => {
-		return hashAssetToBeFlashed === asset.hash;
-	});
+	return existingAssets.some((asset) => hashAssetToBeFlashed === asset.hash);
 }
 
 function _get256Hash(module) {
