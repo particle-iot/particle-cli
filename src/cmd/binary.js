@@ -41,8 +41,9 @@ class BinaryCommand {
 	async inspectBinary(file) {
 		await this._checkFile(file);
 		const extractedFiles = await this._extractFiles(file);
-		const parsedBinaryInfo = await this._parseApplicationBinary(extractedFiles.application);
-		await this._verifyBundle(parsedBinaryInfo, extractedFiles.assets);
+		const parsedAppInfo = await this._parseApplicationBinary(extractedFiles.application);
+		const assets = extractedFiles.assets;
+		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
 	async _checkFile(file) {
@@ -85,21 +86,22 @@ class BinaryCommand {
 		return fileInfo;
 	}
 
-	async _verifyBundle(binaryFileInfo, assets) {
-		if (binaryFileInfo.assets && assets.length){
+	async _verifyBundle(appInfo, assets) {
+		const appAssets = appInfo.assets;
+		if (appAssets && assets.length > 0) {
 			console.log('It depends on assets:');
-			for (const assetInfo of binaryFileInfo.assets) {
-				const asset = assets.find((asset) => asset.name === assetInfo.name);
+			for (const appAsset of appAssets) {
+				const asset = assets.find((bundleAsset) => bundleAsset.name === appAsset.name);
 				if (asset) {
-					const valid = isAssetValid(asset.data, assetInfo);
+					const valid = isAssetValid(asset.data, appAsset);
 
 					if (valid) {
-						console.log(' ' + chalk.bold(assetInfo.name) + ' (hash ' + assetInfo.hash + ')');
+						console.log(' ' + chalk.bold(appAsset.name) + ' (hash ' + appAsset.hash + ')');
 					} else {
-						console.log(chalk.red(' ' + assetInfo.name + ' failed' + ' (hash should be ' + assetInfo.hash + ')'));
+						console.log(chalk.red(' ' + appAsset.name + ' failed' + ' (hash should be ' + appAsset.hash + ')'));
 					}
 				} else {
-					console.log(chalk.red(' ' + assetInfo.name + ' failed' + ' (hash should be ' + assetInfo.hash + ' but is not in the bundle)'));
+					console.log(chalk.red(' ' + appAsset.name + ' failed' + ' (hash should be ' + appAsset.hash + ' but is not in the bundle)'));
 				}
 			}
 		}

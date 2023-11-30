@@ -1,5 +1,5 @@
 const { expect, sinon } = require('../../test/setup');
-const fs = require('fs-extra'); // Use fs-extra instead of fs
+const fs = require('fs-extra');
 const nock = require('nock');
 const temp = require('temp').track();
 const path = require('path');

@@ -1,5 +1,4 @@
 const fs = require('fs-extra');
-const os = require('os');
 const ParticleApi = require('./api');
 const { ModuleInfo } = require('binary-version-reader');
 const { errors: { usageError } } = require('../app/command-processor');
@@ -58,8 +57,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
-
-		this.ui.write('Flash success!');
 	}
 
 	async flashOverUsb({ binary, factory }) {
@@ -125,15 +122,18 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const { api, auth } = this._particleApi();
 		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
 
-		const platformName = platformForId(device.platformId).name;
+		const platformId = device.platformId;
+		const platformName = platformForId(platformId).name;
+		const currentDeviceOsVersion = device.firmwareVersion;
 
 		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
+
 		validateDFUSupport({ device, ui: this.ui });
 
 		let { skipDeviceOSFlash, files: filesToFlash } = await this._prepareFilesToFlash({
 			knownApp,
 			parsedFiles,
-			platformId: device.platformId,
+			platformId,
 			platformName,
 			target
 		});
@@ -141,24 +141,29 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToFlash = await this._processBundle({ filesToFlash });
 
 		const fileModules = await parseModulesToFlash({ files: filesToFlash });
-		await this._validateModulesForPlatform({ modules: fileModules, platformId: device.platformId, platformName });
+
+		await this._validateModulesForPlatform({ modules: fileModules, platformId, platformName });
 
 		const deviceOsBinaries = await this._getDeviceOsBinaries({
-			currentDeviceOsVersion: device.firmwareVersion,
+			currentDeviceOsVersion,
 			skipDeviceOSFlash,
 			target,
 			modules: fileModules,
-			platformId: device.platformId,
+			platformId,
 			applicationOnly
 		});
 		const deviceOsModules = await parseModulesToFlash({ files: deviceOsBinaries });
 		let modulesToFlash = [...fileModules, ...deviceOsModules];
-		modulesToFlash = filterModulesToFlash({ modules: modulesToFlash, platformId: device.platformId });
+		modulesToFlash = filterModulesToFlash({ modules: modulesToFlash, platformId });
 
-		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
+		const flashSteps = await createFlashSteps({
+			modules: modulesToFlash,
+			isInDfuMode: device.isInDfuMode,
+			platformId
+		});
+
 		await flashFiles({ device, flashSteps, ui: this.ui });
 	}
-
 
 	async _analyzeFiles(files) {
 		const apps = knownAppNames();
@@ -387,68 +392,5 @@ module.exports = class FlashCommand extends CLICommandBase {
 			}
 		}
 		return { module: null, applicationDeviceOsVersion: null };
-	}
-
-	_createFlashProgress({ flashSteps }) {
-		const NORMAL_MULTIPLIER = 10; // flashing in normal mode is slower so count each byte more
-		const { isInteractive } = this.ui;
-		let progressBar;
-		if (isInteractive) {
-			progressBar = this.ui.createProgressBar();
-			// double the size to account for the erase and programming steps
-			const total = flashSteps.reduce((total, step) => total + step.data.length * 2 * (step.flashMode === 'normal' ? NORMAL_MULTIPLIER : 1), 0);
-			progressBar.start(total, 0, { description: 'Preparing to flash' });
-		}
-
-		let flashMultiplier = 1;
-		let eraseSize = 0;
-		let step = null;
-		let description;
-		return (payload) => {
-			switch (payload.event) {
-				case 'flash-file':
-					description = `Flashing ${payload.filename}`;
-					if (isInteractive) {
-						progressBar.update({ description });
-					} else {
-						this.ui.stdout.write(`${description}${os.EOL}`);
-					}
-					step = flashSteps.find(step => step.name === payload.filename);
-					flashMultiplier = step.flashMode === 'normal' ? NORMAL_MULTIPLIER : 1;
-					eraseSize = 0;
-					break;
-				case 'switch-mode':
-					description = `Switching device to ${payload.mode} mode`;
-					if (isInteractive) {
-						progressBar.update({ description });
-					} else {
-						this.ui.stdout.write(`${description}${os.EOL}`);
-					}
-					break;
-				case 'erased':
-					if (isInteractive) {
-						// In DFU, entire sectors are erased so the count of bytes can be higher than the actual size
-						// of the file. Ignore the extra bytes to avoid issues with the progress bar
-						if (step && eraseSize + payload.bytes > step.data.length) {
-							progressBar.increment((step.data.length - eraseSize) * flashMultiplier);
-							eraseSize = step.data.length;
-						} else {
-							progressBar.increment(payload.bytes * flashMultiplier);
-							eraseSize += payload.bytes;
-						}
-					}
-					break;
-				case 'downloaded':
-					if (isInteractive) {
-						progressBar.increment(payload.bytes * flashMultiplier);
-					}
-					break;
-				case 'finish':
-					if (isInteractive) {
-						progressBar.stop();
-					}
-					break;
-			}
-		};
 	}
 };
