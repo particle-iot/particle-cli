@@ -605,12 +605,12 @@ describe('flash-helper', () => {
 		it ('returns the hash of the file', async () => {
 			const assetModules = await createAssetModules();
 
-			const hash = await _get256Hash(assetModules[0]);
+			const hash = _get256Hash(assetModules[0]);
 			expect(hash).to.equal('8e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2');
 		});
 
 		it ('returns if module is not available', async () => {
-			const hash = await _get256Hash();
+			const hash = _get256Hash();
 
 			expect(hash).to.equal(undefined);
 		});
@@ -637,9 +637,9 @@ describe('flash-helper', () => {
 
 		it('skips asset is it is on the device', async () => {
 			const modules = await createAssetModules();
-			const asset = modules.filter(m => m.filename === 'asset1.bin')[0];
+			const asset = modules.find(m => m.filename === 'asset1.bin');
 
-			const res = await _skipAsset(asset, existingAssets);
+			const res = _skipAsset(asset, existingAssets);
 
 			expect(res).to.equal(true);
 		});
@@ -662,7 +662,7 @@ describe('flash-helper', () => {
 				}
 			];
 
-			const res = await _skipAsset(asset, existingAssets);
+			const res = _skipAsset(asset, existingAssets);
 
 			expect(res).to.equal(false);
 		});
