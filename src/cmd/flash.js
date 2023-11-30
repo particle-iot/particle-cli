@@ -167,8 +167,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		await flashFiles({ device, flashSteps, ui: this.ui });
 	}
 
-
-
 	async _analyzeFiles(files) {
 		const apps = knownAppNames();
 

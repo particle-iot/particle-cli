@@ -617,10 +617,9 @@ describe('flash-helper', () => {
 	});
 
 	describe('_skipAsset', () => {
-		it('skips asset is it is on the device', async () => {
-			const modules = await createAssetModules();
-			const asset = modules.filter(m => m.filename === 'asset1.bin')[0];
-			const existingAssets = [
+		let existingAssets;
+		beforeEach(() => {
+			existingAssets = [
 				{
 					name: 'asset1.bin',
 					hash: '8e3dd2ea9ff3da70862a52621f7c1dc81c2b184cb886a324a3f430ec11efd3f2',
@@ -634,6 +633,11 @@ describe('flash-helper', () => {
 					storageSize: 3389
 				}
 			];
+		});
+
+		it('skips asset is it is on the device', async () => {
+			const modules = await createAssetModules();
+			const asset = modules.filter(m => m.filename === 'asset1.bin')[0];
 
 			const res = await _skipAsset(asset, existingAssets);
 
