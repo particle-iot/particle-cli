@@ -138,26 +138,40 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
+	/** Recursively copy and replace template files */
 	async _copyAndReplaceLogicFunction({ logicFunctionName, logicFunctionSlugName, description, templatePath, destinationPath }){
 		const files = await fs.readdir(templatePath);
 		const createdFiles = [];
 
 		for (const file of files){
 			//createdFiles.push(destinationFile);
-			const fileReplacements = {
-				'logic_function_name': logicFunctionSlugName,
-			};
-			const destinationFile = await templateProcessor.copyAndReplaceTemplate({
-				fileNameReplacements: fileReplacements,
-				file,
-				templatePath,
-				destinationPath,
-				replacements: {
-					name: logicFunctionName,
-					description: description || ''
-				}
-			});
-			createdFiles.push(destinationFile);
+			// check if file is a dir
+			const stat = await fs.stat(path.join(templatePath, file));
+			if (stat.isDirectory()) {
+				const subFiles = await this._copyAndReplaceLogicFunction({
+					logicFunctionName,
+					logicFunctionSlugName,
+					description,
+					templatePath: path.join(templatePath, file),
+					destinationPath: path.join(destinationPath, file)
+				});
+				createdFiles.push(...subFiles);
+			} else {
+				const fileReplacements = {
+					'logic_function_name': logicFunctionSlugName,
+				};
+				const destinationFile = await templateProcessor.copyAndReplaceTemplate({
+					fileNameReplacements: fileReplacements,
+					file,
+					templatePath,
+					destinationPath,
+					replacements: {
+						name: logicFunctionName,
+						description: description || ''
+					}
+				});
+				createdFiles.push(destinationFile);
+			}
 		}
 		// return file name created
 		return createdFiles;

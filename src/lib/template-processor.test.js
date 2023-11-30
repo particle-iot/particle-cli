@@ -16,7 +16,9 @@ describe('template-processor', () => {
 				name: 'My Logic Function',
 				description: 'My Logic Function Description',
 			};
-			const templates = await fs.readdir(templatePath);
+			let templates = await fs.readdir(templatePath);
+			// filter out @types from templates
+			templates = templates.filter((template) => !template.includes('@types'));
 			const createdFiles = [];
 			for (const template of templates){
 				const createdFile = await copyAndReplaceTemplate({
@@ -29,10 +31,9 @@ describe('template-processor', () => {
 			}
 			// check files were copied
 			const files = await fs.readdir(destinationPath);
-			const templateFiles = await fs.readdir(templatePath);
-			expect(files).to.have.lengthOf(templateFiles.length);
-			expect(createdFiles).to.have.lengthOf(templateFiles.length);
-			const templateFileNames = templateFiles.map((file) => file.replace('.template', ''));
+			expect(files).to.have.lengthOf(templates.length);
+			expect(createdFiles).to.have.lengthOf(templates.length);
+			const templateFileNames = templates.map((file) => file.replace('.template', ''));
 			expect(files).to.have.all.members(templateFileNames);
 			// check content was replaced
 			const codeContent = await fs.readFile(path.join(destinationPath, 'logic_function_name.logic.json'), 'utf8');
@@ -54,7 +55,9 @@ describe('template-processor', () => {
 				name: 'My Logic Function',
 				description: 'My Logic Function Description',
 			};
-			const templates = await fs.readdir(templatePath);
+			let templates = await fs.readdir(templatePath);
+			// filter out @types from templates
+			templates = templates.filter((template) => !template.includes('@types'));
 			for (const template of templates){
 				await copyAndReplaceTemplate({
 					file: template,
