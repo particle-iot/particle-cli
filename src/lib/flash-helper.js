@@ -315,8 +315,9 @@ function _get256Hash(module) {
 	if (module && module.suffixInfo && module.suffixInfo.extensions) {
 		const suffixInfoExtensions = module.suffixInfo.extensions;
 		const moduleInfo = suffixInfoExtensions.find(extension => extension.type === ModuleInfo.ModuleInfoExtension.HASH);
-
-		return moduleInfo ? moduleInfo.hash : null;
+		if (moduleInfo && moduleInfo.hash) {
+			return moduleInfo.hash;
+		}
 	}
 }
 
