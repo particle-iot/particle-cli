@@ -34,6 +34,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 					this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
 				});
 				this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`);
+				return list;
 			}
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
@@ -42,8 +43,15 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 
 	async get({ org, name, id }) {
-		// TODO
-		console.log(org, name, id);
+		// 1. Get the list of logic functions to download from
+		const list = await this.list()
+
+		// 2. Select one using picker
+
+		// 3. Download it to files. Take care of formatting
+
+		// 4. 
+
 	}
 
 	async create({ org, params: { filepath } }) {
