@@ -177,8 +177,12 @@ function _createFlashProgress({ flashSteps, ui }) {
 				}
 				break;
 			case 'finish':
+				description = 'Flash success!';
 				if (isInteractive) {
+					progressBar.update({ description });
 					progressBar.stop();
+				} else {
+					ui.stdout.write(`${description}${os.EOL}`);
 				}
 				break;
 		}

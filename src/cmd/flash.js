@@ -57,8 +57,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
-
-		this.ui.write('Flash success!');
 	}
 
 	async flashOverUsb({ binary, factory }) {

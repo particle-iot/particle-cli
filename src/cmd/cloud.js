@@ -167,6 +167,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			}
 
 			await this._doFlash({ product, deviceId: device, fileMapping });
+
+			this.ui.stdout.write(`Flash success!${os.EOL}`);
 		} catch (error) {
 			const message = `Failed to flash ${device}`;
 			throw createAPIErrorResult({ error, message });
