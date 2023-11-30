@@ -3,7 +3,7 @@ const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
 const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
-const { HalModuleParser: ModuleParser, ModuleInfo, unwrapAssetModule } = require('binary-version-reader');
+const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
@@ -314,13 +314,12 @@ function _skipAsset(module, existingAssets) {
 }
 
 function _get256Hash(module) {
-	const suffixInfoExtensions = module.suffixInfo.extensions;
+	if (module && module.suffixInfo && module.suffixInfo.extensions) {
+		const suffixInfoExtensions = module.suffixInfo.extensions;
+		const moduleInfo = suffixInfoExtensions.find(extension => extension.type === ModuleInfo.ModuleInfoExtension.HASH);
 
-	const moduleInfo = suffixInfoExtensions.filter((extension) => {
-		return extension.type === ModuleInfo.ModuleInfoExtension.HASH;
-	});
-
-	return moduleInfo[0].hash;
+		return moduleInfo ? moduleInfo.hash : null;
+	}
 }
 
 function validateDFUSupport({ device, ui }) {
