@@ -10,6 +10,10 @@ const templateProcessor = require('../lib/template-processor');
 const { slugify } = require('../lib/utilities');
 
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
+const CLICommandBase = require('./base');
+const os = require('os');
+const fs = require('fs-extra');
+const path = require('path');
 
 /**
  * Commands for managing encryption keys.
@@ -49,15 +53,56 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 
 	async get({ org, name, id }) {
-		// 1. Get the list of logic functions to download from
-		const list = await this.list()
+		const list = await this.list({ org });
+		if (!name && !id) {
+			name = await this._promptForLogicFunctionName(list);
+		}
+		if (name) {
+			id = this.getIdFromName(name, list);
+		}
+		if (!id) {
+			throw new Error('Unable to get logic function id');
+		}
 
-		// 2. Select one using picker
+		const api = createAPI();
+		try {
+			const logicFunction = await api.getLogicFunction({ org, id });
 
-		// 3. Download it to files. Take care of formatting
+			const orgName = getOrgName(org);
+			const dirPath = path.join(process.cwd(), `${name}`);
+			const jsonPath = path.join(dirPath, `${name}.json`);
+			const jsPath = path.join(dirPath, `${name}.js`);
+			const code = logicFunction.body.logic_function.source.code;
+			const logicFunctionJSON = logicFunction.body.logic_function;
+			delete logicFunctionJSON.source;
 
-		// 4. 
+			await fs.ensureDir(dirPath);
+			await fs.writeFile(jsonPath, JSON.stringify(logicFunctionJSON, null, 2));
+			await fs.writeFile(jsPath, code);
 
+			this.ui.stdout.write(`Downloaded Logic Function ${name} (${id}) from ${orgName}${os.EOL} to: ${dirPath}${os.EOL}`);
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
+		}
+	}
+
+	async _promptForLogicFunctionName(list) {
+		const question = {
+			type: 'list',
+			name: 'logic_function',
+			message: 'Which logic function would you like to download?',
+			choices() {
+				return list;
+			}
+		};
+		const nonInteractiveError = 'Provide name for the logic function'; // How to test this?
+		const ans = await this.ui.prompt([question], { nonInteractiveError });
+		return ans.logic_function;
+	}
+
+	getIdFromName(name, list) {
+		const found = list.find(item => item.name === name);
+		return found ? found.id : null;
 	}
 
 	async create({ org, name, params : { filepath } } = { params: { } }) {
