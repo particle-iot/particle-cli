@@ -24,25 +24,34 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	async list({ org }) {
+	async list({ org, display = true }) {
 		const api = createAPI();
 		try {
 			const logicFunctions = await api.getLogicFunctionList({ org });
 			const orgName = getOrgName(org);
 			const list = logicFunctions.logic_functions;
 			if (list.length === 0) {
-				this.ui.stdout.write(`No Logic Functions currently deployed in your ${orgName}.`);
-				this.ui.stdout.write(`To create a Logic Function, see \`particle logic-function create\`.${os.EOL}
-							To download an existing Logic Function, see \`particle lf get\`.${os.EOL}`);
+				if (display) {
+					this.ui.stdout.write(`No Logic Functions currently deployed in your ${orgName}.`);
+					this.ui.stdout.write(`To create a Logic Function, see \`particle logic-function create\`.${os.EOL}
+								To view Functions from an organization, use the \`--org\` option.${os.EOL}
+								To download an existing Logic Function, see \`particle lf get\`.${os.EOL}`);
+				}
 			} else {
-				this.ui.stdout.write(`Logic Functions currently deployed in your ${orgName}:${os.EOL}`);
+				if (display) {
+					this.ui.stdout.write(`Logic Functions currently deployed in your ${orgName}:${os.EOL}`);
+				}
 				list.forEach((item) => {
-					// We assume atleast one trigger
-					this.ui.stdout.write(`- ${item.name} (${ item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.grey('disabled') })${os.EOL}`);
-					this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
-					this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
+					// We assume at least one trigger
+					if (display) {
+						this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.grey('disabled')})${os.EOL}`);
+						this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
+						this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
+					}
 				});
-				this.ui.stdout.write(this.ui.chalk.yellow(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`));
+				if (display) {
+					this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`);
+				}
 				return list;
 			}
 			return list;
@@ -53,22 +62,27 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 
 	async get({ org, name, id }) {
-		const list = await this.list({ org });
+		const api = createAPI();
+		let list;
+		try {
+			list = await this.list({ org, display: false });
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
+		}
+
 		if (!name && !id) {
 			name = await this._promptForLogicFunctionName(list);
 		}
-		if (name) {
-			id = this.getIdFromName(name, list);
+		if (name && !id) {
+			id = this._getIdFromName(name, list);
 		}
 		if (!id) {
 			throw new Error('Unable to get logic function id');
 		}
 
-		const api = createAPI();
 		try {
 			const logicFunction = await api.getLogicFunction({ org, id });
 
-			const orgName = getOrgName(org);
 			const dirPath = path.join(process.cwd(), `${name}`);
 			const jsonPath = path.join(dirPath, `${name}.json`);
 			const jsPath = path.join(dirPath, `${name}.js`);
@@ -76,17 +90,44 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const logicFunctionJSON = logicFunction.body.logic_function;
 			delete logicFunctionJSON.source;
 
+			if (await this._checkIfDirExists(dirPath)) {
+				return;
+			}
+
 			await fs.ensureDir(dirPath);
 			await fs.writeFile(jsonPath, JSON.stringify(logicFunctionJSON, null, 2));
 			await fs.writeFile(jsPath, code);
 
-			this.ui.stdout.write(`Downloaded Logic Function ${name} (${id}) from ${orgName}${os.EOL} to: ${dirPath}${os.EOL}`);
+			this.ui.stdout.write(`Downloaded:${os.EOL}`);
+			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
+			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+			this.ui.stdout.write(`${os.EOL}`);
+
+			this.ui.stdout.write(`Note that any local modifications to these files need to be deployed to the cloud in order to take effect.${os.EOL}` +
+				`Refer to 'particle logic-function execute' and 'particle logic-function deploy' for further details.${os.EOL}`);
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
 		}
 	}
 
+	async _checkIfDirExists(dirPath) {
+		if (await fs.pathExists(dirPath)) {
+			const question = {
+				type: 'confirm',
+				name: 'overwrite',
+				message: `Directory ${path.basename(dirPath)} already exists. Overwrite?`,
+				default: false
+			};
+			const ans = await this.ui.prompt([question]);
+			if (!ans.overwrite) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	async _promptForLogicFunctionName(list) {
+		// XXX: What if list is empty?
 		const question = {
 			type: 'list',
 			name: 'logic_function',
@@ -95,12 +136,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				return list;
 			}
 		};
-		const nonInteractiveError = 'Provide name for the logic function'; // How to test this?
+		const nonInteractiveError = 'Provide name for the logic function'; // XXX: How to test this?
 		const ans = await this.ui.prompt([question], { nonInteractiveError });
 		return ans.logic_function;
 	}
 
-	getIdFromName(name, list) {
+	_getIdFromName(name, list) {
 		const found = list.find(item => item.name === name);
 		return found ? found.id : null;
 	}
