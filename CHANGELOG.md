@@ -1,5 +1,11 @@
 # Changelog
 
+# 3.18.0 - Dec 1 2023
+
+* Local flsher skips flashing assets which are already on the device
+* Supports flashing monolithic firmware using `particle flash --local / --usb` commands
+* Fix e2e tests
+
 # 3.17.3 - Oct 19 2023
 
 * Fix `particle flash --local` were not picking the deviceId from params
