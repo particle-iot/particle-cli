@@ -2,7 +2,6 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const ParticleAPI = require('./api');
-const CLICommandBase = require('./base');
 const VError = require('verror');
 const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
@@ -11,9 +10,6 @@ const { slugify } = require('../lib/utilities');
 
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 const CLICommandBase = require('./base');
-const os = require('os');
-const fs = require('fs-extra');
-const path = require('path');
 
 /**
  * Commands for managing encryption keys.
