@@ -7,9 +7,6 @@ const LogicFunctionCommands = require('./logic-function');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS, PATH_TMP_DIR } = require('../../test/lib/env');
 const templateProcessor = require('../lib/template-processor');
 
-
-
-
 describe('LogicFunctionCommands', () => {
 	let logicFunctionCommands;
 	let originalUi = new LogicFunctionCommands().ui;
@@ -247,6 +244,50 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(1);
 			expect(logicFunctionCommands.ui.prompt.firstCall.lastArg[0].choices[0].name).to.equal('code.js');
 			expect(logicFunctionCommands.ui.prompt.firstCall.lastArg[0].choices[1].name).to.equal('code2.js');
+		});
+	});
+
+	describe('_checkIfDirExists', () => {
+		it('returns true if directory exists', async () => {
+
+		});
+
+		it('returns false if directory does not exist', async () => {
+
+		});
+	});
+
+	describe('_promptForLogicFunctionName', () => {
+		// how to write tests here?
+	});
+
+	describe('_getIdFromName', () => {
+		it('returns id if found', async () => {
+
+		});
+
+		it('returns null if not found', async () => {
+
+		});
+	});
+
+	describe('_validateExistingName', () => {
+		it('returns an error if a logic function with that name already exists', async () => {
+
+		});
+	});
+
+	describe('get', () => {
+		it('downloads a logic function', async () => {
+
+		});
+
+		it('prompts if multiple files are found', async () => {
+
+		});
+
+		it('returns error if logic-function is not found', async () => {
+
 		});
 	});
 });

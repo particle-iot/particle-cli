@@ -56,7 +56,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-
 	async get({ org, name, id }) {
 		const api = createAPI();
 		let list;
@@ -79,11 +78,13 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		try {
 			const logicFunction = await api.getLogicFunction({ org, id });
 
+			// TODO: Address spaces in the name for Windows
 			const dirPath = path.join(process.cwd(), `${name}`);
 			const jsonPath = path.join(dirPath, `${name}.json`);
 			const jsPath = path.join(dirPath, `${name}.js`);
-			const code = logicFunction.body.logic_function.source.code;
-			const logicFunctionJSON = logicFunction.body.logic_function;
+			// TODO: Check if keys exist?
+			const code = logicFunction.logic_function.source.code;
+			const logicFunctionJSON = logicFunction.logic_function;
 			delete logicFunctionJSON.source;
 
 			if (await this._checkIfDirExists(dirPath)) {
@@ -94,13 +95,18 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			await fs.writeFile(jsonPath, JSON.stringify(logicFunctionJSON, null, 2));
 			await fs.writeFile(jsPath, code);
 
+			this.ui.stdout.write(`${os.EOL}`);
 			this.ui.stdout.write(`Downloaded:${os.EOL}`);
 			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
 			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
 			this.ui.stdout.write(`${os.EOL}`);
 
 			this.ui.stdout.write(`Note that any local modifications to these files need to be deployed to the cloud in order to take effect.${os.EOL}` +
-				`Refer to 'particle logic-function execute' and 'particle logic-function deploy' for further details.${os.EOL}`);
+				'Refer to \'' +
+				this.ui.chalk.yellow('particle logic-function execute') +
+				'\' and \'' +
+				this.ui.chalk.yellow('particle logic-function deploy') +
+				`' for more information.${os.EOL}`);
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
 		}
@@ -191,6 +197,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return createdFiles;
 	}
 
+	// TODO: Rename this function
 	async _validateExistingName({ api, org, name }) {
 		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
 		let existingLogicFunction;
