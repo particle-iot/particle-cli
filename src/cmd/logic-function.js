@@ -207,12 +207,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	// TODO: Rename this function
-	async _validateExistingName({ api, org, name }) {
+	async _validateExistingName({ org, name }) {
 		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
 		let existingLogicFunction;
 		try {
-			const logicFunctionsResponse = await api.getLogicFunctionList({ org });
-			const existingLogicFunctions = logicFunctionsResponse.logic_functions;
+			const list = await this.list({ org, display: false });
+			const existingLogicFunctions = list.logic_functions;
 			existingLogicFunction = existingLogicFunctions.find((item) => item.name === name);
 		} catch (error) {
 			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with name ${name} already exists.${os.EOL}`));
