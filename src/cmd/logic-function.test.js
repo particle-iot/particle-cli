@@ -6,6 +6,7 @@ const { expect, sinon } = require('../../test/setup');
 const LogicFunctionCommands = require('./logic-function');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS, PATH_TMP_DIR } = require('../../test/lib/env');
 const templateProcessor = require('../lib/template-processor');
+const { desc } = require('yeoman-generator/lib/actions/help');
 
 describe('LogicFunctionCommands', () => {
 	let logicFunctionCommands;
@@ -164,8 +165,7 @@ describe('LogicFunctionCommands', () => {
 				params: { filepath: PATH_TMP_DIR }
 			});
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(2);
-			// FIXME: this test is failing on CI
-			// expect(logicFunctionCommands.ui.prompt.thirdCall.lastArg[0].message).to.contain('We found existing files in');
+			expect(logicFunctionCommands.ui.prompt.thirdCall.lastArg[0].message).to.contain('We found existing files in');
 		});
 
 		it('throws an error if logic function already exists', async () => {
@@ -262,6 +262,20 @@ describe('LogicFunctionCommands', () => {
 		// how to write tests here?
 	});
 
+	describe('_checkAndPromptOverwrite', () => {
+		it('checks if path exists', async () => {
+
+		});
+
+		it('returns true if user wants to overwrite', async () => {
+
+		});
+
+		it('returns false if user does not want to overwrite', async () => {
+
+		});
+	}
+
 	describe('_getIdFromName', () => {
 		it('returns id if found', async () => {
 
@@ -272,8 +286,32 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('_validateExistingName', () => {
-		it('returns an error if a logic function with that name already exists', async () => {
+	describe('_getNameFromId', () => {
+		it('returns name if found', async () => {
+
+		});
+
+		it('returns null if not found', async () => {
+
+		});
+	});
+
+	describe('_validateDir', () => {
+		it('returns true if directory exists', async () => {
+
+		});
+
+		it('returns false if directory does not exist', async () => {
+
+		});
+	});
+
+	describe('_validateTemplateFiles', () => {
+		it('returns true if all files exist', async () => {
+
+		});
+
+		it('returns false if any file does not exist', async () => {
 
 		});
 	});
@@ -329,7 +367,7 @@ describe('LogicFunctionCommands', () => {
 			expect(stubGet.isDone()).to.be.true;
 		});
 
-		it('downloads a logic function with id', async () => {
+		it('downloads a logic function from user input', async () => {
 			let logicFunctions = [];
 			logicFunctions.push(logicFunc1.logic_functions[0]);
 			logicFunctions.push(logicFunc2.logic_functions[0]);
@@ -342,13 +380,10 @@ describe('LogicFunctionCommands', () => {
 				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
 				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
 
-			await logicFunctionCommands.get({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
+			await logicFunctionCommands.get({ name: 'LF1' });
 
 			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.js'))).to.be.true;
 			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.json'))).to.be.true;
-
-			// //clean up
-			fs.remove(path.join(process.cwd(), 'LF1'));
 			expect(stubList.isDone()).to.be.true;
 			expect(stubGet.isDone()).to.be.true;
 		});
@@ -381,4 +416,53 @@ describe('LogicFunctionCommands', () => {
 			expect(stubGet.isDone()).to.be.true;
 		});
 	});
+
+	describe('_getLogicFunctionIdAndName', () => {
+		it('returns id and name if both are provided', async () => {
+
+		});
+
+		it('returns id if name is provided', async () => {
+
+		});
+
+		it('returns name if id is provided', async () => {
+
+		});
+
+		it('error if list is unable to be fetched', async () => {
+
+		});
+
+		it('null if name is not found', async () => {
+
+		});
+
+		it('error if id is not found', async () => {
+
+		});
+
+	});
+
+	describe('_selectLogicFunction', () => {
+		it('selects logic function from a list', async () => {
+
+		});
+
+		it('returns error if list is empty', async () => {
+
+		});
+	});
+
+	describe('_validateLFName', () => {
+		it('returns error if a logic function with that name already deployed', async () => {
+
+		});
+
+		it('returns if logic function is not already deployed', async () => {
+
+		});
+	});
+
+
 });

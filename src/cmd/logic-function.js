@@ -387,44 +387,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async disable({ org, name, id }) {
 		// TODO
 		console.log(org, name, id);
-
-		const api = createAPI();
-		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
-
-		// get the logic function
-		// get the content of the logic function
-		// update the logic function with enabled = false
-
-		const logicFunction = await api.getLogicFunction({ org, name, id });
-		logicFunction.logic_function.enabled = false;
-		await api.updateLogicFunction({ org, id, logicFunctionData: logicFunction });
-
-		// try {
-		// 	await api.updateLogicFunction({ org, id, enabled: false });
-		// 	this.ui.stdout.write(`Logic Function ${name}(${id}) disabled successfully.${os.EOL}`);
-		// }
 	}
 
 	async delete({ org, name, id }) {
-		const api = createAPI();
-		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
-
-		const answer = await this._prompt({
-			type: 'confirm',
-			name: 'delete',
-			message: `Are you sure you want to delete the Logic Function ${name}(${id})? This action cannot be undone.`
-		});
-		if (answer.delete === false) {
-			this.ui.stdout.write(`Aborted.${os.EOL}`);
-			process.exit(0);
-		}
-
-		try {
-			await api.deleteLogicFunction({ org, name, id });
-			this.ui.stdout.write(`Logic Function ${name}(${id}) deleted successfully.${os.EOL}`);
-		} catch (error) {
-			throw createAPIErrorResult({ error: error, message: `Error deleting Logic Function ${name}` });
-		}
+		// TODO
+		console.log(org, name, id);
 	}
 
 	async logs({ org, name, id, saveTo }) {
