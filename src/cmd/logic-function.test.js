@@ -247,7 +247,7 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('_checkIfDirExists', () => {
+	describe('_validateExistingDir', () => {
 		it('returns true if directory exists', async () => {
 
 		});

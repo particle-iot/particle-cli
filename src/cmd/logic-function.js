@@ -67,7 +67,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		// TODO: Refactor this!
 		if (!name && !id) {
-			name = await this._promptForLogicFunctionName(list);
+			name = await this._selectLogicFunction(list);
 		}
 		if (name && !id) {
 			id = this._getIdFromName(name, list);
@@ -91,9 +91,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const logicFunctionJSON = logicFunction.logic_function;
 			delete logicFunctionJSON.source;
 
-			if (await this._checkIfDirExists(dirPath)) {
-				return;
-			}
+			await this._validateExistingDir(dirPath);
 
 			await fs.ensureDir(dirPath);
 			await fs.writeFile(jsonPath, JSON.stringify(logicFunctionJSON, null, 2));
@@ -116,35 +114,16 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-	async _checkIfDirExists(dirPath) {
-		if (await fs.pathExists(dirPath)) {
-			const question = {
-				type: 'confirm',
-				name: 'overwrite',
-				message: `Directory ${path.basename(dirPath)} already exists. Overwrite?`,
-				default: false
-			};
-			const ans = await this.ui.prompt([question]);
-			if (!ans.overwrite) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	async _promptForLogicFunctionName(list) {
+	async _selectLogicFunction(list) {
 		// XXX: What if list is empty?
-		const question = {
+		const answer = await this._prompt({
 			type: 'list',
 			name: 'logic_function',
 			message: 'Which logic function would you like to download?',
-			choices() {
-				return list;
-			}
-		};
-		const nonInteractiveError = 'Provide name for the logic function'; // XXX: How to test this?
-		const ans = await this.ui.prompt([question], { nonInteractiveError });
-		return ans.logic_function;
+			choices : list,
+			nonInteractiveError: 'Provide name for the logic function'
+		});
+		return answer.logic_function;
 	}
 
 	_getIdFromName(name, list) {
@@ -161,59 +140,55 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const orgName = getOrgName(org);
 		const api = createAPI();
 		// get name from filepath
-		const logicPath = getFilePath(filepath);
+		const logicFuncPath = getFilePath(filepath);
 		if (!name) {
-			const question = {
+			const result = await this._prompt({
 				type: 'input',
 				name: 'name',
 				message: 'What would you like to call your Function?'
-			};
-			const result =  await this.ui.prompt([question]);
+			});
 			name = result.name;
 		}
-		// trim name
 		name = name.trim();
 		// ask for description
-		const question = {
+		const result = await this._prompt({
 			type: 'input',
 			name: 'description',
-			message: 'Add a description for your Function (optional)'
-		};
-		const result =  await this.ui.prompt([question]);
+			message: 'Please provide a short description of your Function:'
+		});
 		const description = result.description;
 		const slugName = slugify(name);
 		const destinationPath = path.join(logicPath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
-		await this._validateExistingName({ api, org, name });
-		await this._validateExistingFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
+		await this._isFunctionNameDeployed({ api, org, name });
+		await this._validateExistingTemplateFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
 		const createdFiles = await this._copyAndReplaceLogicFunction({
 			logicFunctionName: name,
 			logicFunctionSlugName: slugName,
 			description,
 			templatePath: logicFunctionTemplatePath,
-			destinationPath: path.join(filepath, slugName)
+			destinationPath: path.join(logicFuncPath, slugName)
 		});
-		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(logicPath)}${os.EOL}`);
+		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(logicFuncPath)}${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
 		createdFiles.forEach((file) => {
 			this.ui.stdout.write(`- ${file}${os.EOL}`);
 		});
 		this.ui.stdout.write(`${os.EOL}Guidelines for creating your Logic Function can be found <TBD>.${os.EOL}`);
 		this.ui.stdout.write(`Once you have written your Logic Function, run${os.EOL}`);
-		this.ui.stdout.write(`- \`particle logic execute\` to run your Function${os.EOL}`);
-		this.ui.stdout.write(`- \`particle logic deploy\` to deploy your new changes${os.EOL}`);
+		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function execute\'') + ` to run your Function${os.EOL}`);
+		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function deploy\'') + ` to deploy your new changes${os.EOL}`);
 		return createdFiles;
 	}
 
 	// TODO: Rename this function
-	async _validateExistingName({ org, name }) {
+	async _isFunctionNameDeployed({ org, name }) {
 		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
 		let existingLogicFunction;
 		try {
 			const list = await this.list({ org, display: false });
-			const existingLogicFunctions = list.logic_functions;
-			existingLogicFunction = existingLogicFunctions.find((item) => item.name === name);
+			existingLogicFunction = list.find((item) => item.name === name);
 		} catch (error) {
 			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with name ${name} already exists.${os.EOL}`));
 		}
@@ -222,21 +197,58 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-	async _validateExistingFiles({ templatePath, destinationPath }){
-		const filesAlreadyExist = await templateProcessor.hasTemplateFiles({
+	async _prompt({ type, name, message, choices, nonInteractiveError }) {
+		const question = {
+			type,
+			name,
+			message,
+			choices
+		};
+		const result = await this.ui.prompt([question], { nonInteractiveError });
+		return result;
+	}
+
+	async _checkAndPromptOverwrite({ pathToCheck, message }) {
+		if (await fs.pathExists(pathToCheck)) {
+			const answer = await this._prompt({
+				type: 'confirm',
+				name: 'overwrite',
+				message,
+				choices: Boolean
+			});
+			if (!answer.overwrite) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	async _validateExistingDir(dirPath) {
+		const shouldAbort = await this._checkAndPromptOverwrite({
+			pathToCheck: dirPath,
+			message: `Directory ${path.basename(dirPath)} already exists. Overwrite?`,
+		});
+		if (shouldAbort) {
+			this.ui.stdout.write(`Aborted.${os.EOL}`);
+			process.exit(0);
+
+		}
+	}
+
+	async _validateExistingTemplateFiles({ templatePath, destinationPath }) {
+		const filesExist = await templateProcessor.hasTemplateFiles({
 			templatePath,
 			destinationPath
 		});
-		if (filesAlreadyExist) {
-			const question = {
-				type: 'confirm',
-				name: 'overwrite',
+		if (filesExist) {
+			const shouldAbort = await this._checkAndPromptOverwrite({
+				pathToCheck: destinationPath,
 				message: `We found existing files in ${this.ui.chalk.bold(destinationPath)}. Would you like to overwrite them?`
-			};
-			const { overwrite } =  await this.ui.prompt([question]);
-			if (!overwrite) {
+			});
+			if (shouldAbort) {
 				this.ui.stdout.write(`Aborted.${os.EOL}`);
 				process.exit(0);
+
 			}
 		}
 	}
@@ -351,13 +363,13 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 					value: file
 				};
 			});
-			const question = {
+
+			const result = await this._prompt({
 				type: 'list',
 				name: 'file',
 				message: `Which ${extension} file would you like to use?`,
 				choices
-			};
-			const result = await this.ui.prompt([question]);
+			});
 			fileName = result.file;
 		}
 
