@@ -72,7 +72,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const logicFunctionJSON = logicFunction.logic_function;
 			delete logicFunctionJSON.source;
 
-			await this._validateExistingDir(dirPath);
+			await this._validateDir(dirPath);
 
 			await fs.ensureDir(dirPath);
 			await fs.writeFile(jsonPath, JSON.stringify(logicFunctionJSON, null, 2));
@@ -163,8 +163,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const destinationPath = path.join(logicPath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
-		await this._isFunctionNameDeployed({ api, org, name });
-		await this._validateExistingTemplateFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
+		await this._validateLFName({ api, org, name });
+		await this._validateTemplateFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
 		const createdFiles = await this._copyAndReplaceLogicFunction({
 			logicFunctionName: name,
 			logicFunctionSlugName: slugName,
@@ -185,7 +185,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	// TODO: Rename this function
-	async _isFunctionNameDeployed({ org, name }) {
+	async _validateLFName({ org, name }) {
 		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
 		let existingLogicFunction;
 		try {
@@ -225,7 +225,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return false;
 	}
 
-	async _validateExistingDir(dirPath) {
+	async _validateDir(dirPath) {
 		const shouldAbort = await this._checkAndPromptOverwrite({
 			pathToCheck: dirPath,
 			message: `Directory ${path.basename(dirPath)} already exists. Overwrite?`,
@@ -237,7 +237,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-	async _validateExistingTemplateFiles({ templatePath, destinationPath }) {
+	async _validateTemplateFiles({ templatePath, destinationPath }) {
 		const filesExist = await templateProcessor.hasTemplateFiles({
 			templatePath,
 			destinationPath
