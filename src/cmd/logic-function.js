@@ -58,26 +58,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async get({ org, name, id }) {
 		const api = createAPI();
-		let list;
-		try {
-			list = await this.list({ org, display: false });
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
-		}
-
-		// TODO: Refactor this!
-		if (!name && !id) {
-			name = await this._selectLogicFunction(list);
-		}
-		if (name && !id) {
-			id = this._getIdFromName(name, list);
-		}
-		if (id && !name) {
-			name = this._getNameFromId(id, list);
-		}
-		if (!id) {
-			throw new Error('Unable to get logic function id');
-		}
+		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
 
 		try {
 			const logicFunction = await api.getLogicFunction({ org, id });
@@ -112,6 +93,27 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
 		}
+	}
+
+	async _getLogicFunctionIdAndName(org, name, id) {
+		const list = await this.list({ org, display: false });
+		if (!name && !id) {
+			name = await this._selectLogicFunction(list);
+		}
+
+		if (name && !id) {
+			id = this._getIdFromName(name, list);
+		}
+
+		if (id && !name) {
+			name = this._getNameFromId(id, list);
+		}
+
+		if (!id) {
+			throw new Error('Unable to get logic function id');
+		}
+
+		return { name, id };
 	}
 
 	async _selectLogicFunction(list) {
@@ -388,8 +390,25 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async delete({ org, name, id }) {
-		// TODO
-		console.log(org, name, id);
+		const api = createAPI();
+		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
+
+		const answer = await this._prompt({
+			type: 'confirm',
+			name: 'delete',
+			message: `Are you sure you want to delete the Logic Function ${name}(${id})? This action cannot be undone.`
+		});
+		if (answer.delete === false) {
+			this.ui.stdout.write(`Aborted.${os.EOL}`);
+			process.exit(0);
+		}
+
+		try {
+			await api.deleteLogicFunction({ org, name, id });
+			this.ui.stdout.write(`Logic Function ${name}(${id}) deleted successfully.${os.EOL}`);
+		} catch (error) {
+			throw createAPIErrorResult({ error: error, message: `Error deleting Logic Function ${name}` });
+		}
 	}
 
 	async logs({ org, name, id, saveTo }) {

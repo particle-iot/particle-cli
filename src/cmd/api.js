@@ -257,6 +257,14 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	deleteLogicFunction({ org, id }) {
+		return this._wrap(this.api.deleteLogicFunction({
+			org: org,
+			logicFunctionId: id,
+			auth: this.accessToken,
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
