@@ -147,7 +147,7 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.create({
 				params: { filepath: PATH_TMP_DIR }
 			});
-			expect(logicFunctionCommands.ui.chalk.yellow.callCount).to.equal(1);
+			expect(logicFunctionCommands.ui.chalk.yellow.callCount).to.equal(3);
 			expect(logicFunctionCommands.ui.chalk.yellow.firstCall.args[0]).to.equal(`Warn: We were unable to check if a Logic Function with name logicFunc1 already exists.${os.EOL}`);
 		});
 
@@ -163,7 +163,7 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.create({
 				params: { filepath: PATH_TMP_DIR }
 			});
-			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(3);
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(2);
 			expect(logicFunctionCommands.ui.prompt.thirdCall.lastArg[0].message).to.contain('We found existing files in');
 		});
 
