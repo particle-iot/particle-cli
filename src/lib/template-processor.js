@@ -15,6 +15,7 @@ async function copyAndReplaceTemplate({ fileNameReplacements, file, templatePath
 	return destinationFile;
 }
 
+// FIXME (hmontero): Stop working after file naming changes
 async function hasTemplateFiles({ templatePath, destinationPath }){
 	const files = await fs.readdir(templatePath);
 	for (const file of files){
