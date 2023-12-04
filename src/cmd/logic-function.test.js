@@ -243,8 +243,8 @@ describe('LogicFunctionCommands', () => {
 				data: { foo: 'bar' }
 			});
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(1);
-			expect(logicFunctionCommands.ui.prompt.firstCall.lastArg[0].choices[0].name).to.equal('code.js');
-			expect(logicFunctionCommands.ui.prompt.firstCall.lastArg[0].choices[1].name).to.equal('code2.js');
+			expect(logicFunctionCommands.ui.prompt.firstCall.args[0][0].choices[0].name).to.equal('code.js');
+			expect(logicFunctionCommands.ui.prompt.firstCall.args[0][0].choices[1].name).to.equal('code2.js');
 		});
 	});
 
