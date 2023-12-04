@@ -138,7 +138,7 @@ describe('LogicFunctionCommands', () => {
 			}
 		});
 
-		it('shows warning if we cannot look up to cloud for existing logic functions', async () => {
+		it('shows warning if a logic function cannot be looked up in the cloud', async () => {
 			nock('https://api.particle.io/v1', )
 				.intercept('/logic/functions', 'GET')
 				.reply(403);
