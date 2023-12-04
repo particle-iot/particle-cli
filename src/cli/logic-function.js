@@ -4,7 +4,8 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'list', 'Lists the deployed logic functions', {
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			}
 		},
 		handler: (args) => {
@@ -16,7 +17,8 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'get', 'Downloads the logic function', {
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			},
 			'name': {
 				description: 'Name of the logic function'
@@ -35,7 +37,8 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			},
 			'name': {
 				description: 'Name of the logic function'
@@ -51,7 +54,8 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			},
 			'data': {
 				description: 'Sample test data file to verify the logic function'
@@ -70,7 +74,8 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			}
 		},
 		handler: (args) => {
@@ -82,7 +87,8 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'disable', 'Disables a logic function in the cloud', {
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			},
 			'name': {
 				description: 'Name of the logic function'
@@ -100,7 +106,8 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'delete', 'Deletes a logic function from the cloud', {
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			},
 			'name': {
 				description: 'Name of the logic function'
@@ -118,7 +125,8 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'logs', 'Deletes a logic function from the cloud', {
 		options: {
 			'org': {
-				description: 'Specify the organization'
+				description: 'Specify the organization',
+				hidden: true
 			},
 			'name': {
 				description: 'Name of the logic function'
