@@ -265,6 +265,15 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	updateLogicFunction({ org, id, logicFunctionData }) {
+		return this._wrap(this.api.updateLogicFunction({
+			org: org,
+			logicFunctionId: id,
+			data: logicFunctionData,
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)

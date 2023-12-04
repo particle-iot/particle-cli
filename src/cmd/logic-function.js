@@ -387,6 +387,22 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async disable({ org, name, id }) {
 		// TODO
 		console.log(org, name, id);
+
+		const api = createAPI();
+		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
+
+		// get the logic function
+		// get the content of the logic function
+		// update the logic function with enabled = false
+
+		const logicFunction = await api.getLogicFunction({ org, name, id });
+		logicFunction.logic_function.enabled = false;
+		await api.updateLogicFunction({ org, id, logicFunctionData: logicFunction });
+
+		// try {
+		// 	await api.updateLogicFunction({ org, id, enabled: false });
+		// 	this.ui.stdout.write(`Logic Function ${name}(${id}) disabled successfully.${os.EOL}`);
+		// }
 	}
 
 	async delete({ org, name, id }) {
