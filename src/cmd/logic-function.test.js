@@ -277,17 +277,107 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('get', () => {
-		it('downloads a logic function', async () => {
-
+	describe('get', async () => {
+		beforeEach(() => {
+			fs.remove(path.join(process.cwd(), 'LF1'));
+			fs.remove(path.join(process.cwd(), 'LF2'));
 		});
 
-		it('prompts if multiple files are found', async () => {
+		it('downloads a logic function with name', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			const stubList = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const stubGet = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
+				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+
+			await logicFunctionCommands.get({ name: 'LF1' });
+
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.js'))).to.be.true;
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.json'))).to.be.true;
+			expect(stubList.isDone()).to.be.true;
+			expect(stubGet.isDone()).to.be.true;
+		});
+
+		it('downloads a logic function with id', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
+
+			const stubList = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const stubGet = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
+				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+
+			await logicFunctionCommands.get({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
+
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.js'))).to.be.true;
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.json'))).to.be.true;
+
+			// //clean up
+			fs.remove(path.join(process.cwd(), 'LF1'));
+			expect(stubList.isDone()).to.be.true;
+			expect(stubGet.isDone()).to.be.true;
+		});
+
+		it('downloads a logic function with id', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
+
+			const stubList = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const stubGet = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
+				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+
+			await logicFunctionCommands.get({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
+
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.js'))).to.be.true;
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.json'))).to.be.true;
+
+			// //clean up
+			fs.remove(path.join(process.cwd(), 'LF1'));
+			expect(stubList.isDone()).to.be.true;
+			expect(stubGet.isDone()).to.be.true;
 		});
 
 		it('returns error if logic-function is not found', async () => {
 
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
+
+			const stubList = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const stubGet = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
+				.reply(404, { });
+
+			let error;
+			try {
+				await logicFunctionCommands.get({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Error getting logic function: HTTP error 404 from https://api.particle.io/v1/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b');
+
+			expect(stubList.isDone()).to.be.true;
+			expect(stubGet.isDone()).to.be.true;
 		});
 	});
 });

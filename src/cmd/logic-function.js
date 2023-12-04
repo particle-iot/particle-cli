@@ -65,11 +65,15 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
 		}
 
+		// TODO: Refactor this!
 		if (!name && !id) {
 			name = await this._promptForLogicFunctionName(list);
 		}
 		if (name && !id) {
 			id = this._getIdFromName(name, list);
+		}
+		if (id && !name) {
+			name = this._getNameFromId(id, list);
 		}
 		if (!id) {
 			throw new Error('Unable to get logic function id');
@@ -82,7 +86,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const dirPath = path.join(process.cwd(), `${name}`);
 			const jsonPath = path.join(dirPath, `${name}.json`);
 			const jsPath = path.join(dirPath, `${name}.js`);
-			// TODO: Check if keys exist?
+			// TODO: Check if the keys exist?
 			const code = logicFunction.logic_function.source.code;
 			const logicFunctionJSON = logicFunction.logic_function;
 			delete logicFunctionJSON.source;
@@ -146,6 +150,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	_getIdFromName(name, list) {
 		const found = list.find(item => item.name === name);
 		return found ? found.id : null;
+	}
+
+	_getNameFromId(id, list) {
+		const found = list.find(item => item.id === id);
+		return found ? found.name : null;
 	}
 
 	async create({ org, name, params : { filepath } } = { params: { } }) {
