@@ -7,7 +7,7 @@ const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
 const templateProcessor = require('../lib/template-processor');
 const fs = require('fs-extra');
-
+const { slugify } = require('../lib/utilities');
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 
 /**
@@ -79,7 +79,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		};
 		const result =  await this.ui.prompt([question]);
 		const description = result.description;
-		const slugName = name.toLowerCase().replace(/\s/g, '-');
+		const slugName = slugify(name);
 		const destinationPath = path.join(filepath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
