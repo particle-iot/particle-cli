@@ -98,21 +98,23 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async _getLogicFunctionIdAndName(org, name, id) {
 		const list = await this.list({ org, display: false });
-		if (!name && !id) {
+
+		if (!id && !name) {
 			name = await this._selectLogicFunction(list);
-		}
-
-		if (name && !id) {
 			id = this._getIdFromName(name, list);
-		}
-
-		if (id && !name) {
+		} else if (!id && name) {
+			id = this._getIdFromName(name, list);
+		} else if (id && !name) {
 			name = this._getNameFromId(id, list);
 		}
 
-		if (!id) {
-			throw new Error('Unable to get logic function id');
+		if (!id || !name) {
+			throw new Error('Unable to get logic function');
 		}
+
+		// Validate the ID and Name are in fact existing
+		await this._validateLFId({ org, id });
+		await this._validateLFName({ org, name });
 
 		return { name, id };
 	}
@@ -197,6 +199,19 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 		if (existingLogicFunction) {
 			throw new Error(`Error: Logic Function with name ${name} already exists.`);
+		}
+	}
+
+	async _validateLFId({ org, id }) {
+		let existingLogicFunction;
+		try {
+			const list = await this.list({ org, display: false });
+			existingLogicFunction = list.find((item) => item.id === id);
+		} catch (error) {
+			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with name ${id} already exists.${os.EOL}`));
+		}
+		if (existingLogicFunction) {
+			throw new Error(`Error: Logic Function with name ${id} already exists.`);
 		}
 	}
 

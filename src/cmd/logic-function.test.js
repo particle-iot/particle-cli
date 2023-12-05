@@ -437,27 +437,103 @@ describe('LogicFunctionCommands', () => {
 
 	describe('_getLogicFunctionIdAndName', () => {
 		it('returns id and name if both are provided', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const res = await logicFunctionCommands._getLogicFunctionIdAndName(undefined, 'LF1', '0021e8f4-64ee-416d-83f3-898aa909fb1b');
+
+			expect(res).to.eql({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', name: 'LF1' });
 		});
 
 		it('returns id if name is provided', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const res = await logicFunctionCommands._getLogicFunctionIdAndName(undefined, 'LF1', undefined);
+
+			expect(res).to.eql({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', name: 'LF1' });
 		});
 
 		it('returns name if id is provided', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const res = await logicFunctionCommands._getLogicFunctionIdAndName(undefined, undefined, '0021e8f4-64ee-416d-83f3-898aa909fb1b');
+
+			expect(res).to.eql({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', name: 'LF1' });
 		});
 
 		it('error if list is unable to be fetched', async () => {
+			let logicFunctions = [];
 
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			let error;
+			try {
+				await logicFunctionCommands._getLogicFunctionIdAndName(undefined, undefined, undefined);
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Unable to find a list of options to choose from.');
 		});
 
 		it('null if name is not found', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			let error;
+			try {
+				await logicFunctionCommands._getLogicFunctionIdAndName(undefined, 'LF3', undefined);
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Unable to get logic function');
 		});
 
 		it('error if id is not found', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			let error;
+			try {
+				await logicFunctionCommands._getLogicFunctionIdAndName(undefined, undefined, '0021e8f4-64ee-416d-83f3-898aa909fb1c');
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Unable to get logic function');
 		});
 
 	});
