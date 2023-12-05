@@ -593,22 +593,18 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('_validateLFName', () => {
-		it('returns error if a logic function with that name already deployed', async () => {
+		it('returns true if a logic function with that name already deployed', async () => {
 			let logicFunctions = [];
 			logicFunctions.push(logicFunc1.logic_functions[0]);
 			logicFunctions.push(logicFunc2.logic_functions[0]);
 
-			const stubList = nock('https://api.particle.io/v1',)
+			nock('https://api.particle.io/v1',)
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: logicFunctions });
 
-			try {
-				await logicFunctionCommands._validateLFName({ name: 'LF1' });
-			} catch (error) {
-				expect(error).to.be.an.instanceOf(Error);
-				expect(error.message).to.equal('Error: Logic Function with name LF1 already exists.');
-				expect(stubList.isDone()).to.be.true;
-			}
+			const res = await logicFunctionCommands._validateLFName({ name: 'LF1' });
+
+			expect(res).to.be.true;
 
 		});
 
@@ -617,20 +613,44 @@ describe('LogicFunctionCommands', () => {
 			logicFunctions.push(logicFunc1.logic_functions[0]);
 			logicFunctions.push(logicFunc2.logic_functions[0]);
 
-			const stubList = nock('https://api.particle.io/v1',)
+			nock('https://api.particle.io/v1',)
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: logicFunctions });
 
-			let error;
-			try {
-				await logicFunctionCommands._validateLFName({ name: 'LF1' });
-			} catch (_e) {
-				error = _e;
-			}
+			const res = await logicFunctionCommands._validateLFName({ name: 'LF3' });
 
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Error: Logic Function with name LF1 already exists.');
-			expect(stubList.isDone()).to.be.true;
+			expect(res).to.be.false;
+		});
+	});
+
+	describe('_validateLFId', () => {
+		it('returns true if a logic function with that name already deployed', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
+
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const res = await logicFunctionCommands._validateLFId({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
+
+			expect(res).to.be.true;
+
+		});
+
+		it('returns if logic function is not already deployed', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
+
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const res = await logicFunctionCommands._validateLFId({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1c' });
+
+			expect(res).to.be.false;
 		});
 	});
 

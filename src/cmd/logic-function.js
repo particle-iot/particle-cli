@@ -145,7 +145,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async create({ org, name, params : { filepath } } = { params: { } }) {
 		const orgName = getOrgName(org);
-		const api = createAPI();
 		// get name from filepath
 		const logicFuncPath = getFilePath(filepath);
 		if (!name) {
@@ -168,7 +167,10 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const destinationPath = path.join(logicFuncPath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
-		await this._validateLFName({ api, org, name });
+		const logicFuncNameDeployed = await this._validateLFName({ org, name });
+		if (logicFuncNameDeployed) {
+			throw new Error(`Logic Function ${name} already exists in ${orgName}. Use a new name for your Logic Function.`);
+		}
 		await this._validateTemplateFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
 		const createdFiles = await this._copyAndReplaceLogicFunction({
 			logicFunctionName: name,
@@ -189,32 +191,31 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return createdFiles;
 	}
 
-	// TODO: Rename this function
+	// Throws an error if logic function name is already deployed in the cloud
 	async _validateLFName({ org, name }) {
 		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
-		let existingLogicFunction;
+		let logicFuncNameExists = false;
 		try {
 			const list = await this.list({ org, display: false });
-			existingLogicFunction = list.find((item) => item.name === name);
+			logicFuncNameExists = list.find((item) => item.name === name);
 		} catch (error) {
 			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with name ${name} already exists.${os.EOL}`));
 		}
-		if (existingLogicFunction) {
-			throw new Error(`Error: Logic Function with name ${name} already exists.`);
-		}
+
+		return logicFuncNameExists ? true : false;
 	}
 
+	// Throws an error if logic function id is already deployed in the cloud
 	async _validateLFId({ org, id }) {
-		let existingLogicFunction;
+		let logicFuncIdExists = false;
 		try {
 			const list = await this.list({ org, display: false });
-			existingLogicFunction = list.find((item) => item.id === id);
+			logicFuncIdExists = list.find((item) => item.id === id);
 		} catch (error) {
-			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with name ${id} already exists.${os.EOL}`));
+			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with id ${id} already exists.${os.EOL}`));
 		}
-		if (existingLogicFunction) {
-			throw new Error(`Error: Logic Function with name ${id} already exists.`);
-		}
+
+		return logicFuncIdExists ? true : false;
 	}
 
 	async _prompt({ type, name, message, choices, nonInteractiveError }) {
@@ -238,7 +239,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return !answer.overwrite;
 	}
 
-	async _validatePaths({ paths }) {
+	async _validatePaths(paths) {
 		// check if any of the paths exist (could be folder or file paths)
 		let exists = false;
 		for (const p of paths) {
