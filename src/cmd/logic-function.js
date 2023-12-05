@@ -59,14 +59,15 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async get({ org, name, id }) {
 		const api = createAPI();
 		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
+		const slugName = name.toLowerCase().replace(/\s/g, '-');
 
 		try {
 			const logicFunction = await api.getLogicFunction({ org, id });
 
 			// TODO: Address spaces in the name for Windows
-			const dirPath = path.join(process.cwd(), `${name}`);
-			const jsonPath = path.join(dirPath, `${name}.json`);
-			const jsPath = path.join(dirPath, `${name}.js`);
+			const dirPath = path.join(process.cwd(), `${slugName}`);
+			const jsonPath = path.join(dirPath, `${slugName}.json`);
+			const jsPath = path.join(dirPath, `${slugName}.js`);
 			// TODO: Check if the keys exist?
 			const code = logicFunction.logic_function.source.code;
 			const logicFunctionJSON = logicFunction.logic_function;
