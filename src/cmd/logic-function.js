@@ -86,10 +86,10 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			this.ui.stdout.write(`${os.EOL}`);
 
 			this.ui.stdout.write(`Note that any local modifications to these files need to be deployed to the cloud in order to take effect.${os.EOL}` +
-				'Refer to \'' +
-				this.ui.chalk.yellow('particle logic-function execute') +
-				'\' and \'' +
-				this.ui.chalk.yellow('particle logic-function deploy') +
+				'Refer to ' +
+				this.ui.chalk.yellow('\'particle logic-function execute\'') +
+				' and ' +
+				this.ui.chalk.yellow('\'particle logic-function deploy\'') +
 				`' for more information.${os.EOL}`);
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
