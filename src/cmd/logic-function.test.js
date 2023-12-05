@@ -253,11 +253,11 @@ describe('LogicFunctionCommands', () => {
 		});
 
 		it('returns false if directory does not exist', async () => {
-			
+
 		});
 	});
 
-	describe('_promptForLogicFunctionName', () => {
+	describe('_checkAndPromptOverwrite', () => {
 		it('should return true if path exists and user chooses not to overwrite', async () => {
 			sinon.stub(fs, 'pathExists').resolves(true);
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: false });
@@ -291,20 +291,6 @@ describe('LogicFunctionCommands', () => {
 			});
 
 			expect(res).to.be.false;
-		});
-	});
-
-	describe('_checkAndPromptOverwrite', () => {
-		it('checks if path exists', async () => {
-
-		});
-
-		it('returns true if user wants to overwrite', async () => {
-
-		});
-
-		it('returns false if user does not want to overwrite', async () => {
-
 		});
 	});
 
@@ -478,21 +464,73 @@ describe('LogicFunctionCommands', () => {
 
 	describe('_selectLogicFunction', () => {
 		it('selects logic function from a list', async () => {
+			const logicFunctions = ['logicFunc1', 'logicFunc2'];
+			const selectedLF = 'logicFunc2';
+			const promptStub = sinon.stub(logicFunctionCommands, '_prompt');
+			promptStub.resolves({ logic_function: selectedLF });
 
+			const res = await logicFunctionCommands._selectLogicFunction(logicFunctions);
+
+			expect(res).to.eql(selectedLF);
+			sinon.assert.calledOnceWithExactly(promptStub, {
+				type: 'list',
+				name: 'logic_function',
+				message: 'Which logic function would you like to download?',
+				choices: logicFunctions,
+				nonInteractiveError: 'Provide name for the logic function',
+			});
 		});
 
 		it('returns error if list is empty', async () => {
+			const logicFunctions = [];
 
+			let error;
+			try {
+				await logicFunctionCommands._selectLogicFunction(logicFunctions);
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.eql('Unable to find a list of options to choose from.')
 		});
 	});
 
 	describe('_validateLFName', () => {
 		it('returns error if a logic function with that name already deployed', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			const stubList = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			const res = await logicFunctionCommands._validateLFName({ name: 'LF1' });
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(stubList.isDone()).to.be.true;
 		});
 
 		it('returns if logic function is not already deployed', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			const stubList = nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+
+			let error;
+			try {
+				await logicFunctionCommands._validateLFName({ name: 'LF1' });
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Error: Logic Function with name LF1 already exists.');
+			expect(stubList.isDone()).to.be.true;
 		});
 	});
 

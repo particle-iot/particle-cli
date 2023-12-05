@@ -201,6 +201,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _prompt({ type, name, message, choices, nonInteractiveError }) {
+		if (choices.length === 0) {
+			throw new Error('Unable to find a list of options to choose from.');
+		}
 		const question = {
 			type,
 			name,
