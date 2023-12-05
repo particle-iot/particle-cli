@@ -304,11 +304,23 @@ describe('LogicFunctionCommands', () => {
 
 	describe('_getIdFromName', () => {
 		it('returns id if found', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			const res = await logicFunctionCommands._getIdFromName('LF1', logicFunctions);
+
+			expect(res).to.equal('0021e8f4-64ee-416d-83f3-898aa909fb1b');
 		});
 
 		it('returns null if not found', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			const res = await logicFunctionCommands._getIdFromName('LF3', logicFunctions);
+
+			expect(res).to.equal(null);
 		});
 	});
 
