@@ -354,7 +354,7 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.get({ name: 'LF1' });
 
 			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.js'))).to.be.true;
-			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.json'))).to.be.true;
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.logic.json'))).to.be.true;
 			expect(stubList.isDone()).to.be.true;
 			expect(stubGet.isDone()).to.be.true;
 		});
@@ -375,7 +375,7 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.get({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
 
 			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.js'))).to.be.true;
-			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.json'))).to.be.true;
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.logic.json'))).to.be.true;
 
 			// //clean up
 			fs.remove(path.join(process.cwd(), 'LF1'));
@@ -399,7 +399,7 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.get({ name: 'LF1' });
 
 			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.js'))).to.be.true;
-			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.json'))).to.be.true;
+			expect(fs.existsSync(path.join(process.cwd(), 'LF1', 'LF1.logic.json'))).to.be.true;
 			expect(stubList.isDone()).to.be.true;
 			expect(stubGet.isDone()).to.be.true;
 		});

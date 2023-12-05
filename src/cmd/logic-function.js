@@ -66,7 +66,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 			// TODO: Address spaces in the name for Windows
 			const dirPath = path.join(process.cwd(), `${slugName}`);
-			const jsonPath = path.join(dirPath, `${slugName}.json`);
+			const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
 			const jsPath = path.join(dirPath, `${slugName}.js`);
 			// TODO: Check if the keys exist?
 			const code = logicFunction.logic_function.source.code;
