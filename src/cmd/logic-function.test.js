@@ -259,7 +259,7 @@ describe('LogicFunctionCommands', () => {
 		it('returns if dir exists and not overwriting', async () => {
 			sinon.stub(logicFunctionCommands, '_checkAndPromptOverwrite').resolves(true);
 
-			await logicFunctionCommands._validateDir('somePath');
+			const res = await logicFunctionCommands._validateDir('somePath');
 
 			expect(res).to.eql(undefined);
 		});
@@ -594,10 +594,14 @@ describe('LogicFunctionCommands', () => {
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: logicFunctions });
 
-			const res = await logicFunctionCommands._validateLFName({ name: 'LF1' });
+			try {
+				await logicFunctionCommands._validateLFName({ name: 'LF1' });
+			} catch (error) {
+				expect(error).to.be.an.instanceOf(Error);
+				expect(error.message).to.equal('Error: Logic Function with name LF1 already exists.');
+				expect(stubList.isDone()).to.be.true;
+			}
 
-			expect(error).to.be.an.instanceOf(Error);
-			expect(stubList.isDone()).to.be.true;
 		});
 
 		it('returns if logic function is not already deployed', async () => {
