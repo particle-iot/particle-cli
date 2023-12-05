@@ -252,7 +252,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		if (shouldAbort) {
 			this.ui.stdout.write(`Aborted.${os.EOL}`);
 			process.exit(0);
-
 		}
 	}
 

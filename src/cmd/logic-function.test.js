@@ -248,12 +248,20 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('_validateDir', () => {
-		it('returns true if directory exists', async () => {
+		it('returns if dir doesnt exist', async () => {
+			sinon.stub(logicFunctionCommands, '_checkAndPromptOverwrite').resolves(false);
 
+			const res = await logicFunctionCommands._validateDir('somePath');
+
+			expect(res).to.eql(undefined);
 		});
 
-		it('returns false if directory does not exist', async () => {
+		it('returns if dir exists and not overwriting', async () => {
+			sinon.stub(logicFunctionCommands, '_checkAndPromptOverwrite').resolves(true);
 
+			await logicFunctionCommands._validateDir('somePath');
+
+			expect(res).to.eql(undefined);
 		});
 	});
 
@@ -310,16 +318,6 @@ describe('LogicFunctionCommands', () => {
 		});
 
 		it('returns null if not found', async () => {
-
-		});
-	});
-
-	describe('_validateDir', () => {
-		it('returns true if directory exists', async () => {
-
-		});
-
-		it('returns false if directory does not exist', async () => {
 
 		});
 	});
