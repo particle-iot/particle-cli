@@ -120,7 +120,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _selectLogicFunction(list) {
-		// XXX: What if list is empty?
+		if (list.length === 0) {
+			throw new Error('No logic functions found');
+		}
 		const answer = await this._prompt({
 			type: 'list',
 			name: 'logic_function',
@@ -163,7 +165,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		});
 		const description = result.description;
 		const slugName = slugify(name);
-		const destinationPath = path.join(logicPath, slugName);
+		const destinationPath = path.join(logicFuncPath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
 		await this._validateLFName({ api, org, name });
@@ -216,9 +218,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _prompt({ type, name, message, choices, nonInteractiveError }) {
-		if (choices.length === 0) {
-			throw new Error('Unable to find a list of options to choose from.');
-		}
 		const question = {
 			type,
 			name,

@@ -505,7 +505,7 @@ describe('LogicFunctionCommands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to find a list of options to choose from.');
+			expect(error.message).to.equal('No logic functions found');
 		});
 
 		it('null if name is not found', async () => {
@@ -580,7 +580,7 @@ describe('LogicFunctionCommands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.eql('Unable to find a list of options to choose from.');
+			expect(error.message).to.eql('No logic functions found');
 		});
 	});
 
