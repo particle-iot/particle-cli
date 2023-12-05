@@ -231,11 +231,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async _promptOverwrite({ message }) {
 		const answer = await this._prompt({
-				type: 'confirm',
-				name: 'overwrite',
-				message,
-				choices: Boolean
-			});
+			type: 'confirm',
+			name: 'overwrite',
+			message,
+			choices: Boolean
+		});
 		return !answer.overwrite;
 	}
 
