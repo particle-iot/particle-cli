@@ -326,21 +326,23 @@ describe('LogicFunctionCommands', () => {
 
 	describe('_getNameFromId', () => {
 		it('returns name if found', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
+			const res = await logicFunctionCommands._getNameFromId('0021e8f4-64ee-416d-83f3-898aa909fb1b', logicFunctions);
+
+			expect(res).to.equal('LF1');
 		});
 
 		it('returns null if not found', async () => {
+			let logicFunctions = [];
+			logicFunctions.push(logicFunc1.logic_functions[0]);
+			logicFunctions.push(logicFunc2.logic_functions[0]);
 
-		});
-	});
+			const res = await logicFunctionCommands._getNameFromId('0021e8f4-64ee-416d-83f3-898aa909fb1c', logicFunctions);
 
-	describe('_validateTemplateFiles', () => {
-		it('returns true if all files exist', async () => {
-
-		});
-
-		it('returns false if any file does not exist', async () => {
-
+			expect(res).to.equal(null);
 		});
 	});
 
@@ -578,7 +580,7 @@ describe('LogicFunctionCommands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.eql('Unable to find a list of options to choose from.')
+			expect(error.message).to.eql('Unable to find a list of options to choose from.');
 		});
 	});
 
