@@ -6,7 +6,6 @@ const { expect, sinon } = require('../../test/setup');
 const LogicFunctionCommands = require('./logic-function');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS, PATH_TMP_DIR } = require('../../test/lib/env');
 const templateProcessor = require('../lib/template-processor');
-const { desc } = require('yeoman-generator/lib/actions/help');
 
 describe('LogicFunctionCommands', () => {
 	let logicFunctionCommands;
@@ -248,18 +247,51 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('_validateExistingDir', () => {
+	describe('_validateDir', () => {
 		it('returns true if directory exists', async () => {
 
 		});
 
 		it('returns false if directory does not exist', async () => {
-
+			
 		});
 	});
 
 	describe('_promptForLogicFunctionName', () => {
-		// how to write tests here?
+		it('should return true if path exists and user chooses not to overwrite', async () => {
+			sinon.stub(fs, 'pathExists').resolves(true);
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: false });
+
+			const res = await logicFunctionCommands._checkAndPromptOverwrite({
+				pathToCheck: 'somePath',
+				message: 'someMessage'
+			});
+
+			expect(res).to.be.true;
+		});
+
+		it('should return false if path exists and user chooses to overwrite', async () => {
+			sinon.stub(fs, 'pathExists').resolves(true);
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
+
+			const res = await logicFunctionCommands._checkAndPromptOverwrite({
+				pathToCheck: 'somePath',
+				message: 'someMessage'
+			});
+
+			expect(res).to.be.false;
+		});
+
+		it('should return false if path does not exist', async () => {
+			sinon.stub(fs, 'pathExists').resolves(false);
+
+			const res = await logicFunctionCommands._checkAndPromptOverwrite({
+				pathToCheck: 'somePath',
+				message: 'someMessage'
+			});
+
+			expect(res).to.be.false;
+		});
 	});
 
 	describe('_checkAndPromptOverwrite', () => {
@@ -274,7 +306,7 @@ describe('LogicFunctionCommands', () => {
 		it('returns false if user does not want to overwrite', async () => {
 
 		});
-	}
+	});
 
 	describe('_getIdFromName', () => {
 		it('returns id if found', async () => {
