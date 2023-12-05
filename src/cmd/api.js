@@ -241,6 +241,14 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	executeLogicFunction({ org, logic }) {
+		return this._wrap(this.api.executeLogic({
+			org: org,
+			logic: logic,
+			auth: this.accessToken,
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)

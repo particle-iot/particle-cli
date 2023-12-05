@@ -1,13 +1,14 @@
 const os = require('os');
 const path = require('path');
+const fs = require('fs-extra');
 const ParticleAPI = require('./api');
 const CLICommandBase = require('./base');
 const VError = require('verror');
 const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
 const templateProcessor = require('../lib/template-processor');
-const fs = require('fs-extra');
 const { slugify } = require('../lib/utilities');
+
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 
 /**
@@ -50,13 +51,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async get({ org, name, id }) {
 		// 1. Get the list of logic functions to download from
-		const list = await this.list()
-
+		//const list = await this.list();
+		console.log(org, name, id);
 		// 2. Select one using picker
-
 		// 3. Download it to files. Take care of formatting
 
-		// 4. 
+		// 4.
 
 	}
 
@@ -64,10 +64,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const orgName = getOrgName(org);
 		const api = createAPI();
 		// get name from filepath
-		if (!filepath) {
-			// use default directory
-			filepath = '.';
-		}
+		const logicPath = getFilePath(filepath);
 		if (!name) {
 			const question = {
 				type: 'input',
@@ -88,7 +85,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const result =  await this.ui.prompt([question]);
 		const description = result.description;
 		const slugName = slugify(name);
-		const destinationPath = path.join(filepath, slugName);
+		const destinationPath = path.join(logicPath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
 		await this._validateExistingName({ api, org, name });
@@ -100,7 +97,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			templatePath: logicFunctionTemplatePath,
 			destinationPath: path.join(filepath, slugName)
 		});
-		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(filepath)}${os.EOL}`);
+		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(logicPath)}${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
 		createdFiles.forEach((file) => {
 			this.ui.stdout.write(`- ${file}${os.EOL}`);
@@ -185,9 +182,89 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return createdFiles;
 	}
 
-	async execute({ org, data, params: { filepath } }) {
-		// TODO
-		console.log(org, data, filepath);
+	async execute({ org, data, dataPath, params: { filepath } }) {
+		let logicData;
+		const orgName = getOrgName(org);
+		const logicPath = getFilePath(filepath);
+
+		if (!data && !dataPath) {
+			throw new Error('Error: Please provide either data or dataPath');
+		}
+		if (data && dataPath) {
+			throw new Error('Error: Please provide either data or dataPath');
+		}
+		if (dataPath) {
+			logicData = await fs.readFile(dataPath, 'utf8');
+		} else {
+			logicData = data;
+		}
+
+		const files = await fs.readdir(logicPath);
+		const { content: configurationFileString } = await this._pickLogicFunctionFileByExtension({ files, extension: 'json', logicPath });
+		const configurationFile = JSON.parse(configurationFileString);
+		// TODO (hmontero): here we can pick different files based on the source type
+		const { fileName: logicCodeFileName, content: logicCodeContent } = await this._pickLogicFunctionFileByExtension({ files, logicPath });
+
+		const logic = {
+			event: {
+				event_data: logicData,
+				event_name: 'test_event',
+				device_id: '',
+				product_id: 0
+			},
+			source: {
+				type: configurationFile.logic_function.source.type,
+				code: logicCodeContent
+			}
+		};
+		const api = createAPI();
+		try {
+			this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicCodeFileName)} for ${orgName}...${os.EOL}`);
+			const { result } = await api.executeLogicFunction({ org, logic, data });
+			const resultType = result.status === 'Success' ? this.ui.chalk.cyanBright(result.status) : this.ui.chalk.red(result.status);
+			this.ui.stdout.write(`Execution Status: ${resultType}${os.EOL}`);
+			this.ui.stdout.write(`Logs of the Execution:${os.EOL}`);
+			result.logs.forEach((log, index) => {
+				this.ui.stdout.write(`	${index + 1}.- ${JSON.stringify(log)}${os.EOL}`);
+			});
+			if (result.err) {
+				this.ui.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
+				this.ui.stdout.write(`${result.err}${os.EOL}`);
+			} else {
+				this.ui.stdout.write(this.ui.chalk.cyanBright(`No errors during Execution.${os.EOL}`));
+			}
+		} catch (error) {
+			throw createAPIErrorResult({ error: error, message: `Error executing logic function for ${orgName}` });
+		}
+	}
+
+	async _pickLogicFunctionFileByExtension({ logicPath, files, extension = 'js' } ) {
+		let fileName;
+		const filteredFiles = findFilesByExtension(files, extension);
+		if (filteredFiles.length === 0) {
+			throw new Error(`Error: No ${extension} files found in ${logicPath}`);
+		}
+		if (filteredFiles.length === 1) {
+			fileName = filteredFiles[0];
+		} else {
+			const choices = filteredFiles.map((file) => {
+				return {
+					name: file,
+					value: file
+				};
+			});
+			const question = {
+				type: 'list',
+				name: 'file',
+				message: `Which ${extension} file would you like to use?`,
+				choices
+			};
+			const result = await this.ui.prompt([question]);
+			fileName = result.file;
+		}
+
+		const fileBuffer =  await fs.readFile(path.join(logicPath, fileName));
+		return { fileName, content: fileBuffer.toString() };
 	}
 
 	async deploy({ org, params: { filepath } }) {
@@ -227,6 +304,14 @@ function createAPIErrorResult({ error: e, message, json }){
 // get org name from org slug
 function getOrgName(org) {
 	return org || 'Sandbox';
+}
+
+function getFilePath(filepath) {
+	return filepath || '.';
+}
+
+function findFilesByExtension(files, extension) {
+	return files.filter((file) => file.endsWith(`.${extension}`));
 }
 
 // TODO (mirande): reconcile this w/ `normalizedApiError()` and `ensureError()`
