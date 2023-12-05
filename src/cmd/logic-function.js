@@ -239,10 +239,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return !answer.overwrite;
 	}
 
-	async _validatePaths(paths) {
+	async _validatePaths({ dirPath, jsonPath, jsPath }) {
 		// check if any of the paths exist (could be folder or file paths)
 		let exists = false;
-		for (const p of paths) {
+		const pathsToCheck = [dirPath, jsonPath, jsPath];
+		for (const p of pathsToCheck) {
 			if (await fs.pathExists(p)) {
 				exists = true;
 			}
