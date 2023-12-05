@@ -163,8 +163,8 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.create({
 				params: { filepath: PATH_TMP_DIR }
 			});
-			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(2);
-			expect(logicFunctionCommands.ui.prompt.thirdCall.lastArg[0].message).to.contain('We found existing files in');
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(3);
+			expect(logicFunctionCommands.ui.prompt.thirdCall.args[0][0].message).to.contain('We found existing files in');
 		});
 
 		it('throws an error if logic function already exists', async () => {
@@ -183,7 +183,7 @@ describe('LogicFunctionCommands', () => {
 				error = e;
 			}
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Error: Logic Function with name LF1 already exists.');
+			expect(error.message).to.equal('Logic Function LF1 already exists in Sandbox. Use a new name for your Logic Function.');
 		});
 
 	});
