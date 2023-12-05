@@ -15,20 +15,42 @@ async function copyAndReplaceTemplate({ fileNameReplacements, file, templatePath
 	return destinationFile;
 }
 
-// FIXME (hmontero): Stop working after file naming changes
-async function hasTemplateFiles({ templatePath, destinationPath }){
+/**
+ * This function will get the existing files from a destination path that match the template files
+ * @param templatePath
+ * @param destinationPath
+ * @param fileNameReplacements[] - Array with the replacements to be done in the file name
+ * @param fileNameReplacements.template - The template name
+ * @param fileNameReplacements.fileName - The destination file name
+ * @example
+ * [
+ * 	{ template: 'template', fileName: 'fileName' }
+ * 	{ template: 'template.js', fileName: 'fileName.js' }
+ * ]
+ * @returns {Promise<[String]>}
+ */
+async function getExistingTemplateFiles({ templatePath, destinationPath, fileNameReplacements = [] }){
 	const files = await fs.readdir(templatePath);
+	const foundFiles = [];
 	for (const file of files){
-		const fileName = file.replace('.template', '');
+		let fileName = file;
+		const replacement = fileNameReplacements.find((replacement) => {
+			return file.includes(replacement.template);
+		});
+		if (replacement) {
+			fileName = fileName.replace(replacement.template, replacement.fileName)
+				.replace('.template', '');
+		}
 		const destinationFile = path.join(destinationPath, fileName);
 		try {
 			await fs.stat(destinationFile);
-			return true; // File exists in the destination path
+			foundFiles.push(destinationFile);
+			//return true; // File exists in the destination path
 		} catch (error) {
 			// File doesn't exist, continue checking other files
 		}
 	}
-	return false;
+	return foundFiles;
 }
 
 function replace(content, replacements, options = { stringMatch: false }){
@@ -46,5 +68,5 @@ function replace(content, replacements, options = { stringMatch: false }){
 
 module.exports = {
 	copyAndReplaceTemplate,
-	hasTemplateFiles
+	getExistingTemplateFiles
 };

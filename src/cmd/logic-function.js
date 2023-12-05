@@ -88,7 +88,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
 		await this._validateExistingName({ api, org, name });
-		await this._validateExistingFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
+		await this._validateExistingFiles({ templatePath: logicFunctionTemplatePath, destinationPath, fileName: slugName });
 		const createdFiles = await this._copyAndReplaceLogicFunction({
 			logicFunctionName: name,
 			logicFunctionSlugName: slugName,
@@ -123,12 +123,13 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-	async _validateExistingFiles({ templatePath, destinationPath }){
-		const filesAlreadyExist = await templateProcessor.hasTemplateFiles({
+	async _validateExistingFiles({ templatePath, destinationPath, fileName }){
+		const filesAlreadyExist = await templateProcessor.getExistingTemplateFiles({
 			templatePath,
-			destinationPath
+			destinationPath,
+			fileNameReplacements: [{ template: 'logic_function_name', fileName }]
 		});
-		if (filesAlreadyExist) {
+		if (filesAlreadyExist.length) {
 			const question = {
 				type: 'confirm',
 				name: 'overwrite',

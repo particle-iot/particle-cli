@@ -1,5 +1,5 @@
 const { expect } = require('../../test/setup');
-const { copyAndReplaceTemplate, hasTemplateFiles } = require('./template-processor');
+const { copyAndReplaceTemplate, getExistingTemplateFiles } = require('./template-processor');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const fs = require('fs-extra');
 const path = require('path');
@@ -42,7 +42,7 @@ describe('template-processor', () => {
 		});
 	});
 
-	describe('hasTemplateFiles', () => {
+	describe('getExistingTemplateFiles', () => {
 		const logicFunctionPath = 'tmp-logic-function';
 		beforeEach(async () => {
 			await fs.emptyDir(path.join(PATH_TMP_DIR, logicFunctionPath));
@@ -66,14 +66,20 @@ describe('template-processor', () => {
 					replacements
 				});
 			}
-			const hasFiles = await hasTemplateFiles({ templatePath, destinationPath });
-			expect(hasFiles).to.be.true;
+			const hasFiles = await getExistingTemplateFiles({
+				templatePath,
+				destinationPath,
+				fileNameReplacements: [
+					{ template: 'logic_function_name', fileName: 'logic_function_name' },
+				]
+			});
+			expect(hasFiles).to.have.lengthOf(templates.length);
 		});
 		it('returns false if template files do not exist in destination', async () => {
 			const templatePath = path.join(__dirname, '..', '..', 'assets', 'logicFunction');
 			const destinationPath = path.join(PATH_TMP_DIR, logicFunctionPath);
-			const hasFiles = await hasTemplateFiles({ templatePath, destinationPath });
-			expect(hasFiles).to.be.false;
+			const hasFiles = await getExistingTemplateFiles({ templatePath, destinationPath });
+			expect(hasFiles).to.have.lengthOf(0);
 		});
 	});
 

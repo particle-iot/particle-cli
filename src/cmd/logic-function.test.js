@@ -147,6 +147,7 @@ describe('LogicFunctionCommands', () => {
 			logicFunctionCommands.ui.prompt = sinon.stub();
 			logicFunctionCommands.ui.prompt.onCall(0).resolves({ name: 'logicFunc1' });
 			logicFunctionCommands.ui.prompt.onCall(1).resolves({ description: 'Logic Function 1' });
+
 			await logicFunctionCommands.create({
 				params: { filepath: PATH_TMP_DIR }
 			});
@@ -158,7 +159,7 @@ describe('LogicFunctionCommands', () => {
 			nock('https://api.particle.io/v1', )
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: [] });
-			sinon.stub(templateProcessor, 'hasTemplateFiles').resolves(true);
+			sinon.stub(templateProcessor, 'getExistingTemplateFiles').resolves(['file1', 'file2']);
 			logicFunctionCommands.ui.prompt = sinon.stub();
 			logicFunctionCommands.ui.prompt.onCall(0).resolves({ name: 'logicFunc1' });
 			logicFunctionCommands.ui.prompt.onCall(1).resolves({ description: 'Logic Function 1' });
