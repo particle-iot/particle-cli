@@ -236,9 +236,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				message,
 				choices: Boolean
 			});
-			if (!answer.overwrite) {
-				return true;
-			}
+			return answer.overwrite;
 		}
 		return false;
 	}
