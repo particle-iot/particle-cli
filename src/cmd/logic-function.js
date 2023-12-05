@@ -73,7 +73,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const logicFunctionJSON = logicFunction.logic_function;
 			delete logicFunctionJSON.source;
 
-			await this._validateDir(dirPath);
+			await this._validatePaths({ dirPath, jsonPath, jsPath });
 
 			await fs.ensureDir(dirPath);
 			await fs.writeFile(jsonPath, JSON.stringify(logicFunctionJSON, null, 2));
@@ -228,27 +228,33 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return result;
 	}
 
-	async _checkAndPromptOverwrite({ pathToCheck, message }) {
-		if (await fs.pathExists(pathToCheck)) {
-			const answer = await this._prompt({
+	async _promptOverwrite({ message }) {
+		const answer = await this._prompt({
 				type: 'confirm',
 				name: 'overwrite',
 				message,
 				choices: Boolean
 			});
-			return !answer.overwrite;
-		}
-		return false;
+		return !answer.overwrite;
 	}
 
-	async _validateDir(dirPath) {
-		const shouldAbort = await this._checkAndPromptOverwrite({
-			pathToCheck: dirPath,
-			message: `Directory ${path.basename(dirPath)} already exists. Overwrite?`,
-		});
-		if (shouldAbort) {
-			this.ui.stdout.write(`Aborted.${os.EOL}`);
-			process.exit(0);
+	async _validatePaths({ paths }) {
+		// check if any of the paths exist (could be folder or file paths)
+		let exists = false;
+		for (const p of paths) {
+			if (await fs.pathExists(p)) {
+				exists = true;
+			}
+		}
+
+		if (exists) {
+			const shouldAbort = await this._promptOverwrite({
+				message: 'This Logic Function was previously downloaded. Overwrite?',
+			});
+			if (shouldAbort) {
+				this.ui.stdout.write(`Aborted.${os.EOL}`);
+				process.exit(0);
+			}
 		}
 	}
 
@@ -258,7 +264,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			destinationPath
 		});
 		if (filesExist) {
-			const shouldAbort = await this._checkAndPromptOverwrite({
+			const shouldAbort = await this._promptOverwrite({
 				pathToCheck: destinationPath,
 				message: `We found existing files in ${this.ui.chalk.bold(destinationPath)}. Would you like to overwrite them?`
 			});

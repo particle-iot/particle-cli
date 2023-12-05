@@ -247,30 +247,50 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('_validateDir', () => {
-		it('returns if dir doesnt exist', async () => {
-			sinon.stub(logicFunctionCommands, '_checkAndPromptOverwrite').resolves(false);
-
-			const res = await logicFunctionCommands._validateDir('somePath');
-
-			expect(res).to.eql(undefined);
+	describe('_validatePaths', () => {
+		afterEach(() => {
+			sinon.restore();
 		});
 
-		it('returns if dir exists and not overwriting', async () => {
-			sinon.stub(logicFunctionCommands, '_checkAndPromptOverwrite').resolves(true);
+		it('returns if paths do not exist', async () => {
+			sinon.stub(fs, 'pathExists').resolves(false);
 
-			const res = await logicFunctionCommands._validateDir('somePath');
+			const paths = ['dir/', 'dir/path/to/file'];
+
+			const res = await logicFunctionCommands._validatePaths({ paths });
 
 			expect(res).to.eql(undefined);
+
+		});
+
+		it('returns if all paths exist and not overwriting', async () => {
+			sinon.stub(fs, 'pathExists').resolves(true);
+			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(true);
+			const exitStub = sinon.stub(process, 'exit');
+			const paths = ['dir/', 'dir/path/to/file'];
+
+			await logicFunctionCommands._validatePaths({ paths });
+
+			expect(exitStub.called).to.be.true;
+		});
+
+		it('prompts if any path exists and overwriting', async () => {
+			sinon.stub(fs, 'pathExists').resolves(true);
+			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
+			const paths = ['dir/', 'dir/path/to/file'];
+
+			const res = await logicFunctionCommands._validatePaths({ paths });
+
+			expect(res).to.eql(undefined);
+
 		});
 	});
 
-	describe('_checkAndPromptOverwrite', () => {
-		it('should return true if path exists and user chooses not to overwrite', async () => {
-			sinon.stub(fs, 'pathExists').resolves(true);
+	describe('_promptOverwrite', () => {
+		it('should return true if user chooses not to overwrite', async () => {
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: false });
 
-			const res = await logicFunctionCommands._checkAndPromptOverwrite({
+			const res = await logicFunctionCommands._promptOverwrite({
 				pathToCheck: 'somePath',
 				message: 'someMessage'
 			});
@@ -278,22 +298,10 @@ describe('LogicFunctionCommands', () => {
 			expect(res).to.be.true;
 		});
 
-		it('should return false if path exists and user chooses to overwrite', async () => {
-			sinon.stub(fs, 'pathExists').resolves(true);
+		it('should return false user chooses to overwrite', async () => {
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
 
-			const res = await logicFunctionCommands._checkAndPromptOverwrite({
-				pathToCheck: 'somePath',
-				message: 'someMessage'
-			});
-
-			expect(res).to.be.false;
-		});
-
-		it('should return false if path does not exist', async () => {
-			sinon.stub(fs, 'pathExists').resolves(false);
-
-			const res = await logicFunctionCommands._checkAndPromptOverwrite({
+			const res = await logicFunctionCommands._promptOverwrite({
 				pathToCheck: 'somePath',
 				message: 'someMessage'
 			});
