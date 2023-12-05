@@ -195,8 +195,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			throw new Error('Error: Please provide either data or dataPath');
 		}
 		if (dataPath) {
-			const logicDataBuffer = await fs.readFile(dataPath);
-			logicData = logicDataBuffer.toString();
+			logicData = await fs.readFile(dataPath, 'utf8');
 		} else {
 			logicData = data;
 		}
