@@ -8,6 +8,7 @@ const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
 const templateProcessor = require('../lib/template-processor');
 const { slugify } = require('../lib/utilities');
+const { copyTemplatesFromPath } = require('../lib/template-processor');
 
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 
@@ -89,12 +90,16 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
 		await this._validateExistingName({ api, org, name });
 		await this._validateExistingFiles({ templatePath: logicFunctionTemplatePath, destinationPath, fileName: slugName });
-		const createdFiles = await this._copyAndReplaceLogicFunction({
+		const fileNameReplacements = [
+			{ template: 'logic_function_name', fileName: slugName },
+		];
+		const createdFiles = await copyTemplatesFromPath({
 			logicFunctionName: name,
 			logicFunctionSlugName: slugName,
 			description,
 			templatePath: logicFunctionTemplatePath,
-			destinationPath: path.join(filepath, slugName)
+			destinationPath: path.join(filepath, slugName),
+			fileNameReplacements
 		});
 		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(logicPath)}${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
@@ -141,45 +146,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				process.exit(0);
 			}
 		}
-	}
-
-	/** Recursively copy and replace template files */
-	async _copyAndReplaceLogicFunction({ logicFunctionName, logicFunctionSlugName, description, templatePath, destinationPath }){
-		const files = await fs.readdir(templatePath);
-		const createdFiles = [];
-
-		for (const file of files){
-			//createdFiles.push(destinationFile);
-			// check if file is a dir
-			const stat = await fs.stat(path.join(templatePath, file));
-			if (stat.isDirectory()) {
-				const subFiles = await this._copyAndReplaceLogicFunction({
-					logicFunctionName,
-					logicFunctionSlugName,
-					description,
-					templatePath: path.join(templatePath, file),
-					destinationPath: path.join(destinationPath, file)
-				});
-				createdFiles.push(...subFiles);
-			} else {
-				const fileReplacements = {
-					'logic_function_name': logicFunctionSlugName,
-				};
-				const destinationFile = await templateProcessor.copyAndReplaceTemplate({
-					fileNameReplacements: fileReplacements,
-					file,
-					templatePath,
-					destinationPath,
-					replacements: {
-						name: logicFunctionName,
-						description: description || ''
-					}
-				});
-				createdFiles.push(destinationFile);
-			}
-		}
-		// return file name created
-		return createdFiles;
 	}
 
 	async execute({ org, data, dataPath, params: { filepath } }) {
