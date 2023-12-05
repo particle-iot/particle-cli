@@ -389,6 +389,23 @@ module.exports = {
 		const savedProp = fs.readFileSync(propPath, 'utf8');
 		const parsedPropFile = propertiesParser.parse(savedProp);
 		return parsedPropFile;
-	}
+	},
+
+	/**
+	 * Converts a string to the slug version by replacing
+	 * spaces and underscores with dashes, changing
+	 * to lowercase, and removing anything other than
+	 * numbers, letters, and dashes
+	 * @param  {String} str string to slugify
+	 * @return {String}     slugified version of str
+	 */
+	slugify(str) {
+		const slug = str.trim().toLowerCase()
+			// replace every group of spaces and underscores with a single hyphen
+			.replace(/[ _]+/g, '-')
+			// delete everything other than letters, numbers and hyphens
+			.replace(/[^a-z0-9-]/g, '');
+		return slug;
+	},
 };
 

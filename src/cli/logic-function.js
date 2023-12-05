@@ -36,7 +36,10 @@ module.exports = ({ commandProcessor, root }) => {
 		options: {
 			'org': {
 				description: 'Specify the organization'
-			}
+			},
+			'name': {
+				description: 'Name of the logic function'
+			},
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
