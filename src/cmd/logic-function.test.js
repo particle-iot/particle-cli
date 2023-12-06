@@ -631,7 +631,7 @@ describe('LogicFunctionCommands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.eql('Error deleting logic function');
+			expect(error.message).to.contain('Error deleting Logic Function LF1');
 			expect(exitStub.called).to.be.false;
 		});
 	});
