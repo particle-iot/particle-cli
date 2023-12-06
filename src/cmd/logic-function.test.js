@@ -635,4 +635,8 @@ describe('LogicFunctionCommands', () => {
 			expect(exitStub.called).to.be.false;
 		});
 	});
+
+	describe('disable', () => {
+		
+	});
 });

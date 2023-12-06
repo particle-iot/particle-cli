@@ -334,8 +334,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async disable({ org, name, id }) {
-		// TODO
-		console.log(org, name, id);
+		const api = createAPI();
+		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
+
+		try {
+			await api.updateLogicFunction({ org, id, logicFunctionData});
+		} catch (err) {
+			throw new Error(`Error disabling Logic Function ${name}: ${err.message}`);
+		}
 	}
 
 	async delete({ org, name, id }) {
