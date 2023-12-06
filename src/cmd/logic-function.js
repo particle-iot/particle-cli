@@ -20,6 +20,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		super(...args);
 	}
 
+	// FIXME: Should we put the display responsibility in a seaparte function?
 	async list({ org, display = true }) {
 		const api = createAPI();
 		try {
