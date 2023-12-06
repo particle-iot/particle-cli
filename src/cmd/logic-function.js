@@ -29,7 +29,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			if (list.length === 0) {
 				this.ui.stdout.write(`No Logic Functions currently deployed in your ${orgName}.`);
 				this.ui.stdout.write(`To create a Logic Function, see \`particle logic-function create\`.${os.EOL}
-							To view Functions from an organization, use the \`--org\` option.${os.EOL}
 							To download an existing Logic Function, see \`particle lf get\`.${os.EOL}`);
 			} else {
 				this.ui.stdout.write(`Logic Functions currently deployed in your ${orgName}:${os.EOL}`);
@@ -39,7 +38,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 					this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
 					this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
 				});
-				this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`);
+				this.ui.stdout.write(this.ui.chalk.yellow(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`));
 				return list;
 			}
 			return list;

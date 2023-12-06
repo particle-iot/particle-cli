@@ -1,5 +1,5 @@
 module.exports = ({ commandProcessor, root }) => {
-	const logicFunction = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy logic functions');
+	const logicFunction = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy logic functions', { alias : 'lf' });
 
 	commandProcessor.createCommand(logicFunction, 'list', 'Lists the deployed logic functions', {
 		options: {
