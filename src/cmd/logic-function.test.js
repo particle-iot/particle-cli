@@ -265,7 +265,7 @@ describe('LogicFunctionCommands', () => {
 
 		it('returns if all paths exist and not overwriting', async () => {
 			sinon.stub(fs, 'pathExists').resolves(true);
-			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(true);
+			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
 			const exitStub = sinon.stub(process, 'exit');
 			const paths = ['dir/', 'dir/path/to/file'];
 
@@ -276,7 +276,7 @@ describe('LogicFunctionCommands', () => {
 
 		it('prompts if any path exists and overwriting', async () => {
 			sinon.stub(fs, 'pathExists').resolves(true);
-			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
+			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(true);
 			const paths = ['dir/', 'dir/path/to/file'];
 
 			const res = await logicFunctionCommands._validatePaths({ paths });
@@ -295,7 +295,7 @@ describe('LogicFunctionCommands', () => {
 				message: 'someMessage'
 			});
 
-			expect(res).to.be.true;
+			expect(res).to.be.false;
 		});
 
 		it('should return false user chooses to overwrite', async () => {
@@ -306,7 +306,7 @@ describe('LogicFunctionCommands', () => {
 				message: 'someMessage'
 			});
 
-			expect(res).to.be.false;
+			expect(res).to.be.true;
 		});
 	});
 

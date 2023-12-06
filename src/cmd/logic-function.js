@@ -236,11 +236,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			message,
 			choices: Boolean
 		});
-		return !answer.overwrite;
+		return answer.overwrite;
 	}
 
+	// Prompts the user to overwrite if any files exist
+	// If user says no, we exit the process
 	async _validatePaths({ dirPath, jsonPath, jsPath }) {
-		// check if any of the paths exist (could be folder or file paths)
 		let exists = false;
 		const pathsToCheck = [dirPath, jsonPath, jsPath];
 		for (const p of pathsToCheck) {
@@ -250,27 +251,29 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 
 		if (exists) {
-			const shouldAbort = await this._promptOverwrite({
+			const overwrite = await this._promptOverwrite({
 				message: 'This Logic Function was previously downloaded. Overwrite?',
 			});
-			if (shouldAbort) {
+			if (!overwrite) {
 				this.ui.stdout.write(`Aborted.${os.EOL}`);
 				process.exit(0);
 			}
 		}
 	}
 
+	// Prompts the user to overwrite if any files exist
+	// If user says no, we exit the process
 	async _validateTemplateFiles({ templatePath, destinationPath }) {
 		const filesExist = await templateProcessor.hasTemplateFiles({
 			templatePath,
 			destinationPath
 		});
 		if (filesExist) {
-			const shouldAbort = await this._promptOverwrite({
+			const overwrite = await this._promptOverwrite({
 				pathToCheck: destinationPath,
 				message: `We found existing files in ${this.ui.chalk.bold(destinationPath)}. Would you like to overwrite them?`
 			});
-			if (shouldAbort) {
+			if (!overwrite) {
 				this.ui.stdout.write(`Aborted.${os.EOL}`);
 				process.exit(0);
 
