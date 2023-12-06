@@ -616,12 +616,12 @@ describe('LogicFunctionCommands', () => {
 			expect(exitStub.called).to.be.true;
 		});
 
-		it('throws an error if deleting fails', async() => {
+		it('throws an error if deletion fails', async() => {
 			const exitStub = sinon.stub(process, 'exit');
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: false });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
 			nock('https://api.particle.io/v1',)
 				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(404, { });
+				.reply(404, {});
 
 			let error;
 			try {
