@@ -355,10 +355,8 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('get', async () => {
-		beforeEach(() => {
+		afterEach(() => {
 			fs.remove(path.join(process.cwd(), 'lf1'));
-			fs.remove(path.join(process.cwd(), 'LF1'));
-			fs.remove(path.join(process.cwd(), 'LF2'));
 			fs.remove(path.join(process.cwd(), 'lf2'));
 		});
 

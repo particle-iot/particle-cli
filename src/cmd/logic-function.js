@@ -59,7 +59,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async get({ org, name, id }) {
 		const api = createAPI();
 		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
-		const slugName = name.toLowerCase().replace(/\s/g, '-');
+		const slugName = slugify(name);
 
 		try {
 			const logicFunction = await api.getLogicFunction({ org, id });
