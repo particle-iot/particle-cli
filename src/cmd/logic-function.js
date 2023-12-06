@@ -31,7 +31,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				if (display) {
 					this.ui.stdout.write(`No Logic Functions currently deployed in your ${orgName}.`);
 					this.ui.stdout.write(`To create a Logic Function, see \`particle logic-function create\`.${os.EOL}
-								To view Functions from an organization, use the \`--org\` option.${os.EOL}
 								To download an existing Logic Function, see \`particle lf get\`.${os.EOL}`);
 				}
 			} else {
