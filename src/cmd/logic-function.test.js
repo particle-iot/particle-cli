@@ -356,8 +356,10 @@ describe('LogicFunctionCommands', () => {
 
 	describe('get', async () => {
 		beforeEach(() => {
+			fs.remove(path.join(process.cwd(), 'lf1'));
 			fs.remove(path.join(process.cwd(), 'LF1'));
 			fs.remove(path.join(process.cwd(), 'LF2'));
+			fs.remove(path.join(process.cwd(), 'lf2'));
 		});
 
 		it('downloads a logic function with name', async () => {
