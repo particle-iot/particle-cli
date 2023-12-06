@@ -269,7 +269,7 @@ module.exports = class ParticleApi {
 		return this._wrap(this.api.updateLogicFunction({
 			org: org,
 			logicFunctionId: id,
-			data: logicFunctionData,
+			logicFunction: logicFunctionData,
 			auth: this.accessToken
 		}));
 	}

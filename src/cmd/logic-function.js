@@ -337,8 +337,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const api = createAPI();
 		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
 
+		let logicFunctionJson = await this._getLogicFunctionData({ org, id });
+		logicFunctionJson.logic_function.enabled = false;
+		const obj = logicFunctionJson.logic_function;
+
 		try {
-			await api.updateLogicFunction({ org, id, logicFunctionData});
+			const res = await api.updateLogicFunction({ org, id, logicFunctionData: obj  });
+			this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
+			return res;
 		} catch (err) {
 			throw new Error(`Error disabling Logic Function ${name}: ${err.message}`);
 		}
