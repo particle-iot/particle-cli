@@ -569,4 +569,70 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
+	describe('delete', () => {
+		let logicFunctions = [];
+		logicFunctions.push(logicFunc1.logic_functions[0]);
+		logicFunctions.push(logicFunc2.logic_functions[0]);
+
+		beforeEach(() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+		});
+
+		it('checks for confirmation before deleting', async() => {
+			const exitStub = sinon.stub(process, 'exit');
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(200, { });
+
+			await logicFunctionCommands.delete({ name: 'LF1' });
+
+			expect(exitStub.called).to.be.false;
+		});
+
+		it('returuns without throwing an error if success', async() => {
+			const exitStub = sinon.stub(process, 'exit');
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(200, { });
+
+			await logicFunctionCommands.delete({ name: 'LF1' });
+
+			expect(exitStub.called).to.be.false;
+		});
+
+		it('process exits if user does not want to delete during confirmation', async() => {
+			const exitStub = sinon.stub(process, 'exit');
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: false });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(200, { });
+
+			await logicFunctionCommands.delete({ name: 'LF1' });
+
+			expect(exitStub.called).to.be.true;
+		});
+
+		it('throws an error if deleting fails', async() => {
+			const exitStub = sinon.stub(process, 'exit');
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(404, { });
+
+			let error;
+			try {
+				await logicFunctionCommands.delete({ name: 'LF1' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.eql('Error deleting logic function');
+			expect(exitStub.called).to.be.false;
+		});
+	});
 });

@@ -339,8 +339,27 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async delete({ org, name, id }) {
-		// TODO
-		console.log(org, name, id);
+		const api = createAPI();
+		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
+
+		const confirm = await this._prompt({
+			type: 'confirm',
+			name: 'delete',
+			message: `Are you sure you want to delete Logic Function ${name}? This action cannot be undone.`,
+			choices: Boolean
+		});
+
+		if (confirm.delete) {
+			try {
+				await api.deleteLogicFunction({ org, id });
+				this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.`);
+			} catch (err) {
+				throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
+			}
+		} else {
+			this.ui.stdout.write(`Aborted.${os.EOL}`);
+			process.exit(0);
+		}
 	}
 
 	async logs({ org, name, id, saveTo }) {
