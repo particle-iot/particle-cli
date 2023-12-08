@@ -18,132 +18,84 @@ const CLICommandBase = require('./base');
 module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
+		this.api = createAPI();
+		this.logicFuncList = null;
+		this.org = null;
 	}
 
 	// FIXME: Should we put the display responsibility in a seaparte function?
-	async list({ org, display = true }) {
-		const api = createAPI();
-		try {
-			const logicFunctions = await api.getLogicFunctionList({ org });
-			const orgName = getOrgName(org);
-			const list = logicFunctions.logic_functions;
-			if (list.length === 0) {
-				if (display) {
-					this.ui.stdout.write(`No Logic Functions currently deployed in your ${orgName}.`);
-					this.ui.stdout.write(`To create a Logic Function, see \`particle logic-function create\`.${os.EOL}
-								To download an existing Logic Function, see \`particle lf get\`.${os.EOL}`);
-				}
-			} else {
-				if (display) {
-					this.ui.stdout.write(`Logic Functions currently deployed in your ${orgName}:${os.EOL}`);
-				}
-				list.forEach((item) => {
-					// We assume at least one trigger
-					if (display) {
-						this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.grey('disabled')})${os.EOL}`);
-						this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
-						this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
-					}
-				});
-				if (display) {
-					this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle lf get.\`${os.EOL}`);
-				}
-				return list;
-			}
-			return list;
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
+	async list({ org }) {
+		await this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
+		if (this.logicFuncList === null || this.logicFuncList.length === 0) {
+			this._printListHelperOutput();
+		} else {
+			this._printListOutput({ logicFunctionsList: this.logicFuncList });
 		}
 	}
 
+	_printListHelperOutput() {
+		this.ui.stdout.write(`No Logic Functions currently deployed in your ${getOrgName(this.org)}.${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write('To create a Logic Function, see  ' + this.ui.chalk.yellow('\'particle logic-function create\'.') + `${os.EOL}`);
+		this.ui.stdout.write('To download an existing Logic Function, see ' + this.ui.chalk.yellow('\'particle logic-function get\'.') + `${os.EOL}`);
+	}
+
+	_printListOutput({ logicFunctionsList}) {
+		this.ui.stdout.write(`Logic Functions currently deployed in your ${getOrgName(this.org)}:${os.EOL}`);
+		logicFunctionsList.forEach((item) => {
+				// We assume at least one trigger
+				this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
+				this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
+				this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
+			});
+		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle logic-function get.\`${os.EOL}`);
+	}
+
 	async get({ org, name, id }) {
-		const api = createAPI();
-		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
-		const slugName = slugify(name);
+		await this._setOrg(org);
 
-		try {
-			const logicFunction = await api.getLogicFunction({ org, id });
+		await this._getLogicFunctionList();
 
-			// TODO: Address spaces in the name for Windows
-			const dirPath = path.join(process.cwd(), `${slugName}`);
-			const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
-			const jsPath = path.join(dirPath, `${slugName}.js`);
-			// TODO: Check if the keys exist?
-			const code = logicFunction.logic_function.source.code;
-			const logicFunctionJSON = logicFunction.logic_function;
-			delete logicFunctionJSON.source;
+		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
-			await this._validatePaths({ dirPath, jsonPath, jsPath });
+		const logicFunctionData = await this._getLogicFunctionData(id);
 
-			await fs.ensureDir(dirPath);
-			await fs.writeFile(jsonPath, JSON.stringify(logicFunctionJSON, null, 2));
-			await fs.writeFile(jsPath, code);
+		const {logicFunctionConfigData, logicFunctionCode} = this._serializeLogicFunction(logicFunctionData);
 
+		const { dirPath, jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+
+		this._printGetFilesOutput({ dirPath, jsonPath, jsPath });
+		this._printGetHelperOutput();
+	}
+
+	_printGetOutput({ dirPath, jsonPath, jsPath }) {
+		if (dirPath || jsonPath || jsPath) {
 			this.ui.stdout.write(`${os.EOL}`);
 			this.ui.stdout.write(`Downloaded:${os.EOL}`);
 			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
 			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
 			this.ui.stdout.write(`${os.EOL}`);
-
-			this.ui.stdout.write(`Note that any local modifications to these files need to be deployed to the cloud in order to take effect.${os.EOL}` +
-				'Refer to ' +
-				this.ui.chalk.yellow('\'particle logic-function execute\'') +
-				' and ' +
-				this.ui.chalk.yellow('\'particle logic-function deploy\'') +
-				`' for more information.${os.EOL}`);
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
 		}
 	}
 
-	async _getLogicFunctionIdAndName(org, name, id) {
-		const list = await this.list({ org, display: false });
-
-		if (!id && !name) {
-			name = await this._selectLogicFunction(list);
-			id = this._getIdFromName(name, list);
-		} else if (!id && name) {
-			id = this._getIdFromName(name, list);
-		} else if (id && !name) {
-			name = this._getNameFromId(id, list);
-		}
-
-		if (!id || !name) {
-			throw new Error('Unable to get logic function');
-		}
-
-		// Validate the ID and Name are in fact existing
-		await this._validateLFId({ org, id });
-		await this._validateLFName({ org, name });
-
-		return { name, id };
-	}
-
-	async _selectLogicFunction(list) {
-		if (list.length === 0) {
-			throw new Error('No logic functions found');
-		}
-		const answer = await this._prompt({
-			type: 'list',
-			name: 'logic_function',
-			message: 'Which logic function would you like to download?',
-			choices : list,
-			nonInteractiveError: 'Provide name for the logic function'
-		});
-		return answer.logic_function;
-	}
-
-	_getIdFromName(name, list) {
-		const found = list.find(item => item.name === name);
-		return found ? found.id : null;
-	}
-
-	_getNameFromId(id, list) {
-		const found = list.find(item => item.id === id);
-		return found ? found.name : null;
+	_printGetHelperOutput() {
+		this.ui.stdout.write(`Note that any local modifications to these files need to be deployed to the cloud in order to take effect.${os.EOL}` +
+			'Refer to ' +
+			this.ui.chalk.yellow('\'particle logic-function execute\'') +
+			' and ' +
+			this.ui.chalk.yellow('\'particle logic-function deploy\'') +
+			`' for more information.${os.EOL}`);
 	}
 
 	async create({ org, name, params : { filepath } } = { params: { } }) {
+
+		await this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
 		const orgName = getOrgName(org);
 		// get name from filepath
 		const logicFuncPath = getFilePath(filepath);
@@ -167,7 +119,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const destinationPath = path.join(logicFuncPath, slugName);
 
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
-		const logicFuncNameDeployed = await this._validateLFName({ org, name });
+		const logicFuncNameDeployed = await this._validateLFName({ name });
 		if (logicFuncNameDeployed) {
 			throw new Error(`Logic Function ${name} already exists in ${orgName}. Use a new name for your Logic Function.`);
 		}
@@ -192,30 +144,15 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	// Throws an error if logic function name is already deployed in the cloud
-	async _validateLFName({ org, name }) {
+	async _validateLFName({ name }) {
 		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
-		let logicFuncNameExists = false;
-		try {
-			const list = await this.list({ org, display: false });
-			logicFuncNameExists = list.find((item) => item.name === name);
-		} catch (error) {
+		const logicFuncNameExists = this.logicFuncList.find((item) => item.name === name);
+		if (!logicFuncNameExists) {
 			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with name ${name} already exists.${os.EOL}`));
+			return false;
 		}
 
-		return logicFuncNameExists ? true : false;
-	}
-
-	// Throws an error if logic function id is already deployed in the cloud
-	async _validateLFId({ org, id }) {
-		let logicFuncIdExists = false;
-		try {
-			const list = await this.list({ org, display: false });
-			logicFuncIdExists = list.find((item) => item.id === id);
-		} catch (error) {
-			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with id ${id} already exists.${os.EOL}`));
-		}
-
-		return logicFuncIdExists ? true : false;
+		return true;
 	}
 
 	async _prompt({ type, name, message, choices, nonInteractiveError }) {
@@ -423,6 +360,103 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async logs({ org, name, id, saveTo }) {
 		// TODO
 		console.log(org, name, id, saveTo);
+	}
+
+	async _setOrg(org) {
+		if (this.org === null) {
+			this.org = org;
+		}
+	}
+
+	async _getLogicFunctionList() {
+		if (this.logicFuncList === null) {
+			try {
+				const res = await this.api.getLogicFunctionList({ org: this.org });
+				this.logicFuncList = res.logic_functions;
+			} catch(e) {
+				throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
+			}
+		}
+	}
+
+	async _getLogicFunctionData(id) {
+		try {
+			const logicFunction = await this.api.getLogicFunction({ org: this.org, id });
+			return logicFunction;
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
+		}
+	}
+
+	_serializeLogicFunction(data) {
+		const logicFunctionCode = data.logic_function.source.code;
+		const logicFunctionConfigData = data.logic_function;
+		delete logicFunctionConfigData.source;
+
+		return { logicFunctionConfigData, logicFunctionCode };
+	}
+
+	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
+		// TODO: Address spaces in the name for Windows
+		const slugName = slugify(name);
+		const dirPath = path.join(process.cwd(), `${slugName}`);
+		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
+		const jsPath = path.join(dirPath, `${slugName}.js`);
+
+		await this._validatePaths({ dirPath, jsonPath, jsPath });
+
+		await fs.ensureDir(dirPath);
+		await fs.writeFile(jsonPath, JSON.stringify(logicFunctionConfigData, null, 2));
+		await fs.writeFile(jsPath, logicFunctionCode);
+
+		return { dirPath, jsonPath, jsPath };
+	}
+
+	async _getLogicFunctionIdAndName(name, id) {
+		if (!id && !name) {
+			name = await this._selectLogicFunction(this.logicFuncList);
+			id = this._getIdFromName(name, this.logicFuncList);
+		} else if (!id && name) {
+			id = this._getIdFromName(name, this.logicFuncList);
+		} else if (id && !name) {
+			name = this._getNameFromId(id, this.logicFuncList);
+		}
+
+		return { name, id };
+	}
+
+	async _selectLogicFunction(list) {
+		if (list.length === 0) {
+			throw new Error('No logic functions found');
+		}
+		const answer = await this._prompt({
+			type: 'list',
+			name: 'logic_function',
+			message: 'Which logic function would you like to download?',
+			choices : list,
+			nonInteractiveError: 'Provide name for the logic function'
+		});
+		return answer.logic_function;
+	}
+
+	_getIdFromName(name, list) {
+		const found = list.find(item => item.name === name);
+
+		if (!found) {
+			throw new Error('Unable to get logic function id from name');
+		}
+
+		return found.id; // assume that found has a key called id
+	}
+
+	_getNameFromId(id, list) {
+		const found = list.find(item => item.id === id);
+
+		if (!found) {
+			throw new Error('Unable to get logic function name from id');
+		}
+
+		return found.name; // assume that found has a key called name
 	}
 };
 
