@@ -255,7 +255,7 @@ describe('LogicFunctionCommands', () => {
 				error = e;
 			}
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Logic Function LF1 already exists in Sandbox. Use a new name for your Logic Function.');
+			expect(error.message).to.equal('Logic Function LF1 already exists in your Sandbox. Use a new name for your Logic Function.');
 		});
 
 	});

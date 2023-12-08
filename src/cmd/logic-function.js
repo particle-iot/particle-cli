@@ -36,14 +36,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	_printListHelperOutput() {
-		this.ui.stdout.write(`No Logic Functions currently deployed in your ${getOrgName(this.org)}.${os.EOL}`);
+		this.ui.stdout.write(`No Logic Functions deployed in your ${getOrgName(this.org)}.${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`To create a Logic Function, see ${this.ui.chalk.yellow('particle logic-function create')}.${os.EOL}`);
 		this.ui.stdout.write(`To download an existing Logic Function, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
 
 	_printListOutput({ logicFunctionsList }) {
-		this.ui.stdout.write(`Logic Functions currently deployed in your ${getOrgName(this.org)}:${os.EOL}`);
+		this.ui.stdout.write(`Logic Functions deployed in your ${getOrgName(this.org)}:${os.EOL}`);
 		logicFunctionsList.forEach((item) => {
 			// We assume at least one trigger
 			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
@@ -460,7 +460,7 @@ function createAPIErrorResult({ error: e, message, json }){
 
 // get org name from org slug
 function getOrgName(org) {
-	return org || 'Sandbox';
+	return org || 'your Sandbox';
 }
 
 function getFilePath(filepath) {
