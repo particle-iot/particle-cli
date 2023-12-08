@@ -45,7 +45,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('_setOrg', async() => {
-		it('sets the org member', () => {
+		it('sets the organization member', () => {
 			const orgBeforeSetting = logicFunctionCommands.org;
 
 			logicFunctionCommands._setOrg('myOrg');
@@ -80,7 +80,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.logicFuncList).to.eql(expectedResp);
 		});
 
-		it('shows relevant msg is no logic functions are found', async () => {
+		it('lists empty if no logic functions are found', async () => {
 			nock('https://api.particle.io/v1/orgs/particle')
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: [] });
@@ -382,7 +382,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('_getIdFromName', () => {
-		it('returns id if found', async () => {
+		it('returns id from LF name', async () => {
 			let logicFunctions = [];
 			logicFunctions.push(logicFunc1.logic_functions[0]);
 			logicFunctions.push(logicFunc2.logic_functions[0]);
@@ -392,7 +392,7 @@ describe('LogicFunctionCommands', () => {
 			expect(res).to.equal('0021e8f4-64ee-416d-83f3-898aa909fb1b');
 		});
 
-		it('returns null if not found', async () => {
+		it('returns an error if id is not found', async () => {
 			let logicFunctions = [];
 			logicFunctions.push(logicFunc1.logic_functions[0]);
 			logicFunctions.push(logicFunc2.logic_functions[0]);
@@ -420,7 +420,7 @@ describe('LogicFunctionCommands', () => {
 			expect(res).to.equal('LF1');
 		});
 
-		it('returns null if not found', async () => {
+		it('returns an error if name is not found', async () => {
 			let logicFunctions = [];
 			logicFunctions.push(logicFunc1.logic_functions[0]);
 			logicFunctions.push(logicFunc2.logic_functions[0]);
@@ -453,14 +453,14 @@ describe('LogicFunctionCommands', () => {
 			expect(id).to.eql('0021e8f4-64ee-416d-83f3-898aa909fb1b');
 		});
 
-		it('returns id if name is provided', async () => {
+		it('returns name and id if name is provided', async () => {
 			const { name, id } = await logicFunctionCommands._getLogicFunctionIdAndName('LF1', undefined);
 
 			expect(name).to.eql('LF1');
 			expect(id).to.eql('0021e8f4-64ee-416d-83f3-898aa909fb1b');
 		});
 
-		it('returns name if id is provided', async () => {
+		it('returns name and id if id is provided', async () => {
 			const { name, id } = await logicFunctionCommands._getLogicFunctionIdAndName(undefined, '0021e8f4-64ee-416d-83f3-898aa909fb1b');
 
 			expect(name).to.eql('LF1');
@@ -481,7 +481,7 @@ describe('LogicFunctionCommands', () => {
 			expect(error.message).to.equal('No logic functions found');
 		});
 
-		it('null if name is not found', async () => {
+		it('returns error if id is not found', async () => {
 			let error;
 			try {
 				await logicFunctionCommands._getLogicFunctionIdAndName('LF3', undefined);
@@ -493,7 +493,7 @@ describe('LogicFunctionCommands', () => {
 			expect(error.message).to.equal('Unable to get logic function id from name');
 		});
 
-		it('error if id is not found', async () => {
+		it('returns error if name is not found', async () => {
 			let error;
 			try {
 				await logicFunctionCommands._getLogicFunctionIdAndName(undefined, '0021e8f4-64ee-416d-83f3-898aa909fb1c');
