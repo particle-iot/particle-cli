@@ -43,14 +43,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write('To download an existing Logic Function, see ' + this.ui.chalk.yellow('\'particle logic-function get\'.') + `${os.EOL}`);
 	}
 
-	_printListOutput({ logicFunctionsList}) {
+	_printListOutput({ logicFunctionsList }) {
 		this.ui.stdout.write(`Logic Functions currently deployed in your ${getOrgName(this.org)}:${os.EOL}`);
 		logicFunctionsList.forEach((item) => {
-				// We assume at least one trigger
-				this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
-				this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
-				this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
-			});
+			// We assume at least one trigger
+			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
+			this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
+			this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
+		});
 		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle logic-function get.\`${os.EOL}`);
 	}
 
@@ -63,7 +63,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		const logicFunctionData = await this._getLogicFunctionData(id);
 
-		const {logicFunctionConfigData, logicFunctionCode} = this._serializeLogicFunction(logicFunctionData);
+		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
 
 		const { dirPath, jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
 
@@ -326,7 +326,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 					value: file
 				};
 			});
-			
+
 			const result = await this._prompt({
 				type: 'list',
 				name: 'file',
@@ -371,7 +371,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			try {
 				const res = await this.api.getLogicFunctionList({ org: this.org });
 				this.logicFuncList = res.logic_functions;
-			} catch(e) {
+			} catch (e) {
 				throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
 			}
 		}

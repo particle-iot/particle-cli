@@ -53,7 +53,7 @@ describe('LogicFunctionCommands', () => {
 			const orgAfterSetting = logicFunctionCommands.org;
 			expect(orgBeforeSetting).to.be.null;
 			expect(orgAfterSetting).to.eql('myOrg');
-		})
+		});
 	});
 
 	describe('_getLogicFunctionList', () => {
