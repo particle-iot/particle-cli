@@ -96,7 +96,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		await this._getLogicFunctionList();
 
-		const orgName = getOrgName(org);
 		// get name from filepath
 		const logicFuncPath = getFilePath(filepath);
 		if (!name) {
@@ -118,10 +117,10 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const slugName = slugify(name);
 		const destinationPath = path.join(logicFuncPath, slugName);
 
-		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${orgName}...${os.EOL}`);
+		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${getOrgName(org)}...${os.EOL}`);
 		const logicFuncNameDeployed = await this._validateLFName({ name });
 		if (logicFuncNameDeployed) {
-			throw new Error(`Logic Function ${name} already exists in ${orgName}. Use a new name for your Logic Function.`);
+			throw new Error(`Logic Function ${name} already exists in ${getOrgName(org)}. Use a new name for your Logic Function.`);
 		}
 		await this._validateTemplateFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
 		const createdFiles = await this._copyAndReplaceLogicFunction({
