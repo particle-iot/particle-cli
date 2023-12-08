@@ -38,8 +38,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	_printListHelperOutput() {
 		this.ui.stdout.write(`No Logic Functions currently deployed in your ${getOrgName(this.org)}.${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write('To create a Logic Function, see  ' + this.ui.chalk.yellow('\'particle logic-function create\'.') + `${os.EOL}`);
-		this.ui.stdout.write('To download an existing Logic Function, see ' + this.ui.chalk.yellow('\'particle logic-function get\'.') + `${os.EOL}`);
+		this.ui.stdout.write(`To create a Logic Function, see ${this.ui.chalk.yellow('particle logic-function create')}.${os.EOL}`);
+		this.ui.stdout.write(`To download an existing Logic Function, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
 
 	_printListOutput({ logicFunctionsList }) {
@@ -50,7 +50,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
 			this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
 		});
-		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see \`particle logic-function get.\`${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
 
 	async get({ org, name, id }) {
@@ -66,27 +66,21 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		const { dirPath, jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
 
-		this._printGetFilesOutput({ dirPath, jsonPath, jsPath });
+		this._printGetOutput({ dirPath, jsonPath, jsPath });
 		this._printGetHelperOutput();
 	}
 
 	_printGetOutput({ dirPath, jsonPath, jsPath }) {
-		if (dirPath || jsonPath || jsPath) {
-			this.ui.stdout.write(`${os.EOL}`);
-			this.ui.stdout.write(`Downloaded:${os.EOL}`);
-			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
-			this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
-			this.ui.stdout.write(`${os.EOL}`);
-		}
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Downloaded:${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 	}
 
 	_printGetHelperOutput() {
 		this.ui.stdout.write(`Note that any local modifications to these files need to be deployed to the cloud in order to take effect.${os.EOL}` +
-			'Refer to ' +
-			this.ui.chalk.yellow('\'particle logic-function execute\'') +
-			' and ' +
-			this.ui.chalk.yellow('\'particle logic-function deploy\'') +
-			`' for more information.${os.EOL}`);
+			`Refer to ${this.ui.chalk.yellow('particle logic-function execute')} and ${this.ui.chalk.yellow('particle logic-function deploy')} for more information.${os.EOL}`);
 	}
 
 	async create({ org, name, params : { filepath } } = { params: { } }) {
@@ -141,16 +135,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return createdFiles;
 	}
 
-	// Throws an error if logic function name is already deployed in the cloud
+	// Returns if name is already deployed
 	async _validateLFName({ name }) {
 		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
 		const logicFuncNameExists = this.logicFuncList.find((item) => item.name === name);
-		if (!logicFuncNameExists) {
-			this.ui.stdout.write(this.ui.chalk.yellow(`Warn: We were unable to check if a Logic Function with name ${name} already exists.${os.EOL}`));
-			return false;
-		}
-
-		return true;
+		return Boolean(logicFuncNameExists);
 	}
 
 	async _prompt({ type, name, message, choices, nonInteractiveError }) {
