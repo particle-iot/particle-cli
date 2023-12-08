@@ -212,7 +212,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			if (!overwrite) {
 				this.ui.stdout.write(`Aborted.${os.EOL}`);
 				process.exit(0);
-
 			}
 		}
 	}
@@ -327,7 +326,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 					value: file
 				};
 			});
-
+			
 			const result = await this._prompt({
 				type: 'list',
 				name: 'file',
