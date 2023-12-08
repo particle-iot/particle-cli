@@ -23,7 +23,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.org = null;
 	}
 
-	// FIXME: Should we put the display responsibility in a seaparte function?
 	async list({ org }) {
 		await this._setOrg(org);
 
@@ -395,7 +394,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
-		// TODO: Address spaces in the name for Windows
 		const slugName = slugify(name);
 		const dirPath = path.join(process.cwd(), `${slugName}`);
 		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);

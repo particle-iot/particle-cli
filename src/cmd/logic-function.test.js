@@ -178,6 +178,8 @@ describe('LogicFunctionCommands', () => {
 			expect(dirPath).to.eql(path.join(process.cwd(), slugName));
 			expect(jsonPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.logic.json`));
 			expect(jsPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.js`));
+
+			await fs.remove(dirPath);
 		});
 	});
 
