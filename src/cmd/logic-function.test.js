@@ -640,7 +640,7 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.delete({ name: 'LF1' });
 
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(1);
-			expect(logicFunctionCommands.ui.stdout.write.lastCall.lastArg).to.equal('Aborted.\n');
+			expect(logicFunctionCommands.ui.stdout.write.lastCall.lastArg).to.equal(`Aborted.${os.EOL}`);
 		});
 
 		it('throws an error if deletion fails', async() => {
