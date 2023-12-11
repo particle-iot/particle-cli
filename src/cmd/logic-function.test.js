@@ -183,6 +183,17 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
+	describe('_getLocalLFPathNames', async() => {
+		it('returns local file paths where the LF should be saved', () => {
+			const slugName = slugify(name);
+			const { dirPath, jsonPath, jsPath } = logicFunctionCommands._getLocalLFPathNames('LF1');
+
+			expect(dirPath).to.eql(path.join(process.cwd(), slugName));
+			expect(jsonPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.logic.json`));
+			expect(jsPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.js`));
+		});
+	});
+
 	describe('create', () => {
 		it('creates a logic function locally for Sandbox account', async () => {
 			nock('https://api.particle.io/v1', )
@@ -578,6 +589,7 @@ describe('LogicFunctionCommands', () => {
 			nock('https://api.particle.io/v1',)
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions: logicFunctions });
+			logicFunctionCommands.logicFuncList = logicFunctions;
 		});
 
 		it('checks for confirmation before deleting', async() => {

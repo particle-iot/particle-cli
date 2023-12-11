@@ -176,7 +176,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		if (exists) {
 			const overwrite = await this._promptOverwrite({
-				message: 'This Logic Function was previously downloaded. Overwrite?',
+				message: 'This Logic Function was previously downloaded locally. Overwrite?',
 			});
 			if (!overwrite) {
 				this.ui.stdout.write(`Aborted.${os.EOL}`);
@@ -334,24 +334,27 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async disable({ org, name, id }) {
-		const api = createAPI();
 		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
 
 		let logicFunctionJson = await this._getLogicFunctionData({ org, id });
 		logicFunctionJson.logic_function.enabled = false;
-		const obj = logicFunctionJson.logic_function;
-
+		
 		try {
-			const res = await api.updateLogicFunction({ org, id, logicFunctionData: obj  });
-			this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
-			return res;
+			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function  });
+			this._printDisableOutput(name, id);
 		} catch (err) {
 			throw new Error(`Error disabling Logic Function ${name}: ${err.message}`);
 		}
+
+		// Overwrite logic function if found locally since it is now disabled
+		await this.get({ name });
+	}
+
+	_printDisableOutput(name, id) {
+		this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
 	}
 
 	async delete({ org, name, id }) {
-		const api = createAPI();
 		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
 
 		const confirm = await this._prompt({
@@ -363,7 +366,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		if (confirm.delete) {
 			try {
-				await api.deleteLogicFunction({ org, id });
+				await this.api.deleteLogicFunction({ org, id });
 				this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.`);
 			} catch (err) {
 				throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
@@ -414,16 +417,22 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
-		const slugName = slugify(name);
-		const dirPath = path.join(process.cwd(), `${slugName}`);
-		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
-		const jsPath = path.join(dirPath, `${slugName}.js`);
+		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
 		await this._validatePaths({ dirPath, jsonPath, jsPath });
 
 		await fs.ensureDir(dirPath);
 		await fs.writeFile(jsonPath, JSON.stringify(logicFunctionConfigData, null, 2));
 		await fs.writeFile(jsPath, logicFunctionCode);
+
+		return { dirPath, jsonPath, jsPath };
+	}
+
+	_getLocalLFPathNames(name) {
+		const slugName = slugify(name);
+		const dirPath = path.join(process.cwd(), `${slugName}`);
+		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
+		const jsPath = path.join(dirPath, `${slugName}.js`);
 
 		return { dirPath, jsonPath, jsPath };
 	}
