@@ -340,7 +340,7 @@ describe('LogicFunctionCommands', () => {
 
 			const paths = ['dir/', 'dir/path/to/file'];
 
-			const res = await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: false });
+			const res = await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: sinon.stub() });
 
 			expect(res).to.eql(false);
 
