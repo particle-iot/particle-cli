@@ -335,6 +335,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async disable({ org, name, id }) {
 		this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
 		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
 		let logicFunctionJson = await this._getLogicFunctionData(id);
@@ -348,15 +351,36 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 
 		// Overwrite logic function if found locally since it is now disabled
-		await this.get({ name });
+		await this._overwriteIfLFExistsLocally(name, id);
+	}
+
+	async _overwriteIfLFExistsLocally(name, id) {
+		const logicFunctionData = await this._getLogicFunctionData(id);
+
+		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
+
+		const { dirPath, jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+
+		this._printDisableNewFilesOutput({ dirPath, jsonPath, jsPath });
 	}
 
 	_printDisableOutput(name, id) {
 		this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
 	}
 
+	_printDisableNewFilesOutput({ dirPath, jsonPath, jsPath }) {
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`The following files were overwritten after disabling the Logic Function:${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
+	}
+
 	async delete({ org, name, id }) {
 		this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
 		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
 		const confirm = await this._prompt({
@@ -369,7 +393,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		if (confirm.delete) {
 			try {
 				await this.api.deleteLogicFunction({ org: this.org, id });
-				this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.`);
+				this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.${os.EOL}`);
 			} catch (err) {
 				throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
 			}
