@@ -691,12 +691,12 @@ describe('LogicFunctionCommands', () => {
 				.reply(201, { logic_function: logicFunc1Data });
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
 			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
-			sinon.stub(logicFunctionCommands, 'get').resolves({ });
+			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
 			await logicFunctionCommands.disable({ name: 'LF1' });
 
 			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
-			expect(logicFunctionCommands.get).to.have.been.calledOnce;
+			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
 		});
 
 		it('disables a logic function with id', async() => {
@@ -705,12 +705,12 @@ describe('LogicFunctionCommands', () => {
 				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
 				.reply(201, { logic_function: logicFunc1Data });
 			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
-			sinon.stub(logicFunctionCommands, 'get').resolves({ });
+			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
 			await logicFunctionCommands.disable({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
 
 			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
-			expect(logicFunctionCommands.get).to.have.been.calledOnce;
+			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
 		});
 
 		it('fails to disable a logic function', async() => {

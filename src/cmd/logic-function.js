@@ -344,7 +344,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		logicFunctionJson.logic_function.enabled = false;
 
 		try {
-			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function  });
+			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function });
 			this._printDisableOutput(name, id);
 		} catch (err) {
 			throw new Error(`Error disabling Logic Function ${name}: ${err.message}`);
