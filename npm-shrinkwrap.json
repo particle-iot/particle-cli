@@ -8742,7 +8742,6 @@
       "version": "7.5.0",
       "resolved": "https://registry.npmjs.org/sinon/-/sinon-7.5.0.tgz",
       "integrity": "sha512-AoD0oJWerp0/rY9czP/D6hDTTUYGpObhZjMpd7Cl/A6+j0xBE+ayL/ldfggkBXUs0IkvIiM1ljM8+WkOc5k78Q==",
-      "deprecated": "16.1.1",
       "dev": true,
       "dependencies": {
         "@sinonjs/commons": "^1.4.0",
