@@ -183,6 +183,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				_exit();
 			}
 		}
+		return exists;
 	}
 
 	// Prompts the user to overwrite if any files exist
@@ -355,13 +356,21 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _overwriteIfLFExistsLocally(name, id) {
+		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
+
+		const exist = await this._validatePaths({ dirPath, jsonPath, jsPath });
+
+		if (!exist) {
+			return;
+		}
+
 		const logicFunctionData = await this._getLogicFunctionData(id);
 
 		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
 
-		const { dirPath, jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+		const { genDirPath, genJsonPath, genJsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
 
-		this._printDisableNewFilesOutput({ dirPath, jsonPath, jsPath });
+		this._printDisableNewFilesOutput({ dirPath: genDirPath, jsonPath: genJsonPath, jsPath: genJsPath });
 	}
 
 	_printDisableOutput(name, id) {

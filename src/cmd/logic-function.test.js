@@ -342,7 +342,7 @@ describe('LogicFunctionCommands', () => {
 
 			const res = await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: false });
 
-			expect(res).to.eql(undefined);
+			expect(res).to.eql(false);
 
 		});
 
@@ -365,7 +365,7 @@ describe('LogicFunctionCommands', () => {
 
 			const res = await logicFunctionCommands._validatePaths({ paths });
 
-			expect(res).to.eql(undefined);
+			expect(res).to.eql(true);
 
 		});
 	});
