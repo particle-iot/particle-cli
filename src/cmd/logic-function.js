@@ -24,7 +24,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async list({ org }) {
-		await this._setOrg(org);
+		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
@@ -54,7 +54,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async get({ org, name, id }) {
-		await this._setOrg(org);
+		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
@@ -85,7 +85,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async create({ org, name, params : { filepath } } = { params: { } }) {
 
-		await this._setOrg(org);
+		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
@@ -165,7 +165,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	// Prompts the user to overwrite if any files exist
 	// If user says no, we exit the process
-	async _validatePaths({ dirPath, jsonPath, jsPath }) {
+	async _validatePaths({ dirPath, jsonPath, jsPath, _exit = () => process.exit(0) }) {
 		let exists = false;
 		const pathsToCheck = [dirPath, jsonPath, jsPath];
 		for (const p of pathsToCheck) {
@@ -180,7 +180,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			});
 			if (!overwrite) {
 				this.ui.stdout.write(`Aborted.${os.EOL}`);
-				process.exit(0);
+				_exit();
 			}
 		}
 	}
@@ -334,11 +334,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async disable({ org, name, id }) {
-		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
+		this._setOrg(org);
+		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
-		let logicFunctionJson = await this._getLogicFunctionData({ org, id });
+		let logicFunctionJson = await this._getLogicFunctionData(id);
 		logicFunctionJson.logic_function.enabled = false;
-		
+
 		try {
 			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function  });
 			this._printDisableOutput(name, id);
@@ -355,7 +356,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async delete({ org, name, id }) {
-		({ name, id } = await this._getLogicFunctionIdAndName(org, name, id));
+		this._setOrg(org);
+		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
 		const confirm = await this._prompt({
 			type: 'confirm',
@@ -366,14 +368,13 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		if (confirm.delete) {
 			try {
-				await this.api.deleteLogicFunction({ org, id });
+				await this.api.deleteLogicFunction({ org: this.org, id });
 				this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.`);
 			} catch (err) {
 				throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
 			}
 		} else {
 			this.ui.stdout.write(`Aborted.${os.EOL}`);
-			process.exit(0);
 		}
 	}
 
@@ -382,7 +383,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		console.log(org, name, id, saveTo);
 	}
 
-	async _setOrg(org) {
+	_setOrg(org) {
 		if (this.org === null) {
 			this.org = org;
 		}
