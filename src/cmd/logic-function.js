@@ -64,17 +64,17 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
 
-		const { dirPath, jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+		const { jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
 
-		this._printGetOutput({ dirPath, jsonPath, jsPath });
+		this._printGetOutput({ jsonPath, jsPath });
 		this._printGetHelperOutput();
 	}
 
-	_printGetOutput({ dirPath, jsonPath, jsPath }) {
+	_printGetOutput({ jsonPath, jsPath }) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Downloaded:${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
@@ -165,9 +165,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	// Prompts the user to overwrite if any files exist
 	// If user says no, we exit the process
-	async _validatePaths({ dirPath, jsonPath, jsPath, _exit = () => process.exit(0) }) {
+	async _validatePaths({ jsonPath, jsPath, _exit = () => process.exit(0) }) {
 		let exists = false;
-		const pathsToCheck = [dirPath, jsonPath, jsPath];
+		const pathsToCheck = [jsonPath, jsPath];
 		for (const p of pathsToCheck) {
 			if (await fs.pathExists(p)) {
 				exists = true;
@@ -329,9 +329,27 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return { fileName, content: fileBuffer.toString() };
 	}
 
-	async deploy({ org, params: { filepath } }) {
-		// TODO
-		console.log(org, filepath);
+	async deploy({ org, data, dataPath, params: { filepath } }) {
+		this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
+		const confirm = await this._prompt({
+			type: 'confirm',
+			name: 'proceed',
+			message: `Deploying to ${this.org}. Proceed?`,
+			choices: Boolean
+		});
+
+		if (!confirm.proceed) {
+			this.ui.stdout.write(`Aborted.${os.EOL}`);
+			return;
+		}
+
+		await this.execute({ org, data, dataPath, params: { filepath } });
+
+		this.ui.stdout.write(`Deploying Logic Function ${this.org}...${os.EOL}`);
+
 	}
 
 	async disable({ org, name, id }) {
@@ -356,9 +374,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _overwriteIfLFExistsLocally(name, id) {
-		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
+		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
-		const exist = await this._validatePaths({ dirPath, jsonPath, jsPath });
+		const exist = await this._validatePaths({ jsonPath, jsPath });
 
 		if (!exist) {
 			return;
@@ -368,20 +386,20 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
 
-		const { genDirPath, genJsonPath, genJsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+		const { genJsonPath, genJsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
 
-		this._printDisableNewFilesOutput({ dirPath: genDirPath, jsonPath: genJsonPath, jsPath: genJsPath });
+		this._printDisableNewFilesOutput({ jsonPath: genJsonPath, jsPath: genJsPath });
 	}
 
 	_printDisableOutput(name, id) {
 		this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
 	}
 
-	_printDisableNewFilesOutput({ dirPath, jsonPath, jsPath }) {
+	_printDisableNewFilesOutput({ jsonPath, jsPath }) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`The following files were overwritten after disabling the Logic Function:${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
@@ -445,30 +463,28 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	_serializeLogicFunction(data) {
 		const logicFunctionCode = data.logic_function.source.code;
 		const logicFunctionConfigData = data.logic_function;
-		delete logicFunctionConfigData.source;
+		delete logicFunctionConfigData.source.code;
 
-		return { logicFunctionConfigData, logicFunctionCode };
+		return { logicFunctionConfigData: { "logic_function": logicFunctionConfigData }, logicFunctionCode };
 	}
 
 	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
-		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
+		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
-		await this._validatePaths({ dirPath, jsonPath, jsPath });
+		await this._validatePaths({ jsonPath, jsPath });
 
-		await fs.ensureDir(dirPath);
 		await fs.writeFile(jsonPath, JSON.stringify(logicFunctionConfigData, null, 2));
 		await fs.writeFile(jsPath, logicFunctionCode);
 
-		return { dirPath, jsonPath, jsPath };
+		return { jsonPath, jsPath };
 	}
 
 	_getLocalLFPathNames(name) {
 		const slugName = slugify(name);
-		const dirPath = path.join(process.cwd(), `${slugName}`);
-		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
-		const jsPath = path.join(dirPath, `${slugName}.js`);
+		const jsonPath = path.join(process.cwd(), `${slugName}.logic.json`);
+		const jsPath = path.join(process.cwd(), `${slugName}.js`);
 
-		return { dirPath, jsonPath, jsPath };
+		return { jsonPath, jsPath };
 	}
 
 	async _getLogicFunctionIdAndName(name, id) {
