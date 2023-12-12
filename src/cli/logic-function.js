@@ -76,7 +76,13 @@ module.exports = ({ commandProcessor, root }) => {
 			'org': {
 				description: 'Specify the organization',
 				hidden: true
-			}
+			},
+			'data': {
+				description: 'Sample test data file to verify the logic function'
+			},
+			'dataPath': {
+				description: 'Sample test data file to verify the logic function'
+			},
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');

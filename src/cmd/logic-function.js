@@ -48,7 +48,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			// We assume at least one trigger
 			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
 			this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
-			this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
+			if (item.logic_triggers[0] && item.logic_triggers[0].type) {
+				this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
+			}
 		});
 		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
@@ -261,11 +263,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			logicData = data;
 		}
 
-		const files = await fs.readdir(logicPath);
-		const { content: configurationFileString } = await this._pickLogicFunctionFileByExtension({ files, extension: 'json', logicPath });
-		const configurationFile = JSON.parse(configurationFileString);
-		// TODO (hmontero): here we can pick different files based on the source type
-		const { fileName: logicCodeFileName, content: logicCodeContent } = await this._pickLogicFunctionFileByExtension({ files, logicPath });
+		const { logicConfigContent } = await this._getLogicFunctionConfig({ logicPath });
+		const { logicCodeFileName, logicCodeContent } = await this._getLogicFunctionCode({ logicPath });
 
 		const logic = {
 			event: {
@@ -275,7 +274,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				product_id: 0
 			},
 			source: {
-				type: configurationFile.logic_function.source.type,
+				type: logicConfigContent.logic_function.source.type,
 				code: logicCodeContent
 			}
 		};
@@ -295,9 +294,23 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			} else {
 				this.ui.stdout.write(this.ui.chalk.cyanBright(`No errors during Execution.${os.EOL}`));
 			}
+			return { logicConfigContent, logicCodeContent };
 		} catch (error) {
 			throw createAPIErrorResult({ error: error, message: `Error executing logic function for ${orgName}` });
 		}
+	}
+
+	async _getLogicFunctionConfig({ logicPath }) {
+		const files = await fs.readdir(logicPath);
+		const { fileName, content: configurationFileString } = await this._pickLogicFunctionFileByExtension({ files, extension: 'json', logicPath });
+		const configurationFileJson = JSON.parse(configurationFileString);
+		return { logicConfigFileName: fileName, logicConfigContent: configurationFileJson };
+	}
+	async _getLogicFunctionCode({ logicPath }) {
+		const files = await fs.readdir(logicPath);
+		// TODO (hmontero): here we can pick different files based on the source type
+		const { fileName: logicCodeFileName, content: logicCodeContent } = await this._pickLogicFunctionFileByExtension({ files, logicPath });
+		return { logicCodeFileName, logicCodeContent };
 	}
 
 	async _pickLogicFunctionFileByExtension({ logicPath, files, extension = 'js' } ) {
@@ -318,6 +331,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 			const result = await this._prompt({
 				type: 'list',
+
 				name: 'file',
 				message: `Which ${extension} file would you like to use?`,
 				choices
@@ -337,7 +351,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const confirm = await this._prompt({
 			type: 'confirm',
 			name: 'proceed',
-			message: `Deploying to ${this.org}. Proceed?`,
+			message: `Deploying to ${getOrgName(this.org)}. Proceed?`,
 			choices: Boolean
 		});
 
@@ -346,10 +360,54 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			return;
 		}
 
-		await this.execute({ org, data, dataPath, params: { filepath } });
+		const { logicConfigContent, logicCodeContent } = await this.execute({ org, data, dataPath, params: { filepath } });
+		const name = logicConfigContent.logic_function.name;
+		logicConfigContent.logic_function.enabled = true;
+		logicConfigContent.logic_function.source.code = logicCodeContent;
 
-		this.ui.stdout.write(`Deploying Logic Function ${this.org}...${os.EOL}`);
+		const logicFuncNameDeployed = await this._validateLFName({ name});
+		if (logicFuncNameDeployed) {
+			try {
+				const confirm = await this._prompt({
+					type: 'confirm',
+					name: 'proceed',
+					message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}. Proceed and overwrite with the new content?`,
+					choices: Boolean
+				});
 
+				if (!confirm.proceed) {
+					this.ui.stdout.write(`Aborted.${os.EOL}`);
+					return;
+				}
+
+				const { id } = await this._getLogicFunctionIdAndName(name);
+				await this.api.updateLogicFunction({ org, id, logicFunctionData: logicConfigContent.logic_function });
+				this._printDeployOutput(name, id);
+			} catch (err) {
+				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
+			}
+		} else {
+			try {
+				const deployedLogicFunc = await this.api.createLogicFunction({ org, logicFunction: logicConfigContent.logic_function });
+				this._printDeployNewLFOutput(deployedLogicFunc.logic_function.name, deployedLogicFunc.logic_function.id);
+			} catch (err) {
+				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
+			}
+		}
+	}
+
+	async _printDeployOutput(name, id) {
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
+	}
+
+	async _printDeployNewLFOutput(name, id) {
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name}`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.cyanBright(`Success! Logic Function ${name} deployed with ${id}`)}${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 	}
 
 	async disable({ org, name, id }) {
@@ -521,7 +579,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			throw new Error('Unable to get logic function id from name');
 		}
 
-		return found.id; // assume that found has a key called id
+		return found.id;
 	}
 
 	_getNameFromId(id, list) {
@@ -531,7 +589,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			throw new Error('Unable to get logic function name from id');
 		}
 
-		return found.name; // assume that found has a key called name
+		return found.name;
 	}
 };
 
