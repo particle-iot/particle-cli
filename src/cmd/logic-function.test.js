@@ -183,6 +183,17 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
+	describe('_getLocalLFPathNames', async() => {
+		it('returns local file paths where the LF should be saved', () => {
+			const slugName = slugify('LF1');
+			const { dirPath, jsonPath, jsPath } = logicFunctionCommands._getLocalLFPathNames('LF1');
+
+			expect(dirPath).to.eql(path.join(process.cwd(), slugName));
+			expect(jsonPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.logic.json`));
+			expect(jsPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.js`));
+		});
+	});
+
 	describe('create', () => {
 		it('creates a logic function locally for Sandbox account', async () => {
 			nock('https://api.particle.io/v1', )
@@ -329,21 +340,22 @@ describe('LogicFunctionCommands', () => {
 
 			const paths = ['dir/', 'dir/path/to/file'];
 
-			const res = await logicFunctionCommands._validatePaths({ paths });
+			const res = await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: sinon.stub() });
 
-			expect(res).to.eql(undefined);
+			expect(res).to.eql(false);
 
 		});
 
 		it('returns if all paths exist and not overwriting', async () => {
+			const exitStub = sinon.stub();
 			sinon.stub(fs, 'pathExists').resolves(true);
 			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
-			const exitStub = sinon.stub(process, 'exit');
 			const paths = ['dir/', 'dir/path/to/file'];
 
-			await logicFunctionCommands._validatePaths({ paths });
+			await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: exitStub });
 
-			expect(exitStub.called).to.be.true;
+			expect(logicFunctionCommands._promptOverwrite.callCount).to.eql(1);
+			expect(exitStub.callCount).to.eql(1);
 		});
 
 		it('prompts if any path exists and overwriting', async () => {
@@ -353,7 +365,7 @@ describe('LogicFunctionCommands', () => {
 
 			const res = await logicFunctionCommands._validatePaths({ paths });
 
-			expect(res).to.eql(undefined);
+			expect(res).to.eql(true);
 
 		});
 	});
@@ -569,4 +581,154 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
+	describe('delete', () => {
+		let logicFunctions = [];
+		logicFunctions.push(logicFunc1.logic_functions[0]);
+		logicFunctions.push(logicFunc2.logic_functions[0]);
+
+		beforeEach(() => {
+			logicFunctionCommands.logicFuncList = logicFunctions;
+		});
+
+		afterEach(() => {
+			nock.cleanAll();
+		});
+
+		it('checks for confirmation before deleting', async() => {
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(204, { });
+
+			await logicFunctionCommands.delete({ name: 'LF1' });
+
+			expect(logicFunctionCommands._prompt).to.have.been.calledOnce;
+		});
+
+		it('returns without throwing an error if success', async() => {
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(204, { });
+
+			let error;
+			try {
+				await logicFunctionCommands.delete({ name: 'LF1' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.undefined;
+		});
+
+		it('process exits if user does not want to delete during confirmation', async() => {
+			logicFunctionCommands.logicFuncList = logicFunctions;
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: false });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(204, { });
+
+			await logicFunctionCommands.delete({ name: 'LF1' });
+
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(1);
+			expect(logicFunctionCommands.ui.stdout.write.lastCall.lastArg).to.equal(`Aborted.${os.EOL}`);
+		});
+
+		it('throws an error if deletion fails', async() => {
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'GET')
+				.reply(200, { logic_functions: logicFunctions });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
+				.reply(404, {});
+
+			let error;
+			try {
+				await logicFunctionCommands.delete({ name: 'LF1' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.contain('Error deleting Logic Function LF1');
+		});
+	});
+
+	describe('disable', () => {
+		let logicFunctions = [];
+		logicFunctions.push(logicFunc1.logic_functions[0]);
+		logicFunctions.push(logicFunc2.logic_functions[0]);
+		const logicFunc1Data = logicFunc1.logic_functions[0];
+		logicFunc1Data.enabled = false;
+
+		beforeEach(() => {
+			logicFunctionCommands.logicFuncList = logicFunctions;
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
+				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
+				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+		});
+
+		afterEach(() => {
+			fs.rmSync('lf1', { recursive: true, force: true });
+		});
+
+		it('disables a logic function with name', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
+				.reply(201, { logic_function: logicFunc1Data });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
+			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
+			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
+
+			await logicFunctionCommands.disable({ name: 'LF1' });
+
+			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
+			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
+		});
+
+		it('disables a logic function with id', async() => {
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
+				.reply(201, { logic_function: logicFunc1Data });
+			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
+			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
+
+			await logicFunctionCommands.disable({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
+
+			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
+			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
+		});
+
+		it('fails to disable a logic function', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
+				.reply(404, { error: 'Error' });
+			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
+
+			let error;
+			try {
+				await logicFunctionCommands.disable({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.contain('Error disabling Logic Function LF1');
+			expect(logicFunctionCommands._printDisableOutput).to.not.have.been.called;
+		});
+	});
 });

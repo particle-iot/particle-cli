@@ -24,7 +24,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async list({ org }) {
-		await this._setOrg(org);
+		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
@@ -54,7 +54,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async get({ org, name, id }) {
-		await this._setOrg(org);
+		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
@@ -85,7 +85,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async create({ org, name, params : { filepath } } = { params: { } }) {
 
-		await this._setOrg(org);
+		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
@@ -165,7 +165,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	// Prompts the user to overwrite if any files exist
 	// If user says no, we exit the process
-	async _validatePaths({ dirPath, jsonPath, jsPath }) {
+	async _validatePaths({ dirPath, jsonPath, jsPath, _exit = () => process.exit(0) }) {
 		let exists = false;
 		const pathsToCheck = [dirPath, jsonPath, jsPath];
 		for (const p of pathsToCheck) {
@@ -176,13 +176,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		if (exists) {
 			const overwrite = await this._promptOverwrite({
-				message: 'This Logic Function was previously downloaded. Overwrite?',
+				message: 'This Logic Function was previously downloaded locally. Overwrite?',
 			});
 			if (!overwrite) {
 				this.ui.stdout.write(`Aborted.${os.EOL}`);
-				process.exit(0);
+				_exit();
 			}
 		}
+		return exists;
 	}
 
 	// Prompts the user to overwrite if any files exist
@@ -334,13 +335,80 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async disable({ org, name, id }) {
-		// TODO
-		console.log(org, name, id);
+		this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
+		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
+
+		let logicFunctionJson = await this._getLogicFunctionData(id);
+		logicFunctionJson.logic_function.enabled = false;
+
+		try {
+			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function });
+			this._printDisableOutput(name, id);
+		} catch (err) {
+			throw new Error(`Error disabling Logic Function ${name}: ${err.message}`);
+		}
+
+		// Overwrite logic function if found locally since it is now disabled
+		await this._overwriteIfLFExistsLocally(name, id);
+	}
+
+	async _overwriteIfLFExistsLocally(name, id) {
+		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
+
+		const exist = await this._validatePaths({ dirPath, jsonPath, jsPath });
+
+		if (!exist) {
+			return;
+		}
+
+		const logicFunctionData = await this._getLogicFunctionData(id);
+
+		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
+
+		const { genDirPath, genJsonPath, genJsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+
+		this._printDisableNewFilesOutput({ dirPath: genDirPath, jsonPath: genJsonPath, jsPath: genJsPath });
+	}
+
+	_printDisableOutput(name, id) {
+		this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
+	}
+
+	_printDisableNewFilesOutput({ dirPath, jsonPath, jsPath }) {
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`The following files were overwritten after disabling the Logic Function:${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 	}
 
 	async delete({ org, name, id }) {
-		// TODO
-		console.log(org, name, id);
+		this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
+		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
+
+		const confirm = await this._prompt({
+			type: 'confirm',
+			name: 'delete',
+			message: `Are you sure you want to delete Logic Function ${name}? This action cannot be undone.`,
+			choices: Boolean
+		});
+
+		if (confirm.delete) {
+			try {
+				await this.api.deleteLogicFunction({ org: this.org, id });
+				this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.${os.EOL}`);
+			} catch (err) {
+				throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
+			}
+		} else {
+			this.ui.stdout.write(`Aborted.${os.EOL}`);
+		}
 	}
 
 	async logs({ org, name, id, saveTo }) {
@@ -348,7 +416,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		console.log(org, name, id, saveTo);
 	}
 
-	async _setOrg(org) {
+	_setOrg(org) {
 		if (this.org === null) {
 			this.org = org;
 		}
@@ -383,16 +451,22 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
-		const slugName = slugify(name);
-		const dirPath = path.join(process.cwd(), `${slugName}`);
-		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
-		const jsPath = path.join(dirPath, `${slugName}.js`);
+		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
 		await this._validatePaths({ dirPath, jsonPath, jsPath });
 
 		await fs.ensureDir(dirPath);
 		await fs.writeFile(jsonPath, JSON.stringify(logicFunctionConfigData, null, 2));
 		await fs.writeFile(jsPath, logicFunctionCode);
+
+		return { dirPath, jsonPath, jsPath };
+	}
+
+	_getLocalLFPathNames(name) {
+		const slugName = slugify(name);
+		const dirPath = path.join(process.cwd(), `${slugName}`);
+		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
+		const jsPath = path.join(dirPath, `${slugName}.js`);
 
 		return { dirPath, jsonPath, jsPath };
 	}
