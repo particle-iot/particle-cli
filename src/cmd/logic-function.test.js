@@ -168,29 +168,27 @@ describe('LogicFunctionCommands', () => {
 			const data = { logic_function : logicFunc1.logic_functions[0] };
 			const logicFunctionCode = data.logic_function.source.code;
 			const logicFunctionConfigData = data.logic_function;
-			delete logicFunctionConfigData.source;
 			sinon.stub(logicFunctionCommands, '_validatePaths').resolves(true);
 			const name = 'LF1';
 			const slugName = slugify(name);
 
-			const { dirPath, jsonPath, jsPath } = await logicFunctionCommands._generateFiles({ logicFunctionConfigData, logicFunctionCode, name: 'LF1' });
+			const { jsonPath, jsPath } = await logicFunctionCommands._generateFiles({ logicFunctionConfigData, logicFunctionCode, name: 'LF1' });
 
-			expect(dirPath).to.eql(path.join(process.cwd(), slugName));
-			expect(jsonPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.logic.json`));
-			expect(jsPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.js`));
+			expect(jsonPath).to.eql(path.join(process.cwd(), `${slugName}.logic.json`));
+			expect(jsPath).to.eql(path.join(process.cwd(), `${slugName}.js`));
 
-			await fs.remove(dirPath);
+			await fs.remove(jsonPath);
+			await fs.remove(jsPath);
 		});
 	});
 
 	describe('_getLocalLFPathNames', async() => {
 		it('returns local file paths where the LF should be saved', () => {
 			const slugName = slugify('LF1');
-			const { dirPath, jsonPath, jsPath } = logicFunctionCommands._getLocalLFPathNames('LF1');
+			const { jsonPath, jsPath } = logicFunctionCommands._getLocalLFPathNames('LF1');
 
-			expect(dirPath).to.eql(path.join(process.cwd(), slugName));
-			expect(jsonPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.logic.json`));
-			expect(jsPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.js`));
+			expect(jsonPath).to.eql(path.join(process.cwd(), `${slugName}.logic.json`));
+			expect(jsPath).to.eql(path.join(process.cwd(), `${slugName}.js`));
 		});
 	});
 
@@ -338,9 +336,7 @@ describe('LogicFunctionCommands', () => {
 		it('returns if paths do not exist', async () => {
 			sinon.stub(fs, 'pathExists').resolves(false);
 
-			const paths = ['dir/', 'dir/path/to/file'];
-
-			const res = await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: sinon.stub() });
+			const res = await logicFunctionCommands._validatePaths({ jsonPath: 'dir/path/to/file', _exit: sinon.stub() });
 
 			expect(res).to.eql(false);
 
@@ -350,9 +346,8 @@ describe('LogicFunctionCommands', () => {
 			const exitStub = sinon.stub();
 			sinon.stub(fs, 'pathExists').resolves(true);
 			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
-			const paths = ['dir/', 'dir/path/to/file'];
 
-			await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: exitStub });
+			await logicFunctionCommands._validatePaths({ jsonPath: 'dir/path/to/file', _exit: exitStub });
 
 			expect(logicFunctionCommands._promptOverwrite.callCount).to.eql(1);
 			expect(exitStub.callCount).to.eql(1);
@@ -729,6 +724,71 @@ describe('LogicFunctionCommands', () => {
 			expect(error).to.be.an.instanceOf(Error);
 			expect(error.message).to.contain('Error disabling Logic Function LF1');
 			expect(logicFunctionCommands._printDisableOutput).to.not.have.been.called;
+		});
+	});
+
+	describe('deploy', () => {
+		let logicFunctions = [];
+		logicFunctions.push(logicFunc1.logic_functions[0]);
+
+		beforeEach(() => {
+			logicFunctionCommands.logicFuncList = logicFunctions;
+		});
+
+		afterEach(() => {
+			fs.rmSync('lf1', { recursive: true, force: true });
+			nock.cleanAll();
+		});
+
+		it('deploys a new logic function', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'POST')
+				.reply(200, { logic_function: logicFunc2.logic_functions[0] });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
+			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc2.logic_functions[0] }, logicCodeContent: logicFunc2.logic_functions[0].source.code });
+			sinon.stub(logicFunctionCommands, '_printDeployNewLFOutput').resolves({ });
+
+			await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
+
+			expect(logicFunctionCommands._prompt).to.have.property('callCount', 1);
+			expect(logicFunctionCommands.execute).to.have.been.calledOnce;
+			expect(logicFunctionCommands._printDeployNewLFOutput).to.have.been.calledOnce;
+
+		});
+
+		it('re-deploys an old logic function', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
+				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
+			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc1.logic_functions[0] }, logicCodeContent: logicFunc1.logic_functions[0].source.code });
+			sinon.stub(logicFunctionCommands, '_printDeployOutput').resolves({ });
+
+			await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
+
+			expect(logicFunctionCommands._prompt).to.have.property('callCount', 2);
+			expect(logicFunctionCommands.execute).to.have.been.calledOnce;
+			expect(logicFunctionCommands._printDeployOutput).to.have.been.calledOnce;
+		});
+
+		it('throws an error if deployement fails', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
+				.reply(500, { error: 'Error' });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
+			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc1.logic_functions[0] }, logicCodeContent: logicFunc1.logic_functions[0].source.code });
+			sinon.stub(logicFunctionCommands, '_printDeployOutput').resolves({ });
+
+			let error;
+			try {
+				await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.contain('Error deploying Logic Function LF1');
+
 		});
 	});
 });

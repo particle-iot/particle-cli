@@ -64,17 +64,17 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
 
-		const { dirPath, jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+		const { jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
 
-		this._printGetOutput({ dirPath, jsonPath, jsPath });
+		this._printGetOutput({ jsonPath, jsPath });
 		this._printGetHelperOutput();
 	}
 
-	_printGetOutput({ dirPath, jsonPath, jsPath }) {
+	_printGetOutput({ jsonPath, jsPath }) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Downloaded:${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
@@ -165,9 +165,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	// Prompts the user to overwrite if any files exist
 	// If user says no, we exit the process
-	async _validatePaths({ dirPath, jsonPath, jsPath, _exit = () => process.exit(0) }) {
+	async _validatePaths({ jsonPath, jsPath, _exit = () => process.exit(0) }) {
 		let exists = false;
-		const pathsToCheck = [dirPath, jsonPath, jsPath];
+		const pathsToCheck = [jsonPath, jsPath];
 		for (const p of pathsToCheck) {
 			if (await fs.pathExists(p)) {
 				exists = true;
@@ -261,11 +261,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			logicData = data;
 		}
 
-		const files = await fs.readdir(logicPath);
-		const { content: configurationFileString } = await this._pickLogicFunctionFileByExtension({ files, extension: 'json', logicPath });
-		const configurationFile = JSON.parse(configurationFileString);
-		// TODO (hmontero): here we can pick different files based on the source type
-		const { fileName: logicCodeFileName, content: logicCodeContent } = await this._pickLogicFunctionFileByExtension({ files, logicPath });
+		const { logicConfigContent } = await this._getLogicFunctionConfig({ logicPath });
+		const { logicCodeFileName, logicCodeContent } = await this._getLogicFunctionCode({ logicPath });
 
 		const logic = {
 			event: {
@@ -275,7 +272,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				product_id: 0
 			},
 			source: {
-				type: configurationFile.logic_function.source.type,
+				type: logicConfigContent.logic_function.source.type,
 				code: logicCodeContent
 			}
 		};
@@ -295,9 +292,23 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			} else {
 				this.ui.stdout.write(this.ui.chalk.cyanBright(`No errors during Execution.${os.EOL}`));
 			}
+			return { logicConfigContent, logicCodeContent };
 		} catch (error) {
 			throw createAPIErrorResult({ error: error, message: `Error executing logic function for ${orgName}` });
 		}
+	}
+
+	async _getLogicFunctionConfig({ logicPath }) {
+		const files = await fs.readdir(logicPath);
+		const { fileName, content: configurationFileString } = await this._pickLogicFunctionFileByExtension({ files, extension: 'json', logicPath });
+		const configurationFileJson = JSON.parse(configurationFileString);
+		return { logicConfigFileName: fileName, logicConfigContent: configurationFileJson };
+	}
+	async _getLogicFunctionCode({ logicPath }) {
+		const files = await fs.readdir(logicPath);
+		// TODO (hmontero): here we can pick different files based on the source type
+		const { fileName: logicCodeFileName, content: logicCodeContent } = await this._pickLogicFunctionFileByExtension({ files, logicPath });
+		return { logicCodeFileName, logicCodeContent };
 	}
 
 	async _pickLogicFunctionFileByExtension({ logicPath, files, extension = 'js' } ) {
@@ -318,6 +329,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 			const result = await this._prompt({
 				type: 'list',
+
 				name: 'file',
 				message: `Which ${extension} file would you like to use?`,
 				choices
@@ -329,9 +341,71 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return { fileName, content: fileBuffer.toString() };
 	}
 
-	async deploy({ org, params: { filepath } }) {
-		// TODO
-		console.log(org, filepath);
+	async deploy({ org, data, dataPath, params: { filepath } }) {
+		this._setOrg(org);
+
+		await this._getLogicFunctionList();
+
+		const confirm = await this._prompt({
+			type: 'confirm',
+			name: 'proceed',
+			message: `Deploying to ${getOrgName(this.org)}. Proceed?`,
+			choices: Boolean
+		});
+
+		if (!confirm.proceed) {
+			this.ui.stdout.write(`Aborted.${os.EOL}`);
+			return;
+		}
+
+		const { logicConfigContent, logicCodeContent } = await this.execute({ org, data, dataPath, params: { filepath } });
+		const name = logicConfigContent.logic_function.name;
+		logicConfigContent.logic_function.enabled = true;
+		logicConfigContent.logic_function.source.code = logicCodeContent;
+
+		const logicFuncNameDeployed = await this._validateLFName({ name });
+		if (logicFuncNameDeployed) {
+			try {
+				const confirm = await this._prompt({
+					type: 'confirm',
+					name: 'proceed',
+					message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}. Proceed and overwrite with the new content?`,
+					choices: Boolean
+				});
+
+				if (!confirm.proceed) {
+					this.ui.stdout.write(`Aborted.${os.EOL}`);
+					return;
+				}
+
+				const { id } = await this._getLogicFunctionIdAndName(name);
+				await this.api.updateLogicFunction({ org, id, logicFunctionData: logicConfigContent.logic_function });
+				this._printDeployOutput(name, id);
+			} catch (err) {
+				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
+			}
+		} else {
+			try {
+				const deployedLogicFunc = await this.api.createLogicFunction({ org, logicFunction: logicConfigContent.logic_function });
+				this._printDeployNewLFOutput(deployedLogicFunc.logic_function.name, deployedLogicFunc.logic_function.id);
+			} catch (err) {
+				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
+			}
+		}
+	}
+
+	async _printDeployOutput(name, id) {
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
+	}
+
+	async _printDeployNewLFOutput(name, id) {
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name}`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.cyanBright(`Success! Logic Function ${name} deployed with ${id}`)}${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 	}
 
 	async disable({ org, name, id }) {
@@ -356,9 +430,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _overwriteIfLFExistsLocally(name, id) {
-		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
+		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
-		const exist = await this._validatePaths({ dirPath, jsonPath, jsPath });
+		const exist = await this._validatePaths({ jsonPath, jsPath });
 
 		if (!exist) {
 			return;
@@ -368,20 +442,20 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
 
-		const { genDirPath, genJsonPath, genJsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
+		const { genJsonPath, genJsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
 
-		this._printDisableNewFilesOutput({ dirPath: genDirPath, jsonPath: genJsonPath, jsPath: genJsPath });
+		this._printDisableNewFilesOutput({ jsonPath: genJsonPath, jsPath: genJsPath });
 	}
 
 	_printDisableOutput(name, id) {
 		this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
 	}
 
-	_printDisableNewFilesOutput({ dirPath, jsonPath, jsPath }) {
+	_printDisableNewFilesOutput({ jsonPath, jsPath }) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`The following files were overwritten after disabling the Logic Function:${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsonPath)}${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(dirPath) + '/' + path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
@@ -445,30 +519,28 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	_serializeLogicFunction(data) {
 		const logicFunctionCode = data.logic_function.source.code;
 		const logicFunctionConfigData = data.logic_function;
-		delete logicFunctionConfigData.source;
+		delete logicFunctionConfigData.source.code;
 
-		return { logicFunctionConfigData, logicFunctionCode };
+		return { logicFunctionConfigData: { 'logic_function': logicFunctionConfigData }, logicFunctionCode };
 	}
 
 	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
-		const { dirPath, jsonPath, jsPath } = this._getLocalLFPathNames(name);
+		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
-		await this._validatePaths({ dirPath, jsonPath, jsPath });
+		await this._validatePaths({ jsonPath, jsPath });
 
-		await fs.ensureDir(dirPath);
 		await fs.writeFile(jsonPath, JSON.stringify(logicFunctionConfigData, null, 2));
 		await fs.writeFile(jsPath, logicFunctionCode);
 
-		return { dirPath, jsonPath, jsPath };
+		return { jsonPath, jsPath };
 	}
 
 	_getLocalLFPathNames(name) {
 		const slugName = slugify(name);
-		const dirPath = path.join(process.cwd(), `${slugName}`);
-		const jsonPath = path.join(dirPath, `${slugName}.logic.json`);
-		const jsPath = path.join(dirPath, `${slugName}.js`);
+		const jsonPath = path.join(process.cwd(), `${slugName}.logic.json`);
+		const jsPath = path.join(process.cwd(), `${slugName}.js`);
 
-		return { dirPath, jsonPath, jsPath };
+		return { jsonPath, jsPath };
 	}
 
 	async _getLogicFunctionIdAndName(name, id) {
@@ -505,7 +577,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			throw new Error('Unable to get logic function id from name');
 		}
 
-		return found.id; // assume that found has a key called id
+		return found.id;
 	}
 
 	_getNameFromId(id, list) {
@@ -515,7 +587,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			throw new Error('Unable to get logic function name from id');
 		}
 
-		return found.name; // assume that found has a key called name
+		return found.name;
 	}
 };
 
