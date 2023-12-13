@@ -416,11 +416,15 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
 		let logicFunctionJson = await this._getLogicFunctionData(id);
-		logicFunctionJson.logic_function.enabled = status;
+		logicFunctionJson.logic_function.enabled = !status;
 
 		try {
 			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function });
-			this._printDisableOutput(name, id);
+			if (status) {
+				this._printDisableOutput(name, id);
+			} else {
+				this._printEnableOutput(name, id);
+			}
 		} catch (err) {
 			throw new Error(`Error disabling Logic Function ${name}: ${err.message}`);
 		}
@@ -451,7 +455,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
 	}
 
-	_printDisableNewFilesOutput({ jsonPath, jsPath }) {
+	_printEnableOutput(name, id) {
+		this.ui.stdout.write(`Logic Function ${name}(${id}) is now enabled.${os.EOL}`);
+	}
+
+	_printDisableNewFilesOutput({ dirPath, jsonPath, jsPath }) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`The following files were overwritten after disabling the Logic Function:${os.EOL}`);
 		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
