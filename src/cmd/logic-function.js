@@ -48,9 +48,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			// We assume at least one trigger
 			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
 			this.ui.stdout.write(`	- ID: ${item.id}${os.EOL}`);
-			if (item.logic_triggers[0] && item.logic_triggers[0].type) {
-				this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
-			}
+			this.ui.stdout.write(`	- ${item.logic_triggers[0].type} based trigger ${os.EOL}`);
 		});
 		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
@@ -365,7 +363,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		logicConfigContent.logic_function.enabled = true;
 		logicConfigContent.logic_function.source.code = logicCodeContent;
 
-		const logicFuncNameDeployed = await this._validateLFName({ name});
+		const logicFuncNameDeployed = await this._validateLFName({ name });
 		if (logicFuncNameDeployed) {
 			try {
 				const confirm = await this._prompt({
@@ -523,7 +521,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const logicFunctionConfigData = data.logic_function;
 		delete logicFunctionConfigData.source.code;
 
-		return { logicFunctionConfigData: { "logic_function": logicFunctionConfigData }, logicFunctionCode };
+		return { logicFunctionConfigData: { 'logic_function': logicFunctionConfigData }, logicFunctionCode };
 	}
 
 	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {

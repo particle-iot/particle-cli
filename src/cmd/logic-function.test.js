@@ -735,11 +735,9 @@ describe('LogicFunctionCommands', () => {
 	describe('deploy', () => {
 
 		beforeEach(() => {
-
 		});
 
 		afterEach(() => {
-
 		});
 
 		it('deploys a new logic function', async() => {

@@ -274,7 +274,7 @@ module.exports = class ParticleApi {
 		}));
 	}
 
-	createLogicFunction({org, logicFunction}) {
+	createLogicFunction({ org, logicFunction }) {
 		return this._wrap(this.api.createLogicFunction({
 			auth: this.accessToken,
 			org,
