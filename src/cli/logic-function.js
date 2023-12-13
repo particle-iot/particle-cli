@@ -105,7 +105,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().updateStatus(args, true);
+			return new LogicFunctionsCmd().updateStatus(args, { enable: false });
 		}
 	});
 
@@ -124,7 +124,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().updateStatus(args, false);
+			return new LogicFunctionsCmd().updateStatus(args, { enable: true });
 		}
 	});
 

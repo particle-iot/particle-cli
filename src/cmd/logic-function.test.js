@@ -688,7 +688,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.updateStatus({ name: 'LF1' }, true);
+			await logicFunctionCommands.updateStatus({ name: 'LF1' }, { enable: false });
 
 			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -702,7 +702,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, true);
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: false });
 
 			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -716,13 +716,13 @@ describe('LogicFunctionCommands', () => {
 
 			let error;
 			try {
-				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, true);
+				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: false });
 			} catch (e) {
 				error = e;
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.contain('Error disabling Logic Function LF1');
+			expect(error.message).to.contain('Error updating Logic Function LF1');
 			expect(logicFunctionCommands._printDisableOutput).to.not.have.been.called;
 		});
 	});
@@ -821,7 +821,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printEnableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.updateStatus({ name: 'LF1' }, false);
+			await logicFunctionCommands.updateStatus({ name: 'LF1' }, { enable: true });
 
 			expect(logicFunctionCommands._printEnableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -835,7 +835,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printEnableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, false);
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: true });
 
 			expect(logicFunctionCommands._printEnableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -849,13 +849,13 @@ describe('LogicFunctionCommands', () => {
 
 			let error;
 			try {
-				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, false);
+				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: true });
 			} catch (e) {
 				error = e;
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.contain('Error disabling Logic Function LF1');
+			expect(error.message).to.contain('Error updating Logic Function LF1');
 			expect(logicFunctionCommands._printEnableOutput).to.not.have.been.called;
 		});
 	});
