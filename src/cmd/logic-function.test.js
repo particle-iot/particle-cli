@@ -733,22 +733,64 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('deploy', () => {
+		let logicFunctions = [];
+		logicFunctions.push(logicFunc1.logic_functions[0]);
 
 		beforeEach(() => {
+			logicFunctionCommands.logicFuncList = logicFunctions;
 		});
 
 		afterEach(() => {
 		});
 
 		it('deploys a new logic function', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions', 'POST')
+				.reply(200, { logic_function: logicFunc2.logic_functions[0] });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
+			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc2.logic_functions[0] }, logicCodeContent: logicFunc2.logic_functions[0].source.code });
+			sinon.stub(logicFunctionCommands, '_printDeployNewLFOutput').resolves({ });
+
+			await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
+
+			expect(logicFunctionCommands._prompt).to.have.property('callCount', 1);
+			expect(logicFunctionCommands.execute).to.have.been.calledOnce;
+			expect(logicFunctionCommands._printDeployNewLFOutput).to.have.been.calledOnce;
 
 		});
 
 		it('re-deploys an old logic function', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
+				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
+			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc1.logic_functions[0] }, logicCodeContent: logicFunc1.logic_functions[0].source.code });
+			sinon.stub(logicFunctionCommands, '_printDeployOutput').resolves({ });
 
+			await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
+
+			expect(logicFunctionCommands._prompt).to.have.property('callCount', 2);
+			expect(logicFunctionCommands.execute).to.have.been.calledOnce;
+			expect(logicFunctionCommands._printDeployOutput).to.have.been.calledOnce;
 		});
 
 		it('throws an error if deployement fails', async() => {
+			nock('https://api.particle.io/v1',)
+				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
+				.reply(500, { error: 'Error' });
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
+			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc1.logic_functions[0] }, logicCodeContent: logicFunc1.logic_functions[0].source.code });
+			sinon.stub(logicFunctionCommands, '_printDeployOutput').resolves({ });
+
+			let error;
+			try {
+				await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.contain('Error deploying Logic Function LF1');
 
 		});
 	});
