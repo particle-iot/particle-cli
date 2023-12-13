@@ -168,29 +168,27 @@ describe('LogicFunctionCommands', () => {
 			const data = { logic_function : logicFunc1.logic_functions[0] };
 			const logicFunctionCode = data.logic_function.source.code;
 			const logicFunctionConfigData = data.logic_function;
-			delete logicFunctionConfigData.source;
 			sinon.stub(logicFunctionCommands, '_validatePaths').resolves(true);
 			const name = 'LF1';
 			const slugName = slugify(name);
 
-			const { dirPath, jsonPath, jsPath } = await logicFunctionCommands._generateFiles({ logicFunctionConfigData, logicFunctionCode, name: 'LF1' });
+			const { jsonPath, jsPath } = await logicFunctionCommands._generateFiles({ logicFunctionConfigData, logicFunctionCode, name: 'LF1' });
 
-			expect(dirPath).to.eql(path.join(process.cwd(), slugName));
-			expect(jsonPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.logic.json`));
-			expect(jsPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.js`));
+			expect(jsonPath).to.eql(path.join(process.cwd(), `${slugName}.logic.json`));
+			expect(jsPath).to.eql(path.join(process.cwd(), `${slugName}.js`));
 
-			await fs.remove(dirPath);
+			await fs.remove(jsonPath);
+			await fs.remove(jsPath);
 		});
 	});
 
 	describe('_getLocalLFPathNames', async() => {
 		it('returns local file paths where the LF should be saved', () => {
 			const slugName = slugify('LF1');
-			const { dirPath, jsonPath, jsPath } = logicFunctionCommands._getLocalLFPathNames('LF1');
+			const { jsonPath, jsPath } = logicFunctionCommands._getLocalLFPathNames('LF1');
 
-			expect(dirPath).to.eql(path.join(process.cwd(), slugName));
-			expect(jsonPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.logic.json`));
-			expect(jsPath).to.eql(path.join(process.cwd(), slugName, `${slugName}.js`));
+			expect(jsonPath).to.eql(path.join(process.cwd(), `${slugName}.logic.json`));
+			expect(jsPath).to.eql(path.join(process.cwd(), `${slugName}.js`));
 		});
 	});
 
@@ -340,7 +338,7 @@ describe('LogicFunctionCommands', () => {
 
 			const paths = ['dir/', 'dir/path/to/file'];
 
-			const res = await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: sinon.stub() });
+			const res = await logicFunctionCommands._validatePaths({ jsonPath: paths[1], _exit: sinon.stub() });
 
 			expect(res).to.eql(false);
 
@@ -352,7 +350,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
 			const paths = ['dir/', 'dir/path/to/file'];
 
-			await logicFunctionCommands._validatePaths({ dirPath: paths[0], jsonPath: paths[1], _exit: exitStub });
+			await logicFunctionCommands._validatePaths({ jsonPath: paths[1], _exit: exitStub });
 
 			expect(logicFunctionCommands._promptOverwrite.callCount).to.eql(1);
 			expect(exitStub.callCount).to.eql(1);
@@ -741,6 +739,8 @@ describe('LogicFunctionCommands', () => {
 		});
 
 		afterEach(() => {
+			fs.rmSync('lf1', { recursive: true, force: true });
+			nock.cleanAll();
 		});
 
 		it('deploys a new logic function', async() => {
