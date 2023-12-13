@@ -57,7 +57,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'library search', 'library upload', 'library publish', 'library view',
 		'library', 'list', 'logic-function list', 'logic-function get',
 		'logic-function create', 'logic-function execute','logic-function deploy', 'logic-function disable',
-		'logic-function delete', 'logic-function enable', 'logic-function logs', 'logic-function',
+		'logic-function enable', 'logic-function delete', 'logic-function logs', 'logic-function',
 		'login', 'logout', 'monitor', 'nyan', 'preprocess',
 		'product device list', 'product device add', 'product device remove',
 		'product device', 'product', 'project create', 'project', 'publish',
