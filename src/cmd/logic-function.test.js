@@ -336,9 +336,7 @@ describe('LogicFunctionCommands', () => {
 		it('returns if paths do not exist', async () => {
 			sinon.stub(fs, 'pathExists').resolves(false);
 
-			const paths = ['dir/', 'dir/path/to/file'];
-
-			const res = await logicFunctionCommands._validatePaths({ jsonPath: paths[1], _exit: sinon.stub() });
+			const res = await logicFunctionCommands._validatePaths({ jsonPath: 'dir/path/to/file', _exit: sinon.stub() });
 
 			expect(res).to.eql(false);
 
@@ -348,9 +346,8 @@ describe('LogicFunctionCommands', () => {
 			const exitStub = sinon.stub();
 			sinon.stub(fs, 'pathExists').resolves(true);
 			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
-			const paths = ['dir/', 'dir/path/to/file'];
 
-			await logicFunctionCommands._validatePaths({ jsonPath: paths[1], _exit: exitStub });
+			await logicFunctionCommands._validatePaths({ jsonPath: 'dir/path/to/file', _exit: exitStub });
 
 			expect(logicFunctionCommands._promptOverwrite.callCount).to.eql(1);
 			expect(exitStub.callCount).to.eql(1);
