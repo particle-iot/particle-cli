@@ -860,5 +860,3 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 });
-
-});

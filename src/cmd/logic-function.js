@@ -459,7 +459,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`Logic Function ${name}(${id}) is now enabled.${os.EOL}`);
 	}
 
-	_printDisableNewFilesOutput({ dirPath, jsonPath, jsPath }) {
+	_printDisableNewFilesOutput({ jsonPath, jsPath }) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`The following files were overwritten after disabling the Logic Function:${os.EOL}`);
 		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
