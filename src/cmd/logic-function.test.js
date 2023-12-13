@@ -731,4 +731,27 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands._printDisableOutput).to.not.have.been.called;
 		});
 	});
+
+	describe('deploy', () => {
+
+		beforeEach(() => {
+
+		});
+
+		afterEach(() => {
+
+		});
+
+		it('deploys a new logic function', async() => {
+
+		});
+
+		it('re-deploys an old logic function', async() => {
+
+		});
+
+		it('throws an error if deployement fails', async() => {
+
+		});
+	});
 });
