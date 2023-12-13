@@ -408,7 +408,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 	}
 
-	async disable({ org, name, id }) {
+	async disable({ org, name, id }, status) {
 		this._setOrg(org);
 
 		await this._getLogicFunctionList();
@@ -416,7 +416,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
 		let logicFunctionJson = await this._getLogicFunctionData(id);
-		logicFunctionJson.logic_function.enabled = false;
+		logicFunctionJson.logic_function.enabled = status;
 
 		try {
 			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function });
