@@ -105,7 +105,26 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().disable(args);
+			return new LogicFunctionsCmd().updateStatus(args, { enable: false });
+		}
+	});
+
+	commandProcessor.createCommand(logicFunction, 'enable', 'Enables a logic function in the cloud', {
+		options: {
+			'org': {
+				description: 'Specify the organization',
+				hidden: true
+			},
+			'name': {
+				description: 'Name of the logic function'
+			},
+			'id': {
+				description: 'Id of the logic function'
+			}
+		},
+		handler: (args) => {
+			const LogicFunctionsCmd = require('../cmd/logic-function');
+			return new LogicFunctionsCmd().updateStatus(args, { enable: true });
 		}
 	});
 
