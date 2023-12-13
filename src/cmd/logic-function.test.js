@@ -688,7 +688,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.disable({ name: 'LF1' }, true);
+			await logicFunctionCommands.updateStatus({ name: 'LF1' }, true);
 
 			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -702,7 +702,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.disable({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, true);
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, true);
 
 			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -716,7 +716,7 @@ describe('LogicFunctionCommands', () => {
 
 			let error;
 			try {
-				await logicFunctionCommands.disable({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, true);
+				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, true);
 			} catch (e) {
 				error = e;
 			}
@@ -821,7 +821,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printEnableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.disable({ name: 'LF1' }, false);
+			await logicFunctionCommands.updateStatus({ name: 'LF1' }, false);
 
 			expect(logicFunctionCommands._printEnableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -835,7 +835,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_printEnableOutput').resolves({ });
 			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
 
-			await logicFunctionCommands.disable({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, false);
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, false);
 
 			expect(logicFunctionCommands._printEnableOutput).to.have.been.calledOnce;
 			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
@@ -849,7 +849,7 @@ describe('LogicFunctionCommands', () => {
 
 			let error;
 			try {
-				await logicFunctionCommands.disable({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, false);
+				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, false);
 			} catch (e) {
 				error = e;
 			}

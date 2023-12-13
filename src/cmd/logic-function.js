@@ -408,7 +408,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 	}
 
-	async disable({ org, name, id }, status) {
+	async updateStatus({ org, name, id }, status) {
 		this._setOrg(org);
 
 		await this._getLogicFunctionList();
@@ -426,7 +426,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				this._printEnableOutput(name, id);
 			}
 		} catch (err) {
-			throw new Error(`Error disabling Logic Function ${name}: ${err.message}`);
+			throw new Error(`Error updating Logic Function ${name}: ${err.message}`);
 		}
 
 		// Overwrite logic function if found locally since it is now disabled
