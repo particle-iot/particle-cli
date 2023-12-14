@@ -382,7 +382,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				const confirm = await this._prompt({
 					type: 'confirm',
 					name: 'proceed',
-					message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}. Proceed and overwrite with the new content?`,
+					message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
 					choices: Boolean
 				});
 
@@ -411,6 +411,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.cyanBright(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
@@ -419,6 +420,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name}`)} to ${getOrgName(this.org)}...${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.cyanBright(`Success! Logic Function ${this.ui.chalk.cyanBright(name)} deployed with ${this.ui.chalk.cyanBright(id)}`)}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
