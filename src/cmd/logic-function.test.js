@@ -7,6 +7,7 @@ const LogicFunctionCommands = require('./logic-function');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS, PATH_TMP_DIR } = require('../../test/lib/env');
 const templateProcessor = require('../lib/template-processor');
 const { slugify } = require('../lib/utilities');
+const LogicFunction = require('../lib/logic-function');
 
 describe('LogicFunctionCommands', () => {
 	let logicFunctionCommands;
@@ -29,10 +30,10 @@ describe('LogicFunctionCommands', () => {
 			chalk: {
 				bold: sinon.stub(),
 				cyanBright: sinon.stub(),
+				cyan: sinon.stub(),
 				yellow: sinon.stub(),
 				grey: sinon.stub(),
 				red: sinon.stub(),
-				cyan: sinon.stub()
 			},
 		};
 	});
@@ -55,6 +56,43 @@ describe('LogicFunctionCommands', () => {
 			expect(orgBeforeSetting).to.be.null;
 			expect(orgAfterSetting).to.eql('myOrg');
 		});
+	});
+
+	describe('list', () => {
+		it('lists logic functions in Sandbox account', async () => {
+			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
+			await logicFunctionCommands.list({});
+			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: undefined })).to.be.true;
+			expect(logicListStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`Logic Functions deployed in your Sandbox:${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`- LF1 (undefined)${os.EOL}`);
+		});
+
+		it('lists logic functions in an org', async () => {
+			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
+			await logicFunctionCommands.list({ org: 'particle' });
+			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: 'particle' })).to.be.true;
+			expect(logicListStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`Logic Functions deployed in particle:${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`- LF1 (undefined)${os.EOL}`);
+		});
+
+		it('shows help if no logic functions are found', async () => {
+			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves([]);
+			await logicFunctionCommands.list({});
+			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: undefined })).to.be.true;
+			expect(logicListStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`No Logic Functions deployed in your Sandbox.${os.EOL}`);
+		});
+
+		it('shows help if no logic functions are found', async () => {
+			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves([]);
+			await logicFunctionCommands.list({ api: logicFunctionCommands.api, org: 'particle' });
+			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: 'particle' })).to.be.true;
+			expect(logicListStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`No Logic Functions deployed in particle.${os.EOL}`);
+		});
+
 	});
 
 	describe('_getLogicFunctionList', () => {

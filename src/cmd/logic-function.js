@@ -7,6 +7,7 @@ const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
 const templateProcessor = require('../lib/template-processor');
 const { slugify } = require('../lib/utilities');
+const LogicFunction = require('../lib/logic-function');
 
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 const CLICommandBase = require('./base');
@@ -25,25 +26,23 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async list({ org }) {
 		this._setOrg(org);
-
-		await this._getLogicFunctionList();
-
-		if (this.logicFuncList === null || this.logicFuncList.length === 0) {
+		const logicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
+		if (!logicFunctions.length) {
 			this._printListHelperOutput();
 		} else {
-			this._printListOutput({ logicFunctionsList: this.logicFuncList });
+			this._printListOutput({ logicFunctionsList: logicFunctions });
 		}
 	}
 
 	_printListHelperOutput() {
-		this.ui.stdout.write(`No Logic Functions deployed in your ${getOrgName(this.org)}.${os.EOL}`);
+		this.ui.stdout.write(`No Logic Functions deployed in ${getOrgName(this.org)}.${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`To create a Logic Function, see ${this.ui.chalk.yellow('particle logic-function create')}.${os.EOL}`);
 		this.ui.stdout.write(`To download an existing Logic Function, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
 
 	_printListOutput({ logicFunctionsList }) {
-		this.ui.stdout.write(`Logic Functions deployed in your ${getOrgName(this.org)}:${os.EOL}`);
+		this.ui.stdout.write(`Logic Functions deployed in ${getOrgName(this.org)}:${os.EOL}`);
 		logicFunctionsList.forEach((item) => {
 			// We assume at least one trigger
 			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
