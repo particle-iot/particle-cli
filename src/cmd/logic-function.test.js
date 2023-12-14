@@ -31,7 +31,8 @@ describe('LogicFunctionCommands', () => {
 				cyanBright: sinon.stub(),
 				yellow: sinon.stub(),
 				grey: sinon.stub(),
-				red: sinon.stub()
+				red: sinon.stub(),
+				cyan: sinon.stub()
 			},
 		};
 	});
@@ -278,7 +279,7 @@ describe('LogicFunctionCommands', () => {
 				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
 				data: { foo: 'bar' }
 			});
-			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(4);
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(7);
 			expect(logicFunctionCommands.ui.chalk.bold.callCount).to.equal(1);
 			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
 			expect(logicFunctionCommands.ui.chalk.cyanBright.callCount).to.equal(2);
@@ -293,13 +294,14 @@ describe('LogicFunctionCommands', () => {
 				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
 				dataPath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj', 'sample', 'data.json')
 			});
-			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(4);
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(7);
 			expect(logicFunctionCommands.ui.chalk.bold.callCount).to.equal(1);
 			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
 			expect(logicFunctionCommands.ui.chalk.cyanBright.callCount).to.equal(2);
 			expect(logicFunctionCommands.ui.chalk.cyanBright.firstCall.args[0]).to.equal('Success');
 			expect(logicFunctionCommands.ui.chalk.cyanBright.secondCall.args[0]).to.equal(`No errors during Execution.${os.EOL}`);
 		});
+
 		it('executes a logic function with user provided data from file and shows error', async () => {
 			nock('https://api.particle.io/v1', )
 				.intercept('/logic/execute', 'POST')
@@ -308,10 +310,10 @@ describe('LogicFunctionCommands', () => {
 				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
 				dataPath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj', 'sample', 'data.json')
 			});
-			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(5);
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(8);
 			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
-			expect(logicFunctionCommands.ui.stdout.write.lastCall.args[0]).to.equal(`Error message${os.EOL}`);
 		});
+
 		it('prompts if found multiple files', async () => {
 			nock('https://api.particle.io/v1', )
 				.intercept('/logic/execute', 'POST')

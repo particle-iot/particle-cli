@@ -111,7 +111,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const destinationPath = path.join(logicFuncPath, slugName);
 
 		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold.cyan(name)} for ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.cyan(name)} for ${getOrgName(this.org)}...${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		const logicFuncNameDeployed = await this._validateLFName({ name });
 		if (logicFuncNameDeployed) {
@@ -125,7 +125,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			templatePath: logicFunctionTemplatePath,
 			destinationPath: path.join(logicFuncPath, slugName)
 		});
-		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold.cyan(name)} locally in ${this.ui.chalk.bold(logicFuncPath)}${os.EOL}`);
+		this.ui.stdout.write(`Successfully created ${this.ui.chalk.cyan(name)} locally in ${this.ui.chalk.bold(logicFuncPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
 		createdFiles.forEach((file) => {
@@ -409,7 +409,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async _printDeployOutput(name, id) {
 		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold.cyanBright(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.cyanBright(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
@@ -418,7 +418,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async _printDeployNewLFOutput(name, id) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name}`)} to ${getOrgName(this.org)}...${os.EOL}`);
-		this.ui.stdout.write(`${this.ui.chalk.cyanBright(`Success! Logic Function ${this.ui.chalk.bold.cyanBright(name)} deployed with ${this.ui.chalk.bold.cyanBright(id)}`)}${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.cyanBright(`Success! Logic Function ${this.ui.chalk.cyanBright(name)} deployed with ${this.ui.chalk.cyanBright(id)}`)}${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
