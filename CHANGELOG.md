@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.18.1 - Dec 14 2023
+
+* Dummy version same as 3.18.0
+
 # 3.18.0 - Dec 1 2023
 
 * Local flsher skips flashing assets which are already on the device
