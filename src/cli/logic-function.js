@@ -11,6 +11,9 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().list(args);
+		},
+		examples: {
+			'$0 $command': 'lists deployed Logic Functions'
 		}
 	});
 
@@ -31,6 +34,11 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().get(args);
+		},
+		examples: {
+			'$0 $command': 'downloads a Logic Function to your current directory',
+			'$0 $command --name <name>': 'downloads the Logic Function with the given name to your current directory',
+			'$0 $command --id <id>': 'downloads the Logic Function with the given ID to your current directory',
 		}
 	});
 
@@ -48,6 +56,10 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().create(args);
+		},
+		examples: {
+			'$0 $command': 'creates a new Logic Function',
+			'$0 $command --name <name>': 'creates a new Logic Function with the given name'
 		}
 	});
 
@@ -68,6 +80,10 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().execute(args);
+		},
+		examples: {
+			'$0 $command --data <data>': 'executes the local Logic Function with the data',
+			'$0 $command --dataPath <filePath>': 'executes the local Logic Function with the data from the file',
 		}
 	});
 
@@ -88,6 +104,10 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().deploy(args);
+		},
+		examples: {
+			'$0 $command --data <data>': 'executes and deploys a Logic Function. Executes using the data',
+			'$0 $command --dataPath <filePath>': 'executes and deploys a Logic Function. Executes using the data from the dataPath',
 		}
 	});
 
@@ -107,6 +127,11 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().updateStatus(args, { enable: false });
+		},
+		examples: {
+			'$0 $command': 'Disables a Logic Function',
+			'$0 $command --name <name>': 'Disables a Logic Function with the given name',
+			'$0 $command --id <id>': 'Disables a Logic Function with the given id',
 		}
 	});
 
@@ -126,6 +151,11 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().updateStatus(args, { enable: true });
+		},
+		examples: {
+			'$0 $command': 'Enables a Logic Function',
+			'$0 $command --name <name>': 'Enables a Logic Function with the given name',
+			'$0 $command --id <id>': 'Enables a Logic Function with the given id',
 		}
 	});
 
@@ -145,10 +175,15 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().delete(args);
+		},
+		examples: {
+			'$0 $command': 'Deletes a Logic Function',
+			'$0 $command --name <name>': 'Deletes a Logic Function with the given name',
+			'$0 $command --id <id>': 'Deletes a Logic Function with the given id',
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'logs', 'Deletes a logic function from the cloud', {
+	commandProcessor.createCommand(logicFunction, 'logs', 'Shows logs from a Logic Function', {
 		options: {
 			'org': {
 				description: 'Specify the organization',
@@ -167,6 +202,12 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
 			return new LogicFunctionsCmd().logs(args);
+		},
+		examples: {
+			'$0 $command': 'Shows logs from a Logic Function',
+			'$0 $command --name <name>': 'Shows logs from a Logic Function with the given name',
+			'$0 $command --id <id>': 'Shows logs from a Logic Function with the given id',
+			'$0 $command --name <name> --saveTo /path/to/file.txt': 'Downloads logs from a Logic Function with the given name to the path',
 		}
 	});
 
