@@ -4,6 +4,7 @@ const fs = require('fs-extra');
 const { PATH_TMP_DIR, USERNAME, PATH_FIXTURES_LOGIC_FUNCTIONS } = require('../lib/env');
 const path = require('path');
 const { delay } = require('../lib/mocha-utils');
+// const os = require('os');
 
 describe('Logic Function Commands', () => {
 	const help = [
@@ -110,6 +111,17 @@ describe('Logic Function Commands', () => {
 	});
 
 	xit('Creates a blank Logic Function locally', async () => {
+		// const subpr = cli.run(['lf', 'create', '--name', 'newLF']);
+		//
+		// await delay(2000);
+		// subpr.stdin.write('desc');
+		// subpr.stdin.end(os.EOL);
+		//
+		// const { stdout, stderr, exitCode } = await subpr;
+		//
+		// expect(stdout).to.equal('Created blank Logic Function MyLF in your Sandbox.');
+		// expect(stderr).to.equal('');
+		// expect(exitCode).to.equal(0);
 	});
 
 	it('Executes a Logic Function', async () => {
