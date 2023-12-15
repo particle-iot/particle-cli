@@ -52,6 +52,11 @@ module.exports = ({ commandProcessor, root }) => {
 			'name': {
 				description: 'Name of the logic function'
 			},
+			'force': {
+				boolean: true,
+				default: true,
+				description: 'Overwrites all the prompts',
+			}
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
@@ -100,6 +105,11 @@ module.exports = ({ commandProcessor, root }) => {
 			'dataPath': {
 				description: 'Sample test data file to verify the logic function'
 			},
+			'force': {
+				boolean: true,
+				default: true,
+				description: 'Overwrites all the prompts',
+			}
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
@@ -170,6 +180,11 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'id': {
 				description: 'Id of the logic function'
+			},
+			'force': {
+				boolean: true,
+				default: true,
+				description: 'Overwrites all the prompts',
 			}
 		},
 		handler: (args) => {

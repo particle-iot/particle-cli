@@ -4,9 +4,11 @@ const fs = require('fs-extra');
 const { PATH_TMP_DIR, USERNAME, PATH_FIXTURES_LOGIC_FUNCTIONS } = require('../lib/env');
 const path = require('path');
 const { delay } = require('../lib/mocha-utils');
-// const os = require('os');
+const os = require('os');
 
 describe('Logic Function Commands', () => {
+	let id;
+
 	const help = [
 		'Create, execute, and deploy logic functions',
 		'Usage: particle logic-function <command>',
@@ -45,6 +47,23 @@ describe('Logic Function Commands', () => {
 		'Refer to particle logic-function execute and particle logic-function deploy for more information.'
 	];
 
+	const createOutput = [
+		'Creating Logic Function newLF for your Sandbox...',
+		'',
+		'Successfully created newLF locally in .',
+		'',
+		'Files created:',
+		'- newlf/@types/particle_core.d.ts',
+		'- newlf/@types/particle_encoding.d.ts',
+		'- newlf/newlf.js',
+		'- newlf/newlf.logic.json',
+		'',
+		'Guidelines for creating your Logic Function can be found here <TBD>.',
+		'Once you have written your Logic Function, run',
+		'- \'particle logic-function execute\' to run your Function',
+		'- \'particle logic-function deploy\' to deploy your new changes',
+	];
+
 	const executeOutput = [
 		'Executing Logic Function code.js for your Sandbox...',
 		'',
@@ -52,6 +71,21 @@ describe('Logic Function Commands', () => {
 		'Logs from Execution:',
 		'',
 		'No errors during Execution.'
+	];
+
+	const deployOutput = [
+		'Executing Logic Function code.js for your Sandbox...',
+		'',
+		'Execution Status: Success',
+		'Logs from Execution:',
+		'',
+		'No errors during Execution.',
+		'',
+		'',
+		// 'Deploying Logic Function lf3 to your Sandbox...',
+		// 'Success! Logic Function name deployed with ID: bbd75c65-0db2-44bd-9d35-8ce6db9885e3',
+		'',
+		'Visit \'console.particle.io\' to view results from your device(s)!',
 	];
 
 	before(async () => {
@@ -64,6 +98,8 @@ describe('Logic Function Commands', () => {
 		await cli.setDefaultProfile();
 		await fs.remove(path.join(PATH_TMP_DIR, 'mylf.js'));
 		await fs.remove(path.join(PATH_TMP_DIR, 'mylf.logic.json'));
+		// FIXME
+		await fs.remove(path.join(process.cwd(), 'a'));
 	});
 
 	it('Shows `help` content', async () => {
@@ -110,22 +146,18 @@ describe('Logic Function Commands', () => {
 		await fs.remove(path.join(PATH_TMP_DIR, 'mylf.logic.json'));
 	});
 
-	xit('Creates a blank Logic Function locally', async () => {
-		// const subpr = cli.run(['lf', 'create', '--name', 'newLF']);
-		//
-		// await delay(2000);
-		// subpr.stdin.write('desc');
-		// subpr.stdin.end(os.EOL);
-		//
-		// const { stdout, stderr, exitCode } = await subpr;
-		//
-		// expect(stdout).to.equal('Created blank Logic Function MyLF in your Sandbox.');
-		// expect(stderr).to.equal('');
-		// expect(exitCode).to.equal(0);
+	it('Creates a blank Logic Function locally', async () => {
+		// remove if exists
+		await fs.remove(path.join(PATH_TMP_DIR, 'newlf'));
+
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'create', '--name', 'newLF', '--force']);
+
+		expect(stdout.split('\n')).to.include.members(createOutput);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
 	});
 
 	it('Executes a Logic Function', async () => {
-
 		const { stdout, stderr, exitCode } = await cli.run(['lf', 'execute', '--data', '1234', path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj')]);
 
 		expect(stdout.split('\n')).to.include.members(executeOutput);
@@ -133,29 +165,52 @@ describe('Logic Function Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	xit('Deploys a new Logic Function', async () => {
+	it('Deploys a new Logic Function', async () => {
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'deploy', '--data', '1234', path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj'), '--force']);
+
+		stdout.split('\n').forEach((line) => {
+			if (line.includes('Success!')) {
+				id = line.split('ID: ')[1];
+			}
+		});
+
+		expect(stdout.split('\n')).to.include.members(deployOutput);
+		expect(stdout).to.contain('Success');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
 	});
 
-	xit('Re-deploys a Logic Function', async () => {
+	it('Re-deploys a Logic Function', async () => {
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'deploy', '--data', '1234', path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj'), '--force']);
+
+		expect(stdout.split('\n')).to.include.members(deployOutput);
+		expect(stdout).to.contain('Success');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
 	});
 
 	it('Disables a Logic Function', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'disable', '--name', 'MyLF']);
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'disable', '--id', id]);
 
-		expect(stdout).to.equal('Logic Function MyLF (0021e8f4-64ee-416d-83f3-898aa909fb1b) is now disabled.');
+		expect(stdout).to.equal(`Logic Function lf3 (${id}) is now disabled.`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
 
 	it('Enables a Logic Function', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'enable', '--name', 'MyLF']);
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'enable', '--id', id]);
 
-		expect(stdout).to.equal('Logic Function MyLF (0021e8f4-64ee-416d-83f3-898aa909fb1b) is now enabled.');
+		expect(stdout).to.equal(`Logic Function lf3 (${id}) is now enabled.`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
 
-	xit('Deletes a Logic Function', async () => {
+	it('Deletes a Logic Function', async () => {
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'delete', '--id', id, '--force']);
+
+		expect(stdout).to.contain('has been successfully deleted.');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
 	});
 });
 

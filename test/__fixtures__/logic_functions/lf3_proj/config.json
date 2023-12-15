@@ -1,7 +1,7 @@
 {
   "$schema": "schemas/logic_function.schema.json",
   "logic_function": {
-    "name": "my logic function",
+    "name": "lf3",
     "description": "my description",
     "source": {
       "type": "JavaScript"
@@ -10,7 +10,7 @@
     "logic_triggers": [{
       "type": "Event",
       "event_name": "Name of the event",
-      "product_id": 5,
+      "product_id": 18552,
       "enabled": true
     }]
   }
