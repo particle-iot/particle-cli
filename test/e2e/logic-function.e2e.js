@@ -1,10 +1,8 @@
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const fs = require('fs-extra');
-const { PATH_TMP_DIR, USERNAME, PATH_FIXTURES_LOGIC_FUNCTIONS } = require('../lib/env');
+const { PATH_TMP_DIR, PATH_FIXTURES_LOGIC_FUNCTIONS } = require('../lib/env');
 const path = require('path');
-const { delay } = require('../lib/mocha-utils');
-const os = require('os');
 
 describe('Logic Function Commands', () => {
 	let id;
