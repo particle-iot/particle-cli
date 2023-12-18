@@ -15,6 +15,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(logicFunction, 'get', 'Downloads the logic function', {
+		params: '[filepath]',
 		options: {
 			'org': {
 				description: 'Specify the organization',
