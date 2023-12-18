@@ -95,6 +95,75 @@ describe('LogicFunctionCommands', () => {
 
 	});
 
+	describe('get', () => {
+		let lf;
+
+		beforeEach(() => {
+			lf = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+			});
+			lf.fileNames = {
+				source: 'code.js',
+				configuration: 'config.json'
+			};
+		});
+
+		it('gets a logic function with an specific name from Sandbox account', async () => {
+			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
+			lf.saveToDisk = sinon.stub().resolves(true);
+			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
+			await logicFunctionCommands.get({ name: 'LF1', params: {} });
+			expect(logicGetStub.calledWith({ org: undefined, id: undefined, name: 'LF1', list: logicFunc1.logic_functions })).to.be.true;
+			expect(logicGetStub.calledOnce).to.be.true;
+			expect(lf.saveToDisk.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.source}${os.EOL}`);
+		});
+		it('gets a logic function with an specific id from Sandbox account', async () => {
+			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
+			lf.saveToDisk = sinon.stub().resolves(true);
+			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
+			await logicFunctionCommands.get({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', params: {} });
+			expect(logicGetStub.calledWith({ org: undefined, id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', name: undefined, list: logicFunc1.logic_functions })).to.be.true;
+			expect(logicGetStub.calledOnce).to.be.true;
+			expect(lf.saveToDisk.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.source}${os.EOL}`);
+
+		});
+		it('shows error if logic function is not found', async () => {
+			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').rejects(new Error('Logic function not found'));
+			lf.saveToDisk = sinon.stub().resolves(true);
+			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
+			let error;
+			try {
+				await logicFunctionCommands.get({ name: 'LF3', params: {} });
+			} catch (e) {
+				error = e;
+			}
+			expect(logicGetStub.calledWith({ org: undefined, id: undefined, name: 'LF3', list: logicFunc1.logic_functions })).to.be.true;
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Logic function not found');
+		});
+
+		it('gets a logic function with an specific name from an org', async () => {
+			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
+			lf.saveToDisk = sinon.stub().resolves(true);
+			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
+			await logicFunctionCommands.get({ name: 'LF1', org: 'particle', params: {} });
+			expect(logicGetStub.calledWith({ org: 'particle', id: undefined, name: 'LF1', list: logicFunc1.logic_functions })).to.be.true;
+			expect(logicGetStub.calledOnce).to.be.true;
+			expect(lf.saveToDisk.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.source}${os.EOL}`);
+		});
+	});
+
 	describe('_getLogicFunctionList', () => {
 		it('lists logic functions in Sandbox', async () => {
 			nock('https://api.particle.io/v1', )
@@ -207,7 +276,7 @@ describe('LogicFunctionCommands', () => {
 			const data = { logic_function : logicFunc1.logic_functions[0] };
 			const logicFunctionCode = data.logic_function.source.code;
 			const logicFunctionConfigData = data.logic_function;
-			sinon.stub(logicFunctionCommands, '_validatePaths').resolves(true);
+			sinon.stub(logicFunctionCommands, '_confirmOverwriteIfNeeded').resolves(true);
 			const name = 'LF1';
 			const slugName = slugify(name);
 
@@ -376,7 +445,10 @@ describe('LogicFunctionCommands', () => {
 		it('returns if paths do not exist', async () => {
 			sinon.stub(fs, 'pathExists').resolves(false);
 
-			const res = await logicFunctionCommands._validatePaths({ jsonPath: 'dir/path/to/file', _exit: sinon.stub() });
+			const res = await logicFunctionCommands._confirmOverwriteIfNeeded({
+				filePaths: ['dir/path/to/file'],
+				_exit: sinon.stub()
+			});
 
 			expect(res).to.eql(false);
 
@@ -387,7 +459,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(fs, 'pathExists').resolves(true);
 			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(false);
 
-			await logicFunctionCommands._validatePaths({ jsonPath: 'dir/path/to/file', _exit: exitStub });
+			await logicFunctionCommands._confirmOverwriteIfNeeded({ filePaths: ['dir/path/to/file'], _exit: exitStub });
 
 			expect(logicFunctionCommands._promptOverwrite.callCount).to.eql(1);
 			expect(exitStub.callCount).to.eql(1);
@@ -398,7 +470,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.stub(logicFunctionCommands, '_promptOverwrite').resolves(true);
 			const paths = ['dir/', 'dir/path/to/file'];
 
-			const res = await logicFunctionCommands._validatePaths({ paths });
+			const res = await logicFunctionCommands._confirmOverwriteIfNeeded({ filePaths: paths });
 
 			expect(res).to.eql(true);
 
@@ -555,14 +627,14 @@ describe('LogicFunctionCommands', () => {
 
 	});
 
-	describe('_selectLogicFunction', () => {
+	describe('_selectLogicFunctionName', () => {
 		it('selects logic function from a list', async () => {
 			const logicFunctions = ['logicFunc1', 'logicFunc2'];
 			const selectedLF = 'logicFunc2';
 			const promptStub = sinon.stub(logicFunctionCommands, '_prompt');
 			promptStub.resolves({ logic_function: selectedLF });
 
-			const res = await logicFunctionCommands._selectLogicFunction(logicFunctions);
+			const res = await logicFunctionCommands._selectLogicFunctionName(logicFunctions);
 
 			expect(res).to.eql(selectedLF);
 			sinon.assert.calledOnceWithExactly(promptStub, {
@@ -579,7 +651,7 @@ describe('LogicFunctionCommands', () => {
 
 			let error;
 			try {
-				await logicFunctionCommands._selectLogicFunction(logicFunctions);
+				await logicFunctionCommands._selectLogicFunctionName(logicFunctions);
 			} catch (_e) {
 				error = _e;
 			}

@@ -52,20 +52,24 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${os.EOL}To view a Logic Function's code, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
 
-	async get({ org, name, id }) {
+	async get({ org, name, id, params : { filepath } } = { params: { } }) {
 		this._setOrg(org);
+		const logicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
+		if (!name && !id) {
+			name = await this._selectLogicFunctionName(logicFunctions);
+		}
+		const logicFunction = await LogicFunction.getByIdOrName({ org, id, name, list: logicFunctions });
+		logicFunction.path = filepath;
 
-		await this._getLogicFunctionList();
-
-		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
-
-		const logicFunctionData = await this._getLogicFunctionData(id);
-
-		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
-
-		const { jsonPath, jsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
-
-		this._printGetOutput({ jsonPath, jsPath });
+		// check if the files already exists
+		await this._confirmOverwriteIfNeeded({
+			filePaths: [logicFunction.configurationPath, logicFunction.sourcePath],
+		});
+		await logicFunction.saveToDisk();
+		this._printGetOutput({
+			jsonPath: logicFunction.configurationPath,
+			jsPath: logicFunction.sourcePath
+		});
 		this._printGetHelperOutput();
 	}
 
@@ -168,9 +172,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	// Prompts the user to overwrite if any files exist
 	// If user says no, we exit the process
-	async _validatePaths({ jsonPath, jsPath, _exit = () => process.exit(0) }) {
+	async _confirmOverwriteIfNeeded({ filePaths, _exit = () => process.exit(0) }) {
 		let exists = false;
-		const pathsToCheck = [jsonPath, jsPath];
+		const pathsToCheck = filePaths;
 		for (const p of pathsToCheck) {
 			if (await fs.pathExists(p)) {
 				exists = true;
@@ -452,7 +456,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async _overwriteIfLFExistsLocally(name, id) {
 		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
-		const exist = await this._validatePaths({ jsonPath, jsPath });
+		const exist = await this._confirmOverwriteIfNeeded({ filePaths: { jsonPath, jsPath } });
 
 		if (!exist) {
 			return;
@@ -551,7 +555,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
 		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
-		await this._validatePaths({ jsonPath, jsPath });
+		await this._confirmOverwriteIfNeeded({ filePaths: { jsonPath, jsPath } });
 
 		await fs.writeFile(jsonPath, JSON.stringify(logicFunctionConfigData, null, 2));
 		await fs.writeFile(jsPath, logicFunctionCode);
@@ -569,7 +573,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async _getLogicFunctionIdAndName(name, id) {
 		if (!id && !name) {
-			name = await this._selectLogicFunction(this.logicFuncList);
+			name = await this._selectLogicFunctionName(this.logicFuncList);
 			id = this._getIdFromName(name, this.logicFuncList);
 		} else if (!id && name) {
 			id = this._getIdFromName(name, this.logicFuncList);
@@ -580,8 +584,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return { name, id };
 	}
 
-	async _selectLogicFunction(list) {
+	async _selectLogicFunctionName(list) {
 		if (list.length === 0) {
+			this._printListHelperOutput();
 			throw new Error('No logic functions found');
 		}
 		const answer = await this._prompt({
