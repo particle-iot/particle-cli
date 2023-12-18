@@ -105,7 +105,7 @@ describe('LogicFunctionCommands', () => {
 				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
 			});
 			lf.fileNames = {
-				source: 'code.js',
+				sourceCode: 'code.js',
 				configuration: 'config.json'
 			};
 		});
@@ -120,7 +120,7 @@ describe('LogicFunctionCommands', () => {
 			expect(lf.saveToDisk.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
 			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.source}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.sourceCode}${os.EOL}`);
 		});
 		it('gets a logic function with an specific id from Sandbox account', async () => {
 			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
@@ -132,7 +132,7 @@ describe('LogicFunctionCommands', () => {
 			expect(lf.saveToDisk.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
 			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.source}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.sourceCode}${os.EOL}`);
 
 		});
 		it('shows error if logic function is not found', async () => {
@@ -160,7 +160,7 @@ describe('LogicFunctionCommands', () => {
 			expect(lf.saveToDisk.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
 			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.source}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.sourceCode}${os.EOL}`);
 		});
 	});
 
