@@ -46,16 +46,6 @@ class LogicFunction {
 		}
 	}
 
-	static async listFromDisk({ path }) {
-		// TODO - implement
-		throw new Error(`Not implemented yet for ${path}`);
-	}
-
-	static async loadFromDisk({ fileName }) {
-		// TODO - implement
-		throw new Error(`Not implemented yet for ${fileName}`);
-	}
-
 	// should return an instance of LogicFunction
 	static async getByIdOrName({ id, name, list }) {
 		const logicFunctionData = list.find(lf => lf.id === id || lf.name === name);
@@ -63,6 +53,10 @@ class LogicFunction {
 			throw new Error('Logic function not found');
 		}
 		return logicFunctionData;
+	}
+
+	async initFromTemplate({ templatePath }) {
+		throw new Error('Not implemented yet');
 	}
 
 	get configurationPath () {
