@@ -5,6 +5,7 @@ const settings = require('../../settings');
 const VError = require('verror');
 const { normalizedApiError } = require('./api-client');
 const { slugify } = require('./utilities');
+const templateProcessor = require('./template-processor');
 
 class LogicFunction {
 	constructor({ org, name, id, description, source, enabled, _path, version, triggers, api = createAPI() }) {
@@ -56,7 +57,29 @@ class LogicFunction {
 	}
 
 	async initFromTemplate({ templatePath }) {
-		throw new Error('Not implemented yet');
+		const contentReplacements = {
+			name: this.name,
+			description: this.description
+		};
+		const fileNameReplacements = [
+			{ template: 'logic_function_name', fileName: slugify(this.name) },
+		];
+
+		const files = await templateProcessor.loadTemplateFiles({
+			templatePath,
+			contentReplacements,
+			fileNameReplacements
+		});
+		// remove the template path from the file names so that they are relative to the logic function path
+		files.forEach(file => {
+			file.fileName = file.fileName.replace(templatePath, '');
+		});
+
+		// put the data into the logic function
+		const sourceCode = files.find(file => file.fileName.includes(this.fileNames.sourceCode));
+		this.source.code = sourceCode.content;
+		const configuration = files.find(file => file.fileName.includes(this.fileNames.configuration));
+		this._deserializeConfiguration(configuration.content);
 	}
 
 	get configurationPath () {
@@ -88,16 +111,29 @@ class LogicFunction {
 
 	_toJSONString(){
 		return JSON.stringify({
-			id: this.id,
-			name: this.name,
-			description: this.description,
-			version: this.version,
-			enabled: this.enabled,
-			source: {
-				type: this.source.type,
-			},
-			logic_triggers: this.triggers
+			logic_function: {
+				id: this.id,
+				name: this.name,
+				description: this.description,
+				version: this.version,
+				enabled: this.enabled,
+				source: {
+					type: this.source.type,
+				},
+				logic_triggers: this.triggers
+			}
 		}, null, 2);
+	}
+
+	_deserializeConfiguration(json){
+		const { logic_function: data } = JSON.parse(json);
+		this.id = data.id;
+		this.name = data.name;
+		this.description = data.description;
+		this.version = data.version;
+		this.enabled = data.enabled;
+		this.source.type = data.source.type;
+		this.triggers = data.logic_triggers;
 	}
 }
 
