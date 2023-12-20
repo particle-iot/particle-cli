@@ -64,6 +64,7 @@ describe('LogicFunction', () => {
 		});
 		it('returns a logic function by name', async () => {
 			const logicFunctions = [new LogicFunction(logicFunc1.logic_functions[0])];
+			logicFunctions[0].files.sourceCode.content = logicFunc1.logic_functions[0].source.code;
 			const logicFunction = await LogicFunction.getByIdOrName({ name: 'LF1', list: logicFunctions });
 			const expectedLogicFunction = {
 				name: 'LF1',
@@ -71,14 +72,18 @@ describe('LogicFunction', () => {
 				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
 				enabled: true,
 				triggers: [],
-				source: {
-					type: 'JavaScript',
-					code: 'import Particle from \'particle:core\';\nexport default function main({ event }) {\n   Particle.publish(\'logic-publish\', event.eventData, { productId: 18552 });\n}'
+				type: 'JavaScript',
+				files: {
+					sourceCode: {
+						name: 'lf1.js',
+						content: 'import Particle from \'particle:core\';\nexport default function main({ event }) {\n   Particle.publish(\'logic-publish\', event.eventData, { productId: 18552 });\n}'
+					},
+					configuration: {
+						name: 'lf1.logic.json',
+						content: ''
+					},
+					types:[]
 				},
-				fileNames: {
-					sourceCode: 'lf1.js',
-					configuration: 'lf1.logic.json'
-				}
 			};
 			Object.keys(expectedLogicFunction).forEach(key => {
 				expect(logicFunction).to.have.property(key);
@@ -104,7 +109,7 @@ describe('LogicFunction', () => {
 			// check if the source code is correct
 			const sourceCodeFile = await fs.readFile(path.join(logicFunction.path, 'lf1.js'));
 			const sourceCode = sourceCodeFile.toString();
-			expect(sourceCode).to.equal(logicFunction.source.code);
+			expect(sourceCode).to.equal(logicFunction.files.sourceCode.content);
 		});
 	});
 	describe('initFromTemplate', () => {
