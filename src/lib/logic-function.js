@@ -89,6 +89,13 @@ class LogicFunction {
 		const configuration = files.find(file => file.fileName.includes(this.files.configuration.name));
 		this.files.configuration.name = configuration.fileName;
 		this.files.configuration.content = configuration.content;
+		// add types
+		this.files.types = files.filter(file => file.fileName.includes('@types')).map(file => {
+			return {
+				name: file.fileName,
+				content: file.content
+			};
+		});
 		this._deserializeConfiguration();
 	}
 
@@ -117,6 +124,12 @@ class LogicFunction {
 		await fs.writeFile(this.configurationPath, configuration);
 		// save the source code to disk
 		await fs.writeFile(this.sourcePath, this.files.sourceCode.content);
+		// save the types
+		for (const type of this.files.types) {
+			const dirPath = path.join(this.path, path.dirname(type.name));
+			fs.ensureDirSync(dirPath);
+			await fs.writeFile(path.join(dirPath, path.basename(type.name)), type.content);
+		}
 	}
 
 	_toJSONString(){

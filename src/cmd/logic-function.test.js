@@ -110,9 +110,9 @@ describe('LogicFunctionCommands', () => {
 				description: 'Logic Function 1',
 				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
 			});
-			lf.fileNames = {
-				sourceCode: 'code.js',
-				configuration: 'config.json'
+			lf.files = {
+				sourceCode: { name: 'code.js' },
+				configuration: { name:'config.json' }
 			};
 		});
 
@@ -125,8 +125,8 @@ describe('LogicFunctionCommands', () => {
 			expect(logicGetStub.calledOnce).to.be.true;
 			expect(lf.saveToDisk.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.sourceCode}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.files.configuration.name}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.files.sourceCode.name}${os.EOL}`);
 		});
 		it('gets a logic function with an specific id from Sandbox account', async () => {
 			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
@@ -137,8 +137,8 @@ describe('LogicFunctionCommands', () => {
 			expect(logicGetStub.calledOnce).to.be.true;
 			expect(lf.saveToDisk.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.sourceCode}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.files.configuration.name}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.files.sourceCode.name}${os.EOL}`);
 
 		});
 		it('shows error if logic function is not found', async () => {
@@ -165,8 +165,8 @@ describe('LogicFunctionCommands', () => {
 			expect(logicGetStub.calledOnce).to.be.true;
 			expect(lf.saveToDisk.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.fileNames.configuration}${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.fileNames.sourceCode}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(2).args[0]).to.equal(` - ${lf.files.configuration.name}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.getCall(3).args[0]).to.equal(` - ${lf.files.sourceCode.name}${os.EOL}`);
 		});
 	});
 
