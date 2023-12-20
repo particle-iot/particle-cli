@@ -1,50 +1,55 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-
-
-async function copyAndReplaceTemplate({ fileNameReplacements, file, templatePath, destinationPath, replacements }) {
-	// ensure destination path exists
-	await fs.ensureDir(destinationPath);
-	const templateFile = path.join(templatePath, file);
-	const fileName = replace(file, fileNameReplacements, { stringMatch: true }).replace('.template', '');
-	const destinationFile = path.join(destinationPath, fileName);
-	const templateContent = await fs.readFile(templateFile, 'utf8');
-	const destinationContent = replace(templateContent, replacements);
-	await fs.writeFile(destinationFile, destinationContent);
-	return destinationFile;
-}
-
-// FIXME (hmontero): Stop working after file naming changes
-async function hasTemplateFiles({ templatePath, destinationPath }){
-	const files = await fs.readdir(templatePath);
-	for (const file of files){
-		const fileName = file.replace('.template', '');
-		const destinationFile = path.join(destinationPath, fileName);
-		try {
-			await fs.stat(destinationFile);
-			return true; // File exists in the destination path
-		} catch (error) {
-			// File doesn't exist, continue checking other files
+async function loadTemplateFiles({ templatePath, contentReplacements, fileNameReplacements }){
+	if (!await fs.pathExists(templatePath)){
+		throw new Error('Template not found');
+	}
+	const templateFiles = await fs.readdir(templatePath);
+	const files = [];
+	for (const file of templateFiles){
+		const filePath = path.join(templatePath, file);
+		const stats = await fs.stat(filePath);
+		if (stats.isDirectory()){
+			const subFiles = await loadTemplateFiles({ templatePath: filePath, contentReplacements, fileNameReplacements });
+			files.push(...subFiles);
+		} else {
+			const file = await copyTemplateToString({ filePath, contentReplacements, fileNameReplacements });
+			files.push(file);
 		}
 	}
-	return false;
+	return files;
 }
 
-function replace(content, replacements, options = { stringMatch: false }){
+async function copyTemplateToString({ filePath, contentReplacements, fileNameReplacements }) {
+	// open the file
+	const file = await fs.readFile(filePath, 'utf8');
+	// replace the content
+	const content = replace(file, contentReplacements);
+	// replace the file name
+	let fileName = filePath.replace('.template', '');
+	const replacement = fileNameReplacements.find((replacement) => {
+		return fileName.includes(replacement.template);
+	});
+
+	if (replacement){
+		fileName = fileName.replace(replacement.template, replacement.fileName);
+	}
+	return {
+		fileName: fileName,
+		content: content
+	};
+}
+
+function replace(content, replacements){
 	let result = content;
 	for (const key in replacements){
 		const value = replacements[key];
-		if (options.stringMatch){
-			result = result.replace(key, value);
-		} else {
-			result = result.replace(new RegExp(`\\$\{${key}}`, 'g'), value);
-		}
+		result = result.replace(new RegExp(`\\$\{${key}}`, 'g'), value);
 	}
 	return result;
 }
 
 module.exports = {
-	copyAndReplaceTemplate,
-	hasTemplateFiles
+	loadTemplateFiles
 };
