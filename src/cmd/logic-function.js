@@ -128,8 +128,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				name: 'name',
 				message: 'What would you like to call your Function?'
 			});
+			if (!result.name) {
+				throw new Error('Please provide a name for the Logic Function');
+			}
 			name = result.name;
 		}
+
 		if (!_description) {
 			const result = await this._prompt({
 				type: 'input',
@@ -138,6 +142,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			});
 			description = result.description;
 		}
+
 		return {
 			name: name.trim(),
 			description: description.trim()
