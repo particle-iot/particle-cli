@@ -7,6 +7,7 @@ const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
 const templateProcessor = require('../lib/template-processor');
 const { slugify } = require('../lib/utilities');
+const LogicFunction = require('../lib/logic-function');
 
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 const CLICommandBase = require('./base');
@@ -25,25 +26,23 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async list({ org }) {
 		this._setOrg(org);
-
-		await this._getLogicFunctionList();
-
-		if (this.logicFuncList === null || this.logicFuncList.length === 0) {
+		const logicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
+		if (!logicFunctions.length) {
 			this._printListHelperOutput();
 		} else {
-			this._printListOutput({ logicFunctionsList: this.logicFuncList });
+			this._printListOutput({ logicFunctionsList: logicFunctions });
 		}
 	}
 
 	_printListHelperOutput() {
-		this.ui.stdout.write(`No Logic Functions deployed in your ${getOrgName(this.org)}.${os.EOL}`);
+		this.ui.stdout.write(`No Logic Functions deployed in ${getOrgName(this.org)}.${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`To create a Logic Function, see ${this.ui.chalk.yellow('particle logic-function create')}.${os.EOL}`);
 		this.ui.stdout.write(`To download an existing Logic Function, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
 	}
 
 	_printListOutput({ logicFunctionsList }) {
-		this.ui.stdout.write(`Logic Functions deployed in your ${getOrgName(this.org)}:${os.EOL}`);
+		this.ui.stdout.write(`Logic Functions deployed in ${getOrgName(this.org)}:${os.EOL}`);
 		logicFunctionsList.forEach((item) => {
 			// We assume at least one trigger
 			this.ui.stdout.write(`- ${item.name} (${item.enabled ? this.ui.chalk.cyanBright('enabled') : this.ui.chalk.cyan('disabled')})${os.EOL}`);
@@ -110,7 +109,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const slugName = slugify(name);
 		const destinationPath = path.join(logicFuncPath, slugName);
 
-		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.bold(name)} for ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.cyan(name)} for ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 		const logicFuncNameDeployed = await this._validateLFName({ name });
 		if (logicFuncNameDeployed) {
 			throw new Error(`Logic Function ${name} already exists in ${getOrgName(this.org)}. Use a new name for your Logic Function.`);
@@ -123,15 +124,17 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			templatePath: logicFunctionTemplatePath,
 			destinationPath: path.join(logicFuncPath, slugName)
 		});
-		this.ui.stdout.write(`Successfully created ${this.ui.chalk.bold(name)} in ${this.ui.chalk.bold(logicFuncPath)}${os.EOL}`);
+		this.ui.stdout.write(`Successfully created ${this.ui.chalk.cyan(name)} locally in ${this.ui.chalk.bold(logicFuncPath)}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
 		createdFiles.forEach((file) => {
 			this.ui.stdout.write(`- ${file}${os.EOL}`);
 		});
-		this.ui.stdout.write(`${os.EOL}Guidelines for creating your Logic Function can be found <TBD>.${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}Guidelines for creating your Logic Function can be found here <TBD>.${os.EOL}`);
 		this.ui.stdout.write(`Once you have written your Logic Function, run${os.EOL}`);
 		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function execute\'') + ` to run your Function${os.EOL}`);
 		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function deploy\'') + ` to deploy your new changes${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 		return createdFiles;
 	}
 
@@ -279,18 +282,27 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const api = createAPI();
 		try {
 			this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicCodeFileName)} for ${orgName}...${os.EOL}`);
+			this.ui.stdout.write(`${os.EOL}`);
 			const { result } = await api.executeLogicFunction({ org, logic, data });
 			const resultType = result.status === 'Success' ? this.ui.chalk.cyanBright(result.status) : this.ui.chalk.red(result.status);
 			this.ui.stdout.write(`Execution Status: ${resultType}${os.EOL}`);
-			this.ui.stdout.write(`Logs of the Execution:${os.EOL}`);
-			result.logs.forEach((log, index) => {
-				this.ui.stdout.write(`	${index + 1}.- ${JSON.stringify(log)}${os.EOL}`);
-			});
+			if (result.logs.length === 0) {
+				this.ui.stdout.write(`No logs obtained from Execution${os.EOL}`);
+				this.ui.stdout.write(`${os.EOL}`);
+			} else {
+				this.ui.stdout.write(`Logs from Execution:${os.EOL}`);
+				result.logs.forEach((log, index) => {
+					this.ui.stdout.write(`	${index + 1}.- ${JSON.stringify(log)}${os.EOL}`);
+				});
+				this.ui.stdout.write(`${os.EOL}`);
+			}
 			if (result.err) {
 				this.ui.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
 				this.ui.stdout.write(`${result.err}${os.EOL}`);
+				this.ui.stdout.write(`${os.EOL}`);
 			} else {
 				this.ui.stdout.write(this.ui.chalk.cyanBright(`No errors during Execution.${os.EOL}`));
+				this.ui.stdout.write(`${os.EOL}`);
 			}
 			return { logicConfigContent, logicCodeContent };
 		} catch (error) {
@@ -369,7 +381,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				const confirm = await this._prompt({
 					type: 'confirm',
 					name: 'proceed',
-					message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}. Proceed and overwrite with the new content?`,
+					message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
 					choices: Boolean
 				});
 
@@ -396,16 +408,20 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async _printDeployOutput(name, id) {
 		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.cyanBright(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 	}
 
 	async _printDeployNewLFOutput(name, id) {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.bold(`${name}`)} to ${getOrgName(this.org)}...${os.EOL}`);
-		this.ui.stdout.write(`${this.ui.chalk.cyanBright(`Success! Logic Function ${name} deployed with ${id}`)}${os.EOL}`);
+		this.ui.stdout.write(`${this.ui.chalk.cyanBright(`Success! Logic Function ${this.ui.chalk.cyanBright(name)} deployed with ${this.ui.chalk.cyanBright(id)}`)}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
 	}
 
 	async updateStatus({ org, name, id }, { enable }) {
