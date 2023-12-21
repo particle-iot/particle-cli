@@ -324,7 +324,7 @@ describe('LogicFunctionCommands', () => {
 			expect(initFromTemplateStub.calledOnce).to.be.true;
 			expect(saveToDiskStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`Creating Logic Function logic func 1 for your Sandbox...${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Successfully created logic func 1 locally in ${PATH_TMP_DIR}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Successfully created logic func 1 locally in ${PATH_TMP_DIR}`);
 		});
 
 		it('ask to overwrite if files already exist', async () => {
@@ -338,7 +338,7 @@ describe('LogicFunctionCommands', () => {
 			expect(saveToDiskStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(3);
 			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`Creating Logic Function logic func 1 for your Sandbox...${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Successfully created logic func 1 locally in ${PATH_TMP_DIR}${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Successfully created logic func 1 locally in ${PATH_TMP_DIR}`);
 		});
 
 	});

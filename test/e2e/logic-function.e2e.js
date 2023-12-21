@@ -37,20 +37,20 @@ describe('Logic Function Commands', () => {
 	];
 
 	const createOutput = [
+		'',
 		'Creating Logic Function newLF for cyberdyne-systems...',
 		'',
-		'Successfully created newLF locally in .',
+		`Successfully created newLF locally in ${PATH_TMP_DIR}`,
 		'',
 		'Files created:',
-		'- newlf/@types/particle_core.d.ts',
-		'- newlf/@types/particle_encoding.d.ts',
-		'- newlf/newlf.js',
-		'- newlf/newlf.logic.json',
+		'- newlf.js',
+		'- newlf.logic.json',
 		'',
-		'Guidelines for creating your Logic Function can be found here <TBD>.',
+		'Guidelines for creating your Logic Function can be found here https://docs.particle.io/getting-started/cloud/logic/',
 		'Once you have written your Logic Function, run',
 		'- \'particle logic-function execute\' to run your Function',
 		'- \'particle logic-function deploy\' to deploy your new changes',
+		''
 	];
 
 	const executeOutput = [
@@ -124,7 +124,6 @@ describe('Logic Function Commands', () => {
 
 	it('Lists Logic Functions', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['lf', 'list', '--org', 'cyberdyne-systems']);
-
 		// FIXME: This would pass even if listOutput was empty
 		expect(stdout.split('\n')).to.include.members(listOutput);
 		expect(stderr).to.equal('');
@@ -171,6 +170,10 @@ describe('Logic Function Commands', () => {
 	});
 
 	it('Re-deploys a Logic Function', async () => {
+		if (!fs.existsSync(path.join(PATH_TMP_DIR, 'newlf', 'newlf.js'))) {
+			await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'config.json'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.logic.json'));
+			await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'code.js'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.js'));
+		}
 		const { stdout, stderr, exitCode } = await cli.run(['lf', 'deploy', '--org', 'cyberdyne-systems', '--data', '1234', '--force'], { cwd: path.join(PATH_TMP_DIR, 'newlf') });
 
 		stdout.split('\n').forEach((line) => {
@@ -187,8 +190,6 @@ describe('Logic Function Commands', () => {
 
 	it('Disables a Logic Function', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['lf', 'disable', '--org', 'cyberdyne-systems', '--id', id]);
-
-
 		expect(stdout).to.equal(`Logic Function newlf (${id}) is now disabled.`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);

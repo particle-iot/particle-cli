@@ -52,6 +52,9 @@ module.exports = ({ commandProcessor, root }) => {
 			'name': {
 				description: 'Name of the logic function'
 			},
+			'description': {
+				description: 'Description of the logic function'
+			},
 			'force': {
 				boolean: true,
 				default: true,
