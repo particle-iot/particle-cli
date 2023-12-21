@@ -86,60 +86,85 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			`Refer to ${this.ui.chalk.yellow('particle logic-function execute')} and ${this.ui.chalk.yellow('particle logic-function deploy')} for more information.${os.EOL}`);
 	}
 
-	async create({ org, name, params : { filepath } } = { params: { } }) {
-
+	async create({ org, name, description, params : { filepath } } = { params: { } }) {
 		this._setOrg(org);
+		const {
+			name: logicFunctionName,
+			description: logicFunctionDescription
+		}  = await this._promptLogicFunctionInput({ _name: name, _description: description });
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.cyan(logicFunctionName)} for ${getOrgName(this.org)}...${os.EOL}`);
 
-		await this._getLogicFunctionList();
+		const logicFunction = new LogicFunction({
+			org,
+			name: logicFunctionName,
+			_path: filepath,
+			description: logicFunctionDescription,
+			api: this.api
+		});
 
-		// get name from filepath
-		const logicFuncPath = getFilePath(filepath);
-		if (!name) {
+		await logicFunction.initFromTemplate({ templatePath: logicFunctionTemplatePath });
+
+		await this._confirmOverwriteIfNeeded({
+			filePaths: [logicFunction.configurationPath, logicFunction.sourcePath],
+		});
+
+		await logicFunction.saveToDisk();
+		// notify files were created
+		this._printCreateOutput({
+			logicFunctionName,
+			basePath: logicFunction.path,
+			jsonPath: logicFunction.configurationPath,
+			jsPath: logicFunction.sourcePath
+		});
+		this._printCreateHelperOutput();
+	}
+
+	async _promptLogicFunctionInput({ _name, _description }) {
+		let name = _name, description = _description;
+		if (!_name) {
 			const result = await this._prompt({
 				type: 'input',
 				name: 'name',
 				message: 'What would you like to call your Function?'
 			});
+			if (!result.name) {
+				throw new Error('Please provide a name for the Logic Function');
+			}
 			name = result.name;
 		}
-		name = name.trim();
-		// ask for description
-		const result = await this._prompt({
-			type: 'input',
-			name: 'description',
-			message: 'Please provide a short description of your Function:'
-		});
-		const description = result.description;
-		const slugName = slugify(name);
-		const destinationPath = path.join(logicFuncPath, slugName);
 
-		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.cyan(name)} for ${getOrgName(this.org)}...${os.EOL}`);
-		this.ui.stdout.write(`${os.EOL}`);
-		const logicFuncNameDeployed = await this._validateLFName({ name });
-		if (logicFuncNameDeployed) {
-			throw new Error(`Logic Function ${name} already exists in ${getOrgName(this.org)}. Use a new name for your Logic Function.`);
+		if (!_description) {
+			const result = await this._prompt({
+				type: 'input',
+				name: 'description',
+				message: 'Please provide a short description of your Function:'
+			});
+			description = result.description;
 		}
-		await this._validateTemplateFiles({ templatePath: logicFunctionTemplatePath, destinationPath });
-		const createdFiles = await this._copyAndReplaceLogicFunction({
-			logicFunctionName: name,
-			logicFunctionSlugName: slugName,
-			description,
-			templatePath: logicFunctionTemplatePath,
-			destinationPath: path.join(logicFuncPath, slugName)
-		});
-		this.ui.stdout.write(`Successfully created ${this.ui.chalk.cyan(name)} locally in ${this.ui.chalk.bold(logicFuncPath)}${os.EOL}`);
+
+		return {
+			name: name.trim(),
+			description: description.trim()
+		};
+	}
+
+	_printCreateOutput({ logicFunctionName, basePath, jsonPath, jsPath }) {
+		this.ui.stdout.write(`Successfully created ${this.ui.chalk.cyan(logicFunctionName)} locally in ${this.ui.chalk.bold(basePath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
-		createdFiles.forEach((file) => {
-			this.ui.stdout.write(`- ${file}${os.EOL}`);
-		});
-		this.ui.stdout.write(`${os.EOL}Guidelines for creating your Logic Function can be found here <TBD>.${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
+		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
+	}
+
+	_printCreateHelperOutput() {
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Guidelines for creating your Logic Function can be found here https://docs.particle.io/getting-started/cloud/logic/ ${os.EOL}`);
 		this.ui.stdout.write(`Once you have written your Logic Function, run${os.EOL}`);
 		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function execute\'') + ` to run your Function${os.EOL}`);
 		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function deploy\'') + ` to deploy your new changes${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
-		return createdFiles;
 	}
 
 	// Returns if name is already deployed

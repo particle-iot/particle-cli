@@ -5,9 +5,10 @@ const settings = require('../../settings');
 const VError = require('verror');
 const { normalizedApiError } = require('./api-client');
 const { slugify } = require('./utilities');
+const templateProcessor = require('./template-processor');
 
 class LogicFunction {
-	constructor({ org, name, id, description, source, enabled, _path, version, triggers, api = createAPI() }) {
+	constructor({ org, name, id, description, type, enabled, _path, version, triggers, api = createAPI() }) {
 		// throw if api is not provided
 		this.org = org;
 		this.name = name;
@@ -18,13 +19,17 @@ class LogicFunction {
 		this.enabled = !!enabled;
 		this.version = version || 0;
 		this.triggers = triggers || [];
-		this.source = {
-			type: source ? source.type : 'JavaScript',
-			code: source ? source.code : ''
-		};
-		this.fileNames = {
-			sourceCode: name ? slugify(name) + '.js' : '', // might change once we implement execute method
-			configuration: name ? slugify(name) + '.logic.json' : ''
+		this.type = type || 'JavaScript',
+		this.files = {
+			sourceCode: {
+				name: name ? slugify(name) + '.js' : '',
+				content: ''
+			}, // might change once we implement execute method
+			configuration: {
+				name: name ? slugify(name) + '.logic.json' : '',
+				content: ''
+			},
+			types:[] // should be an array of { name: 'type name', content: 'type content' }
 		};
 	}
 
@@ -32,28 +37,21 @@ class LogicFunction {
 		try {
 			const response = await api.getLogicFunctionList({ org: org });
 			const logicFunctions = response.logic_functions.map(logicFunctionData => {
-				return new LogicFunction({
+				const lf =  new LogicFunction({
 					org,
 					...logicFunctionData,
 					triggers: logicFunctionData.logic_triggers,
 					api
 				});
+				const source = logicFunctionData.source;
+				lf.files.sourceCode.content = source ? source.code : '';
+				return lf;
 
 			});
 			return logicFunctions;
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
 		}
-	}
-
-	static async listFromDisk({ path }) {
-		// TODO - implement
-		throw new Error(`Not implemented yet for ${path}`);
-	}
-
-	static async loadFromDisk({ fileName }) {
-		// TODO - implement
-		throw new Error(`Not implemented yet for ${fileName}`);
 	}
 
 	// should return an instance of LogicFunction
@@ -65,12 +63,48 @@ class LogicFunction {
 		return logicFunctionData;
 	}
 
+	async initFromTemplate({ templatePath }) {
+		const contentReplacements = {
+			name: this.name,
+			description: this.description
+		};
+		const fileNameReplacements = [
+			{ template: 'logic_function_name', fileName: slugify(this.name) },
+		];
+
+		const files = await templateProcessor.loadTemplateFiles({
+			templatePath,
+			contentReplacements,
+			fileNameReplacements
+		});
+		// remove the template path from the file names so that they are relative to the logic function path
+		files.forEach(file => {
+			file.fileName = file.fileName.replace(templatePath, '');
+		});
+
+		// put the data into the logic function
+		const sourceCode = files.find(file => file.fileName.includes(this.files.sourceCode.name));
+		this.files.sourceCode.name = sourceCode.fileName;
+		this.files.sourceCode.content = sourceCode.content;
+		const configuration = files.find(file => file.fileName.includes(this.files.configuration.name));
+		this.files.configuration.name = configuration.fileName;
+		this.files.configuration.content = configuration.content;
+		// add types
+		this.files.types = files.filter(file => file.fileName.includes('@types')).map(file => {
+			return {
+				name: file.fileName,
+				content: file.content
+			};
+		});
+		this._deserializeConfiguration();
+	}
+
 	get configurationPath () {
-		return path.join(this._path, this.fileNames.configuration);
+		return path.join(this._path, this.files.configuration.name);
 	}
 
 	get sourcePath () {
-		return path.join(this._path, this.fileNames.sourceCode);
+		return path.join(this._path, this.files.sourceCode.name);
 	}
 
 	set path (value) {
@@ -89,21 +123,40 @@ class LogicFunction {
 		// save the config json to disk
 		await fs.writeFile(this.configurationPath, configuration);
 		// save the source code to disk
-		await fs.writeFile(this.sourcePath, this.source.code);
+		await fs.writeFile(this.sourcePath, this.files.sourceCode.content);
+		// save the types
+		for (const type of this.files.types) {
+			const dirPath = path.join(this.path, path.dirname(type.name));
+			fs.ensureDirSync(dirPath);
+			await fs.writeFile(path.join(dirPath, path.basename(type.name)), type.content);
+		}
 	}
 
 	_toJSONString(){
 		return JSON.stringify({
-			id: this.id,
-			name: this.name,
-			description: this.description,
-			version: this.version,
-			enabled: this.enabled,
-			source: {
-				type: this.source.type,
-			},
-			logic_triggers: this.triggers
+			logic_function: {
+				id: this.id,
+				name: this.name,
+				description: this.description,
+				version: this.version,
+				enabled: this.enabled,
+				source: {
+					type: this.type,
+				},
+				logic_triggers: this.triggers
+			}
 		}, null, 2);
+	}
+
+	_deserializeConfiguration(){
+		const { logic_function: data } = JSON.parse(this.files.configuration.content);
+		this.id = data.id;
+		this.name = data.name;
+		this.description = data.description;
+		this.version = data.version;
+		this.enabled = data.enabled;
+		this.type = data.source.type;
+		this.triggers = data.logic_triggers;
 	}
 }
 
