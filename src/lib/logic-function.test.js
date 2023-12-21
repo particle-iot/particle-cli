@@ -11,7 +11,7 @@ describe('LogicFunction', () => {
 		nock.cleanAll();
 		fs.emptyDirSync(PATH_TMP_DIR);
 	});
-	describe('list', ()  => {
+	describe('list', () => {
 		it('returns an empty array if there are no logic functions', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/functions', 'GET')

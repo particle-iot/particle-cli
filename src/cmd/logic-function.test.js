@@ -59,7 +59,14 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('list', () => {
+		beforeEach(() => {
+			logicFunc1.logic_functions.forEach((lf) => {
+				lf.triggers = lf.logic_triggers;
+			});
+		});
+
 		it('lists logic functions in Sandbox account', async () => {
+
 			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
 			await logicFunctionCommands.list({});
 			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: undefined })).to.be.true;
