@@ -57,7 +57,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'force': {
 				boolean: true,
-				default: true,
+				default: false,
 				description: 'Overwrites all the prompts',
 			}
 		},
@@ -110,7 +110,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'force': {
 				boolean: true,
-				default: true,
+				default: false,
 				description: 'Overwrites all the prompts',
 			}
 		},
@@ -186,7 +186,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'force': {
 				boolean: true,
-				default: true,
+				default: false,
 				description: 'Overwrites all the prompts',
 			}
 		},
