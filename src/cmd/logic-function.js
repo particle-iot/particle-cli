@@ -86,12 +86,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			`Refer to ${this.ui.chalk.yellow('particle logic-function execute')} and ${this.ui.chalk.yellow('particle logic-function deploy')} for more information.${os.EOL}`);
 	}
 
-	async create({ org, name, description, params : { filepath } } = { params: { } }) {
+	async create({ org, name, description, force, params : { filepath } } = { params: { } }) {
 		this._setOrg(org);
 		const {
 			name: logicFunctionName,
 			description: logicFunctionDescription
-		}  = await this._promptLogicFunctionInput({ _name: name, _description: description });
+		}  = await this._promptLogicFunctionInput({ _name: name, _description: description, force });
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.cyan(logicFunctionName)} for ${getOrgName(this.org)}...${os.EOL}`);
 
@@ -107,6 +107,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 		await this._confirmOverwriteIfNeeded({
 			filePaths: [logicFunction.configurationPath, logicFunction.sourcePath],
+			force
 		});
 
 		await logicFunction.saveToDisk();
@@ -120,8 +121,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this._printCreateHelperOutput();
 	}
 
-	async _promptLogicFunctionInput({ _name, _description }) {
+	async _promptLogicFunctionInput({ _name, _description, force }) {
 		let name = _name, description = _description;
+		if (force) {
+			return {
+				name: name? name.trim() : '',
+				description: description ? description.trim() : ''
+			};
+		}
 		if (!_name) {
 			const result = await this._prompt({
 				type: 'input',
@@ -150,17 +157,17 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	_printCreateOutput({ logicFunctionName, basePath, jsonPath, jsPath }) {
-		this.ui.stdout.write(`Successfully created ${this.ui.chalk.cyan(logicFunctionName)} locally in ${this.ui.chalk.bold(basePath)}${os.EOL}`);
+		this.ui.stdout.write(`Successfully created ${this.ui.chalk.cyan(logicFunctionName)} locally in ${this.ui.chalk.bold(basePath)}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Files created:${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
-		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(`- ${path.basename(jsPath)}${os.EOL}`);
+		this.ui.stdout.write(`- ${path.basename(jsonPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
 	_printCreateHelperOutput() {
 		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`Guidelines for creating your Logic Function can be found here https://docs.particle.io/getting-started/cloud/logic/ ${os.EOL}`);
+		this.ui.stdout.write(`Guidelines for creating your Logic Function can be found here https://docs.particle.io/getting-started/cloud/logic/${os.EOL}`);
 		this.ui.stdout.write(`Once you have written your Logic Function, run${os.EOL}`);
 		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function execute\'') + ` to run your Function${os.EOL}`);
 		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function deploy\'') + ` to deploy your new changes${os.EOL}`);
@@ -197,7 +204,10 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	// Prompts the user to overwrite if any files exist
 	// If user says no, we exit the process
-	async _confirmOverwriteIfNeeded({ filePaths, _exit = () => process.exit(0) }) {
+	async _confirmOverwriteIfNeeded({ force, filePaths, _exit = () => process.exit(0) }) {
+		if (force) {
+			return;
+		}
 		let exists = false;
 		const pathsToCheck = filePaths;
 		for (const p of pathsToCheck) {
@@ -382,22 +392,25 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return { fileName, content: fileBuffer.toString() };
 	}
 
-	async deploy({ org, data, dataPath, params: { filepath } }) {
+	async deploy({ org, data, force, dataPath, params: { filepath } }) {
 		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
-		const confirm = await this._prompt({
-			type: 'confirm',
-			name: 'proceed',
-			message: `Deploying to ${getOrgName(this.org)}. Proceed?`,
-			choices: Boolean
-		});
+		if (!force) {
+			const confirm = await this._prompt({
+				type: 'confirm',
+				name: 'proceed',
+				message: `Deploying to ${getOrgName(this.org)}. Proceed?`,
+				choices: Boolean
+			});
 
-		if (!confirm.proceed) {
-			this.ui.stdout.write(`Aborted.${os.EOL}`);
-			return;
+			if (!confirm.proceed) {
+				this.ui.stdout.write(`Aborted.${os.EOL}`);
+				return;
+			}
 		}
+
 
 		const { logicConfigContent, logicCodeContent } = await this.execute({ org, data, dataPath, params: { filepath } });
 		const name = logicConfigContent.logic_function.name;
@@ -407,18 +420,19 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const logicFuncNameDeployed = await this._validateLFName({ name });
 		if (logicFuncNameDeployed) {
 			try {
-				const confirm = await this._prompt({
-					type: 'confirm',
-					name: 'proceed',
-					message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
-					choices: Boolean
-				});
+				if (!force) {
+					const confirm = await this._prompt({
+						type: 'confirm',
+						name: 'proceed',
+						message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
+						choices: Boolean
+					});
 
-				if (!confirm.proceed) {
-					this.ui.stdout.write(`Aborted.${os.EOL}`);
-					return;
+					if (!confirm.proceed) {
+						this.ui.stdout.write(`Aborted.${os.EOL}`);
+						return;
+					}
 				}
-
 				const { id } = await this._getLogicFunctionIdAndName(name);
 				await this.api.updateLogicFunction({ org, id, logicFunctionData: logicConfigContent.logic_function });
 				this._printDeployOutput(name, id);
@@ -481,7 +495,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async _overwriteIfLFExistsLocally(name, id) {
 		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
 
-		const exist = await this._confirmOverwriteIfNeeded({ filePaths: { jsonPath, jsPath } });
+		const exist = await this._confirmOverwriteIfNeeded(
+			{ filePaths: [jsonPath, jsPath] });
 
 		if (!exist) {
 			return;
@@ -497,11 +512,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	_printDisableOutput(name, id) {
-		this.ui.stdout.write(`Logic Function ${name}(${id}) is now disabled.${os.EOL}`);
+		this.ui.stdout.write(`Logic Function ${name} (${id}) is now disabled.${os.EOL}`);
 	}
 
 	_printEnableOutput(name, id) {
-		this.ui.stdout.write(`Logic Function ${name}(${id}) is now enabled.${os.EOL}`);
+		this.ui.stdout.write(`Logic Function ${name} (${id}) is now enabled.${os.EOL}`);
 	}
 
 	_printDisableNewFilesOutput({ jsonPath, jsPath }) {
@@ -512,29 +527,30 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
-	async delete({ org, name, id }) {
+	async delete({ org, name, id, force }) {
 		this._setOrg(org);
 
 		await this._getLogicFunctionList();
 
 		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
 
-		const confirm = await this._prompt({
-			type: 'confirm',
-			name: 'delete',
-			message: `Are you sure you want to delete Logic Function ${name}? This action cannot be undone.`,
-			choices: Boolean
-		});
-
-		if (confirm.delete) {
-			try {
-				await this.api.deleteLogicFunction({ org: this.org, id });
-				this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.${os.EOL}`);
-			} catch (err) {
-				throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
+		if (!force) {
+			const confirm = await this._prompt({
+				type: 'confirm',
+				name: 'delete',
+				message: `Are you sure you want to delete Logic Function ${name}? This action cannot be undone.`,
+				choices: Boolean
+			});
+			if (!confirm.delete) {
+				this.ui.stdout.write(`Aborted.${os.EOL}`);
+				return;
 			}
-		} else {
-			this.ui.stdout.write(`Aborted.${os.EOL}`);
+		}
+		try {
+			await this.api.deleteLogicFunction({ org: this.org, id });
+			this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.${os.EOL}`);
+		} catch (err) {
+			throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
 		}
 	}
 
