@@ -345,62 +345,107 @@ describe('LogicFunctionCommands', () => {
 
 	describe('execute', () => {
 		it('executes a logic function with user provided data', async () => {
-			nock('https://api.particle.io/v1', )
-				.intercept('/logic/execute', 'POST')
-				.reply(200, { result: { status: 'Success', logs: [] } });
-			await logicFunctionCommands.execute({
-				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
-				data: { foo: 'bar' }
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
 			});
-			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(7);
-			expect(logicFunctionCommands.ui.chalk.bold.callCount).to.equal(1);
-			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
-			expect(logicFunctionCommands.ui.chalk.cyanBright.callCount).to.equal(2);
-			expect(logicFunctionCommands.ui.chalk.cyanBright.firstCall.args[0]).to.equal('Success');
-			expect(logicFunctionCommands.ui.chalk.cyanBright.secondCall.args[0]).to.equal(`No errors during Execution.${os.EOL}`);
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves([logicFunction]);
+			const executeStub = sinon.stub(logicFunction, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
+
+			await logicFunctionCommands.execute({ data: '{"eventData": "someData"}' , params: {} });
+			expect(logicStub.calledOnce).to.be.true;
+			expect(executeStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`Execution Status: Success${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Logs from Execution:${os.EOL}`);
 		});
+
+		it('throws an error if there is no logic function in the directory', async () => {
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves([]);
+			let error;
+			try {
+				await logicFunctionCommands.execute({ data: '{"eventData": "someData"}' , params: {} });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(logicStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`No Logic Functions found in your directory.${os.EOL}`);
+			expect(error.message).to.equal('No Logic Functions found');
+		});
+
 		it('executes a logic function with user provided data from file', async () => {
-			nock('https://api.particle.io/v1', )
-				.intercept('/logic/execute', 'POST')
-				.reply(200, { result: { status: 'Success', logs: [] } });
-			await logicFunctionCommands.execute({
-				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
-				dataPath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj', 'sample', 'data.json')
+			const filepath = PATH_TMP_DIR;
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
 			});
-			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(7);
-			expect(logicFunctionCommands.ui.chalk.bold.callCount).to.equal(1);
-			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
-			expect(logicFunctionCommands.ui.chalk.cyanBright.callCount).to.equal(2);
-			expect(logicFunctionCommands.ui.chalk.cyanBright.firstCall.args[0]).to.equal('Success');
-			expect(logicFunctionCommands.ui.chalk.cyanBright.secondCall.args[0]).to.equal(`No errors during Execution.${os.EOL}`);
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves([logicFunction]);
+			sinon.stub(logicFunction, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
+			await logicFunctionCommands.execute({ data: '{"eventData": "someData"}' , params: { filepath } });
+			// called with the file path
+			expect(logicStub).to.have.been.calledWith({ filepath, api: logicFunctionCommands.api, org: logicFunctionCommands.org });
 		});
 
-		it('executes a logic function with user provided data from file and shows error', async () => {
-			nock('https://api.particle.io/v1', )
-				.intercept('/logic/execute', 'POST')
-				.reply(200, { result: { status: 'Exception', logs: [], err: 'Error message' } });
-			await logicFunctionCommands.execute({
-				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj') },
-				dataPath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf1_proj', 'sample', 'data.json')
+		it('executes a logic function with user provided data and shows error', async () => {
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
 			});
-			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(8);
-			expect(logicFunctionCommands.ui.chalk.bold.firstCall.args[0]).to.equal('code.js'); // file name
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves([logicFunction]);
+			sinon.stub(logicFunction, 'execute').resolves({
+				status: 'Exception',
+				error: 'Some error'
+			});
+
+			await logicFunctionCommands.execute({ data: '{"eventData": "someData"}' , params: {} });
+
+			expect(logicStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`Execution Status: Exception${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Error during Execution:${os.EOL}`);
 		});
 
-		it('prompts if found multiple files', async () => {
-			nock('https://api.particle.io/v1', )
-				.intercept('/logic/execute', 'POST')
-				.reply(200, { result: { status: 'Success', logs: [] } });
-			logicFunctionCommands.ui.prompt = sinon.stub();
-			logicFunctionCommands.ui.prompt.onCall(0).resolves({ file: 'code.js' });
-			await logicFunctionCommands.execute({
-				params: { filepath: path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf2_proj') },
-				data: { foo: 'bar' }
+		it('prompts if found multiple logic functions', async () => {
+			const logicFunction1 = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
 			});
+			const logicFunction2 = new LogicFunction({
+				name: 'LF2',
+				description: 'Logic Function 2',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1c',
+				type: 'JavaScript',
+			});
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves([logicFunction1, logicFunction2]);
+			sinon.stub(logicFunction1, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
+			sinon.stub(logicFunction2, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
+			logicFunctionCommands.ui.prompt = sinon.stub().resolves({ logicFunction: 'LF1' });
+			await logicFunctionCommands.execute({ data: '{"eventData": "someData"}' , params: {} });
+			expect(logicStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(1);
-			expect(logicFunctionCommands.ui.prompt.firstCall.args[0][0].choices[0].name).to.equal('code.js');
-			expect(logicFunctionCommands.ui.prompt.firstCall.args[0][0].choices[1].name).to.equal('code2.js');
 		});
+
 	});
 
 	describe('_validatePaths', () => {

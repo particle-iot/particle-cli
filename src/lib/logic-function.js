@@ -54,6 +54,10 @@ class LogicFunction {
 		}
 	}
 
+	static async listFromDisk({ path, org, api = createAPI() } = {}) {
+		return [];
+	}
+
 	// should return an instance of LogicFunction
 	static async getByIdOrName({ id, name, list }) {
 		const logicFunctionData = list.find(lf => lf.id === id || lf.name === name);
@@ -61,6 +65,27 @@ class LogicFunction {
 			throw new Error('Logic function not found');
 		}
 		return logicFunctionData;
+	}
+
+	async execute({ event } = {}) {
+		const logicEvent = {
+			event,
+			source: {
+				type: this.type,
+				code: this.files.sourceCode.content
+			}
+		};
+		try {
+			const response =
+				await this.api.executeLogicFunction({ org: this.org, id: this.id, logicEvent });
+			return {
+				logs: response.logs,
+				error: response.error,
+				status: response.status,
+			};
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error executing logic function' });
+		}
 	}
 
 	async initFromTemplate({ templatePath }) {
