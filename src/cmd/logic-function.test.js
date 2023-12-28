@@ -526,7 +526,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 		});
 
-		it('prints out malformed logic functions in case there are any', async () => {
+		it('prints malformed logic list when there are any and name/id params are not sent', async () => {
 			const lf1 = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -535,7 +535,54 @@ describe('LogicFunctionCommands', () => {
 			});
 			logicFunctionCommands.ui.prompt = sinon.stub().resolves({ logicFunction: 'LF1' });
 			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
-				malformedLogicFunctions: [{ name: 'lf1', error: 'file lf1.js does not exist'}],
+				malformedLogicFunctions: [{ name: 'lf1', error: 'file lf1.js does not exist' }],
+				logicFunctions: [lf1]
+			});
+
+			const executeStub = sinon.stub(lf1, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
+
+			await logicFunctionCommands.execute({ params: {} });
+			expect(logicStub.calledOnce).to.be.true;
+			expect(executeStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`The following Logic Functions are not valid:${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- lf1: file lf1.js does not exist${os.EOL}`);
+		});
+		it('prints malformed logic list when lf list is empty', async () => {
+			let error;
+			logicFunctionCommands.ui.prompt = sinon.stub().resolves({ logicFunction: 'LF1' });
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [{ name: 'lf1', error: 'file lf1.js does not exist' }],
+				logicFunctions: []
+			});
+			try {
+				await logicFunctionCommands.execute({ params: {} });
+				expect.fail('should have thrown an error');
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.equal('No Logic Functions found');
+			expect(logicStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`The following Logic Functions are not valid:${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- lf1: file lf1.js does not exist${os.EOL}`);
+		});
+		it('omit print malformed logic list when there are any and name/id are sent and lf exist', async () => {
+			const lf1 = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+			logicFunctionCommands.ui.prompt = sinon.stub().resolves({ logicFunction: 'LF1' });
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [{ name: 'lf1', error: 'file lf1.js does not exist' }],
 				logicFunctions: [lf1]
 			});
 
@@ -551,8 +598,8 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Malformed Logic Functions:${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- lf1: file lf1.js does not exist${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).to.not.have.been.calledWith(`The following Logic Functions are not valid:${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).to.not.have.been.calledWith(`- lf1: file lf1.js does not exist${os.EOL}`);
 		});
 	});
 

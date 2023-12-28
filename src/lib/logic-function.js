@@ -55,12 +55,13 @@ class LogicFunction {
 	}
 
 	static async listFromDisk({ filepath, org, api = createAPI() } = {}) {
+		let logicFunctions = [];
+		let malformedLogicFunctions = [];
 		if (!filepath) {
 			filepath = process.cwd();
 		}
 		const pathExists = await fs.exists(filepath);
 		const logicFunctionExtensionPattern = '*.logic.json';
-		const malformedLogicFunctions = [];
 		if (!pathExists) {
 			throw new Error('Path does not exist');
 		}
@@ -76,22 +77,15 @@ class LogicFunction {
 					org,
 					api
 				});
-				return [lf];
+				logicFunctions.push(lf);
 			} catch (error) {
 				malformedLogicFunctions.push({
-					fileName: filepath,
+					name: path.basename(filepath.substring(0, filepath.indexOf('.'))),
 					error: error.message
 				});
-				console.log('Malformed logic functions: ', malformedLogicFunctions);
-				return [];
 			}
 		} else {
-			const logicFunctions = [];
-			// if it is a directory, then load all the logic functions in the directory
 			const files = globList(filepath, [logicFunctionExtensionPattern]);
-			if (files.length === 0) {
-				return [];
-			}
 			for (const file of files) {
 				// if the file is a directory, then load the logic functions from the directory
 				try {
@@ -104,14 +98,16 @@ class LogicFunction {
 					logicFunctions.push(lf);
 				} catch (error) {
 					malformedLogicFunctions.push({
-						fileName: file,
+						name: path.basename(file.substring(0, file.indexOf('.'))),
 						error: error.message
 					});
 				}
 			}
-			console.log('Malformed logic functions: ', malformedLogicFunctions);
-			return logicFunctions;
 		}
+		return {
+			logicFunctions,
+			malformedLogicFunctions
+		};
 	}
 
 	static async loadFromDisk({ basePath, fileName, org, api = createAPI() } = {}) {

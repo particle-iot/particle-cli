@@ -245,13 +245,17 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _pickLogicFunctionFromDisk({ filepath, name, id }) {
-		let { logicFunctions } = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
+		let { logicFunctions, malformedLogicFunctions } = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
 		if (name || id) {
-			logicFunctions = logicFunctions.filter(lf => lf.name === name || lf.id === id);
+			logicFunctions = logicFunctions.filter(lf => (lf.name === name && name) || (lf.id === id && id));
 		}
 		if (logicFunctions.length === 0) {
+			this._printMalformedLogicFunctionsFromDisk(malformedLogicFunctions);
 			this._printListHelperOutput({ fromFile: true });
 			throw new Error('No Logic Functions found');
+		}
+		if (logicFunctions.length && !name && !id) {
+			this._printMalformedLogicFunctionsFromDisk(malformedLogicFunctions);
 		}
 		if (logicFunctions.length === 1) {
 			return logicFunctions[0];
@@ -264,6 +268,16 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		});
 
 		return logicFunctions.find(lf => lf.name === answer.logicFunction);
+	}
+
+	_printMalformedLogicFunctionsFromDisk(malformedLogicFunctions) {
+		if (malformedLogicFunctions.length) {
+			this.ui.stdout.write(`The following Logic Functions are not valid:${os.EOL}`);
+			malformedLogicFunctions.forEach((item) => {
+				this.ui.stdout.write(`- ${item.name}: ${item.error}${os.EOL}`);
+			});
+			this.ui.stdout.write(`${os.EOL}`);
+		}
 	}
 
 	async _getExecuteData({ productId, deviceId, eventName, data, payload }) {

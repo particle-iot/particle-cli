@@ -189,13 +189,13 @@ describe('LogicFunction', () => {
 		});
 		it('returns a list of logic functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
 		it('returns a list of logic functions with org', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions'), org: 'my-org' });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions'), org: 'my-org' });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 			expect(logicFunctions[0]).to.have.property('org', 'my-org');
@@ -203,39 +203,49 @@ describe('LogicFunction', () => {
 		it('returns a list of more than one logic functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await createLogicFunction({ name: 'lf2', description: 'Logic Function 2 on SandBox' });
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(2);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
 		it('filter out files that are not logic functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.json'), '{}');
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
 		it('filter out no well formed logic functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.logic.json'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
 		it('returns a list of one element if the path is a file and it is a logic function', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf1.js') });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf1.js') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
 		it ('returns an empty list if the path is a file and it is not a logic function', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.js'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.js') });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.js') });
 			expect(logicFunctions).to.have.lengthOf(0);
 		});
 		it('returns an empty list if there are no logic functions', async () => {
-			const logicFunctions = await LogicFunction.listFromDisk({ filepath: PATH_TMP_DIR });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: PATH_TMP_DIR });
 			expect(logicFunctions).to.have.lengthOf(0);
+		});
+
+		it('returns a list of logic functions and a list of malformed logic functions', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.logic.json'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
+			const { logicFunctions, malformedLogicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			expect(logicFunctions).to.have.lengthOf(1);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+			expect(malformedLogicFunctions).to.have.lengthOf(1);
+			expect(malformedLogicFunctions[0].name).to.equal('lf2');
 		});
 		it('fails if the path does not exist', async () => {
 			try {
