@@ -78,6 +78,12 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Specify the organization',
 				hidden: true
 			},
+			'name': {
+				description: 'Name of the logic function'
+			},
+			'id': {
+				description: 'Id of the logic function'
+			},
 			'data': {
 				description: 'Sample test data file to verify the logic function'
 			},

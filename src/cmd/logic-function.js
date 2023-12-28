@@ -229,9 +229,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return exists;
 	}
 
-	async execute({ org, product_id: productId, event_name: eventName, device_id: deviceId, data, payload, params: { filepath } }) {
+	async execute({ org, name, id, product_id: productId, event_name: eventName, device_id: deviceId, data, payload, params: { filepath } }) {
 		this._setOrg(org);
-		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath });
+		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath, name, id });
 		const eventData = await this._getExecuteData({
 			productId,
 			deviceId,
@@ -244,11 +244,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this._printExecuteOutput({ logs, error, status });
 	}
 
-	async _pickLogicFunctionFromDisk({ filepath }) {
-		const logicFunctions = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
+	async _pickLogicFunctionFromDisk({ filepath, name, id }) {
+		let logicFunctions = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
 		if (logicFunctions.length === 0) {
 			this._printListHelperOutput({ fromFile: true });
 			throw new Error('No Logic Functions found');
+		}
+		if (name || id) {
+			logicFunctions = logicFunctions.filter(lf => lf.name === name || lf.id === id);
 		}
 		if (logicFunctions.length === 1) {
 			return logicFunctions[0];
