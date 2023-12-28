@@ -446,6 +446,64 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(1);
 		});
 
+		it('executes a logic function with provided logic function name', async () => {
+			const lf1 = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+			const lf2 = new LogicFunction({
+				name: 'LF2',
+				description: 'Logic Function 2',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1c',
+				type: 'JavaScript',
+			});
+			logicFunctionCommands.ui.prompt = sinon.stub().resolves({ logicFunction: 'LF1' });
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves([lf1, lf2]);
+
+			const executeStub = sinon.stub(lf1, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
+
+			await logicFunctionCommands.execute({ name: 'LF1', params: {} });
+			expect(logicStub.calledOnce).to.be.true;
+			expect(executeStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`Execution Status: Success${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Logs from Execution:${os.EOL}`);
+		});
+		it('executes a logic function with provided logic function id', async () => {
+			const lf1 = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+			const lf2 = new LogicFunction({
+				name: 'LF2',
+				description: 'Logic Function 2',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1c',
+				type: 'JavaScript',
+			});
+			logicFunctionCommands.ui.prompt = sinon.stub().resolves({ logicFunction: 'LF1' });
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves([lf1, lf2]);
+
+			const executeStub = sinon.stub(lf2, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
+
+			await logicFunctionCommands.execute({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1c', params: {} });
+			expect(logicStub.calledOnce).to.be.true;
+			expect(executeStub.calledOnce).to.be.true;
+			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
+			expect(logicFunctionCommands.ui.stdout.write.firstCall.args[0]).to.equal(`Executing Logic Function LF2 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.secondCall.args[0]).to.equal(`Execution Status: Success${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write.thirdCall.args[0]).to.equal(`Logs from Execution:${os.EOL}`);
+		});
 	});
 
 	describe('_validatePaths', () => {
