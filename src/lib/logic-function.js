@@ -55,7 +55,7 @@ class LogicFunction {
 	}
 
 	static async listFromDisk({ path, org, api = createAPI() } = {}) {
-		return [];
+		throw new Error(`Not implemented for ${path} ${org} ${api}` );
 	}
 
 	// should return an instance of LogicFunction
