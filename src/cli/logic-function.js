@@ -81,9 +81,18 @@ module.exports = ({ commandProcessor, root }) => {
 			'data': {
 				description: 'Sample test data file to verify the logic function'
 			},
-			'dataPath': {
-				description: 'Sample test data file to verify the logic function'
+			'event_name': {
+				description: 'Name of the event to execute'
 			},
+			'product_id': {
+				description: 'Product ID of the device'
+			},
+			'device_id': {
+				description: 'Device ID of the device'
+			},
+			'payload': {
+				description: 'Payload to send to the device could be a string or a file path'
+			}
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
@@ -91,7 +100,10 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command --data <data>': 'executes the local Logic Function with the data',
-			'$0 $command --dataPath <filePath>': 'executes the local Logic Function with the data from the file',
+			'$0 $command --productId <productId>': 'executes the local Logic Function for an specific product',
+			'$0 $command --deviceId <deviceId>': 'executes the local Logic Function for an specific device',
+			'$0 $command --payload { "event": { "product_id": <productId>, "device_id": "<deviceId>", "event_data": "<test data>", "event_name":"<event_test_name>"}}' : 'executes the local Logic Function with the payload',
+			'$0 $command --payload /path/payload.json' : 'executes the local Logic Function with the payload',
 		}
 	});
 

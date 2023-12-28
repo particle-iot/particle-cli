@@ -229,10 +229,16 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return exists;
 	}
 
-	async execute({ org, productId, eventName, deviceId, data, payload, params: { filepath } }) {
+	async execute({ org, product_id: productId, event_name: eventName, device_id: deviceId, data, payload, params: { filepath } }) {
 		this._setOrg(org);
 		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath });
-		const eventData = await this._getEventData({ productId, deviceId, data, eventName, payload });
+		const eventData = await this._getExecuteData({
+			productId,
+			deviceId,
+			data,
+			eventName,
+			payload
+		});
 		const { status, logs, error } = await logicFunction.execute(eventData);
 		this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...${os.EOL}`);
 		this._printExecuteOutput({ logs, error, status });
@@ -257,19 +263,21 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return logicFunctions.find(lf => lf.name === answer.logicFunction);
 	}
 
-	async _getEventData({ productId, deviceId, eventName, data, payload }) {
+	async _getExecuteData({ productId, deviceId, eventName, data, payload }) {
 		if (payload) {
-			return this._getEventDataFromPayload(payload);
+			return this._getExecuteDataFromPayload(payload);
 		}
 		return {
-			event_name: eventName || 'test_event',
-			product_id: productId || 0,
-			device_id: deviceId || '',
-			event_data: data || ''
+			event:  {
+				event_name: eventName || 'test_event',
+				product_id: productId || 0,
+				device_id: deviceId || '',
+				event_data: data || ''
+			}
 		};
 	}
 
-	async _getEventDataFromPayload(payload) {
+	async _getExecuteDataFromPayload(payload) {
 		const parsedAsJson = await this._parseEventFromPayload(payload);
 		if (!parsedAsJson.error) {
 			return parsedAsJson.eventData;
