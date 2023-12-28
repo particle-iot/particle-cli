@@ -245,13 +245,13 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _pickLogicFunctionFromDisk({ filepath, name, id }) {
-		let logicFunctions = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
+		let { logicFunctions } = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
+		if (name || id) {
+			logicFunctions = logicFunctions.filter(lf => lf.name === name || lf.id === id);
+		}
 		if (logicFunctions.length === 0) {
 			this._printListHelperOutput({ fromFile: true });
 			throw new Error('No Logic Functions found');
-		}
-		if (name || id) {
-			logicFunctions = logicFunctions.filter(lf => lf.name === name || lf.id === id);
 		}
 		if (logicFunctions.length === 1) {
 			return logicFunctions[0];
