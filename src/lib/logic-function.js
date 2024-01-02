@@ -131,7 +131,7 @@ class LogicFunction {
 		logicFunction.files.sourceCode.name = codeFile;
 		logicFunction.files.configuration.content = configuration;
 		logicFunction.files.sourceCode.content = code;
-		logicFunction.path = path;
+		logicFunction.path = basePath;
 		logicFunction._deserializeConfiguration();
 		return logicFunction;
 
