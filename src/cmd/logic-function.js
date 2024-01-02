@@ -272,7 +272,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	_printMalformedLogicFunctionsFromDisk(malformedLogicFunctions) {
 		if (malformedLogicFunctions.length) {
-			this.ui.stdout.write(`The following Logic Functions are not valid:${os.EOL}`);
+			this.ui.stdout.write(this.ui.chalk.red(`The following Logic Functions are not valid:${os.EOL}`));
 			malformedLogicFunctions.forEach((item) => {
 				this.ui.stdout.write(`- ${item.name}: ${item.error}${os.EOL}`);
 			});
