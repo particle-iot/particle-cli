@@ -906,74 +906,6 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('disable', () => {
-		let logicFunctions = [];
-		logicFunctions.push(logicFunc1.logic_functions[0]);
-		logicFunctions.push(logicFunc2.logic_functions[0]);
-		const logicFunc1Data = logicFunc1.logic_functions[0];
-		logicFunc1Data.enabled = false;
-
-		beforeEach(() => {
-			logicFunctionCommands.logicFuncList = logicFunctions;
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
-				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
-				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
-		});
-
-		afterEach(() => {
-			fs.rmSync('lf1', { recursive: true, force: true });
-		});
-
-		it('disables a logic function with name', async() => {
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(201, { logic_function: logicFunc1Data });
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
-			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
-			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
-
-			await logicFunctionCommands.updateStatus({ name: 'LF1' }, { enable: false });
-
-			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
-			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
-		});
-
-		it('disables a logic function with id', async() => {
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(201, { logic_function: logicFunc1Data });
-			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
-			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
-
-			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: false });
-
-			expect(logicFunctionCommands._printDisableOutput).to.have.been.calledOnce;
-			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
-		});
-
-		it('fails to disable a logic function', async() => {
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(404, { error: 'Error' });
-			sinon.stub(logicFunctionCommands, '_printDisableOutput').resolves({ });
-
-			let error;
-			try {
-				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: false });
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.contain('Error updating Logic Function LF1');
-			expect(logicFunctionCommands._printDisableOutput).to.not.have.been.called;
-		});
-	});
-
 	describe('deploy', () => {
 		let logicFunctions = [];
 		logicFunctions.push(logicFunc1.logic_functions[0]);
@@ -1082,71 +1014,85 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('enable', () => {
-		let logicFunctions = [];
-		logicFunctions.push(logicFunc1.logic_functions[0]);
-		logicFunctions.push(logicFunc2.logic_functions[0]);
-		const logicFunc1Data = logicFunc1.logic_functions[0];
-		logicFunc1Data.enabled = false;
+	describe('enable/disable', () => {
+		let logicFunction;
 
 		beforeEach(() => {
-			logicFunctionCommands.logicFuncList = logicFunctions;
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
-				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
-				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+			logicFunction = new LogicFunction({
+				org: 'my-org',
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
 		});
 
 		afterEach(() => {
-			fs.rmSync('lf1', { recursive: true, force: true });
+			sinon.restore();
 		});
 
 		it('enable a logic function with name', async() => {
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(201, { logic_function: logicFunc1Data });
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
-			sinon.stub(logicFunctionCommands, '_printEnableOutput').resolves({ });
-			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
-
-			await logicFunctionCommands.updateStatus({ name: 'LF1' }, { enable: true });
-
-			expect(logicFunctionCommands._printEnableOutput).to.have.been.calledOnce;
-			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
+			const updateStub = sinon.stub(logicFunction, 'updateToCloud').resolves(undefined);
+			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [],
+				logicFunctions: []
+			});
+			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			await logicFunctionCommands.updateStatus({ name: 'LF1', org: 'my-org' }, { enable: true });
+			expect(updateStub).to.have.been.calledOnce;
+			expect(listLocalStub).to.have.been.calledOnce;
+			expect(listCloud).to.have.been.calledOnce;
+			expect(logicFunction.enable).to.be.true;
 		});
 
 		it('enable a logic function with id', async() => {
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ overwrite: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(201, { logic_function: logicFunc1Data });
-			sinon.stub(logicFunctionCommands, '_printEnableOutput').resolves({ });
-			sinon.stub(logicFunctionCommands, '_overwriteIfLFExistsLocally').resolves({ });
-
-			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: true });
-
-			expect(logicFunctionCommands._printEnableOutput).to.have.been.calledOnce;
-			expect(logicFunctionCommands._overwriteIfLFExistsLocally).to.have.been.calledOnce;
+			const updateStub = sinon.stub(logicFunction, 'updateToCloud').resolves(undefined);
+			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [],
+				logicFunctions: []
+			});
+			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org' }, { enable: true });
+			expect(updateStub).to.have.been.calledOnce;
+			expect(listLocalStub).to.have.been.calledOnce;
+			expect(listCloud).to.have.been.calledOnce;
+			expect(logicFunction.enable).to.be.true;
 		});
 
 		it('fails to enable a logic function', async() => {
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(404, { error: 'Error' });
-			sinon.stub(logicFunctionCommands, '_printEnableOutput').resolves({ });
-
 			let error;
+			const updateStub = sinon.stub(logicFunction, 'updateToCloud').rejects(new Error('Error enabling Logic Function LF1'));
+			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [],
+				logicFunctions: [logicFunction]
+			});
+			const saveStub = sinon.stub(logicFunction, 'saveToDisk').resolves(undefined);
+			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
 			try {
-				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }, { enable: true });
+				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org' }, { enable: true });
 			} catch (e) {
 				error = e;
 			}
+			expect(updateStub).to.have.been.calledOnce;
+			expect(listLocalStub).to.have.been.calledOnce;
+			expect(listCloud).to.have.been.calledOnce;
+			expect(error.message).to.contain('Error enabling Logic Function LF1');
+		});
 
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.contain('Error updating Logic Function LF1');
-			expect(logicFunctionCommands._printEnableOutput).to.not.have.been.called;
+		it('updates the local logic function if it exists in the path', async() => {
+			const updateStub = sinon.stub(logicFunction, 'updateToCloud').resolves(undefined);
+			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [],
+				logicFunctions: [logicFunction]
+			});
+			const saveStub = sinon.stub(logicFunction, 'saveToDisk').resolves(undefined);
+			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org' }, { enable: true });
+			expect(updateStub).to.have.been.calledOnce;
+			expect(listLocalStub).to.have.been.calledOnce;
+			expect(listCloud).to.have.been.calledOnce;
+			expect(logicFunction.enable).to.be.true;
+			expect(saveStub).to.have.been.calledOnce;
 		});
 	});
 });
