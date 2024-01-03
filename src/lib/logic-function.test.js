@@ -319,4 +319,55 @@ describe('LogicFunction', () => {
 			}
 		});
 	});
+
+	describe('deploy', () => {
+		afterEach(() => {
+			sinon.restore();
+			fs.emptyDirSync(PATH_TMP_DIR);
+		});
+		it('deploys a new logic function', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions', 'POST')
+				.reply(200, { id: '1234', version: 1 } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await lf1.deploy();
+			expect(lf1).to.have.property('id', '1234');
+			expect(lf1).to.have.property('version', 1);
+		});
+		it ('deploys existent logic function', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions/1234', 'PUT')
+				.reply(200, { id: '1234', version: 1 } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			lf1.id = '1234';
+			await lf1.deploy();
+			expect(lf1).to.have.property('id', '1234');
+			expect(lf1).to.have.property('version', 1);
+		});
+		it('propagates errors', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions', 'POST')
+				.reply(500, { error: 'Internal Server Error' } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			try {
+				await lf1.deploy();
+				expect.fail('Should have thrown an error');
+			} catch (error) {
+				expect(error.message).to.equal('Error deploying logic function: Internal Server Error');
+			}
+		});
+		it('propagates errors when updating', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions/1234', 'PUT')
+				.reply(500, { error: 'Internal Server Error' } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			lf1.id = '1234';
+			try {
+				await lf1.deploy();
+				expect.fail('Should have thrown an error');
+			} catch (error) {
+				expect(error.message).to.equal('Error deploying logic function: Internal Server Error');
+			}
+		});
+	});
 });

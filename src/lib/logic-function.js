@@ -169,6 +169,51 @@ class LogicFunction {
 		}
 	}
 
+	async deploy() {
+		const logicFunctionRequestData = {
+			name: this.name,
+			description: this.description,
+			enabled: this.enabled,
+			source: {
+				type: this.type,
+				code: this.files.sourceCode.content
+			},
+			logic_triggers: this.triggers
+		};
+		if (this.id) {
+			return this.updateToCloud(logicFunctionRequestData);
+		} else {
+			return this.createToCloud(logicFunctionRequestData);
+		}
+	}
+
+	async createToCloud(logicFunctionData) {
+		try {
+			const result = await this.api.createLogicFunction({
+				org: this.org,
+				logicFunction: logicFunctionData,
+			});
+			this.id = result.id;
+			this.version = result.version;
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error deploying logic function' });
+		}
+
+	}
+
+	async updateToCloud(logicFunctionData) {
+		try {
+			const result = await this.api.updateLogicFunction({
+				org: this.org,
+				id: this.id,
+				logicFunctionData: logicFunctionData,
+			});
+			this.version = result.version;
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error deploying logic function' });
+		}
+	}
+
 	async initFromTemplate({ templatePath }) {
 		const contentReplacements = {
 			name: this.name,
