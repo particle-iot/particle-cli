@@ -152,8 +152,11 @@ module.exports = ({ commandProcessor, root }) => {
 			return new LogicFunctionsCmd().deploy(args);
 		},
 		examples: {
-			'$0 $command --data <data>': 'executes and deploys a Logic Function. Executes using the data',
-			'$0 $command --dataPath <filePath>': 'executes and deploys a Logic Function. Executes using the data from the dataPath',
+			'$0 $command --data <data>': 'executes and deploys the local Logic Function with the data',
+			'$0 $command --productId <productId>': 'executes and deploys the local Logic Function for an specific product',
+			'$0 $command --deviceId <deviceId>': 'executes and deploys the local Logic Function for an specific device',
+			'$0 $command --payload { "event": { "product_id": <productId>, "device_id": "<deviceId>", "event_data": "<test data>", "event_name":"<event_test_name>"}}' : 'executes and deploys the local Logic Function with the payload',
+			'$0 $command --payload /path/payload.json' : 'executes and deploys the local Logic Function with the payload',
 		}
 	});
 
