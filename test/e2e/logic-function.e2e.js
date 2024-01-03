@@ -54,7 +54,7 @@ describe('Logic Function Commands', () => {
 	];
 
 	const executeOutput = [
-		'Executing Logic Function newlf.js for cyberdyne-systems...',
+		'Executing Logic Function newlf for cyberdyne-systems...',
 		'',
 		'Execution Status: Success',
 		'Logs from Execution:',
@@ -63,7 +63,7 @@ describe('Logic Function Commands', () => {
 	];
 
 	const deployOutput = [
-		'Executing Logic Function newlf.js for cyberdyne-systems...',
+		'Executing Logic Function newlf for cyberdyne-systems...',
 		'',
 		'Execution Status: Success',
 		'Logs from Execution:',
