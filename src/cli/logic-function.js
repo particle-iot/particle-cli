@@ -120,11 +120,26 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Specify the organization',
 				hidden: true
 			},
+			'name': {
+				description: 'Name of the logic function'
+			},
+			'id': {
+				description: 'Id of the logic function'
+			},
 			'data': {
 				description: 'Sample test data file to verify the logic function'
 			},
-			'dataPath': {
-				description: 'Sample test data file to verify the logic function'
+			'event_name': {
+				description: 'Name of the event to execute'
+			},
+			'product_id': {
+				description: 'Product ID of the device'
+			},
+			'device_id': {
+				description: 'Device ID of the device'
+			},
+			'payload': {
+				description: 'Payload to send to the device could be a string or a file path'
 			},
 			'force': {
 				boolean: true,
