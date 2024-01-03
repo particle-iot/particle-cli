@@ -405,7 +405,6 @@ describe('LogicFunctionCommands', () => {
 			// called with the file path
 			expect(logicStub).to.have.been.calledWith({ filepath, api: logicFunctionCommands.api, org: logicFunctionCommands.org });
 		});
-
 		it('executes a logic function with user provided data and shows error', async () => {
 			const logicFunction = new LogicFunction({
 				name: 'LF1',
@@ -429,7 +428,6 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Exception${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Error during Execution:${os.EOL}`);
 		});
-
 		it('prompts if found multiple logic functions', async () => {
 			const logicFunction1 = new LogicFunction({
 				name: 'LF1',
@@ -460,7 +458,6 @@ describe('LogicFunctionCommands', () => {
 			expect(logicStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(1);
 		});
-
 		it('executes a logic function with provided logic function name', async () => {
 			const lf1 = new LogicFunction({
 				name: 'LF1',
@@ -525,7 +522,6 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 		});
-
 		it('prints malformed logic list when there are any and name/id params are not sent', async () => {
 			const lf1 = new LogicFunction({
 				name: 'LF1',
@@ -827,33 +823,6 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('_validateLFName', () => {
-		it('returns true if a logic function with that name already deployed', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-
-			logicFunctionCommands.logicFuncList = logicFunctions;
-
-			const res = await logicFunctionCommands._validateLFName({ name: 'LF1' });
-
-			expect(res).to.be.true;
-
-		});
-
-		it('returns if logic function is not already deployed', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-
-			logicFunctionCommands.logicFuncList = logicFunctions;
-
-			const res = await logicFunctionCommands._validateLFName({ name: 'LF3' });
-
-			expect(res).to.be.false;
-		});
-	});
-
 	describe('delete', () => {
 		let logicFunctions = [];
 		logicFunctions.push(logicFunc1.logic_functions[0]);
@@ -1015,56 +984,99 @@ describe('LogicFunctionCommands', () => {
 
 		afterEach(() => {
 			fs.rmSync('lf1', { recursive: true, force: true });
-			nock.cleanAll();
 		});
 
 		it('deploys a new logic function', async() => {
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'POST')
-				.reply(200, { logic_function: logicFunc2.logic_functions[0] });
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				type: 'JavaScript',
+			});
+			sinon.stub(LogicFunction, 'listFromCloud').resolves([]);
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
-			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc2.logic_functions[0] }, logicCodeContent: logicFunc2.logic_functions[0].source.code });
-			sinon.stub(logicFunctionCommands, '_printDeployNewLFOutput').resolves({ });
+
+			const deployStub = sinon.stub(logicFunction, 'deploy').resolves(undefined);
+			const saveStub = sinon.stub(logicFunction, 'saveToDisk').resolves(undefined);
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [],
+				logicFunctions: [logicFunction]
+			});
+			const executeStub = sinon.stub(logicFunction, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
 
 			await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
 
 			expect(logicFunctionCommands._prompt).to.have.property('callCount', 1);
-			expect(logicFunctionCommands.execute).to.have.been.calledOnce;
-			expect(logicFunctionCommands._printDeployNewLFOutput).to.have.been.calledOnce;
-
+			expect(deployStub).to.have.been.calledOnce;
+			expect(executeStub).to.have.been.calledOnce;
+			expect(logicStub).to.have.been.calledOnce;
+			expect(saveStub).to.have.been.calledOnce;
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
 		});
 
-		it('re-deploys an old logic function', async() => {
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
+		it('deploys an existent logic function', async() => {
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				type: 'JavaScript',
+			});
+			sinon.stub(LogicFunction, 'listFromCloud').resolves([{ ...logicFunction, id: '0021e8f4-64ee-416d-83f3-898aa909fb1b' }]);
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
-			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc1.logic_functions[0] }, logicCodeContent: logicFunc1.logic_functions[0].source.code });
-			sinon.stub(logicFunctionCommands, '_printDeployOutput').resolves({ });
-
+			const deployStub = sinon.stub(logicFunction, 'deploy').resolves(undefined);
+			const saveStub = sinon.stub(logicFunction, 'saveToDisk').resolves(undefined);
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [],
+				logicFunctions: [logicFunction]
+			});
+			const executeStub = sinon.stub(logicFunction, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
 			await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
-
+			const expectedPromptCall = {
+				message: `A Logic Function with name ${logicFunction.name} is already available in the cloud your Sandbox.${os.EOL}Proceed and overwrite with the new content?`,
+			};
 			expect(logicFunctionCommands._prompt).to.have.property('callCount', 2);
-			expect(logicFunctionCommands.execute).to.have.been.calledOnce;
-			expect(logicFunctionCommands._printDeployOutput).to.have.been.calledOnce;
+			expect(deployStub).to.have.been.calledOnce;
+			expect(executeStub).to.have.been.calledOnce;
+			expect(logicStub).to.have.been.calledOnce;
+			expect(saveStub).to.have.been.calledOnce;
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands._prompt).calledWith(sinon.match(expectedPromptCall));
+			expect(logicFunction.id).to.equal('0021e8f4-64ee-416d-83f3-898aa909fb1b');
 		});
 
 		it('throws an error if deployement fails', async() => {
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'PUT')
-				.reply(500, { error: 'Error' });
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+			sinon.stub(LogicFunction, 'listFromCloud').resolves([]);
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ proceed: true });
-			sinon.stub(logicFunctionCommands, 'execute').resolves({ logicConfigContent: { logic_function: logicFunc1.logic_functions[0] }, logicCodeContent: logicFunc1.logic_functions[0].source.code });
-			sinon.stub(logicFunctionCommands, '_printDeployOutput').resolves({ });
 
+			const deployStub = sinon.stub(logicFunction, 'deploy').rejects(new Error('Error deploying Logic Function LF1'));
+			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
+				malformedLogicFunctions: [],
+				logicFunctions: [logicFunction]
+			});
+			const executeStub = sinon.stub(logicFunction, 'execute').resolves({
+				status: 'Success',
+				logs: ['log1', 'log2']
+			});
 			let error;
 			try {
 				await logicFunctionCommands.deploy({ params: { filepath: 'test/lf1' } });
 			} catch (e) {
 				error = e;
 			}
-
 			expect(error).to.be.an.instanceOf(Error);
+			expect(deployStub).to.have.been.calledOnce;
+			expect(executeStub).to.have.been.calledOnce;
+			expect(logicStub).to.have.been.calledOnce;
 			expect(error.message).to.contain('Error deploying Logic Function LF1');
 
 		});

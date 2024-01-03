@@ -25,6 +25,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async list({ org }) {
 		this._setOrg(org);
+		// TODO (hmontero): put an spinner
 		const logicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
 		if (!logicFunctions.length) {
 			this._printListHelperOutput();
@@ -57,6 +58,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async get({ org, name, id, params : { filepath } } = { params: { } }) {
 		this._setOrg(org);
+		// TODO (hmontero): put an spinner
 		const logicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
 		if (!name && !id) {
 			name = await this._selectLogicFunctionName(logicFunctions);
@@ -177,13 +179,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
-	// Returns if name is already deployed
-	async _validateLFName({ name }) {
-		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
-		const logicFuncNameExists = this.logicFuncList.find((item) => item.name === name);
-		return Boolean(logicFuncNameExists);
-	}
-
 	async _prompt({ type, name, message, choices, nonInteractiveError }) {
 		const question = {
 			type,
@@ -239,8 +234,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			eventName,
 			payload
 		});
-		const { status, logs, error } = await logicFunction.execute(eventData);
+		// TODO (hmontero): put an spinner
 		this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...${os.EOL}`);
+		const { status, logs, error } = await logicFunction.execute(eventData);
 		this._printExecuteOutput({ logs, error, status });
 	}
 
@@ -267,7 +263,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			choices : logicFunctions,
 		});
 
-		return logicFunctions.find(lf => lf.name === answer.logicFunction);
+		const logicFunction = logicFunctions.find(lf => lf.name === answer.logicFunction);
+		logicFunction.path = filepath;
+		return logicFunction;
 	}
 
 	_printMalformedLogicFunctionsFromDisk(malformedLogicFunctions) {
@@ -340,6 +338,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				});
 				this.ui.stdout.write(`${os.EOL}`);
 			}
+			this.ui.stdout.write(`No errors during Execution.${os.EOL}`);
 		} else {
 			this.ui.stdout.write(this.ui.chalk.red(`Execution Status: ${status}${os.EOL}`));
 			this.ui.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
@@ -347,16 +346,44 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-	async deploy({ org, data, force, dataPath, params: { filepath } }) {
+	async deploy({ org, name, id, product_id: productId, event_name: eventName, device_id: deviceId, data, payload, force, params: { filepath } }) {
 		this._setOrg(org);
+		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath, name, id });
+		const eventData = await this._getExecuteData({
+			productId,
+			deviceId,
+			data,
+			eventName,
+			payload
+		});
+		const cloudLogicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
+		const cloudLogicFunction = cloudLogicFunctions.find(lf => lf.name === logicFunction.name);
+		await this._confirmDeploy(logicFunction, force);
+		if (cloudLogicFunction) {
+			await this._promptOverwriteCloudLogicFunction(cloudLogicFunction, force);
+			logicFunction.id = cloudLogicFunction.id;
+		}
+		// TODO (hmontero): put an spinner
+		this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...${os.EOL}`);
+		const { status, logs, error } = await logicFunction.execute(eventData);
+		this._printExecuteOutput({ logs, error, status });
+		if (status !== 'Success') {
+			throw new Error('Unable to deploy Logic Function');
+		}
+		// TODO (hmontero): put an spinner
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.cyanBright(`${logicFunction.name} (${logicFunction.id || ''})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		await logicFunction.deploy();
+		await logicFunction.saveToDisk();
+		this._printDeployOutput(logicFunction);
+	}
 
-		await this._getLogicFunctionList();
-
+	async _confirmDeploy(logicFunction, force) {
 		if (!force) {
 			const confirm = await this._prompt({
 				type: 'confirm',
 				name: 'proceed',
-				message: `Deploying to ${getOrgName(this.org)}. Proceed?`,
+				message: `Deploying ${logicFunction.name} to ${getOrgName(this.org)}. Proceed?`,
 				choices: Boolean
 			});
 
@@ -365,48 +392,24 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				return;
 			}
 		}
+	}
+	async _promptOverwriteCloudLogicFunction(cloudLogicFunction, force) {
+		if (!force) {
+			const confirm = await this._prompt({
+				type: 'confirm',
+				name: 'proceed',
+				message: `A Logic Function with name ${cloudLogicFunction.name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
+				choices: Boolean
+			});
 
-
-		const { logicConfigContent, logicCodeContent } = await this.execute({ org, data, dataPath, params: { filepath } });
-		const name = logicConfigContent.logic_function.name;
-		logicConfigContent.logic_function.enabled = true;
-		logicConfigContent.logic_function.source.code = logicCodeContent;
-
-		const logicFuncNameDeployed = await this._validateLFName({ name });
-		if (logicFuncNameDeployed) {
-			try {
-				if (!force) {
-					const confirm = await this._prompt({
-						type: 'confirm',
-						name: 'proceed',
-						message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
-						choices: Boolean
-					});
-
-					if (!confirm.proceed) {
-						this.ui.stdout.write(`Aborted.${os.EOL}`);
-						return;
-					}
-				}
-				const { id } = await this._getLogicFunctionIdAndName(name);
-				await this.api.updateLogicFunction({ org, id, logicFunctionData: logicConfigContent.logic_function });
-				this._printDeployOutput(name, id);
-			} catch (err) {
-				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
-			}
-		} else {
-			try {
-				const deployedLogicFunc = await this.api.createLogicFunction({ org, logicFunction: logicConfigContent.logic_function });
-				this._printDeployNewLFOutput(deployedLogicFunc.logic_function.name, deployedLogicFunc.logic_function.id);
-			} catch (err) {
-				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
+			if (!confirm.proceed) {
+				this.ui.stdout.write(`Aborted.${os.EOL}`);
+				process.exit(0);
 			}
 		}
 	}
 
-	async _printDeployOutput(name, id) {
-		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.cyanBright(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+	_printDeployOutput() {
 		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
