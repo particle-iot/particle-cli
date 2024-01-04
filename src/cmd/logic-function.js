@@ -2,12 +2,8 @@ const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
 const ParticleAPI = require('./api');
-const VError = require('verror');
 const settings = require('../../settings');
-const { normalizedApiError } = require('../lib/api-client');
-const { slugify } = require('../lib/utilities');
 const LogicFunction = require('../lib/logic-function');
-
 const logicFunctionTemplatePath = path.join(__dirname, '/../../assets/logicFunction');
 const CLICommandBase = require('./base');
 
@@ -465,9 +461,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async delete({ org, name, id, force }) {
 		this._setOrg(org);
 
-		await this._getLogicFunctionList();
+		const cloudLogicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
 
-		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
+		if (!name && !id) {
+			name = await this._selectLogicFunctionName(cloudLogicFunctions);
+		}
+		const logicFunction = await LogicFunction.getByIdOrName({ org, id, name, list: cloudLogicFunctions });
 
 		if (!force) {
 			const confirm = await this._prompt({
@@ -482,10 +481,10 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			}
 		}
 		try {
-			await this.api.deleteLogicFunction({ org: this.org, id });
-			this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.${os.EOL}`);
+			await this.api.deleteLogicFunction({ org: this.org, id: logicFunction.id });
+			this.ui.stdout.write(`Logic Function ${logicFunction.name}(${logicFunction.id}) has been successfully deleted.${os.EOL}`);
 		} catch (err) {
-			throw new Error(`Error deleting Logic Function ${name}: ${err.message}`);
+			throw new Error(`Error deleting Logic Function ${logicFunction.name}: ${err.message}`);
 		}
 	}
 
@@ -500,64 +499,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-	async _getLogicFunctionList() {
-		if (this.logicFuncList === null) {
-			try {
-				const res = await this.api.getLogicFunctionList({ org: this.org });
-				this.logicFuncList = res.logic_functions;
-			} catch (e) {
-				throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
-			}
-		}
-	}
-
-	async _getLogicFunctionData(id) {
-		try {
-			const logicFunction = await this.api.getLogicFunction({ org: this.org, id });
-			return logicFunction;
-		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error getting logic function' });
-		}
-	}
-
 	_serializeLogicFunction(data) {
 		const logicFunctionCode = data.logic_function.source.code;
 		const logicFunctionConfigData = data.logic_function;
 		delete logicFunctionConfigData.source.code;
 
 		return { logicFunctionConfigData: { 'logic_function': logicFunctionConfigData }, logicFunctionCode };
-	}
-
-	async _generateFiles({ logicFunctionConfigData, logicFunctionCode, name }) {
-		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
-
-		await this._confirmOverwriteIfNeeded({ filePaths: { jsonPath, jsPath } });
-
-		await fs.writeFile(jsonPath, JSON.stringify(logicFunctionConfigData, null, 2));
-		await fs.writeFile(jsPath, logicFunctionCode);
-
-		return { jsonPath, jsPath };
-	}
-
-	_getLocalLFPathNames(name) {
-		const slugName = slugify(name);
-		const jsonPath = path.join(process.cwd(), `${slugName}.logic.json`);
-		const jsPath = path.join(process.cwd(), `${slugName}.js`);
-
-		return { jsonPath, jsPath };
-	}
-
-	async _getLogicFunctionIdAndName(name, id) {
-		if (!id && !name) {
-			name = await this._selectLogicFunctionName(this.logicFuncList);
-			id = this._getIdFromName(name, this.logicFuncList);
-		} else if (!id && name) {
-			id = this._getIdFromName(name, this.logicFuncList);
-		} else if (id && !name) {
-			name = this._getNameFromId(id, this.logicFuncList);
-		}
-
-		return { name, id };
 	}
 
 	async _selectLogicFunctionName(list) {
@@ -574,26 +521,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		});
 		return answer.logic_function;
 	}
-
-	_getIdFromName(name, list) {
-		const found = list.find(item => item.name === name);
-
-		if (!found) {
-			throw new Error('Unable to get logic function id from name');
-		}
-
-		return found.id;
-	}
-
-	_getNameFromId(id, list) {
-		const found = list.find(item => item.id === id);
-
-		if (!found) {
-			throw new Error('Unable to get logic function name from id');
-		}
-
-		return found.name;
-	}
 };
 
 // UTILS //////////////////////////////////////////////////////////////////////
@@ -603,37 +530,10 @@ function createAPI() {
 	});
 }
 
-function createAPIErrorResult({ error: e, message, json }){
-	const error = new VError(formatAPIErrorMessage(e), message);
-	error.asJSON = json;
-	return error;
-}
 
 // get org name from org slug
 function getOrgName(org) {
 	return org || 'your Sandbox';
-}
-
-// TODO (mirande): reconcile this w/ `normalizedApiError()` and `ensureError()`
-// utilities and pull the result into cmd/api.js
-function formatAPIErrorMessage(error){
-	error = normalizedApiError(error);
-
-	if (error.body){
-		if (typeof error.body.error === 'string'){
-			error.message = error.body.error;
-		} else if (Array.isArray(error.body.errors)){
-			if (error.body.errors.length === 1){
-				error.message = error.body.errors[0];
-			}
-		}
-	}
-
-	if (error.message.includes('That belongs to someone else.')){
-		error.canRequestTransfer = true;
-	}
-
-	return error;
 }
 
 module.exports.createAPI = createAPI;
