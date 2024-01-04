@@ -1,7 +1,6 @@
 const os = require('os');
 const fs = require('fs-extra');
 const path = require('path');
-const nock = require('nock');
 const { expect, sinon } = require('../../test/setup');
 const LogicFunctionCommands = require('./logic-function');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS, PATH_TMP_DIR } = require('../../test/lib/env');
@@ -12,8 +11,6 @@ describe('LogicFunctionCommands', () => {
 	let originalUi = new LogicFunctionCommands().ui;
 	let logicFunc1 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc1.json'), 'utf-8');
 	logicFunc1 = JSON.parse(logicFunc1);
-	let logicFunc2 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc2.json'), 'utf-8');
-	logicFunc2 = JSON.parse(logicFunc2);
 
 	beforeEach(async () => {
 		logicFunctionCommands = new LogicFunctionCommands();
@@ -561,75 +558,58 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('delete', () => {
-		let logicFunctions = [];
-		logicFunctions.push(logicFunc1.logic_functions[0]);
-		logicFunctions.push(logicFunc2.logic_functions[0]);
-
-		beforeEach(() => {
-			logicFunctionCommands.logicFuncList = logicFunctions;
-		});
-
 		afterEach(() => {
-			nock.cleanAll();
+			sinon.restore();
 		});
 
 		it('checks for confirmation before deleting', async() => {
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(204, { });
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+
+			const listFromCloudStub = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			const deleteStub = sinon.stub(logicFunction, 'deleteFromCloud').resolves(undefined);
 
 			await logicFunctionCommands.delete({ name: 'LF1' });
 
 			expect(logicFunctionCommands._prompt).to.have.been.calledOnce;
-		});
-
-		it('returns without throwing an error if success', async() => {
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(204, { });
-
-			let error;
-			try {
-				await logicFunctionCommands.delete({ name: 'LF1' });
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.undefined;
+			expect(listFromCloudStub).to.have.been.calledOnce;
+			expect(deleteStub).to.have.been.calledOnce;
 		});
 
 		it('process exits if user does not want to delete during confirmation', async() => {
-			logicFunctionCommands.logicFuncList = logicFunctions;
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: false });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(204, { });
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
 
+			sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			const deleteStub = sinon.stub(logicFunction, 'deleteFromCloud').resolves(undefined);
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: false });
 			await logicFunctionCommands.delete({ name: 'LF1' });
 
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(1);
+			expect(deleteStub).to.not.have.been.called;
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Aborted.${os.EOL}`);
 		});
 
 		it('throws an error if deletion fails', async() => {
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+
+			sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			const deleteStub = sinon.stub(logicFunction, 'deleteFromCloud').rejects(new Error('Error deleting Logic Function LF1'));
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(404, {});
 
 			let error;
 			try {
@@ -640,6 +620,7 @@ describe('LogicFunctionCommands', () => {
 
 			expect(error).to.be.an.instanceOf(Error);
 			expect(error.message).to.contain('Error deleting Logic Function LF1');
+			expect(deleteStub).to.have.been.calledOnce;
 		});
 	});
 

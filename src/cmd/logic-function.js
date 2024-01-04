@@ -475,7 +475,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const confirm = await this._prompt({
 				type: 'confirm',
 				name: 'delete',
-				message: `Are you sure you want to delete Logic Function ${name}? This action cannot be undone.`,
+				message: `Are you sure you want to delete Logic Function ${logicFunction.name}? This action cannot be undone.`,
 				choices: Boolean
 			});
 			if (!confirm.delete) {
@@ -483,12 +483,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				return;
 			}
 		}
-		try {
-			await this.api.deleteLogicFunction({ org: this.org, id: logicFunction.id });
-			this.ui.stdout.write(`Logic Function ${logicFunction.name}(${logicFunction.id}) has been successfully deleted.${os.EOL}`);
-		} catch (err) {
-			throw new Error(`Error deleting Logic Function ${logicFunction.name}: ${err.message}`);
-		}
+		await logicFunction.deleteFromCloud();
+		this._printDeleteOutput({ name: logicFunction.name, id: logicFunction.id });
+	}
+
+	async _printDeleteOutput({ name, id }) {
+		this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.${os.EOL}`);
 	}
 
 	async logs({ org, name, id, saveTo }) {
@@ -532,7 +532,6 @@ function createAPI() {
 		accessToken: settings.access_token
 	});
 }
-
 
 // get org name from org slug
 function getOrgName(org) {

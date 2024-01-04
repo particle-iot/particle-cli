@@ -214,6 +214,17 @@ class LogicFunction {
 		}
 	}
 
+	async deleteFromCloud() {
+		try {
+			await this.api.deleteLogicFunction({
+				org: this.org,
+				id: this.id
+			});
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error deleting logic function' });
+		}
+	}
+
 	copyFromOtherLogicFunction(logicFunction) {
 		this.name = logicFunction.name;
 		this.org = logicFunction.org;
@@ -224,6 +235,7 @@ class LogicFunction {
 		this.files.sourceCode.content = logicFunction.files.sourceCode.content;
 		this.files.configuration.content = logicFunction.files.configuration.content;
 	}
+
 
 	async initFromTemplate({ templatePath }) {
 		const contentReplacements = {
