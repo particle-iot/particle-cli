@@ -71,7 +71,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: undefined })).to.be.true;
 			expect(logicListStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logic Functions deployed in your Sandbox:${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- LF1 (disabled)${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- LF1 (enabled)${os.EOL}`);
 		});
 
 		it('lists logic functions in an org', async () => {
@@ -80,7 +80,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: 'particle' })).to.be.true;
 			expect(logicListStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logic Functions deployed in particle:${os.EOL}`);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- LF1 (disabled)${os.EOL}`);
+			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- LF1 (enabled)${os.EOL}`);
 		});
 
 		it('shows help if no logic functions are found', async () => {
@@ -1066,7 +1066,6 @@ describe('LogicFunctionCommands', () => {
 				malformedLogicFunctions: [],
 				logicFunctions: [logicFunction]
 			});
-			const saveStub = sinon.stub(logicFunction, 'saveToDisk').resolves(undefined);
 			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
 			try {
 				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org' }, { enable: true });
