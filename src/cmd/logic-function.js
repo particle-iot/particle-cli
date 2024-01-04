@@ -424,6 +424,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async updateStatus({ org, name, id, force, params: { filepath } }, { enable }) {
 		this._setOrg(org);
 		const cloudLogicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
+		if (!name && !id) {
+			name = await this._selectLogicFunctionName(cloudLogicFunctions);
+		}
 		const logicFunction = await LogicFunction.getByIdOrName({ org, id, name, list: cloudLogicFunctions });
 		logicFunction.enabled = enable;
 		await logicFunction.deploy();
