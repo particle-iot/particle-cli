@@ -5,7 +5,6 @@ const ParticleAPI = require('./api');
 const VError = require('verror');
 const settings = require('../../settings');
 const { normalizedApiError } = require('../lib/api-client');
-const templateProcessor = require('../lib/template-processor');
 const { slugify } = require('../lib/utilities');
 const LogicFunction = require('../lib/logic-function');
 
@@ -26,6 +25,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async list({ org }) {
 		this._setOrg(org);
+		// TODO (hmontero): put an spinner
 		const logicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
 		if (!logicFunctions.length) {
 			this._printListHelperOutput();
@@ -34,8 +34,12 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		}
 	}
 
-	_printListHelperOutput() {
-		this.ui.stdout.write(`No Logic Functions deployed in ${getOrgName(this.org)}.${os.EOL}`);
+	_printListHelperOutput({ fromFile } = {}) {
+		if (fromFile) {
+			this.ui.stdout.write(`No Logic Functions found in your directory.${os.EOL}`);
+		} else {
+			this.ui.stdout.write(`No Logic Functions deployed in ${getOrgName(this.org)}.${os.EOL}`);
+		}
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`To create a Logic Function, see ${this.ui.chalk.yellow('particle logic-function create')}.${os.EOL}`);
 		this.ui.stdout.write(`To download an existing Logic Function, see ${this.ui.chalk.yellow('particle logic-function get')}.${os.EOL}`);
@@ -54,6 +58,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async get({ org, name, id, params : { filepath } } = { params: { } }) {
 		this._setOrg(org);
+		// TODO (hmontero): put an spinner
 		const logicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
 		if (!name && !id) {
 			name = await this._selectLogicFunctionName(logicFunctions);
@@ -174,13 +179,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
-	// Returns if name is already deployed
-	async _validateLFName({ name }) {
-		// TODO (hmontero): request for a getLogicFunctionByName() method in the API
-		const logicFuncNameExists = this.logicFuncList.find((item) => item.name === name);
-		return Boolean(logicFuncNameExists);
-	}
-
 	async _prompt({ type, name, message, choices, nonInteractiveError }) {
 		const question = {
 			type,
@@ -202,8 +200,6 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return answer.overwrite;
 	}
 
-	// Prompts the user to overwrite if any files exist
-	// If user says no, we exit the process
 	async _confirmOverwriteIfNeeded({ force, filePaths, _exit = () => process.exit(0) }) {
 		if (force) {
 			return;
@@ -228,180 +224,166 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return exists;
 	}
 
-	// Prompts the user to overwrite if any files exist
-	// If user says no, we exit the process
-	async _validateTemplateFiles({ templatePath, destinationPath }) {
-		const filesExist = await templateProcessor.hasTemplateFiles({
-			templatePath,
-			destinationPath
+	async execute({ org, name, id, product_id: productId, event_name: eventName, device_id: deviceId, data, payload, params: { filepath } }) {
+		this._setOrg(org);
+		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath, name, id });
+		const eventData = await this._getExecuteData({
+			productId,
+			deviceId,
+			data,
+			eventName,
+			payload
 		});
-		if (filesExist) {
-			const overwrite = await this._promptOverwrite({
-				pathToCheck: destinationPath,
-				message: `We found existing files in ${this.ui.chalk.bold(destinationPath)}. Would you like to overwrite them?`
+		// TODO (hmontero): put an spinner
+		this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...${os.EOL}`);
+		const { status, logs, error } = await logicFunction.execute(eventData);
+		this._printExecuteOutput({ logs, error, status });
+	}
+
+	async _pickLogicFunctionFromDisk({ filepath, name, id }) {
+		let { logicFunctions, malformedLogicFunctions } = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
+		if (name || id) {
+			logicFunctions = logicFunctions.filter(lf => (lf.name === name && name) || (lf.id === id && id));
+		}
+		if (logicFunctions.length === 0) {
+			this._printMalformedLogicFunctionsFromDisk(malformedLogicFunctions);
+			this._printListHelperOutput({ fromFile: true });
+			throw new Error('No Logic Functions found');
+		}
+		if (logicFunctions.length && !name && !id) {
+			this._printMalformedLogicFunctionsFromDisk(malformedLogicFunctions);
+		}
+		if (logicFunctions.length === 1) {
+			return logicFunctions[0];
+		}
+		const answer = await this._prompt({
+			type: 'list',
+			name: 'logicFunction',
+			message: 'Which logic function would you like to execute?',
+			choices : logicFunctions,
+		});
+
+		const logicFunction = logicFunctions.find(lf => lf.name === answer.logicFunction);
+		logicFunction.path = filepath;
+		return logicFunction;
+	}
+
+	_printMalformedLogicFunctionsFromDisk(malformedLogicFunctions) {
+		if (malformedLogicFunctions.length) {
+			this.ui.stdout.write(this.ui.chalk.red(`The following Logic Functions are not valid:${os.EOL}`));
+			malformedLogicFunctions.forEach((item) => {
+				this.ui.stdout.write(`- ${item.name}: ${item.error}${os.EOL}`);
 			});
-			if (!overwrite) {
-				this.ui.stdout.write(`Aborted.${os.EOL}`);
-				process.exit(0);
-			}
+			this.ui.stdout.write(`${os.EOL}`);
 		}
 	}
 
-	/** Recursively copy and replace template files */
-	async _copyAndReplaceLogicFunction({ logicFunctionName, logicFunctionSlugName, description, templatePath, destinationPath }){
-		const files = await fs.readdir(templatePath);
-		const createdFiles = [];
-
-		for (const file of files){
-			//createdFiles.push(destinationFile);
-			// check if file is a dir
-			const stat = await fs.stat(path.join(templatePath, file));
-			if (stat.isDirectory()) {
-				const subFiles = await this._copyAndReplaceLogicFunction({
-					logicFunctionName,
-					logicFunctionSlugName,
-					description,
-					templatePath: path.join(templatePath, file),
-					destinationPath: path.join(destinationPath, file)
-				});
-				createdFiles.push(...subFiles);
-			} else {
-				const fileReplacements = {
-					'logic_function_name': logicFunctionSlugName,
-				};
-				const destinationFile = await templateProcessor.copyAndReplaceTemplate({
-					fileNameReplacements: fileReplacements,
-					file,
-					templatePath,
-					destinationPath,
-					replacements: {
-						name: logicFunctionName,
-						description: description || ''
-					}
-				});
-				createdFiles.push(destinationFile);
-			}
+	async _getExecuteData({ productId, deviceId, eventName, data, payload }) {
+		if (payload) {
+			return this._getExecuteDataFromPayload(payload);
 		}
-		// return file name created
-		return createdFiles;
-	}
-
-	async execute({ org, data, dataPath, params: { filepath } }) {
-		let logicData;
-		const orgName = getOrgName(org);
-		const logicPath = getFilePath(filepath);
-
-		if (!data && !dataPath) {
-			throw new Error('Error: Please provide either data or dataPath');
-		}
-		if (data && dataPath) {
-			throw new Error('Error: Please provide either data or dataPath');
-		}
-		if (dataPath) {
-			logicData = await fs.readFile(dataPath, 'utf8');
-		} else {
-			logicData = data;
-		}
-
-		const { logicConfigContent } = await this._getLogicFunctionConfig({ logicPath });
-		const { logicCodeFileName, logicCodeContent } = await this._getLogicFunctionCode({ logicPath });
-
-		const logic = {
-			event: {
-				event_data: logicData,
-				event_name: 'test_event',
-				device_id: '',
-				product_id: 0
-			},
-			source: {
-				type: logicConfigContent.logic_function.source.type,
-				code: logicCodeContent
+		return {
+			event:  {
+				event_name: eventName || 'test_event',
+				product_id: productId || 0,
+				device_id: deviceId || '',
+				event_data: data || ''
 			}
 		};
-		const api = createAPI();
+	}
+
+	async _getExecuteDataFromPayload(payload) {
+		const parsedAsJson = await this._parseEventFromPayload(payload);
+		if (!parsedAsJson.error) {
+			return parsedAsJson.eventData;
+		}
+		const parsedAsFile = await this._parseEventFromFile(payload);
+		if (parsedAsFile.error) {
+			throw new Error('Unable to parse payload as JSON or file');
+		} else {
+			return parsedAsFile.eventData;
+		}
+	}
+
+	async _parseEventFromPayload(payload) {
+		let eventData, error;
 		try {
-			this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicCodeFileName)} for ${orgName}...${os.EOL}`);
-			this.ui.stdout.write(`${os.EOL}`);
-			const { result } = await api.executeLogicFunction({ org, logic, data });
-			const resultType = result.status === 'Success' ? this.ui.chalk.cyanBright(result.status) : this.ui.chalk.red(result.status);
-			this.ui.stdout.write(`Execution Status: ${resultType}${os.EOL}`);
-			if (result.logs.length === 0) {
+			eventData = JSON.parse(payload);
+		} catch (_error) {
+			error = _error;
+		}
+		return { error, eventData };
+	}
+
+	async _parseEventFromFile(payloadPah) {
+		let eventData, error;
+		try {
+			eventData = await fs.readJson(payloadPah);
+		} catch (_error) {
+			error = _error;
+		}
+		return { error, eventData };
+	}
+
+	_printExecuteOutput({ logs, error, status }) {
+		if (status === 'Success') {
+			this.ui.stdout.write(this.ui.chalk.cyanBright(`Execution Status: ${status}${os.EOL}`));
+			if (logs.length === 0) {
 				this.ui.stdout.write(`No logs obtained from Execution${os.EOL}`);
 				this.ui.stdout.write(`${os.EOL}`);
 			} else {
 				this.ui.stdout.write(`Logs from Execution:${os.EOL}`);
-				result.logs.forEach((log, index) => {
+				logs.forEach((log, index) => {
 					this.ui.stdout.write(`	${index + 1}.- ${JSON.stringify(log)}${os.EOL}`);
 				});
 				this.ui.stdout.write(`${os.EOL}`);
 			}
-			if (result.err) {
-				this.ui.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
-				this.ui.stdout.write(`${result.err}${os.EOL}`);
-				this.ui.stdout.write(`${os.EOL}`);
-			} else {
-				this.ui.stdout.write(this.ui.chalk.cyanBright(`No errors during Execution.${os.EOL}`));
-				this.ui.stdout.write(`${os.EOL}`);
-			}
-			return { logicConfigContent, logicCodeContent };
-		} catch (error) {
-			throw createAPIErrorResult({ error: error, message: `Error executing logic function for ${orgName}` });
-		}
-	}
-
-	async _getLogicFunctionConfig({ logicPath }) {
-		const files = await fs.readdir(logicPath);
-		const { fileName, content: configurationFileString } = await this._pickLogicFunctionFileByExtension({ files, extension: 'json', logicPath });
-		const configurationFileJson = JSON.parse(configurationFileString);
-		return { logicConfigFileName: fileName, logicConfigContent: configurationFileJson };
-	}
-	async _getLogicFunctionCode({ logicPath }) {
-		const files = await fs.readdir(logicPath);
-		// TODO (hmontero): here we can pick different files based on the source type
-		const { fileName: logicCodeFileName, content: logicCodeContent } = await this._pickLogicFunctionFileByExtension({ files, logicPath });
-		return { logicCodeFileName, logicCodeContent };
-	}
-
-	async _pickLogicFunctionFileByExtension({ logicPath, files, extension = 'js' } ) {
-		let fileName;
-		const filteredFiles = findFilesByExtension(files, extension);
-		if (filteredFiles.length === 0) {
-			throw new Error(`Error: No ${extension} files found in ${logicPath}`);
-		}
-		if (filteredFiles.length === 1) {
-			fileName = filteredFiles[0];
+			this.ui.stdout.write(`No errors during Execution.${os.EOL}`);
 		} else {
-			const choices = filteredFiles.map((file) => {
-				return {
-					name: file,
-					value: file
-				};
-			});
-
-			const result = await this._prompt({
-				type: 'list',
-
-				name: 'file',
-				message: `Which ${extension} file would you like to use?`,
-				choices
-			});
-			fileName = result.file;
+			this.ui.stdout.write(this.ui.chalk.red(`Execution Status: ${status}${os.EOL}`));
+			this.ui.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
+			this.ui.stdout.write(`${error}${os.EOL}`);
 		}
-
-		const fileBuffer =  await fs.readFile(path.join(logicPath, fileName));
-		return { fileName, content: fileBuffer.toString() };
 	}
 
-	async deploy({ org, data, force, dataPath, params: { filepath } }) {
+	async deploy({ org, name, id, product_id: productId, event_name: eventName, device_id: deviceId, data, payload, force, params: { filepath } }) {
 		this._setOrg(org);
+		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath, name, id });
+		const eventData = await this._getExecuteData({
+			productId,
+			deviceId,
+			data,
+			eventName,
+			payload
+		});
+		const cloudLogicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
+		const cloudLogicFunction = cloudLogicFunctions.find(lf => lf.name === logicFunction.name);
+		await this._confirmDeploy(logicFunction, force);
+		if (cloudLogicFunction) {
+			await this._promptOverwriteCloudLogicFunction(cloudLogicFunction, force);
+			logicFunction.id = cloudLogicFunction.id;
+		}
+		// TODO (hmontero): put an spinner
+		this.ui.stdout.write(`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...${os.EOL}`);
+		const { status, logs, error } = await logicFunction.execute(eventData);
+		this._printExecuteOutput({ logs, error, status });
+		if (status !== 'Success') {
+			throw new Error('Unable to deploy Logic Function');
+		}
+		// TODO (hmontero): put an spinner
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.cyanBright(`${logicFunction.name} (${logicFunction.id || ''})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+		await logicFunction.deploy();
+		await logicFunction.saveToDisk();
+		this._printDeployOutput(logicFunction);
+	}
 
-		await this._getLogicFunctionList();
-
+	async _confirmDeploy(logicFunction, force) {
 		if (!force) {
 			const confirm = await this._prompt({
 				type: 'confirm',
 				name: 'proceed',
-				message: `Deploying to ${getOrgName(this.org)}. Proceed?`,
+				message: `Deploying ${logicFunction.name} to ${getOrgName(this.org)}. Proceed?`,
 				choices: Boolean
 			});
 
@@ -410,48 +392,24 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				return;
 			}
 		}
+	}
+	async _promptOverwriteCloudLogicFunction(cloudLogicFunction, force) {
+		if (!force) {
+			const confirm = await this._prompt({
+				type: 'confirm',
+				name: 'proceed',
+				message: `A Logic Function with name ${cloudLogicFunction.name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
+				choices: Boolean
+			});
 
-
-		const { logicConfigContent, logicCodeContent } = await this.execute({ org, data, dataPath, params: { filepath } });
-		const name = logicConfigContent.logic_function.name;
-		logicConfigContent.logic_function.enabled = true;
-		logicConfigContent.logic_function.source.code = logicCodeContent;
-
-		const logicFuncNameDeployed = await this._validateLFName({ name });
-		if (logicFuncNameDeployed) {
-			try {
-				if (!force) {
-					const confirm = await this._prompt({
-						type: 'confirm',
-						name: 'proceed',
-						message: `A Logic Function with name ${name} is already available in the cloud ${getOrgName(this.org)}.${os.EOL}Proceed and overwrite with the new content?`,
-						choices: Boolean
-					});
-
-					if (!confirm.proceed) {
-						this.ui.stdout.write(`Aborted.${os.EOL}`);
-						return;
-					}
-				}
-				const { id } = await this._getLogicFunctionIdAndName(name);
-				await this.api.updateLogicFunction({ org, id, logicFunctionData: logicConfigContent.logic_function });
-				this._printDeployOutput(name, id);
-			} catch (err) {
-				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
-			}
-		} else {
-			try {
-				const deployedLogicFunc = await this.api.createLogicFunction({ org, logicFunction: logicConfigContent.logic_function });
-				this._printDeployNewLFOutput(deployedLogicFunc.logic_function.name, deployedLogicFunc.logic_function.id);
-			} catch (err) {
-				throw new Error(`Error deploying Logic Function ${name}: ${err.message}`);
+			if (!confirm.proceed) {
+				this.ui.stdout.write(`Aborted.${os.EOL}`);
+				process.exit(0);
 			}
 		}
 	}
 
-	async _printDeployOutput(name, id) {
-		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`Deploying Logic Function ${this.ui.chalk.cyanBright(`${name} (${id})`)} to ${getOrgName(this.org)}...${os.EOL}`);
+	_printDeployOutput() {
 		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
@@ -677,14 +635,6 @@ function createAPIErrorResult({ error: e, message, json }){
 // get org name from org slug
 function getOrgName(org) {
 	return org || 'your Sandbox';
-}
-
-function getFilePath(filepath) {
-	return filepath || '.';
-}
-
-function findFilesByExtension(files, extension) {
-	return files.filter((file) => file.endsWith(`.${extension}`));
 }
 
 // TODO (mirande): reconcile this w/ `normalizedApiError()` and `ensureError()`

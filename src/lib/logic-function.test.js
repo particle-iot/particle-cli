@@ -5,7 +5,6 @@ const logicFunc1 = require('../../test/__fixtures__/logic_functions/logicFunc1.j
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 const path = require('path');
 const templateProcessor = require('./template-processor');
-
 const fs = require('fs-extra');
 
 describe('LogicFunction', () => {
@@ -13,6 +12,18 @@ describe('LogicFunction', () => {
 		nock.cleanAll();
 		fs.emptyDirSync(PATH_TMP_DIR);
 	});
+	async function createLogicFunction({ name, description }) {
+		const lfPath = path.join(PATH_TMP_DIR, 'logic_functions');
+		const code = 'import Particle from \'particle:core\';\nexport default function main({ event }) {\n   console.log(\'Hello from logic function!\'); \n}';
+		const logicFunction = new LogicFunction({
+			name,
+			description,
+			_path: lfPath,
+		});
+		logicFunction.files.sourceCode.content = code;
+		await logicFunction.saveToDisk();
+		return logicFunction;
+	}
 	describe('list', () => {
 		it('returns an empty array if there are no logic functions', async () => {
 			nock('https://api.particle.io/v1/', )
@@ -171,5 +182,192 @@ describe('LogicFunction', () => {
 			}
 		});
 	});
+	describe('listFromDisk', () => {
+		afterEach(() => {
+			sinon.restore();
+			fs.emptyDirSync(PATH_TMP_DIR);
+		});
+		it('returns a list of logic functions', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			expect(logicFunctions).to.have.lengthOf(1);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+		});
+		it('returns a list of logic functions with org', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions'), org: 'my-org' });
+			expect(logicFunctions).to.have.lengthOf(1);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+			expect(logicFunctions[0]).to.have.property('org', 'my-org');
+		});
+		it('returns a list of more than one logic functions', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await createLogicFunction({ name: 'lf2', description: 'Logic Function 2 on SandBox' });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			expect(logicFunctions).to.have.lengthOf(2);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+		});
+		it('filter out files that are not logic functions', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.json'), '{}');
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			expect(logicFunctions).to.have.lengthOf(1);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+		});
+		it('filter out no well formed logic functions', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.logic.json'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			expect(logicFunctions).to.have.lengthOf(1);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+		});
+		it('returns a list of one element if the path is a file and it is a logic function', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf1.js') });
+			expect(logicFunctions).to.have.lengthOf(1);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+		});
+		it ('returns an empty list if the path is a file and it is not a logic function', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.js'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.js') });
+			expect(logicFunctions).to.have.lengthOf(0);
+		});
+		it('returns an empty list if there are no logic functions', async () => {
+			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: PATH_TMP_DIR });
+			expect(logicFunctions).to.have.lengthOf(0);
+		});
 
+		it('returns a list of logic functions and a list of malformed logic functions', async () => {
+			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.logic.json'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
+			const { logicFunctions, malformedLogicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
+			expect(logicFunctions).to.have.lengthOf(1);
+			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
+			expect(malformedLogicFunctions).to.have.lengthOf(1);
+			expect(malformedLogicFunctions[0].name).to.equal('lf2');
+		});
+		it('fails if the path does not exist', async () => {
+			try {
+				await LogicFunction.listFromDisk({ filepath: '/path/does/not/exist' });
+				expect.fail('Should have thrown an error');
+			} catch (error) {
+				expect(error.message).to.equal('Path does not exist');
+			}
+		});
+	});
+	describe('execute', () => {
+		afterEach(() => {
+			sinon.restore();
+			fs.emptyDirSync(PATH_TMP_DIR);
+		});
+		it('executes a logic function', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/execute', 'POST')
+				.reply(200, { result: { status: 'Success', logs: ['abc1'] } });
+			const trigger = {
+				event: {
+					event_name: 'my-event',
+					event_data: 'my-event-data',
+					product_id: 1,
+					device_id: 'my-device-id',
+				}
+			};
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			const executeResult = await lf1.execute(trigger);
+			expect(executeResult).to.have.property('status', 'Success');
+			expect(executeResult).to.have.property('logs');
+			expect(executeResult.logs).to.deep.equal(['abc1']);
+		});
+		it('returns status as exception and errors if the execution fails', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/execute', 'POST')
+				.reply(200, { result: { status: 'Exception', err: 'Error', logs: [] } });
+			const trigger = {
+				event: {
+					event_name: 'my-event',
+					event_data: 'my-event-data',
+					product_id: 1,
+					device_id: 'my-device-id',
+				}
+			};
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			const executeResult = await lf1.execute(trigger);
+			expect(executeResult).to.have.property('status', 'Exception');
+			expect(executeResult).to.have.property('error', 'Error');
+			expect(executeResult).to.have.property('logs');
+			expect(executeResult.logs).to.deep.equal([]);
+		});
+		it('propagates errors', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/execute', 'POST')
+				.reply(500, { error: 'Internal Server Error' } );
+			const trigger = {
+				event: {
+					event_name: 'my-event',
+					event_data: 'my-event-data',
+					product_id: 1,
+					device_id: 'my-device-id',
+				}
+			};
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			try {
+				await lf1.execute(trigger);
+				expect.fail('Should have thrown an error');
+			} catch (error) {
+				expect(error.message).to.equal('Error executing logic function: Internal Server Error');
+			}
+		});
+	});
+
+	describe('deploy', () => {
+		afterEach(() => {
+			sinon.restore();
+			fs.emptyDirSync(PATH_TMP_DIR);
+		});
+		it('deploys a new logic function', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions', 'POST')
+				.reply(200, { id: '1234', version: 1 } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			await lf1.deploy();
+			expect(lf1).to.have.property('id', '1234');
+			expect(lf1).to.have.property('version', 1);
+		});
+		it ('deploys existent logic function', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions/1234', 'PUT')
+				.reply(200, { id: '1234', version: 1 } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			lf1.id = '1234';
+			await lf1.deploy();
+			expect(lf1).to.have.property('id', '1234');
+			expect(lf1).to.have.property('version', 1);
+		});
+		it('propagates errors', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions', 'POST')
+				.reply(500, { error: 'Internal Server Error' } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			try {
+				await lf1.deploy();
+				expect.fail('Should have thrown an error');
+			} catch (error) {
+				expect(error.message).to.equal('Error deploying logic function: Internal Server Error');
+			}
+		});
+		it('propagates errors when updating', async () => {
+			nock('https://api.particle.io/v1/', )
+				.intercept('/logic/functions/1234', 'PUT')
+				.reply(500, { error: 'Internal Server Error' } );
+			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
+			lf1.id = '1234';
+			try {
+				await lf1.deploy();
+				expect.fail('Should have thrown an error');
+			} catch (error) {
+				expect(error.message).to.equal('Error deploying logic function: Internal Server Error');
+			}
+		});
+	});
 });

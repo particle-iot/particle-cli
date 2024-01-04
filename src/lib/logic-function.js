@@ -4,7 +4,7 @@ const ParticleAPI = require('../cmd/api');
 const settings = require('../../settings');
 const VError = require('verror');
 const { normalizedApiError } = require('./api-client');
-const { slugify } = require('./utilities');
+const { slugify, globList } = require('./utilities');
 const templateProcessor = require('./template-processor');
 
 class LogicFunction {
@@ -54,6 +54,91 @@ class LogicFunction {
 		}
 	}
 
+	static async listFromDisk({ filepath, org, api = createAPI() } = {}) {
+		let logicFunctions = [];
+		let malformedLogicFunctions = [];
+		if (!filepath) {
+			filepath = process.cwd();
+		}
+		const pathExists = await fs.exists(filepath);
+		const logicFunctionExtensionPattern = '*.logic.json';
+		if (!pathExists) {
+			throw new Error('Path does not exist');
+		}
+		// check if the path is a directory or a file
+		const stats = await fs.stat(filepath);
+
+		if (stats.isFile()) {
+			try {
+				// if it is a file, then load it as a logic function
+				const lf = await LogicFunction.loadFromDisk({
+					basePath: path.dirname(filepath),
+					fileName: path.basename(filepath),
+					org,
+					api
+				});
+				logicFunctions.push(lf);
+			} catch (error) {
+				malformedLogicFunctions.push({
+					name: path.basename(filepath.substring(0, filepath.indexOf('.'))),
+					error: error.message
+				});
+			}
+		} else {
+			const files = globList(filepath, [logicFunctionExtensionPattern]);
+			for (const file of files) {
+				// if the file is a directory, then load the logic functions from the directory
+				try {
+					const lf = await LogicFunction.loadFromDisk({
+						basePath: filepath,
+						fileName: path.basename(file),
+						org,
+						api
+					});
+					logicFunctions.push(lf);
+				} catch (error) {
+					malformedLogicFunctions.push({
+						name: path.basename(file.substring(0, file.indexOf('.'))),
+						error: error.message
+					});
+				}
+			}
+		}
+		return {
+			logicFunctions,
+			malformedLogicFunctions
+		};
+	}
+
+	static async loadFromDisk({ basePath, fileName, org, api = createAPI() } = {}) {
+		// if receive a .js then look for a .logic.json
+		// we need both files to be present
+		const baseFileName = fileName.substring(0, fileName.indexOf('.'));
+		const codeFile = `${baseFileName}.js`;
+		const configFile = `${baseFileName}.logic.json`;
+		const files = [codeFile, configFile];
+		for (const file of files) {
+			const filePath = path.join(basePath, file);
+			const pathExists = await fs.exists(filePath);
+			if (!pathExists) {
+				throw new Error(`File ${file} does not exist`);
+			}
+		}
+		const configuration = await fs.readFile(path.join(basePath, configFile), 'utf8');
+		const code = await fs.readFile(path.join(basePath, codeFile), 'utf8');
+		const logicFunction = new LogicFunction({ org, api });
+		logicFunction.files.configuration.name = configFile;
+		logicFunction.files.sourceCode.name = codeFile;
+		logicFunction.files.configuration.content = configuration;
+		logicFunction.files.sourceCode.content = code;
+		logicFunction.path = basePath;
+		logicFunction._deserializeConfiguration();
+		return logicFunction;
+
+	}
+
+
+
 	// should return an instance of LogicFunction
 	static async getByIdOrName({ id, name, list }) {
 		const logicFunctionData = list.find(lf => lf.id === id || lf.name === name);
@@ -61,6 +146,72 @@ class LogicFunction {
 			throw new Error('Logic function not found');
 		}
 		return logicFunctionData;
+	}
+
+	async execute(trigger) {
+		const logicEvent = {
+			event: trigger.event,
+			source: {
+				type: this.type,
+				code: this.files.sourceCode.content
+			}
+		};
+		try {
+			const { result } =
+				await this.api.executeLogicFunction({ org: this.org, logic: logicEvent });
+			return {
+				logs: result.logs,
+				error: result.err,
+				status: result.status,
+			};
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error executing logic function' });
+		}
+	}
+
+	async deploy() {
+		const logicFunctionRequestData = {
+			name: this.name,
+			description: this.description,
+			enabled: this.enabled,
+			source: {
+				type: this.type,
+				code: this.files.sourceCode.content
+			},
+			logic_triggers: this.triggers
+		};
+		if (this.id) {
+			return this.updateToCloud(logicFunctionRequestData);
+		} else {
+			return this.createToCloud(logicFunctionRequestData);
+		}
+	}
+
+	async createToCloud(logicFunctionData) {
+		try {
+			const result = await this.api.createLogicFunction({
+				org: this.org,
+				logicFunction: logicFunctionData,
+			});
+			this.id = result.id;
+			this.version = result.version;
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error deploying logic function' });
+		}
+
+	}
+
+	async updateToCloud(logicFunctionData) {
+		try {
+			const result = await this.api.updateLogicFunction({
+				org: this.org,
+				id: this.id,
+				logicFunctionData: logicFunctionData,
+			});
+			this.version = result.version;
+		} catch (e) {
+			throw createAPIErrorResult({ error: e, message: 'Error deploying logic function' });
+		}
 	}
 
 	async initFromTemplate({ templatePath }) {
