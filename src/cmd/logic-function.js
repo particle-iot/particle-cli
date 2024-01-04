@@ -425,61 +425,38 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
-	async updateStatus({ org, name, id }, { enable }) {
+	async updateStatus({ org, name, id, force, params: { filepath } }, { enable }) {
 		this._setOrg(org);
-
-		await this._getLogicFunctionList();
-
-		({ name, id } = await this._getLogicFunctionIdAndName(name, id));
-
-		let logicFunctionJson = await this._getLogicFunctionData(id);
-		logicFunctionJson.logic_function.enabled = enable;
-
-		try {
-			await this.api.updateLogicFunction({ org, id, logicFunctionData: logicFunctionJson.logic_function });
-			if (enable) {
-				this._printEnableOutput(name, id);
-			} else {
-				this._printDisableOutput(name, id);
-			}
-		} catch (err) {
-			throw new Error(`Error updating Logic Function ${name}: ${err.message}`);
+		const cloudLogicFunctions = await LogicFunction.listFromCloud({ org, api: this.api });
+		const logicFunction = await LogicFunction.getByIdOrName({ org, id, name, list: cloudLogicFunctions });
+		logicFunction.enabled = enable;
+		await logicFunction.deploy();
+		this._printUpdateStatusOutput({ name: logicFunction.name, id: logicFunction.id , enable });
+		const { logicFunctions: localLogicFunctions } = await LogicFunction.listFromDisk({ filepath, org, api: this.api });
+		const localLogicFunction = localLogicFunctions.find(lf => lf.name === logicFunction.name);
+		if (localLogicFunction) {
+			await this._confirmOverwriteIfNeeded({
+				filePaths: [localLogicFunction.configurationPath, localLogicFunction.sourcePath],
+				force
+			});
+			// assign cloud values to local logic function
+			localLogicFunction.copyFromOtherLogicFunction(logicFunction);
+			await localLogicFunction.saveToDisk();
+			this._printUpdateLocalFilesOutput({
+				jsonPath: localLogicFunction.configurationPath,
+				jsPath: localLogicFunction.sourcePath,
+				enable
+			});
 		}
-
-		// Overwrite logic function if found locally since it is now disabled
-		await this._overwriteIfLFExistsLocally(name, id);
 	}
 
-	async _overwriteIfLFExistsLocally(name, id) {
-		const { jsonPath, jsPath } = this._getLocalLFPathNames(name);
-
-		const exist = await this._confirmOverwriteIfNeeded(
-			{ filePaths: [jsonPath, jsPath] });
-
-		if (!exist) {
-			return;
-		}
-
-		const logicFunctionData = await this._getLogicFunctionData(id);
-
-		const { logicFunctionConfigData, logicFunctionCode } = this._serializeLogicFunction(logicFunctionData);
-
-		const { genJsonPath, genJsPath } = await this._generateFiles({ logicFunctionConfigData, logicFunctionCode, name });
-
-		this._printDisableNewFilesOutput({ jsonPath: genJsonPath, jsPath: genJsPath });
+	_printUpdateStatusOutput({ name, id, enable }) {
+		this.ui.stdout.write(`Logic Function ${name} (${id}) is now ${enable ? 'enabled' : 'disabled'}.${os.EOL}`);
 	}
 
-	_printDisableOutput(name, id) {
-		this.ui.stdout.write(`Logic Function ${name} (${id}) is now disabled.${os.EOL}`);
-	}
-
-	_printEnableOutput(name, id) {
-		this.ui.stdout.write(`Logic Function ${name} (${id}) is now enabled.${os.EOL}`);
-	}
-
-	_printDisableNewFilesOutput({ jsonPath, jsPath }) {
+	_printUpdateLocalFilesOutput({ jsonPath, jsPath, enable }) {
 		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`The following files were overwritten after disabling the Logic Function:${os.EOL}`);
+		this.ui.stdout.write(`The following files were overwritten after ${enable ? 'enabling': 'disabling'} the Logic Function:${os.EOL}`);
 		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
 		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);

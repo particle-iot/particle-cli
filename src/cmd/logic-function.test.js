@@ -1021,6 +1021,7 @@ describe('LogicFunctionCommands', () => {
 			logicFunction = new LogicFunction({
 				org: 'my-org',
 				name: 'LF1',
+				enabled: false,
 				description: 'Logic Function 1',
 				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
 				type: 'JavaScript',
@@ -1038,11 +1039,11 @@ describe('LogicFunctionCommands', () => {
 				logicFunctions: []
 			});
 			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
-			await logicFunctionCommands.updateStatus({ name: 'LF1', org: 'my-org' }, { enable: true });
+			await logicFunctionCommands.updateStatus({ name: 'LF1', org: 'my-org', params: {} }, { enable: true });
 			expect(updateStub).to.have.been.calledOnce;
 			expect(listLocalStub).to.have.been.calledOnce;
 			expect(listCloud).to.have.been.calledOnce;
-			expect(logicFunction.enable).to.be.true;
+			expect(logicFunction.enabled).to.be.true;
 		});
 
 		it('enable a logic function with id', async() => {
@@ -1052,11 +1053,11 @@ describe('LogicFunctionCommands', () => {
 				logicFunctions: []
 			});
 			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
-			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org' }, { enable: true });
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org', params: {} }, { enable: true });
 			expect(updateStub).to.have.been.calledOnce;
 			expect(listLocalStub).to.have.been.calledOnce;
 			expect(listCloud).to.have.been.calledOnce;
-			expect(logicFunction.enable).to.be.true;
+			expect(logicFunction.enabled).to.be.true;
 		});
 
 		it('fails to enable a logic function', async() => {
@@ -1068,12 +1069,12 @@ describe('LogicFunctionCommands', () => {
 			});
 			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
 			try {
-				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org' }, { enable: true });
+				await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org', params: {} }, { enable: true });
 			} catch (e) {
 				error = e;
 			}
 			expect(updateStub).to.have.been.calledOnce;
-			expect(listLocalStub).to.have.been.calledOnce;
+			expect(listLocalStub).to.not.have.been.calledOnce;
 			expect(listCloud).to.have.been.calledOnce;
 			expect(error.message).to.contain('Error enabling Logic Function LF1');
 		});
@@ -1086,11 +1087,11 @@ describe('LogicFunctionCommands', () => {
 			});
 			const saveStub = sinon.stub(logicFunction, 'saveToDisk').resolves(undefined);
 			const listCloud = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
-			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org' }, { enable: true });
+			await logicFunctionCommands.updateStatus({ id: '0021e8f4-64ee-416d-83f3-898aa909fb1b', org: 'my-org', params: {} }, { enable: true });
 			expect(updateStub).to.have.been.calledOnce;
 			expect(listLocalStub).to.have.been.calledOnce;
 			expect(listCloud).to.have.been.calledOnce;
-			expect(logicFunction.enable).to.be.true;
+			expect(logicFunction.enabled).to.be.true;
 			expect(saveStub).to.have.been.calledOnce;
 		});
 	});

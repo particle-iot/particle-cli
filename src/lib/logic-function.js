@@ -214,6 +214,17 @@ class LogicFunction {
 		}
 	}
 
+	copyFromOtherLogicFunction(logicFunction) {
+		this.name = logicFunction.name;
+		this.org = logicFunction.org;
+		this.description = logicFunction.description;
+		this.enabled = logicFunction.enabled;
+		this.type = logicFunction.type;
+		this.triggers = logicFunction.triggers;
+		this.files.sourceCode.content = logicFunction.files.sourceCode.content;
+		this.files.configuration.content = logicFunction.files.configuration.content;
+	}
+
 	async initFromTemplate({ templatePath }) {
 		const contentReplacements = {
 			name: this.name,
