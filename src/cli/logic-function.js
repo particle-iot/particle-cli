@@ -161,6 +161,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(logicFunction, 'disable', 'Disables a logic function in the cloud', {
+		params: '[filepath]',
 		options: {
 			'org': {
 				description: 'Specify the organization',
@@ -185,6 +186,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(logicFunction, 'enable', 'Enables a logic function in the cloud', {
+		params: '[filepath]',
 		options: {
 			'org': {
 				description: 'Specify the organization',
