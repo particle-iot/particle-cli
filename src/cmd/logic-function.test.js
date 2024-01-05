@@ -21,6 +21,7 @@ describe('LogicFunctionCommands', () => {
 			stderr: {
 				write: sinon.stub()
 			},
+			showBusySpinnerUntilResolved: sinon.stub().callsFake((text, promise) => promise),
 			prompt: sinon.stub(),
 			chalk: {
 				bold: sinon.stub().callsFake((str) => str),
@@ -224,7 +225,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicStub.calledOnce).to.be.true;
 			expect(executeStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', logicFunction.execute());
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 		});
@@ -284,7 +285,7 @@ describe('LogicFunctionCommands', () => {
 			await logicFunctionCommands.execute({ data: '{"eventData": "someData"}' , params: {} });
 
 			expect(logicStub.calledOnce).to.be.true;
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', logicFunction.execute());
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Exception${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Error during Execution:${os.EOL}`);
 		});
@@ -346,7 +347,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicStub.calledOnce).to.be.true;
 			expect(executeStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', lf1.execute());
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 		});
@@ -378,7 +379,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicStub.calledOnce).to.be.true;
 			expect(executeStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF2 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF2 for your Sandbox...', lf2.execute());
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 		});
@@ -404,7 +405,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicStub.calledOnce).to.be.true;
 			expect(executeStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', lf1.execute());
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`The following Logic Functions are not valid:${os.EOL}`);
@@ -451,7 +452,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicStub.calledOnce).to.be.true;
 			expect(executeStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(0);
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', lf1.execute());
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).to.not.have.been.calledWith(`The following Logic Functions are not valid:${os.EOL}`);
@@ -663,7 +664,7 @@ describe('LogicFunctionCommands', () => {
 			expect(executeStub).to.have.been.calledOnce;
 			expect(logicStub).to.have.been.calledOnce;
 			expect(saveStub).to.have.been.calledOnce;
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', logicFunction.execute());
 		});
 
 		it('deploys an existent logic function', async() => {
@@ -693,7 +694,7 @@ describe('LogicFunctionCommands', () => {
 			expect(executeStub).to.have.been.calledOnce;
 			expect(logicStub).to.have.been.calledOnce;
 			expect(saveStub).to.have.been.calledOnce;
-			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Executing Logic Function LF1 for your Sandbox...${os.EOL}`);
+			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', logicFunction.execute());
 			expect(logicFunctionCommands._prompt).calledWith(sinon.match(expectedPromptCall));
 			expect(logicFunction.id).to.equal('0021e8f4-64ee-416d-83f3-898aa909fb1b');
 		});

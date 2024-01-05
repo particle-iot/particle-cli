@@ -10,7 +10,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().list(args);
+			return new LogicFunctionsCmd(args).list(args);
 		},
 		examples: {
 			'$0 $command': 'lists deployed Logic Functions'
@@ -33,7 +33,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().get(args);
+			return new LogicFunctionsCmd(args).get(args);
 		},
 		examples: {
 			'$0 $command': 'downloads a Logic Function to your current directory',
@@ -63,7 +63,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().create(args);
+			return new LogicFunctionsCmd(args).create(args);
 		},
 		examples: {
 			'$0 $command': 'creates a new Logic Function',
@@ -102,7 +102,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().execute(args);
+			return new LogicFunctionsCmd(args).execute(args);
 		},
 		examples: {
 			'$0 $command --data <data>': 'executes the local Logic Function with the data',
@@ -149,7 +149,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().deploy(args);
+			return new LogicFunctionsCmd(args).deploy(args);
 		},
 		examples: {
 			'$0 $command --data <data>': 'executes and deploys the local Logic Function with the data',
@@ -176,7 +176,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().updateStatus(args, { enable: false });
+			return new LogicFunctionsCmd(args).updateStatus(args, { enable: false });
 		},
 		examples: {
 			'$0 $command': 'Disables a Logic Function',
@@ -201,7 +201,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().updateStatus(args, { enable: true });
+			return new LogicFunctionsCmd(args).updateStatus(args, { enable: true });
 		},
 		examples: {
 			'$0 $command': 'Enables a Logic Function',
@@ -230,7 +230,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().delete(args);
+			return new LogicFunctionsCmd(args).delete(args);
 		},
 		examples: {
 			'$0 $command': 'Deletes a Logic Function',
@@ -257,7 +257,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().logs(args);
+			return new LogicFunctionsCmd(args).logs(args);
 		},
 		examples: {
 			'$0 $command': 'Shows logs from a Logic Function',
