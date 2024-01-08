@@ -1,11 +1,9 @@
 const os = require('os');
 const fs = require('fs-extra');
 const path = require('path');
-const nock = require('nock');
 const { expect, sinon } = require('../../test/setup');
 const LogicFunctionCommands = require('./logic-function');
 const { PATH_FIXTURES_LOGIC_FUNCTIONS, PATH_TMP_DIR } = require('../../test/lib/env');
-const { slugify } = require('../lib/utilities');
 const LogicFunction = require('../lib/logic-function');
 
 describe('LogicFunctionCommands', () => {
@@ -13,8 +11,6 @@ describe('LogicFunctionCommands', () => {
 	let originalUi = new LogicFunctionCommands().ui;
 	let logicFunc1 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc1.json'), 'utf-8');
 	logicFunc1 = JSON.parse(logicFunc1);
-	let logicFunc2 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc2.json'), 'utf-8');
-	logicFunc2 = JSON.parse(logicFunc2);
 
 	beforeEach(async () => {
 		logicFunctionCommands = new LogicFunctionCommands();
@@ -167,142 +163,6 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(6);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(` - ${lf.files.configuration.name}${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(` - ${lf.files.sourceCode.name}${os.EOL}`);
-		});
-	});
-
-	describe('_getLogicFunctionList', () => {
-		it('lists logic functions in Sandbox', async () => {
-			nock('https://api.particle.io/v1', )
-				.intercept('/logic/functions', 'GET')
-				.reply(200, logicFunc1);
-			const expectedResp = logicFunc1.logic_functions;
-
-			await logicFunctionCommands._getLogicFunctionList({});
-
-			expect(logicFunctionCommands.logicFuncList).to.eql(expectedResp);
-		});
-
-		it('lists logic functions in an org', async () => {
-			nock('https://api.particle.io/v1/orgs/particle')
-				.intercept('/logic/functions', 'GET')
-				.reply(200, logicFunc2);
-			const expectedResp = logicFunc2.logic_functions;
-			logicFunctionCommands.org = 'particle';
-
-			await logicFunctionCommands._getLogicFunctionList({ org: 'particle' });
-
-			expect(logicFunctionCommands.logicFuncList).to.eql(expectedResp);
-		});
-
-		it('lists empty if no logic functions are found', async () => {
-			nock('https://api.particle.io/v1/orgs/particle')
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: [] });
-			const expectedResp = [];
-			logicFunctionCommands.org = 'particle';
-
-			await logicFunctionCommands._getLogicFunctionList({ org: 'particle' });
-
-			expect(logicFunctionCommands.logicFuncList).to.eql(expectedResp);
-		});
-
-		it('throws an error if API is not accessible', async () => {
-			nock('https://api.particle.io/v1', )
-				.intercept('/logic/functions', 'GET')
-				.reply(500, { error: 'Internal Server Error' });
-
-			let error;
-			try {
-				await logicFunctionCommands._getLogicFunctionList({});
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Error listing logic functions: Internal Server Error');
-		});
-
-		it('throws an error if org is not found', async () => {
-			nock('https://api.particle.io/v1/orgs/particle')
-				.intercept('/logic/functions', 'GET')
-				.reply(404, { error: 'Organization Not Found' });
-			logicFunctionCommands.org = 'particle';
-
-			let error;
-			try {
-				await logicFunctionCommands._getLogicFunctionList({ org: 'particle' });
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Error listing logic functions: Organization Not Found');
-		});
-	});
-
-	describe('_getLogicFunctionData', async() => {
-		it('gets the logic function json', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-			const expectedResp = { logic_function: logicFunc1.logic_functions[0] };
-
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
-				.reply(200, { logic_function: logicFunc1.logic_functions[0] });
-
-			const res = await logicFunctionCommands._getLogicFunctionData('0021e8f4-64ee-416d-83f3-898aa909fb1b');
-
-			expect(res).to.eql(expectedResp);
-		});
-
-		it('returns error if logic-function is not found', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'GET')
-				.reply(404, { });
-
-			let error;
-			try {
-				await logicFunctionCommands._getLogicFunctionData('0021e8f4-64ee-416d-83f3-898aa909fb1b');
-			} catch (_e) {
-				error = _e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Error getting logic function: HTTP error 404 from https://api.particle.io/v1/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b');
-		});
-	});
-
-	describe('_generateFiles', async() => {
-		it ('generates files from the data given', async() => {
-			const data = { logic_function : logicFunc1.logic_functions[0] };
-			const logicFunctionCode = data.logic_function.source.code;
-			const logicFunctionConfigData = data.logic_function;
-			sinon.stub(logicFunctionCommands, '_confirmOverwriteIfNeeded').resolves(true);
-			const name = 'LF1';
-			const slugName = slugify(name);
-
-			const { jsonPath, jsPath } = await logicFunctionCommands._generateFiles({ logicFunctionConfigData, logicFunctionCode, name: 'LF1' });
-
-			expect(jsonPath).to.eql(path.join(process.cwd(), `${slugName}.logic.json`));
-			expect(jsPath).to.eql(path.join(process.cwd(), `${slugName}.js`));
-
-			await fs.remove(jsonPath);
-			await fs.remove(jsPath);
-		});
-	});
-
-	describe('_getLocalLFPathNames', async() => {
-		it('returns local file paths where the LF should be saved', () => {
-			const slugName = slugify('LF1');
-			const { jsonPath, jsPath } = logicFunctionCommands._getLocalLFPathNames('LF1');
-
-			expect(jsonPath).to.eql(path.join(process.cwd(), `${slugName}.logic.json`));
-			expect(jsPath).to.eql(path.join(process.cwd(), `${slugName}.js`));
 		});
 	});
 
@@ -663,132 +523,6 @@ describe('LogicFunctionCommands', () => {
 		});
 	});
 
-	describe('_getIdFromName', () => {
-		it('returns id from LF name', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-
-			const res = await logicFunctionCommands._getIdFromName('LF1', logicFunctions);
-
-			expect(res).to.equal('0021e8f4-64ee-416d-83f3-898aa909fb1b');
-		});
-
-		it('returns an error if id is not found', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-
-			let error;
-			try {
-				await logicFunctionCommands._getIdFromName('LF3', logicFunctions);
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to get logic function id from name');
-		});
-	});
-
-	describe('_getNameFromId', () => {
-		it('returns name if found', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-
-			const res = await logicFunctionCommands._getNameFromId('0021e8f4-64ee-416d-83f3-898aa909fb1b', logicFunctions);
-
-			expect(res).to.equal('LF1');
-		});
-
-		it('returns an error if name is not found', async () => {
-			let logicFunctions = [];
-			logicFunctions.push(logicFunc1.logic_functions[0]);
-			logicFunctions.push(logicFunc2.logic_functions[0]);
-
-			let error;
-			try {
-				await logicFunctionCommands._getIdFromName('0021e8f4-64ee-416d-83f3-898aa909fb1c', logicFunctions);
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to get logic function id from name');
-		});
-	});
-
-	describe('_getLogicFunctionIdAndName', () => {
-		let logicFunctions = [];
-		logicFunctions.push(logicFunc1.logic_functions[0]);
-		logicFunctions.push(logicFunc2.logic_functions[0]);
-
-		beforeEach(async () => {
-			logicFunctionCommands.logicFuncList = logicFunctions;
-		});
-
-		it('returns id and name if both are provided', async () => {
-			const { name, id } = await logicFunctionCommands._getLogicFunctionIdAndName('LF1', '0021e8f4-64ee-416d-83f3-898aa909fb1b');
-
-			expect(name).to.eql('LF1');
-			expect(id).to.eql('0021e8f4-64ee-416d-83f3-898aa909fb1b');
-		});
-
-		it('returns name and id if name is provided', async () => {
-			const { name, id } = await logicFunctionCommands._getLogicFunctionIdAndName('LF1', undefined);
-
-			expect(name).to.eql('LF1');
-			expect(id).to.eql('0021e8f4-64ee-416d-83f3-898aa909fb1b');
-		});
-
-		it('returns name and id if id is provided', async () => {
-			const { name, id } = await logicFunctionCommands._getLogicFunctionIdAndName(undefined, '0021e8f4-64ee-416d-83f3-898aa909fb1b');
-
-			expect(name).to.eql('LF1');
-			expect(id).to.eql('0021e8f4-64ee-416d-83f3-898aa909fb1b');
-		});
-
-		it('error if list is unable to be fetched', async () => {
-			logicFunctionCommands.logicFuncList = [];
-
-			let error;
-			try {
-				await logicFunctionCommands._getLogicFunctionIdAndName(undefined, undefined);
-			} catch (_e) {
-				error = _e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('No logic functions found');
-		});
-
-		it('returns error if id is not found', async () => {
-			let error;
-			try {
-				await logicFunctionCommands._getLogicFunctionIdAndName('LF3', undefined);
-			} catch (_e) {
-				error = _e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to get logic function id from name');
-		});
-
-		it('returns error if name is not found', async () => {
-			let error;
-			try {
-				await logicFunctionCommands._getLogicFunctionIdAndName(undefined, '0021e8f4-64ee-416d-83f3-898aa909fb1c');
-			} catch (_e) {
-				error = _e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to get logic function name from id');
-		});
-
-	});
-
 	describe('_selectLogicFunctionName', () => {
 		it('selects logic function from a list', async () => {
 			const logicFunctions = ['logicFunc1', 'logicFunc2'];
@@ -824,75 +558,58 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('delete', () => {
-		let logicFunctions = [];
-		logicFunctions.push(logicFunc1.logic_functions[0]);
-		logicFunctions.push(logicFunc2.logic_functions[0]);
-
-		beforeEach(() => {
-			logicFunctionCommands.logicFuncList = logicFunctions;
-		});
-
 		afterEach(() => {
-			nock.cleanAll();
+			sinon.restore();
 		});
 
 		it('checks for confirmation before deleting', async() => {
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(204, { });
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+
+			const listFromCloudStub = sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			const deleteStub = sinon.stub(logicFunction, 'deleteFromCloud').resolves(undefined);
 
 			await logicFunctionCommands.delete({ name: 'LF1' });
 
 			expect(logicFunctionCommands._prompt).to.have.been.calledOnce;
-		});
-
-		it('returns without throwing an error if success', async() => {
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(204, { });
-
-			let error;
-			try {
-				await logicFunctionCommands.delete({ name: 'LF1' });
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.undefined;
+			expect(listFromCloudStub).to.have.been.calledOnce;
+			expect(deleteStub).to.have.been.calledOnce;
 		});
 
 		it('process exits if user does not want to delete during confirmation', async() => {
-			logicFunctionCommands.logicFuncList = logicFunctions;
-			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: false });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(204, { });
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
 
+			sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			const deleteStub = sinon.stub(logicFunction, 'deleteFromCloud').resolves(undefined);
+			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: false });
 			await logicFunctionCommands.delete({ name: 'LF1' });
 
 			expect(logicFunctionCommands.ui.stdout.write.callCount).to.equal(1);
+			expect(deleteStub).to.not.have.been.called;
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Aborted.${os.EOL}`);
 		});
 
 		it('throws an error if deletion fails', async() => {
+			const logicFunction = new LogicFunction({
+				name: 'LF1',
+				description: 'Logic Function 1',
+				id: '0021e8f4-64ee-416d-83f3-898aa909fb1b',
+				type: 'JavaScript',
+			});
+
+			sinon.stub(LogicFunction, 'listFromCloud').resolves([logicFunction]);
+			const deleteStub = sinon.stub(logicFunction, 'deleteFromCloud').rejects(new Error('Error deleting Logic Function LF1'));
 			sinon.stub(logicFunctionCommands, '_prompt').resolves({ delete: true });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions: logicFunctions });
-			nock('https://api.particle.io/v1',)
-				.intercept('/logic/functions/0021e8f4-64ee-416d-83f3-898aa909fb1b', 'DELETE')
-				.reply(404, {});
 
 			let error;
 			try {
@@ -903,6 +620,7 @@ describe('LogicFunctionCommands', () => {
 
 			expect(error).to.be.an.instanceOf(Error);
 			expect(error.message).to.contain('Error deleting Logic Function LF1');
+			expect(deleteStub).to.have.been.calledOnce;
 		});
 	});
 
