@@ -379,17 +379,19 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	async _deployLogicFunctionWithSpinner(logicFunction) {
+		const logicFunctionShowName = logicFunction.id ? `${logicFunction.name}(${logicFunction.id})` : logicFunction.name;
 		return this.ui.showBusySpinnerUntilResolved(
-			`Deploying Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...`
+			`Deploying Logic Function ${this.ui.chalk.bold(logicFunctionShowName)} for ${getOrgName(this.org)}...`
 			,logicFunction.deploy());
 	}
 
 	async _confirmDeploy(logicFunction, force) {
+		const logicFunctionShowName = logicFunction.id ? `${logicFunction.name}(${logicFunction.id})` : logicFunction.name;
 		if (!force) {
 			const confirm = await this._prompt({
 				type: 'confirm',
 				name: 'proceed',
-				message: `Deploying ${logicFunction.name} to ${getOrgName(this.org)}. Proceed?`,
+				message: `Deploying ${logicFunctionShowName} to ${getOrgName(this.org)}. Proceed?`,
 				choices: Boolean
 			});
 
