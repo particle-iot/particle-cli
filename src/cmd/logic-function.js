@@ -167,15 +167,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`Files created:${os.EOL}`);
 		this.ui.stdout.write(`- ${path.basename(jsPath)}${os.EOL}`);
 		this.ui.stdout.write(`- ${path.basename(jsonPath)}${os.EOL}`);
-		this.ui.stdout.write(`${os.EOL}`);
 	}
 
 	_printCreateHelperOutput() {
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Guidelines for creating your Logic Function can be found here https://docs.particle.io/getting-started/cloud/logic/${os.EOL}`);
 		this.ui.stdout.write(`Once you have written your Logic Function, run${os.EOL}`);
-		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function execute\'') + ` to run your Function${os.EOL}`);
-		this.ui.stdout.write('- ' + this.ui.chalk.yellow('\'particle logic-function deploy\'') + ` to deploy your new changes${os.EOL}`);
+		this.ui.stdout.write('- ' + this.ui.chalk.yellow('particle logic-function execute') + ` to run your Function${os.EOL}`);
+		this.ui.stdout.write('- ' + this.ui.chalk.yellow('particle logic-function deploy') + ` to deploy your new changes${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 
@@ -418,9 +417,11 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	}
 
 	_printDeployOutput(logicFunction) {
+		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`${this.ui.chalk.cyanBright('Success!')}${os.EOL}`);
 		this.ui.stdout.write(`Logic Function ${this.ui.chalk.cyanBright(logicFunction.name)}(${this.ui.chalk.cyanBright(logicFunction.id)}) deployed to ${getOrgName(this.org)}${os.EOL}`);
-		this.ui.stdout.write(`${this.ui.chalk.yellow('Visit \'console.particle.io\' to view results from your device(s)!')}${os.EOL}`);
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(`Visit ${this.ui.chalk.yellow('console.particle.io')} to view results from your device(s)!${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);
 	}
 

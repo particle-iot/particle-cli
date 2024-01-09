@@ -48,8 +48,8 @@ describe('Logic Function Commands', () => {
 		'',
 		'Guidelines for creating your Logic Function can be found here https://docs.particle.io/getting-started/cloud/logic/',
 		'Once you have written your Logic Function, run',
-		'- \'particle logic-function execute\' to run your Function',
-		'- \'particle logic-function deploy\' to deploy your new changes',
+		'- particle logic-function execute to run your Function',
+		'- particle logic-function deploy to deploy your new changes',
 		''
 	];
 
@@ -72,7 +72,7 @@ describe('Logic Function Commands', () => {
 		// 'Deploying Logic Function lf3 to for cyberdyne-systems...',
 		// 'Success! Logic Function name deployed with ID: bbd75c65-0db2-44bd-9d35-8ce6db9885e3',
 		'',
-		'Visit \'console.particle.io\' to view results from your device(s)!',
+		'Visit console.particle.io to view results from your device(s)!',
 	];
 
 	const getOutput = [
