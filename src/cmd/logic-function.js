@@ -428,7 +428,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this._setOrg(org);
 		const cloudLogicFunctions = await this._getLogicFunctionListWithSpinner();
 		if (!name && !id) {
-			name = await this._selectLogicFunctionName(cloudLogicFunctions);
+			const action = enable ? 'enable' : 'disable';
+			name = await this._selectLogicFunctionName(cloudLogicFunctions, action);
 		}
 		const logicFunction = await LogicFunction.getByIdOrName({ org, id, name, list: cloudLogicFunctions });
 		logicFunction.enabled = enable;
@@ -476,7 +477,8 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const cloudLogicFunctions = await this._getLogicFunctionListWithSpinner();
 
 		if (!name && !id) {
-			name = await this._selectLogicFunctionName(cloudLogicFunctions);
+			const action = 'delete';
+			name = await this._selectLogicFunctionName(cloudLogicFunctions, action);
 		}
 		const logicFunction = await LogicFunction.getByIdOrName({ org, id, name, list: cloudLogicFunctions });
 
@@ -525,7 +527,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return { logicFunctionConfigData: { 'logic_function': logicFunctionConfigData }, logicFunctionCode };
 	}
 
-	async _selectLogicFunctionName(list) {
+	async _selectLogicFunctionName(list, action = 'download') {
 		if (list.length === 0) {
 			this._printListHelperOutput();
 			throw new Error('No Logic Functions found');
@@ -533,7 +535,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const answer = await this._prompt({
 			type: 'list',
 			name: 'logic_function',
-			message: 'Which Logic Function would you like to download?',
+			message: `Which Logic Function would you like to ${action}?`,
 			choices : list,
 			nonInteractiveError: 'Provide name for the Logic Function'
 		});
