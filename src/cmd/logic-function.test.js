@@ -61,7 +61,7 @@ describe('LogicFunctionCommands', () => {
 			});
 		});
 
-		it('lists logic functions in Sandbox account', async () => {
+		it('lists Logic Functions in Sandbox account', async () => {
 
 			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
 			await logicFunctionCommands.list({});
@@ -71,7 +71,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- LF1 (enabled)${os.EOL}`);
 		});
 
-		it('lists logic functions in an org', async () => {
+		it('lists Logic Functions in an org', async () => {
 			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
 			await logicFunctionCommands.list({ org: 'particle' });
 			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: 'particle' })).to.be.true;
@@ -80,7 +80,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`- LF1 (enabled)${os.EOL}`);
 		});
 
-		it('shows help if no logic functions are found', async () => {
+		it('shows help if no Logic Functions are found', async () => {
 			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves([]);
 			await logicFunctionCommands.list({});
 			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: undefined })).to.be.true;
@@ -88,7 +88,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`No Logic Functions deployed in your Sandbox.${os.EOL}`);
 		});
 
-		it('shows help if no logic functions are found', async () => {
+		it('shows help if no Logic Functions are found', async () => {
 			const logicListStub = sinon.stub(LogicFunction, 'listFromCloud').resolves([]);
 			await logicFunctionCommands.list({ api: logicFunctionCommands.api, org: 'particle' });
 			expect(logicListStub.calledWith({ api: logicFunctionCommands.api, org: 'particle' })).to.be.true;
@@ -113,7 +113,7 @@ describe('LogicFunctionCommands', () => {
 			};
 		});
 
-		it('gets a logic function with an specific name from Sandbox account', async () => {
+		it('gets a Logic Function with an specific name from Sandbox account', async () => {
 			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
 			lf.saveToDisk = sinon.stub().resolves(true);
 			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
@@ -125,7 +125,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(` - ${lf.files.configuration.name}${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(` - ${lf.files.sourceCode.name}${os.EOL}`);
 		});
-		it('gets a logic function with an specific id from Sandbox account', async () => {
+		it('gets a Logic Function with an specific id from Sandbox account', async () => {
 			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
 			lf.saveToDisk = sinon.stub().resolves(true);
 			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
@@ -138,7 +138,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(` - ${lf.files.sourceCode.name}${os.EOL}`);
 
 		});
-		it('shows error if logic function is not found', async () => {
+		it('shows error if Logic Function is not found', async () => {
 			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').rejects(new Error('Logic function not found'));
 			lf.saveToDisk = sinon.stub().resolves(true);
 			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
@@ -153,7 +153,7 @@ describe('LogicFunctionCommands', () => {
 			expect(error.message).to.equal('Logic function not found');
 		});
 
-		it('gets a logic function with an specific name from an org', async () => {
+		it('gets a Logic Function with an specific name from an org', async () => {
 			const logicGetStub = sinon.stub(LogicFunction, 'getByIdOrName').resolves(lf);
 			lf.saveToDisk = sinon.stub().resolves(true);
 			sinon.stub(LogicFunction, 'listFromCloud').resolves(logicFunc1.logic_functions);
@@ -177,7 +177,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.restore();
 		});
 
-		it('creates a logic function locally for Sandbox account', async () => {
+		it('creates a Logic Function locally for Sandbox account', async () => {
 			logicFunctionCommands.ui.prompt = sinon.stub();
 			logicFunctionCommands.ui.prompt.onCall(0).resolves({ name: 'logic func 1' });
 			logicFunctionCommands.ui.prompt.onCall(1).resolves({ description: 'Logic Function 1' });
@@ -205,7 +205,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('execute', () => {
-		it('executes a logic function with user provided data', async () => {
+		it('executes a Logic Function with user provided data', async () => {
 			const logicFunction = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -230,7 +230,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 		});
 
-		it('throws an error if there is no logic function in the directory', async () => {
+		it('throws an error if there is no Logic Function in the directory', async () => {
 			const logicStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
 				malformedLogicFunctions: [],
 				logicFunctions: []
@@ -246,7 +246,7 @@ describe('LogicFunctionCommands', () => {
 			expect(error.message).to.equal('No Logic Functions found');
 		});
 
-		it('executes a logic function with user provided data from file', async () => {
+		it('executes a Logic Function with user provided data from file', async () => {
 			const filepath = PATH_TMP_DIR;
 			const logicFunction = new LogicFunction({
 				name: 'LF1',
@@ -266,7 +266,7 @@ describe('LogicFunctionCommands', () => {
 			// called with the file path
 			expect(logicStub).to.have.been.calledWith({ filepath, api: logicFunctionCommands.api, org: logicFunctionCommands.org });
 		});
-		it('executes a logic function with user provided data and shows error', async () => {
+		it('executes a Logic Function with user provided data and shows error', async () => {
 			const logicFunction = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -289,7 +289,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Exception${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Error during Execution:${os.EOL}`);
 		});
-		it('prompts if found multiple logic functions', async () => {
+		it('prompts if found multiple Logic Functions', async () => {
 			const logicFunction1 = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -319,7 +319,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicStub.calledOnce).to.be.true;
 			expect(logicFunctionCommands.ui.prompt.callCount).to.equal(1);
 		});
-		it('executes a logic function with provided logic function name', async () => {
+		it('executes a Logic function with provided Logic Function name', async () => {
 			const lf1 = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -351,7 +351,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Execution Status: Success${os.EOL}`);
 			expect(logicFunctionCommands.ui.stdout.write).calledWith(`Logs from Execution:${os.EOL}`);
 		});
-		it('executes a logic function with provided logic function id', async () => {
+		it('executes a Logic Function with provided Logic Function id', async () => {
 			const lf1 = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -525,7 +525,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('_selectLogicFunctionName', () => {
-		it('selects logic function from a list', async () => {
+		it('selects Logic Function from a list', async () => {
 			const logicFunctions = ['logicFunc1', 'logicFunc2'];
 			const selectedLF = 'logicFunc2';
 			const promptStub = sinon.stub(logicFunctionCommands, '_prompt');
@@ -537,9 +537,9 @@ describe('LogicFunctionCommands', () => {
 			sinon.assert.calledOnceWithExactly(promptStub, {
 				type: 'list',
 				name: 'logic_function',
-				message: 'Which logic function would you like to download?',
+				message: 'Which Logic Function would you like to download?',
 				choices: logicFunctions,
-				nonInteractiveError: 'Provide name for the logic function',
+				nonInteractiveError: 'Provide name for the Logic Function',
 			});
 		});
 
@@ -554,7 +554,7 @@ describe('LogicFunctionCommands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.eql('No logic functions found');
+			expect(error.message).to.eql('No Logic Functions found');
 		});
 	});
 
@@ -637,7 +637,7 @@ describe('LogicFunctionCommands', () => {
 			fs.rmSync('lf1', { recursive: true, force: true });
 		});
 
-		it('deploys a new logic function', async() => {
+		it('deploys a new Logic Function', async() => {
 			const logicFunction = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -667,7 +667,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunctionCommands.ui.showBusySpinnerUntilResolved).calledWith('Executing Logic Function LF1 for your Sandbox...', logicFunction.execute());
 		});
 
-		it('deploys an existent logic function', async() => {
+		it('deploys an existent Logic Function', async() => {
 			const logicFunction = new LogicFunction({
 				name: 'LF1',
 				description: 'Logic Function 1',
@@ -751,7 +751,7 @@ describe('LogicFunctionCommands', () => {
 			sinon.restore();
 		});
 
-		it('enable a logic function with name', async() => {
+		it('enable a Logic Function with name', async() => {
 			const updateStub = sinon.stub(logicFunction, 'updateToCloud').resolves(undefined);
 			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
 				malformedLogicFunctions: [],
@@ -765,7 +765,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunction.enabled).to.be.true;
 		});
 
-		it('enable a logic function with id', async() => {
+		it('enable a Logic Function with id', async() => {
 			const updateStub = sinon.stub(logicFunction, 'updateToCloud').resolves(undefined);
 			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
 				malformedLogicFunctions: [],
@@ -779,7 +779,7 @@ describe('LogicFunctionCommands', () => {
 			expect(logicFunction.enabled).to.be.true;
 		});
 
-		it('fails to enable a logic function', async() => {
+		it('fails to enable a Logic Function', async() => {
 			let error;
 			const updateStub = sinon.stub(logicFunction, 'updateToCloud').rejects(new Error('Error enabling Logic Function LF1'));
 			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
@@ -798,7 +798,7 @@ describe('LogicFunctionCommands', () => {
 			expect(error.message).to.contain('Error enabling Logic Function LF1');
 		});
 
-		it('updates the local logic function if it exists in the path', async() => {
+		it('updates the local Logic Function if it exists in the path', async() => {
 			const updateStub = sinon.stub(logicFunction, 'updateToCloud').resolves(undefined);
 			const listLocalStub = sinon.stub(LogicFunction, 'listFromDisk').resolves({
 				malformedLogicFunctions: [],

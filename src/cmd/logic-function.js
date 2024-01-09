@@ -263,7 +263,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const answer = await this._prompt({
 			type: 'list',
 			name: 'logicFunction',
-			message: 'Which logic function would you like to execute?',
+			message: 'Which Logic Function would you like to execute?',
 			choices : logicFunctions,
 		});
 
@@ -441,7 +441,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 				filePaths: [localLogicFunction.configurationPath, localLogicFunction.sourcePath],
 				force
 			});
-			// assign cloud values to local logic function
+			// assign cloud values to local Logic Function
 			localLogicFunction.copyFromOtherLogicFunction(logicFunction);
 			await localLogicFunction.saveToDisk();
 			this._printUpdateLocalFilesOutput({
@@ -528,14 +528,14 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 	async _selectLogicFunctionName(list) {
 		if (list.length === 0) {
 			this._printListHelperOutput();
-			throw new Error('No logic functions found');
+			throw new Error('No Logic Functions found');
 		}
 		const answer = await this._prompt({
 			type: 'list',
 			name: 'logic_function',
-			message: 'Which logic function would you like to download?',
+			message: 'Which Logic Function would you like to download?',
 			choices : list,
-			nonInteractiveError: 'Provide name for the logic function'
+			nonInteractiveError: 'Provide name for the Logic Function'
 		});
 		return answer.logic_function;
 	}
