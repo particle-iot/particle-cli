@@ -328,7 +328,7 @@ describe('LogicFunction', () => {
 		it('deploys a new Logic Function', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/functions', 'POST')
-				.reply(200, { id: '1234', version: 1 } );
+				.reply(200, { logic_function: { id: '1234', version: 1 } });
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await lf1.deploy();
 			expect(lf1).to.have.property('id', '1234');
@@ -337,7 +337,7 @@ describe('LogicFunction', () => {
 		it ('deploys existent Logic Function', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/functions/1234', 'PUT')
-				.reply(200, { id: '1234', version: 1 } );
+				.reply(200, { logic_function: { id: '1234', version: 1 } } );
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			lf1.id = '1234';
 			await lf1.deploy();

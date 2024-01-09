@@ -193,8 +193,8 @@ class LogicFunction {
 				org: this.org,
 				logicFunction: logicFunctionData,
 			});
-			this.id = result.id;
-			this.version = result.version;
+			this.id = result.logic_function.id;
+			this.version = result.logic_function.version;
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error deploying Logic Function' });
 		}
@@ -208,7 +208,7 @@ class LogicFunction {
 				id: this.id,
 				logicFunctionData: logicFunctionData,
 			});
-			this.version = result.version;
+			this.version = result.logic_function.version;
 		} catch (e) {
 			throw createAPIErrorResult({ error: e, message: 'Error deploying Logic Function' });
 		}
