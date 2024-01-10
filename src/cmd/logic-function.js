@@ -509,9 +509,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		this.ui.stdout.write(`Logic Function ${name}(${id}) has been successfully deleted.${os.EOL}`);
 	}
 
-	async logs({ org, name, id, saveTo }) {
+	async logs() {
 		// TODO
-		console.log(org, name, id, saveTo);
+		this.ui.stdout.write(`Please visit ${this.ui.chalk.yellow('console.particle.io')} to view logs.${os.EOL}`);
 	}
 
 	_setOrg(org) {
