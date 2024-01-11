@@ -59,7 +59,11 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 			await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
 			return device;
 		} catch (error) {
-			// ignore error from attempts to flash to external flash
+			// ignore other errors from attempts to flash to external flash
+			if (error.message === 'Device is protected') {
+				throw new Error('Operation could not be completed due to device protection.\
+					Visit console.particle.io to unprotect your device.');
+			}
 		}
 	}
 	throw new Error('Unable to flash device');
@@ -82,6 +86,7 @@ async function prepareDeviceForFlash({ device, mode, progress }) {
 				await delay(1000); // Just in case
 			} catch (error) {
 				// ignore
+				// TODO: Add an error if needed here upon device-os feature addition
 			}
 			break;
 		case 'dfu':
@@ -109,7 +114,15 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 	if (progress) {
 		progress({ event: 'flash-file', filename: name });
 	}
-	await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
+
+	try {
+		await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
+	} catch(error) {
+		if (error.message === 'Device is protected') {
+			throw new Error('Operation could not be completed due to device protection.\
+				Visit console.particle.io to unprotect your device.');
+		}
+	}
 	return device;
 }
 
