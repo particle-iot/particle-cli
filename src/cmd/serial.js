@@ -1370,12 +1370,12 @@ module.exports = class SerialCommand {
 		if (device.type === 'Core'){
 			throw new VError('Unable to get MAC address of a Core');
 		}
-		
+
 		const features = device.specs.features;
 		if (!features.includes('wifi')) {
 			throw new VError('MAC address is only obtained for Wifi devices');
 		}
-		
+
 		let data;
 		const fwVer = await this.askForSystemFirmwareVersion(device);
 		const gen = device.specs.generation;
@@ -1387,7 +1387,7 @@ module.exports = class SerialCommand {
 			data = await dev.getMacAddress();
 			await dev.close();
 		}
-		
+
 		if (data) {
 			const matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
 
@@ -1419,7 +1419,7 @@ module.exports = class SerialCommand {
 				}
 				return mac;
 			}
-		};
+		}
 		throw new VError('Unable to find mac address in response');
 	}
 
@@ -1427,9 +1427,15 @@ module.exports = class SerialCommand {
 		return this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
 	}
 
-	askForDeviceID(device){
-		return this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT)
-			.then((data) => {
+	async askForDeviceID(device) {
+		let data;
+
+		const gen = device.specs.generation;
+		const fwVer = await this.askForSystemFirmwareVersion(device);
+		if (gen < 3 || semver.lt(fwVer, '5.6.0')) { // FIXME: Correct the firmware version
+			// TODO: rework this
+			data = await this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT);
+			if (data) {
 				const matches = data.match(/Your (core|device) id is\s+(\w+)/);
 
 				if (matches && matches.length === 3){
@@ -1454,7 +1460,22 @@ module.exports = class SerialCommand {
 
 					return info;
 				}
-			});
+			}
+		} else {
+			const info = {
+				id : device.deviceId
+			};
+
+			const features = device.specs.features;
+			if (features.includes('cellular')) {
+				const dev = await openUsbDeviceById(device.deviceId);
+				info.imei = await dev.getImei();
+				info.iccid = await dev.getIccid();
+				await dev.close();
+			}
+
+			return info;
+		}
 	}
 
 	askForSystemFirmwareVersion(device, timeout){
