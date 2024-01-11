@@ -50,7 +50,7 @@ class LogicFunction {
 			});
 			return logicFunctions;
 		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error listing logic functions' });
+			throw createAPIErrorResult({ error: e, message: 'Error listing Logic Functions' });
 		}
 	}
 
@@ -70,7 +70,7 @@ class LogicFunction {
 
 		if (stats.isFile()) {
 			try {
-				// if it is a file, then load it as a logic function
+				// if it is a file, then load it as a Logic Function
 				const lf = await LogicFunction.loadFromDisk({
 					basePath: path.dirname(filepath),
 					fileName: path.basename(filepath),
@@ -87,7 +87,7 @@ class LogicFunction {
 		} else {
 			const files = globList(filepath, [logicFunctionExtensionPattern]);
 			for (const file of files) {
-				// if the file is a directory, then load the logic functions from the directory
+				// if the file is a directory, then load the Logic Functions from the directory
 				try {
 					const lf = await LogicFunction.loadFromDisk({
 						basePath: filepath,
@@ -143,7 +143,7 @@ class LogicFunction {
 	static async getByIdOrName({ id, name, list }) {
 		const logicFunctionData = list.find(lf => lf.id === id || lf.name === name);
 		if (!logicFunctionData) {
-			throw new Error('Logic function not found');
+			throw new Error('Logic Function not found');
 		}
 		return logicFunctionData;
 	}
@@ -165,7 +165,7 @@ class LogicFunction {
 				status: result.status,
 			};
 		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error executing logic function' });
+			throw createAPIErrorResult({ error: e, message: 'Error executing Logic Function' });
 		}
 	}
 
@@ -193,10 +193,10 @@ class LogicFunction {
 				org: this.org,
 				logicFunction: logicFunctionData,
 			});
-			this.id = result.id;
-			this.version = result.version;
+			this.id = result.logic_function.id;
+			this.version = result.logic_function.version;
 		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error deploying logic function' });
+			throw createAPIErrorResult({ error: e, message: 'Error deploying Logic Function' });
 		}
 
 	}
@@ -208,9 +208,9 @@ class LogicFunction {
 				id: this.id,
 				logicFunctionData: logicFunctionData,
 			});
-			this.version = result.version;
+			this.version = result.logic_function.version;
 		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error deploying logic function' });
+			throw createAPIErrorResult({ error: e, message: 'Error deploying Logic Function' });
 		}
 	}
 
@@ -221,7 +221,7 @@ class LogicFunction {
 				id: this.id
 			});
 		} catch (e) {
-			throw createAPIErrorResult({ error: e, message: 'Error deleting logic function' });
+			throw createAPIErrorResult({ error: e, message: 'Error deleting Logic Function' });
 		}
 	}
 
@@ -251,12 +251,12 @@ class LogicFunction {
 			contentReplacements,
 			fileNameReplacements
 		});
-		// remove the template path from the file names so that they are relative to the logic function path
+		// remove the template path from the file names so that they are relative to the Logic Function path
 		files.forEach(file => {
 			file.fileName = file.fileName.replace(templatePath, '');
 		});
 
-		// put the data into the logic function
+		// put the data into the Logic Function
 		const sourceCode = files.find(file => file.fileName.includes(this.files.sourceCode.name));
 		this.files.sourceCode.name = sourceCode.fileName;
 		this.files.sourceCode.content = sourceCode.content;
@@ -292,7 +292,7 @@ class LogicFunction {
 	async saveToDisk(){
 		// ensure that the directory exists
 		fs.ensureDirSync(this.path);
-		// deserialize the logic function to config json
+		// deserialize the Logic Function to config json
 		const configuration = this._toJSONString();
 		// save the config json to disk
 		await fs.writeFile(this.configurationPath, configuration);

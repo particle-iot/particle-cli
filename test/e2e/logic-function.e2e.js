@@ -8,19 +8,19 @@ describe('Logic Function Commands', () => {
 	let id;
 
 	const help = [
-		'Create, execute, and deploy logic functions',
+		'Create, execute, and deploy Logic Functions',
 		'Usage: particle logic-function <command>',
 		'Help:  particle help logic-function <command>',
 		'',
 		'Commands:',
-		'  list     Lists the deployed logic functions',
-		'  get      Downloads the logic function',
-		'  create   Creates a logic function',
-		'  execute  Executes a logic function with user provided data',
-		'  deploy   Deploys a logic function to the cloud',
-		'  disable  Disables a logic function in the cloud',
-		'  enable   Enables a logic function in the cloud',
-		'  delete   Deletes a logic function from the cloud',
+		'  list     Lists the deployed Logic Functions',
+		'  get      Downloads the Logic Function',
+		'  create   Creates a Logic Function',
+		'  execute  Executes a Logic Function with user provided data',
+		'  deploy   Deploys a Logic Function to the cloud',
+		'  disable  Disables a Logic Function in the cloud',
+		'  enable   Enables a Logic Function in the cloud',
+		'  delete   Deletes a Logic Function from the cloud',
 		'  logs     Shows logs from a Logic Function',
 		'',
 		'Global Options:',
@@ -48,13 +48,12 @@ describe('Logic Function Commands', () => {
 		'',
 		'Guidelines for creating your Logic Function can be found here https://docs.particle.io/getting-started/cloud/logic/',
 		'Once you have written your Logic Function, run',
-		'- \'particle logic-function execute\' to run your Function',
-		'- \'particle logic-function deploy\' to deploy your new changes',
+		'- particle logic-function execute to run your Function',
+		'- particle logic-function deploy to deploy your new changes',
 		''
 	];
 
 	const executeOutput = [
-		'Executing Logic Function newlf for cyberdyne-systems...',
 		'',
 		'Execution Status: Success',
 		'Logs from Execution:',
@@ -63,7 +62,6 @@ describe('Logic Function Commands', () => {
 	];
 
 	const deployOutput = [
-		'Executing Logic Function newlf for cyberdyne-systems...',
 		'',
 		'Execution Status: Success',
 		'Logs from Execution:',
@@ -74,7 +72,7 @@ describe('Logic Function Commands', () => {
 		// 'Deploying Logic Function lf3 to for cyberdyne-systems...',
 		// 'Success! Logic Function name deployed with ID: bbd75c65-0db2-44bd-9d35-8ce6db9885e3',
 		'',
-		'Visit \'console.particle.io\' to view results from your device(s)!',
+		'Visit console.particle.io to view results from your device(s)!',
 	];
 
 	const getOutput = [
@@ -123,7 +121,7 @@ describe('Logic Function Commands', () => {
 	});
 
 	it('Lists Logic Functions', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'list', '--org', 'cyberdyne-systems']);
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'list', '--quiet', '--org', 'cyberdyne-systems']);
 		// FIXME: This would pass even if listOutput was empty
 		expect(stdout.split('\n')).to.include.members(listOutput);
 		expect(stderr).to.equal('');
@@ -133,7 +131,7 @@ describe('Logic Function Commands', () => {
 	it('Creates a blank Logic Function locally', async () => {
 		await fs.remove(path.join(PATH_TMP_DIR, 'newlf'));
 
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'create', '--name', 'newLF', '--org', 'cyberdyne-systems', '--force'], { cwd: PATH_TMP_DIR });
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'create', '--quiet', '--name', 'newLF', '--org', 'cyberdyne-systems', '--force'], { cwd: PATH_TMP_DIR });
 
 		expect(stdout.split('\n')).to.include.members(createOutput);
 		expect(stderr).to.equal('');
@@ -144,7 +142,7 @@ describe('Logic Function Commands', () => {
 		await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'config.json'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.logic.json'));
 		await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'code.js'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.js'));
 
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'execute', '--org', 'cyberdyne-systems', '--data', '1234'], { cwd: path.join(PATH_TMP_DIR, 'newlf') });
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'execute', '--quiet', '--org', 'cyberdyne-systems', '--data', '1234'], { cwd: path.join(PATH_TMP_DIR, 'newlf') });
 
 		expect(stdout.split('\n')).to.include.members(executeOutput);
 		expect(stderr).to.equal('');
@@ -155,7 +153,7 @@ describe('Logic Function Commands', () => {
 		await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'config.json'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.logic.json'));
 		await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'code.js'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.js'));
 
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'deploy', '--org', 'cyberdyne-systems', '--data', '1234', '--force'], { cwd: path.join(PATH_TMP_DIR, 'newlf') });
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'deploy', '--quiet', '--org', 'cyberdyne-systems', '--data', '1234', '--force'], { cwd: path.join(PATH_TMP_DIR, 'newlf') });
 
 		stdout.split('\n').forEach((line) => {
 			if (line.includes('Deploying Logic Function')) {
@@ -174,10 +172,10 @@ describe('Logic Function Commands', () => {
 			await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'config.json'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.logic.json'));
 			await fs.copy(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'lf3_proj', 'code.js'), path.join(PATH_TMP_DIR, 'newlf', 'newlf.js'));
 		}
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'deploy', '--org', 'cyberdyne-systems', '--data', '1234', '--force'], { cwd: path.join(PATH_TMP_DIR, 'newlf') });
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'deploy', '--quiet', '--org', 'cyberdyne-systems', '--data', '1234', '--force'], { cwd: path.join(PATH_TMP_DIR, 'newlf') });
 
 		stdout.split('\n').forEach((line) => {
-			if (line.includes('Deploying Logic Function')) {
+			if (line.includes('deployed to')) {
 				id = line.substring(line.indexOf('(') + 1, line.indexOf(')'));
 			}
 		});
@@ -189,14 +187,14 @@ describe('Logic Function Commands', () => {
 	});
 
 	it('Disables a Logic Function', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'disable', '--org', 'cyberdyne-systems', '--id', id]);
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'disable', '--quiet', '--org', 'cyberdyne-systems', '--id', id]);
 		expect(stdout).to.equal(`Logic Function newlf (${id}) is now disabled.`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
 
 	it('Enables a Logic Function', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'enable', '--org', 'cyberdyne-systems', '--id', id]);
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'enable', '--quiet', '--org', 'cyberdyne-systems', '--id', id]);
 
 		expect(stdout).to.equal(`Logic Function newlf (${id}) is now enabled.`);
 		expect(stderr).to.equal('');
@@ -206,7 +204,7 @@ describe('Logic Function Commands', () => {
 	it('Downloads a Logic Function', async () => {
 		await fs.remove(path.join(PATH_TMP_DIR, 'newlf'));
 
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'get', '--id', id, '--org', 'cyberdyne-systems'], { cwd: PATH_TMP_DIR });
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'get', '--quiet', '--id', id, '--org', 'cyberdyne-systems'], { cwd: PATH_TMP_DIR });
 
 		expect(stdout.split('\n')).to.include.members(getOutput);
 		expect(stderr).to.equal('');
@@ -217,7 +215,7 @@ describe('Logic Function Commands', () => {
 	});
 
 	it('Deletes a Logic Function', async () => {
-		const { stdout, stderr, exitCode } = await cli.run(['lf', 'delete', '--org', 'cyberdyne-systems', '--id', id, '--force']);
+		const { stdout, stderr, exitCode } = await cli.run(['lf', 'delete', '--quiet', '--org', 'cyberdyne-systems', '--id', id, '--force']);
 
 		expect(stdout).to.contain('has been successfully deleted.');
 		expect(stderr).to.equal('');

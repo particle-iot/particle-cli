@@ -1,7 +1,7 @@
 module.exports = ({ commandProcessor, root }) => {
-	const logicFunction = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy logic functions', { alias : 'lf' });
+	const logicFunction = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy Logic Functions', { alias : 'lf' });
 
-	commandProcessor.createCommand(logicFunction, 'list', 'Lists the deployed logic functions', {
+	commandProcessor.createCommand(logicFunction, 'list', 'Lists the deployed Logic Functions', {
 		options: {
 			'org': {
 				description: 'Specify the organization',
@@ -10,14 +10,14 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().list(args);
+			return new LogicFunctionsCmd(args).list(args);
 		},
 		examples: {
 			'$0 $command': 'lists deployed Logic Functions'
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'get', 'Downloads the logic function', {
+	commandProcessor.createCommand(logicFunction, 'get', 'Downloads the Logic Function', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -25,15 +25,15 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'id': {
-				description: 'Id of the logic function'
+				description: 'Id of the Logic Function'
 			}
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().get(args);
+			return new LogicFunctionsCmd(args).get(args);
 		},
 		examples: {
 			'$0 $command': 'downloads a Logic Function to your current directory',
@@ -42,7 +42,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'create', 'Creates a logic function', {
+	commandProcessor.createCommand(logicFunction, 'create', 'Creates a Logic Function', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -50,10 +50,10 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'description': {
-				description: 'Description of the logic function'
+				description: 'Description of the Logic Function'
 			},
 			'force': {
 				boolean: true,
@@ -63,7 +63,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().create(args);
+			return new LogicFunctionsCmd(args).create(args);
 		},
 		examples: {
 			'$0 $command': 'creates a new Logic Function',
@@ -71,7 +71,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'execute', 'Executes a logic function with user provided data', {
+	commandProcessor.createCommand(logicFunction, 'execute', 'Executes a Logic Function with user provided data', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -79,13 +79,13 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'id': {
-				description: 'Id of the logic function'
+				description: 'Id of the Logic Function'
 			},
 			'data': {
-				description: 'Sample test data file to verify the logic function'
+				description: 'Sample test data file to verify the Logic Function'
 			},
 			'event_name': {
 				description: 'Name of the event to execute'
@@ -102,7 +102,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().execute(args);
+			return new LogicFunctionsCmd(args).execute(args);
 		},
 		examples: {
 			'$0 $command --data <data>': 'executes the local Logic Function with the data',
@@ -113,7 +113,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'deploy', 'Deploys a logic function to the cloud', {
+	commandProcessor.createCommand(logicFunction, 'deploy', 'Deploys a Logic Function to the cloud', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -121,13 +121,13 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'id': {
-				description: 'Id of the logic function'
+				description: 'Id of the Logic Function'
 			},
 			'data': {
-				description: 'Sample test data file to verify the logic function'
+				description: 'Sample test data file to verify the Logic Function'
 			},
 			'event_name': {
 				description: 'Name of the event to execute'
@@ -149,7 +149,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().deploy(args);
+			return new LogicFunctionsCmd(args).deploy(args);
 		},
 		examples: {
 			'$0 $command --data <data>': 'executes and deploys the local Logic Function with the data',
@@ -160,7 +160,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'disable', 'Disables a logic function in the cloud', {
+	commandProcessor.createCommand(logicFunction, 'disable', 'Disables a Logic Function in the cloud', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -168,15 +168,15 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'id': {
-				description: 'Id of the logic function'
+				description: 'Id of the Logic Function'
 			}
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().updateStatus(args, { enable: false });
+			return new LogicFunctionsCmd(args).updateStatus(args, { enable: false });
 		},
 		examples: {
 			'$0 $command': 'Disables a Logic Function',
@@ -185,7 +185,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'enable', 'Enables a logic function in the cloud', {
+	commandProcessor.createCommand(logicFunction, 'enable', 'Enables a Logic Function in the cloud', {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -193,15 +193,15 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'id': {
-				description: 'Id of the logic function'
+				description: 'Id of the Logic Function'
 			}
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().updateStatus(args, { enable: true });
+			return new LogicFunctionsCmd(args).updateStatus(args, { enable: true });
 		},
 		examples: {
 			'$0 $command': 'Enables a Logic Function',
@@ -210,17 +210,17 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'delete', 'Deletes a logic function from the cloud', {
+	commandProcessor.createCommand(logicFunction, 'delete', 'Deletes a Logic Function from the cloud', {
 		options: {
 			'org': {
 				description: 'Specify the organization',
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'id': {
-				description: 'Id of the logic function'
+				description: 'Id of the Logic Function'
 			},
 			'force': {
 				boolean: true,
@@ -230,7 +230,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().delete(args);
+			return new LogicFunctionsCmd(args).delete(args);
 		},
 		examples: {
 			'$0 $command': 'Deletes a Logic Function',
@@ -246,10 +246,10 @@ module.exports = ({ commandProcessor, root }) => {
 				hidden: true
 			},
 			'name': {
-				description: 'Name of the logic function'
+				description: 'Name of the Logic Function'
 			},
 			'id': {
-				description: 'Id of the logic function'
+				description: 'Id of the Logic Function'
 			},
 			'saveTo': {
 				description: 'File name to save the logs'
@@ -257,7 +257,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const LogicFunctionsCmd = require('../cmd/logic-function');
-			return new LogicFunctionsCmd().logs(args);
+			return new LogicFunctionsCmd(args).logs(args);
 		},
 		examples: {
 			'$0 $command': 'Shows logs from a Logic Function',

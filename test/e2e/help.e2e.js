@@ -23,7 +23,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  keys            Manage your device\'s key pair and server public key',
 		'  library         Manage firmware libraries',
 		'  list            Display a list of your devices, as well as their variables and functions',
-		'  logic-function  Create, execute, and deploy logic functions',
+		'  logic-function  Create, execute, and deploy Logic Functions',
 		'  login           Login to the cloud and store an access token locally',
 		'  logout          Log out of your session and clear your saved access token',
 		'  monitor         Connect and display messages from a device',

@@ -25,25 +25,25 @@ describe('LogicFunction', () => {
 		return logicFunction;
 	}
 	describe('list', () => {
-		it('returns an empty array if there are no logic functions', async () => {
+		it('returns an empty array if there are no Logic Functions', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions : [] } );
 			const logicFunctions = await LogicFunction.listFromCloud();
 			expect(logicFunctions).to.have.lengthOf(0);
 		});
-		it('returns a list of logic functions', async () => {
+		it('returns a list of Logic Functions', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/functions', 'GET')
 				.reply(200, { logic_functions : [{ name: 'my-logic-function' }] } );
 
 			const logicFunctions = await LogicFunction.listFromCloud();
 			expect(logicFunctions).to.have.lengthOf(1);
-			// check if the logic function is an instance of LogicFunction
+			// check if the Logic Function is an instance of LogicFunction
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
 
-		it('returns a list of logic functions from an specific org', async () => {
+		it('returns a list of Logic Functions from an specific org', async () => {
 			nock('https://api.particle.io/v1/orgs/', )
 				.intercept('/my-org/logic/functions', 'GET')
 				.reply(200, { logic_functions : [{ name: 'my-logic-function' }] } );
@@ -60,20 +60,20 @@ describe('LogicFunction', () => {
 			try {
 				await LogicFunction.listFromCloud({ org: 'my-org' });
 			} catch (error) {
-				expect(error.message).to.equal('Error listing logic functions: Internal Server Error');
+				expect(error.message).to.equal('Error listing Logic Functions: Internal Server Error');
 			}
 		});
 	});
 	describe('getByIdOrName', () => {
-		it ('throws an error if the logic function is not found', async () => {
+		it ('throws an error if the Logic Function is not found', async () => {
 			try {
 				const logicFunctions = [];
 				await LogicFunction.getByIdOrName({ org: 'my-org', name: 'my-logic-function', list: logicFunctions });
 			} catch (error) {
-				expect(error.message).to.equal('Logic function not found');
+				expect(error.message).to.equal('Logic Function not found');
 			}
 		});
-		it('returns a logic function by name', async () => {
+		it('returns a Logic Function by name', async () => {
 			const logicFunctions = [new LogicFunction(logicFunc1.logic_functions[0])];
 			logicFunctions[0].files.sourceCode.content = logicFunc1.logic_functions[0].source.code;
 			const logicFunction = await LogicFunction.getByIdOrName({ name: 'LF1', list: logicFunctions });
@@ -103,7 +103,7 @@ describe('LogicFunction', () => {
 		});
 	});
 	describe('saveToDisk', () => {
-		it('saves a logic function to disk', async () => {
+		it('saves a Logic Function to disk', async () => {
 			const logicFunction = new LogicFunction(logicFunc1.logic_functions[0]);
 			logicFunction.path = path.join(PATH_TMP_DIR, 'logic-functions', 'lf1');
 			await logicFunction.saveToDisk();
@@ -128,10 +128,10 @@ describe('LogicFunction', () => {
 			sinon.restore();
 		});
 
-		it('initializes a logic function from a template', async () => {
+		it('initializes a Logic Function from a template', async () => {
 			const config = {
 				logic_function: {
-					'name': 'my logic function',
+					'name': 'my Logic Function',
 					'description': 'my test description',
 					'enabled': true,
 					'source': {
@@ -141,7 +141,7 @@ describe('LogicFunction', () => {
 				}
 			};
 			const loadStub = sinon.stub(templateProcessor, 'loadTemplateFiles').resolves([
-				{ fileName: path.join('my_path', 'lf1.js'), content: 'logic function content' },
+				{ fileName: path.join('my_path', 'lf1.js'), content: 'Logic Function content' },
 				{ fileName: path.join('my_path', 'lf1.logic.json'), content: JSON.stringify(config) }
 			]);
 			const logicFunction = new LogicFunction({
@@ -187,58 +187,58 @@ describe('LogicFunction', () => {
 			sinon.restore();
 			fs.emptyDirSync(PATH_TMP_DIR);
 		});
-		it('returns a list of logic functions', async () => {
+		it('returns a list of Logic Functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
-		it('returns a list of logic functions with org', async () => {
+		it('returns a list of Logic Functions with org', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions'), org: 'my-org' });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 			expect(logicFunctions[0]).to.have.property('org', 'my-org');
 		});
-		it('returns a list of more than one logic functions', async () => {
+		it('returns a list of more than one Logic Functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await createLogicFunction({ name: 'lf2', description: 'Logic Function 2 on SandBox' });
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(2);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
-		it('filter out files that are not logic functions', async () => {
+		it('filter out files that are not Logic Functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.json'), '{}');
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
-		it('filter out no well formed logic functions', async () => {
+		it('filter out no well formed Logic Functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.logic.json'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
-		it('returns a list of one element if the path is a file and it is a logic function', async () => {
+		it('returns a list of one element if the path is a file and it is a Logic Function', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf1.js') });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
-		it ('returns an empty list if the path is a file and it is not a logic function', async () => {
+		it ('returns an empty list if the path is a file and it is not a Logic Function', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.js'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.js') });
 			expect(logicFunctions).to.have.lengthOf(0);
 		});
-		it('returns an empty list if there are no logic functions', async () => {
+		it('returns an empty list if there are no Logic Functions', async () => {
 			const { logicFunctions } = await LogicFunction.listFromDisk({ filepath: PATH_TMP_DIR });
 			expect(logicFunctions).to.have.lengthOf(0);
 		});
 
-		it('returns a list of logic functions and a list of malformed logic functions', async () => {
+		it('returns a list of Logic Functions and a list of malformed Logic Functions', async () => {
 			await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await fs.writeFile(path.join(PATH_TMP_DIR, 'logic_functions', 'lf2.logic.json'), '{ "name": "lf2", "description": "Logic Function 2 on SandBox" }');
 			const { logicFunctions, malformedLogicFunctions } = await LogicFunction.listFromDisk({ filepath: path.join(PATH_TMP_DIR, 'logic_functions') });
@@ -261,7 +261,7 @@ describe('LogicFunction', () => {
 			sinon.restore();
 			fs.emptyDirSync(PATH_TMP_DIR);
 		});
-		it('executes a logic function', async () => {
+		it('executes a Logic Function', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/execute', 'POST')
 				.reply(200, { result: { status: 'Success', logs: ['abc1'] } });
@@ -315,7 +315,7 @@ describe('LogicFunction', () => {
 				await lf1.execute(trigger);
 				expect.fail('Should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Error executing logic function: Internal Server Error');
+				expect(error.message).to.equal('Error executing Logic Function: Internal Server Error');
 			}
 		});
 	});
@@ -325,19 +325,19 @@ describe('LogicFunction', () => {
 			sinon.restore();
 			fs.emptyDirSync(PATH_TMP_DIR);
 		});
-		it('deploys a new logic function', async () => {
+		it('deploys a new Logic Function', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/functions', 'POST')
-				.reply(200, { id: '1234', version: 1 } );
+				.reply(200, { logic_function: { id: '1234', version: 1 } });
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			await lf1.deploy();
 			expect(lf1).to.have.property('id', '1234');
 			expect(lf1).to.have.property('version', 1);
 		});
-		it ('deploys existent logic function', async () => {
+		it ('deploys existent Logic Function', async () => {
 			nock('https://api.particle.io/v1/', )
 				.intercept('/logic/functions/1234', 'PUT')
-				.reply(200, { id: '1234', version: 1 } );
+				.reply(200, { logic_function: { id: '1234', version: 1 } } );
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			lf1.id = '1234';
 			await lf1.deploy();
@@ -353,7 +353,7 @@ describe('LogicFunction', () => {
 				await lf1.deploy();
 				expect.fail('Should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Error deploying logic function: Internal Server Error');
+				expect(error.message).to.equal('Error deploying Logic Function: Internal Server Error');
 			}
 		});
 		it('propagates errors when updating', async () => {
@@ -366,7 +366,7 @@ describe('LogicFunction', () => {
 				await lf1.deploy();
 				expect.fail('Should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Error deploying logic function: Internal Server Error');
+				expect(error.message).to.equal('Error deploying Logic Function: Internal Server Error');
 			}
 		});
 	});
