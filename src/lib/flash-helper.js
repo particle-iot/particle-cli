@@ -116,7 +116,7 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 
 	try {
 		await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
-	} catch(error) {
+	} catch (error) {
 		if (error.message === 'Device is protected') {
 			throw new Error('Operation could not be completed due to device protection. Visit console.particle.io to unprotect your device.');
 		}
