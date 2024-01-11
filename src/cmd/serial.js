@@ -3,6 +3,7 @@ const fs = require('fs');
 const _ = require('lodash');
 const path = require('path');
 const chalk = require('chalk');
+const semver = require('semver');
 const VError = require('verror');
 const inquirer = require('inquirer');
 const prompt = require('inquirer').prompt;
@@ -18,6 +19,7 @@ const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
 const { ensureError, knownPlatformDisplayForId } = require('../lib/utilities');
+const { openUsbDeviceById } = require('./usb-util');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -1364,15 +1366,32 @@ module.exports = class SerialCommand {
 			});
 	}
 
-	getDeviceMacAddress(device){
+	async getDeviceMacAddress(device) {
 		if (device.type === 'Core'){
 			throw new VError('Unable to get MAC address of a Core');
 		}
-
-		return this._issueSerialCommand(device, 'm').then((data) => {
+		
+		const features = device.specs.features;
+		if (!features.includes('wifi')) {
+			throw new VError('MAC address is only obtained for Wifi devices');
+		}
+		
+		let data;
+		const fwVer = await this.askForSystemFirmwareVersion(device);
+		const gen = device.specs.generation;
+		if (gen < 3 || semver.lt(fwVer, '5.6.0')) { // FIXME: Correct the firmware version
+			data = await this._issueSerialCommand(device, 'm');
+		} else {
+			// Wifi mac address control requessts are available starting dvos 6.x
+			const dev = await openUsbDeviceById(device.deviceId);
+			data = await dev.getMacAddress();
+			await dev.close();
+		}
+		
+		if (data) {
 			const matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
 
-			if (matches){
+			if (matches) {
 				let mac = matches[0].toLowerCase();
 
 				// manufacturing firmware can sometimes not report the full MAC
@@ -1400,8 +1419,8 @@ module.exports = class SerialCommand {
 				}
 				return mac;
 			}
-			throw new VError('Unable to find mac address in response');
-		});
+		};
+		throw new VError('Unable to find mac address in response');
 	}
 
 	getSystemInformation(device){
