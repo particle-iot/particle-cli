@@ -505,8 +505,7 @@ module.exports = class KeysCommand {
 			await device.writeOverDfu(buffer, { altSetting, startAddr, leave, noErase });
 		} catch (error) {
 			if (error.message === 'Device is protected') {
-				throw new Error('Operation could not be completed due to device protection.\
-					Visit console.particle.io to unprotect your device.');
+				throw new Error('Operation could not be completed due to device protection. Visit console.particle.io to unprotect your device.');
 			}
 		}
 	}
@@ -517,8 +516,7 @@ module.exports = class KeysCommand {
 			buf = await device.readOverDfu({ altSetting, startAddr, size });
 		} catch (err) {
 			if (err.message === 'Device is protected') {
-				throw new Error('Operation could not be completed due to device protection.\
-					Visit console.particle.io to unprotect your device.');
+				throw new Error('Operation could not be completed due to device protection. Visit console.particle.io to unprotect your device.');
 			}
 			// FIXME: First time read may fail so we retry
 			buf = await device.readOverDfu({ altSetting, startAddr, size });
