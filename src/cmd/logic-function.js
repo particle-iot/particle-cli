@@ -235,7 +235,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		});
 
 		const { status, logs, error } = await this._executeLogicFunctionWithSpinner(logicFunction, eventData);
-		this._printExecuteOutput({ logs, error, status });
+		this._printExecuteOutput({ logs, error, status, logicFunction });
 	}
 
 	async _executeLogicFunctionWithSpinner(logicFunction, eventData) {
@@ -328,7 +328,10 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		return { error, eventData };
 	}
 
-	_printExecuteOutput({ logs, error, status }) {
+	_printExecuteOutput({ logs, error, status, logicFunction }) {
+		this.ui.stdout.write(`${os.EOL}`);
+		const logicFunctionShowName = logicFunction.id ? `${logicFunction.name}(${logicFunction.id})` : logicFunction.name;
+		this.ui.stdout.write(`Logic Function ${this.ui.chalk.cyanBright(logicFunctionShowName)} executed in ${getOrgName(this.org)}${os.EOL}`);
 		if (status === 'Success') {
 			this.ui.stdout.write(this.ui.chalk.cyanBright(`Execution Status: ${status}${os.EOL}`));
 			if (logs.length === 0) {
@@ -367,7 +370,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			logicFunction.id = cloudLogicFunction.id;
 		}
 		const { status, logs, error } = await this._executeLogicFunctionWithSpinner(logicFunction, eventData);
-		this._printExecuteOutput({ logs, error, status });
+		this._printExecuteOutput({ logs, error, status, logicFunction });
 		if (status !== 'Success') {
 			throw new Error('Unable to deploy Logic Function');
 		}
