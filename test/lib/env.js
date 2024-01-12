@@ -18,7 +18,7 @@ const PATH_PROJ_BLANK_INO = path.join(PATH_FIXTURES_PROJECTS_DIR, 'blank', 'src'
 const PATH_PROJ_STROBY_INO = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby', 'src', 'stroby.ino');
 const PATH_CLI_CONFIG_JSON = path.join(PATH_PARTICLE_DIR, 'e2e.config.json');
 const PATH_FIXTURES_THIRDPARTY_OTA_DIR = path.join(PATH_TEST_DIR, '__fixtures__', 'third_party_ota');
-
+const PATH_FIXTURES_LOGIC_FUNCTIONS = path.join(PATH_TEST_DIR, '__fixtures__', 'logic_functions');
 process.env.HOME = PATH_HOME_DIR;
 require('dotenv').config({ path: path.join(PATH_TEST_DIR, '.env') });
 
@@ -93,5 +93,6 @@ module.exports = {
 	PATH_PROJ_STROBY_INO,
 	PATH_CLI_CONFIG_JSON,
 	PATH_FIXTURES_THIRDPARTY_OTA_DIR,
+	PATH_FIXTURES_LOGIC_FUNCTIONS,
 };
 

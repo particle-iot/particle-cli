@@ -108,6 +108,7 @@ class CLICommandItem {
 	 */
 	configure(yargs, { options, setup, examples, version, epilogue } = this.buildOptions()){
 		if (options){
+			this.hideOption(options);
 			this.fetchAliases(options);
 			this.configureOptions(options);
 			// avoid converting positional arguments to numbers by default
@@ -135,6 +136,21 @@ class CLICommandItem {
 		}
 
 		yargs.exitProcess(false);
+	}
+
+	/**
+	 * Hides options that are marked as hidden. (by removing the description)
+	 * See here -> https://github.com/yargs/yargs/issues/851
+	 * @param options
+	 */
+	hideOption(options){
+		const optionKeys = Object.keys(options);
+		optionKeys.forEach((key) => {
+			const option = options[key];
+			if (option.hidden){
+				option.description = undefined;
+			}
+		});
 	}
 
 	fetchAliases(options){

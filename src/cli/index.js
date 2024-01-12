@@ -9,6 +9,7 @@ const flash = require('./flash');
 const func = require('./function');
 const keys = require('./keys');
 const library = require('./library');
+const logicFunction = require('./logic-function');
 const preprocess = require('./preprocess');
 const product = require('./product');
 const project = require('./project');
@@ -52,6 +53,7 @@ module.exports = function registerAllCommands(context) {
 	func(context);
 	keys(context);
 	library(context);
+	logicFunction(context);
 	preprocess(context);
 	product(context);
 	project(context);

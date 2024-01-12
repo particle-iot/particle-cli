@@ -234,6 +234,54 @@ module.exports = class ParticleApi {
 		return this.api.getDevice({ deviceId: id, auth: this.accessToken });
 	}
 
+	getLogicFunctionList({ org }) {
+		return this._wrap(this.api.listLogicFunctions({
+			org: org,
+			auth: this.accessToken,
+		}));
+	}
+
+	executeLogicFunction({ org, logic }) {
+		return this._wrap(this.api.executeLogic({
+			org: org,
+			logic: logic,
+			auth: this.accessToken,
+		}));
+	}
+
+	getLogicFunction({ org, id }) {
+		return this._wrap(this.api.getLogicFunction({
+			org: org,
+			logicFunctionId: id,
+			auth: this.accessToken,
+		}));
+	}
+
+	deleteLogicFunction({ org, id }) {
+		return this._wrap(this.api.deleteLogicFunction({
+			org: org,
+			logicFunctionId: id,
+			auth: this.accessToken,
+		}));
+	}
+
+	updateLogicFunction({ org, id, logicFunctionData }) {
+		return this._wrap(this.api.updateLogicFunction({
+			org: org,
+			logicFunctionId: id,
+			logicFunction: logicFunctionData,
+			auth: this.accessToken
+		}));
+	}
+
+	createLogicFunction({ org, logicFunction }) {
+		return this._wrap(this.api.createLogicFunction({
+			auth: this.accessToken,
+			org,
+			logicFunction
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
