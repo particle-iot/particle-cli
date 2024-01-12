@@ -279,7 +279,8 @@ describe('LogicFunctionCommands', () => {
 			});
 			sinon.stub(logicFunction, 'execute').resolves({
 				status: 'Exception',
-				error: 'Some error'
+				error: 'Some error',
+				logs: []
 			});
 
 			await logicFunctionCommands.execute({ data: '{"eventData": "someData"}' , params: {} });
