@@ -1,5 +1,17 @@
 # Changelog
 
+# 3.19.0 - Jan 12 2024
+
+* Add `particle logic-funcction` namespace
+* Add `particle logic-function list` command to list logic functions
+* Add `particle logic-function get` command to get a logic function
+* Add `particle logic-function create` command to create a logic function
+* Add `particle logic-function execute` command to execute a logic function
+* Add `particle logic-function deploy` command to deploy a logic function
+* Add `particle logic-function enable` command to enable a logic function
+* Add `particle logic-function disable` command to disable a logic function
+* Add `particle logic-function delete` command to delete a logic function
+
 # 3.18.1 - Dec 14 2023
 
 * Dummy version same as 3.18.0
