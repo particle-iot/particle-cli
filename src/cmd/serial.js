@@ -918,6 +918,7 @@ module.exports = class SerialCommand {
 
 	async isDeviceClaimed(device) {
 		// FIXME: This control request does not work correctly.
+		// TODO: add tests
 		const dev = await openUsbDeviceById(device.deviceId);
 		const resp = await dev.isClaimed();
 		console.log('Device claimed : ', resp);
