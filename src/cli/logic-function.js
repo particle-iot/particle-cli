@@ -3,7 +3,7 @@ const os = require('os');
 module.exports = ({ commandProcessor, root }) => {
 	const logicFunction = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy Logic Functions', { alias : 'lf' });
 
-	const aliasDescription = 'This command can be also executed as lf';
+	const aliasDescription = 'Alias: this command can be also executed as lf';
 	commandProcessor.createCommand(logicFunction, 'list', `Lists the deployed Logic Functions. ${os.EOL}${aliasDescription} list [options]`, {
 		options: {
 			'org': {

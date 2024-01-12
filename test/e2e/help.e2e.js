@@ -153,7 +153,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 				throw error;
 			}
 
-			const subCmds = findHelpCommands(help);
+			const subCmds = findHelpCommands(help).filter(scmd => scmd !== 'Alias');
 
 			if (subCmds.length){
 				await expectForEachCommand(subCmds.map(scmd => `${cmd} ${scmd}`), assert);
