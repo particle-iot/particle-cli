@@ -349,6 +349,13 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			this.ui.stdout.write(this.ui.chalk.red(`Execution Status: ${status}${os.EOL}`));
 			this.ui.stdout.write(this.ui.chalk.red(`Error during Execution:${os.EOL}`));
 			this.ui.stdout.write(`${error}${os.EOL}`);
+			if (logs.length > 0) {
+				this.ui.stdout.write(`Logs from Execution:${os.EOL}`);
+				logs.forEach((log, index) => {
+					this.ui.stdout.write(`	${index + 1}.- ${JSON.stringify(log)}${os.EOL}`);
+				});
+				this.ui.stdout.write(`${os.EOL}`);
+			}
 		}
 	}
 
@@ -393,7 +400,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			const confirm = await this._prompt({
 				type: 'confirm',
 				name: 'proceed',
-				message: `Deploying ${logicFunctionShowName} to ${getOrgName(this.org)}. Proceed?`,
+				message: `Executing then deploying ${logicFunctionShowName} to ${getOrgName(this.org)}. Proceed?`,
 				choices: Boolean
 			});
 
