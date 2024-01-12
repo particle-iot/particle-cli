@@ -243,7 +243,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 			`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...`
 			,logicFunction.execute(eventData));
 	}
-	async _pickLogicFunctionFromDisk({ filepath, name, id }) {
+	async _pickLogicFunctionFromDisk({ filepath, name, id, action = 'execute' }) {
 		let { logicFunctions, malformedLogicFunctions } = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
 		if (name || id) {
 			logicFunctions = logicFunctions.filter(lf => (lf.name === name && name) || (lf.id === id && id));
@@ -262,7 +262,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const answer = await this._prompt({
 			type: 'list',
 			name: 'logicFunction',
-			message: 'Which Logic Function would you like to execute?',
+			message: `Which Logic Function would you like to ${action}?`,
 			choices : logicFunctions,
 		});
 
@@ -361,7 +361,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async deploy({ org, name, id, product_id: productId, event_name: eventName, device_id: deviceId, data, payload, force, params: { filepath } }) {
 		this._setOrg(org);
-		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath, name, id });
+		const logicFunction = await this._pickLogicFunctionFromDisk({ filepath, name, id, action: 'deploy' });
 		const eventData = await this._getExecuteData({
 			productId,
 			deviceId,
