@@ -303,63 +303,154 @@ module.exports = class SerialCommand {
 				return this.getSystemInformation(device);
 			})
 			.then((data) => {
-				const functionMap = {
-					s: 'System',
-					u: 'User',
-					b: 'Bootloader',
-					r: 'Reserved',
-					m: 'Monolithic',
-					a: 'Radio stack',
-					c: 'NCP'
-				};
-				const locationMap = {
-					m: 'main',
-					b: 'backup',
-					f: 'factory',
-					t: 'temp'
-				};
-
-				const d = JSON.parse(data);
-				const parser = new DescribeParser();
-				const modules = parser.getModules(d);
-
-				if (d.p !== undefined){
-					const platformName = knownPlatformDisplayForId()[d.p];
-					console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
+				let legacyFormat = true;
+				
+				if ('failedFlags' in data.moduleInfo[0]) {
+					legacyFormat = false;
 				}
 
-				if (modules && modules.length > 0){
-					console.log(chalk.underline('Modules'));
-					modules.forEach((m) => {
-						const func = functionMap[m.func];
-						if (!func){
-							console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-							return;
-						}
-
-						console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-
-						if (m.isUserModule() && m.uuid){
-							console.log('    UUID:', m.uuid);
-						}
-
-						console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
-						console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
-						console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-						console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-
-						if (m.dependencies.length > 0){
-							m.dependencies.forEach((dep) => {
-								const df = functionMap[dep.func];
-								console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
-							});
-						}
-					});
+				if (legacyFormat) {
+					this._parseSystemInformationLegacyFormat(data);
+				} else {
+					this._parseSystemInformation(data);
 				}
 			})
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Could not get inspect device');
 			});
+	}
+
+	_parseSystemInformationLegacyFormat(data) {
+		data = data.moduleInfo;
+
+		const functionMap = {
+			s: 'System',
+			u: 'User',
+			b: 'Bootloader',
+			r: 'Reserved',
+			m: 'Monolithic',
+			a: 'Radio stack',
+			c: 'NCP'
+		};
+		const locationMap = {
+			m: 'main',
+			b: 'backup',
+			f: 'factory',
+			t: 'temp'
+		};
+
+		const d = JSON.parse(data);
+		const parser = new DescribeParser();
+		const modules = parser.getModules(d);
+
+		if (d.p !== undefined){
+			const platformName = knownPlatformDisplayForId()[d.p];
+			console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
+		}
+
+		if (modules && modules.length > 0){
+			console.log(chalk.underline('Modules'));
+			modules.forEach((m) => {
+				const func = functionMap[m.func];
+				if (!func){
+					console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+					return;
+				}
+
+				console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+
+				if (m.isUserModule() && m.uuid){
+					console.log('    UUID:', m.uuid);
+				}
+
+				console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
+				console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
+				console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+				console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+
+				if (m.dependencies.length > 0){
+					m.dependencies.forEach((dep) => {
+						const df = functionMap[dep.func];
+						console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
+					});
+				}
+			});
+		}
+	}
+
+	_parseSystemInformation(data) {
+		const modules = data.moduleInfo;
+		const assets = data.assetInfo;
+
+		console.log('modules: ', modules);
+		console.log('modules.length: ', modules.length);
+
+		if (modules && modules.length > 0) {
+			console.log(chalk.underline('Modules'));
+			modules.forEach((m) => {
+				if (!m.type){
+					console.log(`  empty - ${m.store.toLowerCase()} location, ${m.maxSize} bytes max size`);
+					return;
+				}
+
+				console.log(`  ${chalk.bold.cyan(_.capitalize(m.type))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}, ${m.store.toLowerCase()} location, ${m.maxSize} bytes max size`);
+
+				if (m.type === 'USER_PART' && m.hash){
+					console.log('    UUID:', m.hash);
+				}
+				
+				// Referencing from FirmwareModuleValidityFlag in device-os-protobuf
+				console.log('    Integrity: %s', m.failedFlags & 0x02 ? chalk.red('FAIL') : chalk.green('PASS'));
+				console.log('    Address Range: %s', m.failedFlags & 0x08 ? chalk.red('FAIL') : chalk.green('PASS'));
+				console.log('    Platform: %s', m.failedFlags & 0x10 ? chalk.red('FAIL') : chalk.green('PASS'));
+				console.log('    Dependencies: %s', m.failedFlags & 0x04 ? chalk.red('FAIL') : chalk.green('PASS'));
+				
+				if (m.dependencies.length > 0){
+					m.dependencies.forEach((dep) => {
+						console.log(`      ${_.capitalize(dep.type)} module #${dep.index} - version ${dep.version}`);
+					});
+				}
+
+				if (m.type === 'USER_PART' && m.assetDependencies.length > 0) {
+					console.log('    Assets:');
+					const assetsReqd = assets.required;
+					const assetsAvailable = assets.available;
+					if (assetsReqd.length > 0) {
+						console.log('      Required:');
+						assetsReqd.forEach((asset) => {
+							let assetIsAvailable = assetsAvailable.some((a) => {
+								return a.hash === asset.hash;
+							});
+							// FIXME: Is FAIL unnecessary?
+							console.log(`         ${asset.name} - ${assetIsAvailable ? chalk.green('PASS') : chalk.red('FAIL')}`);
+						});
+					}
+					if (assetsReqd.length > 0) {
+						console.log('      Other Available Assets:');
+						let otherAvailableAssetsCnt = 0;
+						assetsAvailable.forEach((asset) => {
+							// if this asset is already in reqd list
+
+							let assetInReqd = false;
+							assetInReqd = assetsReqd.some((a) => {
+								return a.hash === asset.hash;
+							});
+
+							if (!assetInReqd) {
+								otherAvailableAssetsCnt++;
+								console.log(`         ${asset.name}`);
+								console.log(`              hash: ${chalk.bold(asset.hash)}`)
+								console.log(`              storage size: ${chalk.bold(asset.storageSize)} bytes`)
+							}
+						});
+						if (otherAvailableAssetsCnt == 0) {
+							console.log('         N/A');
+						}
+					}
+					
+				}
+			});
+		}
 	}
 
 	_promptForListeningMode(){
@@ -1423,8 +1514,22 @@ module.exports = class SerialCommand {
 		throw new VError('Unable to find mac address in response');
 	}
 
-	getSystemInformation(device){
-		return this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
+	async getSystemInformation(device) {
+		const gen = device.specs.generation;
+		const fwVer = await this.askForSystemFirmwareVersion(device);
+		let result = {
+			moduleInfo: undefined,
+			assetInfo: undefined
+		};
+		if (gen < 3 || semver.lt(fwVer, '5.6.0')) { // FIXME: Correct the firmware version
+			result.modules = this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
+		} else {
+			const dev = await openUsbDeviceById(device.deviceId);
+			result.moduleInfo = await dev.getFirmwareModuleInfo();
+			result.assetInfo = await dev.getAssetInfo();
+			await dev.close();
+		}
+		return result;
 	}
 
 	async askForDeviceID(device) {
