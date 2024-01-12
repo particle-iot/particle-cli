@@ -1,7 +1,10 @@
+const os = require('os');
+
 module.exports = ({ commandProcessor, root }) => {
 	const logicFunction = commandProcessor.createCategory(root, 'logic-function', 'Create, execute, and deploy Logic Functions', { alias : 'lf' });
 
-	commandProcessor.createCommand(logicFunction, 'list', 'Lists the deployed Logic Functions', {
+	const aliasDescription = 'This command can be also executed as lf';
+	commandProcessor.createCommand(logicFunction, 'list', `Lists the deployed Logic Functions. ${os.EOL}${aliasDescription} list [options]`, {
 		options: {
 			'org': {
 				description: 'Specify the organization',
@@ -13,11 +16,11 @@ module.exports = ({ commandProcessor, root }) => {
 			return new LogicFunctionsCmd(args).list(args);
 		},
 		examples: {
-			'$0 $command': 'lists deployed Logic Functions'
+			'$0 $command': 'lists deployed Logic Functions',
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'get', 'Downloads the Logic Function', {
+	commandProcessor.createCommand(logicFunction, 'get', `Downloads the Logic Function. ${os.EOL}${aliasDescription} get [options]`, {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -42,7 +45,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'create', 'Creates a Logic Function', {
+	commandProcessor.createCommand(logicFunction, 'create', `Creates a Logic Function. ${os.EOL}${aliasDescription} create [options]`, {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -71,7 +74,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'execute', 'Executes a Logic Function with user provided data', {
+	commandProcessor.createCommand(logicFunction, 'execute', `Executes a Logic Function with user provided data. ${os.EOL}${aliasDescription} execute [options]`, {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -113,7 +116,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'deploy', 'Deploys a Logic Function to the cloud', {
+	commandProcessor.createCommand(logicFunction, 'deploy', `Deploys a Logic Function to the cloud. ${os.EOL}${aliasDescription} deploy [options]`, {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -160,7 +163,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'disable', 'Disables a Logic Function in the cloud', {
+	commandProcessor.createCommand(logicFunction, 'disable', `Disables a Logic Function in the cloud. ${os.EOL}${aliasDescription} disable [options]`, {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -185,7 +188,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'enable', 'Enables a Logic Function in the cloud', {
+	commandProcessor.createCommand(logicFunction, 'enable', `Enables a Logic Function in the cloud. ${os.EOL}${aliasDescription} enable [options]`, {
 		params: '[filepath]',
 		options: {
 			'org': {
@@ -210,7 +213,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'delete', 'Deletes a Logic Function from the cloud', {
+	commandProcessor.createCommand(logicFunction, 'delete', `Deletes a Logic Function from the cloud. ${os.EOL}${aliasDescription} delete [options]`, {
 		options: {
 			'org': {
 				description: 'Specify the organization',
@@ -239,7 +242,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(logicFunction, 'logs', 'Shows logs from a Logic Function', {
+	commandProcessor.createCommand(logicFunction, 'logs', `Shows logs from a Logic Function. ${os.EOL}${aliasDescription} logs [options]`, {
 		options: {
 			'org': {
 				description: 'Specify the organization',
