@@ -304,7 +304,7 @@ module.exports = class SerialCommand {
 			})
 			.then((data) => {
 				let legacyFormat = true;
-				
+
 				if ('failedFlags' in data.moduleInfo[0]) {
 					legacyFormat = false;
 				}
@@ -378,6 +378,7 @@ module.exports = class SerialCommand {
 		}
 	}
 
+	// TODO: Add tests for assets
 	_parseSystemInformation(data) {
 		const modules = data.moduleInfo;
 		const assets = data.assetInfo;
@@ -398,13 +399,13 @@ module.exports = class SerialCommand {
 				if (m.type === 'USER_PART' && m.hash){
 					console.log('    UUID:', m.hash);
 				}
-				
+
 				// Referencing from FirmwareModuleValidityFlag in device-os-protobuf
 				console.log('    Integrity: %s', m.failedFlags & 0x02 ? chalk.red('FAIL') : chalk.green('PASS'));
 				console.log('    Address Range: %s', m.failedFlags & 0x08 ? chalk.red('FAIL') : chalk.green('PASS'));
 				console.log('    Platform: %s', m.failedFlags & 0x10 ? chalk.red('FAIL') : chalk.green('PASS'));
 				console.log('    Dependencies: %s', m.failedFlags & 0x04 ? chalk.red('FAIL') : chalk.green('PASS'));
-				
+
 				if (m.dependencies.length > 0){
 					m.dependencies.forEach((dep) => {
 						console.log(`      ${_.capitalize(dep.type)} module #${dep.index} - version ${dep.version}`);
@@ -439,15 +440,15 @@ module.exports = class SerialCommand {
 							if (!assetInReqd) {
 								otherAvailableAssetsCnt++;
 								console.log(`         ${asset.name}`);
-								console.log(`              hash: ${chalk.bold(asset.hash)}`)
-								console.log(`              storage size: ${chalk.bold(asset.storageSize)} bytes`)
+								console.log(`              hash: ${chalk.bold(asset.hash)}`);
+								console.log(`              storage size: ${chalk.bold(asset.storageSize)} bytes`);
 							}
 						});
-						if (otherAvailableAssetsCnt == 0) {
+						if (otherAvailableAssetsCnt === 0) {
 							console.log('         N/A');
 						}
 					}
-					
+
 				}
 			});
 		}
