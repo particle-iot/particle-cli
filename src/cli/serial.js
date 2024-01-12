@@ -100,7 +100,15 @@ module.exports = ({ commandProcessor, root }) => {
 		options: portOption,
 		handler: (args) => {
 			const SerialCommands = require('../cmd/serial');
-			return new SerialCommands().claimDevice(args);
+			return new SerialCommands().claimDevice(args.params.claimCode, args);
+		}
+	});
+
+	commandProcessor.createCommand(serial, 'claimed', 'Checks if a device is claimed', {
+		options: portOption,
+		handler: (args) => {
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands().isDeviceClaimed(args);
 		}
 	});
 

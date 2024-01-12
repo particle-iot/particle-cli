@@ -894,7 +894,7 @@ module.exports = class SerialCommand {
 			});
 	}
 
-	claimDevice({ port, claimCode }){
+	claimDevice(claimCode, { port }) {
 		return this.whatSerialPortDidYouMean(port, true)
 			.then(device => {
 				if (!device){
@@ -904,120 +904,24 @@ module.exports = class SerialCommand {
 			})
 			.then(() => {
 				console.log('Claim code set.');
+			})
+			.catch(err => {
+				throw new VError(ensureError(err), 'Claim code setting failed.');
 			});
 	}
 
-	sendClaimCode(device, claimCode){
-		const expectedPrompt = 'Enter 63-digit claim code: ';
-		const confirmation = 'Claim code set to: ' + claimCode;
-		return this.doSerialInteraction(device, 'C', [
-			[expectedPrompt, 2000, (deferred, next) => {
-				next(claimCode + '\n');
-			}],
-			[confirmation, 2000, (deferred, next) => {
-				next();
-				deferred.resolve();
-			}]
-		]);
+	async sendClaimCode(device, claimCode){
+		const dev = await openUsbDeviceById(device.deviceId);
+		await dev.setClaimCode(claimCode, { timeout: 2000 });
+		await dev.close();
 	}
 
-	/**
-	 *
-	 * @param {Device} device        The device to interact with
-	 * @param {String} command      The initial command to send to the device
-	 * @param {Array} interactions  an array of interactions. Each interaction is
-	 *  an array, with these elements:
-	 *  [0] - the prompt text to interact with
-	 *  [1] - the timeout to wait for this prompt
-	 *  [2] - the callback when the prompt has been received. The callback takes
-	 *      these arguments:
-	 *          promise: the deferred result (call resolve/reject)
-	 *          next: the response callback, should be called with (response) to send a response.
-	 *              Response can be undefined
-	 * @returns {Promise}
-	 */
-	doSerialInteraction(device, command, interactions){
-		if (!device){
-			throw new VError('No serial port identified');
-		}
-
-		if (!interactions.length){
-			return;
-		}
-
-		const self = this;
-		let cleanUpFn;
-		const promise = new Promise((resolve, reject) => {
-			const serialPort = this.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
-			const parser = new SerialBatchParser({ timeout: 250 });
-
-			cleanUpFn = () => {
-				resetTimeout();
-				serialPort.removeListener('close', serialClosedEarly);
-				return new Promise((resolve) => serialPort.close(resolve));
-			};
-			serialPort.pipe(parser);
-			serialPort.on('error', (err) => reject(err));
-			serialPort.on('close', serialClosedEarly);
-
-			const serialTrigger = new SerialTrigger(serialPort, parser);
-			let expectedPrompt = interactions[0][0];
-			let callback = interactions[0][2];
-
-			for (let i = 1; i < interactions.length; i++){
-				const timeout = interactions[i][1];
-				addTrigger(expectedPrompt, timeout, callback);
-				expectedPrompt = interactions[i][0];
-				callback = interactions[i][2];
-			}
-
-			// the last interaction completes without a timeout
-			addTrigger(expectedPrompt, undefined, callback);
-
-			serialPort.open((err) => {
-				if (err){
-					return reject(err);
-				}
-
-				serialTrigger.start();
-
-				if (command){
-					serialPort.write(command);
-					serialPort.drain(next);
-				} else {
-					next();
-				}
-
-				function next(){
-					startTimeout(interactions[0][1]);
-				}
-			});
-
-			function serialClosedEarly(){
-				reject('Serial port closed early');
-			}
-
-			function startTimeout(to){
-				self._serialTimeout = setTimeout(() => reject(timeoutError), to);
-			}
-
-			function resetTimeout(){
-				clearTimeout(self._serialTimeout);
-				self._serialTimeout = null;
-			}
-
-			function addTrigger(expectedPrompt, timeout, callback){
-				serialTrigger.addTrigger(expectedPrompt, (cb) => {
-					resetTimeout();
-
-					callback({ resolve, reject }, (response) => {
-						cb(response, timeout ? startTimeout.bind(self, timeout) : undefined);
-					});
-				});
-			}
-		});
-
-		return promise.finally(cleanUpFn);
+	async isDeviceClaimed(device) {
+		// FIXME: This control request does not work correctly.
+		const dev = await openUsbDeviceById(device.deviceId);
+		const resp = await dev.isClaimed();
+		console.log('Device claimed : ', resp);
+		await dev.close();
 	}
 
 	/**
