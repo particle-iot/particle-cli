@@ -112,6 +112,14 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(serial, 'vitals', 'Gets device diagnostics', {
+		options: portOption,
+		handler: (args) => {
+			const SerialCommands = require('../cmd/serial');
+			return new SerialCommands().getVitals(args);
+		}
+	});
+
 	return serial;
 };
 

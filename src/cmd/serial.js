@@ -248,6 +248,7 @@ module.exports = class SerialCommand {
 				return this.askForDeviceID(device);
 			})
 			.then(data => {
+				console.log('data: ', data);
 				if (_.isObject(data)){
 					console.log();
 					console.log('Your device id is', chalk.bold.cyan(data.id));
@@ -894,20 +895,18 @@ module.exports = class SerialCommand {
 			});
 	}
 
-	claimDevice(claimCode, { port }) {
-		return this.whatSerialPortDidYouMean(port, true)
-			.then(device => {
-				if (!device){
-					throw new VError('No serial port identified');
-				}
-				return this.sendClaimCode(device, claimCode);
-			})
-			.then(() => {
-				console.log('Claim code set.');
-			})
-			.catch(err => {
-				throw new VError(ensureError(err), 'Claim code setting failed.');
-			});
+	async claimDevice(claimCode, { port }) {
+		const device = await this.whatSerialPortDidYouMean(port, true);
+		if (!device){
+			throw new VError('No serial port identified');
+		}
+
+		try {
+			await this.sendClaimCode(device, claimCode);
+			console.log('Claim code set.');
+		} catch(err) {
+			throw new VError(ensureError(err), 'Claim code setting failed.');
+		}
 	}
 
 	async sendClaimCode(device, claimCode){
@@ -916,12 +915,27 @@ module.exports = class SerialCommand {
 		await dev.close();
 	}
 
-	async isDeviceClaimed(device) {
+	async isDeviceClaimed({ port }) {
+		const device = await this.whatSerialPortDidYouMean(port, true);	
+		if (!device){
+			throw new VError('No serial port identified');
+		}
 		// FIXME: This control request does not work correctly.
 		// TODO: add tests
 		const dev = await openUsbDeviceById(device.deviceId);
 		const resp = await dev.isClaimed();
 		console.log('Device claimed : ', resp);
+		await dev.close();
+	}
+
+	async getVitals({ port }) {
+		const device = this.whatSerialPortDidYouMean(port, true);
+		if (!device){
+			throw new VError('No serial port identified');
+		}
+
+		const dev = await openUsbDeviceById(device.deviceId);
+		await dev.getDiagnostics();
 		await dev.close();
 	}
 
@@ -1484,12 +1498,12 @@ module.exports = class SerialCommand {
 				info.iccid = await dev.getIccid();
 				await dev.close();
 			}
-
 			return info;
 		}
 	}
 
-	askForSystemFirmwareVersion(device, timeout){
+	async askForSystemFirmwareVersion(device, timeout){
+
 		return this._issueSerialCommand(device, 'v', timeout)
 			.then((data) => {
 				const matches = data.match(/system firmware version:\s+([\w.-]+)/);
