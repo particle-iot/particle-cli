@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
+const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
 
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
