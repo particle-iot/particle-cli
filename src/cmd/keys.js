@@ -14,6 +14,7 @@ const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
 const ParticleApi = require('./api');
 const { validateDFUSupport } = require('../lib/flash-helper');
+const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
 
 /**
  * Commands for managing encryption keys.
@@ -503,10 +504,11 @@ module.exports = class KeysCommand {
 	async _dfuWrite(device, buffer, { altSetting, startAddr, leave, noErase }) {
 		try {
 			await device.writeOverDfu(buffer, { altSetting, startAddr, leave, noErase });
-		} catch (error) {
-			if (error.message === 'Device is protected') {
+		} catch (err) {
+			if (err instanceof DeviceProtectionError) {
 				throw new Error('Operation could not be completed due to device protection.');
 			}
+			throw new Error('Writing over DFU failed', err);
 		}
 	}
 
@@ -515,11 +517,15 @@ module.exports = class KeysCommand {
 		try {
 			buf = await device.readOverDfu({ altSetting, startAddr, size });
 		} catch (err) {
-			if (err.message === 'Device is protected') {
+			if (err instanceof DeviceProtectionError) {
 				throw new Error('Operation could not be completed due to device protection.');
 			}
 			// FIXME: First time read may fail so we retry
-			buf = await device.readOverDfu({ altSetting, startAddr, size });
+			try {
+				buf = await device.readOverDfu({ altSetting, startAddr, size });
+			} catch (err) {
+				throw new Error('Reading over DFU failed', err);
+			}
 		}
 		return buf;
 	}

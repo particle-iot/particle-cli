@@ -60,7 +60,7 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 			return device;
 		} catch (error) {
 			// ignore other errors from attempts to flash to external flash
-			if (error.message === 'Device is protected') {
+			if (error instanceof DeviceProtectionError) {
 				throw new Error('Operation could not be completed due to device protection.');
 			}
 		}
@@ -117,7 +117,7 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 	try {
 		await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
 	} catch (error) {
-		if (error.message === 'Device is protected') {
+		if (error instanceof DeviceProtectionError) {
 			throw new Error('Operation could not be completed due to device protection.');
 		}
 	}
