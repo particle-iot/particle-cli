@@ -15,6 +15,7 @@ const FLASH_TIMEOUT = 4 * 60000;
 
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 	const progress = _createFlashProgress({ flashSteps, ui });
+	let success = false;
 	try {
 		for (const step of flashSteps) {
 			device = await prepareDeviceForFlash({ device, mode: step.flashMode, progress });
@@ -26,8 +27,9 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 				device = await _flashDeviceInDfuMode(device, step.data, { name: step.name, altSetting: altSetting, startAddr: step.address, progress: progress });
 			}
 		}
+		success = true;
 	} finally {
-		progress({ event: 'finish' });
+		progress({ event: 'finish', success });
 		if (device.isOpen) {
 			if (resetAfterFlash) {
 				try {
@@ -189,7 +191,7 @@ function _createFlashProgress({ flashSteps, ui }) {
 				}
 				break;
 			case 'finish':
-				description = 'Flash success!';
+				description = payload.success ? 'Flash success!' : 'Flash failed.';
 				if (isInteractive) {
 					progressBar.update({ description });
 					progressBar.stop();
