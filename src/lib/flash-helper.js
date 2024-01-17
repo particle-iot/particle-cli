@@ -88,7 +88,6 @@ async function prepareDeviceForFlash({ device, mode, progress }) {
 				await delay(1000); // Just in case
 			} catch (error) {
 				// ignore
-				// TODO: Add an error if needed here upon device-os feature addition
 			}
 			break;
 		case 'dfu':
@@ -123,6 +122,7 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 		if (error instanceof DeviceProtectionError) {
 			throw new Error('Operation could not be completed due to device protection.');
 		}
+		throw new Error('Writing over DFU failed', error);
 	}
 	return device;
 }
