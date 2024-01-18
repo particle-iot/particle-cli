@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
+const VError = require('verror');
 const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
@@ -9,6 +10,8 @@ const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
 const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
+const utilities = require('./utilities');
+const ensureError = utilities.ensureError;
 
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
@@ -122,7 +125,7 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 		if (error instanceof DeviceProtectionError) {
 			throw new Error('Operation could not be completed due to device protection.');
 		}
-		throw new VError(ensureError(err), 'Writing over DFU failed');
+		throw new VError(ensureError(error), 'Writing over DFU failed');
 	}
 	return device;
 }
