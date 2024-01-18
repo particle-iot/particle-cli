@@ -3,7 +3,6 @@ const fs = require('fs');
 const _ = require('lodash');
 const path = require('path');
 const chalk = require('chalk');
-const semver = require('semver');
 const VError = require('verror');
 const inquirer = require('inquirer');
 const prompt = require('inquirer').prompt;
@@ -18,8 +17,8 @@ const YModem = require('../lib/ymodem');
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
+const usbUtils = require('./usb-util');
 const { ensureError, knownPlatformDisplayForId } = require('../lib/utilities');
-const { openUsbDeviceById } = require('./usb-util');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -248,7 +247,6 @@ module.exports = class SerialCommand {
 				return this.askForDeviceID(device);
 			})
 			.then(data => {
-				console.log('data: ', data);
 				if (_.isObject(data)){
 					console.log();
 					console.log('Your device id is', chalk.bold.cyan(data.id));
@@ -304,155 +302,63 @@ module.exports = class SerialCommand {
 				return this.getSystemInformation(device);
 			})
 			.then((data) => {
-				let legacyFormat = true;
+				const functionMap = {
+					s: 'System',
+					u: 'User',
+					b: 'Bootloader',
+					r: 'Reserved',
+					m: 'Monolithic',
+					a: 'Radio stack',
+					c: 'NCP'
+				};
+				const locationMap = {
+					m: 'main',
+					b: 'backup',
+					f: 'factory',
+					t: 'temp'
+				};
 
-				if ('failedFlags' in data.moduleInfo[0]) {
-					legacyFormat = false;
+				const d = JSON.parse(data);
+				const parser = new DescribeParser();
+				const modules = parser.getModules(d);
+
+				if (d.p !== undefined){
+					const platformName = knownPlatformDisplayForId()[d.p];
+					console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
 				}
 
-				if (legacyFormat) {
-					this._parseSystemInformationLegacyFormat(data);
-				} else {
-					this._parseSystemInformation(data);
+				if (modules && modules.length > 0){
+					console.log(chalk.underline('Modules'));
+					modules.forEach((m) => {
+						const func = functionMap[m.func];
+						if (!func){
+							console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+							return;
+						}
+
+						console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
+
+						if (m.isUserModule() && m.uuid){
+							console.log('    UUID:', m.uuid);
+						}
+
+						console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
+						console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
+						console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+						console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
+
+						if (m.dependencies.length > 0){
+							m.dependencies.forEach((dep) => {
+								const df = functionMap[dep.func];
+								console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
+							});
+						}
+					});
 				}
 			})
 			.catch((err) => {
 				throw new VError(ensureError(err), 'Could not get inspect device');
 			});
-	}
-
-	_parseSystemInformationLegacyFormat(data) {
-		data = data.moduleInfo;
-
-		const functionMap = {
-			s: 'System',
-			u: 'User',
-			b: 'Bootloader',
-			r: 'Reserved',
-			m: 'Monolithic',
-			a: 'Radio stack',
-			c: 'NCP'
-		};
-		const locationMap = {
-			m: 'main',
-			b: 'backup',
-			f: 'factory',
-			t: 'temp'
-		};
-
-		const d = JSON.parse(data);
-		const parser = new DescribeParser();
-		const modules = parser.getModules(d);
-
-		if (d.p !== undefined){
-			const platformName = knownPlatformDisplayForId()[d.p];
-			console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
-		}
-
-		if (modules && modules.length > 0){
-			console.log(chalk.underline('Modules'));
-			modules.forEach((m) => {
-				const func = functionMap[m.func];
-				if (!func){
-					console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-					return;
-				}
-
-				console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-
-				if (m.isUserModule() && m.uuid){
-					console.log('    UUID:', m.uuid);
-				}
-
-				console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
-				console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
-				console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-				console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-
-				if (m.dependencies.length > 0){
-					m.dependencies.forEach((dep) => {
-						const df = functionMap[dep.func];
-						console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
-					});
-				}
-			});
-		}
-	}
-
-	// TODO: Add tests for assets
-	_parseSystemInformation(data) {
-		const modules = data.moduleInfo;
-		const assets = data.assetInfo;
-
-		console.log('modules: ', modules);
-		console.log('modules.length: ', modules.length);
-
-		if (modules && modules.length > 0) {
-			console.log(chalk.underline('Modules'));
-			modules.forEach((m) => {
-				if (!m.type){
-					console.log(`  empty - ${m.store.toLowerCase()} location, ${m.maxSize} bytes max size`);
-					return;
-				}
-
-				console.log(`  ${chalk.bold.cyan(_.capitalize(m.type))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}, ${m.store.toLowerCase()} location, ${m.maxSize} bytes max size`);
-
-				if (m.type === 'USER_PART' && m.hash){
-					console.log('    UUID:', m.hash);
-				}
-
-				// Referencing from FirmwareModuleValidityFlag in device-os-protobuf
-				console.log('    Integrity: %s', m.failedFlags & 0x02 ? chalk.red('FAIL') : chalk.green('PASS'));
-				console.log('    Address Range: %s', m.failedFlags & 0x08 ? chalk.red('FAIL') : chalk.green('PASS'));
-				console.log('    Platform: %s', m.failedFlags & 0x10 ? chalk.red('FAIL') : chalk.green('PASS'));
-				console.log('    Dependencies: %s', m.failedFlags & 0x04 ? chalk.red('FAIL') : chalk.green('PASS'));
-
-				if (m.dependencies.length > 0){
-					m.dependencies.forEach((dep) => {
-						console.log(`      ${_.capitalize(dep.type)} module #${dep.index} - version ${dep.version}`);
-					});
-				}
-
-				if (m.type === 'USER_PART' && m.assetDependencies.length > 0) {
-					console.log('    Assets:');
-					const assetsReqd = assets.required;
-					const assetsAvailable = assets.available;
-					if (assetsReqd.length > 0) {
-						console.log('      Required:');
-						assetsReqd.forEach((asset) => {
-							let assetIsAvailable = assetsAvailable.some((a) => {
-								return a.hash === asset.hash;
-							});
-							// FIXME: Is FAIL unnecessary?
-							console.log(`         ${asset.name} - ${assetIsAvailable ? chalk.green('PASS') : chalk.red('FAIL')}`);
-						});
-					}
-					if (assetsReqd.length > 0) {
-						console.log('      Other Available Assets:');
-						let otherAvailableAssetsCnt = 0;
-						assetsAvailable.forEach((asset) => {
-							// if this asset is already in reqd list
-
-							let assetInReqd = false;
-							assetInReqd = assetsReqd.some((a) => {
-								return a.hash === asset.hash;
-							});
-
-							if (!assetInReqd) {
-								otherAvailableAssetsCnt++;
-								console.log(`         ${asset.name}`);
-								console.log(`              hash: ${chalk.bold(asset.hash)}`);
-								console.log(`              storage size: ${chalk.bold(asset.storageSize)} bytes`);
-							}
-						});
-						if (otherAvailableAssetsCnt === 0) {
-							console.log('         N/A');
-						}
-					}
-
-				}
-			});
-		}
 	}
 
 	_promptForListeningMode(){
@@ -589,25 +495,35 @@ module.exports = class SerialCommand {
 			});
 	}
 
-	configureWifi({ port, file }){
-		const credentialsFile = file;
-
-		return this.whatSerialPortDidYouMean(port, true)
-			.then(device => {
-				if (!device){
-					throw new VError('No serial port identified');
-				}
-
-				if (credentialsFile){
-					return this._configWifiFromFile(device, credentialsFile);
-				} else {
-					return this.promptWifiScan(device);
-				}
-			})
-			.catch(err => {
-				throw new VError(ensureError(err), 'Error configuring Wi-Fi');
-			});
+	async configureWifi() {
+		const device = await usbUtils.getOneUsbDevice({ idOrName: 'e00fce6819ef5f971ea9563a' });
+		await device.clearWifiNetworks();
+		await device.joinNewWifiNetwork({
+			ssid: 'D49-10',
+			password: 'bravequail648'
+		});
+		await device.close();
 	}
+
+	// configureWifi({ port, file }){
+	// 	const credentialsFile = file;
+
+	// 	return this.whatSerialPortDidYouMean(port, true)
+	// 		.then(device => {
+	// 			if (!device){
+	// 				throw new VError('No serial port identified');
+	// 			}
+
+	// 			if (credentialsFile){
+	// 				return this._configWifiFromFile(device, credentialsFile);
+	// 			} else {
+	// 				return this.promptWifiScan(device);
+	// 			}
+	// 		})
+	// 		.catch(err => {
+	// 			throw new VError(ensureError(err), 'Error configuring Wi-Fi');
+	// 		});
+	// }
 
 	_configWifiFromFile(device, filename){
 		// TODO (mirande): use util.promisify once node@6 is no longer supported
@@ -895,48 +811,130 @@ module.exports = class SerialCommand {
 			});
 	}
 
-	async claimDevice(claimCode, { port }) {
-		const device = await this.whatSerialPortDidYouMean(port, true);
+	claimDevice({ port, claimCode }){
+		return this.whatSerialPortDidYouMean(port, true)
+			.then(device => {
+				if (!device){
+					throw new VError('No serial port identified');
+				}
+				return this.sendClaimCode(device, claimCode);
+			})
+			.then(() => {
+				console.log('Claim code set.');
+			});
+	}
+
+	sendClaimCode(device, claimCode){
+		const expectedPrompt = 'Enter 63-digit claim code: ';
+		const confirmation = 'Claim code set to: ' + claimCode;
+		return this.doSerialInteraction(device, 'C', [
+			[expectedPrompt, 2000, (deferred, next) => {
+				next(claimCode + '\n');
+			}],
+			[confirmation, 2000, (deferred, next) => {
+				next();
+				deferred.resolve();
+			}]
+		]);
+	}
+
+	/**
+	 *
+	 * @param {Device} device        The device to interact with
+	 * @param {String} command      The initial command to send to the device
+	 * @param {Array} interactions  an array of interactions. Each interaction is
+	 *  an array, with these elements:
+	 *  [0] - the prompt text to interact with
+	 *  [1] - the timeout to wait for this prompt
+	 *  [2] - the callback when the prompt has been received. The callback takes
+	 *      these arguments:
+	 *          promise: the deferred result (call resolve/reject)
+	 *          next: the response callback, should be called with (response) to send a response.
+	 *              Response can be undefined
+	 * @returns {Promise}
+	 */
+	doSerialInteraction(device, command, interactions){
 		if (!device){
 			throw new VError('No serial port identified');
 		}
 
-		try {
-			await this.sendClaimCode(device, claimCode);
-			console.log('Claim code set.');
-		} catch(err) {
-			throw new VError(ensureError(err), 'Claim code setting failed.');
-		}
-	}
-
-	async sendClaimCode(device, claimCode){
-		const dev = await openUsbDeviceById(device.deviceId);
-		await dev.setClaimCode(claimCode, { timeout: 2000 });
-		await dev.close();
-	}
-
-	async isDeviceClaimed({ port }) {
-		const device = await this.whatSerialPortDidYouMean(port, true);	
-		if (!device){
-			throw new VError('No serial port identified');
-		}
-		// FIXME: This control request does not work correctly.
-		// TODO: add tests
-		const dev = await openUsbDeviceById(device.deviceId);
-		const resp = await dev.isClaimed();
-		console.log('Device claimed : ', resp);
-		await dev.close();
-	}
-
-	async getVitals({ port }) {
-		const device = this.whatSerialPortDidYouMean(port, true);
-		if (!device){
-			throw new VError('No serial port identified');
+		if (!interactions.length){
+			return;
 		}
 
-		const dev = await openUsbDeviceById(device.deviceId);
-		await dev.getDiagnostics();
-		await dev.close();
+		const self = this;
+		let cleanUpFn;
+		const promise = new Promise((resolve, reject) => {
+			const serialPort = this.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
+			const parser = new SerialBatchParser({ timeout: 250 });
+
+			cleanUpFn = () => {
+				resetTimeout();
+				serialPort.removeListener('close', serialClosedEarly);
+				return new Promise((resolve) => serialPort.close(resolve));
+			};
+			serialPort.pipe(parser);
+			serialPort.on('error', (err) => reject(err));
+			serialPort.on('close', serialClosedEarly);
+
+			const serialTrigger = new SerialTrigger(serialPort, parser);
+			let expectedPrompt = interactions[0][0];
+			let callback = interactions[0][2];
+
+			for (let i = 1; i < interactions.length; i++){
+				const timeout = interactions[i][1];
+				addTrigger(expectedPrompt, timeout, callback);
+				expectedPrompt = interactions[i][0];
+				callback = interactions[i][2];
+			}
+
+			// the last interaction completes without a timeout
+			addTrigger(expectedPrompt, undefined, callback);
+
+			serialPort.open((err) => {
+				if (err){
+					return reject(err);
+				}
+
+				serialTrigger.start();
+
+				if (command){
+					serialPort.write(command);
+					serialPort.drain(next);
+				} else {
+					next();
+				}
+
+				function next(){
+					startTimeout(interactions[0][1]);
+				}
+			});
+
+			function serialClosedEarly(){
+				reject('Serial port closed early');
+			}
+
+			function startTimeout(to){
+				self._serialTimeout = setTimeout(() => reject(timeoutError), to);
+			}
+
+			function resetTimeout(){
+				clearTimeout(self._serialTimeout);
+				self._serialTimeout = null;
+			}
+
+			function addTrigger(expectedPrompt, timeout, callback){
+				serialTrigger.addTrigger(expectedPrompt, (cb) => {
+					resetTimeout();
+
+					callback({ resolve, reject }, (response) => {
+						cb(response, timeout ? startTimeout.bind(self, timeout) : undefined);
+					});
+				});
+			}
+		});
+
+		return promise.finally(cleanUpFn);
 	}
 
 	/**
@@ -1377,32 +1375,15 @@ module.exports = class SerialCommand {
 			});
 	}
 
-	async getDeviceMacAddress(device) {
+	getDeviceMacAddress(device){
 		if (device.type === 'Core'){
 			throw new VError('Unable to get MAC address of a Core');
 		}
 
-		const features = device.specs.features;
-		if (!features.includes('wifi')) {
-			throw new VError('MAC address is only obtained for Wifi devices');
-		}
-
-		let data;
-		const fwVer = await this.askForSystemFirmwareVersion(device);
-		const gen = device.specs.generation;
-		if (gen < 3 || semver.lt(fwVer, '5.6.0')) { // FIXME: Correct the firmware version
-			data = await this._issueSerialCommand(device, 'm');
-		} else {
-			// Wifi mac address control requessts are available starting dvos 6.x
-			const dev = await openUsbDeviceById(device.deviceId);
-			data = await dev.getMacAddress();
-			await dev.close();
-		}
-
-		if (data) {
+		return this._issueSerialCommand(device, 'm').then((data) => {
 			const matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
 
-			if (matches) {
+			if (matches){
 				let mac = matches[0].toLowerCase();
 
 				// manufacturing firmware can sometimes not report the full MAC
@@ -1430,37 +1411,17 @@ module.exports = class SerialCommand {
 				}
 				return mac;
 			}
-		}
-		throw new VError('Unable to find mac address in response');
+			throw new VError('Unable to find mac address in response');
+		});
 	}
 
-	async getSystemInformation(device) {
-		const gen = device.specs.generation;
-		const fwVer = await this.askForSystemFirmwareVersion(device);
-		let result = {
-			moduleInfo: undefined,
-			assetInfo: undefined
-		};
-		if (gen < 3 || semver.lt(fwVer, '5.6.0')) { // FIXME: Correct the firmware version
-			result.modules = this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
-		} else {
-			const dev = await openUsbDeviceById(device.deviceId);
-			result.moduleInfo = await dev.getFirmwareModuleInfo();
-			result.assetInfo = await dev.getAssetInfo();
-			await dev.close();
-		}
-		return result;
+	getSystemInformation(device){
+		return this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
 	}
 
-	async askForDeviceID(device) {
-		let data;
-
-		const gen = device.specs.generation;
-		const fwVer = await this.askForSystemFirmwareVersion(device);
-		if (gen < 3 || semver.lt(fwVer, '5.6.0')) { // FIXME: Correct the firmware version
-			// TODO: rework this
-			data = await this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT);
-			if (data) {
+	askForDeviceID(device){
+		return this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT)
+			.then((data) => {
 				const matches = data.match(/Your (core|device) id is\s+(\w+)/);
 
 				if (matches && matches.length === 3){
@@ -1485,25 +1446,10 @@ module.exports = class SerialCommand {
 
 					return info;
 				}
-			}
-		} else {
-			const info = {
-				id : device.deviceId
-			};
-
-			const features = device.specs.features;
-			if (features.includes('cellular')) {
-				const dev = await openUsbDeviceById(device.deviceId);
-				info.imei = await dev.getImei();
-				info.iccid = await dev.getIccid();
-				await dev.close();
-			}
-			return info;
-		}
+			});
 	}
 
-	async askForSystemFirmwareVersion(device, timeout){
-
+	askForSystemFirmwareVersion(device, timeout){
 		return this._issueSerialCommand(device, 'v', timeout)
 			.then((data) => {
 				const matches = data.match(/system firmware version:\s+([\w.-]+)/);
