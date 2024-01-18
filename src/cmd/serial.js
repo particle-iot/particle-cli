@@ -13,11 +13,11 @@ const specs = require('../lib/device-specs');
 const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
-const YModem = require('../lib/ymodem');
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
 const { ensureError, knownPlatformDisplayForId } = require('../lib/utilities');
+const FlashCommand = require('./flash');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -379,69 +379,20 @@ module.exports = class SerialCommand {
 		]);
 	}
 
-	flashDevice(binary, { port, yes }){
-		let device;
+	async flashDevice(binary, { port }){
+		const device = await this.whatSerialPortDidYouMean(port, true);
+		if (!device) {
+			throw new VError('No serial port identified');
+		}
+		// TODO: Check if this still holds true or if we even care
+		if (device.specs.name === 'core') {
+			throw new VError('Serial flashing is not supported on the Core');
+		}
 
-		return Promise.resolve()
-			.then(() => {
-				if (!yes){
-					return this._promptForListeningMode();
-				}
-			})
-			.then(() => this.whatSerialPortDidYouMean(port, true))
-			.then(_device => {
-				device = _device;
-				if (!device){
-					throw new VError('No serial port identified');
-				}
-				if (device.type === 'Core'){
-					throw new VError('Serial flashing is not supported on the Core');
-				}
+		const deviceId = device.deviceId;
 
-				//only match against knownApp if file is not found
-				let stats;
-				try {
-					stats = fs.statSync(binary);
-				} catch (ex){
-					// file does not exist
-					const specsByProduct = _.keyBy(specs, 'productName');
-					const productSpecs = specsByProduct[device.type];
-					binary = productSpecs && productSpecs.knownApps[binary];
-					if (binary === undefined){
-						throw new VError('File does not exist and no known app found');
-					} else {
-						return;
-					}
-				}
-
-				if (!stats.isFile()){
-					throw new VError('You cannot flash a directory over USB');
-				}
-			})
-			.then(() => {
-				const serialPort = new SerialPort(device.port, {
-					baudRate: 28800,
-					autoOpen: false
-				});
-
-				const closePort = () => {
-					if (serialPort.isOpen){
-						serialPort.close();
-					}
-					process.exit(0);
-				};
-				process.on('SIGINT', closePort);
-				process.on('SIGTERM', closePort);
-
-				const ymodem = new YModem(serialPort, { debug: true });
-				return ymodem.send(binary);
-			})
-			.then(() => {
-				console.log('\nFlash success!');
-			})
-			.catch(err => {
-				throw new VError(ensureError(err), 'Error writing firmware');
-			});
+		const flashCmdInstance = new FlashCommand();
+		await flashCmdInstance.flashLocal({ files: [deviceId, binary] });
 	}
 
 	_scanNetworks(){

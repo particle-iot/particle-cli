@@ -49,6 +49,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command blue app.ino --target 5.0.0': 'Compile app.ino in the cloud using the 5.0.0 firmware and flash to device blue',
 			'$0 $command cyan firmware.bin': 'Flash the pre-compiled binary to device cyan',
 			'$0 $command --local': 'Compile the source code in the current directory in the cloud and flash to the device connected over USB',
+			'$0 $command --local <deviceId> application.bin': 'Compile the source code in the current directory in the cloud and flash to the device connected over USB',
 			'$0 $command --local --target 5.0.0': 'Compile the source code in the current directory in the cloud against the target version and flash to the device connected over USB',
 			'$0 $command --local application.bin': 'Flash the pre-compiled binary to the device connected over USB',
 			'$0 $command --local application.zip': 'Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
