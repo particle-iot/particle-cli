@@ -19,6 +19,7 @@ const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('./usb-util');
 const { ensureError, knownPlatformDisplayForId } = require('../lib/utilities');
+const deviceConstants = require('@particle/device-constants');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -233,10 +234,45 @@ module.exports = class SerialCommand {
 
 	/**
 	 * Check to see if the device is in listening mode, try to get the device ID via serial
+	 * Any devices older than 0.8.0 will fail to collect device identity
 	 * @param {Number|String} comPort
 	 */
-	identifyDevice({ port }){
-		let device;
+	async identifyDevice({ port }){
+		try {
+			const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
+			const deviceId = deviceFromSerialPort.deviceId;
+			
+			const device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+			
+			// Firmware version through control requests is supported since Device-OS 0.8.0
+			// Any devices older than 0.8.0 will fail to collect device identity
+			const fwVer = await dev.getSystemVersion();
+			
+			console.log('Your device id is', chalk.bold.cyan(deviceId));
+
+			const platform = device.specs.name;
+			const features = deviceConstants[platform].features;
+
+			if (features.includes('cellular')) {
+				if (semver.lt(fwVer, '5.6.0')) {
+					
+				} else {
+					const imei = await device.getImei();
+					const iccid = await device.getIccid();
+				}
+				console.log('Your IMEI is', chalk.bold.cyan(imei));
+				console.log('Your ICCID is', chalk.bold.cyan(iccid));
+			}
+
+			console.log('Your system firmware version is', chalk.bold.cyan(fwVer));
+
+			await device.close();
+		} catch (err) {
+			throw new VError(err, 'Could not identify device');
+		}
+	}
+
+	async identifyDeviceThroughSerialCmds({ port }) {
 		return this.whatSerialPortDidYouMean(port, true)
 			.then(_device => {
 				device = _device;
@@ -261,18 +297,19 @@ module.exports = class SerialCommand {
 					console.log('Your device id is', chalk.bold.cyan(data));
 				}
 
-				return this.askForSystemFirmwareVersion(device, 2000)
-					.then(version => {
-						console.log('Your system firmware version is', chalk.bold.cyan(version));
-					})
-					.catch(() => {
-						console.log('Unable to determine system firmware version');
-					});
+				// return this.askForSystemFirmwareVersion(device, 2000)
+				// 	.then(version => {
+				// 		console.log('Your system firmware version is', chalk.bold.cyan(version));
+				// 	})
+				// 	.catch(() => {
+				// 		console.log('Unable to determine system firmware version');
+				// 	});
 			})
 			.catch((err) => {
 				throw new VError(err, 'Could not identify device');
 			});
 	}
+
 
 	deviceMac({ port }){
 		return this.whatSerialPortDidYouMean(port, true)
@@ -1419,7 +1456,7 @@ module.exports = class SerialCommand {
 		return this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
 	}
 
-	askForDeviceID(device){
+	async askForDeviceID(device){
 		return this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT)
 			.then((data) => {
 				const matches = data.match(/Your (core|device) id is\s+(\w+)/);
