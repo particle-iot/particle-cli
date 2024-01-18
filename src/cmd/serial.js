@@ -379,20 +379,21 @@ module.exports = class SerialCommand {
 		]);
 	}
 
-	async flashDevice(binary, { port }){
+	async flashDevice(binary, { port, applicationOnly=false }) {
 		const device = await this.whatSerialPortDidYouMean(port, true);
 		if (!device) {
 			throw new VError('No serial port identified');
 		}
+
 		// TODO: Check if this still holds true or if we even care
-		if (device.specs.name === 'core') {
+		if ((device.specs && device.specs.name === 'core') || device.type === 'Core') {
 			throw new VError('Serial flashing is not supported on the Core');
 		}
 
 		const deviceId = device.deviceId;
 
 		const flashCmdInstance = new FlashCommand();
-		await flashCmdInstance.flashLocal({ files: [deviceId, binary] });
+		await flashCmdInstance.flashLocal({ files: [deviceId, binary], applicationOnly });
 	}
 
 	_scanNetworks(){
@@ -1453,6 +1454,8 @@ module.exports = class SerialCommand {
 		return (((parts[0] * 256) + parts[1]) * 256 + parts[2]) * 256 + parts[3];
 	}
 
+	// TODO: If the comPort does not have an exact match with the device,
+	// throw an error and return
 	_parsePort(devices, comPort){
 		if (!comPort){
 			//they didn't give us anything.

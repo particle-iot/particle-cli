@@ -91,7 +91,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}, portOption),
 		handler: (args) => {
 			const SerialCommands = require('../cmd/serial');
-			return new SerialCommands().flashDevice(args.params.binary, args);
+			return new SerialCommands().flashDevice(args.params.binary, { args, applicationOnly: true });
 		}
 	});
 
