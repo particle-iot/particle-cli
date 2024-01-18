@@ -122,7 +122,7 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 		if (error instanceof DeviceProtectionError) {
 			throw new Error('Operation could not be completed due to device protection.');
 		}
-		throw new Error('Writing over DFU failed', error);
+		throw new VError(ensureError(err), 'Writing over DFU failed');
 	}
 	return device;
 }
