@@ -51,8 +51,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			await this.flashOverUsb({ binary, factory });
 		} else if (serial) {
 			const serialCmdInstance = new SerialCommand();
-			const device = await serialCmdInstance.whatSerialPortDidYouMean(port, true);
-			await this.flashLocal({ files: [device.deviceId, binary] });
+			await serialCmdInstance.flashDevice(binary, { port });
 		} else if (local) {
 			let allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
