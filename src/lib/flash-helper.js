@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
+const VError = require('verror');
 const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
@@ -8,12 +9,16 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
+const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
+const utilities = require('./utilities');
+const ensureError = utilities.ensureError;
 
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 	const progress = _createFlashProgress({ flashSteps, ui });
+	let success = false;
 	try {
 		for (const step of flashSteps) {
 			device = await prepareDeviceForFlash({ device, mode: step.flashMode, progress });
@@ -25,8 +30,9 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 				device = await _flashDeviceInDfuMode(device, step.data, { name: step.name, altSetting: altSetting, startAddr: step.address, progress: progress });
 			}
 		}
+		success = true;
 	} finally {
-		progress({ event: 'finish' });
+		progress({ event: 'finish', success });
 		if (device.isOpen) {
 			if (resetAfterFlash) {
 				try {
@@ -59,7 +65,10 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 			await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
 			return device;
 		} catch (error) {
-			// ignore error from attempts to flash to external flash
+			// ignore other errors from attempts to flash to external flash
+			if (error instanceof DeviceProtectionError) {
+				throw new Error('Operation could not be completed due to device protection.');
+			}
 		}
 	}
 	throw new Error('Unable to flash device');
@@ -109,7 +118,15 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 	if (progress) {
 		progress({ event: 'flash-file', filename: name });
 	}
-	await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
+
+	try {
+		await device.writeOverDfu(data, { altSetting, startAddr: startAddr, progress });
+	} catch (error) {
+		if (error instanceof DeviceProtectionError) {
+			throw new Error('Operation could not be completed due to device protection.');
+		}
+		throw new VError(ensureError(error), 'Writing over DFU failed');
+	}
 	return device;
 }
 
@@ -177,7 +194,7 @@ function _createFlashProgress({ flashSteps, ui }) {
 				}
 				break;
 			case 'finish':
-				description = 'Flash success!';
+				description = payload.success ? 'Flash success!' : 'Flash failed.';
 				if (isInteractive) {
 					progressBar.update({ description });
 					progressBar.stop();
