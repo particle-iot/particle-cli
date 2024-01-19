@@ -55,11 +55,12 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --local application.zip': 'Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
 			'$0 $command --local tinker': 'Flash the default Tinker app to the device connected over USB',
 			'$0 $command --usb firmware.bin': 'Flash the binary over USB',
-			'$0 $command --serial firmware.bin': 'Flash the binary over virtual serial port. The device needs to be in listening mode'
+			'$0 $command --serial firmware.bin': 'DEPRECATED. Use $command --serial instead.'
 		},
 		epilogue: unindent(`
 		  When passing the --local flag, Device OS will be updated if the version on the device is outdated.
 		  When passing both the --local and --target flash, Device OS will be updated to the target version.
+		  To avoid this behavior, pass the --application-only flag.
 		`)
 	});
 };

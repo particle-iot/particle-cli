@@ -10,6 +10,7 @@ const wifiScan = require('node-wifiscanner2').scan;
 const SerialPort = require('../lib/require-optional')('serialport');
 const log = require('../lib/log');
 const specs = require('../lib/device-specs');
+const CLICommandBase = require('./base');
 const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
@@ -42,8 +43,9 @@ const SERIAL_PORT_DEFAULTS = {
 	autoOpen: false
 };
 
-module.exports = class SerialCommand {
+module.exports = class SerialCommand extends CLICommandBase {
 	constructor(){
+		super();
 		spinnerMixin(this);
 	}
 
@@ -380,6 +382,11 @@ module.exports = class SerialCommand {
 	}
 
 	async flashDevice(binary, { port }) {
+		this.ui.stdout.write(
+			`NOTE: ${chalk.bold.white('particle flash serial')} has been replaced by ${chalk.bold.white('particle flash --local')}.${os.EOL}` +
+			`Please use that command going forward.${os.EOL}${os.EOL}`
+		);
+
 		const device = await this.whatSerialPortDidYouMean(port, true);
 		if (!device) {
 			throw new VError('No serial port identified');
