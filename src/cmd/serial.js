@@ -388,7 +388,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		);
 
 		const device = await this.whatSerialPortDidYouMean(port, true);
-		if (!device) {
+		if (!device || !device.deviceId) {
 			throw new VError('No serial port identified');
 		}
 
