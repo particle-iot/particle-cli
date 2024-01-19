@@ -66,7 +66,7 @@
         "npm": ">=6"
       },
       "optionalDependencies": {
-        "particle-usb": "^2.5.0",
+        "particle-usb": "^2.5.1",
         "serialport": "^9.2.8"
       }
     },
@@ -7583,9 +7583,9 @@
       }
     },
     "node_modules/particle-usb": {
-      "version": "2.5.0",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.5.0.tgz",
-      "integrity": "sha512-Yk6gCPy7NFt83w9AYwBBU6Cde8eGwHI82krbENZI7UMMQkC7gbGLpAO7I0ntwn/A2QAJjDNKhK5EB+fXEM7Zcw==",
+      "version": "2.5.1",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.5.1.tgz",
+      "integrity": "sha512-Cw/UFqTVJ/9aJMhmcBUnf8a7BaexpuNULMR4KZYcK3lAEHnGOtInW3FB710Jf9+i1rtUANCdM1HK059juALUrQ==",
       "optional": true,
       "dependencies": {
         "@particle/device-os-protobuf": "^2.2.0",
@@ -17251,9 +17251,9 @@
       }
     },
     "particle-usb": {
-      "version": "2.5.0",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.5.0.tgz",
-      "integrity": "sha512-Yk6gCPy7NFt83w9AYwBBU6Cde8eGwHI82krbENZI7UMMQkC7gbGLpAO7I0ntwn/A2QAJjDNKhK5EB+fXEM7Zcw==",
+      "version": "2.5.1",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.5.1.tgz",
+      "integrity": "sha512-Cw/UFqTVJ/9aJMhmcBUnf8a7BaexpuNULMR4KZYcK3lAEHnGOtInW3FB710Jf9+i1rtUANCdM1HK059juALUrQ==",
       "optional": true,
       "requires": {
         "@particle/device-os-protobuf": "^2.2.0",
