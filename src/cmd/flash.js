@@ -24,7 +24,6 @@ const {
 	getFileFlashInfo
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
-const SerialCommand = require('./serial');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -38,6 +37,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		factory,
 		target,
 		port,
+		yes,
 		'application-only': applicationOnly
 	}) {
 		if (!device && !binary && !local) {
@@ -50,8 +50,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		if (usb) {
 			await this.flashOverUsb({ binary, factory });
 		} else if (serial) {
-			const serialCmdInstance = new SerialCommand();
-			await serialCmdInstance.flashDevice(binary, { port, applicationOnly: true });
+			await this.flashYModem({ binary, port, yes });
 		} else if (local) {
 			let allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
@@ -111,6 +110,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const CloudCommands = require('../cmd/cloud');
 		const args = { target, params: { device, files } };
 		return new CloudCommands().flashDevice(args);
+	}
+
+	flashYModem({ binary, port, yes }) {
+		const SerialCommands = require('../cmd/serial');
+		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
 	async flashLocal({ files, applicationOnly, target }) {
