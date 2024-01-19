@@ -50,7 +50,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		if (usb) {
 			await this.flashOverUsb({ binary, factory });
 		} else if (serial) {
-			await this.flashYModem({ binary, port, yes });
+			await this.flashSerialDeprecated({ binary, port, yes });
 		} else if (local) {
 			let allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
@@ -112,7 +112,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return new CloudCommands().flashDevice(args);
 	}
 
-	flashYModem({ binary, port, yes }) {
+	flashSerialDeprecated({ binary, port, yes }) {
 		const SerialCommands = require('../cmd/serial');
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
