@@ -18,7 +18,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'serial': {
 				boolean: true,
-				description: 'Flash over a virtual serial port'
+				description: 'DEPRECATED. Use --local instead'
 			},
 			'factory': {
 				boolean: true,
@@ -54,8 +54,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --local application.bin': 'Flash the pre-compiled binary to the device connected over USB',
 			'$0 $command --local application.zip': 'Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
 			'$0 $command --local tinker': 'Flash the default Tinker app to the device connected over USB',
-			'$0 $command --usb firmware.bin': 'Flash the binary over USB',
-			'$0 $command --serial firmware.bin': 'DEPRECATED. Use $command --serial instead.'
+			'$0 $command --usb firmware.bin': 'Flash the binary over USB'
 		},
 		epilogue: unindent(`
 		  When passing the --local flag, Device OS will be updated if the version on the device is outdated.

@@ -23,7 +23,7 @@ describe('Flash Commands [@device]', () => {
 		'  --cloud             Flash over the air to the device. Default if no other flag provided  [boolean]',
 		'  --local             Flash locally, updating Device OS as needed  [boolean]',
 		'  --usb               Flash a single file over USB  [boolean]',
-		'  --serial            Flash over a virtual serial port  [boolean]',
+		'  --serial            DEPRECATED. Use --local instead  [boolean]',
 		'  --factory           Flash user application to the factory reset location. Only available for USB flash  [boolean]',
 		'  --yes               Answer yes to all questions  [boolean]',
 		'  --target            The firmware version to compile against. Defaults to latest version.  [string]',
@@ -41,10 +41,10 @@ describe('Flash Commands [@device]', () => {
 		'  particle flash --local application.zip      Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
 		'  particle flash --local tinker               Flash the default Tinker app to the device connected over USB',
 		'  particle flash --usb firmware.bin           Flash the binary over USB',
-		'  particle flash --serial firmware.bin        Flash the binary over virtual serial port. The device needs to be in listening mode',
 		'',
 		'When passing the --local flag, Device OS will be updated if the version on the device is outdated.',
-		'When passing both the --local and --target flash, Device OS will be updated to the target version.'
+		'When passing both the --local and --target flash, Device OS will be updated to the target version.',
+		'To avoid this behavior, pass the --application-only flag.'
 	];
 
 	before(async () => {
