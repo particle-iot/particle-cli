@@ -385,11 +385,6 @@ module.exports = class SerialCommand {
 			throw new VError('No serial port identified');
 		}
 
-		// TODO: Check if this still holds true or if we even care
-		if ((device.specs && device.specs.name === 'core') || device.type === 'Core') {
-			throw new VError('Serial flashing is not supported on the Core');
-		}
-
 		const deviceId = device.deviceId;
 
 		const flashCmdInstance = new FlashCommand();
