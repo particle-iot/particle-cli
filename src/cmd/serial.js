@@ -379,7 +379,7 @@ module.exports = class SerialCommand {
 		]);
 	}
 
-	async flashDevice(binary, { port, applicationOnly=false }) {
+	async flashDevice(binary, { port }) {
 		const device = await this.whatSerialPortDidYouMean(port, true);
 		if (!device) {
 			throw new VError('No serial port identified');
@@ -393,7 +393,7 @@ module.exports = class SerialCommand {
 		const deviceId = device.deviceId;
 
 		const flashCmdInstance = new FlashCommand();
-		await flashCmdInstance.flashLocal({ files: [deviceId, binary], applicationOnly });
+		await flashCmdInstance.flashLocal({ files: [deviceId, binary], applicationOnly: true });
 	}
 
 	_scanNetworks(){
