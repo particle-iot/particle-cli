@@ -10,14 +10,15 @@ const wifiScan = require('node-wifiscanner2').scan;
 const SerialPort = require('../lib/require-optional')('serialport');
 const log = require('../lib/log');
 const specs = require('../lib/device-specs');
+const CLICommandBase = require('./base');
 const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const DescribeParser = require('binary-version-reader').HalDescribeParser;
-const YModem = require('../lib/ymodem');
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
 const { ensureError, knownPlatformDisplayForId } = require('../lib/utilities');
+const FlashCommand = require('./flash');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -42,8 +43,9 @@ const SERIAL_PORT_DEFAULTS = {
 	autoOpen: false
 };
 
-module.exports = class SerialCommand {
+module.exports = class SerialCommand extends CLICommandBase {
 	constructor(){
+		super();
 		spinnerMixin(this);
 	}
 
@@ -379,69 +381,21 @@ module.exports = class SerialCommand {
 		]);
 	}
 
-	flashDevice(binary, { port, yes }){
-		let device;
+	async flashDevice(binary, { port }) {
+		this.ui.stdout.write(
+			`NOTE: ${chalk.bold.white('particle flash serial')} has been replaced by ${chalk.bold.white('particle flash --local')}.${os.EOL}` +
+			`Please use that command going forward.${os.EOL}${os.EOL}`
+		);
 
-		return Promise.resolve()
-			.then(() => {
-				if (!yes){
-					return this._promptForListeningMode();
-				}
-			})
-			.then(() => this.whatSerialPortDidYouMean(port, true))
-			.then(_device => {
-				device = _device;
-				if (!device){
-					throw new VError('No serial port identified');
-				}
-				if (device.type === 'Core'){
-					throw new VError('Serial flashing is not supported on the Core');
-				}
+		const device = await this.whatSerialPortDidYouMean(port, true);
+		if (!device || !device.deviceId) {
+			throw new VError('No serial port identified');
+		}
 
-				//only match against knownApp if file is not found
-				let stats;
-				try {
-					stats = fs.statSync(binary);
-				} catch (ex){
-					// file does not exist
-					const specsByProduct = _.keyBy(specs, 'productName');
-					const productSpecs = specsByProduct[device.type];
-					binary = productSpecs && productSpecs.knownApps[binary];
-					if (binary === undefined){
-						throw new VError('File does not exist and no known app found');
-					} else {
-						return;
-					}
-				}
+		const deviceId = device.deviceId;
 
-				if (!stats.isFile()){
-					throw new VError('You cannot flash a directory over USB');
-				}
-			})
-			.then(() => {
-				const serialPort = new SerialPort(device.port, {
-					baudRate: 28800,
-					autoOpen: false
-				});
-
-				const closePort = () => {
-					if (serialPort.isOpen){
-						serialPort.close();
-					}
-					process.exit(0);
-				};
-				process.on('SIGINT', closePort);
-				process.on('SIGTERM', closePort);
-
-				const ymodem = new YModem(serialPort, { debug: true });
-				return ymodem.send(binary);
-			})
-			.then(() => {
-				console.log('\nFlash success!');
-			})
-			.catch(err => {
-				throw new VError(ensureError(err), 'Error writing firmware');
-			});
+		const flashCmdInstance = new FlashCommand();
+		await flashCmdInstance.flashLocal({ files: [deviceId, binary], applicationOnly: true });
 	}
 
 	_scanNetworks(){
@@ -1502,6 +1456,8 @@ module.exports = class SerialCommand {
 		return (((parts[0] * 256) + parts[1]) * 256 + parts[2]) * 256 + parts[3];
 	}
 
+	// TODO: If the comPort does not have an exact match with the device,
+	// throw an error and return
 	_parsePort(devices, comPort){
 		if (!comPort){
 			//they didn't give us anything.

@@ -81,7 +81,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(serial, 'flash', 'Flash firmware over serial using YMODEM protocol', {
+	commandProcessor.createCommand(serial, 'flash', 'DEPRECATED. Flash firmware using USB. Use flash --local instead', {
 		params: '<binary>',
 		options: Object.assign({
 			'yes': {

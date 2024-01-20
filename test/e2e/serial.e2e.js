@@ -24,7 +24,7 @@ describe('Serial Commands [@device]', () => {
 		'  wifi      Configure Wi-Fi credentials over serial',
 		'  mac       Ask for and display MAC address via serial',
 		'  inspect   Ask for and display device module information via serial',
-		'  flash     Flash firmware over serial using YMODEM protocol',
+		'  flash     DEPRECATED. Flash firmware using USB. Use flash --local instead',
 		'  claim     Claim a device with the given claim code',
 		'',
 		'Global Options:',
