@@ -432,7 +432,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			}
 		}
 	}
-	
+
 	/**
 	 * Obtains module info from control requests
 	 * @param {object} device
