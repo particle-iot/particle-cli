@@ -35,7 +35,7 @@ const FW_MODULE_PLATFORM_CHECK_FLAG = 0x10;
 
 const MAC_ADDR_SIZE_BYTES = 6;
 
-// const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
+const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
 
 function protip(){
 	const args = Array.prototype.slice.call(arguments);
@@ -423,7 +423,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		this.ui.stdout.write(`Platform : ${platformId} - ${chalk.bold.cyan(platformName)}${os.EOL}${os.EOL}`);
 
 		try {
-			this._getModuleInfo(device);
+			await this._getModuleInfo(device);
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not get inspect device');
 		} finally {
