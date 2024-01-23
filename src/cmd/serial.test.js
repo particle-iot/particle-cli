@@ -1,64 +1,170 @@
 const MockSerial = require('../../test/__mocks__/serial.mock');
 const { expect, sinon } = require('../../test/setup');
 const SerialCommand = require('./serial');
-
+const usbUtils = require('./usb-util');
 
 describe('Serial Command', () => {
 	let serial;
 	let clock;
+	let deviceStub;
 
 	beforeEach(() => {
 		serial = new SerialCommand({ params: {} });
+		deviceStub = sinon.stub(usbUtils, 'getOneUsbDevice');
 	});
 
 	afterEach(() => {
+		sinon.restore();
 		if (clock !== undefined) {
 			clock.restore();
 			clock = undefined;
 		}
 	});
 
-	describe('supportsClaimCode', () => {
-		it('can check if a device supports claiming', () => {
-			var device = { port: 'vintage' };
-			var mockSerial = new MockSerial();
-			mockSerial.write = (data, cb) => {
-				if (data==='c') {
-					mockSerial.push('Device claimed: no');
-				}
-				cb();
+	describe('identifyDevice', () => {
+		it('identifies a cellular device with dvos over serial', async () => {
+			const deviceId = '1234456789abcdef';
+			const fwVer = '5.4.0';
+			const imei = '1234';
+			const iccid = '5678';
+			const wifiDeviceFromSerialPort = {
+				'specs': {
+					'name': 'boron'
+				},
+				deviceId
 			};
-			serial.serialPort = mockSerial;
-			return expect(serial.supportsClaimCode(device)).to.eventually.equal(true);
+
+			const device = {
+				isOpen: true,
+				close: sinon.stub(),
+				getSystemVersion: sinon.stub().resolves(fwVer),
+				getImei: sinon.stub().resolves(imei),
+				getIccid: sinon.stub().resolves(iccid),
+			};
+			deviceStub.resolves(device);
+			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
+			sinon.stub(serial, '_printIdentifyInfo').resolves();
+
+			await serial.identifyDevice({ port: 'xyz' });
+
+			expect(serial._printIdentifyInfo).to.have.been.calledOnce.and.calledWithExactly({
+				deviceId,
+				fwVer,
+				isCellular: true,
+				cellularImei: imei,
+				cellularIccid: iccid,
+			});
 		});
 
-		it('supports a device that does not recognise the claim command', () => {
-			var device = { port: 'vintage' };
-			var mockSerial = new MockSerial();
-			serial.serialPort = mockSerial;
-			return expect(serial.supportsClaimCode(device)).to.eventually.equal(false);
+		it('identifies a wifi device', async () => {
+			const deviceId = '1234456789abcdef';
+			const fwVer = '5.4.0';
+			const wifiDeviceFromSerialPort = {
+				'specs': {
+					'name': 'p2'
+				},
+				deviceId
+			};
+			const device = {
+				isOpen: true,
+				close: sinon.stub(),
+				getSystemVersion: sinon.stub().resolves(fwVer)
+			};
+			deviceStub.resolves(device);
+			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
+			sinon.stub(serial, '_printIdentifyInfo').resolves();
+
+			await serial.identifyDevice({ port: 'xyz' });
+
+			expect(serial._printIdentifyInfo).to.have.been.calledOnce.and.calledWithExactly({
+				deviceId,
+				fwVer,
+				isCellular: false,
+				cellularImei: '',
+				cellularIccid: '',
+			});
 		});
 	});
 
-	describe('sendClaimCode', () => {
-		it('can claim a device', () => {
-			var device = { port: 'shanghai' };
-			var mockSerial = new MockSerial();
-			var code = '1234';
-			mockSerial.write = function write(data){
-				if (data==='C') {
-					mockSerial.expectingClaimCode = true;
-					mockSerial.push('Enter 63-digit claim code: ');
-				} else if (this.expectingClaimCode) {
-					mockSerial.expectingClaimCode = false;
-					mockSerial.claimCodeSet = data.split('\n')[0];
-					mockSerial.push('Claim code set to: '+data);
-				}
+	describe('inspectDevice', () => {
+		it('inspects a device with device-os 5.6.0', async () => {
+			const wifiDeviceFromSerialPort = {
+				'specs': {
+					'name': 'p2'
+				},
+				deviceId: '1234456789abcdef'
 			};
-			serial.serialPort = mockSerial;
-			return serial.sendClaimCode(device, code, false).then(() => {
-				expect(mockSerial.claimCodeSet).to.be.eql(code);
-			});
+
+			const device = {
+				isOpen: true,
+				close: sinon.stub(),
+				getSystemVersion: sinon.stub().resolves('5.6.0'),
+
+			};
+			deviceStub.resolves(device);
+			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
+			sinon.stub(serial, '_getModuleInfoOlderFormat').resolves({});
+			sinon.stub(serial, '_getModuleInfo').resolves({});
+
+			await serial.inspectDevice({ port: 'xyz' });
+
+			expect(serial._getModuleInfoOlderFormat).to.not.have.been.called;
+			expect(serial._getModuleInfo).to.have.been.called;
+		});
+
+		it('inspects a device with device-os which has the older module format', async () => {
+			const wifiDeviceFromSerialPort = {
+				'specs': {
+					'name': 'p2'
+				},
+				deviceId: '1234456789abcdef'
+			};
+
+			const device = {
+				isOpen: true,
+				close: sinon.stub(),
+				getSystemVersion: sinon.stub().resolves('5.4.0')
+
+			};
+			deviceStub.resolves(device);
+			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
+			sinon.stub(serial, '_getModuleInfoOlderFormat').resolves({});
+			sinon.stub(serial, '_getModuleInfo').resolves(false);
+
+			await serial.inspectDevice({ port: 'xyz' });
+
+			expect(serial._getModuleInfoOlderFormat).to.have.been.calledOnce;
+			expect(serial._getModuleInfo).to.have.been.calledOnce;
+		});
+	});
+
+	describe('supportsClaimCode', () => {
+		it ('checks if device is claimed', async () => {
+			const wifiDeviceFromSerialPort = {
+				'specs': {
+					'name': 'p2'
+				},
+				deviceId: '1234456789abcdef'
+			};
+
+			const device = {
+				isOpen: true,
+				close: sinon.stub(),
+				getSystemVersion: sinon.stub().resolves('5.4.0'),
+				isClaimed: sinon.stub().resolves(true)
+
+			};
+			let error;
+			deviceStub.resolves(device);
+			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
+
+			try {
+				await serial.supportsClaimCode(wifiDeviceFromSerialPort);
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.eql(undefined);
 		});
 	});
 

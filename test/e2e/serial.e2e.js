@@ -7,7 +7,9 @@ const {
 	DEVICE_ID,
 	DEVICE_NAME,
 	DEVICE_PLATFORM_ID,
-	DEVICE_PLATFORM_NAME
+	DEVICE_PLATFORM_NAME,
+	DEVICE_CELLULAR_IMEI,
+	DEVICE_CELLULAR_ICCID
 } = require('../lib/env');
 
 
@@ -97,10 +99,25 @@ describe('Serial Commands [@device]', () => {
 			await cli.waitUntilOnline();
 		});
 
-		it('Identifies device', async () => {
+		it('Identifies a wifi device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
 
 			expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
+			expect(stdout).to.include('Your system firmware version is');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Identifies a cellular device', async () => {
+			if (DEVICE_CELLULAR_IMEI === undefined || DEVICE_CELLULAR_ICCID === undefined) {
+				// this.skip()?
+				expect(true).to.be.true;
+			}
+			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
+
+			expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
+			expect(stdout).to.include(`Your IMEI is ${DEVICE_CELLULAR_IMEI}`);
+			expect(stdout).to.include(`Your ICCID is ${DEVICE_CELLULAR_ICCID}`);
 			expect(stdout).to.include('Your system firmware version is');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);

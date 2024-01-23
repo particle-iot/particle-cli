@@ -326,7 +326,7 @@ module.exports = class SetupCommand {
 								return serial.setup(device);
 							}
 
-							serial.getDeviceMacAddress(device).then((mac) => {
+							serial.getDeviceMacAddressOverSerial(device).then((mac) => {
 
 								macAddress = mac;
 
