@@ -13,7 +13,6 @@ const specs = require('../lib/device-specs');
 const CLICommandBase = require('./base');
 const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
-const DescribeParser = require('binary-version-reader').HalDescribeParser;
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
@@ -21,8 +20,6 @@ const { ensureError } = require('../lib/utilities');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const deviceConstants = require('@particle/device-constants');
-const semver = require('semver');
-const { RequestError } = require('../lib/require-optional')('particle-usb');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -31,12 +28,14 @@ const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
 const timeoutError = 'Serial timed out';
 
-const FW_MODULE_INTEGRITY_CHECK_FLAG = 0x01;
-const FW_MODULE_DEP_CHECK_FLAG = 0x01;
-const FW_MODULE_RANGE_CHECK_FLAG = 0x01;
-const FW_MODULE_PLATFORM_CHECK_FLAG = 0x01;
+// const FW_MODULE_INTEGRITY_CHECK_FLAG = 0x01;
+// const FW_MODULE_DEP_CHECK_FLAG = 0x01;
+// const FW_MODULE_RANGE_CHECK_FLAG = 0x01;
+// const FW_MODULE_PLATFORM_CHECK_FLAG = 0x01;
 
-const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
+const MAC_ADDR_SIZE_BYTES = 6;
+
+// const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
 
 function protip(){
 	const args = Array.prototype.slice.call(arguments);
@@ -336,31 +335,59 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 			const deviceId = deviceFromSerialPort.deviceId;
 
-			const platform = deviceFromSerialPort.specs.name;
-
 			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
 
-			const features = deviceConstants[platform].features;
+			const networkIfaceListreply = await device.getNetworkInterfaceList({ timeout: 2000 });
+			/*
+			 * Example of the ifaceListRaw
+			 * interfaces: [
+			 *    InterfaceEntry { index: 4, name: 'pp3', type: 16 },
+			 *    InterfaceEntry { index: 1, name: 'lo0', type: 1 }
+			 * ]
+			*/
+			const ifaceListRaw = networkIfaceListreply.interfaces;
 
-			const fwVer = await device.getSystemVersion({ timeout: 2000 });
+			// TODO: Replace this mapping with the one from the protobuf
+			const ifaceMap = {
+				0 : 'INVALID_INTERFACE_TYPE',
+				0x01 : 'LOOPBACK',
+				0x02 : 'THREAD',
+				0x04 : 'ETHERNET',
+				0x08 : 'WIFI',
+				0x10 : 'PPP'
+			};
 
-			if (features.includes('wifi')) {
-				let macAddress;
-				if (semver.lt(fwVer, '5.6.0')) { // TODO: Fix this number
-					macAddress = await this.getDeviceMacAddressOverSerial(deviceFromSerialPort);
-				} else {
-					// macAddress = await device.getMacAddress();
-					macAddress = await device.getNetworkInterfaceList();
+			// We expect either one Wifi interface or one Ethernet interface
+			// Find it and return the hw address value from that interface
+			let macAddress, currIfaceName;
+			for (const iface of ifaceListRaw) {
+				if (macAddress) {
+					break;
 				}
-				console.log();
-				console.log('Your device MAC address is', chalk.bold.cyan(macAddress));
+				const index = iface.index;
+				const type = ifaceMap[iface.type];
+
+				if (type === 'WIFI' || type === 'ETHERNET') {
+					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 10000 });
+					const networkIface = networkIfaceReply.interface;
+					if (networkIface.hwAddress) {
+						// networkIface.hwAddress is a buffer
+						const hwAddressByteArray = Array.from(networkIface.hwAddress);
+						if (hwAddressByteArray.length === MAC_ADDR_SIZE_BYTES) {
+							macAddress = hwAddressByteArray;
+							currIfaceName = type;
+						}
+					}
+				}
+			}
+
+			if (macAddress) {
+				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress.slice(0, 6).map(num => num.toString(16).padStart(2, '0')).join(':'))}${os.EOL}`);
+				this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
 			} else {
-				throw new Error('Mac address is only available for wifi devices');
+				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan('00:00:00:00:00:00')}${os.EOL}`);
 			}
 		} catch (err) {
-			if (err instanceof RequestError) {
-				throw new VError(ensureError(err), 'Could not get MAC address\nEnsure your device is running at least device-os 0.9.0');
-			}
 			throw new VError(ensureError(err), 'Could not get MAC address');
 		} finally {
 			if (device && device.isOpen) {
@@ -385,14 +412,14 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 
-		let platformName = null;
-		let platformId = null;
-		try {
-			platformName = deviceFromSerialPort.specs.productName;
-			platformId = deviceFromSerialPort.specs.productId;
-		} catch(err) {
-			// ignore error and move on to get other fields
-		}
+		// let platformName = null;
+		// let platformId = null;
+		// try {
+		// 	platformName = deviceFromSerialPort.specs.productName;
+		// 	platformId = deviceFromSerialPort.specs.productId;
+		// } catch (err) {
+		// 	// ignore error and move on to get other fields
+		// }
 
 		this._getModuleInfo(device);
 
@@ -413,76 +440,79 @@ module.exports = class SerialCommand extends CLICommandBase {
 		console.log('Platform:', platformId, '- ' + chalk.bold.cyan(platformName));
 	}
 
-	/**
-	 * Obtains module info if module is of new format introduced in 5.6.0
-	 * @param {object} device
-	 * @returns {boolean} returns false if module info has older format
-	 */
-	async _getModuleInfo(device) {
-		const functionMap = {
-			'INVALID_FIRMWARE_MODULE' : 'Invalid',
-			'BOOTLOADER' : 'Bootloader',
-			'SYSTEM_PART' : 'System',
-			'USER_PART' : 'User',
-			'MONO_FIRMWARE' : 'Monolithic',
-			'NCP_FIRMWARE' : 'NCP',
-			'RADIO_STACK' : 'Radio stack'
-		};
-		const modules = await device.getFirmwareModuleInfo();
+	// /**
+	//  * Obtains module info if module is of new format introduced in 5.6.0
+	//  * @param {object} device
+	//  * @returns {boolean} returns false if module info has older format
+	//  */
+	// async _getModuleInfo(device) {
+	// 	const functionMap = {
+	// 		'INVALID_FIRMWARE_MODULE' : 'Invalid',
+	// 		'BOOTLOADER' : 'Bootloader',
+	// 		'SYSTEM_PART' : 'System',
+	// 		'USER_PART' : 'User',
+	// 		'MONO_FIRMWARE' : 'Monolithic',
+	// 		'NCP_FIRMWARE' : 'NCP',
+	// 		'RADIO_STACK' : 'Radio stack'
+	// 	};
+	// 	const modules = await device.getFirmwareModuleInfo();
+	// 	console.log('modules: ', modules);
 
-		// Verify whether the module is using the newer format
-		// Note: 'failedFlags' is an indication of the newer format and is not present in the older format
-		if (modules && modules.length > 0) {
-			const randomModule = modules[0];
-			if (randomModule.failedFlags === undefined) {
-				return Promise.resolve(false);
-			}
-		}
+	// 	return;
 
-		if (modules && modules.length > 0) {
-			console.log(chalk.underline('Modules'));
-			modules.forEach(async (m) => {
-				const func = functionMap[m.type];
-				console.log(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}, ${m.store.toLowerCase()} location, ${m.size} bytes size`);
+	// 	// Verify whether the module is using the newer format
+	// 	// Note: 'failedFlags' is an indication of the newer format and is not present in the older format
+	// 	if (modules && modules.length > 0) {
+	// 		const randomModule = modules[0];
+	// 		if (randomModule.failedFlags === undefined) {
+	// 			return Promise.resolve(false);
+	// 		}
+	// 	}
 
-				if (m.type === 'USER_PART' && m.hash) {
-					console.log('    UUID:', m.hash);
-				}
+	// 	if (modules && modules.length > 0) {
+	// 		console.log(chalk.underline('Modules'));
+	// 		modules.forEach(async (m) => {
+	// 			const func = functionMap[m.type];
+	// 			console.log(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}, ${m.store.toLowerCase()} location, ${m.size} bytes size`);
 
-				console.log('    Integrity: %s', m.failedFlags & FW_MODULE_INTEGRITY_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
-				console.log('    Address Range: %s', m.failedFlags & FW_MODULE_RANGE_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
-				console.log('    Platform: %s', m.failedFlags & FW_MODULE_PLATFORM_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
-				console.log('    Dependencies: %s', m.failedFlags & FW_MODULE_DEP_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
+	// 			if (m.type === 'USER_PART' && m.hash) {
+	// 				console.log('    UUID:', m.hash);
+	// 			}
 
-				if (m.dependencies.length > 0){
-					m.dependencies.forEach((dep) => {
-						const df = functionMap[dep.type];
-						console.log(`      ${_.capitalize(df)} module #${dep.index} - version ${dep.version}`);
-					});
-				}
+	// 			console.log('    Integrity: %s', m.failedFlags & FW_MODULE_INTEGRITY_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
+	// 			console.log('    Address Range: %s', m.failedFlags & FW_MODULE_RANGE_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
+	// 			console.log('    Platform: %s', m.failedFlags & FW_MODULE_PLATFORM_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
+	// 			console.log('    Dependencies: %s', m.failedFlags & FW_MODULE_DEP_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
 
-				if (m.assetDependencies && m.assetDependencies.length > 0) {
-					const assetInfo = await device.getAssetInfo();
-					const availableAssets = assetInfo.available;
-					const requiredAssets = assetInfo.required;
-					console.log('    Asset Dependencies:');
-					console.log('      Required:');
-					requiredAssets.forEach((asset) => {
-						console.log(`        ${asset.name} (${availability(asset, availableAssets) ? chalk.green('PASS') : chalk.red('FAIL')})`);
-					});
+	// 			if (m.dependencies.length > 0){
+	// 				m.dependencies.forEach((dep) => {
+	// 					const df = functionMap[dep.type];
+	// 					console.log(`      ${_.capitalize(df)} module #${dep.index} - version ${dep.version}`);
+	// 				});
+	// 			}
 
-					const notRequiredAssets = availableAssets.filter(asset => !requiredAssets.some(requiredAsset => requiredAsset.hash === asset.hash));
-					if (notRequiredAssets.length > 0) {
-						console.log('      Available but not required:');
-						notRequiredAssets.forEach(asset => {
-							console.log(`\t${asset.name}`);
-						});
-					}
-				}
-			});
-		}
-		return Promise.resolve(true);
-	}
+	// 			if (m.assetDependencies && m.assetDependencies.length > 0) {
+	// 				const assetInfo = await device.getAssetInfo();
+	// 				const availableAssets = assetInfo.available;
+	// 				const requiredAssets = assetInfo.required;
+	// 				console.log('    Asset Dependencies:');
+	// 				console.log('      Required:');
+	// 				requiredAssets.forEach((asset) => {
+	// 					console.log(`        ${asset.name} (${availability(asset, availableAssets) ? chalk.green('PASS') : chalk.red('FAIL')})`);
+	// 				});
+
+	// 				const notRequiredAssets = availableAssets.filter(asset => !requiredAssets.some(requiredAsset => requiredAsset.hash === asset.hash));
+	// 				if (notRequiredAssets.length > 0) {
+	// 					console.log('      Available but not required:');
+	// 					notRequiredAssets.forEach(asset => {
+	// 						console.log(`\t${asset.name}`);
+	// 					});
+	// 				}
+	// 			}
+	// 		});
+	// 	}
+	// 	return Promise.resolve(true);
+	// }
 
 	_promptForListeningMode(){
 		console.log(
