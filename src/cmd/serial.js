@@ -28,10 +28,10 @@ const arrow = chalk.green('>');
 const alert = chalk.yellow('!');
 const timeoutError = 'Serial timed out';
 
-// const FW_MODULE_INTEGRITY_CHECK_FLAG = 0x01;
-// const FW_MODULE_DEP_CHECK_FLAG = 0x01;
-// const FW_MODULE_RANGE_CHECK_FLAG = 0x01;
-// const FW_MODULE_PLATFORM_CHECK_FLAG = 0x01;
+const FW_MODULE_INTEGRITY_CHECK_FLAG = 0x02;
+const FW_MODULE_DEP_CHECK_FLAG = 0x04;
+const FW_MODULE_RANGE_CHECK_FLAG = 0x08;
+const FW_MODULE_PLATFORM_CHECK_FLAG = 0x10;
 
 const MAC_ADDR_SIZE_BYTES = 6;
 
@@ -324,8 +324,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 	}
 
 	/**
-	 * Obtains mac address for wifi devices
-	 * Returns an error if the device is not a wifi device
+	 * Obtains mac address for wifi and ethernet devices
 	 * @param {string} port
 	 */
 	async deviceMac({ port }) {
@@ -368,7 +367,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				const type = ifaceMap[iface.type];
 
 				if (type === 'WIFI' || type === 'ETHERNET') {
-					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 10000 });
+					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 2000 });
 					const networkIface = networkIfaceReply.interface;
 					if (networkIface.hwAddress) {
 						// networkIface.hwAddress is a buffer
@@ -381,6 +380,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 			}
 
+			// Print output
 			if (macAddress) {
 				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress.slice(0, 6).map(num => num.toString(16).padStart(2, '0')).join(':'))}${os.EOL}`);
 				this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
@@ -412,107 +412,100 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 
-		// let platformName = null;
-		// let platformId = null;
-		// try {
-		// 	platformName = deviceFromSerialPort.specs.productName;
-		// 	platformId = deviceFromSerialPort.specs.productId;
-		// } catch (err) {
-		// 	// ignore error and move on to get other fields
-		// }
+		let platformName = null;
+		let platformId = null;
+		try {
+			platformName = deviceFromSerialPort.specs.productName;
+			platformId = deviceFromSerialPort.specs.productId;
+		} catch (err) {
+			// ignore error and move on to get other fields
+		}
+		this.ui.stdout.write(`Platform : ${platformId} - ${chalk.bold.cyan(platformName)}${os.EOL}${os.EOL}`);
 
-		this._getModuleInfo(device);
-
-		// 	const isNewFormat = await this._getModuleInfo(device);
-		// 	if (!isNewFormat) {
-		// 		await this._getModuleInfoOlderFormat(deviceFromSerialPort);
-		// 	}
-		// } catch (err) {
-		// 	throw new VError(ensureError(err), 'Could not get inspect device\nEnsure your device is running at least device-os 0.9.0');
-		// } finally {
-		// 	if (device && device.isOpen) {
-		// 		await device.close();
-		// 	}
-		// }
+		try {
+			this._getModuleInfo(device);
+		} catch (err) {
+			throw new VError(ensureError(err), 'Could not get inspect device');
+		} finally {
+			if (device && device.isOpen) {
+				await device.close();
+			}
+		}
 	}
+	
+	/**
+	 * Obtains module info from control requests
+	 * @param {object} device
+	 * @returns {boolean} returns error or true
+	 */
+	async _getModuleInfo(device) {
+		// TODO: Get this from the protobuf exports
+		const fwModuleDisplayNames = {
+			'INVALID': 'Invalid',
+			'RESOURCE': 'Resource',
+			'BOOTLOADER': 'Bootloader',
+			'MONO_FIRMWARE': 'Monolithic Firmware',
+			'SYSTEM_PART': 'System Part',
+			'USER_PART': 'User Part',
+			'SETTINGS': 'Settings',
+			'NCP_FIRMWARE': 'Network Co-processor Firmware',
+			'RADIO_STACK': 'Radio Stack Module',
+			'ASSET': 'Asset'
+		};
 
-	_printInspectInfo({ platformId, platformName }) {
-		console.log('Platform:', platformId, '- ' + chalk.bold.cyan(platformName));
+		const modules = await device.getFirmwareModuleInfo();
+		if (modules && modules.length > 0) {
+			this.ui.stdout.write(chalk.underline(`Modules${os.EOL}`));
+			modules.forEach(async (m) => {
+				const func = fwModuleDisplayNames[m.type];
+				this.ui.stdout.write(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}${os.EOL}`);
+				if (m.maxSize) {
+					this.ui.stdout.write(`  Size: ${m.size/1000} kB / MaxSize: ${m.maxSize/1000} kB${os.EOL}`);
+				} else {
+					this.ui.stdout.write(`  Size: ${m.size/1000} kB${os.EOL}`);
+				}
+
+				if (m.type === 'USER_PART' && m.hash) {
+					this.ui.stdout.write(`    UUID:${m.hash}${os.EOL}`);
+				}
+
+				const checkFlags = m.validity || m.failedFlags;
+				this.ui.stdout.write(`    Integrity: ${checkFlags & FW_MODULE_INTEGRITY_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Address Range: ${checkFlags & FW_MODULE_RANGE_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Platform: ${checkFlags & FW_MODULE_PLATFORM_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Dependencies: ${checkFlags & FW_MODULE_DEP_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+
+				if (m.dependencies.length > 0){
+					m.dependencies.forEach((dep) => {
+						const df = fwModuleDisplayNames[dep.type];
+						this.ui.stdout.write(`      ${_.capitalize(df)} module #${dep.index} - version ${dep.version}${os.EOL}`);
+					});
+				}
+
+				if (m.assetDependencies && m.assetDependencies.length > 0) {
+					const assetInfo = await device.getAssetInfo();
+					const availableAssets = assetInfo.available;
+					const requiredAssets = assetInfo.required;
+					this.ui.stdout.write(`    Asset Dependencies:${os.EOL}`);
+					this.ui.stdout.write(`      Required:${os.EOL}`);
+					requiredAssets.forEach((asset) => {
+						this.ui.stdout.write(`        ${asset.name} (${availability(asset, availableAssets) ? chalk.green('PASS') : chalk.red('FAIL')})${os.EOL}`);
+					});
+
+					const notRequiredAssets = availableAssets.filter(asset => !requiredAssets.some(requiredAsset => requiredAsset.hash === asset.hash));
+					if (notRequiredAssets.length > 0) {
+						this.ui.stdout.write(`      Available but not required:${os.EOL}`);
+						notRequiredAssets.forEach(asset => {
+							this.ui.stdout.write(`\t${asset.name}${os.EOL}`);
+						});
+					}
+				}
+
+				this.ui.stdout.write(`${os.EOL}`);
+			});
+		}
+		return Promise.resolve(true);
 	}
-
-	// /**
-	//  * Obtains module info if module is of new format introduced in 5.6.0
-	//  * @param {object} device
-	//  * @returns {boolean} returns false if module info has older format
-	//  */
-	// async _getModuleInfo(device) {
-	// 	const functionMap = {
-	// 		'INVALID_FIRMWARE_MODULE' : 'Invalid',
-	// 		'BOOTLOADER' : 'Bootloader',
-	// 		'SYSTEM_PART' : 'System',
-	// 		'USER_PART' : 'User',
-	// 		'MONO_FIRMWARE' : 'Monolithic',
-	// 		'NCP_FIRMWARE' : 'NCP',
-	// 		'RADIO_STACK' : 'Radio stack'
-	// 	};
-	// 	const modules = await device.getFirmwareModuleInfo();
-	// 	console.log('modules: ', modules);
-
-	// 	return;
-
-	// 	// Verify whether the module is using the newer format
-	// 	// Note: 'failedFlags' is an indication of the newer format and is not present in the older format
-	// 	if (modules && modules.length > 0) {
-	// 		const randomModule = modules[0];
-	// 		if (randomModule.failedFlags === undefined) {
-	// 			return Promise.resolve(false);
-	// 		}
-	// 	}
-
-	// 	if (modules && modules.length > 0) {
-	// 		console.log(chalk.underline('Modules'));
-	// 		modules.forEach(async (m) => {
-	// 			const func = functionMap[m.type];
-	// 			console.log(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}, ${m.store.toLowerCase()} location, ${m.size} bytes size`);
-
-	// 			if (m.type === 'USER_PART' && m.hash) {
-	// 				console.log('    UUID:', m.hash);
-	// 			}
-
-	// 			console.log('    Integrity: %s', m.failedFlags & FW_MODULE_INTEGRITY_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
-	// 			console.log('    Address Range: %s', m.failedFlags & FW_MODULE_RANGE_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
-	// 			console.log('    Platform: %s', m.failedFlags & FW_MODULE_PLATFORM_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
-	// 			console.log('    Dependencies: %s', m.failedFlags & FW_MODULE_DEP_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS'));
-
-	// 			if (m.dependencies.length > 0){
-	// 				m.dependencies.forEach((dep) => {
-	// 					const df = functionMap[dep.type];
-	// 					console.log(`      ${_.capitalize(df)} module #${dep.index} - version ${dep.version}`);
-	// 				});
-	// 			}
-
-	// 			if (m.assetDependencies && m.assetDependencies.length > 0) {
-	// 				const assetInfo = await device.getAssetInfo();
-	// 				const availableAssets = assetInfo.available;
-	// 				const requiredAssets = assetInfo.required;
-	// 				console.log('    Asset Dependencies:');
-	// 				console.log('      Required:');
-	// 				requiredAssets.forEach((asset) => {
-	// 					console.log(`        ${asset.name} (${availability(asset, availableAssets) ? chalk.green('PASS') : chalk.red('FAIL')})`);
-	// 				});
-
-	// 				const notRequiredAssets = availableAssets.filter(asset => !requiredAssets.some(requiredAsset => requiredAsset.hash === asset.hash));
-	// 				if (notRequiredAssets.length > 0) {
-	// 					console.log('      Available but not required:');
-	// 					notRequiredAssets.forEach(asset => {
-	// 						console.log(`\t${asset.name}`);
-	// 					});
-	// 				}
-	// 			}
-	// 		});
-	// 	}
-	// 	return Promise.resolve(true);
-	// }
 
 	_promptForListeningMode(){
 		console.log(
