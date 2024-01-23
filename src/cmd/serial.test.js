@@ -87,7 +87,7 @@ describe('Serial Command', () => {
 	});
 
 	describe('inspectDevice', () => {
-		it('inspects a device with device-os 5.6.0', async () => {
+		it('inspects a Particle device', async () => {
 			const wifiDeviceFromSerialPort = {
 				'specs': {
 					'name': 'p2'
@@ -103,68 +103,33 @@ describe('Serial Command', () => {
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
-			sinon.stub(serial, '_getModuleInfoOlderFormat').resolves({});
-			sinon.stub(serial, '_getModuleInfo').resolves({});
+			sinon.stub(serial, '_getModuleInfo').resolves(true);
 
 			await serial.inspectDevice({ port: 'xyz' });
 
-			expect(serial._getModuleInfoOlderFormat).to.not.have.been.called;
 			expect(serial._getModuleInfo).to.have.been.called;
 		});
 
-		it('inspects a device with device-os which has the older module format', async () => {
-			const wifiDeviceFromSerialPort = {
-				'specs': {
-					'name': 'p2'
-				},
-				deviceId: '1234456789abcdef'
-			};
-
+		it('does not get module info if device id is not obtained', async () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				getSystemVersion: sinon.stub().resolves('5.4.0')
+				getSystemVersion: sinon.stub().resolves('5.6.0'),
 
 			};
 			deviceStub.resolves(device);
-			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
-			sinon.stub(serial, '_getModuleInfoOlderFormat').resolves({});
-			sinon.stub(serial, '_getModuleInfo').resolves(false);
+			sinon.stub(serial, 'whatSerialPortDidYouMean').rejects('There was an error');
+			sinon.stub(serial, '_getModuleInfo').resolves(true);
 
-			await serial.inspectDevice({ port: 'xyz' });
-
-			expect(serial._getModuleInfoOlderFormat).to.have.been.calledOnce;
-			expect(serial._getModuleInfo).to.have.been.calledOnce;
-		});
-	});
-
-	describe('supportsClaimCode', () => {
-		it ('checks if device is claimed', async () => {
-			const wifiDeviceFromSerialPort = {
-				'specs': {
-					'name': 'p2'
-				},
-				deviceId: '1234456789abcdef'
-			};
-
-			const device = {
-				isOpen: true,
-				close: sinon.stub(),
-				getSystemVersion: sinon.stub().resolves('5.4.0'),
-				isClaimed: sinon.stub().resolves(true)
-
-			};
 			let error;
-			deviceStub.resolves(device);
-			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
-
 			try {
-				await serial.supportsClaimCode(wifiDeviceFromSerialPort);
+				await serial.inspectDevice({ port: 'xyz' });
 			} catch (_e) {
 				error = _e;
 			}
 
-			expect(error).to.eql(undefined);
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error).to.have.property('message', 'Could not inspect device: ');
 		});
 	});
 

@@ -408,9 +408,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 			deviceId = deviceFromSerialPort.deviceId;
 			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
 		} catch (err) {
-			throw new VError(ensureError(err), 'Could not get inspect device');
+			throw new VError(ensureError(err), 'Could not inspect device');
 		}
-
 
 		let platformName = null;
 		let platformId = null;
@@ -425,7 +424,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		try {
 			await this._getModuleInfo(device);
 		} catch (err) {
-			throw new VError(ensureError(err), 'Could not get inspect device');
+			throw new VError(ensureError(err), 'Could not inspect device');
 		} finally {
 			if (device && device.isOpen) {
 				await device.close();
@@ -459,11 +458,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			modules.forEach(async (m) => {
 				const func = fwModuleDisplayNames[m.type];
 				this.ui.stdout.write(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}${os.EOL}`);
-				if (m.maxSize) {
-					this.ui.stdout.write(`  Size: ${m.size/1000} kB / MaxSize: ${m.maxSize/1000} kB${os.EOL}`);
-				} else {
-					this.ui.stdout.write(`  Size: ${m.size/1000} kB${os.EOL}`);
-				}
+				this.ui.stdout.write(`  Size: ${m.size/1000} kB${m.maxSize ? ` / MaxSize: ${m.maxSize/1000} kB` : ''}${os.EOL}`);
 
 				if (m.type === 'USER_PART' && m.hash) {
 					this.ui.stdout.write(`    UUID:${m.hash}${os.EOL}`);
@@ -725,176 +720,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 				await device.close();
 			}
 		}
-	}
-
-	/**
-	 * Performs device setup via serial. The device should already be in listening mode.
-	 * Setup comprises these steps:
-	 * - fetching the claim code from the API
-	 * - setting the claim code on the device
-	 * - configuring
-	 * @param device
-	 */
-	setup(device){
-		const self = this;
-		let _deviceID = '';
-		const api = new ApiClient();
-
-		function afterClaim(err, dat){
-			self.stopSpin();
-
-			if (err){
-				// TODO: Graceful recovery here
-				// How about retrying the claim code again
-				// console.log(arrow, arrow, err);
-				if (err.code === 'ENOTFOUND'){
-					protip("Your computer couldn't find the cloud...");
-				}
-
-				if (!err.code && err.message){
-					protip(err.message);
-				} else {
-					protip('There was a network error while connecting to the cloud...');
-					protip('We need an active internet connection to successfully complete setup.');
-					protip('Are you currently connected to the internet? Please double-check and try again.');
-				}
-				return;
-			}
-
-			console.log(arrow, 'Obtained magical secure claim code.');
-			console.log();
-
-			return self.sendClaimCode(device, dat.claim_code)
-				.then(() => {
-					console.log('Claim code set. Now setting up Wi-Fi');
-					// todo - add additional commands over USB to have the device scan for Wi-Fi
-					return self.promptWifiScan(device);
-				})
-				.then(revived);
-		}
-
-		function getClaim(){
-			self.newSpin('Obtaining magical secure claim code from the cloud...').start();
-			api.getClaimCode()
-				.then((response) => {
-					afterClaim(null, response);
-				}, (error) => {
-					afterClaim(error);
-				});
-		}
-
-		function revived(){
-			self.stopSpin();
-			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
-
-			setTimeout(() => {
-				api.listDevices({ silent: true })
-					.then((body) => {
-						checkDevices(null, body);
-					}, (error) => {
-						checkDevices(error);
-					});
-			}, 6000);
-		}
-
-		function checkDevices(err, dat){
-			self.stopSpin();
-
-			if (err){
-				if (err.code === 'ENOTFOUND'){
-					// todo - limit the number of retries here.
-					console.log(alert, 'Network not ready yet, retrying...');
-					console.log();
-					return revived(null);
-				}
-				console.log(alert, 'Unable to verify your Photon\'s connection.');
-				console.log(alert, "Please make sure you're connected to the internet.");
-				console.log(alert, 'Then try', chalk.bold.cyan(cmd + ' list'), "to verify it's connected.");
-				self.exit();
-			}
-
-			// self.deviceID -> _deviceID
-			const onlinePhoton = _.find(dat, (device) => {
-				return (device.id.toUpperCase() === _deviceID.toUpperCase()) && device.connected === true;
-			});
-
-			if (onlinePhoton){
-				console.log(arrow, 'It looks like your Photon has made it happily to the cloud!');
-				console.log();
-				namePhoton(onlinePhoton.id);
-				return;
-			}
-
-			console.log(alert, "It doesn't look like your Photon has made it to the cloud yet.");
-			console.log();
-
-			const question = {
-				type: 'list',
-				name: 'recheck',
-				message: 'What would you like to do?',
-				choices: [
-					{ name: 'Check again to see if the Photon has connected', value: 'recheck' },
-					{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' }
-				]
-			};
-
-			prompt([question]).then(recheck);
-
-			function recheck(ans){
-				if (ans.recheck === 'recheck'){
-					api.listDevices({ silent: true })
-						.then((body) => {
-							checkDevices(null, body);
-						}, (error) => {
-							checkDevices(error);
-						});
-				} else {
-					self._promptForListeningMode();
-					self.setup(device);
-				}
-			}
-		}
-
-		function namePhoton(deviceId){
-			const question = {
-				type: 'input',
-				name: 'deviceName',
-				message: 'What would you like to call your Photon (Enter to skip)?'
-			};
-
-			prompt([question])
-				.then((ans) => {
-					// todo - retrieve existing name of the device?
-					const deviceName = ans.deviceName;
-					if (deviceName){
-						api.renameDevice(deviceId, deviceName)
-							.then(() => {
-								console.log();
-								console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
-								console.log(arrow, "Congratulations! You've just won the internet!");
-								console.log();
-								self.exit();
-							}, (err) => {
-								console.error(alert, 'Error naming your Photon: ', err);
-								namePhoton(deviceId);
-							});
-					} else {
-						console.log('Skipping device naming.');
-						self.exit();
-					}
-				});
-		}
-
-		return this.askForDeviceID(device)
-			.then((deviceID) => {
-				_deviceID = deviceID;
-				console.log('setting up device', deviceID);
-				return getClaim();
-			})
-			.catch((err) => {
-				this.stopSpin();
-				throw new VError(ensureError(err), 'Error during setup');
-			});
 	}
 
 	/**

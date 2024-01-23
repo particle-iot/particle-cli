@@ -2,6 +2,8 @@
 // device settings like IP address and antenna
 // Compile by running scripts/build_doctor.sh
 
+// CCC: Do we still need the script after the removal of the doctor command?
+
 SYSTEM_MODE(MANUAL);
 
 void setup() {
