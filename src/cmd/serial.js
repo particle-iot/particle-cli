@@ -19,6 +19,7 @@ const { ensureError } = require('../lib/utilities');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const deviceConstants = require('@particle/device-constants');
+const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -429,25 +430,11 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 * @returns {boolean} returns error or true
 	 */
 	async _getModuleInfo(device) {
-		// TODO: Get this from the protobuf exports
-		const fwModuleDisplayNames = {
-			'INVALID': 'Invalid',
-			'RESOURCE': 'Resource',
-			'BOOTLOADER': 'Bootloader',
-			'MONO_FIRMWARE': 'Monolithic Firmware',
-			'SYSTEM_PART': 'System Part',
-			'USER_PART': 'User Part',
-			'SETTINGS': 'Settings',
-			'NCP_FIRMWARE': 'Network Co-processor Firmware',
-			'RADIO_STACK': 'Radio Stack Module',
-			'ASSET': 'Asset'
-		};
-
 		const modules = await device.getFirmwareModuleInfo({ timeout: 5000 });
 		if (modules && modules.length > 0) {
 			this.ui.stdout.write(chalk.underline(`Modules${os.EOL}`));
 			modules.forEach(async (m) => {
-				const func = fwModuleDisplayNames[m.type];
+				const func = FirmwareModuleDisplayNames[m.type];
 				this.ui.stdout.write(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}${os.EOL}`);
 				this.ui.stdout.write(`  Size: ${m.size/1000} kB${m.maxSize ? ` / MaxSize: ${m.maxSize/1000} kB` : ''}${os.EOL}`);
 
@@ -463,7 +450,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 				if (m.dependencies.length > 0){
 					m.dependencies.forEach((dep) => {
-						const df = fwModuleDisplayNames[dep.type];
+						const df = FirmwareModuleDisplayNames[dep.type];
 						this.ui.stdout.write(`      ${_.capitalize(df)} module #${dep.index} - version ${dep.version}${os.EOL}`);
 					});
 				}
