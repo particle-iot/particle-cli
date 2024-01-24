@@ -264,18 +264,14 @@ module.exports = class SerialCommand extends CLICommandBase {
 			deviceId = deviceFromSerialPort.deviceId;
 			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
 		} catch (err) {
-			if (!deviceId) {
-				// The main step has failed and we dont continue
-				// because the others would fail as well
-				throw new VError(err, 'Could not identify device');
-			}
+			throw new VError(ensureError(err), 'Could not identify device');
 		}
 
 		// Obtain system firmware version
 		try {
 			fwVer = await device.getSystemVersion({ timeout: 2000 });
 		} catch (err) {
-			// ignore error and move on to get other elements
+			// ignore error and move on to get other fields
 		}
 
 		// If the device is a cellular device, obtain imei and iccid
@@ -288,7 +284,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				cellularIccid = await device.getIccid();
 			}
 		} catch (err) {
-			// ignore and move on to get other elements
+			// ignore and move on to get other fields
 		}
 
 		// Print whatever was obtained from the device
@@ -323,11 +319,13 @@ module.exports = class SerialCommand extends CLICommandBase {
 		let device;
 		try {
 			const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
-
 			const deviceId = deviceFromSerialPort.deviceId;
-
 			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+		} catch (err) {
+			throw new VError(ensureError(err), 'Could not identify device');
+		}
 
+		try {
 			const networkIfaceListreply = await device.getNetworkInterfaceList({ timeout: 2000 });
 			/*
 			 * Example of the ifaceListRaw
@@ -381,10 +379,11 @@ module.exports = class SerialCommand extends CLICommandBase {
 			}
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not get MAC address');
-		} finally {
-			if (device && device.isOpen) {
-				await device.close();
-			}
+		}
+
+		// Clean up
+		if (device && device.isOpen) {
+			await device.close();
 		}
 	}
 
@@ -417,10 +416,11 @@ module.exports = class SerialCommand extends CLICommandBase {
 			await this._getModuleInfo(device);
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not inspect device');
-		} finally {
-			if (device && device.isOpen) {
-				await device.close();
-			}
+		}
+
+		// Clean up
+		if (device && device.isOpen) {
+			await device.close();
 		}
 	}
 
@@ -459,6 +459,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 					const assetInfo = await device.getAssetInfo({ timeout: 5000 });
 					const availableAssets = assetInfo.available;
 					const requiredAssets = assetInfo.required;
+
 					this.ui.stdout.write(`    Asset Dependencies:${os.EOL}`);
 					this.ui.stdout.write(`      Required:${os.EOL}`);
 					requiredAssets.forEach((asset) => {
@@ -505,7 +506,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 			`Please use that command going forward.${os.EOL}${os.EOL}`
 		);
 		const device = await this.whatSerialPortDidYouMean(port, true);
-
 		const deviceId = device.deviceId;
 
 		const flashCmdInstance = new FlashCommand();
@@ -678,26 +678,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 				return this.serialWifiConfig(device, { network, security });
 			});
-	}
-
-	async supportsClaimCode(deviceFromSerialPort) {
-		let device;
-		if (!deviceFromSerialPort || !deviceFromSerialPort.deviceId) {
-			throw new VError('No serial port identified');
-		}
-
-		try {
-			const deviceId = deviceFromSerialPort.deviceId;
-			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
-			const res = await device.isClaimed();
-			return res;
-		} catch (err) {
-			throw new VError(ensureError(err), 'Unable to set claim code');
-		} finally {
-			if (device && device.isOpen) {
-				await device.close();
-			}
-		}
 	}
 
 	/**
