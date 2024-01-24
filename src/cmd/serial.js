@@ -34,9 +34,6 @@ const FW_MODULE_PLATFORM_CHECK_FLAG = 0x10;
 
 const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
 
-// An LTE device may take up to 18 seconds to power up the modem
-const MODULE_INFO_COMMAND_TIMEOUT = 20000;
-
 const SERIAL_PORT_DEFAULTS = {
 	baudRate: 9600,
 	autoOpen: false
@@ -467,25 +464,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 			});
 		}
 		return Promise.resolve(true);
-	}
-
-	_promptForListeningMode(){
-		console.log(
-			chalk.cyan('!'),
-			'PROTIP:',
-			chalk.white('Hold the'),
-			chalk.cyan('SETUP'),
-			chalk.white('button on your device until it'),
-			chalk.cyan('blinks blue!')
-		);
-
-		return prompt([
-			{
-				type: 'input',
-				name: 'listening',
-				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE')
-			}
-		]);
 	}
 
 	async flashDevice(binary, { port }) {
@@ -1045,115 +1023,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 		});
 
 		return promise.finally(cleanUpFn);
-	}
-	/* eslint-enable max-statements */
-
-	/**
-	 * Sends a command to the device and retrieves the response.
-	 * @param device    The device to send the command to
-	 * @param command   The command text
-	 * @param timeout   How long in milliseconds to wait for a response
-	 * @returns {Promise} to send the command.
-	 * The serial port should not be open, and is closed after the command is sent.
-	 * @private
-	 */
-	_issueSerialCommand(device, command, timeout){
-		if (!device){
-			throw new VError('No serial port identified');
-		}
-		const failDelay = timeout || 5000;
-
-		let serialPort;
-		return new Promise((resolve, reject) => {
-			serialPort = this.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
-			const parser = new SerialBatchParser({ timeout: 250 });
-			serialPort.pipe(parser);
-
-			const failTimer = setTimeout(() => {
-				reject(timeoutError);
-			}, failDelay);
-
-			parser.on('data', (data) => {
-				clearTimeout(failTimer);
-				resolve(data.toString());
-			});
-
-			serialPort.open((err) => {
-				if (err){
-					console.error('Serial err: ' + err);
-					console.error('Serial problems, please reconnect the device.');
-					reject('Serial problems, please reconnect the device.');
-					return;
-				}
-
-				serialPort.write(command, (werr) => {
-					if (werr){
-						reject(err);
-					}
-				});
-			});
-		})
-			.finally(() => {
-				if (serialPort){
-					serialPort.removeAllListeners('open');
-
-					if (serialPort.isOpen){
-						return new Promise((resolve) => {
-							serialPort.close(resolve);
-						});
-					}
-				}
-			});
-	}
-
-	getDeviceMacAddressOverSerial(device){
-		return this._issueSerialCommand(device, 'm').then((data) => {
-			const matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
-			if (matches){
-				let mac = matches[0].toLowerCase();
-
-				// manufacturing firmware can sometimes not report the full MAC
-				// lets try and fix it
-				if (mac.length < 17){
-					const bytes = mac.split(':');
-
-					while (bytes.length < 6){
-						bytes.unshift('00');
-					}
-
-					const usiMacs = [
-						['6c', '0b', '84'],
-						['44', '39', 'c4']
-					];
-
-					usiMacs.some((usimac) => {
-						for (let i = usimac.length - 1; i >= 0; i--){
-							if (bytes[i] === usimac[i]){
-								mac = usimac.concat(bytes.slice(usimac.length)).join(':');
-								return true;
-							}
-						}
-					});
-				}
-				return mac;
-			}
-			throw new VError('Unable to find mac address in response');
-		});
-	}
-
-	getSystemInformation(device){
-		return this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
-	}
-
-	// If the 'device' object does not have a key called deviceId,
-	// it could mean that the serial port which was used to obtain `device`
-	// does not have an exact match with the connected device(s)
-	askForDeviceID(device) {
-		if (device.deviceId) {
-			return device.deviceId;
-		} else {
-			throw new Error('Unable to obtain Device ID');
-		}
 	}
 
 	// TODO: If the comPort does not have an exact match with the device,

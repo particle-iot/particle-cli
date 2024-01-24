@@ -159,8 +159,7 @@ describe('Serial Command', () => {
 						address: [1,2,3,4,5,6],
 						size: 6
 					}
-				}),
-
+				})
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
