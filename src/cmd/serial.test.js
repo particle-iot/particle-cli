@@ -37,9 +37,8 @@ describe('Serial Command', () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				getSystemVersion: sinon.stub().resolves(fwVer),
-				getImei: sinon.stub().resolves(imei),
-				getIccid: sinon.stub().resolves(iccid),
+				_fwVer: fwVer,
+				getIccid: sinon.stub().resolves({ iccid, imei }),
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
@@ -68,7 +67,7 @@ describe('Serial Command', () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				getSystemVersion: sinon.stub().resolves(fwVer)
+				_fwVer: fwVer
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
@@ -88,6 +87,7 @@ describe('Serial Command', () => {
 
 	describe('inspectDevice', () => {
 		it('inspects a Particle device', async () => {
+			const fwVer = '5.6.0';
 			const wifiDeviceFromSerialPort = {
 				'specs': {
 					'name': 'p2'
@@ -98,7 +98,7 @@ describe('Serial Command', () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				getSystemVersion: sinon.stub().resolves('5.6.0'),
+				_fwVer: fwVer
 
 			};
 			deviceStub.resolves(device);
@@ -111,10 +111,11 @@ describe('Serial Command', () => {
 		});
 
 		it('does not get module info if device id is not obtained', async () => {
+			const fwVer = '5.6.0';
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				getSystemVersion: sinon.stub().resolves('5.6.0'),
+				_fwVer: fwVer
 
 			};
 			deviceStub.resolves(device);
@@ -130,6 +131,43 @@ describe('Serial Command', () => {
 
 			expect(error).to.be.an.instanceOf(Error);
 			expect(error).to.have.property('message', 'Could not inspect device: ');
+		});
+	});
+
+	describe('deviceMac', async () => {
+		it ('returns mac address of a device', async () => {
+			const fwVer = '5.6.0';
+			const wifiDeviceFromSerialPort = {
+				'specs': {
+					'name': 'p2'
+				},
+				deviceId: '1234456789abcdef'
+			};
+			const device = {
+				isOpen: true,
+				close: sinon.stub(),
+				_fwVer: fwVer,
+				getNetworkInterfaceList: sinon.stub().resolves([
+					{
+						index: 4,
+						name: 'wl3',
+						type: 8
+					}
+				]),
+				getNetworkInterface: sinon.stub().resolves({
+					hwAddr: {
+						address: [1,2,3,4,5,6],
+						size: 6
+					}
+				}),
+
+			};
+			deviceStub.resolves(device);
+			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
+
+			const macAddress = await serial.deviceMac({ port: 'xyz' });
+
+			expect(macAddress).to.deep.equal([1, 2, 3, 4, 5, 6]);
 		});
 	});
 

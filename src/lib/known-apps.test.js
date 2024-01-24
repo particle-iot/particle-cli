@@ -6,6 +6,7 @@ describe('Known Apps', () => {
 		it('returns all the known apps', () => {
 			const apps = knownAppNames();
 
+			// XXX: Should we remove doctor from knownApps as well?
 			expect(apps.sort()).to.eql(['doctor', 'tinker', 'tinker-usb-debugging']);
 		});
 	});

@@ -32,8 +32,6 @@ const FW_MODULE_DEP_CHECK_FLAG = 0x04;
 const FW_MODULE_RANGE_CHECK_FLAG = 0x08;
 const FW_MODULE_PLATFORM_CHECK_FLAG = 0x10;
 
-const MAC_ADDR_SIZE_BYTES = 6;
-
 const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
 
 // An LTE device may take up to 18 seconds to power up the modem
@@ -269,7 +267,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Obtain system firmware version
 		try {
-			fwVer = await device.getSystemVersion({ timeout: 2000 });
+			fwVer = device._fwVer;
 		} catch (err) {
 			// ignore error and move on to get other fields
 		}
@@ -280,18 +278,9 @@ module.exports = class SerialCommand extends CLICommandBase {
 			const features = deviceConstants[platform].features;
 			if (features.includes('cellular')) {
 				isCellular = true;
-				cellularImei = await device.getImei();
-			}
-		} catch (err) {
-			// ignore and move on to get other fields
-		}
-
-		try {
-			const platform = deviceFromSerialPort.specs.name;
-			const features = deviceConstants[platform].features;
-			if (features.includes('cellular')) {
-				isCellular = true;
-				cellularIccid = await device.getIccid();
+				const cellularMetrics = await device.getIccid();
+				cellularImei = cellularMetrics.imei;
+				cellularIccid = cellularMetrics.iccid;
 			}
 		} catch (err) {
 			// ignore and move on to get other fields
@@ -327,6 +316,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 */
 	async deviceMac({ port }) {
 		let device;
+		let macAddress, macAddressSize, currIfaceName;
 		try {
 			const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
 			const deviceId = deviceFromSerialPort.deviceId;
@@ -337,14 +327,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		try {
 			const networkIfaceListreply = await device.getNetworkInterfaceList({ timeout: 2000 });
-			/*
-			 * Example of the ifaceListRaw
-			 * interfaces: [
-			 *    InterfaceEntry { index: 4, name: 'pp3', type: 16 },
-			 *    InterfaceEntry { index: 1, name: 'lo0', type: 1 }
-			 * ]
-			*/
-			const ifaceListRaw = networkIfaceListreply.interfaces;
 
 			// TODO: Replace this mapping with the one from the protobuf
 			const ifaceMap = {
@@ -358,8 +340,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 			// We expect either one Wifi interface or one Ethernet interface
 			// Find it and return the hw address value from that interface
-			let macAddress, currIfaceName;
-			for (const iface of ifaceListRaw) {
+			for (const iface of networkIfaceListreply) {
 				if (macAddress) {
 					break;
 				}
@@ -368,21 +349,15 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 				if (type === 'WIFI' || type === 'ETHERNET') {
 					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 2000 });
-					const networkIface = networkIfaceReply.interface;
-					if (networkIface.hwAddress) {
-						// networkIface.hwAddress is a buffer
-						const hwAddressByteArray = Array.from(networkIface.hwAddress);
-						if (hwAddressByteArray.length === MAC_ADDR_SIZE_BYTES) {
-							macAddress = hwAddressByteArray;
-							currIfaceName = type;
-						}
-					}
+					macAddress = networkIfaceReply.hwAddr.address;
+					macAddressSize = networkIfaceReply.hwAddr.size;
+					currIfaceName = type;
 				}
 			}
 
 			// Print output
 			if (macAddress) {
-				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress.slice(0, 6).map(num => num.toString(16).padStart(2, '0')).join(':'))}${os.EOL}`);
+				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress.slice(0, macAddressSize).map(num => num.toString(16).padStart(2, '0')).join(':'))}${os.EOL}`);
 				this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
 			} else {
 				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan('00:00:00:00:00:00')}${os.EOL}`);
@@ -395,6 +370,9 @@ module.exports = class SerialCommand extends CLICommandBase {
 		if (device && device.isOpen) {
 			await device.close();
 		}
+
+		// this return value is only for unit tests
+		return macAddress;
 	}
 
 	/**
@@ -1176,59 +1154,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 		} else {
 			throw new Error('Unable to obtain Device ID');
 		}
-	}
-
-	sendDoctorAntenna(device, antenna, timeout){
-		const antennaValues = { Internal: 'i', External: 'e' };
-		const command = 'a' + antennaValues[antenna];
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorIP(device, mode, ipAddresses, timeout){
-		const modeValues = {
-			'Dynamic IP': 'd',
-			'Static IP': 's'
-		};
-
-		let command = 'i' + modeValues[mode];
-
-		if (mode === 'Static IP'){
-			const ipAddressValues = [ipAddresses.device_ip, ipAddresses.netmask, ipAddresses.gateway, ipAddresses.dns];
-			const ipAddressesInt = _.map(ipAddressValues, this._ipToInteger);
-			command += ipAddressesInt.join(' ') + '\n';
-		}
-
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorSoftAPPrefix(device, prefix, timeout){
-		const command = 'p' + prefix + '\n';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorClearEEPROM(device, timeout){
-		const command = 'e';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorClearWiFi(device, timeout){
-		const command = 'c';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorListenMode(device, timeout){
-		const command = 'l';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	_ipToInteger(ip){
-		const parts = ip.split('.');
-
-		if (parts.length !== 4){
-			return 0;
-		}
-
-		return (((parts[0] * 256) + parts[1]) * 256 + parts[2]) * 256 + parts[3];
 	}
 
 	// TODO: If the comPort does not have an exact match with the device,
