@@ -11,7 +11,6 @@ const SerialPort = require('../lib/require-optional')('serialport');
 const log = require('../lib/log');
 const specs = require('../lib/device-specs');
 const CLICommandBase = require('./base');
-const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
@@ -25,7 +24,6 @@ const deviceConstants = require('@particle/device-constants');
 // The categories of output will be handled via the log class, and similar for protip.
 const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
-const alert = chalk.yellow('!');
 const timeoutError = 'Serial timed out';
 
 const FW_MODULE_INTEGRITY_CHECK_FLAG = 0x02;
@@ -36,13 +34,6 @@ const FW_MODULE_PLATFORM_CHECK_FLAG = 0x10;
 const MAC_ADDR_SIZE_BYTES = 6;
 
 const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
-
-function protip(){
-	const args = Array.prototype.slice.call(arguments);
-	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
-	console.log.apply(null, args);
-}
-
 
 // An LTE device may take up to 18 seconds to power up the modem
 const MODULE_INFO_COMMAND_TIMEOUT = 20000;
