@@ -443,7 +443,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			'ASSET': 'Asset'
 		};
 
-		const modules = await device.getFirmwareModuleInfo();
+		const modules = await device.getFirmwareModuleInfo({ timeout: 5000 });
 		if (modules && modules.length > 0) {
 			this.ui.stdout.write(chalk.underline(`Modules${os.EOL}`));
 			modules.forEach(async (m) => {
@@ -469,7 +469,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 
 				if (m.assetDependencies && m.assetDependencies.length > 0) {
-					const assetInfo = await device.getAssetInfo();
+					const assetInfo = await device.getAssetInfo({ timeout: 5000 });
 					const availableAssets = assetInfo.available;
 					const requiredAssets = assetInfo.required;
 					this.ui.stdout.write(`    Asset Dependencies:${os.EOL}`);
