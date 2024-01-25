@@ -313,7 +313,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 */
 	async deviceMac({ port }) {
 		let device;
-		let macAddress, macAddressSize, currIfaceName;
+		let macAddress, currIfaceName;
 		try {
 			const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
 			const deviceId = deviceFromSerialPort.deviceId;
@@ -325,16 +325,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 		try {
 			const networkIfaceListreply = await device.getNetworkInterfaceList({ timeout: 2000 });
 
-			// TODO: Replace this mapping with the one from the protobuf
-			const ifaceMap = {
-				0 : 'INVALID_INTERFACE_TYPE',
-				0x01 : 'LOOPBACK',
-				0x02 : 'THREAD',
-				0x04 : 'ETHERNET',
-				0x08 : 'WIFI',
-				0x10 : 'PPP'
-			};
-
 			// We expect either one Wifi interface or one Ethernet interface
 			// Find it and return the hw address value from that interface
 			for (const iface of networkIfaceListreply) {
@@ -342,19 +332,20 @@ module.exports = class SerialCommand extends CLICommandBase {
 					break;
 				}
 				const index = iface.index;
-				const type = ifaceMap[iface.type];
+				const type = iface.type;
 
 				if (type === 'WIFI' || type === 'ETHERNET') {
 					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 2000 });
-					macAddress = networkIfaceReply.hwAddr.address;
-					macAddressSize = networkIfaceReply.hwAddr.size;
+					macAddress = networkIfaceReply.hwAddr;
 					currIfaceName = type;
 				}
 			}
 
+
+
 			// Print output
 			if (macAddress) {
-				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress.slice(0, macAddressSize).map(num => num.toString(16).padStart(2, '0')).join(':'))}${os.EOL}`);
+				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress)}${os.EOL}`);
 				this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
 			} else {
 				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan('00:00:00:00:00:00')}${os.EOL}`);
