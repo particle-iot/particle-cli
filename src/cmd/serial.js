@@ -341,8 +341,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 			}
 
-
-
 			// Print output
 			if (macAddress) {
 				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress)}${os.EOL}`);
@@ -409,7 +407,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		const modules = await device.getFirmwareModuleInfo({ timeout: 5000 });
 		if (modules && modules.length > 0) {
 			this.ui.stdout.write(chalk.underline(`Modules${os.EOL}`));
-			modules.forEach(async (m) => {
+			for (const m of modules) {
 				const func = FirmwareModuleDisplayNames[m.type];
 				this.ui.stdout.write(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}${os.EOL}`);
 				this.ui.stdout.write(`  Size: ${m.size/1000} kB${m.maxSize ? ` / MaxSize: ${m.maxSize/1000} kB` : ''}${os.EOL}`);
@@ -435,13 +433,11 @@ module.exports = class SerialCommand extends CLICommandBase {
 					const assetInfo = await device.getAssetInfo({ timeout: 5000 });
 					const availableAssets = assetInfo.available;
 					const requiredAssets = assetInfo.required;
-
 					this.ui.stdout.write(`    Asset Dependencies:${os.EOL}`);
 					this.ui.stdout.write(`      Required:${os.EOL}`);
 					requiredAssets.forEach((asset) => {
 						this.ui.stdout.write(`        ${asset.name} (${availability(asset, availableAssets) ? chalk.green('PASS') : chalk.red('FAIL')})${os.EOL}`);
 					});
-
 					const notRequiredAssets = availableAssets.filter(asset => !requiredAssets.some(requiredAsset => requiredAsset.hash === asset.hash));
 					if (notRequiredAssets.length > 0) {
 						this.ui.stdout.write(`      Available but not required:${os.EOL}`);
@@ -452,7 +448,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 
 				this.ui.stdout.write(`${os.EOL}`);
-			});
+			}
 		}
 		return Promise.resolve(true);
 	}
