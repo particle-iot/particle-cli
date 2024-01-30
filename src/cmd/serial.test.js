@@ -38,7 +38,7 @@ describe('Serial Command', () => {
 				isOpen: true,
 				close: sinon.stub(),
 				_fwVer: fwVer,
-				getIccid: sinon.stub().resolves({ iccid, imei }),
+				getCellularInfo: sinon.stub().resolves({ iccid, imei }),
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
@@ -151,22 +151,17 @@ describe('Serial Command', () => {
 					{
 						index: 4,
 						name: 'wl3',
-						type: 8
+						type: 'WIFI'
 					}
 				]),
-				getNetworkInterface: sinon.stub().resolves({
-					hwAddr: {
-						address: [1,2,3,4,5,6],
-						size: 6
-					}
-				})
+				getNetworkInterface: sinon.stub().resolves({ hwAddress: '01:02:03:04:05:06' })
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
 
 			const macAddress = await serial.deviceMac({ port: 'xyz' });
 
-			expect(macAddress).to.deep.equal([1, 2, 3, 4, 5, 6]);
+			expect(macAddress).to.deep.equal('01:02:03:04:05:06');
 		});
 	});
 

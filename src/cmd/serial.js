@@ -275,7 +275,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			const features = deviceConstants[platform].features;
 			if (features.includes('cellular')) {
 				isCellular = true;
-				const cellularMetrics = await device.getIccid();
+				const cellularMetrics = await device.getCellularInfo();
 				cellularImei = cellularMetrics.imei;
 				cellularIccid = cellularMetrics.iccid;
 			}
@@ -336,7 +336,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 				if (type === 'WIFI' || type === 'ETHERNET') {
 					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 2000 });
-					macAddress = networkIfaceReply.hwAddr;
+					macAddress = networkIfaceReply.hwAddress;
 					currIfaceName = type;
 				}
 			}
