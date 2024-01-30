@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.20.0 - Jan 30 2024
+
+* Support devices in protected mode
+* Replace serial mode flashing by local flashing
+
 # 3.19.0 - Jan 12 2024
 
 * Add `particle logic-funcction` namespace
