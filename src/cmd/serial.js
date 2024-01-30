@@ -281,6 +281,16 @@ module.exports = class SerialCommand extends CLICommandBase {
 			if (features.includes('cellular')) {
 				isCellular = true;
 				cellularImei = await device.getImei();
+			}
+		} catch (err) {
+			// ignore and move on to get other fields
+		}
+
+		try {
+			const platform = deviceFromSerialPort.specs.name;
+			const features = deviceConstants[platform].features;
+			if (features.includes('cellular')) {
+				isCellular = true;
 				cellularIccid = await device.getIccid();
 			}
 		} catch (err) {

@@ -73,7 +73,7 @@ module.exports = class CLI {
 			},
 
 			examples: {
-				'$0 setup': 'Set up your Particle account and your device',
+				'$0 setup': 'NOT SUPPORTED. Go to setup.particle.io with your browser',
 				'$0 list': 'Show all your devices and their functions and variables',
 				'$0 flash my_device tinker': 'Remotely update your device to run the default Tinker app',
 				'$0 call my_device_name digitalwrite D7=HIGH': 'Call a function on your device running Tinker to toggle the onboard LED'
