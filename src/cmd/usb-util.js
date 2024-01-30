@@ -37,7 +37,7 @@ async function _getDeviceInfo(device) {
 		if (err instanceof TimeoutError) {
 			return { id, mode: 'UNKNOWN' };
 		} else if (err instanceof DeviceProtectionError) {
-			throw new Error('Operation could not be completed due to device protection.');
+			return { id, mode: 'PROTECTED' };
 		} else {
 			throw new Error(`Unable to get device mode: ${err.message}`);
 		}
@@ -242,6 +242,11 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 		usbDevice = devices[0].value;
 	}
 
+	const devInfo = await _getDeviceInfo(usbDevice);
+	if (devInfo.mode === 'PROTECTED') {
+		ui.write(`Attempted to flash device ${devInfo.id}`);
+		throw new Error('Operation could not be completed due to device protection.');
+	}
 
 	try {
 		await usbDevice.open();
