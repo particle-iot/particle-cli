@@ -7,7 +7,8 @@ const {
 	openDeviceById,
 	NotFoundError,
 	NotAllowedError,
-	TimeoutError
+	TimeoutError,
+	DeviceProtectionError
 } = require('../lib/require-optional')('particle-usb');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
@@ -35,6 +36,8 @@ async function _getDeviceInfo(device) {
 	} catch (err) {
 		if (err instanceof TimeoutError) {
 			return { id, mode: 'UNKNOWN' };
+		} else if (err instanceof DeviceProtectionError) {
+			return { id, mode: 'PROTECTED' };
 		} else {
 			throw new Error(`Unable to get device mode: ${err.message}`);
 		}
@@ -239,6 +242,11 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 		usbDevice = devices[0].value;
 	}
 
+	const devInfo = await _getDeviceInfo(usbDevice);
+	if (devInfo.mode === 'PROTECTED') {
+		ui.write(`Attempted to flash device ${devInfo.id}`);
+		throw new Error('Operation could not be completed due to device protection.');
+	}
 
 	try {
 		await usbDevice.open();
@@ -362,5 +370,6 @@ module.exports = {
 	reopenInNormalMode,
 	reopenDevice,
 	UsbPermissionsError,
-	TimeoutError
+	TimeoutError,
+	DeviceProtectionError
 };

@@ -1,7 +1,7 @@
 const { spin } = require('../app/ui');
 const { delay, asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
@@ -46,8 +46,10 @@ module.exports = class UsbCommand {
 								info.push(
 									usbDevice.getDeviceMode({ timeout: 10 * 1000 })
 										.catch(error => {
-											if (error instanceof TimeoutError){
+											if (error instanceof TimeoutError) {
 												return 'UNKNOWN';
+											} else if (error instanceof DeviceProtectionError) {
+												return 'PROTECTED';
 											}
 											throw error;
 										})
