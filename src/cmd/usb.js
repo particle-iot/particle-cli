@@ -49,7 +49,7 @@ module.exports = class UsbCommand {
 											if (error instanceof TimeoutError) {
 												return 'UNKNOWN';
 											} else if (error instanceof DeviceProtectionError) {
-												return;
+												return 'PROTECTED';
 											}
 											throw error;
 										})
