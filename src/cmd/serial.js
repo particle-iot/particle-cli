@@ -120,12 +120,12 @@ module.exports = class SerialCommand extends CLICommandBase {
 		return this.findDevices()
 			.then(devices => {
 				if (devices.length === 0){
-					console.log(chalk.bold.white('No devices available via serial'));
+					this.ui.stdout.write(`${chalk.bold.white('No devices available via serial')}`);
 					return;
 				}
 
-				console.log('Found', chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device'), 'connected via serial:');
-				devices.forEach((device) => console.log(`${device.port} - ${device.type} - ${device.deviceId}`));
+				this.ui.stdout.write(`Found, ${chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device')}, connected via serial:`);
+				devices.forEach((device) => this.ui.stdout.write(`${device.port} - ${device.type} - ${device.deviceId}`));
 			});
 	}
 
@@ -143,19 +143,19 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Called when port closes
 		const handleClose = () => {
-			console.log(os.EOL);
+			this.ui.stdout.write(`${os.EOL}`);
 			if (follow && !cleaningUp){
-				console.log(chalk.bold.white('Serial connection closed.  Attempting to reconnect...'));
+				this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.  Attempting to reconnect...')}`);
 				return reconnect();
 			}
-			console.log(chalk.bold.white('Serial connection closed.'));
+			this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.')}`);
 		};
 
 		// Handle interrupts and close the port gracefully
 		const handleInterrupt = (silent) => {
 			if (!cleaningUp){
 				if (!silent){
-					console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
+					this.ui.stdout.write(`${chalk.bold.red('Caught Interrupt.  Cleaning up.')}`);
 				}
 				cleaningUp = true;
 				if (serialPort && serialPort.isOpen){
@@ -167,7 +167,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Called only when the port opens successfully
 		const handleOpen = () => {
-			console.log(chalk.bold.white('Serial monitor opened successfully:'));
+			this.ui.stdout.write(`${chalk.bold.white('Serial monitor opened successfully:')}`);
 		};
 
 		// If device is not found but we are still '--follow'ing to find a device,
@@ -190,7 +190,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 			}
 
-			console.log('Opening serial monitor for com port: "' + device.port + '"');
+			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "`);
 			selectedDevice = device;
 			openPort();
 		};
@@ -226,7 +226,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		process.on('exit', () => handleInterrupt(true));
 
 		if (follow){
-			console.log('Polling for available serial device...');
+			this.ui.stdout.write('Polling for available serial device...');
 		}
 
 		return this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
@@ -1097,8 +1097,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 	}
 
 	exit(){
-		console.log();
-		console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
 			chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
 		chalk.bold.magenta('<3'))
 		);
