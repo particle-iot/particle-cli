@@ -119,8 +119,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 					return;
 				}
 
-				this.ui.stdout.write(`Found, ${chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device')}, connected via serial:`);
-				devices.forEach((device) => this.ui.stdout.write(`${device.port} - ${device.type} - ${device.deviceId}`));
+				this.ui.stdout.write(`Found ${chalk.cyan(devices.length)} ${devices.length > 1 ? 'devices' : 'device'}, connected via serial:${os.EOL}`);
+				devices.forEach((device) => this.ui.stdout.write(`${device.port} - ${device.type} - ${device.deviceId}${os.EOL}`));
 			});
 	}
 
@@ -140,18 +140,15 @@ module.exports = class SerialCommand extends CLICommandBase {
 		const handleClose = () => {
 			this.ui.stdout.write(`${os.EOL}`);
 			if (follow && !cleaningUp){
-				this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.  Attempting to reconnect...')}`);
+				this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.  Attempting to reconnect...')}${os.EOL}`);
 				return reconnect();
 			}
-			this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.')}`);
+			this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.')}${os.EOL}`);
 		};
 
 		// Handle interrupts and close the port gracefully
 		const handleInterrupt = (silent) => {
 			if (!cleaningUp){
-				if (!silent){
-					this.ui.stdout.write(`${chalk.bold.red('Caught Interrupt.  Cleaning up.')}`);
-				}
 				cleaningUp = true;
 				if (serialPort && serialPort.isOpen){
 					serialPort.close();
@@ -162,7 +159,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Called only when the port opens successfully
 		const handleOpen = () => {
-			this.ui.stdout.write(`${chalk.bold.white('Serial monitor opened successfully:')}`);
+			this.ui.stdout.write(`${chalk.bold.white('Serial monitor opened successfully:')}${os.EOL}`);
 		};
 
 		// If device is not found but we are still '--follow'ing to find a device,
@@ -185,7 +182,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 			}
 
-			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "`);
+			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "${os.EOL}`);
 			selectedDevice = device;
 			openPort();
 		};
@@ -246,7 +243,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 		let fwVer = '';
 		let cellularImei = '';
 		let cellularIccid = '';
-		let isCellular = false;
 
 		// Obtain device
 		try {
@@ -258,18 +254,13 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		// Obtain system firmware version
-		try {
-			fwVer = device._fwVer;
-		} catch (err) {
-			// ignore error and move on to get other fields
-		}
+		fwVer = device.firmwareVersion;
 
 		// If the device is a cellular device, obtain imei and iccid
 		try {
-			const platform = deviceFromSerialPort.specs.name;
-			const features = deviceConstants[platform].features;
+			const platform = Object.values(deviceConstants).find(p => p.id === device.platformId);
+			const features = (platform && platform.features) || [];
 			if (features.includes('cellular')) {
-				isCellular = true;
 				const cellularMetrics = await device.getCellularInfo();
 				cellularImei = cellularMetrics.imei;
 				cellularIccid = cellularMetrics.iccid;
@@ -282,7 +273,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 		this._printIdentifyInfo({
 			deviceId,
 			fwVer,
-			isCellular,
 			cellularImei,
 			cellularIccid
 		});
@@ -293,13 +283,17 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 	}
 
-	_printIdentifyInfo({ deviceId, fwVer, isCellular, cellularImei, cellularIccid }) {
+	_printIdentifyInfo({ deviceId, fwVer, cellularImei, cellularIccid }) {
 		this.ui.stdout.write(`Your device id is ${chalk.bold.cyan(deviceId)}${os.EOL}`);
-		if (isCellular) {
+		if (cellularImei) {
 			this.ui.stdout.write(`Your IMEI is ${chalk.bold.cyan(cellularImei)}${os.EOL}`);
+		}
+		if (cellularIccid) {
 			this.ui.stdout.write(`Your ICCID is ${chalk.bold.cyan(cellularIccid)}${os.EOL}`);
 		}
-		this.ui.stdout.write(`Your system firmware version is ${chalk.bold.cyan(fwVer)}${os.EOL}`);
+		if (fwVer) {
+			this.ui.stdout.write(`Your system firmware version is ${chalk.bold.cyan(fwVer)}${os.EOL}`);
+		}
 	}
 
 	/**

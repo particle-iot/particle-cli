@@ -2,6 +2,7 @@ const MockSerial = require('../../test/__mocks__/serial.mock');
 const { expect, sinon } = require('../../test/setup');
 const SerialCommand = require('./serial');
 const usbUtils = require('./usb-util');
+const deviceConstants = require('@particle/device-constants');
 
 describe('Serial Command', () => {
 	let serial;
@@ -28,16 +29,14 @@ describe('Serial Command', () => {
 			const imei = '1234';
 			const iccid = '5678';
 			const wifiDeviceFromSerialPort = {
-				'specs': {
-					'name': 'boron'
-				},
 				deviceId
 			};
 
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				_fwVer: fwVer,
+				firmwareVersion: fwVer,
+				platformId: deviceConstants.boron.id,
 				getCellularInfo: sinon.stub().resolves({ iccid, imei }),
 			};
 			deviceStub.resolves(device);
@@ -49,7 +48,6 @@ describe('Serial Command', () => {
 			expect(serial._printIdentifyInfo).to.have.been.calledOnce.and.calledWithExactly({
 				deviceId,
 				fwVer,
-				isCellular: true,
 				cellularImei: imei,
 				cellularIccid: iccid,
 			});
@@ -59,15 +57,13 @@ describe('Serial Command', () => {
 			const deviceId = '1234456789abcdef';
 			const fwVer = '5.4.0';
 			const wifiDeviceFromSerialPort = {
-				'specs': {
-					'name': 'p2'
-				},
 				deviceId
 			};
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				_fwVer: fwVer
+				platformId: deviceConstants.p2.id,
+				firmwareVersion: fwVer
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
@@ -78,7 +74,6 @@ describe('Serial Command', () => {
 			expect(serial._printIdentifyInfo).to.have.been.calledOnce.and.calledWithExactly({
 				deviceId,
 				fwVer,
-				isCellular: false,
 				cellularImei: '',
 				cellularIccid: '',
 			});
@@ -98,8 +93,7 @@ describe('Serial Command', () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				_fwVer: fwVer
-
+				firmwareVersion: fwVer
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
@@ -115,8 +109,7 @@ describe('Serial Command', () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				_fwVer: fwVer
-
+				firmwareVersion: fwVer
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').rejects('There was an error');
@@ -146,7 +139,7 @@ describe('Serial Command', () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				_fwVer: fwVer,
+				firmwareVersion: fwVer,
 				getNetworkInterfaceList: sinon.stub().resolves([
 					{
 						index: 4,
