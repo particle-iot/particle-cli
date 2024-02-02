@@ -119,7 +119,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 					return;
 				}
 
-				this.ui.stdout.write(`Found ${chalk.cyan(devices.length)} ${devices.length > 1 ? 'devices' : 'device'}, connected via serial:${os.EOL}`);
+				this.ui.stdout.write(`Found ${chalk.cyan(devices.length)} ${devices.length > 1 ? 'devices' : 'device'} connected via serial:${os.EOL}`);
 				devices.forEach((device) => this.ui.stdout.write(`${device.port} - ${device.type} - ${device.deviceId}${os.EOL}`));
 			});
 	}
@@ -147,7 +147,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		};
 
 		// Handle interrupts and close the port gracefully
-		const handleInterrupt = (silent) => {
+		const handleInterrupt = () => {
 			if (!cleaningUp){
 				cleaningUp = true;
 				if (serialPort && serialPort.isOpen){
@@ -215,7 +215,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		process.on('SIGQUIT', handleInterrupt);
 		process.on('SIGBREAK', handleInterrupt);
 		process.on('SIGTERM', handleInterrupt);
-		process.on('exit', () => handleInterrupt(true));
+		process.on('exit', () => handleInterrupt());
 
 		if (follow){
 			this.ui.stdout.write('Polling for available serial device...');
@@ -363,8 +363,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		const platform = platformForId(device.platformId);
-		this.ui.stdout.write(`Device : ${chalk.bold.cyan(deviceId)}${os.EOL}`);
-		this.ui.stdout.write(`Platform : ${platform.id} - ${chalk.bold.cyan(platform.name)}${os.EOL}${os.EOL}`);
+		this.ui.stdout.write(`Device: ${chalk.bold.cyan(deviceId)}${os.EOL}`);
+		this.ui.stdout.write(`Platform: ${platform.id} - ${chalk.bold.cyan(platform.displayName)}${os.EOL}${os.EOL}`);
 
 		try {
 			await this._getModuleInfo(device);
