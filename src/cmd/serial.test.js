@@ -2,7 +2,7 @@ const MockSerial = require('../../test/__mocks__/serial.mock');
 const { expect, sinon } = require('../../test/setup');
 const SerialCommand = require('./serial');
 const usbUtils = require('./usb-util');
-const deviceConstants = require('@particle/device-constants');
+const { PlatformId } = require('../lib/platform');
 
 describe('Serial Command', () => {
 	let serial;
@@ -36,7 +36,7 @@ describe('Serial Command', () => {
 				isOpen: true,
 				close: sinon.stub(),
 				firmwareVersion: fwVer,
-				platformId: deviceConstants.boron.id,
+				platformId: PlatformId.BORON,
 				getCellularInfo: sinon.stub().resolves({ iccid, imei }),
 			};
 			deviceStub.resolves(device);
@@ -62,7 +62,7 @@ describe('Serial Command', () => {
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
-				platformId: deviceConstants.p2.id,
+				platformId: PlatformId.P2,
 				firmwareVersion: fwVer
 			};
 			deviceStub.resolves(device);
@@ -84,15 +84,13 @@ describe('Serial Command', () => {
 		it('inspects a Particle device', async () => {
 			const fwVer = '5.6.0';
 			const wifiDeviceFromSerialPort = {
-				'specs': {
-					'name': 'p2'
-				},
 				deviceId: '1234456789abcdef'
 			};
 
 			const device = {
 				isOpen: true,
 				close: sinon.stub(),
+				platformId: PlatformId.P2,
 				firmwareVersion: fwVer
 			};
 			deviceStub.resolves(device);
@@ -131,9 +129,6 @@ describe('Serial Command', () => {
 		it ('returns mac address of a device', async () => {
 			const fwVer = '5.6.0';
 			const wifiDeviceFromSerialPort = {
-				'specs': {
-					'name': 'p2'
-				},
 				deviceId: '1234456789abcdef'
 			};
 			const device = {

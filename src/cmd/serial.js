@@ -18,7 +18,7 @@ const spinnerMixin = require('../lib/spinner-mixin');
 const { ensureError } = require('../lib/utilities');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
-const deviceConstants = require('@particle/device-constants');
+const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
 
 // TODO: DRY this up somehow
@@ -258,8 +258,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// If the device is a cellular device, obtain imei and iccid
 		try {
-			const platform = Object.values(deviceConstants).find(p => p.id === device.platformId);
-			const features = (platform && platform.features) || [];
+			const features = platformForId(device.platformId).features;
 			if (features.includes('cellular')) {
 				const cellularMetrics = await device.getCellularInfo();
 				cellularImei = cellularMetrics.imei;
@@ -317,9 +316,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 			// We expect either one Wifi interface or one Ethernet interface
 			// Find it and return the hw address value from that interface
 			for (const iface of networkIfaceListreply) {
-				if (macAddress) {
-					break;
-				}
 				const index = iface.index;
 				const type = iface.type;
 
@@ -327,6 +323,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 2000 });
 					macAddress = networkIfaceReply.hwAddress;
 					currIfaceName = type;
+					break;
 				}
 			}
 
@@ -335,7 +332,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress)}${os.EOL}`);
 				this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
 			} else {
-				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan('00:00:00:00:00:00')}${os.EOL}`);
+				this.ui.stdout.write(`Your device does not have a MAC address${os.EOL}`);
 			}
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not get MAC address');
@@ -365,15 +362,9 @@ module.exports = class SerialCommand extends CLICommandBase {
 			throw new VError(ensureError(err), 'Could not inspect device');
 		}
 
-		let platformName = null;
-		let platformId = null;
-		try {
-			platformName = deviceFromSerialPort.specs.productName;
-			platformId = deviceFromSerialPort.specs.productId;
-		} catch (err) {
-			// ignore error and move on to get other fields
-		}
-		this.ui.stdout.write(`Platform : ${platformId} - ${chalk.bold.cyan(platformName)}${os.EOL}${os.EOL}`);
+		const platform = platformForId(device.platformId);
+		this.ui.stdout.write(`Device : ${chalk.bold.cyan(deviceId)}${os.EOL}`);
+		this.ui.stdout.write(`Platform : ${platform.id} - ${chalk.bold.cyan(platform.name)}${os.EOL}${os.EOL}`);
 
 		try {
 			await this._getModuleInfo(device);
@@ -394,6 +385,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 */
 	async _getModuleInfo(device) {
 		const modules = await device.getFirmwareModuleInfo({ timeout: 5000 });
+
 		if (modules && modules.length > 0) {
 			this.ui.stdout.write(chalk.underline(`Modules${os.EOL}`));
 			for (const m of modules) {
@@ -402,7 +394,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				this.ui.stdout.write(`  Size: ${m.size/1000} kB${m.maxSize ? ` / MaxSize: ${m.maxSize/1000} kB` : ''}${os.EOL}`);
 
 				if (m.type === 'USER_PART' && m.hash) {
-					this.ui.stdout.write(`    UUID:${m.hash}${os.EOL}`);
+					this.ui.stdout.write(`    UUID: ${m.hash}${os.EOL}`);
 				}
 
 				const errors = m.validityErrors;
