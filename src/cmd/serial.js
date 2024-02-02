@@ -27,11 +27,6 @@ const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
 const timeoutError = 'Serial timed out';
 
-const FW_MODULE_INTEGRITY_CHECK_FLAG = 0x02;
-const FW_MODULE_DEP_CHECK_FLAG = 0x04;
-const FW_MODULE_RANGE_CHECK_FLAG = 0x08;
-const FW_MODULE_PLATFORM_CHECK_FLAG = 0x10;
-
 const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
 
 const SERIAL_PORT_DEFAULTS = {
@@ -416,11 +411,11 @@ module.exports = class SerialCommand extends CLICommandBase {
 					this.ui.stdout.write(`    UUID:${m.hash}${os.EOL}`);
 				}
 
-				const checkFlags = m.validity || m.failedFlags;
-				this.ui.stdout.write(`    Integrity: ${checkFlags & FW_MODULE_INTEGRITY_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
-				this.ui.stdout.write(`    Address Range: ${checkFlags & FW_MODULE_RANGE_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
-				this.ui.stdout.write(`    Platform: ${checkFlags & FW_MODULE_PLATFORM_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
-				this.ui.stdout.write(`    Dependencies: ${checkFlags & FW_MODULE_DEP_CHECK_FLAG ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				const errors = m.validityErrors;
+				this.ui.stdout.write(`    Integrity: ${errors.includes('INTEGRITY_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Address Range: ${errors.includes('RANGE_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Platform: ${errors.includes('PLATFORM_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Dependencies: ${errors.includes('DEPENDENCY_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
 
 				if (m.dependencies.length > 0){
 					m.dependencies.forEach((dep) => {
