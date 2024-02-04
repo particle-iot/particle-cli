@@ -20,6 +20,7 @@ const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
+const WifiControlRequest = require('../lib/wifi-control-request');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -496,20 +497,25 @@ module.exports = class SerialCommand extends CLICommandBase {
 			});
 	}
 
-	configureWifi({ port, file }){
-		const credentialsFile = file;
-
-		return this.whatSerialPortDidYouMean(port, true)
-			.then(device => {
-				if (credentialsFile){
-					return this._configWifiFromFile(device, credentialsFile);
-				} else {
-					return this.promptWifiScan(device);
-				}
-			})
-			.catch(err => {
-				throw new VError(ensureError(err), 'Error configuring Wi-Fi');
+	async configureWifi({ port, file }){
+		const device = await this.whatSerialPortDidYouMean(port, true);
+		if (device?.specs?.generation === 2 ) {
+			// configure serial
+			if (file){
+				return this._configWifiFromFile(device, file);
+			} else {
+				return this.promptWifiScan(device);
+			}
+		} else {
+			const wifiControlRequest = new WifiControlRequest(device.deviceId, {
+				file,
+				ui: this.ui,
+				newSpin: this.newSpin,
+				stopSpin: this.stopSpin
 			});
+			await wifiControlRequest.configureWifi();
+		}
+
 	}
 
 	_configWifiFromFile(device, filename){
