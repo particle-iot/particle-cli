@@ -1,9 +1,9 @@
-const { getOneUsbDevice } = require('../cmd/usb-util');
-const { prompt } = require('inquirer');
+const usbUtils = require('../cmd/usb-util');
 const os = require('os');
 const inquirer = require('inquirer');
 const RESCAN_LABEL = '[rescan networks]';
 const fs = require('fs-extra');
+const JOIN_NETWORK_TIMEOUT = 30000;
 
 module.exports = class WiFiControlRequest {
 	constructor(deviceId, { ui, newSpin, stopSpin, file }) {
@@ -53,7 +53,7 @@ module.exports = class WiFiControlRequest {
 			}
 			return { ssid: network, password };
 		} catch (error) {
-			throw new Error('Ups! We could not read the file. Please try again.', error.message);
+			throw new Error('Ups! We could not read the file. Please try again: ' + error.message);
 		}
 
 	}
@@ -98,14 +98,14 @@ module.exports = class WiFiControlRequest {
 		networks = await this._deviceScanNetworks();
 		this.stopSpin();
 		if (!networks.length) {
-			const answers = await prompt([{
+			const answers = await this.ui.prompt([{
 				type: 'confirm',
 				name: 'rescan',
 				message: 'Uh oh, no networks found. Try again?',
 				default: true
 			}]);
 			if (answers.rescan){
-				networks = this.scanNetworks();
+				return this.scanNetworks();
 			}
 		}
 		return this._filterNetworks(networks);
@@ -132,7 +132,7 @@ module.exports = class WiFiControlRequest {
 	async _deviceScanNetworks() {
 		try {
 			if (!this.device || this.device.isOpen === false) {
-				this.device = await getOneUsbDevice({ ui: this.ui });
+				this.device = await usbUtils.getOneUsbDevice({ idOrName: this.deviceId, ui: this.ui });
 			}
 			const networks = await this.device.scanWifiNetworks();
 			return this._serializeNetworks(networks) || [];
@@ -178,9 +178,9 @@ module.exports = class WiFiControlRequest {
 		this.newSpin(`Joining Wi-Fi network ${ssid}`).start();
 		try {
 			if (!this.device || this.device.isOpen === false) {
-				this.device = await getOneUsbDevice({ idOrName: this.deviceId });
+				this.device = await usbUtils.getOneUsbDevice({ idOrName: this.deviceId });
 			}
-			const { pass }  = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: 30000 });
+			const { pass }  = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
 			if (pass) {
 				await this.device.reset();
 			}
