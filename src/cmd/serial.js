@@ -11,32 +11,23 @@ const SerialPort = require('../lib/require-optional')('serialport');
 const log = require('../lib/log');
 const specs = require('../lib/device-specs');
 const CLICommandBase = require('./base');
-const ApiClient = require('../lib/api-client');
 const settings = require('../../settings');
-const DescribeParser = require('binary-version-reader').HalDescribeParser;
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
-const { ensureError, knownPlatformDisplayForId } = require('../lib/utilities');
+const { ensureError } = require('../lib/utilities');
 const FlashCommand = require('./flash');
+const usbUtils = require('./usb-util');
+const { platformForId } = require('../lib/platform');
+const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
 const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
-const alert = chalk.yellow('!');
 const timeoutError = 'Serial timed out';
 
-function protip(){
-	const args = Array.prototype.slice.call(arguments);
-	args.unshift(chalk.cyan('!'), chalk.bold.white('PROTIP:'));
-	console.log.apply(null, args);
-}
-
-
-// An LTE device may take up to 18 seconds to power up the modem
-const MODULE_INFO_COMMAND_TIMEOUT = 20000;
-const IDENTIFY_COMMAND_TIMEOUT = 20000;
+const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
 
 const SERIAL_PORT_DEFAULTS = {
 	baudRate: 9600,
@@ -124,12 +115,12 @@ module.exports = class SerialCommand extends CLICommandBase {
 		return this.findDevices()
 			.then(devices => {
 				if (devices.length === 0){
-					console.log(chalk.bold.white('No devices available via serial'));
+					this.ui.stdout.write(`${chalk.bold.white('No devices available via serial')}`);
 					return;
 				}
 
-				console.log('Found', chalk.cyan(devices.length), (devices.length > 1 ? 'devices' : 'device'), 'connected via serial:');
-				devices.forEach((device) => console.log(`${device.port} - ${device.type} - ${device.deviceId}`));
+				this.ui.stdout.write(`Found ${chalk.cyan(devices.length)} ${devices.length > 1 ? 'devices' : 'device'} connected via serial:${os.EOL}`);
+				devices.forEach((device) => this.ui.stdout.write(`${device.port} - ${device.type} - ${device.deviceId}${os.EOL}`));
 			});
 	}
 
@@ -147,20 +138,17 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Called when port closes
 		const handleClose = () => {
-			console.log(os.EOL);
+			this.ui.stdout.write(`${os.EOL}`);
 			if (follow && !cleaningUp){
-				console.log(chalk.bold.white('Serial connection closed.  Attempting to reconnect...'));
+				this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.  Attempting to reconnect...')}${os.EOL}`);
 				return reconnect();
 			}
-			console.log(chalk.bold.white('Serial connection closed.'));
+			this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.')}${os.EOL}`);
 		};
 
 		// Handle interrupts and close the port gracefully
-		const handleInterrupt = (silent) => {
+		const handleInterrupt = () => {
 			if (!cleaningUp){
-				if (!silent){
-					console.log(chalk.bold.red('Caught Interrupt.  Cleaning up.'));
-				}
 				cleaningUp = true;
 				if (serialPort && serialPort.isOpen){
 					serialPort.close();
@@ -171,17 +159,21 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Called only when the port opens successfully
 		const handleOpen = () => {
-			console.log(chalk.bold.white('Serial monitor opened successfully:'));
+			this.ui.stdout.write(`${chalk.bold.white('Serial monitor opened successfully:')}${os.EOL}`);
 		};
 
+		// If device is not found but we are still '--follow'ing to find a device,
+		// handlePortFn schedules a delayed retry using setTimeout.
 		const handlePortFn = (device) => {
-			if (!device){
-				if (follow){
+			if (!device) {
+				if (follow) {
 					setTimeout(() => {
 						if (cleaningUp){
 							return;
 						} else {
-							this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
+							this.whatSerialPortDidYouMean(port, true)
+								.catch(() => null)
+								.then(handlePortFn);
 						}
 					}, settings.serial_follow_delay);
 					return;
@@ -190,7 +182,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 			}
 
-			console.log('Opening serial monitor for com port: "' + device.port + '"');
+			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "${os.EOL}`);
 			selectedDevice = device;
 			openPort();
 		};
@@ -223,162 +215,223 @@ module.exports = class SerialCommand extends CLICommandBase {
 		process.on('SIGQUIT', handleInterrupt);
 		process.on('SIGBREAK', handleInterrupt);
 		process.on('SIGTERM', handleInterrupt);
-		process.on('exit', () => handleInterrupt(true));
+		process.on('exit', () => handleInterrupt());
 
 		if (follow){
-			console.log('Polling for available serial device...');
+			this.ui.stdout.write('Polling for available serial device...');
 		}
 
 		return this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
 	}
 
 	/**
-	 * Check to see if the device is in listening mode, try to get the device ID via serial
+	 * Device identify gives the following
+	 *     - Device ID
+	 *     - (Cellular devices) Cell radio IMEI
+	 *           - Obtained via control req for dvos > 5.6.0
+	 *           - Obtained via serial otherwise
+	 *     - (Cellular devices) Cell radio ICCID
+	 *     - System firmware version
+	 * This command is committed to print the values that are obtained from the device
+	 * ignoring the ones that are not obtained
 	 * @param {Number|String} comPort
 	 */
-	identifyDevice({ port }){
-		let device;
-		return this.whatSerialPortDidYouMean(port, true)
-			.then(_device => {
-				device = _device;
-				if (!device){
-					throw new VError('No serial port identified');
-				}
+	async identifyDevice({ port }) {
+		let deviceFromSerialPort, device;
 
-				return this.askForDeviceID(device);
-			})
-			.then(data => {
-				if (_.isObject(data)){
-					console.log();
-					console.log('Your device id is', chalk.bold.cyan(data.id));
-					if (data.imei){
-						console.log('Your IMEI is', chalk.bold.cyan(data.imei));
-					}
-					if (data.iccid){
-						console.log('Your ICCID is', chalk.bold.cyan(data.iccid));
-					}
-				} else {
-					console.log();
-					console.log('Your device id is', chalk.bold.cyan(data));
-				}
+		let deviceId = '';
+		let fwVer = '';
+		let cellularImei = '';
+		let cellularIccid = '';
 
-				return this.askForSystemFirmwareVersion(device, 2000)
-					.then(version => {
-						console.log('Your system firmware version is', chalk.bold.cyan(version));
-					})
-					.catch(() => {
-						console.log('Unable to determine system firmware version');
-					});
-			})
-			.catch((err) => {
-				throw new VError(err, 'Could not identify device');
-			});
-	}
+		// Obtain device
+		try {
+			deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
+			deviceId = deviceFromSerialPort.deviceId;
+			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+		} catch (err) {
+			throw new VError(ensureError(err), 'Could not identify device');
+		}
 
-	deviceMac({ port }){
-		return this.whatSerialPortDidYouMean(port, true)
-			.then(device => {
-				if (!device){
-					throw new VError('No serial port identified');
-				}
+		// Obtain system firmware version
+		fwVer = device.firmwareVersion;
 
-				return this.getDeviceMacAddress(device);
-			})
-			.then(data => {
-				console.log();
-				console.log('Your device MAC address is', chalk.bold.cyan(data));
-			})
-			.catch((err) => {
-				throw new VError(ensureError(err), 'Could not get MAC address');
-			});
-	}
-
-	inspectDevice({ port }){
-		return this.whatSerialPortDidYouMean(port, true)
-			.then(device => {
-				if (!device){
-					throw new VError('No serial port identified');
-				}
-
-				return this.getSystemInformation(device);
-			})
-			.then((data) => {
-				const functionMap = {
-					s: 'System',
-					u: 'User',
-					b: 'Bootloader',
-					r: 'Reserved',
-					m: 'Monolithic',
-					a: 'Radio stack',
-					c: 'NCP'
-				};
-				const locationMap = {
-					m: 'main',
-					b: 'backup',
-					f: 'factory',
-					t: 'temp'
-				};
-
-				const d = JSON.parse(data);
-				const parser = new DescribeParser();
-				const modules = parser.getModules(d);
-
-				if (d.p !== undefined){
-					const platformName = knownPlatformDisplayForId()[d.p];
-					console.log('Platform:', d.p, platformName ? ('- ' + chalk.bold.cyan(platformName)) : '');
-				}
-
-				if (modules && modules.length > 0){
-					console.log(chalk.underline('Modules'));
-					modules.forEach((m) => {
-						const func = functionMap[m.func];
-						if (!func){
-							console.log(`  empty - ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-							return;
-						}
-
-						console.log(`  ${chalk.bold.cyan(func)} module ${chalk.bold('#' + m.name)} - version ${chalk.bold(m.version)}, ${locationMap[m.location]} location, ${m.maxSize} bytes max size`);
-
-						if (m.isUserModule() && m.uuid){
-							console.log('    UUID:', m.uuid);
-						}
-
-						console.log('    Integrity: %s', m.hasIntegrity() ? chalk.green('PASS') : chalk.red('FAIL'));
-						console.log('    Address Range: %s', m.isImageAddressInRange() ? chalk.green('PASS') : chalk.red('FAIL'));
-						console.log('    Platform: %s', m.isImagePlatformValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-						console.log('    Dependencies: %s', m.areDependenciesValid() ? chalk.green('PASS') : chalk.red('FAIL'));
-
-						if (m.dependencies.length > 0){
-							m.dependencies.forEach((dep) => {
-								const df = functionMap[dep.func];
-								console.log(`      ${df} module #${dep.name} - version ${dep.version}`);
-							});
-						}
-					});
-				}
-			})
-			.catch((err) => {
-				throw new VError(ensureError(err), 'Could not get inspect device');
-			});
-	}
-
-	_promptForListeningMode(){
-		console.log(
-			chalk.cyan('!'),
-			'PROTIP:',
-			chalk.white('Hold the'),
-			chalk.cyan('SETUP'),
-			chalk.white('button on your device until it'),
-			chalk.cyan('blinks blue!')
-		);
-
-		return prompt([
-			{
-				type: 'input',
-				name: 'listening',
-				message: 'Press ' + chalk.bold.cyan('ENTER') + ' when your device is blinking ' + chalk.bold.blue('BLUE')
+		// If the device is a cellular device, obtain imei and iccid
+		try {
+			const features = platformForId(device.platformId).features;
+			if (features.includes('cellular')) {
+				const cellularMetrics = await device.getCellularInfo();
+				cellularImei = cellularMetrics.imei;
+				cellularIccid = cellularMetrics.iccid;
 			}
-		]);
+		} catch (err) {
+			// ignore and move on to get other fields
+		}
+
+		// Print whatever was obtained from the device
+		this._printIdentifyInfo({
+			deviceId,
+			fwVer,
+			cellularImei,
+			cellularIccid
+		});
+
+		// Clean up
+		if (device && device.isOpen) {
+			await device.close();
+		}
+	}
+
+	_printIdentifyInfo({ deviceId, fwVer, cellularImei, cellularIccid }) {
+		this.ui.stdout.write(`Your device id is ${chalk.bold.cyan(deviceId)}${os.EOL}`);
+		if (cellularImei) {
+			this.ui.stdout.write(`Your IMEI is ${chalk.bold.cyan(cellularImei)}${os.EOL}`);
+		}
+		if (cellularIccid) {
+			this.ui.stdout.write(`Your ICCID is ${chalk.bold.cyan(cellularIccid)}${os.EOL}`);
+		}
+		if (fwVer) {
+			this.ui.stdout.write(`Your system firmware version is ${chalk.bold.cyan(fwVer)}${os.EOL}`);
+		}
+	}
+
+	/**
+	 * Obtains mac address for wifi and ethernet devices
+	 * @param {string} port
+	 */
+	async deviceMac({ port }) {
+		let device;
+		let macAddress, currIfaceName;
+		try {
+			const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
+			const deviceId = deviceFromSerialPort.deviceId;
+			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+		} catch (err) {
+			throw new VError(ensureError(err), 'Could not identify device');
+		}
+
+		try {
+			const networkIfaceListreply = await device.getNetworkInterfaceList({ timeout: 2000 });
+
+			// We expect either one Wifi interface or one Ethernet interface
+			// Find it and return the hw address value from that interface
+			for (const iface of networkIfaceListreply) {
+				const index = iface.index;
+				const type = iface.type;
+
+				if (type === 'WIFI' || type === 'ETHERNET') {
+					const networkIfaceReply = await device.getNetworkInterface({ index, timeout: 2000 });
+					macAddress = networkIfaceReply.hwAddress;
+					currIfaceName = type;
+					break;
+				}
+			}
+
+			// Print output
+			if (macAddress) {
+				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress)}${os.EOL}`);
+				this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
+			} else {
+				this.ui.stdout.write(`Your device does not have a MAC address${os.EOL}`);
+			}
+		} catch (err) {
+			throw new VError(ensureError(err), 'Could not get MAC address');
+		}
+
+		// Clean up
+		if (device && device.isOpen) {
+			await device.close();
+		}
+
+		// this return value is only for unit tests
+		return macAddress;
+	}
+
+	/**
+	 * Inspects a Particle device and provides module info and asset info
+	 * @param {string} port
+	 */
+	async inspectDevice({ port }) {
+		let deviceFromSerialPort, deviceId, device;
+
+		try {
+			deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
+			deviceId = deviceFromSerialPort.deviceId;
+			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+		} catch (err) {
+			throw new VError(ensureError(err), 'Could not inspect device');
+		}
+
+		const platform = platformForId(device.platformId);
+		this.ui.stdout.write(`Device: ${chalk.bold.cyan(deviceId)}${os.EOL}`);
+		this.ui.stdout.write(`Platform: ${platform.id} - ${chalk.bold.cyan(platform.displayName)}${os.EOL}${os.EOL}`);
+
+		try {
+			await this._getModuleInfo(device);
+		} catch (err) {
+			throw new VError(ensureError(err), 'Could not inspect device');
+		}
+
+		// Clean up
+		if (device && device.isOpen) {
+			await device.close();
+		}
+	}
+
+	/**
+	 * Obtains module info from control requests
+	 * @param {object} device
+	 * @returns {boolean} returns error or true
+	 */
+	async _getModuleInfo(device) {
+		const modules = await device.getFirmwareModuleInfo({ timeout: 5000 });
+
+		if (modules && modules.length > 0) {
+			this.ui.stdout.write(chalk.underline(`Modules${os.EOL}`));
+			for (const m of modules) {
+				const func = FirmwareModuleDisplayNames[m.type];
+				this.ui.stdout.write(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}${os.EOL}`);
+				this.ui.stdout.write(`  Size: ${m.size/1000} kB${m.maxSize ? ` / MaxSize: ${m.maxSize/1000} kB` : ''}${os.EOL}`);
+
+				if (m.type === 'USER_PART' && m.hash) {
+					this.ui.stdout.write(`    UUID: ${m.hash}${os.EOL}`);
+				}
+
+				const errors = m.validityErrors;
+				this.ui.stdout.write(`    Integrity: ${errors.includes('INTEGRITY_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Address Range: ${errors.includes('RANGE_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Platform: ${errors.includes('PLATFORM_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+				this.ui.stdout.write(`    Dependencies: ${errors.includes('DEPENDENCY_CHECK_FAILED') ? chalk.red('FAIL') : chalk.green('PASS')}${os.EOL}`);
+
+				if (m.dependencies.length > 0){
+					m.dependencies.forEach((dep) => {
+						const df = FirmwareModuleDisplayNames[dep.type];
+						this.ui.stdout.write(`      ${_.capitalize(df)} module #${dep.index} - version ${dep.version}${os.EOL}`);
+					});
+				}
+
+				if (m.assetDependencies && m.assetDependencies.length > 0) {
+					const assetInfo = await device.getAssetInfo({ timeout: 5000 });
+					const availableAssets = assetInfo.available;
+					const requiredAssets = assetInfo.required;
+					this.ui.stdout.write(`    Asset Dependencies:${os.EOL}`);
+					this.ui.stdout.write(`      Required:${os.EOL}`);
+					requiredAssets.forEach((asset) => {
+						this.ui.stdout.write(`        ${asset.name} (${availability(asset, availableAssets) ? chalk.green('PASS') : chalk.red('FAIL')})${os.EOL}`);
+					});
+					const notRequiredAssets = availableAssets.filter(asset => !requiredAssets.some(requiredAsset => requiredAsset.hash === asset.hash));
+					if (notRequiredAssets.length > 0) {
+						this.ui.stdout.write(`      Available but not required:${os.EOL}`);
+						notRequiredAssets.forEach(asset => {
+							this.ui.stdout.write(`\t${asset.name}${os.EOL}`);
+						});
+					}
+				}
+
+				this.ui.stdout.write(`${os.EOL}`);
+			}
+		}
+		return Promise.resolve(true);
 	}
 
 	async flashDevice(binary, { port }) {
@@ -386,12 +439,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			`NOTE: ${chalk.bold.white('particle flash serial')} has been replaced by ${chalk.bold.white('particle flash --local')}.${os.EOL}` +
 			`Please use that command going forward.${os.EOL}${os.EOL}`
 		);
-
 		const device = await this.whatSerialPortDidYouMean(port, true);
-		if (!device || !device.deviceId) {
-			throw new VError('No serial port identified');
-		}
-
 		const deviceId = device.deviceId;
 
 		const flashCmdInstance = new FlashCommand();
@@ -453,10 +501,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		return this.whatSerialPortDidYouMean(port, true)
 			.then(device => {
-				if (!device){
-					throw new VError('No serial port identified');
-				}
-
 				if (credentialsFile){
 					return this._configWifiFromFile(device, credentialsFile);
 				} else {
@@ -568,316 +612,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 				return this.serialWifiConfig(device, { network, security });
 			});
-	}
-
-	supportsClaimCode(device){
-		return this._issueSerialCommand(device, 'c', 500)
-			.then((data) => {
-				const matches = data.match(/Device claimed: (\w+)/);
-				return !!matches;
-			})
-			.catch((err) => {
-				if (err !== timeoutError){
-					throw err;
-				}
-				return false;
-			});
-	}
-
-	/**
-	 * Performs device setup via serial. The device should already be in listening mode.
-	 * Setup comprises these steps:
-	 * - fetching the claim code from the API
-	 * - setting the claim code on the device
-	 * - configuring
-	 * @param device
-	 */
-	setup(device){
-		const self = this;
-		let _deviceID = '';
-		const api = new ApiClient();
-
-		function afterClaim(err, dat){
-			self.stopSpin();
-
-			if (err){
-				// TODO: Graceful recovery here
-				// How about retrying the claim code again
-				// console.log(arrow, arrow, err);
-				if (err.code === 'ENOTFOUND'){
-					protip("Your computer couldn't find the cloud...");
-				}
-
-				if (!err.code && err.message){
-					protip(err.message);
-				} else {
-					protip('There was a network error while connecting to the cloud...');
-					protip('We need an active internet connection to successfully complete setup.');
-					protip('Are you currently connected to the internet? Please double-check and try again.');
-				}
-				return;
-			}
-
-			console.log(arrow, 'Obtained magical secure claim code.');
-			console.log();
-
-			return self.sendClaimCode(device, dat.claim_code)
-				.then(() => {
-					console.log('Claim code set. Now setting up Wi-Fi');
-					// todo - add additional commands over USB to have the device scan for Wi-Fi
-					return self.promptWifiScan(device);
-				})
-				.then(revived);
-		}
-
-		function getClaim(){
-			self.newSpin('Obtaining magical secure claim code from the cloud...').start();
-			api.getClaimCode()
-				.then((response) => {
-					afterClaim(null, response);
-				}, (error) => {
-					afterClaim(error);
-				});
-		}
-
-		function revived(){
-			self.stopSpin();
-			self.newSpin("Attempting to verify the Photon's connection to the cloud...").start();
-
-			setTimeout(() => {
-				api.listDevices({ silent: true })
-					.then((body) => {
-						checkDevices(null, body);
-					}, (error) => {
-						checkDevices(error);
-					});
-			}, 6000);
-		}
-
-		function checkDevices(err, dat){
-			self.stopSpin();
-
-			if (err){
-				if (err.code === 'ENOTFOUND'){
-					// todo - limit the number of retries here.
-					console.log(alert, 'Network not ready yet, retrying...');
-					console.log();
-					return revived(null);
-				}
-				console.log(alert, 'Unable to verify your Photon\'s connection.');
-				console.log(alert, "Please make sure you're connected to the internet.");
-				console.log(alert, 'Then try', chalk.bold.cyan(cmd + ' list'), "to verify it's connected.");
-				self.exit();
-			}
-
-			// self.deviceID -> _deviceID
-			const onlinePhoton = _.find(dat, (device) => {
-				return (device.id.toUpperCase() === _deviceID.toUpperCase()) && device.connected === true;
-			});
-
-			if (onlinePhoton){
-				console.log(arrow, 'It looks like your Photon has made it happily to the cloud!');
-				console.log();
-				namePhoton(onlinePhoton.id);
-				return;
-			}
-
-			console.log(alert, "It doesn't look like your Photon has made it to the cloud yet.");
-			console.log();
-
-			const question = {
-				type: 'list',
-				name: 'recheck',
-				message: 'What would you like to do?',
-				choices: [
-					{ name: 'Check again to see if the Photon has connected', value: 'recheck' },
-					{ name: 'Reconfigure the Wi-Fi settings of the Photon', value: 'reconfigure' }
-				]
-			};
-
-			prompt([question]).then(recheck);
-
-			function recheck(ans){
-				if (ans.recheck === 'recheck'){
-					api.listDevices({ silent: true })
-						.then((body) => {
-							checkDevices(null, body);
-						}, (error) => {
-							checkDevices(error);
-						});
-				} else {
-					self._promptForListeningMode();
-					self.setup(device);
-				}
-			}
-		}
-
-		function namePhoton(deviceId){
-			const question = {
-				type: 'input',
-				name: 'deviceName',
-				message: 'What would you like to call your Photon (Enter to skip)?'
-			};
-
-			prompt([question])
-				.then((ans) => {
-					// todo - retrieve existing name of the device?
-					const deviceName = ans.deviceName;
-					if (deviceName){
-						api.renameDevice(deviceId, deviceName)
-							.then(() => {
-								console.log();
-								console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
-								console.log(arrow, "Congratulations! You've just won the internet!");
-								console.log();
-								self.exit();
-							}, (err) => {
-								console.error(alert, 'Error naming your Photon: ', err);
-								namePhoton(deviceId);
-							});
-					} else {
-						console.log('Skipping device naming.');
-						self.exit();
-					}
-				});
-		}
-
-		return this.askForDeviceID(device)
-			.then((deviceID) => {
-				_deviceID = deviceID;
-				console.log('setting up device', deviceID);
-				return getClaim();
-			})
-			.catch((err) => {
-				this.stopSpin();
-				throw new VError(ensureError(err), 'Error during setup');
-			});
-	}
-
-	claimDevice({ port, claimCode }){
-		return this.whatSerialPortDidYouMean(port, true)
-			.then(device => {
-				if (!device){
-					throw new VError('No serial port identified');
-				}
-				return this.sendClaimCode(device, claimCode);
-			})
-			.then(() => {
-				console.log('Claim code set.');
-			});
-	}
-
-	sendClaimCode(device, claimCode){
-		const expectedPrompt = 'Enter 63-digit claim code: ';
-		const confirmation = 'Claim code set to: ' + claimCode;
-		return this.doSerialInteraction(device, 'C', [
-			[expectedPrompt, 2000, (deferred, next) => {
-				next(claimCode + '\n');
-			}],
-			[confirmation, 2000, (deferred, next) => {
-				next();
-				deferred.resolve();
-			}]
-		]);
-	}
-
-	/**
-	 *
-	 * @param {Device} device        The device to interact with
-	 * @param {String} command      The initial command to send to the device
-	 * @param {Array} interactions  an array of interactions. Each interaction is
-	 *  an array, with these elements:
-	 *  [0] - the prompt text to interact with
-	 *  [1] - the timeout to wait for this prompt
-	 *  [2] - the callback when the prompt has been received. The callback takes
-	 *      these arguments:
-	 *          promise: the deferred result (call resolve/reject)
-	 *          next: the response callback, should be called with (response) to send a response.
-	 *              Response can be undefined
-	 * @returns {Promise}
-	 */
-	doSerialInteraction(device, command, interactions){
-		if (!device){
-			throw new VError('No serial port identified');
-		}
-
-		if (!interactions.length){
-			return;
-		}
-
-		const self = this;
-		let cleanUpFn;
-		const promise = new Promise((resolve, reject) => {
-			const serialPort = this.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
-			const parser = new SerialBatchParser({ timeout: 250 });
-
-			cleanUpFn = () => {
-				resetTimeout();
-				serialPort.removeListener('close', serialClosedEarly);
-				return new Promise((resolve) => serialPort.close(resolve));
-			};
-			serialPort.pipe(parser);
-			serialPort.on('error', (err) => reject(err));
-			serialPort.on('close', serialClosedEarly);
-
-			const serialTrigger = new SerialTrigger(serialPort, parser);
-			let expectedPrompt = interactions[0][0];
-			let callback = interactions[0][2];
-
-			for (let i = 1; i < interactions.length; i++){
-				const timeout = interactions[i][1];
-				addTrigger(expectedPrompt, timeout, callback);
-				expectedPrompt = interactions[i][0];
-				callback = interactions[i][2];
-			}
-
-			// the last interaction completes without a timeout
-			addTrigger(expectedPrompt, undefined, callback);
-
-			serialPort.open((err) => {
-				if (err){
-					return reject(err);
-				}
-
-				serialTrigger.start();
-
-				if (command){
-					serialPort.write(command);
-					serialPort.drain(next);
-				} else {
-					next();
-				}
-
-				function next(){
-					startTimeout(interactions[0][1]);
-				}
-			});
-
-			function serialClosedEarly(){
-				reject('Serial port closed early');
-			}
-
-			function startTimeout(to){
-				self._serialTimeout = setTimeout(() => reject(timeoutError), to);
-			}
-
-			function resetTimeout(){
-				clearTimeout(self._serialTimeout);
-				self._serialTimeout = null;
-			}
-
-			function addTrigger(expectedPrompt, timeout, callback){
-				serialTrigger.addTrigger(expectedPrompt, (cb) => {
-					resetTimeout();
-
-					callback({ resolve, reject }, (response) => {
-						cb(response, timeout ? startTimeout.bind(self, timeout) : undefined);
-					});
-				});
-			}
-		});
-
-		return promise.finally(cleanUpFn);
 	}
 
 	/**
@@ -1258,203 +992,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		return promise.finally(cleanUpFn);
 	}
-	/* eslint-enable max-statements */
-
-	/**
-	 * Sends a command to the device and retrieves the response.
-	 * @param device    The device to send the command to
-	 * @param command   The command text
-	 * @param timeout   How long in milliseconds to wait for a response
-	 * @returns {Promise} to send the command.
-	 * The serial port should not be open, and is closed after the command is sent.
-	 * @private
-	 */
-	_issueSerialCommand(device, command, timeout){
-		if (!device){
-			throw new VError('No serial port identified');
-		}
-		const failDelay = timeout || 5000;
-
-		let serialPort;
-		return new Promise((resolve, reject) => {
-			serialPort = this.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
-			const parser = new SerialBatchParser({ timeout: 250 });
-			serialPort.pipe(parser);
-
-			const failTimer = setTimeout(() => {
-				reject(timeoutError);
-			}, failDelay);
-
-			parser.on('data', (data) => {
-				clearTimeout(failTimer);
-				resolve(data.toString());
-			});
-
-			serialPort.open((err) => {
-				if (err){
-					console.error('Serial err: ' + err);
-					console.error('Serial problems, please reconnect the device.');
-					reject('Serial problems, please reconnect the device.');
-					return;
-				}
-
-				serialPort.write(command, (werr) => {
-					if (werr){
-						reject(err);
-					}
-				});
-			});
-		})
-			.finally(() => {
-				if (serialPort){
-					serialPort.removeAllListeners('open');
-
-					if (serialPort.isOpen){
-						return new Promise((resolve) => {
-							serialPort.close(resolve);
-						});
-					}
-				}
-			});
-	}
-
-	getDeviceMacAddress(device){
-		if (device.type === 'Core'){
-			throw new VError('Unable to get MAC address of a Core');
-		}
-
-		return this._issueSerialCommand(device, 'm').then((data) => {
-			const matches = data.match(/([0-9a-fA-F]{2}:){1,5}([0-9a-fA-F]{2})?/);
-
-			if (matches){
-				let mac = matches[0].toLowerCase();
-
-				// manufacturing firmware can sometimes not report the full MAC
-				// lets try and fix it
-				if (mac.length < 17){
-					const bytes = mac.split(':');
-
-					while (bytes.length < 6){
-						bytes.unshift('00');
-					}
-
-					const usiMacs = [
-						['6c', '0b', '84'],
-						['44', '39', 'c4']
-					];
-
-					usiMacs.some((usimac) => {
-						for (let i = usimac.length - 1; i >= 0; i--){
-							if (bytes[i] === usimac[i]){
-								mac = usimac.concat(bytes.slice(usimac.length)).join(':');
-								return true;
-							}
-						}
-					});
-				}
-				return mac;
-			}
-			throw new VError('Unable to find mac address in response');
-		});
-	}
-
-	getSystemInformation(device){
-		return this._issueSerialCommand(device, 's', MODULE_INFO_COMMAND_TIMEOUT);
-	}
-
-	askForDeviceID(device){
-		return this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT)
-			.then((data) => {
-				const matches = data.match(/Your (core|device) id is\s+(\w+)/);
-
-				if (matches && matches.length === 3){
-					return matches[2];
-				}
-
-				const electronMatches = data.match(/\s+([a-fA-F0-9]{24})\s+/);
-
-				if (electronMatches && electronMatches.length === 2){
-					const info = { id: electronMatches[1] };
-					const imeiMatches = data.match(/IMEI: (\w+)/);
-
-					if (imeiMatches){
-						info.imei = imeiMatches[1];
-					}
-
-					const iccidMatches = data.match(/ICCID: (\w+)/);
-
-					if (iccidMatches){
-						info.iccid = iccidMatches[1];
-					}
-
-					return info;
-				}
-			});
-	}
-
-	askForSystemFirmwareVersion(device, timeout){
-		return this._issueSerialCommand(device, 'v', timeout)
-			.then((data) => {
-				const matches = data.match(/system firmware version:\s+([\w.-]+)/);
-
-				if (matches && matches.length === 2){
-					return matches[1];
-				}
-			});
-	}
-
-	sendDoctorAntenna(device, antenna, timeout){
-		const antennaValues = { Internal: 'i', External: 'e' };
-		const command = 'a' + antennaValues[antenna];
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorIP(device, mode, ipAddresses, timeout){
-		const modeValues = {
-			'Dynamic IP': 'd',
-			'Static IP': 's'
-		};
-
-		let command = 'i' + modeValues[mode];
-
-		if (mode === 'Static IP'){
-			const ipAddressValues = [ipAddresses.device_ip, ipAddresses.netmask, ipAddresses.gateway, ipAddresses.dns];
-			const ipAddressesInt = _.map(ipAddressValues, this._ipToInteger);
-			command += ipAddressesInt.join(' ') + '\n';
-		}
-
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorSoftAPPrefix(device, prefix, timeout){
-		const command = 'p' + prefix + '\n';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorClearEEPROM(device, timeout){
-		const command = 'e';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorClearWiFi(device, timeout){
-		const command = 'c';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	sendDoctorListenMode(device, timeout){
-		const command = 'l';
-		return this._issueSerialCommand(device, command, timeout);
-	}
-
-	_ipToInteger(ip){
-		const parts = ip.split('.');
-
-		if (parts.length !== 4){
-			return 0;
-		}
-
-		return (((parts[0] * 256) + parts[1]) * 256 + parts[2]) * 256 + parts[3];
-	}
 
 	// TODO: If the comPort does not have an exact match with the device,
 	// throw an error and return
@@ -1498,40 +1035,51 @@ module.exports = class SerialCommand extends CLICommandBase {
 		return null;
 	}
 
-	whatSerialPortDidYouMean(comPort){
-		return this.findDevices()
-			.then(devices => {
-				const port = this._parsePort(devices, comPort);
-				if (port){
-					return port;
-				}
+	/**
+	 * Converts the specified comPort into a device object. If comPort is provided,
+	 * the device is obtained based on that port. If comPort is not specified,
+	 * the device is obtained from the selected port within the function.
+	 *
+	 * @param {string|null} comPort - Example port on Mac/Linux (/dev/tty.usbmodem123456)
+	 * @returns {object} - The resulting device object
+	 */
+	async whatSerialPortDidYouMean(comPort) {
+		const devices = await this.findDevices();
+		const port = this._parsePort(devices, comPort);
+		if (port) {
+			if (!port.deviceId) {
+				throw new Error('No serial port identified');
+			}
+			return port;
+		}
 
-				if (!devices || devices.length === 0){
-					return;
-				}
+		if (!devices || devices.length === 0) {
+			throw new Error('No serial port identified');
+		}
 
-				const question = {
-					name: 'port',
-					type: 'list',
-					message: 'Which device did you mean?',
-					choices: devices.map((d) => {
-						return {
-							name: d.port + ' - ' + d.type + ' - ' + d.deviceId,
-							value: d
-						};
-					})
+		const question = {
+			name: 'port',
+			type: 'list',
+			message: 'Which device did you mean?',
+			choices: devices.map((d) => {
+				return {
+					name: d.port + ' - ' + d.type + ' - ' + d.deviceId,
+					value: d
 				};
+			})
+		};
 
-				return prompt([question])
-					.then(answers => {
-						return answers.port;
-					});
-			});
+		const answers = await prompt([question]);
+		const portSelected = answers.port;
+		if (!portSelected || !portSelected.deviceId) {
+			throw new Error('No serial port identified');
+		}
+		return portSelected;
 	}
 
 	exit(){
-		console.log();
-		console.log(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
+		this.ui.stdout.write(`${os.EOL}`);
+		this.ui.stdout.write(arrow, chalk.bold.white('Ok, bye! Don\'t forget `' +
 			chalk.bold.cyan(cmd + ' help') + '` if you\'re stuck!',
 		chalk.bold.magenta('<3'))
 		);

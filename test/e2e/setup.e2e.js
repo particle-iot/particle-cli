@@ -4,28 +4,14 @@ const cli = require('../lib/cli');
 
 describe('Setup Commands [@device]', () => {
 	const help = [
-		'Do the initial setup & claiming of your device',
+		'NOT SUPPORTED. Go to setup.particle.io with your browser',
 		'Usage: particle setup [options]',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
 		'  -q, --quiet    Decreases how much logging to display  [count]',
-		'',
-		'Options:',
-		'  --wifi    Force setup over WiFi even if a device is connected to USB  [boolean]',
-		'  --scan    Force WiFi scanning  [boolean]',
-		'  --manual  Force no WiFi scannign  [boolean]',
-		'  --yes     Answer yes to all questions  [boolean]'
+		''
 	];
-
-	before(async () => {
-		await cli.setTestProfileAndLogin();
-	});
-
-	after(async () => {
-		await cli.logout();
-		await cli.setDefaultProfile();
-	});
 
 	it('Shows `help` content', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['help', 'setup']);
@@ -43,6 +29,12 @@ describe('Setup Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it.skip('NYI', async () => {});
+	it('Returns that this is no longer supported', async() => {
+		const { stdout, stderr, exitCode } = await cli.run(['setup']);
+
+		expect(stdout).to.equal('particle setup is no longer supported. Go to setup.particle.io with your browser.');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
 });
 

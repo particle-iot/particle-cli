@@ -66,7 +66,7 @@
         "npm": ">=6"
       },
       "optionalDependencies": {
-        "particle-usb": "^2.5.1",
+        "particle-usb": "^2.8.0",
         "serialport": "^9.2.8"
       }
     },
@@ -339,9 +339,9 @@
       }
     },
     "node_modules/@particle/device-os-protobuf": {
-      "version": "2.2.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.2.0.tgz",
-      "integrity": "sha512-Ol9NdtDETgrIxFA6Ak2JjDtL2Dsyqf/QEt9+V0I0zWgmcTn83xvddxgnHd0ON5aaG0jK81QfNOsyzT9NCa2AyA==",
+      "version": "2.4.2",
+      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.4.2.tgz",
+      "integrity": "sha512-i+MI60gQK6QTsAksd7DrhIDPZTaKAi4AN22IpkqQIEnNud9hBfWDbOuBCfYWeoUjXHlU/gLzSrH4yVDhK4ZG/Q==",
       "optional": true,
       "dependencies": {
         "protobufjs": "^6.11.2"
@@ -721,9 +721,9 @@
       "optional": true
     },
     "node_modules/@types/node": {
-      "version": "20.10.0",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.10.0.tgz",
-      "integrity": "sha512-D0WfRmU9TQ8I9PFx9Yc+EBHw+vSpIub4IDvQivcp26PtPrdMGAq5SDcpXEo/epqa/DXotVpekHiLNTg3iaKXBQ==",
+      "version": "20.11.16",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.11.16.tgz",
+      "integrity": "sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==",
       "optional": true,
       "dependencies": {
         "undici-types": "~5.26.4"
@@ -4788,6 +4788,31 @@
         "node": ">=0.10.0"
       }
     },
+    "node_modules/ip-address": {
+      "version": "9.0.5",
+      "resolved": "https://registry.npmjs.org/ip-address/-/ip-address-9.0.5.tgz",
+      "integrity": "sha512-zHtQzGojZXTwZTHQqra+ETKd4Sn3vgi7uBmlPoXVWZqYvuKmtI0l/VZTjqGmJY9x88GGOaZ9+G9ES8hC4T4X8g==",
+      "optional": true,
+      "dependencies": {
+        "jsbn": "1.1.0",
+        "sprintf-js": "^1.1.3"
+      },
+      "engines": {
+        "node": ">= 12"
+      }
+    },
+    "node_modules/ip-address/node_modules/jsbn": {
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/jsbn/-/jsbn-1.1.0.tgz",
+      "integrity": "sha512-4bYVV3aAMtDTTu4+xsDYa6sy9GyJ69/amsu9sYF2zqjiEoZA5xJi3BrfX3uY+/IekIu7MwdObdbDWpoZdBv3/A==",
+      "optional": true
+    },
+    "node_modules/ip-address/node_modules/sprintf-js": {
+      "version": "1.1.3",
+      "resolved": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.1.3.tgz",
+      "integrity": "sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==",
+      "optional": true
+    },
     "node_modules/is-accessor-descriptor": {
       "version": "0.1.6",
       "resolved": "https://registry.npmjs.org/is-accessor-descriptor/-/is-accessor-descriptor-0.1.6.tgz",
@@ -7583,12 +7608,13 @@
       }
     },
     "node_modules/particle-usb": {
-      "version": "2.5.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.5.1.tgz",
-      "integrity": "sha512-Cw/UFqTVJ/9aJMhmcBUnf8a7BaexpuNULMR4KZYcK3lAEHnGOtInW3FB710Jf9+i1rtUANCdM1HK059juALUrQ==",
+      "version": "2.8.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.8.0.tgz",
+      "integrity": "sha512-J8pXbNYbHJmunBCau+OC0eqaTwx6/j8dIiVy9Z/QZ0d1q/2bCuqrxieHbEVhM7dENeSs5WqM4mpTbPnjlvJo8A==",
       "optional": true,
       "dependencies": {
-        "@particle/device-os-protobuf": "^2.2.0",
+        "@particle/device-os-protobuf": "^2.4.2",
+        "ip-address": "^9.0.5",
         "protobufjs": "^6.11.3",
         "usb": "^2.11.0"
       },
@@ -11428,9 +11454,9 @@
       "integrity": "sha512-QAx7j77A2ADyVq/vtEzuhrbFM3JXn5gfmC6OpvCuFbLvGoGNcZHBdCaf+y1krrFG9PiWcezNEmhGdkIGtjGsWA=="
     },
     "@particle/device-os-protobuf": {
-      "version": "2.2.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.2.0.tgz",
-      "integrity": "sha512-Ol9NdtDETgrIxFA6Ak2JjDtL2Dsyqf/QEt9+V0I0zWgmcTn83xvddxgnHd0ON5aaG0jK81QfNOsyzT9NCa2AyA==",
+      "version": "2.4.2",
+      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.4.2.tgz",
+      "integrity": "sha512-i+MI60gQK6QTsAksd7DrhIDPZTaKAi4AN22IpkqQIEnNud9hBfWDbOuBCfYWeoUjXHlU/gLzSrH4yVDhK4ZG/Q==",
       "optional": true,
       "requires": {
         "protobufjs": "^6.11.2"
@@ -11719,9 +11745,9 @@
       "optional": true
     },
     "@types/node": {
-      "version": "20.10.0",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.10.0.tgz",
-      "integrity": "sha512-D0WfRmU9TQ8I9PFx9Yc+EBHw+vSpIub4IDvQivcp26PtPrdMGAq5SDcpXEo/epqa/DXotVpekHiLNTg3iaKXBQ==",
+      "version": "20.11.16",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.11.16.tgz",
+      "integrity": "sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==",
       "optional": true,
       "requires": {
         "undici-types": "~5.26.4"
@@ -14953,6 +14979,30 @@
       "resolved": "https://registry.npmjs.org/invert-kv/-/invert-kv-1.0.0.tgz",
       "integrity": "sha1-EEqOSqym09jNFXqO+L+rLXo//bY="
     },
+    "ip-address": {
+      "version": "9.0.5",
+      "resolved": "https://registry.npmjs.org/ip-address/-/ip-address-9.0.5.tgz",
+      "integrity": "sha512-zHtQzGojZXTwZTHQqra+ETKd4Sn3vgi7uBmlPoXVWZqYvuKmtI0l/VZTjqGmJY9x88GGOaZ9+G9ES8hC4T4X8g==",
+      "optional": true,
+      "requires": {
+        "jsbn": "1.1.0",
+        "sprintf-js": "^1.1.3"
+      },
+      "dependencies": {
+        "jsbn": {
+          "version": "1.1.0",
+          "resolved": "https://registry.npmjs.org/jsbn/-/jsbn-1.1.0.tgz",
+          "integrity": "sha512-4bYVV3aAMtDTTu4+xsDYa6sy9GyJ69/amsu9sYF2zqjiEoZA5xJi3BrfX3uY+/IekIu7MwdObdbDWpoZdBv3/A==",
+          "optional": true
+        },
+        "sprintf-js": {
+          "version": "1.1.3",
+          "resolved": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.1.3.tgz",
+          "integrity": "sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==",
+          "optional": true
+        }
+      }
+    },
     "is-accessor-descriptor": {
       "version": "0.1.6",
       "resolved": "https://registry.npmjs.org/is-accessor-descriptor/-/is-accessor-descriptor-0.1.6.tgz",
@@ -17251,12 +17301,13 @@
       }
     },
     "particle-usb": {
-      "version": "2.5.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.5.1.tgz",
-      "integrity": "sha512-Cw/UFqTVJ/9aJMhmcBUnf8a7BaexpuNULMR4KZYcK3lAEHnGOtInW3FB710Jf9+i1rtUANCdM1HK059juALUrQ==",
+      "version": "2.8.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.8.0.tgz",
+      "integrity": "sha512-J8pXbNYbHJmunBCau+OC0eqaTwx6/j8dIiVy9Z/QZ0d1q/2bCuqrxieHbEVhM7dENeSs5WqM4mpTbPnjlvJo8A==",
       "optional": true,
       "requires": {
-        "@particle/device-os-protobuf": "^2.2.0",
+        "@particle/device-os-protobuf": "^2.4.2",
+        "ip-address": "^9.0.5",
         "protobufjs": "^6.11.3",
         "usb": "^2.11.0"
       }

@@ -36,6 +36,7 @@ const VError = require('verror');
 const childProcess = require('child_process');
 const { PLATFORMS } = require('./platform');
 const log = require('./log');
+const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
 
 
 module.exports = {
@@ -379,6 +380,10 @@ module.exports = {
 	},
 
 	ensureError(err){
+		if (err instanceof DeviceProtectionError) {
+			return new Error('Operation could not be completed due to device protection');
+		}
+
 		if (!_.isError(err) && !(err instanceof VError)){
 			return new Error(_.isArray(err) ? err.join('\n') : err);
 		}

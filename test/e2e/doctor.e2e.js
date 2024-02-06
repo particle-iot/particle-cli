@@ -4,7 +4,7 @@ const cli = require('../lib/cli');
 
 describe('Doctor Commands [@device]', () => {
 	const help = [
-		'Put your device back into a healthy state',
+		'NOT SUPPORTED. Go to the device doctor tool at docs.particle.io/tools/doctor',
 		'Usage: particle doctor [options]',
 		'',
 		'Global Options:',
@@ -28,6 +28,12 @@ describe('Doctor Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it.skip('NYI: REQUIRES GEN2 HW', async () => {});
+	it('is not longer supported', async() => {
+		const { stdout, stderr, exitCode } = await cli.run(['doctor', '--help']);
+
+		expect(stdout).to.equal('particle device doctor is no longer supported.\nGo to the device doctor tool at docs.particle.io/tools/doctor.');
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+	});
 });
 

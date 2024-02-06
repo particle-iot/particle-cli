@@ -16,7 +16,7 @@ describe('Device Commands [@device]', () => {
 		'  add     Register a device with your user account with the cloud',
 		'  remove  Release a device from your account so that another user may claim it',
 		'  rename  Give a device a name!',
-		'  doctor  Put your device back into a healthy state',
+		'  doctor  NOT SUPPORTED. Go to the device doctor tool at docs.particle.io/tools/doctor',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',

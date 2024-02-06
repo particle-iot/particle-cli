@@ -6,7 +6,7 @@ describe('Known Apps', () => {
 		it('returns all the known apps', () => {
 			const apps = knownAppNames();
 
-			expect(apps.sort()).to.eql(['doctor', 'tinker', 'tinker-usb-debugging']);
+			expect(apps.sort()).to.eql(['tinker', 'tinker-usb-debugging']);
 		});
 	});
 
@@ -14,7 +14,7 @@ describe('Known Apps', () => {
 		it('returns the known apps for Photon', () => {
 			const apps = knownAppsForPlatform('photon');
 
-			expect(Object.keys(apps)).to.eql(['doctor', 'tinker']);
+			expect(Object.keys(apps)).to.eql(['tinker']);
 		});
 	});
 });

@@ -102,7 +102,7 @@
     "sinon-chai": "^3.3.0"
   },
   "optionalDependencies": {
-    "particle-usb": "^2.5.1",
+    "particle-usb": "^2.8.0",
     "serialport": "^9.2.8"
   },
   "engines": {

@@ -1,4 +1,3 @@
-const os = require('os');
 const words = require('lodash/words');
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
@@ -7,7 +6,9 @@ const {
 	DEVICE_ID,
 	DEVICE_NAME,
 	DEVICE_PLATFORM_ID,
-	DEVICE_PLATFORM_NAME
+	DEVICE_PLATFORM_NAME,
+	DEVICE_CELLULAR_IMEI,
+	DEVICE_CELLULAR_ICCID
 } = require('../lib/env');
 
 
@@ -25,7 +26,6 @@ describe('Serial Commands [@device]', () => {
 		'  mac       Ask for and display MAC address via serial',
 		'  inspect   Ask for and display device module information via serial',
 		'  flash     DEPRECATED. Flash firmware using USB. Use flash --local instead',
-		'  claim     Claim a device with the given claim code',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
@@ -67,15 +67,6 @@ describe('Serial Commands [@device]', () => {
 	});
 
 	describe('Serial List Subcommand', () => {
-		before(async () => {
-			await cli.startListeningMode();
-		});
-
-		after(async () => {
-			await cli.stopListeningMode();
-			await cli.waitUntilOnline();
-		});
-
 		it('Lists devices', async () => {
 			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(['serial', 'list']);
@@ -88,16 +79,7 @@ describe('Serial Commands [@device]', () => {
 	});
 
 	describe('Serial Identify Subcommand', () => {
-		before(async () => {
-			await cli.startListeningMode();
-		});
-
-		after(async () => {
-			await cli.stopListeningMode();
-			await cli.waitUntilOnline();
-		});
-
-		it('Identifies device', async () => {
+		it('Identifies a wifi device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
 
 			expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
@@ -105,18 +87,21 @@ describe('Serial Commands [@device]', () => {
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
+
+		// skip test for non-cellular device
+		(DEVICE_CELLULAR_ICCID ? it : it.skip)('Identifies a cellular device', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
+
+			expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
+			expect(stdout).to.include(`Your IMEI is ${DEVICE_CELLULAR_IMEI}`);
+			expect(stdout).to.include(`Your ICCID is ${DEVICE_CELLULAR_ICCID}`);
+			expect(stdout).to.include('Your system firmware version is');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
 	});
 
 	describe('Serial Inspect Subcommand', () => {
-		before(async () => {
-			await cli.startListeningMode();
-		});
-
-		after(async () => {
-			await cli.stopListeningMode();
-			await cli.waitUntilOnline();
-		});
-
 		it('Inspects device', async () => {
 			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(['serial', 'inspect']);
@@ -131,21 +116,12 @@ describe('Serial Commands [@device]', () => {
 	});
 
 	describe('Serial Mac Subcommand', () => {
-		before(async () => {
-			await cli.startListeningMode();
-		});
-
-		after(async () => {
-			await cli.stopListeningMode();
-			await cli.waitUntilOnline();
-		});
-
 		it('Gets MAC address from device', async () => {
-			const macAddressPtn = /([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+			const macAddressPtn = /([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})/;
 			const { stdout, stderr, exitCode } = await cli.run(['serial', 'mac']);
 			const [address] = stdout.trim().match(macAddressPtn);
 
-			expect(stdout).to.equal(`${os.EOL}Your device MAC address is ${address}`);
+			expect(stdout).to.include(`Your device MAC address is ${address}`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});

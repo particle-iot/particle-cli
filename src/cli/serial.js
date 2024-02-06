@@ -95,15 +95,6 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(serial, 'claim', 'Claim a device with the given claim code', {
-		params: '<claimCode>',
-		options: portOption,
-		handler: (args) => {
-			const SerialCommands = require('../cmd/serial');
-			return new SerialCommands().claimDevice(args);
-		}
-	});
-
 	return serial;
 };
 
