@@ -499,6 +499,9 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 	async configureWifi({ port, file }){
 		const device = await this.whatSerialPortDidYouMean(port, true);
+		if (!device?.specs?.features?.includes('wifi')) {
+			throw new VError('The device does not support Wi-Fi');
+		}
 		if (device?.specs?.generation === 2 ) {
 			// configure serial
 			if (file){
