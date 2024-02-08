@@ -10,6 +10,7 @@ const ParticleApi = require('../cmd/api');
 const settings = require('../../settings');
 const createApiCache = require('./api-cache');
 const utilities = require('./utilities');
+const os = require('os');
 
 module.exports = class WiFiControlRequest {
 	constructor(deviceId, { ui, newSpin, stopSpin, file }) {
@@ -183,6 +184,7 @@ module.exports = class WiFiControlRequest {
 				if (pass) {
 					this.stopSpin();
 					this.ui.stdout.write('Wi-Fi network connected successfully, your device should now restart.');
+					this.ui.stdout.write(os.EOL);
 					await this.device.reset();
 					return;
 				}
