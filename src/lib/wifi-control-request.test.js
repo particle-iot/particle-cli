@@ -1,6 +1,7 @@
 const { expect, sinon } = require('../../test/setup');
 const WifiControlRequest = require('./wifi-control-request');
 const usbUtil = require('../cmd/usb-util');
+const utilities = require('./utilities');
 const fs = require('fs-extra');
 const path = require('path');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
@@ -10,6 +11,7 @@ describe('Wifi Control Request', () => {
 	let openDevice;
 
 	beforeEach(() => {
+		sinon.stub(utilities, 'delay').resolves();
 		ui = {
 			stdout: {
 				write: sinon.stub()
@@ -18,7 +20,13 @@ describe('Wifi Control Request', () => {
 				write: sinon.stub()
 			}
 		};
-		newSpin = sinon.stub().returns({ start: sinon.stub(), stop: sinon.stub() });
+		newSpin = sinon.stub().returns({
+			start: sinon.stub().callsFake(() => {
+				return {
+					setSpinnerTitle: sinon.stub()
+				};
+			}),
+			stop: sinon.stub() });
 		stopSpin = sinon.stub();
 		openDevice = {
 			deviceId: 'deviceId',
@@ -160,19 +168,28 @@ describe('Wifi Control Request', () => {
 			}]);
 			expect(usbUtil.getOneUsbDevice).to.have.been.calledOnce;
 			expect(usbUtil.getOneUsbDevice).to.have.been.calledWith({
+				api: sinon.match.object,
 				idOrName: 'deviceId', ui
 			});
 		});
-		it('returns empty if there is an error', async () => {
+		it('throws an error if fails after retrying', async () => {
 			openDevice.scanWifiNetworks.rejects(new Error('error'));
 			usbUtil.getOneUsbDevice.resolves(openDevice);
+			let error;
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
-			const networks = await wifiControlRequest._deviceScanNetworks();
-			expect(networks).to.eql([]);
+			try {
+				await wifiControlRequest._deviceScanNetworks({ customRetryCount: 1 });
+			} catch (_error) {
+				error = _error;
+			}
+
+			expect(error.message).to.eql('Unable to scan for Wi-Fi networks: error');
 			expect(usbUtil.getOneUsbDevice).to.have.been.calledOnce;
 			expect(usbUtil.getOneUsbDevice).to.have.been.calledWith({
+				api: sinon.match.object,
 				idOrName: 'deviceId', ui
 			});
+			expect(utilities.delay).to.have.been.calledWith(1000);
 		});
 		it('close the device after scanning', async () => {
 			openDevice.scanWifiNetworks.resolves([{
@@ -195,6 +212,7 @@ describe('Wifi Control Request', () => {
 			expect(networks).to.eql([]);
 			expect(usbUtil.getOneUsbDevice).to.have.been.calledOnce;
 			expect(usbUtil.getOneUsbDevice).to.have.been.calledWith({
+				api: sinon.match.object,
 				idOrName: 'deviceId', ui
 			});
 		});
@@ -288,23 +306,26 @@ describe('Wifi Control Request', () => {
 		it('throws error if file does not exist', async () => {
 			const fileName = path.join(process.cwd(), 'fake-file');
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin, file: fileName });
-			let expectedErrorMessage = 'Ups! We could not read the file. Please try again:';
-			expectedErrorMessage += ` ENOENT: no such file or directory, open '${fileName}'`;
+			let expectedErrorMessage = `ENOENT: no such file or directory, open '${fileName}'`;
 			try {
 				await wifiControlRequest.getNetworkToConnectFromJson();
 			} catch (error) {
 				expect(error.message).to.eql(expectedErrorMessage);
 			}
 		});
-		it('returns null and print error if file does not have network field', async () => {
+		it('throws an error in case the file does not contain network property', async () => {
 			const network = { password: 'my-password' };
 			const file = path.join(PATH_TMP_DIR, 'networks', 'network.json');
+			let error;
 			fs.writeJsonSync(file, network);
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin, file });
-			const result = await wifiControlRequest.getNetworkToConnectFromJson();
-			expect(result).to.eql(null);
-			expect(ui.stderr.write).to.have.been.calledOnce;
-			expect(ui.stderr.write).to.have.been.calledWith('No SSID found in the file');
+			try {
+				await wifiControlRequest.getNetworkToConnectFromJson();
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.eql('No network name found in the file');
+			expect(error.isUsageError).to.eql(true);
 		});
 	});
 
@@ -322,8 +343,6 @@ describe('Wifi Control Request', () => {
 			wifiControlRequest._deviceScanNetworks = sinon.stub().resolves(networks);
 			const result = await wifiControlRequest.scanNetworks();
 			expect(result).to.eql(networks);
-			expect(newSpin).to.have.been.calledOnce;
-			expect(stopSpin).to.have.been.calledOnce;
 		});
 
 		it ('prompts to rescan if there are no networks', async () => {
@@ -336,7 +355,7 @@ describe('Wifi Control Request', () => {
 			expect(result).to.eql([]);
 			expect(ui.prompt).to.have.been.calledWith([{
 				default: true,
-				message: 'Uh oh, no networks found. Try again?',
+				message: 'No networks found. Try again?',
 				type: 'confirm',
 				name: 'rescan',
 			}]);
@@ -376,32 +395,32 @@ describe('Wifi Control Request', () => {
 			openDevice.joinNewWifiNetwork.resolves({ pass: true });
 			usbUtil.getOneUsbDevice.resolves(openDevice);
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
-			const result = await wifiControlRequest.joinWifi({ ssid: 'network1', password: 'password' });
-			expect(result).to.eql(true);
+			await wifiControlRequest.joinWifi({ ssid: 'network1', password: 'password' });
 			expect(openDevice.joinNewWifiNetwork).to.have.been.calledOnce;
 			expect(openDevice.joinNewWifiNetwork).to.have.been.calledWith({ ssid: 'network1', password: 'password' }, { timeout: 30000 });
 			expect(newSpin).to.have.been.calledWith('Joining Wi-Fi network network1');
 			expect(stopSpin).to.have.been.calledOnce;
+			expect(ui.stdout.write).to.have.been.calledWith('Wi-Fi network connected successfully, your device should now restart.');
 		});
 
-		it('print out error if there is an error', async () => {
+		it('throw error if fails', async () => {
 			openDevice.joinNewWifiNetwork.rejects(new Error('error'));
 			usbUtil.getOneUsbDevice.resolves(openDevice);
+			let error;
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
-			const result =	await wifiControlRequest.joinWifi({ ssid: 'network1', password: 'password' });
-			expect(result).to.eql(false);
+			try {
+				await wifiControlRequest.joinWifi({ ssid: 'network1', password: 'password' });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.eql('Unable to join Wi-Fi network: error');
 			expect(openDevice.joinNewWifiNetwork).to.have.been.calledWith({ ssid: 'network1', password: 'password' }, { timeout: 30000 });
-			expect(ui.stderr.write).to.have.been.calledWith('Unable to join Wi-Fi network: error');
 			expect(newSpin).to.have.been.calledWith('Joining Wi-Fi network network1');
 			expect(stopSpin).to.have.been.calledOnce;
 		});
 	});
 
 	describe('configureWifi', () => {
-		let exitMock;
-		beforeEach(() => {
-			exitMock = sinon.stub(process, 'exit');
-		});
 		it('performs the wifi configuration flow', async () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
 			wifiControlRequest.getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
@@ -411,7 +430,6 @@ describe('Wifi Control Request', () => {
 			expect(wifiControlRequest.getNetworkToConnect).to.have.been.calledOnce;
 			expect(wifiControlRequest.joinWifi).to.have.been.calledOnce;
 			expect(wifiControlRequest.getNetworkToConnectFromJson).not.to.have.been.called;
-			expect(exitMock).to.have.been.calledWith(0);
 		});
 
 		it('performs the wifi configuration flow from json', async () => {
@@ -423,7 +441,6 @@ describe('Wifi Control Request', () => {
 			expect(wifiControlRequest.getNetworkToConnect).not.to.have.been.called;
 			expect(wifiControlRequest.joinWifi).to.have.been.calledOnce;
 			expect(wifiControlRequest.getNetworkToConnectFromJson).to.have.been.calledOnce;
-			expect(exitMock).to.have.been.calledWith(0);
 		});
 	});
 });

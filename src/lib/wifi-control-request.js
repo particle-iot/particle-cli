@@ -1,84 +1,67 @@
 const usbUtils = require('../cmd/usb-util');
-const os = require('os');
 const inquirer = require('inquirer');
 const RESCAN_LABEL = '[rescan networks]';
 const fs = require('fs-extra');
+const { deviceControlError } = require('./device-error-handler');
 const JOIN_NETWORK_TIMEOUT = 30000;
+const TIME_BETWEEN_RETRIES = 1000;
+const RETRY_COUNT = 5;
+const ParticleApi = require('../cmd/api');
+const settings = require('../../settings');
+const createApiCache = require('./api-cache');
+const utilities = require('./utilities');
 
 module.exports = class WiFiControlRequest {
 	constructor(deviceId, { ui, newSpin, stopSpin, file }) {
+		const { api } = this._particleApi();
 		this.deviceId = deviceId;
 		this.device = null;
 		this.ui = ui;
 		this.newSpin = newSpin;
 		this.stopSpin = stopSpin;
 		this.file = file;
+		this.api = api;
 	}
 
 	async configureWifi() {
-		// prompt for scan networks
 		let network;
 		if (this.file) {
 			network = await this.getNetworkToConnectFromJson();
 		} else {
 			network = await this.getNetworkToConnect();
 		}
-
-		if (network) {
-			const success = await this.joinWifi(network);
-			if (success) {
-				this.ui.stdout.write('Successfully connected to Wi-Fi');
-				this.ui.stdout.write(`${os.EOL}`);
-				this.ui.stdout.write(`Done! Your device should now restart.${os.EOL}`);
-				process.exit(0);
-			} else {
-				this.ui.stderr.write('Failed to connect to Wi-Fi');
-				this.ui.stderr.write(`${os.EOL}`);
-				process.exit(1);
-			}
-		} else {
-			this.ui.stdout.write(`${os.EOL}`);
-			this.ui.stdout.write('No network selected');
-			this.ui.stdout.write(`${os.EOL}`);
-			process.exit(1);
-		}
+		await this.joinWifi(network);
 	}
 
 	async getNetworkToConnectFromJson() {
-		try {
-			const { network, password } = await fs.readJSON(this.file);
-			if (!network) {
-				this.ui.stderr.write('No SSID found in the file');
-				return null;
-			}
-			return { ssid: network, password };
-		} catch (error) {
-			throw new Error('Ups! We could not read the file. Please try again: ' + error.message);
+		const { network, password } = await fs.readJSON(this.file);
+		if (!network) {
+			const error = new Error('No network name found in the file');
+			error.isUsageError = true;
+			throw error;
 		}
-
+		return { ssid: network, password };
 	}
 
 	async getNetworkToConnect({ prompt = true } = { }) {
-		try {
-			let scan = true;
-			if (prompt) {
-				scan = await this.promptForScanNetworks();
-			}
-			if (scan) {
-				const networks = await this.scanNetworks();
-				if (networks.length) {
-					const network = await this.promptToSelectNetwork(networks);
-					if (network?.rescan){
-						return await this.getNetworkToConnect({ prompt: false });
-					} else {
-						return network;
-					}
-				}
-			}
-			return await this.pickNetworkManually();
-		} catch (error) {
-			throw new Error('Ups! something went wrong. Please try again.', error.message);
+		let scan = true;
+		if (prompt) {
+			scan = await this.promptForScanNetworks();
 		}
+		if (scan) {
+			const networks = await this.scanNetworks();
+			if (networks.length) {
+				const network = await this.promptToSelectNetwork(networks);
+				if (network?.rescan){
+					return await this.getNetworkToConnect({ prompt: false });
+				} else {
+					return network;
+				}
+			} else {
+				throw new Error('No Wi-Fi networks found');
+			}
+		}
+		return this.pickNetworkManually();
 	}
 
 	async promptForScanNetworks() {
@@ -93,15 +76,12 @@ module.exports = class WiFiControlRequest {
 
 	async scanNetworks() {
 		// open device by id
-		this.newSpin('Scanning for Wi-Fi networks').start();
-		let networks = [];
-		networks = await this._deviceScanNetworks();
-		this.stopSpin();
+		const networks = await this._deviceScanNetworks();
 		if (!networks.length) {
 			const answers = await this.ui.prompt([{
 				type: 'confirm',
 				name: 'rescan',
-				message: 'Uh oh, no networks found. Try again?',
+				message: 'No networks found. Try again?',
 				default: true
 			}]);
 			if (answers.rescan){
@@ -112,7 +92,7 @@ module.exports = class WiFiControlRequest {
 	}
 
 	_filterNetworks(networkList) {
-		return networkList.filter((ap) => {
+		const networks = networkList.filter((ap) => {
 			if (!ap){
 				return false;
 			}
@@ -127,22 +107,38 @@ module.exports = class WiFiControlRequest {
 			}
 			return true;
 		});
+		return networks.reduce((acc, network) => {
+			if (!acc.find((n) => n.ssid === network.ssid)) {
+				acc.push(network);
+			}
+			return acc;
+		}, []);
 	}
 
 	async _deviceScanNetworks() {
-		try {
-			if (!this.device || this.device.isOpen === false) {
-				this.device = await usbUtils.getOneUsbDevice({ idOrName: this.deviceId, ui: this.ui });
-			}
-			const networks = await this.device.scanWifiNetworks();
-			return this._serializeNetworks(networks) || [];
-		} catch (error) {
-			return []; // ignore error if no networks found
-		} finally {
-			if (this.device && this.device.isOpen) {
-				await this.device.close();
+		this.newSpin('Scanning for Wi-Fi networks').start();
+		let retries = RETRY_COUNT;
+		let lastError = null;
+		while (retries > 0) {
+			try {
+				if (!this.device || this.device.isOpen === false) {
+					this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+				}
+				const networks = await this.device.scanWifiNetworks();
+				this.stopSpin();
+				return this._serializeNetworks(networks) || [];
+			} catch (error) {
+				lastError = error;
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			} finally {
+				if (this.device && this.device.isOpen) {
+					await this.device.close();
+				}
 			}
 		}
+		this.stopSpin();
+		throw this._handleDeviceError(lastError, { action: 'scan for Wi-Fi networks' });
 	}
 
 	async promptToSelectNetwork(networks) {
@@ -175,25 +171,36 @@ module.exports = class WiFiControlRequest {
 
 	async joinWifi({ ssid, password }) {
 		// open device by id
-		this.newSpin(`Joining Wi-Fi network ${ssid}`).start();
-		try {
-			if (!this.device || this.device.isOpen === false) {
-				this.device = await usbUtils.getOneUsbDevice({ idOrName: this.deviceId });
+		let retries = RETRY_COUNT;
+		const spin = this.newSpin(`Joining Wi-Fi network ${ssid}`).start();
+		let lastError;
+		while (retries > 0) {
+			try {
+				if (!this.device || this.device.isOpen === false) {
+					this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId });
+				}
+				const { pass }  = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
+				if (pass) {
+					this.stopSpin();
+					this.ui.stdout.write('Wi-Fi network connected successfully, your device should now restart.');
+					await this.device.reset();
+					return;
+				}
+				retries = 0;
+				lastError = new Error('Please check your credentials and try again.');
+			} catch (error) {
+				spin.setSpinnerTitle(`Joining Wi-Fi network ${ssid} is taking longer than expected.`);
+				lastError = error;
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			} finally {
+				if (this.device && this.device.isOpen) {
+					await this.device.close();
+				}
 			}
-			const { pass }  = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
-			if (pass) {
-				await this.device.reset();
-			}
-			return pass;
-		} catch (error) {
-			this.ui.stderr.write(`Unable to join Wi-Fi network: ${error.message}`);
-			return false;
-		} finally {
-			if (this.device && this.device.isOpen) {
-				await this.device.close();
-			}
-			this.stopSpin();
 		}
+		this.stopSpin();
+		throw this._handleDeviceError(lastError, { action: 'join Wi-Fi network' });
 	}
 
 	async pickNetworkManually() {
@@ -247,5 +254,20 @@ module.exports = class WiFiControlRequest {
 				mac: ''
 			};
 		});
+	}
+
+	_handleDeviceError(_error, { action } = { }) {
+		const error = _error;
+		if (_error.cause) {
+			error.message = deviceControlError[error.name];
+		}
+		return new Error(`Unable to ${action}: ${error.message}`);
+	}
+
+	_particleApi() {
+		const auth = settings.access_token;
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const apiCache = createApiCache(api);
+		return { api: apiCache, auth };
 	}
 };
