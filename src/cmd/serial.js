@@ -502,7 +502,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		if (!device?.specs?.features?.includes('wifi')) {
 			throw new VError('The device does not support Wi-Fi');
 		}
-		if (device?.specs?.generation === 2 ) {
+		if (device?.specs?.generation <= 2 ) {
 			// configure serial
 			if (file){
 				return this._configWifiFromFile(device, file);
