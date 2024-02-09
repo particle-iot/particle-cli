@@ -75,8 +75,8 @@ jobs:
       - run:
           name: Install Node
           command: |
-            nvm install << parameters.node-version >>
-            nvm use << parameters.node-version >>
+            nvm install 16.20.2
+            nvm use 16.20.2
       - configure-npm-token
       - run:
           name: Install packages
