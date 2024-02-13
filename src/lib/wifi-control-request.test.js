@@ -398,9 +398,9 @@ describe('Wifi Control Request', () => {
 			await wifiControlRequest.joinWifi({ ssid: 'network1', password: 'password' });
 			expect(openDevice.joinNewWifiNetwork).to.have.been.calledOnce;
 			expect(openDevice.joinNewWifiNetwork).to.have.been.calledWith({ ssid: 'network1', password: 'password' }, { timeout: 30000 });
-			expect(newSpin).to.have.been.calledWith('Joining Wi-Fi network network1');
+			expect(newSpin).to.have.been.calledWith('Joining Wi-Fi network \'network1\'');
 			expect(stopSpin).to.have.been.calledOnce;
-			expect(ui.stdout.write).to.have.been.calledWith('Wi-Fi network connected successfully, your device should now restart.');
+			expect(ui.stdout.write).to.have.been.calledWith('Wi-Fi network configured successfully, your device should now restart.');
 		});
 
 		it('throw error if fails', async () => {
@@ -415,7 +415,7 @@ describe('Wifi Control Request', () => {
 			}
 			expect(error.message).to.eql('Unable to join Wi-Fi network: error');
 			expect(openDevice.joinNewWifiNetwork).to.have.been.calledWith({ ssid: 'network1', password: 'password' }, { timeout: 30000 });
-			expect(newSpin).to.have.been.calledWith('Joining Wi-Fi network network1');
+			expect(newSpin).to.have.been.calledWith('Joining Wi-Fi network \'network1\'');
 			expect(stopSpin).to.have.been.calledOnce;
 		});
 	});

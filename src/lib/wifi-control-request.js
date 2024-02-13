@@ -173,7 +173,7 @@ module.exports = class WiFiControlRequest {
 	async joinWifi({ ssid, password }) {
 		// open device by id
 		let retries = RETRY_COUNT;
-		const spin = this.newSpin(`Joining Wi-Fi network ${ssid}`).start();
+		const spin = this.newSpin(`Joining Wi-Fi network '${ssid}'`).start();
 		let lastError;
 		while (retries > 0) {
 			try {
@@ -183,7 +183,7 @@ module.exports = class WiFiControlRequest {
 				const { pass }  = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
 				if (pass) {
 					this.stopSpin();
-					this.ui.stdout.write('Wi-Fi network connected successfully, your device should now restart.');
+					this.ui.stdout.write('Wi-Fi network configured successfully, your device should now restart.');
 					this.ui.stdout.write(os.EOL);
 					await this.device.reset();
 					return;
@@ -191,7 +191,7 @@ module.exports = class WiFiControlRequest {
 				retries = 0;
 				lastError = new Error('Please check your credentials and try again.');
 			} catch (error) {
-				spin.setSpinnerTitle(`Joining Wi-Fi network ${ssid} is taking longer than expected.`);
+				spin.setSpinnerTitle(`Joining Wi-Fi network '${ssid}' is taking longer than expected.`);
 				lastError = error;
 				await utilities.delay(TIME_BETWEEN_RETRIES);
 				retries--;
