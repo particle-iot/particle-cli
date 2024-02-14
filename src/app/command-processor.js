@@ -167,18 +167,18 @@ class CLICommandItem {
 		Object.keys(options).forEach((key) => {
 			const option = options[key];
 
-			if (!option.hasOwnProperty('nargs') &&
+			if (!Object.prototype.hasOwnProperty.call(option, 'nargs') &&
 				!option.boolean &&
 				!option.count &&
 				!option.array){
 				option.nargs = 1;
 			}
 
-			if (!option.hasOwnProperty('number') &&
-				!option.hasOwnProperty('boolean') &&
-				!option.hasOwnProperty('string') &&
-				!option.hasOwnProperty('count') &&
-				!option.hasOwnProperty('array')){
+			if (!Object.prototype.hasOwnProperty.call(option, 'number') &&
+				!Object.prototype.hasOwnProperty.call(option, 'boolean') &&
+				!Object.prototype.hasOwnProperty.call(option, 'string') &&
+				!Object.prototype.hasOwnProperty.call(option, 'count') &&
+				!Object.prototype.hasOwnProperty.call(option, 'array')){
 				option.string = true;
 			}
 		});
@@ -488,10 +488,10 @@ function checkForUnknownArguments(yargs, argv, command){
 
 	function isUnknown(key){
 		return (key !== '$0' && key !== '_' && key !== 'params' &&
-			!demanded.hasOwnProperty(key) &&
-			!flags.hasOwnProperty(key) &&
-			!aliasLookup.hasOwnProperty('no-' + key) &&
-			!aliasLookup.hasOwnProperty(key));
+			!Object.prototype.hasOwnProperty.call(demanded, key) &&
+			!Object.prototype.hasOwnProperty.call(flags, key) &&
+			!Object.prototype.hasOwnProperty.call(aliasLookup, 'no-' + key) &&
+			!Object.prototype.hasOwnProperty.call(aliasLookup, key));
 	}
 
 	function aliasFor(key){

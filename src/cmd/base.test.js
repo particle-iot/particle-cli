@@ -26,7 +26,7 @@ describe('CLI Command Base Class', () => {
 		expect(cmd.isDeviceId('')).to.equal(false);
 		expect(cmd.isDeviceId(666)).to.equal(false);
 		expect(cmd.isDeviceId('nope')).to.equal(false);
-		expect(cmd.isDeviceId(123456789123456789123456)).to.equal(false);
+		expect(cmd.isDeviceId(123456789123456789123456)).to.equal(false); // eslint-disable-line no-loss-of-precision
 		expect(cmd.isDeviceId('0123456789abcdef0123456')).to.equal(false);
 		expect(cmd.isDeviceId('0123456789abcdef01234567')).to.equal(true);
 		expect(cmd.isDeviceId('0123456789ABCDEF01234567')).to.equal(true);

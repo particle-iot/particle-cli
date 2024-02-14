@@ -97,8 +97,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 			this.ui.write(`Flashing ${platformName} device ${device.id}`);
 			const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
 			await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
-		} catch (error) {
-			throw error;
 		} finally {
 			if (device && device.isOpen) {
 				await device.close();
