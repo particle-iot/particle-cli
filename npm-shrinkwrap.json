@@ -1,12 +1,12 @@
 {
   "name": "particle-cli",
-  "version": "3.20.0",
+  "version": "3.21.0",
   "lockfileVersion": 2,
   "requires": true,
   "packages": {
     "": {
       "name": "particle-cli",
-      "version": "3.20.0",
+      "version": "3.21.0",
       "license": "Apache-2.0",
       "dependencies": {
         "@particle/device-constants": "^3.3.0",

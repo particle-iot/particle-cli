@@ -1,5 +1,15 @@
 # Changelog
 
+# 3.21.0 - Feb 14 2024
+* Removes particle setup command which was used to setup photons
+* Removes particle device doctor command and doctor is suggested to be used by docs
+* Removes particle serial claim command
+* Uses control requests to use the following commands so the user does not need to keep the device in listening mode
+  * Device identify using particle serial identify
+  * Device inspect using particle serial inspect now shows assets as well
+  * Device mac address using particle serial mac
+  * Configure Wifi using particle serial wifi
+
 # 3.20.0 - Jan 30 2024
 
 * Support devices in protected mode
