@@ -1,22 +1,10 @@
-const TerminalAdapter = require('yeoman-environment/lib/adapter');
 const { LibraryInitCommandSite, LibraryInitCommand } = require('../cmd');
-
-/**
- * Provides the UI delegations required by yeoman. For now, we just use the
- * built-in one, but later we may delegate to our own implementation of prompts.
- */
-class YeomanAdapter extends TerminalAdapter {
-	constructor() {
-		super();
-		this.owner = this;
-	}
-}
+const { prompt } = require('../app/ui');
 
 class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 	constructor(argv) {
 		super();
 		this.argv = argv;
-		this.adapter = new YeomanAdapter(this);
 	}
 
 	options() {
@@ -27,13 +15,10 @@ class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 		return this.argv.params || [];
 	}
 
-	yeomanAdapter() {
-		return this.adapter;
+	prompter() {
+		return prompt;
 	}
 
-	yeomanEnvironment() {
-		return require('yeoman-environment');
-	}
 }
 
 
