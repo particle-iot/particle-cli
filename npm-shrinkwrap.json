@@ -24,7 +24,7 @@
         "latest-version": "^2.0.0",
         "lodash": "^4.17.15",
         "moment": "^2.24.0",
-        "node-wifiscanner2": "^1.2.0",
+        "node-wifiscanner2": "^1.2.1",
         "openurl": "^1.1.1",
         "particle-api-js": "^10.3.0",
         "particle-commands": "^1.0.0",
@@ -5210,9 +5210,9 @@
       }
     },
     "node_modules/node-wifiscanner2": {
-      "version": "1.2.0",
-      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.0.tgz",
-      "integrity": "sha1-ln+tDXV7Qwo5snGNQIy72ewetIA=",
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.1.tgz",
+      "integrity": "sha512-8D+U7d8HjU/SeL6Z44qWq9X5bZm2Q5LKbJY9irWaELCkEfZf3yss8rvzlUm0oBWOUuX3UdiCMePxyV9bZI3qVg==",
       "dependencies": {
         "os-locale": "^1.4.0"
       }
@@ -12680,9 +12680,9 @@
       "integrity": "sha1-baWhdmjEs91ZYjvaEc9/pMH2Cm8="
     },
     "node-wifiscanner2": {
-      "version": "1.2.0",
-      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.0.tgz",
-      "integrity": "sha1-ln+tDXV7Qwo5snGNQIy72ewetIA=",
+      "version": "1.2.1",
+      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.1.tgz",
+      "integrity": "sha512-8D+U7d8HjU/SeL6Z44qWq9X5bZm2Q5LKbJY9irWaELCkEfZf3yss8rvzlUm0oBWOUuX3UdiCMePxyV9bZI3qVg==",
       "requires": {
         "os-locale": "^1.4.0"
       }
