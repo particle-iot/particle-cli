@@ -7,7 +7,7 @@ const VError = require('verror');
 const inquirer = require('inquirer');
 const prompt = require('inquirer').prompt;
 const wifiScan = require('node-wifiscanner2').scan;
-const SerialPort = require('../lib/require-optional')('serialport');
+const SerialPort = require('serialport');
 const log = require('../lib/log');
 const specs = require('../lib/device-specs');
 const CLICommandBase = require('./base');
@@ -19,7 +19,8 @@ const { ensureError } = require('../lib/utilities');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
-const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
+const { FirmwareModuleDisplayNames } = require('particle-usb');
+
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
