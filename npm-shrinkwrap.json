@@ -27,7 +27,7 @@
         "node-wifiscanner2": "^1.2.1",
         "openurl": "^1.1.1",
         "particle-api-js": "^10.3.0",
-        "particle-commands": "^1.0.0",
+        "particle-commands": "^1.0.1",
         "particle-library-manager": "^0.1.15",
         "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
         "safe-buffer": "^5.2.0",
@@ -5741,9 +5741,9 @@
       }
     },
     "node_modules/particle-commands": {
-      "version": "1.0.0",
-      "resolved": "https://registry.npmjs.org/particle-commands/-/particle-commands-1.0.0.tgz",
-      "integrity": "sha512-0b4qtWmQpEX9dy2w4qgbSEdBNneVTuItMBTmMlZNPgwLBLM8lEGCtqHEbugeGGcYdTR6v6LkadulM5rVKAyeuA==",
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/particle-commands/-/particle-commands-1.0.1.tgz",
+      "integrity": "sha512-7KMInud6pXCRuQkIzX8pAKKFt4GPu5y/dsWLfeKsNO7SFTG4Bf61oTWIPbUiaq/DfvAg6KNaQZo+wPBW15mp/w==",
       "dependencies": {
         "babel-runtime": "^6.9.2",
         "es6-promisify": "^4.1.0",
@@ -13111,9 +13111,9 @@
       }
     },
     "particle-commands": {
-      "version": "1.0.0",
-      "resolved": "https://registry.npmjs.org/particle-commands/-/particle-commands-1.0.0.tgz",
-      "integrity": "sha512-0b4qtWmQpEX9dy2w4qgbSEdBNneVTuItMBTmMlZNPgwLBLM8lEGCtqHEbugeGGcYdTR6v6LkadulM5rVKAyeuA==",
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/particle-commands/-/particle-commands-1.0.1.tgz",
+      "integrity": "sha512-7KMInud6pXCRuQkIzX8pAKKFt4GPu5y/dsWLfeKsNO7SFTG4Bf61oTWIPbUiaq/DfvAg6KNaQZo+wPBW15mp/w==",
       "requires": {
         "babel-runtime": "^6.9.2",
         "es6-promisify": "^4.1.0",

@@ -70,7 +70,7 @@
     "node-wifiscanner2": "^1.2.1",
     "openurl": "^1.1.1",
     "particle-api-js": "^10.3.0",
-    "particle-commands": "^1.0.0",
+    "particle-commands": "^1.0.1",
     "particle-library-manager": "^0.1.15",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.2.0",
