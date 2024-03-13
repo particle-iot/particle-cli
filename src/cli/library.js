@@ -32,6 +32,9 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'author': {
 				description: 'The author of the library.'
+			},
+			'dir': {
+				description: 'The directory to create the library in.'
 			}
 		},
 		handler: (...args) => require('./library_init').command(...args)
