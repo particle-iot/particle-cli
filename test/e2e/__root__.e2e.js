@@ -19,9 +19,9 @@ const { version } = require('../../package.json');
 const NPM_PACKAGE_PATH = path.join(__dirname, '..', '..', `particle-cli-${version}.tgz`);
 
 const builds = {
-	'darwin-x64': 'particle-cli-macos',
-	'linux-x64': 'particle-cli-linux',
-	'win32-x64': 'particle-cli-windows.exe'
+	'darwin-x64': 'particle-cli',
+	'linux-x64': 'particle-cli',
+	'win32-x64': 'particle-cli.exe'
 };
 
 
