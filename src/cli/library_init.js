@@ -1,5 +1,6 @@
 const { LibraryInitCommandSite, LibraryInitCommand } = require('../cmd');
 const UI = require('../lib/ui');
+const inquirer = require('inquirer');
 
 class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 	constructor(argv) {
@@ -17,7 +18,7 @@ class CLILibraryInitCommandSite extends LibraryInitCommandSite {
 	}
 
 	prompter() {
-		return this.ui.prompt;
+		return inquirer.prompt;
 	}
 
 	outputStreamer() {
