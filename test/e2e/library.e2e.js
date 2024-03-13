@@ -17,12 +17,12 @@ describe('Library Commands', () => {
 	const projName = 'test-proj';
 	const projPath = path.join(PATH_TMP_DIR, projName);
 	const libCreateLog = [
-		'   create library.properties',
-		'   create README.md',
-		'   create LICENSE',
-		'   create src/testlib.cpp',
-		'   create src/testlib.h',
-		'   create examples/usage/usage.ino'
+		'Created library.properties',
+		'Created README.md',
+		'Created LICENSE',
+		'Created src/testlib.cpp',
+		'Created src/testlib.h',
+		'Created examples/usage/usage.ino'
 	];
 	const help = [
 		'Manage firmware libraries',
@@ -804,6 +804,7 @@ describe('Library Commands', () => {
 
 	describe('Library Create Subcommand', () => {
 		it('Creates a library', async () => {
+			global.isInteractive = true;
 			const name = 'testlib';
 			const version = '1.0.0';
 			const opts = { cwd: PATH_TMP_DIR };
@@ -820,9 +821,9 @@ describe('Library Commands', () => {
 			subprocess.stdin.write('me@example.com');
 			subprocess.stdin.end('\n');
 
-			const { stderr, exitCode } = await subprocess;
-
-			expect(stderr.split('\n')).to.include.members(libCreateLog);
+			const result = await subprocess;
+			const { stdout, exitCode } = result;
+			expect(stdout.split('\n')).to.include.members(libCreateLog);
 			expect(exitCode).to.equal(0);
 			await expectLibrary(name, version, PATH_TMP_DIR);
 		}).timeout(60 * 1000);
@@ -834,8 +835,8 @@ describe('Library Commands', () => {
 			const args = ['library', 'create', '--name', name, '--version', version, '--author', 'me@example.com'];
 			const { stdout, stderr, exitCode } = await cli.run(args, opts);
 
-			expect(stdout).to.equal('');
-			expect(stderr.split('\n')).to.include.members(libCreateLog);
+			expect(stdout.split('\n')).to.include.members(libCreateLog);
+			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 			await expectLibrary(name, version, PATH_TMP_DIR);
 		});
