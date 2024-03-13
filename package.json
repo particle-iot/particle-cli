@@ -143,7 +143,7 @@
     "test:integration:inspect": "npm test:integration -- --inspect-brk",
     "test:integration:silent": "PARTICLE_NOOP=$(npm run test:integration:ci)",
     "test:e2e": "mocha 'test/{,!(__fixtures__)/**}/*.e2e.js' --timeout 120000 --exit",
-    "test:e2e:ci": "npm run test:e2e:no-device -- --forbid-only",
+    "test:e2e:ci": "npm run build && npm run test:e2e:no-device -- --forbid-only",
     "test:e2e:no-device": "npm run test:e2e -- --grep @device --invert",
     "test:e2e:watch": "npm run test:e2e -- --watch --watch-extensions js,json",
     "test:e2e:inspect": "npm test:e2e -- --inspect-brk",
@@ -154,12 +154,27 @@
     "coverage:integration": "nyc --no-clean npm run test:integration:silent",
     "coverage:e2e": "nyc npm run test:e2e:silent",
     "coverage:report": "nyc report --reporter=html",
+    "build": "npx pkg .",
     "clean": "npm run clean:modules",
     "clean:modules": "rm -rf ./node_modules",
     "update-changelog": "VERSION=`node --print --eval \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md",
     "reinstall": "npm run clean && npm i",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
     "todo": "git grep -e 'TODO (.*)' --ignore-case --heading --break --context=2 --full-name --line-number -- :^./package.json"
+  },
+  "pkg": {
+    "targets": [
+      "node16-linux-x64",
+      "node16-macos-x64",
+      "node16-win-x64"
+    ],
+    "assets": [
+      "./assets/**",
+      "./node_modules/@serialport/bindings/build/Release/bindings.node",
+      "./node_modules/usb/prebuilds/*/node.napi*.node",
+      "./node_modules/node-wifiscanner2/locales/en.json"
+    ],
+    "outputPath": "build"
   },
   "yargs": {
     "camel-case-expansion": false
