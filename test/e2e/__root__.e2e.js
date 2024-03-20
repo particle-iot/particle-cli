@@ -56,10 +56,6 @@ before(async () => {
 				.then(() => fs.emptyDir(dir)))
 	);
 
-	//await execa('npm', ['pack'], { cwd: PATH_REPO_DIR, stdio: 'inherit' });
-	//console.log(PATH_REPO_DIR);
-	//const script = path.join(PATH_REPO_DIR, 'scripts', 'test-cli-pkg.sh');
-	//await execa('bash', [script], { stdio: 'inherit' });
 	const osKey = `${os.platform()}-${os.arch()}`;
 	const cliName = builds[osKey];
 	await execa('cp', [path.join(PATH_REPO_DIR, 'build', cliName), path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', 'particle')]);
