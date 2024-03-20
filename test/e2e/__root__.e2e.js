@@ -21,7 +21,8 @@ const NPM_PACKAGE_PATH = path.join(__dirname, '..', '..', `particle-cli-${versio
 const builds = {
 	'darwin-x64': 'particle-cli',
 	'linux-x64': 'particle-cli',
-	'win32-x64': 'particle-cli.exe'
+	'win32-x64': 'particle-cli.exe',
+	'darwin-arm64': 'particle-cli',
 };
 
 
