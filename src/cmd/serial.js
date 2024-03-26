@@ -20,7 +20,6 @@ const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
-const WifiControlRequest = require('../lib/wifi-control-request');
 
 // TODO: DRY this up somehow
 // The categories of output will be handled via the log class, and similar for protip.
@@ -502,23 +501,14 @@ module.exports = class SerialCommand extends CLICommandBase {
 		if (!device?.specs?.features?.includes('wifi')) {
 			throw new VError('The device does not support Wi-Fi');
 		}
-		if (device?.specs?.generation <= 2 ) {
-			// configure serial
-			if (file){
-				return this._configWifiFromFile(device, file);
-			} else {
-				return this.promptWifiScan(device);
-			}
+		// configure serial
+		// there is an issue with control request that doesn't allow us to pre-configure the device with the wifi credentials
+		// that's the reason we need to use serial to configure the device
+		if (file){
+			return this._configWifiFromFile(device, file);
 		} else {
-			const wifiControlRequest = new WifiControlRequest(device.deviceId, {
-				file,
-				ui: this.ui,
-				newSpin: this.newSpin,
-				stopSpin: this.stopSpin
-			});
-			await wifiControlRequest.configureWifi();
+			return this.promptWifiScan(device);
 		}
-
 	}
 
 	_configWifiFromFile(device, filename){
