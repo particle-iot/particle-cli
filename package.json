@@ -97,6 +97,7 @@
     "mock-fs": "^4.10.4",
     "nock": "^13.3.0",
     "nyc": "^14.1.1",
+    "pkg": "^5.8.1",
     "proxyquire": "^2.1.3",
     "sinon": "^7.5.0",
     "sinon-chai": "^3.3.0"
@@ -161,6 +162,22 @@
     "reinstall": "npm run clean && npm i",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
     "todo": "git grep -e 'TODO (.*)' --ignore-case --heading --break --context=2 --full-name --line-number -- :^./package.json"
+  },
+  "pkg": {
+    "targets": [
+      "node16-linux-x64",
+      "node16-macos-x64",
+      "node16-win-x64"
+    ],
+    "assets": [
+      "./assets/**",
+      "./node_modules/@serialport/bindings/build/Release/bindings.node",
+      "./node_modules/usb/prebuilds/*/node.napi*.node",
+      "./node_modules/node-wifiscanner2/locales/en.json",
+      "./node_modules/particle-commands/dist/cmd/templates/project/**/*",
+      "./node_modules/particle-commands/node_modules/particle-library-manager/dist/init/**/*"
+    ],
+    "outputPath": "build"
   },
   "yargs": {
     "camel-case-expansion": false
