@@ -154,7 +154,7 @@
     "coverage:integration": "nyc --no-clean npm run test:integration:silent",
     "coverage:e2e": "nyc npm run test:e2e:silent",
     "coverage:report": "nyc report --reporter=html",
-    "build": "pkg . --no-bytecode",
+    "build": "pkg .",
     "clean": "npm run clean:modules",
     "clean:modules": "rm -rf ./node_modules",
     "update-changelog": "VERSION=`node --print --eval \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md",
