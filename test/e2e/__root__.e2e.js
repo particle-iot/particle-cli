@@ -58,7 +58,8 @@ before(async () => {
 
 	const osKey = `${os.platform()}-${os.arch()}`;
 	const cliName = builds[osKey];
-	await execa('cp', [path.join(PATH_REPO_DIR, 'build', cliName), path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', 'particle')]);
+	const appName = os.platform() === 'win32' ? 'particle.exe' : 'particle';
+	await execa('cp', [path.join(PATH_REPO_DIR, 'build', cliName), path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', appName)]);
 });
 
 afterEach(async () => {
