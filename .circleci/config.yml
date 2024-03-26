@@ -52,6 +52,20 @@ commands:
       - run:
           name: Run Tests
           command: npm run << parameters.test-command >>
+  build-package:
+    description: "A command to build and sign package"
+    parameters:
+      node-version:
+        type: string
+    steps:
+      - install-node:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Build Package
+          command: npm run build
+      - run:
+          name: Sign Package
+          command: /usr/local/bin/ldid -S build/*macos*
 
 jobs:
   test-unix:
@@ -110,6 +124,19 @@ jobs:
           command: npm run coverage
       - store_artifacts:
           path: coverage
+  build-package:
+    parameters:
+      os:
+        type: executor
+      node-version:
+        type: string
+    executor: << parameters.os >>
+    steps:
+      - build-package:
+          node-version: << parameters.node-version >>
+      - store_artifacts:
+          path: build
+
   # Copied from following repos
   # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml
   # https://github.com/particle-iot-inc/app-metrics/blob/034e6dd5d77ce3b0683310c81e6f6994be2d1c80/.circleci/config.yml
@@ -172,6 +199,14 @@ workflows:
               os: [macos]
               node-version: ["16"]
       - test-coverage:
+          <<: *tag_filters
+          context:
+            - particle-ci-private
+          matrix:
+            parameters:
+              os: [linux]
+              node-version: ["16"]
+      - build-package:
           <<: *tag_filters
           context:
             - particle-ci-private
