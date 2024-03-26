@@ -8,7 +8,7 @@ tag_filters: &tag_filters
 executors:
   linux:
     docker:
-      - image: particle/cimg-node-cross-compile:16.16-1
+      - image: particle/cimg-node-cross-compile:16.16-2
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
