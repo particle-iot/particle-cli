@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.22.0 - Mar 26 2024
+* Remove yeoman generator and use the new project structure
+* Use `serial` to configure wifi devices
+* Update `particle-commands` dependency to `1.0.1`
+
 # 3.21.0 - Feb 14 2024
 * Removes particle setup command which was used to setup photons
 * Removes particle device doctor command and doctor is suggested to be used by docs
