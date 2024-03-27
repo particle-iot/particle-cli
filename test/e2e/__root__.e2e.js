@@ -18,6 +18,13 @@ const {
 const { version } = require('../../package.json');
 const NPM_PACKAGE_PATH = path.join(__dirname, '..', '..', `particle-cli-${version}.tgz`);
 
+const builds = {
+	'darwin-x64': 'particle-cli',
+	'linux-x64': 'particle-cli',
+	'win32-x64': 'particle-cli.exe',
+	'darwin-arm64': 'particle-cli',
+};
+
 
 if (os.userInfo().homedir === os.homedir()){
 	throw new Error([
@@ -42,14 +49,17 @@ if (!USERNAME || !PASSWORD || !DEVICE_ID || !DEVICE_NAME || !DEVICE_PLATFORM_ID 
 }
 
 before(async () => {
+	const particleCliDir = path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin');
 	await Promise.all(
-		[PATH_HOME_DIR, PATH_TMP_DIR]
+		[PATH_HOME_DIR, PATH_TMP_DIR, particleCliDir]
 			.map(dir => fs.ensureDir(dir)
 				.then(() => fs.emptyDir(dir)))
 	);
 
-	await execa('npm', ['pack'], { cwd: PATH_REPO_DIR, stdio: 'inherit' });
-	await execa('npm', ['install', NPM_PACKAGE_PATH], { cwd: PATH_FIXTURES_PKG_DIR });
+	const osKey = `${os.platform()}-${os.arch()}`;
+	const cliName = builds[osKey];
+	const appName = os.platform() === 'win32' ? 'particle.exe' : 'particle';
+	await execa('cp', [path.join(PATH_REPO_DIR, 'build', cliName), path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', appName)]);
 });
 
 afterEach(async () => {
@@ -60,6 +70,6 @@ after(async () => {
 	await cli.logout();
 	await cli.setDefaultProfile();
 	await fs.remove(NPM_PACKAGE_PATH);
-	await execa('npm', ['uninstall', 'particle-cli'], { cwd: PATH_FIXTURES_PKG_DIR });
+	await fs.remove(path.join(PATH_FIXTURES_PKG_DIR, 'node_modules'));
 });
 
