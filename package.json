@@ -72,9 +72,11 @@
     "particle-api-js": "^10.3.0",
     "particle-commands": "^1.0.1",
     "particle-library-manager": "^0.1.15",
+    "particle-usb": "^2.8.0",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",
+    "serialport": "^9.2.8",
     "softap-setup": "^4.1.0",
     "temp": "^0.9.1",
     "verror": "^1.10.0",
@@ -99,10 +101,6 @@
     "proxyquire": "^2.1.3",
     "sinon": "^7.5.0",
     "sinon-chai": "^3.3.0"
-  },
-  "optionalDependencies": {
-    "particle-usb": "^2.8.0",
-    "serialport": "^9.2.8"
   },
   "engines": {
     "node": ">=12",
