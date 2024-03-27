@@ -64,11 +64,17 @@ commands:
           name: Build Package
           command: npm run build
       - run:
+            name: Backup Package arm64 macOS
+            command: cp build/particle-cli-macos-arm64 build/particle-cli-macos-arm64_ns
+      - run:
+            name: Backup Package x64 macOS
+            command: cp build/particle-cli-macos-x64 build/particle-cli-macos-x64_ns
+      - run:
           name: Sign Package arm64 macOS
-          command: cd build && ldid -S particle-cli-macos-arm64
+          command: cd build && sudo /usr/local/bin/ldid -S particle-cli-macos-arm64
       - run:
           name: Sign Package x64 macOS
-          command: cd build && ldid -S particle-cli-macos-x64
+          command: cd build && sudo /usr/local/bin/ldid -S particle-cli-macos-x64
 
 jobs:
   test-unix:
