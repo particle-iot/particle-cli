@@ -9,7 +9,7 @@ const {
 	NotAllowedError,
 	TimeoutError,
 	DeviceProtectionError
-} = require('../lib/require-optional')('particle-usb');
+} = require('particle-usb');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update

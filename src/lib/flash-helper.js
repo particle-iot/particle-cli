@@ -9,7 +9,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
-const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
+const { DeviceProtectionError } = require('particle-usb');
 const utilities = require('./utilities');
 const ensureError = utilities.ensureError;
 

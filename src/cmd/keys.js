@@ -14,7 +14,7 @@ const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
 const ParticleApi = require('./api');
 const { validateDFUSupport } = require('../lib/flash-helper');
-const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
+const { DeviceProtectionError } = require('particle-usb');
 
 /**
  * Commands for managing encryption keys.
