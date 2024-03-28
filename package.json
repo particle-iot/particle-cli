@@ -169,7 +169,7 @@
     ],
     "assets": [
       "./assets/**",
-      "./node_modules/@serialport/bindings/build/Release/bindings.node",
+      "./node_modules/@serialport/bindings-cpp/prebuilds/*/node.napi*.node",
       "./node_modules/usb/prebuilds/*/node.napi*.node",
       "./node_modules/node-wifiscanner2/locales/en.json",
       "./node_modules/particle-commands/dist/cmd/templates/project/**/*",
