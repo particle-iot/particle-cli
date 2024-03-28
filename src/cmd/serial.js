@@ -7,7 +7,7 @@ const VError = require('verror');
 const inquirer = require('inquirer');
 const prompt = require('inquirer').prompt;
 const wifiScan = require('node-wifiscanner2').scan;
-const SerialPort = require('serialport');
+const { SerialPort } = require('serialport');
 const log = require('../lib/log');
 const specs = require('../lib/device-specs');
 const CLICommandBase = require('./base');
@@ -189,7 +189,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		};
 
 		function openPort(){
-			serialPort = new SerialPort(selectedDevice.port, SERIAL_PORT_DEFAULTS);
+			serialPort = new SerialPort({ path: selectedDevice.port, ...SERIAL_PORT_DEFAULTS });
 			serialPort.on('close', handleClose);
 			serialPort.on('readable', () => {
 				process.stdout.write(serialPort.read().toString());
@@ -643,7 +643,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		const self = this;
 		let cleanUpFn;
 		const promise = new Promise((resolve, reject) => {
-			const serialPort = self.serialPort || new SerialPort(device.port, SERIAL_PORT_DEFAULTS);
+			const serialPort = self.serialPort || new SerialPort({ path: device.port, ...SERIAL_PORT_DEFAULTS });
 			const parser = new SerialBatchParser({ timeout: 250 });
 
 			cleanUpFn = () => {
