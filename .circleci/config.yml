@@ -63,6 +63,19 @@ commands:
       - run:
           name: Build Package
           command: npm run build
+  sign-win:
+    description: "A command to sign windows executable"
+    parameters:
+      node-version:
+        type: string
+    steps:
+      - install-node:
+          node-version: << parameters.node-version >>
+      - run:
+          name: Sign Executable
+          command: |
+            sudo apt install nsis osslsigncode
+            npm run sign:win
 jobs:
   test-unix:
     parameters:
@@ -129,6 +142,8 @@ jobs:
     executor: << parameters.os >>
     steps:
       - build-package:
+          node-version: << parameters.node-version >>
+      - sign-win:
           node-version: << parameters.node-version >>
       - store_artifacts:
           path: build
