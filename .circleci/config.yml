@@ -8,7 +8,7 @@ tag_filters: &tag_filters
 executors:
   linux:
     docker:
-      - image: particle/cimg-node-cross-compile:16.16-2
+      - image: particle/cimg-node-cross-compile:16.16-3
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -74,7 +74,6 @@ commands:
       - run:
           name: Sign Executable
           command: |
-            sudo apt install nsis osslsigncode
             npm run sign:win
 jobs:
   test-unix:
