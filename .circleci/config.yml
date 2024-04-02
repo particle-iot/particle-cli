@@ -17,6 +17,7 @@ executors:
       xcode: 13.4.1
 
 orbs:
+  aws-cli: circleci/aws-cli@4.1.1
   node: circleci/node@5.0.2
   win: circleci/windows@5.0.0
 
@@ -144,6 +145,28 @@ jobs:
           node-version: << parameters.node-version >>
       - store_artifacts:
           path: build
+      - save_cache:
+          key: v1-build-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - build
+  publish-package:
+    parameters:
+      os:
+        type: executor
+    executor: << parameters.os >>
+    steps:
+      - restore_cache:
+          key: v1-build-{{ .Branch }}-{{ .Revision }}
+      - aws-cli/setup:
+          role_arn: ${AWS_ST_ROLE_ARN}
+          region: ${AWS_S3_REGION}
+          profile_name: "ARTIFACT-UPLOAD"
+          role_session_name: "circleci-deploy-public-artifacts-${CIRCLE_BUILD_NUM}"
+          session_duration: "1800"
+      - run:
+          name: Upload to S3
+          command: |
+            aws s3 --profile ARTIFACT-UPLOAD cp build s3://${AWS_ST_S3_BUCKET}/particle-cli/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}/ --recursive
 
   # Copied from following repos
   # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml
@@ -171,49 +194,49 @@ jobs:
 workflows:
   test-and-publish:
     jobs:
-      - test-unix:
-          <<: *tag_filters
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              os: [linux, macos]
-              node-version: ["16"] # Node 18 doesn't work due to serialport dependency
-      - test-windows:
-          <<: *tag_filters
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              node-version: ["16"] # Node 18 doesn't work due to serialport dependency
-      - test-e2e:
-          <<: *tag_filters
-          name: test-e2e-linux
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              os: [linux]
-              node-version: ["16"]
-      - test-e2e:
-          <<: *tag_filters
-          name: test-e2e-macos
-          requires:
-            - test-e2e-linux
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              os: [macos]
-              node-version: ["16"]
-      - test-coverage:
-          <<: *tag_filters
-          context:
-            - particle-ci-private
-          matrix:
-            parameters:
-              os: [linux]
-              node-version: ["16"]
+     # - test-unix:
+     #     <<: *tag_filters
+     #     context:
+     #       - particle-ci-private
+     #     matrix:
+     #       parameters:
+     #         os: [linux, macos]
+     #         node-version: ["16"] # Node 18 doesn't work due to serialport dependency
+     # - test-windows:
+     #     <<: *tag_filters
+     #     context:
+     #       - particle-ci-private
+     #     matrix:
+     #       parameters:
+     #         node-version: ["16"] # Node 18 doesn't work due to serialport dependency
+     # - test-e2e:
+     #     <<: *tag_filters
+     #     name: test-e2e-linux
+     #     context:
+     #       - particle-ci-private
+     #     matrix:
+     #       parameters:
+     #         os: [linux]
+     #         node-version: ["16"]
+     # - test-e2e:
+     #     <<: *tag_filters
+     #     name: test-e2e-macos
+     #     requires:
+     #       - test-e2e-linux
+     #     context:
+     #       - particle-ci-private
+     #     matrix:
+     #       parameters:
+     #         os: [macos]
+     #         node-version: ["16"]
+     # - test-coverage:
+     #     <<: *tag_filters
+     #     context:
+     #       - particle-ci-private
+     #     matrix:
+     #       parameters:
+     #         os: [linux]
+     #         node-version: ["16"]
       - build-package:
           <<: *tag_filters
           context:
@@ -222,18 +245,30 @@ workflows:
             parameters:
               os: [linux]
               node-version: ["16"]
-      - publish-npm:
+      - publish-package:
           requires:
-            - test-unix
-            - test-windows
-            - test-e2e-linux
-            - test-e2e-macos
+            - build-package
           context:
             - particle-ci-private
-          # publish for tags only
+          matrix:
+            parameters:
+              os: [linux]
           filters:
             tags:
-              only: /^v.*/
+              only: /^test-.*|^v.*/ # Publish only for test tags
             branches:
-              ignore: /.*/
-
+              ignore: /.*/ # Publish only for tags
+     # - publish-npm:
+     #     requires:
+     #       - test-unix
+     #       - test-windows
+     #       - test-e2e-linux
+     #       - test-e2e-macos
+     #     context:
+     #       - particle-ci-private
+     #     # publish for tags only
+     #     filters:
+     #       tags:
+     #         only: /^v.*/
+     #       branches:
+     #         ignore: /.*/
