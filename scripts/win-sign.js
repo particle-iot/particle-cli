@@ -25,7 +25,7 @@ const BUILD_DIR = path.join(__dirname, '..', 'build');
 
 		log(`Signing .exe for ${name}@${version} on x64`);
 
-		await fs.copy(bin, unsigned);
+		await fs.move(bin, unsigned); // Move the original exe to a new file to sign it
 		await winSign({ unsigned, signed: bin }, signingParams);
 
 		log('removing temporal files');

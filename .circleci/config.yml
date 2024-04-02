@@ -69,8 +69,6 @@ commands:
       node-version:
         type: string
     steps:
-      - install-node:
-          node-version: << parameters.node-version >>
       - run:
           name: Sign Executable
           command: |
