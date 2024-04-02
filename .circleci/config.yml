@@ -8,7 +8,7 @@ tag_filters: &tag_filters
 executors:
   linux:
     docker:
-      - image: particle/cimg-node-cross-compile:16.16-2
+      - image: particle/cimg-node-cross-compile:16.16-3
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
@@ -63,6 +63,16 @@ commands:
       - run:
           name: Build Package
           command: npm run build
+  sign-win:
+    description: "A command to sign windows executable"
+    parameters:
+      node-version:
+        type: string
+    steps:
+      - run:
+          name: Sign Executable
+          command: |
+            npm run sign:win
 jobs:
   test-unix:
     parameters:
@@ -129,6 +139,8 @@ jobs:
     executor: << parameters.os >>
     steps:
       - build-package:
+          node-version: << parameters.node-version >>
+      - sign-win:
           node-version: << parameters.node-version >>
       - store_artifacts:
           path: build
