@@ -3,7 +3,7 @@ version: 2.1
 tag_filters: &tag_filters
   filters:
     tags:
-      only: /^v.*/
+      only: /^test-.*|^v.*/
 
 executors:
   linux:
