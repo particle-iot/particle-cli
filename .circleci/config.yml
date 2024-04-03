@@ -157,6 +157,19 @@ jobs:
     steps:
       - restore_cache:
           key: v1-build-{{ .Branch }}-{{ .Revision }}
+      - run:
+          name: Set AWS Role ARN Based on Tag
+          command: |
+            if [[ "${CIRCLE_TAG}" == v* ]]; then
+              echo 'export ROLE_ARN=${AWS_PRD_ROLE_ARN}' >> $BASH_ENV
+              echo 'export S3_BUCKET=${AWS_PRD_S3_BUCKET}' >> $BASH_ENV
+            elif [[ "${CIRCLE_TAG}" == test-* ]]; then
+              echo 'export ROLE_ARN=${AWS_ST_ROLE_ARN}' >> $BASH_ENV
+              echo 'export S3_BUCKET=${AWS_ST_S3_BUCKET}' >> $BASH_ENV
+            else
+              echo "Tag does not meet criteria for setting ROLE_ARN."
+              exit 1
+            fi
       - aws-cli/setup:
           role_arn: ${AWS_ST_ROLE_ARN}
           region: ${AWS_S3_REGION}
@@ -166,7 +179,7 @@ jobs:
       - run:
           name: Upload to S3
           command: |
-            aws s3 --profile ARTIFACT-UPLOAD cp build s3://${AWS_ST_S3_BUCKET}/particle-cli/${CIRCLE_BRANCH}/${CIRCLE_BUILD_NUM}/ --recursive
+            aws s3 --profile ARTIFACT-UPLOAD cp build s3://${S3_BUCKET}/particle-cli/${CIRCLE_TAG}/ --recursive
 
   # Copied from following repos
   # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml
