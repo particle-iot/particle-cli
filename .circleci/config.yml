@@ -170,6 +170,10 @@ jobs:
               echo "Tag does not meet criteria for setting ROLE_ARN."
               exit 1
             fi
+      - run:
+          name: Generate Manifest
+          command: |
+            npm run generate:manifest build ${CIRCLE_TAG} ${S3_BUCKET}/particle-cli/
       - aws-cli/setup:
           role_arn: ${AWS_ST_ROLE_ARN}
           region: ${AWS_S3_REGION}
@@ -179,7 +183,9 @@ jobs:
       - run:
           name: Upload to S3
           command: |
-            aws s3 --profile ARTIFACT-UPLOAD cp build s3://${S3_BUCKET}/particle-cli/${CIRCLE_TAG}/ --recursive
+            aws s3 --profile ARTIFACT-UPLOAD cp build/release/ s3://${S3_BUCKET}/particle-cli/ --recursive
+      
+              
 
   # Copied from following repos
   # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml
