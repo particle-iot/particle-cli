@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const semver = require('semver');
 
 const buildDir = process.argv[2] || './build';
-const version = process.argv[3]; // Version tag, e.g., '1.2.0' or '1.2.0-alpha.1'
+const version = cleanVersion(process.argv[3]); // Version tag, e.g., '1.2.0' or '1.2.0-alpha.1'
 const baseUrl = process.argv[4];
 
 function generateSHA(filePath) {
@@ -27,6 +27,14 @@ function parseFilename(filename) {
 		platform: platformMap[parts[2]],
 		arch: archMap[parts[3].split('.')[0]] // Removing file extension if present
 	};
+}
+
+function cleanVersion(version) {
+	const cleanedVersion = version.replace(/^v|^test-/, '');
+	if (!semver.valid(cleanedVersion)) {
+		throw new Error(`Invalid version: ${version}`);
+	}
+	return cleanedVersion;
 }
 
 async function generateManifest() {
