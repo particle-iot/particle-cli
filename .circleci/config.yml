@@ -74,6 +74,20 @@ commands:
           name: Sign Executable
           command: |
             npm run sign:win
+  generate-manifest:
+    description: "A command to generate manifest"
+    parameters:
+        build-path:
+            type: string
+        version:
+            type: string
+        s3-bucket:
+            type: string
+    steps:
+      - run:
+          name: Generate Manifest
+          command: |
+            npm run generate:manifest <<parameters.build-path>> <<parameters.version>> <<parameters.s3-bucket>>
 jobs:
   test-unix:
     parameters:
@@ -155,6 +169,11 @@ jobs:
         type: executor
     executor: << parameters.os >>
     steps:
+      - checkout
+      - configure-npm-token
+      - run:
+          name: Install packages
+          command: npm ci
       - restore_cache:
           key: v1-build-{{ .Branch }}-{{ .Revision }}
       - run:
@@ -170,10 +189,10 @@ jobs:
               echo "Tag does not meet criteria for setting ROLE_ARN."
               exit 1
             fi
-      - run:
-          name: Generate Manifest
-          command: |
-            npm run generate:manifest build ${CIRCLE_TAG} ${S3_BUCKET}/particle-cli/
+      - generate-manifest:
+          build-path: build
+          version: $CIRCLE_TAG
+          s3-bucket: $AWS_ST_S3_BUCKET/particle-cli
       - aws-cli/setup:
           role_arn: ${AWS_ST_ROLE_ARN}
           region: ${AWS_S3_REGION}
@@ -184,8 +203,6 @@ jobs:
           name: Upload to S3
           command: |
             aws s3 --profile ARTIFACT-UPLOAD cp build/release/ s3://${S3_BUCKET}/particle-cli/ --recursive
-      
-              
 
   # Copied from following repos
   # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml
