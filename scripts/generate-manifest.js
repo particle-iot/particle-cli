@@ -14,8 +14,8 @@ function generateSHA(filePath) {
 	return { sha1: sha1Hash, sha256: sha256Hash };
 }
 
-function constructUrl(platform, arch, filename) {
-	return `${baseUrl}/${version}/${platform}/${arch}/${path.basename(filename)}`;
+function constructUrl(platform, arch) {
+	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe' : 'particle'}`;
 }
 
 function parseFilename(filename) {
@@ -60,7 +60,7 @@ async function generateManifest() {
 				manifest.builds[platform] = {};
 			}
 			manifest.builds[platform][arch] = {
-				url: constructUrl(platform, arch, file),
+				url: constructUrl(platform, arch),
 				sha1,
 				sha256
 			};
