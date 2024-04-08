@@ -20,7 +20,7 @@ function constructUrl(platform, arch) {
 
 function parseFilename(filename) {
 	// Simplified parsing logic, adjust as needed
-	const platformMap = { macos: 'darwin', linux: 'linux', win: 'windows' };
+	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win' };
 	const archMap = { x64: 'amd64', arm64: 'arm64' };
 	const parts = filename.split('-');
 	return {
