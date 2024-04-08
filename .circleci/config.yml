@@ -204,7 +204,8 @@ jobs:
       - run:
           name: Upload to S3
           command: |
-            aws s3 --profile ARTIFACT-UPLOAD cp build/release/ s3://${S3_BUCKET}/particle-cli/ --recursive
+            aws s3 --profile ARTIFACT-UPLOAD cp build/release/ s3://${S3_BUCKET}/particle-cli/ --recursive \
+            --cache-control max-age=0
 
   # Copied from following repos
   # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml
