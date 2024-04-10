@@ -6,8 +6,9 @@ const execa = require('execa');
 const pkgJSON = require('../package.json');
 const log = require('../src/lib/log').info;
 const logErrorAndExit = require('../src/lib/log').error;
-const particleBuildName = 'particle-cli-win-x64';
 const BUILD_DIR = path.join(__dirname, '..', 'build');
+const particleBuildName = process.argv[2] || 'particle-cli-win-x64';
+
 
 (async () => {
 	try {
