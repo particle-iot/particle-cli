@@ -1,0 +1,4 @@
+This installer downloads the Particle Command Line Interface (CLI) and its dependencies.
+
+After this initial installation the CLI will keep itself up to date by installing new versions as they are released.
+
