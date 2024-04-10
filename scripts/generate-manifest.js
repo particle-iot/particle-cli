@@ -104,7 +104,8 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 		{ test: /^particle-cli-macos-x64$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'amd64', 'particle') },
 		{ test: /^particle-cli-macos-arm64$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'arm64', 'particle') },
 		{ test: /^particle-cli-win-x64\.exe$/, newPath: path.join(targetBaseDir,'release', version, 'win', 'amd64', 'particle.exe') },
-		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir,'release', version, 'win', 'amd64', 'ParticleCLISetup.exe') },
+		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir, 'release', 'installer', version, 'windows', 'ParticleCLISetup.exe'), keep: true },
+		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir, 'release', 'installer', 'windows', 'ParticleCLISetup.exe'), keep: true },
 	];
 
 	try {
@@ -115,11 +116,17 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 				const sourcePath = path.join(sourceDir, file);
 				// Ensure the target directory exists
 				await fs.ensureDir(path.dirname(mapping.newPath));
-				await moveFile(sourcePath, mapping.newPath);
+				if (!mapping.keep) {
+					await fs.copy(sourcePath, mapping.newPath, { overwrite: true });
+					console.log(`Adding ${sourcePath} to ${mapping.newPath}`);
+				} else {
+					await moveFile(sourcePath, mapping.newPath);
+				}
 			}
 		}
 
 		await moveManifestFiles(sourceDir, path.join(targetBaseDir, 'release'), version);
+
 		console.log('Restructuring completed.');
 	} catch (error) {
 		console.error('Failed to restructure files:', error);

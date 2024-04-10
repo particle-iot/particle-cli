@@ -21,6 +21,6 @@ executes it a first time to install Node.js and the particle-cli module.
 See [licences.txt](/installer/windows/licenses.txt) for more info on the open source licenses.
 
 
-## Release information
+## Release Urls
 - Download the latest installer from  <https://binaries.particle.io/particle-cli/installer/windows/ParticleCLISetup.exe>
-- Download the latest drivers installer from <https://binaries.particle.io/particle-cli/installer/windows/ParticleDriversSetup.exe>
+- Download the installer for a specific version from <https://binaries.particle.io/particle-cli/${version}/installer/windows/ParticleDriversSetup.exe>
