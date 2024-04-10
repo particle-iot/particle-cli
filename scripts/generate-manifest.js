@@ -116,7 +116,7 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 				const sourcePath = path.join(sourceDir, file);
 				// Ensure the target directory exists
 				await fs.ensureDir(path.dirname(mapping.newPath));
-				if (!mapping.keep) {
+				if (mapping.keep) {
 					await fs.copy(sourcePath, mapping.newPath, { overwrite: true });
 					console.log(`Adding ${sourcePath} to ${mapping.newPath}`);
 				} else {
