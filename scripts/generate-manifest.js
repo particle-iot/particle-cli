@@ -104,6 +104,7 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 		{ test: /^particle-cli-macos-x64$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'amd64', 'particle') },
 		{ test: /^particle-cli-macos-arm64$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'arm64', 'particle') },
 		{ test: /^particle-cli-win-x64\.exe$/, newPath: path.join(targetBaseDir,'release', version, 'win', 'amd64', 'particle.exe') },
+		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir,'release', version, 'win', 'amd64', 'ParticleCLISetup.exe') },
 	];
 
 	try {
