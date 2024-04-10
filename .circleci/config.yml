@@ -74,6 +74,16 @@ commands:
           name: Sign Executable
           command: |
             npm run sign:win
+  generate-win-installer:
+    description: "A command to generate windows installer"
+    parameters:
+      node-version:
+        type: string
+    steps:
+      - run:
+          name: Generate Installer
+          command: |
+            npm run generate:win-installer
   generate-manifest:
     description: "A command to generate manifest"
     parameters:
@@ -156,6 +166,8 @@ jobs:
       - build-package:
           node-version: << parameters.node-version >>
       - sign-win:
+          node-version: << parameters.node-version >>
+      - generate-win-installer:
           node-version: << parameters.node-version >>
       - store_artifacts:
           path: build
