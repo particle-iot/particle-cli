@@ -69,15 +69,7 @@ module.exports = class CLI {
 				version: {
 					boolean: true,
 					description: 'Show the version of particle-cli installed.'
-				},
-				'enable-updates': {
-					boolean: true,
-					description: 'Enable checking for updates'
-				},
-				'disable-updates': {
-					boolean: true,
-					description: 'Disable checking for updates'
-				},
+				}
 			},
 
 			examples: {
@@ -90,8 +82,6 @@ module.exports = class CLI {
 			epilogue: 'For more information, visit our documentation at https://docs.particle.io',
 
 			version: app.showVersion,
-			enableUpdates: () => console.log('enable updates'),
-			disableUpdates: () => console.log('disable updates'),
 
 			/**
 			 * Setup global attributes from the parsed arguments.

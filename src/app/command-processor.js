@@ -106,7 +106,7 @@ class CLICommandItem {
 	 * @param {function} version    A function to retrieve the version
 	 * @param {string} epilogue     Printed at the end of the command block.
 	 */
-	configure(yargs, { options, setup, examples, version, epilogue, enableUpdates, disableUpdates } = this.buildOptions()){
+	configure(yargs, { options, setup, examples, version, epilogue } = this.buildOptions()){
 		if (options){
 			this.hideOption(options);
 			this.fetchAliases(options);
@@ -133,14 +133,6 @@ class CLICommandItem {
 
 		if (epilogue){
 			yargs.epilogue(epilogue);
-		}
-
-		if (enableUpdates) {
-			this.enableUpdates = enableUpdates;
-		}
-
-		if (disableUpdates) {
-			this.disableUpdates = disableUpdates;
 		}
 
 		yargs.exitProcess(false);
@@ -273,15 +265,6 @@ class CLICommandItem {
 		if (argv.version && this.version){
 			return Promise.resolve(this.version(argv));
 		}
-
-		if (argv['enable-updates'] && this.enableUpdates) {
-			return Promise.resolve(this.enableUpdates(argv));
-		}
-
-		if (argv['disable-updates'] && this.disableUpdates) {
-			return Promise.resolve(this.disableUpdates(argv));
-		}
-
 		return this.showHelp();
 	}
 

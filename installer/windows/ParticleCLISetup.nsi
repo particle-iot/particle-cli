@@ -153,13 +153,11 @@ FunctionEnd
 
 
 Function EnableAutoUpdates
-    ; CLI will install Node and all modules needed
-    	nsExec::ExecToLog "${BINDIR}\${EXE} autoupdate --enable"
+    nsExec::ExecToLog "${BINDIR}\${EXE} update-cli --enable-updates"
 FunctionEnd
 
 Function DisableAutoUpdates
-    ; CLI will install Node and all modules needed
-    	nsExec::ExecToLog "${BINDIR}\${EXE} autoupdate --disable"
+    nsExec::ExecToLog "${BINDIR}\${EXE} update-cli --disable-updates"
 FunctionEnd
 
 
