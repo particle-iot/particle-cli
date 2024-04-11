@@ -162,9 +162,8 @@ FunctionEnd
 
 
 Function InstallOpenSSL
-	DetailPrint "Downloading OpenSSL"
-	File "/oname=$TEMP/${OpenSSLFile}" ".\bin\${OpenSSLFile}"
 	DetailPrint "Installing OpenSSL"
+	File "/oname=$TEMP/${OpenSSLFile}" ".\bin\${OpenSSLFile}"
 	nsExec::ExecToLog "$TEMP/${OpenSSLFile} /verysilent"
 	DetailPrint "Adding OpenSSL to path"
 	Push "C:\OpenSSL-Win32\bin"
