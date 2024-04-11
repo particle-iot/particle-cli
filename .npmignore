@@ -12,3 +12,4 @@
 # but don't forget to also ignore us
 .DS_Store*
 .env
+installer/**/*
