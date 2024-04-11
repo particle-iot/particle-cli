@@ -9,9 +9,8 @@ const baseUrl = process.argv[4];
 
 function generateSHA(filePath) {
 	const fileBuffer = fs.readFileSync(filePath);
-	const sha1Hash = crypto.createHash('sha1').update(fileBuffer).digest('hex');
 	const sha256Hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-	return { sha1: sha1Hash, sha256: sha256Hash };
+	return { sha256: sha256Hash };
 }
 
 function constructUrl(platform, arch) {
@@ -54,14 +53,13 @@ async function generateManifest() {
 		const filePath = path.join(buildDir, file);
 		const fileStats = fs.statSync(filePath);
 		if (fileStats.isFile()) {
-			const { sha1, sha256 } = generateSHA(filePath);
+			const { sha256 } = generateSHA(filePath);
 			const { platform, arch } = parseFilename(file);
 			if (!manifest.builds[platform]) {
 				manifest.builds[platform] = {};
 			}
 			manifest.builds[platform][arch] = {
 				url: constructUrl(platform, arch),
-				sha1,
 				sha256
 			};
 		}
