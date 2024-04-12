@@ -16,11 +16,11 @@ VERSION=${VERSION}
 BINARY="particle"
 DEST_PATH="$HOME/bin"
 DEST="$DEST_PATH/$BINARY"
-MANIFEST_URL="https://binaries.particle.io/particle-cli/manifest.json"
+MANIFEST_URL="https://binaries.staging.particle.io/particle-cli/manifest.json"
 SHELL_CONFIG="$HOME/.bash_profile"
 
-if ["$VERSION" != ""]; then
-    MANIFEST_URL="https://binaries.particle.io/particle-cli/manifest-${VERSION}.json"
+if [-z "$VERSION" ]; then
+    MANIFEST_URL="https://binaries.staging.particle.io/particle-cli/manifest-${VERSION}.json"
 fi
 echo
 echo 'PARTICLE CLI SETUP...'
@@ -85,7 +85,6 @@ fi
 
 # Download JSON manifest with latest CLI binary
 echo ":::: Installing the Particle CLI for $OS to \"$DEST\""
-
 BINARY_URL=$(curl -s $MANIFEST_URL | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['url'])")
 BINARY_SHA256=$(curl -s $MANIFEST_URL | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['sha256'])")
 
@@ -93,7 +92,7 @@ BINARY_SHA256=$(curl -s $MANIFEST_URL | $PYTHON -c "import sys, json; print(json
 mkdir -p "$DEST_PATH"
 TMP_FILE=$(mktemp)
 
-curl -s "$BINARY_URL.gz" | gunzip > "$TMP_FILE"
+curl -s "$BINARY_URL" > "$TMP_FILE"
 
 echo "$BINARY_SHA256  $TMP_FILE" | shasum a 256 -c > /dev/null 2>&1
 if [ $? -eq 1 ]; then
