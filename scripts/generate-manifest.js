@@ -14,7 +14,7 @@ function generateSHA(filePath) {
 }
 
 function constructUrl(platform, arch) {
-	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe' : 'particle'}`;
+	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe.zip' : 'particle.zip'}`;
 }
 
 function parseFilename(filename) {
