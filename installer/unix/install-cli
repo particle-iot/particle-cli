@@ -19,8 +19,8 @@ DEST="$DEST_PATH/$BINARY"
 MANIFEST_URL="https://binaries.staging.particle.io/particle-cli/manifest.json"
 SHELL_CONFIG="$HOME/.bash_profile"
 
-if [-z "$VERSION" ]; then
-    MANIFEST_URL="https://binaries.staging.particle.io/particle-cli/manifest-${VERSION}.json"
+if [ -n "$VERSION" ]; then
+  MANIFEST_URL="https://binaries.staging.particle.io/particle-cli/manifest-${VERSION}.json"
 fi
 echo
 echo 'PARTICLE CLI SETUP...'
@@ -92,7 +92,8 @@ BINARY_SHA256=$(curl -s $MANIFEST_URL | $PYTHON -c "import sys, json; print(json
 mkdir -p "$DEST_PATH"
 TMP_FILE=$(mktemp)
 
-curl -s "$BINARY_URL" > "$TMP_FILE"
+echo ":::: Downloading binary"
+curl -s "$BINARY_URL" | gunzip > "$TMP_FILE"
 
 echo "$BINARY_SHA256  $TMP_FILE" | shasum a 256 -c > /dev/null 2>&1
 if [ $? -eq 1 ]; then
@@ -156,7 +157,6 @@ fi
 echo ":::: Success!"
 echo ":::: The Particle CLI has been installed to: \"$DEST_PATH\""
 echo ":::: Your \"$SHELL_CONFIG\" file has been updated to properly set \$PATH"
-echo ":::: If you previously installed the CLI with npm, run \"npm uninstall -g particle-cli\""
 echo
 echo '************************************************************************'
 echo '** YOU MUST CLOSE AND REOPEN YOUR TERMINAL BEFORE CHANGES TAKE EFFECT **'
