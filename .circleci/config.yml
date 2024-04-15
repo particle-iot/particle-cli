@@ -98,6 +98,21 @@ commands:
           name: Generate Manifest
           command: |
             npm run generate:manifest <<parameters.build-path>> <<parameters.version>> <<parameters.s3-bucket>>
+  compress-files:
+    description: "A command to compress files"
+    parameters:
+        path:
+            type: string
+    steps:
+      - run:
+          name: Compress files
+          command: |
+            cd <<parameters.path>>
+            for file in *; do
+              if [ "$file" != "ParticleCLISetup.exe" ]; then
+                 zip "${file}.zip" "$file" && rm "$file"
+              fi
+            done
 jobs:
   test-unix:
     parameters:
@@ -169,6 +184,8 @@ jobs:
           node-version: << parameters.node-version >>
       - generate-win-installer:
           node-version: << parameters.node-version >>
+      - compress-files:
+          path: build
       - store_artifacts:
           path: build
       - save_cache:
