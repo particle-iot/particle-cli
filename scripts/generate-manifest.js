@@ -14,7 +14,7 @@ function generateSHA(filePath) {
 }
 
 function constructUrl(platform, arch) {
-	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe.zip' : 'particle.zip'}`;
+	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe.gz' : 'particle.gz'}`;
 }
 
 function parseFilename(filename) {
@@ -98,10 +98,10 @@ async function moveManifestFiles(sourceDir, targetBaseDir, version) {
 
 async function restructureFiles(version, sourceDir, targetBaseDir) {
 	const fileMappings = [
-		{ test: /^particle-cli-linux-x64.zip$/, newPath: path.join(targetBaseDir,'release', version, 'linux', 'amd64', 'particle.zip') },
-		{ test: /^particle-cli-macos-x64.zip$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'amd64', 'particle.zip') },
-		{ test: /^particle-cli-macos-arm64.zip$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'arm64', 'particle.zip') },
-		{ test: /^particle-cli-win-x64\.exe.zip$/, newPath: path.join(targetBaseDir,'release', version, 'win', 'amd64', 'particle.exe.zip') },
+		{ test: /^particle-cli-linux-x64.gz$/, newPath: path.join(targetBaseDir,'release', version, 'linux', 'amd64', 'particle.gz') },
+		{ test: /^particle-cli-macos-x64.gz$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'amd64', 'particle.gz') },
+		{ test: /^particle-cli-macos-arm64.gz$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'arm64', 'particle.gz') },
+		{ test: /^particle-cli-win-x64\.exe.gz$/, newPath: path.join(targetBaseDir,'release', version, 'win', 'amd64', 'particle.exe.gz') },
 		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir, 'release', 'installer', version, 'windows', 'ParticleCLISetup.exe'), keep: true },
 		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir, 'release', 'installer', 'windows', 'ParticleCLISetup.exe'), keep: true },
 	];
