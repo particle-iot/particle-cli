@@ -66,6 +66,12 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 				}
 				return device;
 			}
+			try {
+				await device.enterListeningMode();
+				await delay(1000); // Just in case
+			} catch (error) {
+				// ignore
+			}
 			await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
 			return device;
 		} catch (error) {
@@ -89,12 +95,6 @@ async function prepareDeviceForFlash({ device, mode, progress }) {
 					progress({ event: 'switch-mode', mode: 'normal' });
 				}
 				device = await usbUtils.reopenInNormalMode(device, { reset: true });
-			}
-			try {
-				await device.enterListeningMode();
-				await delay(1000); // Just in case
-			} catch (error) {
-				// ignore
 			}
 			break;
 		case 'dfu':
@@ -332,8 +332,9 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 }
 
 function _skipAsset(module, existingAssets) {
+	const name = path.basename(module.filename);
 	const hashAssetToBeFlashed = _get256Hash(module);
-	return existingAssets.some((asset) => hashAssetToBeFlashed === asset.hash && module.filename === asset.name);
+	return existingAssets.some((asset) => hashAssetToBeFlashed === asset.hash && name === asset.name);
 }
 
 function _get256Hash(module) {
