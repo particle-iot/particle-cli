@@ -19,22 +19,26 @@ const FLASH_TIMEOUT = 4 * 60000;
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 	const progress = _createFlashProgress({ flashSteps, ui });
 	let success = false;
+	let lastStepDfu = false;
 	try {
 		for (const step of flashSteps) {
 			device = await prepareDeviceForFlash({ device, mode: step.flashMode, progress });
 			if (step.flashMode === 'normal') {
 				device = await _flashDeviceInNormalMode(device, step.data, { name: step.name, progress: progress, checkSkip: step.checkSkip });
+				lastStepDfu = false;
 			} else {
 				// CLI always flashes to internal flash which is the DFU alt setting 0
 				const altSetting = 0;
 				device = await _flashDeviceInDfuMode(device, step.data, { name: step.name, altSetting: altSetting, startAddr: step.address, progress: progress });
+				lastStepDfu = true;
 			}
 		}
 		success = true;
 	} finally {
 		progress({ event: 'finish', success });
 		if (device.isOpen) {
-			if (resetAfterFlash) {
+			// only reset the device if the last step was in DFU mode
+			if (resetAfterFlash && lastStepDfu) {
 				try {
 					await device.reset();
 				} catch (error) {
@@ -329,7 +333,7 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 
 function _skipAsset(module, existingAssets) {
 	const hashAssetToBeFlashed = _get256Hash(module);
-	return existingAssets.some((asset) => hashAssetToBeFlashed === asset.hash);
+	return existingAssets.some((asset) => hashAssetToBeFlashed === asset.hash && module.filename === asset.name);
 }
 
 function _get256Hash(module) {
