@@ -110,7 +110,7 @@ commands:
             cd <<parameters.path>>
             for file in *; do
               if [ "$file" != "ParticleCLISetup.exe" ]; then
-                 zip "${file}.zip" "$file" && rm "$file"
+                 gzip "${file}"
               fi
             done
 jobs:
