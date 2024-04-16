@@ -46,9 +46,6 @@ case $PROCESSOR in
     x86_64)
         ARCH="amd64"
         ;;
-    i686)
-        ARCH="386"
-        ;;
     arm*)
         ARCH="arm"
         ;;
@@ -84,16 +81,22 @@ else
 fi
 
 # Download JSON manifest with latest CLI binary
-echo ":::: Installing the Particle CLI for $OS to \"$DEST\""
-BINARY_URL=$(curl -s $MANIFEST_URL | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['url'])")
-BINARY_SHA256=$(curl -s $MANIFEST_URL | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['sha256'])")
+echo ":::: Installing the Particle CLI for $OS $ARCH"
+MANIFEST=$(curl -s --fail $MANIFEST_URL)
+if [ $? -ne 0 ]; then
+   echo "Couldn't download CLI $VERSION. Check that the version exists."
+   exit 1
+fi
+VERSION=$(echo $MANIFEST | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['version'])")
+BINARY_URL=$(echo $MANIFEST | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['url'])")
+BINARY_SHA256=$(echo $MANIFEST | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['sha256'])")
 
 # Download and validate binary
 mkdir -p "$DEST_PATH"
 TMP_FILE=$(mktemp)
 
-echo ":::: Downloading binary"
-curl -s "$BINARY_URL" | gunzip > "$TMP_FILE"
+echo ":::: Downloading CLI version $VERSION"
+curl "$BINARY_URL" | gunzip > "$TMP_FILE"
 
 echo "$BINARY_SHA256  $TMP_FILE" | shasum a 256 -c > /dev/null 2>&1
 if [ $? -eq 1 ]; then
@@ -155,7 +158,7 @@ EOL
 fi
 
 echo ":::: Success!"
-echo ":::: The Particle CLI has been installed to: \"$DEST_PATH\""
+echo ":::: The Particle CLI has been installed to: \"$DEST\""
 echo ":::: Your \"$SHELL_CONFIG\" file has been updated to properly set \$PATH"
 echo
 echo '************************************************************************'
