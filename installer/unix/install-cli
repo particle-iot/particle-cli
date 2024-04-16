@@ -1,14 +1,10 @@
 #!/bin/bash
 # Install the Particle Command Line Interface (CLI)
 #
-# This installs a binary wrapper to the home directory.
+# This installs a binary packaged with Node and all the JS files to the home directory.
 #
-# That binary wrapper will download its own version of Node to ~/.particle
-#
-# It will also download the particle-cli npm module which contains the
-# actual Particle CLI logic to ~/.particle/node_modules.
-# When a new version of the particle-cli is released, the binary wrapper
-# will update to the latest version in the background.
+# When a new version of the particle-cli is released, the binary will update to the latest version
+# in the background.
 #
 # Run VERSION=3.2.0 ./install-cli to use the specific version
 
@@ -16,11 +12,12 @@ VERSION=${VERSION}
 BINARY="particle"
 DEST_PATH="$HOME/bin"
 DEST="$DEST_PATH/$BINARY"
-MANIFEST_URL="https://binaries.particle.io/particle-cli/manifest.json"
+MANIFEST_HOST=${MANIFEST_HOST:-binaries.particle.io}
+MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest.json"
 SHELL_CONFIG="$HOME/.bash_profile"
 
 if [ -n "$VERSION" ]; then
-  MANIFEST_URL="https://binaries.particle.io/particle-cli/manifest-${VERSION}.json"
+  MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest-${VERSION}.json"
 fi
 echo
 echo 'PARTICLE CLI SETUP...'
