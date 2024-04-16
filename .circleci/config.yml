@@ -238,7 +238,7 @@ jobs:
       - run:
           name: Upload cli installer to S3
           command: |
-            aws s3 --profile ARTIFACT-UPLOAD cp installer/unix/install-cli s3://${S3_BUCKET}/particle-cli/install-cli \
+            aws s3 --profile ARTIFACT-UPLOAD cp installer/unix/install-cli s3://${S3_BUCKET}/particle-cli/installer/install-cli \
             --cache-control max-age=0
 
   # Copied from following repos
