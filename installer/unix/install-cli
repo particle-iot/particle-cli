@@ -10,17 +10,17 @@
 # When a new version of the particle-cli is released, the binary wrapper
 # will update to the latest version in the background.
 #
-# Run VERSION=3.2.0 ./install-cli to use the beta version
+# Run VERSION=3.2.0 ./install-cli to use the specific version
 
 VERSION=${VERSION}
 BINARY="particle"
 DEST_PATH="$HOME/bin"
 DEST="$DEST_PATH/$BINARY"
-MANIFEST_URL="https://binaries.staging.particle.io/particle-cli/manifest.json"
+MANIFEST_URL="https://binaries.particle.io/particle-cli/manifest.json"
 SHELL_CONFIG="$HOME/.bash_profile"
 
 if [ -n "$VERSION" ]; then
-  MANIFEST_URL="https://binaries.staging.particle.io/particle-cli/manifest-${VERSION}.json"
+  MANIFEST_URL="https://binaries.particle.io/particle-cli/manifest-${VERSION}.json"
 fi
 echo
 echo 'PARTICLE CLI SETUP...'
