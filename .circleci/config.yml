@@ -98,6 +98,21 @@ commands:
           name: Generate Manifest
           command: |
             npm run generate:manifest <<parameters.build-path>> <<parameters.version>> <<parameters.s3-bucket>>
+  compress-files:
+    description: "A command to compress files"
+    parameters:
+        path:
+            type: string
+    steps:
+      - run:
+          name: Compress files
+          command: |
+            cd <<parameters.path>>
+            for file in *; do
+              if [ "$file" != "ParticleCLISetup.exe" ]; then
+                 gzip "${file}"
+              fi
+            done
 jobs:
   test-unix:
     parameters:
@@ -169,6 +184,8 @@ jobs:
           node-version: << parameters.node-version >>
       - generate-win-installer:
           node-version: << parameters.node-version >>
+      - compress-files:
+          path: build
       - store_artifacts:
           path: build
       - save_cache:
@@ -217,6 +234,11 @@ jobs:
           name: Upload to S3
           command: |
             aws s3 --profile ARTIFACT-UPLOAD cp build/release/ s3://${S3_BUCKET}/particle-cli/ --recursive \
+            --cache-control max-age=0
+      - run:
+          name: Upload cli installer to S3
+          command: |
+            aws s3 --profile ARTIFACT-UPLOAD cp installer/unix/install-cli s3://${S3_BUCKET}/particle-cli/installer/install-cli \
             --cache-control max-age=0
 
   # Copied from following repos

@@ -14,7 +14,7 @@ function generateSHA(filePath) {
 }
 
 function constructUrl(platform, arch) {
-	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe' : 'particle'}`;
+	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe.gz' : 'particle.gz'}`;
 }
 
 function parseFilename(filename) {
@@ -98,12 +98,14 @@ async function moveManifestFiles(sourceDir, targetBaseDir, version) {
 
 async function restructureFiles(version, sourceDir, targetBaseDir) {
 	const fileMappings = [
-		{ test: /^particle-cli-linux-x64$/, newPath: path.join(targetBaseDir,'release', version, 'linux', 'amd64', 'particle') },
-		{ test: /^particle-cli-macos-x64$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'amd64', 'particle') },
-		{ test: /^particle-cli-macos-arm64$/, newPath: path.join(targetBaseDir,'release', version, 'darwin', 'arm64', 'particle') },
-		{ test: /^particle-cli-win-x64\.exe$/, newPath: path.join(targetBaseDir,'release', version, 'win', 'amd64', 'particle.exe') },
-		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir, 'release', 'installer', version, 'windows', 'ParticleCLISetup.exe'), keep: true },
-		{ test: /^ParticleCLISetup\.exe$/, newPath: path.join(targetBaseDir, 'release', 'installer', 'windows', 'ParticleCLISetup.exe'), keep: true },
+		{ test: /^particle-cli-linux-x64.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'linux', 'amd64', 'particle.gz')] },
+		{ test: /^particle-cli-macos-x64.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'darwin', 'amd64', 'particle.gz')] },
+		{ test: /^particle-cli-macos-arm64.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'darwin', 'arm64', 'particle.gz')] },
+		{ test: /^particle-cli-win-x64\.exe.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'win', 'amd64', 'particle.exe.gz')] },
+		{ test: /^ParticleCLISetup\.exe$/, newPath: [
+			path.join(targetBaseDir, 'release', 'installer', version, 'windows', 'ParticleCLISetup.exe'),
+			path.join(targetBaseDir, 'release', 'installer', 'windows', 'ParticleCLISetup.exe')
+		] },
 	];
 
 	try {
@@ -112,13 +114,10 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 			const mapping = fileMappings.find(m => file.match(m.test));
 			if (mapping) {
 				const sourcePath = path.join(sourceDir, file);
-				// Ensure the target directory exists
-				await fs.ensureDir(path.dirname(mapping.newPath));
-				if (mapping.keep) {
-					await fs.copy(sourcePath, mapping.newPath, { overwrite: true });
-					console.log(`Adding ${sourcePath} to ${mapping.newPath}`);
-				} else {
-					await moveFile(sourcePath, mapping.newPath);
+				for (const newPath of mapping.newPath) {
+					await fs.ensureDir(path.dirname(newPath));
+					await fs.copy(sourcePath, newPath, { overwrite: true });
+					console.log(`Adding ${sourcePath} to ${newPath}`);
 				}
 			}
 		}
