@@ -139,7 +139,7 @@ class UpdateCliCommand {
 
 	async replaceCLI(newCliPath) {
 		// rename the original CLI
-		const binPath = path.join(os.homedir(), 'bin'); // check for windows
+		const binPath = this.getBinaryPath();
 		const fileName = os.platform() === 'win32' ? 'particle.exe' : 'particle';
 		const cliPath = path.join(binPath, fileName);
 		const oldCliPath = path.join(binPath, `${fileName}.old`);
@@ -148,6 +148,11 @@ class UpdateCliCommand {
 		await fs.chmod(cliPath, 0o755); // add execute permissions
 	}
 
+	getBinaryPath() {
+		const unixPath = path.join(os.homedir(), 'bin');
+		const windowsPath = path.join(process.env.LOCALAPPDATA, 'particle', 'bin');
+		return os.platform() === 'win32' ? windowsPath : unixPath;
+	}
 	async configureProfileSettings(version) {
 		settings.profile_json.last_version_check = new Date().getTime();
 		settings.saveProfileData();
