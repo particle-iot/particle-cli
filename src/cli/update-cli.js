@@ -9,6 +9,9 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true,
 				description: 'Disable automatic update checks'
 			},
+			'version': {
+				description: 'Update to a specific version'
+			}
 		},
 		handler: (args) => {
 			const UpdateCliCommand = require('../cmd/update-cli');
