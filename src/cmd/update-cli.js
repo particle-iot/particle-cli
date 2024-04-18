@@ -116,14 +116,20 @@ class UpdateCliCommand {
 	}
 
 	getUrlFromManifest(manifest) {
+		const platformMapping = {
+			darwin: 'darwin',
+			linux: 'linux',
+			win32: 'win'
+		};
 		const archMapping = {
 			x64: 'amd64',
 			arm64: 'arm64'
 		};
 		const platform = os.platform();
 		const arch = os.arch();
+		const platformKey = platformMapping[platform] || platform;
 		const archKey = archMapping[arch] || arch;
-		const platformManifest = manifest.builds[platform];
+		const platformManifest = manifest.builds[platformKey];
 		const archManifest = platformManifest ? platformManifest[archKey] : null;
 		if (!archManifest) {
 			throw new Error(`No CLI build found for ${platform} ${arch}`);
