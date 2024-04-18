@@ -12,7 +12,7 @@ let settings = {
 	flashWarningShownOn: null,
 	// TODO set to false once we give flags to control this
 	disableUpdateCheck: envValueBoolean('PARTICLE_DISABLE_UPDATE', false),
-	updateCheckInterval: 4 * 60 * 60 * 1000, // 24 hours
+	updateCheckInterval: 4 * 60 * 60 * 1000, // 4 hours
 	updateCheckTimeout: 3000,
 
 	//10 megs -- this constant here is arbitrary
