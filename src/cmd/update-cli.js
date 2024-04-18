@@ -72,18 +72,25 @@ class UpdateCliCommand {
 		return new Promise((resolve, reject ) => {
 			return request(url, (error, response, body) => {
 				if (error) {
-					return reject(`Error downloading manifest: ${error}`);
+					return this.logAndReject(error, reject, version);
 				}
 				if (response.statusCode !== 200) {
-					return reject(`Manifest not found: ${response.statusCode}`);
+					return this.logAndReject(`Failed to download manifest: Status Code ${response.statusCode}`, reject, version);
 				}
 				try {
 					resolve(JSON.parse(body));
 				} catch (error) {
-					reject('Invalid manifest');
+					this.logAndReject(error, reject, version);
 				}
 			});
 		});
+	}
+
+	logAndReject(error, reject, version) {
+		const baseMessage = 'We were unable to check for updates';
+		const message = version ? `${baseMessage}: Version ${version} not found` : `${baseMessage} Please try again later`;
+		log.error(error);
+		reject(message);
 	}
 
 	async downloadCLI(manifest) {
