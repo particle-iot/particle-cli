@@ -9,6 +9,7 @@ const settings = require('../../settings');
 const request = require('request');
 const zlib = require('zlib');
 const Spinner = require('cli-spinner').Spinner;
+const crypto = require('crypto');
 
 /*
  * The update-cli command tells the CLI installer to reinstall the latest version of the CLI
@@ -92,28 +93,67 @@ class UpdateCliCommand {
 	}
 
 	async downloadCLI(manifest) {
-		const url = this.getUrlFromManifest(manifest);
-		const fileName = url.split('/').pop();
-		const fileNameWithoutLastExtension = path.basename(fileName, path.extname(fileName));
-		const filePath = path.join(os.tmpdir(), fileNameWithoutLastExtension);
-		const gunzip = zlib.createGunzip();
-		const output = fs.createWriteStream(filePath);
+		try {
+			const { url, sha256: expectedHash } = this.getBuildDetailsFromManifest(manifest);
+			const fileName = url.split('/').pop();
+			const fileNameWithoutLastExtension = path.basename(fileName, path.extname(fileName));
+			const filePath = path.join(os.tmpdir(), fileNameWithoutLastExtension);
+			const tempFilePath = `${filePath}.gz`;
 
+			const output = fs.createWriteStream(tempFilePath);
+
+			return await new Promise((resolve, reject) => {
+				request(url)
+					.on('response', (response) => {
+						if (response.statusCode !== 200) {
+							log.debug(`Failed to download CLI: Status Code ${response.statusCode}`);
+							return reject(new Error('No file found to download'));
+						}
+					})
+					.pipe(output)
+					.on('finish', async () => {
+						const fileHash = await this.getFileHash(tempFilePath);
+						if (fileHash === expectedHash) {
+							const unzipPath = await this.unzipFile(tempFilePath, filePath);
+							resolve(unzipPath);
+						} else {
+							reject(new Error('Hash mismatch'));
+						}
+					})
+					.on('error', (error) => {
+						reject(error);
+					});
+			});
+		} catch (error) {
+			log.debug(`Failed during download or verification: ${error}`);
+			throw new Error('Failed to download or verify the CLI, please try again later');
+		}
+	}
+
+	async getFileHash(filePath) {
 		return new Promise((resolve, reject) => {
-			request(url)
-				.pipe(gunzip)
-				.pipe(output)
-				.on('finish', () => {
-					resolve(filePath);
-				})
-				.on('error', (error) => {
-					log.error(`Error downloading CLI: ${error}`);
-					reject();
-				});
+			const hash = crypto.createHash('sha256');
+			const stream = fs.createReadStream(filePath);
+			stream.on('data', (data) => hash.update(data));
+			stream.on('end', () => resolve(hash.digest('hex')));
+			stream.on('error', (error) => reject(error));
 		});
 	}
 
-	getUrlFromManifest(manifest) {
+	async unzipFile(sourcePath, targetPath) {
+		return new Promise((resolve, reject) => {
+			const gunzip = zlib.createGunzip();
+			const source = fs.createReadStream(sourcePath);
+			const destination = fs.createWriteStream(targetPath);
+			source
+				.pipe(gunzip)
+				.pipe(destination)
+				.on('finish', () => resolve(targetPath))
+				.on('error', (error) => reject(error));
+		});
+	}
+
+	getBuildDetailsFromManifest(manifest) {
 		const platformMapping = {
 			darwin: 'darwin',
 			linux: 'linux',
@@ -127,12 +167,12 @@ class UpdateCliCommand {
 		const arch = os.arch();
 		const platformKey = platformMapping[platform] || platform;
 		const archKey = archMapping[arch] || arch;
-		const platformManifest = manifest.builds[platformKey];
-		const archManifest = platformManifest ? platformManifest[archKey] : null;
+		const platformManifest = manifest.builds && manifest.builds[platformKey];
+		const archManifest = platformManifest && platformManifest[archKey];
 		if (!archManifest) {
 			throw new Error(`No CLI build found for ${platform} ${arch}`);
 		}
-		return archManifest.url;
+		return archManifest;
 	}
 
 	async replaceCLI(newCliPath) {
