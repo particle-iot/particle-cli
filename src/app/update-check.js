@@ -17,7 +17,7 @@ module.exports = async (skip, force) => {
 		if (skipUpdates) {
 			return;
 		}
-		execa('particle', ['update-cli']);
+		execa('particle', ['update-cli'], { cleanup: false, detached: true });
 	}
 };
 
