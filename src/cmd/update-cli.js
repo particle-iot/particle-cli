@@ -6,7 +6,6 @@ const semver = require('semver');
 const log = require('../lib/log');
 const chalk = require('chalk');
 const settings = require('../../settings');
-const MANIFEST_HOST = process.env.PARTICLE_MANIFEST_HOST || 'binaries.particle.io';
 const request = require('request');
 const zlib = require('zlib');
 const Spinner = require('cli-spinner').Spinner;
@@ -67,7 +66,7 @@ class UpdateCliCommand {
 
 	async downloadManifest(version) {
 		const fileName = version ? `manifest-${version}.json` : 'manifest.json';
-		const url = `https://${MANIFEST_HOST}/particle-cli/${fileName}`;
+		const url = `https://${settings.manifestHost}/particle-cli/${fileName}`;
 		return new Promise((resolve, reject ) => {
 			return request(url, (error, response, body) => {
 				if (error) {

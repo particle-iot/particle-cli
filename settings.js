@@ -21,6 +21,7 @@ let settings = {
 	wirelessSetupFilter: /^Photon-.*$/,
 
 	serial_follow_delay: 250,
+	manifestHost: envValue('PARTICLE_MANIFEST_HOST','binaries.particle.io'),
 
 	notSourceExtensions: [
 		'.ds_store',
