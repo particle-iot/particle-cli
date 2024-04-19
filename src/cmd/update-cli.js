@@ -148,9 +148,10 @@ class UpdateCliCommand {
 	}
 
 	getBinaryPath() {
-		const unixPath = path.join(os.homedir(), 'bin');
-		const windowsPath = path.join(process.env.LOCALAPPDATA, 'particle', 'bin');
-		return os.platform() === 'win32' ? windowsPath : unixPath;
+		if (os.platform() === 'win32') {
+			return path.join(process.env.LOCALAPPDATA, 'particle', 'bin');
+		}
+		return path.join(os.homedir(), 'bin');
 	}
 	async configureProfileSettings(version) {
 		settings.profile_json.last_version_check = new Date().getTime();
