@@ -19,14 +19,13 @@ const Spinner = require('cli-spinner').Spinner;
  */
 class UpdateCliCommand {
 	update({ 'enable-updates': enableUpdates, 'disable-updates': disableUpdates, version }) {
-		const dirPath = __dirname;
 		if (enableUpdates) {
 			return this.enableUpdates();
 		}
 		if (disableUpdates) {
 			return this.disableUpdates();
 		}
-		if (!dirPath.includes('snapshot')) {
+		if (!process.pkg) {
 			log.info(`Update the CLI by running ${chalk.bold('npm install -g particle-cli')}`);
 			log.info('To stay up to date with the latest features and improvements, please install the latest Particle Installer executable from our website: https://www.particle.io/cli');
 			return;
