@@ -225,7 +225,7 @@ jobs:
           version: $CIRCLE_TAG
           s3-bucket: $S3_BUCKET_URL
       - aws-cli/setup:
-          role_arn: ${AWS_ST_ROLE_ARN}
+          role_arn: ${ROLE_ARN}
           region: ${AWS_S3_REGION}
           profile_name: "ARTIFACT-UPLOAD"
           role_session_name: "circleci-deploy-public-artifacts-${CIRCLE_BUILD_NUM}"
