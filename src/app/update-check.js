@@ -9,7 +9,7 @@ module.exports = async (skip, force) => {
 
 	const now = Date.now();
 	const lastCheck = settings.profile_json.last_version_check || 0;
-	const skipUpdates = !settings.profile_json.enableUpdates || settings.disableUpdateCheck;
+	const skipUpdates = !settings.profile_json.enableUpdates === false || settings.disableUpdateCheck;
 
 	if ((now - lastCheck >= settings.updateCheckInterval) || force){
 		settings.profile_json.last_version_check = now;
