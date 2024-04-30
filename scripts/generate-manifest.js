@@ -109,8 +109,8 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 	];
 	const excludedFiles = [
 		/^manifest(-\d+\.\d+\.\d+)?\.json$/,
-		/^particle-cli-.*-unsigned\.(exe|gz)$/,
-		/^ParticleCLISetup(-unsigned)?\.exe$/
+		/^particle-cli-.*-unsigned\.exe(\.gz)?$/,
+		/^ParticleCLISetup(-unsigned)?\.exe(\.gz)?$/
 	];
 
 	try {
@@ -127,6 +127,7 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 			} else {
 				// means is not an installer file
 				if (excludedFiles.some(regex => file.match(regex)) ) {
+					console.log('Skipping excluded file:', file);
 					continue;
 				}
 				const { platform, arch } = parseFilename(file);
@@ -134,7 +135,7 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 					console.error(`Could not determine platform and arch for ${file}`);
 					continue;
 				}
-				const targetDir = path.join(targetBaseDir, 'release', platform, arch);
+				const targetDir = path.join(targetBaseDir, 'release', version, platform, arch);
 				await fs.ensureDir(targetDir);
 				await moveFile(path.join(sourceDir, file), path.join(targetDir, file));
 			}
