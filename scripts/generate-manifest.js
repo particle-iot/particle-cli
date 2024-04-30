@@ -103,7 +103,11 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 			path.join(targetBaseDir, 'release', 'installer', 'win32', 'ParticleCLISetup.exe')
 		] },
 	];
-	const excludedFiles = [/^manifest(-\d+\.\d+\.\d+)?\.json$/, /^ParticleCLISetup\.exe$/];
+	const excludedFiles = [
+		/^manifest(-\d+\.\d+\.\d+)?\.json$/,
+		/^ParticleCLISetup\.exe$/,
+		/^particle-cli-.*-unsigned\.(exe|gz)$/
+	];
 
 	try {
 		const files = await fs.readdir(sourceDir);
