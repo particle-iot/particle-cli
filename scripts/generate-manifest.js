@@ -14,17 +14,17 @@ function generateSHA(filePath) {
 }
 
 function constructUrl(platform, arch) {
-	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win' ? 'particle.exe.gz' : 'particle.gz'}`;
+	return `${baseUrl}/${version}/${platform}/${arch}/${platform === 'win32' ? 'particle.exe.gz' : 'particle.gz'}`;
 }
 
 function parseFilename(filename) {
 	// Simplified parsing logic, adjust as needed
-	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win' };
-	const archMap = { x64: 'amd64', arm64: 'arm64' };
+	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32', linuxstatic: 'linux' };
 	const parts = filename.split('-');
+	const arch = parts[3].split('.')[0];
 	return {
-		platform: platformMap[parts[2]],
-		arch: archMap[parts[3].split('.')[0]] // Removing file extension if present
+		platform: platformMap[parts[2]] || parts[2],
+		arch: arch // Removing file extension if present
 	};
 }
 
@@ -98,15 +98,12 @@ async function moveManifestFiles(sourceDir, targetBaseDir, version) {
 
 async function restructureFiles(version, sourceDir, targetBaseDir) {
 	const fileMappings = [
-		{ test: /^particle-cli-linux-x64.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'linux', 'amd64', 'particle.gz')] },
-		{ test: /^particle-cli-macos-x64.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'darwin', 'amd64', 'particle.gz')] },
-		{ test: /^particle-cli-macos-arm64.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'darwin', 'arm64', 'particle.gz')] },
-		{ test: /^particle-cli-win-x64\.exe.gz$/, newPath: [path.join(targetBaseDir,'release', version, 'win', 'amd64', 'particle.exe.gz')] },
 		{ test: /^ParticleCLISetup\.exe$/, newPath: [
 			path.join(targetBaseDir, 'release', 'installer', version, 'windows', 'ParticleCLISetup.exe'),
 			path.join(targetBaseDir, 'release', 'installer', 'windows', 'ParticleCLISetup.exe')
 		] },
 	];
+	const excludedFiles = [/^manifest(-\d+\.\d+\.\d+)?\.json$/, /^ParticleCLISetup\.exe$/];
 
 	try {
 		const files = await fs.readdir(sourceDir);
@@ -119,6 +116,15 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 					await fs.copy(sourcePath, newPath, { overwrite: true });
 					console.log(`Adding ${sourcePath} to ${newPath}`);
 				}
+			} else {
+				// means is not an installer file
+				if (excludedFiles.some(regex => file.match(regex))) {
+					continue;
+				}
+				const { platform, arch } = parseFilename(file);
+				const targetDir = path.join(targetBaseDir, 'release', platform, arch);
+				await fs.ensureDir(targetDir);
+				await moveFile(path.join(sourceDir, file), path.join(targetDir, file));
 			}
 		}
 
