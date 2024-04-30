@@ -99,8 +99,8 @@ async function moveManifestFiles(sourceDir, targetBaseDir, version) {
 async function restructureFiles(version, sourceDir, targetBaseDir) {
 	const fileMappings = [
 		{ test: /^ParticleCLISetup\.exe$/, newPath: [
-			path.join(targetBaseDir, 'release', 'installer', version, 'windows', 'ParticleCLISetup.exe'),
-			path.join(targetBaseDir, 'release', 'installer', 'windows', 'ParticleCLISetup.exe')
+			path.join(targetBaseDir, 'release', 'installer', version, 'win32', 'ParticleCLISetup.exe'),
+			path.join(targetBaseDir, 'release', 'installer', 'win32', 'ParticleCLISetup.exe')
 		] },
 	];
 	const excludedFiles = [/^manifest(-\d+\.\d+\.\d+)?\.json$/, /^ParticleCLISetup\.exe$/];
