@@ -19,9 +19,13 @@ function constructUrl(platform, arch) {
 
 function parseFilename(filename) {
 	// Simplified parsing logic, adjust as needed
+	console.log('parsing', filename);
 	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32', linuxstatic: 'linux' };
 	const parts = filename.split('-');
-	const arch = parts[3].split('.')[0];
+	let arch;
+	if (parts.length > 3) {
+		arch = parts[3].split('.')[0];
+	}
 	return {
 		platform: platformMap[parts[2]] || parts[2],
 		arch: arch // Removing file extension if present
@@ -126,6 +130,10 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 					continue;
 				}
 				const { platform, arch } = parseFilename(file);
+				if (!platform || !arch) {
+					console.error(`Could not determine platform and arch for ${file}`);
+					continue;
+				}
 				const targetDir = path.join(targetBaseDir, 'release', platform, arch);
 				await fs.ensureDir(targetDir);
 				await moveFile(path.join(sourceDir, file), path.join(targetDir, file));
