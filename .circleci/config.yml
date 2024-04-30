@@ -209,13 +209,13 @@ jobs:
           name: Set AWS Role ARN Based on Tag
           command: |
             if [[ "${CIRCLE_TAG}" == v* ]]; then
-              echo 'export ROLE_ARN=${AWS_ST_ROLE_ARN}' >> $BASH_ENV
-              echo 'export S3_BUCKET=${AWS_ST_S3_BUCKET}' >> $BASH_ENV
-              echo 'export S3_BUCKET_URL=${ST_BINARIES_URL}' >> $BASH_ENV
-            elif [[ "${CIRCLE_TAG}" == test-* ]]; then
               echo 'export ROLE_ARN=${AWS_PRD_ROLE_ARN}' >> $BASH_ENV
               echo 'export S3_BUCKET=${AWS_PRD_S3_BUCKET}' >> $BASH_ENV
               echo 'export S3_BUCKET_URL=${PRD_BINARIES_URL}' >> $BASH_ENV
+            elif [[ "${CIRCLE_TAG}" == test-* ]]; then
+              echo 'export ROLE_ARN=${AWS_ST_ROLE_ARN}' >> $BASH_ENV
+              echo 'export S3_BUCKET=${AWS_ST_S3_BUCKET}' >> $BASH_ENV
+              echo 'export S3_BUCKET_URL=${ST_BINARIES_URL}' >> $BASH_ENV
             else
               echo "Tag does not meet criteria for setting ROLE_ARN."
               exit 1
