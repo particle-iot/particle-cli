@@ -105,8 +105,8 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 	];
 	const excludedFiles = [
 		/^manifest(-\d+\.\d+\.\d+)?\.json$/,
-		/^ParticleCLISetup\.exe$/,
-		/^particle-cli-.*-unsigned\.(exe|gz)$/
+		/^particle-cli-.*-unsigned\.(exe|gz)$/,
+		/^ParticleCLISetup(-unsigned)?\.exe$/
 	];
 
 	try {
@@ -122,7 +122,7 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 				}
 			} else {
 				// means is not an installer file
-				if (excludedFiles.some(regex => file.match(regex))) {
+				if (excludedFiles.some(regex => file.match(regex)) ) {
 					continue;
 				}
 				const { platform, arch } = parseFilename(file);
