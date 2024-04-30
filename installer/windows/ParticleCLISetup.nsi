@@ -19,10 +19,6 @@ InstallDir "$LOCALAPPDATA\particle"
 ; CLI Executable
 !define EXE "particle.exe"
 
-; OpenSSL installer
-!addplugindir /x86-ansi Plugins/x86-ansi
-!define OpenSSLFile "Win32OpenSSL_Light-1_1_0d.exe"
-
 ; Don't request admin privileges
 RequestExecutionLevel user
 
@@ -78,10 +74,6 @@ CompletedText 'Run "particle login" in the command line to start using the Parti
 ; Open source licenses
 !insertmacro MUI_PAGE_LICENSE "licenses.txt"
 
-; Select what to install
-InstType "Full"
-!insertmacro MUI_PAGE_COMPONENTS
-
 ; Installation details page
 !insertmacro MUI_PAGE_INSTFILES
 
@@ -108,11 +100,6 @@ Section "CLI" CLI_SECTION
 	Call AddCLIToPath
 SectionEnd
 
-Section "OpenSSL (keys tools)" OPENSSL_SECTION
-	SectionIn 1 3
-	Call InstallOpenSSL
-SectionEnd
-
 Section "-Create uninstaller"
     WriteRegStr ${UNINSTALL_REG} "DisplayName" "${PRODUCT_NAME}"
     WriteRegStr ${UNINSTALL_REG} "Publisher" "${COMPANY_NAME}"
@@ -124,14 +111,6 @@ Section "-Create uninstaller"
 	DetailPrint ""
 SectionEnd
 
-
-LangString DESC_CLI ${LANG_ENGLISH} "Particle command-line interface. Add to PATH. Run as particle in the command line"
-LangString DESC_OPENSSL ${LANG_ENGLISH} "Tools for generating new keys for devices. Needs admin priviledges."
-
-!insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
-  !insertmacro MUI_DESCRIPTION_TEXT ${CLI_SECTION} $(DESC_CLI)
-  !insertmacro MUI_DESCRIPTION_TEXT ${OPENSSL_SECTION} $(DESC_OPENSSL)
-!insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;--------------------------------
 ; Uninstaller Sections
@@ -158,16 +137,6 @@ FunctionEnd
 
 Function DisableAutoUpdates
     nsExec::ExecToLog "${BINDIR}\${EXE} update-cli --disable-updates"
-FunctionEnd
-
-
-Function InstallOpenSSL
-	DetailPrint "Installing OpenSSL"
-	File "/oname=$TEMP\${OpenSSLFile}" ".\bin\${OpenSSLFile}"
-	nsExec::ExecToLog "$TEMP\${OpenSSLFile} /verysilent"
-	DetailPrint "Adding OpenSSL to path"
-	Push "C:\OpenSSL-Win32\bin"
-	Call AddToPath
 FunctionEnd
 
 Function AddCLIToPath
