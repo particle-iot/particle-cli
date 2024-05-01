@@ -7,7 +7,7 @@ const request = require('request');
 const buildDir = process.argv[2] || './build';
 const version = cleanVersion(process.argv[3]); // Version tag, e.g., '1.2.0' or '1.2.0-alpha.1'
 const baseUrl = process.argv[4];
-const installerManifestUrl = `https://${baseUrl}/installer/manifest.json`;
+const installerManifestUrl = `${baseUrl}/installer/manifest.json`;
 
 function generateSHA(filePath) {
 	const fileBuffer = fs.readFileSync(filePath);
@@ -97,8 +97,8 @@ async function generateInstallerManifest(version, buildDir) {
 		version: version,
 		platforms: {
 			win32: {
-				url: `https://${baseUrl}/release/installer/${version}/win32/ParticleCLISetup.exe`,
-				manifest: `https://${baseUrl}/release/manifest-${version}.json`
+				url: `${baseUrl}/release/installer/${version}/win32/ParticleCLISetup.exe`,
+				manifest: `${baseUrl}/release/manifest-${version}.json`
 			}
 		}
 	};
