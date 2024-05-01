@@ -23,10 +23,14 @@ function parseFilename(filename) {
 	// Simplified parsing logic, adjust as needed
 	console.log('parsing', filename);
 	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32', linuxstatic: 'linux' };
+
 	const parts = filename.split('-');
 	let arch;
 	if (parts.length > 3) {
 		arch = parts[3].split('.')[0];
+	}
+	if (arch?.includes('arm')) {
+		arch = 'arm';
 	}
 	return {
 		platform: platformMap[parts[2]] || parts[2],
