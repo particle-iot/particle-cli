@@ -240,6 +240,11 @@ jobs:
           command: |
             aws s3 --profile ARTIFACT-UPLOAD cp installer/unix/install-cli s3://${S3_BUCKET}/particle-cli/installer/install-cli \
             --cache-control "public, max-age=0"
+      - run:
+          name: Upload installer manifest to S3
+          command: |
+            aws s3 --profile ARTIFACT-UPLOAD cp build/installer-manifest.json s3://${S3_BUCKET}/particle-cli/installer/manifest.json \
+            --cache-control "public, max-age=0"
 
   # Copied from following repos
   # https://github.com/particle-iot-inc/cache-aside/blob/2ee9e2d77138f1a9d22a7d604e7f8cc0d45f016e/.circleci/config.yml

@@ -2,10 +2,12 @@ const fs = require('fs-extra');
 const path = require('path');
 const crypto = require('crypto');
 const semver = require('semver');
+const request = require('request');
 
 const buildDir = process.argv[2] || './build';
 const version = cleanVersion(process.argv[3]); // Version tag, e.g., '1.2.0' or '1.2.0-alpha.1'
 const baseUrl = process.argv[4];
+const installerManifestUrl = `https://${baseUrl}/installer/manifest.json`;
 
 function generateSHA(filePath) {
 	const fileBuffer = fs.readFileSync(filePath);
@@ -79,7 +81,43 @@ async function generateManifest() {
 		fs.writeFileSync(path.join(buildDir, 'manifest.json'), JSON.stringify(manifest, null, 2));
 		console.log('General manifest.json also created.');
 	}
+	await generateInstallerManifest(version, buildDir);
 	await restructureFiles(version, buildDir, buildDir);
+}
+async function generateInstallerManifest(version, buildDir) {
+	const downloadedManifest = await downloadCurrentManifestInstaller(installerManifestUrl);
+	let manifest = {
+		installers: []
+	};
+	if (downloadedManifest) {
+		manifest = downloadedManifest;
+	}
+	const installerData = {
+		released_at: new Date().toISOString(),
+		version: version,
+		platforms: {
+			win32: {
+				url: `https://${baseUrl}/release/installer/${version}/win32/ParticleCLISetup.exe`,
+				manifest: `https://${baseUrl}/release/manifest-${version}.json`
+			}
+		}
+	};
+	manifest.installers.push(installerData);
+	const installerManifestPath = path.join(buildDir, 'installer-manifest.json');
+	fs.writeFileSync(installerManifestPath, JSON.stringify(manifest, null, 2));
+}
+async function downloadCurrentManifestInstaller(url) {
+	return new Promise((resolve, reject) => {
+		request({ url: url, json: true }, (error, response, body) => {
+			if (error) {
+				reject(new Error(`Error making request: ${error.message}`));
+			} else if (response.statusCode !== 200) {
+				resolve(null);
+			} else {
+				resolve(body);
+			}
+		});
+	});
 }
 
 async function moveFile(source, target) {
@@ -88,15 +126,6 @@ async function moveFile(source, target) {
 		console.log(`Moved ${source} to ${target}`);
 	} catch (error) {
 		console.error(`Error moving file ${source}:`, error);
-	}
-}
-
-async function moveManifestFiles(sourceDir, targetBaseDir, version) {
-	const manifestFiles = ['manifest.json', `manifest-${version}.json`];
-	for (const fileName of manifestFiles) {
-		const sourcePath = path.join(sourceDir, fileName);
-		const targetPath = path.join(targetBaseDir, fileName);
-		await moveFile(sourcePath, targetPath);
 	}
 }
 
@@ -148,6 +177,16 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 		console.error('Failed to restructure files:', error);
 	}
 }
+
+async function moveManifestFiles(sourceDir, targetBaseDir, version) {
+	const manifestFiles = ['manifest.json', `manifest-${version}.json`];
+	for (const fileName of manifestFiles) {
+		const sourcePath = path.join(sourceDir, fileName);
+		const targetPath = path.join(targetBaseDir, fileName);
+		await moveFile(sourcePath, targetPath);
+	}
+}
+
 
 (async () => {
 	await generateManifest();
