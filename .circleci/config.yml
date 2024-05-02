@@ -61,9 +61,20 @@ commands:
     steps:
       - install-node:
           node-version: << parameters.node-version >>
+      - restore_cache:
+          key: node16-pkg-v1
+      - run:
+          name: Add pre-built Node for armv7
+          command: |
+            mkdir -p ~/.pkg-cache/v3.4
+            cp .circleci/built-v16.16.0-linux-armv7 ~/.pkg-cache/v3.4
       - run:
           name: Build Package
           command: npm run build
+      - save_cache:
+          key: node16-pkg-v1
+          paths:
+            - ~/.pkg-cache
   sign-win:
     description: "A command to sign windows executable"
     parameters:
