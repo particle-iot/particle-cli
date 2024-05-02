@@ -69,15 +69,6 @@ commands:
             mkdir -p ~/.pkg-cache/v3.4
             cp .circleci/built-v16.16.0-linux-armv7 ~/.pkg-cache/v3.4
       - run:
-          name: Enable QEMU
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y qemu-user-static
-            sudo apt-get install -y binfmt-support
-            qemu-aarch64-static --version
-            qemu-arm-static --version
-            update-binfmts --display
-      - run:
           name: Build Package
           command: npm run build
       - save_cache:

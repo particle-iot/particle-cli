@@ -152,7 +152,7 @@
     "coverage:integration": "nyc --no-clean npm run test:integration:silent",
     "coverage:e2e": "nyc npm run test:e2e:silent",
     "coverage:report": "nyc report --reporter=html",
-    "build": "pkg .",
+    "build": "pkg . --no-bytecode --public",
     "sign:win": "node ./scripts/win-sign.js",
     "generate:win-installer": "node ./scripts/generate-win-installer.js",
     "generate:manifest": "node ./scripts/generate-manifest.js",
