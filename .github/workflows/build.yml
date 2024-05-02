@@ -1,10 +1,9 @@
 name: Build Package
 
 on:
-  push:
-    branches: [ "master", "feature/cli-installer-v2" ] # should change once we have a stable branch
-  pull_request:
-    branches: [ "master", "feature/cli-installer-v2" ]
+  workflow_run:
+    workflows: [Run Tests]
+    types: [completed]
 
 jobs:
   build:
