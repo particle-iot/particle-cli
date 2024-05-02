@@ -1,7 +1,6 @@
 const latestVersion = require('latest-version');
 const settings = require('../../settings');
-const execa = require('execa');
-const { spawn } = require('child_process');
+const { spawn } = require('node:child_process');
 
 
 module.exports = async (skip, force) => {
@@ -22,15 +21,11 @@ module.exports = async (skip, force) => {
 		if (skipUpdates) {
 			return;
 		}
-		console.log('exec', process.execPath);
-		try {
-			await spawn(process.execPath, ['update-cli'], {
-				stdio: 'inherit'
-			});
-		} catch (error) {
-			console.log(error);
-		}
-
+		spawn(process.execPath, [process.argv[1], 'update-cli'], {
+			detached: true,
+			shell: true,
+			windowsHide: true
+		});
 	}
 };
 
