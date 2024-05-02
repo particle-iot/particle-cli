@@ -1,6 +1,10 @@
 name: Build Package
 
-on: [push]
+on:
+  push:
+    branches: [ "master", "feature/cli-installer-v2" ] # should change once we have a stable branch
+  pull_request:
+    branches: [ "master", "feature/cli-installer-v2" ]
 
 jobs:
   build:
