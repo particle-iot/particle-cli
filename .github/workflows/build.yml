@@ -1,0 +1,48 @@
+name: Build Package
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Choose an appropriate runner
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Configure NPM Token
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.pkg-cache
+          key: node16-pkg-${{ github.run_id }}
+          restore-keys: node16-pkg-
+
+      - name: Add pre-built Node for armv7
+        run: |
+          mkdir -p ~/.pkg-cache/v3.4
+          cp .circleci/built-v16.16.0-linux-armv7 ~/.pkg-cache/v3.4
+
+      - name: Build Package
+        run: npm run build
+
+      - name: Save Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.pkg-cache
+          key: node16-pkg-${{ github.run_id }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: build/
+
