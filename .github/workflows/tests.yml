@@ -26,7 +26,6 @@ env:
   E2E_PRODUCT_01_ID: ${{ secrets.E2E_PRODUCT_01_ID }}
   E2E_PRODUCT_01_NAME: ${{ secrets.E2E_PRODUCT_01_NAME }}
   E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
-
 jobs:
   unit-test:
     runs-on: ${{ matrix.os }}
