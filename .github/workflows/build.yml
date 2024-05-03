@@ -7,6 +7,8 @@ on:
     branches: [ "master", "feature/cli-installer-v2" ]
 
 jobs:
+  call-tests:
+    uses: ./.github/workflows/tests.yml
   build:
     runs-on: ubuntu-latest  # Choose an appropriate runner
     steps:

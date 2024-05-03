@@ -1,6 +1,6 @@
 name: Run Tests
 
-on: [push]
+on: [workflow_call]
 env:
   E2E_DEVICE_ID: ${{ secrets.E2E_DEVICE_ID }}
   E2E_DEVICE_NAME: ${{ secrets.E2E_DEVICE_NAME }}
