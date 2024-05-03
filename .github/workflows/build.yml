@@ -76,6 +76,14 @@ jobs:
       - name: Build Package
         run: npm run build
 
+      - name: Sign Windows package
+        run: |
+          npm run sign:win
+
+      - name: Generate Windows installer
+        run: |
+          npm run generate:win-installer
+
       - name: Save Cache
         uses: actions/cache@v3
         with:
