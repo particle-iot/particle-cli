@@ -33,6 +33,7 @@ env:
 jobs:
   call-tests:
     uses: ./.github/workflows/tests.yml
+    secrets: inherit
   build:
     needs: call-tests
     runs-on: ubuntu-latest  # Choose an appropriate runner
