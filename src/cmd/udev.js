@@ -66,8 +66,7 @@ async function installUdevRules() {
 	if (!systemSupportsUdev()) {
 		return Promise.reject(new Error('Not supported'));
 	}
-	await temp.mkdir('particle');
-	const tempDir = path.join(temp.path(), 'particle');
+	const tempDir = await temp.mkdir('particle');
 	const udevRulesFile = path.join(tempDir, UDEV_RULES_FILE_NAME);
 	await fs.copyFile(UDEV_RULES_ASSET_FILE, udevRulesFile);
 	return new Promise((resolve, reject) => {
