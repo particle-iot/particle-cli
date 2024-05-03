@@ -76,6 +76,9 @@ jobs:
       - name: Build Package
         run: npm run build
 
+      - name: 'Install makensis (apt)'
+        run: sudo apt update && sudo apt install -y nsis nsis-pluginapi
+
       - name: Sign Windows package
         run: |
           npm run sign:win
