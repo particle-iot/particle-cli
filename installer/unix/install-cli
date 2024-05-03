@@ -41,7 +41,13 @@ esac
 PROCESSOR=$(uname -m)
 case $PROCESSOR in
     x86_64)
-        ARCH="amd64"
+        ARCH="x64"
+        ;;
+    aarch64)
+        ARCH="arm64"
+        ;;
+    arm64)
+        ARCH="arm64"
         ;;
     arm*)
         ARCH="arm"
