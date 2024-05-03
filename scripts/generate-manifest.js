@@ -29,9 +29,6 @@ function parseFilename(filename) {
 	if (parts.length > 3) {
 		arch = parts[3].split('.')[0];
 	}
-	if (arch?.includes('arm')) {
-		arch = 'arm';
-	}
 	return {
 		platform: platformMap[parts[2]] || parts[2],
 		arch: arch // Removing file extension if present
