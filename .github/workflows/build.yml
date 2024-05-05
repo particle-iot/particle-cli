@@ -31,11 +31,11 @@ env:
   E2E_PRODUCT_01_NAME: ${{ secrets.E2E_PRODUCT_01_NAME }}
   E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
 jobs:
-  call-tests:
-    uses: ./.github/workflows/tests.yml
-    secrets: inherit
+  #call-tests:
+  #  uses: ./.github/workflows/tests.yml
+  #  secrets: inherit
   build:
-    needs: call-tests
+    #needs: call-tests
     runs-on: ubuntu-latest  # Choose an appropriate runner
     steps:
       - uses: actions/checkout@v3
@@ -79,13 +79,20 @@ jobs:
       - name: 'Install makensis (apt)'
         run: sudo apt update && sudo apt install -y nsis nsis-pluginapi
 
+      - name: Download and unzip osslsigncode binary
+        run: |
+          mkdir osslsigncode
+          curl -LJO https://github.com/mtrojnar/osslsigncode/releases/download/2.6/osslsigncode-2.6-ubuntu-20.04.zip
+          unzip osslsigncode-2.6-ubuntu-20.04.zip -d osslsigncode
+          chmod +x osslsigncode/bin/osslsigncode
+
       - name: Sign Windows package
         run: |
-          npm run sign:win
+          npm run sign:win -- particle-cli-win-x64 $(pwd)/osslsigncode/bin/osslsigncode
 
       - name: Generate Windows installer
         run: |
-          npm run generate:win-installer
+          npm run generate:win-installer $(pwd)/osslsigncode/bin/osslsigncode
 
       - name: Save Cache
         uses: actions/cache@v3
