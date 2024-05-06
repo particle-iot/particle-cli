@@ -7,6 +7,10 @@ on:
         required: true
         description: 'The environment to publish to'
         default: 'staging'
+      build_run_id:
+        type: string
+        required: true
+        description: 'The build run id'
 jobs:
     publish:
         runs-on: ubuntu-latest
@@ -24,9 +28,11 @@ jobs:
             - name: Install dependencies
               run: npm install
 
-            - name: Download artifacts
-              uses: actions/download-artifact@v2
+
+            - name: Download workflow artifact
+              uses: dawidd6/action-download-artifact@v3.1.4
               with:
+                  run_id: ${{ inputs.build_run_id }}
                   name: package
                   path: build/
 
