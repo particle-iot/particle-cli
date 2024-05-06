@@ -22,7 +22,7 @@ function constructUrl(platform, arch) {
 function parseFilename(filename) {
 	// Simplified parsing logic, adjust as needed
 	console.log('parsing', filename);
-	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32', linuxstatic: 'linux' };
+	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32' };
 
 	const parts = filename.split('-');
 	let arch;
