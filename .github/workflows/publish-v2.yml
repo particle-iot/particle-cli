@@ -34,15 +34,11 @@ jobs:
               with:
                   run_id: ${{ inputs.build_run_id }}
                   name: package
-                  path: build/
-
-            - name: get-npm-version
-              id: package-version
-              uses: martinbeentjes/npm-get-version-action@v1.3.1
+                  path: ./
 
             - name: generate manifest
               run: |
-                npm run generate:manifest ./build ${{ steps.package-version.outputs.version }} ${secrets.BINARIES_BASE_URL}
+                npm run generate:manifest ./build ${secrets.BINARIES_BASE_URL}
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v2
