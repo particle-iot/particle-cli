@@ -1,0 +1,20 @@
+name: Run Tests on Branch
+on:
+  push:
+    branches:
+      - staging
+jobs:
+  #call-tests:
+  #  uses: ./.github/workflows/tests.yml
+  #  secrets: inherit
+  call-build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    needs: call-tests
+  call-publish:
+    uses: ./.github/workflows/publish-v2.yml
+    secrets: inherit
+    needs: call-build
+    with:
+      environment: staging
+
