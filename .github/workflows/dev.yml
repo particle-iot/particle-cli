@@ -1,0 +1,6 @@
+name: Run Tests on Branch
+on: [push]
+jobs:
+  call-tests:
+    uses: ./.github/workflows/tests.yml
+    secrets: inherit
