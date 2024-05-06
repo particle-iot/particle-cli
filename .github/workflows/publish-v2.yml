@@ -1,9 +1,16 @@
 name: Publish Package v2
-on: [workflow_call]
-
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+        description: 'The environment to publish to'
+        default: 'staging'
 jobs:
     publish:
         runs-on: ubuntu-latest
+        environment: ${{ inputs.environment }}
         steps:
             - uses: actions/checkout@v3
 
