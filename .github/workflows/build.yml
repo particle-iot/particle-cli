@@ -1,10 +1,6 @@
 name: Build Package
 
-on:
-  push:
-    branches: [ "master", "feature/cli-installer-v2" ] # should change once we have a stable branch
-  pull_request:
-    branches: [ "master", "feature/cli-installer-v2" ]
+on: [workflow_call]
 env:
   E2E_DEVICE_ID: ${{ secrets.E2E_DEVICE_ID }}
   E2E_DEVICE_NAME: ${{ secrets.E2E_DEVICE_NAME }}
@@ -31,11 +27,7 @@ env:
   E2E_PRODUCT_01_NAME: ${{ secrets.E2E_PRODUCT_01_NAME }}
   E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
 jobs:
-  #call-tests:
-  #  uses: ./.github/workflows/tests.yml
-  #  secrets: inherit
   build:
-    #needs: call-tests
     runs-on: ubuntu-latest  # Choose an appropriate runner
     steps:
       - uses: actions/checkout@v3
