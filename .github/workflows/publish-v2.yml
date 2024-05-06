@@ -34,7 +34,7 @@ jobs:
               with:
                   run_id: ${{ inputs.build_run_id }}
                   name: package
-                  path: ./
+                  path: build/
 
             - name: generate manifest
               run: |
