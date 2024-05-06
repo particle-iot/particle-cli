@@ -1,0 +1,38 @@
+name: Publish Package v2
+on: [workflow_call]
+
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '16'
+            - name: Configure NPM Token
+              run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Download artifacts
+              uses: actions/download-artifact@v2
+              with:
+                  name: package
+                  path: build/
+
+            - name: get-npm-version
+              id: package-version
+              uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+            - name: generate manifest
+              run: |
+                npm run generate:manifest ./build ${{ steps.package-version.outputs.version }} ${secrets.BINARIES_BASE_URL}
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: release
+                  path: build/
