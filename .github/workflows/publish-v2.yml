@@ -38,7 +38,7 @@ jobs:
 
             - name: generate manifest
               run: |
-                npm run generate:manifest ./build ${secrets.BINARIES_BASE_URL}
+                npm run generate:manifest ./build ${{ secrets.BINARIES_BASE_URL }}
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v2
