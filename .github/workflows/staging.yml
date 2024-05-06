@@ -2,7 +2,7 @@ name: Run Tests on Branch
 on:
   push:
     branches:
-      - staging
+      - 'feature/sc-126222/update-the-particle-cli-executable-in-workbench'
 jobs:
   #call-tests:
   #  uses: ./.github/workflows/tests.yml
@@ -10,7 +10,7 @@ jobs:
   call-build:
     uses: ./.github/workflows/build.yml
     secrets: inherit
-    needs: call-tests
+    #needs: call-tests
   call-publish:
     uses: ./.github/workflows/publish-v2.yml
     secrets: inherit
