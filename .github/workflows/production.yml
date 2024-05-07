@@ -17,3 +17,7 @@ jobs:
     needs: call-build
     with:
       environment: production
+  call-publish-npm:
+    uses: ./.github/workflows/publish-npm.yml
+    secrets: inherit
+    needs: call-publish-v2
