@@ -45,6 +45,26 @@ jobs:
               run: |
                 npm run generate:manifest ./build ${{ secrets.BINARIES_BASE_URL }}
 
+            - name: Aws Assume Role
+              uses: aws-actions/configure-aws-credentials@v4.0.2
+              with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+                  role-session-name: 'particle-cli-upload-session'
+                  aws-region: ${{ secrets.AWS_S3_REGION }}
+
+            - name: Upload version to S3
+              run: |
+                aws s3 cp build/release/ s3://${{ secrets.AWS_S3_BUCKET }}/particle-cli/ --recursive \
+                --cache-control "public, max-age=0"
+            - name: Upload cli installer to s3
+              run: |
+                aws s3 cp installer/unix/install-cli s3://${{ secrets.AWS_S3_BUCKET }}/particle-cli/installer/install-cli \
+                --cache-control "public, max-age=0"
+            - name: Upload installer manifest to s3
+              run: |
+                aws s3 cp build/installer-manifest.json s3://${{ secrets.AWS_S3_BUCKET }}/particle-cli/installer/manifest.json \
+                --cache-control "public, max-age=0"
+
             - name: Upload artifacts
               uses: actions/upload-artifact@v2
               with:
