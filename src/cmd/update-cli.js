@@ -30,7 +30,6 @@ class UpdateCliCommand {
 			log.info('To stay up to date with the latest features and improvements, please install the latest Particle Installer executable from our website: https://www.particle.io/cli');
 			return;
 		}
-		console.log('here is doing');
 		return this.updateCli(version);
 	}
 
