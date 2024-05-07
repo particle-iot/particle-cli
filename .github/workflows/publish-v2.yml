@@ -36,14 +36,14 @@ jobs:
                   name: package
                   path: build/
 
+            - name: compress build with gz
+              run: |
+                cd build
+                find . -type f ! -name "ParticleCLISetup.exe" -exec gzip "{}" +
+
             - name: generate manifest
               run: |
                 npm run generate:manifest ./build ${{ secrets.BINARIES_BASE_URL }}
-
-            - name: compress build with gz
-              run: |
-                cd build/release
-                find . -type f ! -name "ParticleCLISetup.exe" -exec gzip "{}" +
 
             - name: Upload artifacts
               uses: actions/upload-artifact@v2
