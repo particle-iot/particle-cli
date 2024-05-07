@@ -38,6 +38,10 @@ jobs:
                   run_id: ${{ inputs.build_run_id }}
                   name: package
                   path: build/
+            - name: change mode of all files to executable
+              run: |
+                cd build
+                find . -type f -name "ParticleCLISetup.exe" -exec chmod +x {} +
 
             - name: compress build with gz
               run: |
