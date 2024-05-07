@@ -25,6 +25,7 @@ function parseFilename(filename) {
 	// Simplified parsing logic, adjust as needed
 	console.log('parsing', filename);
 	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32' };
+	const archMap = { armv7: 'arm' };
 
 	const parts = filename.split('-');
 	let arch;
@@ -33,7 +34,7 @@ function parseFilename(filename) {
 	}
 	return {
 		platform: platformMap[parts[2]] || parts[2],
-		arch: arch // Removing file extension if present
+		arch: archMap[arch] || arch // Removing file extension if present
 	};
 }
 
@@ -161,7 +162,8 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 				}
 				const targetDir = path.join(targetBaseDir, 'release', version, platform, arch);
 				await fs.ensureDir(targetDir);
-				await moveFile(path.join(sourceDir, file), path.join(targetDir, file));
+				const newFileName = file.includes('exe') ? 'particle.exe.gz' : 'particle.gz';
+				await moveFile(path.join(sourceDir, file), path.join(targetDir, newFileName));
 			}
 		}
 

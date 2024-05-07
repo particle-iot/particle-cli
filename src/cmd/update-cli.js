@@ -155,19 +155,10 @@ class UpdateCliCommand {
 	}
 
 	getBuildDetailsFromManifest(manifest) {
-		const platformMapping = {
-			darwin: 'darwin',
-			linux: 'linux',
-			win32: 'win'
-		};
-		const archMapping = {
-			x64: 'amd64',
-			arm64: 'arm64'
-		};
 		const platform = os.platform();
-		const arch = os.arch();
-		const platformKey = platformMapping[platform] || platform;
-		const archKey = archMapping[arch] || arch;
+		let arch = os.arch();
+		const platformKey = platform;
+		const archKey = arch;
 		const platformManifest = manifest.builds && manifest.builds[platformKey];
 		const archManifest = platformManifest && platformManifest[archKey];
 		if (!archManifest) {
