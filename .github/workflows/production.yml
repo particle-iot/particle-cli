@@ -1,8 +1,8 @@
 name: Run Tests on Branch
 on:
   push:
-    branches:
-      - 'staging'
+    tags:
+      - v*
 jobs:
   call-tests:
     uses: ./.github/workflows/tests.yml
@@ -11,10 +11,9 @@ jobs:
     uses: ./.github/workflows/build.yml
     secrets: inherit
     needs: call-tests
-  call-publish:
+  call-publish-v2:
     uses: ./.github/workflows/publish-v2.yml
     secrets: inherit
     needs: call-build
     with:
-      environment: staging
-      build_run_id: ${{ github.run_id }}
+      environment: production

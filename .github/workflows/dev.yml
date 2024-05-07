@@ -1,5 +1,10 @@
 name: Run Tests on Branch
-on: [push]
+on:
+  push:
+    branches:
+      - '**'
+      - '!master'
+      - '!staging'
 jobs:
   call-tests:
     uses: ./.github/workflows/tests.yml
