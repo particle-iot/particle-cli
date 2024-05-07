@@ -7,5 +7,5 @@ on:
       - '!staging'
 jobs:
   call-tests:
-    uses: ./.github/workflows/tests.yml
+    uses: ./.github/workflows/reusable-tests.yml
     secrets: inherit

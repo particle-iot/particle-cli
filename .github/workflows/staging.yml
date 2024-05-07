@@ -5,14 +5,14 @@ on:
       - 'staging'
 jobs:
   call-tests:
-    uses: ./.github/workflows/tests.yml
+    uses: ./.github/workflows/reusable-tests.yml
     secrets: inherit
   call-build:
-    uses: ./.github/workflows/build.yml
+    uses: ./.github/workflows/reusable-build.yml
     secrets: inherit
     needs: call-tests
   call-publish:
-    uses: ./.github/workflows/publish-v2.yml
+    uses: ./.github/workflows/reusable-publish-v2.yml
     secrets: inherit
     needs: call-build
     with:
