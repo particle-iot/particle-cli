@@ -23,7 +23,7 @@ module.exports = async (skip, force) => {
 		}
 		spawn(process.execPath, [process.argv[1], 'update-cli'], {
 			detached: true,
-			shell: true,
+			stdio: 'ignore',
 			windowsHide: true
 		}).unref();
 	}
