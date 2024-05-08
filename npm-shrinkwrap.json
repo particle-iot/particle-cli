@@ -6,7 +6,7 @@
   "packages": {
     "": {
       "name": "particle-cli",
-      "version": "3.23.0",
+      "version": "3.23.1",
       "license": "Apache-2.0",
       "dependencies": {
         "@particle/device-constants": "^3.3.0",
@@ -25,7 +25,6 @@
         "lodash": "^4.17.15",
         "moment": "^2.24.0",
         "node-wifiscanner2": "^1.2.1",
-        "openurl": "^1.1.1",
         "particle-api-js": "^10.3.0",
         "particle-commands": "^1.0.1",
         "particle-library-manager": "^0.1.15",
@@ -5903,11 +5902,6 @@
       "dependencies": {
         "wrappy": "1"
       }
-    },
-    "node_modules/openurl": {
-      "version": "1.1.1",
-      "resolved": "https://registry.npmjs.org/openurl/-/openurl-1.1.1.tgz",
-      "integrity": "sha512-d/gTkTb1i1GKz5k3XE3XFV/PxQ1k45zDqGP2OA7YhgsaLoqm6qRvARAZOFer1fcXritWlGBRCu/UgeS4HAnXAA=="
     },
     "node_modules/optimist": {
       "version": "0.6.1",
@@ -14044,11 +14038,6 @@
       "requires": {
         "wrappy": "1"
       }
-    },
-    "openurl": {
-      "version": "1.1.1",
-      "resolved": "https://registry.npmjs.org/openurl/-/openurl-1.1.1.tgz",
-      "integrity": "sha512-d/gTkTb1i1GKz5k3XE3XFV/PxQ1k45zDqGP2OA7YhgsaLoqm6qRvARAZOFer1fcXritWlGBRCu/UgeS4HAnXAA=="
     },
     "optimist": {
       "version": "0.6.1",
