@@ -1,0 +1,66 @@
+name: Run Tests
+
+on: [workflow_call]
+env:
+  E2E_DEVICE_ID: ${{ secrets.E2E_DEVICE_ID }}
+  E2E_DEVICE_NAME: ${{ secrets.E2E_DEVICE_NAME }}
+  E2E_DEVICE_PLATFORM_ID: ${{ secrets.E2E_DEVICE_PLATFORM_ID }}
+  E2E_DEVICE_PLATFORM_NAME: ${{ secrets.E2E_DEVICE_PLATFORM_NAME }}
+  E2E_FOREIGN_DEVICE_ID: ${{ secrets.E2E_FOREIGN_DEVICE_ID }}
+  E2E_FOREIGN_DEVICE_NAME: ${{ secrets.E2E_FOREIGN_DEVICE_NAME }}
+  E2E_FOREIGN_DEVICE_PLATFORM_ID: ${{ secrets.E2E_FOREIGN_DEVICE_PLATFORM_ID }}
+  E2E_FOREIGN_DEVICE_PLATFORM_NAME: ${{ secrets.E2E_FOREIGN_DEVICE_PLATFORM_NAME }}
+  E2E_FOREIGN_PASSWORD: ${{ secrets.E2E_FOREIGN_PASSWORD }}
+  E2E_FOREIGN_USERNAME: ${{ secrets.E2E_FOREIGN_USERNAME }}
+  E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+  E2E_PRODUCT_01_DEVICE_01_GROUP: ${{ secrets.E2E_PRODUCT_01_DEVICE_01_GROUP }}
+  E2E_PRODUCT_01_DEVICE_01_ID: ${{ secrets.E2E_PRODUCT_01_DEVICE_01_ID }}
+  E2E_PRODUCT_01_DEVICE_01_NAME: ${{ secrets.E2E_PRODUCT_01_DEVICE_01_NAME }}
+  E2E_PRODUCT_01_DEVICE_01_PLATFORM_ID: ${{ secrets.E2E_PRODUCT_01_DEVICE_01_PLATFORM_ID }}
+  E2E_PRODUCT_01_DEVICE_01_PLATFORM_NAME: ${{ secrets.E2E_PRODUCT_01_DEVICE_01_PLATFORM_NAME }}
+  E2E_PRODUCT_01_DEVICE_02_GROUP: ${{ secrets.E2E_PRODUCT_01_DEVICE_02_GROUP }}
+  E2E_PRODUCT_01_DEVICE_02_ID: ${{ secrets.E2E_PRODUCT_01_DEVICE_02_ID }}
+  E2E_PRODUCT_01_DEVICE_02_NAME: ${{ secrets.E2E_PRODUCT_01_DEVICE_02_NAME }}
+  E2E_PRODUCT_01_DEVICE_02_PLATFORM_ID: ${{ secrets.E2E_PRODUCT_01_DEVICE_02_PLATFORM_ID }}
+  E2E_PRODUCT_01_DEVICE_02_PLATFORM_NAME: ${{ secrets.E2E_PRODUCT_01_DEVICE_02_PLATFORM_NAME }}
+  E2E_PRODUCT_01_ID: ${{ secrets.E2E_PRODUCT_01_ID }}
+  E2E_PRODUCT_01_NAME: ${{ secrets.E2E_PRODUCT_01_NAME }}
+  E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+jobs:
+  unit-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16.x]
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Configure NPM Token
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+      - name: Install dependencies
+        run: npm install
+      - name: Run unit tests
+        run: npm run test:ci
+  e2e-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [16.x]
+        os: [ubuntu-latest, macOS-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Configure NPM Token
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+      - name: Install dependencies
+        run: npm install
+      - name: Run unit tests
+        run: npm run test:e2e:ci
+

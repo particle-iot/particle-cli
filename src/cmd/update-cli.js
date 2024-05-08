@@ -154,19 +154,10 @@ class UpdateCliCommand {
 	}
 
 	getBuildDetailsFromManifest(manifest) {
-		const platformMapping = {
-			darwin: 'darwin',
-			linux: 'linux',
-			win32: 'win'
-		};
-		const archMapping = {
-			x64: 'amd64',
-			arm64: 'arm64'
-		};
 		const platform = os.platform();
-		const arch = os.arch();
-		const platformKey = platformMapping[platform] || platform;
-		const archKey = archMapping[arch] || arch;
+		let arch = os.arch();
+		const platformKey = platform;
+		const archKey = arch;
 		const platformManifest = manifest.builds && manifest.builds[platformKey];
 		const archManifest = platformManifest && platformManifest[archKey];
 		if (!archManifest) {
@@ -178,7 +169,7 @@ class UpdateCliCommand {
 	async replaceCLI(newCliPath) {
 		// rename the original CLI
 		const binPath = this.getBinaryPath();
-		const fileName = os.platform() === 'win32' ? 'particle.exe' : 'particle';
+		const fileName = path.basename(process.execPath, path.extname(process.execPath));
 		const cliPath = path.join(binPath, fileName);
 		const oldCliPath = path.join(binPath, `${fileName}.old`);
 		await fs.move(cliPath, oldCliPath, { overwrite: true });
@@ -187,10 +178,7 @@ class UpdateCliCommand {
 	}
 
 	getBinaryPath() {
-		if (os.platform() === 'win32') {
-			return path.join(process.env.LOCALAPPDATA, 'particle', 'bin');
-		}
-		return path.join(os.homedir(), 'bin');
+		return path.dirname(process.execPath);
 	}
 	async configureProfileSettings(version) {
 		settings.profile_json.last_version_check = new Date().getTime();

@@ -1,0 +1,19 @@
+name: Build Package
+
+on: [workflow_call]
+
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: Configure NPM Token
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+      - name: Install dependencies
+        run: npm install
+      - name: Publish package
+        run: npm publish ${{github.ref_name}}

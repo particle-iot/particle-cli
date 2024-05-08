@@ -8,7 +8,7 @@ const log = require('../src/lib/log').info;
 const logErrorAndExit = require('../src/lib/log').error;
 const BUILD_DIR = path.join(__dirname, '..', 'build');
 const particleBuildName = process.argv[2] || 'particle-cli-win-x64';
-
+const osslsigncode = process.argv[3] || 'osslsigncode';
 
 (async () => {
 	try {
@@ -61,7 +61,7 @@ function winSign(exe, params) {
 		exe.signed
 	];
 
-	return execa('osslsigncode', args);
+	return execa(`${osslsigncode}`, args);
 }
 
 function getSigningParams(pkgJSON, tmpDir) {

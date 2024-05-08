@@ -1,0 +1,23 @@
+name: Run Tests on Branch
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  call-tests:
+    uses: ./.github/workflows/reusable-tests.yml
+    secrets: inherit
+  call-build:
+    uses: ./.github/workflows/reusable-build.yml
+    secrets: inherit
+    needs: call-tests
+  call-publish-v2:
+    uses: ./.github/workflows/reusable-publish-v2.yml
+    secrets: inherit
+    needs: call-build
+    with:
+      environment: production
+  call-publish-npm:
+    uses: ./.github/workflows/reusable-publish-npm.yml
+    secrets: inherit
+    needs: call-publish-v2

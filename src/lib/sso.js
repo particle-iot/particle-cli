@@ -1,6 +1,6 @@
 const request = require('request');
 const jose = require('jose');
-const openurl = require('openurl');
+const openurl = require('./openurl');
 const settings = require('../../settings');
 const WAIT_BETWEEN_REQUESTS = 5000;
 
@@ -78,7 +78,9 @@ const ssoLogin = async () => {
 		method: 'POST'
 	});
 
-	openurl.open(response.verification_uri_complete);
+	openurl.open(response.verification_uri_complete, () => {
+		// ignore errors opening the browser and let the user open the link manually
+	});
 
 	return { deviceCode: response.device_code, verificationUriComplete: response.verification_uri_complete };
 };

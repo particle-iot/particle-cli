@@ -1,7 +1,7 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "3.22.0",
+  "version": "3.23.1",
   "author": "David Middlecamp",
   "bin": {
     "particle": "./src/index.js"
@@ -68,7 +68,6 @@
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "node-wifiscanner2": "^1.2.1",
-    "openurl": "^1.1.1",
     "particle-api-js": "^10.3.0",
     "particle-commands": "^1.0.1",
     "particle-library-manager": "^0.1.15",
@@ -76,7 +75,7 @@
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",
-    "serialport": "^12.0.0",
+    "serialport": "^10.4.0",
     "softap-setup": "^4.1.0",
     "temp": "^0.9.1",
     "verror": "^1.10.0",
@@ -168,7 +167,9 @@
       "node16-linux-x64",
       "node16-macos-x64",
       "node16-macos-arm64",
-      "node16-win-x64"
+      "node16-win-x64",
+      "node16-linux-arm",
+      "node16-linux-arm64"
     ],
     "assets": [
       "./assets/**",

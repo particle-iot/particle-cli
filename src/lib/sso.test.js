@@ -1,6 +1,6 @@
 const nock = require('nock');
 const jose = require('jose');
-const openurl = require('openurl');
+const openurl = require('./openurl');
 const { sinon, expect } = require('../../test/setup');
 const sandbox = sinon.createSandbox();
 const { _makeRequest, waitForLogin, ssoLogin } = require('./sso');

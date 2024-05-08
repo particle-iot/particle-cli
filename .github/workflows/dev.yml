@@ -1,0 +1,11 @@
+name: Run Tests on Branch
+on:
+  push:
+    branches:
+      - '**'
+      - '!master'
+      - '!staging'
+jobs:
+  call-tests:
+    uses: ./.github/workflows/reusable-tests.yml
+    secrets: inherit
