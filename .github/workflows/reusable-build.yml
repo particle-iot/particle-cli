@@ -53,7 +53,7 @@ jobs:
       - name: Add pre-built Node for armv7
         run: |
           mkdir -p ~/.pkg-cache/v3.4
-          cp .circleci/built-v16.16.0-linux-armv7 ~/.pkg-cache/v3.4
+          cp .prebuild/built-v16.16.0-linux-armv7 ~/.pkg-cache/v3.4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
