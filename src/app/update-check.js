@@ -25,7 +25,7 @@ module.exports = async (skip, force) => {
 			detached: true,
 			shell: true,
 			windowsHide: true
-		});
+		}).unref();
 	}
 };
 
