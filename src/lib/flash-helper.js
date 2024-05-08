@@ -19,22 +19,26 @@ const FLASH_TIMEOUT = 4 * 60000;
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 	const progress = _createFlashProgress({ flashSteps, ui });
 	let success = false;
+	let lastStepDfu = false;
 	try {
 		for (const step of flashSteps) {
 			device = await prepareDeviceForFlash({ device, mode: step.flashMode, progress });
 			if (step.flashMode === 'normal') {
 				device = await _flashDeviceInNormalMode(device, step.data, { name: step.name, progress: progress, checkSkip: step.checkSkip });
+				lastStepDfu = false;
 			} else {
 				// CLI always flashes to internal flash which is the DFU alt setting 0
 				const altSetting = 0;
 				device = await _flashDeviceInDfuMode(device, step.data, { name: step.name, altSetting: altSetting, startAddr: step.address, progress: progress });
+				lastStepDfu = true;
 			}
 		}
 		success = true;
 	} finally {
 		progress({ event: 'finish', success });
 		if (device.isOpen) {
-			if (resetAfterFlash) {
+			// only reset the device if the last step was in DFU mode
+			if (resetAfterFlash && lastStepDfu) {
 				try {
 					await device.reset();
 				} catch (error) {
@@ -62,6 +66,12 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 				}
 				return device;
 			}
+			try {
+				await device.enterListeningMode();
+				await delay(1000); // Just in case
+			} catch (error) {
+				// ignore
+			}
 			await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });
 			return device;
 		} catch (error) {
@@ -85,12 +95,6 @@ async function prepareDeviceForFlash({ device, mode, progress }) {
 					progress({ event: 'switch-mode', mode: 'normal' });
 				}
 				device = await usbUtils.reopenInNormalMode(device, { reset: true });
-			}
-			try {
-				await device.enterListeningMode();
-				await delay(1000); // Just in case
-			} catch (error) {
-				// ignore
 			}
 			break;
 		case 'dfu':
@@ -328,8 +332,9 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 }
 
 function _skipAsset(module, existingAssets) {
+	const name = path.basename(module.filename);
 	const hashAssetToBeFlashed = _get256Hash(module);
-	return existingAssets.some((asset) => hashAssetToBeFlashed === asset.hash);
+	return existingAssets.some((asset) => hashAssetToBeFlashed === asset.hash && name === asset.name);
 }
 
 function _get256Hash(module) {

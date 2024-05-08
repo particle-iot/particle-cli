@@ -416,8 +416,7 @@ describe('flash-helper', () => {
 			const device = {
 				isOpen: true,
 				isInDfuMode: true,
-				close: sinon.stub(),
-				enterListeningMode: sinon.stub()
+				close: sinon.stub()
 			};
 			reopenInNormalStub.resolves(device);
 			reopenStub.resolves(device);
@@ -425,14 +424,12 @@ describe('flash-helper', () => {
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInNormalStub).to.have.been.calledOnce;
 			expect(reopenInDfuModeStub).to.not.have.been.called;
-			expect(device.enterListeningMode).to.have.been.calledOnce;
 		});
 		it('prepares the device when is required for normal mode and currently is in normal mode', async () => {
 			const device = {
 				isOpen: true,
 				isInDfuMode: false,
-				close: sinon.stub(),
-				enterListeningMode: sinon.stub()
+				close: sinon.stub()
 			};
 
 			reopenStub.resolves(device);
@@ -440,14 +437,12 @@ describe('flash-helper', () => {
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInNormalStub).to.not.have.been.called;
 			expect(reopenInDfuModeStub).to.not.have.been.called;
-			expect(device.enterListeningMode).to.have.been.calledOnce;
 		});
 		it('prepares the device when is required for dfu mode and currently is in normal mode', async () => {
 			const device = {
 				isOpen: true,
 				isInDfuMode: false,
-				close: sinon.stub(),
-				enterListeningMode: sinon.stub()
+				close: sinon.stub()
 			};
 
 			reopenStub.resolves(device);
@@ -455,21 +450,18 @@ describe('flash-helper', () => {
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInDfuModeStub).to.have.been.calledOnce;
 			expect(reopenInNormalStub).to.not.have.been.called;
-			expect(device.enterListeningMode).to.not.have.been.called;
 		});
 		it('prepares the device when is required for dfu mode and currently is in dfu mode', async () => {
 			const device = {
 				isOpen: true,
 				isInDfuMode: true,
-				close: sinon.stub(),
-				enterListeningMode: sinon.stub()
+				close: sinon.stub()
 			};
 			reopenStub.resolves(device);
 			await prepareDeviceForFlash({ device, mode: 'dfu' });
 			expect(reopenStub).to.have.been.calledOnce;
 			expect(reopenInDfuModeStub).to.not.have.been.called;
 			expect(reopenInNormalStub).to.not.have.been.called;
-			expect(device.enterListeningMode).to.not.have.been.called;
 		});
 	});
 
