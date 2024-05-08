@@ -1,5 +1,14 @@
 # Changelog
 
+# 3.23.1 - May 8 2024
+* Fix assets flashing to accept renamed files
+
+# 3.23.0 - May 8 2024
+* Add new CLI package structure
+* Add `particle update-cli --disable-updates` to disable update checks
+* Add `particle update-cli --enable-updates` to enable update checks
+* Add `particle update-cli --version` to update to a specific version
+
 # 3.22.0 - Mar 26 2024
 * Remove yeoman generator and use the new project structure
 * Use `serial` to configure wifi devices
