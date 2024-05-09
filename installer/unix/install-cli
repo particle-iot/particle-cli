@@ -110,12 +110,13 @@ fi
 mv -f "$TMP_FILE" "$DEST"
 chmod +x "$DEST"
 
-# Run binary for the first time to make it install Node and the
-# particle-cli npm module
-"$DEST" > /dev/null 2>&1
-
-echo ':::: Done!'
-echo ':::: Installing dependencies'
+# Turn off automatic updates when installing a specific version
+if [ -n "$VERSION" ]; then
+  echo
+  echo ":::: Disabling automatic updates since a specific version was installed."
+  echo ":::: Reenable automatic updates by running \"particle update-cli --enable-updates\""
+  "$DEST" update-cli --disable-updates > /dev/null 2>&1
+fi
 
 # Install dependencies
 function install_program {
@@ -141,9 +142,6 @@ function install_program {
 
 install_program "openssl"
 
-echo ':::: Done!'
-
-
 # Add ~/bin to the path
 function file_contains {
     grep "$2" "$1" 1>/dev/null 2>&1
@@ -160,7 +158,7 @@ fi
 EOL
 fi
 
-echo ":::: Success!"
+echo
 echo ":::: The Particle CLI has been installed to: \"$DEST\""
 echo ":::: Your \"$SHELL_CONFIG\" file has been updated to properly set \$PATH"
 echo
