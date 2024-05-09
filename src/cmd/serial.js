@@ -20,6 +20,7 @@ const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
+const semver = require('semver');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
@@ -266,18 +267,20 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		const features = platformForId(device.platformId).features;
 		if (features.includes('cellular')) {
-			let isControlRequestSupported = true;
-			try {
-				const cellularMetrics = await device.getCellularInfo();
-				cellularImei = cellularMetrics.imei;
-				cellularIccid = cellularMetrics.iccid;
-			} catch (err) {
-				// ignore and move on to get other fields
-				if (err.message === 'Not supported') {
-					isControlRequestSupported = false;
+			// since from 6.x onwards we can't use serial to get imei, we use control request
+			if (semver.gte(fwVer, '6.0.0')) {
+				try {
+					const cellularInfo = await device.getCellularInfo({ timeout: 2000 });
+					if (!cellularInfo) {
+						throw new VError('No data returned from control request for device info');
+					}
+					cellularImei = cellularInfo.imei;
+					cellularIccid = cellularInfo.iccid;
+				} catch (err) {
+					// ignore and move on to get other fields
+					throw new VError(ensureError(err), 'Could not get device info');
 				}
-			}
-			if (!isControlRequestSupported) {
+			} else {
 				try {
 					const cellularInfo = await this.getDeviceInfoFromSerial(deviceFromSerialPort);
 					if (!cellularInfo) {
