@@ -28,7 +28,9 @@ const cmd = path.basename(process.argv[1]);
 const arrow = chalk.green('>');
 const timeoutError = 'Serial timed out';
 
-const availability = (asset, availableAssets) => availableAssets.some(availableAsset => availableAsset.hash === asset.hash);
+const availability = (asset, availableAssets) => availableAssets.some(
+	availableAsset => availableAsset.hash === asset.hash && availableAsset.name === asset.name
+);
 
 const SERIAL_PORT_DEFAULTS = {
 	baudRate: 9600,
