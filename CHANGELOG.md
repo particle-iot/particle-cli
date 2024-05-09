@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.23.3 - May 8 2024
+* Fix update-cli command to find the current executable path to update
+
 # 3.23.2 - May 8 2024
 * Fix serial identify: show again IMEI and ICCID for all DVOS versions
 
