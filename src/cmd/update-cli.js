@@ -169,8 +169,8 @@ class UpdateCliCommand {
 	async replaceCLI(newCliPath) {
 		// rename the original CLI
 		const binPath = this.getBinaryPath();
-		const fileName = path.basename(process.execPath, path.extname(process.execPath));
-		const cliPath = path.join(binPath, fileName);
+		const fileName = path.basename(process.execPath);
+		const cliPath = process.execPath;
 		const oldCliPath = path.join(binPath, `${fileName}.old`);
 		await fs.move(cliPath, oldCliPath, { overwrite: true });
 		await fs.move(newCliPath, cliPath);
