@@ -20,6 +20,9 @@ const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
+const semver = require('semver');
+
+const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
 
 // TODO: DRY this up somehow
@@ -259,17 +262,39 @@ module.exports = class SerialCommand extends CLICommandBase {
 		// Obtain system firmware version
 		fwVer = device.firmwareVersion;
 
+
 		// If the device is a cellular device, obtain imei and iccid
-		try {
-			const features = platformForId(device.platformId).features;
-			if (features.includes('cellular')) {
-				const cellularMetrics = await device.getCellularInfo();
-				cellularImei = cellularMetrics.imei;
-				cellularIccid = cellularMetrics.iccid;
+
+		const features = platformForId(device.platformId).features;
+		if (features.includes('cellular')) {
+			// since from 6.x onwards we can't use serial to get imei, we use control request
+			if (semver.gte(fwVer, '6.0.0')) {
+				try {
+					const cellularInfo = await device.getCellularInfo({ timeout: 2000 });
+					if (!cellularInfo) {
+						throw new VError('No data returned from control request for device info');
+					}
+					cellularImei = cellularInfo.imei;
+					cellularIccid = cellularInfo.iccid;
+				} catch (err) {
+					// ignore and move on to get other fields
+					throw new VError(ensureError(err), 'Could not get device info');
+				}
+			} else {
+				try {
+					const cellularInfo = await this.getDeviceInfoFromSerial(deviceFromSerialPort);
+					if (!cellularInfo) {
+						throw new VError('No data returned from serial port for device info');
+					}
+					cellularImei = cellularInfo.imei;
+					cellularIccid = cellularInfo.iccid;
+				} catch (err) {
+					// ignore and move on to get other fields
+					throw new VError(ensureError(err), 'Could not get device info, ensure the device is in listening mode');
+				}
 			}
-		} catch (err) {
-			// ignore and move on to get other fields
 		}
+
 
 		// Print whatever was obtained from the device
 		this._printIdentifyInfo({
@@ -1086,6 +1111,96 @@ module.exports = class SerialCommand extends CLICommandBase {
 		chalk.bold.magenta('<3'))
 		);
 		process.exit(0);
+	}
+
+	getDeviceInfoFromSerial(device){
+		return this._issueSerialCommand(device, 'i', IDENTIFY_COMMAND_TIMEOUT)
+			.then((data) => {
+				const matches = data.match(/Your (core|device) id is\s+(\w+)/);
+
+				if (matches && matches.length === 3){
+					return matches[2];
+				}
+
+				const electronMatches = data.match(/\s+([a-fA-F0-9]{24})\s+/);
+
+				if (electronMatches && electronMatches.length === 2){
+					const info = { id: electronMatches[1] };
+					const imeiMatches = data.match(/IMEI: (\w+)/);
+
+					if (imeiMatches){
+						info.imei = imeiMatches[1];
+					}
+
+					const iccidMatches = data.match(/ICCID: (\w+)/);
+
+					if (iccidMatches){
+						info.iccid = iccidMatches[1];
+					}
+
+					return info;
+				}
+			});
+	}
+
+	/* eslint-enable max-statements */
+
+	/**
+	 * Sends a command to the device and retrieves the response.
+	 * @param devicePort The device port to send the command to
+	 * @param command   The command text
+	 * @param timeout   How long in milliseconds to wait for a response
+	 * @returns {Promise} to send the command.
+	 * The serial port should not be open, and is closed after the command is sent.
+	 * @private
+	 */
+	_issueSerialCommand(device, command, timeout){
+		if (!device){
+			throw new VError('No serial port identified');
+		}
+		const failDelay = timeout || 5000;
+
+		let serialPort;
+		return new Promise((resolve, reject) => {
+			serialPort = new SerialPort({ path: device.port, ...SERIAL_PORT_DEFAULTS });
+			const parser = new SerialBatchParser({ timeout: 250 });
+			serialPort.pipe(parser);
+
+			const failTimer = setTimeout(() => {
+				reject(timeoutError);
+			}, failDelay);
+
+			parser.on('data', (data) => {
+				clearTimeout(failTimer);
+				resolve(data.toString());
+			});
+
+			serialPort.open((err) => {
+				if (err){
+					console.error('Serial err: ' + err);
+					console.error('Serial problems, please reconnect the device.');
+					reject('Serial problems, please reconnect the device.');
+					return;
+				}
+
+				serialPort.write(command, (werr) => {
+					if (werr){
+						reject(err);
+					}
+				});
+			});
+		})
+			.finally(() => {
+				if (serialPort){
+					serialPort.removeAllListeners('open');
+
+					if (serialPort.isOpen){
+						return new Promise((resolve) => {
+							serialPort.close(resolve);
+						});
+					}
+				}
+			});
 	}
 };
 
