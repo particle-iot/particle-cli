@@ -1,15 +1,14 @@
 # Particle CLI Installer
 
-Downloads and installs the latest CLI wrapper from binaries.particle.io,
-executes it a first time to install Node.js and the particle-cli module.
+Includes a version of the CLI with all Javascript files and Node packaged as a single file.
 
 *This installer is based on the CLI installer by Daniel Sullivan. Thanks!*
 
 ## Releasing the installer
 
-- CircleCI builds and signs the executable on each git push 
-- Download a specific branch installer from circleci artifacts and test it 
-- After testing those installers, you can trigger a new release from particle-cli root repo
+- GitHub Actions builds and signs the executable when the staging branch is pushed.
+- Download the installer from binaries.staging.particle.io and test it .
+- After testing those installers, you can trigger a new release from particle-cli root repo.
 
 ## Compile installer
 
@@ -22,5 +21,6 @@ See [licences.txt](/installer/windows/licenses.txt) for more info on the open so
 
 
 ## Release Urls
+- Download the staging installer from  <https://binaries.staging.particle.io/particle-cli/installer/windows/ParticleCLISetup.exe>
 - Download the latest installer from  <https://binaries.particle.io/particle-cli/installer/windows/ParticleCLISetup.exe>
 - Download the installer for a specific version from <https://binaries.particle.io/particle-cli/${version}/installer/windows/ParticleDriversSetup.exe>
