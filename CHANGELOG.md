@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.23.2 - May 8 2024
+* Fix serial identify: show again IMEI and ICCID for all DVOS versions
+
 # 3.23.1 - May 8 2024
 * Fix assets flashing to accept renamed files
 
