@@ -72,6 +72,10 @@ jobs:
                 aws s3 cp build/installer-manifest.json s3://${{ secrets.AWS_S3_BUCKET }}/particle-cli/installer/manifest.json \
                 --cache-control "public, max-age=0"
 
+            # invalidate cloudfront cache
+            - name: Invalidate Cloudfront manifest cache
+              run: |
+                aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_BINARIES_ID }} --paths -paths "/particle-cli/manifest.json" "/particle-cli/installer/manifest.json" "/particle-cli/installer/win32/ParticleCLISetup.exe"
             - name: Upload artifacts
               uses: actions/upload-artifact@v2
               with:
