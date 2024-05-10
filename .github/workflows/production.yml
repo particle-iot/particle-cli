@@ -1,4 +1,4 @@
-name: Run Tests on Branch
+name: Deploy to production
 on:
   push:
     tags:
