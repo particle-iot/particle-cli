@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.23.4 - May 10 2024
+* Fix unix installer to stop update check when installing specific version
+
 # 3.23.3 - May 8 2024
 * Fix update-cli command to find the current executable path to update
 
