@@ -16,8 +16,10 @@ MANIFEST_HOST=${MANIFEST_HOST:-binaries.particle.io}
 MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest.json"
 SHELL_CONFIG="$HOME/.bash_profile"
 
+DISABLE_AUTOMATIC_UPDATES=0
 if [ -n "$VERSION" ]; then
   MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest-${VERSION}.json"
+  DISABLE_AUTOMATIC_UPDATES=1
 fi
 echo
 echo 'PARTICLE CLI SETUP...'
@@ -111,7 +113,7 @@ mv -f "$TMP_FILE" "$DEST"
 chmod +x "$DEST"
 
 # Turn off automatic updates when installing a specific version
-if [ -n "$VERSION" ]; then
+if [ "$DISABLE_AUTOMATIC_UPDATES" -eq 1 ]; then
   echo
   echo ":::: Disabling automatic updates since a specific version was installed."
   echo ":::: Reenable automatic updates by running \"particle update-cli --enable-updates\""
