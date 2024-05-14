@@ -10,27 +10,24 @@
 	- e.g. going from 1.28.1 to 1.28.2 use `npm version patch`
 	- e.g. going from 1.28.2 to 1.29.0 use `npm version minor`
 
-- `git push && git push --tag`
+- `git push origin master --follow-tags`
 
 	- This will push the commits and tag created in the previous steps.
 
-- CircleCI will publish to npm when the build succeeds.
+- GitHub Actions will publish to npm when the build succeeds.
 
 - Create a release on GitHub with the notes from the `CHANGELOG.md`
 
-## Create a pre-release
+## Create a test version on staging
 
-- Switch to a feature branch (if on `master` the prerelease will be published to npm)
+- Run the following command:
 
-- `npm version x.y.z-beta.n` where x.y.z is a version not released yet
-and beta.n is a name for this prerelease.
+  - `git push origin ${branch}:staging -f`
 
-- `npm pack` to build a tarball of the CLI.
+- In case you need to change the version, you can run the following command:
 
-- `git push && git push  --tag`
-
-- Create a pre-release on Github and attach the packed tarball.
-
-- Tell beta users to install with
-`npm install -g https://github.com/particle-iot/particle-cli/releases/download/vx.y.z-beta.n/particle-cli-x.y.z-beta.n.tgz`
-
+  - `npm version <major | minor | patch>`
+  - Make sure to remove the created tag with `git tag -d vX.Y.Z` to prevent publishing to production.
+  - Then, push the changes to staging again.
+  - Once you are happy with the changes, you can proceed to merge the changes to master, remember to remove the version commit you just created.
+  - The executables will be available on `binaries.staging.particle.io/particle-cli/` for testing.
