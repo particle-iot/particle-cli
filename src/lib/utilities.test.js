@@ -73,7 +73,7 @@ describe('Utilities', () => {
 				26: 'Asset Tracker / Monitor One',
 				28: 'Tracker M',
 				32: 'Photon 2 / P2',
-				35: 'M SoM'
+				35: 'M-SoM'
 			});
 		});
 	});
