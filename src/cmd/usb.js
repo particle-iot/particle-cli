@@ -94,7 +94,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 					devices.forEach(device => console.log(device.id));
 				} else {
 					if (devices.length === 0) {
-						console.log(`No devices found.${os.EOL}`);
+						console.log('No devices found.');
 					} else {
 						devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
 
@@ -237,22 +237,19 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	_forEachUsbDevice(args, func, { dfuMode = false } = {}){
 		const msg = 'Getting device information...';
-		let deviceId;
 		const operation = this._openUsbDevices(args, { dfuMode });
 		let lastError = null;
 		return spin(operation, msg)
 			.then(usbDevices => {
 				const p = usbDevices.map(usbDevice => {
-					deviceId = usbDevice.id;
 					return Promise.resolve()
 						.then(() => func(usbDevice))
 						.catch(e => lastError = e)
 						.finally(() => usbDevice.close());
 				});
-				return spin(Promise.all(p), `Sending a command to the device ${deviceId}...`);
+				return spin(Promise.all(p), `Sending a command to the device...`);
 			})
 			.then(() => {
-				this.stopSpin();
 				if (lastError){
 					throw lastError;
 				}
@@ -295,6 +292,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 			});
 	}
 
+	// Helper function to convert CIDR notation to netmask to imitate the 'ifconfig' output
 	_cidrToNetmask(cidr) {
 		let mask = [];
 
