@@ -11,7 +11,7 @@ const CLICommandBase = require('./base');
 const chalk = require('chalk');
 
 
-module.exports = class UsbCommand  extends CLICommandBase {
+module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
 		super();
 		spinnerMixin(this);
@@ -302,23 +302,23 @@ module.exports = class UsbCommand  extends CLICommandBase {
 		for (let i = 0; i < Math.floor(cidr / 8); i++) {
 			mask.push(255);
 		}
-	
+
 		// Calculate remaining bits in the next octet
 		if (mask.length < 4) {
 			mask.push((256 - Math.pow(2, 8 - cidr % 8)) & 255);
 		}
-	
+
 		// Fill the remaining octets with '0' if any
 		while (mask.length < 4) {
 			mask.push(0);
 		}
-		
+
 		return mask.join('.');
 	}
 
 	async getNetworkIfaces(args) {
 		// define output array with logs to prevent interleaving with the spinner
-		let output = []; 
+		let output = [];
 
 		await this._forEachUsbDevice(args, usbDevice => {
 			const platform = platformForId(usbDevice.platformId);
@@ -329,9 +329,9 @@ module.exports = class UsbCommand  extends CLICommandBase {
 				return;
 			}
 			return this.getNetworkIface(usbDevice)
-			.then((outputData) => {
-				output = output.concat(outputData);
-			});
+				.then((outputData) => {
+					output = output.concat(outputData);
+				});
 		});
 
 		if (output.length === 0) {

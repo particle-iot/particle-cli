@@ -28,17 +28,17 @@ describe('USB Command-Line Interface', () => {
 					'Help:  particle help usb <command>',
 					'',
 					'Commands:',
-					'  list             List the devices connected to the host computer',
-					'  start-listening  Put a device into the listening mode',
-					'  listen           alias for start-listening',
-					'  stop-listening   Make a device exit the listening mode',
-					'  safe-mode        Put a device into the safe mode',
-					'  dfu              Put a device into the DFU mode',
-					'  reset            Reset a device',
-					'  setup-done       Set the setup done flag',
-					'  configure        Update the system USB configuration',
-					'  cloud-status     Check a device\'s cloud connection state',
-					'  network-interfaces         Gets the network configuration of the device',
+					'  list                List the devices connected to the host computer',
+					'  start-listening     Put a device into the listening mode',
+					'  listen              alias for start-listening',
+					'  stop-listening      Make a device exit the listening mode',
+					'  safe-mode           Put a device into the safe mode',
+					'  dfu                 Put a device into the DFU mode',
+					'  reset               Reset a device',
+					'  setup-done          Set the setup done flag',
+					'  configure           Update the system USB configuration',
+					'  cloud-status        Check a device\'s cloud connection state',
+					'  network-interfaces  Gets the network configuration of the device',
 					''
 				].join('\n'));
 			});
@@ -385,16 +385,21 @@ describe('USB Command-Line Interface', () => {
 				expect(argv.clierror).to.equal(undefined);
 				expect(argv.all).to.equal(false);
 			});
-	
+
 			it('Includes help with examples', () => {
 				commandProcessor.parse(root, ['usb', 'network-interfaces', '--help'], termWidth);
 				commandProcessor.showHelp((helpText) => {
 					expect(helpText).to.equal([
 						'Gets the network configuration of the device',
-						'Usage: particle usb network-interfaces',
+						'Usage: particle usb network-interfaces [options] [devices...]',
+						'',
+						'Options:',
+						'  --all  Send the command to all devices connected to the host computer  [boolean]',
 						'',
 						'Examples:',
-						'  particle usb network-interfaces  Gets the network configuration of the device',
+						'  particle usb network-interfaces            Gets the network configuration of the device',
+						'  particle usb network-interfaces --all      Gets the network configuration of all the devices connected over USB',
+						'  particle usb network-interfaces my_device  Gets the network configuration of the device named "my_device"',
 						''
 					].join('\n'));
 				});
