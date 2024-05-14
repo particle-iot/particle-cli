@@ -30,13 +30,16 @@ module.exports = class UsbCommand {
 				return asyncMapSeries(usbDevices, (usbDevice) => {
 					return openUsbDevice(usbDevice, { dfuMode: true })
 						.then(() => {
-							if (!idsOnly) {
-								return getDevice({
-									id: usbDevice.id,
-									api: this._api,
-									auth: this._auth,
-									dontThrow: true
-								});
+							return getDevice({
+								id: usbDevice.id,
+								api: this._api,
+								auth: this._auth,
+								dontThrow: true
+							});
+						})
+						.catch(() => {
+							if (idsOnly) {
+								return { id: usbDevice.id };
 							}
 						})
 						.then(device => {
