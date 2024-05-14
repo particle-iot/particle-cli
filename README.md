@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli) ![GitHub Actions](https://github.com/particle-iot/particle-cli/actions/workflows/production.yml/badge.svg?branch=master) [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square)](https://github.com/particle-iot/particle-cli/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli) ![GitHub Actions](https://github.com/particle-iot/particle-cli/actions/workflows/dev.yml/badge.svg?branch=master) [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square)](https://github.com/particle-iot/particle-cli/blob/master/LICENSE)
 
 Particle's full-stack Internet of Things (IoT) device platform
 gives you everything you need to securely and reliably connect
