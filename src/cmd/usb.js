@@ -1,3 +1,4 @@
+const os = require('os');
 const { spin } = require('../app/ui');
 const { delay, asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
@@ -5,10 +6,15 @@ const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, Dev
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
+const spinnerMixin = require('../lib/spinner-mixin');
+const CLICommandBase = require('./base');
+const chalk = require('chalk');
 
 
-module.exports = class UsbCommand {
+module.exports = class UsbCommand  extends CLICommandBase {
 	constructor(settings) {
+		super();
+		spinnerMixin(this);
 		this._auth = settings.access_token;
 		this._api = new ParticleApi(settings.apiUrl, { accessToken: this._auth }).api;
 	}
@@ -88,7 +94,7 @@ module.exports = class UsbCommand {
 					devices.forEach(device => console.log(device.id));
 				} else {
 					if (devices.length === 0) {
-						console.log('No devices found.');
+						console.log(`No devices found.${os.EOL}`);
 					} else {
 						devices = devices.sort((a, b) => a.name.localeCompare(b.name)); // Sort devices by name
 
@@ -231,19 +237,22 @@ module.exports = class UsbCommand {
 
 	_forEachUsbDevice(args, func, { dfuMode = false } = {}){
 		const msg = 'Getting device information...';
+		let deviceId;
 		const operation = this._openUsbDevices(args, { dfuMode });
 		let lastError = null;
 		return spin(operation, msg)
 			.then(usbDevices => {
 				const p = usbDevices.map(usbDevice => {
+					deviceId = usbDevice.id;
 					return Promise.resolve()
 						.then(() => func(usbDevice))
 						.catch(e => lastError = e)
 						.finally(() => usbDevice.close());
 				});
-				return spin(Promise.all(p), 'Sending a command to the device...');
+				return spin(Promise.all(p), `Sending a command to the device ${deviceId}...`);
 			})
 			.then(() => {
+				this.stopSpin();
 				if (lastError){
 					throw lastError;
 				}
@@ -284,6 +293,87 @@ module.exports = class UsbCommand {
 						.then(usbDevice => usbDevice);
 				});
 			});
+	}
+
+	_cidrToNetmask(cidr) {
+		let mask = [];
+
+		// Calculate number of full '1' octets in the netmask
+		for (let i = 0; i < Math.floor(cidr / 8); i++) {
+			mask.push(255);
+		}
+	
+		// Calculate remaining bits in the next octet
+		if (mask.length < 4) {
+			mask.push((256 - Math.pow(2, 8 - cidr % 8)) & 255);
+		}
+	
+		// Fill the remaining octets with '0' if any
+		while (mask.length < 4) {
+			mask.push(0);
+		}
+		
+		return mask.join('.');
+	}
+
+	async getNetworkIfaces(args) {
+		// define output array with logs to prevent interleaving with the spinner
+		let output = []; 
+
+		await this._forEachUsbDevice(args, usbDevice => {
+			const platform = platformForId(usbDevice.platformId);
+			if (platform.generation <= 2) {
+				output = output.concat(`Device ID: ${chalk.cyan(usbDevice.id)} (${chalk.cyan(platform.displayName)})`);
+				output = output.concat('\tCannot get network interfaces for Gen 2 devices');
+				output = output.concat('\n');
+				return;
+			}
+			return this.getNetworkIface(usbDevice)
+			.then((outputData) => {
+				output = output.concat(outputData);
+			});
+		});
+
+		if (output.length === 0) {
+			console.log('No network interfaces found.');
+		}
+		output.forEach((str) => console.log(str));
+	}
+
+	async getNetworkIface(usbDevice) {
+		const output = [];
+		const addToOutput = (str) => output.push(str);
+
+		addToOutput(`Device ID: ${chalk.cyan(usbDevice.id)} (${chalk.cyan(platformForId(usbDevice.platformId).displayName)})`);
+		const ifaceList = await usbDevice.getNetworkInterfaceList();
+		for (const iface of ifaceList) {
+			const ifaceInfo = await usbDevice.getNetworkInterface({ index: iface.index, timeout: 10000 });
+			const flagsStr = ifaceInfo.flagsStrings.join(',');
+			addToOutput(`\t${ifaceInfo.name}(${ifaceInfo.type}): flags=${ifaceInfo.flagsVal}<${flagsStr}> mtu ${ifaceInfo.mtu}`);
+
+			// Process IPv4 addresses
+			if (ifaceInfo?.ipv4Config?.addresses.length > 0) {
+				for (const address of ifaceInfo.ipv4Config.addresses) {
+					const [ipv4Address, cidrBits] = address.split('/');
+					const ipv4NetMask = this._cidrToNetmask(parseInt(cidrBits, 10));
+					addToOutput(`\t\tinet ${ipv4Address} netmask ${ipv4NetMask}`);
+				}
+			}
+
+			// Process IPv6 addresses
+			if (ifaceInfo?.ipv6Config?.addresses.length > 0) {
+				for (const address of ifaceInfo.ipv6Config.addresses) {
+					const [ipv6Address, ipv6Prefix] = address.split('/');
+					addToOutput(`\t\tinet6 ${ipv6Address} prefixlen ${ipv6Prefix}`);
+				}
+			}
+
+			// Process hardware address
+			if (ifaceInfo?.hwAddress) {
+				addToOutput(`\t\tether ${ifaceInfo.hwAddress}`);
+			}
+		}
+		return output;
 	}
 };
 

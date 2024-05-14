@@ -38,6 +38,7 @@ describe('USB Command-Line Interface', () => {
 					'  setup-done       Set the setup done flag',
 					'  configure        Update the system USB configuration',
 					'  cloud-status     Check a device\'s cloud connection state',
+					'  network-interfaces         Gets the network configuration of the device',
 					''
 				].join('\n'));
 			});
@@ -376,6 +377,28 @@ describe('USB Command-Line Interface', () => {
 			expect(argv.params).to.eql({ device: 'my-device' });
 			expect(argv.until).to.equal('NOPE');
 			expect(argv.timeout).to.equal(60000);
+		});
+
+		describe('Handles `usb network-interfaces` Command', () => {
+			it('Parses arguments', () => {
+				const argv = commandProcessor.parse(root, ['usb', 'network-interfaces']);
+				expect(argv.clierror).to.equal(undefined);
+				expect(argv.all).to.equal(false);
+			});
+	
+			it('Includes help with examples', () => {
+				commandProcessor.parse(root, ['usb', 'network-interfaces', '--help'], termWidth);
+				commandProcessor.showHelp((helpText) => {
+					expect(helpText).to.equal([
+						'Gets the network configuration of the device',
+						'Usage: particle usb network-interfaces',
+						'',
+						'Examples:',
+						'  particle usb network-interfaces  Gets the network configuration of the device',
+						''
+					].join('\n'));
+				});
+			});
 		});
 
 		it('Includes help with examples', () => {

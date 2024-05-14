@@ -154,6 +154,19 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(usb, 'network-interfaces', 'Gets the network configuration of the device', {
+		params: '[devices...]',
+		options: commonOptions,
+		examples: {
+			'$0 $command': 'Gets the network configuration of the device',
+			'$0 $command --all': 'Gets the network configuration of all the devices connected over USB',
+			'$0 $command my_device': 'Gets the network configuration of the device named "my_device"'
+		},
+		handler: (args) => {
+			return usbCommand().getNetworkIfaces(args);
+		}
+	});
+
 	return usb;
 };
 

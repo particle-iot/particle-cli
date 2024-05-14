@@ -28,6 +28,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		'  setup-done       Set the setup done flag',
 		'  configure        Update the system USB configuration',
 		'  cloud-status     Check a device\'s cloud connection state',
+		'  network-interfaces         Gets the network configuration of the device',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
@@ -318,6 +319,23 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			expect(stdout).to.equal('timed-out waiting for status...');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('USB network-interfaces Subcommand', () => {
+		after(async () => {
+			await cli.resetDevice();
+			await cli.waitUntilOnline();
+		});
+
+		it('provides network interfaces', async () => {
+			const ifacePattern = /\w+\(\w+\): flags=\d+<[\w,]+> mtu \d+/;
+
+			const { stdout, stderr, exitCode } = await cli.run(['usb', 'network-interfaces']);
+
+			expect(stdout).to.match(ifacePattern);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 	});
 });
