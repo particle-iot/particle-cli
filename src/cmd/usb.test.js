@@ -8,7 +8,7 @@ describe('USB Commands', () => {
 
 
 	describe('_formatNetworkIfaceOutput', () => {
-		it('formats the interface information to imitate linux `ifconfig` command', async () => {
+		it('formats the interface information to imitate linux `ifconfig` command', () => {
 			const nwInfo = [
 				{
 					'index': 5,
@@ -104,7 +104,7 @@ describe('USB Commands', () => {
 					access_token: '1234'
 				},
 			});
-			const res = await usbCommands._formatNetworkIfaceOutput(nwInfo, 'p2', '0123456789abcdef');
+			const res = usbCommands._formatNetworkIfaceOutput(nwInfo, 'p2', '0123456789abcdef');
 
 			expect(res).to.eql(expectedOutput);
 		});
