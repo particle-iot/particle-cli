@@ -6518,7 +6518,6 @@
       "version": "2.9.0",
       "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.9.0.tgz",
       "integrity": "sha512-5fw30BNXhV8hPc1eznIbWxHng9ISY61D+mSN3H/wt85tXDPY9kSAO5frz7/Oepntf9OiHEPkCD3tQrehvVRN9A==",
-      "optional": true,
       "dependencies": {
         "@particle/device-os-protobuf": "^2.4.2",
         "ip-address": "^9.0.5",
@@ -14555,7 +14554,6 @@
       "version": "2.9.0",
       "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.9.0.tgz",
       "integrity": "sha512-5fw30BNXhV8hPc1eznIbWxHng9ISY61D+mSN3H/wt85tXDPY9kSAO5frz7/Oepntf9OiHEPkCD3tQrehvVRN9A==",
-      "optional": true,
       "requires": {
         "@particle/device-os-protobuf": "^2.4.2",
         "ip-address": "^9.0.5",

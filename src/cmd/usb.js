@@ -319,15 +319,13 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 		await this._forEachUsbDevice(args, usbDevice => {
 			const platform = platformForId(usbDevice.platformId);
-			if (platform.generation <= 2) {
-				output = output.concat(`Device ID: ${chalk.cyan(usbDevice.id)} (${chalk.cyan(platform.displayName)})`);
-				output = output.concat('\tCannot get network interfaces for Gen 2 devices');
-				output = output.concat('\n');
-				return;
-			}
-			return this.getNetworkIface(usbDevice)
-				.then((outputData) => {
+			return this.getNetworkIfaceInfo(usbDevice)
+				.then((nwIfaces) => {
+					const outputData = this._formatNetworkIfaceOutput(nwIfaces, platform.displayName, usbDevice.id);
 					output = output.concat(outputData);
+				})
+				.catch((error) => {
+					output = output.concat(`Error getting network interfaces (${platform.displayName} / ${usbDevice.id}): ${error.message}\n`);
 				});
 		});
 
@@ -337,23 +335,29 @@ module.exports = class UsbCommand extends CLICommandBase {
 		output.forEach((str) => console.log(str));
 	}
 
-	async getNetworkIface(usbDevice) {
-		const output = [];
-		const addToOutput = (str) => output.push(str);
-
-		addToOutput(`Device ID: ${chalk.cyan(usbDevice.id)} (${chalk.cyan(platformForId(usbDevice.platformId).displayName)})`);
+	async getNetworkIfaceInfo(usbDevice) {
+		let nwIfaces = [];
 		const ifaceList = await usbDevice.getNetworkInterfaceList();
 		for (const iface of ifaceList) {
 			const ifaceInfo = await usbDevice.getNetworkInterface({ index: iface.index, timeout: 10000 });
+			nwIfaces.push(ifaceInfo);
+		}
+		return nwIfaces;
+	}
+
+	_formatNetworkIfaceOutput(nwIfaces, platform, deviceId) {
+		const output = [];
+		output.push(`Device ID: ${chalk.cyan(deviceId)} (${chalk.cyan(platform)})`);
+		for (const ifaceInfo of nwIfaces) {
 			const flagsStr = ifaceInfo.flagsStrings.join(',');
-			addToOutput(`\t${ifaceInfo.name}(${ifaceInfo.type}): flags=${ifaceInfo.flagsVal}<${flagsStr}> mtu ${ifaceInfo.mtu}`);
+			output.push(`\t${ifaceInfo.name}(${ifaceInfo.type}): flags=${ifaceInfo.flagsVal}<${flagsStr}> mtu ${ifaceInfo.mtu}`);
 
 			// Process IPv4 addresses
 			if (ifaceInfo?.ipv4Config?.addresses.length > 0) {
 				for (const address of ifaceInfo.ipv4Config.addresses) {
 					const [ipv4Address, cidrBits] = address.split('/');
 					const ipv4NetMask = this._cidrToNetmask(parseInt(cidrBits, 10));
-					addToOutput(`\t\tinet ${ipv4Address} netmask ${ipv4NetMask}`);
+					output.push(`\t\tinet ${ipv4Address} netmask ${ipv4NetMask}`);
 				}
 			}
 
@@ -361,16 +365,17 @@ module.exports = class UsbCommand extends CLICommandBase {
 			if (ifaceInfo?.ipv6Config?.addresses.length > 0) {
 				for (const address of ifaceInfo.ipv6Config.addresses) {
 					const [ipv6Address, ipv6Prefix] = address.split('/');
-					addToOutput(`\t\tinet6 ${ipv6Address} prefixlen ${ipv6Prefix}`);
+					output.push(`\t\tinet6 ${ipv6Address} prefixlen ${ipv6Prefix}`);
 				}
 			}
 
 			// Process hardware address
 			if (ifaceInfo?.hwAddress) {
-				addToOutput(`\t\tether ${ifaceInfo.hwAddress}`);
+				output.push(`\t\tether ${ifaceInfo.hwAddress}`);
 			}
 		}
 		return output;
 	}
+
 };
 
