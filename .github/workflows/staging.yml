@@ -1,0 +1,20 @@
+name: Deploy to staging
+on:
+  push:
+    branches:
+      - 'staging'
+jobs:
+  call-tests:
+    uses: ./.github/workflows/reusable-tests.yml
+    secrets: inherit
+  call-build:
+    uses: ./.github/workflows/reusable-build.yml
+    secrets: inherit
+    needs: call-tests
+  call-publish:
+    uses: ./.github/workflows/reusable-publish-v2.yml
+    secrets: inherit
+    needs: call-build
+    with:
+      environment: staging
+      build_run_id: ${{ github.run_id }}

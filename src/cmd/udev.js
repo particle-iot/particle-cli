@@ -1,9 +1,10 @@
-const fs = require('fs');
+const fs = require('fs-extra');
+const path = require('path');
 const chalk = require('chalk');
 const VError = require('verror');
 const childProcess = require('child_process');
 const { prompt } = require('../app/ui');
-
+const temp = require('temp');
 const UDEV_RULES_SYSTEM_PATH = '/etc/udev/rules.d';
 const UDEV_RULES_FILE_NAME = '50-particle.rules';
 
@@ -61,12 +62,15 @@ function udevRulesInstalled() {
  *
  * @return {Promise}
  */
-function installUdevRules() {
+async function installUdevRules() {
 	if (!systemSupportsUdev()) {
 		return Promise.reject(new Error('Not supported'));
 	}
+	const tempDir = await temp.mkdir('particle');
+	const udevRulesFile = path.join(tempDir, UDEV_RULES_FILE_NAME);
+	await fs.copyFile(UDEV_RULES_ASSET_FILE, udevRulesFile);
 	return new Promise((resolve, reject) => {
-		const cmd = `sudo cp "${UDEV_RULES_ASSET_FILE}" "${UDEV_RULES_SYSTEM_FILE}"`;
+		const cmd = `sudo cp "${udevRulesFile}" "${UDEV_RULES_SYSTEM_FILE}"`;
 		console.log(cmd);
 		childProcess.exec(cmd, err => {
 			if (err) {

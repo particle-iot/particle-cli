@@ -36,7 +36,7 @@ const VError = require('verror');
 const childProcess = require('child_process');
 const { PLATFORMS } = require('./platform');
 const log = require('./log');
-const { DeviceProtectionError } = require('../lib/require-optional')('particle-usb');
+const { DeviceProtectionError } = require('particle-usb');
 
 
 module.exports = {

@@ -1,7 +1,7 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "3.22.0",
+  "version": "3.23.4",
   "author": "David Middlecamp",
   "bin": {
     "particle": "./src/index.js"
@@ -68,13 +68,14 @@
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "node-wifiscanner2": "^1.2.1",
-    "openurl": "^1.1.1",
     "particle-api-js": "^10.3.0",
     "particle-commands": "^1.0.1",
     "particle-library-manager": "^0.1.15",
+    "particle-usb": "^2.8.0",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",
+    "serialport": "^10.4.0",
     "softap-setup": "^4.1.0",
     "temp": "^0.9.1",
     "verror": "^1.10.0",
@@ -95,13 +96,10 @@
     "mock-fs": "^4.10.4",
     "nock": "^13.3.0",
     "nyc": "^14.1.1",
+    "pkg": "^5.8.1",
     "proxyquire": "^2.1.3",
     "sinon": "^7.5.0",
     "sinon-chai": "^3.3.0"
-  },
-  "optionalDependencies": {
-    "particle-usb": "^2.8.0",
-    "serialport": "^9.2.8"
   },
   "engines": {
     "node": ">=12",
@@ -141,7 +139,7 @@
     "test:integration:watch": "npm run test:integration -- --watch --watch-extensions js,json",
     "test:integration:inspect": "npm test:integration -- --inspect-brk",
     "test:integration:silent": "PARTICLE_NOOP=$(npm run test:integration:ci)",
-    "test:e2e": "mocha 'test/{,!(__fixtures__)/**}/*.e2e.js' --timeout 120000 --exit",
+    "test:e2e": "npm run build -- --target host && mocha 'test/{,!(__fixtures__)/**}/*.e2e.js' --timeout 120000 --exit",
     "test:e2e:ci": "npm run test:e2e:no-device -- --forbid-only",
     "test:e2e:no-device": "npm run test:e2e -- --grep @device --invert",
     "test:e2e:watch": "npm run test:e2e -- --watch --watch-extensions js,json",
@@ -153,12 +151,35 @@
     "coverage:integration": "nyc --no-clean npm run test:integration:silent",
     "coverage:e2e": "nyc npm run test:e2e:silent",
     "coverage:report": "nyc report --reporter=html",
+    "build": "pkg .",
+    "sign:win": "node ./scripts/win-sign.js",
+    "generate:win-installer": "node ./scripts/generate-win-installer.js",
+    "generate:manifest": "node ./scripts/generate-manifest.js",
     "clean": "npm run clean:modules",
     "clean:modules": "rm -rf ./node_modules",
     "update-changelog": "VERSION=`node --print --eval \"require('./package.json').version\"` bash -c 'read -p \"Update CHANGELOG.md for version $VERSION and press ENTER when done.\"' && git add CHANGELOG.md",
     "reinstall": "npm run clean && npm i",
     "doctoc": "doctoc --title '## Table of Contents' README.md",
     "todo": "git grep -e 'TODO (.*)' --ignore-case --heading --break --context=2 --full-name --line-number -- :^./package.json"
+  },
+  "pkg": {
+    "targets": [
+      "node16-linux-x64",
+      "node16-macos-x64",
+      "node16-macos-arm64",
+      "node16-win-x64",
+      "node16-linux-arm",
+      "node16-linux-arm64"
+    ],
+    "assets": [
+      "./assets/**",
+      "./node_modules/@serialport/bindings-cpp/prebuilds/*/node.napi*.node",
+      "./node_modules/usb/prebuilds/*/node.napi*.node",
+      "./node_modules/node-wifiscanner2/locales/en.json",
+      "./node_modules/particle-commands/dist/cmd/templates/project/**/*",
+      "./node_modules/particle-commands/node_modules/particle-library-manager/dist/init/**/*"
+    ],
+    "outputPath": "build"
   },
   "yargs": {
     "camel-case-expansion": false

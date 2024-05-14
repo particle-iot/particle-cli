@@ -1,0 +1,83 @@
+name: Publish Package v2
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+        description: 'The environment to publish to'
+        default: 'staging'
+      build_run_id:
+        type: string
+        required: true
+        description: 'The build run id'
+jobs:
+    publish:
+        runs-on: ubuntu-latest
+        environment: ${{ inputs.environment }}
+        permissions:
+          id-token: write
+          contents: read
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '16'
+            - name: Configure NPM Token
+              run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+            - name: Install dependencies
+              run: npm install
+
+
+            - name: Download workflow artifact
+              uses: dawidd6/action-download-artifact@v3.1.4
+              with:
+                  run_id: ${{ inputs.build_run_id }}
+                  name: package
+                  path: build/
+            - name: change mode of all files to executable
+              run: |
+                cd build
+                find . -type f -name "ParticleCLISetup.exe" -exec chmod +x {} +
+
+            - name: compress build with gz
+              run: |
+                cd build
+                find . -type f ! -name "ParticleCLISetup.exe" -exec gzip "{}" +
+
+            - name: generate manifest
+              run: |
+                npm run generate:manifest ./build ${{ secrets.BINARIES_BASE_URL }}
+
+            - name: Aws Assume Role
+              uses: aws-actions/configure-aws-credentials@v4.0.2
+              with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+                  role-session-name: 'particle-cli-upload-session'
+                  aws-region: ${{ secrets.AWS_S3_REGION }}
+
+            - name: Upload version to S3
+              run: |
+                aws s3 cp build/release/ s3://${{ secrets.AWS_S3_BUCKET }}/particle-cli/ --recursive \
+                --cache-control "public, max-age=0"
+            - name: Upload cli installer to s3
+              run: |
+                aws s3 cp installer/unix/install-cli s3://${{ secrets.AWS_S3_BUCKET }}/particle-cli/installer/install-cli \
+                --cache-control "public, max-age=0"
+            - name: Upload installer manifest to s3
+              run: |
+                aws s3 cp build/installer-manifest.json s3://${{ secrets.AWS_S3_BUCKET }}/particle-cli/installer/manifest.json \
+                --cache-control "public, max-age=0"
+
+            # invalidate cloudfront cache
+            - name: Invalidate Cloudfront manifest cache
+              run: |
+                aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_BINARIES_ID }} --paths "/particle-cli/manifest.json" "/particle-cli/installer/manifest.json" "/particle-cli/installer/win32/ParticleCLISetup.exe"
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v2
+              with:
+                  name: release
+                  path: build/

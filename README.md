@@ -1,4 +1,4 @@
-[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli) [![Build Status](https://circleci.com/gh/particle-iot/particle-cli/tree/master.svg?style=svg)](https://circleci.com/gh/particle-iot/particle-cli/tree/master) [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square)](https://github.com/particle-iot/particle-cli/blob/master/LICENSE)
+[![npm](https://img.shields.io/npm/v/particle-cli.svg?style=flat-square)](https://www.npmjs.com/package/particle-cli) ![GitHub Actions](https://github.com/particle-iot/particle-cli/actions/workflows/dev.yml/badge.svg?branch=master) [![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg?style=flat-square)](https://github.com/particle-iot/particle-cli/blob/master/LICENSE)
 
 Particle's full-stack Internet of Things (IoT) device platform
 gives you everything you need to securely and reliably connect
@@ -36,20 +36,8 @@ The Particle CLI is a powerful tool for interacting with your IoT devices and th
 
 For end-users, the most up-to-date installation instructions can be found here: [macOS / Linux](https://docs.particle.io/tutorials/developer-tools/cli/#using-macos-or-linux) | [Windows](https://docs.particle.io/tutorials/developer-tools/cli/#using-windows)
 
-Note: On some platforms (e.g. `arm`), additional manual steps are required:
-
->  particle-cli uses npm packages [`node-usb`](https://github.com/tessel/node-usb) and [`node-serialport`](https://github.com/serialport/node-serialport).
->  On some environments (ie: Raspberry Pi and Apple M1), `node-serialport` [does not provide prebuild environments](https://github.com/serialport/node-serialport/issues/2292),
->  so their npm install script relies on creating a prebuild using node-gyp (See
->  [node-gyp requirements](https://github.com/nodejs/node-gyp#on-unix)), and libudev (See [node-usb installation](https://github.com/tessel/node-usb#installation).
->  And these must be installed in order for their npm install script to succeed.  As well, particle-cli uses openssl.
->
->  As an example, to install these dependencies on Raspbian/Debian/Ubuntu:
->  ```bash
->  sudo apt update && sudo apt upgrade
->  sudo apt install build-essential libudev-dev python3 openssl
->  ```
-
+Note: Some commands may require `openssl` to be installed on your system.
+You can install it using your package manager (e.g. `brew install openssl` on macOS).
 
 ## Getting Started
 
@@ -137,8 +125,30 @@ The Particle CLI has a number of automated test suites and related commands. The
 
 All tests use [mocha](https://mochajs.org), [chai](https://www.chaijs.com), and [sinon](https://sinonjs.org/) with coverage handled by [nyc](https://github.com/istanbuljs/nyc).
 
-We recommend running locally if you can as it greatly shortens your feedback loop. However, CI also runs against every PR and [error reporting is publicly available](https://app.circleci.com/pipelines/github/particle-iot/particle-cli).
+We recommend running locally if you can as it greatly shortens your feedback loop.
+However, CI also runs against every PR and [error reporting
+is publicly available](https://app.circleci.com/pipelines/github/particle-iot/particle-cli).
 
+## CLI Packaging and Distribution
+* Cli is packaged using [pkg](https://github.com/vercel/pkg).
+The packaging is done using GitHub Actions
+  and the executables are uploaded to [binaries.particle.io/particle-cli](https://binaries.particle.io/particle-cli/).
+* There are two installers that are created for the CLI:
+  * Windows installer: `particle-cli-setup.exe` (This is an NSIS installer for Windows).
+    You can see the installer script here [ParticleCLISetup.nsi](installer/windows/ParticleCLISetup.nsi)
+  * Unix installer: `install-cli` (This is a shell script that installs the CLI on Unix systems).
+    You can see the installer script here [install-cli.sh](installer/unix/install-cli)
+* The installers are created using GitHub Actions and are uploaded to [binaries.particle.io/particle-cli/installer](https://binaries.particle.io/particle-cli/installer).
+* The current supported platforms for the CLI are:
+  * Windows
+    * x64
+  * macOS
+    * x64
+    * arm64
+  * Linux
+    * x64
+    * arm64
+    * arm
 ## Releasing a new version
 
 See [RELEASE.md](RELEASE.md).

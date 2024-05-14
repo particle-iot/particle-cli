@@ -1,0 +1,170 @@
+#!/bin/bash
+# Install the Particle Command Line Interface (CLI)
+#
+# This installs a binary packaged with Node and all the JS files to the home directory.
+#
+# When a new version of the particle-cli is released, the binary will update to the latest version
+# in the background.
+#
+# Run VERSION=3.2.0 ./install-cli to use the specific version
+
+VERSION=${VERSION}
+BINARY="particle"
+DEST_PATH="$HOME/bin"
+DEST="$DEST_PATH/$BINARY"
+MANIFEST_HOST=${MANIFEST_HOST:-binaries.particle.io}
+MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest.json"
+SHELL_CONFIG="$HOME/.bash_profile"
+
+DISABLE_AUTOMATIC_UPDATES=0
+if [ -n "$VERSION" ]; then
+  MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest-${VERSION}.json"
+  DISABLE_AUTOMATIC_UPDATES=1
+fi
+echo
+echo 'PARTICLE CLI SETUP...'
+echo
+
+# Compute OS and architecture
+UNAME=$(uname -s)
+case $UNAME in
+    Linux)
+        OS="linux"
+        ;;
+    Darwin)
+        OS="darwin"
+        ;;
+    *)
+        echo "Don't know how to install the Particle CLI on $UNAME"
+        exit 1
+        ;;
+esac
+
+PROCESSOR=$(uname -m)
+case $PROCESSOR in
+    x86_64)
+        ARCH="x64"
+        ;;
+    aarch64)
+        ARCH="arm64"
+        ;;
+    arm64)
+        ARCH="arm64"
+        ;;
+    arm*)
+        ARCH="arm"
+        ;;
+    *)
+        echo "Don't know how to install the Particle CLI for $PROCESSOR"
+        exit 1
+        ;;
+esac
+
+# setup for legacy macOS bash
+if [ -e "$HOME/.profile" ] && [ "${OS}" == "darwin" ]; then
+   SHELL_CONFIG="$HOME/.profile"
+fi
+
+# setup for zsh if that's the prefered shell
+if [ -n "$($SHELL -c 'echo $ZSH_VERSION')" ]; then
+   SHELL_CONFIG="$HOME/.zprofile"
+fi
+
+function program_exists {
+    hash "$1" 2> /dev/null
+}
+
+if program_exists "python3"; then
+   PYTHON=python3
+elif program_exists "python2"; then
+   PYTHON=python2
+elif program_exists "python"; then
+   PYTHON=python
+else
+   echo "python is required to run this installer"
+   exit 1
+fi
+
+# Download JSON manifest with latest CLI binary
+echo ":::: Installing the Particle CLI for $OS $ARCH"
+MANIFEST=$(curl -s --fail $MANIFEST_URL)
+if [ $? -ne 0 ]; then
+   echo "Couldn't download CLI $VERSION. Check that the version exists."
+   exit 1
+fi
+VERSION=$(echo $MANIFEST | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['version'])")
+BINARY_URL=$(echo $MANIFEST | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['url'])")
+BINARY_SHA256=$(echo $MANIFEST | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['builds']['$OS']['$ARCH']['sha256'])")
+
+# Download and validate binary
+mkdir -p "$DEST_PATH"
+TMP_FILE=$(mktemp)
+
+echo ":::: Downloading CLI version $VERSION"
+curl "$BINARY_URL" | gunzip > "$TMP_FILE"
+
+echo "$BINARY_SHA256  $TMP_FILE" | shasum a 256 -c > /dev/null 2>&1
+if [ $? -eq 1 ]; then
+   echo ':::: Checksum check failed! Aborting installation'
+   exit 1
+fi
+
+mv -f "$TMP_FILE" "$DEST"
+chmod +x "$DEST"
+
+# Turn off automatic updates when installing a specific version
+if [ "$DISABLE_AUTOMATIC_UPDATES" -eq 1 ]; then
+  echo
+  echo ":::: Disabling automatic updates since a specific version was installed."
+  echo ":::: Reenable automatic updates by running \"particle update-cli --enable-updates\""
+  "$DEST" update-cli --disable-updates > /dev/null 2>&1
+fi
+
+# Install dependencies
+function install_program {
+    prog="$1"
+
+    if ! program_exists "$prog"; then
+        if [ "$OS" = "linux" ]; then
+            if program_exists "apt-get"; then
+                echo ":::: Installing dependency $prog"
+                sudo apt-get install -y "$prog"
+                return
+            fi
+        else
+            if program_exists "brew"; then
+                echo ":::: Installing dependency $prog"
+                brew install "$prog"
+                return
+            fi
+        fi
+        echo ":::: The Particle CLI uses $prog. Install it for your OS"
+    fi
+}
+
+install_program "openssl"
+
+# Add ~/bin to the path
+function file_contains {
+    grep "$2" "$1" 1>/dev/null 2>&1
+}
+
+if ! file_contains "$SHELL_CONFIG" "\$HOME/bin"; then
+    cat >> "$SHELL_CONFIG" <<EOL
+
+# added by Particle CLI
+# add home bin directory to PATH if it exists
+if [ -d "\$HOME/bin" ] ; then
+    PATH="\$HOME/bin:\$PATH"
+fi
+EOL
+fi
+
+echo
+echo ":::: The Particle CLI has been installed to: \"$DEST\""
+echo ":::: Your \"$SHELL_CONFIG\" file has been updated to properly set \$PATH"
+echo
+echo '************************************************************************'
+echo '** YOU MUST CLOSE AND REOPEN YOUR TERMINAL BEFORE CHANGES TAKE EFFECT **'
+echo '************************************************************************'
+echo
