@@ -1,4 +1,3 @@
-const os = require('os');
 const { spin } = require('../app/ui');
 const { delay, asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
@@ -247,7 +246,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 						.catch(e => lastError = e)
 						.finally(() => usbDevice.close());
 				});
-				return spin(Promise.all(p), `Sending a command to the device...`);
+				return spin(Promise.all(p), 'Sending a command to the device...');
 			})
 			.then(() => {
 				if (lastError){
