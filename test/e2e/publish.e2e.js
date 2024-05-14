@@ -16,8 +16,6 @@ describe('Publish Commands', () => {
 		'',
 		'Options:',
 		'  --private  Publish to the private stream  [boolean] [default: true]',
-		'  --public   Publish to the public stream  [boolean]',
-		'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
 		'',
 		'Examples:',
 		'  particle publish temp 25.0                  Publish a temp event to your private event stream',
@@ -66,24 +64,6 @@ describe('Publish Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Publishes a private event', async () => {
-		const args = ['publish', eventName, '--private'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.include(`Published private event: ${eventName}${os.EOL}`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	it('Publishes a public event', async () => {
-		const args = ['publish', eventName, '--public'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.include(`Published public event: ${eventName}${os.EOL}`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
 	it('Publishes a product event', async () => {
 		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
 		const { stdout, stderr, exitCode } = await cli.run(args);
@@ -94,16 +74,7 @@ describe('Publish Commands', () => {
 	});
 
 	it('Publishes a private product event', async () => {
-		const args = ['publish', eventName, '--product', PRODUCT_01_ID, '--private'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-
-		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-	});
-
-	it('Ignores `--public` flag when publishing a product event', async () => {
-		const args = ['publish', eventName, '--product', PRODUCT_01_ID, '--public'];
+		const args = ['publish', eventName, '--product', PRODUCT_01_ID];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 
 		expect(stdout).to.include(`Published private event: ${eventName} to product: ${PRODUCT_01_ID}${os.EOL}`);

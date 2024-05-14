@@ -209,13 +209,13 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	publishEvent(name, data, isPrivate, product){
+	publishEvent(name, data, product){
 		return this._wrap(
 			this.api.publishEvent({
 				name,
 				data,
 				product,
-				isPrivate,
+				isPrivate: true,
 				auth: this.accessToken
 			})
 		);

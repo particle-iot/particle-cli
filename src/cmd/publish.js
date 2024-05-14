@@ -11,16 +11,14 @@ module.exports = class PublishCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	publishEvent({ private: isPrivate, public: isPublic, product, params: { event, data } }){
-		isPrivate = (isPublic && !product) ? false : isPrivate; // `isPrivate: true` by default see: src/cli/publish.js
-		const visibility = isPrivate ? 'private' : 'public';
-		let epilogue = `${visibility} event: ${event}`;
+	publishEvent({ product, params: { event, data } }){
+		let epilogue = `private event: ${event}`;
 
 		if (product){
 			epilogue += ` to product: ${product}`;
 		}
 
-		const publishEvent = createAPI().publishEvent(event, data, isPrivate, product);
+		const publishEvent = createAPI().publishEvent(event, data, product);
 		return this.ui.showBusySpinnerUntilResolved(`Publishing ${epilogue}`, publishEvent)
 			.then(() => this.ui.stdout.write(`Published ${epilogue}${os.EOL}${os.EOL}`))
 			.catch(error => {

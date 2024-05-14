@@ -946,7 +946,7 @@ module.exports = class ApiClient {
 		});
 	}
 
-	publishEvent(eventName, data, setPrivate){
+	publishEvent(eventName, data){
 		const { request, _access_token: token } = this;
 		let self = this;
 
@@ -959,7 +959,7 @@ module.exports = class ApiClient {
 					name: eventName,
 					data: data,
 					access_token: token,
-					private: setPrivate
+					private: true
 				}
 			};
 
@@ -977,11 +977,7 @@ module.exports = class ApiClient {
 					return reject(body);
 				}
 
-				console.log(
-					`Published ${setPrivate ? 'private' : 'public'}`,
-					'event:',
-					eventName
-				);
+				console.log(`Published private event: ${eventName}`);
 				console.log('');
 				resolve(body);
 			});
