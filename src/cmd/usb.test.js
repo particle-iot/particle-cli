@@ -88,7 +88,7 @@ describe('USB Commands', () => {
 			];
 
 			const expectedOutput = [
-				'Device ID: \u001b[36m0123456789abcdef\u001b[39m (\u001b[36mp2\u001b[39m)',
+				'Device ID: 0123456789abcdef (p2)',
 				'\twl4(WIFI): flags=98371<UP,BROADCAST,LOWER_UP,LOWER_UP,MULTICAST,NOND6> mtu 1500',
 				'\t\tinet 10.2.3.4 netmask 255.255.255.255',
 				'\t\tether 94:94:4a:04:af:80',
