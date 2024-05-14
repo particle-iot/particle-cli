@@ -21,7 +21,6 @@ const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
 const WifiControlRequest = require('../lib/wifi-control-request');
-const semver = require('semver');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
@@ -759,7 +758,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 					});
 			});
 
-
 			serialTrigger.addTrigger('EAP Type 0=PEAP/MSCHAPv2, 1=EAP-TLS:', (cb) => {
 				resetTimeout();
 
@@ -812,7 +810,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 						});
 				}
 			});
-
 
 			serialTrigger.addTrigger('Outer identity (optional):', (cb) => {
 				resetTimeout();
@@ -913,7 +910,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 						});
 				}
 			});
-
 
 			serialTrigger.addTrigger('Password:', (cb) => {
 				resetTimeout();
