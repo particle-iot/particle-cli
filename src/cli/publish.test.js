@@ -25,11 +25,9 @@ describe('Publish Command-Line Interface', () => {
 		});
 
 		it('Parses options', () => {
-			const argv = commandProcessor.parse(root, ['publish', 'my-event', '--private', '--public', '--product', '12345']);
+			const argv = commandProcessor.parse(root, ['publish', 'my-event', '--product', '12345']);
 			expect(argv.clierror).to.equal(undefined);
 			expect(argv.params).to.eql({ event: 'my-event', data: undefined });
-			expect(argv.private).to.equal(true);
-			expect(argv.public).to.equal(true);
 			expect(argv.product).to.equal('12345');
 		});
 
@@ -56,8 +54,6 @@ describe('Publish Command-Line Interface', () => {
 					'Usage: particle publish [options] <event> [data]',
 					'',
 					'Options:',
-					'  --private  Publish to the private stream  [boolean] [default: true]',
-					'  --public   Publish to the public stream  [boolean]',
 					'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
 					'',
 					'Examples:',

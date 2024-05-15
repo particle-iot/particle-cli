@@ -2,15 +2,6 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'publish', 'Publish an event to the cloud', {
 		params: '<event> [data]',
 		options: {
-			'private': {
-				boolean: true,
-				default: true,
-				description: 'Publish to the private stream'
-			},
-			'public': {
-				boolean: true,
-				description: 'Publish to the public stream'
-			},
 			'product': {
 				description: 'Publish to the given Product ID or Slug\'s stream'
 			}
