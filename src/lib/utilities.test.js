@@ -67,13 +67,13 @@ describe('Utilities', () => {
 				12: 'Argon',
 				13: 'Boron',
 				14: 'Xenon',
-				15: 'E SoM X',
-				23: 'B SoM',
-				25: 'B5 SoM',
+				15: 'E-SoM-X',
+				23: 'B-SoM',
+				25: 'B5-SoM',
 				26: 'Asset Tracker / Monitor One',
-				28: 'Tracker M',
+				28: 'Tracker-M',
 				32: 'Photon 2 / P2',
-				35: 'M SoM'
+				35: 'M-SoM'
 			});
 		});
 	});
