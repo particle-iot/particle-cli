@@ -21,6 +21,7 @@ const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('../lib/require-optional')('particle-usb');
 const WifiControlRequest = require('../lib/wifi-control-request');
+const semver = require('semver');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
@@ -524,19 +525,24 @@ module.exports = class SerialCommand extends CLICommandBase {
 	}
 
 	async configureWifi({ port, file }){
-		const device = await this.whatSerialPortDidYouMean(port, true);
-		if (!device?.specs?.features?.includes('wifi')) {
+		const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
+		const deviceId = deviceFromSerialPort.deviceId;
+		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+		if (!deviceFromSerialPort?.specs?.features?.includes('wifi')) {
 			throw new VError('The device does not support Wi-Fi');
 		}
-		if (device?.specs?.generation <= 2 ) {
+
+		// if device's firmware version is less than 6.0.0, use the old way
+		const fwVer = device.firmwareVersion;
+		if (semver.lt(fwVer, '6.0.0')) {
 			// configure serial
 			if (file){
-				return this._configWifiFromFile(device, file);
+				return this._configWifiFromFile(deviceFromSerialPort, file);
 			} else {
-				return this.promptWifiScan(device);
+				return this.promptWifiScan(deviceFromSerialPort);
 			}
 		} else {
-			const wifiControlRequest = new WifiControlRequest(device.deviceId, {
+			const wifiControlRequest = new WifiControlRequest(deviceFromSerialPort.deviceId, {
 				file,
 				ui: this.ui,
 				newSpin: this.newSpin,
