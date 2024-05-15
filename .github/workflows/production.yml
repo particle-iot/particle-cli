@@ -17,6 +17,7 @@ jobs:
     needs: call-build
     with:
       environment: production
+      build_run_id: ${{ github.run_id }}
   call-publish-npm:
     uses: ./.github/workflows/reusable-publish-npm.yml
     secrets: inherit
