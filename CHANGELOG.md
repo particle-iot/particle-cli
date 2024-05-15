@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.23.6 - May 15 2024
+* Fix ci deployment
+
 # 3.23.5 - May 15 2024
 * Update Readme and Release documents to reflect the new CLI package structure
 
