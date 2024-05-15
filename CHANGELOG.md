@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.23.5 - May 15 2024
+* Update Readme and Release documents to reflect the new CLI package structure
+
 # 3.23.4 - May 10 2024
 * Fix unix installer to stop update check when installing specific version
 
