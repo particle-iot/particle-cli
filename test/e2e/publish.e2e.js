@@ -15,7 +15,7 @@ describe('Publish Commands', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --private  Publish to the private stream  [boolean] [default: true]',
+		'  --product  Publish to the given Product ID or Slug\'s stream  [string]',
 		'',
 		'Examples:',
 		'  particle publish temp 25.0                  Publish a temp event to your private event stream',
