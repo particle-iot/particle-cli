@@ -16,4 +16,4 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Publish package
-        run: npm publish ${{github.ref_name}}
+        run: npm publish
