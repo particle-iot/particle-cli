@@ -209,7 +209,7 @@ module.exports = class WiFiControlRequest {
 	async setWifiCredentials({ ssid, password }) {
 		// open device by id
 		let retries = RETRY_COUNT;
-		const spin = this.newSpin(`Setting Wi-Fi credentials for '${ssid}'`).start();
+		this.newSpin(`Setting Wi-Fi credentials for '${ssid}'`).start();
 		let lastError;
 		while (retries > 0) {
 			try {
