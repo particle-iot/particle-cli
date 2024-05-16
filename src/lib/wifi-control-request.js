@@ -31,7 +31,8 @@ module.exports = class WiFiControlRequest {
 		} else {
 			network = await this.getNetworkToConnect();
 		}
-		await this.joinWifi(network);
+		await this.setWifiCredentials(network);
+		console.log('Done! WiFi credentials have been set.');
 	}
 
 	async getNetworkToConnectFromJson() {
@@ -203,6 +204,33 @@ module.exports = class WiFiControlRequest {
 		}
 		this.stopSpin();
 		throw this._handleDeviceError(lastError, { action: 'join Wi-Fi network' });
+	}
+
+	async setWifiCredentials({ ssid, password }) {
+		// open device by id
+		let retries = RETRY_COUNT;
+		const spin = this.newSpin(`Setting Wi-Fi credentials for '${ssid}'`).start();
+		let lastError;
+		while (retries > 0) {
+			try {
+				if (!this.device || this.device.isOpen === false) {
+					this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId });
+				}
+				await this.device.setWifiCredentials({ ssid, password });
+				this.stopSpin();
+				return;
+			} catch (error) {
+				lastError = error;
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			} finally {
+				if (this.device && this.device.isOpen) {
+					await this.device.close();
+				}
+			}
+		}
+		this.stopSpin();
+		throw this._handleDeviceError(lastError, { action: 'set Wi-Fi credentials' });
 	}
 
 	async pickNetworkManually() {

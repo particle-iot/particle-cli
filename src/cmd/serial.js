@@ -534,6 +534,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// if device's firmware version is less than 6.0.0, use the old way
 		const fwVer = device.firmwareVersion;
+		// FIXME: get the correct version number
 		if (semver.lt(fwVer, '6.0.0')) {
 			// configure serial
 			if (file){
