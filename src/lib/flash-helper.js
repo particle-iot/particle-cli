@@ -349,7 +349,7 @@ function _get256Hash(module) {
 
 function validateDFUSupport({ device, ui }) {
 	const platform = platformForId(device.platformId);
-	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0')) && platform.generation === 2) {
+	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0')) && platform.generation <= 2) {
 		ui.logDFUModeRequired({ showVersionWarning: true });
 		throw new Error('Put the device in DFU mode and try again');
 	}

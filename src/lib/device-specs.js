@@ -173,7 +173,7 @@ function generateDeviceSpecs() {
 			knownApps: knownAppsForPlatform(device.name),
 
 			// add the offsets to server and device keys in DCT
-			...(device.generation === 1 ? keysDctOffsets.generation1 : keysDctOffsets.laterGenerations),
+			...(device.generation <= 1 ? keysDctOffsets.generation1 : keysDctOffsets.laterGenerations),
 
 			// add the segments where DFU can read/write
 			...device.dfu.segments,
