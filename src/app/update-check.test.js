@@ -3,7 +3,7 @@ const { expect, sinon } = require('../../test/setup');
 const updateCheck = require('./update-check');
 const settings = require('../../settings');
 const pkg = require('../../package');
-
+const childProcess= require('node:child_process');
 
 describe('Update Check', () => {
 	const sandbox = sinon.createSandbox();
@@ -13,6 +13,7 @@ describe('Update Check', () => {
 		fakeLastVersionCheck;
 
 	beforeEach(() => {
+		process.pkg = true;
 		fakeUpdateCheckTimeout = 1000;
 		fakeUpdateCheckInterval = 0;
 		fakeLastVersionCheck = 0;
@@ -25,8 +26,9 @@ describe('Update Check', () => {
 		sandbox.stub(settings.profile_json, 'last_version_check').set((x) => (fakeLastVersionCheck = x));
 		sandbox.stub(pkg, 'version').get(() => fakePkgVersion);
 		//sandbox.stub(internal, 'displayVersionBanner');
-		//sandbox.stub(internal, 'latestVersion');
+		sandbox.stub(internal, 'latestVersion');
 		sandbox.spy(semver, 'gt');
+		sandbox.stub(childProcess, 'spawn').returns({ unref: () => {} });
 	});
 
 	afterEach(() => {
@@ -34,114 +36,68 @@ describe('Update Check', () => {
 		settings.profile_json = originalProfileJSON;
 	});
 
-	xit('Checks for latest version', async () => {
-		internal.latestVersion.resolves(fakePkgVersion);
-
+	it('Checks for latest version', async () => {
 		const lastCheck = settings.profile_json.last_version_check;
-		const promise = updateCheck();
-
-		expect(promise).to.have.property('then');
-
-		const result = await promise;
+		const result = await updateCheck();
 
 		expect(result).to.equal(undefined);
-		expect(semver.gt).to.have.property('callCount', 1);
-		expect(semver.gt.firstCall.args).to.eql(['6.6.6', '6.6.6']);
-		expect(internal.latestVersion).to.have.property('callCount', 1);
 		expect(settings.saveProfileData).to.have.property('callCount', 1);
-		expect(internal.displayVersionBanner).to.have.property('callCount', 0);
 		expect(settings.profile_json.last_version_check).to.be.at.least(lastCheck);
 		expect(settings.profile_json).to.not.have.property('newer_version');
+		expect(childProcess.spawn).to.have.property('callCount', 1);
+		expect(childProcess.spawn.firstCall.args[0]).to.equal(process.execPath);
+		expect(childProcess.spawn.firstCall.args[1]).to.include('update-cli');
 	});
 
-	xit('Checks for latest version when forced', async () => {
-		internal.latestVersion.resolves(fakePkgVersion);
+	it('Checks for latest version when forced', async () => {
 		fakeLastVersionCheck = Date.now();
 		fakeUpdateCheckInterval = 1000;
 
 		const force = true;
 		const lastCheck = settings.profile_json.last_version_check;
-		const promise = updateCheck(undefined, force);
-
-		expect(promise).to.have.property('then');
-
-		const result = await promise;
+		const result = await updateCheck(false, force);
 
 		expect(result).to.equal(undefined);
-		expect(semver.gt).to.have.property('callCount', 1);
-		expect(semver.gt.firstCall.args).to.eql(['6.6.6', '6.6.6']);
-		expect(internal.latestVersion).to.have.property('callCount', 1);
+
 		expect(settings.saveProfileData).to.have.property('callCount', 1);
-		expect(internal.displayVersionBanner).to.have.property('callCount', 0);
 		expect(settings.profile_json.last_version_check).to.be.at.least(lastCheck);
 		expect(settings.profile_json).to.not.have.property('newer_version');
+		expect(childProcess.spawn).to.have.property('callCount', 1);
+		expect(childProcess.spawn.firstCall.args[0]).to.equal(process.execPath);
+		expect(childProcess.spawn.firstCall.args[1]).to.include('update-cli');
 	});
 
-	xit('Checks for latest version and handles timeout', async () => {
-		fakeUpdateCheckTimeout = 100;
-		internal.latestVersion.returns(new Promise(() => {}));
-		const lastCheck = settings.profile_json.last_version_check;
-		const promise = updateCheck();
-		const result = await promise;
-
-		expect(result).to.equal(undefined);
-		expect(semver.gt).to.have.property('callCount', 1);
-		expect(semver.gt.firstCall.args).to.eql(['6.6.6', '6.6.6']);
-		expect(internal.latestVersion).to.have.property('callCount', 1);
-		expect(settings.saveProfileData).to.have.property('callCount', 1);
-		expect(internal.displayVersionBanner).to.have.property('callCount', 0);
-		expect(settings.profile_json.last_version_check).to.be.at.least(lastCheck);
-		expect(settings.profile_json).to.not.have.property('newer_version');
-	});
-
-	xit('Checks for latest version and prompts to update', async () => {
-		internal.latestVersion.resolves(semver.inc(fakePkgVersion, 'patch'));
-
-		const lastCheck = settings.profile_json.last_version_check;
-		const promise = updateCheck();
-
-		expect(promise).to.have.property('then');
-
-		const result = await promise;
-
-		expect(result).to.equal(undefined);
-		expect(semver.gt).to.have.property('callCount', 1);
-		expect(semver.gt.firstCall.args).to.eql(['6.6.7', '6.6.6']);
-		expect(internal.latestVersion).to.have.property('callCount', 1);
-		expect(settings.saveProfileData).to.have.property('callCount', 1);
-		expect(internal.displayVersionBanner).to.have.property('callCount', 1);
-		expect(settings.profile_json.last_version_check).to.be.at.least(lastCheck);
-		expect(settings.profile_json).to.have.property('newer_version', '6.6.7');
-	});
-
-	xit('Does nothing when last check was completed within the allotted interval', async () => {
+	it('Does nothing when last check was completed within the allotted interval', async () => {
 		fakeLastVersionCheck = Date.now();
 		fakeUpdateCheckInterval = 1000;
-
-		const promise = updateCheck();
-
-		expect(promise).to.have.property('then');
-
-		const result = await promise;
+		const result = await updateCheck();
 
 		expect(result).to.equal(undefined);
-		expect(semver.gt).to.have.property('callCount', 0);
 		expect(internal.latestVersion).to.have.property('callCount', 0);
 		expect(settings.saveProfileData).to.have.property('callCount', 0);
+		expect(childProcess.spawn).to.have.property('callCount', 0);
 	});
 
-	xit('Does nothing when `skip` flag is set', async () => {
+	it('Does nothing when `skip` flag is set', async () => {
 		const skip = true;
-		const promise = updateCheck(skip);
-
-		expect(promise).to.have.property('then');
-
-		const result = await promise;
+		const result = await updateCheck(skip);
 
 		expect(result).to.equal(undefined);
 		expect(semver.gt).to.have.property('callCount', 0);
 		expect(internal.latestVersion).to.have.property('callCount', 0);
 		expect(settings.saveProfileData).to.have.property('callCount', 0);
+		expect(childProcess.spawn).to.have.property('callCount', 0);
+	});
+
+	it('Does nothing when running from source', async () => {
+		process.pkg = false;
+		const result = await updateCheck();
+
+		expect(result).to.equal(undefined);
+		expect(semver.gt).to.have.property('callCount', 0);
+		expect(internal.latestVersion).to.have.property('callCount', 0);
+		expect(settings.saveProfileData).to.have.property('callCount', 0);
+		expect(childProcess.spawn).to.have.property('callCount', 0);
 	});
 });
 

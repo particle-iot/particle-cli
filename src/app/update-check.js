@@ -1,6 +1,6 @@
 const latestVersion = require('latest-version');
 const settings = require('../../settings');
-const { spawn } = require('node:child_process');
+const childProcess = require('node:child_process');
 
 
 module.exports = async (skip, force) => {
@@ -21,7 +21,7 @@ module.exports = async (skip, force) => {
 		if (skipUpdates) {
 			return;
 		}
-		spawn(process.execPath, [process.argv[1], 'update-cli'], {
+		childProcess.spawn(process.execPath, [process.argv[1], 'update-cli'], {
 			detached: true,
 			stdio: 'ignore',
 			windowsHide: true
