@@ -32,7 +32,6 @@ module.exports = class WiFiControlRequest {
 			network = await this.getNetworkToConnect();
 		}
 		await this.setWifiCredentials(network);
-		console.log('Done! WiFi credentials have been set.');
 	}
 
 	async getNetworkToConnectFromJson() {
@@ -216,9 +215,14 @@ module.exports = class WiFiControlRequest {
 				if (!this.device || this.device.isOpen === false) {
 					this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId });
 				}
-				await this.device.setWifiCredentials({ ssid, password });
-				this.stopSpin();
-				return;
+				const { pass } = await this.device.setWifiCredentials({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
+				if (pass) {
+					this.stopSpin();
+					this.ui.stdout.write('Wi-Fi network configured successfully, your device should now restart.');
+					this.ui.stdout.write(os.EOL);
+					await this.device.reset();
+					return;
+				}
 			} catch (error) {
 				lastError = error;
 				await utilities.delay(TIME_BETWEEN_RETRIES);

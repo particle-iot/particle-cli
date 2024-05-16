@@ -34,7 +34,8 @@ describe('Wifi Control Request', () => {
 			close: sinon.stub(),
 			reset: sinon.stub(),
 			scanWifiNetworks: sinon.stub(),
-			joinNewWifiNetwork: sinon.stub()
+			joinNewWifiNetwork: sinon.stub(),
+			setWifiCredentials: sinon.stub()
 		};
 		usbUtil.getOneUsbDevice = sinon.stub();
 	});
@@ -420,15 +421,45 @@ describe('Wifi Control Request', () => {
 		});
 	});
 
+	describe('setWifiCredentials', () => {
+		it('joins a network', async () => {
+			openDevice.setWifiCredentials.resolves({ pass: true });
+			usbUtil.getOneUsbDevice.resolves(openDevice);
+			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
+			await wifiControlRequest.setWifiCredentials({ ssid: 'network1', password: 'password' });
+			expect(openDevice.setWifiCredentials).to.have.been.calledOnce;
+			expect(openDevice.setWifiCredentials).to.have.been.calledWith({ ssid: 'network1', password: 'password' }, { timeout: 30000 });
+			expect(newSpin).to.have.been.calledWith('Setting Wi-Fi credentials for \'network1\'');
+			expect(stopSpin).to.have.been.calledOnce;
+			expect(ui.stdout.write).to.have.been.calledWith('Wi-Fi network configured successfully, your device should now restart.');
+		});
+
+		it('throw error if fails', async () => {
+			openDevice.setWifiCredentials.rejects(new Error('error'));
+			usbUtil.getOneUsbDevice.resolves(openDevice);
+			let error;
+			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
+			try {
+				await wifiControlRequest.setWifiCredentials({ ssid: 'network1', password: 'password' });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.eql('Unable to set Wi-Fi credentials: error');
+			expect(openDevice.setWifiCredentials).to.have.been.calledWith({ ssid: 'network1', password: 'password' }, { timeout: 30000 });
+			expect(newSpin).to.have.been.calledWith('Setting Wi-Fi credentials for \'network1\'');
+			expect(stopSpin).to.have.been.calledOnce;
+		});
+	});
+
 	describe('configureWifi', () => {
 		it('performs the wifi configuration flow', async () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
 			wifiControlRequest.getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
 			wifiControlRequest.getNetworkToConnectFromJson = sinon.stub();
-			wifiControlRequest.joinWifi = sinon.stub().resolves(true);
+			wifiControlRequest.setWifiCredentials = sinon.stub().resolves(true);
 			await wifiControlRequest.configureWifi();
 			expect(wifiControlRequest.getNetworkToConnect).to.have.been.calledOnce;
-			expect(wifiControlRequest.joinWifi).to.have.been.calledOnce;
+			expect(wifiControlRequest.setWifiCredentials).to.have.been.calledOnce;
 			expect(wifiControlRequest.getNetworkToConnectFromJson).not.to.have.been.called;
 		});
 
@@ -436,10 +467,10 @@ describe('Wifi Control Request', () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin, file: 'file' });
 			wifiControlRequest.getNetworkToConnect = sinon.stub();
 			wifiControlRequest.getNetworkToConnectFromJson = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			wifiControlRequest.joinWifi = sinon.stub().resolves(true);
+			wifiControlRequest.setWifiCredentials = sinon.stub().resolves(true);
 			await wifiControlRequest.configureWifi();
 			expect(wifiControlRequest.getNetworkToConnect).not.to.have.been.called;
-			expect(wifiControlRequest.joinWifi).to.have.been.calledOnce;
+			expect(wifiControlRequest.setWifiCredentials).to.have.been.calledOnce;
 			expect(wifiControlRequest.getNetworkToConnectFromJson).to.have.been.calledOnce;
 		});
 	});
