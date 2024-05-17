@@ -1,15 +1,12 @@
-const semver = require('semver');
 const { expect, sinon } = require('../../test/setup');
 const updateCheck = require('./update-check');
 const settings = require('../../settings');
-const pkg = require('../../package');
 const childProcess= require('node:child_process');
 
 describe('Update Check', () => {
 	const sandbox = sinon.createSandbox();
-	const internal = updateCheck.__internal__;
 	const originalProfileJSON = settings.profile_json;
-	let fakePkgVersion, fakeUpdateCheckTimeout, fakeUpdateCheckInterval,
+	let fakeUpdateCheckTimeout, fakeUpdateCheckInterval,
 		fakeLastVersionCheck;
 
 	beforeEach(() => {
@@ -17,17 +14,12 @@ describe('Update Check', () => {
 		fakeUpdateCheckTimeout = 1000;
 		fakeUpdateCheckInterval = 0;
 		fakeLastVersionCheck = 0;
-		fakePkgVersion = '6.6.6';
 		settings.profile_json = settings.profile_json || { last_version_check: undefined };
 		sandbox.stub(settings, 'saveProfileData');
 		sandbox.stub(settings, 'updateCheckInterval').get(() => fakeUpdateCheckInterval);
 		sandbox.stub(settings, 'updateCheckTimeout').get(() => fakeUpdateCheckTimeout);
 		sandbox.stub(settings.profile_json, 'last_version_check').get(() => fakeLastVersionCheck);
 		sandbox.stub(settings.profile_json, 'last_version_check').set((x) => (fakeLastVersionCheck = x));
-		sandbox.stub(pkg, 'version').get(() => fakePkgVersion);
-		//sandbox.stub(internal, 'displayVersionBanner');
-		sandbox.stub(internal, 'latestVersion');
-		sandbox.spy(semver, 'gt');
 		sandbox.stub(childProcess, 'spawn').returns({ unref: () => {} });
 	});
 
@@ -73,7 +65,6 @@ describe('Update Check', () => {
 		const result = await updateCheck();
 
 		expect(result).to.equal(undefined);
-		expect(internal.latestVersion).to.have.property('callCount', 0);
 		expect(settings.saveProfileData).to.have.property('callCount', 0);
 		expect(childProcess.spawn).to.have.property('callCount', 0);
 	});
@@ -83,8 +74,6 @@ describe('Update Check', () => {
 		const result = await updateCheck(skip);
 
 		expect(result).to.equal(undefined);
-		expect(semver.gt).to.have.property('callCount', 0);
-		expect(internal.latestVersion).to.have.property('callCount', 0);
 		expect(settings.saveProfileData).to.have.property('callCount', 0);
 		expect(childProcess.spawn).to.have.property('callCount', 0);
 	});
@@ -94,8 +83,6 @@ describe('Update Check', () => {
 		const result = await updateCheck();
 
 		expect(result).to.equal(undefined);
-		expect(semver.gt).to.have.property('callCount', 0);
-		expect(internal.latestVersion).to.have.property('callCount', 0);
 		expect(settings.saveProfileData).to.have.property('callCount', 0);
 		expect(childProcess.spawn).to.have.property('callCount', 0);
 	});

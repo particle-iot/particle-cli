@@ -1,4 +1,3 @@
-const latestVersion = require('latest-version');
 const settings = require('../../settings');
 const childProcess = require('node:child_process');
 
@@ -27,10 +26,5 @@ module.exports = async (skip, force) => {
 			windowsHide: true
 		}).unref();
 	}
-};
-
-
-module.exports.__internal__ = {
-	latestVersion
 };
 
