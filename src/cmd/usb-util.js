@@ -1,3 +1,4 @@
+const { spin } = require('../app/ui');
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
 const { delay } = require('../lib/utilities');
@@ -346,6 +347,63 @@ async function reopenDevice(device) {
 	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
 }
 
+async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
+	const msg = 'Getting device information...';
+	const operation = openUsbDevices(args, { dfuMode });
+	let lastError = null;
+	return spin(operation, msg)
+		.then(usbDevices => {
+			const p = usbDevices.map(usbDevice => {
+				return Promise.resolve()
+					.then(() => func(usbDevice))
+					.catch(e => lastError = e)
+					.finally(() => usbDevice.close());
+			});
+			return spin(Promise.all(p), 'Sending a command to the device...');
+		})
+		.then(() => {
+			if (lastError){
+				throw lastError;
+			}
+		});
+}
+
+async function openUsbDevices(args, { dfuMode = false } = {}){
+	const deviceIds = args.params.devices;
+	return Promise.resolve()
+		.then(() => {
+			if (args.all){
+				return getUsbDevices({ dfuMode: true })
+					.then(usbDevices => {
+						return asyncMapSeries(usbDevices, (usbDevice) => {
+							return openUsbDevice(usbDevice, { dfuMode })
+								.then(() => usbDevice);
+						});
+					});
+			}
+
+			if (deviceIds.length === 0){
+				return getUsbDevices({ dfuMode: true })
+					.then(usbDevices => {
+						if (usbDevices.length === 0){
+							throw new Error('No devices found');
+						}
+						if (usbDevices.length > 1){
+							throw new Error('Found multiple devices. Please specify the ID or name of one of them');
+						}
+						const usbDevice = usbDevices[0];
+						return openUsbDevice(usbDevice, { dfuMode })
+							.then(() => [usbDevice]);
+					});
+			}
+
+			return asyncMapSeries(deviceIds, (id) => {
+				return openUsbDeviceByIdOrName(id, this._api, this._auth, { dfuMode })
+					.then(usbDevice => usbDevice);
+			});
+		});
+}
+
 async function handleUsbError(err){
 	if (err instanceof NotAllowedError) {
 		err = new UsbPermissionsError('Missing permissions to access the USB device');
@@ -371,5 +429,7 @@ module.exports = {
 	reopenDevice,
 	UsbPermissionsError,
 	TimeoutError,
-	DeviceProtectionError
+	DeviceProtectionError,
+	forEachUsbDevice,
+	openUsbDevices
 };
