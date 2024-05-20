@@ -532,25 +532,12 @@ module.exports = class SerialCommand extends CLICommandBase {
 			throw new VError('The device does not support Wi-Fi');
 		}
 
-		// if device's firmware version is less than 6.0.0, use the old way
-		const fwVer = device.firmwareVersion;
-		if (semver.lt(fwVer, '6.0.0')) {
-			// configure serial
-			if (file){
-				return this._configWifiFromFile(deviceFromSerialPort, file);
-			} else {
-				return this.promptWifiScan(deviceFromSerialPort);
-			}
+		// configure serial
+		if (file){
+			return this._configWifiFromFile(deviceFromSerialPort, file);
 		} else {
-			const wifiControlRequest = new WifiControlRequest(deviceFromSerialPort.deviceId, {
-				file,
-				ui: this.ui,
-				newSpin: this.newSpin,
-				stopSpin: this.stopSpin
-			});
-			await wifiControlRequest.configureWifi();
+			return this.promptWifiScan(deviceFromSerialPort);
 		}
-
 	}
 
 	_configWifiFromFile(device, filename){
