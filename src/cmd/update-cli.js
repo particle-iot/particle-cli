@@ -88,13 +88,13 @@ class UpdateCliCommand {
 	logAndReject(error, reject, version) {
 		const baseMessage = 'We were unable to check for updates';
 		const message = version ? `${baseMessage}: Version ${version} not found` : `${baseMessage} Please try again later`;
-		log.error(error);
+		log.error(error.message || error);
 		reject(message);
 	}
 
-	async downloadCLI(manifest) {
+	async downloadCLI(manifest, _os = os) {
 		try {
-			const { url, sha256: expectedHash } = this.getBuildDetailsFromManifest(manifest);
+			const { url, sha256: expectedHash } = this.getBuildDetailsFromManifest(manifest, _os);
 			const fileName = url.split('/').pop();
 			const fileNameWithoutLastExtension = path.basename(fileName, path.extname(fileName));
 			const filePath = path.join(os.tmpdir(), fileNameWithoutLastExtension);
@@ -153,9 +153,9 @@ class UpdateCliCommand {
 		});
 	}
 
-	getBuildDetailsFromManifest(manifest) {
-		const platform = os.platform();
-		let arch = os.arch();
+	getBuildDetailsFromManifest(manifest, _os = os) {
+		const platform = _os.platform();
+		let arch = _os.arch();
 		const platformKey = platform;
 		const archKey = arch;
 		const platformManifest = manifest.builds && manifest.builds[platformKey];
