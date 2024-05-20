@@ -20,7 +20,6 @@ const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
-const WifiControlRequest = require('../lib/wifi-control-request');
 const semver = require('semver');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
@@ -530,6 +529,12 @@ module.exports = class SerialCommand extends CLICommandBase {
 		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
 		if (!deviceFromSerialPort?.specs?.features?.includes('wifi')) {
 			throw new VError('The device does not support Wi-Fi');
+		}
+
+		const fwVer = device.firmwareVersion;
+		if (semver.gte(fwVer, '6.2.0')) {
+			this.ui.stdout.write(`[Recommendation]${os.EOL}Use the improved Wi-Fi configuration commands for this device-os version (>= 6.2.0).${os.EOL}See 'particle wifi --help' for more details on available commands.${os.EOL}`);
+			this.ui.stdout.write(`${os.EOL}`);
 		}
 
 		// configure serial

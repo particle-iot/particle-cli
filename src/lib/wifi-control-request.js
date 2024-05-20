@@ -5,12 +5,14 @@ const fs = require('fs-extra');
 const { deviceControlError } = require('./device-error-handler');
 const JOIN_NETWORK_TIMEOUT = 30000;
 const TIME_BETWEEN_RETRIES = 1000;
-const RETRY_COUNT = 5;
+const RETRY_COUNT = 1;
 const ParticleApi = require('../cmd/api');
 const settings = require('../../settings');
 const createApiCache = require('./api-cache');
 const utilities = require('./utilities');
 const os = require('os');
+const semver = require('semver');
+const { WifiSecurityEnum } = require('particle-usb');
 
 module.exports = class WiFiControlRequest {
 	constructor(deviceId, { ui, newSpin, stopSpin, file }) {
@@ -24,14 +26,118 @@ module.exports = class WiFiControlRequest {
 		this.api = api;
 	}
 
-	async configureWifi() {
+	async addNetwork() {
 		let network;
-		if (this.file) {
-			network = await this.getNetworkToConnectFromJson();
-		} else {
-			network = await this.getNetworkToConnect();
+		try {
+			if (!this.device || this.device.isOpen === false) {
+				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+			}
+
+			const fwVer = this.device.firmwareVersion;
+			if (semver.lt(fwVer, '6.2.0')) {
+				throw new Error(`The 'add' command is not supported on this firmware version.${os.EOL}Use 'particle wifi join --help' to join a network.${os.EOL}`);
+			}
+			await this.ensureVersionCompat({
+				version: this.device.firmwareVersion,
+				command: 'add'
+			});
+
+			if (this.file) {
+				network = await this.getNetworkToConnectFromJson();
+			} else {
+				network = await this.getNetworkToConnect(this.device);
+			}
+			await this.addWifi(network);
+		} catch (error) {
+			throw error;
+		} finally {
+			if (this.device && this.device.isOpen) {
+				await this.device.close();
+			}
 		}
-		await this.joinWifi(network);
+	}
+
+	async joinNetwork() {
+		let network;
+		try {
+			if (!this.device || this.device.isOpen === false) {
+				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+			}
+
+			if (this.file) {
+				network = await this.getNetworkToConnectFromJson();
+			} else {
+				network = await this.getNetworkToConnect(this.device);
+			}
+			await this.joinWifi(network);
+		} catch (error) {
+			throw error;
+		} finally {
+			if (this.device && this.device.isOpen) {
+				await this.device.close();
+			}
+		}
+	}
+
+	async joinKnownNetwork(ssid) {
+		try {
+			if (!this.device || this.device.isOpen === false) {
+				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+			}
+			await this.joinKnownWifi(ssid);
+		} catch (error) {
+			throw error;
+		} finally {
+			if (this.device && this.device.isOpen) {
+				await this.device.close();
+			}
+		}
+	}
+
+	async listNetworks() {
+		try {
+			if (!this.device || this.device.isOpen === false) {
+				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+			}
+			await this.listWifi();
+		} catch (error) {
+			throw error;
+		} finally {
+			if (this.device && this.device.isOpen) {
+				await this.device.close();
+			}
+		}
+	}
+
+	async removeNetwork(ssid) {
+		try {
+			if (!this.device || this.device.isOpen === false) {
+				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+			}
+			await this.removeWifi(ssid);
+			await this.listNetworks();
+		} catch (error) {
+			throw error;
+		} finally {
+			if (this.device && this.device.isOpen) {
+				await this.device.close();
+			}
+		}
+	}
+
+	async clearNetworks() {
+		try {
+			if (!this.device || this.device.isOpen === false) {
+				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+			}
+			await this.clearWifi();
+		} catch (error) {
+			throw error;
+		} finally {
+			if (this.device && this.device.isOpen) {
+				await this.device.close();
+			}
+		}
 	}
 
 	async getNetworkToConnectFromJson() {
@@ -76,7 +182,6 @@ module.exports = class WiFiControlRequest {
 	}
 
 	async scanNetworks() {
-		// open device by id
 		const networks = await this._deviceScanNetworks();
 		if (!networks.length) {
 			const answers = await this.ui.prompt([{
@@ -122,9 +227,10 @@ module.exports = class WiFiControlRequest {
 		let lastError = null;
 		while (retries > 0) {
 			try {
-				if (!this.device || this.device.isOpen === false) {
-					this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+				if (!this.device) {
+					throw new Error('No device found');
 				}
+
 				const networks = await this.device.scanWifiNetworks();
 				this.stopSpin();
 				return this._serializeNetworks(networks) || [];
@@ -132,10 +238,6 @@ module.exports = class WiFiControlRequest {
 				lastError = error;
 				await utilities.delay(TIME_BETWEEN_RETRIES);
 				retries--;
-			} finally {
-				if (this.device && this.device.isOpen) {
-					await this.device.close();
-				}
 			}
 		}
 		this.stopSpin();
@@ -170,17 +272,45 @@ module.exports = class WiFiControlRequest {
 		return { ssid: network.ssid, password };
 	}
 
-	async joinWifi({ ssid, password }) {
-		// open device by id
+	async addWifi({ ssid, password }) {
 		let retries = RETRY_COUNT;
 		const spin = this.newSpin(`Joining Wi-Fi network '${ssid}'`).start();
 		let lastError;
 		while (retries > 0) {
 			try {
-				if (!this.device || this.device.isOpen === false) {
-					this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId });
+				if (!this.device) {
+					throw new Error('No device found');
 				}
-				const { pass }  = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
+				const { pass, error }  = await this.device.setWifiCredentials({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
+				if (pass) {
+					this.stopSpin();
+					this.ui.stdout.write('Wi-Fi network added successfully.');
+					this.ui.stdout.write(os.EOL);
+					return;
+				}
+				retries = 0;
+				lastError = new Error(error);
+			} catch (error) {
+				spin.setSpinnerTitle(`Joining Wi-Fi network '${ssid}' is taking longer than expected.`);
+				lastError = error;
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			}
+		}
+		this.stopSpin();
+		throw this._handleDeviceError(lastError, { action: 'add Wi-Fi network' });
+	}
+
+	async joinWifi({ ssid, password }) {
+		let retries = RETRY_COUNT;
+		const spin = this.newSpin(`Joining Wi-Fi network '${ssid}'`).start();
+		let lastError;
+		while (retries > 0) {
+			try {
+				if (!this.device) {
+					throw new Error('No device found');
+				}
+				const { pass, error }  = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
 				if (pass) {
 					this.stopSpin();
 					this.ui.stdout.write('Wi-Fi network configured successfully, your device should now restart.');
@@ -189,20 +319,148 @@ module.exports = class WiFiControlRequest {
 					return;
 				}
 				retries = 0;
-				lastError = new Error('Please check your credentials and try again.');
+				lastError = new Error(error);
 			} catch (error) {
 				spin.setSpinnerTitle(`Joining Wi-Fi network '${ssid}' is taking longer than expected.`);
 				lastError = error;
 				await utilities.delay(TIME_BETWEEN_RETRIES);
 				retries--;
-			} finally {
-				if (this.device && this.device.isOpen) {
-					await this.device.close();
-				}
 			}
 		}
 		this.stopSpin();
 		throw this._handleDeviceError(lastError, { action: 'join Wi-Fi network' });
+	}
+
+	async joinKnownWifi({ ssid }) {
+		let retries = RETRY_COUNT;
+		const spin = this.newSpin(`Joining Wi-Fi network '${ssid}'`).start();
+		let lastError;
+		while (retries > 0) {
+			try {
+				if (!this.device) {
+					throw new Error('No device found');
+				}
+				const { pass, error }  = await this.device.joinKnownWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
+				if (pass) {
+					this.stopSpin();
+					this.ui.stdout.write('Wi-Fi network configured successfully, your device should now restart.');
+					this.ui.stdout.write(os.EOL);
+					await this.device.reset();
+					return;
+				}
+				retries = 0;
+				lastError = new Error(error);
+			} catch (error) {
+				lastError = error;
+				spin.setSpinnerTitle(`Joining Wi-Fi network '${ssid}' is taking longer than expected.`);
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			}
+		}
+		this.stopSpin();
+		// TODO: Add a more helpful error msg. "Not found" could be either not found in the device or the network 
+		throw this._handleDeviceError(lastError, { action: 'join Wi-Fi network' });
+	}
+
+	async clearWifi() {
+		let retries = RETRY_COUNT;
+		const spin = this.newSpin('Clearing Wi-Fi networks').start();
+		let lastError;
+		while (retries > 0) {
+			try {
+				if (!this.device) {
+					throw new Error('No device found');
+				}
+				const { pass, error }  = await this.device.clearWifiNetworks({ timeout : JOIN_NETWORK_TIMEOUT });
+				if (pass) {
+					this.stopSpin();
+					this.ui.stdout.write('Wi-Fi networks cleared successfully.');
+					this.ui.stdout.write(os.EOL);
+					return;
+				}
+				retries = 0;
+				lastError = new Error(error);
+			} catch (error) {
+				lastError = error;
+				spin.setSpinnerTitle('Clearing Wi-Fi networks is taking longer than expected.');
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			}
+		}
+		this.stopSpin();
+		throw this._handleDeviceError(lastError, { action: 'clear Wi-Fi networks' });
+	}
+
+	async listWifi() {
+		let retries = RETRY_COUNT;
+		const spin = this.newSpin('Listing Wi-Fi networks').start();
+		let lastError;
+		while (retries > 0) {
+			try {
+				if (!this.device) {
+					throw new Error('No device found');
+				}
+				const { pass, replyObject }  = await this.device.listWifiNetworks({ timeout : JOIN_NETWORK_TIMEOUT });
+				if (pass) {
+					this.stopSpin();
+					this.ui.stdout.write(`List of Wi-Fi networks:${os.EOL}${os.EOL}`);
+					const networks = replyObject.networks;
+					if (networks.length) {
+						networks.forEach((network) => {
+							this.ui.stdout.write(`- SSID: ${network.ssid}\n  Security: ${WifiSecurityEnum[network.security]}\n  Credentials Type: ${network.credentialsType}`);
+							this.ui.stdout.write(os.EOL);
+							this.ui.stdout.write(os.EOL);
+						});
+					} else {
+						this.ui.stdout.write('\tNo Wi-Fi networks found.');
+						this.ui.stdout.write(os.EOL);
+					}
+					this.ui.stdout.write(os.EOL);
+					return;
+				}
+				retries = 0;
+				lastError = new Error(error);
+			} catch (error) {
+				lastError = error;
+				spin.setSpinnerTitle('Listing Wi-Fi networks is taking longer than expected.');
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			}
+		}
+		this.stopSpin();
+		throw this._handleDeviceError(lastError, { action: 'list Wi-Fi networks' });
+	}
+
+	async removeWifi(ssid) {
+		let retries = RETRY_COUNT;
+		const spin = this.newSpin('Removing Wi-Fi networks').start();
+		let lastError;
+		while (retries > 0) {
+			try {
+				if (!this.device) {
+					throw new Error('No device found');
+				}
+				const { pass, error }  = await this.device.removeWifiNetwork( { ssid }, { timeout : JOIN_NETWORK_TIMEOUT });
+				if (pass) {
+					this.stopSpin();
+					this.ui.stdout.write(`Wi-Fi network ${ssid} removed successfully.${os.EOL}`);
+					this.ui.stdout.write(`Your device will stay connected to this network until reset or connected to other network. Run 'particle wifi --help' to learn more.${os.EOL}`);
+					// XXX: What about disconnecting from the network?
+					this.ui.stdout.write(os.EOL);
+					return;
+				}
+				retries = 0;
+				lastError = new Error(error);
+			} catch (error) {
+				lastError = error;
+				spin.setSpinnerTitle('Removing Wi-Fi networks is taking longer than expected.');
+				await utilities.delay(TIME_BETWEEN_RETRIES);
+				retries--;
+			}
+		}
+		this.stopSpin();
+		throw this._handleDeviceError(lastError, { action: 'remove Wi-Fi networks' });
+	
 	}
 
 	async pickNetworkManually() {
