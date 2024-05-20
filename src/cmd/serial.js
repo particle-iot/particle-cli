@@ -294,7 +294,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 			}
 		}
 
-
 		// Print whatever was obtained from the device
 		this._printIdentifyInfo({
 			deviceId,
@@ -532,8 +531,11 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		const fwVer = device.firmwareVersion;
+		// XXX: Firmware version TBD
 		if (semver.gte(fwVer, '6.2.0')) {
-			this.ui.stdout.write(`[Recommendation]${os.EOL}Use the improved Wi-Fi configuration commands for this device-os version (>= 6.2.0).${os.EOL}See 'particle wifi --help' for more details on available commands.${os.EOL}`);
+			this.ui.stdout.write(`${chalk.yellow('[Recommendation]')}${os.EOL}`);
+			this.ui.stdout.write(`${chalk.yellow('Use the improved Wi-Fi configuration commands for this device-os version (>= 6.2.0)')}${os.EOL}`);
+			this.ui.stdout.write(`${chalk.yellow('See \'particle wifi --help\' for more details on available commands')}${os.EOL}`);
 			this.ui.stdout.write(`${os.EOL}`);
 		}
 
