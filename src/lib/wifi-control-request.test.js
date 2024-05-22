@@ -82,13 +82,13 @@ describe('Wifi Control Request', () => {
 		});
 	});
 
-	describe('pickNetworkManually', () => {
+	describe('_pickNetworkManually', () => {
 		it('prompts for ssid and password', async () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
 			ui.prompt = sinon.stub();
 			ui.prompt.onCall(0).returns({ ssid: 'ssid' }).onCall(1).returns({ password: 'password' });
 
-			const result = await wifiControlRequest.pickNetworkManually();
+			const result = await wifiControlRequest._pickNetworkManually();
 			expect(result).to.eql({ ssid: 'ssid', password: 'password' });
 			expect(ui.prompt).to.have.been.calledTwice;
 			expect(ui.prompt.firstCall).to.have.been.calledWith([{
@@ -218,7 +218,7 @@ describe('Wifi Control Request', () => {
 		});
 	});
 
-	describe('promptToSelectNetwork', () => {
+	describe('_promptToSelectNetwork', () => {
 		it('prompts to select a network', async () => {
 			const networks = [
 				{
@@ -232,7 +232,7 @@ describe('Wifi Control Request', () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
 			ui.prompt = sinon.stub();
 			ui.prompt.resolves({ network: 'network1' });
-			const result = await wifiControlRequest.promptToSelectNetwork(networks);
+			const result = await wifiControlRequest._promptToSelectNetwork(networks);
 			expect(result).to.eql({ ssid: 'network1', password: undefined });
 		});
 
@@ -250,7 +250,7 @@ describe('Wifi Control Request', () => {
 			ui.prompt = sinon.stub();
 			ui.prompt.onCall(0).resolves({ network: 'network1' });
 			ui.prompt.onCall(1).resolves({ password: 'password' });
-			const result = await wifiControlRequest.promptToSelectNetwork(networks);
+			const result = await wifiControlRequest._promptToSelectNetwork(networks);
 			expect(result).to.eql({ ssid: 'network1', password: 'password' });
 			expect(ui.prompt).to.have.been.calledTwice;
 			expect(ui.prompt).to.calledWithMatch([{
@@ -282,12 +282,12 @@ describe('Wifi Control Request', () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
 			ui.prompt = sinon.stub();
 			ui.prompt.resolves({ network: '[rescan networks]' });
-			const result = await wifiControlRequest.promptToSelectNetwork(networks);
+			const result = await wifiControlRequest._promptToSelectNetwork(networks);
 			expect(result).to.eql({ ssid: null, rescan: true });
 		});
 	});
 
-	describe('getNetworkToConnectFromJson', () => {
+	describe('_getNetworkToConnect', () => {
 		beforeEach(async () => {
 			await fs.ensureDir(path.join(PATH_TMP_DIR, 'networks'));
 		});
@@ -300,7 +300,7 @@ describe('Wifi Control Request', () => {
 			const file = path.join(PATH_TMP_DIR, 'networks', 'network.json');
 			fs.writeJsonSync(file, network);
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin, file });
-			const result = await wifiControlRequest.getNetworkToConnectFromJson();
+			const result = await wifiControlRequest._getNetworkToConnect();
 			expect(result).to.eql({ ssid: network.network, password: network.password });
 		});
 		it('throws error if file does not exist', async () => {
@@ -308,7 +308,7 @@ describe('Wifi Control Request', () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin, file: fileName });
 			let expectedErrorMessage = `ENOENT: no such file or directory, open '${fileName}'`;
 			try {
-				await wifiControlRequest.getNetworkToConnectFromJson();
+				await wifiControlRequest._getNetworkToConnect();
 			} catch (error) {
 				expect(error.message).to.eql(expectedErrorMessage);
 			}
@@ -320,7 +320,7 @@ describe('Wifi Control Request', () => {
 			fs.writeJsonSync(file, network);
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin, file });
 			try {
-				await wifiControlRequest.getNetworkToConnectFromJson();
+				await wifiControlRequest._getNetworkToConnect();
 			} catch (_error) {
 				error = _error;
 			}
@@ -329,7 +329,7 @@ describe('Wifi Control Request', () => {
 		});
 	});
 
-	describe('scanNetworks', () => {
+	describe('_scanNetworks', () => {
 		it('returns a list of networks', async () => {
 			const networks = [
 				{
@@ -341,7 +341,7 @@ describe('Wifi Control Request', () => {
 			];
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
 			wifiControlRequest._deviceScanNetworks = sinon.stub().resolves(networks);
-			const result = await wifiControlRequest.scanNetworks();
+			const result = await wifiControlRequest._scanNetworks();
 			expect(result).to.eql(networks);
 		});
 
@@ -351,7 +351,7 @@ describe('Wifi Control Request', () => {
 			ui.prompt = sinon.stub();
 			ui.prompt.onCall(0).resolves({ rescan: true });
 			ui.prompt.onCall(1).resolves({ rescan: false });
-			const result = await wifiControlRequest.scanNetworks();
+			const result = await wifiControlRequest._scanNetworks();
 			expect(result).to.eql([]);
 			expect(ui.prompt).to.have.been.calledWith([{
 				default: true,
@@ -362,7 +362,7 @@ describe('Wifi Control Request', () => {
 		});
 	});
 
-	describe('getNetworkToConnect', () => {
+	describe('_getNetworkToConnect', () => {
 		it('returns network from prompt', async () => {
 			const networks = [
 				{
@@ -374,18 +374,18 @@ describe('Wifi Control Request', () => {
 					mac: ''
 				}];
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
-			wifiControlRequest.promptForScanNetworks = sinon.stub().resolves(true);
-			wifiControlRequest.scanNetworks = sinon.stub().resolves(networks);
-			wifiControlRequest.promptToSelectNetwork = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			const result = await wifiControlRequest.getNetworkToConnect();
+			wifiControlRequest._promptForScanNetworks = sinon.stub().resolves(true);
+			wifiControlRequest._scanNetworks = sinon.stub().resolves(networks);
+			wifiControlRequest._promptToSelectNetwork = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
+			const result = await wifiControlRequest._getNetworkToConnect();
 			expect(result).to.eql({ ssid: 'network1', password: 'password' });
 		});
 
 		it('returns network from manual input', async () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
-			wifiControlRequest.promptForScanNetworks = sinon.stub().resolves(false);
-			wifiControlRequest.pickNetworkManually = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			const result = await wifiControlRequest.getNetworkToConnect();
+			wifiControlRequest._promptForScanNetworks = sinon.stub().resolves(false);
+			wifiControlRequest._pickNetworkManually = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
+			const result = await wifiControlRequest._getNetworkToConnect();
 			expect(result).to.eql({ ssid: 'network1', password: 'password' });
 		});
 	});
@@ -423,24 +423,24 @@ describe('Wifi Control Request', () => {
 	describe('configureWifi', () => {
 		it('performs the wifi configuration flow', async () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin });
-			wifiControlRequest.getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			wifiControlRequest.getNetworkToConnectFromJson = sinon.stub();
+			wifiControlRequest._getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
+			wifiControlRequest._getNetworkToConnect = sinon.stub();
 			wifiControlRequest.joinWifi = sinon.stub().resolves(true);
 			await wifiControlRequest.configureWifi();
-			expect(wifiControlRequest.getNetworkToConnect).to.have.been.calledOnce;
+			expect(wifiControlRequest._getNetworkToConnect).to.have.been.calledOnce;
 			expect(wifiControlRequest.joinWifi).to.have.been.calledOnce;
-			expect(wifiControlRequest.getNetworkToConnectFromJson).not.to.have.been.called;
+			expect(wifiControlRequest._getNetworkToConnect).not.to.have.been.called;
 		});
 
 		it('performs the wifi configuration flow from json', async () => {
 			const wifiControlRequest = new WifiControlRequest('deviceId', { ui, newSpin, stopSpin, file: 'file' });
-			wifiControlRequest.getNetworkToConnect = sinon.stub();
-			wifiControlRequest.getNetworkToConnectFromJson = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
+			wifiControlRequest._getNetworkToConnect = sinon.stub();
+			wifiControlRequest._getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
 			wifiControlRequest.joinWifi = sinon.stub().resolves(true);
 			await wifiControlRequest.configureWifi();
-			expect(wifiControlRequest.getNetworkToConnect).not.to.have.been.called;
+			expect(wifiControlRequest._getNetworkToConnect).not.to.have.been.called;
 			expect(wifiControlRequest.joinWifi).to.have.been.calledOnce;
-			expect(wifiControlRequest.getNetworkToConnectFromJson).to.have.been.calledOnce;
+			expect(wifiControlRequest._getNetworkToConnect).to.have.been.calledOnce;
 		});
 	});
 });

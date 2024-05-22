@@ -99,6 +99,16 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command ssid': 'Removes network from the device',
 		}
 	});
+
+	commandProcessor.createCommand(wifi, 'status', 'Gets the current network', {
+		handler: (args) => {
+			const WiFiCommands = require('../cmd/wifi');
+			return new WiFiCommands().getCurrentNetwork();
+		},
+		examples: {
+			'$0 $command ssid': 'Gets the current network',
+		}
+	});
 	
 	return wifi;
 };

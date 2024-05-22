@@ -37,4 +37,8 @@ module.exports = class WiFiCommands extends CLICommandBase {
     removeNetwork(ssid) {
         return this.wifiControlRequest.removeNetwork(ssid);
     }
+
+    getCurrentNetwork() {
+        return this.wifiControlRequest.getCurrentNetwork();
+    }
 }
