@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 const { deviceControlError } = require('./device-error-handler');
 const JOIN_NETWORK_TIMEOUT = 30000;
 const TIME_BETWEEN_RETRIES = 1000;
-const RETRY_COUNT = 1;
+const RETRY_COUNT = 3;
 const ParticleApi = require('../cmd/api');
 const settings = require('../../settings');
 const createApiCache = require('./api-cache');
@@ -43,7 +43,7 @@ module.exports = class WiFiControlRequest {
 			} catch (error) {
 				if (error.message.endsWith('Not supported')) {
 					if (this.device.generation < 3) {
-						throw new Error(`The 'add' command is not supported on this device (${this.device.deviceId}). Use 'particle serial wifi'.${os.EOL}`);
+						throw new Error(`The 'add' command is not supported on this device (${this.device.deviceId}). Use 'particle serial wifi' instead.${os.EOL}`);s
 					}
 					throw new Error(`The 'add' command is not supported on this firmware version.${os.EOL}Use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi' for more options.${os.EOL}`);
 				}
@@ -105,7 +105,7 @@ module.exports = class WiFiControlRequest {
 				const platformName = platformForId(this.device.platformId).name;
 				this.deviceId = this.device._id;
 				if (deviceGen < WIFI_COMMANDS_SUPPORTED_DEVICE_GEN) {
-					throw new Error(`The 'particle wifi' commands are not supported on this device (${this.deviceId} / ${platformName}).${os.EOL} Use 'particle serial wifi'.${os.EOL}`);
+					throw new Error(`The 'particle wifi' commands are not supported on this device (${this.deviceId} / ${platformName}).${os.EOL}Use 'particle serial wifi' instead.${os.EOL}`);
 				}
 			}
 			return await fn();
@@ -280,7 +280,7 @@ module.exports = class WiFiControlRequest {
 					return result;
 				}
 			} catch (error) {
-				if (error.message === 'NOT_SUPPORTED') {
+				if (error.message === 'Not supported') {
 					this.stopSpin();
 					throw error;
 				}
@@ -292,7 +292,6 @@ module.exports = class WiFiControlRequest {
 		}
 
 		this.stopSpin();
-		console.log('operationName', operationName);
 		throw this._handleDeviceError(lastError, { action: operationName.toLowerCase() });
 	}
 
