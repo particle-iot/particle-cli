@@ -103,10 +103,15 @@ module.exports = class WiFiControlRequest {
 				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
 				const deviceGen = platformForId(this.device.platformId).generation;
 				const platformName = platformForId(this.device.platformId).name;
+				const features = platformForId(this.device.platformId).features;
 				this.deviceId = this.device._id;
+				if (features.includes('wifi') === false) {
+					throw new Error(`The current device (${this.deviceId} / ${platformName})does not support Wi-Fi.${os.EOL}`);
+				}
 				if (deviceGen < WIFI_COMMANDS_SUPPORTED_DEVICE_GEN) {
 					throw new Error(`The 'particle wifi' commands are not supported on this device (${this.deviceId} / ${platformName}).${os.EOL}Use 'particle serial wifi' instead.${os.EOL}`);
 				}
+
 			}
 			return await fn();
 		} catch (error) {
