@@ -146,6 +146,8 @@ module.exports = class CLI {
 			throw argv.clierror;
 		} else if (argv.clicommand){
 			await argv.clicommand.exec(argv);
+		} else {
+			throw commandProcessor.errors.unknownCommandError(args, null);
 		}
 	}
 
