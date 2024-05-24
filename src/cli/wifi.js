@@ -32,7 +32,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 			
 			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK, WPA_WPA2_PSK, WPA2_WPA3_PSK.
-			For enterprise Wi-Fi, set security to WPA_802.1x or WPA2_802.1x and provide the eap, username, outer_identity, client_certificate, private_key and root_ca properties.
+			Enterprise networks are not supported.
 		`)
 	});
 
@@ -66,17 +66,17 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 			
 			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK, WPA_WPA2_PSK, WPA2_WPA3_PSK.
-			For enterprise Wi-Fi, set security to WPA_802.1x or WPA2_802.1x and provide the eap, username, outer_identity, client_certificate, private_key and root_ca properties.
+			Enterprise networks are not supported.
 		`)
 	});
 
-	commandProcessor.createCommand(wifi, 'clear', 'Clears the list of wifi credentials on your device', {
+	commandProcessor.createCommand(wifi, 'clear', 'Clears the list of wifi networks on your device', {
 		handler: () => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().clearNetworks();
 		},
 		examples: {
-			'$0 $command': 'Clears the list of wifi credentials on your device',
+			'$0 $command': 'Clears the list of wifi networks on your device',
 		}
 	});
 
@@ -90,7 +90,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(wifi, 'remove', 'Removes a network from the device', {
+	commandProcessor.createCommand(wifi, 'remove', 'Removes a wifi network from the device', {
 		params: '<ssid>',
 		handler: (args) => {
 			const WiFiCommands = require('../cmd/wifi');
@@ -101,13 +101,13 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(wifi, 'status', 'Gets the current network', {
+	commandProcessor.createCommand(wifi, 'status', 'Gets the current wifi network', {
 		handler: (args) => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().getCurrentNetwork();
 		},
 		examples: {
-			'$0 $command ssid': 'Gets the network that the device is currently connected to',
+			'$0 $command ssid': 'Gets the wifi network that the device is currently connected to',
 		}
 	});
 	

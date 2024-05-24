@@ -15,11 +15,7 @@ const { WifiSecurityEnum } = require('particle-usb');
 const chalk = require('chalk');
 const { platformForId } = require('../lib/platform');
 
-// TODO: Fix retries - Only retry if it makes sense
-
 // TODO: Tell people if you want to use a hidden nwetwork, use particle wifi add and use the file optionparticle wifi join
-
-// Tests!!!!!!!
 
 const WIFI_COMMANDS_SUPPORTED_DEVICE_GEN = 3;
 
@@ -37,32 +33,15 @@ module.exports = class WiFiControlRequest {
 
 	async addNetwork() {
 		await this._withDevice(async () => {
-			try {
-				const network = await this._getNetwork();
-				await this.addWifi(network);
-			} catch (error) {
-				if (error.message.endsWith('Not supported')) {
-					if (this.device.generation < 3) {
-						throw new Error(`The 'add' command is not supported on this device (${this.device.deviceId}). Use 'particle serial wifi' instead.${os.EOL}`);s
-					}
-					throw new Error(`The 'add' command is not supported on this firmware version.${os.EOL}Use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi' for more options.${os.EOL}`);
-				}
-				throw error;
-			}
+			const network = await this._getNetwork();
+			await this.addWifi(network);
 		});
 	}
 
 	async joinNetwork() {
 		await this._withDevice(async () => {
-			try {
-				const network = await this._getNetwork();
-				await this.joinWifi(network);
-			} catch (error) {
-				if (error.message.endsWith('Not found')) {
-					throw new Error(`Network not found.${os.EOL}If you are using a hidden network, please add the hidden network credentials first using 'particle wifi add'.${os.EOL}`);
-				}
-				throw error;
-			}
+			const network = await this._getNetwork();
+			await this.joinWifi(network);
 		});
 	}
 
@@ -101,12 +80,14 @@ module.exports = class WiFiControlRequest {
 		try {
 			if (!this.device || this.device.isOpen === false) {
 				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+
 				const deviceGen = platformForId(this.device.platformId).generation;
 				const platformName = platformForId(this.device.platformId).name;
 				const features = platformForId(this.device.platformId).features;
 				this.deviceId = this.device._id;
+
 				if (features.includes('wifi') === false) {
-					throw new Error(`The current device (${this.deviceId} / ${platformName})does not support Wi-Fi.${os.EOL}`);
+					throw new Error(`This device (${this.deviceId} / ${platformName}) does not support Wi-Fi.${os.EOL}`);
 				}
 				if (deviceGen < WIFI_COMMANDS_SUPPORTED_DEVICE_GEN) {
 					throw new Error(`The 'particle wifi' commands are not supported on this device (${this.deviceId} / ${platformName}).${os.EOL}Use 'particle serial wifi' instead.${os.EOL}`);
@@ -266,184 +247,160 @@ module.exports = class WiFiControlRequest {
 	}
 
 	async _performWifiOperation(operationName, operationCallback) {
-		const spin = this.newSpin(`${operationName}`).start();
+		this.newSpin(`${operationName}`).start();
 		let lastError;
-
-		const tryOperation = async () => {
-			if (!this.device) {
-				throw new Error('No device found');
-			}
-
-			return await operationCallback();
-		};
-
+	
+		if (!this.device) {
+			this.stopSpin();
+			throw new Error('No device found');
+		}
+	
 		for (let attempt = 0; attempt < RETRY_COUNT; attempt++) {
 			try {
-				const result = await tryOperation();
-				if (result !== false) {
+				// The device API can throw an error directly
+				// or it can return an error in its result object in result.error
+				const result = await operationCallback();
+				// Some results have a pass while others have a pass and replyObject
+				if (result?.pass) {
 					this.stopSpin();
-					return result;
+					return result?.replyObject ? result.replyObject : true;
+				}
+				if (result?.error) {
+					// After studying particle-usb, this is most likely a timeout error
+					lastError = error;
 				}
 			} catch (error) {
 				if (error.message === 'Not supported') {
 					this.stopSpin();
-					throw error;
+					throw this._handleDeviceError(error, { action: this._getActionStringFromOp(operationName) });
 				}
 				lastError = error;
 			}
-
-			spin.setSpinnerTitle(`${operationName} is taking longer than expected.`);
 			await utilities.delay(TIME_BETWEEN_RETRIES);
 		}
-
 		this.stopSpin();
-		throw this._handleDeviceError(lastError, { action: operationName.toLowerCase() });
+		throw this._handleDeviceError(lastError, { action: this._getActionStringFromOp(operationName) });
 	}
 
+	_getActionStringFromOp(operationName) {
+		// This converts an operation name (e.g., 'Adding Wi-Fi network') to a verb form (e.g., 'Add Wi-Fi network')
+		return operationName.replace(/^\w+/, match => match.toLowerCase().replace(/ing$/, ''));
+	}
 
 	async addWifi({ ssid, security, password }) {
 		// Error can be coming from the particle-usb device API call
 		// or the device API call might return the error in the result object without throwing an error
-		let result;
-		await this._performWifiOperation(`Adding Wi-Fi network '${ssid}'`, async () => {
-			result = await this.device.setWifiCredentials({ ssid, security, password }, { timeout: JOIN_NETWORK_TIMEOUT });
+		const parsedResult = await this._performWifiOperation(`Adding Wi-Fi network '${ssid}'`, async () => {
+			return await this.device.setWifiCredentials({ ssid, security, password }, { timeout: JOIN_NETWORK_TIMEOUT });
 		});
 
-		const { pass, error } = result;
-
-		if (pass) {
+		if (parsedResult) {
 			this.ui.stdout.write(`Wi-Fi network '${ssid}' added successfully.${os.EOL}`);
 			this.ui.stdout.write(`To join this network, run ${chalk.yellow('particle wifi join --ssid <SSID>')}${os.EOL}`);
 			this.ui.stdout.write(os.EOL);
 			return true;
 		}
-		throw this._handleDeviceError(error, { action: 'add Wi-Fi network' });
 	}
 
 	async joinWifi({ ssid, password }) {
-		let result;
-		await this._performWifiOperation(`Joining Wi-Fi network '${ssid}'`, async () => {
-			result = await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
+		const parsedResult = await this._performWifiOperation(`Joining Wi-Fi network '${ssid}'`, async () => {
+			return await this.device.joinNewWifiNetwork({ ssid, password }, { timeout: JOIN_NETWORK_TIMEOUT });
 		});
-		const { pass, error } = result;
-		if (pass) {
+
+		if (parsedResult) {
 			this.ui.stdout.write(`Wi-Fi network '${ssid}' configured and joined successfully.${os.EOL}`);
 			return true;
 		}
-		throw this._handleDeviceError(error, { action: 'join Wi-Fi network' });
 	}
 
 	async joinKnownWifi({ ssid }) {
-		let result;
-		await this._performWifiOperation(`Joining Wi-Fi network '${ssid}'`, async () => {
-			result = await this.device.joinKnownWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
+		const parsedResult = await this._performWifiOperation(`Joining Wi-Fi network '${ssid}'`, async () => {
+			return await this.device.joinKnownWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
 		});
 
-		const { pass, error } = result;
-		if (pass) {
+		if (parsedResult) {
 			this.ui.stdout.write(`Wi-Fi network '${ssid}' joined successfully.${os.EOL}`);
-			await this.device.reset();
 			return true;
 		}
-		throw this._handleDeviceError(error, { action: 'join known Wi-Fi network' });
 	}
 
 	async clearWifi() {
-		let result;
-		await this._performWifiOperation('Clearing Wi-Fi networks', async () => {
-			result = await this.device.clearWifiNetworks({ timeout: JOIN_NETWORK_TIMEOUT });
+		const parsedResult = await this._performWifiOperation('Clearing Wi-Fi networks', async () => {
+			return await this.device.clearWifiNetworks({ timeout: JOIN_NETWORK_TIMEOUT });
 		});
 
-		const { pass, error } = result;
-		if (pass) {
+		if (parsedResult) {
 			this.ui.stdout.write(`Wi-Fi networks cleared successfully.${os.EOL}`);
 			return true;
 		}
-		throw this._handleDeviceError(error, { action: 'clear Wi-Fi networks' });
 	}
 
 	async listWifi() {
-		let result, resultCurrNw;
-		await this._performWifiOperation('Listing Wi-Fi networks', async () => {
-			result = await this.device.listWifiNetworks({ timeout: JOIN_NETWORK_TIMEOUT });
+		const parsedResult = await this._performWifiOperation('Listing Wi-Fi networks', async () => {
+			return await this.device.listWifiNetworks({ timeout: JOIN_NETWORK_TIMEOUT });
 		});
+		
+		let currentNetwork = { pass: false };
 		try {
-			resultCurrNw = await this.device.getCurrentWifiNetwork({ timeout: JOIN_NETWORK_TIMEOUT });
+			currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: JOIN_NETWORK_TIMEOUT });
 		} catch (error) {
 			// Ignore error as it's not mandatory to get current network
-			resultCurrNw = { pass: false };
 		}
 
-		const { pass, error, replyObject } = result;
-		const { pass: passCurrNw, replyObject: replyObjectCurrNw } = resultCurrNw;
+		if (parsedResult) {
+			this.ui.stdout.write(`List of Wi-Fi networks on the device:${os.EOL}${os.EOL}`);
+			const networks = parsedResult?.networks || [];
 
-		if (pass) {
-			this.ui.stdout.write(`List of Wi-Fi networks:${os.EOL}${os.EOL}`);
-			const networks = replyObject.networks;
 			if (networks.length) {
-				networks.forEach((network) => {
-					const currentSsid = passCurrNw && replyObjectCurrNw ? replyObjectCurrNw.ssid : null;
+				const currentSsid = currentNetwork?.pass ? currentNetwork?.replyObject?.ssid : null;
+				networks.forEach(network => {
 					const networkInfo = `- ${network.ssid} (${WifiSecurityEnum[network.security]})`;
 					if (currentSsid === network.ssid) {
 						this.ui.stdout.write(`${networkInfo} - current network${os.EOL}`);
 					} else {
 						this.ui.stdout.write(`${networkInfo}${os.EOL}`);
 					}
-					this.ui.stdout.write(os.EOL);
 				});
+			} else {
+				this.ui.stdout.write('No Wi-Fi networks found.');
 			}
-			return true;
-		} else if (error) {
-			throw this._handleDeviceError(error, { action: 'list Wi-Fi networks' });
-		} else {
-			this.ui.stdout.write('\tNo Wi-Fi networks found.');
 			this.ui.stdout.write(os.EOL);
 			return true;
 		}
 	}
 
 	async removeWifi(ssid) {
-		let result;
-
-		await this._performWifiOperation('Removing Wi-Fi networks', async () => {
-			result = await this.device.removeWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
+		const parsedResult = await this._performWifiOperation('Removing Wi-Fi networks', async () => {
+			return await this.device.removeWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
 		});
 
-		const { pass, error } = result;
-		if (pass) {
-			this.ui.stdout.write(`Wi-Fi network ${ssid} removed successfully.${os.EOL}`);
-			this.ui.stdout.write(`Your device will stay connected to this network until reset or connected to another network. Run 'particle wifi --help' to learn more.${os.EOL}`);
+		if (parsedResult) {
+			this.ui.stdout.write(`Wi-Fi network ${ssid} removed from device's list successfully.${os.EOL}`);
 			this.ui.stdout.write(os.EOL);
 			return true;
 		}
-		throw this._handleDeviceError(error, { action: 'remove Wi-Fi network' });
 	}
 
 	async getCurrentWifiNetwork() {
-		let result;
-
-		await this._performWifiOperation('Getting current Wi-Fi network', async () => {
-			result = await this.device.getCurrentWifiNetwork({ timeout: JOIN_NETWORK_TIMEOUT });
+		const parsedResult = await this._performWifiOperation('Getting current Wi-Fi network', async () => {
+			return await this.device.getCurrentWifiNetwork({ timeout: JOIN_NETWORK_TIMEOUT });
 		});
 
-		const { pass, error, replyObject } = result;
-
-		if (pass) {
+		if (parsedResult) {
 			this.ui.stdout.write(`Current Wi-Fi network:${os.EOL}${os.EOL}`);
-			if (replyObject.ssid) {
+			if (parsedResult?.ssid) {
 				let bssid = null;
-				if (replyObject.bssid) {
+				if (parsedResult?.bssid) {
 					// Convert buffer to string separated by colons
-					bssid = Array.from(replyObject.bssid).map((byte) => byte.toString(16).padStart(2, '0')).join(':');
+					bssid = Array.from(parsedResult.bssid).map((byte) => byte.toString(16).padStart(2, '0')).join(':');
 				}
-				this.ui.stdout.write(`- SSID: ${replyObject.ssid}${os.EOL}` +
+				this.ui.stdout.write(`- SSID: ${parsedResult.ssid}${os.EOL}` +
 					(bssid ? `  BSSID: ${bssid}${os.EOL}` : '') +
-					`  Channel: ${replyObject.channel}${os.EOL}` +
-					`  RSSI: ${replyObject.rssi}${os.EOL}${os.EOL}`);
+					`  Channel: ${parsedResult.channel}${os.EOL}` +
+					`  RSSI: ${parsedResult.rssi}${os.EOL}${os.EOL}`);
 			}
 			return true;
 		}
-		throw this._handleDeviceError(error, { action: 'get current Wi-Fi network' });
 	}
 
 	async _pickNetworkManually() {
@@ -546,7 +503,21 @@ module.exports = class WiFiControlRequest {
 		if (_error.cause) {
 			error.message = deviceControlError[error.name];
 		}
-		return new Error(`Unable to ${action}: ${error.message}`);
+		let helperString = '';
+		switch (error.message) {
+			case 'Invalid state':
+				helperString = 'Please ensure your device is in listening mode (blinking blue) before attempting to configure Wi-Fi.';
+				break;
+			case 'Not found':
+				helperString = 'If you are using a hidden network, please add the hidden network credentials first using \'particle wifi add\'.';
+				break;
+			case 'Not supported':
+				helperString = `This feature is not supported on this firmware version.${os.EOL}Update to device-os 6.2.0 or use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi'.${os.EOL}`;
+				break;
+			default:
+				break;
+		}
+		return new Error(`Unable to ${action}: ${error.message}${os.EOL}${helperString}`);
 	}
 
 	_particleApi() {
