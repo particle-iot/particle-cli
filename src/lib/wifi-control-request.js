@@ -382,9 +382,8 @@ module.exports = class WiFiControlRequest {
 			const networks = replyObject.networks;
 			if (networks.length) {
 				networks.forEach((network) => {
-					const passwordProtected = network.credentialsType === 0 ? 'Open' : null;
 					const currentSsid = passCurrNw && replyObjectCurrNw ? replyObjectCurrNw.ssid : null;
-					const networkInfo = `- ${network.ssid} (${WifiSecurityEnum[network.security]})${passwordProtected ? `, ${passwordProtected}` : ''}`;
+					const networkInfo = `- ${network.ssid} (${WifiSecurityEnum[network.security]})`;
 					if (currentSsid === network.ssid) {
 						this.ui.stdout.write(`${networkInfo} - current network${os.EOL}`);
 					} else {
@@ -400,7 +399,7 @@ module.exports = class WiFiControlRequest {
 			this.ui.stdout.write('\tNo Wi-Fi networks found.');
 			this.ui.stdout.write(os.EOL);
 			return true;
-		}	
+		}
 	}
 
 	async removeWifi(ssid) {

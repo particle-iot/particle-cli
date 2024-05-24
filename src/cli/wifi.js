@@ -27,11 +27,11 @@ module.exports = ({ commandProcessor, root }) => {
 			The JSON file for passing Wi-Fi credentials should look like this:
 			{
 			  "network": "my_ssid",
-			  "security": "WPA2_AES",
+			  "security": "WPA2_PSK",
 			  "password": "my_password"
 			}
 			
-			The security property can be NONE, WEP, WPA2_AES, WPA2_TKIP, WPA2_AES+TKIP, WPA_AES, WPA_TKIP, WPA_AES+TKIP.
+			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK, WPA_WPA2_PSK, WPA2_WPA3_PSK.
 			For enterprise Wi-Fi, set security to WPA_802.1x or WPA2_802.1x and provide the eap, username, outer_identity, client_certificate, private_key and root_ca properties.
 		`)
 	});
@@ -54,17 +54,18 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command': 'Prompt for Wi-Fi credentials and send them to a device',
-			'$0 $command --file credentials.json': 'Read Wi-Fi credentials from credentials.json and send them to a device'
+			'$0 $command --file credentials.json': 'Read Wi-Fi credentials from credentials.json and send them to a device',
+			'$0 $command --ssid <SSID>': 'Join a known network specified by SSID'
 		},
 		epilogue: unindent(`
 			The JSON file for passing Wi-Fi credentials should look like this:
 			{
 			  "network": "my_ssid",
-			  "security": "WPA2_AES",
+			  "security": "WPA2_PSK",
 			  "password": "my_password"
 			}
 			
-			The security property can be NONE, WEP, WPA2_AES, WPA2_TKIP, WPA2_AES+TKIP, WPA_AES, WPA_TKIP, WPA_AES+TKIP.
+			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK, WPA_WPA2_PSK, WPA2_WPA3_PSK.
 			For enterprise Wi-Fi, set security to WPA_802.1x or WPA2_802.1x and provide the eap, username, outer_identity, client_certificate, private_key and root_ca properties.
 		`)
 	});
@@ -85,7 +86,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new WiFiCommands().listNetworks();
 		},
 		examples: {
-			'$0 $command': 'Clears the list of wifi credentials on your device',
+			'$0 $command': 'Lists the wifi networks on your device',
 		}
 	});
 
@@ -96,7 +97,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new WiFiCommands().removeNetwork(args.params.ssid);
 		},
 		examples: {
-			'$0 $command ssid': 'Removes network from the device',
+			'$0 $command ssid': 'Removes a network specified by SSID from the device',
 		}
 	});
 
@@ -106,7 +107,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new WiFiCommands().getCurrentNetwork();
 		},
 		examples: {
-			'$0 $command ssid': 'Gets the current network',
+			'$0 $command ssid': 'Gets the network that the device is currently connected to',
 		}
 	});
 	
