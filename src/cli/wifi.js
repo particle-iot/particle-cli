@@ -1,7 +1,7 @@
 const unindent = require('../lib/unindent');
 
 module.exports = ({ commandProcessor, root }) => {
-	const wifi = commandProcessor.createCategory(root, 'wifi', 'Configure Wi-Fi credentials to your device(s)');
+	const wifi = commandProcessor.createCategory(root, 'wifi', 'Configure Wi-Fi credentials to your device');
 
 	const portOption = {
 		'port': {
@@ -9,7 +9,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	};
 
-    commandProcessor.createCommand(wifi, 'add', 'Adds a WiFi network to your device', {
+	commandProcessor.createCommand(wifi, 'add', 'Adds a WiFi network to your device', {
 		options: Object.assign({
 			'file': {
 				description: 'Take the credentials from a JSON file instead of prompting for them'
@@ -102,7 +102,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(wifi, 'status', 'Gets the current wifi network', {
-		handler: (args) => {
+		handler: () => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().getCurrentNetwork();
 		},

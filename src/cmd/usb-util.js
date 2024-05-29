@@ -1,7 +1,7 @@
 const { spin } = require('../app/ui');
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
-const { delay } = require('../lib/utilities');
+const { delay, asyncMapSeries } = require('../lib/utilities');
 const { platformForId } = require('../lib/platform');
 const {
 	getDevices,
