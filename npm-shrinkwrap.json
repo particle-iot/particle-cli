@@ -27,7 +27,7 @@
         "particle-api-js": "^10.3.0",
         "particle-commands": "^1.0.1",
         "particle-library-manager": "^0.1.15",
-        "particle-usb": "^2.10.1",
+        "particle-usb": "^3.0.0",
         "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
         "safe-buffer": "^5.2.0",
         "semver": "^7.5.2",
@@ -572,11 +572,15 @@
       }
     },
     "node_modules/@particle/device-os-protobuf": {
-      "version": "2.4.2",
-      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.4.2.tgz",
-      "integrity": "sha512-i+MI60gQK6QTsAksd7DrhIDPZTaKAi4AN22IpkqQIEnNud9hBfWDbOuBCfYWeoUjXHlU/gLzSrH4yVDhK4ZG/Q==",
+      "version": "2.5.0",
+      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.5.0.tgz",
+      "integrity": "sha512-FoqK/d10JfHpd4qoRCOtSH2zGVk65Hd3JjZtELv9SUCiDzi+feaoMhoEdtNWzrXTpDR/zg9CY4v5eOE6co0kZg==",
       "dependencies": {
         "protobufjs": "^6.11.2"
+      },
+      "engines": {
+        "node": ">=16.x",
+        "npm": "8.x"
       }
     },
     "node_modules/@protobufjs/aspromise": {
@@ -944,9 +948,9 @@
       "integrity": "sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA=="
     },
     "node_modules/@types/node": {
-      "version": "20.11.16",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.11.16.tgz",
-      "integrity": "sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==",
+      "version": "20.12.13",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.12.13.tgz",
+      "integrity": "sha512-gBGeanV41c1L171rR7wjbMiEpEI/l5XFQdLLfhr/REwpgDy/4U8y89+i8kRiLzDyZdOkXh+cRaTetUnCYutoXA==",
       "dependencies": {
         "undici-types": "~5.26.4"
       }
@@ -6400,11 +6404,11 @@
       }
     },
     "node_modules/particle-usb": {
-      "version": "2.10.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.10.1.tgz",
-      "integrity": "sha512-uyyRjjJUSXesTHDnvsk08hoHw/874XaFBfSztG8d3yaLKeiyC5RJDv22vjtumkBUTAFEGjuRLPQfXr0QdhYI8w==",
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-3.0.0.tgz",
+      "integrity": "sha512-aPVf2sExAT/V1k4/IqcCHBPNwh245za6tS5LNNtv1vj6JcpyW80hSpagsbyssLvPqc/lUgNCqeCsr+7efjn6ow==",
       "dependencies": {
-        "@particle/device-os-protobuf": "^2.4.2",
+        "@particle/device-os-protobuf": "^2.5.0",
         "ip-address": "^9.0.5",
         "protobufjs": "^6.11.3",
         "usb": "^2.11.0"
@@ -9679,9 +9683,9 @@
       "integrity": "sha512-3H4g9oZ6LBq9YYOhbZrApwbwU9d1jIFchyrGG41vPmj2awDUqwOQ6errPvjYusm+Kj6jJLduo4h4o74ATEWSIg=="
     },
     "@particle/device-os-protobuf": {
-      "version": "2.4.2",
-      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.4.2.tgz",
-      "integrity": "sha512-i+MI60gQK6QTsAksd7DrhIDPZTaKAi4AN22IpkqQIEnNud9hBfWDbOuBCfYWeoUjXHlU/gLzSrH4yVDhK4ZG/Q==",
+      "version": "2.5.0",
+      "resolved": "https://registry.npmjs.org/@particle/device-os-protobuf/-/device-os-protobuf-2.5.0.tgz",
+      "integrity": "sha512-FoqK/d10JfHpd4qoRCOtSH2zGVk65Hd3JjZtELv9SUCiDzi+feaoMhoEdtNWzrXTpDR/zg9CY4v5eOE6co0kZg==",
       "requires": {
         "protobufjs": "^6.11.2"
       }
@@ -9951,9 +9955,9 @@
       "integrity": "sha512-MqTGEo5bj5t157U6fA/BiDynNkn0YknVdh48CMPkTSpFTVmvao5UQmm7uEF6xBEo7qIMAlY/JSleYaE6VOdpaA=="
     },
     "@types/node": {
-      "version": "20.11.16",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.11.16.tgz",
-      "integrity": "sha512-gKb0enTmRCzXSSUJDq6/sPcqrfCv2mkkG6Jt/clpn5eiCbKTY+SgZUxo+p8ZKMof5dCp9vHQUAB7wOUTod22wQ==",
+      "version": "20.12.13",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-20.12.13.tgz",
+      "integrity": "sha512-gBGeanV41c1L171rR7wjbMiEpEI/l5XFQdLLfhr/REwpgDy/4U8y89+i8kRiLzDyZdOkXh+cRaTetUnCYutoXA==",
       "requires": {
         "undici-types": "~5.26.4"
       }
@@ -14290,11 +14294,11 @@
       }
     },
     "particle-usb": {
-      "version": "2.10.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-2.10.1.tgz",
-      "integrity": "sha512-uyyRjjJUSXesTHDnvsk08hoHw/874XaFBfSztG8d3yaLKeiyC5RJDv22vjtumkBUTAFEGjuRLPQfXr0QdhYI8w==",
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-3.0.0.tgz",
+      "integrity": "sha512-aPVf2sExAT/V1k4/IqcCHBPNwh245za6tS5LNNtv1vj6JcpyW80hSpagsbyssLvPqc/lUgNCqeCsr+7efjn6ow==",
       "requires": {
-        "@particle/device-os-protobuf": "^2.4.2",
+        "@particle/device-os-protobuf": "^2.5.0",
         "ip-address": "^9.0.5",
         "protobufjs": "^6.11.3",
         "usb": "^2.11.0"
