@@ -76,7 +76,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 			// expect that the network is present in the list
 			const { stdout: listStdout } = await cli.run(['wifi', 'list']);
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--ssid', WIFI_SSID]);
-			
+
 			expect(listStdout).to.include(WIFI_SSID);
 			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' joined successfully.`);
 			expect(stderr).to.equal('');
@@ -120,7 +120,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 			const { stdout : listStdoutAfterClearing }  = await cli.run(['wifi', 'list']);
 
 			expect(listStdoutBeforeClearing).to.include(WIFI_SSID);
-			expect(stdout).to.include(`Wi-Fi networks cleared successfully.`);
+			expect(stdout).to.include('Wi-Fi networks cleared successfully.');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 			expect(listStdoutAfterClearing).to.not.include(WIFI_SSID);

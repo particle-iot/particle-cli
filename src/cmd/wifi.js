@@ -83,10 +83,10 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	}
 
 	async removeNetwork(args) {
-        const { ssid } = args;
-        if (!ssid) {
-            throw new Error('Please provide a network name to remove using the --ssid flag.');
-        }
+		const { ssid } = args;
+		if (!ssid) {
+			throw new Error('Please provide a network name to remove using the --ssid flag.');
+		}
 		await this._withDevice(async () => {
 			await this.removeWifi(ssid);
 		});
@@ -140,7 +140,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 			error.isUsageError = true;
 			throw error;
 		}
-        return { ssid: network, security: this._convertToKnownSecType(security), password };
+		return { ssid: network, security: this._convertToKnownSecType(security), password };
 	}
 
 	async _getNetworkToConnect({ prompt = true } = { }) {
@@ -339,12 +339,12 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		let list, currentNetwork;
 		await this._performWifiOperation('Listing Wi-Fi networks', async () => {
 			list = await this.device.listWifiNetworks({ timeout: REQUEST_TIMEOUT });
-            try {
-			    currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
-            } catch (error) {
-                // Device-OS returns 'Invalid state' error if device is still trying to connect to wifi
-                // Device-OS also returns 'Not Supported' error (cause yet to be figured)
-            }
+			try {
+				currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
+			} catch (error) {
+				// Device-OS returns 'Invalid state' error if device is still trying to connect to wifi
+				// Device-OS also returns 'Not Supported' error (cause yet to be figured)
+			}
 		});
 
 		this.ui.stdout.write(`List of Wi-Fi networks on the device:${os.EOL}${os.EOL}`);
@@ -381,7 +381,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		});
 
 		this.ui.stdout.write(`Current Wi-Fi network:${os.EOL}${os.EOL}`);
-        this.ui.stdout.write(`- SSID: ${parsedResult?.ssid}${os.EOL}` +
+		this.ui.stdout.write(`- SSID: ${parsedResult?.ssid}${os.EOL}` +
             (`  BSSID: ${parsedResult?.bssid}${os.EOL}`) +
             `  Channel: ${parsedResult?.channel}${os.EOL}` +
             `  RSSI: ${parsedResult?.rssi}${os.EOL}${os.EOL}`);
@@ -391,7 +391,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		const ssid = await this._promptForSSID();
 		const security = await this._promptForSecurityType();
 		let password = null;
-		if (security !== 'NONE') {
+		if (security !== 'NO_SECURITY') {
 			password = await this._promptForPassword();
 		}
 		return { ssid, security: this._convertToKnownSecType(security), password };
@@ -401,7 +401,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	// Device-OS processes only known security types and they all end with `PSK` of their kind.
 	// Similar security types are consolidated and mapped to a unified type ending in `PSK`.
 	// Example: WPA_AES, WPA_TKIP, WPA_AES+TKIP are all treated as WPA_PSK.
-    // For the exact mapping, see https://github.com/particle-iot/device-os-protobuf/blob/main/control/wifi_new.proto
+	// For the exact mapping, see https://github.com/particle-iot/device-os-protobuf/blob/main/control/wifi_new.proto
 	_convertToKnownSecType(security) {
 		try {
 			return securityMapping[security];
@@ -472,9 +472,9 @@ module.exports = class WiFiCommands extends CLICommandBase {
 			};
 		});
 	}
-	
-    // TODO: Fix error handling
-    // Figure out a way to differentiate between USB errors and device errors and handle them accordingly
+
+	// TODO: Fix error handling
+	// Figure out a way to differentiate between USB errors and device errors and handle them accordingly
 	_handleDeviceError(_error, { action } = { }) {
 		if (typeof _error === 'string' && _error.startsWith('Request timed out')) {
 			return new Error(`Unable to ${action}: Request timed out`);
@@ -485,9 +485,9 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		}
 		let helperString = '';
 		switch (error.message) {
-            case 'Invalid state':
-                helperString = 'Check that the device is connected to the network and try again.';
-                break;
+			case 'Invalid state':
+				helperString = 'Check that the device is connected to the network and try again.';
+				break;
 			case 'Not found':
 				helperString = 'If you are using a hidden network, please add the hidden network credentials first using \'particle wifi add\'.';
 				break;
