@@ -82,7 +82,11 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		});
 	}
 
-	async removeNetwork(ssid) {
+	async removeNetwork(args) {
+        const { ssid } = args;
+        if (!ssid) {
+            throw new Error('Please provide a network name to remove using the --ssid flag.');
+        }
 		await this._withDevice(async () => {
 			await this.removeWifi(ssid);
 		});
@@ -136,7 +140,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 			error.isUsageError = true;
 			throw error;
 		}
-		return { ssid: network, security: this._convertToKnownSecType(security), password };
+        return { ssid: network, security: this._convertToKnownSecType(security), password };
 	}
 
 	async _getNetworkToConnect({ prompt = true } = { }) {

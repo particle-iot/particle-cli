@@ -16,16 +16,17 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		'Help:  particle help wifi <command>',
 		'',
 		'Commands:',
-		'  add     Adds a WiFi network to your device',
-		'  join    Joins a wifi network',
-		'  clear   Clears the list of wifi networks on your device',
-		'  list    Lists the wifi networks on your device',
-		'  remove  Removes a wifi network from the device',
+		'  add      Adds a WiFi network to your device',
+		'  join     Joins a wifi network',
+		'  clear    Clears the list of wifi networks on your device',
+		'  list     Lists the wifi networks on your device',
+		'  remove   Removes a wifi network from the device',
 		'  current  Gets the current wifi network',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
-		'  -q, --quiet    Decreases how much logging to display  [count]'
+		'  -q, --quiet    Decreases how much logging to display  [count]',
+		''
 	];
 
 	after(async () => {
@@ -79,7 +80,16 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--ssid', WIFI_SSID]);
 			
 			expect(listStdout).to.include(WIFI_SSID);
-			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured and joined successfully.`);
+			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' joined successfully.`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Fetches the current network the device is connected to', async () => {
+			// Let the device join a network and then clear it
+			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'current']);
+
+			expect(stdout).to.include(WIFI_SSID);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -105,8 +115,8 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		});
 
 		it('Clears networks from the device', async () => {
-			// Let the device join a network and then clear it
-			await cli.run(['wifi', 'join', '--ssid', WIFI_SSID]);
+			// Let the device add a network and then clear it
+			await cli.run(['wifi', 'add', '--ssid', WIFI_SSID]);
 			const { stdout: listStdoutBeforeClearing } = await cli.run(['wifi', 'list']);
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'clear']);
 			const { stdout : listStdoutAfterClearing }  = await cli.run(['wifi', 'list']);

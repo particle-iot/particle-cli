@@ -91,10 +91,14 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(wifi, 'remove', 'Removes a wifi network from the device', {
-		params: '<ssid>',
+		options: Object.assign({
+			'ssid': {
+				description: 'The name of the network to remove'
+			}
+		}, portOption),
 		handler: (args) => {
 			const WiFiCommands = require('../cmd/wifi');
-			return new WiFiCommands().removeNetwork(args.params.ssid);
+			return new WiFiCommands().removeNetwork(args);
 		},
 		examples: {
 			'$0 $command ssid': 'Removes a network specified by SSID from the device',

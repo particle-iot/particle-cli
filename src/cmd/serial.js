@@ -260,7 +260,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Obtain system firmware version
 		fwVer = device.firmwareVersion;
-
+		
 
 		// If the device is a cellular device, obtain imei and iccid
 
@@ -531,6 +531,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		const fwVer = device.firmwareVersion;
+		await device.close();
+
 		// XXX: Firmware version TBD
 		if (semver.gte(fwVer, '6.2.0')) {
 			this.ui.stdout.write(`${chalk.yellow('[Recommendation]')}${os.EOL}`);
