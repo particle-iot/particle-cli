@@ -49,7 +49,7 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command': 'Prompt for Wi-Fi credentials and send them to a device',
 			'$0 $command --file credentials.json': 'Read Wi-Fi credentials from credentials.json and send them to a device',
-			'$0 $command --ssid <SSID>': 'Join a known network specified by SSID'
+			'$0 $command --ssid <SSID>': 'Join a pre-configured network specified by SSID. Pre-configure a network using `particle wifi add`'
 		},
 		epilogue: unindent(`
 			The JSON file for passing Wi-Fi credentials should look like this:
