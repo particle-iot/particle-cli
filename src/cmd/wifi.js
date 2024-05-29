@@ -48,7 +48,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	}
 
 	async addNetwork(args) {
-		this.file = args.file; // FIXME?
+		this.file = args.file;
 		await this._withDevice(async () => {
 			const network = await this._getNetwork();
 			await this.addWifi(network);
@@ -340,7 +340,8 @@ module.exports = class WiFiCommands extends CLICommandBase {
             try {
 			    currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
             } catch (error) {
-                // this command is known to be throwing 'not supported' error if the device is not connected to wifi
+                // Device-OS returns 'Invalid state' error if device is still trying to connect to wifi
+                // Device-OS also returns 'Not Supported' error (cause yet to be figured)
             }
 		});
 
@@ -476,23 +477,10 @@ module.exports = class WiFiCommands extends CLICommandBase {
 			};
 		});
 	}
-
-	// TODO: FIXME: UsbError has a cause property that is the native libusb error.
-	// And the cause.message is a libusb error code.
-	// May be we out the error.code as the libusb and explanation will be from particle usb
-	// UsbError -- cause -- error.name -- mapping (better done inside particle-usb to create a rich error object like ParticleUsbError { which will have certain reliable fields })
-	// If an operation fails because particle usb was trying tog et info from the device, and the part of the code tfrom pusb taht's trying to fonload from device fials, originally we just showed in_transfder-failed.
-	// that's not super helpful. if there is other info we could show, we can show that
-	// if ther eis some sor tofos statemamchine error.
-	// what's a USB error - ther eis an operation weare trying to do - and its failed -
-	// AND then there is a RequestErroc omgin from Deiv-eos and ther eis na error code an there is also an error id .
-	// and then there is a message. no matter wheret he erro came from, we can still show something to use t if we ont care abt the difference
-	// in a lot of timews, if it's a USB error, we can retry it. but if its a request error, we wouldnt retry it coz device-os already told us it didnt work
-
+	
     // TODO: Fix error handling
     // Figure out a way to differentiate between USB errors and device errors and handle them accordingly
 	_handleDeviceError(_error, { action } = { }) {
-        console.log('tp error: ', _error);
 		if (typeof _error === 'string' && _error.startsWith('Request timed out')) {
 			return new Error(`Unable to ${action}: Request timed out`);
 		}
@@ -502,14 +490,11 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		}
 		let helperString = '';
 		switch (error.message) {
-			case 'Invalid state':
-				helperString = 'Please ensure your device is in listening mode (blinking blue) before attempting to configure Wi-Fi.';
-				break;
 			case 'Not found':
 				helperString = 'If you are using a hidden network, please add the hidden network credentials first using \'particle wifi add\'.';
 				break;
 			case 'Not supported':
-				helperString = `This feature is not supported on this firmware version.${os.EOL}Update to device-os 6.2.0 or use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi'.${os.EOL}`;
+				helperString = `This feature is likely not supported on this firmware version.${os.EOL}Update to device-os 6.2.0 or use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi'.${os.EOL}`;
 				break;
 			default:
 				break;
