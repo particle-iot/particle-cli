@@ -61,7 +61,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		it('Adds a Wi-Fi network', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'add', '--file', WIFI_CREDS_FILE]);
 
-			expect(stdout).to.include(`Wi-Fi network ${WIFI_SSID}' added successfully.`);
+			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' added successfully.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -116,7 +116,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 
 		it('Clears networks from the device', async () => {
 			// Let the device add a network and then clear it
-			await cli.run(['wifi', 'add', '--ssid', WIFI_SSID]);
+			await cli.run(['wifi', 'add', '--file', WIFI_CREDS_FILE]);
 			const { stdout: listStdoutBeforeClearing } = await cli.run(['wifi', 'list']);
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'clear']);
 			const { stdout : listStdoutAfterClearing }  = await cli.run(['wifi', 'list']);
