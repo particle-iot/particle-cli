@@ -136,8 +136,6 @@ module.exports = class WiFiCommands extends CLICommandBase {
 			error.isUsageError = true;
 			throw error;
 		}
-        console.log('tp security: ', security);
-		// TEST this with security type:
 		return { ssid: network, security: this._convertToKnownSecType(security), password };
 	}
 
@@ -317,7 +315,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured and joined successfully.${os.EOL}`);
 	}
 
-	async joinKnownWifi({ ssid }) {
+	async joinKnownWifi(ssid) {
 		await this._performWifiOperation(`Joining a known Wi-Fi network '${ssid}'`, async () => {
 			await this.device.joinKnownWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
 		});
@@ -379,17 +377,10 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		});
 
 		this.ui.stdout.write(`Current Wi-Fi network:${os.EOL}${os.EOL}`);
-		if (parsedResult?.ssid) {
-			let bssid = null;
-			if (parsedResult?.bssid) {
-				// Convert buffer to string separated by colons
-				bssid = Array.from(parsedResult.bssid).map((byte) => byte.toString(16).padStart(2, '0')).join(':');
-			}
-			this.ui.stdout.write(`- SSID: ${parsedResult.ssid}${os.EOL}` +
-				(bssid ? `  BSSID: ${bssid}${os.EOL}` : '') +
-				`  Channel: ${parsedResult.channel}${os.EOL}` +
-				`  RSSI: ${parsedResult.rssi}${os.EOL}${os.EOL}`);
-		}
+        this.ui.stdout.write(`- SSID: ${parsedResult?.ssid}${os.EOL}` +
+            (`  BSSID: ${parsedResult?.bssid}${os.EOL}`) +
+            `  Channel: ${parsedResult?.channel}${os.EOL}` +
+            `  RSSI: ${parsedResult?.rssi}${os.EOL}${os.EOL}`);
 	}
 
 	async _pickNetworkManually() {
@@ -490,6 +481,9 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		}
 		let helperString = '';
 		switch (error.message) {
+            case 'Invalid state':
+                helperString = 'Check that the device is connected to the network and try again.';
+                break;
 			case 'Not found':
 				helperString = 'If you are using a hidden network, please add the hidden network credentials first using \'particle wifi add\'.';
 				break;

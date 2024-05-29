@@ -101,7 +101,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(wifi, 'status', 'Gets the current wifi network', {
+	commandProcessor.createCommand(wifi, 'current', 'Gets the current wifi network', {
 		handler: () => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().getCurrentNetwork();

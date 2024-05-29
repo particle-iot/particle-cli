@@ -11,7 +11,7 @@ const {
 describe('Wi-Fi Commands [@device,@wifi]', () => {
 
 	const help = [
-		'Configure Wi-Fi credentials to your device',
+		'Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).',
 		'Usage: particle wifi <command>',
 		'Help:  particle help wifi <command>',
 		'',
@@ -21,7 +21,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		'  clear   Clears the list of wifi networks on your device',
 		'  list    Lists the wifi networks on your device',
 		'  remove  Removes a wifi network from the device',
-		'  status  Gets the current wifi network',
+		'  current  Gets the current wifi network',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
@@ -60,7 +60,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		it('Adds a Wi-Fi network', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'add', '--file', WIFI_CREDS_FILE]);
 
-			expect(stdout).to.include('blahme');
+			expect(stdout).to.include(`Wi-Fi network ${WIFI_SSID}' added successfully.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -68,17 +68,17 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		it('Joins a Wi-Fi network', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--file', WIFI_CREDS_FILE]);
 
-			expect(stdout).to.include('blahme');
+			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured and joined successfully.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Joins a known Wi-Fi network', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--ssid', 'myNetwork1']);
-
 			// expect that the network is present in the list
-			const { stdout: listStdout, stderr: listStderr, exitCode: listExitCode } = await cli.run(['wifi', 'list']);
-
+			const { stdout: listStdout } = await cli.run(['wifi', 'list']);
+			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--ssid', WIFI_SSID]);
+			
+			expect(listStdout).to.include(WIFI_SSID);
 			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured and joined successfully.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
@@ -87,33 +87,36 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		it('Lists networks on the device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'list']);
 
-			expect(stdout).to.include('blahme');
+			expect(stdout).to.include('List of Wi-Fi networks on the device:');
+			expect(stdout).to.include(WIFI_SSID);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
 		it('removes a Wi-Fi network', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'remove', '--ssid', 'myNetwork1']);
+			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'remove', '--ssid', WIFI_SSID]);
 
-			// expect that the network to not be present in the list
-			const { stdout: listStdout, stderr: listStderr, exitCode: listExitCode } = await cli.run(['wifi', 'list']);
+			const { stdout: listStdout } = await cli.run(['wifi', 'list']);
 
-			expect(stdout).to.include(`Wi-Fi network 'myNetwork1' removed successfully.`);
+			expect(stdout).to.include(`Wi-Fi network ${WIFI_SSID} removed from device's list successfully.`);
+			expect(listStdout).to.not.include(WIFI_SSID);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Clears networks from the device', async () => {
-			await cli.run(['wifi', 'join', '--ssid', 'myNetwork1']);
+			// Let the device join a network and then clear it
+			await cli.run(['wifi', 'join', '--ssid', WIFI_SSID]);
+			const { stdout: listStdoutBeforeClearing } = await cli.run(['wifi', 'list']);
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'clear']);
+			const { stdout : listStdoutAfterClearing }  = await cli.run(['wifi', 'list']);
 
-			const { stdout : stdoutList }  = await cli.run(['wifi', 'list']);
-
-			expect(stdout).to.include('blahme');
+			expect(listStdoutBeforeClearing).to.include(WIFI_SSID);
+			expect(stdout).to.include(`Wi-Fi networks cleared successfully.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect(listStdoutAfterClearing).to.not.include(WIFI_SSID);
 		});
-
 	});
 
 });
