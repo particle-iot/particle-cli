@@ -3,18 +3,12 @@ const unindent = require('../lib/unindent');
 module.exports = ({ commandProcessor, root }) => {
 	const wifi = commandProcessor.createCategory(root, 'wifi', 'Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).');
 
-	const portOption = {
-		'port': {
-			describe: 'Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device'
-		}
-	};
-
 	commandProcessor.createCommand(wifi, 'add', 'Adds a WiFi network to your device', {
 		options: Object.assign({
 			'file': {
 				description: 'Take the credentials from a JSON file instead of prompting for them'
 			}
-		}, portOption),
+		}),
 		handler: (args) => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().addNetwork(args);
@@ -44,7 +38,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'ssid': {
 				description: 'The name of the network to join'
 			},
-		}, portOption),
+		}),
 		handler: (args) => {
 			const WiFiCommands = require('../cmd/wifi');
 			if (args.ssid) {
@@ -95,7 +89,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'ssid': {
 				description: 'The name of the network to remove'
 			}
-		}, portOption),
+		}),
 		handler: (args) => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().removeNetwork(args);

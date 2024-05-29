@@ -2,8 +2,6 @@ const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
 	WIFI_SSID,
-	WIFI_SECURITY,
-	WIFI_PASSWORD,
 	WIFI_CREDS_FILE
 } = require('../lib/env');
 
