@@ -38,13 +38,14 @@ const securityMapping = {
 };
 
 module.exports = class WiFiCommands extends CLICommandBase {
-	constructor() {
+	constructor({ ui } = {}) {
 		super();
 		spinnerMixin(this);
 		const { api } = this._particleApi();
 		this.api = api;
 		this.deviceId = null;
 		this.device = null;
+		this.ui = ui || this.ui;
 	}
 
 	async addNetwork(args) {

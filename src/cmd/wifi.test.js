@@ -5,11 +5,6 @@ const utilities = require('../lib/utilities');
 const fs = require('fs-extra');
 const path = require('path');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
-const { platformForId } = require('../lib/platform');
-const os = require('os');
-
-const NUM_TRIES = 3;
-const RESCAN_LABEL = '[rescan networks]';
 
 describe('Wifi Commands', () => {
 	let ui, newSpin, stopSpin;
@@ -64,7 +59,7 @@ describe('Wifi Commands', () => {
 					channel: 11
 				}
 			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
 
 			const result = wifiCommands._serializeNetworks(networks);
 			expect(result).to.eql([
@@ -89,13 +84,17 @@ describe('Wifi Commands', () => {
 
 	describe('_pickNetworkManually', () => {
 		it('prompts for ssid and password', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
 			ui.prompt = sinon.stub();
-			ui.prompt.onCall(0).returns({ ssid: 'ssid' }).onCall(1).returns({ password: 'password' });
+			ui.prompt
+				.onCall(0).returns({ ssid: 'ssid' })
+				.onCall(1).returns({ security: 'WPA2_PSK' })
+				.onCall(2).returns({ password: 'password' });
 
 			const result = await wifiCommands._pickNetworkManually();
-			expect(result).to.eql({ ssid: 'ssid', password: 'password' });
-			expect(ui.prompt).to.have.been.calledTwice;
+
+			expect(result).to.eql({ ssid: 'ssid', security: 'WPA2_PSK', password: 'password' });
+			expect(ui.prompt).to.have.been.calledThrice;
 			expect(ui.prompt.firstCall).to.have.been.calledWith([{
 				type: 'input',
 				name: 'ssid',
@@ -104,6 +103,12 @@ describe('Wifi Commands', () => {
 				filter: sinon.match.func
 			}]);
 			expect(ui.prompt.secondCall).to.have.been.calledWith([{
+				choices: ['NO_SECURITY', 'WEP', 'WPA_PSK', 'WPA2_PSK', 'WPA_WPA2_PSK', 'WPA3_PSK', 'WPA2_WPA3_PSK'],
+				type: 'list',
+				name: 'security',
+				message: 'Select the security type for your Wi-Fi network:'
+			}]);
+			expect(ui.prompt.thirdCall).to.have.been.calledWith([{
 				type: 'input',
 				name: 'password',
 				message: 'Wi-Fi Password',
@@ -138,8 +143,10 @@ describe('Wifi Commands', () => {
 				},
 				null,
 			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
+
 			const result = wifiCommands._filterNetworks(networks);
+
 			expect(result).to.eql([
 				{
 					ssid: 'network1',
@@ -160,9 +167,11 @@ describe('Wifi Commands', () => {
 				rssi: -50,
 				channel: 6
 			}]);
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.device = openDevice;
+
 			const networks = await wifiCommands._deviceScanNetworks();
+
 			expect(networks).to.eql([{
 				ssid: 'network1',
 				security: 'WPA2',
@@ -171,55 +180,34 @@ describe('Wifi Commands', () => {
 				unsecure: false,
 				mac: ''
 			}]);
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-				api: sinon.match.object,
-				idOrName: 'deviceId', ui
-			});
 		});
+
 		it('throws an error if fails after retrying', async () => {
 			openDevice.scanWifiNetworks.rejects(new Error('error'));
-			usbUtils.getOneUsbDevice.resolves(openDevice);
 			let error;
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.device = openDevice;
+
 			try {
 				await wifiCommands._deviceScanNetworks({ customRetryCount: 1 });
 			} catch (_error) {
 				error = _error;
 			}
 
-			expect(error.message).to.eql('Unable to scan for Wi-Fi networks: error');
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-				api: sinon.match.object,
-				idOrName: 'deviceId', ui
-			});
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.eql('Unable to scan for Wi-Fi networks: error\n');
 			expect(utilities.delay).to.have.been.calledWith(1000);
-		});
-		it('close the device after scanning', async () => {
-			openDevice.scanWifiNetworks.resolves([{
-				ssid: 'network1',
-				security: 'WPA2',
-				rssi: -50,
-				channel: 6
-			}]);
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			await wifiCommands._deviceScanNetworks();
-			expect(openDevice.close).to.have.been.calledOnce;
 		});
 
 		it('returns empty if there is no networks', async () => {
 			openDevice.scanWifiNetworks.resolves([]);
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.device = openDevice;
+
 			const networks = await wifiCommands._deviceScanNetworks();
+
 			expect(networks).to.eql([]);
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-				api: sinon.match.object,
-				idOrName: 'deviceId', ui
-			});
+
 		});
 	});
 
@@ -228,35 +216,39 @@ describe('Wifi Commands', () => {
 			const networks = [
 				{
 					ssid: 'network1',
-					security: 'WPA2',
+					security: 'WPA2_PSK',
 					signal_level: -50,
 					channel: 6,
 					unsecure: true,
 					mac: ''
 				}];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
 			ui.prompt = sinon.stub();
 			ui.prompt.resolves({ network: 'network1' });
+
 			const result = await wifiCommands._promptToSelectNetwork(networks);
-			expect(result).to.eql({ ssid: 'network1', password: undefined });
+
+			expect(result).to.eql({ ssid: 'network1', security: 'WPA2_PSK', password: undefined });
 		});
 
 		it('asks for password if network is not unsecure', async () => {
 			const networks = [
 				{
 					ssid: 'network1',
-					security: 'WPA2',
+					security: 'WPA2_PSK',
 					signal_level: -50,
 					channel: 6,
 					unsecure: false,
 					mac: ''
 				}];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
 			ui.prompt = sinon.stub();
 			ui.prompt.onCall(0).resolves({ network: 'network1' });
 			ui.prompt.onCall(1).resolves({ password: 'password' });
+
 			const result = await wifiCommands._promptToSelectNetwork(networks);
-			expect(result).to.eql({ ssid: 'network1', password: 'password' });
+
+			expect(result).to.eql({ ssid: 'network1', security: 'WPA2_PSK', password: 'password' });
 			expect(ui.prompt).to.have.been.calledTwice;
 			expect(ui.prompt).to.calledWithMatch([{
 				choices: sinon.match.func,
@@ -284,10 +276,12 @@ describe('Wifi Commands', () => {
 					unsecure: true,
 					mac: ''
 				}];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
 			ui.prompt = sinon.stub();
 			ui.prompt.resolves({ network: '[rescan networks]' });
+
 			const result = await wifiCommands._promptToSelectNetwork(networks);
+
 			expect(result).to.eql({ ssid: null, rescan: true });
 		});
 	});
@@ -299,36 +293,50 @@ describe('Wifi Commands', () => {
 		afterEach(async () => {
 			await fs.remove(path.join(PATH_TMP_DIR, 'networks'));
 		});
+
 		it('returns network from json', async () => {
 			// create a file with a network
-			const network = { network: 'my-network', password: 'my-password' };
+			const network = { network: 'my-network', security: 'WPA2_PSK', password: 'my-password' };
 			const file = path.join(PATH_TMP_DIR, 'networks', 'network.json');
 			fs.writeJsonSync(file, network);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin, file });
-			const result = await wifiCommands._getNetworkToConnect();
-			expect(result).to.eql({ ssid: network.network, password: network.password });
+			const wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.file = file;
+
+			const result = await wifiCommands._getNetworkToConnectFromJson();
+
+			expect(result).to.eql({ ssid: network.network, security: 'WPA2_PSK', password: network.password });
 		});
+
 		it('throws error if file does not exist', async () => {
 			const fileName = path.join(process.cwd(), 'fake-file');
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin, file: fileName });
-			let expectedErrorMessage = `ENOENT: no such file or directory, open '${fileName}'`;
+			const wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.file = fileName;
+			const expectedErrorMessage = `ENOENT: no such file or directory, open '${fileName}'`;
+			let error;
+
 			try {
-				await wifiCommands._getNetworkToConnect();
-			} catch (error) {
-				expect(error.message).to.eql(expectedErrorMessage);
+				await wifiCommands._getNetworkToConnectFromJson();
+			} catch (e) {
+				error = e;
 			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.eql(expectedErrorMessage);
 		});
 		it('throws an error in case the file does not contain network property', async () => {
 			const network = { password: 'my-password' };
 			const file = path.join(PATH_TMP_DIR, 'networks', 'network.json');
-			let error;
 			fs.writeJsonSync(file, network);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin, file });
+			const wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.file = file;
+			let error;
+
 			try {
-				await wifiCommands._getNetworkToConnect();
+				await wifiCommands._getNetworkToConnectFromJson();
 			} catch (_error) {
 				error = _error;
 			}
+
 			expect(error.message).to.eql('No network name found in the file');
 			expect(error.isUsageError).to.eql(true);
 		});
@@ -344,19 +352,23 @@ describe('Wifi Commands', () => {
 					channel: 6
 				}
 			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
 			wifiCommands._deviceScanNetworks = sinon.stub().resolves(networks);
+
 			const result = await wifiCommands._scanNetworks();
+
 			expect(result).to.eql(networks);
 		});
 
 		it ('prompts to rescan if there are no networks', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
 			wifiCommands._deviceScanNetworks = sinon.stub().resolves([]);
 			ui.prompt = sinon.stub();
 			ui.prompt.onCall(0).resolves({ rescan: true });
 			ui.prompt.onCall(1).resolves({ rescan: false });
+
 			const result = await wifiCommands._scanNetworks();
+
 			expect(result).to.eql([]);
 			expect(ui.prompt).to.have.been.calledWith([{
 				default: true,
@@ -382,7 +394,9 @@ describe('Wifi Commands', () => {
 			wifiCommands._promptForScanNetworks = sinon.stub().resolves(true);
 			wifiCommands._scanNetworks = sinon.stub().resolves(networks);
 			wifiCommands._promptToSelectNetwork = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
+
 			const result = await wifiCommands._getNetworkToConnect();
+
 			expect(result).to.eql({ ssid: 'network1', password: 'password' });
 		});
 
@@ -390,399 +404,44 @@ describe('Wifi Commands', () => {
 			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
 			wifiCommands._promptForScanNetworks = sinon.stub().resolves(false);
 			wifiCommands._pickNetworkManually = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
+
 			const result = await wifiCommands._getNetworkToConnect();
+
 			expect(result).to.eql({ ssid: 'network1', password: 'password' });
-		});
-	});
-
-	describe('configureWifi', () => {
-		it('performs the wifi configuration flow', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			wifiCommands._getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			wifiCommands._getNetworkToConnect = sinon.stub();
-			wifiCommands.joinWifi = sinon.stub().resolves(true);
-			await wifiCommands.configureWifi();
-			expect(wifiCommands._getNetworkToConnect).to.have.been.calledOnce;
-			expect(wifiCommands.joinWifi).to.have.been.calledOnce;
-			expect(wifiCommands._getNetworkToConnect).not.to.have.been.called;
-		});
-
-		it('performs the wifi configuration flow from json', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin, file: 'file' });
-			wifiCommands._getNetworkToConnect = sinon.stub();
-			wifiCommands._getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			wifiCommands.joinWifi = sinon.stub().resolves(true);
-			await wifiCommands.configureWifi();
-			expect(wifiCommands._getNetworkToConnect).not.to.have.been.called;
-			expect(wifiCommands.joinWifi).to.have.been.calledOnce;
-			expect(wifiCommands._getNetworkToConnect).to.have.been.calledOnce;
-		});
-	});
-
-
-});
-
-describe('Wifi Control Request', () => {
-	let ui, newSpin, stopSpin;
-	let openDevice;
-	beforeEach(() => {
-		sinon.stub(utilities, 'delay').resolves();
-		ui = {
-			stdout: {
-				write: sinon.stub()
-			},
-			stderr: {
-				write: sinon.stub()
-			}
-		};
-		newSpin = sinon.stub().returns({
-			start: sinon.stub().callsFake(() => { }),
-			stop: sinon.stub()
-		});
-		stopSpin = sinon.stub();
-		openDevice = {
-			deviceId: 'deviceId',
-			isOpen: true,
-			close: sinon.stub(),
-			reset: sinon.stub(),
-			scanWifiNetworks: sinon.stub(),
-			joinNewWifiNetwork: sinon.stub()
-		};
-		usbUtils.getOneUsbDevice = sinon.stub();
-	});
-	afterEach(() => {
-		sinon.restore();
-	});
-
-	describe('_serializeNetworks', () => {
-		it('returns a list of networks', () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signal_level: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signal_level: -60, channel: 11 }
-			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const result = wifiCommands._serializeNetworks(networks);
-			expect(result).to.eql([
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 }
-			]);
-		});
-	});
-
-	describe('_pickNetworkManually', () => {
-		it('prompts for ssid and password', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			ui.prompt = sinon.stub();
-			ui.prompt.onCall(0).resolves({ ssid: 'network1' });
-			ui.prompt.onCall(1).resolves({ password: 'password' });
-			const result = await wifiCommands._pickNetworkManually();
-			expect(result).to.eql({ ssid: 'network1', password: 'password' });
-			expect(ui.prompt).to.have.been.calledTwice;
-			expect(ui.prompt).to.have.been.calledWith([
-				{ type: 'input', name: 'ssid', message: 'Wi-Fi SSID' }
-			]);
-			expect(ui.prompt).to.have.been.calledWith([
-				{ type: 'password', name: 'password', message: 'Wi-Fi Password' }
-			]);
-		});
-	});
-
-	describe('_filterNetworks', () => {
-		it('filters out and remove null, undefined and 5GHZ networks', () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signal_level: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signal_level: -60, channel: 11 },
-				{ ssid: 'network3', security: 'WPA2', signal_level: -70, channel: 36 },
-				{ ssid: null, security: 'WPA2', signal_level: -80, channel: 1 },
-				{ ssid: 'network5', security: 'WPA2', signal_level: -90, channel: 6, frequency: '5GHZ' },
-				{ ssid: 'network6', security: 'WPA2', signal_level: -100, channel: 6, frequency: '5GHZ' }
-			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const result = wifiCommands._filterNetworks(networks);
-			expect(result).to.eql([
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 },
-				{ ssid: 'network3', security: 'WPA2', signalLevel: -70, channel: 36 }
-			]);
-		});
-	});
-
-	describe('_deviceScanNetworks', () => {
-		it('returns a list of networks from a particle device', async () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signal_level: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signal_level: -60, channel: 11 }
-			];
-			openDevice.scanWifiNetworks.resolves(networks);
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const result = await wifiCommands._deviceScanNetworks();
-			expect(result).to.eql([
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 }
-			]);
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-				api: sinon.match.object,
-				idOrName: 'deviceId',
-				ui
-			});
-			expect(openDevice.scanWifiNetworks).to.have.been.calledOnce;
-		});
-
-		it('throws an error if fails after retrying', async () => {
-			openDevice.scanWifiNetworks.rejects(new Error('Scan failed'));
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			try {
-				await wifiCommands._deviceScanNetworks();
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal('Scan failed');
-				expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-				expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-					api: sinon.match.object,
-					idOrName: 'deviceId',
-					ui
-				});
-				expect(openDevice.scanWifiNetworks).to.have.callCount(NUM_TRIES + 1);
-			}
-		});
-
-		it('closes the device after scanning', async () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signal_level: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signal_level: -60, channel: 11 }
-			];
-			openDevice.scanWifiNetworks.resolves(networks);
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			await wifiCommands._deviceScanNetworks();
-			expect(openDevice.close).to.have.been.calledOnce;
-		});
-
-		it('returns an empty array if there are no networks', async () => {
-			openDevice.scanWifiNetworks.resolves([]);
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const result = await wifiCommands._deviceScanNetworks();
-			expect(result).to.eql([]);
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-				api: sinon.match.object,
-				idOrName: 'deviceId',
-				ui
-			});
-			expect(openDevice.scanWifiNetworks).to.have.been.calledOnce;
-		});
-	});
-
-	describe('_promptToSelectNetwork', () => {
-		it('prompts to select a network', async () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 }
-			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			ui.prompt = sinon.stub();
-			ui.prompt.resolves({ network: 'network1' });
-			const result = await wifiCommands._promptToSelectNetwork(networks);
-			expect(result).to.eql({ ssid: 'network1', password: undefined });
-			expect(ui.prompt).to.have.been.calledOnce;
-			expect(ui.prompt).to.have.been.calledWith([
-				{
-					choices: sinon.match.func,
-					message: 'Select the Wi-Fi network with which you wish to connect your device:',
-					name: 'network',
-					type: 'list',
-					when: sinon.match.func
-				}
-			]);
-		});
-
-		it('asks for password if network is not unsecure', async () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 }
-			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			ui.prompt = sinon.stub();
-			ui.prompt.onCall(0).resolves({ network: 'network1' });
-			ui.prompt.onCall(1).resolves({ password: 'password' });
-			const result = await wifiCommands._promptToSelectNetwork(networks);
-			expect(result).to.eql({ ssid: 'network1', password: 'password' });
-			expect(ui.prompt).to.have.been.calledTwice;
-			expect(ui.prompt).to.have.been.calledWith([
-				{
-					choices: sinon.match.func,
-					message: 'Select the Wi-Fi network with which you wish to connect your device:',
-					name: 'network',
-					type: 'list',
-					when: sinon.match.func
-				}
-			]);
-			expect(ui.prompt).to.have.been.calledWith([
-				{ type: 'password', name: 'password', message: 'Wi-Fi Password' }
-			]);
-		});
-
-		it('returns rescan if RESCAN_LABEL is selected', async () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 }
-			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			ui.prompt = sinon.stub();
-			ui.prompt.resolves({ network: RESCAN_LABEL });
-			const result = await wifiCommands._promptToSelectNetwork(networks);
-			expect(result).to.eql({ ssid: null, rescan: true });
-			expect(ui.prompt).to.have.been.calledOnce;
-			expect(ui.prompt).to.have.been.calledWith([
-				{
-					choices: sinon.match.func,
-					message: 'Select the Wi-Fi network with which you wish to connect your device:',
-					name: 'network',
-					type: 'list',
-					when: sinon.match.func
-				}
-			]);
-		});
-	});
-
-	describe('_getNetworkToConnectFromJson', () => {
-		beforeEach(async () => {
-			await fs.ensureDir(path.join(PATH_TMP_DIR, 'networks'));
-		});
-
-		afterEach(async () => {
-			await fs.remove(path.join(PATH_TMP_DIR, 'networks'));
-		});
-
-		it('returns network from json', async () => {
-			const network = { ssid: 'my-network', password: 'my-password' };
-			const file = path.join(PATH_TMP_DIR, 'networks', 'network.json');
-			fs.writeJsonSync(file, network);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin, file });
-			const result = await wifiCommands._getNetworkToConnectFromJson();
-			expect(result).to.eql({ ssid: network.ssid, password: network.password });
-		});
-
-		it('throws an error if file does not exist', async () => {
-			const fileName = path.join(process.cwd(), 'fake-file');
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin, file: fileName });
-			try {
-				await wifiCommands._getNetworkToConnectFromJson();
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal(`ENOENT: no such file or directory, open '${fileName}'`);
-			}
-		});
-
-		it('throws an error if the file does not contain the network property', async () => {
-			const network = { password: 'my-password' };
-			const file = path.join(PATH_TMP_DIR, 'networks', 'network.json');
-			fs.writeJsonSync(file, network);
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin, file });
-			try {
-				await wifiCommands._getNetworkToConnectFromJson();
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal('No network name found in the file');
-				expect(error.isUsageError).to.be.true;
-			}
-		});
-	});
-
-	describe('_scanNetworks', () => {
-		it('returns a list of networks', async () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 }
-			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			wifiCommands._deviceScanNetworks = sinon.stub().resolves(networks);
-			const result = await wifiCommands._scanNetworks();
-			expect(result).to.eql(networks);
-			expect(wifiCommands._deviceScanNetworks).to.have.been.calledOnce;
-		});
-
-		it('prompts to rescan if there are no networks', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			wifiCommands._deviceScanNetworks = sinon.stub().resolves([]);
-			ui.prompt = sinon.stub();
-			ui.prompt.onCall(0).resolves({ rescan: true });
-			ui.prompt.onCall(1).resolves({ rescan: false });
-			const result = await wifiCommands._scanNetworks();
-			expect(result).to.eql([]);
-			expect(ui.prompt).to.have.been.calledOnce;
-			expect(ui.prompt).to.have.been.calledWith([
-				{
-					default: true,
-					message: 'No networks found. Try again?',
-					type: 'confirm',
-					name: 'rescan'
-				}
-			]);
-		});
-	});
-
-	describe('_getNetworkToConnect', () => {
-		it('returns network from prompt', async () => {
-			const networks = [
-				{ ssid: 'network1', security: 'WPA2', signalLevel: -50, channel: 6 },
-				{ ssid: 'network2', security: 'WPA2', signalLevel: -60, channel: 11 }
-			];
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			wifiCommands._promptForScanNetworks = sinon.stub().resolves(true);
-			wifiCommands._scanNetworks = sinon.stub().resolves(networks);
-			wifiCommands._promptToSelectNetwork = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			const result = await wifiCommands._getNetworkToConnect();
-			expect(result).to.eql({ ssid: 'network1', password: 'password' });
-			expect(wifiCommands._promptForScanNetworks).to.have.been.calledOnce;
-			expect(wifiCommands._scanNetworks).to.have.been.calledOnce;
-			expect(wifiCommands._promptToSelectNetwork).to.have.been.calledOnce;
-		});
-
-		it('returns network from manual input', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			wifiCommands._promptForScanNetworks = sinon.stub().resolves(false);
-			wifiCommands._pickNetworkManually = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			const result = await wifiCommands._getNetworkToConnect();
-			expect(result).to.eql({ ssid: 'network1', password: 'password' });
-			expect(wifiCommands._promptForScanNetworks).to.have.been.calledOnce;
-			expect(wifiCommands._pickNetworkManually).to.have.been.calledOnce;
 		});
 	});
 
 	describe('joinWifi', () => {
 		it('joins a Wi-Fi network', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			wifiCommands._getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
-			openDevice.joinNewWifiNetwork.resolves();
+			const wifiCommands = new WiFiCommands({ ui });
 			usbUtils.getOneUsbDevice.resolves(openDevice);
-			const result = await wifiCommands.joinWifi();
-			expect(result).to.be.true;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-				api: sinon.match.object,
-				idOrName: 'deviceId',
-				ui
-			});
+			openDevice.joinNewWifiNetwork.resolves();
+			wifiCommands.device = openDevice;
+			const networkInput = { ssid: 'network1', security: 'WPA2_PSK', password: 'password' };
+
+			const result = await wifiCommands.joinWifi(networkInput);
+
+			expect(result).to.be.undefined;
 			expect(openDevice.joinNewWifiNetwork).to.have.been.calledOnce;
-			expect(openDevice.joinNewWifiNetwork).to.have.been.calledWith('network1', 'password');
+			expect(openDevice.joinNewWifiNetwork).to.have.been.calledWith(networkInput);
 		});
 
 		it('throws an error if joining the Wi-Fi network fails', async () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			wifiCommands._getNetworkToConnect = sinon.stub().resolves({ ssid: 'network1', password: 'password' });
+			const wifiCommands = new WiFiCommands({ ui });
+			const networkInput = { ssid: 'network1', security: 'WPA2_PSK', password: 'password' };
 			openDevice.joinNewWifiNetwork.rejects(new Error('Join failed'));
 			usbUtils.getOneUsbDevice.resolves(openDevice);
+			wifiCommands.device = openDevice;
+
+			let error;
 			try {
-				await wifiCommands.joinWifi();
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal('Join failed');
+				await wifiCommands.joinWifi(networkInput);
+			} catch (e) {
+				error = e;
 			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Unable to join Wi-Fi network \'network1\': Join failed\n');
 		});
 
 	});
@@ -792,17 +451,18 @@ describe('Wifi Control Request', () => {
 		let fn;
 
 		beforeEach(() => {
-			wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			wifiCommands = new WiFiCommands({ ui });
 			fn = sinon.stub();
 		});
 
 		it('opens the device and calls the provided function', async () => {
 			const device = {
 				isOpen: false,
-				platformId: '123',
+				platformId: 35,
 				_id: 'deviceId'
 			};
 			usbUtils.getOneUsbDevice.resolves(device);
+			wifiCommands.device = device;
 			fn.resolves();
 
 			await wifiCommands._withDevice(fn);
@@ -810,7 +470,7 @@ describe('Wifi Control Request', () => {
 			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
 			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
 				api: wifiCommands.api,
-				idOrName: 'deviceId',
+				idOrName: null, // FIX THIS
 				ui
 			});
 			expect(fn).to.have.been.calledOnce;
@@ -819,41 +479,42 @@ describe('Wifi Control Request', () => {
 		it('throws an error if the device does not support Wi-Fi', async () => {
 			const device = {
 				isOpen: false,
-				platformId: '123',
+				platformId: 13,
 				_id: 'deviceId'
 			};
 			usbUtils.getOneUsbDevice.resolves(device);
-			platformForId.withArgs('123').returns({ generation: 3, name: 'boron', features: ['cellular'] });
 
+			let error;
 			try {
 				await wifiCommands._withDevice(fn);
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal('This device (deviceId / boron) does not support Wi-Fi.\n');
+			} catch (e) {
+				error = e;
 			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('This device (deviceId / boron) does not support Wi-Fi.\n');
 		});
 
 		it('throws an error if the device does not support the "particle wifi" commands', async () => {
 			const device = {
 				isOpen: false,
-				platformId: '123',
+				platformId: 6,
 				_id: 'deviceId'
 			};
 			usbUtils.getOneUsbDevice.resolves(device);
-			platformForId.withArgs('123').returns({ generation: 2, name: 'Photon', features: ['wifi'] });
 
 			try {
 				await wifiCommands._withDevice(fn);
-				expect.fail('Expected an error to be thrown');
 			} catch (error) {
-				expect(error.message).to.equal('The \'particle wifi\' commands are not supported on this device (deviceId / Photon).\nUse \'particle serial wifi\' instead.\n');
+				expect(error.message).to.equal('The \'particle wifi\' commands are not supported on this device (deviceId / photon).\nUse \'particle serial wifi\' instead.\n');
 			}
 		});
 
 		it('calls the provided function if the device is already open', async () => {
 			const device = {
 				isOpen: true,
-				_id: 'deviceId'
+				_id: 'deviceId',
+				close: sinon.stub()
 			};
 			wifiCommands.device = device;
 			fn.resolves();
@@ -865,8 +526,8 @@ describe('Wifi Control Request', () => {
 
 		it('closes the device after calling the provided function', async () => {
 			const device = {
-				isOpen: false,
-				platformId: '123',
+				isOpen: true,
+				platformId: 35,
 				_id: 'deviceId',
 				close: sinon.stub()
 			};
@@ -881,7 +542,7 @@ describe('Wifi Control Request', () => {
 		it('throws an error if the provided function throws an error', async () => {
 			const device = {
 				isOpen: false,
-				platformId: '123',
+				platformId: 35,
 				_id: 'deviceId'
 			};
 			usbUtils.getOneUsbDevice.resolves(device);
@@ -889,7 +550,6 @@ describe('Wifi Control Request', () => {
 
 			try {
 				await wifiCommands._withDevice(fn);
-				expect.fail('Expected an error to be thrown');
 			} catch (error) {
 				expect(error.message).to.equal('Function error');
 			}
@@ -901,7 +561,9 @@ describe('Wifi Control Request', () => {
 			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
 			const operationName = 'Adding Wi-Fi network';
 			const expected = 'add Wi-Fi network';
+
 			const result = wifiCommands._getActionStringFromOp(operationName);
+
 			expect(result).to.equal(expected);
 		});
 	});
@@ -911,23 +573,18 @@ describe('Wifi Control Request', () => {
 		let operationCallback;
 
 		beforeEach(() => {
-			wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.device = {
+				isOpen: false,
+				platformId: 35,
+				_id: 'deviceId'
+			};
 			operationCallback = sinon.stub();
 		});
 
-		it('returns true if operationCallback returns a result with pass', async () => {
-			operationCallback.resolves({ pass: true });
-
-			const result = await wifiCommands._performWifiOperation('Test Operation', operationCallback);
-
-			expect(result).to.be.true;
-			expect(operationCallback).to.have.been.calledOnce;
-		});
-
-		it('returns replyObject if operationCallback returns a result with pass and replyObject', async () => {
+		it('returns true if operationCallback returns a replyObject', async () => {
 			const replyObject = { foo: 'bar' };
-
-			operationCallback.resolves({ pass: true, replyObject });
+			operationCallback.resolves(replyObject);
 
 			const result = await wifiCommands._performWifiOperation('Test Operation', operationCallback);
 
@@ -936,97 +593,69 @@ describe('Wifi Control Request', () => {
 		});
 
 		it('throws an error if operationCallback throws an error with message "Not supported"', async () => {
-			const error = new Error('Not supported');
-			operationCallback.rejects(error);
+			operationCallback.rejects(new Error('Random Error'));
 
+			let error;
 			try {
 				await wifiCommands._performWifiOperation('Test Operation', operationCallback);
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal('Unable to perform Test Operation: Not supported');
-				expect(error.helperString).to.be.undefined;
+			} catch (e) {
+				error = e;
 			}
 
-			expect(operationCallback).to.have.been.calledOnce;
-		});
-
-		it('throws an error if operationCallback throws an error other than "Not supported"', async () => {
-			const error = new Error('Some error');
-			operationCallback.rejects(error);
-
-			try {
-				await wifiCommands._performWifiOperation('Test Operation', operationCallback);
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal('Unable to perform Test Operation: Some error');
-				expect(error.helperString).to.be.undefined;
-			}
-
-			expect(operationCallback).to.have.callCount(NUM_TRIES);
-			expect(utilities.delay).to.have.callCount(NUM_TRIES - 1);
-		});
-
-		it('throws an error if operationCallback returns a result with error', async () => {
-			const error = new Error('Some error');
-			operationCallback.resolves({ error });
-
-			try {
-				await wifiCommands._performWifiOperation('Test Operation', operationCallback);
-				expect.fail('Expected an error to be thrown');
-			} catch (error) {
-				expect(error.message).to.equal('Unable to perform Test Operation: Some error');
-				expect(error.helperString).to.be.undefined;
-			}
-
-			expect(operationCallback).to.have.been.calledOnce;
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.equal('Unable to test Operation: Random Error\n');
 		});
 	});
 
 	describe('_handleDeviceError', () => {
 		it('returns an error with "Request timed out" message', () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
+			const wifiCommands = new WiFiCommands({ ui });
+
 			const error = wifiCommands._handleDeviceError('Request timed out', { action: 'join wi-fi network' });
+
 			expect(error).to.be.an.instanceOf(Error);
 			expect(error.message).to.equal('Unable to join wi-fi network: Request timed out');
 		});
 
 		it('returns an error with the appropriate message and helper string for "Invalid state" error', () => {
-			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const error = { name: 'Invalid state', message: 'Invalid state', cause: true };
+			const wifiCommands = new WiFiCommands({ ui });
+			const error = { name: 'Invalid state', message: 'Invalid state', cause: false };
+
 			const result = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
+
 			expect(result).to.be.an.instanceOf(Error);
-			expect(result.message).to.equal('Unable to join wi-fi network: Invalid state');
-			expect(result.helperString).to.equal('Please ensure your device is in listening mode (blinking blue) before attempting to configure Wi-Fi.');
+			expect(result.message).to.equal('Unable to join wi-fi network: Invalid state\nCheck that the device is connected to the network and try again.');
 		});
 
 		it('returns an error with the appropriate message and helper string for "Not found" error', () => {
 			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const error = { name: 'Not found', message: 'Not found', cause: true };
+			const error = { name: 'Not found', message: 'Not found', cause: false };
+
 			const result = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
+
 			expect(result).to.be.an.instanceOf(Error);
-			expect(result.message).to.equal('Unable to join wi-fi network: Not found');
-			expect(result.helperString).to.equal("If you are using a hidden network, please add the hidden network credentials first using 'particle wifi add'.");
+			expect(result.message).to.equal('Unable to join wi-fi network: Not found\nIf you are using a hidden network, please add the hidden network credentials first using \'particle wifi add\'.');
 		});
 
 		it('returns an error with the appropriate message and helper string for "Not supported" error', () => {
 			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const error = { name: 'Not supported', message: 'Not supported', cause: true };
-			const resultString = 'Unable to join wi-fi network: Not supported';
-			const helperString = `This feature is likely not supported on this firmware version.${os.EOL}Update to device-os 6.2.0 or use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi'.${os.EOL}`;
+			const error = { name: 'Not supported', message: 'Not supported', cause: false };
 
 			const resultError = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
-			
+
 			expect(resultError).to.be.an.instanceOf(Error);
-			expect(resultError.message).to.equal(resultString + helperString);
+			expect(resultError.message).to.include('Unable to join wi-fi network: Not supported\nThis feature is likely not supported on this firmware version.\nUpdate to device-os 6.2.0 or use \'particle wifi join --help\' to join a network.\nAlternatively, check \'particle serial wifi\'.\n');
 		});
 
 		it('returns an error without a helper string for unknown error messages', () => {
 			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
-			const error = { name: 'Unknown error', message: 'Unknown error', cause: true };
+			const error = { name: 'Unknown error', message: 'Unknown error', cause: false };
+
 			const result = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
+
 			expect(result).to.be.an.instanceOf(Error);
-			expect(result.message).to.equal('Unable to join wi-fi network: Unknown error');
-			expect(result.helperString).to.equal('');
+			expect(result.message).to.equal('Unable to join wi-fi network: Unknown error\n');
 		});
 	});
+
 });
