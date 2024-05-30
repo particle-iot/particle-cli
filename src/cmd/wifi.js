@@ -37,6 +37,8 @@ const securityMapping = {
 	'WPA2_WPA3_PSK': 'WPA2_WPA3_PSK',
 };
 
+const WifiSecurityConsolidatedForUserPrompt = ['NO_SECURITY', 'WEP', 'WPA_WPA2_PSK', 'WPA3_PSK'];
+
 module.exports = class WiFiCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
@@ -378,6 +380,11 @@ module.exports = class WiFiCommands extends CLICommandBase {
 
 	async getCurrentWifiNetwork() {
 		const parsedResult = await this._performWifiOperation('Fetching current Wi-Fi network', async () => {
+			const ifaces = await this.device.getNetworkInterfaceList();
+			const wifiIface = await this.device.getNetworkInterface({ index: ifaces.find(iface => iface.type === 'WIFI').index });
+			if (!wifiIface || !wifiIface.flagsStrings.includes('LOWER_UP')) {
+				throw new Error('No Wi-Fi network connected');
+			}
 			return this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
 		});
 
@@ -448,7 +455,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	async _promptForSecurityType() {
 		// TODO: Expand the list of security types to include more relevant options
 		// (e.g., WPA_AES for WPA_PSK) to assist users who may not know the specific associations
-		const securityChoices = Object.keys(WifiSecurityEnum);
+		const securityChoices = WifiSecurityConsolidatedForUserPrompt;
 		const question = [
 			{
 				type: 'list',

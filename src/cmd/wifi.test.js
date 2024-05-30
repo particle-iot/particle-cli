@@ -103,7 +103,7 @@ describe('Wifi Commands', () => {
 				filter: sinon.match.func
 			}]);
 			expect(ui.prompt.secondCall).to.have.been.calledWith([{
-				choices: ['NO_SECURITY', 'WEP', 'WPA_PSK', 'WPA2_PSK', 'WPA_WPA2_PSK', 'WPA3_PSK', 'WPA2_WPA3_PSK'],
+				choices: ['NO_SECURITY', 'WEP', 'WPA_WPA2_PSK', 'WPA3_PSK'],
 				type: 'list',
 				name: 'security',
 				message: 'Select the security type for your Wi-Fi network:'
