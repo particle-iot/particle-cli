@@ -11,12 +11,19 @@ const {
 	PATH_TMP_DIR,
 	PATH_PROJ_BLANK_INO,
 	PATH_PROJ_STROBY_INO,
-	PATH_FIXTURES_PKG_DIR
+	PATH_FIXTURES_PKG_DIR, PATH_REPO_DIR
 } = require('./env');
+const os = require('os');
 const cliBinPath = path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', 'particle');
 
+const builds = {
+	'darwin-x64': 'particle-cli',
+	'linux-x64': 'particle-cli',
+	'win32-x64': 'particle-cli.exe',
+	'darwin-arm64': 'particle-cli',
+};
 
-module.exports.run = (args = [], options = {}) => {
+module.exports.run = async (args = [], options = {}) => {
 	const opts = Object.assign({
 		cwd: PATH_TMP_DIR,
 		reject: false,
@@ -24,6 +31,10 @@ module.exports.run = (args = [], options = {}) => {
 	}, options);
 
 	args = Array.isArray(args) ? args : [args];
+	const osKey = `${os.platform()}-${os.arch()}`;
+	const cliName = builds[osKey];
+	const appName = os.platform() === 'win32' ? 'particle.exe' : 'particle';
+	await execa('cp', [path.join(PATH_REPO_DIR, 'build', cliName), path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', appName)]);
 	return execa(cliBinPath, [...args], opts);
 };
 
