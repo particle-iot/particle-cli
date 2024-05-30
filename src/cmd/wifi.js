@@ -338,16 +338,25 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		this.ui.stdout.write(`Wi-Fi networks cleared successfully.${os.EOL}`);
 	}
 
+	async _getCurrentNetwork() {
+		let currentNetwork;
+		const ifaces = await this.device.getNetworkInterfaceList();
+		const wifiIface = await this.device.getNetworkInterface({ index: ifaces.find(iface => iface.type === 'WIFI').index });
+		if (wifiIface && wifiIface.flagsStrings.includes('LOWER_UP')) {
+            try {
+			    currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
+            } catch (error) {
+                // Ignore error if the device does not support the getCurrentWifiNetwork command
+            }
+		}
+		return currentNetwork;
+	}
+
 	async listWifi() {
 		let list, currentNetwork;
 		await this._performWifiOperation('Listing Wi-Fi networks', async () => {
 			list = await this.device.listWifiNetworks({ timeout: REQUEST_TIMEOUT });
-			try {
-				currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
-			} catch (error) {
-				// Device-OS returns 'Invalid state' error if device is still trying to connect to wifi
-				// Device-OS also returns 'Not Supported' error (cause yet to be figured)
-			}
+			currentNetwork = await this._getCurrentNetwork();
 		});
 
 		this.ui.stdout.write(`List of Wi-Fi networks on the device:${os.EOL}${os.EOL}`);
@@ -380,12 +389,11 @@ module.exports = class WiFiCommands extends CLICommandBase {
 
 	async getCurrentWifiNetwork() {
 		const parsedResult = await this._performWifiOperation('Fetching current Wi-Fi network', async () => {
-			const ifaces = await this.device.getNetworkInterfaceList();
-			const wifiIface = await this.device.getNetworkInterface({ index: ifaces.find(iface => iface.type === 'WIFI').index });
-			if (!wifiIface || !wifiIface.flagsStrings.includes('LOWER_UP')) {
+			const currentNetwork = await this._getCurrentNetwork();
+			if (!currentNetwork) {
 				throw new Error('No Wi-Fi network connected');
 			}
-			return this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
+			return currentNetwork;
 		});
 
 		this.ui.stdout.write(`Current Wi-Fi network:${os.EOL}${os.EOL}`);
