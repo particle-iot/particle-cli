@@ -66,13 +66,13 @@ module.exports = ({ commandProcessor, root }) => {
 		`)
 	});
 
-	commandProcessor.createCommand(wifi, 'clear', 'Clears the list of wifi networks on your device', {
+	commandProcessor.createCommand(wifi, 'clear', 'Clears the list of Wi-Fi networks on your device', {
 		handler: () => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().clearNetworks();
 		},
 		examples: {
-			'$0 $command': 'Clears the list of wifi networks on your device',
+			'$0 $command': 'Clears the list of Wi-Fi networks on your device',
 		}
 	});
 
