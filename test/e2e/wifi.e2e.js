@@ -7,7 +7,6 @@ const {
 
 
 describe('Wi-Fi Commands [@device,@wifi]', () => {
-
 	const help = [
 		'Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).',
 		'Usage: particle wifi <command>',
@@ -27,8 +26,15 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		''
 	];
 
+
+	before(async () => {
+		await cli.setTestProfileAndLogin();
+	});
+
 	after(async () => {
 		await cli.run(['usb', 'setup-done']);
+		await cli.logout();
+		await cli.setDefaultProfile();
 	});
 
 	it('Shows `help` content', async () => {
