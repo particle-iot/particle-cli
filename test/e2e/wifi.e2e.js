@@ -67,7 +67,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		it('Joins a Wi-Fi network', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--file', WIFI_CREDS_FILE]);
 
-			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured and joined successfully.`);
+			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured successfully. Attempting to join...\nUse particle wifi current to check the current network.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -78,7 +78,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--ssid', WIFI_SSID]);
 
 			expect(listStdout).to.include(WIFI_SSID);
-			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' joined successfully.`);
+			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured successfully. Attemping to join...\nUse \'particle wifi current\' to check the current network.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
