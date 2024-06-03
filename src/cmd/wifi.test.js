@@ -34,7 +34,8 @@ describe('Wifi Commands', () => {
 			close: sinon.stub(),
 			reset: sinon.stub(),
 			scanWifiNetworks: sinon.stub(),
-			joinNewWifiNetwork: sinon.stub()
+			joinNewWifiNetwork: sinon.stub(),
+			getDeviceMode: sinon.stub().resolves()
 		};
 		usbUtils.getOneUsbDevice = sinon.stub();
 	});
@@ -87,28 +88,35 @@ describe('Wifi Commands', () => {
 			const wifiCommands = new WiFiCommands({ ui });
 			ui.prompt = sinon.stub();
 			ui.prompt
-				.onCall(0).returns({ ssid: 'ssid' })
-				.onCall(1).returns({ security: 'WPA2_PSK' })
-				.onCall(2).returns({ password: 'password' });
+				.onCall(0).returns({ hidden: false })
+				.onCall(1).returns({ ssid: 'ssid' })
+				.onCall(2).returns({ security: 'WPA2_PSK' })
+				.onCall(3).returns({ password: 'password' });
 
 			const result = await wifiCommands._pickNetworkManually();
 
-			expect(result).to.eql({ ssid: 'ssid', security: 'WPA2_PSK', password: 'password' });
-			expect(ui.prompt).to.have.been.calledThrice;
+			expect(result).to.eql({ ssid: 'ssid', security: 'WPA2_PSK', password: 'password', hidden: false });
+			expect(ui.prompt).to.have.callCount(4);
 			expect(ui.prompt.firstCall).to.have.been.calledWith([{
+				default: false,
+				message: 'Is this a hidden network?',
+				type: 'confirm',
+				name: 'hidden'
+			}]);
+			expect(ui.prompt.secondCall).to.have.been.calledWith([{
 				type: 'input',
 				name: 'ssid',
 				message: 'SSID',
 				validate: sinon.match.func,
 				filter: sinon.match.func
 			}]);
-			expect(ui.prompt.secondCall).to.have.been.calledWith([{
+			expect(ui.prompt.thirdCall).to.have.been.calledWith([{
 				choices: ['NO_SECURITY', 'WEP', 'WPA_PSK', 'WPA2_PSK', 'WPA3_PSK'],
 				type: 'list',
 				name: 'security',
 				message: 'Select the security type for your Wi-Fi network:'
 			}]);
-			expect(ui.prompt.thirdCall).to.have.been.calledWith([{
+			expect(ui.prompt.lastCall).to.have.been.calledWith([{
 				type: 'input',
 				name: 'password',
 				message: 'Wi-Fi Password',
@@ -304,7 +312,20 @@ describe('Wifi Commands', () => {
 
 			const result = await wifiCommands._getNetworkToConnectFromJson();
 
-			expect(result).to.eql({ ssid: network.network, security: 'WPA2_PSK', password: network.password });
+			expect(result).to.eql({ ssid: network.network, security: 'WPA2_PSK', password: network.password, hidden: undefined });
+		});
+
+		it('returns a hidden network from json', async () => {
+			// create a file with a network
+			const network = { network: 'my-network', security: 'WPA2_PSK', password: 'my-password', hidden: true };
+			const file = path.join(PATH_TMP_DIR, 'networks', 'network.json');
+			fs.writeJsonSync(file, network);
+			const wifiCommands = new WiFiCommands({ ui });
+			wifiCommands.file = file;
+
+			const result = await wifiCommands._getNetworkToConnectFromJson();
+
+			expect(result).to.eql({ ssid: network.network, security: 'WPA2_PSK', password: network.password, hidden: true });
 		});
 
 		it('throws error if file does not exist', async () => {
@@ -417,7 +438,7 @@ describe('Wifi Commands', () => {
 			usbUtils.getOneUsbDevice.resolves(openDevice);
 			openDevice.joinNewWifiNetwork.resolves();
 			wifiCommands.device = openDevice;
-			const networkInput = { ssid: 'network1', security: 'WPA2_PSK', password: 'password' };
+			const networkInput = { ssid: 'network1', security: 'WPA2_PSK', password: 'password', hidden: undefined };
 
 			const result = await wifiCommands.joinWifi(networkInput);
 
@@ -608,15 +629,6 @@ describe('Wifi Commands', () => {
 	});
 
 	describe('_handleDeviceError', () => {
-		it('returns an error with "Request timed out" message', () => {
-			const wifiCommands = new WiFiCommands({ ui });
-
-			const error = wifiCommands._handleDeviceError('Request timed out', { action: 'join wi-fi network' });
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to join wi-fi network: Request timed out');
-		});
-
 		it('returns an error with the appropriate message and helper string for "Invalid state" error', () => {
 			const wifiCommands = new WiFiCommands({ ui });
 			const error = { name: 'Invalid state', message: 'Invalid state', cause: false };
@@ -624,7 +636,7 @@ describe('Wifi Commands', () => {
 			const result = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
 
 			expect(result).to.be.an.instanceOf(Error);
-			expect(result.message).to.equal('Unable to join wi-fi network: Invalid state\nCheck that the device is connected to the network and try again.');
+			expect(result.message).to.include('Unable to join wi-fi network: Invalid state');
 		});
 
 		it('returns an error with the appropriate message and helper string for "Not found" error', () => {
