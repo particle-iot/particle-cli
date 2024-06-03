@@ -3,7 +3,7 @@ const unindent = require('../lib/unindent');
 module.exports = ({ commandProcessor, root }) => {
 	const wifi = commandProcessor.createCategory(root, 'wifi', 'Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).');
 
-	commandProcessor.createCommand(wifi, 'add', 'Adds a WiFi network to your device', {
+	commandProcessor.createCommand(wifi, 'add', 'Adds a Wi-Fi network to your device', {
 		options: Object.assign({
 			'file': {
 				description: 'Take the credentials from a JSON file instead of prompting for them'
@@ -22,15 +22,16 @@ module.exports = ({ commandProcessor, root }) => {
 			{
 			  "network": "my_ssid",
 			  "security": "WPA2_PSK",
-			  "password": "my_password"
+			  "password": "my_password",
+			  "hidden": false
 			}
 			
-			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK, WPA_WPA2_PSK, WPA2_WPA3_PSK.
+			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK.
 			Enterprise networks are not supported.
 		`)
 	});
 
-	commandProcessor.createCommand(wifi, 'join', 'Joins a wifi network', {
+	commandProcessor.createCommand(wifi, 'join', 'Joins a Wi-Fi network', {
 		options: Object.assign({
 			'file': {
 				description: 'Take the credentials from a JSON file instead of prompting for them'
@@ -56,10 +57,11 @@ module.exports = ({ commandProcessor, root }) => {
 			{
 			  "network": "my_ssid",
 			  "security": "WPA2_PSK",
-			  "password": "my_password"
+			  "password": "my_password",
+			  "hidden": false
 			}
 			
-			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK, WPA_WPA2_PSK, WPA2_WPA3_PSK.
+			The security property can be NONE, WEP, WPA_PSK, WPA2_PSK, WPA3_PSK.
 			Enterprise networks are not supported.
 		`)
 	});
@@ -74,7 +76,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(wifi, 'list', 'Lists the wifi networks on your device', {
+	commandProcessor.createCommand(wifi, 'list', 'Lists the Wi-Fi networks on your device', {
 		handler: () => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().listNetworks();
@@ -84,7 +86,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(wifi, 'remove', 'Removes a wifi network from the device', {
+	commandProcessor.createCommand(wifi, 'remove', 'Removes a Wi-Fi network from the device', {
 		options: Object.assign({
 			'ssid': {
 				description: 'The name of the network to remove'
@@ -99,16 +101,16 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(wifi, 'current', 'Gets the current wifi network', {
+	commandProcessor.createCommand(wifi, 'current', 'Gets the current Wi-Fi network', {
 		handler: () => {
 			const WiFiCommands = require('../cmd/wifi');
 			return new WiFiCommands().getCurrentNetwork();
 		},
 		examples: {
-			'$0 $command ssid': 'Gets the wifi network that the device is currently connected to',
+			'$0 $command ssid': 'Gets the Wi-Fi network that the device is currently connected to',
 		}
 	});
-	
+
 	return wifi;
 };
 

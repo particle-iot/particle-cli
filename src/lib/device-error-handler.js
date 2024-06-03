@@ -16,6 +16,7 @@ const deviceControlError = {
 	'LIBUSB_ERROR_OTHER': 'Other error',
 };
 
+
 module.exports = {
 	deviceControlError
 };

@@ -37,7 +37,6 @@ const securityMapping = {
 	'WPA2_WPA3_PSK': 'WPA2_WPA3_PSK',
 };
 
-// TODO: Add this to the help
 const WifiSecurityConsolidatedForUserPrompt = ['NO_SECURITY', 'WEP', 'WPA_PSK', 'WPA2_PSK', 'WPA3_PSK'];
 
 module.exports = class WiFiCommands extends CLICommandBase {
@@ -219,7 +218,6 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	}
 
 	async _deviceScanNetworks() {
-		// undefined is returned if the device is reset etccc?
 		this.newSpin('Scanning for Wi-Fi networks').start();
 		let attempts = NUM_TRIES;
 		let lastError = null;
@@ -360,7 +358,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 			}
 		}
 
-		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attemping to join...${os.EOL}Use 'particle wifi current' to check the current network.${os.EOL}`);
+		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attemping to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
 	}
 
 	async clearWifi() {

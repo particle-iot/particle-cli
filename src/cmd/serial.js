@@ -260,7 +260,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Obtain system firmware version
 		fwVer = device.firmwareVersion;
-		
 
 		// If the device is a cellular device, obtain imei and iccid
 
@@ -541,7 +540,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			this.ui.stdout.write(`${os.EOL}`);
 		}
 
-		// configure serial
+		// configure Wi-Fi via serial interface
 		if (file){
 			return this._configWifiFromFile(deviceFromSerialPort, file);
 		} else {

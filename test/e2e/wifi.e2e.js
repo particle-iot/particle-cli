@@ -14,12 +14,12 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 		'Help:  particle help wifi <command>',
 		'',
 		'Commands:',
-		'  add      Adds a WiFi network to your device',
-		'  join     Joins a wifi network',
-		'  clear    Clears the list of wifi networks on your device',
-		'  list     Lists the wifi networks on your device',
-		'  remove   Removes a wifi network from the device',
-		'  current  Gets the current wifi network',
+		'  add      Adds a Wi-Fi network to your device',
+		'  join     Joins a Wi-Fi network',
+		'  clear    Clears the list of Wi-Fi networks on your device',
+		'  list     Lists the Wi-Fi networks on your device',
+		'  remove   Removes a Wi-Fi network from the device',
+		'  current  Gets the current Wi-Fi network',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
@@ -78,7 +78,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'join', '--ssid', WIFI_SSID]);
 
 			expect(listStdout).to.include(WIFI_SSID);
-			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured successfully. Attemping to join...\nUse \'particle wifi current\' to check the current network.`);
+			expect(stdout).to.include(`Wi-Fi network '${WIFI_SSID}' configured successfully. Attemping to join...\nUse particle wifi current to check the current network.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});

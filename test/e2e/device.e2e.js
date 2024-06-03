@@ -6,7 +6,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Device Commands [@device]', () => { // [@device,wifi]???
+describe('Device Commands [@device]', () => {
 	const help = [
 		'Manipulate a device',
 		'Usage: particle device <command>',
