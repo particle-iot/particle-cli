@@ -5,6 +5,7 @@ const utilities = require('../lib/utilities');
 const fs = require('fs-extra');
 const path = require('path');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
+const os = require('os');
 
 describe('Wifi Commands', () => {
 	let ui, newSpin, stopSpin;
@@ -462,7 +463,7 @@ describe('Wifi Commands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to join Wi-Fi network \'network1\': Join failed\n');
+			expect(error.message).to.equal(`Unable to join Wi-Fi network 'network1': Join failed${os.EOL}`);
 		});
 
 	});
@@ -527,7 +528,7 @@ describe('Wifi Commands', () => {
 			try {
 				await wifiCommands._withDevice(fn);
 			} catch (error) {
-				expect(error.message).to.equal('The \'particle wifi\' commands are not supported on this device (deviceId / photon).\nUse \'particle serial wifi\' instead.\n');
+				expect(error.message).to.equal(`The 'particle wifi' commands are not supported on this device (deviceId / photon).${os.EOL}Use 'particle serial wifi' instead.${os.EOL}`);
 			}
 		});
 
@@ -646,7 +647,7 @@ describe('Wifi Commands', () => {
 			const result = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
 
 			expect(result).to.be.an.instanceOf(Error);
-			expect(result.message).to.equal('Unable to join wi-fi network: Not found\nIf you are using a hidden network, please add the hidden network credentials first using \'particle wifi add\'.');
+			expect(result.message).to.equal(`Unable to join wi-fi network: Not found${os.EOL}If you are using a hidden network, please add the hidden network credentials first using 'particle wifi add'.`);
 		});
 
 		it('returns an error with the appropriate message and helper string for "Not supported" error', () => {
@@ -656,7 +657,7 @@ describe('Wifi Commands', () => {
 			const resultError = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
 
 			expect(resultError).to.be.an.instanceOf(Error);
-			expect(resultError.message).to.include('Unable to join wi-fi network: Not supported\nThis feature is likely not supported on this firmware version.\nUpdate to device-os 6.2.0 or use \'particle wifi join --help\' to join a network.\nAlternatively, check \'particle serial wifi\'.\n');
+			expect(resultError.message).to.include(`Unable to join wi-fi network: Not supported${os.EOL}This feature is likely not supported on this firmware version.\nUpdate to device-os 6.2.0 or use 'particle wifi join --help' to join a network.\nAlternatively, check 'particle serial wifi'.${os.EOL}`);
 		});
 
 		it('returns an error without a helper string for unknown error messages', () => {
@@ -666,7 +667,7 @@ describe('Wifi Commands', () => {
 			const result = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
 
 			expect(result).to.be.an.instanceOf(Error);
-			expect(result.message).to.equal('Unable to join wi-fi network: Unknown error\n');
+			expect(result.message).to.equal(`Unable to join wi-fi network: Unknown error${os.EOL}`);
 		});
 	});
 
