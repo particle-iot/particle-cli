@@ -204,7 +204,7 @@ describe('Wifi Commands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.eql('Unable to scan for Wi-Fi networks: error\n');
+			expect(error.message).to.eql(`Unable to scan for Wi-Fi networks: error${os.EOL}`);
 			expect(utilities.delay).to.have.been.calledWith(1000);
 		});
 
@@ -514,7 +514,7 @@ describe('Wifi Commands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('This device (deviceId / boron) does not support Wi-Fi.\n');
+			expect(error.message).to.equal(`This device (deviceId / boron) does not support Wi-Fi.${os.EOL}`);
 		});
 
 		it('throws an error if the device does not support the "particle wifi" commands', async () => {
@@ -625,7 +625,7 @@ describe('Wifi Commands', () => {
 			}
 
 			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal('Unable to test Operation: Random Error\n');
+			expect(error.message).to.equal(`Unable to test Operation: Random Error${os.EOL}`);
 		});
 	});
 
@@ -657,7 +657,7 @@ describe('Wifi Commands', () => {
 			const resultError = wifiCommands._handleDeviceError(error, { action: 'join wi-fi network' });
 
 			expect(resultError).to.be.an.instanceOf(Error);
-			expect(resultError.message).to.include(`Unable to join wi-fi network: Not supported${os.EOL}This feature is likely not supported on this firmware version.\nUpdate to device-os 6.2.0 or use 'particle wifi join --help' to join a network.\nAlternatively, check 'particle serial wifi'.${os.EOL}`);
+			expect(resultError.message).to.include(`Unable to join wi-fi network: Not supported${os.EOL}This feature is likely not supported on this firmware version.${os.EOL}Update to device-os 6.2.0 or use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi'.${os.EOL}`);
 		});
 
 		it('returns an error without a helper string for unknown error messages', () => {
