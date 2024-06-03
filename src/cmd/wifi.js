@@ -37,7 +37,8 @@ const securityMapping = {
 	'WPA2_WPA3_PSK': 'WPA2_WPA3_PSK',
 };
 
-const WifiSecurityConsolidatedForUserPrompt = ['NO_SECURITY', 'WEP', 'WPA_WPA2_PSK', 'WPA3_PSK'];
+// TODO: Add this to the help
+const WifiSecurityConsolidatedForUserPrompt = ['NO_SECURITY', 'WEP', 'WPA_PSK', 'WPA2_PSK', 'WPA3_PSK'];
 
 module.exports = class WiFiCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -137,13 +138,13 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	}
 
 	async _getNetworkToConnectFromJson() {
-		const { network, security, password } = await fs.readJSON(this.file);
+		const { network, security, password, hidden } = await fs.readJSON(this.file);
 		if (!network) {
 			const error = new Error('No network name found in the file');
 			error.isUsageError = true;
 			throw error;
 		}
-		return { ssid: network, security: this._convertToKnownSecType(security), password };
+		return { ssid: network, security: this._convertToKnownSecType(security), password, hidden };
 	}
 
 	async _getNetworkToConnect({ prompt = true } = { }) {
@@ -291,6 +292,10 @@ module.exports = class WiFiCommands extends CLICommandBase {
 					this.stopSpin();
 					throw this._handleDeviceError(error, { action: this._getActionStringFromOp(operationName) });
 				}
+				if ((error.message === 'Invalid argument' || error.message === 'Invalid state') && operationName.toLowerCase().includes('join')) {
+					this.stopSpin();
+					throw this._handleDeviceError(error, { action: this._getActionStringFromOp(operationName) });
+				}
 				lastError = error;
 			}
 			await utilities.delay(TIME_BETWEEN_RETRIES);
@@ -304,9 +309,9 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		return operationName.replace(/^\w+/, match => match.toLowerCase().replace(/ing$/, ''));
 	}
 
-	async addWifi({ ssid, security, password }) {
+	async addWifi({ ssid, security, password, hidden }) {
 		await this._performWifiOperation(`Adding Wi-Fi network '${ssid}'`, async () => {
-			await this.device.setWifiCredentials({ ssid, security, password }, { timeout: REQUEST_TIMEOUT });
+			await this.device.setWifiCredentials({ ssid, security, password, hidden }, { timeout: REQUEST_TIMEOUT });
 		});
 
 		this.ui.stdout.write(`Wi-Fi network '${ssid}' added successfully.${os.EOL}`);
@@ -314,20 +319,48 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		this.ui.stdout.write(os.EOL);
 	}
 
-	async joinWifi({ ssid, security, password }) {
+	async joinWifi({ ssid, security, password, hidden }) {
+		let mode;
 		await this._performWifiOperation(`Joining Wi-Fi network '${ssid}'`, async () => {
-			await this.device.joinNewWifiNetwork({ ssid, security, password }, { timeout: JOIN_NETWORK_TIMEOUT });
+			mode = await this.device.getDeviceMode({ timeout: 10 * 1000 });
+			await this.device.joinNewWifiNetwork({ ssid, security, password, hidden }, { timeout: JOIN_NETWORK_TIMEOUT });
 		});
 
-		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured and joined successfully.${os.EOL}`);
+		// Device does not exit listening mode after joining a network.
+		// Until the behavior is fixed, we will exit listening mode manually.
+		if (mode === 'LISTENING') {
+			this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
+			try {
+				await this.device.leaveListeningMode();
+			} catch (error) {
+				// Ignore error
+				// It's not critical that the device does not exit listening mode
+			}
+		}
+
+		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attempting to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
 	}
 
 	async joinKnownWifi(ssid) {
+		let mode;
 		await this._performWifiOperation(`Joining a known Wi-Fi network '${ssid}'`, async () => {
+			mode = await this.device.getDeviceMode({ timeout: 10 * 1000 });
 			await this.device.joinKnownWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
 		});
 
-		this.ui.stdout.write(`Wi-Fi network '${ssid}' joined successfully.${os.EOL}`);
+		// Device does not exit listening mode after joining a network.
+		// Until the behavior is fixed, we will exit listening mode manually.
+		if (mode === 'LISTENING') {
+			this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
+			try {
+				await this.device.leaveListeningMode();
+			} catch (error) {
+				// Ignore error
+				// It's not critical that the device does not exit listening mode
+			}
+		}
+
+		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attemping to join...${os.EOL}Use 'particle wifi current' to check the current network.${os.EOL}`);
 	}
 
 	async clearWifi() {
@@ -343,11 +376,11 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		const ifaces = await this.device.getNetworkInterfaceList();
 		const wifiIface = await this.device.getNetworkInterface({ index: ifaces.find(iface => iface.type === 'WIFI').index });
 		if (wifiIface && wifiIface.flagsStrings.includes('LOWER_UP')) {
-            try {
-			    currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
-            } catch (error) {
-                // Ignore error if the device does not support the getCurrentWifiNetwork command
-            }
+			try {
+				currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
+			} catch (error) {
+				// Ignore error if the device does not support the getCurrentWifiNetwork command
+			}
 		}
 		return currentNetwork;
 	}
@@ -384,6 +417,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		});
 
 		this.ui.stdout.write(`Wi-Fi network ${ssid} removed from device's list successfully.${os.EOL}`);
+		this.ui.stdout.write(`To disconnect from the network, run ${chalk.yellow('particle usb reset')}.${os.EOL}`);
 		this.ui.stdout.write(os.EOL);
 	}
 
@@ -404,13 +438,14 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	}
 
 	async _pickNetworkManually() {
+		const hidden = await this._promptForHiddenNetwork();
 		const ssid = await this._promptForSSID();
 		const security = await this._promptForSecurityType();
 		let password = null;
 		if (security !== 'NO_SECURITY') {
 			password = await this._promptForPassword();
 		}
-		return { ssid, security: this._convertToKnownSecType(security), password };
+		return { ssid, security: this._convertToKnownSecType(security), password, hidden };
 	}
 
 	// For Gen 3 and above, ensure that the security string ends with `PSK`.
@@ -424,6 +459,17 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		} catch (error) {
 			throw new Error(`Unknown security type: ${security} - ${error.message}`);
 		}
+	}
+
+	async _promptForHiddenNetwork() {
+		const question = {
+			type: 'confirm',
+			name: 'hidden',
+			message: 'Is this a hidden network?',
+			default: false
+		};
+		const ans = await this.ui.prompt([question]);
+		return ans.hidden;
 	}
 
 	async _promptForSSID() {
@@ -492,23 +538,37 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	// TODO: Fix error handling
 	// Figure out a way to differentiate between USB errors and device errors and handle them accordingly
 	_handleDeviceError(_error, { action } = { }) {
-		if (typeof _error === 'string' && _error.startsWith('Request timed out')) {
-			return new Error(`Unable to ${action}: Request timed out`);
-		}
 		const error = _error;
 		if (_error.cause) {
 			error.message = deviceControlError[error.name];
 		}
+
 		let helperString = '';
+
 		switch (error.message) {
+			case 'Request timeout':
+				if (action.toLowerCase().includes('join')) {
+					helperString = 'Please check the network credentials.';
+				}
+				break;
 			case 'Invalid state':
-				helperString = 'Check that the device is connected to the network and try again.';
+				if (action.toLowerCase().includes('fetch')) {
+					helperString = 'Check that the device is connected to the network.';
+				}
+				if (action.toLowerCase().includes('join')) {
+					helperString = `${os.EOL}1. Please check the network credentials.\
+									${os.EOL}2. Please verify that the Access Point is in range.\
+									${os.EOL}3. If you are using a hidden network, please add the hidden network credentials first using 'particle wifi add'.${os.EOL}`;
+				}
 				break;
 			case 'Not found':
 				helperString = 'If you are using a hidden network, please add the hidden network credentials first using \'particle wifi add\'.';
 				break;
 			case 'Not supported':
 				helperString = `This feature is likely not supported on this firmware version.${os.EOL}Update to device-os 6.2.0 or use 'particle wifi join --help' to join a network.${os.EOL}Alternatively, check 'particle serial wifi'.${os.EOL}`;
+				break;
+			case 'Invalid argument':
+				helperString = 'Please check the network credentials.';
 				break;
 			default:
 				break;
