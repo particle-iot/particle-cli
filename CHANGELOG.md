@@ -1,5 +1,11 @@
 # Changelog
 
+# 3.24.0 - Jun 4 2024
+* Introduce new wifi setup process using `particle wifi` commands
+* Add `particle usb network-interfaces` command
+* Remove `--private` and `--public` option from `publish` args
+* Handle failures for invalid CLI commands
+
 # 3.23.6 - May 15 2024
 * Fix ci deployment
 
