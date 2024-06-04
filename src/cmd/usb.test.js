@@ -1,4 +1,5 @@
 const { expect } = require('../../test/setup');
+const stripAnsi = require('strip-ansi');
 const UsbCommands = require('./usb');
 
 
@@ -106,7 +107,7 @@ describe('USB Commands', () => {
 			});
 			const res = usbCommands._formatNetworkIfaceOutput(nwInfo, 'p2', '0123456789abcdef');
 
-			expect(res).to.eql(expectedOutput);
+			expect(res.map(stripAnsi)).to.eql(expectedOutput);
 		});
 	});
 });
