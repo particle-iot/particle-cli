@@ -436,13 +436,13 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	}
 
 	async _pickNetworkManually() {
-		const hidden = await this._promptForHiddenNetwork();
 		const ssid = await this._promptForSSID();
 		const security = await this._promptForSecurityType();
 		let password = null;
 		if (security !== 'NO_SECURITY') {
 			password = await this._promptForPassword();
 		}
+		const hidden = await this._promptForHiddenNetwork();
 		return { ssid, security: this._convertToKnownSecType(security), password, hidden };
 	}
 

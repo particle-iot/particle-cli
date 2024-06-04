@@ -89,39 +89,39 @@ describe('Wifi Commands', () => {
 			const wifiCommands = new WiFiCommands({ ui });
 			ui.prompt = sinon.stub();
 			ui.prompt
-				.onCall(0).returns({ hidden: false })
-				.onCall(1).returns({ ssid: 'ssid' })
-				.onCall(2).returns({ security: 'WPA2_PSK' })
-				.onCall(3).returns({ password: 'password' });
+				.onCall(0).returns({ ssid: 'ssid' })
+				.onCall(1).returns({ security: 'WPA2_PSK' })
+				.onCall(2).returns({ password: 'password' })
+				.onCall(3).returns({ hidden: false });
 
 			const result = await wifiCommands._pickNetworkManually();
 
 			expect(result).to.eql({ ssid: 'ssid', security: 'WPA2_PSK', password: 'password', hidden: false });
 			expect(ui.prompt).to.have.callCount(4);
 			expect(ui.prompt.firstCall).to.have.been.calledWith([{
-				default: false,
-				message: 'Is this a hidden network?',
-				type: 'confirm',
-				name: 'hidden'
-			}]);
-			expect(ui.prompt.secondCall).to.have.been.calledWith([{
 				type: 'input',
 				name: 'ssid',
 				message: 'SSID',
 				validate: sinon.match.func,
 				filter: sinon.match.func
 			}]);
-			expect(ui.prompt.thirdCall).to.have.been.calledWith([{
+			expect(ui.prompt.secondCall).to.have.been.calledWith([{
 				choices: ['NO_SECURITY', 'WEP', 'WPA_PSK', 'WPA2_PSK', 'WPA3_PSK'],
 				type: 'list',
 				name: 'security',
 				message: 'Select the security type for your Wi-Fi network:'
 			}]);
-			expect(ui.prompt.lastCall).to.have.been.calledWith([{
+			expect(ui.prompt.thirdCall).to.have.been.calledWith([{
 				type: 'input',
 				name: 'password',
 				message: 'Wi-Fi Password',
 				validate: sinon.match.func
+			}]);
+			expect(ui.prompt.lastCall).to.have.been.calledWith([{
+				default: false,
+				message: 'Is this a hidden network?',
+				type: 'confirm',
+				name: 'hidden'
 			}]);
 		});
 	});
