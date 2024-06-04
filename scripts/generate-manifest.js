@@ -93,8 +93,8 @@ async function generateInstallerManifest(version, buildDir) {
 		version: version,
 		platforms: {
 			win32: {
-				url: `${baseUrl}/release/installer/${version}/win32/ParticleCLISetup.exe`,
-				manifest: `${baseUrl}/release/manifest-${version}.json`
+				url: `${baseUrl}/installer/${version}/win32/ParticleCLISetup.exe`,
+				manifest: `${baseUrl}/manifest-${version}.json`
 			}
 		}
 	};
