@@ -20,7 +20,6 @@ const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
-const WifiControlRequest = require('../lib/wifi-control-request');
 const semver = require('semver');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
@@ -262,7 +261,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 		// Obtain system firmware version
 		fwVer = device.firmwareVersion;
 
-
 		// If the device is a cellular device, obtain imei and iccid
 
 		const features = platformForId(device.platformId).features;
@@ -294,7 +292,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 			}
 		}
-
 
 		// Print whatever was obtained from the device
 		this._printIdentifyInfo({
@@ -532,25 +529,23 @@ module.exports = class SerialCommand extends CLICommandBase {
 			throw new VError('The device does not support Wi-Fi');
 		}
 
-		// if device's firmware version is less than 6.0.0, use the old way
 		const fwVer = device.firmwareVersion;
-		if (semver.lt(fwVer, '6.0.0')) {
-			// configure serial
-			if (file){
-				return this._configWifiFromFile(deviceFromSerialPort, file);
-			} else {
-				return this.promptWifiScan(deviceFromSerialPort);
-			}
-		} else {
-			const wifiControlRequest = new WifiControlRequest(deviceFromSerialPort.deviceId, {
-				file,
-				ui: this.ui,
-				newSpin: this.newSpin,
-				stopSpin: this.stopSpin
-			});
-			await wifiControlRequest.configureWifi();
+		await device.close();
+
+		// XXX: Firmware version TBD
+		if (semver.gte(fwVer, '6.2.0')) {
+			this.ui.stdout.write(`${chalk.yellow('[Recommendation]')}${os.EOL}`);
+			this.ui.stdout.write(`${chalk.yellow('Use the improved Wi-Fi configuration commands for this device-os version (>= 6.2.0)')}${os.EOL}`);
+			this.ui.stdout.write(`${chalk.yellow('See \'particle wifi --help\' for more details on available commands')}${os.EOL}`);
+			this.ui.stdout.write(`${os.EOL}`);
 		}
 
+		// configure Wi-Fi via serial interface
+		if (file){
+			return this._configWifiFromFile(deviceFromSerialPort, file);
+		} else {
+			return this.promptWifiScan(deviceFromSerialPort);
+		}
 	}
 
 	_configWifiFromFile(device, filename){

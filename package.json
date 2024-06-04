@@ -70,7 +70,7 @@
     "particle-api-js": "^10.3.0",
     "particle-commands": "^1.0.1",
     "particle-library-manager": "^0.1.15",
-    "particle-usb": "^2.9.0",
+    "particle-usb": "^3.1.0",
     "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",
@@ -98,7 +98,8 @@
     "pkg": "^5.8.1",
     "proxyquire": "^2.1.3",
     "sinon": "^7.5.0",
-    "sinon-chai": "^3.3.0"
+    "sinon-chai": "^3.3.0",
+    "strip-ansi": "^6.0.1"
   },
   "engines": {
     "node": ">=12",
@@ -141,6 +142,7 @@
     "test:e2e": "npm run build -- --target host && mocha 'test/{,!(__fixtures__)/**}/*.e2e.js' --timeout 120000 --exit",
     "test:e2e:ci": "npm run test:e2e:no-device -- --forbid-only",
     "test:e2e:no-device": "npm run test:e2e -- --grep @device --invert",
+    "test:e2e:wifi": "npm run test:e2e -- --grep @device,@wifi",
     "test:e2e:watch": "npm run test:e2e -- --watch --watch-extensions js,json",
     "test:e2e:inspect": "npm test:e2e -- --inspect-brk",
     "test:e2e:silent": "PARTICLE_NOOP=$(npm run test:e2e:ci)",

@@ -15,7 +15,6 @@ const {
 } = require('./env');
 const cliBinPath = path.join(PATH_FIXTURES_PKG_DIR, 'node_modules', '.bin', 'particle');
 
-
 module.exports.run = (args = [], options = {}) => {
 	const opts = Object.assign({
 		cwd: PATH_TMP_DIR,

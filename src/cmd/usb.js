@@ -1,7 +1,7 @@
 const { spin } = require('../app/ui');
 const { delay, asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError, forEachUsbDevice } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
@@ -109,7 +109,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	startListening(args) {
-		return this._forEachUsbDevice(args, usbDevice => {
+		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.enterListeningMode();
 		})
 			.then(() => {
@@ -118,7 +118,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	stopListening(args) {
-		return this._forEachUsbDevice(args, usbDevice => {
+		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.leaveListeningMode();
 		})
 			.then(() => {
@@ -127,7 +127,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	safeMode(args) {
-		return this._forEachUsbDevice(args, usbDevice => {
+		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.enterSafeMode();
 		})
 			.then(() => {
@@ -136,7 +136,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	dfu(args) {
-		return this._forEachUsbDevice(args, usbDevice => {
+		return forEachUsbDevice(args, usbDevice => {
 			if (!usbDevice.isInDfuMode) {
 				return usbDevice.enterDfuMode();
 			}
@@ -147,7 +147,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	reset(args) {
-		return this._forEachUsbDevice(args, usbDevice => {
+		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.reset();
 		}, { dfuMode: true })
 			.then(() => {
@@ -157,7 +157,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	setSetupDone(args) {
 		const done = !args.reset;
-		return this._forEachUsbDevice(args, usbDevice => {
+		return forEachUsbDevice(args, usbDevice => {
 			if (usbDevice.isGen3Device) {
 				return usbDevice.setSetupDone(done)
 					.then(() => {
@@ -234,63 +234,6 @@ module.exports = class UsbCommand extends CLICommandBase {
 			.finally(() => deviceMgr.close());
 	}
 
-	_forEachUsbDevice(args, func, { dfuMode = false } = {}){
-		const msg = 'Getting device information...';
-		const operation = this._openUsbDevices(args, { dfuMode });
-		let lastError = null;
-		return spin(operation, msg)
-			.then(usbDevices => {
-				const p = usbDevices.map(usbDevice => {
-					return Promise.resolve()
-						.then(() => func(usbDevice))
-						.catch(e => lastError = e)
-						.finally(() => usbDevice.close());
-				});
-				return spin(Promise.all(p), 'Sending a command to the device...');
-			})
-			.then(() => {
-				if (lastError){
-					throw lastError;
-				}
-			});
-	}
-
-	_openUsbDevices(args, { dfuMode = false } = {}){
-		const deviceIds = args.params.devices;
-		return Promise.resolve()
-			.then(() => {
-				if (args.all){
-					return getUsbDevices({ dfuMode: true })
-						.then(usbDevices => {
-							return asyncMapSeries(usbDevices, (usbDevice) => {
-								return openUsbDevice(usbDevice, { dfuMode })
-									.then(() => usbDevice);
-							});
-						});
-				}
-
-				if (deviceIds.length === 0){
-					return getUsbDevices({ dfuMode: true })
-						.then(usbDevices => {
-							if (usbDevices.length === 0){
-								throw new Error('No devices found');
-							}
-							if (usbDevices.length > 1){
-								throw new Error('Found multiple devices. Please specify the ID or name of one of them');
-							}
-							const usbDevice = usbDevices[0];
-							return openUsbDevice(usbDevice, { dfuMode })
-								.then(() => [usbDevice]);
-						});
-				}
-
-				return asyncMapSeries(deviceIds, (id) => {
-					return openUsbDeviceByIdOrName(id, this._api, this._auth, { dfuMode })
-						.then(usbDevice => usbDevice);
-				});
-			});
-	}
-
 	// Helper function to convert CIDR notation to netmask to imitate the 'ifconfig' output
 	_cidrToNetmask(cidr) {
 		let mask = [];
@@ -317,7 +260,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 		// define output array with logs to prevent interleaving with the spinner
 		let output = [];
 
-		await this._forEachUsbDevice(args, usbDevice => {
+		await forEachUsbDevice(args, usbDevice => {
 			const platform = platformForId(usbDevice.platformId);
 			return this.getNetworkIfaceInfo(usbDevice)
 				.then((nwIfaces) => {

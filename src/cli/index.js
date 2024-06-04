@@ -25,6 +25,7 @@ const variable = require('./variable');
 const version = require('./version');
 const webhook = require('./webhook');
 const whoami = require('./whoami');
+const wifi = require('./wifi');
 const usb = require('./usb');
 
 /**
@@ -69,6 +70,7 @@ module.exports = function registerAllCommands(context) {
 	version(context);
 	webhook(context);
 	whoami(context);
+	wifi(context);
 	usb(context);
 	alias(context);
 };

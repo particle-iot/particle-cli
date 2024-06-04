@@ -42,7 +42,8 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  usb             Control USB devices',
 		'  variable        Retrieve and monitor variables on your device',
 		'  webhook         Manage webhooks that react to device event streams',
-		'  whoami          prints signed-in username'
+		'  whoami          prints signed-in username',
+		'  wifi            Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).'
 	];
 
 	const allCmds = ['binary inspect', 'binary', 'bundle', 'call', 'cloud list',
@@ -70,7 +71,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'usb setup-done', 'usb configure', 'usb cloud-status', 'usb network-interfaces', 'usb',
 		'variable list', 'variable get', 'variable monitor', 'variable',
 		'webhook create', 'webhook list', 'webhook delete', 'webhook POST',
-		'webhook GET', 'webhook', 'whoami'];
+		'webhook GET', 'webhook', 'whoami', 'wifi add', 'wifi join', 'wifi clear', 'wifi list', 'wifi remove', 'wifi current', 'wifi'];
 
 	const mainCmds = dedupe(allCmds.map(c => c.split(' ')[0]));
 
