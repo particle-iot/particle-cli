@@ -452,11 +452,11 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	// Example: WPA_AES, WPA_TKIP, WPA_AES+TKIP are all treated as WPA_PSK.
 	// For the exact mapping, see https://github.com/particle-iot/device-os-protobuf/blob/main/control/wifi_new.proto
 	_convertToKnownSecType(security) {
-		try {
-			return securityMapping[security];
-		} catch (error) {
-			throw new Error(`Unknown security type: ${security} - ${error.message}`);
+		const mapping = securityMapping[security];
+		if (!mapping) {
+			throw new Error(`Unknown security type: ${security}`);
 		}
+		return mapping;
 	}
 
 	async _promptForHiddenNetwork() {
