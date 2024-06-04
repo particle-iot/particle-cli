@@ -5,6 +5,7 @@
 * Add `particle usb network-interfaces` command
 * Remove `--private` and `--public` option from `publish` args
 * Handle failures for invalid CLI commands
+* Add improvements to CI/CD process
 
 # 3.23.6 - May 15 2024
 * Fix ci deployment
