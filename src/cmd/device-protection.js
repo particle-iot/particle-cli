@@ -31,9 +31,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		// then the device is not pretected. For now though, let's assume the device is in normal mode and not in dfu mode.
 
         return this._withDevice(async () => {
-			let status;
+			let s;
 			try {
-				status = await this.device.getProtectionState();
+				s = await this.device.getProtectionState();
 			} catch (error) {
 				if (error.message === 'Not implemented') {
 					throw new Error('Device protection status is not supported on this device${os.EOL}${os.EOL}');
@@ -41,9 +41,18 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				throw new Error('Failed to get device protection status');
 			}
 
-			this.ui.stdout.write(`Device Protection: ${status.protected ? 'Active' : 'Not active'}${os.EOL}${os.EOL}`);
+			let res;
+			if (!s.protected && !s.overridden) {
+				res = 'Not Active';
+			} else if (s.protected && !s.overridden) {
+				res = 'Active';
+			} else if (s.overridden) {
+				res = 'Temporarily Not Active';
+			}
 
-			return status;
+			this.ui.stdout.write(`Device Protection: ${res}${os.EOL}${os.EOL}`);
+
+			return s;
 		});
 	}
 
