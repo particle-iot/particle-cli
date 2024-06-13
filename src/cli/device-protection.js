@@ -21,23 +21,17 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command': 'Disables device protection temporarily',
-			'$0 $command --permanent': 'Disables device protection permanently'
+			'$0 $command permanent': 'Disables device protection permanently'
 		}
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'enable', 'Enables device protection', {
-		options: Object.assign({
-			'permanent': {
-				description: 'Disable device protection permanently'
-			},
-		}),
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
 			return new DeviceProtectionCommands().enableProtection(args);
 		},
 		examples: {
-			'$0 $command': 'Enables device protection temporarily',
-			'$0 $command --permanent': 'Disables device protection permanently'
+			'$0 $command': 'Enables device protection temporarily'
 		}
 	});
 
