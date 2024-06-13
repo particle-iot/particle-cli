@@ -11,6 +11,7 @@ const {
 	TimeoutError,
 	DeviceProtectionError
 } = require('particle-usb');
+const os = require('os');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
@@ -243,10 +244,10 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 		usbDevice = devices[0].value;
 	}
 
+	// FIXME: Currently, just make this a warning
 	const devInfo = await _getDeviceInfo(usbDevice);
 	if (devInfo.mode === 'PROTECTED') {
-		ui.write(`Attempted to flash device ${devInfo.id}`);
-		throw new Error('Operation could not be completed due to device protection.');
+		ui.write(`Attempted to get device info but failed due to device protection.${os.EOL}`);
 	}
 
 	try {

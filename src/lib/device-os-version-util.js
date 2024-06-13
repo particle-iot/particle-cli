@@ -154,5 +154,7 @@ async function downloadFile({ url, directory, filename }) {
 }
 
 module.exports = {
-	downloadDeviceOsVersionBinaries
+	downloadDeviceOsVersionBinaries,
+	downloadBinary,
+	getBinaryPath
 };

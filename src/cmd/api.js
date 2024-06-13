@@ -274,6 +274,21 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	unprotectDevice({ deviceId, product, action, serverNonce, deviceNonce, deviceSignature, devicePublicKeyFingerprint, auth, headers, context }) {
+		return this._wrap(this.api.unprotectDevice({
+			deviceId,
+			product,
+			action,
+			serverNonce,
+			deviceNonce,
+			deviceSignature,
+			devicePublicKeyFingerprint,
+			auth,
+			headers,
+			context
+		}));
+	}
+
 	createLogicFunction({ org, logicFunction }) {
 		return this._wrap(this.api.createLogicFunction({
 			auth: this.accessToken,

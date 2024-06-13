@@ -71,7 +71,9 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'usb setup-done', 'usb configure', 'usb cloud-status', 'usb network-interfaces', 'usb',
 		'variable list', 'variable get', 'variable monitor', 'variable',
 		'webhook create', 'webhook list', 'webhook delete', 'webhook POST',
-		'webhook GET', 'webhook', 'whoami', 'wifi add', 'wifi join', 'wifi clear', 'wifi list', 'wifi remove', 'wifi current', 'wifi'];
+		'webhook GET', 'webhook', 'whoami', 'wifi add', 'wifi join', 'wifi clear', 'wifi list', 'wifi remove', 'wifi current', 'wifi',
+		'protection', 'protection status', 'protection disable', 'protection enable'
+	];
 
 	const mainCmds = dedupe(allCmds.map(c => c.split(' ')[0]));
 
