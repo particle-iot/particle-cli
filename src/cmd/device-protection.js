@@ -37,7 +37,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				s = await this.device.getProtectionState();
 			} catch (error) {
 				if (error.message === 'Not implemented') {
-					throw new Error('Device protection status is not supported on this device${os.EOL}${os.EOL}');
+					throw new Error(`Device protection status is not supported on this device${os.EOL}${os.EOL}`);
 				}
 				throw new Error('Failed to get device protection status');
 			}

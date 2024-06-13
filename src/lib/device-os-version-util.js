@@ -22,6 +22,8 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
 		// omit user part application
 		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
+		// ensure the version is the semver version
+		version = deviceOsVersion.version;
 
 		// find the modules that don't already exist on this machine
 		const modulesToDownload = [];
