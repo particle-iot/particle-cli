@@ -10,7 +10,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const { downloadBinary, getBinaryPath } = require('../lib/device-os-version-util');
 const FlashCommand = require('./flash');
-const { platformForId } = require('../lib/platforms');
+const { platformForId } = require('../lib/platform');
 
 
 module.exports = class DeviceProtectionCommands extends CLICommandBase {
@@ -113,7 +113,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				await this._flashBootloader(localBootloaderPath);
 
 				this.ui.stdout.write(os.EOL);
-				
+
 				this.ui.stdout.write(`Device is permanently unlocked.${os.EOL}${os.EOL}`);
 
 				this.ui.stdout.write(`Marking as development device...${os.EOL}${os.EOL}`);
@@ -196,7 +196,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				this.ui.stdout.write(`Remove device as development device...${os.EOL}${os.EOL}`);
 
 				const success = await this._markAsDevelopmentDevice(false);
-				
+
 				if (success) {
 					this.ui.stdout.write(`Device was removed from development mode to enable protection.${os.EOL}`);
 				} else {
