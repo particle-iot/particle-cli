@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs-extra');
 const { downloadBinary, getBinaryPath } = require('../lib/device-os-version-util');
 const FlashCommand = require('./flash');
+const { platformForId } = require('../lib/platforms');
 
 
 module.exports = class DeviceProtectionCommands extends CLICommandBase {
@@ -138,7 +139,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			}
 		});
 
-		const platformId = this.device._info.id;
+		const platformId = this.device.platformId;
 
 		const deviceOsVersionModules = await this.api.getDeviceOsVersions(platformId, version);
 
@@ -148,7 +149,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		await this.ui.showBusySpinnerUntilResolved(description, Promise.all([
 			(async () => {
 					await downloadBinary({
-					platformName: this.device._info.type,
+					platformName: platformForId(device.platformId).name,
 					module: bootloader,
 					baseUrl: deviceOsVersionModules.base_url,
 					version: deviceOsVersionModules.version

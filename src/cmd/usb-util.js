@@ -244,12 +244,6 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 		usbDevice = devices[0].value;
 	}
 
-	// FIXME: Currently, just make this a warning
-	const devInfo = await _getDeviceInfo(usbDevice);
-	if (devInfo.mode === 'PROTECTED') {
-		ui.write(`Attempted to get device info but failed due to device protection.${os.EOL}`);
-	}
-
 	try {
 		await usbDevice.open();
 		return usbDevice;
