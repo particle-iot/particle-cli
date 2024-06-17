@@ -1,7 +1,7 @@
 const unindent = require('../lib/unindent');
 
 module.exports = ({ commandProcessor, root }) => {
-	const deviceProtection = commandProcessor.createCategory(root, 'protection', 'Commands for managing device protection');
+	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Commands for managing device protection');
 
 	commandProcessor.createCommand(deviceProtection, 'status', 'Gets the current device protection status', {
 		handler: () => {
@@ -14,18 +14,28 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'disable', 'Disables device protection (temporary or permanent)', {
-		params: '[permanent]',
+		options: {
+			'open': {
+				boolean: true,
+				description: 'Unlocks a protected device and makes it an Open device'
+			}
+		},
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
-			return new DeviceProtectionCommands().disableProtection(args.params);
+			return new DeviceProtectionCommands(args).disableProtection(args);
 		},
 		examples: {
-			'$0 $command': 'Disables device protection temporarily',
-			'$0 $command permanent': 'Disables device protection permanently'
+			'$0 $command': 'Device is temporarily unprotected',
+			'$0 $command --open': '[TBD] Device becomes an Open device'
 		}
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'enable', 'Enables device protection', {
+		options: {
+			file: {
+				description: 'Provide file to use for device protection'
+			}
+		},
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
 			return new DeviceProtectionCommands().enableProtection(args);
@@ -39,7 +49,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<file>',
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
-			return new DeviceProtectionCommands().protectBinary(args.params.file);
+			return new DeviceProtectionCommands().protectBinary({ file: args.params.file, verbose: true });
 		},
 		examples: {
 			'$0 $command myBootloader.bin': 'Adds device-protection to your bootloader binary'

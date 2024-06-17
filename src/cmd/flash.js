@@ -115,7 +115,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
-	async flashLocal({ files, applicationOnly, target }) {
+	async flashLocal({ files, applicationOnly, target, verbose=true }) {
 		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
 		const { api, auth } = this._particleApi();
 		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
@@ -124,7 +124,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const platformName = platformForId(platformId).name;
 		const currentDeviceOsVersion = device.firmwareVersion;
 
-		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
+		if (verbose) {
+			this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
+		}
 
 		validateDFUSupport({ device, ui: this.ui });
 
@@ -160,7 +162,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			platformId
 		});
 
-		await flashFiles({ device, flashSteps, ui: this.ui });
+		await flashFiles({ device, flashSteps, ui: this.ui, verbose });
 	}
 
 	async _analyzeFiles(files) {

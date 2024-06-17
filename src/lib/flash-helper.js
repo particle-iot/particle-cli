@@ -16,8 +16,9 @@ const ensureError = utilities.ensureError;
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
-async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
-	const progress = _createFlashProgress({ flashSteps, ui });
+async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose=true }) {
+	let progress = null;
+	progress = verbose ? _createFlashProgress({ flashSteps, ui, verbose }) : null;
 	let success = false;
 	let lastStepDfu = false;
 	try {
@@ -35,7 +36,9 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 		}
 		success = true;
 	} finally {
-		progress({ event: 'finish', success });
+		if (progress) {
+			progress({ event: 'finish', success });
+		}
 		if (device.isOpen) {
 			// only reset the device if the last step was in DFU mode
 			if (resetAfterFlash && lastStepDfu) {
@@ -135,6 +138,7 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 }
 
 function _createFlashProgress({ flashSteps, ui }) {
+	console.log('verbose: ' , verbose);
 	const NORMAL_MULTIPLIER = 10; // flashing in normal mode is slower so count each byte more
 	const { isInteractive } = ui;
 	let progressBar;

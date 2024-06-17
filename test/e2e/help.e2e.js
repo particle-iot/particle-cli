@@ -72,7 +72,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'variable list', 'variable get', 'variable monitor', 'variable',
 		'webhook create', 'webhook list', 'webhook delete', 'webhook POST',
 		'webhook GET', 'webhook', 'whoami', 'wifi add', 'wifi join', 'wifi clear', 'wifi list', 'wifi remove', 'wifi current', 'wifi',
-		'protection', 'protection status', 'protection disable', 'protection enable'
+		'device-protection', 'device-protection status', 'device-protection disable', 'device-protection enable'
 	];
 
 	const mainCmds = dedupe(allCmds.map(c => c.split(' ')[0]));

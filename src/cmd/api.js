@@ -297,6 +297,15 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	getProduct({ product, auth, headers, context }) {
+		return this._wrap(this.api.getProduct({
+			product,
+			auth,
+			headers,
+			context
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)

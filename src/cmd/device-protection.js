@@ -32,38 +32,29 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		// then the device is not pretected. For now though, let's assume the device is in normal mode and not in dfu mode.
 
         return this._withDevice(async () => {
-			let s;
-			try {
-				s = await this.device.getProtectionState();
-			} catch (error) {
-				if (error.message === 'Not implemented') {
-					throw new Error(`Device protection status is not supported on this device${os.EOL}${os.EOL}`);
-				}
-				throw new Error('Failed to get device protection status');
-			}
+			const s = await this._getDeviceProtection();
 
 			let res;
 			if (!s.protected && !s.overridden) {
-				res = 'not protected';
+				res = `Open (not protected)${os.EOL}Run ${chalk.yellow('particle device-protection enable')} to protect the device`;
 			} else if (s.protected && !s.overridden) {
-				res = 'protected';
+				res = `Protected${os.EOL}Run ${chalk.yellow('particle device-protection disable')} unlock the device`;
 			} else if (s.overridden) {
-				res = 'temporarily not protected. A reset is required to re-enable protection.';
+				res = `Protected (service mode)${os.EOL}Run ${chalk.yellow('particle device-protection enable')} to enable protection`;
 			}
 
-			this.ui.stdout.write(`Device (${this.deviceId}) is ${chalk.bold(res)}${os.EOL}${os.EOL}`);
+			this.ui.stdout.write(`Device protection : ${res}${os.EOL}`);
 
 			return s;
 		});
 	}
 
-    async disableProtection({ permanent }) {
-		// TODO : Remove logs with sensitive information
+    async disableProtection({ open } = {}) {
+		return this._withDevice(async () => {
+			let s = await this._getDeviceProtection();
 
-        return this._withDevice(async () => {
-			let s = await this.device.getProtectionState();
 			if (!s.protected && !s.overridden) {
-				this.ui.stdout.write(`Device is not protected${os.EOL}${os.EOL}`);
+				this.ui.stdout.write(`Device is not protected${os.EOL}`);
 				return;
 			}
 
@@ -76,8 +67,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			// console.log(`CLI -> Device:\n\tserver_nonce=${serverNonce.toString('base64')}`);
 			r = await this.device.unprotectDevice({ action: 'prepare', serverNonce });
 			if (!r.protected) {
-			  console.log('Device is not protected');
-			  return;
+				this.ui.stdout.write(`Device is not protected${os.EOL}`);
+				return;
 			}
 			const { deviceNonce, deviceSignature, devicePublicKeyFingerprint } = r;
 			// console.log(`Device -> CLI:\n\tdevice_signature=${deviceSignature.toString('base64')}`);
@@ -85,13 +76,13 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			// Verify the device signature and get a server signature
 			// console.log(`CLI -> Server:\n\tdevice_signature=${deviceSignature.toString('base64')}`);
 			r = await this.api.unprotectDevice({
-			  deviceId: this.deviceId,
-			  action: 'confirm',
-			  serverNonce: serverNonce.toString('base64'),
-			  deviceNonce: deviceNonce.toString('base64'),
-			  deviceSignature: deviceSignature.toString('base64'),
-			  devicePublicKeyFingerprint: devicePublicKeyFingerprint.toString('base64'),
-			  auth: settings.access_token
+				deviceId: this.deviceId,
+				action: 'confirm',
+				serverNonce: serverNonce.toString('base64'),
+				deviceNonce: deviceNonce.toString('base64'),
+				deviceSignature: deviceSignature.toString('base64'),
+				devicePublicKeyFingerprint: devicePublicKeyFingerprint.toString('base64'),
+				auth: settings.access_token
 			});
 
 			const serverSignature = Buffer.from(r.server_signature, 'base64');
@@ -101,32 +92,30 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			// Unprotect the device
 			await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
 
-			s = await this.device.getProtectionState();
-			if (!permanent) {
-				this.ui.stdout.write(`Device protection ${chalk.bold('temporarily disabled')}${os.EOL}${os.EOL}`);
+			s = await this._getDeviceProtection();
+			if (!open) {
+				this.ui.stdout.write(`Device protection temporarily disabled.${os.EOL}Device is put into service mode for 20 reboots or 24 hours.${os.EOL}`);
+				return;
 			}
 
-			if (permanent) {
+			const localBootloaderPath = await this._downloadBootloader();
 
-				const localBootloaderPath = await this._downloadBootloader();
+			await this._flashBootloader(localBootloaderPath, 'disable');
 
-				await this._flashBootloader(localBootloaderPath);
+			this.ui.stdout.write(`Device protection disabled. Device is now open${os.EOL}`);
+			this.ui.stdout.write(`Putting device in developement mode to prevent cloud from enabling protection...${os.EOL}`);
 
-				this.ui.stdout.write(os.EOL);
+			const success = await this._markAsDevelopmentDevice(true);
 
-				this.ui.stdout.write(`Device is permanently unlocked${os.EOL}${os.EOL}`);
-
-				const success = await this._markAsDevelopmentDevice(true);
-
-				if (!success) {
-					this.ui.stdout.write(`Failed to mark device as development device. Protection will be automatically enabled after a power cycle${os.EOL}`);
-				}
+			if (!success) {
+				this.ui.stdout.write(`Failed to mark device as development device. Protection will be automatically enabled after a power cycle${os.EOL}`);
+			} else {
+				this.ui.stdout.write(`Device is now in development mode${os.EOL}`);
 			}
         });
     }
 
 	async _downloadBootloader() {
-
 		let version;
 		const modules = await this.device.getFirmwareModuleInfo();
 		modules.forEach((m) => {
@@ -147,62 +136,99 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 
 
-	async enableProtection() {
+	async enableProtection({ file } = {}) {
 		// TODO: Option to provide bootloader binary in the path
 
-		// TODO: error if device protection is not supported on this firmware version
+		// TODO: Log better error if device protection is not supported on this firmware version
+		let protectedBinary = file;
 
 		return this._withDevice(async () => {
-			let s = await this.device.getProtectionState();
+			const s = await this._getDeviceProtection();
+			
+			const attrs = await this.api.getDeviceAttributes(this.deviceId);
+			let deviceProtectionActiveInProduct = false;
+			if (attrs.platform_id !== attrs.product_id) {
+				// it's in a product
+				const res = await this.api.getProduct({ product: attrs.product_id, auth: settings.access_token });
+				deviceProtectionActiveInProduct = res.product.device_protection;
+			}
+
 			if (s.protected && !s.overridden) {
-				this.ui.stdout.write(`Device is protected${os.EOL}${os.EOL}`);
+				this.ui.stdout.write(`Device is protected${os.EOL}`);
 				return;
 			}
 
 			if (s.overridden) {
 				// terminate unlock
 				await this.device.unprotectDevice({ action: 'reset' });
-				this.ui.stdout.write(`Device is ${chalk.bold('protected')}${os.EOL}`);
+				
+				this.ui.stdout.write(`Device is protected${os.EOL}`);
+				this.ui.stdout.write(`Removing device from developement mode...${os.EOL}`);
+				
 				const success = await this._markAsDevelopmentDevice(false);
-				if (success) {
-					this.ui.stdout.write(`Device was removed from development mode to keep in protection mode.${os.EOL}`);
-				} else {
-					this.ui.stdout.write(`Failed to mark device as development device${os.EOL}`);
+				if (!success) {
+					this.ui.stdout.write(`Failed to remove device from development mode. Ensure it is not in development mode for protection to work properly${os.EOL}`);
 				}
-
 				return;
 			}
 
-			if (!s.protected && !s.overridden) {
+			if (!s.protected && !s.overridden && deviceProtectionActiveInProduct) {
 				// Protect device (permanently)
 
-				const localBootloaderPath = await this._downloadBootloader();
+				if (!protectedBinary) {
+					const localBootloaderPath = await this._downloadBootloader();
+					protectedBinary = await this.protectBinary({ file: localBootloaderPath, verbose: false });
+				}
 
-				const resPath = await this.protectBinary(localBootloaderPath);
+				await this._flashBootloader(protectedBinary, 'enable');
 
-				await this._flashBootloader(resPath);
-
-				this.ui.stdout.write(`Remove device as development device...${os.EOL}${os.EOL}`);
+				this.ui.write(`Device is protected${os.EOL}`);
+				this.ui.stdout.write(`Removing device from developement mode...${os.EOL}`);
 
 				const success = await this._markAsDevelopmentDevice(false);
-
-				if (success) {
-					this.ui.stdout.write(`Device was removed from development mode to enable protection.${os.EOL}`);
-				} else {
-					this.ui.stdout.write(`Failed to remove device from development mode.${os.EOL}`);
+				
+				if (!success) {
+					this.ui.stdout.write(`Failed to remove device from development mode. Ensure it is not in development mode for protection to work properly${os.EOL}`);
 				}
 			}
 		});
 	}
 
-	async _flashBootloader(path) {
+	async _getDeviceProtection() {
+		try {
+			const s = await this.device.getProtectionState();
+			return s;
+		} catch (error) {
+			if (error.message === 'Not supported') {
+				throw new Error(`Device protection feature is not supported on this device${os.EOL}`);
+			}
+		}
+	}
+
+	async _flashBootloader(path, action) {
+		let msg;
+		switch (action) {
+			case 'enable':
+				msg = 'Enabling protection on the device. Please wait...';
+				break;
+			case 'disable':
+				msg = 'Disabling protection on the device. Please wait...';
+				break;
+			default:
+				throw new Error('Invalid action');
+		}
+
 		const flashCmdInstance = new FlashCommand();
-		await flashCmdInstance.flashLocal({ files: [path], applicationOnly: true });
+	
+		const flashPromise = flashCmdInstance.flashLocal({ files: [path], applicationOnly: true, verbose: false });
+	
+		await this.ui.showBusySpinnerUntilResolved(msg, flashPromise);
 	}
 
 	async _markAsDevelopmentDevice(state) {
 		let attrs;
 		try {
+			// TODO: Refactor
 			attrs = await this.api.getDeviceAttributes(this.deviceId);
 			if (attrs.platform_id !== attrs.product_id) {
 				// it's in a product
@@ -225,7 +251,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (this.device.isInDfuMode) {
 				this.ui.stdout.write(`Device is in DFU mode. Performing a reset to get the device in normal mode. Please wait...${os.EOL}`);
 				await this.resetDevice(this.device);
-				this.ui.stdout.write(`Done! Device is now in normal mode.${os.EOL}`);
+				this.ui.stdout.write(`Done! Device is now in normal mode${os.EOL}`);
 				await this.getUsbDevice(this.device);
 			}
 
@@ -252,7 +278,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		await new Promise(resolve => setTimeout(resolve, 3000));
 	}
 
-	async protectBinary(file) {
+	async protectBinary({ file, verbose=true }) {
 		if (!file) {
 			throw new Error('Please provide a file to add device protection');
 		}
@@ -266,7 +292,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		const protectedBinary = await createProtectedModule(binary);
 		await fs.writeFile(resBinaryPath, protectedBinary);
 
-		this.ui.stdout.write(`Protected binary saved at ${resBinaryPath}${os.EOL}${os.EOL}`);
+		if (verbose) {
+			this.ui.stdout.write(`Protected binary saved at ${resBinaryPath}`);
+		}
 
 		return resBinaryPath;
 	}
