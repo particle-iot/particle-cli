@@ -25,7 +25,8 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command': 'Puts a protected device into service mode',
 			'$0 $command --open': 'Turns a protected device into an open device'
-		}
+		},
+		epilogue: 'A protected device in service mode allows any command to be performed on it that can be performed on an open device like flashing firmware or serial monitor.'
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'enable', 'Enables device protection', {

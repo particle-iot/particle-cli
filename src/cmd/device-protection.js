@@ -94,7 +94,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async disableProtection({ open } = {}) {
 		let addToOutput = [];
 
-		await this.ui.showBusySpinnerUntilResolved('Disabling protection on the device', this._withDevice(async () => {
+		await this.ui.showBusySpinnerUntilResolved('Disabling device protection', this._withDevice(async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
 				let s = await this._getDeviceProtection();
@@ -140,7 +140,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					`Failed to mark device as development device. Device protection may be enabled on next cloud connection.${os.EOL}`
 				);
 			} catch (error) {
-				throw new Error(`Failed to turn the device into an open device: ${error.message}${os.EOL}`);
+				throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
 			}
 		}));
 
@@ -167,12 +167,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 		let protectedBinary = file;
 		try {
-			await this.ui.showBusySpinnerUntilResolved('Enabling protection on the device', this._withDevice(async () => {
+			await this.ui.showBusySpinnerUntilResolved('Enabling device protection', this._withDevice(async () => {
 				const deviceStr = await this._getDeviceString();
 				const s = await this._getDeviceProtection();
 
 				if (s.protected && !s.overridden) {
-					addToOutput.push(`${deviceStr} is a protected device.${os.EOL}`);
+					addToOutput.push(`${deviceStr} is already a protected device.${os.EOL}`);
 					return;
 				}
 
@@ -206,7 +206,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				}
 			}));
 		} catch (error) {
-			throw new Error(`Failed to turn the device into a protected device: ${error.message}${os.EOL}`);
+			throw new Error(`Failed to enable device protection: ${error.message}${os.EOL}`);
 		}
 
 		addToOutput.forEach((line) => {
@@ -303,7 +303,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 
 		const res = await this.api.getProduct({ product: this.productId, auth: settings.access_token });
-		return res?.product?.device_protection;
+		return res?.product?.device_protection === 'active';
 	}
 
 	/**
