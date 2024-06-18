@@ -130,7 +130,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				}
 
 				const localBootloaderPath = await this._downloadBootloader();
-				await this._flashBootloader(localBootloaderPath, 'disable');
+				await this._flashBootloader(localBootloaderPath);
 				addToOutput.push(`${deviceStr} is now an open device.${os.EOL}`);
 
 				const success = await this._markAsDevelopmentDevice(true);
@@ -171,39 +171,36 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				const deviceStr = await this._getDeviceString();
 				const s = await this._getDeviceProtection();
 
-				if (s.protected && !s.overridden) {
+				if (s.overridden) {
+					await this.device.unprotectDevice({ action: 'reset' });
+					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
+					return;
+				}
+
+				if (s.protected) {
 					addToOutput.push(`${deviceStr} is already a protected device.${os.EOL}`);
 					return;
 				}
 
-				const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
-				if (s.overridden) {
-					await this.device.unprotectDevice({ action: 'reset' });
-					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
-					if (deviceProtectionActiveInProduct) {
-						const success = await this._markAsDevelopmentDevice(false);
-						addToOutput.push(success ?
-							`Device removed from development mode to maintain current settings.${os.EOL}` :
-							`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
-						);
+				if (!protectedBinary) {
+					// bypass checking the product when the bootloader is provided to allow for enabling device protection offline
+					const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
+					if (!deviceProtectionActiveInProduct) {
+						addToOutput.push(`${deviceStr} is not in a product that supports device protection.${os.EOL}`);
+						return;
 					}
-					return;
-				}
 
-				if (!s.protected && !s.overridden && deviceProtectionActiveInProduct) {
-					if (!protectedBinary) {
-						const localBootloaderPath = await this._downloadBootloader();
-						protectedBinary = await this._getProtectedBinary({ file: localBootloaderPath, verbose: false });
-					}
-					await this._flashBootloader(protectedBinary, 'enable');
-					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
-					const success = await this._markAsDevelopmentDevice(false);
-					addToOutput.push(success ?
-						// TODO: Improve these lines
-						`Device removed from development mode to maintain current settings.${os.EOL}` :
-						`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
-					);
+					const localBootloaderPath = await this._downloadBootloader();
+					protectedBinary = await this._getProtectedBinary({ file: localBootloaderPath, verbose: false });
 				}
+				await this._flashBootloader(protectedBinary);
+				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
+				const success = await this._markAsDevelopmentDevice(false);
+				addToOutput.push(success ?
+					// TODO: Improve these lines
+					`Device removed from development mode to maintain current settings.${os.EOL}` :
+					`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
+				);
 			}));
 		} catch (error) {
 			throw new Error(`Failed to enable device protection: ${error.message}${os.EOL}`);
