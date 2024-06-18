@@ -13,11 +13,11 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(deviceProtection, 'disable', 'Disables device protection (temporary or permanent)', {
+	commandProcessor.createCommand(deviceProtection, 'disable', 'Disables device protection', {
 		options: {
 			'open': {
 				boolean: true,
-				description: 'Unlocks a protected device and makes it an Open device'
+				description: 'Turns a protected device an unprotected/open device'
 			}
 		},
 		handler: (args) => {
@@ -25,8 +25,8 @@ module.exports = ({ commandProcessor, root }) => {
 			return new DeviceProtectionCommands(args).disableProtection(args);
 		},
 		examples: {
-			'$0 $command': 'Device is temporarily unprotected',
-			'$0 $command --open': '[TBD] Device becomes an Open device'
+			'$0 $command': 'Turns a protected device to being protected in service mode',
+			'$0 $command --open': 'Turns a protected device back to an unprotected/open device'
 		}
 	});
 
@@ -41,7 +41,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new DeviceProtectionCommands().enableProtection(args);
 		},
 		examples: {
-			'$0 $command': 'Enables device protection temporarily'
+			'$0 $command': 'Enables device protection'
 		}
 	});
 
