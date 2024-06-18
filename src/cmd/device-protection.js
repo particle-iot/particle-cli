@@ -79,7 +79,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			let s = await this._getDeviceProtection();
 
 			if (!s.protected && !s.overridden) {
-				this.ui.stdout.write(`Device is not protected${os.EOL}`);
+				this.ui.stdout.write(`Device ${deviceStr} is not protected${os.EOL}`);
 				return;
 			}
 
@@ -87,6 +87,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			const serverNonce = Buffer.from(r.server_nonce, 'base64');
 			
 			r = await this.device.unprotectDevice({ action: 'prepare', serverNonce });
+			// XXX: This is a redundant check
 			if (!r.protected) {
 				this.ui.stdout.write(`Device ${deviceStr} is not protected${os.EOL}`);
 				return;
@@ -164,13 +165,13 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		return this._withDevice(async () => {
 			const deviceStr = await this._getDeviceString();
 			const s = await this._getDeviceProtection();
-			const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
 
 			if (s.protected && !s.overridden) {
 				this.ui.stdout.write(`Device is protected${os.EOL}`);
 				return;
 			}
 
+			const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
 			if (s.overridden) {
 				await this.device.unprotectDevice({ action: 'reset' });
 				this.ui.stdout.write(`Device ${deviceStr} is protected${os.EOL}`);
