@@ -29,7 +29,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const VError = require('verror');
 const chalk = require('chalk');
-const { HalModuleParser: Parser, unpackApplicationAndAssetBundle, isAssetValid } = require('binary-version-reader');
+const { HalModuleParser: Parser, unpackApplicationAndAssetBundle, isAssetValid, createProtectedModule } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
 
@@ -45,6 +45,25 @@ class BinaryCommand {
 		const assets = extractedFiles.assets;
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
+
+	async createProtectedBinary({ file, verbose=true }) {
+		await this._checkFile(file);
+		
+		const fileName = path.basename(file);
+		const resBinaryName = fileName.replace('.bin', '-protected.bin');
+		const resBinaryPath = path.join(path.dirname(file), resBinaryName);
+
+		const binary = await fs.readFile(file);
+		const protectedBinary = await createProtectedModule(binary);
+		await fs.writeFile(resBinaryPath, protectedBinary);
+
+		if (verbose) {
+			console.log(`Protected binary saved at ${resBinaryPath}`);
+		}
+
+		return resBinaryPath;
+	}
+	
 
 	async _checkFile(file) {
 		try {

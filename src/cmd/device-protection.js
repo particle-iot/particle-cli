@@ -12,6 +12,7 @@ const { downloadDeviceOsVersionBinaries } = require('../lib/device-os-version-ut
 const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
 const chalk = require('chalk');
+const BinaryCommand = require('./binary');
 
 module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -152,7 +153,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * It then downloads the device OS version binaries and returns the path to the bootloader binary.
 	 *
 	 * @async
-	 * @returns {Promise<string>} The file path to the downloaded bootloader binary.
+	 * @returns {Promise<string>} The file path to the downloaded bootloader binary.protectBinary
 	 * @throws {Error} Throws an error if any of the async operations fail.
 	 */
 	async _downloadBootloader() {
@@ -208,7 +209,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				if (!s.protected && !s.overridden && deviceProtectionActiveInProduct) {
 					if (!protectedBinary) {
 						const localBootloaderPath = await this._downloadBootloader();
-						protectedBinary = await this.protectBinary({ file: localBootloaderPath, verbose: false });
+						const binary = new BinaryCommand();
+						protectedBinary = await binary.createProtectedBinary({ file: localBootloaderPath, verbose: false });
 					}
 					await this._flashBootloader(protectedBinary, 'enable');
 					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);

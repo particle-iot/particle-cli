@@ -43,17 +43,6 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(deviceProtection, 'protect', 'Adds device-protection to your bootloader binary', {
-		params: '<file>',
-		handler: (args) => {
-			const DeviceProtectionCommands = require('../cmd/device-protection');
-			return new DeviceProtectionCommands().protectBinary({ file: args.params.file, verbose: true });
-		},
-		examples: {
-			'$0 $command myBootloader.bin': 'Adds device-protection to your bootloader binary'
-		}
-	});
-
 	return deviceProtection;
 };
 
