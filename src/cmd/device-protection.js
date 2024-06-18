@@ -51,7 +51,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			} else if (s.protected && !s.overridden) {
 				res = `Protected${os.EOL}${chalk.yellow('Run \'particle device-protection disable\' to put the device in service mode')}`;
 			} else if (s.overridden) {
-				res = `Protected (service mode)${os.EOL}${chalk.yellow('Run \'particle device-protection disable\' to put the device in service mode')}`;
+				res = `Protected (service mode)${os.EOL}${chalk.yellow('Run \'particle device-protection enable\' to protect the device')}`;
 			}
 			const deviceStr = await this._getDeviceString();
 			this.ui.stdout.write(`Device protection for ${deviceStr} : ${res}${os.EOL}`);
@@ -167,7 +167,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			const s = await this._getDeviceProtection();
 
 			if (s.protected && !s.overridden) {
-				this.ui.stdout.write(`Device is protected${os.EOL}`);
+				this.ui.stdout.write(`Device ${deviceStr} is protected${os.EOL}`);
 				return;
 			}
 
@@ -232,10 +232,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let msg;
 		switch (action) {
 			case 'enable':
-				msg = 'Enabling protection on the device. Please wait...';
+				msg = 'Enabling protection on the device...';
 				break;
 			case 'disable':
-				msg = 'Disabling protection on the device. Please wait...';
+				msg = 'Disabling protection on the device...';
 				break;
 			default:
 				throw new Error('Invalid action');
