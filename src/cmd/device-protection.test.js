@@ -6,6 +6,11 @@ describe('DeviceProtectionCommands', () => {
 
 	beforeEach(() => {
 		deviceProtectionCommands = new DeviceProtectionCommands();
+		sinon.stub(deviceProtectionCommands, '_getUsbDevice').resolves();
+		deviceProtectionCommands.device = {
+			isInDfuMode: false,
+			unprotectDevice: sinon.stub()
+		};
 	});
 
 	afterEach(() => {
@@ -351,30 +356,23 @@ describe('DeviceProtectionCommands', () => {
 	describe('_withDevice', () => {
 		it('should execute a function with the device in normal mode', async () => {
 			const fn = sinon.stub().resolves();
-			sinon.stub(deviceProtectionCommands, 'getUsbDevice').resolves();
-			deviceProtectionCommands.device = {
-				isInDfuMode: false
-			};
 			sinon.stub(deviceProtectionCommands, '_resetDevice').resolves();
 
 			await deviceProtectionCommands._withDevice(fn);
 
-			expect(deviceProtectionCommands.getUsbDevice).to.have.been.calledOnce;
+			expect(deviceProtectionCommands._getUsbDevice).to.have.been.calledOnce;
 			expect(deviceProtectionCommands._resetDevice).to.not.have.been.called;
 			expect(fn).to.have.been.calledOnce;
 		});
 
 		it('should execute a function with the device in dfu mode', async () => {
 			const fn = sinon.stub().resolves();
-			sinon.stub(deviceProtectionCommands, 'getUsbDevice').resolves();
-			deviceProtectionCommands.device = {
-				isInDfuMode: true
-			};
+			deviceProtectionCommands.device.isInDfuMode = true;
 			sinon.stub(deviceProtectionCommands, '_resetDevice').resolves();
 
 			await deviceProtectionCommands._withDevice(fn);
 
-			expect(deviceProtectionCommands.getUsbDevice).to.have.been.calledTwice;
+			expect(deviceProtectionCommands._getUsbDevice).to.have.been.calledTwice;
 			expect(deviceProtectionCommands._resetDevice).to.have.been.calledOnce;
 			expect(fn).to.have.been.calledOnce;
 		});

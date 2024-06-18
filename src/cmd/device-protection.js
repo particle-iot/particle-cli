@@ -333,11 +333,11 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async _withDevice(fn) {
 		try {
-			await this.getUsbDevice(this.device);
+			await this._getUsbDevice(this.device);
 
 			if (this.device.isInDfuMode) {
 				await this._resetDevice(this.device);
-				await this.getUsbDevice(this.device);
+				await this._getUsbDevice(this.device);
 			}
 
 			return await fn();
@@ -366,7 +366,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @param {Object} dev - The USB device instance.
 	 * @returns {Promise<void>}
 	 */
-	async getUsbDevice(dev) {
+	async _getUsbDevice(dev) {
 		if (!dev || dev.isOpen === false) {
 			this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
 			this.deviceId = this.device._id;
