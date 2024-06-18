@@ -46,15 +46,21 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		return this._withDevice(async () => {
 			const s = await this._getDeviceProtection();
 			let res;
-			if (!s.protected && !s.overridden) {
-				res = `Open (not protected)${os.EOL}${chalk.yellow('Run \'particle device-protection enable\' to protect the device')}`;
-			} else if (s.protected && !s.overridden) {
-				res = `Protected${os.EOL}${chalk.yellow('Run \'particle device-protection disable\' to put the device in service mode')}`;
-			} else if (s.overridden) {
-				res = `Protected (service mode)${os.EOL}${chalk.yellow('Run \'particle device-protection enable\' to protect the device')}`;
+			let helper;
+
+			if (s.overridden) {
+				res = 'Protected device (service mode)';
+				helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of service mode`;
+			} else if (s.protected) {
+				res = 'Protected device';
+				helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in service mode`;
+			} else {
+				res = 'Open device';
+				helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device`;
 			}
+
 			const deviceStr = await this._getDeviceString();
-			this.ui.stdout.write(`Device protection for ${deviceStr} : ${res}${os.EOL}`);
+			this.ui.stdout.write(`${deviceStr}: ${chalk.bold.white(res)}${os.EOL}${helper}${os.EOL}`);
 			return s;
 		});
 	}
@@ -79,7 +85,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			let s = await this._getDeviceProtection();
 
 			if (!s.protected && !s.overridden) {
-				this.ui.stdout.write(`Device ${deviceStr} is not protected${os.EOL}`);
+				this.ui.stdout.write(`${deviceStr} is not a protected device${os.EOL}`);
 				return;
 			}
 
@@ -111,13 +117,13 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			s = await this._getDeviceProtection();
 
 			if (!open) {
-				this.ui.stdout.write(`Device ${deviceStr} is in service mode.${os.EOL}Device is put into service mode for a total of 20 reboots or 24 hours.${os.EOL}`);
+				this.ui.stdout.write(`Device ${deviceStr} is in service mode${os.EOL}Device is put into service mode for a total of 20 reboots or 24 hours${os.EOL}`);
 				return;
 			}
 
 			const localBootloaderPath = await this._downloadBootloader();
 			await this._flashBootloader(localBootloaderPath, 'disable');
-			this.ui.stdout.write(`Device ${deviceStr} is open (unprotected)${os.EOL}`);
+			this.ui.stdout.write(`Device ${deviceStr} is open${os.EOL}`);
 
 			const success = await this._markAsDevelopmentDevice(true);
 			this.ui.stdout.write(success ?
@@ -314,9 +320,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			await this.getUsbDevice(this.device);
 
 			if (this.device.isInDfuMode) {
-				this.ui.stdout.write(`Device is in DFU mode. Performing a reset to get the device in normal mode. Please wait...${os.EOL}`);
 				await this._resetDevice(this.device);
-				this.ui.stdout.write(`Done! Device is now in normal mode${os.EOL}`);
 				await this.getUsbDevice(this.device);
 			}
 

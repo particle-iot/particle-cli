@@ -1,5 +1,5 @@
 module.exports = ({ commandProcessor, root }) => {
-	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Commands for managing device protection');
+	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Manage device protection');
 
 	commandProcessor.createCommand(deviceProtection, 'status', 'Gets the current device protection status', {
 		handler: () => {
@@ -15,7 +15,7 @@ module.exports = ({ commandProcessor, root }) => {
 		options: {
 			'open': {
 				boolean: true,
-				description: 'Turns a protected device an unprotected/open device'
+				description: 'Turns a protected device into an open device'
 			}
 		},
 		handler: (args) => {
@@ -23,15 +23,15 @@ module.exports = ({ commandProcessor, root }) => {
 			return new DeviceProtectionCommands(args).disableProtection(args);
 		},
 		examples: {
-			'$0 $command': 'Turns a protected device to being protected in service mode',
-			'$0 $command --open': 'Turns a protected device back to an unprotected/open device'
+			'$0 $command': 'Puts a protected device into service mode',
+			'$0 $command --open': 'Turns a protected device into an open device'
 		}
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'enable', 'Enables device protection', {
 		options: {
 			file: {
-				description: 'Provide file to use for device protection'
+				description: 'File to use for device protection'
 			}
 		},
 		handler: (args) => {
@@ -39,7 +39,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new DeviceProtectionCommands().enableProtection(args);
 		},
 		examples: {
-			'$0 $command': 'Enables device protection'
+			'$0 $command': 'Turns an open device into a protected device'
 		}
 	});
 
