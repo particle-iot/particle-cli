@@ -11,7 +11,6 @@ const {
 	TimeoutError,
 	DeviceProtectionError
 } = require('particle-usb');
-const os = require('os');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update

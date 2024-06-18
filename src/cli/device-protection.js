@@ -1,5 +1,3 @@
-const unindent = require('../lib/unindent');
-
 module.exports = ({ commandProcessor, root }) => {
 	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Commands for managing device protection');
 

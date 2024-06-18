@@ -138,7 +138,6 @@ async function _flashDeviceInDfuMode(device, data, { name, altSetting, startAddr
 }
 
 function _createFlashProgress({ flashSteps, ui }) {
-	console.log('verbose: ' , verbose);
 	const NORMAL_MULTIPLIER = 10; // flashing in normal mode is slower so count each byte more
 	const { isInteractive } = ui;
 	let progressBar;

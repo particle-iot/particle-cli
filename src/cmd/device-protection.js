@@ -29,29 +29,29 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * Retrieves and displays the protection status of the device.
 	 *
 	 * This method assumes the device is in normal mode and not in DFU mode. It retrieves the current protection status and
-	 * constructs a message indicating whether the device is protected, in service mode, or not protected. 
+	 * constructs a message indicating whether the device is protected, in service mode, or not protected.
 	 * The device protection status is then displayed in the console.
 	 *
 	 * @async
 	 * @returns {Promise<Object>} The protection state of the device.
 	 * @throws {Error} Throws an error if any of the async operations fail.
 	 */
-    async getStatus() {
+	async getStatus() {
 
 		// FIXME: Fix this logic to accommodate devices in dfu mode.
 		// To get information for dfu devices, a new API needs to be exposed from Particle-USB to get the dfu segments
 		// and verify that the segment containing the system-part1 is writable or not. If the segment is writable,
 		// then the device is not pretected. For now though, let's assume the device is in normal mode and not in dfu mode.
 
-        return this._withDevice(async () => {
+		return this._withDevice(async () => {
 			const s = await this._getDeviceProtection();
 			let res;
 			if (!s.protected && !s.overridden) {
-				res = `Open (not protected)${os.EOL}${chalk.yellow(`Run \'particle device-protection enable\' to protect the device`)}`;
+				res = `Open (not protected)${os.EOL}${chalk.yellow('Run \'particle device-protection enable\' to protect the device')}`;
 			} else if (s.protected && !s.overridden) {
-				res = `Protected${os.EOL}${chalk.yellow(`Run \'particle device-protection disable\' to put the device in service mode`)}`;
+				res = `Protected${os.EOL}${chalk.yellow('Run \'particle device-protection disable\' to put the device in service mode')}`;
 			} else if (s.overridden) {
-				res = `Protected (service mode)${os.EOL}${chalk.yellow(`Run \'particle device-protection disable\' to put the device in service mode`)}`;
+				res = `Protected (service mode)${os.EOL}${chalk.yellow('Run \'particle device-protection disable\' to put the device in service mode')}`;
 			}
 			const deviceStr = await this._getDeviceString();
 			this.ui.stdout.write(`Device protection for ${deviceStr} : ${res}${os.EOL}`);
@@ -63,7 +63,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * Disables protection on the device.
 	 *
 	 * This method checks the current protection status of the device and proceeds to disable protection
-	 * if the device is protected. If the device is not protected or is already in service mode, 
+	 * if the device is protected. If the device is not protected or is already in service mode,
 	 * appropriate messages are logged to the console. If the `open` parameter is true, the device will be
 	 * flashed with an unprotected bootloader and marked as a development device to prevent re-enabling protection.
 	 *
@@ -73,7 +73,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<void>}
 	 * @throws {Error} - Throws an error if any of the async operations fail.
 	 */
-    async disableProtection({ open } = {}) {
+	async disableProtection({ open } = {}) {
 		return this._withDevice(async () => {
 			const deviceStr = await this._getDeviceString();
 			let s = await this._getDeviceProtection();
@@ -85,7 +85,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 			let r = await this.api.unprotectDevice({ deviceId: this.deviceId, action: 'prepare', auth: settings.access_token });
 			const serverNonce = Buffer.from(r.server_nonce, 'base64');
-			
+
 			r = await this.device.unprotectDevice({ action: 'prepare', serverNonce });
 			// XXX: This is a redundant check
 			if (!r.protected) {
@@ -93,7 +93,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				return;
 			}
 			const { deviceNonce, deviceSignature, devicePublicKeyFingerprint } = r;
-			
+
 			r = await this.api.unprotectDevice({
 				deviceId: this.deviceId,
 				action: 'confirm',
@@ -124,8 +124,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				`Device put in development mode to prevent cloud from enabling protection${os.EOL}` :
 				`Failed to mark device as development device. Protection will be automatically enabled after a power cycle${os.EOL}`
 			);
-        });
-    }
+		});
+	}
 
 	/**
 	 * Downloads the bootloader binary for the device.
@@ -149,7 +149,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	/**
 	 * Enables protection on the device.
 	 *
-	 * This method checks the current protection status of the device and proceeds to enable protection by 
+	 * This method checks the current protection status of the device and proceeds to enable protection by
 	 * either terminating the protection if the device is already protected or enabling protection on the device
 	 * if the device is not protected and the device protection feature is active in the product.
 	 * It flashes a protected bootloader binary to the device if necessary and marks the device as not in development mode.
@@ -264,7 +264,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Checks if device protection is active in the product.
 	 *
@@ -295,8 +295,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 
 		try {
-			const { platform_id, product_id } = await this.api.getDeviceAttributes(this.deviceId);
-			this.productId = platform_id !== product_id ? product_id : null;
+			const attrs = await this.api.getDeviceAttributes(this.deviceId);
+			this.productId = attrs.platform_id !== attrs.product_id ? attrs.product_id : null;
 		} catch (error) {
 			return null;
 		}
@@ -309,7 +309,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @param {Function} fn - The function to execute with the device.
 	 * @returns {Promise<*>} The result of the function execution.
 	 */
-    async _withDevice(fn) {
+	async _withDevice(fn) {
 		try {
 			await this.getUsbDevice(this.device);
 
