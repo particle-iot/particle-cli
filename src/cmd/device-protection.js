@@ -1,17 +1,17 @@
+const os = require('os');
+const path = require('path');
+const fs = require('fs-extra');
+const { createProtectedModule } = require('binary-version-reader');
+const chalk = require('chalk');
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('../cmd/usb-util');
 const ParticleApi = require('../cmd/api');
 const settings = require('../../settings');
 const createApiCache = require('../lib/api-cache');
-const os = require('os');
-const { createProtectedModule } = require('binary-version-reader');
-const path = require('path');
-const fs = require('fs-extra');
 const { downloadDeviceOsVersionBinaries } = require('../lib/device-os-version-util');
 const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
-const chalk = require('chalk');
 const BinaryCommand = require('./binary');
 
 module.exports = class DeviceProtectionCommands extends CLICommandBase {
@@ -66,6 +66,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				return s;
 			}));
 		} catch (error) {
+			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
 			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
 		}
 
@@ -119,7 +120,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				const serverSignature = Buffer.from(r.server_signature, 'base64');
 				const serverPublicKeyFingerprint = Buffer.from(r.server_public_key_fingerprint, 'base64');
 
-				// TODO: Error handling
 				await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
 
 				if (!open) {
@@ -133,11 +133,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				const success = await this._markAsDevelopmentDevice(true);
 				addToOutput.push(success ?
+					// TODO: Improve these lines
 					`Device placed in development mode to maintain current settings.${os.EOL}` :
 					`Failed to mark device as development device. Device protection may be enabled on next cloud connection.${os.EOL}`
 				);
 			} catch (error) {
-				throw new Error(`Unable to make the device an open device: ${error.message}${os.EOL}`);
+				throw new Error(`Failed to turn the device into an open device: ${error.message}${os.EOL}`);
 			}
 		}));
 
@@ -147,31 +148,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	}
 
 	/**
-	 * Downloads the bootloader binary for the device.
-	 *
-	 * This method retrieves the firmware module information from the device to determine the version and platform ID.
-	 * It then downloads the device OS version binaries and returns the path to the bootloader binary.
-	 *
-	 * @async
-	 * @returns {Promise<string>} The file path to the downloaded bootloader binary.protectBinary
-	 * @throws {Error} Throws an error if any of the async operations fail.
-	 */
-	async _downloadBootloader() {
-		const modules = await this.device.getFirmwareModuleInfo();
-		const version = modules.find(m => m.type === 'SYSTEM_PART').version;
-		const platformId = this.device.platformId;
-		const downloadedFilePaths = await downloadDeviceOsVersionBinaries({ api: this.api, platformId, version, ui: this.ui });
-		const platformName = platformForId(platformId).name;
-		return downloadedFilePaths.find(f => path.basename(f).includes(`${platformName}-bootloader`));
-	}
-
-	/**
 	 * Enables protection on the device.
 	 *
 	 * This method checks the current protection status of the device and proceeds to enable protection by
 	 * either terminating the protection if the device is already protected or enabling protection on the device
 	 * if the device is not protected and the device protection feature is active in the product.
-	 * It flashes a protected bootloader binary to the device if necessary and marks the device as not in development mode.
+	 * It flashes a protected bootloader binary to the device if necessary and remove the device from development mode.
 	 *
 	 * @async
 	 * @param {Object} [options={}] - Options for enabling protection.
@@ -216,13 +198,14 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
 					const success = await this._markAsDevelopmentDevice(false);
 					addToOutput.push(success ?
+						// TODO: Improve these lines
 						`Device removed from development mode to maintain current settings.${os.EOL}` :
 						`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
 					);
 				}
 			}));
 		} catch (error) {
-			throw new Error(`Unable to make the device a protected device: ${error.message}${os.EOL}`);
+			throw new Error(`Failed to turn the device into a protected device: ${error.message}${os.EOL}`);
 		}
 
 		addToOutput.forEach((line) => {
@@ -243,10 +226,29 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			return s;
 		} catch (error) {
 			if (error.message === 'Not supported') {
-				throw new Error(`Device protection feature is not supported on this device${os.EOL}`);
+				throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 			}
 			throw new Error(error);
 		}
+	}
+
+	/**
+	 * Downloads the bootloader binary for the device.
+	 *
+	 * This method retrieves the firmware module information from the device to determine the version and platform ID.
+	 * It then downloads the device OS version binaries and returns the path to the bootloader binary.
+	 *
+	 * @async
+	 * @returns {Promise<string>} The file path to the downloaded bootloader
+	 * @throws {Error} Throws an error if any of the async operations fail.
+	 */
+	async _downloadBootloader() {
+		const modules = await this.device.getFirmwareModuleInfo();
+		const version = modules.find(m => m.type === 'SYSTEM_PART').version;
+		const platformId = this.device.platformId;
+		const downloadedFilePaths = await downloadDeviceOsVersionBinaries({ api: this.api, platformId, version, ui: this.ui });
+		const platformName = platformForId(platformId).name;
+		return downloadedFilePaths.find(f => path.basename(f).includes(`${platformName}-bootloader`));
 	}
 
 	/**
@@ -260,7 +262,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async _flashBootloader(path) {
 		const flashCmdInstance = new FlashCommand();
 		await flashCmdInstance.flashLocal({ files: [path], applicationOnly: true, verbose: false });
-	}
+	}	
 
 	/**
 	 * Marks the device as a development device.
@@ -320,6 +322,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 	/**
 	 * Executes a function with the device, ensuring it is in the correct mode.
+	 * If it is in DFU mode, the device is reset and re-opened expecting it to be in normal mode.
 	 *
 	 * @async
 	 * @param {Function} fn - The function to execute with the device.
@@ -344,7 +347,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 	/**
 	 * Constructs and returns a string representation of the device, including its product ID.
-	 *
+	 * 
 	 * @async
 	 * @returns {Promise<string>} A string representing the device and its product ID.
 	 */

@@ -20,7 +20,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
-			return new DeviceProtectionCommands(args).disableProtection(args);
+			return new DeviceProtectionCommands().disableProtection(args);
 		},
 		examples: {
 			'$0 $command': 'Puts a protected device into service mode',
