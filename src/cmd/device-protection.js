@@ -44,9 +44,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		// and verify that the segment containing the system-part1 is writable or not. If the segment is writable,
 		// then the device is not pretected. For now though, let's assume the device is in normal mode and not in dfu mode.
 		let addToOutput = [];
+		let s;
 		try {
 			await this.ui.showBusySpinnerUntilResolved('Getting device status', this._withDevice(async () => {
-				const s = await this._getDeviceProtection();
+				s = await this._getDeviceProtection();
 				let res;
 				let helper;
 
@@ -63,7 +64,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				const deviceStr = await this._getDeviceString();
 				addToOutput.push(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
-				return s;
 			}));
 		} catch (error) {
 			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
@@ -73,6 +73,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		addToOutput.forEach((line) => {
 			this.ui.stdout.write(line);
 		});
+
+		return s;
 	}
 
 	/**
@@ -191,8 +193,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				if (!s.protected && !s.overridden && deviceProtectionActiveInProduct) {
 					if (!protectedBinary) {
 						const localBootloaderPath = await this._downloadBootloader();
-						const binary = new BinaryCommand();
-						protectedBinary = await binary.createProtectedBinary({ file: localBootloaderPath, verbose: false });
+						protectedBinary = await this._getProtectedBinary({ file: localBootloaderPath, verbose: false });
 					}
 					await this._flashBootloader(protectedBinary, 'enable');
 					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
@@ -211,6 +212,11 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		addToOutput.forEach((line) => {
 			this.ui.stdout.write(line);
 		});
+	}
+
+	async _getProtectedBinary({ file, verbose=true }) {
+		const res = await new BinaryCommand().createProtectedBinary({ file, verbose });
+		return res;
 	}
 
 	/**

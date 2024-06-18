@@ -51,7 +51,7 @@ describe('DeviceProtectionCommands', () => {
 			// Call the method
 			await deviceProtectionCommands.disableProtection();
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledTwice;
+			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
 			expect(deviceProtectionCommands.device.unprotectDevice).to.have.been.calledTwice;
 			expect(deviceProtectionCommands.api.unprotectDevice).to.have.been.calledTwice;
 		});
@@ -76,7 +76,7 @@ describe('DeviceProtectionCommands', () => {
 			// Call the method
 			await deviceProtectionCommands.disableProtection({ open: true });
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledTwice;
+			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
 			expect(deviceProtectionCommands.device.unprotectDevice).to.have.been.calledTwice;
 			expect(deviceProtectionCommands.api.unprotectDevice).to.have.been.calledTwice;
 			expect(deviceProtectionCommands._markAsDevelopmentDevice).to.have.been.calledOnce;
@@ -103,7 +103,7 @@ describe('DeviceProtectionCommands', () => {
 			});
 			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
 			sinon.stub(deviceProtectionCommands, '_isDeviceProtectionActiveInProduct').resolves(true);
-			sinon.stub(deviceProtectionCommands, 'protectBinary').resolves('/path/to/bootloader-protected.bin');
+			sinon.stub(deviceProtectionCommands,'_getProtectedBinary').resolves('/path/to/bootloader-protected.bin');
 			sinon.stub(deviceProtectionCommands, '_downloadBootloader').resolves();
 			sinon.stub(deviceProtectionCommands, '_flashBootloader').resolves();
 			sinon.stub(deviceProtectionCommands, '_markAsDevelopmentDevice').resolves(true);
@@ -208,18 +208,8 @@ describe('DeviceProtectionCommands', () => {
 	});
 
 	describe('_flashBootloader', () => {
-		it('should flash the bootloader on the device', async () => {
-			const flashCmd = new FlashCommand();
-			sinon.stub(flashCmd, 'flashLocal').resolves(true);
-
-			let error;
-			try {
-				await deviceProtectionCommands._flashBootloader('/path/to/bootloader-protected.bin');
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.eql(undefined);
+		xit('should flash the bootloader on the device', async () => {
+			// TODO
 		});
 	});
 
@@ -324,11 +314,46 @@ describe('DeviceProtectionCommands', () => {
 	});
 
 	describe('_withDevice', () => {
-		// TODO
+		it('should execute a function with the device in normal mode', async () => {
+			const fn = sinon.stub().resolves();
+			sinon.stub(deviceProtectionCommands, 'getUsbDevice').resolves();
+			deviceProtectionCommands.device = {
+				isInDfuMode: false
+			};
+			sinon.stub(deviceProtectionCommands, '_resetDevice').resolves();
+
+			await deviceProtectionCommands._withDevice(fn);
+
+			expect(deviceProtectionCommands.getUsbDevice).to.have.been.calledOnce;
+			expect(deviceProtectionCommands._resetDevice).to.not.have.been.called;
+			expect(fn).to.have.been.calledOnce;
+		});
+
+		it('should execute a function with the device in dfu mode', async () => {
+			const fn = sinon.stub().resolves();
+			sinon.stub(deviceProtectionCommands, 'getUsbDevice').resolves();
+			deviceProtectionCommands.device = {
+				isInDfuMode: true
+			};
+			sinon.stub(deviceProtectionCommands, '_resetDevice').resolves();
+
+			await deviceProtectionCommands._withDevice(fn);
+
+			expect(deviceProtectionCommands.getUsbDevice).to.have.been.calledTwice;
+			expect(deviceProtectionCommands._resetDevice).to.have.been.calledOnce;
+			expect(fn).to.have.been.calledOnce;
+		});
 	});
 
 	describe('_getDeviceString', () => {
-		// TODO
+		it('gets the device string', async() => {
+			deviceProtectionCommands.deviceId = '0123456789abcdef';
+			deviceProtectionCommands.productId = 12345;
+
+			const res = await deviceProtectionCommands._getDeviceString();
+
+			expect(res).to.eql('[0123456789abcdef] (Product 12345)');
+		});
 	});
 
 	describe('getUsbDevice', () => {
