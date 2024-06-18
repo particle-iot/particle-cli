@@ -43,27 +43,30 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		// and verify that the segment containing the system-part1 is writable or not. If the segment is writable,
 		// then the device is not pretected. For now though, let's assume the device is in normal mode and not in dfu mode.
 		let addToOutput = [];
+		try {
+			await this.ui.showBusySpinnerUntilResolved('Getting device status', this._withDevice(async () => {
+				const s = await this._getDeviceProtection();
+				let res;
+				let helper;
 
-		await this.ui.showBusySpinnerUntilResolved('Getting device status', this._withDevice(async () => {
-			const s = await this._getDeviceProtection();
-			let res;
-			let helper;
+				if (s.overridden) {
+					res = 'Protected device (service mode)';
+					helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of service mode.`;
+				} else if (s.protected) {
+					res = 'Protected device';
+					helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in service mode.`;
+				} else {
+					res = 'Open device';
+					helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
+				}
 
-			if (s.overridden) {
-				res = 'Protected device (service mode)';
-				helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of service mode.`;
-			} else if (s.protected) {
-				res = 'Protected device';
-				helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in service mode.`;
-			} else {
-				res = 'Open device';
-				helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
-			}
-
-			const deviceStr = await this._getDeviceString();
-			addToOutput.push(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
-			return s;
-		}));
+				const deviceStr = await this._getDeviceString();
+				addToOutput.push(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
+				return s;
+			}));
+		} catch (error) {
+			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
+		}
 
 		addToOutput.forEach((line) => {
 			this.ui.stdout.write(line);
@@ -88,49 +91,53 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 
 		await this.ui.showBusySpinnerUntilResolved('Disabling protection on the device', this._withDevice(async () => {
-			const deviceStr = await this._getDeviceString();
-			let s = await this._getDeviceProtection();
+			try {
+				const deviceStr = await this._getDeviceString();
+				let s = await this._getDeviceProtection();
 
-			if (!s.protected && !s.overridden) {
-				addToOutput.push(`${deviceStr} is not a protected device.${os.EOL}`);
-				return;
+				if (!s.protected && !s.overridden) {
+					addToOutput.push(`${deviceStr} is not a protected device.${os.EOL}`);
+					return;
+				}
+
+				let r = await this.api.unprotectDevice({ deviceId: this.deviceId, action: 'prepare', auth: settings.access_token });
+				const serverNonce = Buffer.from(r.server_nonce, 'base64');
+
+				const { deviceNonce, deviceSignature, devicePublicKeyFingerprint } = await this.device.unprotectDevice({ action: 'prepare', serverNonce });
+
+				r = await this.api.unprotectDevice({
+					deviceId: this.deviceId,
+					action: 'confirm',
+					serverNonce: serverNonce.toString('base64'),
+					deviceNonce: deviceNonce.toString('base64'),
+					deviceSignature: deviceSignature.toString('base64'),
+					devicePublicKeyFingerprint: devicePublicKeyFingerprint.toString('base64'),
+					auth: settings.access_token
+				});
+
+				const serverSignature = Buffer.from(r.server_signature, 'base64');
+				const serverPublicKeyFingerprint = Buffer.from(r.server_public_key_fingerprint, 'base64');
+
+				// TODO: Error handling
+				await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
+
+				if (!open) {
+					addToOutput.push(`${deviceStr} is now in service mode.${os.EOL}A protected device stays in service mode for a total of 20 reboots or 24 hours.${os.EOL}`);
+					return;
+				}
+
+				const localBootloaderPath = await this._downloadBootloader();
+				await this._flashBootloader(localBootloaderPath, 'disable');
+				addToOutput.push(`${deviceStr} is now an open device.${os.EOL}`);
+
+				const success = await this._markAsDevelopmentDevice(true);
+				addToOutput.push(success ?
+					`Device placed in development mode to maintain current settings.${os.EOL}` :
+					`Failed to mark device as development device. Device protection may be enabled on next cloud connection.${os.EOL}`
+				);
+			} catch (error) {
+				throw new Error(`Unable to make the device an open device: ${error.message}${os.EOL}`);
 			}
-
-			let r = await this.api.unprotectDevice({ deviceId: this.deviceId, action: 'prepare', auth: settings.access_token });
-			const serverNonce = Buffer.from(r.server_nonce, 'base64');
-
-			const { deviceNonce, deviceSignature, devicePublicKeyFingerprint } = await this.device.unprotectDevice({ action: 'prepare', serverNonce });
-
-			r = await this.api.unprotectDevice({
-				deviceId: this.deviceId,
-				action: 'confirm',
-				serverNonce: serverNonce.toString('base64'),
-				deviceNonce: deviceNonce.toString('base64'),
-				deviceSignature: deviceSignature.toString('base64'),
-				devicePublicKeyFingerprint: devicePublicKeyFingerprint.toString('base64'),
-				auth: settings.access_token
-			});
-
-			const serverSignature = Buffer.from(r.server_signature, 'base64');
-			const serverPublicKeyFingerprint = Buffer.from(r.server_public_key_fingerprint, 'base64');
-
-			// TODO: Error handling (Run CLI configured to local api but device to staging and vice versa)
-			await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
-
-			if (!open) {
-				addToOutput.push(`${deviceStr} is now in service mode.${os.EOL}A protected device stays in service mode for a total of 20 reboots or 24 hours.${os.EOL}`);
-				return;
-			}
-
-			const localBootloaderPath = await this._downloadBootloader();
-			await this._flashBootloader(localBootloaderPath, 'disable');
-			addToOutput.push(`${deviceStr} is now an open device.${os.EOL}`);
-
-			const success = await this._markAsDevelopmentDevice(true);
-			addToOutput.push(success ?
-				`Device placed in development mode to maintain current settings.${os.EOL}` :
-				`Failed to mark device as development device. Device protection may be enabled on next cloud connection.${os.EOL}`
-			);
 		}));
 
 		addToOutput.forEach((line) => {
@@ -174,43 +181,47 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async enableProtection({ file } = {}) {
 		let addToOutput = [];
 		let protectedBinary = file;
-		await this.ui.showBusySpinnerUntilResolved('Enabling protection on the device', this._withDevice(async () => {
-			const deviceStr = await this._getDeviceString();
-			const s = await this._getDeviceProtection();
+		try {
+			await this.ui.showBusySpinnerUntilResolved('Enabling protection on the device', this._withDevice(async () => {
+				const deviceStr = await this._getDeviceString();
+				const s = await this._getDeviceProtection();
 
-			if (s.protected && !s.overridden) {
-				addToOutput.push(`${deviceStr} is a protected device.${os.EOL}`);
-				return;
-			}
+				if (s.protected && !s.overridden) {
+					addToOutput.push(`${deviceStr} is a protected device.${os.EOL}`);
+					return;
+				}
 
-			const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
-			if (s.overridden) {
-				await this.device.unprotectDevice({ action: 'reset' });
-				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
-				if (deviceProtectionActiveInProduct) {
+				const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
+				if (s.overridden) {
+					await this.device.unprotectDevice({ action: 'reset' });
+					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
+					if (deviceProtectionActiveInProduct) {
+						const success = await this._markAsDevelopmentDevice(false);
+						addToOutput.push(success ?
+							`Device removed from development mode to maintain current settings.${os.EOL}` :
+							`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
+						);
+					}
+					return;
+				}
+
+				if (!s.protected && !s.overridden && deviceProtectionActiveInProduct) {
+					if (!protectedBinary) {
+						const localBootloaderPath = await this._downloadBootloader();
+						protectedBinary = await this.protectBinary({ file: localBootloaderPath, verbose: false });
+					}
+					await this._flashBootloader(protectedBinary, 'enable');
+					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
 					const success = await this._markAsDevelopmentDevice(false);
 					addToOutput.push(success ?
 						`Device removed from development mode to maintain current settings.${os.EOL}` :
 						`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
 					);
 				}
-				return;
-			}
-
-			if (!s.protected && !s.overridden && deviceProtectionActiveInProduct) {
-				if (!protectedBinary) {
-					const localBootloaderPath = await this._downloadBootloader();
-					protectedBinary = await this.protectBinary({ file: localBootloaderPath, verbose: false });
-				}
-				await this._flashBootloader(protectedBinary, 'enable');
-				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
-				const success = await this._markAsDevelopmentDevice(false);
-				addToOutput.push(success ?
-					`Device removed from development mode to maintain current settings.${os.EOL}` :
-					`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
-				);
-			}
-		}));
+			}));
+		} catch (error) {
+			throw new Error(`Unable to make the device a protected device: ${error.message}${os.EOL}`);
+		}
 
 		addToOutput.forEach((line) => {
 			this.ui.stdout.write(line);
