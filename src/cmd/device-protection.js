@@ -42,8 +42,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		// To get information for dfu devices, a new API needs to be exposed from Particle-USB to get the dfu segments
 		// and verify that the segment containing the system-part1 is writable or not. If the segment is writable,
 		// then the device is not pretected. For now though, let's assume the device is in normal mode and not in dfu mode.
+		let addToOutput = [];
 
-		return this._withDevice(async () => {
+		await this.ui.showBusySpinnerUntilResolved('Getting device status', this._withDevice(async () => {
 			const s = await this._getDeviceProtection();
 			let res;
 			let helper;
@@ -60,8 +61,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			}
 
 			const deviceStr = await this._getDeviceString();
-			this.ui.stdout.write(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
+			addToOutput.push(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
 			return s;
+		}));
+
+		addToOutput.forEach((line) => {
+			this.ui.stdout.write(line);
 		});
 	}
 
@@ -80,12 +85,14 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @throws {Error} - Throws an error if any of the async operations fail.
 	 */
 	async disableProtection({ open } = {}) {
-		return this._withDevice(async () => {
+		let addToOutput = [];
+
+		await this.ui.showBusySpinnerUntilResolved('Disabling protection on the device', this._withDevice(async () => {
 			const deviceStr = await this._getDeviceString();
 			let s = await this._getDeviceProtection();
 
 			if (!s.protected && !s.overridden) {
-				this.ui.stdout.write(`${deviceStr} is not a protected device.${os.EOL}`);
+				addToOutput.push(`${deviceStr} is not a protected device.${os.EOL}`);
 				return;
 			}
 
@@ -111,19 +118,23 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
 
 			if (!open) {
-				this.ui.stdout.write(`${deviceStr} is in service mode.${os.EOL}A protected device stays in service mode for a total of 20 reboots or 24 hours.${os.EOL}`);
+				addToOutput.push(`${deviceStr} is now in service mode.${os.EOL}A protected device stays in service mode for a total of 20 reboots or 24 hours.${os.EOL}`);
 				return;
 			}
 
 			const localBootloaderPath = await this._downloadBootloader();
 			await this._flashBootloader(localBootloaderPath, 'disable');
-			this.ui.stdout.write(`${deviceStr} is now an open device.${os.EOL}`);
+			addToOutput.push(`${deviceStr} is now an open device.${os.EOL}`);
 
 			const success = await this._markAsDevelopmentDevice(true);
-			this.ui.stdout.write(success ?
+			addToOutput.push(success ?
 				`Device placed in development mode to maintain current settings.${os.EOL}` :
 				`Failed to mark device as development device. Device protection may be enabled on next cloud connection.${os.EOL}`
 			);
+		}));
+
+		addToOutput.forEach((line) => {
+			this.ui.stdout.write(line);
 		});
 	}
 
@@ -161,23 +172,24 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @throws {Error} Throws an error if any of the asynchronous operations fail.
 	 */
 	async enableProtection({ file } = {}) {
+		let addToOutput = [];
 		let protectedBinary = file;
-		return this._withDevice(async () => {
+		await this.ui.showBusySpinnerUntilResolved('Enabling protection on the device', this._withDevice(async () => {
 			const deviceStr = await this._getDeviceString();
 			const s = await this._getDeviceProtection();
 
 			if (s.protected && !s.overridden) {
-				this.ui.stdout.write(`${deviceStr} is a protected device.${os.EOL}`);
+				addToOutput.push(`${deviceStr} is a protected device.${os.EOL}`);
 				return;
 			}
 
 			const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
 			if (s.overridden) {
 				await this.device.unprotectDevice({ action: 'reset' });
-				this.ui.stdout.write(`${deviceStr} is now a protected device.${os.EOL}`);
+				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
 				if (deviceProtectionActiveInProduct) {
 					const success = await this._markAsDevelopmentDevice(false);
-					this.ui.stdout.write(success ?
+					addToOutput.push(success ?
 						`Device removed from development mode to maintain current settings.${os.EOL}` :
 						`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
 					);
@@ -191,13 +203,17 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					protectedBinary = await this.protectBinary({ file: localBootloaderPath, verbose: false });
 				}
 				await this._flashBootloader(protectedBinary, 'enable');
-				this.ui.stdout.write(`${deviceStr} is now a protected device.${os.EOL}`);
+				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
 				const success = await this._markAsDevelopmentDevice(false);
-				this.ui.stdout.write(success ?
+				addToOutput.push(success ?
 					`Device removed from development mode to maintain current settings.${os.EOL}` :
 					`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
 				);
 			}
+		}));
+
+		addToOutput.forEach((line) => {
+			this.ui.stdout.write(line);
 		});
 	}
 
@@ -228,22 +244,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @param {string} action - The action to perform ('enable' or 'disable').
 	 * @returns {Promise<void>}
 	 */
-	async _flashBootloader(path, action) {
-		let msg;
-		switch (action) {
-			case 'enable':
-				msg = 'Enabling protection on the device...';
-				break;
-			case 'disable':
-				msg = 'Disabling protection on the device...';
-				break;
-			default:
-				throw new Error('Invalid action');
-		}
-
+	async _flashBootloader(path) {
 		const flashCmdInstance = new FlashCommand();
-		const flashPromise = flashCmdInstance.flashLocal({ files: [path], applicationOnly: true, verbose: false });
-		await this.ui.showBusySpinnerUntilResolved(msg, flashPromise);
+		await flashCmdInstance.flashLocal({ files: [path], applicationOnly: true, verbose: false });
 	}
 
 	/**
