@@ -262,7 +262,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async _flashBootloader(path) {
 		const flashCmdInstance = new FlashCommand();
 		await flashCmdInstance.flashLocal({ files: [path], applicationOnly: true, verbose: false });
-	}	
+	}
 
 	/**
 	 * Marks the device as a development device.
@@ -347,7 +347,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 	/**
 	 * Constructs and returns a string representation of the device, including its product ID.
-	 * 
+	 *
 	 * @async
 	 * @returns {Promise<string>} A string representing the device and its product ID.
 	 */

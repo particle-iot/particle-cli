@@ -1,4 +1,5 @@
-const DeviceProtectionCommands = require('/Users/keerthyamisagadda/code/particle-cli/src/cmd/device-protection');
+const DeviceProtectionCommands = require('./device-protection');
+const FlashCommand = require('./flash');
 const { expect, sinon } = require('../../test/setup');
 // const fs = require('fs-extra');
 // const { createProtectedModule } = require('binary-version-reader');
@@ -207,19 +208,74 @@ describe('DeviceProtectionCommands', () => {
 	});
 
 	describe('_flashBootloader', () => {
-		xit('should flash the bootloader on the device', async () => {
+		it('should flash the bootloader on the device', async () => {
+			const flashCmd = new FlashCommand();
+			sinon.stub(flashCmd, 'flashLocal').resolves(true);
 
+			let error;
+			try {
+				await deviceProtectionCommands._flashBootloader('/path/to/bootloader-protected.bin');
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.eql(undefined);
 		});
 	});
 
 	describe('_markAsDevelopmentDevice', () => {
-		xit('should mark the device as a development device', async () => {
+		it('should mark the device as a development device', async () => {
+			deviceProtectionCommands.productId = 12345;
+			deviceProtectionCommands.api = {
+				markAsDevelopmentDevice: sinon.stub().resolves()
+			};
+
+			let error;
+			let res;
+			try {
+				res = await deviceProtectionCommands._markAsDevelopmentDevice(true);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.undefined;
+			expect(res).to.eql(true);
 		});
 
-		xit('should return false if the product ID is not available', async () => {
+		it('should return false if the product ID is not available', async () => {
+			deviceProtectionCommands.productId = null;
+			deviceProtectionCommands.api = {
+				markAsDevelopmentDevice: sinon.stub().resolves()
+			};
+
+			let error;
+			let res;
+			try {
+				res = await deviceProtectionCommands._markAsDevelopmentDevice(true);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.undefined;
+			expect(res).to.eql(false);
 		});
 
-		xit('should return false if an error occurs', async () => {
+		it('should return false if an error occurs', async () => {
+			deviceProtectionCommands.productId = 12345;
+			deviceProtectionCommands.api = {
+				markAsDevelopmentDevice: sinon.stub().rejects(new Error('random error'))
+			};
+
+			let error;
+			let res;
+			try {
+				res = await deviceProtectionCommands._markAsDevelopmentDevice(true);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.undefined;
+			expect(res).to.eql(false);
 		});
 	});
 
@@ -235,10 +291,35 @@ describe('DeviceProtectionCommands', () => {
 	});
 
 	describe('_getProductId', () => {
-		xit('should retrieve the product ID of the device', async () => {
+		it('should retrieve the product ID of the device', async () => {
+			deviceProtectionCommands.api = {
+				getDeviceAttributes: sinon.stub().resolves({
+					platform_id: 13,
+					product_id: 12345
+				})
+			};
+
+			const productIdBefore = deviceProtectionCommands.productId;
+			await deviceProtectionCommands._getProductId();
+			const productIdAfter = deviceProtectionCommands.productId;
+
+			expect(productIdBefore).to.eql(null);
+			expect(productIdAfter).to.eql(12345);
 		});
 
-		xit('should set the product ID to null if an error occurs', async () => {
+		it('should set the product ID to null if an error occurs', async () => {
+			it('should retrieve the product ID of the device', async () => {
+				deviceProtectionCommands.api = {
+					getDeviceAttributes: sinon.stub().rejects(new Error('random error'))
+				};
+
+				const productIdBefore = deviceProtectionCommands.productId;
+				await deviceProtectionCommands._getProductId();
+				const productIdAfter = deviceProtectionCommands.productId;
+
+				expect(productIdBefore).to.eql(null);
+				expect(productIdAfter).to.eql(null);
+			});
 		});
 	});
 
@@ -258,24 +339,4 @@ describe('DeviceProtectionCommands', () => {
 		// TODO
 	});
 
-	describe('protectBinary', () => {
-		it('should protect a binary file by adding device protection', async () => {
-			// const file = '/path/to/binary.bin';
-			// const protectedFile = '/path/to/binary-protected.bin';
-			// const binary = Buffer.from('1111');
-			// const protectedBinary = Buffer.from('2222');
-			// sinon.stub(fs, 'ensureFile').resolves();
-			// sinon.stub(fs, 'readFile').resolves(binary);
-			// sinon.stub(createProtectedModule, 'call').resolves(protectedBinary);
-			// sinon.stub(fs, 'writeFile').resolves();
-			//
-			// const result = await deviceProtectionCommands.protectBinary({ file });
-
-
-		});
-
-		it('should throw an error if the file is not provided', async () => {
-			// await expect(deviceProtectionCommands.protectBinary({})).rejects.toThrowError('Please provide a file to add device protection');
-		});
-	});
 });

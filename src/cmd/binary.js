@@ -48,7 +48,7 @@ class BinaryCommand {
 
 	async createProtectedBinary({ file, verbose=true }) {
 		await this._checkFile(file);
-		
+
 		const fileName = path.basename(file);
 		const resBinaryName = fileName.replace('.bin', '-protected.bin');
 		const resBinaryPath = path.join(path.dirname(file), resBinaryName);
@@ -63,7 +63,7 @@ class BinaryCommand {
 
 		return resBinaryPath;
 	}
-	
+
 
 	async _checkFile(file) {
 		try {
