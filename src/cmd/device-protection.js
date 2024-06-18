@@ -60,7 +60,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			}
 
 			const deviceStr = await this._getDeviceString();
-			this.ui.stdout.write(`${deviceStr}: ${chalk.bold.white(res)}${os.EOL}${helper}${os.EOL}`);
+			this.ui.stdout.write(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
 			return s;
 		});
 	}
