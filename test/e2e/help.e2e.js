@@ -46,7 +46,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  wifi            Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).'
 	];
 
-	const allCmds = ['binary inspect', 'binary', 'bundle', 'call', 'cloud list',
+	const allCmds = ['binary inspect', 'binary enable-device-protection', 'binary', 'bundle', 'call', 'cloud list',
 		'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile', 'config', 'device add', 'device remove',
