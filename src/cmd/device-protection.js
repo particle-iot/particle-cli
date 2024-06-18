@@ -312,7 +312,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 	async _getProductId() {
 		if (this.productId) {
-			return;
+			return this.productId;
 		}
 
 		try {

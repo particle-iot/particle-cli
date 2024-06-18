@@ -1,8 +1,5 @@
 const DeviceProtectionCommands = require('./device-protection');
-const FlashCommand = require('./flash');
 const { expect, sinon } = require('../../test/setup');
-// const fs = require('fs-extra');
-// const { createProtectedModule } = require('binary-version-reader');
 
 describe('DeviceProtectionCommands', () => {
 	let deviceProtectionCommands;
@@ -149,8 +146,7 @@ describe('DeviceProtectionCommands', () => {
 			await deviceProtectionCommands.enableProtection();
 
 			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
-			expect(deviceProtectionCommands._isDeviceProtectionActiveInProduct).to.have.been.calledOnce;
-			expect(deviceProtectionCommands._markAsDevelopmentDevice).to.have.been.calledOnce;
+			expect(deviceProtectionCommands._isDeviceProtectionActiveInProduct).to.not.have.been.called;
 		});
 
 		it('does not protect an open device if it is not in a product', async () => {
@@ -270,13 +266,52 @@ describe('DeviceProtectionCommands', () => {
 	});
 
 	describe('_isDeviceProtectionActiveInProduct', () => {
-		xit('should return true if device protection is active in the product', async () => {
+		it('should return true if device protection is active in the product', async () => {
+			sinon.stub(deviceProtectionCommands, '_getProductId').resolves();
+			deviceProtectionCommands.productId = '12345';
+			deviceProtectionCommands.api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						device_protection: 'active'
+					}
+				})
+			};
+
+			const res = await deviceProtectionCommands._isDeviceProtectionActiveInProduct();
+
+			expect(res).to.eql(true);
+
 		});
 
-		xit('should return false if device protection is not active in the product', async () => {
+		it('should return false if device protection is not active in the product', async () => {
+			sinon.stub(deviceProtectionCommands, '_getProductId').resolves();
+			deviceProtectionCommands.productId = '12345';
+			deviceProtectionCommands.api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						device_protection: ''
+					}
+				})
+			};
+
+			const res = await deviceProtectionCommands._isDeviceProtectionActiveInProduct();
+
+			expect(res).to.eql(false);
 		});
 
-		xit('should return false if the product ID is not available', async () => {
+		it('should return false if device protection is not available for this product', async () => {
+			sinon.stub(deviceProtectionCommands, '_getProductId').resolves();
+			deviceProtectionCommands.productId = '12345';
+			deviceProtectionCommands.api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+					}
+				})
+			};
+
+			const res = await deviceProtectionCommands._isDeviceProtectionActiveInProduct();
+
+			expect(res).to.eql(false);
 		});
 	});
 
