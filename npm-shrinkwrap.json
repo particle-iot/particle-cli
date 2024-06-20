@@ -27,7 +27,7 @@
         "particle-api-js": "^10.5.0",
         "particle-commands": "^1.0.1",
         "particle-library-manager": "^0.1.15",
-        "particle-usb": "^3.2.1",
+        "particle-usb": "^3.3.0",
         "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
         "safe-buffer": "^5.2.0",
         "semver": "^7.5.2",
@@ -6376,9 +6376,9 @@
       }
     },
     "node_modules/particle-usb": {
-      "version": "3.2.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-3.2.1.tgz",
-      "integrity": "sha512-btOF97OrVvBkfe2VEbNbWH+ANiUMxINQbeGO6PbI8qnRrjJ61VdVW6KkxUfTVqwQ7oYxOHcvowl+6nySJoAmvQ==",
+      "version": "3.3.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-3.3.0.tgz",
+      "integrity": "sha512-oCshMQPkUZpLZZ+7wGOct9wnGfn44QX/gZNFVi1rrh0ulbrGsG5jgkDu/R0oKMchW4dhPMZAJmjr3KgVzVaQeA==",
       "dependencies": {
         "@particle/device-os-protobuf": "^2.6.1",
         "ip-address": "^9.0.5",
@@ -14266,9 +14266,9 @@
       }
     },
     "particle-usb": {
-      "version": "3.2.1",
-      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-3.2.1.tgz",
-      "integrity": "sha512-btOF97OrVvBkfe2VEbNbWH+ANiUMxINQbeGO6PbI8qnRrjJ61VdVW6KkxUfTVqwQ7oYxOHcvowl+6nySJoAmvQ==",
+      "version": "3.3.0",
+      "resolved": "https://registry.npmjs.org/particle-usb/-/particle-usb-3.3.0.tgz",
+      "integrity": "sha512-oCshMQPkUZpLZZ+7wGOct9wnGfn44QX/gZNFVi1rrh0ulbrGsG5jgkDu/R0oKMchW4dhPMZAJmjr3KgVzVaQeA==",
       "requires": {
         "@particle/device-os-protobuf": "^2.6.1",
         "ip-address": "^9.0.5",
