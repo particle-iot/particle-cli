@@ -131,6 +131,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				const localBootloaderPath = await this._downloadBootloader();
 				await this._flashBootloader(localBootloaderPath);
+				// FIXME: Device could still be flashing the bootloader at this point.
 				addToOutput.push(`${deviceStr} is now an open device.${os.EOL}`);
 
 				const success = await this._markAsDevelopmentDevice(true);
@@ -194,6 +195,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					protectedBinary = await this._getProtectedBinary({ file: localBootloaderPath, verbose: false });
 				}
 				await this._flashBootloader(protectedBinary);
+				// FIXME: Device could still be flashing the bootloader at this point.
 				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
 				const success = await this._markAsDevelopmentDevice(false);
 				addToOutput.push(success ?
@@ -332,16 +334,20 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<*>} The result of the function execution.
 	 */
 	async _withDevice(fn) {
+		let putDeviceInDfuMode = false;
 		try {
 			await this._getUsbDevice(this.device);
-
 			if (this.device.isInDfuMode) {
+				putDeviceInDfuMode = true;
 				await this._resetDevice(this.device);
-				await this._getUsbDevice(this.device);
+				this.device = await usbUtils.reopenInNormalMode( { id: this.deviceId });
 			}
 
 			return await fn();
 		} finally {
+			if (putDeviceInDfuMode) {
+				await this.device.enterDfuMode();
+			}
 			if (this.device && this.device.isOpen) {
 				await this.device.close();
 			}
@@ -373,6 +379,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 	}
 
+	async delay(ms){
+		return new Promise((resolve) => setTimeout(resolve, ms));
+	}
+
 	/**
 	 * Resets the device and waits for it to restart.
 	 *
@@ -381,11 +391,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<void>}
 	 */
 	async _resetDevice(device) {
-		await device.reset();
-		if (device.isOpen) {
+		if (device.isInDfuMode) {
+			await device.enterSafeMode();
 			await device.close();
 		}
-		await new Promise(resolve => setTimeout(resolve, 3000));
 	}
 
 	/**
