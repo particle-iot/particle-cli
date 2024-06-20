@@ -340,7 +340,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (this.device.isInDfuMode) {
 				putDeviceInDfuMode = true;
 				await this._resetDevice(this.device);
-				this.device = await usbUtils.reopenInNormalMode( { id: this.deviceId });
 			}
 
 			return await fn();
@@ -395,37 +394,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			await device.enterSafeMode();
 			await device.close();
 		}
-	}
-
-	/**
-	 * Protects a binary file by adding device protection.
-	 *
-	 * @async
-	 * @param {Object} options - The options for protecting the binary.
-	 * @param {string} options.file - The path to the binary file.
-	 * @param {boolean} [options.verbose=true] - Whether to log verbose output.
-	 * @returns {Promise<string>} The path to the protected binary file.
-	 * @throws {Error} Throws an error if the file is not provided.
-	 */
-	async protectBinary({ file, verbose=true }) {
-		if (!file) {
-			throw new Error('Please provide a file to add device protection');
-		}
-
-		await fs.ensureFile(file);
-		const fileName = path.basename(file);
-		const resBinaryName = fileName.replace('.bin', '-protected.bin');
-		const resBinaryPath = path.join(path.dirname(file), resBinaryName);
-
-		const binary = await fs.readFile(file);
-		const protectedBinary = await createProtectedModule(binary);
-		await fs.writeFile(resBinaryPath, protectedBinary);
-
-		if (verbose) {
-			this.ui.stdout.write(`Protected binary saved at ${resBinaryPath}`);
-		}
-
-		return resBinaryPath;
+		this.device = await usbUtils.reopenInNormalMode( { id: this.deviceId });
 	}
 
 	/**
