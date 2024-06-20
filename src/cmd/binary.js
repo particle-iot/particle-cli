@@ -46,16 +46,19 @@ class BinaryCommand {
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
-	async createProtectedBinary({ file, saveTo, verbose=true }) {
-		await this._checkFile(file);
+	async createProtectedBinary({ saveTo, params: { filename } }, verbose=true) {
+		await this._checkFile(filename);
+		let resBinaryName;
+		
+		if (saveTo) {
+			resBinaryName = saveTo.endsWith('.bin') ? saveTo : `${saveTo}.bin`;
+		} else {
+			resBinaryName = path.basename(filename).replace('.bin', '-protected.bin');
+		}
 
-		const resBinaryName = saveTo 
-			? (saveTo.endsWith('.bin') ? saveTo : `${saveTo}.bin`)
-			: path.basename(file).replace('.bin', '-protected.bin');
+		const resBinaryPath = path.join(path.dirname(filename), resBinaryName);
 
-		const resBinaryPath = path.join(path.dirname(file), resBinaryName);
-
-		const binary = await fs.readFile(file);
+		const binary = await fs.readFile(filename);
 		const protectedBinary = await createProtectedModule(binary);
 		await fs.writeFile(resBinaryPath, protectedBinary);
 

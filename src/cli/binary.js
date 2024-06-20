@@ -21,7 +21,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const BinaryCommand = require('../cmd/binary');
-			return new BinaryCommand().createProtectedBinary({ file: args.params.filename, saveTo, verbose: true });
+			return new BinaryCommand().createProtectedBinary(args, true /* verbose */);
 		},
 		examples: {
 			'$0 $command bootloader.bin': 'Provide bootloader binary to protect'

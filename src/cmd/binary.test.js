@@ -10,6 +10,26 @@ describe('Binary Inspect', () => {
 		binaryCommand = new BinaryCommand();
 	});
 
+	describe('createProtectedBinary', () => {
+		it('creates a protected binary', async () => {
+			const filename = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-bootloader-610.bin');
+			const saveTo = 'argon_stroby-protected.bin';
+
+			let error;
+			let resPath;
+			try {
+				resPath = await binaryCommand.createProtectedBinary({ saveTo, params: { filename } }, false);
+			} catch (err) {
+				error = err;
+			}
+
+			expect(error).to.equal(undefined);
+			expect(resPath).to.equal(path.join(path.dirname(filename), saveTo));
+
+			await fs.remove(resPath);
+		});
+	});
+
 	describe('__checkFile', () => {
 		it('errors if file does not exist', async () => {
 			let error;
