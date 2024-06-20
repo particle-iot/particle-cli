@@ -46,7 +46,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 		let s;
 		try {
-			await this.ui.showBusySpinnerUntilResolved('Getting device status', this._withDevice(async () => {
+			await this.ui.showBusySpinnerUntilResolved('Getting device status', this._withDevice(true, async () => {
 				s = await this._getDeviceProtection();
 				let res;
 				let helper;
@@ -94,7 +94,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async disableProtection({ open } = {}) {
 		let addToOutput = [];
 
-		await this.ui.showBusySpinnerUntilResolved('Disabling device protection', this._withDevice(async () => {
+		await this.ui.showBusySpinnerUntilResolved('Disabling device protection', this._withDevice(true, async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
 				let s = await this._getDeviceProtection();
@@ -131,7 +131,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				const localBootloaderPath = await this._downloadBootloader();
 				await this._flashBootloader(localBootloaderPath);
-				// FIXME: Device could still be flashing the bootloader at this point.
 				addToOutput.push(`${deviceStr} is now an open device.${os.EOL}`);
 
 				const success = await this._markAsDevelopmentDevice(true);
@@ -168,7 +167,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 		let protectedBinary = file;
 		try {
-			await this.ui.showBusySpinnerUntilResolved('Enabling device protection', this._withDevice(async () => {
+			await this.ui.showBusySpinnerUntilResolved('Enabling device protection', this._withDevice(false, async () => {
 				const deviceStr = await this._getDeviceString();
 				const s = await this._getDeviceProtection();
 
@@ -194,9 +193,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					const localBootloaderPath = await this._downloadBootloader();
 					protectedBinary = await this._getProtectedBinary({ file: localBootloaderPath, verbose: false });
 				}
+
 				await this._flashBootloader(protectedBinary);
-				// FIXME: Device could still be flashing the bootloader at this point.
 				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
+
 				const success = await this._markAsDevelopmentDevice(false);
 				addToOutput.push(success ?
 					// TODO: Improve these lines
@@ -333,18 +333,16 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @param {Function} fn - The function to execute with the device.
 	 * @returns {Promise<*>} The result of the function execution.
 	 */
-	async _withDevice(fn) {
-		let putDeviceInDfuMode = false;
+	async _withDevice(putDeviceInDfuMode, fn) {
 		try {
 			await this._getUsbDevice(this.device);
-			if (this.device.isInDfuMode) {
-				putDeviceInDfuMode = true;
-				await this._resetDevice(this.device);
-			}
+			putDeviceInDfuMode = putDeviceInDfuMode && !this.device.isInDfuMode;
 
 			return await fn();
 		} finally {
+			console.log('Closing device.');
 			if (putDeviceInDfuMode) {
+				await this._waitForDeviceToReboot();
 				await this.device.enterDfuMode();
 			}
 			if (this.device && this.device.isOpen) {
@@ -378,6 +376,20 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 	}
 
+	async _waitForDeviceToReboot() {
+		const start = Date.now();
+		while (Date.now() - start < 60000) {
+			try {
+				await this.delay(1000);
+				this.device = await usbUtils.reopenDevice({ id: this.deviceId });
+				const s = await this.device.getProtectionState();
+				break;
+			} catch (error) {
+				// ignore error
+			}
+		}
+	}
+
 	async delay(ms){
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
@@ -389,10 +401,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @param {Object} device - The device to reset.
 	 * @returns {Promise<void>}
 	 */
-	async _resetDevice(device) {
-		if (device.isInDfuMode) {
-			await device.enterSafeMode();
-			await device.close();
+	async _putDeviceInSafeMode() {
+		if (this.device.isInDfuMode) {
+			await this.device.enterSafeMode();
+			await this.device.close();
 		}
 		this.device = await usbUtils.reopenInNormalMode( { id: this.deviceId });
 	}
