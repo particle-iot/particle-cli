@@ -46,7 +46,7 @@ class BinaryCommand {
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
-	async createProtectedBinary({ saveTo, file, verbose}) {
+	async createProtectedBinary({ saveTo, file, verbose }) {
 		await this._checkFile(file);
 		let resBinaryName;
 

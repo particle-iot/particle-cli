@@ -1,7 +1,5 @@
 const os = require('os');
 const path = require('path');
-const fs = require('fs-extra');
-const { createProtectedModule } = require('binary-version-reader');
 const chalk = require('chalk');
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
@@ -382,13 +380,19 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 	}
 
+	/**
+	 * Waits for the device to reboot.
+	 * This method waits for the device to reboot by checking if the device is ready to accept control requests.
+	 * It waits for a maximum of 60 seconds with a 1-second interval.
+	 */
 	async _waitForDeviceToReboot() {
 		const start = Date.now();
 		while (Date.now() - start < REBOOT_TIME_MSEC) {
 			try {
 				await this._delay(REBOOT_INTERVAL_MSEC);
 				this.device = await usbUtils.reopenDevice({ id: this.deviceId });
-				const s = await this.device.getProtectionState();
+				// Waiting for any control request to work to ensure the device is ready
+				await this.device.getProtectionState();
 				break;
 			} catch (error) {
 				// ignore error
