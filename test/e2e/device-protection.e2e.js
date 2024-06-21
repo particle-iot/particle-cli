@@ -6,7 +6,7 @@ const {
 } = require('../lib/env');
 
 
-describe('Wi-Fi Commands [@device,@device-protection]', () => {
+describe('Device Protection Commands [@device,@device-protection]', () => {
 	const help = [
 		'Manage device protection',
 		'Usage: particle device-protection <command>',
@@ -62,15 +62,15 @@ describe('Wi-Fi Commands [@device,@device-protection]', () => {
 		it('Gets the current device protection status', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'status']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
-        it('Attempts to disable protection status on an open device', async () => {
+		it('Attempts to disable protection status on an open device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is not a protected device.`);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is not a protected device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -78,23 +78,23 @@ describe('Wi-Fi Commands [@device,@device-protection]', () => {
 		it('Enables protection status on the device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'status']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now a protected device.\nDevice removed from development mode to maintain current settings.`);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now a protected device.\nDevice removed from development mode to maintain current settings.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
-        it('Gets the current status of the device', async () => {
-            const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
+		it('Gets the current status of the device', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Protected device\nRun particle device-protection disable to put the device in service mode.`);
-            expect(stderr).to.equal('');
-            expect(exitCode).to.equal(0);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Protected device\nRun particle device-protection disable to put the device in service mode.`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 
-        it('Attempts to enable protection status on a protected device', async () => {
+		it('Attempts to enable protection status on a protected device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'enable']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is already a protected device.`);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is already a protected device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -102,7 +102,7 @@ describe('Wi-Fi Commands [@device,@device-protection]', () => {
 		it('Puts the device in service mode', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now in service mode.\nA protected device stays in service mode for a total of 20 reboots or 24 hours.`);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now in service mode.\nA protected device stays in service mode for a total of 20 reboots or 24 hours.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -110,17 +110,17 @@ describe('Wi-Fi Commands [@device,@device-protection]', () => {
 		it('Turns the device to an open device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now an open device.\nDevice placed in development mode to maintain current settings.`);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now an open device.\nDevice placed in development mode to maintain current settings.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Gets the current status of the device', async () => {
-            const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
+			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
-            expect(stderr).to.equal('');
-            expect(exitCode).to.equal(0);
+			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
 		});
 
 	});

@@ -36,11 +36,6 @@ describe('DeviceProtectionCommands', () => {
 		});
 
 		it('throws an error while getting the protection status of the device', async () => {
-			const expectedStatus = {
-				protected: true,
-				overridden: false
-			};
-
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').rejects(new Error('random error'));
 
 			let error;
