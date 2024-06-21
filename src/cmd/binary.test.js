@@ -18,7 +18,7 @@ describe('Binary Inspect', () => {
 			let error;
 			let resPath;
 			try {
-				resPath = await binaryCommand.createProtectedBinary({ saveTo, params: { filename } }, false);
+				resPath = await binaryCommand.createProtectedBinary({ saveTo, file: filename, verbose: false });
 			} catch (err) {
 				error = err;
 			}

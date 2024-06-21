@@ -38,7 +38,6 @@ describe('DeviceProtectionCommands', () => {
 
 	describe('disableProtection', () => {
 		it('should disable protection on the device', async () => {
-			// Stub the necessary methods
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
 				.onFirstCall().resolves({ protected: true, overridden: false })
 				.onSecondCall().resolves({ protected: true, overridden: false });
@@ -51,7 +50,6 @@ describe('DeviceProtectionCommands', () => {
 			};
 
 
-			// Call the method
 			await deviceProtectionCommands.disableProtection();
 
 			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
@@ -60,7 +58,6 @@ describe('DeviceProtectionCommands', () => {
 		});
 
 		it('should disable protection on the device', async () => {
-			// Stub the necessary methods
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
 				.onFirstCall().resolves({ protected: true, overridden: false })
 				.onSecondCall().resolves({ protected: true, overridden: false });
@@ -76,7 +73,6 @@ describe('DeviceProtectionCommands', () => {
 			sinon.stub(deviceProtectionCommands,'_markAsDevelopmentDevice').resolves(true);
 
 
-			// Call the method
 			await deviceProtectionCommands.disableProtection({ open: true });
 
 			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
@@ -99,7 +95,6 @@ describe('DeviceProtectionCommands', () => {
 
 	describe('enableProtection', () => {
 		it('should enable protection on the device', async () => {
-			// Stub the necessary methods
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
 				protected: false,
 				overridden: false
@@ -111,7 +106,6 @@ describe('DeviceProtectionCommands', () => {
 			sinon.stub(deviceProtectionCommands, '_flashBootloader').resolves();
 			sinon.stub(deviceProtectionCommands, '_markAsDevelopmentDevice').resolves(true);
 
-			// Call the method
 			await deviceProtectionCommands.enableProtection();
 
 			expect(deviceProtectionCommands._getDeviceString).to.have.been.calledOnce;
@@ -123,7 +117,6 @@ describe('DeviceProtectionCommands', () => {
 
 
 		it('handles already protected devices', async () => {
-			// Stub the necessary methods
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
 				protected: true,
 				overridden: false
@@ -131,7 +124,6 @@ describe('DeviceProtectionCommands', () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
 			sinon.stub(deviceProtectionCommands, '_isDeviceProtectionActiveInProduct').resolves();
 
-			// Call the method
 			await deviceProtectionCommands.enableProtection();
 
 			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
@@ -139,7 +131,6 @@ describe('DeviceProtectionCommands', () => {
 		});
 
 		it('protects a service mode device', async () => {
-			// Stub the necessary methods
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
 				protected: true,
 				overridden: true
@@ -148,7 +139,6 @@ describe('DeviceProtectionCommands', () => {
 			sinon.stub(deviceProtectionCommands, '_isDeviceProtectionActiveInProduct').resolves(true);
 			sinon.stub(deviceProtectionCommands, '_markAsDevelopmentDevice').resolves(true);
 
-			// Call the method
 			await deviceProtectionCommands.enableProtection();
 
 			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
@@ -156,7 +146,6 @@ describe('DeviceProtectionCommands', () => {
 		});
 
 		it('does not protect an open device if it is not in a product', async () => {
-			// Stub the necessary methods
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
 				protected: false,
 				overridden: false
@@ -166,7 +155,6 @@ describe('DeviceProtectionCommands', () => {
 			sinon.stub(deviceProtectionCommands, '_markAsDevelopmentDevice').resolves(true);
 			sinon.stub(deviceProtectionCommands, '_flashBootloader').resolves();
 
-			// Call the method
 			await deviceProtectionCommands.enableProtection();
 
 			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
