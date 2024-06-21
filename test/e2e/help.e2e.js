@@ -52,7 +52,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile', 'config', 'device add', 'device remove',
 		'device rename', 'device doctor', 'device',
-		'device-protection', 'device-protection status', 'device-protection disable', 'device-protection enable',
+		'device-protection status', 'device-protection disable', 'device-protection enable', 'device-protection',
 		'doctor', 'flash',
 		'function list', 'function call', 'function', 'get', 'identify',
 		'keys new', 'keys load', 'keys save', 'keys send', 'keys doctor',
