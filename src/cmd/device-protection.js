@@ -14,6 +14,9 @@ const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
 const BinaryCommand = require('./binary');
 
+const REBOOT_TIME_MSEC = 60000;
+const REBOOT_INTERVAL_MSEC = 1000;
+
 module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
@@ -330,18 +333,21 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * If it is in DFU mode, the device is reset and re-opened expecting it to be in normal mode.
 	 *
 	 * @async
+	 * @param {boolean} putDeviceBackInDfuMode - Checks if device should be put back into dfy mode if the device was in dfu mode at the start of the operation
 	 * @param {Function} fn - The function to execute with the device.
 	 * @returns {Promise<*>} The result of the function execution.
 	 */
-	async _withDevice(putDeviceInDfuMode, fn) {
+	async _withDevice(putDeviceBackInDfuMode, fn) {
 		try {
 			await this._getUsbDevice(this.device);
-			putDeviceInDfuMode = putDeviceInDfuMode && !this.device.isInDfuMode;
-
+			const deviceWasInDfuMode = this.device.isInDfuMode;
+			if (deviceWasInDfuMode) {
+				await this._putDeviceInSafeMode();
+			}
+			putDeviceBackInDfuMode = putDeviceBackInDfuMode && deviceWasInDfuMode;
 			return await fn();
 		} finally {
-			console.log('Closing device.');
-			if (putDeviceInDfuMode) {
+			if (putDeviceBackInDfuMode) {
 				await this._waitForDeviceToReboot();
 				await this.device.enterDfuMode();
 			}
@@ -378,9 +384,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 	async _waitForDeviceToReboot() {
 		const start = Date.now();
-		while (Date.now() - start < 60000) {
+		while (Date.now() - start < REBOOT_TIME_MSEC) {
 			try {
-				await this.delay(1000);
+				await this._delay(REBOOT_INTERVAL_MSEC);
 				this.device = await usbUtils.reopenDevice({ id: this.deviceId });
 				const s = await this.device.getProtectionState();
 				break;
@@ -390,7 +396,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 	}
 
-	async delay(ms){
+	async _delay(ms){
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
