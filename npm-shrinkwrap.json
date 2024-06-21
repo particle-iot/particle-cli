@@ -24,7 +24,7 @@
         "lodash": "^4.17.15",
         "moment": "^2.24.0",
         "node-wifiscanner2": "^1.2.1",
-        "particle-api-js": "^10.5.0",
+        "particle-api-js": "^10.5.1",
         "particle-commands": "^1.0.1",
         "particle-library-manager": "^0.1.15",
         "particle-usb": "^3.3.0",
@@ -5921,9 +5921,9 @@
       }
     },
     "node_modules/particle-api-js": {
-      "version": "10.5.0",
-      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-10.5.0.tgz",
-      "integrity": "sha512-GdTukWuF7bQi7NPLO6srIbqPGj9X7hAOUNR83rbPBQT7Hlo/jt6lkiVI/176ozR8v1fDR3YCzdlQxy5Y8blriQ==",
+      "version": "10.5.1",
+      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-10.5.1.tgz",
+      "integrity": "sha512-FuE3BHGO7YiAyYYFpSvhVV247L6Vi7OQcWwgVwFpaHcC4TKwpknnxhwVWoGOTPXKNsILpdg5EJNlvtrausc0ew==",
       "dependencies": {
         "form-data": "^4.0.0",
         "node-fetch": "^2.7.0",
@@ -13882,9 +13882,9 @@
       }
     },
     "particle-api-js": {
-      "version": "10.5.0",
-      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-10.5.0.tgz",
-      "integrity": "sha512-GdTukWuF7bQi7NPLO6srIbqPGj9X7hAOUNR83rbPBQT7Hlo/jt6lkiVI/176ozR8v1fDR3YCzdlQxy5Y8blriQ==",
+      "version": "10.5.1",
+      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-10.5.1.tgz",
+      "integrity": "sha512-FuE3BHGO7YiAyYYFpSvhVV247L6Vi7OQcWwgVwFpaHcC4TKwpknnxhwVWoGOTPXKNsILpdg5EJNlvtrausc0ew==",
       "requires": {
         "form-data": "^4.0.0",
         "node-fetch": "^2.7.0",
