@@ -16,7 +16,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<file>',
 		options: {
 			'saveTo': {
-				description: 'Specify the bootloader file to add device protection to'
+				description: 'Specify the filename for the protected binary'
 			}
 		},
 		handler: (args) => {

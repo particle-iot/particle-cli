@@ -34,6 +34,25 @@ describe('DeviceProtectionCommands', () => {
 			expect(deviceProtectionCommands._getDeviceString).to.have.been.calledOnce;
 			expect(result).to.eql(expectedStatus);
 		});
+
+		it('throws an error while getting the protection status of the device', async () => {
+			const expectedStatus = {
+				protected: true,
+				overridden: false
+			};
+
+			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').rejects(new Error('random error'));
+
+			let error;
+			try {
+				await deviceProtectionCommands.getStatus();
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.include('Unable to get device status: random error');
+		});
 	});
 
 	describe('disableProtection', () => {
@@ -57,7 +76,7 @@ describe('DeviceProtectionCommands', () => {
 			expect(deviceProtectionCommands.api.unprotectDevice).to.have.been.calledTwice;
 		});
 
-		it('should disable protection on the device', async () => {
+		it('should disable protection on the device and turns to an open device', async () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
 				.onFirstCall().resolves({ protected: true, overridden: false })
 				.onSecondCall().resolves({ protected: true, overridden: false });
@@ -81,12 +100,11 @@ describe('DeviceProtectionCommands', () => {
 			expect(deviceProtectionCommands._markAsDevelopmentDevice).to.have.been.calledOnce;
 		});
 
-		it('handles open devices', async () => {
+		it('handles already open devices', async () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
 				.onFirstCall().resolves({ protected: false, overridden: false });
 			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
 
-			// Call the method
 			await deviceProtectionCommands.disableProtection();
 
 			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
@@ -194,6 +212,22 @@ describe('DeviceProtectionCommands', () => {
 
 			expect(error).to.be.an.instanceOf(Error);
 			expect(error.message).to.include('Device protection feature is not supported on this device');
+		});
+
+		it('throws a random error', async () => {
+			deviceProtectionCommands.device = {
+				getProtectionState: sinon.stub().rejects(new Error('random error'))
+			};
+
+			let error;
+			try {
+				await deviceProtectionCommands._getDeviceProtection();
+			} catch (_e) {
+				error = _e;
+			}
+
+			expect(error).to.be.an.instanceOf(Error);
+			expect(error.message).to.include('random error');
 		});
 	});
 
