@@ -1,10 +1,12 @@
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
-	DEVICE_ID,
-	PRODUCT_01_DEVICE_01_ID
+	PRODUCT_01_DEVICE_01_ID,
+	PRODUCT_01_ID
 } = require('../lib/env');
+const { delay } = require('../../src/lib/utilities');
 
+const FLASH_TIME = 15000;
 
 describe('Device Protection Commands [@device,@device-protection]', () => {
 	const help = [
@@ -26,10 +28,14 @@ describe('Device Protection Commands [@device,@device-protection]', () => {
 
 	before(async () => {
 		await cli.setTestProfileAndLogin();
+		// Ensure device starts as an Open Device
+		await cli.run(['device-protection', 'disable', '--open']);
+
+		// give time to flash the device
+		await delay(FLASH_TIME);
 	});
 
 	after(async () => {
-		await cli.run(['usb', 'setup-done']);
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
@@ -62,7 +68,7 @@ describe('Device Protection Commands [@device,@device-protection]', () => {
 		it('Gets the current device protection status', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'status']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -70,23 +76,26 @@ describe('Device Protection Commands [@device,@device-protection]', () => {
 		it('Attempts to disable protection status on an open device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is not a protected device.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}) is not a protected device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Enables protection status on the device', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'status']);
+			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'enable']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now a protected device.\nDevice removed from development mode to maintain current settings.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}) is now a protected device.\nDevice removed from development mode to maintain current settings.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+
+			// give time to flash the device
+			await delay(FLASH_TIME);
 		});
 
-		it('Gets the current status of the device', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
+		it('Gets the current status of a Protected Device', async () => {
+			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'status']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Protected device\nRun particle device-protection disable to put the device in service mode.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}): Protected device\nRun particle device-protection disable to put the device in service mode.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -94,7 +103,7 @@ describe('Device Protection Commands [@device,@device-protection]', () => {
 		it('Attempts to enable protection status on a protected device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'enable']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is already a protected device.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}) is already a protected device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -102,7 +111,7 @@ describe('Device Protection Commands [@device,@device-protection]', () => {
 		it('Puts the device in service mode', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now in service mode.\nA protected device stays in service mode for a total of 20 reboots or 24 hours.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}) is now in service mode.\nA protected device stays in service mode for a total of 20 reboots or 24 hours.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -110,20 +119,21 @@ describe('Device Protection Commands [@device,@device-protection]', () => {
 		it('Turns the device to an open device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is now an open device.\nDevice placed in development mode to maintain current settings.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}) is now an open device.\nDevice placed in development mode to maintain current settings.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+
+			// give time to flash the device
+			await delay(FLASH_TIME);
 		});
 
 		it('Gets the current status of the device', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable', '--open']);
+			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'status']);
 
-			expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
-
 	});
-
 });
 

@@ -143,6 +143,7 @@
     "test:e2e:ci": "npm run test:e2e:no-device -- --forbid-only",
     "test:e2e:no-device": "npm run test:e2e -- --grep @device --invert",
     "test:e2e:wifi": "npm run test:e2e -- --grep @device,@wifi",
+    "test:e2e:device-protection": "npm run test:e2e -- --grep @device,@device-protection",
     "test:e2e:watch": "npm run test:e2e -- --watch --watch-extensions js,json",
     "test:e2e:inspect": "npm test:e2e -- --inspect-brk",
     "test:e2e:silent": "PARTICLE_NOOP=$(npm run test:e2e:ci)",
