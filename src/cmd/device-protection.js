@@ -40,10 +40,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async getStatus() {
 
-		// FIXME: Fix this logic to accommodate devices in dfu mode.
-		// To get information for dfu devices, a new API needs to be exposed from Particle-USB to get the dfu segments
-		// and verify that the segment containing the system-part1 is writable or not. If the segment is writable,
-		// then the device is not pretected. For now though, let's assume the device is in normal mode and not in dfu mode.
 		let addToOutput = [];
 		let s;
 		try {

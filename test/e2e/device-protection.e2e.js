@@ -70,7 +70,7 @@ describe('Wi-Fi Commands [@device,@device-protection]', () => {
         it('Attempts to disable protection status on an open device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'disable']);
 
-            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}): Open device\nRun particle device-protection enable to protect the device.`);
+            expect(stdout).to.include(`[${DEVICE_ID}] (Product ${PRODUCT_01_DEVICE_01_ID}) is not a protected device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
