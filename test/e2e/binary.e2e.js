@@ -235,5 +235,18 @@ describe('Binary Commands', () => {
 		});
 
 	});
+
+	describe('Binary Subcommand to created a protected bootloader', () => {
+		it('Creates a protected bootloader', async () => {
+			const bootloader = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-bootloader-610.bin');
+			const args = ['binary', 'enable-device-protection', bootloader];
+			const { stdout, stderr, exitCode } = await cli.run(args);
+			expect(stdout).to.equal('argon-bootloader-610-protected.bin\n');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+
+			await fs.remove(path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-bootloader-610-protected.bin'));
+		});
+	});
 });
 
