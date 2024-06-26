@@ -99,6 +99,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('get', () => {
+
 		let lf;
 
 		beforeEach(() => {

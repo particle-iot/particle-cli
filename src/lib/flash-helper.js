@@ -4,19 +4,28 @@ const { delay } = require('./utilities');
 const VError = require('verror');
 const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
-const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
+const { HalModuleParser: ModuleParser, ModuleInfo, createProtectedModule } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
 const { DeviceProtectionError } = require('particle-usb');
 const utilities = require('./utilities');
+const DeviceProtectionCommands  = require('../cmd/device-protection');
 const ensureError = utilities.ensureError;
 
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose=true }) {
+	// FIXME: Get this from device-protection module where it's readily available
+	// TODO: Rework this asap
+	const deviceProtection = new DeviceProtectionCommands({ ui });
+	const status = await deviceProtection.getStatus();
+	if (status.protected === true) {
+		await deviceProtection.disableProtection();
+	}
+
 	let progress = null;
 	progress = verbose ? _createFlashProgress({ flashSteps, ui, verbose }) : null;
 	let success = false;
@@ -39,6 +48,12 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verb
 		if (progress) {
 			progress({ event: 'finish', success });
 		}
+
+		if (status.protected || status.overridden) {
+			// TODO: Rework this asap
+			await deviceProtection.enableProtection();
+		}
+
 		if (device.isOpen) {
 			// only reset the device if the last step was in DFU mode
 			if (resetAfterFlash && lastStepDfu) {
@@ -269,7 +284,7 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	const assetModules = [], normalModules = [], dfuModules = [];
 	let availableAssets;
 
-	sortedModules.forEach(module => {
+	sortedModules.forEach(async (module) => {
 		const data = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
 		const flashStep = {
 			name: path.basename(module.filename),
@@ -303,7 +318,20 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 				return _skipAsset(module, availableAssets);
 			};
 			assetModules.push(flashStep);
-		} else if (moduleType === 'bootloader' || moduleDefinition.storage === 'externalMcu') {
+		} else if (moduleDefinition.storage === 'externalMcu') {
+			flashStep.flashMode = 'normal';
+			normalModules.push(flashStep);
+		} else if (moduleType === 'bootloader') {
+			// FIXME: Get this from device-protection module where it's readily available
+			const attrs = await this.api.getDeviceAttributes(this.deviceId);
+			const productId = attrs.platform_id !== attrs.product_id ? attrs.product_id : null;
+			const res = await this.api.getProduct({ product: productId, auth: settings.access_token });
+			const active = res?.product?.device_protection === 'active';
+			if (active) {
+				console.log('Device protection is active, a protected bootloader will not be flashed');
+				const bootloaderData = flashStep.data;
+				flashStep.data = createProtectedModule(bootloaderData);
+			}
 			flashStep.flashMode = 'normal';
 			normalModules.push(flashStep);
 		} else {

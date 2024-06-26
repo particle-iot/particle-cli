@@ -268,7 +268,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 					output = output.concat(outputData);
 				})
 				.catch((error) => {
-					output = output.concat(`Error getting network interfaces (${platform.displayName} / ${usbDevice.id}): ${error.message}\n`);
+					output = output.concat(`Error getting network interfaces (${platform.displayName} / ${usbDevice.id}): ${error}\n`);
 				});
 		});
 

@@ -107,6 +107,8 @@ module.exports = class KeysCommand {
 		filename = utilities.filenameNoExt(filename || device.id) + '.der';
 		try {
 			await this._saveKeyFromDevice({ filename, force, device });
+		} catch (err) {
+			throw new VError(ensureError(err), 'Error saving key from the device');
 		} finally {
 			await device.close();
 		}
@@ -141,7 +143,7 @@ module.exports = class KeysCommand {
 				});
 			console.log(`Saved existing key to ${filename}`);
 		} catch (err) {
-			return new VError(ensureError(err), 'Error saving key from device');
+			throw new VError(ensureError(err));
 		}
 	}
 

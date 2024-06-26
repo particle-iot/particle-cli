@@ -19,6 +19,7 @@ const { ensureError } = require('../lib/utilities');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
+const DeviceProtectionCommands = require('./device-protection');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
 const semver = require('semver');
 
@@ -387,6 +388,14 @@ module.exports = class SerialCommand extends CLICommandBase {
 			throw new VError(ensureError(err), 'Could not inspect device');
 		}
 
+		// TODO: Rework with by checking for DeviceProtectionError
+		// TODO: Rework this asap
+		const deviceProtection = new DeviceProtectionCommands({ ui: this.ui });
+		const status = await deviceProtection.getStatus();
+		if (status.protected === true) {
+			await deviceProtection.disableProtection();
+		}
+
 		const platform = platformForId(device.platformId);
 		this.ui.stdout.write(`Device: ${chalk.bold.cyan(deviceId)}${os.EOL}`);
 		this.ui.stdout.write(`Platform: ${platform.id} - ${chalk.bold.cyan(platform.displayName)}${os.EOL}${os.EOL}`);
@@ -399,6 +408,9 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		// Clean up
 		if (device && device.isOpen) {
+			if (status.protected || status.overridden) {
+				await deviceProtection.enableProtection();
+			}
 			await device.close();
 		}
 	}

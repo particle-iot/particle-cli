@@ -285,7 +285,9 @@ async function reopenInDfuMode(device) {
 			}
 			return device;
 		} catch (error) {
-			// ignore error
+			if (error instanceof DeviceProtectionError) {
+				throw new Error('Operation could not be completed due to device protection.');
+			}
 		}
 	}
 	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
@@ -313,7 +315,9 @@ async function reopenInNormalMode(device, { reset } = {}) {
 				}
 			}
 		} catch (err) {
-			// ignore error
+			if (err instanceof DeviceProtectionError) {
+				throw new Error('Operation could not be completed due to device protection.');
+			}
 		}
 	}
 	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
@@ -336,6 +340,9 @@ async function reopenDevice(device) {
 
 		} catch (err) {
 			// ignore error
+			if (err instanceof DeviceProtectionError) {
+				throw new Error('Operation could not be completed due to device protection.');
+			}
 		}
 	}
 	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
