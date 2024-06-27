@@ -71,7 +71,7 @@ describe('DeviceProtectionCommands', () => {
 			expect(deviceProtectionCommands.api.unprotectDevice).to.have.been.calledTwice;
 		});
 
-		it('handles already open devices', async () => {
+		it('handles already Open Devices', async () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
 				.onFirstCall().resolves({ protected: false, overridden: false });
 			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
@@ -105,7 +105,7 @@ describe('DeviceProtectionCommands', () => {
 		});
 
 
-		it('handles already protected devices', async () => {
+		it('handles already Protected Devices', async () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
 				protected: true,
 				overridden: false
@@ -119,7 +119,7 @@ describe('DeviceProtectionCommands', () => {
 			expect(deviceProtectionCommands._isDeviceProtectionActiveInProduct).to.not.have.been.called;
 		});
 
-		it('protects a service mode device', async () => {
+		it('protects a Service Mode device', async () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
 				protected: true,
 				overridden: true
@@ -134,7 +134,7 @@ describe('DeviceProtectionCommands', () => {
 			expect(deviceProtectionCommands._isDeviceProtectionActiveInProduct).to.not.have.been.called;
 		});
 
-		it('does not protect an open device if it is not in a product', async () => {
+		it('does not protect an Open Device if it is not in a product', async () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
 				protected: false,
 				overridden: false

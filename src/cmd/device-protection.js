@@ -31,7 +31,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * Retrieves and displays the protection status of the device.
 	 *
 	 * This method assumes the device is in normal mode and not in DFU mode. It retrieves the current protection status and
-	 * constructs a message indicating whether the device is protected, in service mode, or not protected.
+	 * constructs a message indicating whether the device is Protected, in Service Mode, or Open
 	 * The device protection status is then displayed in the console.
 	 *
 	 * @async
@@ -49,11 +49,11 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				let helper;
 
 				if (s.overridden) {
-					res = 'Protected device (service mode)';
-					helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of service mode.`;
+					res = 'Protected Device (Service Mode)';
+					helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of Service Mode.`;
 				} else if (s.protected) {
-					res = 'Protected device';
-					helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in service mode.`;
+					res = 'Protected Device';
+					helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in Service Mode.`;
 				} else {
 					res = 'Open device';
 					helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
@@ -77,14 +77,11 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	/**
 	 * Disables protection on the device.
 	 *
-	 * This method checks the current protection status of the device and proceeds to disable protection
-	 * if the device is protected. If the device is not protected or is already in service mode,
-	 * appropriate messages are logged to the console. If the `open` parameter is true, the device will be
-	 * flashed with an unprotected bootloader and marked as a development device to prevent re-enabling protection.
+	 * This method checks the current protection status of the device and proceeds to put the device in Service Mode
+	 * if the device is protected. If the device is not protected or is already in Service Mode,
+	 * appropriate messages are logged to the console.
 	 *
 	 * @async
-	 * @param {Object} [options={}] - Options for disabling protection.
-	 * @param {boolean} [options.open] - If true, flashes an unprotected bootloader and marks the device as a development device to make it an open device.
 	 * @returns {Promise<void>}
 	 * @throws {Error} - Throws an error if any of the async operations fail.
 	 */
@@ -122,7 +119,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
 
 				addToOutput.push(`${deviceStr} is now in Service Mode.${os.EOL}A Protected Device stays in Service Mode for a total of 20 reboots or 24 hours.${os.EOL}`);
-
 			} catch (error) {
 				throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
 			}
@@ -157,12 +153,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				if (s.overridden) {
 					await this.device.unprotectDevice({ action: 'reset' });
-					addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
+					addToOutput.push(`${deviceStr} is now a Protected Device.${os.EOL}`);
 					return;
 				}
 
 				if (s.protected) {
-					addToOutput.push(`${deviceStr} is already a protected device.${os.EOL}`);
+					addToOutput.push(`${deviceStr} is already a Protected Device.${os.EOL}`);
 					return;
 				}
 
@@ -179,7 +175,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				}
 
 				await this._flashBootloader(protectedBinary);
-				addToOutput.push(`${deviceStr} is now a protected device.${os.EOL}`);
+				addToOutput.push(`${deviceStr} is now a Protected Device.${os.EOL}`);
 
 				const success = await this._markAsDevelopmentDevice(false);
 				addToOutput.push(success ?
