@@ -5,7 +5,7 @@ const {
 	PRODUCT_01_ID
 } = require('../lib/env');
 
-describe.only('Device Protection Commands [@device,@device-protection]', () => {
+describe('Device Protection Commands [@device,@device-protection]', () => {
 	const help = [
 		'Manage device protection',
 		'Usage: particle device-protection <command>',
@@ -62,7 +62,7 @@ describe.only('Device Protection Commands [@device,@device-protection]', () => {
 
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'enable']);
 
-			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}) is now a Protected Device.\nDevice removed from development mode to maintain current settings.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}) is now a Protected Device.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -94,7 +94,7 @@ describe.only('Device Protection Commands [@device,@device-protection]', () => {
 		it('Gets the current status of the device', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['device-protection', 'status']);
 
-			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}): Protected Device (Service Mode)\nRun particle device-protection enable to protect the device.`);
+			expect(stdout).to.include(`[${PRODUCT_01_DEVICE_01_ID}] (Product ${PRODUCT_01_ID}): Protected Device (Service Mode)\nRun particle device-protection enable to take the device out of Service Mode.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
