@@ -12,21 +12,15 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'disable', 'Disables device protection', {
-		options: {
-			'open': {
-				boolean: true,
-				description: 'Turns a protected device into an open device'
-			}
-		},
-		handler: (args) => {
+
+		handler: () => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
-			return new DeviceProtectionCommands().disableProtection(args);
+			return new DeviceProtectionCommands().disableProtection();
 		},
 		examples: {
-			'$0 $command': 'Puts a protected device into service mode',
-			'$0 $command --open': 'Turns a protected device into an open device'
+			'$0 $command': 'Puts a Protected Device to Service Mode',
 		},
-		epilogue: 'A protected device in service mode allows any command to be performed on it that can be performed on an open device like flashing firmware or serial monitor.'
+		epilogue: 'A Protected Device in Service Mode allows any command to be performed on it that can be performed on an open device like flashing firmware or serial monitor.'
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'enable', 'Enables device protection', {
@@ -40,7 +34,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new DeviceProtectionCommands().enableProtection(args);
 		},
 		examples: {
-			'$0 $command': 'Turns an open device into a protected device'
+			'$0 $command': 'Turns an Open Device into a Protected Device'
 		}
 	});
 
