@@ -7,6 +7,7 @@ const {
 	filterModulesToFlash,
 	prepareDeviceForFlash,
 	validateDFUSupport,
+	validateModulesForProtection,
 	getFileFlashInfo,
 	_get256Hash,
 	_skipAsset
@@ -659,4 +660,126 @@ describe('flash-helper', () => {
 			expect(res).to.equal(false);
 		});
 	});
+
+	describe('validateModulesForProtection', () => {
+		let device;
+		const modulesOldBootloader = [{
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			platformId: 12,
+			moduleIndex: 0,
+			moduleVersion: 1200,
+		}];
+		const modulesOldSystem = [{
+			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+			platformId: 12,
+			moduleIndex: 0,
+			moduleVersion: 5800,
+		}];
+		const modulesNew = [{
+			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+			platformId: 12,
+			moduleIndex: 0,
+			moduleVersion: 3000,
+		}, {
+			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+			platformId: 12,
+			moduleIndex: 0,
+			moduleVersion: 6000,
+		}];
+
+		beforeEach(() => {
+			device = {
+				getProtectedState: sinon.stub(),
+			};
+		});
+
+		describe('device is not protected', () => {
+			beforeEach(() => {
+				device.getProtectedState.returns({ protected: false, overriden: false });
+			});
+
+			it('does does not reject old modules', () => {
+				let error;
+				try {
+					validateModulesForProtection({ device, modules: modulesOldBootloader });
+				} catch (_error) {
+					error = _error;
+				}
+				expect(error).to.be.undefined;
+			});
+
+			it('does does not reject new modules', () => {
+				let error;
+				try {
+					validateModulesForProtection({ device, modules: modulesNew });
+				} catch (_error) {
+					error = _error;
+				}
+				expect(error).to.be.undefined;
+			});
+		});
+
+		describe('device is protected', () => {
+			beforeEach(() => {
+				device.getProtectedState.returns({ protected: true, overriden: false });
+			});
+
+			it('throws an exception if the bootloader is too old', () => {
+				let error;
+				try {
+					validateModulesForProtection({ device, modules: modulesOldBootloader });
+				} catch (_error) {
+					error = _error;
+				}
+				expect(error).to.have.property('message').that.eql('Cannot downgrade Device OS below version 6.0.0 on a Protected Device');
+			});
+
+			it('throws an exception if the system part is too old', () => {
+				let error;
+				try {
+					validateModulesForProtection({ device, modules: modulesOldSystem });
+				} catch (_error) {
+					error = _error;
+				}
+				expect(error).to.have.property('message').that.eql('Cannot downgrade Device OS below version 6.0.0 on a Protected Device');
+			});
+
+			it('does does not reject new modules', () => {
+				let error;
+				try {
+					validateModulesForProtection({ device, modules: modulesNew });
+				} catch (_error) {
+					error = _error;
+				}
+				expect(error).to.be.undefined;
+			});
+		});
+
+		describe('device does not support protection', () => {
+			beforeEach(() => {
+				device.getProtectedState.throws(new Error('Not supported'));
+			});
+
+			it('does does not reject old modules', () => {
+				let error;
+				try {
+					validateModulesForProtection({ device, modules: modulesOldBootloader });
+				} catch (_error) {
+					error = _error;
+				}
+				expect(error).to.be.undefined;
+			});
+
+			it('does does not reject new modules', () => {
+				let error;
+				try {
+					validateModulesForProtection({ device, modules: modulesNew });
+				} catch (_error) {
+					error = _error;
+				}
+				expect(error).to.be.undefined;
+			});
+		});
+	});
 });
+
