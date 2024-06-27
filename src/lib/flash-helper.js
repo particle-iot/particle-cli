@@ -380,10 +380,11 @@ async function validateModulesForProtection({ modules, device }) {
 	}
 
 	for (const module of modules) {
-		const oldSystem = module.moduleFunction === ModuleInfo.FunctionType.SYSTEM_PART &&
-			module.moduleVersion < PROTECTED_MINIMUM_SYSTEM_VERSION;
-		const oldBootloader = module.moduleFunction === ModuleInfo.FunctionType.BOOTLOADER &&
-			module.moduleIndex === 0 && module.moduleVersion < PROTECTED_MINIMUM_BOOTLOADER_VERSION;
+		const { moduleFunction, moduleIndex, moduleVersion } = module.prefixInfo;
+		const oldSystem = moduleFunction === ModuleInfo.FunctionType.SYSTEM_PART &&
+			moduleVersion < PROTECTED_MINIMUM_SYSTEM_VERSION;
+		const oldBootloader = moduleFunction === ModuleInfo.FunctionType.BOOTLOADER &&
+			moduleIndex === 0 && moduleVersion < PROTECTED_MINIMUM_BOOTLOADER_VERSION;
 
 		if (oldSystem || oldBootloader) {
 			throw new Error(`Cannot downgrade Device OS below version ${PROTECTED_MINIMUM_VERSION} on a Protected Device`);

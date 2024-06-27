@@ -664,27 +664,35 @@ describe('flash-helper', () => {
 	describe('validateModulesForProtection', () => {
 		let device;
 		const modulesOldBootloader = [{
-			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
-			platformId: 12,
-			moduleIndex: 0,
-			moduleVersion: 1200,
+			prefixInfo: {
+				moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+				platformId: 12,
+				moduleIndex: 0,
+				moduleVersion: 1200
+			}
 		}];
 		const modulesOldSystem = [{
-			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
-			platformId: 12,
-			moduleIndex: 0,
-			moduleVersion: 5800,
+			prefixInfo: {
+				moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+				platformId: 12,
+				moduleIndex: 0,
+				moduleVersion: 5800
+			}
 		}];
 		const modulesNew = [{
-			moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
-			platformId: 12,
-			moduleIndex: 0,
-			moduleVersion: 3000,
+			prefixInfo: {
+				moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
+				platformId: 12,
+				moduleIndex: 0,
+				moduleVersion: 3000
+			}
 		}, {
-			moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
-			platformId: 12,
-			moduleIndex: 0,
-			moduleVersion: 6000,
+			prefixInfo: {
+				moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
+				platformId: 12,
+				moduleIndex: 0,
+				moduleVersion: 6000
+			}
 		}];
 
 		beforeEach(() => {
