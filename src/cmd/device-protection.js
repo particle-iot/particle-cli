@@ -88,7 +88,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<void>}
 	 * @throws {Error} - Throws an error if any of the async operations fail.
 	 */
-	async disableProtection({ open } = {}) {
+	async disableProtection() {
 		let addToOutput = [];
 
 		await this.ui.showBusySpinnerUntilResolved('Disabling device protection', this._withDevice(true, async () => {
@@ -97,7 +97,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				let s = await this._getDeviceProtection();
 
 				if (!s.protected && !s.overridden) {
-					addToOutput.push(`${deviceStr} is not a protected device.${os.EOL}`);
+					addToOutput.push(`${deviceStr} is not a Protected Device.${os.EOL}`);
 					return;
 				}
 
@@ -121,21 +121,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
 
-				if (!open) {
-					addToOutput.push(`${deviceStr} is now in service mode.${os.EOL}A protected device stays in service mode for a total of 20 reboots or 24 hours.${os.EOL}`);
-					return;
-				}
+				addToOutput.push(`${deviceStr} is now in Service Mode.${os.EOL}A Protected Device stays in Service Mode for a total of 20 reboots or 24 hours.${os.EOL}`);
 
-				const localBootloaderPath = await this._downloadBootloader();
-				await this._flashBootloader(localBootloaderPath);
-				addToOutput.push(`${deviceStr} is now an open device.${os.EOL}`);
-
-				const success = await this._markAsDevelopmentDevice(true);
-				addToOutput.push(success ?
-					// TODO: Improve these lines
-					`Device placed in development mode to maintain current settings.${os.EOL}` :
-					`Failed to mark device as development device. Device protection may be enabled on next cloud connection.${os.EOL}`
-				);
 			} catch (error) {
 				throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
 			}

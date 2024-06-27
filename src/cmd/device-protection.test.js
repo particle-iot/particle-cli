@@ -71,30 +71,6 @@ describe('DeviceProtectionCommands', () => {
 			expect(deviceProtectionCommands.api.unprotectDevice).to.have.been.calledTwice;
 		});
 
-		it('should disable protection on the device and turns to an open device', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
-				.onFirstCall().resolves({ protected: true, overridden: false })
-				.onSecondCall().resolves({ protected: true, overridden: false });
-			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
-			deviceProtectionCommands.device = {
-				unprotectDevice: sinon.stub().resolves({ protected: true, deviceNonce: '11111', deviceSignature: '22222', devicePublicKeyFingerprint: '33333' })
-			};
-			deviceProtectionCommands.api = {
-				unprotectDevice: sinon.stub().resolves({ server_nonce: '44444', server_signature: '55555', server_public_key_fingerprint: '66666' })
-			};
-			sinon.stub(deviceProtectionCommands, '_downloadBootloader').resolves();
-			sinon.stub(deviceProtectionCommands, '_flashBootloader').resolves();
-			sinon.stub(deviceProtectionCommands,'_markAsDevelopmentDevice').resolves(true);
-
-
-			await deviceProtectionCommands.disableProtection({ open: true });
-
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
-			expect(deviceProtectionCommands.device.unprotectDevice).to.have.been.calledTwice;
-			expect(deviceProtectionCommands.api.unprotectDevice).to.have.been.calledTwice;
-			expect(deviceProtectionCommands._markAsDevelopmentDevice).to.have.been.calledOnce;
-		});
-
 		it('handles already open devices', async () => {
 			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
 				.onFirstCall().resolves({ protected: false, overridden: false });
