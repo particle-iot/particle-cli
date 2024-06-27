@@ -6,7 +6,7 @@ const semver = require('semver');
 const usbUtils = require('./usb-util');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const CLICommandBase = require('./base');
-const { parseModulesToFlash, filterModulesToFlash, createFlashSteps, flashFiles, validateDFUSupport } = require('../lib/flash-helper');
+const { parseModulesToFlash, filterModulesToFlash, validateModulesForProtection, createFlashSteps, flashFiles, validateDFUSupport } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 
 module.exports = class UpdateCommand extends CLICommandBase {
@@ -41,6 +41,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		});
 		const deviceOsModules = await parseModulesToFlash({ files: deviceOsBinaries });
 		const modulesToFlash = filterModulesToFlash({ modules: deviceOsModules, platformId: device.platformId, allowAll: true });
+		await validateModulesForProtection({ modules: modulesToFlash, device });
 		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
 		await flashFiles({ device, flashSteps, ui: this.ui });
 		this.ui.write('Update success!');
