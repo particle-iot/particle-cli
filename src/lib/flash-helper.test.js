@@ -661,7 +661,7 @@ describe('flash-helper', () => {
 		});
 	});
 
-	describe.only('maintainDeviceProtection', () => {
+	describe('maintainDeviceProtection', () => {
 		let device;
 
 
