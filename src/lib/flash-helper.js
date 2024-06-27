@@ -358,6 +358,9 @@ function validateDFUSupport({ device, ui }) {
 	}
 }
 
+function validateModulesForProtection({ modules, device }) {
+
+}
 
 module.exports = {
 	flashFiles,
@@ -366,6 +369,7 @@ module.exports = {
 	createFlashSteps,
 	prepareDeviceForFlash,
 	validateDFUSupport,
+	validateModulesForProtection,
 	getFileFlashInfo,
 	_get256Hash,
 	_skipAsset
