@@ -16,6 +16,11 @@ const ensureError = utilities.ensureError;
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
+// Minimum version of Device OS that supports protected modules
+const PROTECTED_MINIMUM_VERSION = '6.0.0';
+const PROTECTED_MINIMUM_SYSTEM_VERSION = 6000;
+const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3000;
+
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose=true }) {
 	let progress = null;
 	progress = verbose ? _createFlashProgress({ flashSteps, ui, verbose }) : null;
@@ -358,8 +363,32 @@ function validateDFUSupport({ device, ui }) {
 	}
 }
 
-function validateModulesForProtection({ modules, device }) {
+async function validateModulesForProtection({ modules, device }) {
+	try {
+		const s = await device.getProtectionState();
 
+		if (!s.protected && !s.overridden) {
+			// Device is not protected -> Don't enforce Device OS version
+			return;
+		}
+	} catch (error) {
+		// Device does not support device protection -> Don't enforce Device OS version
+		if (error.message === 'Not supported') {
+			return;
+		}
+		throw error;
+	}
+
+	for (const module of modules) {
+		const oldSystem = module.moduleFunction === ModuleInfo.FunctionType.SYSTEM_PART &&
+			module.moduleVersion < PROTECTED_MINIMUM_SYSTEM_VERSION;
+		const oldBootloader = module.moduleFunction === ModuleInfo.FunctionType.BOOTLOADER &&
+			module.moduleIndex === 0 && module.moduleVersion < PROTECTED_MINIMUM_BOOTLOADER_VERSION;
+
+		if (oldSystem || oldBootloader) {
+			throw new Error(`Cannot downgrade Device OS below version ${PROTECTED_MINIMUM_VERSION} on a Protected Device`);
+		}
+	}
 }
 
 module.exports = {
