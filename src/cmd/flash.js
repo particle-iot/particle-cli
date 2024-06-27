@@ -19,7 +19,7 @@ const {
 	createFlashSteps,
 	filterModulesToFlash,
 	parseModulesToFlash,
-	validateModulesForProtection,
+	maintainDeviceProtection,
 	flashFiles,
 	validateDFUSupport,
 	getFileFlashInfo
@@ -88,7 +88,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				platformId: device.platformId,
 				platformName
 			});
-			await validateModulesForProtection({ modules: modulesToFlash, device });
+			await maintainDeviceProtection({ modules: modulesToFlash, device });
 			const flashSteps = await createFlashSteps({
 				modules: modulesToFlash,
 				isInDfuMode: device.isInDfuMode,
@@ -158,7 +158,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		let modulesToFlash = [...fileModules, ...deviceOsModules];
 		modulesToFlash = filterModulesToFlash({ modules: modulesToFlash, platformId });
 
-		await validateModulesForProtection({ modules: modulesToFlash, device });
+		await maintainDeviceProtection({ modules: modulesToFlash, device });
 		const flashSteps = await createFlashSteps({
 			modules: modulesToFlash,
 			isInDfuMode: device.isInDfuMode,
