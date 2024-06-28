@@ -4,7 +4,7 @@ const { delay } = require('./utilities');
 const VError = require('verror');
 const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
-const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
+const { HalModuleParser: ModuleParser, ModuleInfo, createProtectedModule } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
@@ -363,7 +363,7 @@ function validateDFUSupport({ device, ui }) {
 	}
 }
 
-async function validateModulesForProtection({ modules, device }) {
+async function maintainDeviceProtection({ modules, device }) {
 	try {
 		const s = await device.getProtectionState();
 
@@ -389,6 +389,14 @@ async function validateModulesForProtection({ modules, device }) {
 		if (oldSystem || oldBootloader) {
 			throw new Error(`Cannot downgrade Device OS below version ${PROTECTED_MINIMUM_VERSION} on a Protected Device`);
 		}
+
+		// Enable Device Protection on the bootloader when flashing a Protected Device
+		if (moduleFunction === ModuleInfo.FunctionType.BOOTLOADER && moduleIndex === 0) {
+			const protectedBuffer = await createProtectedModule(module.fileBuffer);
+			const parser = new ModuleParser();
+			const protectedModule = await parser.parseBuffer({ fileBuffer: protectedBuffer });
+			Object.assign(module, protectedModule);
+		}
 	}
 }
 
@@ -399,7 +407,7 @@ module.exports = {
 	createFlashSteps,
 	prepareDeviceForFlash,
 	validateDFUSupport,
-	validateModulesForProtection,
+	maintainDeviceProtection,
 	getFileFlashInfo,
 	_get256Hash,
 	_skipAsset

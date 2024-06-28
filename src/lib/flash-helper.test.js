@@ -7,7 +7,7 @@ const {
 	filterModulesToFlash,
 	prepareDeviceForFlash,
 	validateDFUSupport,
-	validateModulesForProtection,
+	maintainDeviceProtection,
 	getFileFlashInfo,
 	_get256Hash,
 	_skipAsset
@@ -661,44 +661,55 @@ describe('flash-helper', () => {
 		});
 	});
 
-	describe('validateModulesForProtection', () => {
+	describe('maintainDeviceProtection', () => {
 		let device;
-		const modulesOldBootloader = [{
-			prefixInfo: {
+
+
+
+		let modulesOldBootloader;
+		let modulesOldSystem;
+		let modulesNew;
+		let newBootloader;
+		let newSystemPart;
+
+		beforeEach(async () => {
+			device = {
+				getProtectionState: sinon.stub(),
+			};
+
+			const oldBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
 				moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
 				platformId: 12,
 				moduleIndex: 0,
 				moduleVersion: 1200
-			}
-		}];
-		const modulesOldSystem = [{
-			prefixInfo: {
+			});
+			const oldBootloader = await new HalModuleParser().parseBuffer({ fileBuffer: oldBootloaderBuffer });
+			modulesOldBootloader = [oldBootloader];
+
+			const oldSystemBuffer = await firmwareTestHelper.createFirmwareBinary({
 				moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
 				platformId: 12,
 				moduleIndex: 0,
 				moduleVersion: 5800
-			}
-		}];
-		const modulesNew = [{
-			prefixInfo: {
+			});
+			const oldSystem = await new HalModuleParser().parseBuffer({ fileBuffer: oldSystemBuffer });
+			modulesOldSystem = [oldSystem];
+
+			const newBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
 				moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
 				platformId: 12,
 				moduleIndex: 0,
 				moduleVersion: 3000
-			}
-		}, {
-			prefixInfo: {
+			});
+			const newSystemPartBuffer = await firmwareTestHelper.createFirmwareBinary({
 				moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
 				platformId: 12,
 				moduleIndex: 0,
 				moduleVersion: 6000
-			}
-		}];
-
-		beforeEach(() => {
-			device = {
-				getProtectionState: sinon.stub(),
-			};
+			});
+			newBootloader = await new HalModuleParser().parseBuffer({ fileBuffer: newBootloaderBuffer });
+			newSystemPart = await new HalModuleParser().parseBuffer({ fileBuffer: newSystemPartBuffer });
+			modulesNew = [newBootloader, newSystemPart];
 		});
 
 		describe('device is not protected', () => {
@@ -709,7 +720,7 @@ describe('flash-helper', () => {
 			it('does does not reject old modules', async () => {
 				let error;
 				try {
-					await validateModulesForProtection({ device, modules: modulesOldBootloader });
+					await maintainDeviceProtection({ device, modules: modulesOldBootloader });
 				} catch (_error) {
 					error = _error;
 				}
@@ -719,15 +730,22 @@ describe('flash-helper', () => {
 			it('does does not reject new modules', async () => {
 				let error;
 				try {
-					await validateModulesForProtection({ device, modules: modulesNew });
+					await maintainDeviceProtection({ device, modules: modulesNew });
 				} catch (_error) {
 					error = _error;
 				}
 				expect(error).to.be.undefined;
 			});
+
+			it('does not protect the bootloader', async () => {
+				await maintainDeviceProtection({ device, modules: modulesNew });
+
+				expect(newBootloader).not.to.have.property('security');
+				expect(newSystemPart).not.to.have.property('security');
+			});
 		});
 
-		describe('device is protected',  () => {
+		describe('device is protected', () => {
 			beforeEach(() => {
 				device.getProtectionState.returns({ protected: true, overridden: false });
 			});
@@ -735,7 +753,7 @@ describe('flash-helper', () => {
 			it('throws an exception if the bootloader is too old', async () => {
 				let error;
 				try {
-					await validateModulesForProtection({ device, modules: modulesOldBootloader });
+					await maintainDeviceProtection({ device, modules: modulesOldBootloader });
 				} catch (_error) {
 					error = _error;
 				}
@@ -745,7 +763,7 @@ describe('flash-helper', () => {
 			it('throws an exception if the system part is too old', async () => {
 				let error;
 				try {
-					await validateModulesForProtection({ device, modules: modulesOldSystem });
+					await maintainDeviceProtection({ device, modules: modulesOldSystem });
 				} catch (_error) {
 					error = _error;
 				}
@@ -755,11 +773,18 @@ describe('flash-helper', () => {
 			it('does does not reject new modules', async () => {
 				let error;
 				try {
-					await validateModulesForProtection({ device, modules: modulesNew });
+					await maintainDeviceProtection({ device, modules: modulesNew });
 				} catch (_error) {
 					error = _error;
 				}
 				expect(error).to.be.undefined;
+			});
+
+			it('protects the bootloader', async () => {
+				await maintainDeviceProtection({ device, modules: modulesNew });
+
+				expect(newBootloader).to.have.property('security');
+				expect(newSystemPart).not.to.have.property('security');
 			});
 		});
 
@@ -771,7 +796,7 @@ describe('flash-helper', () => {
 			it('does does not reject old modules', async () => {
 				let error;
 				try {
-					await validateModulesForProtection({ device, modules: modulesOldBootloader });
+					await maintainDeviceProtection({ device, modules: modulesOldBootloader });
 				} catch (_error) {
 					error = _error;
 				}
@@ -781,7 +806,7 @@ describe('flash-helper', () => {
 			it('does does not reject new modules', async () => {
 				let error;
 				try {
-					await validateModulesForProtection({ device, modules: modulesNew });
+					await maintainDeviceProtection({ device, modules: modulesNew });
 				} catch (_error) {
 					error = _error;
 				}
