@@ -29,7 +29,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const VError = require('verror');
 const chalk = require('chalk');
-const { HalModuleParser: Parser, unpackApplicationAndAssetBundle, isAssetValid, createProtectedModule } = require('binary-version-reader');
+const { HalModuleParser: Parser, unpackApplicationAndAssetBundle, isAssetValid, createProtectedModule, ModuleInfo } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
 
@@ -37,17 +37,29 @@ const INVALID_SUFFIX_SIZE = 65535;
 const DEFAULT_PRODUCT_ID = 65535;
 const DEFAULT_PRODUCT_VERSION = 65535;
 
+const PROTECTED_MINIMUM_VERSION = '6.0.0';
+const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3000;
+
 class BinaryCommand {
-	async inspectBinary(file) {
+	async inspectApplicationBinary(file) {
 		await this._checkFile(file);
-		const extractedFiles = await this._extractFiles(file);
+		const extractedFiles = await this._extractApplicationFiles(file);
 		const parsedAppInfo = await this._parseApplicationBinary(extractedFiles.application);
 		const assets = extractedFiles.assets;
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
+	async inspectBinary(file) {
+		await this._checkFile(file);
+		const extractedFiles = await this._extractFile(file);
+		const parsedInfo = await this._parseBinary(extractedFiles.application);
+		return parsedInfo;
+	}
+
 	async createProtectedBinary({ saveTo, file, verbose }) {
 		await this._checkFile(file);
+		const binaryModule = this.inspectBinary(file);
+		this._validateProtectedBinary(binaryModule);
 		let resBinaryName;
 
 		if (saveTo) {
@@ -69,6 +81,21 @@ class BinaryCommand {
 		return resBinaryPath;
 	}
 
+	_validateProtectedBinary(module) {
+		const { moduleFunction, moduleVersion, moduleIndex } = module.prefixInfo;
+		if (moduleFunction !== ModuleInfo.FunctionType.BOOTLOADER) {
+			throw new Error('Device Protection can only be enabled on bootloaders. The file provided is not a bootloader.');
+		}
+
+		if (moduleIndex !== 0) {
+			throw new Error('Device Protection can only be enabled on bootloaders with module index 0. Please use the correct bootloader file.');
+		}
+
+		if (moduleVersion < PROTECTED_MINIMUM_BOOTLOADER_VERSION) {
+			throw new Error(`Device Protection can only be enabled on bootloader for device-os version ${PROTECTED_MINIMUM_VERSION} and later. The provided file is an older version.`);
+		}
+	}
+
 
 	async _checkFile(file) {
 		try {
@@ -79,7 +106,7 @@ class BinaryCommand {
 		return true;
 	}
 
-	async _extractFiles(file) {
+	async _extractApplicationFiles(file) {
 		if (utilities.getFilenameExt(file) === '.zip') {
 			return unpackApplicationAndAssetBundle(file);
 		} else if (utilities.getFilenameExt(file) === '.bin') {
@@ -87,6 +114,15 @@ class BinaryCommand {
 			return { application: { name: path.basename(file), data }, assets: [] };
 		} else {
 			throw new VError(`File must be a .bin or .zip file: ${file}`);
+		}
+	}
+
+	async _extractFile(file) {
+		if (utilities.getFilenameExt(file) === '.bin') {
+			const data = await fs.readFile(file);
+			return { name: path.basename(file), data };
+		} else {
+			throw new VError(`File must be a .bin: ${file}`);
 		}
 	}
 
@@ -108,6 +144,17 @@ class BinaryCommand {
 		this._showPlatform(fileInfo);
 		this._showModuleInfo(fileInfo);
 		return fileInfo;
+	}
+
+	async _parseBinary(binary) {
+		const parser = new Parser();
+		let fileInfo;
+		try {
+			fileInfo = await parser.parseBuffer({ filename: binary.name, fileBuffer: binary.data });
+			return fileInfo;
+		} catch (err) {
+			throw new VError(ensureError(err), `Could not parse ${binary.name}`);
+		}
 	}
 
 	async _verifyBundle(appInfo, assets) {
