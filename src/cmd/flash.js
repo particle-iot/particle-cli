@@ -152,7 +152,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			target,
 			modules: fileModules,
 			platformId,
-			applicationOnly
+			applicationOnly,
+			verbose
 		});
 		const deviceOsModules = await parseModulesToFlash({ files: deviceOsBinaries });
 		let modulesToFlash = [...fileModules, ...deviceOsModules];
@@ -329,7 +330,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {
+	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly, verbose=true }) {
 		const { api } = this._particleApi();
 		const { module: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, api);
 
@@ -357,7 +358,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 				platformId,
 				version: target,
 				ui: this.ui,
-				omitUserPart: true
+				omitUserPart: true,
+				verbose
 			});
 		}
 
@@ -373,6 +375,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				platformId,
 				version: applicationDeviceOsVersion,
 				ui: this.ui,
+				verbose
 			});
 		} else {
 			// Device OS is up to date or we don't know the current Device OS version, so no need to download binaries

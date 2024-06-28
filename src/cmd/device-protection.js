@@ -231,7 +231,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		const modules = await this.device.getFirmwareModuleInfo();
 		const version = modules.find(m => m.type === 'SYSTEM_PART').version;
 		const platformId = this.device.platformId;
-		const downloadedFilePaths = await downloadDeviceOsVersionBinaries({ api: this.api, platformId, version, ui: this.ui });
+		const downloadedFilePaths = await downloadDeviceOsVersionBinaries({ api: this.api, platformId, version, ui: this.ui, verbose: false });
 		const platformName = platformForId(platformId).name;
 		return downloadedFilePaths.find(f => path.basename(f).includes(`${platformName}-bootloader`));
 	}
