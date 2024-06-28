@@ -180,11 +180,13 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				if (onlineMode) {
 					const success = await this._markAsDevelopmentDevice(false);
-					addToOutput.push(success ?
-						// TODO: Improve these lines
-						`Device removed from development mode to maintain current settings.${os.EOL}` :
-						`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
-					);
+					if (typeof success !== 'undefined') {
+						addToOutput.push(success ?
+							// TODO: Improve these lines
+							`Device removed from development mode to maintain current settings.${os.EOL}` :
+							`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
+						);
+					}
 				}
 			}));
 		} catch (error) {
@@ -257,11 +259,15 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 *
 	 * @async
 	 * @param {boolean} state - The state to set for the development device.
-	 * @returns {Promise<boolean>} True if the device was successfully marked, false otherwise.
+	 * @returns {Promise<boolean|undefined>} Undefined if no need to change mode, true if the mode was successfully changed, false otherwise.
 	 */
 	async _markAsDevelopmentDevice(state) {
 		try {
 			if (this.productId) {
+				const data = await this.api.getDeviceAttributes(this.deviceId, this.productId);
+				if (data.development === state) {
+					return;
+				}
 				await this.api.markAsDevelopmentDevice(this.deviceId, state, this.productId);
 				return true;
 			}

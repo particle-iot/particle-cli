@@ -209,16 +209,18 @@ describe('DeviceProtectionCommands', () => {
 	});
 
 	describe('_markAsDevelopmentDevice', () => {
-		it('should mark the device as a development device', async () => {
+		it('clears the device as a development device', async () => {
+			let attributes = { development: true };
 			deviceProtectionCommands.productId = 12345;
 			deviceProtectionCommands.api = {
+				getDeviceAttributes: sinon.stub().resolves(attributes),
 				markAsDevelopmentDevice: sinon.stub().resolves()
 			};
 
 			let error;
 			let res;
 			try {
-				res = await deviceProtectionCommands._markAsDevelopmentDevice(true);
+				res = await deviceProtectionCommands._markAsDevelopmentDevice(false);
 			} catch (e) {
 				error = e;
 			}
@@ -227,11 +229,29 @@ describe('DeviceProtectionCommands', () => {
 			expect(res).to.eql(true);
 		});
 
-		it('should return false if the product ID is not available', async () => {
-			deviceProtectionCommands.productId = null;
+		it('does not clear development mode if not set', async () => {
+			let attributes = { development: false };
+			deviceProtectionCommands.productId = 12345;
 			deviceProtectionCommands.api = {
+				getDeviceAttributes: sinon.stub().resolves(attributes),
 				markAsDevelopmentDevice: sinon.stub().resolves()
 			};
+
+			let error;
+			let res;
+			try {
+				res = await deviceProtectionCommands._markAsDevelopmentDevice(false);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(deviceProtectionCommands.api.markAsDevelopmentDevice).to.not.have.been.called;
+			expect(error).to.be.undefined;
+			expect(res).to.be.undefined;
+		});
+
+		it('returns false if the product ID is not available', async () => {
+			deviceProtectionCommands.productId = null;
 
 			let error;
 			let res;
@@ -245,10 +265,10 @@ describe('DeviceProtectionCommands', () => {
 			expect(res).to.eql(false);
 		});
 
-		it('should return false if an error occurs', async () => {
+		it('returns false if an error occurs', async () => {
 			deviceProtectionCommands.productId = 12345;
 			deviceProtectionCommands.api = {
-				markAsDevelopmentDevice: sinon.stub().rejects(new Error('random error'))
+				getDeviceAttributes: sinon.stub().rejects(new Error('random error'))
 			};
 
 			let error;
