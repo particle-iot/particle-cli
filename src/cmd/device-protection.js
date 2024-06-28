@@ -145,7 +145,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async enableProtection({ file } = {}) {
 		let addToOutput = [];
-		let protectedBinary = file;
 		try {
 			await this.ui.showBusySpinnerUntilResolved('Enabling device protection', this._withDevice(false, async () => {
 				const deviceStr = await this._getDeviceString();
@@ -162,8 +161,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					return;
 				}
 
-				if (!protectedBinary) {
-					// bypass checking the product when the bootloader is provided to allow for enabling device protection offline
+				let protectedBinary = file;
+				// bypass checking the product and clearing development mode when the bootloader is provided to allow for enabling device protection offline
+				const onlineMode = !file;
+				if (onlineMode) {
 					const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
 					if (!deviceProtectionActiveInProduct) {
 						addToOutput.push(`${deviceStr} is not in a product that supports device protection.${os.EOL}`);
@@ -177,12 +178,14 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				await this._flashBootloader(protectedBinary);
 				addToOutput.push(`${deviceStr} is now a Protected Device.${os.EOL}`);
 
-				const success = await this._markAsDevelopmentDevice(false);
-				addToOutput.push(success ?
-					// TODO: Improve these lines
-					`Device removed from development mode to maintain current settings.${os.EOL}` :
-					`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
-				);
+				if (onlineMode) {
+					const success = await this._markAsDevelopmentDevice(false);
+					addToOutput.push(success ?
+						// TODO: Improve these lines
+						`Device removed from development mode to maintain current settings.${os.EOL}` :
+						`Failed to remove device from development mode. Device protection may be disabled on next cloud connection.${os.EOL}`
+					);
+				}
 			}));
 		} catch (error) {
 			throw new Error(`Failed to enable device protection: ${error.message}${os.EOL}`);
