@@ -37,11 +37,10 @@ const INVALID_SUFFIX_SIZE = 65535;
 const DEFAULT_PRODUCT_ID = 65535;
 const DEFAULT_PRODUCT_VERSION = 65535;
 
-const PROTECTED_MINIMUM_VERSION = '6.0.0';
 const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3000;
 
 class BinaryCommand {
-	async inspectApplicationBinary(file) {
+	async inspectBinary(file) {
 		await this._checkFile(file);
 		const extractedFiles = await this._extractApplicationFiles(file);
 		const parsedAppInfo = await this._parseApplicationBinary(extractedFiles.application);
@@ -49,16 +48,10 @@ class BinaryCommand {
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
-	async inspectBinary(file) {
-		await this._checkFile(file);
-		const extractedFiles = await this._extractFile(file);
-		const parsedInfo = await this._parseBinary(extractedFiles.application);
-		return parsedInfo;
-	}
-
 	async createProtectedBinary({ saveTo, file, verbose }) {
 		await this._checkFile(file);
-		const binaryModule = this.inspectBinary(file);
+		const extractedFile = await this._extractFile(file);
+		const binaryModule = await this._parseBinary(extractedFile);
 		this._validateProtectedBinary(binaryModule);
 		let resBinaryName;
 
@@ -83,19 +76,10 @@ class BinaryCommand {
 
 	_validateProtectedBinary(module) {
 		const { moduleFunction, moduleVersion, moduleIndex } = module.prefixInfo;
-		if (moduleFunction !== ModuleInfo.FunctionType.BOOTLOADER) {
-			throw new Error('Device Protection can only be enabled on bootloaders. The file provided is not a bootloader.');
-		}
-
-		if (moduleIndex !== 0) {
-			throw new Error('Device Protection can only be enabled on bootloaders with module index 0. Please use the correct bootloader file.');
-		}
-
-		if (moduleVersion < PROTECTED_MINIMUM_BOOTLOADER_VERSION) {
-			throw new Error(`Device Protection can only be enabled on bootloader for device-os version ${PROTECTED_MINIMUM_VERSION} and later. The provided file is an older version.`);
+		if (moduleFunction !== ModuleInfo.FunctionType.BOOTLOADER || moduleIndex !== 0 || moduleVersion < PROTECTED_MINIMUM_BOOTLOADER_VERSION) {
+			throw new Error('Device protection feature is not supported for this binary.');
 		}
 	}
-
 
 	async _checkFile(file) {
 		try {

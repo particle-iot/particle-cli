@@ -56,12 +56,12 @@ describe('Binary Inspect', () => {
 		});
 	});
 
-	describe('_extractFiles', () => {
+	describe('_extractApplicationFiles', () => {
 		it('errors if file is not .zip or .bin', async () => {
 			let error;
 
 			try {
-				await binaryCommand._extractFiles('not-a-zip-or-bin-file');
+				await binaryCommand._extractApplicationFiles('not-a-zip-or-bin-file');
 			} catch (_error) {
 				error = _error;
 			}
@@ -73,7 +73,7 @@ describe('Binary Inspect', () => {
 		it('extracts a .zip file', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
 
-			const binaryInfo = await binaryCommand._extractFiles(zipPath);
+			const binaryInfo = await binaryCommand._extractApplicationFiles(zipPath);
 
 			expect(binaryInfo).to.have.property('application').with.property('name', 'app.bin');
 			expect(binaryInfo).to.have.property('assets').with.lengthOf(3);
@@ -87,7 +87,7 @@ describe('Binary Inspect', () => {
 		it('extracts a .bin file', async () => {
 			const binPath = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin');
 
-			const binaryInfo = await binaryCommand._extractFiles(binPath);
+			const binaryInfo = await binaryCommand._extractApplicationFiles(binPath);
 
 			expect(binaryInfo).to.have.property('application').with.property('name', 'argon_stroby.bin');
 			expect(binaryInfo).to.have.property('assets').with.lengthOf(0);
@@ -96,7 +96,7 @@ describe('Binary Inspect', () => {
 		it('handles if zip file does not have a binary or assets', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'invalid-bundle.zip');
 
-			const binaryInfo = await binaryCommand._extractFiles(zipPath);
+			const binaryInfo = await binaryCommand._extractApplicationFiles(zipPath);
 
 			expect(binaryInfo).to.have.property('application').with.property('name', 'app.txt');
 			expect(binaryInfo).to.have.property('assets').with.lengthOf(0);
@@ -136,12 +136,90 @@ describe('Binary Inspect', () => {
 	describe('_verifyBundle', () => {
 		it('verifies bundle with asset info', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
-			const res = await binaryCommand._extractFiles(zipPath);
+			const res = await binaryCommand._extractApplicationFiles(zipPath);
 			const parsedBinaryInfo = await binaryCommand._parseApplicationBinary(res.application);
 
 			const verify = await binaryCommand._verifyBundle(parsedBinaryInfo, res.assets);
 
 			expect(verify).to.equal(true);
+		});
+	});
+
+	describe('_validateProtectedBinary', () => {
+		it('validates a protected binary', async () => {
+			const module = {
+				prefixInfo: {
+					moduleIndex: 0,
+					moduleFunction: 2,
+					moduleVersion: 3000
+				}
+			};
+
+			let error;
+			try {
+				binaryCommand._validateProtectedBinary(module);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.equal(undefined);
+		});
+
+		it('errors if binary is of the wrong module index', async () => {
+			const module = {
+				prefixInfo: {
+					moduleIndex: 1,
+					moduleFunction: 2,
+					moduleVersion: 3000
+				}
+			};
+
+			let error;
+			try {
+				binaryCommand._validateProtectedBinary(module);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.equal('Device protection feature is not supported for this binary.');
+		});
+
+		it('errors if binary is not a bootloader', async () => {
+			const module = {
+				prefixInfo: {
+					moduleIndex: 1,
+					moduleFunction: 0,
+					moduleVersion: 3000
+				}
+			};
+
+			let error;
+			try {
+				binaryCommand._validateProtectedBinary(module);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.equal('Device protection feature is not supported for this binary.');
+		});
+
+		it('errors if binary is of an older bootloader version', async () => {
+			const module = {
+				prefixInfo: {
+					moduleIndex: 1,
+					moduleFunction: 0,
+					moduleVersion: 2000
+				}
+			};
+
+			let error;
+			try {
+				binaryCommand._validateProtectedBinary(module);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.equal('Device protection feature is not supported for this binary.');
 		});
 	});
 });
