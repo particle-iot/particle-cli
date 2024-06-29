@@ -133,6 +133,35 @@ describe('Binary Inspect', () => {
 		});
 	});
 
+	describe('_parseBinary', () => {
+		it('parses a .bin file', async () => {
+			const name = 'argon_stroby.bin';
+			const data = await fs.readFile(path.join(PATH_FIXTURES_BINARIES_DIR, name));
+			const applicationBinary = { name, data };
+
+			const res = await binaryCommand._parseBinary(applicationBinary);
+
+			expect(path.basename(res.filename)).to.equal('argon_stroby.bin');
+			expect(res.crc.ok).to.equal(true);
+			expect(res).to.have.property('prefixInfo');
+			expect(res).to.have.property('suffixInfo');
+		});
+
+		it('errors if the binary is not valid', async () => {
+			const binary = { name: 'junk', data: Buffer.from('junk') };
+
+			let error;
+			try {
+				await binaryCommand._parseBinary(binary);
+			} catch (_error) {
+				error = _error;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error.message).to.match(/Could not parse junk/);
+		});
+	});
+
 	describe('_verifyBundle', () => {
 		it('verifies bundle with asset info', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
