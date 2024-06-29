@@ -161,7 +161,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					return;
 				}
 
-				let protectedBinary = file;
+				let localBootloaderPath = file;
 				// bypass checking the product and clearing development mode when the bootloader is provided to allow for enabling device protection offline
 				const onlineMode = !file;
 				if (onlineMode) {
@@ -171,10 +171,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 						return;
 					}
 
-					const localBootloaderPath = await this._downloadBootloader();
-					protectedBinary = await this._getProtectedBinary({ file: localBootloaderPath, verbose: false });
+					localBootloaderPath = await this._downloadBootloader();
 				}
 
+				const protectedBinary = await this._getProtectedBinary({ file: localBootloaderPath, verbose: false });
 				await this._flashBootloader(protectedBinary);
 				addToOutput.push(`${deviceStr} is now a Protected Device.${os.EOL}`);
 
