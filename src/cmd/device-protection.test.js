@@ -371,7 +371,7 @@ describe('DeviceProtectionCommands', () => {
 		it('should execute a function with the device in normal (non-dfu) mode', async () => {
 			const fn = sinon.stub().resolves();
 
-			await deviceProtectionCommands._withDevice(true, fn);
+			await deviceProtectionCommands._withDevice({ putDeviceBackInDfuMode: true }, fn);
 
 			expect(deviceProtectionCommands._getUsbDevice).to.have.been.calledOnce;
 			expect(fn).to.have.been.calledOnce;
@@ -383,11 +383,20 @@ describe('DeviceProtectionCommands', () => {
 			sinon.stub(deviceProtectionCommands, '_putDeviceInSafeMode').resolves();
 			sinon.stub(deviceProtectionCommands, '_waitForDeviceToReboot').resolves();
 
-			await deviceProtectionCommands._withDevice(true, fn);
+			await deviceProtectionCommands._withDevice({ putDeviceBackInDfuMode: true }, fn);
 
 			expect(deviceProtectionCommands._putDeviceInSafeMode).to.have.been.calledOnce;
 			expect(deviceProtectionCommands._waitForDeviceToReboot).to.have.been.calledOnce;
 			expect(fn).to.have.been.calledOnce;
+		});
+
+		it('shows the spinner', async () => {
+			const fn = sinon.stub().returns(1234);
+			sinon.stub(deviceProtectionCommands.ui, 'showBusySpinnerUntilResolved').resolves();
+
+			await deviceProtectionCommands._withDevice({ spinner: 'Long operation' }, fn);
+
+			expect(deviceProtectionCommands.ui.showBusySpinnerUntilResolved).to.have.been.calledWith('Long operation', 1234);
 		});
 	});
 

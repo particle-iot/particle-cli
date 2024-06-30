@@ -43,7 +43,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 		let s;
 		try {
-			await this.ui.showBusySpinnerUntilResolved('Getting device status', this._withDevice(true, async () => {
+			await this._withDevice({ spinner: 'Getting device status', putDeviceBackInDfuMode: true }, async () => {
 				s = await this._getDeviceProtection();
 				let res;
 				let helper;
@@ -61,7 +61,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				const deviceStr = await this._getDeviceString();
 				addToOutput.push(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
-			}));
+			});
 		} catch (error) {
 			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
 			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
@@ -88,7 +88,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async disableProtection() {
 		let addToOutput = [];
 
-		await this.ui.showBusySpinnerUntilResolved('Disabling device protection', this._withDevice(true, async () => {
+		await this._withDevice({ spinner: 'Disabling device protection', putDeviceBackInDfuMode: true }, async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
 				let s = await this._getDeviceProtection();
@@ -122,7 +122,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			} catch (error) {
 				throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
 			}
-		}));
+		});
 
 		addToOutput.forEach((line) => {
 			this.ui.stdout.write(line);
@@ -146,7 +146,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async enableProtection({ file } = {}) {
 		let addToOutput = [];
 		try {
-			await this.ui.showBusySpinnerUntilResolved('Enabling device protection', this._withDevice(false, async () => {
+			await this._withDevice({ spinner: 'Enabling device protection', putDeviceBackInDfuMode: false }, async () => {
 				const deviceStr = await this._getDeviceString();
 				const s = await this._getDeviceProtection();
 
@@ -188,7 +188,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 						);
 					}
 				}
-			}));
+			});
 		} catch (error) {
 			throw new Error(`Failed to enable device protection: ${error.message}${os.EOL}`);
 		}
@@ -319,19 +319,23 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * If it is in DFU mode, the device is reset and re-opened expecting it to be in normal mode.
 	 *
 	 * @async
-	 * @param {boolean} putDeviceBackInDfuMode - Checks if device should be put back into dfy mode if the device was in dfu mode at the start of the operation
+	 * @param {Object} options
+	 * @param {boolean} options.putDeviceBackInDfuMode - Checks if device should be put back into dfy mode if the device was in dfu mode at the start of the operation
+	 * @param {Function} options.spinner - The text to display in a spinner until the operation completes
 	 * @param {Function} fn - The function to execute with the device.
 	 * @returns {Promise<*>} The result of the function execution.
 	 */
-	async _withDevice(putDeviceBackInDfuMode, fn) {
+	async _withDevice({ putDeviceBackInDfuMode, spinner }, fn) {
 		try {
 			await this._getUsbDevice(this.device);
-			const deviceWasInDfuMode = this.device.isInDfuMode;
-			if (deviceWasInDfuMode) {
-				await this._putDeviceInSafeMode();
-			}
-			putDeviceBackInDfuMode = putDeviceBackInDfuMode && deviceWasInDfuMode;
-			return await fn();
+			return await this.ui.showBusySpinnerUntilResolved(spinner, (async () => {
+				const deviceWasInDfuMode = this.device.isInDfuMode;
+				if (deviceWasInDfuMode) {
+					await this._putDeviceInSafeMode();
+				}
+				putDeviceBackInDfuMode = putDeviceBackInDfuMode && deviceWasInDfuMode;
+				return await fn();
+			})());
 		} finally {
 			if (putDeviceBackInDfuMode) {
 				await this._waitForDeviceToReboot();
