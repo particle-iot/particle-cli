@@ -391,12 +391,13 @@ describe('DeviceProtectionCommands', () => {
 		});
 
 		it('shows the spinner', async () => {
-			const fn = sinon.stub().returns(1234);
+			const promise = Promise.resolve(1234);
+			const fn = sinon.stub().returns(promise);
 			sinon.stub(deviceProtectionCommands.ui, 'showBusySpinnerUntilResolved').resolves();
 
 			await deviceProtectionCommands._withDevice({ spinner: 'Long operation' }, fn);
 
-			expect(deviceProtectionCommands.ui.showBusySpinnerUntilResolved).to.have.been.calledWith('Long operation', 1234);
+			expect(deviceProtectionCommands.ui.showBusySpinnerUntilResolved).to.have.been.calledWith('Long operation', promise);
 		});
 	});
 
