@@ -4,7 +4,7 @@ const { delay } = require('./utilities');
 const VError = require('verror');
 const { PLATFORMS, platformForId } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
-const { HalModuleParser: ModuleParser, ModuleInfo } = require('binary-version-reader');
+const { HalModuleParser: ModuleParser, ModuleInfo, createProtectedModule } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
@@ -16,8 +16,14 @@ const ensureError = utilities.ensureError;
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
-async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
-	const progress = _createFlashProgress({ flashSteps, ui });
+// Minimum version of Device OS that supports protected modules
+const PROTECTED_MINIMUM_VERSION = '6.0.0';
+const PROTECTED_MINIMUM_SYSTEM_VERSION = 6000;
+const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3000;
+
+async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose=true }) {
+	let progress = null;
+	progress = verbose ? _createFlashProgress({ flashSteps, ui, verbose }) : null;
 	let success = false;
 	let lastStepDfu = false;
 	try {
@@ -35,7 +41,9 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui }) {
 		}
 		success = true;
 	} finally {
-		progress({ event: 'finish', success });
+		if (progress) {
+			progress({ event: 'finish', success });
+		}
 		if (device.isOpen) {
 			// only reset the device if the last step was in DFU mode
 			if (resetAfterFlash && lastStepDfu) {
@@ -355,6 +363,42 @@ function validateDFUSupport({ device, ui }) {
 	}
 }
 
+async function maintainDeviceProtection({ modules, device }) {
+	try {
+		const s = await device.getProtectionState();
+
+		if (!s.protected && !s.overridden) {
+			// Device is not protected -> Don't enforce Device OS version
+			return;
+		}
+	} catch (error) {
+		// Device does not support device protection -> Don't enforce Device OS version
+		if (error.message === 'Not supported') {
+			return;
+		}
+		throw error;
+	}
+
+	for (const module of modules) {
+		const { moduleFunction, moduleIndex, moduleVersion } = module.prefixInfo;
+		const oldSystem = moduleFunction === ModuleInfo.FunctionType.SYSTEM_PART &&
+			moduleVersion < PROTECTED_MINIMUM_SYSTEM_VERSION;
+		const oldBootloader = moduleFunction === ModuleInfo.FunctionType.BOOTLOADER &&
+			moduleIndex === 0 && moduleVersion < PROTECTED_MINIMUM_BOOTLOADER_VERSION;
+
+		if (oldSystem || oldBootloader) {
+			throw new Error(`Cannot downgrade Device OS below version ${PROTECTED_MINIMUM_VERSION} on a Protected Device`);
+		}
+
+		// Enable Device Protection on the bootloader when flashing a Protected Device
+		if (moduleFunction === ModuleInfo.FunctionType.BOOTLOADER && moduleIndex === 0) {
+			const protectedBuffer = await createProtectedModule(module.fileBuffer);
+			const parser = new ModuleParser();
+			const protectedModule = await parser.parseBuffer({ fileBuffer: protectedBuffer });
+			Object.assign(module, protectedModule);
+		}
+	}
+}
 
 module.exports = {
 	flashFiles,
@@ -363,6 +407,7 @@ module.exports = {
 	createFlashSteps,
 	prepareDeviceForFlash,
 	validateDFUSupport,
+	maintainDeviceProtection,
 	getFileFlashInfo,
 	_get256Hash,
 	_skipAsset

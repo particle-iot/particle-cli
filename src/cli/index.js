@@ -5,6 +5,7 @@ const bundle = require('./bundle');
 const cloud = require('./cloud');
 const config = require('./config');
 const doctor = require('./doctor');
+const protection = require('./device-protection');
 const flash = require('./flash');
 const func = require('./function');
 const keys = require('./keys');
@@ -50,6 +51,7 @@ module.exports = function registerAllCommands(context) {
 	cloud(context);
 	config(context);
 	doctor(context);
+	protection(context);
 	flash(context);
 	func(context);
 	keys(context);

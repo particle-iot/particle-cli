@@ -1,6 +1,7 @@
 const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
+const fs = require('fs-extra');
 const {
 	PATH_FIXTURES_BINARIES_DIR, PATH_FIXTURES_THIRDPARTY_OTA_DIR
 } = require('../lib/env');
@@ -13,7 +14,8 @@ describe('Binary Commands', () => {
 		'Help:  particle help binary <command>',
 		'',
 		'Commands:',
-		'  inspect  Describe binary contents',
+		'  inspect                   Describe binary contents',
+		'  enable-device-protection  Create a protected bootloader binary',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
@@ -233,6 +235,21 @@ describe('Binary Commands', () => {
 			expect(exitCode).to.equal(1);
 		});
 
+	});
+
+	describe('Binary Subcommand to created a protected bootloader', () => {
+		it('Creates a protected bootloader', async () => {
+			try {
+				const bootloader = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-bootloader-610.bin');
+				const args = ['binary', 'enable-device-protection', bootloader];
+				const { stdout, stderr, exitCode } = await cli.run(args);
+				expect(stdout).to.include('argon-bootloader-610-protected.bin');
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			} finally {
+				await fs.remove(path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-bootloader-610-protected.bin'));
+			}
+		});
 	});
 });
 

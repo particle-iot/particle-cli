@@ -19,6 +19,7 @@ const {
 	createFlashSteps,
 	filterModulesToFlash,
 	parseModulesToFlash,
+	maintainDeviceProtection,
 	flashFiles,
 	validateDFUSupport,
 	getFileFlashInfo
@@ -87,6 +88,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				platformId: device.platformId,
 				platformName
 			});
+			await maintainDeviceProtection({ modules: modulesToFlash, device });
 			const flashSteps = await createFlashSteps({
 				modules: modulesToFlash,
 				isInDfuMode: device.isInDfuMode,
@@ -115,7 +117,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
-	async flashLocal({ files, applicationOnly, target }) {
+	async flashLocal({ files, applicationOnly, target, verbose=true }) {
 		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
 		const { api, auth } = this._particleApi();
 		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
@@ -124,7 +126,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const platformName = platformForId(platformId).name;
 		const currentDeviceOsVersion = device.firmwareVersion;
 
-		this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
+		if (verbose) {
+			this.ui.write(`Flashing ${platformName} ${deviceIdOrName || device.id}`);
+		}
 
 		validateDFUSupport({ device, ui: this.ui });
 
@@ -148,19 +152,21 @@ module.exports = class FlashCommand extends CLICommandBase {
 			target,
 			modules: fileModules,
 			platformId,
-			applicationOnly
+			applicationOnly,
+			verbose
 		});
 		const deviceOsModules = await parseModulesToFlash({ files: deviceOsBinaries });
 		let modulesToFlash = [...fileModules, ...deviceOsModules];
 		modulesToFlash = filterModulesToFlash({ modules: modulesToFlash, platformId });
 
+		await maintainDeviceProtection({ modules: modulesToFlash, device });
 		const flashSteps = await createFlashSteps({
 			modules: modulesToFlash,
 			isInDfuMode: device.isInDfuMode,
 			platformId
 		});
 
-		await flashFiles({ device, flashSteps, ui: this.ui });
+		await flashFiles({ device, flashSteps, ui: this.ui, verbose });
 	}
 
 	async _analyzeFiles(files) {
@@ -324,7 +330,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly }) {
+	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly, verbose=true }) {
 		const { api } = this._particleApi();
 		const { module: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, api);
 
@@ -352,7 +358,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 				platformId,
 				version: target,
 				ui: this.ui,
-				omitUserPart: true
+				omitUserPart: true,
+				verbose
 			});
 		}
 
@@ -368,6 +375,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				platformId,
 				version: applicationDeviceOsVersion,
 				ui: this.ui,
+				verbose
 			});
 		} else {
 			// Device OS is up to date or we don't know the current Device OS version, so no need to download binaries
