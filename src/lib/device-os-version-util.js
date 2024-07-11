@@ -14,7 +14,7 @@ const { HalModuleParser } = require('binary-version-reader');
  * @param {Object} ui - allow us to interact in the console
  * @returns {Promise<*[]>} - true if successful
  */
-async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui }){
+async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui, verbose=true }){
 	try {
 		// get platform by id from device-constants
 		const platform = Object.values(deviceConstants).filter(p => p.public).find(p => p.id === platformId);
@@ -22,6 +22,8 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
 		// omit user part application
 		deviceOsVersion.modules = deviceOsVersion.modules.filter(m => m.prefixInfo.moduleFunction !== 'user_part');
+		// ensure the version is the semver version
+		version = deviceOsVersion.version;
 
 		// find the modules that don't already exist on this machine
 		const modulesToDownload = [];
@@ -44,7 +46,9 @@ async function downloadDeviceOsVersionBinaries({ api, platformId, version='lates
 					version: deviceOsVersion.version
 				});
 			})));
-			ui.stdout.write(`Downloaded Device OS ${version}${os.EOL}`);
+			if (verbose) {
+				ui.stdout.write(`Downloaded Device OS ${version}${os.EOL}`);
+			}
 		}
 
 		const binaryPath = getBinaryPath(deviceOsVersion.version, platform.name);
