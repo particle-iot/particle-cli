@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.25.0 - Jul 11 2024
+* Added Device Protection feature
+
 # 3.24.0 - Jun 4 2024
 * Introduce new wifi setup process using `particle wifi` commands
 * Add `particle usb network-interfaces` command
