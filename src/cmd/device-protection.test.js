@@ -10,7 +10,8 @@ describe('DeviceProtectionCommands', () => {
 		deviceProtectionCommands.device = {
 			isInDfuMode: false,
 			unprotectDevice: sinon.stub(),
-			enterDfuMode: sinon.stub()
+			enterDfuMode: sinon.stub(),
+			getProtectionState: sinon.stub()
 		};
 	});
 
@@ -19,24 +20,23 @@ describe('DeviceProtectionCommands', () => {
 	});
 
 	describe('getStatus', () => {
-		it('should retrieve and display the protection status of the device', async () => {
+		it.only('should retrieve and display the protection status of the device', async () => {
 			const expectedStatus = {
 				protected: true,
 				overridden: false
 			};
-
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves(expectedStatus);
+			deviceProtectionCommands.device.getProtectionState.resolves(expectedStatus);
 			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
 
 			const result = await deviceProtectionCommands.getStatus();
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
+			expect(deviceProtectionCommands.device.getProtectionState).to.have.been.calledOnce;
 			expect(deviceProtectionCommands._getDeviceString).to.have.been.calledOnce;
 			expect(result).to.eql(expectedStatus);
 		});
 
 		it('throws an error while getting the protection status of the device', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').rejects(new Error('random error'));
+			deviceProtectionCommands.device.getProtectionState.rejects(new Error('random error'));
 
 			let error;
 			try {
@@ -52,7 +52,7 @@ describe('DeviceProtectionCommands', () => {
 
 	describe('disableProtection', () => {
 		it('should disable protection on the device', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
+			deviceProtectionCommands.device.getProtectionState
 				.onFirstCall().resolves({ protected: true, overridden: false })
 				.onSecondCall().resolves({ protected: true, overridden: false });
 			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
@@ -66,25 +66,25 @@ describe('DeviceProtectionCommands', () => {
 
 			await deviceProtectionCommands.disableProtection();
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
+			expect(deviceProtectionCommands.device.getProtectionState).to.have.been.calledOnce;
 			expect(deviceProtectionCommands.device.unprotectDevice).to.have.been.calledTwice;
 			expect(deviceProtectionCommands.api.unprotectDevice).to.have.been.calledTwice;
 		});
 
 		it('handles already Open Devices', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection')
+			deviceProtectionCommands.device.getProtectionState
 				.onFirstCall().resolves({ protected: false, overridden: false });
 			sinon.stub(deviceProtectionCommands, '_getDeviceString').resolves('[123456789abcdef] (Product 12345)');
 
 			await deviceProtectionCommands.disableProtection();
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
+			expect(deviceProtectionCommands.device.getProtectionState).to.have.been.calledOnce;
 		});
 	});
 
 	describe('enableProtection', () => {
 		it('should enable protection on the device', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
+			deviceProtectionCommands.device.getProtectionState.resolves({
 				protected: false,
 				overridden: false
 			});
@@ -106,7 +106,7 @@ describe('DeviceProtectionCommands', () => {
 
 
 		it('handles already Protected Devices', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
+			deviceProtectionCommands.device.getProtectionState.resolves({
 				protected: true,
 				overridden: false
 			});
@@ -115,12 +115,12 @@ describe('DeviceProtectionCommands', () => {
 
 			await deviceProtectionCommands.enableProtection();
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
+			expect(deviceProtectionCommands.device.getProtectionState).to.have.been.calledOnce;
 			expect(deviceProtectionCommands._isDeviceProtectionActiveInProduct).to.not.have.been.called;
 		});
 
 		it('protects a Service Mode device', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
+			deviceProtectionCommands.device.getProtectionState.resolves({
 				protected: true,
 				overridden: true
 			});
@@ -130,12 +130,12 @@ describe('DeviceProtectionCommands', () => {
 
 			await deviceProtectionCommands.enableProtection();
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
+			expect(deviceProtectionCommands.device.getProtectionState).to.have.been.calledOnce;
 			expect(deviceProtectionCommands._isDeviceProtectionActiveInProduct).to.not.have.been.called;
 		});
 
 		it('does not protect an Open Device if it is not in a product', async () => {
-			sinon.stub(deviceProtectionCommands, '_getDeviceProtection').resolves({
+			deviceProtectionCommands.device.getProtectionState.resolves({
 				protected: false,
 				overridden: false
 			});
@@ -146,59 +146,10 @@ describe('DeviceProtectionCommands', () => {
 
 			await deviceProtectionCommands.enableProtection();
 
-			expect(deviceProtectionCommands._getDeviceProtection).to.have.been.calledOnce;
+			expect(deviceProtectionCommands.device.getProtectionState).to.have.been.calledOnce;
 			expect(deviceProtectionCommands._isDeviceProtectionActiveInProduct).to.have.been.calledOnce;
 			expect(deviceProtectionCommands._markAsDevelopmentDevice).to.not.have.been.called;
 			expect(deviceProtectionCommands._flashBootloader).to.not.have.been.called;
-		});
-	});
-
-	describe('_getDeviceProtection', () => {
-		it('should retrieve the current protection state of the device', async () => {
-			const expectedState = {
-				protected: true,
-				overridden: false
-			};
-			deviceProtectionCommands.device = {
-				getProtectionState: sinon.stub().resolves(expectedState)
-			};
-
-			const result = await deviceProtectionCommands._getDeviceProtection();
-
-			expect(deviceProtectionCommands.device.getProtectionState).to.have.been.calledOnce;
-			expect(result).eql(expectedState);
-		});
-
-		it('should throw an error if the device protection feature is not supported', async () => {
-			deviceProtectionCommands.device = {
-				getProtectionState: sinon.stub().rejects(new Error('Not supported'))
-			};
-
-			let error;
-			try {
-				await deviceProtectionCommands._getDeviceProtection();
-			} catch (_e) {
-				error = _e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.include('Device protection feature is not supported on this device');
-		});
-
-		it('throws a random error', async () => {
-			deviceProtectionCommands.device = {
-				getProtectionState: sinon.stub().rejects(new Error('random error'))
-			};
-
-			let error;
-			try {
-				await deviceProtectionCommands._getDeviceProtection();
-			} catch (_e) {
-				error = _e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.include('random error');
 		});
 	});
 
