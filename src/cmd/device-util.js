@@ -1,3 +1,5 @@
+const { getProtectionStatus, disableDeviceProtection, turnOffServiceMode } = require('../lib/device-protection-helper');
+
 /**
  * Check if the string can represent a valid device ID.
  *
@@ -46,3 +48,21 @@ module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = fal
 		});
 };
 
+module.exports.manageDeviceProtection = async (device) => {
+	try {
+		const s = await getProtectionStatus(device);
+		if (s.protected && !s.overridden) { // protected device
+			await disableDeviceProtection(device);
+			return true;
+		}
+	} catch (error) {
+		if (!error.message.includes('Not supported') && !error.message.includes('Request Error')) {
+			throw new Error(error);
+		}
+	}
+	return false;
+};
+
+module.exports.protectDevice = async (device) => {
+	await turnOffServiceMode(device);
+};

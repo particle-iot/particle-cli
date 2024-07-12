@@ -11,6 +11,7 @@ const os = require('os');
 const semver = require('semver');
 const { DeviceProtectionError } = require('particle-usb');
 const utilities = require('./utilities');
+const { getProtectionStatus } = require('./device-protection-helper');
 const ensureError = utilities.ensureError;
 
 // Flashing an NCP firmware can take a few minutes
@@ -365,7 +366,7 @@ function validateDFUSupport({ device, ui }) {
 
 async function maintainDeviceProtection({ modules, device }) {
 	try {
-		const s = await device.getProtectionState();
+		const s = await getProtectionStatus(device);
 
 		if (!s.protected && !s.overridden) {
 			// Device is not protected -> Don't enforce Device OS version

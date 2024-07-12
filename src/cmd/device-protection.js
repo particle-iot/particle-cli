@@ -11,6 +11,7 @@ const { downloadDeviceOsVersionBinaries } = require('../lib/device-os-version-ut
 const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
 const BinaryCommand = require('./binary');
+const { getProtectionStatus, disableDeviceProtection, turnOffServiceMode } = require('../lib/device-protection-helper');
 
 const REBOOT_TIME_MSEC = 60000;
 const REBOOT_INTERVAL_MSEC = 1000;
@@ -44,7 +45,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let s;
 		try {
 			await this._withDevice({ spinner: 'Getting device status', putDeviceBackInDfuMode: true }, async () => {
-				s = await this._getDeviceProtection();
+				s = await getProtectionStatus(this.device);
 				let res;
 				let helper;
 
@@ -64,6 +65,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			});
 		} catch (error) {
 			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
+			if (error.message === 'Not supported') {
+				throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+			}
 			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
 		}
 
@@ -91,35 +95,20 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		await this._withDevice({ spinner: 'Disabling device protection', putDeviceBackInDfuMode: true }, async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
-				let s = await this._getDeviceProtection();
+				let s = await getProtectionStatus(this.device);
 
 				if (!s.protected && !s.overridden) {
 					addToOutput.push(`${deviceStr} is not a Protected Device.${os.EOL}`);
 					return;
 				}
 
-				let r = await this.api.unprotectDevice({ deviceId: this.deviceId, action: 'prepare', auth: settings.access_token });
-				const serverNonce = Buffer.from(r.server_nonce, 'base64');
-
-				const { deviceNonce, deviceSignature, devicePublicKeyFingerprint } = await this.device.unprotectDevice({ action: 'prepare', serverNonce });
-
-				r = await this.api.unprotectDevice({
-					deviceId: this.deviceId,
-					action: 'confirm',
-					serverNonce: serverNonce.toString('base64'),
-					deviceNonce: deviceNonce.toString('base64'),
-					deviceSignature: deviceSignature.toString('base64'),
-					devicePublicKeyFingerprint: devicePublicKeyFingerprint.toString('base64'),
-					auth: settings.access_token
-				});
-
-				const serverSignature = Buffer.from(r.server_signature, 'base64');
-				const serverPublicKeyFingerprint = Buffer.from(r.server_public_key_fingerprint, 'base64');
-
-				await this.device.unprotectDevice({ action: 'confirm', serverSignature, serverPublicKeyFingerprint });
+				await disableDeviceProtection(this.device);
 
 				addToOutput.push(`${deviceStr} is now in Service Mode.${os.EOL}A Protected Device stays in Service Mode for a total of 20 reboots or 24 hours.${os.EOL}`);
 			} catch (error) {
+				if (error.message === 'Not supported') {
+					throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+				}
 				throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
 			}
 		});
@@ -148,19 +137,22 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		try {
 			await this._withDevice({ spinner: 'Enabling device protection', putDeviceBackInDfuMode: false }, async () => {
 				const deviceStr = await this._getDeviceString();
-				const s = await this._getDeviceProtection();
+				const s = await getProtectionStatus(this.device);
 
+				// Protected (Service Mode) Device
 				if (s.overridden) {
-					await this.device.unprotectDevice({ action: 'reset' });
+					await turnOffServiceMode(this.device);
 					addToOutput.push(`${deviceStr} is now a Protected Device.${os.EOL}`);
 					return;
 				}
 
+				// Protected Device
 				if (s.protected) {
 					addToOutput.push(`${deviceStr} is already a Protected Device.${os.EOL}`);
 					return;
 				}
 
+				// Open Device
 				let localBootloaderPath = file;
 				// bypass checking the product and clearing development mode when the bootloader is provided to allow for enabling device protection offline
 				const onlineMode = !file;
@@ -190,6 +182,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				}
 			});
 		} catch (error) {
+			if (error.message === 'Not supported') {
+				throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+			}
 			throw new Error(`Failed to enable device protection: ${error.message}${os.EOL}`);
 		}
 
@@ -201,25 +196,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async _getProtectedBinary({ file, verbose=true }) {
 		const res = await new BinaryCommand().createProtectedBinary({ file, verbose });
 		return res;
-	}
-
-	/**
-	 * Retrieves the current protection state of the device.
-	 *
-	 * @async
-	 * @returns {Promise<Object>} The protection state of the device.
-	 * @throws {Error} Throws an error if the device protection feature is not supported.
-	 */
-	async _getDeviceProtection() {
-		try {
-			const s = await this.device.getProtectionState();
-			return s;
-		} catch (error) {
-			if (error.message === 'Not supported') {
-				throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
-			}
-			throw new Error(error);
-		}
 	}
 
 	/**
@@ -384,7 +360,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				await this._delay(REBOOT_INTERVAL_MSEC);
 				this.device = await usbUtils.reopenDevice({ id: this.deviceId });
 				// Waiting for any control request to work to ensure the device is ready
-				await this.device.getProtectionState();
+				await getProtectionStatus(this.device);
 				break;
 			} catch (error) {
 				// ignore error
