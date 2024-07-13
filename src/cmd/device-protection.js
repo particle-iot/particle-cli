@@ -11,10 +11,8 @@ const { downloadDeviceOsVersionBinaries } = require('../lib/device-os-version-ut
 const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
 const BinaryCommand = require('./binary');
-const { getProtectionStatus, disableDeviceProtection, turnOffServiceMode } = require('../lib/device-protection-helper');
-
-const REBOOT_TIME_MSEC = 60000;
-const REBOOT_INTERVAL_MSEC = 1000;
+const DeviceProtectionHelper = require('../lib/device-protection-helper');
+const FlashHelper = require('../lib/flash-helper');
 
 module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -45,7 +43,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let s;
 		try {
 			await this._withDevice({ spinner: 'Getting device status', putDeviceBackInDfuMode: true }, async () => {
-				s = await getProtectionStatus(this.device);
+				s = await DeviceProtectionHelper.getProtectionStatus(this.device);
 				let res;
 				let helper;
 
@@ -95,14 +93,14 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		await this._withDevice({ spinner: 'Disabling device protection', putDeviceBackInDfuMode: true }, async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
-				let s = await getProtectionStatus(this.device);
+				let s = await DeviceProtectionHelper.getProtectionStatus(this.device);
 
 				if (!s.protected && !s.overridden) {
 					addToOutput.push(`${deviceStr} is not a Protected Device.${os.EOL}`);
 					return;
 				}
 
-				await disableDeviceProtection(this.device);
+				await DeviceProtectionHelper.disableDeviceProtection(this.device);
 
 				addToOutput.push(`${deviceStr} is now in Service Mode.${os.EOL}A Protected Device stays in Service Mode for a total of 20 reboots or 24 hours.${os.EOL}`);
 			} catch (error) {
@@ -137,11 +135,11 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		try {
 			await this._withDevice({ spinner: 'Enabling device protection', putDeviceBackInDfuMode: false }, async () => {
 				const deviceStr = await this._getDeviceString();
-				const s = await getProtectionStatus(this.device);
+				const s = await DeviceProtectionHelper.getProtectionStatus(this.device);
 
 				// Protected (Service Mode) Device
 				if (s.overridden) {
-					await turnOffServiceMode(this.device);
+					await DeviceProtectionHelper.turnOffServiceMode(this.device);
 					addToOutput.push(`${deviceStr} is now a Protected Device.${os.EOL}`);
 					return;
 				}
@@ -314,7 +312,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			})());
 		} finally {
 			if (putDeviceBackInDfuMode) {
-				await this._waitForDeviceToReboot();
+				await FlashHelper.waitForDeviceToReboot(this.deviceId);
 				await this.device.enterDfuMode();
 			}
 			if (this.device && this.device.isOpen) {
@@ -345,26 +343,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		if (!dev || dev.isOpen === false) {
 			this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
 			this.deviceId = this.device._id;
-		}
-	}
-
-	/**
-	 * Waits for the device to reboot.
-	 * This method waits for the device to reboot by checking if the device is ready to accept control requests.
-	 * It waits for a maximum of 60 seconds with a 1-second interval.
-	 */
-	async _waitForDeviceToReboot() {
-		const start = Date.now();
-		while (Date.now() - start < REBOOT_TIME_MSEC) {
-			try {
-				await this._delay(REBOOT_INTERVAL_MSEC);
-				this.device = await usbUtils.reopenDevice({ id: this.deviceId });
-				// Waiting for any control request to work to ensure the device is ready
-				await getProtectionStatus(this.device);
-				break;
-			} catch (error) {
-				// ignore error
-			}
 		}
 	}
 
