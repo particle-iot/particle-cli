@@ -1,5 +1,3 @@
-const { getProtectionStatus, disableDeviceProtection, turnOffServiceMode } = require('../lib/device-protection-helper');
-
 /**
  * Check if the string can represent a valid device ID.
  *
