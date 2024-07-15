@@ -1,5 +1,4 @@
-const { spin } = require('../app/ui');
-const { delay, asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
+const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError, forEachUsbDevice } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
@@ -8,6 +7,8 @@ const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
+const { getProtectionStatus, disableDeviceProtection, turnOffServiceMode } = require('../lib/device-protection-helper');
+const { forEach } = require('lodash');
 
 
 module.exports = class UsbCommand extends CLICommandBase {
@@ -109,8 +110,18 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	startListening(args) {
-		return forEachUsbDevice(args, usbDevice => {
-			return usbDevice.enterListeningMode();
+		return forEachUsbDevice(args, async (usbDevice) => {
+			const s = await getProtectionStatus(usbDevice);
+			const deviceIsProtected = s.protected && !s.overridden;
+			if (deviceIsProtected) {
+				await disableDeviceProtection(usbDevice);
+			}
+
+			await usbDevice.enterListeningMode();
+
+			if (deviceIsProtected) {
+				await turnOffServiceMode(usbDevice);
+			}
 		})
 			.then(() => {
 				console.log('Done.');
@@ -118,8 +129,20 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	stopListening(args) {
-		return forEachUsbDevice(args, usbDevice => {
-			return usbDevice.leaveListeningMode();
+		return forEachUsbDevice(args, async (usbDevice) => {
+			const s = await getProtectionStatus(usbDevice);
+			const deviceIsProtected = s.protected && !s.overridden;
+			if (deviceIsProtected) {
+				await disableDeviceProtection(usbDevice);
+			}
+
+			// const s = await getProtectionStatus(usbDevice);
+			// console.log('Protection status:', s);
+			await usbDevice.leaveListeningMode();
+
+			if (deviceIsProtected) {
+				await turnOffServiceMode(usbDevice);
+			}
 		})
 			.then(() => {
 				console.log('Done.');
@@ -127,8 +150,18 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	safeMode(args) {
-		return forEachUsbDevice(args, usbDevice => {
-			return usbDevice.enterSafeMode();
+		return forEachUsbDevice(args, async (usbDevice) => {
+			const s = await getProtectionStatus(usbDevice);
+			const deviceIsProtected = s.protected && !s.overridden;
+			if (deviceIsProtected) {
+				await disableDeviceProtection(usbDevice);
+			}
+
+			await usbDevice.enterSafeMode();
+
+			if (deviceIsProtected) {
+				await turnOffServiceMode(usbDevice);
+			}
 		})
 			.then(() => {
 				console.log('Done.');
@@ -136,6 +169,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	dfu(args) {
+		// YET TO ADD
 		return forEachUsbDevice(args, usbDevice => {
 			if (!usbDevice.isInDfuMode) {
 				return usbDevice.enterDfuMode();
@@ -147,30 +181,52 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	reset(args) {
-		return forEachUsbDevice(args, usbDevice => {
-			return usbDevice.reset();
+		return forEachUsbDevice(args, async (usbDevice) => {
+			const s = await getProtectionStatus(usbDevice);
+			const deviceIsProtected = s.protected && !s.overridden;
+			if (deviceIsProtected) {
+				await disableDeviceProtection(usbDevice);
+			}
+
+			await usbDevice.reset();
+
+			if (deviceIsProtected) {
+				await turnOffServiceMode(usbDevice);
+			}
 		}, { dfuMode: true })
 			.then(() => {
 				console.log('Done.');
 			});
 	}
 
-	setSetupDone(args) {
+	async setSetupDone(args) {
 		const done = !args.reset;
-		return forEachUsbDevice(args, usbDevice => {
-			if (usbDevice.isGen3Device) {
-				return usbDevice.setSetupDone(done)
-					.then(() => {
-						if (done) {
-							return usbDevice.leaveListeningMode();
-						}
-						return usbDevice.enterListeningMode();
-					});
+		
+		const processDevice = async (usbDevice) => {
+			const s = await getProtectionStatus(usbDevice);
+			const deviceIsProtected = s.protected && !s.overridden;
+			
+			if (deviceIsProtected) {
+				await disableDeviceProtection(usbDevice);
 			}
-		})
-			.then(() => {
-				console.log('Done.');
-			});
+	
+			if (usbDevice.isGen3Device) {
+				await usbDevice.setSetupDone(done);
+	
+				if (done) {
+					await usbDevice.leaveListeningMode();
+				} else {
+					await usbDevice.enterListeningMode();
+				}
+			}
+	
+			if (deviceIsProtected) {
+				await turnOffServiceMode(usbDevice);
+			}
+		};
+	
+		await forEachUsbDevice(args, processDevice);
+		console.log('Done.');
 	}
 
 	configure() {
@@ -186,52 +242,55 @@ module.exports = class UsbCommand extends CLICommandBase {
 			.then(() => console.log('Done.'));
 	}
 
-	cloudStatus(args, started = Date.now()){
+	async cloudStatus(args) {
 		const { until, timeout, params: { device } } = args;
-
-		if (Date.now() - (started + timeout) > 0){
-			throw new Error('timed-out waiting for status...');
-		}
-
-		const deviceMgr = {
-			_: null,
-			set(usbDevice){
-				this._ = usbDevice || null;
-				return this;
-			},
-			close(){
-				const { _: usbDevice } = this;
-				return usbDevice ? usbDevice.close() : Promise.resolve();
-			},
-			status(){
-				const { _: usbDevice } = this;
-				let getStatus = usbDevice
-					? usbDevice.getCloudConnectionStatus()
-					: Promise.resolve('unknown');
-
-				return getStatus.then(status => status.toLowerCase());
+	
+		this.newSpin('Querying device...').start();
+		let usbDevice = null;
+		let deviceIsProtected = false;
+		let status = null;
+	
+		try {
+			usbDevice = await openUsbDeviceByIdOrName(device, this._api, this._auth);
+			const s = await getProtectionStatus(usbDevice);
+			deviceIsProtected = s.protected && !s.overridden;
+	
+			if (deviceIsProtected) {
+				await disableDeviceProtection(usbDevice);
 			}
-		};
-
-		const queryDevice = openUsbDeviceByIdOrName(device, this._api, this._auth)
-			.then(usbDevice => deviceMgr.set(usbDevice).status());
-
-		return spin(queryDevice, 'Querying device...')
-			.then(status => {
-				if (until && until !== status){
-					throw new Error(`Unexpected status: ${status}`);
+	
+			const started = Date.now();
+	
+			if (until) {
+				while (Date.now() - started < timeout) {
+					try {
+						status = await usbDevice.getCloudConnectionStatus();
+						status = status.toLowerCase();
+						if (status === until) {
+							break;
+						}
+					} catch (error) {
+						// ignore error and keep trying until timeout has elapsed
+					}
 				}
-				console.log(status);
-			})
-			.catch(error => {
-				if (until){
-					return deviceMgr.close()
-						.then(() => delay(1000))
-						.then(() => this.cloudStatus(args, started));
+	
+				if (Date.now() - started >= timeout) {
+					throw new Error('timed-out waiting for status...');
 				}
-				throw error;
-			})
-			.finally(() => deviceMgr.close());
+			} else {
+				status = await usbDevice.getCloudConnectionStatus();
+			}
+			console.log(status.toLowerCase());
+			return status;
+		} finally {
+			if (deviceIsProtected) {
+				await turnOffServiceMode(usbDevice);
+			}
+			if (usbDevice && usbDevice.isOpen) {
+				await usbDevice.close();
+			}
+			this.stopSpin();
+		}
 	}
 
 	// Helper function to convert CIDR notation to netmask to imitate the 'ifconfig' output
@@ -260,7 +319,13 @@ module.exports = class UsbCommand extends CLICommandBase {
 		// define output array with logs to prevent interleaving with the spinner
 		let output = [];
 
-		await forEachUsbDevice(args, usbDevice => {
+		await forEachUsbDevice(args, async (usbDevice) => {
+			const s = await getProtectionStatus(usbDevice);
+			let deviceIsProtected = s.protected && !s.overridden;
+	
+			if (deviceIsProtected) {
+				await disableDeviceProtection(usbDevice);
+			}
 			const platform = platformForId(usbDevice.platformId);
 			return this.getNetworkIfaceInfo(usbDevice)
 				.then((nwIfaces) => {
@@ -269,6 +334,11 @@ module.exports = class UsbCommand extends CLICommandBase {
 				})
 				.catch((error) => {
 					output = output.concat(`Error getting network interfaces (${platform.displayName} / ${usbDevice.id}): ${error.message}\n`);
+				})
+				.finally(() => {
+					if (deviceIsProtected) {
+						return turnOffServiceMode(usbDevice);
+					}
 				});
 		});
 
