@@ -404,6 +404,32 @@ async function openUsbDevices(args, { dfuMode = false } = {}){
 		});
 }
 
+
+/**
+* Waits for the device to reboot to reboot by checking if the device is ready to accept control requests.
+* It waits for a maximum of 60 seconds with a 1-second interval.
+*/
+async function waitForDeviceToReboot(deviceId) {
+	const REBOOT_TIME_MSEC = 60000;
+	const REBOOT_INTERVAL_MSEC = 1000;
+	const start = Date.now();
+	while (Date.now() - start < REBOOT_TIME_MSEC) {
+		try {
+			await _delay(REBOOT_INTERVAL_MSEC);
+			const device = await reopenDevice({ id: deviceId });
+			// Waiting for any control request to work to ensure the device is ready
+			await device.getDeviceId();
+			return device;
+		} catch (error) {
+			// ignore error
+		}
+	}
+}
+
+async function _delay(ms){
+	return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function handleUsbError(err){
 	if (err instanceof NotAllowedError) {
 		err = new UsbPermissionsError('Missing permissions to access the USB device');
@@ -431,5 +457,6 @@ module.exports = {
 	TimeoutError,
 	DeviceProtectionError,
 	forEachUsbDevice,
-	openUsbDevices
+	openUsbDevices,
+	waitForDeviceToReboot
 };
