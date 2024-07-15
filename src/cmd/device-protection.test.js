@@ -1,7 +1,6 @@
 const DeviceProtectionCommands = require('./device-protection');
 const { expect, sinon } = require('../../test/setup');
 const deviceProtectionHelper = require('../lib/device-protection-helper');
-const flashHelper = require('../lib/flash-helper');
 
 describe('DeviceProtectionCommands', () => {
 	let deviceProtectionCommands;
@@ -314,12 +313,12 @@ describe('DeviceProtectionCommands', () => {
 			const fn = sinon.stub().resolves();
 			deviceProtectionCommands.device.isInDfuMode = true;
 			sinon.stub(deviceProtectionCommands, '_putDeviceInSafeMode').resolves();
-			sinon.stub(flashHelper, 'waitForDeviceToReboot').resolves();
+			sinon.stub(deviceProtectionCommands, '_waitForDeviceToReboot').resolves();
 
 			await deviceProtectionCommands._withDevice({ putDeviceBackInDfuMode: true }, fn);
 
 			expect(deviceProtectionCommands._putDeviceInSafeMode).to.have.been.calledOnce;
-			expect(flashHelper.waitForDeviceToReboot).to.have.been.called;
+			expect(deviceProtectionCommands._waitForDeviceToReboot).to.have.been.called;
 			expect(fn).to.have.been.calledOnce;
 		});
 

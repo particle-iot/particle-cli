@@ -12,7 +12,7 @@ const FlashCommand = require('./flash');
 const { platformForId } = require('../lib/platform');
 const BinaryCommand = require('./binary');
 const DeviceProtectionHelper = require('../lib/device-protection-helper');
-const FlashHelper = require('../lib/flash-helper');
+const { waitForDeviceToReboot } = require('./device-util');
 
 module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -312,13 +312,17 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			})());
 		} finally {
 			if (putDeviceBackInDfuMode) {
-				await FlashHelper.waitForDeviceToReboot(this.deviceId);
+				await this._waitForDeviceToReboot();
 				await this.device.enterDfuMode();
 			}
 			if (this.device && this.device.isOpen) {
 				await this.device.close();
 			}
 		}
+	}
+
+	async _waitForDeviceToReboot() {
+		await waitForDeviceToReboot(this.deviceId);
 	}
 
 	/**
