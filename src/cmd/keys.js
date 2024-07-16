@@ -15,6 +15,7 @@ const UI = require('../lib/ui');
 const ParticleApi = require('./api');
 const { validateDFUSupport } = require('../lib/flash-helper');
 const { DeviceProtectionError } = require('particle-usb');
+const deviceProtectionHelper = require('../lib/device-protection-helper');
 
 /**
  * Commands for managing encryption keys.
@@ -26,6 +27,8 @@ module.exports = class KeysCommand {
 		this.auth = settings.access_token;
 		this.api = new ParticleApi(settings.apiUrl, { accessToken: this.auth }).api;
 		this.ui = new UI({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, quiet: false });
+		this.deviceIsProtected = false;
+		this.deviceWasInDfuMode = false;
 	}
 
 	async makeKeyOpenSSL(filename, alg) {
@@ -63,9 +66,7 @@ module.exports = class KeysCommand {
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error creating keys');
 		} finally {
-			if (device) {
-				await device.close();
-			}
+			await this._cleanup(device);
 		}
 	}
 
@@ -96,9 +97,7 @@ module.exports = class KeysCommand {
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error writing key to device.');
 		} finally {
-			if (device) {
-				await device.close();
-			}
+			await this._cleanup(device);
 		}
 	}
 
@@ -108,7 +107,7 @@ module.exports = class KeysCommand {
 		try {
 			await this._saveKeyFromDevice({ filename, force, device });
 		} finally {
-			await device.close();
+			await this._cleanup(device);
 		}
 	}
 
@@ -212,9 +211,9 @@ module.exports = class KeysCommand {
 				console.log('***************************************************************');
 			}
 		}
-
+		let device;
 		try {
-			const device = await this.getDfuDevice({ deviceID });
+			device = await this.getDfuDevice({ deviceID });
 			deviceID = device.id;
 			await device.close();
 
@@ -227,6 +226,8 @@ module.exports = class KeysCommand {
 			console.log('Okay!  New keys in place, your device should restart.');
 		} catch (err) {
 			throw new VError(ensureError(err), 'Make sure your device is connected to your computer, and that your computer is online');
+		} finally {
+			await this._cleanup(device);
 		}
 	}
 
@@ -298,9 +299,7 @@ module.exports = class KeysCommand {
 		} catch (err) {
 			throw new VError(ensureError(err), 'Make sure your device is connected to your computer');
 		} finally {
-			if (device) {
-				await device.close();
-			}
+			await this._cleanup(device);
 		}
 	}
 
@@ -481,12 +480,60 @@ module.exports = class KeysCommand {
 
 	async getDfuDevice({ deviceID } = {}) {
 		let device = await usbUtils.getOneUsbDevice({ idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui });
+
+		const s = await deviceProtectionHelper.getProtectionStatus(device);
+		this.deviceIsProtected = s.protected && !s.overridden;
+		this.deviceWasInDfuMode = false;
+		if (this.deviceIsProtected) {
+			if (device.isInDfuMode) {
+				deviceWasInDfuMode = true;
+				device = await this._putDeviceInSafeMode(device);
+			}
+			await deviceProtectionHelper.disableDeviceProtection(device);
+		}
+
 		if (!device.isInDfuMode) {
 			validateDFUSupport({ device, ui: this.ui });
 			device = await usbUtils.reopenInDfuMode(device);
 		}
 		this.platform = device._info.type;
+
 		return device;
+	}
+
+	/**
+	 * Resets the device and waits for it to restart.
+	 *
+	 * @async
+	 * @param {Object} device - The device to reset.
+	 * @returns {Promise<void>}
+	 */
+	async _putDeviceInSafeMode(device) {
+		await device.enterSafeMode();
+		await device.close();
+		device = await usbUtils.reopenInNormalMode( { id: device.id });
+	}
+
+	async _cleanup(device) {
+		const deviceId = device.id;
+		if (device) {
+			if (this.deviceIsProtected) {
+				if (!this.deviceWasInDfuMode) {
+					await device.reset();
+					device = await usbUtils.reopenInNormalMode({ id: deviceId });
+				} else {
+					// TODO: This will go away once we are able to turn off service mode while in dfu
+					await this._putDeviceInSafeMode(device);
+				}
+				await deviceProtectionHelper.turnOffServiceMode(device);
+			} else {
+				// Device is Open / Protected (Service Mode)
+				if (!this.deviceWasInDfuMode) {
+					device = await usbUtils.reopenInNormalMode({ id: deviceId });
+				}
+			}
+		}
+		await device.close();
 	}
 
 	_getDctKeySegments() {
