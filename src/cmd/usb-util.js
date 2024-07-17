@@ -11,6 +11,7 @@ const {
 	TimeoutError,
 	DeviceProtectionError
 } = require('particle-usb');
+const deviceProtectionHelper = require('../lib/device-protection-helper');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
@@ -71,6 +72,66 @@ class UsbPermissionsError extends Error {
 		super(message);
 		this.name = this.constructor.name;
 	}
+}
+
+/**
+ * Executes a function with a USB device, handling device protection and DFU mode.
+ * Given limitations from Device-OS, we currently ask the user to exit DFU mode if the device is protected.
+ *
+ * @param {Object} options - The options for executing with the USB device.
+ * @param {Object} options.args - The arguments to identify and configure the USB device.
+ * @param {Function} options.func - The function to execute with the USB device.
+ * @param {boolean} [options.dfuMode=false] - Flag indicating whether to include devices in DFU mode.
+ * @returns {Promise<*>} The result of the executed function.
+ * @throws {Error} If the device is protected and cannot be unprotected, or if the executed function throws an error.
+ *
+ * @example
+ * await executeWithUsbDevice({
+ *   args: { idOrName: 'e00fce6819ef5f971ea9563a' },
+ *   func: async (device) => {
+ *     // Perform operations with the device
+ *     return result;
+ *   },
+ *   dfuMode: true
+ * });
+ */
+async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
+	let device = await getOneUsbDevice(args, { dfuMode });
+	let deviceIsProtected = false;
+	try {
+		const s = await deviceProtectionHelper.getProtectionStatus(device);
+		deviceIsProtected = s.protected && !s.overrridden;
+		if (deviceIsProtected) {
+			if (device.isInDfuMode) {
+				throw new Error('Cannot run this command on a Protected Device in DFU mode. Please exit DFU mode and try again.');
+			}
+			await deviceProtectionHelper.disableDeviceProtection(device);
+		}
+	} catch (err) {
+		if (err.message === 'Not supported' || err.message === 'Request Error') {
+			// Device Protection is not supported on certain platforms and versions.
+			// It means that the device is not protected.
+			// XXX: I would not expect the getProtectionStatus to work and
+			// disableDeviceProtection to throw this error.
+		}
+		throw err;
+	}
+
+	let res;
+	try {
+		res = await func(device);
+	} catch (err) {
+		throw err;
+	} finally {
+		if (deviceIsProtected) {
+			device = await reopenDevice(device);
+			await deviceProtectionHelper.turnOffServiceMode(device);
+		}
+		if (device && device.isOpen) {
+			await device.close();
+		}
+	}
+	return res;
 }
 
 /**
@@ -308,7 +369,7 @@ async function reopenInNormalMode(device, { reset } = {}) {
 		try {
 			device = await openDeviceById(id);
 			if (device.isInDfuMode) {
-				await device.close();
+				await device.close();	// Should this be device.reset()???
 			} else {
 				// check if we can communicate with the device
 				if (device.isOpen) {
@@ -458,5 +519,6 @@ module.exports = {
 	DeviceProtectionError,
 	forEachUsbDevice,
 	openUsbDevices,
-	waitForDeviceToReboot
+	waitForDeviceToReboot,
+	executeWithUsbDevice
 };
