@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.25.1 - Jul 18 2024
+* Fix open url action on windows for `particle login --sso` command
+
+
 # 3.25.0 - Jul 11 2024
 * Added Device Protection feature
 
