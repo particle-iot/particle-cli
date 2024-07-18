@@ -12,6 +12,8 @@ const {
 	DeviceProtectionError
 } = require('particle-usb');
 const deviceProtectionHelper = require('../lib/device-protection-helper');
+const semver = require('semver');
+const chalk = require('chalk');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
@@ -416,13 +418,15 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 		.then(usbDevices => {
 			const p = usbDevices.map(usbDevice => {
 				let deviceIsProtected = false;
+				const deviceId = usbDevice.id;
+				const firmwareVersion = usbDevice._fwVer;
 				return Promise.resolve()
 					.then(async () => {
 						try {
-							const s = await deviceProtectionHelper.getProtectionStatus(device);
+							const s = await deviceProtectionHelper.getProtectionStatus(usbDevice);
 							deviceIsProtected = s.protected && !s.overridden;
 							if (deviceIsProtected) {
-								await deviceProtectionHelper.disableDeviceProtection(device);
+								await deviceProtectionHelper.disableDeviceProtection(usbDevice);
 							}
 						} catch (err) {
 							if (err.message === 'Not supported' || err.message === 'Request Error') {
@@ -437,9 +441,21 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 					.catch(e => lastError = e)
 					.finally(async () => {
 						if (deviceIsProtected) {
-							await deviceProtectionHelper.turnOffServiceMode(device);
+							// if device goes into DFU mode, we need to reopen it
+							if (!usbDevice.isOpen){
+								usbDevice = await reopenDevice({ id : deviceId });
+							}
+							// XXX: This will fail with device-os < 6.1.3 if the device is in DFU mode
+							if (usbDevice.isInDfuMode && semver.lt(firmwareVersion, '6.1.3')) {
+								// FIXME: Use ui
+								console.log(`Your device may be in Service Mode. Re-enable Device Protection by running ${chalk.yellow('particle device-protection enable')}`);
+							} else {
+								await deviceProtectionHelper.turnOffServiceMode(usbDevice);
+							}
 						}
-						await usbDevice.close();
+						if (usbDevice && usbDevice.isOpen){
+							await usbDevice.close();
+						}
 					});
 			});
 			return spin(Promise.all(p), 'Sending a command to the device...');
