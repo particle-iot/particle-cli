@@ -415,10 +415,32 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 	return spin(operation, msg)
 		.then(usbDevices => {
 			const p = usbDevices.map(usbDevice => {
+				let deviceIsProtected = false;
 				return Promise.resolve()
-					.then(() => func(usbDevice))
+					.then(async () => {
+						try {
+							const s = await deviceProtectionHelper.getProtectionStatus(device);
+							deviceIsProtected = s.protected && !s.overridden;
+							if (deviceIsProtected) {
+								await deviceProtectionHelper.disableDeviceProtection(device);
+							}
+						} catch (err) {
+							if (err.message === 'Not supported' || err.message === 'Request Error') {
+								// Device Protection is not supported on certain platforms and versions.
+								// It means that the device is not protected.
+								// XXX: I would not expect the getProtectionStatus to work and
+								// disableDeviceProtection to throw this error.
+							}
+						}
+						return func(usbDevice);
+					})
 					.catch(e => lastError = e)
-					.finally(() => usbDevice.close());
+					.finally(async () => {
+						if (deviceIsProtected) {
+							await deviceProtectionHelper.turnOffServiceMode(device);
+						}
+						await usbDevice.close();
+					});
 			});
 			return spin(Promise.all(p), 'Sending a command to the device...');
 		})
