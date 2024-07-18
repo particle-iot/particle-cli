@@ -1,18 +1,23 @@
 // Copy of https://github.com/rauschma/openurl with additional error handling
 const spawn = require('child_process').spawn;
+const path = require('path');
 
 let command;
 
 switch (process.platform) {
-	case 'darwin':
+	case 'darwin':{
 		command = 'open';
 		break;
-	case 'win32':
-		command = 'explorer.exe';
+	}
+	case 'win32':{
+		const binPath = `${process.env.SYSTEMROOT || process.env.windir || 'C:\\Windows'}`;
+		command = path.join(binPath, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell');
 		break;
-	case 'linux':
+	}
+	case 'linux': {
 		command = 'xdg-open';
 		break;
+	}
 	default:
 		throw new Error('Unsupported platform: ' + process.platform);
 }
@@ -25,7 +30,8 @@ switch (process.platform) {
  */
 
 function open(url, callback) {
-	const child = spawn(command, [url]);
+	const args = process.platform === 'win32' ? ['Start', url] : [url];
+	const child = spawn(command, args);
 	child.on('error', (error) => {
 		callback(error);
 	});
