@@ -442,9 +442,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 					.finally(async () => {
 						if (deviceIsProtected) {
 							// if device goes into DFU mode, we need to reopen it
-							if (!usbDevice.isOpen){
-								usbDevice = await reopenDevice({ id : deviceId });
-							}
+							usbDevice = await reopenDevice({ id : deviceId });
 							// XXX: This will fail with device-os < 6.1.3 if the device is in DFU mode
 							if (usbDevice.isInDfuMode && semver.lt(firmwareVersion, '6.1.3')) {
 								// FIXME: Use ui
