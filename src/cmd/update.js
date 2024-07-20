@@ -24,7 +24,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		// get device info
 		await usbUtils.executeWithUsbDevice({
 			args: { idOrName: deviceIdOrName, api, auth, ui: this.ui },
-			func: this._updateDevice.bind(deviceIdOrName, target)
+			func: this._updateDevice.bind(this, deviceIdOrName, target)
 		});
 	}
 
