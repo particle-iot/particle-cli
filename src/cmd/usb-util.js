@@ -371,7 +371,7 @@ async function reopenInNormalMode(device, { reset } = {}) {
 		try {
 			device = await openDeviceById(id);
 			if (device.isInDfuMode) {
-				await device.close();	// Should this be device.reset()???
+				await device.close();	// Should this be device.reset()?
 			} else {
 				// check if we can communicate with the device
 				if (device.isOpen) {
@@ -414,6 +414,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 	const msg = 'Getting device information...';
 	const operation = openUsbDevices(args, { dfuMode });
 	let lastError = null;
+	let outputMsg = [];
 	return spin(operation, msg)
 		.then(usbDevices => {
 			const p = usbDevices.map(usbDevice => {
@@ -426,6 +427,9 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 							const s = await deviceProtectionHelper.getProtectionStatus(usbDevice);
 							deviceIsProtected = s.protected && !s.overridden;
 							if (deviceIsProtected) {
+								if (usbDevice.isInDfuMode) {
+									throw new Error('Cannot run this command on a Protected Device in DFU mode. Please exit DFU mode and try again.');
+								}
 								await deviceProtectionHelper.disableDeviceProtection(usbDevice);
 							}
 						} catch (err) {
@@ -443,11 +447,11 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 						if (deviceIsProtected) {
 							// if device goes into DFU mode, we need to reopen it
 							usbDevice = await reopenDevice({ id : deviceId });
-							// XXX: This will fail with device-os < 6.1.3 if the device is in DFU mode
+							// XXX: Cannot turn off Service Mode with device-os < 6.1.3 if the device is in DFU mode
 							if (usbDevice.isInDfuMode && semver.lt(firmwareVersion, '6.1.3')) {
-								// FIXME: Use ui
-								console.log(`Your device may be in Service Mode. Re-enable Device Protection by running ${chalk.yellow('particle device-protection enable')}`);
+								outputMsg.push(`Your device may be in Service Mode. Re-enable Device Protection by running ${chalk.yellow('particle device-protection enable')}`);
 							} else {
+								// TODO (discuss): Add a retry mechanism if this fails
 								await deviceProtectionHelper.turnOffServiceMode(usbDevice);
 							}
 						}
@@ -459,6 +463,9 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 			return spin(Promise.all(p), 'Sending a command to the device...');
 		})
 		.then(() => {
+			if (outputMsg.length > 0) {
+				outputMsg.forEach(msg => console.log(msg));
+			}
 			if (lastError){
 				throw lastError;
 			}
@@ -514,7 +521,7 @@ async function waitForDeviceToReboot(deviceId) {
 		try {
 			await _delay(REBOOT_INTERVAL_MSEC);
 			const device = await reopenDevice({ id: deviceId });
-			// Waiting for any control request to work to ensure the device is ready
+			// Check device readiness
 			await device.getDeviceId();
 			return device;
 		} catch (error) {
