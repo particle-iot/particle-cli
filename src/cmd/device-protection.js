@@ -41,37 +41,25 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 		let s;
 		try {
-			// Don't need to use _withDevice because we don't need do special handling for dfu devices
-			await this.ui.showBusySpinnerUntilResolved('Getting device status', (async () => {
-				await this._getUsbDevice(this.device);
-				s = await DeviceProtectionHelper.getProtectionStatus(this.device);
+			await this._withDevice({ spinner: 'Getting device status', putDeviceBackInDfuMode: true }, async () => {
 				let res;
 				let helper;
+				s = await DeviceProtectionHelper.getProtectionStatus(this.device);
 
 				if (s.overridden) {
-					if (this.device.isInDfuMode) {
-						res = 'Open / Protected Device (Service Mode)';
-						helper = 'Take the device out of DFU mode to see the actual protection status.';
-					} else {
-						res = 'Protected Device (Service Mode)';
-						helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of Service Mode.`;
-					}
+					res = 'Protected Device (Service Mode)';
+					helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of Service Mode.`;
 				} else if (s.protected) {
 					res = 'Protected Device';
 					helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in Service Mode.`;
 				} else {
-					if (this.device.isInDfuMode) {
-						res = 'Open / Protected Device (Service Mode)';
-						helper = 'Take the device out of DFU mode to see the actual protection status.';
-					} else {
-						res = 'Open device';
-						helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
-					}
+					res = 'Open device';
+					helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
 				}
 
 				const deviceStr = await this._getDeviceString();
 				addToOutput.push(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
-			})());
+			});
 		} catch (error) {
 			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
 			if (error.message === 'Not supported') {
@@ -315,7 +303,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async _withDevice({ putDeviceBackInDfuMode, spinner }, fn) {
 		try {
 			await this._getUsbDevice(this.device);
-			return await this.ui.showBusySpinnerUntilResolved(spinner, (async () => {
+			await this.ui.showBusySpinnerUntilResolved(spinner, (async () => {
 				const deviceWasInDfuMode = this.device.isInDfuMode;
 				if (deviceWasInDfuMode) {
 					await this._putDeviceInSafeMode();
@@ -323,14 +311,15 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				putDeviceBackInDfuMode = putDeviceBackInDfuMode && deviceWasInDfuMode;
 				return await fn();
 			})());
-		} finally {
-			if (putDeviceBackInDfuMode) {
-				await usbUtils.waitForDeviceToReboot();
-				await this.device.enterDfuMode();
-			}
-			if (this.device && this.device.isOpen) {
-				await this.device.close();
-			}
+		} catch (error) {
+			throw error;
+		}
+		if (!this.device.isInDfuMode && putDeviceBackInDfuMode) {
+			await usbUtils.waitForDeviceToReboot(this.deviceId);
+			await this.device.enterDfuMode();
+		}
+		if (this.device && this.device.isOpen) {
+			await this.device.close();
 		}
 	}
 
@@ -371,11 +360,22 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<void>}
 	 */
 	async _putDeviceInSafeMode() {
+		await this.device.enterSafeMode();
+		// device.enterSafeMode() is ineffective for devices with device-os < 6.1.3.
+		// If device is still in dfu mode, it likely means that this is an older device-os version
+		// and it cannot be put into safe mode. In this case, we can only tell if the device is
+		// Protected or not (we cannot distinguish between Protected and Protected (Service Mode) / Open).
+		// Current Approach:
+		// - Request user to exit DFU mode for accurate status determination
+		// Alternative considerations:
+		// 1. Provide a general response about Protection status (less precise but more permissive)
+		// 2. Implement version-specific handling for a more tailored user experience
+		this.device = await usbUtils.reopenDevice({ id: this.deviceId });
 		if (this.device.isInDfuMode) {
-			await this.device.enterSafeMode();
-			await this.device.close();
+			throw new Error('Device Protection commands unavailable in DFU mode for this Device-OS version. Take the device out of DFU mode and try again.');
+		} else {
+			this.device = await usbUtils.reopenInNormalMode( { id: this.deviceId });
 		}
-		this.device = await usbUtils.reopenInNormalMode( { id: this.deviceId });
 	}
 
 	/**
