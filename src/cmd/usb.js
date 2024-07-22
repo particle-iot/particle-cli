@@ -1,15 +1,13 @@
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError, forEachUsbDevice } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError, forEachUsbDevice, executeWithUsbDevice } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
-const { getProtectionStatus, disableDeviceProtection, turnOffServiceMode } = require('../lib/device-protection-helper');
-const { forEach } = require('lodash');
-
+const { stat } = require('fs-extra');
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -190,44 +188,56 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	async cloudStatus(args) {
+		console.log('tp0');
 		const { until, timeout, params: { device } } = args;
-	
 		this.newSpin('Querying device...').start();
-		let usbDevice = null;
-		let deviceIsProtected = false;
 		let status = null;
-	
+	  
 		try {
-			usbDevice = await openUsbDeviceByIdOrName(device, this._api, this._auth);
-			const started = Date.now();
-	
-			if (until) {
-				while (Date.now() - started < timeout) {
-					try {
-						status = await usbDevice.getCloudConnectionStatus();
-						status = status.toLowerCase();
-						if (status === until) {
-							break;
-						}
-					} catch (error) {
-						// ignore error and keep trying until timeout has elapsed
-					}
-				}
-	
-				if (Date.now() - started >= timeout) {
-					throw new Error('timed-out waiting for status...');
-				}
-			} else {
-				status = await usbDevice.getCloudConnectionStatus();
-			}
-			console.log(status.toLowerCase());
-			return status;
-		} finally {
-			if (usbDevice && usbDevice.isOpen) {
-				await usbDevice.close();
-			}
+			status = await executeWithUsbDevice({
+				args: { idOrName: device }, // device here is the id
+				func: (dev) => this._cloudStatus(dev, until, timeout),
+			});
+		} catch (error) {
 			this.stopSpin();
+			throw new Error(error.message);
+		} finally {
+			this.stopSpin();
+			if (status) {
+				console.log(status.toLowerCase());
+			}                                                                                                                                                                                                                                                             
 		}
+	}
+	  
+	async _cloudStatus(device, until, timeout) {
+		let status = null;
+		const started = Date.now();
+		
+		if (until) {
+			while (Date.now() - started < timeout) {
+				try {
+					status = await device.getCloudConnectionStatus();
+					status = status.toLowerCase();
+					if (status === until) {
+						break;
+					}
+				} catch (error) {
+					// ignore error and keep trying until timeout has elapsed
+				}
+			}
+			if (Date.now() - started >= timeout) {
+				throw new Error('timed-out waiting for status...', error.message);
+			}
+		} else {
+			try {
+				status = await device.getCloudConnectionStatus();
+			} catch (error) {
+				// FIXME
+				throw new Error(error);
+			}
+		}
+	
+		return status;
 	}
 
 	// Helper function to convert CIDR notation to netmask to imitate the 'ifconfig' output
