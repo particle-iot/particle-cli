@@ -41,37 +41,51 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 		let s;
 		try {
-			await this._withDevice({ spinner: 'Getting device status', putDeviceBackInDfuMode: true }, async () => {
+			// Don't need to use _withDevice because we don't need do special handling for dfu devices
+			await this.ui.showBusySpinnerUntilResolved('Getting device status', (async () => {
+				await this._getUsbDevice(this.device);
 				s = await DeviceProtectionHelper.getProtectionStatus(this.device);
 				let res;
 				let helper;
 
 				if (s.overridden) {
-					res = 'Protected Device (Service Mode)';
-					helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of Service Mode.`;
+					if (this.device.isInDfuMode) {
+						res = 'Open / Protected Device (Service Mode)';
+						helper = 'Take the device out of DFU mode to see the actual protection status.';
+					} else {
+						res = 'Protected Device (Service Mode)';
+						helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of Service Mode.`;
+					}
 				} else if (s.protected) {
 					res = 'Protected Device';
 					helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in Service Mode.`;
 				} else {
-					res = 'Open device';
-					helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
+					if (this.device.isInDfuMode) {
+						res = 'Open / Protected Device (Service Mode)';
+						helper = 'Take the device out of DFU mode to see the actual protection status.';
+					} else {
+						res = 'Open device';
+						helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
+					}
 				}
 
 				const deviceStr = await this._getDeviceString();
 				addToOutput.push(`${deviceStr}: ${chalk.bold(res)}${os.EOL}${helper}${os.EOL}`);
-			});
+			})());
 		} catch (error) {
 			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
 			if (error.message === 'Not supported') {
 				throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 			}
 			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
+		} finally {
+			addToOutput.forEach((line) => {
+				this.ui.stdout.write(line);
+			});
+			if (this.device && this.device.isOpen) {
+				await this.device.close();
+			}
 		}
-
-		addToOutput.forEach((line) => {
-			this.ui.stdout.write(line);
-		});
-
 		return s;
 	}
 
