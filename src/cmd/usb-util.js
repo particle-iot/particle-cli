@@ -101,10 +101,18 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	let device = await getOneUsbDevice(args, { dfuMode });
 	let deviceIsProtected = false;
 	try {
+		// This call with work for devices in DFU mode as well as Normal mode.
+		// In dfu mode, we will know if the device is Protected or not.
+		// In normal mode, we will know if the device is Protected / SM / Open.
 		const s = await deviceProtectionHelper.getProtectionStatus(device);
 		deviceIsProtected = s.protected && !s.overrridden;
 		if (deviceIsProtected) {
 			if (device.isInDfuMode) {
+				// We have to put the Protected Device in Service Mode and for this the device should be
+				// put in safe mode first, disable DP, and then put the device back in DFU mode.
+				// Instead, ask the user to start the device in normal mode and if the device requires to be
+				// in dfu mode for the CLI operation, then CLI will take care of putting in in dfu mode
+				// after putting the device in Service Mode
 				throw new Error('Cannot run this command on a Protected Device in DFU mode. Please exit DFU mode and try again.');
 			}
 			await deviceProtectionHelper.disableDeviceProtection(device);
@@ -122,8 +130,6 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	let res;
 	try {
 		res = await func(device);
-	} catch (err) {
-		throw err;
 	} finally {
 		if (deviceIsProtected) {
 			device = await reopenDevice(device);
@@ -428,6 +434,11 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 							deviceIsProtected = s.protected && !s.overridden;
 							if (deviceIsProtected) {
 								if (usbDevice.isInDfuMode) {
+									// We have to put the Protected Device in Service Mode and for this the device should be
+									// put in safe mode first, disable DP, and then put the device back in DFU mode.
+									// Instead, ask the user to start the device in normal mode and if the device requires to be
+									// in dfu mode for the CLI operation, then CLI will take care of putting in in dfu mode
+									// after putting the device in Service Mode
 									throw new Error('Cannot run this command on a Protected Device in DFU mode. Please exit DFU mode and try again.');
 								}
 								await deviceProtectionHelper.disableDeviceProtection(usbDevice);
