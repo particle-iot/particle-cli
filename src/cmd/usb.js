@@ -188,7 +188,6 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	async cloudStatus(args) {
-		console.log('tp0');
 		const { until, timeout, params: { device } } = args;
 		this.newSpin('Querying device...').start();
 		let status = null;
