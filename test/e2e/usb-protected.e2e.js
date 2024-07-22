@@ -9,7 +9,7 @@ const {
 } = require('../lib/env');
 
 
-describe('USB Commands [@device]', function cliUSBCommands(){
+describe('USB Commands for Protected Devices [@device]', function cliUSBCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
@@ -36,7 +36,6 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 	];
 
 	beforeEach(async () => {
-		console.log('blah');
 		await cli.setTestProfileAndLogin();
 	});
 
@@ -81,13 +80,13 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 
 		after(async () => {
-			// await cli.setTestProfileAndLogin();
+            await cli.logout();
 		});
 
 		it('Lists connected devices', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -102,10 +101,10 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		});
 
 		it('Lists connected devices filtered by platform name', async () => {
-			args.push('argon');
+			args.push(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -129,7 +128,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args.push(DEVICE_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -147,7 +146,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args.push(DEVICE_ID);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -166,7 +165,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args.push('online');
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -181,7 +180,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			expect(exitCode).to.equal(0);
 		});
 
-		xit('Lists connected devices when signed-in to a foreign account', async () => {
+		it('Lists connected devices when signed-in to a foreign account', async () => {
 			await cli.logout();
 			await cli.loginToForeignAcct();
 			const { stdout, stderr, exitCode } = await cli.run(args);
@@ -194,7 +193,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			expect(exitCode).to.equal(0);
 		});
 
-		xit('Lists connected devices filtered by platform name when signed-in to a foreign account', async () => {
+		it('Lists connected devices filtered by platform name when signed-in to a foreign account', async () => {
 			await cli.logout();
 			await cli.loginToForeignAcct();
 			args.push(DEVICE_PLATFORM_NAME);

@@ -52,9 +52,11 @@ module.exports.login = () => {
 	return run(['login', '-u', USERNAME, '-p', PASSWORD], { reject: true });
 };
 
-module.exports.loginToForeignAcct = () => {
+module.exports.loginToForeignAcct = async () => {
 	const { run } = module.exports;
-	return run(['login', '-u', FOREIGN_USERNAME, '-p', FOREIGN_PASSWORD], { reject: true });
+	await run(['login', '-u', FOREIGN_USERNAME, '-p', FOREIGN_PASSWORD], { reject: true });
+	const s = await run(['whoami'], { reject: true });
+	console.log('Logged in as:', s);
 };
 
 module.exports.logout = () => {
@@ -182,7 +184,7 @@ module.exports.getCloudConnectionStatus = async () => {
 
 module.exports.waitUntilOnline = async () => {
 	const { run } = module.exports;
-	const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected', '--timeout', 5 * 60 * 1000];
+	const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected', '--timeout', 5000];
 	return run(args, { reject: true });
 };
 
