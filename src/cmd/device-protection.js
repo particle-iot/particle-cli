@@ -353,7 +353,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	}
 
 	/**
-	 * Resets the device and waits for it to restart.
+	 * Attempts to enter Safe Mode to enable operations on Protected Devices in DFU mode.
 	 *
 	 * @async
 	 * @param {Object} device - The device to reset.
