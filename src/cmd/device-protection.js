@@ -37,7 +37,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @throws {Error} Throws an error if any of the async operations fail.
 	 */
 	async getStatus() {
-
 		let addToOutput = [];
 		let s;
 		try {
@@ -301,19 +300,15 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<*>} The result of the function execution.
 	 */
 	async _withDevice({ putDeviceBackInDfuMode, spinner }, fn) {
-		try {
-			await this._getUsbDevice(this.device);
-			await this.ui.showBusySpinnerUntilResolved(spinner, (async () => {
-				const deviceWasInDfuMode = this.device.isInDfuMode;
-				if (deviceWasInDfuMode) {
-					await this._putDeviceInSafeMode();
-				}
-				putDeviceBackInDfuMode = putDeviceBackInDfuMode && deviceWasInDfuMode;
-				return await fn();
-			})());
-		} catch (error) {
-			throw error;
-		}
+		await this._getUsbDevice(this.device);
+		await this.ui.showBusySpinnerUntilResolved(spinner, (async () => {
+			const deviceWasInDfuMode = this.device.isInDfuMode;
+			if (deviceWasInDfuMode) {
+				await this._putDeviceInSafeMode();
+			}
+			putDeviceBackInDfuMode = putDeviceBackInDfuMode && deviceWasInDfuMode;
+			return await fn();
+		})());
 		if (!this.device.isInDfuMode && putDeviceBackInDfuMode) {
 			await usbUtils.waitForDeviceToReboot(this.deviceId);
 			await this.device.enterDfuMode();
@@ -360,8 +355,19 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<void>}
 	 */
 	async _putDeviceInSafeMode() {
-		await this.device.enterSafeMode();
-		// device.enterSafeMode() is ineffective for devices with device-os < 6.1.3.
+		try {
+			await this.device.enterSafeMode();
+		} catch (error) {
+			if (error.message === 'Unsupported DfuSe command') {
+				// Device-OS 6.1.1 introduces the DFUSE_COMMAND_ENTER_SAFE_MODE to enter safe mode while in DFU mode
+				// which facilitates sending control request to the device
+				// This error occurs if device-os < 6.1.1. There are a couple of ways to tackle this error:
+				// 1. Update device-os to 6.1.1 and try the same in DFU mode
+				// 2. Use device in normal mode (Recommending this approach to the user)
+				throw new Error(`Unable to run this command in DFU mode on this Device-OS version. Take your device out of DFU mode and try again.${os.EOL}Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+			}
+		}
+		// device.enterSafeMode() is ineffective for device-os < 6.1.3 (TBD).
 		// If device is still in dfu mode, it likely means that this is an older device-os version
 		// and it cannot be put into safe mode. In this case, we can only tell if the device is
 		// Protected or not (we cannot distinguish between Protected and Protected (Service Mode) / Open).
