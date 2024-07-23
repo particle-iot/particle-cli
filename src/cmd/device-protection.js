@@ -26,7 +26,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		this.status = {
 			protected: null,
 			overridden: null
-		}
+		};
 	}
 
 	/**
@@ -48,7 +48,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				let res;
 				let helper;
 
-				const s = this.status;
+				s = this.status;
 				if (s.overridden) {
 					res = 'Protected Device (Service Mode)';
 					helper = `Run ${chalk.yellow('particle device-protection enable')} to take the device out of Service Mode.`;
@@ -136,7 +136,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		await this._withDevice({ spinner: 'Enabling device protection', putDeviceBackInDfuMode: false, supportSafeMode: true }, async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
-				
+
 				const s = this.status;
 				// Protected (Service Mode) Device
 				if (s.overridden) {
