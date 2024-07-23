@@ -101,38 +101,33 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	let device = await getOneUsbDevice(args, { dfuMode });
 	let deviceIsProtected = false;
 	try {
-		// This call with work for devices in DFU mode as well as Normal mode.
-		// In dfu mode, we will know if the device is Protected or not.
-		// In normal mode, we will know if the device is Protected / SM / Open.
 		const s = await deviceProtectionHelper.getProtectionStatus(device);
 		deviceIsProtected = s.protected && !s.overrridden;
-		if (deviceIsProtected) {
-			if (device.isInDfuMode) {
-				// We have to put the Protected Device in Service Mode and for this the device should be
-				// put in safe mode first, disable DP, and then put the device back in DFU mode.
-				// Instead, ask the user to start the device in normal mode and if the device requires to be
-				// in dfu mode for the CLI operation, then CLI will take care of putting in in dfu mode
-				// after putting the device in Service Mode
-				throw new Error('Cannot run this command on a Protected Device in DFU mode. Please exit DFU mode and try again.');
-			}
-			await deviceProtectionHelper.disableDeviceProtection(device);
-		}
 	} catch (err) {
-		if (err.message === 'Not supported' || err.message === 'Request Error') {
+		if (err.message === 'Not supported') {
 			// Device Protection is not supported on certain platforms and versions.
 			// It means that the device is not protected.
-			// XXX: I would not expect the getProtectionStatus to work and
-			// disableDeviceProtection to throw this error.
 		}
 		throw err;
 	}
-
+	if (deviceIsProtected) {
+		const deviceWasInDfuMode = device.isInDfuMode;
+		if (deviceWasInDfuMode) {
+			device = await _putDeviceInSafeMode(device);
+		}
+		await deviceProtectionHelper.disableDeviceProtection(device);
+		if (deviceWasInDfuMode) {
+			device = await reopenInDfuMode(device);
+		}
+	}
+	
 	let res;
 	try {
 		res = await func(device);
 	} finally {
 		if (deviceIsProtected) {
 			device = await reopenDevice(device);
+			// FIXME: ignore errors
 			await deviceProtectionHelper.turnOffServiceMode(device);
 		}
 		if (device && device.isOpen) {
@@ -140,6 +135,22 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 		}
 	}
 	return res;
+}
+
+/**
+	 * Attempts to enter Safe Mode to enable operations on Protected Devices in DFU mode.
+	 *
+	 * @async
+	 * @param {Object} device - The device to reset.
+	 * @returns {Promise<void>}
+	 */
+async function _putDeviceInSafeMode(dev) {
+	try {
+		await dev.enterSafeMode();
+	} catch (error) {
+		// ignore errors
+	}
+	return usbUtils.reopenInNormalMode({ id: this.deviceId });
 }
 
 /**
@@ -377,7 +388,7 @@ async function reopenInNormalMode(device, { reset } = {}) {
 		try {
 			device = await openDeviceById(id);
 			if (device.isInDfuMode) {
-				await device.close();	// Should this be device.reset()?
+				await device.close();
 			} else {
 				// check if we can communicate with the device
 				if (device.isOpen) {
@@ -385,10 +396,7 @@ async function reopenInNormalMode(device, { reset } = {}) {
 				}
 			}
 		} catch (err) {
-			// ignore other errors
-			if (err instanceof DeviceProtectionError) {
-				throw new Error('Operation cannot be completed due to Device Protection.');
-			}
+			// ignore errors
 		}
 	}
 	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
@@ -423,53 +431,16 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 	let outputMsg = [];
 	return spin(operation, msg)
 		.then(usbDevices => {
-			const p = usbDevices.map(usbDevice => {
-				let deviceIsProtected = false;
-				const deviceId = usbDevice.id;
-				const firmwareVersion = usbDevice._fwVer;
+			const p = usbDevices.map(async (usbDevice) => {
 				return Promise.resolve()
 					.then(async () => {
-						try {
-							const s = await deviceProtectionHelper.getProtectionStatus(usbDevice);
-							deviceIsProtected = s.protected && !s.overridden;
-							if (deviceIsProtected) {
-								if (usbDevice.isInDfuMode) {
-									// We have to put the Protected Device in Service Mode and for this the device should be
-									// put in safe mode first, disable DP, and then put the device back in DFU mode.
-									// Instead, ask the user to start the device in normal mode and if the device requires to be
-									// in dfu mode for the CLI operation, then CLI will take care of putting in in dfu mode
-									// after putting the device in Service Mode
-									throw new Error('Cannot run this command on a Protected Device in DFU mode. Please exit DFU mode and try again.');
-								}
-								await deviceProtectionHelper.disableDeviceProtection(usbDevice);
-							}
-						} catch (err) {
-							if (err.message === 'Not supported' || err.message === 'Request Error') {
-								// Device Protection is not supported on certain platforms and versions.
-								// It means that the device is not protected.
-								// XXX: I would not expect the getProtectionStatus to work and
-								// disableDeviceProtection to throw this error.
-							}
-						}
-						return func(usbDevice);
+						await executeWithUsbDevice({
+							args: { idOrName : usbDevice.id },
+							func,
+							dfuMode
+						})
 					})
-					.catch(e => lastError = e)
-					.finally(async () => {
-						if (deviceIsProtected) {
-							// if device goes into DFU mode, we need to reopen it
-							usbDevice = await reopenDevice({ id : deviceId });
-							// XXX: Cannot turn off Service Mode with device-os < 6.1.3 (TBD) if the device is in DFU mode
-							if (usbDevice.isInDfuMode && semver.lt(firmwareVersion, '6.1.3')) {
-								outputMsg.push(`Your device may be in Service Mode. Re-enable Device Protection by running ${chalk.yellow('particle device-protection enable')}`);
-							} else {
-								// TODO (discuss): Add a retry mechanism if this fails
-								await deviceProtectionHelper.turnOffServiceMode(usbDevice);
-							}
-						}
-						if (usbDevice && usbDevice.isOpen){
-							await usbDevice.close();
-						}
-					});
+					.catch(e => lastError = e);
 			});
 			return spin(Promise.all(p), 'Sending a command to the device...');
 		})

@@ -44,7 +44,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		let addToOutput = [];
 		let s;
 		try {
-			await this._withDevice({ spinner: 'Getting device status', putDeviceBackInDfuMode: true }, async () => {
+			await this._withDevice({ spinner: 'Getting device status' }, async () => {
 				let res;
 				let helper;
 
@@ -91,7 +91,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async disableProtection() {
 		let addToOutput = [];
 
-		await this._withDevice({ spinner: 'Disabling device protection', putDeviceBackInDfuMode: true, supportSafeMode: true }, async () => {
+		await this._withDevice({ spinner: 'Disabling device protection' }, async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
 
@@ -100,7 +100,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					addToOutput.push(`${deviceStr} is not a Protected Device.${os.EOL}`);
 					return;
 				}
-
+				
+				if (this.device.isInDfuMode) {
+					await this._putDeviceInSafeMode();
+				}
 				await DeviceProtectionHelper.disableDeviceProtection(this.device);
 
 				addToOutput.push(`${deviceStr} is now in Service Mode.${os.EOL}A Protected Device stays in Service Mode for a total of 20 reboots or 24 hours.${os.EOL}`);
@@ -133,7 +136,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async enableProtection({ file } = {}) {
 		let addToOutput = [];
-		await this._withDevice({ spinner: 'Enabling device protection', putDeviceBackInDfuMode: false, supportSafeMode: true }, async () => {
+		await this._withDevice({ spinner: 'Enabling device protection' }, async () => {
 			try {
 				const deviceStr = await this._getDeviceString();
 
@@ -149,6 +152,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				if (s.protected) {
 					addToOutput.push(`${deviceStr} is already a Protected Device.${os.EOL}`);
 					return;
+				}
+
+				if (this.device.isInDfuMode) {
+					await this._putDeviceInSafeMode();
 				}
 
 				// Open Device
@@ -303,24 +310,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @param {Function} fn - The function to execute with the device.
 	 * @returns {Promise<*>} The result of the function execution.
 	 */
-	async _withDevice({ putDeviceBackInDfuMode, spinner, supportSafeMode }, fn) {
+	async _withDevice({ spinner }, fn) {
 		await this._getUsbDevice(this.device);
 		await this.ui.showBusySpinnerUntilResolved(spinner, (async () => {
 			this.status = await DeviceProtectionHelper.getProtectionStatus(this.device);
-			const deviceWasInDfuMode = this.device.isInDfuMode;
-			if (deviceWasInDfuMode) {
-				if (!this.status.protected || supportSafeMode) {
-					await this._putDeviceInSafeMode();
-					this.status = await DeviceProtectionHelper.getProtectionStatus(this.device);
-				}
-			}
-			putDeviceBackInDfuMode = putDeviceBackInDfuMode && deviceWasInDfuMode;
 			return await fn();
 		})());
-		if (!this.device.isInDfuMode && putDeviceBackInDfuMode) {
-			await usbUtils.waitForDeviceToReboot(this.deviceId);
-			await this.device.enterDfuMode();
-		}
 		if (this.device && this.device.isOpen) {
 			await this.device.close();
 		}
@@ -366,31 +361,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		try {
 			await this.device.enterSafeMode();
 		} catch (error) {
-			if (error.message === 'Unsupported DfuSe command') {
-				// Device-OS 6.1.1 introduces the DFUSE_COMMAND_ENTER_SAFE_MODE to enter safe mode while in DFU mode
-				// which facilitates sending control request to the device
-				// This error occurs if device-os < 6.1.1. There are a couple of ways to tackle this error:
-				// 1. Update device-os to 6.1.1 and try the same in DFU mode
-				// 2. Use device in normal mode (Recommending this approach to the user)
-				throw new Error(`Unable to run this command in DFU mode on this Device-OS version. Take your device out of DFU mode and try again.${os.EOL}Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
-			}
+			// ignore errors
 		}
-		// device.enterSafeMode() is ineffective for device-os < 6.1.3 (TBD). However, it does not throw an error.
-		// If device is still in dfu mode, it likely means that this is an older device-os version
-		// and it cannot be put into safe mode. In this case, we can only tell if the device is
-		// Protected or not (we cannot distinguish between Protected and Protected (Service Mode) / Open).
-		// Current Approach:
-		// - Request user to exit DFU mode for accurate status determination
-		// Alternative considerations:
-		// 1. Provide a general response about Protection status (less precise but more permissive)
-		// 2. Implement version-specific handling for a more tailored user experience
-		//		(but firmware version is not available in the device class for dfu devices)
-		this.device = await usbUtils.reopenDevice({ id: this.deviceId });
-		if (this.device.isInDfuMode) {
-			throw new Error('Device Protection commands unavailable in DFU mode for this Device-OS version. Take the device out of DFU mode and try again.');
-		} else {
-			this.device = await usbUtils.reopenInNormalMode( { id: this.deviceId });
-		}
+		this.device = await usbUtils.reopenInNormalMode({ id: this.deviceId });
 	}
 
 	/**
