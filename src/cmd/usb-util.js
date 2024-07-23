@@ -458,7 +458,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 						if (deviceIsProtected) {
 							// if device goes into DFU mode, we need to reopen it
 							usbDevice = await reopenDevice({ id : deviceId });
-							// XXX: Cannot turn off Service Mode with device-os < 6.1.3 if the device is in DFU mode
+							// XXX: Cannot turn off Service Mode with device-os < 6.1.3 (TBD) if the device is in DFU mode
 							if (usbDevice.isInDfuMode && semver.lt(firmwareVersion, '6.1.3')) {
 								outputMsg.push(`Your device may be in Service Mode. Re-enable Device Protection by running ${chalk.yellow('particle device-protection enable')}`);
 							} else {
