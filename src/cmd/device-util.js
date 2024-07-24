@@ -45,4 +45,3 @@ module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = fal
 			throw error;
 		});
 };
-

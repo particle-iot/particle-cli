@@ -11,6 +11,7 @@ const {
 	TimeoutError,
 	DeviceProtectionError
 } = require('particle-usb');
+const deviceProtectionHelper = require('../lib/device-protection-helper');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
@@ -71,6 +72,82 @@ class UsbPermissionsError extends Error {
 		super(message);
 		this.name = this.constructor.name;
 	}
+}
+
+/**
+ * Executes a function with a USB device, handling device protection and DFU mode.
+ *
+ * @param {Object} options - The options for executing with the USB device.
+ * @param {Object} options.args - The arguments to identify and configure the USB device.
+ * @param {Function} options.func - The function to execute with the USB device.
+ * @param {boolean} [options.dfuMode=false] - Flag indicating whether to include devices in DFU mode.
+ * @returns {Promise<*>} The result of the executed function.
+ * @throws {Error} If the device is protected and cannot be unprotected, or if the executed function throws an error.
+ *
+ * @example
+ * await executeWithUsbDevice({
+ *   args: { idOrName: 'e00fce6819ef5f971ea9563a' },
+ *   func: async (device) => {
+ *     // Perform operations with the device
+ *     return result;
+ *   },
+ *   dfuMode: true
+ * });
+ */
+async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
+	let device = await getOneUsbDevice(args, { dfuMode });
+	let deviceIsProtected = false;
+	try {
+		const s = await deviceProtectionHelper.getProtectionStatus(device);
+		deviceIsProtected = s.protected && !s.overrridden;
+	} catch (err) {
+		if (err.message === 'Not supported') {
+			// Device Protection is not supported on certain platforms and versions.
+			// It means that the device is not protected.
+		}
+		throw err;
+	}
+	if (deviceIsProtected) {
+		const deviceWasInDfuMode = device.isInDfuMode;
+		if (deviceWasInDfuMode) {
+			device = await _putDeviceInSafeMode(device);
+		}
+		await deviceProtectionHelper.disableDeviceProtection(device);
+		if (deviceWasInDfuMode) {
+			device = await reopenInDfuMode(device);
+		}
+	}
+
+	let res;
+	try {
+		res = await func(device);
+	} finally {
+		if (deviceIsProtected) {
+			device = await reopenDevice(device);
+			// FIXME: ignore errors
+			await deviceProtectionHelper.turnOffServiceMode(device);
+		}
+		if (device && device.isOpen) {
+			await device.close();
+		}
+	}
+	return res;
+}
+
+/**
+	 * Attempts to enter Safe Mode to enable operations on Protected Devices in DFU mode.
+	 *
+	 * @async
+	 * @param {Object} device - The device to reset.
+	 * @returns {Promise<void>}
+	 */
+async function _putDeviceInSafeMode(dev) {
+	try {
+		await dev.enterSafeMode();
+	} catch (error) {
+		// ignore errors
+	}
+	return reopenInNormalMode({ id: this.deviceId });
 }
 
 /**
@@ -316,10 +393,7 @@ async function reopenInNormalMode(device, { reset } = {}) {
 				}
 			}
 		} catch (err) {
-			// ignore other errors
-			if (err instanceof DeviceProtectionError) {
-				throw new Error('Operation cannot be completed due to Device Protection.');
-			}
+			// ignore errors
 		}
 	}
 	throw new Error('Unable to reconnect to the device. Try again or run particle update to repair the device');
@@ -351,17 +425,26 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 	const msg = 'Getting device information...';
 	const operation = openUsbDevices(args, { dfuMode });
 	let lastError = null;
+	let outputMsg = [];
 	return spin(operation, msg)
 		.then(usbDevices => {
-			const p = usbDevices.map(usbDevice => {
+			const p = usbDevices.map(async (usbDevice) => {
 				return Promise.resolve()
-					.then(() => func(usbDevice))
-					.catch(e => lastError = e)
-					.finally(() => usbDevice.close());
+					.then(async () => {
+						await executeWithUsbDevice({
+							args: { idOrName : usbDevice.id },
+							func,
+							dfuMode
+						});
+					})
+					.catch(e => lastError = e);
 			});
 			return spin(Promise.all(p), 'Sending a command to the device...');
 		})
 		.then(() => {
+			if (outputMsg.length > 0) {
+				outputMsg.forEach(msg => console.log(msg));
+			}
 			if (lastError){
 				throw lastError;
 			}
@@ -431,5 +514,6 @@ module.exports = {
 	TimeoutError,
 	DeviceProtectionError,
 	forEachUsbDevice,
-	openUsbDevices
+	openUsbDevices,
+	executeWithUsbDevice
 };
