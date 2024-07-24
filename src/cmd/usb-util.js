@@ -487,10 +487,6 @@ async function openUsbDevices(args, { dfuMode = false } = {}){
 		});
 }
 
-async function _delay(ms){
-	return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function handleUsbError(err){
 	if (err instanceof NotAllowedError) {
 		err = new UsbPermissionsError('Missing permissions to access the USB device');

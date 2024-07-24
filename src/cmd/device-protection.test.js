@@ -1,7 +1,6 @@
 const DeviceProtectionCommands = require('./device-protection');
 const { expect, sinon } = require('../../test/setup');
 const deviceProtectionHelper = require('../lib/device-protection-helper');
-const usbUtils = require('./usb-util');
 
 describe('DeviceProtectionCommands', () => {
 	let deviceProtectionCommands;
