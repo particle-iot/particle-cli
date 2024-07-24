@@ -80,7 +80,7 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 		});
 
 		after(async () => {
-            await cli.logout();
+			await cli.logout();
 		});
 
 		it('Lists connected devices', async () => {
