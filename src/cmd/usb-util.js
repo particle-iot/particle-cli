@@ -140,8 +140,8 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 /**
  * Reboots device and waits for it to enter normal mode.
  * Useful for enabling Device Protection on a device in after its current operation completes.
- * @param {*} deviceId 
- * @returns 
+ * @param {*} deviceId
+ * @returns
  */
 async function waitForDeviceToReboot(deviceId) {
 	const REBOOT_TIME_MSEC = 60000;

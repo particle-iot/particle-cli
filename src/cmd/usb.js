@@ -1,6 +1,6 @@
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError, forEachUsbDevice, executeWithUsbDevice } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, TimeoutError, DeviceProtectionError, forEachUsbDevice, executeWithUsbDevice } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
@@ -158,11 +158,11 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	async setSetupDone(args) {
 		const done = !args.reset;
-		
+
 		const processDevice = async (usbDevice) => {
 			if (usbDevice.isGen3Device) {
 				await usbDevice.setSetupDone(done);
-	
+
 				if (done) {
 					await usbDevice.leaveListeningMode();
 				} else {
@@ -170,7 +170,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 				}
 			}
 		};
-	
+
 		await forEachUsbDevice(args, processDevice);
 		console.log('Done.');
 	}
@@ -192,7 +192,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 		const { until, timeout, params: { device } } = args;
 		this.newSpin('Querying device...').start();
 		let status = null;
-	  
+
 		try {
 			status = await executeWithUsbDevice({
 				args: { idOrName: device }, // device here is the id
@@ -205,14 +205,14 @@ module.exports = class UsbCommand extends CLICommandBase {
 			this.stopSpin();
 			if (status) {
 				console.log(status.toLowerCase());
-			}                                                                                                                                                                                                                                                             
+			}
 		}
 	}
-	  
+
 	async _cloudStatus(device, until, timeout) {
 		let status = null;
 		const started = Date.now();
-		
+
 		if (until) {
 			while (Date.now() - started < timeout) {
 				try {
@@ -236,7 +236,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 				throw new Error(error);
 			}
 		}
-	
+
 		return status;
 	}
 
