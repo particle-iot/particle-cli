@@ -108,8 +108,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	startListening(args) {
-		return forEachUsbDevice(args, async (usbDevice) => {
-			await usbDevice.enterListeningMode();
+		return forEachUsbDevice(args, usbDevice => {
+			return usbDevice.enterListeningMode();
 		})
 			.then(() => {
 				console.log('Done.');
@@ -117,8 +117,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	stopListening(args) {
-		return forEachUsbDevice(args, async (usbDevice) => {
-			await usbDevice.leaveListeningMode();
+		return forEachUsbDevice(args, usbDevice => {
+			return usbDevice.leaveListeningMode();
 		})
 			.then(() => {
 				console.log('Done.');
@@ -136,7 +136,6 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	dfu(args) {
-		// YET TO ADD
 		return forEachUsbDevice(args, usbDevice => {
 			if (!usbDevice.isInDfuMode) {
 				return usbDevice.enterDfuMode();
@@ -148,8 +147,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	reset(args) {
-		return forEachUsbDevice(args, async (usbDevice) => {
-			await usbDevice.reset();
+		return forEachUsbDevice(args, usbDevice => {
+			return usbDevice.reset();
 		}, { dfuMode: true })
 			.then(() => {
 				console.log('Done.');
@@ -229,12 +228,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 				throw new Error('timed-out waiting for status...');
 			}
 		} else {
-			try {
-				status = await device.getCloudConnectionStatus();
-			} catch (error) {
-				// FIXME
-				throw new Error(error);
-			}
+			status = await device.getCloudConnectionStatus();
 		}
 
 		return status;

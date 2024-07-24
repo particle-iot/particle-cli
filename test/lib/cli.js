@@ -184,7 +184,7 @@ module.exports.getCloudConnectionStatus = async () => {
 
 module.exports.waitUntilOnline = async () => {
 	const { run } = module.exports;
-	const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected', '--timeout', 5000];
+	const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected', '--timeout', 5 * 60 * 1000];
 	return run(args, { reject: true });
 };
 
