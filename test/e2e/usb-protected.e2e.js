@@ -9,7 +9,7 @@ const {
 } = require('../lib/env');
 
 
-describe('USB Commands for Protected Devices [@device]', function cliUSBCommands(){
+describe.only('USB Commands for Protected Devices [@device]', function cliUSBCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
@@ -184,10 +184,7 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 			await cli.logout();
 			await cli.loginToForeignAcct();
 			const { stdout, stderr, exitCode } = await cli.run(args);
-			console.log('stdout:', stdout);
-			console.log('stderr:', stderr);
-			console.log('exitCode:', exitCode);
-
+			
 			expect(stdout).to.include(`<no name> [${DEVICE_ID}] (${platform})`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
@@ -225,11 +222,14 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 			await delay(2000);
 
 			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
 			expect(stdout).to.include('Your system firmware version is');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect(stdoutP).to.include('Protected Device');
+			expect(stdoutP).to.not.include('Service Mode');
 		});
 	});
 
@@ -249,10 +249,13 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect(stdoutP).to.include('Protected Device');
+			expect(stdoutP).to.not.include('Service Mode');
 		});
 	});
 
@@ -267,9 +270,13 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 
 			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
+			
 			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, DFU)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
+			expect(stdoutP).to.include('Service Mode');
 
 			await cli.resetDevice();
 			await cli.waitUntilOnline();
@@ -293,18 +300,24 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 	describe('USB Cloud Status Subcommand', () => {
 		it('Reports current cloud connection status', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_NAME]);
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect(stdoutP).to.include('Protected Device');
+			expect(stdoutP).to.not.include('Service Mode');
 		});
 
 		it('Reports current cloud connection status for device id', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_ID]);
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect(stdoutP).to.include('Protected Device');
+			expect(stdoutP).to.not.include('Service Mode');
 		});
 
 		it('Polls cloud connection status using the `--until` flag', async () => {
@@ -312,19 +325,25 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect(stdoutP).to.include('Protected Device');
+			expect(stdoutP).to.not.include('Service Mode');
 		});
 
 		it('Fails with timeout error when polling cloud connection status using the `--until` flag', async () => {
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'disconnecting', '--timeout', 2 * 1000];
 			const { stdout, stderr, exitCode } = await cli.run(args);
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.equal('timed-out waiting for status...');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
+			expect(stdoutP).to.include('Protected Device');
+			expect(stdoutP).to.not.include('Service Mode');
 		});
 	});
 
@@ -338,10 +357,13 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 			const ifacePattern = /\w+\(\w+\): flags=\d+<[\w,]+> mtu \d+/;
 
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'network-interfaces']);
+			const { stdoutP } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.match(ifacePattern);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect(stdoutP).to.include('Protected Device');
+			expect(stdoutP).to.not.include('Service Mode');
 		});
 	});
 });
