@@ -12,8 +12,6 @@ const {
 	DeviceProtectionError
 } = require('particle-usb');
 const deviceProtectionHelper = require('../lib/device-protection-helper');
-const semver = require('semver');
-const chalk = require('chalk');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
@@ -78,7 +76,6 @@ class UsbPermissionsError extends Error {
 
 /**
  * Executes a function with a USB device, handling device protection and DFU mode.
- * Given limitations from Device-OS, we currently ask the user to exit DFU mode if the device is protected.
  *
  * @param {Object} options - The options for executing with the USB device.
  * @param {Object} options.args - The arguments to identify and configure the USB device.
@@ -120,7 +117,7 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 			device = await reopenInDfuMode(device);
 		}
 	}
-	
+
 	let res;
 	try {
 		res = await func(device);
@@ -150,7 +147,7 @@ async function _putDeviceInSafeMode(dev) {
 	} catch (error) {
 		// ignore errors
 	}
-	return usbUtils.reopenInNormalMode({ id: this.deviceId });
+	return reopenInNormalMode({ id: this.deviceId });
 }
 
 /**
@@ -438,7 +435,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 							args: { idOrName : usbDevice.id },
 							func,
 							dfuMode
-						})
+						});
 					})
 					.catch(e => lastError = e);
 			});

@@ -32,9 +32,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	/**
 	 * Retrieves and displays the protection status of the device.
 	 *
-	 * This method assumes the device is in normal mode and not in DFU mode. It retrieves the current protection status and
-	 * constructs a message indicating whether the device is Protected, in Service Mode, or Open
-	 * The device protection status is then displayed in the console.
+	 * It retrieves the current protection status and constructs a message
+	 * indicating whether the device is Protected, in Service Mode, or Open.
 	 *
 	 * @async
 	 * @returns {Promise<Object>} The protection state of the device.
@@ -100,7 +99,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					addToOutput.push(`${deviceStr} is not a Protected Device.${os.EOL}`);
 					return;
 				}
-				
+
 				if (this.device.isInDfuMode) {
 					await this._putDeviceInSafeMode();
 				}
@@ -299,13 +298,9 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	/**
 	 * Executes a function with the device (Open / Protected / Protected (Service Mode)), ensuring it is in the correct mode.
 	 * Checks the protection status of the device which is needed for all the commands
-	 * If it is in DFU mode, the device is reset and re-opened expecting it to be in normal mode.
-	 * DFU device is queried for protection status and if the device is not a Protected Device, then the device is put
-	 * into safe mode to send it a control request to get the exact status.
 	 *
 	 * @async
 	 * @param {Object} options
-	 * @param {boolean} options.putDeviceBackInDfuMode - Checks if device should be put back into dfy mode if the device was in dfu mode at the start of the operation
 	 * @param {Function} options.spinner - The text to display in a spinner until the operation completes
 	 * @param {Function} fn - The function to execute with the device.
 	 * @returns {Promise<*>} The result of the function execution.

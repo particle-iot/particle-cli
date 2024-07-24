@@ -330,12 +330,10 @@ describe('DeviceProtectionCommands', () => {
 			const fn = sinon.stub().resolves();
 			deviceProtectionCommands.device.isInDfuMode = true;
 			sinon.stub(deviceProtectionHelper, 'getProtectionStatus').resolves({ protected: false });
-			sinon.stub(deviceProtectionCommands, '_putDeviceInSafeMode').resolves();
 			sinon.stub(usbUtils, 'waitForDeviceToReboot').resolves();
 
 			await deviceProtectionCommands._withDevice({ putDeviceBackInDfuMode: true }, fn);
 
-			expect(deviceProtectionCommands._putDeviceInSafeMode).to.have.been.calledOnce;
 			expect(usbUtils.waitForDeviceToReboot).to.not.have.been.called;
 			expect(fn).to.have.been.calledOnce;
 		});
