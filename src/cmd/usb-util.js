@@ -124,14 +124,44 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	} finally {
 		if (deviceIsProtected) {
 			device = await reopenDevice(device);
-			// FIXME: ignore errors
-			await deviceProtectionHelper.turnOffServiceMode(device);
+			try {
+				await deviceProtectionHelper.turnOffServiceMode(device);
+			} catch (error) {
+				// FIXME: ignore errors
+			}
 		}
 		if (device && device.isOpen) {
 			await device.close();
 		}
 	}
 	return res;
+}
+
+/**
+ * Reboots device and waits for it to enter normal mode.
+ * Useful for enabling Device Protection on a device in after its current operation completes.
+ * @param {*} deviceId 
+ * @returns 
+ */
+async function waitForDeviceToReboot(deviceId) {
+	const REBOOT_TIME_MSEC = 60000;
+	const REBOOT_INTERVAL_MSEC = 1000;
+	const start = Date.now();
+	while (Date.now() - start < REBOOT_TIME_MSEC) {
+		try {
+			await _delay(REBOOT_INTERVAL_MSEC);
+			const device = await reopenDevice({ id: deviceId });
+			// Check device readiness
+			await device.getDeviceId();
+			return device;
+		} catch (error) {
+			// ignore error
+		}
+	}
+}
+
+async function _delay(ms){
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -437,7 +467,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 							dfuMode
 						});
 					})
-					.catch(e => lastError = e);
+					.catch(e => lastError = e)
 			});
 			return spin(Promise.all(p), 'Sending a command to the device...');
 		})
@@ -515,5 +545,6 @@ module.exports = {
 	DeviceProtectionError,
 	forEachUsbDevice,
 	openUsbDevices,
-	executeWithUsbDevice
+	executeWithUsbDevice,
+	waitForDeviceToReboot
 };

@@ -7,7 +7,7 @@ const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
-const { stat } = require('fs-extra');
+const usbUtils = require('./usb-util');
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -128,6 +128,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	safeMode(args) {
 		return forEachUsbDevice(args, async (usbDevice) => {
 			await usbDevice.enterSafeMode();
+			await usbUtils.waitForDeviceToReboot(usbDevice.id);
 		})
 			.then(() => {
 				console.log('Done.');
@@ -225,7 +226,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 				}
 			}
 			if (Date.now() - started >= timeout) {
-				throw new Error('timed-out waiting for status...', error.message);
+				throw new Error('timed-out waiting for status...');
 			}
 		} else {
 			try {
