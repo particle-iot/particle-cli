@@ -341,10 +341,6 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 	}
 
-	async _delay(ms){
-		return new Promise((resolve) => setTimeout(resolve, ms));
-	}
-
 	/**
 	 * Attempts to enter Safe Mode to enable operations on Protected Devices in DFU mode.
 	 *
