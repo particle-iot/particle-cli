@@ -467,7 +467,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 							dfuMode
 						});
 					})
-					.catch(e => lastError = e)
+					.catch(e => lastError = e);
 			});
 			return spin(Promise.all(p), 'Sending a command to the device...');
 		})
