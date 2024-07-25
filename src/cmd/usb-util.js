@@ -96,6 +96,7 @@ class UsbPermissionsError extends Error {
  */
 async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	let device = await getOneUsbDevice(args, { dfuMode });
+	const deviceId = device.id;
 	let deviceIsProtected = false;
 	try {
 		const s = await deviceProtectionHelper.getProtectionStatus(device);
@@ -123,8 +124,12 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 		res = await func(device);
 	} finally {
 		if (deviceIsProtected) {
-			device = await reopenDevice(device);
+			device = await reopenDevice({ id: deviceId });
+			if (!device.isInDfuMode) {
+				device = await waitForDeviceToReboot(device.id);
+			}
 			try {
+				// Only works for 6.1.2 and later
 				await deviceProtectionHelper.turnOffServiceMode(device);
 			} catch (error) {
 				// FIXME: ignore errors
@@ -462,10 +467,15 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 				return Promise.resolve()
 					.then(async () => {
 						await executeWithUsbDevice({
-							args: { idOrName : usbDevice.id },
+							args: { idOrName : usbDevice.id, api: args.api, auth: args.auth },
 							func,
 							dfuMode
 						});
+						// This is particularly useful if the device handle is lost in the executed function
+						// Example: particle usb reset
+						if (usbDevice?.isOpen) {
+							await usbDevice.close();
+						}
 					})
 					.catch(e => lastError = e);
 			});
@@ -511,7 +521,7 @@ async function openUsbDevices(args, { dfuMode = false } = {}){
 			}
 
 			return asyncMapSeries(deviceIds, (id) => {
-				return openUsbDeviceByIdOrName(id, this._api, this._auth, { dfuMode })
+				return openUsbDeviceByIdOrName(id, args.api, args.auth, { dfuMode })
 					.then(usbDevice => usbDevice);
 			});
 		});

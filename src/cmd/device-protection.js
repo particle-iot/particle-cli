@@ -55,7 +55,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 					res = 'Protected Device';
 					helper = `Run ${chalk.yellow('particle device-protection disable')} to put the device in Service Mode.`;
 				} else {
-					res = 'Open device';
+					res = 'Open Device';
 					helper = `Run ${chalk.yellow('particle device-protection enable')} to protect the device.`;
 				}
 
