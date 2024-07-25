@@ -7,7 +7,6 @@ const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
-const usbUtils = require('./usb-util');
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -108,6 +107,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	startListening(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.enterListeningMode();
 		})
@@ -117,6 +118,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	stopListening(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.leaveListeningMode();
 		})
@@ -126,9 +129,10 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	safeMode(args) {
-		return forEachUsbDevice(args, async (usbDevice) => {
-			await usbDevice.enterSafeMode();
-			await usbUtils.waitForDeviceToReboot(usbDevice.id);
+		args.api = this._api;
+		args.auth = this._auth;
+		return forEachUsbDevice(args, usbDevice => {
+			return usbDevice.enterSafeMode();
 		})
 			.then(() => {
 				console.log('Done.');
@@ -136,6 +140,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	dfu(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			if (!usbDevice.isInDfuMode) {
 				return usbDevice.enterDfuMode();
@@ -147,6 +153,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	reset(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.reset();
 		}, { dfuMode: true })
@@ -156,6 +164,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	async setSetupDone(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		const done = !args.reset;
 
 		const processDevice = async (usbDevice) => {
@@ -194,7 +204,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 		try {
 			status = await executeWithUsbDevice({
-				args: { idOrName: device }, // device here is the id
+				args: { idOrName: device, api: this._api, auth: this._auth }, // device here is the id
 				func: (dev) => this._cloudStatus(dev, until, timeout),
 			});
 		} catch (error) {
@@ -259,8 +269,10 @@ module.exports = class UsbCommand extends CLICommandBase {
 	async getNetworkIfaces(args) {
 		// define output array with logs to prevent interleaving with the spinner
 		let output = [];
+		args.api = this._api;
+		args.auth = this._auth;
 
-		await forEachUsbDevice(args, async (usbDevice) => {
+		await forEachUsbDevice(args, usbDevice => {
 			const platform = platformForId(usbDevice.platformId);
 			return this.getNetworkIfaceInfo(usbDevice)
 				.then((nwIfaces) => {
