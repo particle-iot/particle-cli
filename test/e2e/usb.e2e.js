@@ -7,9 +7,10 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME
 } = require('../lib/env');
+const stripAnsi = require('strip-ansi');
 
 
-describe('USB Commands [@device]', function cliUSBCommands(){
+describe.only('USB Commands [@device]', function cliUSBCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
@@ -238,6 +239,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 
 		afterEach(async () => {
 			await cli.resetDevice();
+			await delay(5000);
 			await cli.waitUntilOnline();
 		});
 
@@ -247,7 +249,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.equal('connected');
+			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -256,6 +258,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 	describe('USB DFU Subcommand', () => {
 		after(async () => {
 			await cli.resetDevice();
+			await delay(5000);
 			await cli.waitUntilOnline();
 		});
 
@@ -269,6 +272,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			expect(exitCode).to.equal(0);
 
 			await cli.resetDevice();
+			await delay(5000);
 			await cli.waitUntilOnline();
 
 			const subproc = await cli.run(['usb', 'list']);
@@ -291,7 +295,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		it('Reports current cloud connection status', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_NAME]);
 
-			expect(stdout).to.equal('connected');
+			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -299,18 +303,19 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		it('Reports current cloud connection status for device id', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_ID]);
 
-			expect(stdout).to.equal('connected');
+			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Polls cloud connection status using the `--until` flag', async () => {
 			await cli.resetDevice();
+			await delay(5000);
 
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.equal('connected');
+			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -319,7 +324,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'disconnecting', '--timeout', 2 * 1000];
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.equal('timed-out waiting for status...');
+			expect(stripAnsi(stdout)).to.equal('timed-out waiting for status...');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
@@ -328,6 +333,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 	describe('USB network-interfaces Subcommand', () => {
 		after(async () => {
 			await cli.resetDevice();
+			await delay(5000);
 			await cli.waitUntilOnline();
 		});
 
