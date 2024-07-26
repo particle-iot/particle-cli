@@ -221,9 +221,9 @@ module.exports = class UsbCommand extends CLICommandBase {
 		if (!until) {
 			return device.getCloudConnectionStatus();
 		}
-	
+
 		const endTime = Date.now() + timeout;
-	
+
 		while (Date.now() < endTime) {
 			try {
 				const status = await device.getCloudConnectionStatus();
@@ -234,7 +234,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 				// Ignore error and continue polling
 			}
 		}
-	
+
 		throw new Error('Timed out waiting for status');
 	}
 
