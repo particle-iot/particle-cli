@@ -228,6 +228,7 @@ describe.only('USB Commands for Protected Devices [@device]', function cliUSBCom
 
 		afterEach(async () => {
 			await cli.run(['usb', 'stop-listening']);
+			await cli.run(['device-protection', 'enable']);
 		});
 
 		it('Starts listening', async () => {
@@ -259,6 +260,8 @@ describe.only('USB Commands for Protected Devices [@device]', function cliUSBCom
 
 		afterEach(async () => {
 			await cli.resetDevice();
+			delay(5000);
+			await cli.run(['device-protection', 'enable']);
 		});
 
 		it('Stops listening', async () => {
@@ -309,11 +312,13 @@ describe.only('USB Commands for Protected Devices [@device]', function cliUSBCom
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 
+
 			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 			// This will not work for device-os < 6.1.2
-			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Open Device');
 
 			await cli.resetDevice();
+			await delay(5000);
 			await cli.waitUntilOnline();
 
 			const subproc = await cli.run(['usb', 'list']);
@@ -336,10 +341,15 @@ describe.only('USB Commands for Protected Devices [@device]', function cliUSBCom
 		before(async () => {
 			await cli.setTestProfileAndLogin();
 			await cli.waitUntilOnline();
+			await cli.run(['device-protection', 'enable']);
 		});
 
 		beforeEach(async () => {
 			await cli.setTestProfileAndLogin();
+		});
+
+		after(async () => {
+			await cli.run(['device-protection', 'enable']);
 		});
 
 		it('Reports current cloud connection status', async () => {
@@ -404,6 +414,10 @@ describe.only('USB Commands for Protected Devices [@device]', function cliUSBCom
 	describe('USB network-interfaces Subcommand', () => {
 		before(async () => {
 			await cli.waitUntilOnline();
+		});
+
+		after(async () => {
+			await cli.run(['device-protection', 'enable']);
 		});
 
 		it('provides network interfaces', async () => {
