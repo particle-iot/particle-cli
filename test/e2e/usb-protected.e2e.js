@@ -189,7 +189,7 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 			await cli.logout();
 			await cli.loginToForeignAcct();
 			const { stdout, stderr, exitCode } = await cli.run(args);
-			
+
 			expect(stdout).to.include(`<no name> [${DEVICE_ID}] (${platform})`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
@@ -221,7 +221,7 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 			await cli.setTestProfileAndLogin();
 			await cli.waitUntilOnline();
 		});
-		
+
 		beforeEach(async () => {
 			await cli.setTestProfileAndLogin();
 		});
