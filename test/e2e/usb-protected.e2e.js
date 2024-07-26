@@ -9,7 +9,7 @@ const {
 } = require('../lib/env');
 const stripAnsi = require('strip-ansi');
 
-describe.only('USB Commands for Protected Devices [@device]', function cliUSBCommands(){
+describe('USB Commands for Protected Devices [@device]', function cliUSBCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
