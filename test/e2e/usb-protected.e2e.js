@@ -314,8 +314,8 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 
 
 			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
-			// This will not work for device-os < 6.1.2
-			expect((stdoutPAfter.split('\n'))[0]).to.include('Open Device');
+			// This will fail for device-os < 6.1.2
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
 
 			await cli.resetDevice();
 			await delay(5000);

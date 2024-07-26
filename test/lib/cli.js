@@ -52,11 +52,9 @@ module.exports.login = () => {
 	return run(['login', '-u', USERNAME, '-p', PASSWORD], { reject: true });
 };
 
-module.exports.loginToForeignAcct = async () => {
+module.exports.loginToForeignAcct = () => {
 	const { run } = module.exports;
-	await run(['login', '-u', FOREIGN_USERNAME, '-p', FOREIGN_PASSWORD], { reject: true });
-	const s = await run(['whoami'], { reject: true });
-	console.log('Logged in as:', s);
+	return run(['login', '-u', FOREIGN_USERNAME, '-p', FOREIGN_PASSWORD], { reject: true });
 };
 
 module.exports.logout = () => {

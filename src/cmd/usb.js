@@ -208,7 +208,6 @@ module.exports = class UsbCommand extends CLICommandBase {
 				func: (dev) => this._cloudStatus(dev, until, timeout),
 			});
 		} catch (error) {
-			this.stopSpin();
 			throw new Error(error.message);
 		} finally {
 			this.stopSpin();
@@ -219,29 +218,24 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	async _cloudStatus(device, until, timeout) {
-		let status = null;
-		const started = Date.now();
-
-		if (until) {
-			while (Date.now() - started < timeout) {
-				try {
-					status = await device.getCloudConnectionStatus();
-					status = status.toLowerCase();
-					if (status === until) {
-						break;
-					}
-				} catch (error) {
-					// ignore error and keep trying until timeout has elapsed
-				}
-			}
-			if (Date.now() - started >= timeout) {
-				throw new Error('timed-out waiting for status...');
-			}
-		} else {
-			status = await device.getCloudConnectionStatus();
+		if (!until) {
+			return device.getCloudConnectionStatus();
 		}
-
-		return status;
+	
+		const endTime = Date.now() + timeout;
+	
+		while (Date.now() < endTime) {
+			try {
+				const status = await device.getCloudConnectionStatus();
+				if (status.toLowerCase() === until) {
+					return status;
+				}
+			} catch (error) {
+				// Ignore error and continue polling
+			}
+		}
+	
+		throw new Error('Timed out waiting for status');
 	}
 
 	// Helper function to convert CIDR notation to netmask to imitate the 'ifconfig' output
