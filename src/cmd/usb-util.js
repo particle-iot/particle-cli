@@ -124,14 +124,48 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	} finally {
 		if (deviceIsProtected) {
 			device = await reopenDevice(device);
-			// FIXME: ignore errors
-			await deviceProtectionHelper.turnOffServiceMode(device);
+			if (!device.isInDfuMode) {
+				device = await waitForDeviceToReboot(device);
+			}
+			try {
+				// Only works for 6.1.2 and later
+				await deviceProtectionHelper.turnOffServiceMode(device);
+			} catch (error) {
+				// FIXME: ignore errors
+			}
 		}
 		if (device && device.isOpen) {
 			await device.close();
 		}
 	}
 	return res;
+}
+
+/**
+ * Reboots device and waits for it to enter normal mode.
+ * Useful for enabling Device Protection on a device in after its current operation completes.
+ * @param {*} deviceId
+ * @returns
+ */
+async function waitForDeviceToReboot(device) {
+	const deviceId = device.id;
+	const REBOOT_TIME_MSEC = 60000;
+	const REBOOT_INTERVAL_MSEC = 1000;
+	const start = Date.now();
+	if (device.isOpen) {
+		await device.close();
+	}
+	while (Date.now() - start < REBOOT_TIME_MSEC) {
+		try {
+			await delay(REBOOT_INTERVAL_MSEC);
+			const device = await reopenDevice({ id: deviceId });
+			// Check device readiness
+			await device.getDeviceId();
+			return device;
+		} catch (error) {
+			// ignore error
+		}
+	}
 }
 
 /**
@@ -432,7 +466,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 				return Promise.resolve()
 					.then(async () => {
 						await executeWithUsbDevice({
-							args: { idOrName : usbDevice.id },
+							args: { idOrName : usbDevice.id, api: args.api, auth: args.auth },
 							func,
 							dfuMode
 						});
@@ -481,7 +515,7 @@ async function openUsbDevices(args, { dfuMode = false } = {}){
 			}
 
 			return asyncMapSeries(deviceIds, (id) => {
-				return openUsbDeviceByIdOrName(id, this._api, this._auth, { dfuMode })
+				return openUsbDeviceByIdOrName(id, args.api, args.auth, { dfuMode })
 					.then(usbDevice => usbDevice);
 			});
 		});
@@ -515,5 +549,6 @@ module.exports = {
 	DeviceProtectionError,
 	forEachUsbDevice,
 	openUsbDevices,
-	executeWithUsbDevice
+	executeWithUsbDevice,
+	waitForDeviceToReboot
 };

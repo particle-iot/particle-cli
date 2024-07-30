@@ -1,14 +1,12 @@
-const { spin } = require('../app/ui');
-const { delay, asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
+const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, openUsbDeviceByIdOrName, TimeoutError, DeviceProtectionError, forEachUsbDevice } = require('./usb-util');
+const { getUsbDevices, openUsbDevice, TimeoutError, DeviceProtectionError, forEachUsbDevice, executeWithUsbDevice } = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
-
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -109,6 +107,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	startListening(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.enterListeningMode();
 		})
@@ -118,6 +118,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	stopListening(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.leaveListeningMode();
 		})
@@ -127,6 +129,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	safeMode(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.enterSafeMode();
 		})
@@ -136,6 +140,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	dfu(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			if (!usbDevice.isInDfuMode) {
 				return usbDevice.enterDfuMode();
@@ -147,6 +153,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	reset(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		return forEachUsbDevice(args, usbDevice => {
 			return usbDevice.reset();
 		}, { dfuMode: true })
@@ -155,22 +163,25 @@ module.exports = class UsbCommand extends CLICommandBase {
 			});
 	}
 
-	setSetupDone(args) {
+	async setSetupDone(args) {
+		args.api = this._api;
+		args.auth = this._auth;
 		const done = !args.reset;
-		return forEachUsbDevice(args, usbDevice => {
+
+		const processDevice = async (usbDevice) => {
 			if (usbDevice.isGen3Device) {
-				return usbDevice.setSetupDone(done)
-					.then(() => {
-						if (done) {
-							return usbDevice.leaveListeningMode();
-						}
-						return usbDevice.enterListeningMode();
-					});
+				await usbDevice.setSetupDone(done);
+
+				if (done) {
+					await usbDevice.leaveListeningMode();
+				} else {
+					await usbDevice.enterListeningMode();
+				}
 			}
-		})
-			.then(() => {
-				console.log('Done.');
-			});
+		};
+
+		await forEachUsbDevice(args, processDevice);
+		console.log('Done.');
 	}
 
 	configure() {
@@ -186,52 +197,45 @@ module.exports = class UsbCommand extends CLICommandBase {
 			.then(() => console.log('Done.'));
 	}
 
-	cloudStatus(args, started = Date.now()){
+	async cloudStatus(args) {
 		const { until, timeout, params: { device } } = args;
+		this.newSpin('Querying device...').start();
+		let status = null;
 
-		if (Date.now() - (started + timeout) > 0){
-			throw new Error('timed-out waiting for status...');
+		try {
+			status = await executeWithUsbDevice({
+				args: { idOrName: device, api: this._api, auth: this._auth }, // device here is the id
+				func: (dev) => this._cloudStatus(dev, until, timeout),
+			});
+		} catch (error) {
+			throw new Error(error.message);
+		} finally {
+			this.stopSpin();
+			if (status) {
+				console.log(status.toLowerCase());
+			}
+		}
+	}
+
+	async _cloudStatus(device, until, timeout) {
+		if (!until) {
+			return device.getCloudConnectionStatus();
 		}
 
-		const deviceMgr = {
-			_: null,
-			set(usbDevice){
-				this._ = usbDevice || null;
-				return this;
-			},
-			close(){
-				const { _: usbDevice } = this;
-				return usbDevice ? usbDevice.close() : Promise.resolve();
-			},
-			status(){
-				const { _: usbDevice } = this;
-				let getStatus = usbDevice
-					? usbDevice.getCloudConnectionStatus()
-					: Promise.resolve('unknown');
+		const endTime = Date.now() + timeout;
 
-				return getStatus.then(status => status.toLowerCase());
+		while (Date.now() < endTime) {
+			try {
+				const status = await device.getCloudConnectionStatus();
+				if (status.toLowerCase() === until) {
+					return status;
+				}
+			} catch (error) {
+				// Ignore error and continue polling
 			}
-		};
+		}
 
-		const queryDevice = openUsbDeviceByIdOrName(device, this._api, this._auth)
-			.then(usbDevice => deviceMgr.set(usbDevice).status());
-
-		return spin(queryDevice, 'Querying device...')
-			.then(status => {
-				if (until && until !== status){
-					throw new Error(`Unexpected status: ${status}`);
-				}
-				console.log(status);
-			})
-			.catch(error => {
-				if (until){
-					return deviceMgr.close()
-						.then(() => delay(1000))
-						.then(() => this.cloudStatus(args, started));
-				}
-				throw error;
-			})
-			.finally(() => deviceMgr.close());
+		throw new Error('Timed out waiting for status');
 	}
 
 	// Helper function to convert CIDR notation to netmask to imitate the 'ifconfig' output
@@ -259,6 +263,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 	async getNetworkIfaces(args) {
 		// define output array with logs to prevent interleaving with the spinner
 		let output = [];
+		args.api = this._api;
+		args.auth = this._auth;
 
 		await forEachUsbDevice(args, usbDevice => {
 			const platform = platformForId(usbDevice.platformId);
