@@ -124,9 +124,9 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 		res = await func(device);
 	} finally {
 		if (deviceIsProtected) {
-			device = await reopenDevice({ id: deviceId });
+			device = await reopenDevice(device);
 			if (!device.isInDfuMode) {
-				device = await waitForDeviceToReboot(device.id);
+				device = await waitForDeviceToReboot(device);
 			}
 			try {
 				// Only works for 6.1.2 and later
@@ -148,13 +148,17 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
  * @param {*} deviceId
  * @returns
  */
-async function waitForDeviceToReboot(deviceId) {
+async function waitForDeviceToReboot(device) {
+	const deviceId = device.id;
 	const REBOOT_TIME_MSEC = 60000;
 	const REBOOT_INTERVAL_MSEC = 1000;
 	const start = Date.now();
+	if (device.isOpen) {
+		await device.close();
+	}
 	while (Date.now() - start < REBOOT_TIME_MSEC) {
 		try {
-			await _delay(REBOOT_INTERVAL_MSEC);
+			await delay(REBOOT_INTERVAL_MSEC);
 			const device = await reopenDevice({ id: deviceId });
 			// Check device readiness
 			await device.getDeviceId();
@@ -163,10 +167,6 @@ async function waitForDeviceToReboot(deviceId) {
 			// ignore error
 		}
 	}
-}
-
-async function _delay(ms){
-	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -471,11 +471,6 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 							func,
 							dfuMode
 						});
-						// This is particularly useful if the device handle is lost in the executed function
-						// Example: particle usb reset
-						if (usbDevice?.isOpen) {
-							await usbDevice.close();
-						}
 					})
 					.catch(e => lastError = e);
 			});
