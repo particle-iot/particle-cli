@@ -65,7 +65,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		} catch (error) {
 			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
 			if (error.message === 'Not supported') {
-				throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 			}
 			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
 		} finally {
@@ -108,7 +108,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				addToOutput.push(`${deviceStr} is now in Service Mode.${os.EOL}A Protected Device stays in Service Mode for a total of 20 reboots or 24 hours.${os.EOL}`);
 			} catch (error) {
 				if (error.message === 'Not supported') {
-					throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+					throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 				}
 				throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
 			}
@@ -187,7 +187,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				}
 			} catch (error) {
 				if (error.message === 'Not supported') {
-					throw new Error(`Device protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+					throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 				}
 				throw new Error(`Failed to enable device protection: ${error.message}${os.EOL}`);
 			}
