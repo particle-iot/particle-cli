@@ -21,14 +21,18 @@ module.exports = class UpdateCommand extends CLICommandBase {
 			this.ui.write(`Invalid version: ${target}`);
 			return;
 		}
-		// get device info
-		await usbUtils.executeWithUsbDevice({
-			args: { idOrName: deviceIdOrName, api, auth, ui: this.ui },
-			func: this._updateDevice.bind(this, deviceIdOrName, target)
-		});
+		try {
+			await usbUtils.executeWithUsbDevice({
+				args: { idOrName: deviceIdOrName, api, auth, ui: this.ui },
+				func: (dev) => this._updateDevice(dev, deviceIdOrName, target)
+			});
+		} catch (error) {
+			throw new Error(`Error updating device: ${error}`);
+		}
 	}
 
-	async _updateDevice({ deviceIdOrName, target }) {
+	async _updateDevice(device, deviceIdOrName, target) {
+		const { api } = this._particleApi();
 		const version = target || 'latest';
 		validateDFUSupport({ device, ui: this.ui });
 
