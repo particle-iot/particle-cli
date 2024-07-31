@@ -97,24 +97,29 @@ class UsbPermissionsError extends Error {
 async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	let device = await getOneUsbDevice(args, { dfuMode });
 	let deviceIsProtected = false;
-	try {
-		const s = await deviceProtectionHelper.getProtectionStatus(device);
-		deviceIsProtected = s.protected && !s.overrridden;
-	} catch (err) {
-		if (err.message === 'Not supported') {
-			// Device Protection is not supported on certain platforms and versions.
-			// It means that the device is not protected.
+	
+	const platform = platformForId(device.platformId);
+	if (platform.generation > 2) { // Skipping device protection check for Gen2 platforms
+		try {
+			const s = await deviceProtectionHelper.getProtectionStatus(device);
+			deviceIsProtected = s.protected && !s.overrridden;
+		} catch (err) {
+			if (err.message === 'Not supported') {
+				// Device Protection is not supported on certain platforms and versions.
+				// It means that the device is not protected.
+			} else {
+				throw err;
+			}
 		}
-		throw err;
-	}
-	if (deviceIsProtected) {
-		const deviceWasInDfuMode = device.isInDfuMode;
-		if (deviceWasInDfuMode) {
-			device = await _putDeviceInSafeMode(device);
-		}
-		await deviceProtectionHelper.disableDeviceProtection(device);
-		if (deviceWasInDfuMode) {
-			device = await reopenInDfuMode(device);
+		if (deviceIsProtected) {
+			const deviceWasInDfuMode = device.isInDfuMode;
+			if (deviceWasInDfuMode) {
+				device = await _putDeviceInSafeMode(device);
+			}
+			await deviceProtectionHelper.disableDeviceProtection(device);
+			if (deviceWasInDfuMode) {
+				device = await reopenInDfuMode(device);
+			}
 		}
 	}
 
@@ -123,15 +128,11 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 		res = await func(device);
 	} finally {
 		if (deviceIsProtected) {
-			device = await reopenDevice(device);
-			if (!device.isInDfuMode) {
-				device = await waitForDeviceToReboot(device);
-			}
 			try {
-				// Only works for 6.1.2 and later
+				// 'device' has finished the CLI command and is now ready to run this command
 				await deviceProtectionHelper.turnOffServiceMode(device);
 			} catch (error) {
-				// FIXME: ignore errors
+				// Ignore error. At most, device is left in Service Mode
 			}
 		}
 		if (device && device.isOpen) {
@@ -147,9 +148,9 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
  * @param {*} deviceId
  * @returns
  */
-async function waitForDeviceToReboot(device) {
+async function waitForDeviceToRespond(device) {
 	const deviceId = device.id;
-	const REBOOT_TIME_MSEC = 60000;
+	const REBOOT_TIME_MSEC = 20000;
 	const REBOOT_INTERVAL_MSEC = 1000;
 	const start = Date.now();
 	if (device.isOpen) {
@@ -550,5 +551,5 @@ module.exports = {
 	forEachUsbDevice,
 	openUsbDevices,
 	executeWithUsbDevice,
-	waitForDeviceToReboot
+	waitForDeviceToRespond
 };
