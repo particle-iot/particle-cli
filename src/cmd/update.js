@@ -22,8 +22,14 @@ module.exports = class UpdateCommand extends CLICommandBase {
 			return;
 		}
 		// get device info
-		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
+		await usbUtils.executeWithUsbDevice({
+			args: { idOrName: deviceIdOrName, api, auth, ui: this.ui },
+			func: (dev) => this._updateDevice(dev, deviceIdOrName, target)
+		});
+	}
 
+	async _updateDevice(device, deviceIdOrName, target) {
+		const { api } = this._particleApi();
 		const version = target || 'latest';
 		validateDFUSupport({ device, ui: this.ui });
 
@@ -43,7 +49,8 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		const modulesToFlash = filterModulesToFlash({ modules: deviceOsModules, platformId: device.platformId, allowAll: true });
 		await maintainDeviceProtection({ modules: modulesToFlash, device });
 		const flashSteps = await createFlashSteps({ modules: modulesToFlash, isInDfuMode: device.isInDfuMode , platformId: device.platformId });
-		await flashFiles({ device, flashSteps, ui: this.ui });
+		device = await flashFiles({ device, flashSteps, ui: this.ui });
+
 		this.ui.write('Update success!');
 	}
 
