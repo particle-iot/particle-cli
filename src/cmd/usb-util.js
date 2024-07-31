@@ -97,7 +97,7 @@ class UsbPermissionsError extends Error {
 async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	let device = await getOneUsbDevice(args, { dfuMode });
 	let deviceIsProtected = false;
-	
+
 	const platform = platformForId(device.platformId);
 	if (platform.generation > 2) { // Skipping device protection check for Gen2 platforms
 		try {
