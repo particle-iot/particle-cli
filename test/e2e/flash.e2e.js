@@ -8,6 +8,8 @@ const {
 	PATH_PROJ_STROBY_INO,
 	PATH_FIXTURES_PROJECTS_DIR
 } = require('../lib/env');
+const { delay } = require('../lib/mocha-utils');
+const stripAnsi = require('strip-ansi');
 
 
 describe('Flash Commands [@device]', () => {
@@ -31,16 +33,17 @@ describe('Flash Commands [@device]', () => {
 		'  --port              Use this serial port instead of auto-detecting. Useful if there are more than 1 connected device. Only available for serial  [string]',
 		'',
 		'Examples:',
-		'  particle flash red                          Compile the source code in the current directory in the cloud and flash to device red',
-		'  particle flash green tinker                 Flash the default Tinker app to device green',
-		'  particle flash blue app.ino --target 5.0.0  Compile app.ino in the cloud using the 5.0.0 firmware and flash to device blue',
-		'  particle flash cyan firmware.bin            Flash the pre-compiled binary to device cyan',
-		'  particle flash --local                      Compile the source code in the current directory in the cloud and flash to the device connected over USB',
-		'  particle flash --local --target 5.0.0       Compile the source code in the current directory in the cloud against the target version and flash to the device connected over USB',
-		'  particle flash --local application.bin      Flash the pre-compiled binary to the device connected over USB',
-		'  particle flash --local application.zip      Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
-		'  particle flash --local tinker               Flash the default Tinker app to the device connected over USB',
-		'  particle flash --usb firmware.bin           Flash the binary over USB',
+		'  particle flash red                                 Compile the source code in the current directory in the cloud and flash to device red',
+		'  particle flash green tinker                        Flash the default Tinker app to device green',
+		'  particle flash blue app.ino --target 5.0.0         Compile app.ino in the cloud using the 5.0.0 firmware and flash to device blue',
+		'  particle flash cyan firmware.bin                   Flash the pre-compiled binary to device cyan',
+		'  particle flash --local                             Compile the source code in the current directory in the cloud and flash to the device connected over USB',
+		'  particle flash --local <deviceId> application.bin  Compile the source code in the current directory in the cloud and flash to the device connected over USB',
+		'  particle flash --local --target 5.0.0              Compile the source code in the current directory in the cloud against the target version and flash to the device connected over USB',
+		'  particle flash --local application.bin             Flash the pre-compiled binary to the device connected over USB',
+		'  particle flash --local application.zip             Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
+		'  particle flash --local tinker                      Flash the default Tinker app to the device connected over USB',
+		'  particle flash --usb firmware.bin                  Flash the binary over USB',
 		'',
 		'When passing the --local flag, Device OS will be updated if the version on the device is outdated.',
 		'When passing both the --local and --target flash, Device OS will be updated to the target version.',
@@ -53,6 +56,7 @@ describe('Flash Commands [@device]', () => {
 
 	after(async () => {
 		await cli.resetDevice();
+		await delay(5000);
 		await cli.waitUntilOnline();
 		await cli.logout();
 		await cli.setDefaultProfile();
@@ -82,7 +86,7 @@ describe('Flash Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Flashes a project', async () => {
+	it('Flashes a project over cloud', async () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby');
 		const args = ['flash', DEVICE_NAME];
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
@@ -97,14 +101,14 @@ describe('Flash Commands [@device]', () => {
 			'Flash success!'
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
 		await cli.waitForVariable('name', 'stroby');
 	});
 
-	it('Flashes a project with an example', async () => {
+	it('Flashes a project with an example  over cloud', async () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'lib-with-example');
 		const args = ['flash', DEVICE_NAME];
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
@@ -120,7 +124,7 @@ describe('Flash Commands [@device]', () => {
 			'Flash success!'
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
@@ -130,7 +134,7 @@ describe('Flash Commands [@device]', () => {
 	// TODO (mirande): need a better way to confirm device is back online after
 	// flashing - in this case, the current hackaround doesn't work b/c tinker
 	// doesn't expose a `name` variable
-	it.skip('FIXME: Flashes a known app', async () => {
+	it.skip('FIXME: Flashes a known app  over cloud', async () => {
 		const args = ['flash', DEVICE_NAME, 'tinker'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
@@ -143,14 +147,14 @@ describe('Flash Commands [@device]', () => {
 			'Flash success!'
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
 		await cli.waitForVariable('name', 'tinker');
 	});
 
-	it('Flashes an `.ino` file', async () => {
+	it('Flashes an `.ino` file  over cloud', async () => {
 		const args = ['flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
@@ -158,14 +162,14 @@ describe('Flash Commands [@device]', () => {
 			'Flash success!'
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
 		await cli.waitForVariable('name', 'stroby');
 	});
 
-	it('Flashes a `.bin` file', async () => {
+	it('Flashes a `.bin` file  over cloud', async () => {
 		const { bin } = await cli.compileBlankFirmwareForTest(DEVICE_PLATFORM_NAME);
 		const args = ['flash', DEVICE_NAME, bin];
 		const { stdout, stderr, exitCode } = await cli.run(args);
@@ -174,14 +178,14 @@ describe('Flash Commands [@device]', () => {
 			'Flash success!'
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 
 		await cli.waitForVariable('name', 'blank');
 	});
 
-	it('Flashes a `.bin` file using usb', async () => {
+	it('Flashes a `.bin` file over usb', async () => {
 		await cli.waitUntilOnline();
 		await cli.enterDFUMode();
 		const { bin } = await cli.compileBlankFirmwareForTest(DEVICE_PLATFORM_NAME);
@@ -193,33 +197,34 @@ describe('Flash Commands [@device]', () => {
 			'Flash success!'
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 		await cli.waitForVariable('name', 'blank');
 	});
 
-	it('Fails to flash missing or unrecognized app', async () => {
+	it('Fails to flash missing or unrecognized app over cloud', async () => {
 		const args = ['flash', DEVICE_NAME, 'WATNOPE.bin'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
 			`Failed to flash ${DEVICE_NAME}: I couldn't find that file: WATNOPE.bin`
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
 
-	it('Fails to flash missing or unrecognized app when using usb', async () => {
+	it('Fails to flash missing or unrecognized app when over usb', async () => {
 		await cli.enterDFUMode();
+		await delay(5000);
 		const args = ['flash', 'WATNOPE.bin', '--usb'];
 		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
 			'WATNOPE.bin doesn\'t exist'
 		];
 
-		expect(stdout.split('\n')).to.include.members(log);
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

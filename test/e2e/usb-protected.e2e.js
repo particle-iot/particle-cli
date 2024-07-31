@@ -260,7 +260,7 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 
 		afterEach(async () => {
 			await cli.resetDevice();
-			delay(5000);
+			await delay(5000);
 			await cli.run(['device-protection', 'enable']);
 		});
 
@@ -294,7 +294,7 @@ describe('USB Commands for Protected Devices [@device]', function cliUSBCommands
 
 		after(async () => {
 			await cli.resetDevice();
-			delay(5000);
+			await delay(5000);
 			await cli.run(['device-protection', 'enable']);
 		});
 
