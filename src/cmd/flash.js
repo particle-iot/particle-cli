@@ -102,7 +102,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		this.ui.write(`Flashing ${platformName} device ${device.id}`);
 		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
-		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
+		device = await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
+
+		// The device obtained here is closed so reopen the device
+		device = await usbUtils.waitForDeviceToRespond(device, { timeout: 5000 });
+		return device;
 	}
 
 	flashCloud({ device, files, target }) {
@@ -174,6 +178,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		});
 
 		await flashFiles({ device, flashSteps, ui: this.ui, verbose });
+
+		// The device obtained here is may be closed so reopen the device and ensure its ready
+		// to talk to
+		device = await usbUtils.waitForDeviceToRespond(device, { timeout: 5000 });
+		return device;
 	}
 
 	async _analyzeFiles(files) {

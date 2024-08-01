@@ -52,6 +52,7 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		device = await flashFiles({ device, flashSteps, ui: this.ui });
 
 		this.ui.write('Update success!');
+		return device;
 	}
 
 	_particleApi() {

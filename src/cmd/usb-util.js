@@ -129,13 +129,15 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
 		}
 	}
 
-	let res;
+	let newDeviceHandle = null;
 	try {
 		if (enterDfuMode) {
 			validateDFUSupport({ device, ui: args.ui });
 			device = await reopenInDfuMode(device);
 		}
-		res = await func(device);
+		newDeviceHandle = await func(device);
+		// Overwrite device handle if it is provided by the executed function
+		device = newDeviceHandle || device;
 	} finally {
 		if (deviceIsProtected) {
 			try {
@@ -149,27 +151,32 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
 			await device.close();
 		}
 	}
-	return res;
+	// return res;
 }
 
 /**
- * Reboots device and waits for it to enter normal mode.
+ * Waits for device readiness (mainly to send control requsts to it)
  * Useful for enabling Device Protection on a device in after its current operation completes.
  * @param {*} deviceId
  * @returns
  */
-async function waitForDeviceToRespond(device) {
+async function waitForDeviceToRespond(device, { timeout = 10000 } = {}) {
 	const deviceId = device.id;
-	const REBOOT_TIME_MSEC = 20000;
-	const REBOOT_INTERVAL_MSEC = 1000;
+	const REBOOT_TIME_MSEC = timeout;
+	const REBOOT_INTERVAL_MSEC = 100;
 	const start = Date.now();
+
 	if (device.isOpen) {
 		await device.close();
 	}
+
 	while (Date.now() - start < REBOOT_TIME_MSEC) {
 		try {
 			await delay(REBOOT_INTERVAL_MSEC);
-			const device = await reopenDevice({ id: deviceId });
+			device = await reopenDevice({ id: deviceId });
+			if (device.isInDfuMode) {
+				return device;
+			}
 			// Check device readiness
 			await device.getDeviceId();
 			return device;
@@ -177,7 +184,9 @@ async function waitForDeviceToRespond(device) {
 			// ignore error
 		}
 	}
+	return null;
 }
+
 
 /**
 	 * Attempts to enter Safe Mode to enable operations on Protected Devices in DFU mode.
