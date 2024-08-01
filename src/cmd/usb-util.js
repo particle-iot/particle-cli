@@ -151,7 +151,6 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
 			await device.close();
 		}
 	}
-	// return res;
 }
 
 /**

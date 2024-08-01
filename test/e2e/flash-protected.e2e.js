@@ -89,11 +89,6 @@ describe('Flash Commands for Protected Devices [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	// Comment to self. Remove later.
-	// As long as the device is in a Protected product, cloud will not send OTAs down to the device
-	// even if the device is in Service Mode. So cloud flashes will not work.
-	// Cloud flashes will work if the device is marked as a development device, at which point, cloud turns the
-	// Protected Device to an Open Device by sending down the OG bootloader (which is the non-protected one).
 	it('Fails to flash a project over cloud', async () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby');
 		const args = ['flash', DEVICE_NAME];
