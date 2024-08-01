@@ -56,6 +56,7 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verb
 			await device.close();
 		}
 	}
+	return device;
 }
 
 async function _flashDeviceInNormalMode(device, data, { name, progress, checkSkip } = {}) {
