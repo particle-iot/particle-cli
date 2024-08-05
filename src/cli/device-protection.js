@@ -1,17 +1,17 @@
 module.exports = ({ commandProcessor, root }) => {
-	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Manage device protection');
+	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Manage Device Protection');
 
-	commandProcessor.createCommand(deviceProtection, 'status', 'Gets the current device protection status', {
+	commandProcessor.createCommand(deviceProtection, 'status', 'Gets the current Device Protection status', {
 		handler: () => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
 			return new DeviceProtectionCommands().getStatus();
 		},
 		examples: {
-			'$0 $command': 'Gets the current device protection status'
+			'$0 $command': 'Gets the current Device Protection status'
 		}
 	});
 
-	commandProcessor.createCommand(deviceProtection, 'disable', 'Disables device protection', {
+	commandProcessor.createCommand(deviceProtection, 'disable', 'Disables Device Protection', {
 
 		handler: () => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
@@ -23,10 +23,10 @@ module.exports = ({ commandProcessor, root }) => {
 		epilogue: 'A Protected Device in Service Mode allows any command to be performed on it that can be performed on an Open Device like flashing firmware or serial monitor.'
 	});
 
-	commandProcessor.createCommand(deviceProtection, 'enable', 'Enables device protection', {
+	commandProcessor.createCommand(deviceProtection, 'enable', 'Enables Device Protection', {
 		options: {
 			file: {
-				description: 'File to use for device protection'
+				description: 'File to use for Device Protection'
 			}
 		},
 		handler: (args) => {
