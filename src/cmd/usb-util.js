@@ -102,7 +102,7 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	if (platform.generation > 2) { // Skipping device protection check for Gen2 platforms
 		try {
 			const s = await deviceProtectionHelper.getProtectionStatus(device);
-			deviceIsProtected = s.protected && !s.overrridden;
+			deviceIsProtected = s.protected && !s.overridden;
 		} catch (err) {
 			if (err.message === 'Not supported') {
 				// Device Protection is not supported on certain platforms and versions.
