@@ -78,13 +78,13 @@ module.exports = class KeysCommand {
 		await this._writeKeyToDevice({ filename });
 	}
 
-	async _writeKeyToDevice({ filename, leave = false, deviceID }) {
+	async _writeKeyToDevice({ filename, leave = false, deviceID, allowProtectedDevices = false }) {
 		try {
 			await usbUtils.executeWithUsbDevice({
 				args: { idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui },
 				func: (dev) => this._writeKeyToDeviceImpl(dev, filename, leave),
 				enterDfuMode: true,
-				allowProtectedDevices: false
+				allowProtectedDevices
 			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error writing key to device.');
@@ -228,7 +228,6 @@ module.exports = class KeysCommand {
 				console.log('***************************************************************');
 			}
 		}
-		let device;
 		try {
 			await usbUtils.executeWithUsbDevice({
 				args: { idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui },
