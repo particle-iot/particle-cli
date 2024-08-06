@@ -105,10 +105,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				await DeviceProtectionHelper.disableDeviceProtection(this.device);
 
 				addToOutput.push(`${deviceStr} is now in Service Mode.${os.EOL}A Protected Device stays in Service Mode for a total of 20 reboots or 24 hours.${os.EOL}`);
-			});
-		} catch (error) {
-			if (error.message === 'Not supported') {
-				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+			} catch (error) {
+				if (error.message === 'Not supported') {
+					throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+				} else if (error.message === 'Device public key was not found') {
+					throw new Error(`Server key mismatch while putting device in Service Mode. Check that device is accessible through ${settings.apiUrl || 'https://api.particle.io'}.${os.EOL}`);
+				}
 			}
 			throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
 		}
