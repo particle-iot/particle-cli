@@ -96,13 +96,15 @@ class UsbPermissionsError extends Error {
  */
 async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 	let device = await getOneUsbDevice(args, { dfuMode });
-	let deviceIsProtected = false;
+	let deviceIsProtected = false; // Protected and Protected Devices in Service Mode
+	let disableProtection = false; // Only Protected Devices (not in Service Mode)
 
 	const platform = platformForId(device.platformId);
 	if (platform.generation > 2) { // Skipping device protection check for Gen2 platforms
 		try {
 			const s = await deviceProtectionHelper.getProtectionStatus(device);
 			deviceIsProtected = s.protected;
+			disableProtection = s.protected && !s.overridden;
 		} catch (err) {
 			if (err.message === 'Not supported') {
 				// Device Protection is not supported on certain platforms and versions.
@@ -111,7 +113,7 @@ async function executeWithUsbDevice({ args, func, dfuMode = false } = {}) {
 				throw err;
 			}
 		}
-		if (deviceIsProtected) {
+		if (disableProtection) {
 			const deviceWasInDfuMode = device.isInDfuMode;
 			if (deviceWasInDfuMode) {
 				device = await _putDeviceInSafeMode(device);
