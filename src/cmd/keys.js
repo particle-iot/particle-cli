@@ -26,8 +26,6 @@ module.exports = class KeysCommand {
 		this.auth = settings.access_token;
 		this.api = new ParticleApi(settings.apiUrl, { accessToken: this.auth }).api;
 		this.ui = new UI({ stdin: process.stdin, stdout: process.stdout, stderr: process.stderr, quiet: false });
-		this.deviceIsProtected = false;
-		this.deviceWasInDfuMode = false;
 	}
 
 	async makeKeyOpenSSL(filename, alg) {
