@@ -45,43 +45,136 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		spinnerMixin(this);
 		const { api } = this._particleApi();
 		this.api = api;
-		this.deviceId = null;
-		this.device = null;
 		this.ui = ui || this.ui;
 	}
 
 	async addNetwork(args) {
 		this.file = args.file;
-		await this._withDevice(async () => {
-			const network = await this._getNetwork();
-			await this.addWifi(network);
+		return await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth },
+			func: async (device) => {
+				await this._compatCheck(device);
+
+				const { ssid, security, password, hidden } = await this._getNetwork(device);
+				await this._performWifiOperation(device, `Adding Wi-Fi network '${ssid}'`, async () => {
+					await device.setWifiCredentials({ ssid, security, password, hidden }, { timeout: REQUEST_TIMEOUT });
+				});
+
+				this.ui.stdout.write(`Wi-Fi network '${ssid}' added successfully.${os.EOL}`);
+				this.ui.stdout.write(`To join this network, run ${chalk.yellow('particle wifi join --ssid <SSID>')}${os.EOL}`);
+				this.ui.stdout.write(os.EOL);
+			}
 		});
 	}
 
 	async joinNetwork(args) {
 		this.file = args.file;
-		await this._withDevice(async () => {
-			const network = await this._getNetwork();
-			await this.joinWifi(network);
+		return await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth },
+			func: async (device) => {
+				await this._compatCheck(device);
+
+				const { ssid, security, password, hidden } = await this._getNetwork(device);
+				let mode;
+				await this._performWifiOperation(device, `Joining Wi-Fi network '${ssid}'`, async () => {
+					mode = await device.getDeviceMode({ timeout: 10 * 1000 });
+					await device.joinNewWifiNetwork({ ssid, security, password, hidden }, { timeout: JOIN_NETWORK_TIMEOUT });
+				});
+
+				// Device does not exit listening mode after joining a network.
+				// Until the behavior is fixed, we will exit listening mode manually.
+				if (mode === 'LISTENING') {
+					this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
+					try {
+						await device.leaveListeningMode();
+					} catch (error) {
+						// Ignore error
+						// It's not critical that the device does not exit listening mode
+					}
+				}
+
+				this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully.\
+					Attempting to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
+			}
 		});
 	}
 
 	async joinKnownNetwork(args) {
 		this.file = args.file;
-		await this._withDevice(async () => {
-			await this.joinKnownWifi(args.ssid);
+		return await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth },
+			func: async (device) => {
+				await this._compatCheck(device);
+
+				let mode;
+				const ssid = args.ssid;
+				await this._performWifiOperation(device, `Joining a known Wi-Fi network '${ssid}'`, async () => {
+					mode = await device.getDeviceMode({ timeout: 10 * 1000 });
+					await device.joinKnownWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
+				});
+
+				// Device does not exit listening mode after joining a network.
+				// Until the behavior is fixed, we will exit listening mode manually.
+				if (mode === 'LISTENING') {
+					this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
+					try {
+						await device.leaveListeningMode();
+					} catch (error) {
+						// Ignore error
+						// It's not critical that the device does not exit listening mode
+					}
+				}
+
+				this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attemping to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
+			}
 		});
 	}
 
 	async clearNetworks() {
-		await this._withDevice(async () => {
-			await this.clearWifi();
+		return await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth },
+			func: async (device) => {
+				await this._compatCheck(device);
+
+				await this._performWifiOperation(device, 'Clearing Wi-Fi networks', async () => {
+					await device.clearWifiNetworks({ timeout: REQUEST_TIMEOUT });
+				});
+
+				this.ui.stdout.write(`Wi-Fi networks cleared successfully.${os.EOL}`);
+			}
 		});
 	}
 
 	async listNetworks() {
-		await this._withDevice(async () => {
-			await this.listWifi();
+		return await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth },
+			func: async (device) => {
+				await this._compatCheck(device);
+
+				let list, currentNetwork;
+				await this._performWifiOperation(device, 'Listing Wi-Fi networks', async () => {
+					list = await device.listWifiNetworks({ timeout: REQUEST_TIMEOUT });
+					currentNetwork = await this._getCurrentNetwork(device);
+				});
+
+				this.ui.stdout.write(`List of Wi-Fi networks on the device:${os.EOL}${os.EOL}`);
+				const networks = list?.networks || [];
+
+				if (networks.length) {
+					const currentSsid = currentNetwork?.ssid;
+					networks.forEach(network => {
+						const networkInfo = `- ${network.ssid} (${WifiSecurityEnum[network.security]})`;
+						if (currentSsid === network.ssid) {
+							this.ui.stdout.write(`${networkInfo} - current network${os.EOL}`);
+						} else {
+							this.ui.stdout.write(`${networkInfo}${os.EOL}`);
+						}
+					});
+				} else {
+					this.ui.stdout.write('No Wi-Fi networks found.');
+				}
+				this.ui.stdout.write(os.EOL);
+			}
 		});
 	}
 
@@ -90,48 +183,67 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		if (!ssid) {
 			throw new Error('Please provide a network name to remove using the --ssid flag.');
 		}
-		await this._withDevice(async () => {
-			await this.removeWifi(ssid);
+		return await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth },
+			func: async (device) => {
+				await this._compatCheck(device);
+
+				await this._performWifiOperation(device, 'Removing Wi-Fi networks', async () => {
+					await device.removeWifiNetwork({ ssid }, { timeout: REQUEST_TIMEOUT });
+				});
+
+				this.ui.stdout.write(`Wi-Fi network ${ssid} removed from device's list successfully.${os.EOL}`);
+				this.ui.stdout.write(`To disconnect from the network, run ${chalk.yellow('particle usb reset')}.${os.EOL}`);
+				this.ui.stdout.write(os.EOL);
+			}
 		});
 	}
 
 	async getCurrentNetwork() {
-		await this._withDevice(async () => {
-			await this.getCurrentWifiNetwork();
+		return await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth },
+			func: async (device) => {
+				await this._compatCheck(device);
+
+				const parsedResult = await this._performWifiOperation(device, 'Fetching current Wi-Fi network', async () => {
+					const currentNetwork = await this._getCurrentNetwork(device);
+					if (!currentNetwork) {
+						throw new Error('No Wi-Fi network connected');
+					}
+					return currentNetwork;
+				});
+
+				this.ui.stdout.write(`Current Wi-Fi network:${os.EOL}${os.EOL}`);
+				this.ui.stdout.write(`- SSID: ${parsedResult?.ssid}${os.EOL}` +
+					(`  BSSID: ${parsedResult?.bssid}${os.EOL}`) +
+					`  Channel: ${parsedResult?.channel}${os.EOL}` +
+					`  RSSI: ${parsedResult?.rssi}${os.EOL}${os.EOL}`);
+			}
 		});
 	}
 
-	async _withDevice(fn) {
-		try {
-			if (!this.device || this.device.isOpen === false) {
-				this.device = await usbUtils.getOneUsbDevice({ api: this.api, idOrName: this.deviceId, ui: this.ui });
+	async _compatCheck(device) {
+		const deviceId = device.id;
+		const platformId = device.platformId;
 
-				const deviceGen = platformForId(this.device.platformId).generation;
-				const platformName = platformForId(this.device.platformId).name;
-				const features = platformForId(this.device.platformId).features;
-				this.deviceId = this.device._id;
+		const deviceGen = platformForId(platformId).generation;
+		const platformName = platformForId(platformId).name;
+		const features = platformForId(platformId).features;
 
-				if (features.includes('wifi') === false) {
-					throw new Error(`This device (${this.deviceId} / ${platformName}) does not support Wi-Fi.${os.EOL}`);
-				}
-				if (deviceGen < WIFI_COMMANDS_SUPPORTED_DEVICE_GEN) {
-					throw new Error(`The 'particle wifi' commands are not supported on this device (${this.deviceId} / ${platformName}).${os.EOL}Use 'particle serial wifi' instead.${os.EOL}`);
-				}
-			}
-			return await fn();
-		} finally {
-			if (this.device && this.device.isOpen) {
-				await this.device.close();
-			}
+		if (features.includes('wifi') === false) {
+			throw new Error(`This device (${deviceId} / ${platformName}) does not support Wi-Fi.${os.EOL}`);
+		}
+		if (deviceGen < WIFI_COMMANDS_SUPPORTED_DEVICE_GEN) {
+			throw new Error(`The 'particle wifi' commands are not supported on this device (${deviceId} / ${platformName}).${os.EOL}Use 'particle serial wifi' instead.${os.EOL}`);
 		}
 	}
 
-	async _getNetwork() {
+	async _getNetwork(device) {
 		let network;
 		if (this.file) {
 			network = await this._getNetworkToConnectFromJson();
 		} else {
-			network = await this._getNetworkToConnect();
+			network = await this._getNetworkToConnect(device);
 		}
 		return network;
 	}
@@ -146,17 +258,17 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		return { ssid: network, security: this._convertToKnownSecType(security), password, hidden };
 	}
 
-	async _getNetworkToConnect({ prompt = true } = { }) {
+	async _getNetworkToConnect(device, { prompt = true } = { }) {
 		let scan = true;
 		if (prompt) {
 			scan = await this._promptForScanNetworks();
 		}
 		if (scan) {
-			const networks = await this._scanNetworks();
+			const networks = await this._scanNetworks(device);
 			if (networks.length) {
 				const network = await this._promptToSelectNetwork(networks);
 				if (network?.rescan){
-					return await this._getNetworkToConnect({ prompt: false });
+					return await this._getNetworkToConnect(device, { prompt: false });
 				} else {
 					return network;
 				}
@@ -177,8 +289,8 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		return ans.scan;
 	}
 
-	async _scanNetworks() {
-		const networks = await this._deviceScanNetworks();
+	async _scanNetworks(device) {
+		const networks = await this._deviceScanNetworks(device);
 		if (!networks.length) {
 			const answers = await this.ui.prompt([{
 				type: 'confirm',
@@ -187,7 +299,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 				default: true
 			}]);
 			if (answers.rescan){
-				return this._scanNetworks();
+				return this._scanNetworks(device);
 			}
 		}
 		return this._filterNetworks(networks);
@@ -217,17 +329,17 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		}, []);
 	}
 
-	async _deviceScanNetworks() {
+	async _deviceScanNetworks(device) {
 		this.newSpin('Scanning for Wi-Fi networks').start();
 		let attempts = NUM_TRIES;
 		let lastError = null;
 		while (attempts > 0) {
 			try {
-				if (!this.device) {
+				if (!device) {
 					throw new Error('No device found');
 				}
 
-				const networks = await this.device.scanWifiNetworks();
+				const networks = await device.scanWifiNetworks();
 				this.stopSpin();
 				return this._serializeNetworks(networks) || [];
 			} catch (error) {
@@ -268,11 +380,11 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		return { ssid: network.ssid, security: this._convertToKnownSecType(network.security), password };
 	}
 
-	async _performWifiOperation(operationName, operationCallback) {
+	async _performWifiOperation(device, operationName, operationCallback) {
 		this.newSpin(`${operationName}`).start();
 		let lastError;
 
-		if (!this.device) {
+		if (!device) {
 			this.stopSpin();
 			throw new Error('No device found');
 		}
@@ -307,132 +419,18 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		return operationName.replace(/^\w+/, match => match.toLowerCase().replace(/ing$/, ''));
 	}
 
-	async addWifi({ ssid, security, password, hidden }) {
-		await this._performWifiOperation(`Adding Wi-Fi network '${ssid}'`, async () => {
-			await this.device.setWifiCredentials({ ssid, security, password, hidden }, { timeout: REQUEST_TIMEOUT });
-		});
-
-		this.ui.stdout.write(`Wi-Fi network '${ssid}' added successfully.${os.EOL}`);
-		this.ui.stdout.write(`To join this network, run ${chalk.yellow('particle wifi join --ssid <SSID>')}${os.EOL}`);
-		this.ui.stdout.write(os.EOL);
-	}
-
-	async joinWifi({ ssid, security, password, hidden }) {
-		let mode;
-		await this._performWifiOperation(`Joining Wi-Fi network '${ssid}'`, async () => {
-			mode = await this.device.getDeviceMode({ timeout: 10 * 1000 });
-			await this.device.joinNewWifiNetwork({ ssid, security, password, hidden }, { timeout: JOIN_NETWORK_TIMEOUT });
-		});
-
-		// Device does not exit listening mode after joining a network.
-		// Until the behavior is fixed, we will exit listening mode manually.
-		if (mode === 'LISTENING') {
-			this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
-			try {
-				await this.device.leaveListeningMode();
-			} catch (error) {
-				// Ignore error
-				// It's not critical that the device does not exit listening mode
-			}
-		}
-
-		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attempting to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
-	}
-
-	async joinKnownWifi(ssid) {
-		let mode;
-		await this._performWifiOperation(`Joining a known Wi-Fi network '${ssid}'`, async () => {
-			mode = await this.device.getDeviceMode({ timeout: 10 * 1000 });
-			await this.device.joinKnownWifiNetwork({ ssid }, { timeout: JOIN_NETWORK_TIMEOUT });
-		});
-
-		// Device does not exit listening mode after joining a network.
-		// Until the behavior is fixed, we will exit listening mode manually.
-		if (mode === 'LISTENING') {
-			this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
-			try {
-				await this.device.leaveListeningMode();
-			} catch (error) {
-				// Ignore error
-				// It's not critical that the device does not exit listening mode
-			}
-		}
-
-		this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attemping to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
-	}
-
-	async clearWifi() {
-		await this._performWifiOperation('Clearing Wi-Fi networks', async () => {
-			await this.device.clearWifiNetworks({ timeout: REQUEST_TIMEOUT });
-		});
-
-		this.ui.stdout.write(`Wi-Fi networks cleared successfully.${os.EOL}`);
-	}
-
-	async _getCurrentNetwork() {
+	async _getCurrentNetwork(device) {
 		let currentNetwork;
-		const ifaces = await this.device.getNetworkInterfaceList();
-		const wifiIface = await this.device.getNetworkInterface({ index: ifaces.find(iface => iface.type === 'WIFI').index });
+		const ifaces = await device.getNetworkInterfaceList();
+		const wifiIface = await device.getNetworkInterface({ index: ifaces.find(iface => iface.type === 'WIFI').index });
 		if (wifiIface && wifiIface.flagsStrings.includes('LOWER_UP')) {
 			try {
-				currentNetwork = await this.device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
+				currentNetwork = await device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
 			} catch (error) {
 				// Ignore error if the device does not support the getCurrentWifiNetwork command
 			}
 		}
 		return currentNetwork;
-	}
-
-	async listWifi() {
-		let list, currentNetwork;
-		await this._performWifiOperation('Listing Wi-Fi networks', async () => {
-			list = await this.device.listWifiNetworks({ timeout: REQUEST_TIMEOUT });
-			currentNetwork = await this._getCurrentNetwork();
-		});
-
-		this.ui.stdout.write(`List of Wi-Fi networks on the device:${os.EOL}${os.EOL}`);
-		const networks = list?.networks || [];
-
-		if (networks.length) {
-			const currentSsid = currentNetwork?.ssid;
-			networks.forEach(network => {
-				const networkInfo = `- ${network.ssid} (${WifiSecurityEnum[network.security]})`;
-				if (currentSsid === network.ssid) {
-					this.ui.stdout.write(`${networkInfo} - current network${os.EOL}`);
-				} else {
-					this.ui.stdout.write(`${networkInfo}${os.EOL}`);
-				}
-			});
-		} else {
-			this.ui.stdout.write('No Wi-Fi networks found.');
-		}
-		this.ui.stdout.write(os.EOL);
-	}
-
-	async removeWifi(ssid) {
-		await this._performWifiOperation('Removing Wi-Fi networks', async () => {
-			await this.device.removeWifiNetwork({ ssid }, { timeout: REQUEST_TIMEOUT });
-		});
-
-		this.ui.stdout.write(`Wi-Fi network ${ssid} removed from device's list successfully.${os.EOL}`);
-		this.ui.stdout.write(`To disconnect from the network, run ${chalk.yellow('particle usb reset')}.${os.EOL}`);
-		this.ui.stdout.write(os.EOL);
-	}
-
-	async getCurrentWifiNetwork() {
-		const parsedResult = await this._performWifiOperation('Fetching current Wi-Fi network', async () => {
-			const currentNetwork = await this._getCurrentNetwork();
-			if (!currentNetwork) {
-				throw new Error('No Wi-Fi network connected');
-			}
-			return currentNetwork;
-		});
-
-		this.ui.stdout.write(`Current Wi-Fi network:${os.EOL}${os.EOL}`);
-		this.ui.stdout.write(`- SSID: ${parsedResult?.ssid}${os.EOL}` +
-            (`  BSSID: ${parsedResult?.bssid}${os.EOL}`) +
-            `  Channel: ${parsedResult?.channel}${os.EOL}` +
-            `  RSSI: ${parsedResult?.rssi}${os.EOL}${os.EOL}`);
 	}
 
 	async _pickNetworkManually() {
