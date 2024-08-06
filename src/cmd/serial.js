@@ -134,6 +134,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		let cleaningUp = false;
 		let selectedDevice;
 		let serialPort;
+		let usbDevice;
 
 		const displayError = (err) => {
 			if (err){
@@ -143,11 +144,14 @@ module.exports = class SerialCommand extends CLICommandBase {
 		};
 
 		// Called when port closes
-		const handleClose = () => {
+		const handleClose = async () => {
 			this.ui.stdout.write(`${os.EOL}`);
 			if (follow && !cleaningUp){
 				this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.  Attempting to reconnect...')}${os.EOL}`);
 				return reconnect();
+			}
+			if (usbDevice && usbDevice.isOpen) {
+				await usbDevice.close();
 			}
 			this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.')}${os.EOL}`);
 		};
@@ -190,7 +194,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "${os.EOL}`);
 			selectedDevice = device;
-			const usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId });
+			usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId });
 			const s = await getProtectionStatus(usbDevice);
 			if (s.protected) {
 				disableDeviceProtection(usbDevice);
@@ -218,7 +222,12 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		function reconnect(){
-			setTimeout(() => {
+			setTimeout(async () => {
+				usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId });
+				const s = await getProtectionStatus(usbDevice);
+				if (s.protected) {
+					disableDeviceProtection(usbDevice);
+				}
 				openPort(selectedDevice);
 			}, settings.serial_follow_delay);
 		}
