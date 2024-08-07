@@ -233,8 +233,16 @@ module.exports = class SerialCommand extends CLICommandBase {
 			const tryReconnect = async () => {
 				for (let cnt = 0; cnt < MAX_RECONNECTION_ATTEMPTS; cnt++) {
 					try {
-						return await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
+						usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
+						const s = await getProtectionStatus(usbDevice);
+						if (s.protected) {
+							await disableDeviceProtection(usbDevice);
+						}
+						return usbDevice;
 					} catch (err) {
+						if (err.message === 'Not supported') {
+							return usbDevice;
+						}
 						await delay(ATTEMPT_INTERVAL_MS);
 					}
 				}
@@ -245,10 +253,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 				usbDevice = await tryReconnect();
 				if (!usbDevice) {
 					throw new Error('Unable to reconnect to your device');
-				}
-				const s = await getProtectionStatus(usbDevice);
-				if (s.protected) {
-					await disableDeviceProtection(usbDevice);
 				}
 				openPort(selectedDevice);
 			}, settings.serial_follow_delay);
