@@ -15,7 +15,7 @@ const settings = require('../../settings');
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
-const { ensureError } = require('../lib/utilities');
+const { ensureError, delay } = require('../lib/utilities');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
@@ -136,7 +136,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 		let cleaningUp = false;
 		let selectedDevice;
 		let serialPort;
-		let usbDevice;
 		const { api, auth } = this._particleApi();
 
 		const displayError = (err) => {
@@ -152,9 +151,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 			if (follow && !cleaningUp){
 				this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.  Attempting to reconnect...')}${os.EOL}`);
 				return reconnect();
-			}
-			if (usbDevice && usbDevice.isOpen) {
-				await usbDevice.close();
 			}
 			this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.')}${os.EOL}`);
 		};
@@ -175,20 +171,37 @@ module.exports = class SerialCommand extends CLICommandBase {
 			this.ui.stdout.write(`${chalk.bold.white('Serial monitor opened successfully:')}${os.EOL}`);
 		};
 
+		const handleDeviceProtection = async () => {
+			let usbDevice;
+			try {
+				usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
+				const s = await getProtectionStatus(usbDevice);
+				if (s.protected) {
+					await disableDeviceProtection(usbDevice);
+				}
+			} catch (err) {
+				// ignore error
+			} finally {
+				if (usbDevice && usbDevice.isOpen) {
+					await usbDevice.close();
+				}
+			}
+		}
+
+
 		// If device is not found but we are still '--follow'ing to find a device,
 		// handlePortFn schedules a delayed retry using setTimeout.
 		const handlePortFn = async (device) => {
 			if (!device) {
 				if (follow) {
-					setTimeout(() => {
-						if (cleaningUp){
-							return;
-						} else {
-							this.whatSerialPortDidYouMean(port, true)
-								.catch(() => null)
-								.then(handlePortFn);
-						}
-					}, settings.serial_follow_delay);
+					await delay(settings.serial_follow_delay);
+					if (cleaningUp){
+						return;
+					} else {
+						this.whatSerialPortDidYouMean(port, true)
+							.catch(() => null)
+							.then(handlePortFn);
+					}
 					return;
 				} else {
 					throw new VError('No serial port identified');
@@ -197,11 +210,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "${os.EOL}`);
 			selectedDevice = device;
-			usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
-			const s = await getProtectionStatus(usbDevice);
-			if (s.protected) {
-				await disableDeviceProtection(usbDevice);
-			}
+			await handleDeviceProtection();
 			// Note that a Protected Device will be left in Service Mode after the operation
 			openPort();
 		};
@@ -224,38 +233,10 @@ module.exports = class SerialCommand extends CLICommandBase {
 			});
 		}
 
-		function reconnect(){
-			const MAX_RECONNECTION_ATTEMPTS= 100;	// 5 seconds with 50ms interval
-			const ATTEMPT_INTERVAL_MS = 50;
-
-			const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-			const tryReconnect = async () => {
-				for (let cnt = 0; cnt < MAX_RECONNECTION_ATTEMPTS; cnt++) {
-					try {
-						usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
-						const s = await getProtectionStatus(usbDevice);
-						if (s.protected) {
-							await disableDeviceProtection(usbDevice);
-						}
-						return usbDevice;
-					} catch (err) {
-						if (err.message === 'Not supported') {
-							return usbDevice;
-						}
-						await delay(ATTEMPT_INTERVAL_MS);
-					}
-				}
-				return null;
-			};
-
-			setTimeout(async () => {
-				usbDevice = await tryReconnect();
-				if (!usbDevice) {
-					throw new Error('Unable to reconnect to your device');
-				}
-				openPort(selectedDevice);
-			}, settings.serial_follow_delay);
+		async function reconnect(){
+			await delay(settings.serial_follow_delay);
+			await handleDeviceProtection();
+			openPort(selectedDevice);
 		}
 
 		process.on('SIGINT', handleInterrupt);
