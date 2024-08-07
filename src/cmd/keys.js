@@ -13,7 +13,6 @@ const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
 const ParticleApi = require('./api');
-const { validateDFUSupport } = require('../lib/flash-helper');
 const { DeviceProtectionError } = require('particle-usb');
 
 /**

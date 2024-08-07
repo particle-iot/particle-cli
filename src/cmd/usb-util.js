@@ -12,6 +12,7 @@ const {
 	DeviceProtectionError
 } = require('particle-usb');
 const deviceProtectionHelper = require('../lib/device-protection-helper');
+const { validateDFUSupport } = require('../lib/flash-helper');
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
@@ -131,6 +132,7 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
 	let res;
 	try {
 		if (enterDfuMode) {
+			validateDFUSupport({ device, ui: args.ui });
 			device = await reopenInDfuMode(device);
 		}
 		res = await func(device);
