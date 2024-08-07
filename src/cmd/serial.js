@@ -225,8 +225,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		function reconnect(){
-			const MAX_RECONNECTION_ATTEMPTS= 10;
-			const ATTEMPT_INTERVAL_MS = 10;
+			const MAX_RECONNECTION_ATTEMPTS= 100;	// 5 seconds with 50ms interval
+			const ATTEMPT_INTERVAL_MS = 50;
 
 			const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
