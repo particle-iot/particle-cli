@@ -238,13 +238,10 @@ module.exports = class WiFiCommands extends CLICommandBase {
 	}
 
 	async _getNetwork(device) {
-		let network;
 		if (this.file) {
-			network = await this._getNetworkToConnectFromJson();
-		} else {
-			network = await this._getNetworkToConnect(device);
+			return this._getNetworkToConnectFromJson();
 		}
-		return network;
+		return this._getNetworkToConnect(device);
 	}
 
 	async _getNetworkToConnectFromJson() {
