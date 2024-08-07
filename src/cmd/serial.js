@@ -22,6 +22,8 @@ const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
 const semver = require('semver');
 const { getProtectionStatus, disableDeviceProtection } = require('../lib/device-protection-helper');
+const ParticleApi = require('../cmd/api');
+const createApiCache = require('../lib/api-cache');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
@@ -135,6 +137,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		let selectedDevice;
 		let serialPort;
 		let usbDevice;
+		const { api, auth } = this._particleApi();
 
 		const displayError = (err) => {
 			if (err){
@@ -194,10 +197,10 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "${os.EOL}`);
 			selectedDevice = device;
-			usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId });
+			usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
 			const s = await getProtectionStatus(usbDevice);
 			if (s.protected) {
-				disableDeviceProtection(usbDevice);
+				await disableDeviceProtection(usbDevice);
 			}
 			// Note that a Protected Device will be left in Service Mode after the operation
 			openPort();
@@ -222,11 +225,30 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		function reconnect(){
+			const MAX_RECONNECTION_ATTEMPTS= 10;
+			const ATTEMPT_INTERVAL_MS = 10;
+
+			const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+			const tryReconnect = async () => {
+				for (let cnt = 0; cnt < MAX_RECONNECTION_ATTEMPTS; cnt++) {
+					try {
+						return await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
+					} catch (err) {
+						await delay(ATTEMPT_INTERVAL_MS);
+					}
+				}
+				return null;
+			};
+
 			setTimeout(async () => {
-				usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId });
+				usbDevice = await tryReconnect();
+				if (!usbDevice) {
+					throw new Error('Unable to reconnect to your device');
+				}
 				const s = await getProtectionStatus(usbDevice);
 				if (s.protected) {
-					disableDeviceProtection(usbDevice);
+					await disableDeviceProtection(usbDevice);
 				}
 				openPort(selectedDevice);
 			}, settings.serial_follow_delay);
@@ -243,6 +265,18 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		return this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
+	}
+
+	/**
+	 * Creates and returns the Particle API and authentication token.
+	 *
+	 * @returns {Object} The Particle API instance and authentication token.
+	 */
+	_particleApi() {
+		const auth = settings.access_token;
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const apiCache = createApiCache(api);
+		return { api: apiCache, auth };
 	}
 
 	/**
