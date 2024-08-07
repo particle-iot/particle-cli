@@ -93,8 +93,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 					}
 				}
 
-				this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully.\
-					Attempting to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
+				this.ui.stdout.write(`Wi-Fi network '${ssid}' configured successfully. Attempting to join...${os.EOL}Use ${chalk.yellow('particle wifi current')} to check the current network.${os.EOL}`);
 			}
 		});
 	}
