@@ -10,7 +10,7 @@ const {
 const stripAnsi = require('strip-ansi');
 
 
-describe.only('USB Commands [@device]', function cliUSBCommands(){
+describe('USB Commands [@device]', function cliUSBCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
