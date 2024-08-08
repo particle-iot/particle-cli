@@ -95,7 +95,7 @@ class UsbPermissionsError extends Error {
  *   dfuMode: true
  * });
  */
-async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode = false, allowProtectedDevices = true } = {}) {
+async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowProtectedDevices = true } = {}) {
 	let device = await getOneUsbDevice(args);
 	let deviceIsProtected = false; // Protected and Protected Devices in Service Mode
 	let disableProtection = false; // Only Protected Devices (not in Service Mode)
@@ -167,6 +167,9 @@ async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 
 	while (Date.now() - start < REBOOT_TIME_MSEC) {
 		try {
+			if (device && device.isOpen) {
+				await device.close();
+			}
 			await delay(REBOOT_INTERVAL_MSEC);
 			device = await reopenDevice({ id: deviceId });
 			if (device.isInDfuMode) {
@@ -176,12 +179,11 @@ async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 			await device.getDeviceId();
 			return device;
 		} catch (error) {
-			// ignore error
+			// ignore errors
 		}
 	}
 	return null;
 }
-
 
 /**
 	 * Attempts to enter Safe Mode to enable operations on Protected Devices in DFU mode.
@@ -402,7 +404,9 @@ async function reopenInDfuMode(device) {
 	while (Date.now() - start < REOPEN_TIMEOUT) {
 		await delay(REOPEN_DELAY);
 		try {
-			await device.close();
+			if (device && device.isOpen) {
+				await device.close();
+			}
 			device = await openUsbDeviceById(id, { dfuMode: true });
 			if (!device.isInDfuMode) {
 				await device.enterDfuMode();
