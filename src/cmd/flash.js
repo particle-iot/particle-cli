@@ -21,10 +21,10 @@ const {
 	parseModulesToFlash,
 	maintainDeviceProtection,
 	flashFiles,
-	validateDFUSupport,
 	getFileFlashInfo
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
+const { validateDFUSupport } = require('./device-util');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {

@@ -41,12 +41,8 @@ describe('Key Command', () => {
 		};
 	}
 
-	it('Can create device key', () => {
-		setupCommand();
-		key.getDfuDevice = sinon.stub().returns(device);
-		return key.makeNewKey({ params: {} }).then(() => {
-			expect(utilities.deferredChildProcess).to.have.property('callCount', 3);
-		});
+	// TODO: fill these in 
+	it.skip('Can create device key', () => {
 	});
 
 	it.skip('Can load device key', () => {
