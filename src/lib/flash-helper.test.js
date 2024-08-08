@@ -6,7 +6,6 @@ const {
 	createFlashSteps,
 	filterModulesToFlash,
 	prepareDeviceForFlash,
-	validateDFUSupport,
 	maintainDeviceProtection,
 	getFileFlashInfo,
 	_get256Hash,
@@ -16,6 +15,7 @@ const { PATH_TMP_DIR } = require('../../test/lib/env');
 const path = require('path');
 const fs = require('fs-extra');
 const { ensureDir } = require('fs-extra/lib/mkdirs');
+const { validateDFUSupport } = require('../cmd/device-util');
 
 describe('flash-helper', () => {
 	const createModules = async () => {

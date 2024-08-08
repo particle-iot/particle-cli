@@ -1,3 +1,6 @@
+const { platformForId } = require('../lib/platform');
+const semver = require('semver');
+
 /**
  * Check if the string can represent a valid device ID.
  *
@@ -44,4 +47,12 @@ module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = fal
 			}
 			throw error;
 		});
+};
+
+module.exports.validateDFUSupport = ({ device, ui }) => {
+	const platform = platformForId(device.platformId);
+	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0')) && platform.generation === 2) {
+		ui.logDFUModeRequired({ showVersionWarning: true });
+		throw new Error('Put the device in DFU mode and try again');
+	}
 };

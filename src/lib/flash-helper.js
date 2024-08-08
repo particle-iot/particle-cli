@@ -2,13 +2,12 @@ const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
 const VError = require('verror');
-const { PLATFORMS, platformForId } =require('./platform');
+const { PLATFORMS } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo, createProtectedModule } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
-const semver = require('semver');
 const { DeviceProtectionError } = require('particle-usb');
 const utilities = require('./utilities');
 const { getProtectionStatus } = require('./device-protection-helper');
@@ -356,14 +355,6 @@ function _get256Hash(module) {
 	}
 }
 
-function validateDFUSupport({ device, ui }) {
-	const platform = platformForId(device.platformId);
-	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0')) && platform.generation === 2) {
-		ui.logDFUModeRequired({ showVersionWarning: true });
-		throw new Error('Put the device in DFU mode and try again');
-	}
-}
-
 async function maintainDeviceProtection({ modules, device }) {
 	try {
 		const s = await getProtectionStatus(device);
@@ -407,7 +398,6 @@ module.exports = {
 	parseModulesToFlash,
 	createFlashSteps,
 	prepareDeviceForFlash,
-	validateDFUSupport,
 	maintainDeviceProtection,
 	getFileFlashInfo,
 	_get256Hash,
