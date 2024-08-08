@@ -96,7 +96,7 @@ class UsbPermissionsError extends Error {
  * });
  */
 async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode = false, allowProtectedDevices = true } = {}) {
-	let device = await getOneUsbDevice(args, { dfuMode });
+	let device = await getOneUsbDevice(args);
 	let deviceIsProtected = false; // Protected and Protected Devices in Service Mode
 	let disableProtection = false; // Only Protected Devices (not in Service Mode)
 
@@ -159,15 +159,11 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
  * @param {*} deviceId
  * @returns
  */
-async function waitForDeviceToRespond(device, { timeout = 10000 } = {}) {
-	const deviceId = device.id;
+async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 	const REBOOT_TIME_MSEC = timeout;
 	const REBOOT_INTERVAL_MSEC = 100;
 	const start = Date.now();
-
-	if (device.isOpen) {
-		await device.close();
-	}
+	let device;
 
 	while (Date.now() - start < REBOOT_TIME_MSEC) {
 		try {

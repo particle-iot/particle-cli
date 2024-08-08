@@ -74,6 +74,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _flashOverUsb(device, binary, factory) {
+		const deviceId = device.id;
 		const platformName = platformForId(device.platformId).name;
 		validateDFUSupport({ device, ui: this.ui });
 
@@ -105,7 +106,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		device = await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 
 		// The device obtained here is closed so reopen the device
-		device = await usbUtils.waitForDeviceToRespond(device, { timeout: 5000 });
+		device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
 		return device;
 	}
 
@@ -133,6 +134,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _flashLocal(device, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose=true) {
+		const deviceId = device.id;
 		const platformId = device.platformId;
 		const platformName = platformForId(platformId).name;
 		const currentDeviceOsVersion = device.firmwareVersion;
@@ -181,7 +183,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		// The device obtained here is may be closed so reopen the device and ensure its ready
 		// to talk to
-		device = await usbUtils.waitForDeviceToRespond(device, { timeout: 5000 });
+		device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
 		return device;
 	}
 
