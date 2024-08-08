@@ -18,7 +18,6 @@ const KeysCommand = proxyquire('./keys', {
 describe('Key Command', () => {
 	var key;
 	var filename;
-	var device;
 
 	function setupCommand(options = {}) {
 		utilities.deferredChildProcess = sinon.stub().returns(Promise.resolve());
@@ -34,14 +33,9 @@ describe('Key Command', () => {
 		api.sendPublicKey = sinon.stub();
 		api.ready = sinon.stub().returns(true);
 
-		device = {
-			writeOverDfu: sinon.stub(),
-			close: sinon.stub()
-			// readOverDfu is stubbed with in each test for specific return values
-		};
 	}
 
-	// TODO: fill these in 
+	// TODO: fill these in
 	it.skip('Can create device key', () => {
 	});
 
