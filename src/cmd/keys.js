@@ -13,7 +13,6 @@ const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
 const ParticleApi = require('./api');
-const { validateDFUSupport } = require('../lib/flash-helper');
 const { DeviceProtectionError } = require('particle-usb');
 
 /**
@@ -53,66 +52,79 @@ module.exports = class KeysCommand {
 	}
 
 	async _makeNewKey({ filename, deviceID }) {
-		let device;
 		try {
-			device = await this.getDfuDevice({ deviceID });
-			const protocol = this._getDeviceProtocol();
-			const alg = this._getPrivateKeyAlgorithm({ protocol });
-			filename = await this.makeKeyOpenSSL(filename || device.id, alg);
-			console.log(`New key ${path.basename(filename)} created for device ${device.id}`);
+			await usbUtils.executeWithUsbDevice({
+				args: { idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui },
+				func: (dev) => this._makeNewKeyImpl(dev, filename),
+				enterDfuMode: true
+			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error creating keys');
-		} finally {
-			if (device) {
-				await device.close();
-			}
 		}
+	}
+
+	async _makeNewKeyImpl(device, filename) {
+		this.platform = device._info.type;
+		const protocol = this._getDeviceProtocol();
+		const alg = this._getPrivateKeyAlgorithm({ protocol });
+		filename = await this.makeKeyOpenSSL(filename || device.id, alg);
+		console.log(`New key ${path.basename(filename)} created for device ${device.id}`);
 	}
 
 	async writeKeyToDevice({ params: { filename } }) {
 		await this._writeKeyToDevice({ filename });
 	}
 
-	async _writeKeyToDevice({ filename, leave = false, deviceID }) {
-		let device;
+	async _writeKeyToDevice({ filename, leave = false, deviceID, allowProtectedDevices = false }) {
 		try {
-			device = await this.getDfuDevice({ deviceID });
-
-			filename = utilities.filenameNoExt(filename || device.id) + '.der';
-
-			if (!fs.existsSync(filename)){
-				throw new VError("I couldn't find the file: " + filename);
-			}
-
-			const protocol = this._getDeviceProtocol();
-			const alg = this._getPrivateKeyAlgorithm({ protocol });
-			let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
-			await this._saveKeyFromDevice({ filename: prefilename, force: true, device });
-			let segment = this._getPrivateKeySegment({ protocol });
-			const buffer = fs.readFileSync(filename, null); // 'null' to get the raw data
-			await this._dfuWrite(device, buffer, { altSetting: segment.alt, startAddr: segment.address, leave: leave, noErase: true });
-
-			console.log(`Key ${filename} written to device`);
+			await usbUtils.executeWithUsbDevice({
+				args: { idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui },
+				func: (dev) => this._writeKeyToDeviceImpl(dev, filename, leave),
+				enterDfuMode: true,
+				allowProtectedDevices
+			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Error writing key to device.');
-		} finally {
-			if (device) {
-				await device.close();
-			}
 		}
+	}
+
+	async _writeKeyToDeviceImpl(device, filename, leave) {
+		console.log('Writing key to device');
+		this.platform = device._info.type;
+		filename = utilities.filenameNoExt(filename || device.id) + '.der';
+		console.log(`Writing key ${filename} to device ${device.id}`);
+
+		if (!fs.existsSync(filename)){
+			throw new VError("I couldn't find the file: " + filename);
+		}
+
+		const protocol = this._getDeviceProtocol();
+		const alg = this._getPrivateKeyAlgorithm({ protocol });
+		let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
+		await this._saveKeyFromDevice({ filename: prefilename, force: true, device });
+		let segment = this._getPrivateKeySegment({ protocol });
+		const buffer = fs.readFileSync(filename, null); // 'null' to get the raw data
+		await this._dfuWrite(device, buffer, { altSetting: segment.alt, startAddr: segment.address, leave: leave, noErase: true });
+
+		console.log(`Key ${filename} written to device`);
 	}
 
 	async saveKeyFromDevice({ force, params: { filename } }){
-		const device = await this.getDfuDevice();
-		filename = utilities.filenameNoExt(filename || device.id) + '.der';
-		try {
-			await this._saveKeyFromDevice({ filename, force, device });
-		} finally {
-			await device.close();
-		}
+		await usbUtils.executeWithUsbDevice({
+			args: { api: this.api, auth: this.auth, ui: this.ui },
+			func: (device) => this._saveKeyFromDevice({ force, filename, device }),
+			enterDfuMode: true
+		});
+
 	}
 
-	async _saveKeyFromDevice({ filename, force, device }) {
+	async _saveKeyFromDevice({ force, filename, device }) {
+		this.platform = device._info.type;
+		filename = utilities.filenameNoExt(filename || device.id) + '.der';
+		await this._saveKeyFromDeviceImpl({ filename, force, device });
+	}
+
+	async _saveKeyFromDeviceImpl({ filename, force, device }) {
 		const { tryDelete, filenameNoExt, deferredChildProcess } = utilities;
 
 		if (!force && fs.existsSync(filename)) {
@@ -153,7 +165,8 @@ module.exports = class KeysCommand {
 		const { filenameNoExt, deferredChildProcess, readFile } = utilities;
 
 		if (!deviceID) {
-			// default to the connected device if deviceID is not passed
+			// default to the connected device if Device ID is not passed
+			// This is only to get the Device ID
 			let device = await usbUtils.getOneUsbDevice({ ui: this.ui });
 			deviceID = device.id;
 			await device.close();
@@ -212,22 +225,29 @@ module.exports = class KeysCommand {
 				console.log('***************************************************************');
 			}
 		}
-
 		try {
-			const device = await this.getDfuDevice({ deviceID });
-			deviceID = device.id;
-			await device.close();
-
-			const protocol = this._getDeviceProtocol();
-			const algorithm = this._getPrivateKeyAlgorithm({ protocol });
-			const filename = `${deviceID}_${algorithm}_new`;
-			await this._makeNewKey({ filename, deviceID });
-			await this._writeKeyToDevice({ filename, leave: true, deviceID });
-			await this._sendPublicKeyToServer({ deviceID, filename, algorithm });
-			console.log('Okay!  New keys in place, your device should restart.');
+			await usbUtils.executeWithUsbDevice({
+				args: { idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui },
+				func: (dev) => this._keyDoctor(dev),
+				enterDfuMode: true
+			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Make sure your device is connected to your computer, and that your computer is online');
 		}
+	}
+
+	async _keyDoctor(device) {
+		const deviceID = device.id;
+		this.platform = device._info.type;
+		await device.close();
+
+		const protocol = this._getDeviceProtocol();
+		const algorithm = this._getPrivateKeyAlgorithm({ protocol });
+		const filename = `${deviceID}_${algorithm}_new`;
+		await this._makeNewKey({ filename, deviceID });
+		await this._writeKeyToDevice({ filename, leave: true, deviceID });
+		await this._sendPublicKeyToServer({ deviceID, filename, algorithm });
+		console.log('Okay!  New keys in place, your device should restart.');
 	}
 
 	_createAddressBuffer(ipOrDomain){
@@ -266,7 +286,6 @@ module.exports = class KeysCommand {
 			throw new VError('Please specify a server key in DER format.');
 		}
 
-		let device;
 		try {
 			let noDevice = false;
 			if (deviceType) {
@@ -276,76 +295,82 @@ module.exports = class KeysCommand {
 				this.platform = deviceType;
 				noDevice = true;
 			} else {
-				device = await this.getDfuDevice();
-			}
-
-			const protocol = this._getDeviceProtocol();
-			const derFile = await this._getDERPublicKey(filename, { protocol });
-			const bufferFile = await this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
-
-			const segment = this._getServerKeySegment({ protocol });
-
-			if (!noDevice) {
-				const buffer = fs.readFileSync(bufferFile);
-				await this._dfuWrite(device, buffer, { altSetting: segment.alt, startAddr: segment.address, leave: false, noErase: true });
-			}
-
-			if (!noDevice){
-				console.log('Okay!  New keys in place, your device will not restart.');
-			} else {
-				console.log('Okay!  Formatted server key file generated for this type of device.');
+				await usbUtils.executeWithUsbDevice({
+					args: { api: this.api, auth: this.auth, ui: this.ui },
+					func: (dev) => this._writeServerPublicKey(dev, noDevice, host, port, filename, outputFilename),
+					enterDfuMode: true,
+					allowProtectedDevices: false
+				});
 			}
 		} catch (err) {
 			throw new VError(ensureError(err), 'Make sure your device is connected to your computer');
-		} finally {
-			if (device) {
-				await device.close();
-			}
+		}
+	}
+
+	async _writeServerPublicKey(device, noDevice, host, port, filename, outputFilename) {
+		this.platform = device._info.type;
+		const protocol = this._getDeviceProtocol();
+		const derFile = await this._getDERPublicKey(filename, { protocol });
+		const bufferFile = await this._formatPublicKey(derFile, host, port, { protocol, outputFilename });
+
+		const segment = this._getServerKeySegment({ protocol });
+
+		if (!noDevice) {
+			const buffer = fs.readFileSync(bufferFile);
+			await this._dfuWrite(device, buffer, { altSetting: segment.alt, startAddr: segment.address, leave: false, noErase: true });
+		}
+
+		if (!noDevice){
+			console.log('Okay!  New keys in place, your device will not restart.');
+		} else {
+			console.log('Okay!  Formatted server key file generated for this type of device.');
 		}
 	}
 
 	async readServerAddress() {
-		let device;
 		try {
-			device = await this.getDfuDevice();
-
-			const protocol = this._getDeviceProtocol();
-			const segment = this._getServerKeySegment({ protocol });
-
-			const keyBuf = await this._dfuRead(device, { altSetting: segment.alt, startAddr: segment.address, size: segment.size });
-
-			let offset = segment.addressOffset || 384;
-			let portOffset = segment.portOffset || 450;
-			let type = keyBuf[offset];
-			let len = keyBuf[offset+1];
-			let data = keyBuf.slice(offset + 2, offset + 2 + len);
-			let port = keyBuf[portOffset] << 8 | keyBuf[portOffset+1];
-			if (port === 0xFFFF){
-				port = protocol === 'tcp' ? 5683 : 5684;
-			}
-
-			let host = protocol === 'tcp' ? 'device.spark.io' : 'udp.particle.io';
-
-			if (len > 0){
-				if (type === 0){
-					host = Array.prototype.slice.call(data).join('.');
-				} else if (type === 1){
-					host = data.toString('utf8');
-				}
-			}
-
-			let result = { hostname: host, port: port, protocol: protocol, slashes: true };
-
-			console.log();
-			console.log(url.format(result));
-			return result;
+			await usbUtils.executeWithUsbDevice({
+				args: { api: this.api, auth: this.auth, ui: this.ui },
+				func: (dev) => this._readServerAddress(dev),
+				enterDfuMode: true
+			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Make sure your device is connected to your computer');
-		} finally {
-			if (device) {
-				await device.close();
+		}
+	}
+
+	async _readServerAddress(device) {
+		this.platform = device._info.type;
+		const protocol = this._getDeviceProtocol();
+		const segment = this._getServerKeySegment({ protocol });
+
+		const keyBuf = await this._dfuRead(device, { altSetting: segment.alt, startAddr: segment.address, size: segment.size });
+
+		let offset = segment.addressOffset || 384;
+		let portOffset = segment.portOffset || 450;
+		let type = keyBuf[offset];
+		let len = keyBuf[offset+1];
+		let data = keyBuf.slice(offset + 2, offset + 2 + len);
+		let port = keyBuf[portOffset] << 8 | keyBuf[portOffset+1];
+		if (port === 0xFFFF){
+			port = protocol === 'tcp' ? 5683 : 5684;
+		}
+
+		let host = protocol === 'tcp' ? 'device.spark.io' : 'udp.particle.io';
+
+		if (len > 0){
+			if (type === 0){
+				host = Array.prototype.slice.call(data).join('.');
+			} else if (type === 1){
+				host = data.toString('utf8');
 			}
 		}
+
+		let result = { hostname: host, port: port, protocol: protocol, slashes: true };
+
+		console.log();
+		console.log(url.format(result));
+		return result;
 	}
 
 	_getServerKeySegment({ protocol }){
@@ -479,14 +504,17 @@ module.exports = class KeysCommand {
 		return filename;
 	}
 
-	async getDfuDevice({ deviceID } = {}) {
-		let device = await usbUtils.getOneUsbDevice({ idOrName: deviceID, api: this.api, auth: this.auth, ui: this.ui });
-		if (!device.isInDfuMode) {
-			validateDFUSupport({ device, ui: this.ui });
-			device = await usbUtils.reopenInDfuMode(device);
-		}
-		this.platform = device._info.type;
-		return device;
+	/**
+	 * Resets the device and waits for it to restart.
+	 *
+	 * @async
+	 * @param {Object} device - The device to reset.
+	 * @returns {Promise<void>}
+	 */
+	async _putDeviceInSafeMode(device) {
+		await device.enterSafeMode();
+		await device.close();
+		device = await usbUtils.reopenInNormalMode( { id: device.id });
 	}
 
 	_getDctKeySegments() {

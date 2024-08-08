@@ -123,7 +123,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 *
 	 * This method checks the current protection status of the device and proceeds to enable protection by
 	 * either terminating the protection if the device is already protected or enabling protection on the device
-	 * if the device is not protected and the device protection feature is active in the product.
+	 * if the device is not protected and the Device Protection feature is active in the product.
 	 * It flashes a protected bootloader binary to the device if necessary and remove the device from development mode.
 	 *
 	 * @async
@@ -158,12 +158,12 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 
 				// Open Device
 				let localBootloaderPath = file;
-				// bypass checking the product and clearing development mode when the bootloader is provided to allow for enabling device protection offline
+				// bypass checking the product and clearing development mode when the bootloader is provided to allow for enabling Device Protection offline
 				const onlineMode = !file;
 				if (onlineMode) {
 					const deviceProtectionActiveInProduct = await this._isDeviceProtectionActiveInProduct();
 					if (!deviceProtectionActiveInProduct) {
-						addToOutput.push(`${deviceStr} is not in a product that supports device protection.${os.EOL}`);
+						addToOutput.push(`${deviceStr} is not in a product that supports Device Protection.${os.EOL}`);
 						return;
 					}
 
@@ -258,10 +258,10 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	}
 
 	/**
-	 * Checks if device protection is active in the product.
+	 * Checks if Device Protection is active in the product.
 	 *
 	 * @async
-	 * @returns {Promise<boolean>} True if device protection is active, false otherwise.
+	 * @returns {Promise<boolean>} True if Device Protection is active, false otherwise.
 	 */
 	async _isDeviceProtectionActiveInProduct() {
 		await this._getProductId();
