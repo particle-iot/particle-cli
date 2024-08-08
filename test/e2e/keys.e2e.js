@@ -12,7 +12,7 @@ const {
 const { delay } = require('../lib/mocha-utils');
 
 
-describe.only('Keys Commands [@device]', function cliKeysCommands(){
+describe('Keys Commands [@device]', function cliKeysCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [

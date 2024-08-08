@@ -107,7 +107,7 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
 			deviceIsProtected = s.overridden || s.protected;
 			disableProtection = s.protected && !s.overridden;
 			if (deviceIsProtected && !allowProtectedDevices) {
-				throw new Error('Operation cannot be completed due to Device Protection.');
+				throw new Error('This command is not allowed on Protected Devices.');
 			}
 		} catch (err) {
 			if (err.message === 'Not supported') {
