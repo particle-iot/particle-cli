@@ -186,7 +186,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 					await usbDevice.close();
 				}
 			}
-		}
+		};
 
 
 		// If device is not found but we are still '--follow'ing to find a device,
