@@ -6,13 +6,14 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME,
 	PATH_PROJ_STROBY_INO,
-	PATH_FIXTURES_PROJECTS_DIR
+	PATH_FIXTURES_PROJECTS_DIR,
+	PATH_FIXTURES_BINARIES_DIR
 } = require('../lib/env');
 const { delay } = require('../lib/mocha-utils');
 const stripAnsi = require('strip-ansi');
 
 
-describe('Flash Commands [@device]', () => {
+describe('Flash Commands for Protected Devices [@device]', () => {
 	const help = [
 		'Send firmware to your device',
 		'Usage: particle flash [options] [device|binary] [files...]',
@@ -50,6 +51,8 @@ describe('Flash Commands [@device]', () => {
 		'To avoid this behavior, pass the --application-only flag.'
 	];
 
+	const argsDp = ['device-protection', 'status'];
+
 	before(async () => {
 		await cli.setTestProfileAndLogin();
 	});
@@ -86,10 +89,12 @@ describe('Flash Commands [@device]', () => {
 		expect(exitCode).to.equal(0);
 	});
 
-	it('Flashes a project over cloud', async () => {
+	it('Fails to flash a project over cloud', async () => {
 		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'stroby');
 		const args = ['flash', DEVICE_NAME];
+		const { stdout: stdoutPBefore } = await cli.run(argsDp);
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
+		const { stdout: stdoutPAfter } = await cli.run(argsDp);
 		const log = [
 			'Including:',
 			'    project.properties',
@@ -98,134 +103,155 @@ describe('Flash Commands [@device]', () => {
 			'Compile succeeded.',
 			'',
 			`Flashing firmware to your device ${DEVICE_NAME}`,
-			'Flash success!'
+			`Failed to flash ${DEVICE_NAME}: Update denied - device protection active`
 		];
 
 		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-
-		await cli.waitForVariable('name', 'stroby');
+		expect(exitCode).to.equal(1);
+		expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+		expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 	});
 
-	it('Flashes a project with an example  over cloud', async () => {
-		const cwd = path.join(PATH_FIXTURES_PROJECTS_DIR, 'lib-with-example');
-		const args = ['flash', DEVICE_NAME];
-		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
-		const log = [
-			'Including:',
-			'    lib/Particle_TEST_E2E_CLI_LIB/src/Particle_TEST_E2E_CLI_LIB.h',
-			'    project.properties',
-			'    src/app.ino',
-			'',
-			'Compile succeeded.',
-			'',
-			`Flashing firmware to your device ${DEVICE_NAME}`,
-			'Flash success!'
-		];
-
-		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-
-		await cli.waitForVariable('name', 'lib-with-example');
-	});
-
-	// TODO (mirande): need a better way to confirm device is back online after
-	// flashing - in this case, the current hackaround doesn't work b/c tinker
-	// doesn't expose a `name` variable
-	it.skip('FIXME: Flashes a known app  over cloud', async () => {
-		const args = ['flash', DEVICE_NAME, 'tinker'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const log = [
-			'Including:',
-			`    ${PATH_PROJ_STROBY_INO}`,
-			'',
-			'Compile succeeded.',
-			'',
-			`Flashing firmware to your device ${DEVICE_NAME}`,
-			'Flash success!'
-		];
-
-		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-
-		await cli.waitForVariable('name', 'tinker');
-	});
-
-	it('Flashes an `.ino` file  over cloud', async () => {
+	it('Fails to flash an `.ino` file over cloud', async () => {
 		const args = ['flash', DEVICE_NAME, PATH_PROJ_STROBY_INO];
-		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			`Flashing firmware to your device ${DEVICE_NAME}`,
-			'Flash success!'
+			`Failed to flash ${DEVICE_NAME}: Update denied - device protection active`
 		];
+
+		const { stdout: stdoutPBefore } = await cli.run(argsDp);
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout: stdoutPAfter } = await cli.run(argsDp);
 
 		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-
-		await cli.waitForVariable('name', 'stroby');
-	});
-
-	it('Flashes a `.bin` file  over cloud', async () => {
-		const { bin } = await cli.compileBlankFirmwareForTest(DEVICE_PLATFORM_NAME);
-		const args = ['flash', DEVICE_NAME, bin];
-		const { stdout, stderr, exitCode } = await cli.run(args);
-		const log = [
-			`Flashing firmware to your device ${DEVICE_NAME}`,
-			'Flash success!'
-		];
-
-		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
-		expect(stderr).to.equal('');
-		expect(exitCode).to.equal(0);
-
-		await cli.waitForVariable('name', 'blank');
+		expect(exitCode).to.equal(1);
+		expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+		expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 	});
 
 	it('Flashes a `.bin` file over usb', async () => {
 		await cli.waitUntilOnline();
-		await cli.enterDFUMode();
-		const { bin } = await cli.compileBlankFirmwareForTest(DEVICE_PLATFORM_NAME);
-		const args = ['flash', bin, '--usb'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
+		const filename = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-tinker-620.bin');
+		const args = ['flash', '--usb', filename];
 		const log = [
 			`Flashing ${DEVICE_PLATFORM_NAME} device ${DEVICE_ID}`,
-			`Flashing blank-${DEVICE_PLATFORM_NAME}.bin`,
+			'Flashing invalidate-128k-user-part',
+			'Flashing argon-tinker-620.bin',
 			'Flash success!'
 		];
+
+		const { stdout: stdoutPBefore } = await cli.run(argsDp);
+		await cli.enterDFUMode();
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout: stdoutPAfter } = await cli.run(argsDp);
 
 		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
-		await cli.waitForVariable('name', 'blank');
+		expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+		expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
+
+		await cli.resetDevice();
+		await delay(5000);
 	});
 
 	it('Fails to flash missing or unrecognized app over cloud', async () => {
 		const args = ['flash', DEVICE_NAME, 'WATNOPE.bin'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
 			`Failed to flash ${DEVICE_NAME}: I couldn't find that file: WATNOPE.bin`
 		];
 
+		const { stdout: stdoutPBefore } = await cli.run(argsDp);
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout: stdoutPAfter } = await cli.run(argsDp);
+
 		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
+		expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+		expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 	});
 
 	it('Fails to flash missing or unrecognized app when over usb', async () => {
 		await cli.enterDFUMode();
-		await delay(5000);
 		const args = ['flash', 'WATNOPE.bin', '--usb'];
-		const { stdout, stderr, exitCode } = await cli.run(args);
 		const log = [
-			'WATNOPE.bin doesn\'t exist'
+			'Error: WATNOPE.bin doesn\'t exist'
 		];
+
+		const { stdout: stdoutPBefore } = await cli.run(argsDp);
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout: stdoutPAfter } = await cli.run(argsDp);
 
 		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
+		expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+		expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
+
+		await cli.resetDevice();
+		await delay(5000);
+	});
+
+	it('Flashes a file locally in dfu mode', async () => {
+		await cli.waitUntilOnline();
+		const filename = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-tinker-620.bin');	// FIXME
+		const args = ['flash', '--local', filename, '--application-only'];
+		const log = [
+			'Flashing invalidate-128k-user-part',
+			'Flash success!'
+		];
+
+		const { stdout: stdoutPBefore } = await cli.run(argsDp);
+		await cli.enterDFUMode();
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout: stdoutPAfter } = await cli.run(argsDp);
+
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+		expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+		expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
+
+		await cli.resetDevice();
+		await delay(5000);
+	});
+
+	it('Flashes a file locally in normal mode', async () => {
+		await cli.waitUntilOnline();
+		const filename = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon-bootloader-620.bin');	// FIXME
+		const args = ['flash', '--local', filename, '--application-only'];
+		const log = [
+			'Flashing argon-bootloader-620.bin',
+			'Flash success!'
+		];
+
+		const { stdout: stdoutPBefore } = await cli.run(argsDp);
+		const { stdout, stderr, exitCode } = await cli.run(args);
+		const { stdout: stdoutPAfter } = await cli.run(argsDp);
+
+		expect(stripAnsi(stdout).split('\n')).to.include.members(log);
+		expect(stderr).to.equal('');
+		expect(exitCode).to.equal(0);
+		expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+		expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+		expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
+
+		await cli.resetDevice();
+		await delay(5000);
 	});
 });

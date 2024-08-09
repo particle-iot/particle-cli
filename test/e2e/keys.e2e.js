@@ -9,6 +9,7 @@ const {
 	PATH_TMP_DIR,
 	PATH_REPO_DIR
 } = require('../lib/env');
+const { delay } = require('../lib/mocha-utils');
 
 
 describe('Keys Commands [@device]', function cliKeysCommands(){
@@ -72,6 +73,7 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 
 		afterEach(async () => {
 			await cli.resetDevice();
+			await delay(5000);
 			await cli.waitUntilOnline();
 		});
 
@@ -172,6 +174,12 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 	});
 
 	describe('Keys Address Subcommand', () => {
+		after(async () => {
+			await cli.resetDevice();
+			await delay(5000);
+			await cli.waitUntilOnline();
+		});
+
 		it('Reads server address from device\'s server public key', async () => {
 			await cli.enterDFUMode();
 			const { stdout, stderr, exitCode } = await cli.run(['keys', 'address']);
@@ -180,9 +188,6 @@ describe('Keys Commands [@device]', function cliKeysCommands(){
 			expect(stdout.trim()).to.match(addressPtn);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
-
-			await cli.resetDevice();
-			await cli.waitUntilOnline();
 		});
 	});
 });

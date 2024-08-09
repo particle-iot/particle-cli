@@ -177,9 +177,8 @@ describe('Wifi Commands', () => {
 				channel: 6
 			}]);
 			const wifiCommands = new WiFiCommands({ ui });
-			wifiCommands.device = openDevice;
 
-			const networks = await wifiCommands._deviceScanNetworks();
+			const networks = await wifiCommands._deviceScanNetworks(openDevice);
 
 			expect(networks).to.eql([{
 				ssid: 'network1',
@@ -195,10 +194,9 @@ describe('Wifi Commands', () => {
 			openDevice.scanWifiNetworks.rejects(new Error('error'));
 			let error;
 			const wifiCommands = new WiFiCommands({ ui });
-			wifiCommands.device = openDevice;
 
 			try {
-				await wifiCommands._deviceScanNetworks({ customRetryCount: 1 });
+				await wifiCommands._deviceScanNetworks(openDevice, { customRetryCount: 1 });
 			} catch (_error) {
 				error = _error;
 			}
@@ -211,9 +209,8 @@ describe('Wifi Commands', () => {
 		it('returns empty if there is no networks', async () => {
 			openDevice.scanWifiNetworks.resolves([]);
 			const wifiCommands = new WiFiCommands({ ui });
-			wifiCommands.device = openDevice;
 
-			const networks = await wifiCommands._deviceScanNetworks();
+			const networks = await wifiCommands._deviceScanNetworks(openDevice);
 
 			expect(networks).to.eql([]);
 
@@ -433,151 +430,6 @@ describe('Wifi Commands', () => {
 		});
 	});
 
-	describe('joinWifi', () => {
-		it('joins a Wi-Fi network', async () => {
-			const wifiCommands = new WiFiCommands({ ui });
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			openDevice.joinNewWifiNetwork.resolves();
-			wifiCommands.device = openDevice;
-			const networkInput = { ssid: 'network1', security: 'WPA2_PSK', password: 'password', hidden: undefined };
-
-			const result = await wifiCommands.joinWifi(networkInput);
-
-			expect(result).to.be.undefined;
-			expect(openDevice.joinNewWifiNetwork).to.have.been.calledOnce;
-			expect(openDevice.joinNewWifiNetwork).to.have.been.calledWith(networkInput);
-		});
-
-		it('throws an error if joining the Wi-Fi network fails', async () => {
-			const wifiCommands = new WiFiCommands({ ui });
-			const networkInput = { ssid: 'network1', security: 'WPA2_PSK', password: 'password' };
-			openDevice.joinNewWifiNetwork.rejects(new Error('Join failed'));
-			usbUtils.getOneUsbDevice.resolves(openDevice);
-			wifiCommands.device = openDevice;
-
-			let error;
-			try {
-				await wifiCommands.joinWifi(networkInput);
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal(`Unable to join Wi-Fi network 'network1': Join failed${os.EOL}`);
-		});
-
-	});
-
-	describe('_withDevice', () => {
-		let wifiCommands;
-		let fn;
-
-		beforeEach(() => {
-			wifiCommands = new WiFiCommands({ ui });
-			fn = sinon.stub();
-		});
-
-		it('opens the device and calls the provided function', async () => {
-			const device = {
-				isOpen: false,
-				platformId: 35,
-				_id: 'deviceId'
-			};
-			usbUtils.getOneUsbDevice.resolves(device);
-			wifiCommands.device = device;
-			fn.resolves();
-
-			await wifiCommands._withDevice(fn);
-
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledOnce;
-			expect(usbUtils.getOneUsbDevice).to.have.been.calledWith({
-				api: wifiCommands.api,
-				idOrName: null, // FIX THIS
-				ui
-			});
-			expect(fn).to.have.been.calledOnce;
-		});
-
-		it('throws an error if the device does not support Wi-Fi', async () => {
-			const device = {
-				isOpen: false,
-				platformId: 13,
-				_id: 'deviceId'
-			};
-			usbUtils.getOneUsbDevice.resolves(device);
-
-			let error;
-			try {
-				await wifiCommands._withDevice(fn);
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.be.an.instanceOf(Error);
-			expect(error.message).to.equal(`This device (deviceId / boron) does not support Wi-Fi.${os.EOL}`);
-		});
-
-		it('throws an error if the device does not support the "particle wifi" commands', async () => {
-			const device = {
-				isOpen: false,
-				platformId: 6,
-				_id: 'deviceId'
-			};
-			usbUtils.getOneUsbDevice.resolves(device);
-
-			try {
-				await wifiCommands._withDevice(fn);
-			} catch (error) {
-				expect(error.message).to.equal(`The 'particle wifi' commands are not supported on this device (deviceId / photon).${os.EOL}Use 'particle serial wifi' instead.${os.EOL}`);
-			}
-		});
-
-		it('calls the provided function if the device is already open', async () => {
-			const device = {
-				isOpen: true,
-				_id: 'deviceId',
-				close: sinon.stub()
-			};
-			wifiCommands.device = device;
-			fn.resolves();
-
-			await wifiCommands._withDevice(fn);
-
-			expect(fn).to.have.been.calledOnce;
-		});
-
-		it('closes the device after calling the provided function', async () => {
-			const device = {
-				isOpen: true,
-				platformId: 35,
-				_id: 'deviceId',
-				close: sinon.stub()
-			};
-			usbUtils.getOneUsbDevice.resolves(device);
-			fn.resolves();
-
-			await wifiCommands._withDevice(fn);
-
-			expect(device.close).to.have.been.calledOnce;
-		});
-
-		it('throws an error if the provided function throws an error', async () => {
-			const device = {
-				isOpen: false,
-				platformId: 35,
-				_id: 'deviceId'
-			};
-			usbUtils.getOneUsbDevice.resolves(device);
-			fn.rejects(new Error('Function error'));
-
-			try {
-				await wifiCommands._withDevice(fn);
-			} catch (error) {
-				expect(error.message).to.equal('Function error');
-			}
-		});
-	});
-
 	describe('_getActionStringFromOp', () => {
 		it('converts an operation name to a verb form', () => {
 			const wifiCommands = new WiFiCommands('deviceId', { ui, newSpin, stopSpin });
@@ -593,10 +445,11 @@ describe('Wifi Commands', () => {
 	describe('_performWifiOperation', () => {
 		let wifiCommands;
 		let operationCallback;
+		let device;
 
 		beforeEach(() => {
 			wifiCommands = new WiFiCommands({ ui });
-			wifiCommands.device = {
+			device = {
 				isOpen: false,
 				platformId: 35,
 				_id: 'deviceId'
@@ -608,7 +461,7 @@ describe('Wifi Commands', () => {
 			const replyObject = { foo: 'bar' };
 			operationCallback.resolves(replyObject);
 
-			const result = await wifiCommands._performWifiOperation('Test Operation', operationCallback);
+			const result = await wifiCommands._performWifiOperation(device, 'Test Operation', operationCallback);
 
 			expect(result).to.eql(replyObject);
 			expect(operationCallback).to.have.been.calledOnce;
@@ -619,7 +472,7 @@ describe('Wifi Commands', () => {
 
 			let error;
 			try {
-				await wifiCommands._performWifiOperation('Test Operation', operationCallback);
+				await wifiCommands._performWifiOperation(device, 'Test Operation', operationCallback);
 			} catch (e) {
 				error = e;
 			}
