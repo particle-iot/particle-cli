@@ -370,7 +370,6 @@ module.exports = class KeysCommand {
 
 		console.log();
 		console.log(url.format(result));
-		return result;
 	}
 
 	_getServerKeySegment({ protocol }){

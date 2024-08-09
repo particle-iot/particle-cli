@@ -207,7 +207,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	async _cloudStatus(device, until, timeout) {
 		let status = null;
-		
+
 		this.newSpin('Querying device...').start();
 		if (!until) {
 			status = await device.getCloudConnectionStatus();

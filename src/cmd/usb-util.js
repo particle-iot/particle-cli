@@ -137,7 +137,10 @@ async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowPro
 		}
 		newDeviceHandle = await func(device);
 		// Overwrite device handle if it is provided by the executed function
-		device = newDeviceHandle || device;
+		// FIXME: Perhaps a poor way to uniquely identify a device is of UsbDevice type
+		if (newDeviceHandle?._dev) {
+			device = newDeviceHandle;
+		}
 	} finally {
 		if (deviceIsProtected) {
 			try {
