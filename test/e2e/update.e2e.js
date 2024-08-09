@@ -4,7 +4,7 @@ const {
 	DEVICE_ID,
 	DEVICE_NAME, DEVICE_PLATFORM_NAME
 } = require('../lib/env');
-
+const stripAnsi = require('strip-ansi');
 
 describe('Update Commands [@device]', () => {
 	const help = [
@@ -52,7 +52,7 @@ describe('Update Commands [@device]', () => {
 	it('Updates to latest default Device OS version', async () => {
 		const { stdout, stderr, exitCode } = await cli.run(['update']);
 
-		expect(stdout).to.include(`Updating ${DEVICE_PLATFORM_NAME} ${DEVICE_ID} to latest Device OS version`);
+		expect(stripAnsi(stdout)).to.include(`Updating ${DEVICE_PLATFORM_NAME} ${DEVICE_ID} to latest Device OS version`);
 		expect(stdout).to.include('Update success!');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);

@@ -95,8 +95,8 @@ class UsbPermissionsError extends Error {
  *   dfuMode: true
  * });
  */
-async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode = false, allowProtectedDevices = true } = {}) {
-	let device = await getOneUsbDevice(args, { dfuMode });
+async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowProtectedDevices = true } = {}) {
+	let device = await getOneUsbDevice(args);
 	let deviceIsProtected = false; // Protected and Protected Devices in Service Mode
 	let disableProtection = false; // Only Protected Devices (not in Service Mode)
 
@@ -129,13 +129,15 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
 		}
 	}
 
-	let res;
+	let newDeviceHandle = null;
 	try {
 		if (enterDfuMode) {
 			validateDFUSupport({ device, ui: args.ui });
 			device = await reopenInDfuMode(device);
 		}
-		res = await func(device);
+		newDeviceHandle = await func(device);
+		// Overwrite device handle if it is provided by the executed function
+		device = newDeviceHandle || device;
 	} finally {
 		if (deviceIsProtected) {
 			try {
@@ -149,34 +151,38 @@ async function executeWithUsbDevice({ args, func, dfuMode = false, enterDfuMode 
 			await device.close();
 		}
 	}
-	return res;
 }
 
 /**
- * Reboots device and waits for it to enter normal mode.
+ * Waits for device readiness (mainly to send control requsts to it)
  * Useful for enabling Device Protection on a device in after its current operation completes.
  * @param {*} deviceId
  * @returns
  */
-async function waitForDeviceToRespond(device) {
-	const deviceId = device.id;
-	const REBOOT_TIME_MSEC = 20000;
-	const REBOOT_INTERVAL_MSEC = 1000;
+async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
+	const REBOOT_TIME_MSEC = timeout;
+	const REBOOT_INTERVAL_MSEC = 500;
 	const start = Date.now();
-	if (device.isOpen) {
-		await device.close();
-	}
+	let device;
+
 	while (Date.now() - start < REBOOT_TIME_MSEC) {
 		try {
+			if (device && device.isOpen) {
+				await device.close();
+			}
 			await delay(REBOOT_INTERVAL_MSEC);
-			const device = await reopenDevice({ id: deviceId });
+			device = await reopenDevice({ id: deviceId });
+			if (device.isInDfuMode) {
+				return device;
+			}
 			// Check device readiness
 			await device.getDeviceId();
 			return device;
 		} catch (error) {
-			// ignore error
+			// ignore errors
 		}
 	}
+	return null;
 }
 
 /**
@@ -398,7 +404,9 @@ async function reopenInDfuMode(device) {
 	while (Date.now() - start < REOPEN_TIMEOUT) {
 		await delay(REOPEN_DELAY);
 		try {
-			await device.close();
+			if (device && device.isOpen) {
+				await device.close();
+			}
 			device = await openUsbDeviceById(id, { dfuMode: true });
 			if (!device.isInDfuMode) {
 				await device.enterDfuMode();
