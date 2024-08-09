@@ -161,7 +161,7 @@ async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowPro
  */
 async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 	const REBOOT_TIME_MSEC = timeout;
-	const REBOOT_INTERVAL_MSEC = 100;
+	const REBOOT_INTERVAL_MSEC = 500;
 	const start = Date.now();
 	let device;
 
