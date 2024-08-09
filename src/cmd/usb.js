@@ -199,42 +199,39 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	async cloudStatus(args) {
 		const { until, timeout, params: { device } } = args;
-		this.newSpin('Querying device...').start();
-		let status = null;
-
-		try {
-			status = await executeWithUsbDevice({
-				args: { idOrName: device, api: this._api, auth: this._auth }, // device here is the id
-				func: (dev) => this._cloudStatus(dev, until, timeout),
-			});
-		} catch (error) {
-			throw new Error(error.message);
-		} finally {
-			this.stopSpin();
-			if (status) {
-				console.log(status.toLowerCase());
-			}
-		}
+		await executeWithUsbDevice({
+			args: { idOrName: device, api: this._api, auth: this._auth }, // device here is the id
+			func: (dev) => this._cloudStatus(dev, until, timeout),
+		});
 	}
 
 	async _cloudStatus(device, until, timeout) {
+		let status = null;
+		
+		this.newSpin('Querying device...').start();
 		if (!until) {
-			return device.getCloudConnectionStatus();
+			status = await device.getCloudConnectionStatus();
+			this.stopSpin();
+			console.log(status.toLowerCase());
+			return;
 		}
 
 		const endTime = Date.now() + timeout;
 
 		while (Date.now() < endTime) {
 			try {
-				const status = await device.getCloudConnectionStatus();
+				status = await device.getCloudConnectionStatus();
 				if (status.toLowerCase() === until) {
-					return status;
+					this.stopSpin();
+					console.log(status.toLowerCase());
+					return;
 				}
 			} catch (error) {
 				// Ignore error and continue polling
 			}
 		}
 
+		this.stopSpin();
 		throw new Error('Timed out waiting for status');
 	}
 
