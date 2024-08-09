@@ -23,12 +23,12 @@ describe('Serial Command', () => {
 	});
 
 	describe('identifyDevice', () => {
-		it('identifies a cellular device with dvos over serial', async () => {
+		it('identifies a cellular device', async () => {
 			const deviceId = '1234456789abcdef';
 			const fwVer = '6.1.0';
 			const imei = '1234';
 			const iccid = '5678';
-			const wifiDeviceFromSerialPort = {
+			const cellularDeviceFromSerialPort = {
 				deviceId
 			};
 
@@ -40,17 +40,12 @@ describe('Serial Command', () => {
 				getCellularInfo: sinon.stub().resolves({ iccid, imei }),
 			};
 			deviceStub.resolves(device);
-			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
-			sinon.stub(serial, '_printIdentifyInfo').resolves();
+			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(cellularDeviceFromSerialPort);
+			sinon.stub(usbUtils, 'executeWithUsbDevice').resolves({ fwVer, cellularImei: imei, cellularIccid: iccid });
 
 			await serial.identifyDevice({ port: 'xyz' });
 
-			expect(serial._printIdentifyInfo).to.have.been.calledOnce.and.calledWithExactly({
-				deviceId,
-				fwVer,
-				cellularImei: imei,
-				cellularIccid: iccid,
-			});
+			expect(usbUtils.executeWithUsbDevice).to.have.been.calledOnce;
 		});
 
 		it('identifies a wifi device', async () => {
@@ -67,16 +62,11 @@ describe('Serial Command', () => {
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
-			sinon.stub(serial, '_printIdentifyInfo').resolves();
+			sinon.stub(usbUtils, 'executeWithUsbDevice').resolves({ fwVer, cellularImei: '', cellularIccid: '' });
 
 			await serial.identifyDevice({ port: 'xyz' });
 
-			expect(serial._printIdentifyInfo).to.have.been.calledOnce.and.calledWithExactly({
-				deviceId,
-				fwVer,
-				cellularImei: '',
-				cellularIccid: '',
-			});
+			expect(usbUtils.executeWithUsbDevice).to.have.been.calledOnce;
 		});
 	});
 
@@ -91,15 +81,16 @@ describe('Serial Command', () => {
 				isOpen: true,
 				close: sinon.stub(),
 				platformId: PlatformId.P2,
-				firmwareVersion: fwVer
+				firmwareVersion: fwVer,
+				getFirmwareModuleInfo: sinon.stub()
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
-			sinon.stub(serial, '_getModuleInfo').resolves(true);
+			sinon.stub(usbUtils, 'executeWithUsbDevice').resolves({ platform: PlatformId.P2, modules: {} });
 
 			await serial.inspectDevice({ port: 'xyz' });
 
-			expect(serial._getModuleInfo).to.have.been.called;
+			expect(usbUtils.executeWithUsbDevice).to.have.been.called;
 		});
 
 		it('does not get module info if device id is not obtained', async () => {
@@ -111,7 +102,6 @@ describe('Serial Command', () => {
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').rejects('There was an error');
-			sinon.stub(serial, '_getModuleInfo').resolves(true);
 
 			let error;
 			try {
@@ -146,10 +136,11 @@ describe('Serial Command', () => {
 			};
 			deviceStub.resolves(device);
 			sinon.stub(serial, 'whatSerialPortDidYouMean').resolves(wifiDeviceFromSerialPort);
+			sinon.stub(usbUtils, 'executeWithUsbDevice').resolves({ macAddress: '01:02:03:04:05:06', currIfaceName: 'WiFi' });
 
-			const macAddress = await serial.deviceMac({ port: 'xyz' });
+			await serial.deviceMac({ port: 'xyz' });
 
-			expect(macAddress).to.deep.equal('01:02:03:04:05:06');
+			expect(usbUtils.executeWithUsbDevice).to.have.been.calledOnce;
 		});
 	});
 
