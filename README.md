@@ -39,6 +39,39 @@ For end-users, the most up-to-date installation instructions can be found here: 
 Note: Some commands may require `openssl` to be installed on your system.
 You can install it using your package manager (e.g. `brew install openssl` on macOS).
 
+### Installing a staging version
+Before proceeding with this section,
+remember that the staging version may contain bugs and issues that are not present in the production version.
+
+***Please use the staging versions only for testing purposes.***
+
+In case you're running macOS or Linux, you can install a staging version of the CLI by running the following command:
+```bash
+  MANIFEST_HOST=binaries.staging.particle.io bash <(curl -sL https://particle.io/install-cli)
+```
+
+For Windows,
+you can install a staging version of the CLI
+by downloading the installer from [here](https://binaries.staging.particle.io/particle-cli/installer/win32/ParticleCLISetup.exe).
+
+In case you have already installed the CLI, you can update it to the staging version by running the following command:
+```bash
+  export PARTICLE_MANIFEST_HOST=binaries.staging.particle.io
+  particle update-cli --version {STAGING_VERSION_TO_TEST}
+```
+Don't forget to turn off the updates to prevent issues while you're testing the staging version:
+```bash
+  particle update-cli --disable-updates
+```
+
+Once you're done testing the staging version, you can revert to the production version by running the following command:
+```bash
+  export PARTICLE_MANIFEST_HOST=binaries.particle.io
+  particle update-cli --enable-updates
+  particle update-cli --version {PRODUCTION_VERSION}
+```
+
+
 ## Getting Started
 
 These next two commands are all you need to get started setting up an account, claiming a device, and discovering new features.
