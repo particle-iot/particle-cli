@@ -68,7 +68,7 @@ Once you're done testing the staging version, you can revert to the production v
 ```bash
   export PARTICLE_MANIFEST_HOST=binaries.particle.io
   particle update-cli --enable-updates
-  particle update-cli
+  particle update-cli --version {PRODUCTION_VERSION}
 ```
 
 
