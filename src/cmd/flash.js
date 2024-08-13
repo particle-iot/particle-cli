@@ -105,9 +105,13 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
 		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 
-		// The device obtained here is closed so reopen the device
-		device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
-		return device;
+		// The device obtained here is may be closed so reopen the device and ensure its ready to talk to
+		// FIXME: Gen2 devices may not be able to respond to control requests immediately after flashing
+		const platform = platformForId(device.platformId);
+		if (platform.generation > 2) {
+			device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
+			return device;
+		}
 	}
 
 	flashCloud({ device, files, target }) {
@@ -181,10 +185,13 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		await flashFiles({ device, flashSteps, ui: this.ui, verbose });
 
-		// The device obtained here is may be closed so reopen the device and ensure its ready
-		// to talk to
-		device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
-		return device;
+		// The device obtained here is may be closed so reopen the device and ensure its ready to talk to
+		// FIXME: Gen2 devices may not be able to respond to control requests immediately after flashing
+		const platform = platformForId(device.platformId);
+		if (platform.generation > 2) {
+			device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
+			return device;
+		}
 	}
 
 	async _analyzeFiles(files) {
