@@ -202,6 +202,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 		await executeWithUsbDevice({
 			args: { idOrName: device, api: this._api, auth: this._auth }, // device here is the id
 			func: (dev) => this._cloudStatus(dev, until, timeout),
+			dfuMode: false
 		});
 	}
 
