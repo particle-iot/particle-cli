@@ -90,7 +90,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async disableProtection() {
 		let addToOutput = [];
 		try {
-			await this._withDevice({ spinner: 'Disabling device protection' }, async () => {
+			await this._withDevice({ spinner: 'Disabling Device Protection' }, async () => {
 				const deviceStr = await this._getDeviceString();
 
 				const s = this.status;
@@ -110,7 +110,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 			}
-			throw new Error(`Failed to disable device protection: ${error.message}${os.EOL}`);
+			throw new Error(`Failed to disable Device Protection: ${error.message}${os.EOL}`);
 		}
 
 		addToOutput.forEach((line) => {
@@ -135,7 +135,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async enableProtection({ file } = {}) {
 		let addToOutput = [];
 		try {
-			await this._withDevice({ spinner: 'Enabling device protection' }, async () => {
+			await this._withDevice({ spinner: 'Enabling Device Protection' }, async () => {
 				const deviceStr = await this._getDeviceString();
 
 				const s = this.status;
@@ -189,7 +189,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			if (error.message === 'Not supported') {
 				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
 			}
-			throw new Error(`Failed to enable device protection: ${error.message}${os.EOL}`);
+			throw new Error(`Failed to enable Device Protection: ${error.message}${os.EOL}`);
 		}
 
 		addToOutput.forEach((line) => {

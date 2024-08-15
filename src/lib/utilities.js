@@ -381,7 +381,7 @@ module.exports = {
 
 	ensureError(err){
 		if (err instanceof DeviceProtectionError) {
-			return new Error('Operation could not be completed due to device protection');
+			return new Error('Operation could not be completed due to Device Protection');
 		}
 
 		if (!_.isError(err) && !(err instanceof VError)){

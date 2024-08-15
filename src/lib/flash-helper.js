@@ -86,7 +86,7 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 		} catch (error) {
 			// ignore other errors from attempts to flash to external flash
 			if (error instanceof DeviceProtectionError) {
-				throw new Error('Operation could not be completed due to device protection.');
+				throw new Error('Operation could not be completed due to Device Protection.');
 			}
 		}
 	}
@@ -365,7 +365,7 @@ async function maintainDeviceProtection({ modules, device }) {
 			return;
 		}
 	} catch (error) {
-		// Device does not support device protection -> Don't enforce Device OS version
+		// Device does not support Device Protection -> Don't enforce Device OS version
 		if (error.message === 'Not supported') {
 			return;
 		}

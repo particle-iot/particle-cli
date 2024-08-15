@@ -15,7 +15,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  compile            Compile a source file, or directory using the cloud compiler',
 		'  config             Configure and switch between multiple accounts',
 		'  device             Manipulate a device',
-		'  device-protection  Manage device protection',
+		'  device-protection  Manage Device Protection',
 		'  doctor             NOT SUPPORTED. Go to the device doctor tool at docs.particle.io/tools/doctor',
 		'  flash              Send firmware to your device',
 		'  function           Call functions on your device',

@@ -533,7 +533,7 @@ module.exports = class KeysCommand {
 			await device.writeOverDfu(buffer, { altSetting, startAddr, leave, noErase });
 		} catch (err) {
 			if (err instanceof DeviceProtectionError) {
-				throw new Error('Operation could not be completed due to device protection.');
+				throw new Error('Operation could not be completed due to Device Protection.');
 			}
 			throw new VError(ensureError(err), 'Writing over DFU failed');
 		}
@@ -545,7 +545,7 @@ module.exports = class KeysCommand {
 			buf = await device.readOverDfu({ altSetting, startAddr, size });
 		} catch (err) {
 			if (err instanceof DeviceProtectionError) {
-				throw new Error('Operation could not be completed due to device protection.');
+				throw new Error('Operation could not be completed due to Device Protection.');
 			}
 			// FIXME: First time read may fail so we retry
 			try {
