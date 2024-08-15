@@ -102,9 +102,9 @@ The e2e tests run in two modes: with a device connected, and without. Since the 
 
 1. run `npm run test:e2e:no-device`
 
-### Running device protection tests
+### Running Device Protection tests
 
-1. Ensure the device `E2E_PRODUCT_01_DEVICE_01_ID` in product `E2E_PRODUCT_01_ID` is an Open Device in a product with device protection active at the start of the tests.
+1. Ensure the device `E2E_PRODUCT_01_DEVICE_01_ID` in product `E2E_PRODUCT_01_ID` is an Open Device in a product with Device Protection active at the start of the tests.
 2. Ensure the device is not in DFU mode.
 3. run `npm run test:e2e:device-protection`
 
