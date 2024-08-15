@@ -39,7 +39,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<Object>} The protection state of the device.
 	 * @throws {Error} Throws an error if any of the async operations fail.
 	 */
-	async getStatus() {
+	async getStatus({ device } = {}) {
+		this.deviceId = device;
 		let addToOutput = [];
 		let s;
 		try {
@@ -87,7 +88,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<void>}
 	 * @throws {Error} - Throws an error if any of the async operations fail.
 	 */
-	async disableProtection() {
+	async disableProtection({ device } = {}) {
+		this.deviceId = device;
 		let addToOutput = [];
 		try {
 			await this._withDevice({ spinner: 'Disabling Device Protection' }, async () => {
@@ -132,7 +134,8 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 * @returns {Promise<void>}
 	 * @throws {Error} Throws an error if any of the asynchronous operations fail.
 	 */
-	async enableProtection({ file } = {}) {
+	async enableProtection({ file, device } = {}) {
+		this.deviceId = device;
 		let addToOutput = [];
 		try {
 			await this._withDevice({ spinner: 'Enabling Device Protection' }, async () => {
