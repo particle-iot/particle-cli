@@ -154,11 +154,12 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	listDeviceOsVersions(platformId, internalVersion){
+	listDeviceOsVersions(platformId, internalVersion, perPage=100){
 		return this._wrap(
 			this.api.listDeviceOsVersions({
 				platformId,
 				internalVersion,
+				perPage,
 				auth: this.accessToken
 			})
 		);
