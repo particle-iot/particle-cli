@@ -300,15 +300,15 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 			let data;
 			try {
-				data = await createAPI().listBuildTargets(true /* onlyFeatured */);
+				data = await createAPI().listDeviceOsVersions(platformId);
 			} catch (error) {
 				throw normalizedApiError(error);
 			}
 
-			const validTargets = data.targets.filter((t) => t.platforms.includes(platformId));
+			const validTargets = data.versions.filter((t) => t.release_state !== 'archived');
 			const validTarget = validTargets.filter((t) => t.version === target);
 			if (!validTarget.length) {
-				throw new VError(['Invalid build target version.', 'Valid targets:'].concat(_.map(validTargets, 'version')).join('\n'));
+				throw new VError(['Invalid build target version.', 'Valid targets:'].concat(validTargets.map((v) => `${v.version} ${v.release_state === 'preview' ? '(preview)' : ''}`)).join('\n'));
 			}
 			targetVersion = validTarget[0].version;
 			this.ui.stdout.write(`Targeting version: ${targetVersion}${os.EOL}`);

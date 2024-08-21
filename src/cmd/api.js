@@ -154,6 +154,16 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	listDeviceOsVersions(platformId, internalVersion){
+		return this._wrap(
+			this.api.listDeviceOsVersions({
+				platformId,
+				internalVersion,
+				auth: this.accessToken
+			})
+		);
+	}
+
 	compileCode(files, platformId, targetVersion){
 		return this._wrap(
 			this.api.compileCode({
