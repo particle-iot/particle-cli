@@ -167,7 +167,6 @@ async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 	const REBOOT_INTERVAL_MSEC = 500;
 	const start = Date.now();
 	let device;
-
 	while (Date.now() - start < REBOOT_TIME_MSEC) {
 		try {
 			if (device && device.isOpen) {
@@ -183,6 +182,10 @@ async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 			return device;
 		} catch (error) {
 			// ignore errors
+			// device could be open after the last iteration
+			if (device && device.isOpen) {
+				await device.close();
+			}
 		}
 	}
 	return null;

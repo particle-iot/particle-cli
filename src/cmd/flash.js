@@ -105,11 +105,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
 		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 
-		// The device obtained here is may be closed so reopen the device and ensure its ready to talk to
+		// The device obtained here could be closed, so reopen the device and ensure it is ready to talk to
 		// FIXME: Gen2 devices may not be able to respond to control requests immediately after flashing
 		const platform = platformForId(device.platformId);
 		if (platform.generation > 2) {
-			device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
+			device = await usbUtils.waitForDeviceToRespond(deviceId);
 			return device;
 		}
 	}
@@ -185,11 +185,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		await flashFiles({ device, flashSteps, ui: this.ui, verbose });
 
-		// The device obtained here is may be closed so reopen the device and ensure its ready to talk to
+		// The device obtained here may have been closed, so reopen it and ensure it is ready to send control requests to.
 		// FIXME: Gen2 devices may not be able to respond to control requests immediately after flashing
 		const platform = platformForId(device.platformId);
 		if (platform.generation > 2) {
-			device = await usbUtils.waitForDeviceToRespond(deviceId, { timeout: 5000 });
+			device = await usbUtils.waitForDeviceToRespond(deviceId);
 			return device;
 		}
 	}
