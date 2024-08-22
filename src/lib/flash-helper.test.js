@@ -675,6 +675,11 @@ describe('flash-helper', () => {
 		beforeEach(async () => {
 			device = {
 				getProtectionState: sinon.stub(),
+				isInDfuMode: false,
+				getFirmwareModuleInfo: sinon.stub().resolves([
+					{ type: 'BOOTLOADER', index: 0, version: 3000 },
+					{ type: 'SYSTEM_PART', index: 1, version: 6000 },
+				])
 			};
 
 			const oldBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({

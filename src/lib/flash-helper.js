@@ -21,6 +21,17 @@ const PROTECTED_MINIMUM_VERSION = '6.0.0';
 const PROTECTED_MINIMUM_SYSTEM_VERSION = 6000;
 const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3000;
 
+// If a Protected Device has a system version of 6101, it can't be downgraded to 6100 or 6000
+const INCOMPATIBLE_PROTECTED_SYSTEM_VERSIONS = {
+	6101: [6100, 6000],
+	6100: [6000],
+};
+
+// If a Protected Device has a bootloader version of 3001, it can't be downgraded to 3000
+const INCOMPATIBLE_PROTECTED_BOOTLOADER_VERSIONS = {
+	3001: [3000]
+};
+
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose=true }) {
 	let progress = null;
 	progress = verbose ? _createFlashProgress({ flashSteps, ui, verbose }) : null;
@@ -381,6 +392,26 @@ async function maintainDeviceProtection({ modules, device }) {
 
 		if (oldSystem || oldBootloader) {
 			throw new Error(`Cannot downgrade Device OS below version ${PROTECTED_MINIMUM_VERSION} on a Protected Device`);
+		}
+
+		// Check for compatibility with current Device OS version for Protected Devices
+		// Firmware module info is only available when the device is not in DFU mode
+		// If the device was in DFU mode, allow the flashing to continue and fail midway if the device is not compatible
+		if (!device.isInDfuMode) {
+			const currentModules = await device.getFirmwareModuleInfo({ timeout: 5000 });
+			const currentSystem = currentModules.find(m => m.type === 'SYSTEM_PART');
+			const currentBootloader = currentModules.find(m => m.type === 'BOOTLOADER' && m.index === 0);
+			const incompatSystem = currentSystem && INCOMPATIBLE_PROTECTED_SYSTEM_VERSIONS[currentSystem.version] &&
+				INCOMPATIBLE_PROTECTED_SYSTEM_VERSIONS[currentSystem.version].includes(moduleVersion);
+			const incompatBootloader = currentBootloader && INCOMPATIBLE_PROTECTED_BOOTLOADER_VERSIONS[currentBootloader.version] &&
+				INCOMPATIBLE_PROTECTED_BOOTLOADER_VERSIONS[currentBootloader.version].includes(moduleVersion);
+
+			if (incompatSystem) {
+				throw new Error(`Device OS system version ${currentSystem.version} cannot be downgraded to ${moduleVersion} on a Protected Device. Please refer to https://docs.particle.io/ for more details.`);
+			}
+			if (incompatBootloader) {
+				throw new Error(`Device OS bootloader version ${currentBootloader.version} cannot be downgraded to ${moduleVersion} on a Protected Device. Please refer to https://docs.particle.io/ for more details.`);
+			}
 		}
 
 		// Enable Device Protection on the bootloader when flashing a Protected Device
