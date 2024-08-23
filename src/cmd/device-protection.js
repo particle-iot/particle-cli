@@ -65,7 +65,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		} catch (error) {
 			// TODO: Log detailed and user-friendly error messages from the device or API instead of displaying the raw error message
 			if (error.message === 'Not supported') {
-				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information.`);
 			}
 			throw new Error(`Unable to get device status: ${error.message}${os.EOL}`);
 		}
@@ -108,7 +108,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 			});
 		} catch (error) {
 			if (error.message === 'Not supported') {
-				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information${os.EOL}`);
+				throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information.`);
 			}
 			throw new Error(`Failed to disable Device Protection: ${error.message}${os.EOL}`);
 		}
@@ -306,6 +306,13 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async _withDevice({ spinner }, fn) {
 		await this._getUsbDevice(this.device);
+
+		const platform = platformForId(this.device.platformId);
+		// Gen2 platforms can take a long time to respond to control requests. Quit early.
+		if (platform.generation <= 2) {
+			throw new Error(`Device Protection feature is not supported on this device. Visit ${chalk.yellow('https://docs.particle.io')} for more information.`);
+		}
+
 		await this.ui.showBusySpinnerUntilResolved(spinner, (async () => {
 			this.status = await DeviceProtectionHelper.getProtectionStatus(this.device);
 			return await fn();

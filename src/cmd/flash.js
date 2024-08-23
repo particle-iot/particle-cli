@@ -74,7 +74,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _flashOverUsb(device, binary, factory) {
-		const deviceId = device.id;
 		const platformName = platformForId(device.platformId).name;
 		validateDFUSupport({ device, ui: this.ui });
 
@@ -104,14 +103,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.write(`Flashing ${platformName} device ${device.id}`);
 		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
 		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
-
-		// The device obtained here could be closed, so reopen the device and ensure it is ready to talk to
-		// FIXME: Gen2 devices may not be able to respond to control requests immediately after flashing
-		const platform = platformForId(device.platformId);
-		if (platform.generation > 2) {
-			device = await usbUtils.waitForDeviceToRespond(deviceId);
-			return device;
-		}
 	}
 
 	flashCloud({ device, files, target }) {
@@ -138,7 +129,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _flashLocal(device, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose=true) {
-		const deviceId = device.id;
 		const platformId = device.platformId;
 		const platformName = platformForId(platformId).name;
 		const currentDeviceOsVersion = device.firmwareVersion;
@@ -184,14 +174,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		});
 
 		await flashFiles({ device, flashSteps, ui: this.ui, verbose });
-
-		// The device obtained here may have been closed, so reopen it and ensure it is ready to send control requests to.
-		// FIXME: Gen2 devices may not be able to respond to control requests immediately after flashing
-		const platform = platformForId(device.platformId);
-		if (platform.generation > 2) {
-			device = await usbUtils.waitForDeviceToRespond(deviceId);
-			return device;
-		}
 	}
 
 	async _analyzeFiles(files) {

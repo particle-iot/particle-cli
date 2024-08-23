@@ -29,7 +29,6 @@ module.exports = class UpdateCommand extends CLICommandBase {
 	}
 
 	async _updateDevice(device, deviceIdOrName, target) {
-		const deviceId = device.id;
 		const { api } = this._particleApi();
 		const version = target || 'latest';
 		validateDFUSupport({ device, ui: this.ui });
@@ -53,14 +52,6 @@ module.exports = class UpdateCommand extends CLICommandBase {
 		await flashFiles({ device, flashSteps, ui: this.ui });
 
 		this.ui.write('Update success!');
-
-		// The device obtained here may have been closed, so reopen it and ensure it is ready to send control requests to.
-		// FIXME: Gen2 devices may not be able to respond to control requests immediately after flashing
-		const platform = platformForId(device.platformId);
-		if (platform.generation > 2) {
-			device = await usbUtils.waitForDeviceToRespond(deviceId);
-			return device;
-		}
 	}
 
 	_particleApi() {

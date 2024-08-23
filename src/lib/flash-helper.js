@@ -398,11 +398,11 @@ async function maintainDeviceProtection({ modules, device }) {
 		// Firmware module info is only available when the device is not in DFU mode
 		// If the device was in DFU mode, allow the flashing to continue and fail midway if the device is not compatible
 		if (!device.isInDfuMode) {
-			let currentModules, incompatSystem, incompatBootloader;
+			let currentModules, incompatSystem, incompatBootloader, currentSystem, currentBootloader;
 			try {
 				currentModules = await device.getFirmwareModuleInfo({ timeout: 5000 });
-				const currentSystem = currentModules.find(m => m.type === 'SYSTEM_PART');
-				const currentBootloader = currentModules.find(m => m.type === 'BOOTLOADER' && m.index === 0);
+				currentSystem = currentModules.find(m => m.type === 'SYSTEM_PART');
+				currentBootloader = currentModules.find(m => m.type === 'BOOTLOADER' && m.index === 0);
 				incompatSystem = currentSystem && INCOMPATIBLE_PROTECTED_SYSTEM_VERSIONS[currentSystem.version] &&
 					INCOMPATIBLE_PROTECTED_SYSTEM_VERSIONS[currentSystem.version].includes(moduleVersion);
 				incompatBootloader = currentBootloader && INCOMPATIBLE_PROTECTED_BOOTLOADER_VERSIONS[currentBootloader.version] &&
