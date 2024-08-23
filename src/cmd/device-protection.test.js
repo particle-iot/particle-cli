@@ -11,7 +11,8 @@ describe('DeviceProtectionCommands', () => {
 		deviceProtectionCommands.device = {
 			isInDfuMode: false,
 			unprotectDevice: sinon.stub(),
-			enterDfuMode: sinon.stub()
+			enterDfuMode: sinon.stub(),
+			platformId: 13 /*boron*/
 		};
 	});
 

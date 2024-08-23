@@ -97,6 +97,7 @@ class UsbPermissionsError extends Error {
  */
 async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowProtectedDevices = true } = {}) {
 	let device = await getOneUsbDevice(args);
+	const deviceId = device.id;
 	let deviceIsProtected = false; // Protected and Protected Devices in Service Mode
 	let disableProtection = false; // Only Protected Devices (not in Service Mode)
 
@@ -129,22 +130,16 @@ async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowPro
 		}
 	}
 
-	let newDeviceHandle = null;
 	try {
 		if (enterDfuMode) {
 			validateDFUSupport({ device, ui: args.ui });
 			device = await reopenInDfuMode(device);
 		}
-		newDeviceHandle = await func(device);
-		// Overwrite device handle if it is provided by the executed function
-		// FIXME: Perhaps a poor way to uniquely identify a device is of UsbDevice type
-		if (newDeviceHandle?._dev) {
-			device = newDeviceHandle;
-		}
+		await func(device);
 	} finally {
 		if (deviceIsProtected) {
 			try {
-				// 'device' has finished the CLI command and is now ready to run this command
+				device = await waitForDeviceToRespond(deviceId);
 				await deviceProtectionHelper.turnOffServiceMode(device);
 			} catch (error) {
 				// Ignore error. At most, device is left in Service Mode
