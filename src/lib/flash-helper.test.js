@@ -674,12 +674,7 @@ describe('flash-helper', () => {
 
 		beforeEach(async () => {
 			device = {
-				getProtectionState: sinon.stub(),
-				isInDfuMode: false,
-				getFirmwareModuleInfo: sinon.stub().resolves([
-					{ type: 'BOOTLOADER', index: 0, version: 3000 },
-					{ type: 'SYSTEM_PART', index: 1, version: 6000 },
-				])
+				getProtectionState: sinon.stub()
 			};
 
 			const oldBootloaderBuffer = await firmwareTestHelper.createFirmwareBinary({
@@ -704,13 +699,13 @@ describe('flash-helper', () => {
 				moduleFunction: ModuleInfo.FunctionType.BOOTLOADER,
 				platformId: 12,
 				moduleIndex: 0,
-				moduleVersion: 3000
+				moduleVersion: 3001
 			});
 			const newSystemPartBuffer = await firmwareTestHelper.createFirmwareBinary({
 				moduleFunction: ModuleInfo.FunctionType.SYSTEM_PART,
 				platformId: 12,
 				moduleIndex: 0,
-				moduleVersion: 6000
+				moduleVersion: 6101
 			});
 			newBootloader = await new HalModuleParser().parseBuffer({ fileBuffer: newBootloaderBuffer });
 			newSystemPart = await new HalModuleParser().parseBuffer({ fileBuffer: newSystemPartBuffer });
@@ -762,7 +757,7 @@ describe('flash-helper', () => {
 				} catch (_error) {
 					error = _error;
 				}
-				expect(error).to.have.property('message').that.eql('Cannot downgrade Device OS below version 6.0.0 on a Protected Device');
+				expect(error).to.have.property('message').that.eql('Cannot downgrade Device OS below version 6.1.1 on a Protected Device');
 			});
 
 			it('throws an exception if the system part is too old', async () => {
@@ -772,7 +767,7 @@ describe('flash-helper', () => {
 				} catch (_error) {
 					error = _error;
 				}
-				expect(error).to.have.property('message').that.eql('Cannot downgrade Device OS below version 6.0.0 on a Protected Device');
+				expect(error).to.have.property('message').that.eql('Cannot downgrade Device OS below version 6.1.1 on a Protected Device');
 			});
 
 			it('does does not reject new modules', async () => {
