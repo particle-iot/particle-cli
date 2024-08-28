@@ -2,24 +2,24 @@ const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
 const VError = require('verror');
-const { PLATFORMS, platformForId } =require('./platform');
+const { PLATFORMS } =require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo, createProtectedModule } = require('binary-version-reader');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
-const semver = require('semver');
 const { DeviceProtectionError } = require('particle-usb');
 const utilities = require('./utilities');
+const { getProtectionStatus } = require('./device-protection-helper');
 const ensureError = utilities.ensureError;
 
 // Flashing an NCP firmware can take a few minutes
 const FLASH_TIMEOUT = 4 * 60000;
 
 // Minimum version of Device OS that supports protected modules
-const PROTECTED_MINIMUM_VERSION = '6.0.0';
-const PROTECTED_MINIMUM_SYSTEM_VERSION = 6000;
-const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3000;
+const PROTECTED_MINIMUM_VERSION = '6.1.1';
+const PROTECTED_MINIMUM_SYSTEM_VERSION = 6101;
+const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3001;
 
 async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose=true }) {
 	let progress = null;
@@ -56,6 +56,7 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verb
 			await device.close();
 		}
 	}
+	return device;
 }
 
 async function _flashDeviceInNormalMode(device, data, { name, progress, checkSkip } = {}) {
@@ -85,7 +86,7 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 		} catch (error) {
 			// ignore other errors from attempts to flash to external flash
 			if (error instanceof DeviceProtectionError) {
-				throw new Error('Operation could not be completed due to device protection.');
+				throw new Error('Operation could not be completed due to Device Protection.');
 			}
 		}
 	}
@@ -355,24 +356,16 @@ function _get256Hash(module) {
 	}
 }
 
-function validateDFUSupport({ device, ui }) {
-	const platform = platformForId(device.platformId);
-	if (!device.isInDfuMode && (!semver.valid(device.firmwareVersion) || semver.lt(device.firmwareVersion, '2.0.0')) && platform.generation === 2) {
-		ui.logDFUModeRequired({ showVersionWarning: true });
-		throw new Error('Put the device in DFU mode and try again');
-	}
-}
-
 async function maintainDeviceProtection({ modules, device }) {
 	try {
-		const s = await device.getProtectionState();
+		const s = await getProtectionStatus(device);
 
 		if (!s.protected && !s.overridden) {
 			// Device is not protected -> Don't enforce Device OS version
 			return;
 		}
 	} catch (error) {
-		// Device does not support device protection -> Don't enforce Device OS version
+		// Device does not support Device Protection -> Don't enforce Device OS version
 		if (error.message === 'Not supported') {
 			return;
 		}
@@ -406,7 +399,6 @@ module.exports = {
 	parseModulesToFlash,
 	createFlashSteps,
 	prepareDeviceForFlash,
-	validateDFUSupport,
 	maintainDeviceProtection,
 	getFileFlashInfo,
 	_get256Hash,

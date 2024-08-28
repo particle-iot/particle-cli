@@ -7,14 +7,14 @@ const {
 
 describe('Device Protection Commands [@device,@device-protection]', () => {
 	const help = [
-		'Manage device protection',
+		'Manage Device Protection',
 		'Usage: particle device-protection <command>',
 		'Help:  particle help device-protection <command>',
 		'',
 		'Commands:',
-		'  status   Gets the current device protection status',
-		'  disable  Disables device protection',
-		'  enable   Enables device protection',
+		'  status   Gets the current Device Protection status',
+		'  disable  Disables Device Protection',
+		'  enable   Enables Device Protection',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',

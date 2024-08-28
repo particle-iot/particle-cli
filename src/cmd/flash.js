@@ -21,10 +21,10 @@ const {
 	parseModulesToFlash,
 	maintainDeviceProtection,
 	flashFiles,
-	validateDFUSupport,
 	getFileFlashInfo
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
+const { validateDFUSupport } = require('./device-util');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -61,52 +61,54 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async flashOverUsb({ binary, factory }) {
-		let device;
-		try {
-			if (utilities.getFilenameExt(binary) === '.zip') {
-				throw new Error("Use 'particle flash --local' to flash a zipped bundle.");
-			}
-
-			const { api, auth } = this._particleApi();
-			const { flashMode, platformId } = await getFileFlashInfo(binary);
-			device = await usbUtils.getOneUsbDevice({ api, auth, ui: this.ui, flashMode, platformId });
-			const platformName = platformForId(device.platformId).name;
-			validateDFUSupport({ device, ui: this.ui });
-
-			let files;
-			const knownAppPath = knownAppsForPlatform(platformName)[binary];
-			if (knownAppPath) {
-				files = [knownAppPath];
-			} else {
-				files = [binary];
-			}
-
-			const modulesToFlash = await parseModulesToFlash({ files });
-
-			await this._validateModulesForPlatform({
-				modules: modulesToFlash,
-				platformId: device.platformId,
-				platformName
-			});
-			await maintainDeviceProtection({ modules: modulesToFlash, device });
-			const flashSteps = await createFlashSteps({
-				modules: modulesToFlash,
-				isInDfuMode: device.isInDfuMode,
-				platformId: device.platformId,
-				factory
-			});
-
-			this.ui.write(`Flashing ${platformName} device ${device.id}`);
-			const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
-			await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
-		} finally {
-			if (device && device.isOpen) {
-				await device.close();
-			}
+		if (utilities.getFilenameExt(binary) === '.zip') {
+			throw new Error("Use 'particle flash --local' to flash a zipped bundle.");
 		}
+
+		const { api, auth } = this._particleApi();
+		const { flashMode, platformId } = await getFileFlashInfo(binary);
+		await usbUtils.executeWithUsbDevice({
+			args: { api, auth, ui: this.ui, flashMode, platformId },
+			func: (dev) => this._flashOverUsb(dev, binary, factory)
+		});
+	}
+
+	async _flashOverUsb(device, binary, factory) {
+		const platformName = platformForId(device.platformId).name;
+		validateDFUSupport({ device, ui: this.ui });
+
+		let files;
+		const knownAppPath = knownAppsForPlatform(platformName)[binary];
+		if (knownAppPath) {
+			files = [knownAppPath];
+		} else {
+			files = [binary];
+		}
+
+		const modulesToFlash = await parseModulesToFlash({ files });
+
+		await this._validateModulesForPlatform({
+			modules: modulesToFlash,
+			platformId: device.platformId,
+			platformName
+		});
+		await maintainDeviceProtection({ modules: modulesToFlash, device });
+		const flashSteps = await createFlashSteps({
+			modules: modulesToFlash,
+			isInDfuMode: device.isInDfuMode,
+			platformId: device.platformId,
+			factory
+		});
+
+		this.ui.write(`Flashing ${platformName} device ${device.id}`);
+		const resetAfterFlash = !factory && modulesToFlash[0].prefixInfo.moduleFunction === ModuleInfo.FunctionType.USER_PART;
+		await flashFiles({ device, flashSteps, resetAfterFlash, ui: this.ui });
 	}
 
 	flashCloud({ device, files, target }) {
+		// We don't check for Device Protection here
+		// because it will not matter for cloud flashing
+		// These are rejected for Protected Devices even if the device is in Service Mode
 		const CloudCommands = require('../cmd/cloud');
 		const args = { target, params: { device, files } };
 		return new CloudCommands().flashDevice(args);
@@ -120,8 +122,13 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashLocal({ files, applicationOnly, target, verbose=true }) {
 		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
 		const { api, auth } = this._particleApi();
-		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceIdOrName, api, auth, ui: this.ui });
+		await usbUtils.executeWithUsbDevice({
+			args: { idOrName: deviceIdOrName, api, auth, ui: this.ui },
+			func: (dev) => this._flashLocal(dev, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose)
+		});
+	}
 
+	async _flashLocal(device, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose=true) {
 		const platformId = device.platformId;
 		const platformName = platformForId(platformId).name;
 		const currentDeviceOsVersion = device.firmwareVersion;

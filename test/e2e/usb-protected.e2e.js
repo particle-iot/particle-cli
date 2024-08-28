@@ -9,8 +9,7 @@ const {
 } = require('../lib/env');
 const stripAnsi = require('strip-ansi');
 
-
-describe('USB Commands [@device]', function cliUSBCommands(){
+describe('USB Commands for Protected Devices [@device]', function cliUSBCommands(){
 	this.timeout(5 * 60 * 1000);
 
 	const help = [
@@ -41,6 +40,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 	});
 
 	after(async () => {
+		await cli.setTestProfileAndLogin();
 		await cli.run(['usb', 'setup-done']);
 		await cli.waitUntilOnline();
 		await cli.logout();
@@ -75,6 +75,10 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		const platform = capitalize(DEVICE_PLATFORM_NAME);
 		let args;
 
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
 		beforeEach(async () => {
 			args = ['usb', 'list'];
 			await cli.setTestProfileAndLogin();
@@ -87,7 +91,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		it('Lists connected devices', async () => {
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -105,7 +109,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args.push(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -129,7 +133,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args.push(DEVICE_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -147,7 +151,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args.push(DEVICE_ID);
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -166,7 +170,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 			args.push('online');
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform})`);
+			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, PROTECTED)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
@@ -213,26 +217,43 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 	});
 
 	describe('USB Start-Listening Subcommand', () => {
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+			await cli.waitUntilOnline();
+		});
+
+		beforeEach(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
 		afterEach(async () => {
 			await cli.run(['usb', 'stop-listening']);
-			await cli.waitUntilOnline();
+			await cli.run(['device-protection', 'enable']);
 		});
 
 		it('Starts listening', async () => {
 			await cli.run(['usb', 'start-listening']);
 			await delay(2000);
 
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
 			const { stdout, stderr, exitCode } = await cli.run(['serial', 'identify']);
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.include(`Your device id is ${DEVICE_ID}`);
 			expect(stdout).to.include('Your system firmware version is');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 		});
 	});
 
 	describe('USB Stop-Listening Subcommand', () => {
 		beforeEach(async () => {
+			await cli.setTestProfileAndLogin();
+			await cli.waitUntilOnline();
 			await cli.run(['usb', 'start-listening']);
 			await delay(2000);
 		});
@@ -240,36 +261,61 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		afterEach(async () => {
 			await cli.resetDevice();
 			await delay(5000);
-			await cli.waitUntilOnline();
+			await cli.run(['device-protection', 'enable']);
 		});
 
 		it('Stops listening', async () => {
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
 			await cli.run(['usb', 'stop-listening']);
 
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 		});
 	});
 
 	describe('USB DFU Subcommand', () => {
-		after(async () => {
-			await cli.resetDevice();
-			await delay(5000);
+		before(async () => {
+			await cli.setTestProfileAndLogin();
 			await cli.waitUntilOnline();
 		});
 
+		beforeEach(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
+		after(async () => {
+			await cli.resetDevice();
+			await delay(5000);
+			await cli.run(['device-protection', 'enable']);
+		});
+
 		it('Enters DFU mode with confirmation', async () => {
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+
 			await cli.run(['usb', 'dfu', DEVICE_ID]);
 
 			const platform = capitalize(DEVICE_PLATFORM_NAME);
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'list']);
+
 			expect(stdout).to.include(`${DEVICE_NAME} [${DEVICE_ID}] (${platform}, DFU)`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+
+
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
+			// This will fail for device-os < 6.1.2
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
 
 			await cli.resetDevice();
 			await delay(5000);
@@ -292,59 +338,102 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 	});
 
 	describe('USB Cloud Status Subcommand', () => {
+		before(async () => {
+			await cli.setTestProfileAndLogin();
+			await cli.waitUntilOnline();
+			await cli.run(['device-protection', 'enable']);
+		});
+
+		beforeEach(async () => {
+			await cli.setTestProfileAndLogin();
+		});
+
+		after(async () => {
+			await cli.run(['device-protection', 'enable']);
+		});
+
 		it('Reports current cloud connection status', async () => {
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_NAME]);
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 		});
 
 		it('Reports current cloud connection status for device id', async () => {
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'cloud-status', DEVICE_ID]);
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 		});
 
 		it('Polls cloud connection status using the `--until` flag', async () => {
-			await cli.resetDevice();
-			await delay(5000);
-
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'connected'];
 			const { stdout, stderr, exitCode } = await cli.run(args);
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stripAnsi(stdout)).to.equal('connected');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 		});
 
 		it('Fails with timeout error when polling cloud connection status using the `--until` flag', async () => {
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
 			const args = ['usb', 'cloud-status', DEVICE_ID, '--until', 'disconnecting', '--timeout', 2 * 1000];
 			const { stdout, stderr, exitCode } = await cli.run(args);
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stripAnsi(stdout)).to.equal('timed-out waiting for status...');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 		});
 	});
 
 	describe('USB network-interfaces Subcommand', () => {
-		after(async () => {
-			await cli.resetDevice();
-			await delay(5000);
+		before(async () => {
 			await cli.waitUntilOnline();
 		});
 
+		after(async () => {
+			await cli.run(['device-protection', 'enable']);
+		});
+
 		it('provides network interfaces', async () => {
+			const { stdout: stdoutPBefore } = await cli.run(['device-protection', 'status']);
 			const ifacePattern = /\w+\(\w+\): flags=\d+<[\w,]+> mtu \d+/;
 
 			const { stdout, stderr, exitCode } = await cli.run(['usb', 'network-interfaces']);
+			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stdout).to.match(ifacePattern);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
+			expect((stdoutPBefore.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPBefore.split('\n'))[0]).to.not.include('Service Mode');
+			expect((stdoutPAfter.split('\n'))[0]).to.include('Protected Device');
+			expect((stdoutPAfter.split('\n'))[0]).to.not.include('Service Mode');
 		});
 	});
 });

@@ -15,12 +15,15 @@ const settings = require('../../settings');
 const SerialBatchParser = require('../lib/serial-batch-parser');
 const SerialTrigger = require('../lib/serial-trigger');
 const spinnerMixin = require('../lib/spinner-mixin');
-const { ensureError } = require('../lib/utilities');
+const { ensureError, delay } = require('../lib/utilities');
 const FlashCommand = require('./flash');
 const usbUtils = require('./usb-util');
 const { platformForId } = require('../lib/platform');
 const { FirmwareModuleDisplayNames } = require('particle-usb');
 const semver = require('semver');
+const { getProtectionStatus, disableDeviceProtection } = require('../lib/device-protection-helper');
+const ParticleApi = require('../cmd/api');
+const createApiCache = require('../lib/api-cache');
 
 const IDENTIFY_COMMAND_TIMEOUT = 20000;
 
@@ -133,6 +136,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		let cleaningUp = false;
 		let selectedDevice;
 		let serialPort;
+		const { api, auth } = this._particleApi();
 
 		const displayError = (err) => {
 			if (err){
@@ -142,7 +146,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 		};
 
 		// Called when port closes
-		const handleClose = () => {
+		const handleClose = async () => {
 			this.ui.stdout.write(`${os.EOL}`);
 			if (follow && !cleaningUp){
 				this.ui.stdout.write(`${chalk.bold.white('Serial connection closed.  Attempting to reconnect...')}${os.EOL}`);
@@ -167,20 +171,37 @@ module.exports = class SerialCommand extends CLICommandBase {
 			this.ui.stdout.write(`${chalk.bold.white('Serial monitor opened successfully:')}${os.EOL}`);
 		};
 
+		const handleDeviceProtection = async () => {
+			let usbDevice;
+			try {
+				usbDevice = await usbUtils.getOneUsbDevice({ idOrName: selectedDevice.deviceId, api, auth });
+				const s = await getProtectionStatus(usbDevice);
+				if (s.protected) {
+					await disableDeviceProtection(usbDevice);
+				}
+			} catch (err) {
+				// ignore error
+			} finally {
+				if (usbDevice && usbDevice.isOpen) {
+					await usbDevice.close();
+				}
+			}
+		};
+
+
 		// If device is not found but we are still '--follow'ing to find a device,
 		// handlePortFn schedules a delayed retry using setTimeout.
-		const handlePortFn = (device) => {
+		const handlePortFn = async (device) => {
 			if (!device) {
 				if (follow) {
-					setTimeout(() => {
-						if (cleaningUp){
-							return;
-						} else {
-							this.whatSerialPortDidYouMean(port, true)
-								.catch(() => null)
-								.then(handlePortFn);
-						}
-					}, settings.serial_follow_delay);
+					await delay(settings.serial_follow_delay);
+					if (cleaningUp){
+						return;
+					} else {
+						this.whatSerialPortDidYouMean(port, true)
+							.catch(() => null)
+							.then(handlePortFn);
+					}
 					return;
 				} else {
 					throw new VError('No serial port identified');
@@ -189,6 +210,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 			this.ui.stdout.write(`Opening serial monitor for com port: " ${device.port} "${os.EOL}`);
 			selectedDevice = device;
+			await handleDeviceProtection();
+			// Note that a Protected Device will be left in Service Mode after the operation
 			openPort();
 		};
 
@@ -210,10 +233,10 @@ module.exports = class SerialCommand extends CLICommandBase {
 			});
 		}
 
-		function reconnect(){
-			setTimeout(() => {
-				openPort(selectedDevice);
-			}, settings.serial_follow_delay);
+		async function reconnect(){
+			await delay(settings.serial_follow_delay);
+			await handleDeviceProtection();
+			openPort(selectedDevice);
 		}
 
 		process.on('SIGINT', handleInterrupt);
@@ -230,6 +253,18 @@ module.exports = class SerialCommand extends CLICommandBase {
 	}
 
 	/**
+	 * Creates and returns the Particle API and authentication token.
+	 *
+	 * @returns {Object} The Particle API instance and authentication token.
+	 */
+	_particleApi() {
+		const auth = settings.access_token;
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const apiCache = createApiCache(api);
+		return { api: apiCache, auth };
+	}
+
+	/**
 	 * Device identify gives the following
 	 *     - Device ID
 	 *     - (Cellular devices) Cell radio IMEI
@@ -242,21 +277,29 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 * @param {Number|String} comPort
 	 */
 	async identifyDevice({ port }) {
-		let deviceFromSerialPort, device;
-
+		let deviceFromSerialPort;
 		let deviceId = '';
-		let fwVer = '';
-		let cellularImei = '';
-		let cellularIccid = '';
 
-		// Obtain device
+		// For Protected Devices, there's a brief delay after the operation
+		// before Protection is re-enabled. A spinner provides visual feedback
+		// to the user during this process.
 		try {
 			deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
 			deviceId = deviceFromSerialPort.deviceId;
-			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+			await usbUtils.executeWithUsbDevice({
+				args: { idOrName: deviceId },
+				func: (dev) => this._identifyDevice(dev, deviceFromSerialPort)
+			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not identify device');
 		}
+	}
+
+	async _identifyDevice(device, deviceFromSerialPort) {
+		let fwVer = '';
+		let cellularImei = '';
+		let cellularIccid = '';
+		const deviceId = deviceFromSerialPort.deviceId;
 
 		// Obtain system firmware version
 		fwVer = device.firmwareVersion;
@@ -292,19 +335,12 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 			}
 		}
-
-		// Print whatever was obtained from the device
 		this._printIdentifyInfo({
 			deviceId,
 			fwVer,
 			cellularImei,
 			cellularIccid
 		});
-
-		// Clean up
-		if (device && device.isOpen) {
-			await device.close();
-		}
 	}
 
 	_printIdentifyInfo({ deviceId, fwVer, cellularImei, cellularIccid }) {
@@ -325,16 +361,20 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 * @param {string} port
 	 */
 	async deviceMac({ port }) {
-		let device;
-		let macAddress, currIfaceName;
 		try {
 			const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
 			const deviceId = deviceFromSerialPort.deviceId;
-			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+			await usbUtils.executeWithUsbDevice({
+				args: { idOrName: deviceId },
+				func: (dev) => this._deviceMac(dev)
+			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not identify device');
 		}
+	}
 
+	async _deviceMac(device) {
+		let macAddress, currIfaceName;
 		try {
 			const networkIfaceListreply = await device.getNetworkInterfaceList({ timeout: 2000 });
 
@@ -351,25 +391,23 @@ module.exports = class SerialCommand extends CLICommandBase {
 					break;
 				}
 			}
-
-			// Print output
-			if (macAddress) {
-				this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress)}${os.EOL}`);
-				this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
-			} else {
-				this.ui.stdout.write(`Your device does not have a MAC address${os.EOL}`);
-			}
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not get MAC address');
 		}
+		this._printMacAddress({
+			macAddress,
+			currIfaceName
+		});
+	}
 
-		// Clean up
-		if (device && device.isOpen) {
-			await device.close();
+	_printMacAddress({ macAddress, currIfaceName }) {
+		// Print output
+		if (macAddress) {
+			this.ui.stdout.write(`Your device MAC address is ${chalk.bold.cyan(macAddress)}${os.EOL}`);
+			this.ui.stdout.write(`Interface is ${_.capitalize(currIfaceName)}${os.EOL}`);
+		} else {
+			this.ui.stdout.write(`Your device does not have a MAC address${os.EOL}`);
 		}
-
-		// this return value is only for unit tests
-		return macAddress;
 	}
 
 	/**
@@ -377,30 +415,32 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 * @param {string} port
 	 */
 	async inspectDevice({ port }) {
-		let deviceFromSerialPort, deviceId, device;
-
+		let deviceFromSerialPort, deviceId;
 		try {
 			deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
 			deviceId = deviceFromSerialPort.deviceId;
-			device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
+			await usbUtils.executeWithUsbDevice({
+				args: { idOrName: deviceId },
+				func: (dev) => this._inspectDevice(dev)
+			});
 		} catch (err) {
 			throw new VError(ensureError(err), 'Could not inspect device');
 		}
+	}
 
+	async _inspectDevice(device) {
 		const platform = platformForId(device.platformId);
-		this.ui.stdout.write(`Device: ${chalk.bold.cyan(deviceId)}${os.EOL}`);
-		this.ui.stdout.write(`Platform: ${platform.id} - ${chalk.bold.cyan(platform.displayName)}${os.EOL}${os.EOL}`);
-
-		try {
-			await this._getModuleInfo(device);
-		} catch (err) {
-			throw new VError(ensureError(err), 'Could not inspect device');
+		const modules = await device.getFirmwareModuleInfo({ timeout: 5000 });
+		if (modules && modules.length > 0) {
+			for (const m of modules) {
+				if (m.assetDependencies && m.assetDependencies.length > 0) {
+					const assetInfo = await device.getAssetInfo({ timeout: 5000 });
+					m.availableAssets = assetInfo.available;
+					m.requiredAssets = assetInfo.required;
+				}
+			}
 		}
-
-		// Clean up
-		if (device && device.isOpen) {
-			await device.close();
-		}
+		this._printInspectInfo({ deviceId: device.id, platform, modules });
 	}
 
 	/**
@@ -408,8 +448,9 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 * @param {object} device
 	 * @returns {boolean} returns error or true
 	 */
-	async _getModuleInfo(device) {
-		const modules = await device.getFirmwareModuleInfo({ timeout: 5000 });
+	async _printInspectInfo({ deviceId, platform, modules }) {
+		this.ui.stdout.write(`Device: ${chalk.bold.cyan(deviceId)}${os.EOL}`);
+		this.ui.stdout.write(`Platform: ${platform.id} - ${chalk.bold.cyan(platform.displayName)}${os.EOL}${os.EOL}`);
 
 		if (modules && modules.length > 0) {
 			this.ui.stdout.write(chalk.underline(`Modules${os.EOL}`));
@@ -436,9 +477,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				}
 
 				if (m.assetDependencies && m.assetDependencies.length > 0) {
-					const assetInfo = await device.getAssetInfo({ timeout: 5000 });
-					const availableAssets = assetInfo.available;
-					const requiredAssets = assetInfo.required;
+					const { availableAssets, requiredAssets } = m;
 					this.ui.stdout.write(`    Asset Dependencies:${os.EOL}`);
 					this.ui.stdout.write(`      Required:${os.EOL}`);
 					requiredAssets.forEach((asset) => {
@@ -456,7 +495,6 @@ module.exports = class SerialCommand extends CLICommandBase {
 				this.ui.stdout.write(`${os.EOL}`);
 			}
 		}
-		return Promise.resolve(true);
 	}
 
 	async flashDevice(binary, { port }) {
@@ -524,13 +562,18 @@ module.exports = class SerialCommand extends CLICommandBase {
 	async configureWifi({ port, file }){
 		const deviceFromSerialPort = await this.whatSerialPortDidYouMean(port, true);
 		const deviceId = deviceFromSerialPort.deviceId;
-		const device = await usbUtils.getOneUsbDevice({ idOrName: deviceId });
 		if (!deviceFromSerialPort?.specs?.features?.includes('wifi')) {
 			throw new VError('The device does not support Wi-Fi');
 		}
 
+		await usbUtils.executeWithUsbDevice({
+			args: { idOrName: deviceId },
+			func: this._configureWifi.bind(this, deviceFromSerialPort, file)
+		});
+	}
+
+	async _configureWifi(deviceFromSerialPort, file, device){
 		const fwVer = device.firmwareVersion;
-		await device.close();
 
 		// XXX: Firmware version TBD
 		if (semver.gte(fwVer, '6.2.0')) {
@@ -541,11 +584,14 @@ module.exports = class SerialCommand extends CLICommandBase {
 		}
 
 		// configure Wi-Fi via serial interface
+		let res;
 		if (file){
-			return this._configWifiFromFile(deviceFromSerialPort, file);
+			res = await this._configWifiFromFile(deviceFromSerialPort, file);
 		} else {
-			return this.promptWifiScan(deviceFromSerialPort);
+			res = await this.promptWifiScan(deviceFromSerialPort);
 		}
+		return res;
+
 	}
 
 	_configWifiFromFile(device, filename){
