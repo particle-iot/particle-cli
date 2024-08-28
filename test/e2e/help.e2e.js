@@ -34,7 +34,6 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  project            Manage application projects',
 		'  publish            Publish an event to the cloud',
 		'  serial             Simple serial interface to your devices',
-		'  setup              NOT SUPPORTED. Go to setup.particle.io with your browser',
 		'  subscribe          Listen to device event stream',
 		'  token              Manage access tokens (require username/password)',
 		'  udp                Talk UDP to repair devices, run patches, check Wi-Fi, and more!',
