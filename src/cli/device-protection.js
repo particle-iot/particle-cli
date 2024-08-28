@@ -2,9 +2,15 @@ module.exports = ({ commandProcessor, root }) => {
 	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Manage Device Protection');
 
 	commandProcessor.createCommand(deviceProtection, 'status', 'Gets the current Device Protection status', {
-		handler: () => {
+		options: {
+			device: {
+				description: 'Device ID or name',
+				alias: 'd'
+			}
+		},
+		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
-			return new DeviceProtectionCommands().getStatus();
+			return new DeviceProtectionCommands().getStatus(args);
 		},
 		examples: {
 			'$0 $command': 'Gets the current Device Protection status'
@@ -12,10 +18,15 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(deviceProtection, 'disable', 'Disables Device Protection', {
-
-		handler: () => {
+		options: {
+			d: {
+				description: 'Device ID or name',
+				alias: 'device'
+			}
+		},
+		handler: (args) => {
 			const DeviceProtectionCommands = require('../cmd/device-protection');
-			return new DeviceProtectionCommands().disableProtection();
+			return new DeviceProtectionCommands().disableProtection(args);
 		},
 		examples: {
 			'$0 $command': 'Puts a Protected Device to Service Mode',
@@ -27,6 +38,10 @@ module.exports = ({ commandProcessor, root }) => {
 		options: {
 			file: {
 				description: 'File to use for Device Protection'
+			},
+			d: {
+				description: 'Device ID or name',
+				alias: 'device'
 			}
 		},
 		handler: (args) => {
