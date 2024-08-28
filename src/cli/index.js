@@ -16,7 +16,6 @@ const product = require('./product');
 const project = require('./project');
 const publish = require('./publish');
 const serial = require('./serial');
-const setup = require('./setup');
 const subscribe = require('./subscribe');
 const token = require('./token');
 const udp = require('./udp');
@@ -62,7 +61,6 @@ module.exports = function registerAllCommands(context) {
 	project(context);
 	publish(context);
 	serial(context);
-	setup(context);
 	subscribe(context);
 	token(context);
 	udp(context);
