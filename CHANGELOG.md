@@ -1,5 +1,11 @@
 # Changelog
 
+# 3.26.0 - Aug 28 2024
+* Add support for Protected Devices in CLI operations
+* Add option to filter device with particle device-protection commands
+* Remove particle setup command
+* Update device constants for new display names and gen4
+
 # 3.25.1 - Jul 18 2024
 * Fix open url action on windows for `particle login --sso` command
 
