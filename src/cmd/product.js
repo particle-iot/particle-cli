@@ -42,8 +42,8 @@ module.exports = class ProductCommand extends CLICommandBase {
 			.then(result => this.showDeviceAddResult(result));
 	}
 
-	showDeviceAddResult({ product, identifiers, status: { invalidDeviceIds = [], nonmemberDeviceIds = [] } } = {}){
-		identifiers = filterDeviceIdentifiers(identifiers, invalidDeviceIds, nonmemberDeviceIds);
+	showDeviceAddResult({ product, identifiers, status: { invalidDeviceIds = [], nonmemberDeviceIds = [], protectedDeviceIds = [] } } = {}){
+		identifiers = filterDeviceIdentifiers(identifiers, invalidDeviceIds, nonmemberDeviceIds, protectedDeviceIds);
 		const message = [];
 
 		if (identifiers.length){
@@ -71,6 +71,14 @@ module.exports = class ProductCommand extends CLICommandBase {
 			message.push(
 				'Skipped Invalid IDs:',
 				dedupeAndStringifyIDList(invalidDeviceIds),
+				''
+			);
+		}
+
+		if (protectedDeviceIds.length){
+			message.push(
+				'Skipped Protected IDs:',
+				dedupeAndStringifyIDList(protectedDeviceIds),
 				''
 			);
 		}
@@ -200,9 +208,10 @@ function readDeviceListFile(file){
 		});
 }
 
-function filterDeviceIdentifiers(identifiers, invalid = [], nonmember = []){
+function filterDeviceIdentifiers(identifiers, invalid = [], nonmember = [], protectedDevice = []){
 	return identifiers.reduce((out, x) => {
-		if (!hasDeviceIdentifier(x, invalid) && !hasDeviceIdentifier(x, nonmember)){
+		if (!hasDeviceIdentifier(x, invalid) && !hasDeviceIdentifier(x, nonmember)
+			&& !hasDeviceIdentifier(x, protectedDevice)){
 			out.push(x);
 		}
 		return out;
