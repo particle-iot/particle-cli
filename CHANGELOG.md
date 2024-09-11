@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.27.0 - Sep 11 2024
+* Skip adding protected devices to non-protection products
+* Use DeviceOS versions endpoint
+
 # 3.26.0 - Aug 28 2024
 * Add support for Protected Devices in CLI operations
 * Add option to filter device with particle device-protection commands
