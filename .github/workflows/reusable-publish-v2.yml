@@ -77,7 +77,7 @@ jobs:
               run: |
                 aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_BINARIES_ID }} --paths "/particle-cli/manifest.json" "/particle-cli/installer/manifest.json" "/particle-cli/installer/win32/ParticleCLISetup.exe"
             - name: Upload artifacts
-              uses: actions/upload-artifact@v2
+              uses: actions/upload-artifact@v4
               with:
                   name: release
                   path: build/
