@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.27.1 - Sep 11 2024
+* Update actions/upload-artifact to v4
+
 # 3.27.0 - Sep 11 2024
 * Skip adding protected devices to non-protection products
 * Use DeviceOS versions endpoint
