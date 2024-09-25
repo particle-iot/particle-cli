@@ -6,7 +6,7 @@ const {
 } = require('../lib/env');
 const stripAnsi = require('strip-ansi');
 
-describe.only('Wi-Fi Commands for Protected Devices [@device,@wifi]', () => {
+describe('Wi-Fi Commands for Protected Devices [@device,@wifi]', () => {
 	const help = [
 		'Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).',
 		'Usage: particle wifi <command>',

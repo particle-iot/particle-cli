@@ -8,7 +8,7 @@ const stripAnsi = require('strip-ansi');
 const { delay } = require('../lib/mocha-utils');
 
 
-describe.only('Update Commands for Protected Devices [@device]', () => {
+describe('Update Commands for Protected Devices [@device]', () => {
 	before(async () => {
 		await cli.setTestProfileAndLogin();
 	});
