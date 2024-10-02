@@ -26,18 +26,12 @@ module.exports = class ParticleApi {
 			});
 	}
 
-	logout(){
-		this.accessToken = undefined;
-		return Promise.resolve();
-	}
-
-	removeAccessToken(username, password, token){
-		return this.api.removeAccessToken({ username, password, token })
-			.then(() => {
-				if (token === this.accessToken){
-					this.logout();
-				}
-			});
+	async deleteCurrentAccessToken(){
+		return this._wrap(
+			this.api.deleteCurrentAccessToken({
+				auth: this.accessToken
+			})
+		);
 	}
 
 	getUserInfo(){

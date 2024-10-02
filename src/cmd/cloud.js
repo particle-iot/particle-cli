@@ -558,55 +558,20 @@ module.exports = class CloudCommand extends CLICommandBase {
 			});
 	}
 
-	doLogout(keep, password){
-		const api = new ApiClient();
-
-		return Promise.resolve()
-			.then(() => {
-				if (!keep){
-					return api.removeAccessToken(settings.username, password, settings.access_token);
-				}
-				this.ui.stdout.write(`${arrow} Leaving your token intact.${os.EOL}`);
-			})
-			.then(() => {
-				this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
-				settings.override(null, 'username', null);
-				settings.override(null, 'access_token', null);
-			})
-			.catch(err => {
-				throw new VError(ensureError(err), 'There was an error revoking the token');
-			});
-	}
-
-	logout(noPrompt){
+	async logout(){
 		if (!settings.access_token){
 			this.ui.stdout.write(`You were already logged out.${os.EOL}`);
 			return;
 		}
 
-		if (noPrompt){
-			return this.doLogout(true);
+		try {
+			await createAPI().deleteCurrentAccessToken();
+			this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
+			settings.override(null, 'username', null);
+			settings.override(null, 'access_token', null);
+		} catch (err) {
+			throw new VError(ensureError(err), 'There was an error revoking the token');
 		}
-
-		const questions = [
-			{
-				type: 'confirm',
-				name: 'keep',
-				message: 'Would you like to keep the current authentication token?',
-				default: true
-			},
-			{
-				type: 'password',
-				name: 'password',
-				message: 'Please enter your password',
-				when: (ans) => {
-					return !ans.keep;
-				}
-			}
-		];
-
-		return prompt(questions)
-			.then(({ password, keep }) => this.doLogout(keep, password));
 	}
 
 

@@ -1,13 +1,6 @@
 module.exports = ({ commandProcessor, root }) => {
 	const token = commandProcessor.createCategory(root, 'token', 'Manage access tokens (require username/password)');
 
-	commandProcessor.createCommand(token, 'list', 'List all access tokens for your account', {
-		handler: () => {
-			const AccessTokenCommands = require('../cmd/token');
-			return new AccessTokenCommands().listAccessTokens();
-		}
-	});
-
 	commandProcessor.createCommand(token, 'revoke', 'Revoke an access token', {
 		params: '<tokens...>',
 		options: {
