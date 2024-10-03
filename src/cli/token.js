@@ -1,3 +1,5 @@
+const AccessTokenCommands = require('../cmd/token');
+
 module.exports = ({ commandProcessor, root }) => {
 	const token = commandProcessor.createCategory(root, 'token', 'Manage access tokens (require username/password)');
 
@@ -10,7 +12,6 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const AccessTokenCommands = require('../cmd/token');
 			return new AccessTokenCommands().revokeAccessToken(args.params.tokens, args);
 		}
 	});
@@ -27,7 +28,6 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		},
 		handler: (args) => {
-			const AccessTokenCommands = require('../cmd/token');
 			return new AccessTokenCommands().createAccessToken({ expiresIn: args['expires-in'], neverExpires: args['never-expires'] });
 		}
 	});

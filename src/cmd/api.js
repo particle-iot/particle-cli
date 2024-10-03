@@ -34,11 +34,17 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	/**
+	 * @param {string} token
+	 * @returns {Promise<void>}
+	 */
+	async revokeAccessToken(token) {
+		return this._wrap(this.api.deleteAccessToken({ token }));
+	}
+
 	getUserInfo(){
 		return this._wrap(
-			this.api.getUserInfo({
-				auth: this.accessToken
-			})
+			this.api.getUserInfo({ auth: this.accessToken })
 		);
 	}
 

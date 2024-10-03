@@ -4,6 +4,7 @@ const settings = require('../../settings');
 const ApiClient = require('../lib/api-client');
 const prompts = require('../lib/prompts');
 const CloudCommand = require('./cloud');
+const ParticleApi = require('./api');
 
 
 module.exports = class AccessTokenCommands {
@@ -32,6 +33,42 @@ module.exports = class AccessTokenCommands {
 				password: answers.password,
 				otp: answers.otp
 			}));
+	}
+
+	/**
+	 * @param {string[]} tokens
+	 * @param {Object} options
+	 * @param {boolean} options.force
+	 * @returns {Promise<number | undefined>}
+	 */
+	async revokeAccessToken(tokens, { force }) {
+		if (tokens.length === 0) {
+			console.error('You must provide at least one access token to revoke');
+			return -1;
+		}
+
+		if (tokens.indexOf(settings.access_token) >= 0) {
+			console.log('WARNING: ' + settings.access_token + " is this CLI's access token");
+			if (force) {
+				console.log('**forcing**');
+			} else {
+				console.log('use --force to delete it');
+				return -1;
+			}
+		}
+
+		const particle = new ParticleApi(settings.apiUrl, { accessToken: settings.access_token });
+		const results = await Promise.allSettled(
+			tokens.map((token) => particle.revokeAccessToken(token))
+		);
+
+		const fails = results.filter((result) => result.status === 'rejected');
+		if (fails.length > 0) {
+			console.error('Failed to revoke the following access tokens:');
+			fails.forEach((fail, i) => console.error(`  token: ${tokens[i]}; reason: ${fail.reason.message}`));
+			return -1;
+		}
+		console.log('Successfully revoked all provided tokens');
 	}
 
 	/**

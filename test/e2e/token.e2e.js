@@ -12,6 +12,7 @@ describe('Token Commands', () => {
 		'Help:  particle help token <command>',
 		'',
 		'Commands:',
+		'  revoke  Revoke an access token',
 		'  create  Create a new access token',
 		'',
 		'Global Options:',
