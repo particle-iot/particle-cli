@@ -4,6 +4,7 @@ const settings = require('../../settings');
 const ApiClient = require('../lib/api-client');
 const prompts = require('../lib/prompts');
 const CloudCommand = require('./cloud');
+const ParticleApi = require('./api');
 
 
 module.exports = class AccessTokenCommands {
@@ -34,55 +35,13 @@ module.exports = class AccessTokenCommands {
 			}));
 	}
 
-	getAccessTokens (api) {
-		console.error('Checking with the cloud...');
-
-		const sortTokens = (tokens) => {
-			return tokens.sort((a, b) => {
-				return (b.expires_at || '').localeCompare(a.expires_at);
-			});
-		};
-
-		return Promise.resolve()
-			.then(() => {
-				return this.getCredentials({ includeOTP: true });
-			})
-			.then(({ username, password, otp = '' }) => {
-				return api.listTokens(username, password, otp);
-			})
-			.then(tokens => {
-				return sortTokens(tokens);
-			});
-	}
-
-	listAccessTokens () {
-		const api = new ApiClient();
-		return this.getAccessTokens(api).then((tokens) => {
-			const lines = [];
-			for (let i = 0; i < tokens.length; i++) {
-				const token = tokens[i];
-
-				let firstLine = token.client || token.client_id;
-				if (token.token === settings.access_token) {
-					firstLine += ' (active)';
-				}
-				const now = (new Date()).toISOString();
-				if (now > token.expires_at) {
-					firstLine += ' (expired)';
-				}
-
-				lines.push(firstLine);
-				lines.push(' Token:      ' + token.token);
-				lines.push(' Expires at: ' + token.expires_at || 'unknown');
-				lines.push('');
-			}
-			console.log(lines.join('\n'));
-		}).catch(err => {
-			throw new VError(api.normalizedApiError(err), 'Error while listing tokens');
-		});
-	}
-
-	revokeAccessToken (tokens, { force }) {
+	/**
+	 * @param {string[]} tokens
+	 * @param {Object} options
+	 * @param {boolean} options.force
+	 * @returns {Promise<number | undefined>}
+	 */
+	async revokeAccessToken(tokens, { force }) {
 		if (tokens.length === 0) {
 			console.error('You must provide at least one access token to revoke');
 			return -1;
@@ -98,25 +57,18 @@ module.exports = class AccessTokenCommands {
 			}
 		}
 
-		const api = new ApiClient();
+		const particle = new ParticleApi(settings.apiUrl, { accessToken: settings.access_token });
+		const results = await Promise.allSettled(
+			tokens.map((token) => particle.revokeAccessToken(token))
+		);
 
-		return this.getCredentials()
-			.then((creds) => {
-				const promises = tokens.map((tkn) => {
-					return api.removeAccessToken(creds.username, creds.password, tkn)
-						.then(() => {
-							console.log('successfully deleted ' + tkn);
-							if (tkn === settings.access_token){
-								settings.override(null, 'access_token', null);
-							}
-						});
-				});
-
-				return Promise.all(promises)
-					.catch(err => {
-						throw new VError(api.normalizedApiError(err), 'Error while revoking tokens');
-					});
-			});
+		const fails = results.filter((result) => result.status === 'rejected');
+		if (fails.length > 0) {
+			console.error('Failed to revoke the following access tokens:');
+			fails.forEach((fail, i) => console.error(`  token: ${tokens[i]}; reason: ${fail.reason.message}`));
+			return -1;
+		}
+		console.log('Successfully revoked all provided tokens');
 	}
 
 	/**

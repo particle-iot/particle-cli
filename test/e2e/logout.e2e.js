@@ -1,9 +1,7 @@
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
-const {
-	USERNAME
-} = require('../lib/env');
+const { USERNAME } = require('../lib/env');
 
 
 describe('Logout Commands', () => {
