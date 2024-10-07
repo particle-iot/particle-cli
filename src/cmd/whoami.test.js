@@ -3,6 +3,7 @@ const { withConsoleStubs } = require('../../test/lib/mocha-utils');
 const settings = require('../../settings');
 const ApiClient = require('../lib/api-client');
 const WhoAmICommands = require('./whoami');
+const stripAnsi = require('strip-ansi');
 
 
 describe('Whoami Commands', () => {
@@ -25,8 +26,7 @@ describe('Whoami Commands', () => {
 		sandbox.restore();
 	});
 
-	// We don't need to monitor stdout here, but the stub also sets TTY to false forcing color consistency locally and in CI
-	it('fails when user is signed-out', withConsoleStubs(sandbox, () => {
+	it('fails when user is signed-out', () => {
 		sandbox.stub(ApiClient.prototype, '_access_token').get(() => null);
 		const whoAmI = whoAmICommands();
 
@@ -35,9 +35,9 @@ describe('Whoami Commands', () => {
 				throw new Error('expected promise to be rejected');
 			})
 			.catch(error => {
-				expect(error).to.have.property('message', 'You\'re not logged in. Please login using [1m[36mparticle cloud login[39m[22m before using this command');
+				expect(stripAnsi(error.message)).to.eql('You\'re not logged in. Please login using particle cloud login before using this command');
 			});
-	}));
+	});
 
 	it('fails when token is invalid', () => {
 		sandbox.stub(ApiClient.prototype, 'getUser').throws();
