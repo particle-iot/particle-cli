@@ -47,7 +47,7 @@ const _ = require('lodash');
 const path = require('path');
 const chalk = require('chalk');
 const VError = require('verror');
-const request = require('request');
+const requestLib = require('request');
 const Spinner = require('cli-spinner').Spinner;
 const settings = require('../../settings');
 
@@ -61,12 +61,28 @@ const settings = require('../../settings');
  *
  */
 module.exports = class ApiClient {
-	constructor(baseUrl, accessToken){
-		this._access_token = accessToken || settings.access_token;
+	#access_token;
+	get _access_token() {
+		return this.#access_token;
+	}
+	set _access_token(value) {
+		this.#access_token = value;
+		this.request = this.request.defaults({
+			headers: {
+				Authorization: `Bearer ${value}`
+			}
+		});
+	}
 
-		this.request = request.defaults({
+	constructor(baseUrl, accessToken){
+		this.#access_token = accessToken || settings.access_token;
+
+		this.request = requestLib.defaults({
 			baseUrl: baseUrl || settings.apiUrl,
-			proxy: settings.proxyUrl || process.env.HTTPS_PROXY || process.env.https_proxy
+			proxy: settings.proxyUrl || process.env.HTTPS_PROXY || process.env.https_proxy,
+			headers: {
+				Authorization: `Bearer ${this._access_token}`
+			}
 		});
 	}
 
@@ -104,19 +120,9 @@ module.exports = class ApiClient {
 		return this.constructor.normalizedApiError(...args);
 	}
 
-	ready(){
-		let hasToken = this.hasToken();
-
-		if (!hasToken){
-			console.log("You're not logged in. Please login using", chalk.bold.cyan('particle cloud login'), 'before using this command');
-		}
-
-		return hasToken;
-	}
-
 	ensureToken(){
 		if (!this._access_token){
-			throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
+			throw new VError(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
 		}
 	}
 
@@ -124,22 +130,7 @@ module.exports = class ApiClient {
 		return !!this._access_token;
 	}
 
-	clearToken(){
-		this._access_token = null;
-	}
-
-	getToken (){
-		return this._access_token;
-	}
-
-	updateToken(token){
-		this._access_token = token;
-	}
-
 	createUser(user, pass){
-		const { request } = this;
-		let self = this;
-
 		if (!user || (user === '')
 			|| (!user.includes('@'))
 			|| (!user.includes('.'))){
@@ -157,7 +148,7 @@ module.exports = class ApiClient {
 				}
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
@@ -166,33 +157,27 @@ module.exports = class ApiClient {
 					return reject(body.errors);
 				}
 
-				self._user = user;
-				self._pass = pass;
+				this._user = user;
+				this._pass = pass;
 				resolve(body);
 			});
 		});
 	}
 
-	getUser(token){
-		const { request, hasBadToken } = this;
-		token = token || this._access_token;
-
+	getUser(){
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/user',
 				method: 'GET',
-				json: true,
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
+				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					// TODO (mirande): throw a real error and supress the logging
 					// done within hasBadToken();
 					return reject('Invalid token');
@@ -208,10 +193,8 @@ module.exports = class ApiClient {
 	 * Outputs failure to the console.
 	 */
 	login(clientId, user, pass){
-		let that = this;
-
 		return this.createAccessToken(clientId, user, pass).then((body) => {
-			that._access_token = body.access_token;
+			this._access_token = body.access_token;
 			return body;
 		});
 	}
@@ -225,8 +208,6 @@ module.exports = class ApiClient {
 	 * @returns {Promise} to create the token
 	 */
 	createAccessToken(clientId, username, password, expiresIn){
-		const { request } = this;
-
 		const form = {
 			username: username,
 			password: password,
@@ -247,7 +228,7 @@ module.exports = class ApiClient {
 				form
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
@@ -262,9 +243,6 @@ module.exports = class ApiClient {
 	}
 
 	sendOtp(clientId, mfaToken, otp){
-		const { request } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/oauth/token',
@@ -279,7 +257,7 @@ module.exports = class ApiClient {
 				}
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
@@ -288,7 +266,7 @@ module.exports = class ApiClient {
 					return reject(body);
 				}
 
-				self._access_token = body.access_token;
+				this._access_token = body.access_token;
 				resolve(body);
 			});
 		});
@@ -297,26 +275,23 @@ module.exports = class ApiClient {
 	//GET /v1/devices
 	listDevices({ silent = false } = {}){
 		let spinner = new Spinner('Retrieving devices...');
-		const { request } = this;
-		let self = this;
-
 		if (!silent){
 			spinner.start();
 		}
 
 		return new Promise((resolve, reject) => {
 			const options = {
-				uri: '/v1/devices?access_token=' + self._access_token,
+				uri: '/v1/devices',
 				method: 'GET',
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -327,7 +302,7 @@ module.exports = class ApiClient {
 					return reject(body.error);
 				}
 
-				self._devices = body;
+				this._devices = body;
 				resolve(body);
 			});
 		})
@@ -335,9 +310,6 @@ module.exports = class ApiClient {
 	}
 
 	claimDevice(deviceId, requestTransfer){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/devices',
@@ -345,17 +317,16 @@ module.exports = class ApiClient {
 				json: true,
 				form: {
 					id: (deviceId || '').toLowerCase(),
-					access_token: token,
 					request_transfer: requestTransfer ? true : undefined
 				}
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -369,9 +340,6 @@ module.exports = class ApiClient {
 	}
 
 	removeDevice(deviceID){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		console.log('releasing device ' + deviceID);
 
 		return new Promise((resolve, reject) => {
@@ -379,18 +347,17 @@ module.exports = class ApiClient {
 				uri: '/v1/devices/' + deviceID,
 				method: 'DELETE',
 				form: {
-					id: deviceID,
-					access_token: token
+					id: deviceID
 				},
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -405,26 +372,22 @@ module.exports = class ApiClient {
 
 
 	renameDevice(deviceId, name){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/devices/' + deviceId,
 				method: 'PUT',
 				json: true,
 				form: {
-					name: name,
-					access_token: token
+					name: name
 				}
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -443,22 +406,19 @@ module.exports = class ApiClient {
 
 	//GET /v1/devices/{DEVICE_ID}
 	getAttributes(deviceId){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
-				uri: `/v1/devices/${deviceId}?access_token=${token}`,
+				uri: `/v1/devices/${deviceId}`,
 				method: 'GET',
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -469,22 +429,19 @@ module.exports = class ApiClient {
 
 	//GET /v1/devices/{DEVICE_ID}/{VARIABLE}
 	getVariable(deviceId, name){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
-				uri: `/v1/devices/${deviceId}/${name}?access_token=${token}`,
+				uri: `/v1/devices/${deviceId}/${name}`,
 				method: 'GET',
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -495,26 +452,22 @@ module.exports = class ApiClient {
 
 	//PUT /v1/devices/{DEVICE_ID}
 	signalDevice(deviceId, beSignalling){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: `/v1/devices/${deviceId}`,
 				method: 'PUT',
 				form: {
-					signal: (beSignalling) ? 1 : 0,
-					access_token: token
+					signal: (beSignalling) ? 1 : 0
 				},
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -528,27 +481,21 @@ module.exports = class ApiClient {
 	// these are quite distinct operations, and even though they hit the same API should
 	// have different code paths here since there is little overlap in functionality
 	flashDevice(deviceId, fileMapping, targetVersion){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		console.log(`attempting to flash firmware to your device ${deviceId}`);
 
 		return new Promise((resolve, reject) => {
 			const options = {
 				method: 'PUT',
 				uri: `/v1/devices/${deviceId}`,
-				qs: {
-					access_token: token
-				},
 				json: true
 			};
 
-			const req = request(options, (error, response, body) => {
+			const req = this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -556,36 +503,30 @@ module.exports = class ApiClient {
 			});
 
 			// TODO (mirande): refactor this pattern away
-			self._addFilesToCompile(req, fileMapping, targetVersion);
+			this._addFilesToCompile(req, fileMapping, targetVersion);
 		});
 	}
 
 	compileCode(fileMapping, platformId, targetVersion){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		console.log('attempting to compile firmware ');
 
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/binaries',
-				qs: {
-					access_token: token
-				},
 				json: true
 			};
 
-			const req = request.post(options, (error, response, body) => {
+			const req = this.request.post(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
 				if (body.errors){
-					body.errors = self._mapFilenames(fileMapping, body.errors);
+					body.errors = this._mapFilenames(fileMapping, body.errors);
 				}
 
 				resolve(body);
@@ -593,7 +534,7 @@ module.exports = class ApiClient {
 
 
 			// TODO (mirande): refactor this pattern away
-			self._addFilesToCompile(req, fileMapping, targetVersion, platformId);
+			this._addFilesToCompile(req, fileMapping, targetVersion, platformId);
 		});
 	}
 
@@ -662,9 +603,6 @@ module.exports = class ApiClient {
 	}
 
 	downloadBinary(url, filename){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		if (fs.existsSync(filename)){
 			try {
 				fs.unlinkSync(filename);
@@ -677,18 +615,15 @@ module.exports = class ApiClient {
 
 		return new Promise((resolve, reject) => {
 			const options = {
-				uri: url,
-				qs: {
-					access_token: token
-				}
+				uri: url
 			};
 
-			const req = request.get(options);
+			const req = this.request.get(options);
 
 			req.pause();
 			req.on('error', (err) => reject(err));
 			req.on('response', (res) => {
-				if (self.isUnauthorized(res)){
+				if (this.isUnauthorized(res)){
 					return reject('Invalid token');
 				}
 
@@ -709,9 +644,6 @@ module.exports = class ApiClient {
 	}
 
 	sendPublicKey(deviceId, buffer, algorithm, productId){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		console.log('attempting to add a new public key for device ' + deviceId);
 
 		return new Promise((resolve, reject) => {
@@ -725,7 +657,6 @@ module.exports = class ApiClient {
 					order: `manual_${Date.now()}`,
 					filename: 'cli',
 					algorithm: algorithm,
-					access_token: token
 				}
 			};
 
@@ -733,12 +664,12 @@ module.exports = class ApiClient {
 				options.form.product_id = productId;
 			}
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -747,33 +678,29 @@ module.exports = class ApiClient {
 				}
 
 				console.log('submitting public key succeeded!');
-				self._devices = body;
+				this._devices = body;
 				resolve(response);
 			});
 		});
 	}
 
 	callFunction(deviceId, functionName, funcParam){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: `/v1/devices/${deviceId}/${functionName}`,
 				method: 'POST',
 				json: true,
 				form: {
-					arg: funcParam,
-					access_token: token
+					arg: funcParam
 				}
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -783,8 +710,6 @@ module.exports = class ApiClient {
 	}
 
 	getAllAttributes(){
-		let self = this;
-
 		if (this._attributeCache){
 			return Promise.resolve(this._attributeCache);
 		}
@@ -795,7 +720,7 @@ module.exports = class ApiClient {
 			.then(devices => {
 				if (!devices || (devices.length === 0)){
 					console.log('No devices found.');
-					self._attributeCache = null;
+					this._attributeCache = null;
 					return Promise.reject('No devices found');
 				}
 
@@ -805,7 +730,7 @@ module.exports = class ApiClient {
 					let deviceid = devices[i].id;
 
 					if (devices[i].connected){
-						promises.push(self.getAttributes(deviceid));
+						promises.push(this.getAttributes(deviceid));
 					} else {
 						promises.push(Promise.resolve(devices[i]));
 					}
@@ -816,15 +741,13 @@ module.exports = class ApiClient {
 						devices = devices.sort((a, b) => {
 							return (a.name || '').localeCompare(b.name);
 						});
-						self._attributeCache = devices;
+						this._attributeCache = devices;
 						return devices;
 					});
 			});
 	}
 
 	getEventStream(eventName, deviceId, onDataHandler){
-		const { request, _access_token: token } = this;
-		let self = this;
 		let failed = false;
 		let url;
 
@@ -844,15 +767,12 @@ module.exports = class ApiClient {
 
 		return new Promise((resolve, reject) => {
 			const options = {
-				uri: url,
-				qs: {
-					access_token: token
-				}
+				uri: url
 			};
 
-			request.get(options)
+			this.request.get(options)
 				.on('response', (res) => {
-					if (self.isUnauthorized(res)){
+					if (this.isUnauthorized(res)){
 						reject('Invalid access token');
 					}
 
@@ -872,9 +792,6 @@ module.exports = class ApiClient {
 	}
 
 	publishEvent(eventName, data){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/devices/events',
@@ -883,17 +800,16 @@ module.exports = class ApiClient {
 				form: {
 					name: eventName,
 					data: data,
-					access_token: token,
 					private: true
 				}
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -910,27 +826,21 @@ module.exports = class ApiClient {
 	}
 
 	createWebhookWithObj(obj){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/webhooks',
 				method: 'POST',
-				json: obj,
-				headers: {
-					Authorization: `Bearer ${token}`
-				}
+				json: obj
 			};
 
 			console.log('Sending webhook request ', options);
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -949,16 +859,14 @@ module.exports = class ApiClient {
 	}
 
 	deleteWebhook(hookID){
-		const { request, _access_token: token } = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
-				uri: `/v1/webhooks/${hookID}?access_token=${token}`,
+				uri: `/v1/webhooks/${hookID}`,
 				method: 'DELETE',
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
@@ -973,22 +881,19 @@ module.exports = class ApiClient {
 	}
 
 	listWebhooks(){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
-				uri: `/v1/webhooks/?access_token=${token}`,
+				uri: '/v1/webhooks',
 				method: 'GET',
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -998,26 +903,22 @@ module.exports = class ApiClient {
 	}
 
 	getBuildTargets(){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/build_targets',
 				qs: {
-					access_token: token,
 					featured: true
 				},
 				method: 'GET',
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
@@ -1027,25 +928,19 @@ module.exports = class ApiClient {
 	}
 
 	getClaimCode(){
-		const { request, _access_token: token } = this;
-		let self = this;
-
 		return new Promise((resolve, reject) => {
 			const options = {
 				uri: '/v1/device_claims',
 				method: 'POST',
-				qs: {
-					access_token: token,
-				},
 				json: true
 			};
 
-			request(options, (error, response, body) => {
+			this.request(options, (error, response, body) => {
 				if (error){
 					return reject(error);
 				}
 
-				if (self.hasBadToken(body)){
+				if (this.hasBadToken(body)){
 					return reject('Invalid token');
 				}
 
