@@ -54,7 +54,7 @@ const settings = require('../../settings');
 /**
  * Provides a framework for interacting with and testing the API
  * - apiUrl and access_token can be set, otherwise default to those in global settings
- * - accessors/mutators for access token
+ * - accessors/mutators for _access_token
  * - returns promises
  * - most functions generate console output on error, but not for success
  * - tests for specific known errors such as invalid access token.
@@ -124,10 +124,6 @@ module.exports = class ApiClient {
 		if (!this._access_token){
 			throw new VError(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
 		}
-	}
-
-	hasToken(){
-		return !!this._access_token;
 	}
 
 	createUser(user, pass){
