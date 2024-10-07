@@ -25,7 +25,8 @@ describe('Whoami Commands', () => {
 		sandbox.restore();
 	});
 
-	it('fails when user is signed-out', () => {
+	// We don't need to monitor stdout here, but the stub also sets TTY to false forcing color consistency locally and in CI
+	it('fails when user is signed-out', withConsoleStubs(sandbox, () => {
 		sandbox.stub(ApiClient.prototype, '_access_token').get(() => null);
 		const whoAmI = whoAmICommands();
 
@@ -36,7 +37,7 @@ describe('Whoami Commands', () => {
 			.catch(error => {
 				expect(error).to.have.property('message', 'You\'re not logged in. Please login using [1m[36mparticle cloud login[39m[22m before using this command');
 			});
-	});
+	}));
 
 	it('fails when token is invalid', () => {
 		sandbox.stub(ApiClient.prototype, 'getUser').throws();
