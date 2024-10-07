@@ -7,6 +7,7 @@ let settings = {
 	apiUrl: 'https://api.particle.io',
 	clientId: 'CLI2',
 	access_token: null,
+	username: null,
 	minimumApiDelay: 500,
 	useSudoForDfu: false,
 	flashWarningShownOn: null,
