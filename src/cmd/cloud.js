@@ -469,7 +469,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			.then(credentials => {
 				const { token, username, password, sso } = credentials;
 				const msg = 'Sending login details...';
-				const api = new ApiClient();
+				const api = new ApiClient(null, token);
 
 				this._usernameProvided = username;
 
@@ -485,7 +485,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				}
 
 				if (token){
-					return this.ui.showBusySpinnerUntilResolved(msg, api.getUser(token))
+					return this.ui.showBusySpinnerUntilResolved(msg, api.getUser())
 						.then(response => ({ token, username: response.username }));
 				}
 				const login = api.login(settings.clientId, username, password);
