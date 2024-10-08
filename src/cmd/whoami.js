@@ -17,9 +17,7 @@ module.exports = class WhoAmICommand {
 
 		return Promise.resolve()
 			.then(() => {
-				if (!api.hasToken()){
-					throw new VError('You are not signed in! Please run: `particle login`');
-				}
+				api.ensureToken();
 
 				this.newSpin('Checking...').start();
 

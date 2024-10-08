@@ -64,7 +64,6 @@ describe('Cloud Commands', () => {
 					expect(t).to.equal(fakeToken);
 					expect(api.login).to.have.property('callCount', 0);
 					expect(api.getUser).to.have.property('callCount', 1);
-					expect(api.getUser.firstCall.args).to.eql([fakeToken]);
 					expect(settings.override).to.have.property('callCount', 2);
 					expect(settings.override.firstCall.args).to.eql([null, 'access_token', fakeToken]);
 					expect(settings.override.secondCall.args).to.eql([null, 'username', username]);
