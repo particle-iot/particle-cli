@@ -7,8 +7,7 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'list', `Lists the deployed Logic Functions. ${os.EOL}${aliasDescription} list [options]`, {
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			}
 		},
 		handler: (args) => {
@@ -24,8 +23,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
@@ -49,8 +47,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
@@ -78,8 +75,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
@@ -120,8 +116,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
@@ -167,8 +162,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
@@ -192,8 +186,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '[filepath]',
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
@@ -216,8 +209,7 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'delete', `Deletes a Logic Function from the cloud. ${os.EOL}${aliasDescription} delete [options]`, {
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
@@ -245,8 +237,7 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(logicFunction, 'logs', `Shows logs from a Logic Function. ${os.EOL}${aliasDescription} logs [options]`, {
 		options: {
 			'org': {
-				description: 'Specify the organization',
-				hidden: true
+				description: 'Specify the organization'
 			},
 			'name': {
 				description: 'Name of the Logic Function'
