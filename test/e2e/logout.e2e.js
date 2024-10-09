@@ -41,11 +41,11 @@ describe('Logout Commands', () => {
 
 	it('Signs out', async () => {
 		const subprocess = cli.run(['logout']);
-		await delay(1000);
+		await delay(2000);
 
 		const { stdout, stderr, exitCode } = await subprocess;
 
-		expect(stdout, `MSG- err: ${stderr}; exit: ${exitCode}`).to.include(`You have been logged out from ${USERNAME}`);
+		expect(stdout, `err: ${stderr}; exit: ${exitCode}`).to.include(`You have been logged out from ${USERNAME}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
