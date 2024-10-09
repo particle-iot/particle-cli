@@ -143,7 +143,7 @@ class BinaryCommand {
 
 	async _verifyBundle(appInfo, assets) {
 		const appAssets = appInfo.assets;
-		if (appAssets && assets.length > 0) {
+		if (appAssets) {
 			console.log('It depends on assets:');
 			for (const appAsset of appAssets) {
 				const asset = assets.find((bundleAsset) => bundleAsset.name === appAsset.name);
@@ -213,6 +213,10 @@ class BinaryCommand {
 			+ ' at version '
 			+ chalk.bold(fileInfo.prefixInfo.moduleVersion.toString()));
 
+		if (fileInfo.suffixInfo.fwUniqueId) {
+			console.log(' It has a ' + chalk.bold('UUID') + ' of '
+			+ chalk.bold(fileInfo.suffixInfo.fwUniqueId.toString()));
+		}
 		if (fileInfo.suffixInfo.productId !== DEFAULT_PRODUCT_ID &&
 			fileInfo.suffixInfo.productVersion !== DEFAULT_PRODUCT_VERSION) {
 			console.log(' It is firmware for '

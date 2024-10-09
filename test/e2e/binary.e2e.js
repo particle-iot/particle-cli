@@ -54,7 +54,8 @@ describe('Binary Commands', () => {
 					'core_tinker.bin',
 					' CRC is ok (aded513e)',
 					' Compiled for core',
-					' This is a monolithic firmware number 0 at version 0'
+					' This is a monolithic firmware number 0 at version 0',
+					' It has a UUID of d7e7a22d276d68029c05dcf3a4e0157d4c2a6c2e269eb82fa5cb66f2cb5a0697'
 				]
 			},
 			{
@@ -64,6 +65,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (ba4f59ab)',
 					' Compiled for photon',
 					' This is an application module number 1 at version 2',
+					' It has a UUID of 2ba4e71e840f596b812003882aae7ca6496f1590ca4a049310af76eaf11c943a',
 					' It depends on a system module number 2 at version 1'
 				]
 			},
@@ -74,6 +76,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (4a738441)',
 					' Compiled for photon',
 					' This is an application module number 1 at version 3',
+					' It has a UUID of b3a6dcd529be70fbe24ee959c7305d58e3bc9a04acdce8f093c7a1f759097d09',
 					' It depends on a system module number 2 at version 6'
 				]
 			},
@@ -84,6 +87,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (61972e4d)',
 					' Compiled for p1',
 					' This is an application module number 1 at version 2',
+					' It has a UUID of 14d591f52cc90d5896b955dff02fb415ee5d3bb86a0b35d13483814f2e6fd26a',
 					' It depends on a system module number 2 at version 3'
 				]
 			},
@@ -94,6 +98,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (70e7c48c)',
 					' Compiled for p1',
 					' This is an application module number 1 at version 3',
+					' It has a UUID of e4da2ebfc575b274b77454827dab02799c87ed0342b046877c8052886fa89e08',
 					' It depends on a system module number 2 at version 6'
 				]
 			},
@@ -104,6 +109,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (b3934494)',
 					' Compiled for electron',
 					' This is an application module number 1 at version 3',
+					' It has a UUID of 6b38bf10be92ba40717e91f2f0b68ba1310a96ca8e61f89f68753b4d06ba84f8',
 					' It depends on a system module number 2 at version 10'
 				]
 			},
@@ -114,6 +120,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (da140931)',
 					' Compiled for argon',
 					' This is an application module number 1 at version 6',
+					' It has a UUID of aa2e89710f3fa2a5d4ebe20d5dd542bfc606c7e863f70f4ad61e71c961ab58e6',
 					' It depends on a system module number 1 at version 1213'
 				]
 			},
@@ -124,6 +131,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (4d02d94f)',
 					' Compiled for boron',
 					' This is an application module number 1 at version 6',
+					' It has a UUID of ea905e4ebacfd74c514e2921306a81c9251c66fb4a9596c7a7bae9c70bed5093',
 					' It depends on a system module number 1 at version 1213'
 				]
 			},
@@ -134,6 +142,7 @@ describe('Binary Commands', () => {
 					' CRC is ok (e309c618)',
 					' Compiled for electron',
 					' This is an application module number 1 at version 6',
+					' It has a UUID of 3200f1aa2d533b53d9ea892f97153207daf1dc6a401714ce4e5e9c47a85529ce',
 					' It is firmware for product id 8178 at version 13',
 					' It depends on a system module number 2 at version 1201'
 				]

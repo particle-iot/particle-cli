@@ -12,7 +12,7 @@ const {
 } = require('../lib/env');
 
 
-describe.only('Serial Commands for Protected Devices [@device]', () => {
+describe('Serial Commands for Protected Devices [@device]', () => {
 	const help = [
 		'Simple serial interface to your devices',
 		'Usage: particle serial <command>',
