@@ -45,7 +45,7 @@ describe('Logout Commands', () => {
 
 		const { stdout, stderr, exitCode } = await subprocess;
 
-		expect(stdout).to.include(`You have been logged out from ${USERNAME}`);
+		expect(stdout, `MSG- err: ${stderr}; exit: ${exitCode}`).to.include(`You have been logged out from ${USERNAME}`);
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(0);
 	});
