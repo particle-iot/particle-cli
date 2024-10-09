@@ -1,5 +1,12 @@
 # Changelog
 
+# 3.28.0 - Oct 9 2024
+* Remove the `particle token list` command
+* Remove basic auth requirement from `particle token revoke` command
+* Enforce current token deletion on `particle logout`
+* Expose hidden `--org` flag for `particle logic-function` commands
+* Remove internal usage of access_token query params in favor of `Authorization` header
+
 # 3.27.1 - Sep 11 2024
 * Update actions/upload-artifact to v4
 
