@@ -523,7 +523,7 @@ describe('Compile Commands', () => {
 		const args = ['compile', platform, '.'];
 		const { stdout, stderr, exitCode } = await cli.run(args, { cwd });
 
-		expect(stdout).to.include('Compile failed: You\'re not logged in. Please login using particle cloud login before using this command');
+		expect(stdout).to.include('Compile failed: You\'re not logged in. Please login using particle login before using this command');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
