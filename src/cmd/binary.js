@@ -143,7 +143,7 @@ class BinaryCommand {
 
 	async _verifyBundle(appInfo, assets) {
 		const appAssets = appInfo.assets;
-		if (appAssets && assets.length > 0) {
+		if (appAssets) {
 			console.log('It depends on assets:');
 			for (const appAsset of appAssets) {
 				const asset = assets.find((bundleAsset) => bundleAsset.name === appAsset.name);
