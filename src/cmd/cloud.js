@@ -881,6 +881,6 @@ function formatAPIErrorMessage(error){
 // TODO (mirande): refactor cmd/api.js to do this check by default when appropriate
 function ensureAPIToken(){
 	if (!settings.access_token){
-		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
+		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle login')} before using this command`);
 	}
 }

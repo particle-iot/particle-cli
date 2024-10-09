@@ -35,7 +35,7 @@ describe('Whoami Commands', () => {
 				throw new Error('expected promise to be rejected');
 			})
 			.catch(error => {
-				expect(stripAnsi(error.message)).to.eql('You\'re not logged in. Please login using particle cloud login before using this command');
+				expect(stripAnsi(error.message)).to.eql('You\'re not logged in. Please login using particle login before using this command');
 			});
 	});
 

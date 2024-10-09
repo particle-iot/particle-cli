@@ -41,10 +41,7 @@ describe('Logout Commands', () => {
 
 	it('Signs out', async () => {
 		const subprocess = cli.run(['logout']);
-
 		await delay(1000);
-		subprocess.stdin.write('y');
-		subprocess.stdin.end('\n');
 
 		const { stdout, stderr, exitCode } = await subprocess;
 
