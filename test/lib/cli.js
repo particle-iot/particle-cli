@@ -59,7 +59,7 @@ module.exports.loginToForeignAcct = () => {
 
 module.exports.logout = () => {
 	const { run } = module.exports;
-	return run(['logout'], { input: 'y\n', reject: true });
+	return run(['logout'], { reject: true });
 };
 
 module.exports.setProfile = (name) => {

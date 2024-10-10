@@ -1,5 +1,4 @@
 const { expect } = require('../setup');
-const { delay } = require('../lib/mocha-utils');
 const cli = require('../lib/cli');
 const { USERNAME } = require('../lib/env');
 
@@ -40,13 +39,7 @@ describe('Logout Commands', () => {
 	});
 
 	it('Signs out', async () => {
-		const subprocess = cli.run(['logout']);
-
-		await delay(1000);
-		subprocess.stdin.write('y');
-		subprocess.stdin.end('\n');
-
-		const { stdout, stderr, exitCode } = await subprocess;
+		const { stdout, stderr, exitCode } = await cli.run(['logout']);
 
 		expect(stdout).to.include(`You have been logged out from ${USERNAME}`);
 		expect(stderr).to.equal('');

@@ -3,6 +3,7 @@ const cli = require('../lib/cli');
 const {
 	USERNAME
 } = require('../lib/env');
+const stripAnsi = require('strip-ansi');
 
 
 describe('Whoami Commands', () => {
@@ -52,7 +53,7 @@ describe('Whoami Commands', () => {
 		await cli.logout();
 		const { stdout, stderr, exitCode } = await cli.run('whoami');
 
-		expect(stdout).to.equal('You are not signed in! Please run: `particle login`');
+		expect(stripAnsi(stdout)).to.equal('You\'re not logged in. Please login using particle login before using this command');
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});

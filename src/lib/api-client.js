@@ -122,7 +122,7 @@ module.exports = class ApiClient {
 
 	ensureToken(){
 		if (!this._access_token){
-			throw new VError(`You're not logged in. Please login using ${chalk.bold.cyan('particle cloud login')} before using this command`);
+			throw new VError(`You're not logged in. Please login using ${chalk.bold.cyan('particle login')} before using this command`);
 		}
 	}
 
