@@ -26,12 +26,22 @@ License along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 const fs = require('fs-extra');
+const os = require('os');
 const path = require('path');
 const VError = require('verror');
 const chalk = require('chalk');
-const { HalModuleParser: Parser, unpackApplicationAndAssetBundle, isAssetValid, createProtectedModule, ModuleInfo } = require('binary-version-reader');
+const {
+	HalModuleParser: Parser,
+	unpackApplicationAndAssetBundle,
+	isAssetValid,
+	createProtectedModule,
+	ModuleInfo,
+	listModuleExtensions,
+	removeModuleExtensions
+} = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const ensureError = utilities.ensureError;
+const filenameNoExt = utilities.filenameNoExt;
 
 const INVALID_SUFFIX_SIZE = 65535;
 const DEFAULT_PRODUCT_ID = 65535;
@@ -43,7 +53,8 @@ class BinaryCommand {
 	async inspectBinary(file) {
 		await this._checkFile(file);
 		const extractedFiles = await this._extractApplicationFiles(file);
-		const parsedAppInfo = await this._parseApplicationBinary(extractedFiles.application);
+		const parsedAppInfo = await this._parseBinary(extractedFiles.application);
+		await this._showInspectOutput(parsedAppInfo);
 		const assets = extractedFiles.assets;
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
@@ -81,6 +92,61 @@ class BinaryCommand {
 		}
 	}
 
+	async listAssetsFromApplication(file) {
+		await this._checkFile(file);
+		const extractedFile = await this._extractApplicationFiles(file);
+		const parsedAppInfo = await this._parseBinary(extractedFile.application);
+
+		const assets = await listModuleExtensions({
+			module: parsedAppInfo.fileBuffer,
+			exts: [ModuleInfo.ModuleInfoExtension.ASSET_DEPENDENCY]
+		});
+
+		//if no assets, print no assets
+		if (assets.length === 0) {
+			throw new Error('No assets found');
+		}
+
+		console.log('Assets found in ' + path.basename(file) + ':');
+		for (const asset of assets) {
+			console.log(' ' + chalk.bold(asset.name) + ' (' + asset.hash + ')');
+		}
+		console.log(os.EOL);
+
+		return assets;
+
+	}
+
+	async stripAssetsFromApplication(file) {
+		// Verify that the file exists and that it has assets
+		this._checkFile(file);
+		const extractedFile = await this._extractApplicationFiles(file);
+		const parsedAppInfo = await this._parseBinary(extractedFile.application);
+
+		const assets = await listModuleExtensions({
+			module: parsedAppInfo.fileBuffer,
+			exts: [ModuleInfo.ModuleInfoExtension.ASSET_DEPENDENCY]
+		});
+
+		//if no assets, print no assets
+		if (assets.length === 0) {
+			throw new Error('No assets found');
+		}
+
+		// Remove assets
+		const appWithAssetsRemoved = await removeModuleExtensions({
+			module: parsedAppInfo.fileBuffer,
+			exts: [ModuleInfo.ModuleInfoExtension.ASSET_DEPENDENCY]
+		});
+
+		// Provide the path of the new application binary file with assets removed
+		const outputFile = filenameNoExt(file) + '-no-assets.bin';
+		await fs.writeFile(outputFile, appWithAssetsRemoved);
+		console.log('Application binary without assets saved to ' + outputFile);
+		console.log(os.EOL);
+		return outputFile;
+	}
+
 	async _checkFile(file) {
 		try {
 			await fs.access(file);
@@ -110,24 +176,15 @@ class BinaryCommand {
 		}
 	}
 
-	async _parseApplicationBinary(applicationBinary) {
-		const parser = new Parser();
-		let fileInfo;
-		try {
-			fileInfo = await parser.parseBuffer({ filename: applicationBinary.name, fileBuffer: applicationBinary.data });
-		} catch (err) {
-			throw new VError(ensureError(err), `Could not parse ${applicationBinary.name}`);
-		}
-
-		const filename = path.basename(fileInfo.filename);
-		if (fileInfo.suffixInfo.suffixSize === INVALID_SUFFIX_SIZE){
+	async _showInspectOutput(appInfo) {
+		const filename = path.basename(appInfo.filename);
+		if (appInfo.suffixInfo.suffixSize === INVALID_SUFFIX_SIZE){
 			throw new VError(`${filename} does not contain inspection information`);
 		}
 		console.log(chalk.bold(filename));
-		this._showCrc(fileInfo);
-		this._showPlatform(fileInfo);
-		this._showModuleInfo(fileInfo);
-		return fileInfo;
+		this._showCrc(appInfo);
+		this._showPlatform(appInfo);
+		this._showModuleInfo(appInfo);
 	}
 
 	async _parseBinary(binary) {
@@ -241,6 +298,8 @@ class BinaryCommand {
 				+ chalk.bold(fileInfo.prefixInfo.dep2ModuleVersion.toString()));
 		}
 	}
+
+
 }
 
 module.exports = BinaryCommand;

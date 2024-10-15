@@ -260,5 +260,93 @@ describe('Binary Commands', () => {
 			}
 		});
 	});
+
+	describe('Binary Subcommand to list assets', () => {
+		it('Lists assets present in an application binary bundle', async () => {
+			const bin = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+			const args = ['binary', 'list-assets', bin];
+			const expected = [
+				'Assets found in bundle.zip:',
+				' cat.txt (b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' house.txt (a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' water.txt (3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+			];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout.split('\n')).to.include.members(expected);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('Lists assets present in an application binary', async () => {
+			const bin = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'app-with-assets.bin');
+			const args = ['binary', 'list-assets', bin];
+			const expected = [
+				'Assets found in app-with-assets.bin:',
+				' cat.txt (b0f0d8ff8cc965a7b70b07e0c6b4c028f132597196ae9c70c620cb9e41344106)',
+				' house.txt (a78fb0e7df9977ffd3102395254ae92dd332b46a616e75ff4701e75f91dd60d3)',
+				' water.txt (3b0c25d6b8af66da115b30018ae94fbe3f04ac056fa60d1150131128baf8c591)'
+			];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout.split('\n')).to.include.members(expected);
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(0);
+		});
+
+		it('errors for binary without assets', async () => {
+			const bin = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin');
+			const args = ['binary', 'list-assets', bin];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('No assets found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
+
+	describe('Binary Subcommand to strip assets', () => {
+		it('Removes assets from application binary', async () => {
+			try {
+				const bin = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+				const args = ['binary', 'strip-assets', bin];
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.include('Application binary without assets saved to');
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			} finally {
+				await fs.remove(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle-no-assets.bin'));
+			}
+		});
+
+		it ('Removes assets from application binary', async () => {
+			try {
+				const bin = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'app-with-assets.bin');
+				const args = ['binary', 'strip-assets', bin];
+				const { stdout, stderr, exitCode } = await cli.run(args);
+
+				expect(stdout).to.include('Application binary without assets saved to');
+				expect(stderr).to.equal('');
+				expect(exitCode).to.equal(0);
+			} finally {
+				await fs.remove(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'app-with-assets-no-assets.bin'));
+			}
+		});
+
+		it('errors for binary without assets', async () => {
+			const bin = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin');
+			const args = ['binary', 'strip-assets', bin];
+
+			const { stdout, stderr, exitCode } = await cli.run(args);
+
+			expect(stdout).to.equal('No assets found');
+			expect(stderr).to.equal('');
+			expect(exitCode).to.equal(1);
+		});
+	});
 });
 

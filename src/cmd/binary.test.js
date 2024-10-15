@@ -104,35 +104,6 @@ describe('Binary Inspect', () => {
 		});
 	});
 
-	describe('_parseApplicationBinary', () => {
-		it('parses a .bin file', async () => {
-			const name = 'argon_stroby.bin';
-			const data = await fs.readFile(path.join(PATH_FIXTURES_BINARIES_DIR, name));
-			const applicationBinary = { name, data };
-
-			const res = await binaryCommand._parseApplicationBinary(applicationBinary);
-
-			expect(path.basename(res.filename)).to.equal('argon_stroby.bin');
-			expect(res.crc.ok).to.equal(true);
-			expect(res).to.have.property('prefixInfo');
-			expect(res).to.have.property('suffixInfo');
-		});
-
-		it('errors if the binary is not valid', async () => {
-			const applicationBinary = { name: 'junk', data: Buffer.from('junk') };
-
-			let error;
-			try {
-				await binaryCommand._parseApplicationBinary(applicationBinary);
-			} catch (_error) {
-				error = _error;
-			}
-
-			expect(error).to.be.an.instanceof(Error);
-			expect(error.message).to.match(/Could not parse junk/);
-		});
-	});
-
 	describe('_parseBinary', () => {
 		it('parses a .bin file', async () => {
 			const name = 'argon_stroby.bin';
@@ -166,7 +137,7 @@ describe('Binary Inspect', () => {
 		it('verifies bundle with asset info', async () => {
 			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
 			const res = await binaryCommand._extractApplicationFiles(zipPath);
-			const parsedBinaryInfo = await binaryCommand._parseApplicationBinary(res.application);
+			const parsedBinaryInfo = await binaryCommand._parseBinary(res.application);
 
 			const verify = await binaryCommand._verifyBundle(parsedBinaryInfo, res.assets);
 
@@ -249,6 +220,76 @@ describe('Binary Inspect', () => {
 			}
 
 			expect(error.message).to.equal('Device protection feature is not supported for this binary.');
+		});
+	});
+
+	describe('listAssetsFromApplication', () => {
+		it('lists assets from a bundle', async () => {
+			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+
+			const assets = await binaryCommand.listAssetsFromApplication(zipPath);
+
+			expect(assets).to.have.lengthOf(3);
+			expect(assets.map(a => a.name)).to.eql(['cat.txt', 'house.txt', 'water.txt']);
+		});
+
+		it('lists assets from an application binary', async () => {
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'app-with-assets.bin');
+
+			const assets = await binaryCommand.listAssetsFromApplication(binPath);
+
+			expect(assets).to.have.lengthOf(3);
+			expect(assets.map(a => a.name)).to.eql(['cat.txt', 'house.txt', 'water.txt']);
+		});
+
+		it('lists assets from a binary which does not have assets', async () => {
+			const binPath = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin');
+
+			let error;
+			try {
+				await binaryCommand.listAssetsFromApplication(binPath);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error.message).to.equal('No assets found');
+		});
+	});
+
+	describe('stripAssetsFromApplication', () => {
+		it('strips assets from a binary', async () => {
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'app-with-assets.bin');
+
+			const res = await binaryCommand.stripAssetsFromApplication(binPath);
+
+			expect(res).to.equal(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'app-with-assets-no-assets.bin'));
+
+			await fs.remove(res);
+		});
+
+		it('strips assets from a bundle', async () => {
+			const zipPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle.zip');
+
+			const res = await binaryCommand.stripAssetsFromApplication(zipPath);
+
+			expect(res).to.equal(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'bundle-no-assets.bin'));
+
+			await fs.remove(res);
+		});
+
+		it('errors if binary has no assets', async () => {
+			const binPath = path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin');
+
+			let error;
+			try {
+				await binaryCommand.stripAssetsFromApplication(binPath);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.be.an.instanceof(Error);
+			expect(error.message).to.equal('No assets found');
 		});
 	});
 });

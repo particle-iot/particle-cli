@@ -28,5 +28,27 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(binary, 'list-assets', 'Lists assets present in an application binary', {
+		params: '<file>',
+		handler: (args) => {
+			const BinaryCommand = require('../cmd/binary');
+			return new BinaryCommand().listAssetsFromApplication(args.params.file);
+		},
+		examples: {
+			'$0 $command app-with-assets.bin': 'Show the list of assets in the application binary'
+		}
+	});
+
+	commandProcessor.createCommand(binary, 'strip-assets', 'Remove assets from application binary', {
+		params: '<file>',
+		handler: (args) => {
+			const BinaryCommand = require('../cmd/binary');
+			return new BinaryCommand().stripAssetsFromApplication(args.params.file);
+		},
+		examples: {
+			'$0 $command app-with-assets.bin': 'Remove assets from the application binary'
+		}
+	});
+
 	return binary;
 };
