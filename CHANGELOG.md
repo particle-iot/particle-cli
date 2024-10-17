@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.29.0 - Oct 17 2024
+* Add `particle binary list-assets` and `particle binary strip-assets`
+
 # 3.28.1 - Oct 10 2024
 * Update message for when you aren't logged in for some cloud commands
 
