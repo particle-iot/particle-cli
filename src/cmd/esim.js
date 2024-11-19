@@ -9,11 +9,9 @@ const execa = require('execa');
 const SerialCommand = require('./serial');
 const FlashCommand = require('./flash');
 const path = require('path');
-const { verbose } = require('../lib/log');
 
 // TODO: Get these from exports
 const PATH_TO_PASS_THROUGH_BINARIES = '/Users/keerthyamisagadda/code/kigen-resources/binaries';
-
 
 module.exports = class eSimCommands extends CLICommandBase {
 	constructor() { // TODO: Bring ui class
@@ -60,79 +58,27 @@ module.exports = class eSimCommands extends CLICommandBase {
         const platform = platformForId(device.specs.productId).name;
         const port = device.port;
         console.log(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
+
         // Flash firmware and retrieve EID
         await this._flashATPassThroughFirmware(device, platform, port);
         const eid = await this._getEid(port);
         console.log(`${os.EOL}EID: ${eid}`);
 
-        // await this._checkForExistingProfiles(port);
+        await this._checkForExistingProfiles(port);
 
-		// Parse the JSON to get EID and profiles
-        const input = fs.readFileSync(this.inputJson);
-        const inputJsonData = JSON.parse(input);
-
-        // Get the profile list that matches the EID that is given by the field eid
-        const eidBlock = inputJsonData.EIDs.find((block) => block.esim_id === eid);
-
-        if (!eidBlock || !eidBlock.profiles || eidBlock.profiles.length === 0) {
-            throw new Error('No profiles to provision in the input JSON');
-        }
-
-        const profiles = eidBlock?.profiles;
-
+        // Get profiles for this EID from the input JSON
+        const profiles = this._getProfiles(eid);
+        
         console.log(`${os.EOL}Provisioning the following profiles to EID ${eid}:`);
+
         profiles.forEach((profile, index) => {
             const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
             console.log(`\t${index + 1}. ${profile.provider} (${rspUrl})`);
         });
 
-        // Download each profile
-        for (const [index, profile] of profiles.entries()) {
-            const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
-            console.log(`${os.EOL}${index + 1}. Downloading ${profile.provider} profile from ${rspUrl}`);
-
-            const start = Date.now();
-            let timeTaken = 0;
-            let iccid = null;
-
-            try {
-                const res = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
-                timeTaken = ((Date.now() - start) / 1000).toFixed(2);
-
-                const output = res.stdout;
-                if (output.includes('Profile successfully downloaded')) {
-                    console.log(`${os.EOL}\tProfile successfully downloaded in ${timeTaken} sec`);
-                    const iccidLine = output.split('\n').find((line) => line.includes('Profile with ICCID'));
-                    if (iccidLine) {
-                        iccid = iccidLine.split(' ')[4]; // Extract ICCID
-                    }
-                } else {
-                    console.log(`${os.EOL}\tProfile download failed`);
-                }
-
-                const outputData = {
-                    EID: eid,
-                    provider: profile.provider,
-                    iccid,
-                    time: timeTaken,
-                    success: true,
-                    output,
-                };
-
-                this._addToJson(this.outputJson, outputData);
-            } catch (err) {
-                const outputData = {
-                    EID: eid,
-                    provider: profile.provider,
-                    iccid,
-                    success: false,
-                    time: timeTaken,
-                    output: err.message,
-                };
-                this._addToJson(this.outputJson, outputData);
-                throw new Error('Failed to download profile');
-            }
-        }
+        // Download each profile and update the JSON output
+        await this._doDownload(profiles, port, eid);
+        
         console.log(`${os.EOL}Provisioning complete`);
     }
 
@@ -260,6 +206,69 @@ module.exports = class eSimCommands extends CLICommandBase {
         }
 
         console.log(`${os.EOL}No existing profiles found`);
+    }
+
+    _getProfiles(eid) {
+        const input = fs.readFileSync(this.inputJson);
+        const inputJsonData = JSON.parse(input);
+
+        // Get the profile list that matches the EID that is given by the field eid
+        const eidBlock = inputJsonData.EIDs.find((block) => block.esim_id === eid);
+
+        if (!eidBlock || !eidBlock.profiles || eidBlock.profiles.length === 0) {
+            throw new Error('No profiles to provision in the input JSON');
+        }
+
+        const profiles = eidBlock?.profiles;
+    }
+
+    async _doDownload(profiles, port, eid) {
+        for (const [index, profile] of profiles.entries()) {
+            const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
+            console.log(`${os.EOL}${index + 1}. Downloading ${profile.provider} profile from ${rspUrl}`);
+
+            const start = Date.now();
+            let timeTaken = 0;
+            let iccid = null;
+
+            try {
+                const res = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
+                timeTaken = ((Date.now() - start) / 1000).toFixed(2);
+
+                const output = res.stdout;
+                if (output.includes('Profile successfully downloaded')) {
+                    console.log(`${os.EOL}\tProfile successfully downloaded in ${timeTaken} sec`);
+                    const iccidLine = output.split('\n').find((line) => line.includes('Profile with ICCID'));
+                    if (iccidLine) {
+                        iccid = iccidLine.split(' ')[4]; // Extract ICCID
+                    }
+                } else {
+                    console.log(`${os.EOL}\tProfile download failed`);
+                }
+
+                const outputData = {
+                    EID: eid,
+                    provider: profile.provider,
+                    iccid,
+                    time: timeTaken,
+                    success: true,
+                    output,
+                };
+
+                this._addToJson(this.outputJson, outputData);
+            } catch (err) {
+                const outputData = {
+                    EID: eid,
+                    provider: profile.provider,
+                    iccid,
+                    success: false,
+                    time: timeTaken,
+                    output: err.message,
+                };
+                this._addToJson(this.outputJson, outputData);
+                throw new Error('Failed to download profile');
+            }
+        }
     }
 
     _addToJson(jsonFile, data) {
