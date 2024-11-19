@@ -21,6 +21,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         this.lpa = null;
         this.inputJson = null;
         this.outputJson = null;
+        this.downloadedProfiles = [];
 	}
 
 	async provisionCommand(args) {
@@ -78,7 +79,14 @@ module.exports = class eSimCommands extends CLICommandBase {
 
         // Download each profile and update the JSON output
         await this._doDownload(profiles, port, eid);
-        
+
+        const profilesOnDevice = await this._listProfiles(port);
+        const iccids = profilesOnDevice.map((line) => line.split(' ')[4]);
+        console.log(`${os.EOL}Profiles downloaded:`);
+        for (const iccid of iccids) {
+            const provider = this.downloadedProfiles.find((profile) => profile.iccid === iccid)?.provider;
+            console.log(`\t${provider} - ${iccid}`);
+        }
         console.log(`${os.EOL}Provisioning complete`);
     }
 
@@ -192,6 +200,17 @@ module.exports = class eSimCommands extends CLICommandBase {
     async _checkForExistingProfiles(port) {
         console.log(`${os.EOL}Checking for existing profiles...`);
 
+        const profilesList = await this._listProfiles(port);
+
+        if (profilesList.length > 0) {
+            console.error(`${os.EOL}Profile(s) already exist:`, profilesList);
+            throw new Error('Profile(s) already exist. Troubleshoot manually.');
+        }
+
+        console.log(`${os.EOL}No existing profiles found`);
+    }
+
+    async _listProfiles(port) {
         const resProfiles = await execa(this.lpa, ['listProfiles', `--serial=${port}`]);
         const profilesOutput = resProfiles.stdout;
 
@@ -200,12 +219,7 @@ module.exports = class eSimCommands extends CLICommandBase {
             .split('\n')
             .filter((line) => line.match(/^\d+:\[\w+,\s(?:enabled|disabled),\s?\]$/));
 
-        if (profilesList.length > 0) {
-            console.error(`${os.EOL}Profile(s) already exist:`, profilesList);
-            throw new Error('Profile(s) already exist. Troubleshoot manually.');
-        }
-
-        console.log(`${os.EOL}No existing profiles found`);
+        return profilesList;
     }
 
     _getProfiles(eid) {
@@ -254,7 +268,10 @@ module.exports = class eSimCommands extends CLICommandBase {
                     success: true,
                     output,
                 };
-
+                this.downloadedProfiles.push({
+                    provider: profile.provider,
+                    iccid,
+                });
                 this._addToJson(this.outputJson, outputData);
             } catch (err) {
                 const outputData = {
