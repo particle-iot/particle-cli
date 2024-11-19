@@ -9,6 +9,7 @@ const execa = require('execa');
 const SerialCommand = require('./serial');
 const FlashCommand = require('./flash');
 const path = require('path');
+const { verbose } = require('../lib/log');
 
 // TODO: Get these from exports
 const PATH_TO_PASS_THROUGH_BINARIES = '/Users/keerthyamisagadda/code/kigen-resources/binaries';
@@ -24,22 +25,47 @@ module.exports = class eSimCommands extends CLICommandBase {
         this.outputJson = null;
 	}
 
-	async provision(args) {
+	async provisionCommand(args) {
         this._validateArgs(args);
 
         // Get the serial port and device details
-        const port = await this._getSerialPortForSingleDevice();
-        const device = await this.serial.whatSerialPortDidYouMean(port);
+        const devices = await this.serial.findDevices();
+        if (devices.length !== 1) {
+            const errorMessage = deviceSerialPorts.length > 1
+                ? 'Multiple devices found. Please unplug all but one device or use the --bulk option.'
+                : 'No devices found.';
+                throw new Error(errorMessage);
+        }
+        await this.doProvision(devices[0], { verbose: false });
+	}
+
+    async bulkProvisionCommand(args) {
+        this._validateArgs(args);
+
+        const provisionedDevices = new Set();
+        setInterval(async () => {
+            const devices = await this.serial.findDevices();
+            for (const device of devices) {
+                if (!provisionedDevices.has(device.deviceId)) {
+                    provisionedDevices.add(device.deviceId);
+                    doProvision(device, { verbose: false });
+                }
+            }
+        }, 1000);
+
+        console.log('Ready to bulk provision. Connect devices to start. Press Ctrl-C to exit.');
+    }
+
+    async doProvision(device, { verbose = false } = {}) {
         const platform = platformForId(device.specs.productId).name;
-
+        const port = device.port;
         console.log(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
-
         // Flash firmware and retrieve EID
         await this._flashATPassThroughFirmware(device, platform, port);
         const eid = await this._getEid(port);
         console.log(`${os.EOL}EID: ${eid}`);
 
-        await this._checkForExistingProfiles(port);
+        // await this._checkForExistingProfiles(port);
 
 		// Parse the JSON to get EID and profiles
         const input = fs.readFileSync(this.inputJson);
@@ -106,11 +132,9 @@ module.exports = class eSimCommands extends CLICommandBase {
                 this._addToJson(this.outputJson, outputData);
                 throw new Error('Failed to download profile');
             }
-            
         }
-
         console.log(`${os.EOL}Provisioning complete`);
-	}
+    }
 
     _validateArgs(args) {
         if (!args) {
@@ -139,6 +163,14 @@ module.exports = class eSimCommands extends CLICommandBase {
                 throw new Error(errorMessage);
             }
         return deviceSerialPorts[0];
+    }
+
+    async _getSerialPortsOfAllDevices() {
+        const deviceSerialPorts = await usbUtils.getUsbSystemPathsForMac();
+        if (deviceSerialPorts.length === 0) {
+            throw new Error('No devices found. Please connect a device and try again.');
+        }
+        return deviceSerialPorts;
     }
 
     async _flashATPassThroughFirmware(device, platform, port) {
@@ -229,7 +261,7 @@ module.exports = class eSimCommands extends CLICommandBase {
 
         console.log(`${os.EOL}No existing profiles found`);
     }
-    
+
     _addToJson(jsonFile, data) {
         try {
             // Read and parse existing JSON data

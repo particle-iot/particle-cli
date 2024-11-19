@@ -21,9 +21,9 @@ module.exports = ({ commandProcessor, root }) => {
 		handler: (args) => {
             const eSimCommands = require('../cmd/esim');
 			if (args.bulk) {
-                return new eSimCommands().bulkProvision(args);
+                return new eSimCommands().bulkProvisionCommand(args);
             } else {
-                return new eSimCommands().provision(args);
+                return new eSimCommands().provisionCommand(args);
             }
 		},
 		examples: {
