@@ -195,29 +195,70 @@ module.exports = class eSimCommands extends CLICommandBase {
             output: provisionOutputLogs,
         });
 
-        // ============================================================
-        // TODO: Implement the download and update the JSON output as per the above in the next commit
-        // ============================================================
+        await this._changeLed(device, PROVISIONING_PROGRESS);
 
-        // await this._changeLed(device, PROVISIONING_PROGRESS);
+        // Download each profile and update the JSON output
+        const downloadStatus = await this._doDownload(profiles, port, eid);
+        if (!downloadStatus.success) {
+            await this._changeLed(device, PROVISIONING_FAILURE);
+            this._addToJson(this.outputJson, {
+                EID: eid,
+                provider: null,
+                iccid: null,
+                success: false,
+                timestamp: timestamp,
+                time: 0,
+                output: downloadStatus.output,
+            });
+            return;
+        }
+        provisionOutputLogs.push(...downloadStatus.output);
+        await this._changeLed(device, PROVISIONING_SUCCESS);
 
-        // // Download each profile and update the JSON output
-        // const success = await this._doDownload(profiles, port, eid);
+        const downloadedProfiles = downloadStatus.downloadedProfiles; // timetaken, iccid, provider for each profile
 
-        //     // Update LED status based on provisioning result
-        // const ledStatus = success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE;
-        // await this._changeLed(device, ledStatus);
+        const profilesOnDeviceAfterDownload = await this._listProfiles(port);
+        const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split(' ')[4]);
 
-        // const profilesOnDevice = await this._listProfiles(port);
-        // const iccids = profilesOnDevice.map((line) => line.split(' ')[4]);
+        const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
+        const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
+        const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(iccidFromJson));
+        if (!equal) {
+            provisionOutputLogs.push(`Profiles did not match after download`);
+            await this._changeLed(device, PROVISIONING_FAILURE);
+            this._addToJson(this.outputJson, {
+                EID: eid,
+                provider: null,
+                iccid: null,
+                success: false,
+                timestamp: timestamp,
+                time: 0,
+                output: provisionOutputLogs,
+            });
+            return;
+        }
 
-        // console.log(`${os.EOL}Profiles downloaded:`);
-        // for (const iccid of iccids) {
-        //     const provider = this.downloadedProfiles.find((profile) => profile.iccid === iccid)?.provider;
-        //     console.log(`\t${provider} - ${iccid}`);
-        // }
+        // Update the JSON output with the downloaded profiles
 
-        // console.log(`${os.EOL}Provisioning complete`);
+        const expectedProfilesArray = matchingEsim.profiles;
+        const downloadedProfilesArray = downloadedProfiles.map((profile) => {
+            return {
+                iccid: profile.iccid,
+                provider: profile.provider,
+                time: profile.timetaken,
+            };
+        });
+
+        this._addToJson(this.outputJson, {
+            EID: eid,
+            expectedProfiles: expectedProfilesArray,
+            downloadedProfiles: downloadedProfilesArray,
+            success: true,
+            timestamp: timestamp,
+            output: provisionOutputLogs
+        });
+
+        console.log(`${os.EOL}Provisioning complete for EID ${eid}`);
     }
 
     _validateArgs(args) {
@@ -398,54 +439,51 @@ module.exports = class eSimCommands extends CLICommandBase {
     }
 
     // TODO: Catch the error here and propagate the success/failure up
+    // Output of each downlaoded profile will have iccid, provider, time taken, output logs
     async _doDownload(profiles, port, eid) {
+        let outputLogs = [];
+        const logAndPush = (message) => {
+            // what about an array
+            outputLogs.push(message);
+            if (this.verbose) {
+                console.log(message);
+            }
+        };
         let success = true;
-        let output = '';
-        let iccid = null;
-        let timeTaken = 0;
+        let downloadedProfiles = [];
         for (const [index, profile] of profiles.entries()) {
             try {
+                let iccid;
+                let provider;
                 const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
-                console.log(`${os.EOL}${index + 1}. Downloading ${profile.provider} profile from ${rspUrl}`);
+                logAndPush(`${os.EOL}${index + 1}. Downloading ${profile.provider} profile from ${rspUrl}`);
 
                 const start = Date.now();
 
                 const res = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
                 timeTaken = ((Date.now() - start) / 1000).toFixed(2);
 
-                output = res.stdout;
+                logAndPush(res.stdout);
                 if (output.includes('Profile successfully downloaded')) {
                     success = true;
-                    console.log(`${os.EOL}\tProfile successfully downloaded in ${timeTaken} sec`);
+                    logAndPush(`${os.EOL}\tProfile ${profile.provider} and ${rspUrl} successfully downloaded in ${timeTaken} sec`);
                     const iccidLine = output.split('\n').find((line) => line.includes('Profile with ICCID'));
                     if (iccidLine) {
                         iccid = iccidLine.split(' ')[4]; // Extract ICCID
                     }
-                    this.downloadedProfiles.push({
-                        provider: profile.provider,
-                        iccid,
-                    });
+                    downloadedProfiles.push({ timetaken, iccid, provider: profile.provider });
                 } else {
                     success = false;
-                    console.log(`${os.EOL}\tProfile download failed`);
+                    logAndPush(`${os.EOL}\tProfile download failed`);
+                    return { success, downloadedProfiles, output: outputLogs };
                 }
             } catch (error) {
-                output = error.message;
                 success = false;
-                console.log(`${os.EOL}\tProfile download failed`);
+                logAndPush(`${os.EOL}\tProfile download failed with error: ${error.message}`);
+                return { success, downloadedProfiles, output: outputLogs };
             }
-
-            const outputData = {
-                EID: eid,
-                provider: profile.provider,
-                iccid: iccid,
-                success: success,
-                time: timeTaken,
-                output,
-            };
-            this._addToJson(this.outputJson, outputData);
         }
-        return success;
+        return { success, downloadedProfiles, output: outputLogs };
     }
 
     _addToJson(jsonFile, data) {
