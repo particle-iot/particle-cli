@@ -12,6 +12,11 @@ const path = require('path');
 
 // TODO: Get these from exports
 const PATH_TO_PASS_THROUGH_BINARIES = '/Users/keerthyamisagadda/code/kigen-resources/binaries';
+const PROVISIONING_PROGRESS = 1;
+const PROVISIONING_SUCCESS = 2;
+const PROVISIONING_FAILURE = 3;
+const CTRL_REQUEST_APP_CUSTOM = 10;
+
 
 module.exports = class eSimCommands extends CLICommandBase {
 	constructor() { // TODO: Bring ui class
@@ -30,7 +35,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         // Get the serial port and device details
         const devices = await this.serial.findDevices();
         if (devices.length !== 1) {
-            const errorMessage = deviceSerialPorts.length > 1
+            const errorMessage = devices.length > 1
                 ? 'Multiple devices found. Please unplug all but one device or use the --bulk option.'
                 : 'No devices found.';
                 throw new Error(errorMessage);
@@ -77,16 +82,28 @@ module.exports = class eSimCommands extends CLICommandBase {
             console.log(`\t${index + 1}. ${profile.provider} (${rspUrl})`);
         });
 
-        // Download each profile and update the JSON output
-        await this._doDownload(profiles, port, eid);
+        await this._changeLed(device, PROVISIONING_PROGRESS);
 
+        // Download each profile and update the JSON output
+        const success = await this._doDownload(profiles, port, eid);
+            
+            // Update LED status based on provisioning result
+        const ledStatus = success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE;
+        await this._changeLed(device, ledStatus);
+            
+        if (!success) {
+            throw new Error('Profile download failed');
+        }
+            
         const profilesOnDevice = await this._listProfiles(port);
         const iccids = profilesOnDevice.map((line) => line.split(' ')[4]);
+            
         console.log(`${os.EOL}Profiles downloaded:`);
         for (const iccid of iccids) {
             const provider = this.downloadedProfiles.find((profile) => profile.iccid === iccid)?.provider;
             console.log(`\t${provider} - ${iccid}`);
         }
+            
         console.log(`${os.EOL}Provisioning complete`);
     }
 
@@ -106,25 +123,6 @@ module.exports = class eSimCommands extends CLICommandBase {
         this.inputJson = args.input;
         this.outputJson = args.output;
         this.lpa = args.lpa;
-    }
-
-    async _getSerialPortForSingleDevice() {
-        const deviceSerialPorts = await usbUtils.getUsbSystemPathsForMac();
-        if (deviceSerialPorts.length !== 1) {
-            const errorMessage = deviceSerialPorts.length > 1
-                ? 'Multiple devices found. Please unplug all but one device or use the --bulk option.'
-                : 'No devices found. Please connect a device and try again.';
-                throw new Error(errorMessage);
-            }
-        return deviceSerialPorts[0];
-    }
-
-    async _getSerialPortsOfAllDevices() {
-        const deviceSerialPorts = await usbUtils.getUsbSystemPathsForMac();
-        if (deviceSerialPorts.length === 0) {
-            throw new Error('No devices found. Please connect a device and try again.');
-        }
-        return deviceSerialPorts;
     }
 
     async _flashATPassThroughFirmware(device, platform, port) {
@@ -204,6 +202,7 @@ module.exports = class eSimCommands extends CLICommandBase {
 
         if (profilesList.length > 0) {
             console.error(`${os.EOL}Profile(s) already exist:`, profilesList);
+            await this._changeLed(device, PROVISIONING_FAILURE);
             throw new Error('Profile(s) already exist. Troubleshoot manually.');
         }
 
@@ -233,59 +232,58 @@ module.exports = class eSimCommands extends CLICommandBase {
             throw new Error('No profiles to provision in the input JSON');
         }
 
-        const profiles = eidBlock?.profiles;
+        return eidBlock?.profiles; 
     }
 
+    // TODO: Catch the error here and propagate the success/failure up
     async _doDownload(profiles, port, eid) {
+        let success = true;
+        let output = '';
+        let iccid = null;
+        let timeTaken = 0;
         for (const [index, profile] of profiles.entries()) {
-            const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
-            console.log(`${os.EOL}${index + 1}. Downloading ${profile.provider} profile from ${rspUrl}`);
-
-            const start = Date.now();
-            let timeTaken = 0;
-            let iccid = null;
-
             try {
+                const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
+                console.log(`${os.EOL}${index + 1}. Downloading ${profile.provider} profile from ${rspUrl}`);
+
+                const start = Date.now();
+
                 const res = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
                 timeTaken = ((Date.now() - start) / 1000).toFixed(2);
 
-                const output = res.stdout;
+                output = res.stdout;
                 if (output.includes('Profile successfully downloaded')) {
+                    success = true;
                     console.log(`${os.EOL}\tProfile successfully downloaded in ${timeTaken} sec`);
                     const iccidLine = output.split('\n').find((line) => line.includes('Profile with ICCID'));
                     if (iccidLine) {
                         iccid = iccidLine.split(' ')[4]; // Extract ICCID
                     }
+                    this.downloadedProfiles.push({
+                        provider: profile.provider,
+                        iccid,
+                    });
                 } else {
+                    success = false;
                     console.log(`${os.EOL}\tProfile download failed`);
                 }
-
-                const outputData = {
-                    EID: eid,
-                    provider: profile.provider,
-                    iccid,
-                    time: timeTaken,
-                    success: true,
-                    output,
-                };
-                this.downloadedProfiles.push({
-                    provider: profile.provider,
-                    iccid,
-                });
-                this._addToJson(this.outputJson, outputData);
-            } catch (err) {
-                const outputData = {
-                    EID: eid,
-                    provider: profile.provider,
-                    iccid,
-                    success: false,
-                    time: timeTaken,
-                    output: err.message,
-                };
-                this._addToJson(this.outputJson, outputData);
-                throw new Error('Failed to download profile');
+            } catch (error) {
+                output = error.message;
+                success = false;
+                console.log(`${os.EOL}\tProfile download failed`);
             }
+
+            const outputData = {
+                EID: eid,
+                provider: profile.provider,
+                iccid: iccid,
+                success: success,
+                time: timeTaken,
+                output,
+            };
+            this._addToJson(this.outputJson, outputData);
         }
+        return success;
     }
 
     _addToJson(jsonFile, data) {
@@ -306,6 +304,18 @@ module.exports = class eSimCommands extends CLICommandBase {
             fs.writeFileSync(jsonFile, JSON.stringify(existingJson, null, 4));
         } catch (error) {
             console.error(`Failed to append data to JSON file: ${error.message}`);
+        }
+    }
+
+    async _changeLed(device, state) {
+        let usbDevice;
+        try {
+            usbDevice = await usbUtils.getOneUsbDevice(device.deviceId);
+            await usbDevice.sendControlRequest(CTRL_REQUEST_APP_CUSTOM, JSON.stringify(state));
+        } catch (err) {
+            console.error(`Failed to change LED state: ${err.message}`);
+        } finally {
+            await usbDevice.close();
         }
     }
 
