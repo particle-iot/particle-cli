@@ -56,7 +56,8 @@ module.exports = class eSimCommands extends CLICommandBase {
             for (const device of devices) {
                 if (!provisionedDevices.has(device.deviceId)) {
                     provisionedDevices.add(device.deviceId);
-                    await this.doProvision(device, { verbose: false });
+                    console.log(`Device ${device.deviceId} connected`);
+                    await this.doProvision(device, { verbose: true });
                 }
             }
         }, 1000);
@@ -70,186 +71,176 @@ module.exports = class eSimCommands extends CLICommandBase {
         const platform = platformForId(device.specs.productId).name;
         const port = device.port;
 
-        const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
-        const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
-        const expectedProfilesArray = matchingEsim.profiles;
-
         if (verbose) {
             console.log(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
         }
 
         // get IMEI
-        const imeiResp = await this._getImei(device);
+        // const imeiResp = await this._getImei(device);
         let imei = null;
-        if (imeiResp.success) {
-            imei = imeiResp.imei;
-            provisionOutputLogs.push(`IMEI: ${imei}`);
-        }
+        // if (imeiResp.success) {
+        //     imei = imeiResp.imei;
+        //     provisionOutputLogs.push(`IMEI: ${imei}`);
+        // }
 
         // Flash firmware and retrieve EID
         const flashResp = await this._flashATPassThroughFirmware(device, platform, port);
+        provisionOutputLogs.push(...flashResp.output);
         if (!flashResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 EID: null,
                 imei: imei,
                 device_id: device.deviceId,
-                provider: null,
-                iccid: null,
                 success: false,
                 timestamp: timestamp,
                 time: 0,
-                output: flashResp.output,
-
+                output: provisionOutputLogs
             });
             return;
         }
-        provisionOutputLogs.push(...flashResp.output);
 
         const eidResp = await this._getEid(port);
+        provisionOutputLogs.push(...eidResp.output);
         if (!eidResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 EID: null,
                 imei: imei,
                 device_id: device.deviceId,
-                provider: null,
-                iccid: null,
                 success: false,
                 timestamp: timestamp,
                 time: 0,
-                output: eidResp.output,
+                output: provisionOutputLogs,
             });
             return;
         }
-        provisionOutputLogs.push(...eidResp.output);
         const eid = eidResp.eid;
+        provisionOutputLogs.push(`EID: ${eid}`);
+        console.log('EID : ', eid);
 
-        // const profileCmdResp = await this._checkForExistingProfiles(port);
-        // if (!profileCmdResp.success) {
-        //     await this._changeLed(device, PROVISIONING_FAILURE);
-        //     this._addToJson(this.outputJson, {
-        //         EID: eid,
-        //         imei: imei,
-        //         device_id: device.deviceId,
-        //         provider: null,
-        //         iccid: null,
-        //         success: false,
-        //         timestamp: timestamp,
-        //         time: 0,
-        //         output: profileCmdResp.output,
-        //     });
-        //     return;
-        // }
-        // provisionOutputLogs.push(...profileCmdResp.output);
+        const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
+        const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
+        const expectedProfilesArray = matchingEsim.profiles;
 
-        // const profilesListOnDevice = profileCmdResp.profilesList;
-        // const existingIccids = profilesListOnDevice.map((line) => line.split(' ')[4]);
-        // if (profilesListOnDevice.length > 0) {
-        //     // extract the iccids that belong to this EID
-        //     const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
-        //     if (!matchingEsim) {
-        //         provisionOutputLogs.push(`No profiles found for the given EID in the input JSON`);
-        //         this._addToJson(this.outputJson, {
-        //             esim_id: eid,
-        //             imei: imei,
-        //             device_id: device.deviceId,
-        //             provider: null,
-        //             iccid: null,
-        //             success: false,
-        //             timestamp: timestamp,
-        //             time: 0,
-        //             output: provisionOutputLogs,
-        //         });
-        //         return;
-        //     }
-        //     const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
-        //     const equal = _.isEqual(_.sortBy(existingIccids), _.sortBy(iccidFromJson));
-        //     if (equal) {
-        //         provisionOutputLogs.push('Profiles already exist on the device for the given EID');
-        //         this._addToJson(this.outputJson, {
-        //             esim_id: eid,
-        //             imei: imei,
-        //             device_id: device.deviceId,
-        //             provider: null,
-        //             iccid: null,
-        //             success: true,
-        //             timestamp: timestamp,
-        //             time: 0,
-        //             output: provisionOutputLogs,
-        //         });
-        //         return;
-        //     } else {
-        //         provisionOutputLogs.push('Profiles exist on the device but do not match the profiles in the input JSON');
-        //         await this._changeLed(device, PROVISIONING_FAILURE);
-        //         this._addToJson(this.outputJson, {
-        //             esim_id: eid,
-        //             imei: imei,
-        //             device_id: device.deviceId,
-        //             provider: null,
-        //             iccid: null,
-        //             success: false,
-        //             timestamp: timestamp,
-        //             time: 0,
-        //             output: provisionOutputLogs,
-        //         });
-        //         return;
-        //     }
-        // }
+        const profileCmdResp = await this._checkForExistingProfiles(port);
+        provisionOutputLogs.push(...profileCmdResp.output);
+        if (!profileCmdResp.success) {
+            await this._changeLed(device, PROVISIONING_FAILURE);
+            this._addToJson(this.outputJson, {
+                EID: eid,
+                imei: imei,
+                device_id: device.deviceId,
+                expectedProfilesArray: expectedProfilesArray,
+                downloadedProfiles: [],
+                success: false,
+                timestamp: timestamp,
+                time: 0,
+                output: provisionOutputLogs
+            });
+            return;
+        }
+
+        const profilesListOnDevice = profileCmdResp.profilesList;
+        const existingIccids = profilesListOnDevice.map((line) => line.split('[')[1].split(',')[0].trim());
+        if (profilesListOnDevice.length > 0) {
+            // extract the iccids that belong to this EID
+            const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
+            if (!matchingEsim) {
+                provisionOutputLogs.push('No profiles found for the given EID in the input JSON');
+                this._addToJson(this.outputJson, {
+                    esim_id: eid,
+                    imei: imei,
+                    device_id: device.deviceId,
+                    expectedProfilesArray: expectedProfilesArray,
+                    downloadedProfiles: [],
+                    success: false,
+                    timestamp: timestamp,
+                    time: 0,
+                    output: provisionOutputLogs,
+                });
+                return;
+            }
+            const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
+            const equal = _.isEqual(_.sortBy(existingIccids), _.sortBy(iccidFromJson));
+            if (equal) {
+                this._changeLed(device, PROVISIONING_SUCCESS);
+                provisionOutputLogs.push('Profiles already provisioned correctly on the device for the given EID');
+                this._addToJson(this.outputJson, {
+                    esim_id: eid,
+                    imei: imei,
+                    device_id: device.deviceId,
+                    expectedProfilesArray: expectedProfilesArray,
+                    success: true,
+                    timestamp: timestamp,
+                    time: 0,
+                    output: provisionOutputLogs,
+                });
+                return;
+            } else {
+                provisionOutputLogs.push('Profiles exist on the device but do not match the profiles in the input JSON');
+                await this._changeLed(device, PROVISIONING_FAILURE);
+                this._addToJson(this.outputJson, {
+                    esim_id: eid,
+                    imei: imei,
+                    device_id: device.deviceId,
+                    success: false,
+                    timestamp: timestamp,
+                    time: 0,
+                    output: provisionOutputLogs,
+                });
+                return;
+            }
+        }
 
         // Get profiles for this EID from the input JSON
         const profileResp = this._getProfiles(eid);
+        provisionOutputLogs.push(...profileResp.output);
         if (!profileResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 esim_id: eid,
                 imei: imei,
                 device_id: device.deviceId,
-                provider: null,
-                iccid: null,
                 success: false,
                 timestamp: timestamp,
                 time: 0,
-                output: profileResp.output,
+                output: provisionOutputLogs
             });
             return;
         }
-        provisionOutputLogs.push(...profileResp.output);
 
-        console.log(`${os.EOL}Provisioning the following profiles to EID ${eid}:`);
         provisionOutputLogs.push(`${os.EOL}Provisioning the following profiles to EID ${eid}:`);
 
         const profiles = profileResp.profiles;
         profiles.forEach((profile, index) => {
             const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
-            console.log(`\t${index + 1}. ${profile.provider} (${rspUrl})`);
-        });
-
-        this._addToJson(this.outputJson, {
-            esim_id: eid,
-            imei: imei,
-            device_id: device.deviceId,
-            provider: null,
-            iccid: null,
-            success: true,
-            timestamp: timestamp,
-            time: 0,
-            output: provisionOutputLogs,
+            provisionOutputLogs.push(`\t${index + 1}. ${profile.provider} (${rspUrl})`);
         });
 
         await this._changeLed(device, PROVISIONING_PROGRESS);
 
         // Download each profile and update the JSON output
         const downloadResp = await this._doDownload(profiles, port);
+        const downloadedProfiles = downloadResp.downloadedProfiles;
+        const downloadedProfilesArray = downloadedProfiles.map((profile) => {
+            return {
+                status: profile.status,
+                iccid: profile.iccid,
+                provider: profile.provider,
+                duration: profile.timetaken,
+            };
+        });
         provisionOutputLogs.push(...downloadResp.output);
+
         if (!downloadResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 esim_id: eid,
                 imei: imei,
                 device_id: device.deviceId,
-                provider: null,
-                iccid: null,
+                expectedProfiles: expectedProfilesArray,
+                downloadedProfiles: downloadedProfilesArray,
                 success: false,
                 timestamp: timestamp,
                 time: 0,
@@ -259,10 +250,8 @@ module.exports = class eSimCommands extends CLICommandBase {
         }
         await this._changeLed(device, PROVISIONING_SUCCESS);
 
-        const downloadedProfiles = downloadResp.downloadedProfiles; // timetaken, iccid, provider for each profile
-
         const profilesOnDeviceAfterDownload = await this._listProfiles(port);
-        const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split(' ')[4]);
+        const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
         const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(iccidFromJson));
         if (!equal) {
             provisionOutputLogs.push('Profiles did not match after download');
@@ -271,8 +260,8 @@ module.exports = class eSimCommands extends CLICommandBase {
                 esim_id: eid,
                 imei: imei,
                 device_id: device.deviceId,
-                provider: null,
-                iccid: null,
+                expectedProfiles: expectedProfilesArray,
+                downloadedProfiles: downloadedProfilesArray,
                 success: false,
                 timestamp: timestamp,
                 time: 0,
@@ -282,15 +271,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         }
 
         // Update the JSON output with the downloaded profiles
-
-        const downloadedProfilesArray = downloadedProfiles.map((profile) => {
-            return {
-                iccid: profile.iccid,
-                provider: profile.provider,
-                time: profile.timetaken,
-            };
-        });
-
+        // Success case
         this._addToJson(this.outputJson, {
             esim_id: eid,
             imei: imei,
@@ -416,7 +397,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                 ?.split(' ')[1];
 
             if (!eid) {
-                console.log('EID not found in the output');
+                logAndPush('EID not found in the output');
                 return { success: false, output: outputLogs };
             }
             return { success: true, eid, output: outputLogs };
@@ -494,54 +475,70 @@ module.exports = class eSimCommands extends CLICommandBase {
         return { success: true, profiles: eidBlock?.profiles, output: outputLogs };
     }
 
-    // TODO: Catch the error here and propagate the success/failure up
-    // Output of each downlaoded profile will have iccid, provider, time taken, output logs
     async _doDownload(profiles, port) {
-        let outputLogs = [];
-        const logAndPush = (message) => {
-            const messages = Array.isArray(message) ? message : [message];
-            messages.forEach(msg => {
+        const outputLogs = [];
+        const downloadedProfiles = [];
+        let overallSuccess = true;
+
+        const logAndPush = (messages) => {
+            const logMessages = Array.isArray(messages) ? messages : [messages];
+            logMessages.forEach((msg) => {
                 outputLogs.push(msg);
                 if (this.verbose) {
                     console.log(msg);
                 }
             });
         };
-        let success = true;
-        let downloadedProfiles = [];
+
+        console.log('[dbg] profiles: ', profiles);
         for (const [index, profile] of profiles.entries()) {
+            const { iccid, provider, smdp, matching_id } = profile;
+            const rspUrl = `1\$${smdp}\$${matching_id}`;
+            const startTime = Date.now();
+
+            logAndPush(`\n${index + 1}. Downloading ${provider} profile from ${rspUrl}`);
+
             try {
-                let iccid;
-                const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
-                logAndPush(`${os.EOL}${index + 1}. Downloading ${profile.provider} profile from ${rspUrl}`);
+                const result = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
+                console.log('[dbg] result: ', result);
+                const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
 
-                const start = Date.now();
-
-                const res = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
-                const timeTaken = ((Date.now() - start) / 1000).toFixed(2);
-
-                const output = res.stdout;
-                // logAndPush(output);
-                if (output.includes('Profile successfully downloaded')) {
-                    success = true;
-                    logAndPush(`${os.EOL}\tProfile ${profile.provider} and ${rspUrl} successfully downloaded in ${timeTaken} sec`);
-                    const iccidLine = output.split('\n').find((line) => line.includes('Profile with ICCID'));
-                    if (iccidLine) {
-                        iccid = iccidLine.split(' ')[4]; // Extract ICCID
-                    }
-                    downloadedProfiles.push({ timetaken, iccid, provider: profile.provider });
+                if (result.stdout.includes('Profile successfully downloaded')) {
+                    logAndPush(`\n\tProfile ${provider} successfully downloaded in ${timeTaken} sec`);
+                    downloadedProfiles.push({
+                        status: "success",
+                        iccid,
+                        provider,
+                        duration: timeTaken,
+                    });
                 } else {
-                    success = false;
-                    logAndPush(`${os.EOL}\tProfile download failed`);
-                    return { success, downloadedProfiles, output: outputLogs };
+                    logAndPush(`\n\tProfile download failed for ${provider}`);
+                    overallSuccess = false;
+                    downloadedProfiles.push({
+                        status: "failed",
+                        iccid,
+                        provider,
+                        duration: timeTaken,
+                    });
                 }
             } catch (error) {
-                success = false;
-                logAndPush(`${os.EOL}\tProfile download failed with error: ${error.message}`);
-                return { success, downloadedProfiles, output: outputLogs };
+                const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+                logAndPush(`\n\tProfile download failed for ${provider} with error: ${error.message}`);
+                overallSuccess = false;
+                downloadedProfiles.push({
+                    status: "failed",
+                    iccid,
+                    provider,
+                    duration: timeTaken,
+                });
             }
         }
-        return { success, downloadedProfiles, output: outputLogs };
+
+        return {
+            success: overallSuccess,
+            downloadedProfiles,
+            output: outputLogs,
+        };
     }
 
     _addToJson(jsonFile, data) {
@@ -587,7 +584,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         let usbDevice;
         try {
             usbDevice = await usbUtils.getOneUsbDevice({ idOrName: device.deviceId });
-            const cellInfo = await usbDevice.getCellularInfo({ timeout: 20000 });
+            const cellInfo = await usbDevice.getCellularInfo({ timeout: 5000 });
             outputLogs.push(`IMEI: ${cellInfo?.imei}`);
             return { success: true, imei: cellInfo?.imei, output: outputLogs };
         } catch (err) {
