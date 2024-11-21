@@ -75,14 +75,6 @@ module.exports = class eSimCommands extends CLICommandBase {
             console.log(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
         }
 
-        // get IMEI
-        // const imeiResp = await this._getImei(device);
-        let imei = null;
-        // if (imeiResp.success) {
-        //     imei = imeiResp.imei;
-        //     provisionOutputLogs.push(`IMEI: ${imei}`);
-        // }
-
         // Flash firmware and retrieve EID
         const flashResp = await this._flashATPassThroughFirmware(device, platform, port);
         provisionOutputLogs.push(...flashResp.output);
@@ -90,11 +82,9 @@ module.exports = class eSimCommands extends CLICommandBase {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 EID: null,
-                imei: imei,
                 device_id: device.deviceId,
                 success: false,
                 timestamp: timestamp,
-                time: 0,
                 output: provisionOutputLogs
             });
             return;
@@ -106,11 +96,9 @@ module.exports = class eSimCommands extends CLICommandBase {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 EID: null,
-                imei: imei,
                 device_id: device.deviceId,
                 success: false,
                 timestamp: timestamp,
-                time: 0,
                 output: provisionOutputLogs,
             });
             return;
@@ -129,13 +117,11 @@ module.exports = class eSimCommands extends CLICommandBase {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 EID: eid,
-                imei: imei,
                 device_id: device.deviceId,
                 expectedProfilesArray: expectedProfilesArray,
                 downloadedProfiles: [],
                 success: false,
                 timestamp: timestamp,
-                time: 0,
                 output: provisionOutputLogs
             });
             return;
@@ -143,6 +129,10 @@ module.exports = class eSimCommands extends CLICommandBase {
 
         const profilesListOnDevice = profileCmdResp.profilesList;
         const existingIccids = profilesListOnDevice.map((line) => line.split('[')[1].split(',')[0].trim());
+
+        console.log('[dbg] existingIccids: ', existingIccids);
+        console.log('[dbg] profilesListOnDevice: ', profilesListOnDevice);
+
         if (profilesListOnDevice.length > 0) {
             // extract the iccids that belong to this EID
             const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
@@ -150,13 +140,11 @@ module.exports = class eSimCommands extends CLICommandBase {
                 provisionOutputLogs.push('No profiles found for the given EID in the input JSON');
                 this._addToJson(this.outputJson, {
                     esim_id: eid,
-                    imei: imei,
                     device_id: device.deviceId,
                     expectedProfilesArray: expectedProfilesArray,
                     downloadedProfiles: [],
                     success: false,
                     timestamp: timestamp,
-                    time: 0,
                     output: provisionOutputLogs,
                 });
                 return;
@@ -168,12 +156,10 @@ module.exports = class eSimCommands extends CLICommandBase {
                 provisionOutputLogs.push('Profiles already provisioned correctly on the device for the given EID');
                 this._addToJson(this.outputJson, {
                     esim_id: eid,
-                    imei: imei,
                     device_id: device.deviceId,
                     expectedProfilesArray: expectedProfilesArray,
                     success: true,
                     timestamp: timestamp,
-                    time: 0,
                     output: provisionOutputLogs,
                 });
                 return;
@@ -182,11 +168,9 @@ module.exports = class eSimCommands extends CLICommandBase {
                 await this._changeLed(device, PROVISIONING_FAILURE);
                 this._addToJson(this.outputJson, {
                     esim_id: eid,
-                    imei: imei,
                     device_id: device.deviceId,
                     success: false,
                     timestamp: timestamp,
-                    time: 0,
                     output: provisionOutputLogs,
                 });
                 return;
@@ -200,11 +184,9 @@ module.exports = class eSimCommands extends CLICommandBase {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 esim_id: eid,
-                imei: imei,
                 device_id: device.deviceId,
                 success: false,
                 timestamp: timestamp,
-                time: 0,
                 output: provisionOutputLogs
             });
             return;
@@ -228,7 +210,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                 status: profile.status,
                 iccid: profile.iccid,
                 provider: profile.provider,
-                duration: profile.timetaken,
+                duration: profile.duration
             };
         });
         provisionOutputLogs.push(...downloadResp.output);
@@ -237,13 +219,11 @@ module.exports = class eSimCommands extends CLICommandBase {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 esim_id: eid,
-                imei: imei,
                 device_id: device.deviceId,
                 expectedProfiles: expectedProfilesArray,
                 downloadedProfiles: downloadedProfilesArray,
                 success: false,
                 timestamp: timestamp,
-                time: 0,
                 output: provisionOutputLogs,
             });
             return;
@@ -258,13 +238,11 @@ module.exports = class eSimCommands extends CLICommandBase {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 esim_id: eid,
-                imei: imei,
                 device_id: device.deviceId,
                 expectedProfiles: expectedProfilesArray,
                 downloadedProfiles: downloadedProfilesArray,
                 success: false,
                 timestamp: timestamp,
-                time: 0,
                 output: provisionOutputLogs,
             });
             return;
@@ -274,7 +252,6 @@ module.exports = class eSimCommands extends CLICommandBase {
         // Success case
         this._addToJson(this.outputJson, {
             esim_id: eid,
-            imei: imei,
             device_id: device.deviceId,
             expectedProfiles: expectedProfilesArray,
             downloadedProfiles: downloadedProfilesArray,
@@ -427,8 +404,8 @@ module.exports = class eSimCommands extends CLICommandBase {
                 profilesList.forEach((profile) => {
                     logAndPush(`\t${profile}`);
                 });
-                return { success: true, profilesList, output: outputLogs };
             }
+            return { success: true, profilesList, output: outputLogs };
         } catch (error) {
             logAndPush(`${os.EOL}Failed to check for existing profiles: ${error.message}`);
             return { success: false, output: outputLogs };
@@ -490,7 +467,7 @@ module.exports = class eSimCommands extends CLICommandBase {
             });
         };
 
-        console.log('[dbg] profiles: ', profiles);
+        // console.log('[dbg] profiles: ', profiles);
         for (const [index, profile] of profiles.entries()) {
             const { iccid, provider, smdp, matching_id } = profile;
             const rspUrl = `1\$${smdp}\$${matching_id}`;
@@ -502,13 +479,14 @@ module.exports = class eSimCommands extends CLICommandBase {
                 const result = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
                 console.log('[dbg] result: ', result);
                 const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
-
+                
+                logAndPush(result.stdout);
                 if (result.stdout.includes('Profile successfully downloaded')) {
                     logAndPush(`\n\tProfile ${provider} successfully downloaded in ${timeTaken} sec`);
                     downloadedProfiles.push({
                         status: "success",
-                        iccid,
-                        provider,
+                        iccid: iccid,
+                        provider: provider,
                         duration: timeTaken,
                     });
                 } else {
@@ -516,10 +494,11 @@ module.exports = class eSimCommands extends CLICommandBase {
                     overallSuccess = false;
                     downloadedProfiles.push({
                         status: "failed",
-                        iccid,
-                        provider,
+                        iccid: iccid,
+                        provider: provider,
                         duration: timeTaken,
                     });
+                    break;
                 }
             } catch (error) {
                 const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
@@ -527,17 +506,18 @@ module.exports = class eSimCommands extends CLICommandBase {
                 overallSuccess = false;
                 downloadedProfiles.push({
                     status: "failed",
-                    iccid,
-                    provider,
+                    iccid: iccid,
+                    provider: provider,
                     duration: timeTaken,
                 });
+                break;
             }
         }
 
         return {
             success: overallSuccess,
             downloadedProfiles,
-            output: outputLogs,
+            output: outputLogs
         };
     }
 
