@@ -17,6 +17,7 @@ const PROVISIONING_PROGRESS = 1;
 const PROVISIONING_SUCCESS = 2;
 const PROVISIONING_FAILURE = 3;
 const CTRL_REQUEST_APP_CUSTOM = 10;
+const GET_AT_COMMAND_STATUS = 4;
 
 
 module.exports = class eSimCommands extends CLICommandBase {
@@ -332,17 +333,33 @@ module.exports = class eSimCommands extends CLICommandBase {
             await deviceResponded.close();
 
             // Handle initial logs (temporary workaround)
-            logAndPush(`${os.EOL}Clearing initial logs (temporary workaround)...`);
-            logAndPush(`${os.EOL}--------------------------------------`);
-            const monitor = await this.serial.monitorPort({ port, follow: false });
+            logAndPush(`${os.EOL}Checking for the AT-OK to work...`);
+            let atOkReceived = false;
+            const start = Date.now();
+            const timeout = 30000;
+            const usbDevice = await usbUtils.getOneUsbDevice({ idOrName: device.deviceId });
+            while (Date.now() - start < timeout && !atOkReceived) {
+                try {
+                    const resp = await usbDevice.sendControlRequest(CTRL_REQUEST_APP_CUSTOM, JSON.stringify(GET_AT_COMMAND_STATUS));
+                    console.log('[dbg] resp: ', resp);
+                    if (resp?.result === 0 && resp.data?.[0] === '1') {
+                        logAndPush('AT-OK received');
+                        atOkReceived = true;
+                    }
+                } catch (error) {
+                    // Ignore
+                    console.log('[dbg] error: ', error);
+                }
 
-            // Wait for logs to clear
-            await utilities.delay(30000); // 30-second delay
-            await monitor.stop();
-            await utilities.delay(5000); // Additional delay to ensure logs are cleared
-            logAndPush(`${os.EOL}--------------------------------------`);
-            logAndPush(`${os.EOL}Initial logs cleared`);
-
+                if (!atOkReceived) {
+                    await utilities.delay(1000);
+                }
+            }
+            await usbDevice.close();
+            if (!atOkReceived) {
+                logAndPush('AT-OK not received after flashing firmware');
+                return { success: false, output: outputLogs };
+            }
             return { success: true, output: outputLogs };
         } catch (error) {
             outputLogs.push(`Failed to flash AT passthrough firmware: ${error.message}`);
