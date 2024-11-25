@@ -21,9 +21,9 @@ const GET_AT_COMMAND_STATUS = 4;
 
 
 module.exports = class eSimCommands extends CLICommandBase {
-	constructor() { // TODO: Bring ui class
-		super();
-		spinnerMixin(this);
+    constructor() { // TODO: Bring ui class
+        super();
+        spinnerMixin(this);
         this.serial = new SerialCommand();
         this.lpa = null;
         this.inputJson = null;
@@ -31,9 +31,9 @@ module.exports = class eSimCommands extends CLICommandBase {
         this.outputJson = null;
         this.downloadedProfiles = [];
         this.verbose = false;
-	}
+    }
 
-	async provisionCommand(args) {
+    async provisionCommand(args) {
         this.verbose = true;
         this._validateArgs(args);
 
@@ -46,7 +46,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                 throw new Error(errorMessage);
         }
         await this.doProvision(devices[0], { verbose: true });
-	}
+    }
 
     async bulkProvisionCommand(args) {
         this._validateArgs(args);
@@ -72,9 +72,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         const platform = platformForId(device.specs.productId).name;
         const port = device.port;
 
-        if (verbose) {
-            console.log(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
-        }
+        provisionOutputLogs.push(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
 
         // Flash firmware and retrieve EID
         const flashResp = await this._flashATPassThroughFirmware(device, platform, port);
@@ -106,7 +104,6 @@ module.exports = class eSimCommands extends CLICommandBase {
         }
         const eid = eidResp.eid;
         provisionOutputLogs.push(`EID: ${eid}`);
-        console.log('EID : ', eid);
 
         const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
         const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
@@ -348,7 +345,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                     }
                 } catch (error) {
                     // Ignore
-                    console.log('[dbg] error: ', error);
+                    logAndPush(`Error during AT-OK check: ${error.message}`);
                 }
 
                 if (!atOkReceived) {
@@ -497,8 +494,8 @@ module.exports = class eSimCommands extends CLICommandBase {
                 console.log('[dbg] result: ', result);
                 const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
                 
-                logAndPush(result.stdout);
                 if (result.stdout.includes('Profile successfully downloaded')) {
+                    // logAndPush(result.stdout);
                     logAndPush(`\n\tProfile ${provider} successfully downloaded in ${timeTaken} sec`);
                     downloadedProfiles.push({
                         status: "success",
@@ -508,6 +505,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                     });
                 } else {
                     logAndPush(`\n\tProfile download failed for ${provider}`);
+                    logAndPush(result.stdout);
                     overallSuccess = false;
                     downloadedProfiles.push({
                         status: "failed",

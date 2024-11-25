@@ -558,26 +558,6 @@ async function handleUsbError(err){
 	throw err;
 }
 
-async function getUsbSystemPathsForMac() {
-	const platform = os.platform();
-	if (platform !== 'darwin') {
-		throw new Error('getUsbSystemPathsForMac() is only supported on macOS');
-	}
-
-	const { stdout } = await execa('ls', ['/dev']);
-
-	let paths = [];
-	stdout.split('\n').forEach((path) => {
-		paths.push(path);
-	});
-
-	//filter out tty.usbmodem*
-	const modemPaths = paths.filter((path) => path.includes('tty.usbmodem'));
-	const updatedModemPaths = modemPaths.map((path) => '/dev/' + path);
-
-	return updatedModemPaths;
-}
-
 module.exports = {
 	openUsbDevice,
 	openUsbDeviceById,
@@ -593,6 +573,5 @@ module.exports = {
 	forEachUsbDevice,
 	openUsbDevices,
 	executeWithUsbDevice,
-	waitForDeviceToRespond,
-	getUsbSystemPathsForMac
+	waitForDeviceToRespond
 };
