@@ -45,7 +45,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                 : 'No devices found.';
                 throw new Error(errorMessage);
         }
-        await this.doProvision(devices[0], { verbose: true });
+        await this.doProvision(devices[0]);
     }
 
     async bulkProvisionCommand(args) {
@@ -66,17 +66,26 @@ module.exports = class eSimCommands extends CLICommandBase {
         console.log('Ready to bulk provision. Connect devices to start. Press Ctrl-C to exit.');
     }
 
-    async doProvision(device, { verbose = false } = {}) {
+    async doProvision(device) {
         let provisionOutputLogs = [];
+        const logAndPush = (message) => {
+            const messages = Array.isArray(message) ? message : [message];
+            messages.forEach(msg => {
+                provisionOutputLogs.push(msg);
+                if (this.verbose) {
+                    console.log(msg);
+                }
+            });
+        };
         const timestamp = new Date().toISOString();
         const platform = platformForId(device.specs.productId).name;
         const port = device.port;
 
-        provisionOutputLogs.push(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
+        logAndPush(`${os.EOL}Provisioning device ${device.deviceId} with platform ${platform}`);
 
         // Flash firmware and retrieve EID
-        const flashResp = await this._flashATPassThroughFirmware(device, platform, port);
-        provisionOutputLogs.push(...flashResp.output);
+        const flashResp = await this._flashATPassThroughFirmware(device, platform);
+        logAndPush(...flashResp.output);
         if (!flashResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
@@ -90,7 +99,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         }
 
         const eidResp = await this._getEid(port);
-        provisionOutputLogs.push(...eidResp.output);
+        logAndPush(...eidResp.output);
         if (!eidResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
@@ -103,14 +112,14 @@ module.exports = class eSimCommands extends CLICommandBase {
             return;
         }
         const eid = eidResp.eid;
-        provisionOutputLogs.push(`EID: ${eid}`);
+        logAndPush(`EID: ${eid}`);
 
         const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
         const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
         const expectedProfilesArray = matchingEsim.profiles;
 
         const profileCmdResp = await this._checkForExistingProfiles(port);
-        provisionOutputLogs.push(...profileCmdResp.output);
+        logAndPush(...profileCmdResp.output);
         if (!profileCmdResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
@@ -135,7 +144,7 @@ module.exports = class eSimCommands extends CLICommandBase {
             // extract the iccids that belong to this EID
             const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
             if (!matchingEsim) {
-                provisionOutputLogs.push('No profiles found for the given EID in the input JSON');
+                logAndPush('No profiles found for the given EID in the input JSON');
                 this._addToJson(this.outputJson, {
                     esim_id: eid,
                     device_id: device.deviceId,
@@ -151,7 +160,7 @@ module.exports = class eSimCommands extends CLICommandBase {
             const equal = _.isEqual(_.sortBy(existingIccids), _.sortBy(iccidFromJson));
             if (equal) {
                 this._changeLed(device, PROVISIONING_SUCCESS);
-                provisionOutputLogs.push('Profiles already provisioned correctly on the device for the given EID');
+                logAndPush('Profiles already provisioned correctly on the device for the given EID');
                 this._addToJson(this.outputJson, {
                     esim_id: eid,
                     device_id: device.deviceId,
@@ -162,7 +171,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                 });
                 return;
             } else {
-                provisionOutputLogs.push('Profiles exist on the device but do not match the profiles in the input JSON');
+                logAndPush('Profiles exist on the device but do not match the profiles in the input JSON');
                 await this._changeLed(device, PROVISIONING_FAILURE);
                 this._addToJson(this.outputJson, {
                     esim_id: eid,
@@ -177,7 +186,7 @@ module.exports = class eSimCommands extends CLICommandBase {
 
         // Get profiles for this EID from the input JSON
         const profileResp = this._getProfiles(eid);
-        provisionOutputLogs.push(...profileResp.output);
+        logAndPush(...profileResp.output);
         if (!profileResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
@@ -190,12 +199,12 @@ module.exports = class eSimCommands extends CLICommandBase {
             return;
         }
 
-        provisionOutputLogs.push(`${os.EOL}Provisioning the following profiles to EID ${eid}:`);
+        logAndPush(`${os.EOL}Provisioning the following profiles to EID ${eid}:`);
 
         const profiles = profileResp.profiles;
         profiles.forEach((profile, index) => {
             const rspUrl = `1\$${profile.smdp}\$${profile.matching_id}`;
-            provisionOutputLogs.push(`\t${index + 1}. ${profile.provider} (${rspUrl})`);
+            logAndPush(`\t${index + 1}. ${profile.provider} (${rspUrl})`);
         });
 
         await this._changeLed(device, PROVISIONING_PROGRESS);
@@ -211,7 +220,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                 duration: profile.duration
             };
         });
-        provisionOutputLogs.push(...downloadResp.output);
+        logAndPush(...downloadResp.output);
 
         if (!downloadResp.success) {
             await this._changeLed(device, PROVISIONING_FAILURE);
@@ -232,7 +241,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
         const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(iccidFromJson));
         if (!equal) {
-            provisionOutputLogs.push('Profiles did not match after download');
+            logAndPush('Profiles did not match after download');
             await this._changeLed(device, PROVISIONING_FAILURE);
             this._addToJson(this.outputJson, {
                 esim_id: eid,
@@ -282,7 +291,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         this.lpa = args.lpa;
     }
 
-    async _flashATPassThroughFirmware(device, platform, port) {
+    async _flashATPassThroughFirmware(device, platform) {
         let outputLogs = [];
         const logAndPush = (message) => {
             const messages = Array.isArray(message) ? message : [message];
@@ -317,17 +326,10 @@ module.exports = class eSimCommands extends CLICommandBase {
                 verbose: true,
             });
             logAndPush(`${os.EOL}Firmware flashed successfully`);
-
-            // Wait for the device to respond
-            logAndPush(`${os.EOL}Waiting for device to respond...`);
-            const deviceResponded = await usbUtils.waitForDeviceToRespond(device.deviceId);
-
-            if (!deviceResponded) {
-                logAndPush('Device did not respond after flashing firmware');
-                return { success: false, output: outputLogs };
-            }
-            logAndPush(`${os.EOL}Device responded successfully`);
-            await deviceResponded.close();
+            
+            // FIXME: The control request for the AT-OK check would give 'IN CONTROL transfer failed' without this delay
+            logAndPush('Waiting for the device to reboot...');
+            await utilities.delay(5000);
 
             // Handle initial logs (temporary workaround)
             logAndPush(`${os.EOL}Checking for the AT-OK to work...`);
