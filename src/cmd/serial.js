@@ -249,13 +249,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			this.ui.stdout.write('Polling for available serial device...');
 		}
 
-		return this.whatSerialPortDidYouMean(port, true).then(handlePortFn).then(() => ({
-			stop: async () => {
-				if (serialPort && serialPort.isOpen) {
-					await serialPort.close();
-				}
-			}
-		}));
+		return this.whatSerialPortDidYouMean(port, true).then(handlePortFn);
 	}
 
 	/**
