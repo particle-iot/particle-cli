@@ -1,0 +1,51 @@
+{
+    "provisioning_data": [
+      {
+        "esim_id": "89044045116727494900000000232944",
+        "profiles": [
+          {
+            "provider": "skylo",
+            "esim_profile_id": 2,
+            "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+            "matching_id": "EB8C7CA0-878B-4D9B-9F29-7620715B72D6",
+            "iccid": "89901980101000000201"
+  
+          },
+          {
+            "provider": "kddi",
+            "esim_profile_id": 3,
+            "smdp": "h3a.prod.ondemandconnectivity.com",
+            "matching_id": "0X4S25TZXTBEJPVW2IIZZXU796ZOEJTD",
+            "iccid": "8943052003855000893"
+          }
+        ]
+      },
+      {
+        "esim_id": "89044045116727494900000000187063",
+        "profiles": [
+          {
+            "provider": "twilio",
+            "esim_profile_id": 1,
+            "smdp": "twl.prod.ondemandconnectivity.com",
+            "matching_id": "ZCG7E-IJ7R2-P4320-JWKMG",
+            "iccid": "89883070000051465399"
+          },
+          {
+            "provider": "skylo",
+            "esim_profile_id": 2,
+            "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+            "matching_id": "4ECC316D-B6D4-4E8A-B992-C499CA7C97AD",
+            "iccid": "89901980101000000227"
+  
+          },
+          {
+            "provider": "kddi",
+            "esim_profile_id": 3,
+            "smdp": "h3a.prod.ondemandconnectivity.com",
+            "matching_id": "FN6CXX6MJI8NNXUU0R0GI96YVIXVLHTY",
+            "iccid": "8943052003855000927"
+          }
+        ]
+      }
+    ]
+  }
