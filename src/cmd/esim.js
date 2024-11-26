@@ -30,11 +30,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 		this.downloadedProfiles = [];
 		this.binaries = null;
 		this.verbose = false;
+		this.availableProvisioningData = new Set();
 	}
 
 	async provisionCommand(args) {
 		this.verbose = true;
 		this._validateArgs(args);
+		await this._generateAvailableProvisioningData();
 
 		// Get the serial port and device details
 		const devices = await this.serial.findDevices();
@@ -45,14 +47,12 @@ module.exports = class ESimCommands extends CLICommandBase {
 			throw new Error(errorMessage);
 		}
 		const device = devices[0];
-		const resp = await this.doProvision(device);
-		await this._changeLed(device, resp.success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
-		const outputJsonForDevice = path.join(this.outputFolder, `${device.deviceId}.json`);
-		this._addToJson(outputJsonForDevice, resp);
+		await this.doProvision(device);
 	}
 
 	async bulkProvisionCommand(args) {
 		this._validateArgs(args);
+		await this._generateAvailableProvisioningData();
 
 		const provisionedDevices = new Set();
 		setInterval(async () => {
@@ -62,10 +62,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 					const deviceId = device.deviceId;
 					provisionedDevices.add(deviceId);
 					console.log(`Device ${deviceId} connected`);
-					const outputJsonForDevice = path.join(this.outputFolder, `${deviceId}.json`);
-					const resp = await this.doProvision(device, { verbose: false });
-					await this._changeLed(device, resp.success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
-					this._addToJson(outputJsonForDevice, resp);
+					// Do not await here, so that the next device can be processed
+					await this.doProvision(device);
 				}
 			}
 		}, 1000);
@@ -73,17 +71,40 @@ module.exports = class ESimCommands extends CLICommandBase {
 		console.log('Ready to bulk provision. Connect devices to start. Press Ctrl-C to exit.');
 	}
 
+	// Populate the availableProvisioningData set with the indices of the input JSON data
+	// If a profile is already provisioned (output JSON file exists with an entry), remove it from the set
+	async _generateAvailableProvisioningData() {
+		const files = fs.readdirSync(this.outputFolder);
+		const jsonFiles = files.filter((file) => file.endsWith('.json'));
+		for (let i = 0; i < this.inputJsonData.provisioning_data.length; i++) {
+			this.availableProvisioningData.add(i);
+		}
+		for (const file of jsonFiles) {
+			const json = fs.readFileSync(path.join(this.outputFolder, file));
+			const data = JSON.parse(json);
+			for (const entry of data) {
+				const index = this.inputJsonData.provisioning_data.findIndex((block) => {
+					return _.isEqual(block.profiles, entry.expectedProfiles);
+				});
+				if (index !== -1) {
+					this.availableProvisioningData.delete(index);
+				}
+			}
+		}
+	}
+
 	async doProvision(device) {
 		let provisionOutputLogs = [];
 		let eid = null;
-		let timestamp = null;
+		let timestamp = new Date().toISOString();
 		let expectedProfilesArray = [];
 		let downloadedProfilesArray = [];
 		let success = false;
+		const outputJsonFile = path.join(this.outputFolder, `${device.deviceId}-${timestamp}.json`);
 
 		// Add the output logs to the output JSON file in one msg
-		const outputMsg = () => {
-			return {
+		const processOutput = async () => {
+			const resp = {
 				esim_id: eid,
 				device_id: device.deviceId,
 				expectedProfiles: expectedProfilesArray,
@@ -92,10 +113,11 @@ module.exports = class ESimCommands extends CLICommandBase {
 				timestamp: timestamp,
 				output: provisionOutputLogs
 			};
+			await this._changeLed(device, resp.success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
+			this._addToJson(outputJsonFile, resp);
 		};
 
 		try {
-			timestamp = new Date().toISOString();
 			const platform = platformForId(device.specs.productId).name;
 			const port = device.port;
 
@@ -105,7 +127,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 			const flashResp = await this._flashATPassThroughFirmware(device, platform);
 			provisionOutputLogs.push(...flashResp.output);
 			if (!flashResp.success) {
-				return outputMsg();
+				await processOutput();
+			    return;
 			}
 			provisionOutputLogs.push(`${os.EOL}Firmware flashed successfully`);
 
@@ -113,57 +136,38 @@ module.exports = class ESimCommands extends CLICommandBase {
 			const eidResp = await this._getEid(port);
 			provisionOutputLogs.push(...eidResp.output);
 			if (!eidResp.success) {
-				return outputMsg();
+				await processOutput();
+				return;
 			}
 			eid = (eidResp.eid).trim();
 			provisionOutputLogs.push(`EID: ${eid}`);
 
-			// Get the profiles for this EID and compare them against the list in the input JSON under the same EID
-			const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
-			const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
-			expectedProfilesArray = matchingEsim.profiles;
-
-			if (!matchingEsim || iccidFromJson?.length === 0 || expectedProfilesArray?.length === 0) {
-				provisionOutputLogs.push('No profiles found for the given EID in the input JSON');
-				return outputMsg();
-			}
-
+			// If any profiles already exist on the device, skip provisioning
+			// TODO: Check the TEST PROFILE situation with a brand new eSIM
 			const profileCmdResp = await this._checkForExistingProfiles(port);
 			provisionOutputLogs.push(...profileCmdResp.output);
 			if (!profileCmdResp.success) {
-				return outputMsg();
+				await processOutput();
+				return;
 			}
 
-			const profilesListOnDevice = profileCmdResp.profilesList;
-			const existingIccids = profilesListOnDevice.map((line) => line.split('[')[1].split(',')[0].trim());
-			provisionOutputLogs.push(`${os.EOL}profilesListOnDevice: ${profilesListOnDevice}`);
-			provisionOutputLogs.push(`${os.EOL}existingIccids: ${existingIccids}`);
-
-			if (profilesListOnDevice.length > 0) {
-				// extract the iccids that belong to this EID
-				const matchingEsim = this.inputJsonData.provisioning_data.find(item => item.esim_id === eid);
-				if (!matchingEsim) {
-					provisionOutputLogs.push('No profiles found for the given EID in the input JSON');
-					return outputMsg();
-				}
-				const iccidFromJson = matchingEsim.profiles.map((profile) => profile.iccid);
-				const equal = _.isEqual(_.sortBy(existingIccids), _.sortBy(iccidFromJson));
-				if (equal) {
-					success = true;
-					provisionOutputLogs.push('Profiles already provisioned correctly on the device for the given EID');
-					return outputMsg();
-				} else {
-					provisionOutputLogs.push('Profiles exist on the device but do not match the profiles in the input JSON');
-					return outputMsg();
-				}
+			if (profileCmdResp.profilesList.length > 0) {
+				success = false;
+				provisionOutputLogs.push('Profiles already exist on the device');
+				await processOutput();
+				return;
 			}
 
-			// Get profiles for this EID from the input JSON
-			const profileResp = this._getProfiles(eid);
+			// Get the next available profile from availableProvisioningData
+			const profileResp = this._getProfiles();
 			provisionOutputLogs.push(...profileResp.output);
 			if (!profileResp.success) {
-				return outputMsg();
+				await processOutput();
+				return;
 			}
+
+			expectedProfilesArray = profileResp.profiles; // TODO: test this
+			const expectedIccids = profileResp.profiles.map((profile) => profile.iccid);
 
 			provisionOutputLogs.push(`${os.EOL}Provisioning the following profiles to EID ${eid}:`);
 
@@ -191,15 +195,17 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 			if (!downloadResp.success) {
 				provisionOutputLogs.push('Profile download failed');
-				return outputMsg();
+				await processOutput();
+				return;
 			}
 
 			const profilesOnDeviceAfterDownload = await this._listProfiles(port);
 			const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
-			const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(iccidFromJson));
+			const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(expectedIccids));
 			if (!equal) {
 				provisionOutputLogs.push('Profiles did not match after download');
-				return outputMsg();
+				await processOutput();
+				return;
 			}
 
 			// Update the JSON output with the downloaded profiles
@@ -207,10 +213,12 @@ module.exports = class ESimCommands extends CLICommandBase {
 			success = true;
 			console.log(`${os.EOL}Provisioning complete for EID ${eid}`);
 			provisionOutputLogs.push(`${os.EOL}Provisioning complete for EID ${eid}`);
-			return outputMsg();
+			await processOutput();
+			return;
 		} catch (error) {
 			provisionOutputLogs.push(`Error during provisioning: ${error.message}`);
-			return outputMsg();
+			await processOutput();
+			return;
 		}
 	}
 
@@ -220,9 +228,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 		if (!args.input) {
 			throw new Error('Missing input json file');
-		}
-		if (!args.output) {
-			throw new Error('Missing input output json file');
 		}
 		if (!args.lpa) {
 			throw new Error('Missing input LPA tool path');
@@ -234,7 +239,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const input = fs.readFileSync(this.inputJson);
 		this.inputJsonData = JSON.parse(input);
 
-		this.outputFolder = args.output;
+		this.outputFolder = args.output || 'esim_loading_logs';
 		this.lpa = args.lpa;
 		this.binaries = args.binary;
 	}
@@ -396,9 +401,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 	}
 
-	// Get the profiles that match the EID from the input JSON
-	_getProfiles(eid) {
-		// Get the profile list that matches the EID that is given by the field eid
+	// Get the next available profile from availableProvisioningData
+	// Once a profile is fetched, remove it from the set so other devices don't get the same profile
+	_getProfiles() {
 		let outputLogs = [];
 		const logAndPush = (message) => {
 			const messages = Array.isArray(message) ? message : [message];
@@ -409,15 +414,15 @@ module.exports = class ESimCommands extends CLICommandBase {
 				}
 			});
 		};
-		logAndPush(`${os.EOL}Getting profiles for EID ${eid}...`);
-		const eidBlock = this.inputJsonData.provisioning_data.find((block) => block.esim_id === eid);
-
-		if (!eidBlock || !eidBlock.profiles || eidBlock.profiles.length === 0) {
-			logAndPush('No profiles found for the given EID in the input JSON');
+		logAndPush(`${os.EOL}Getting profiles...`);
+		if (this.availableProvisioningData.size === 0) {
+			logAndPush('No more profiles to provision');
 			return { success: false, output: outputLogs };
 		}
-
-		return { success: true, profiles: eidBlock?.profiles, output: outputLogs };
+		const index = this.availableProvisioningData.values().next().value;
+		const profiles = this.inputJsonData.provisioning_data[index].profiles;
+		this.availableProvisioningData.delete(index);
+		return { success: true, profiles, output: outputLogs };
 	}
 
 	// Download profiles to the device
