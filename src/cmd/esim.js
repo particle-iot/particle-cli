@@ -12,7 +12,6 @@ const path = require('path');
 const _ = require('lodash');
 
 // TODO: Get these from exports
-const PATH_TO_PASS_THROUGH_BINARIES = '/Users/keerthyamisagadda/code/kigen-resources/binaries';
 const PROVISIONING_PROGRESS = 1;
 const PROVISIONING_SUCCESS = 2;
 const PROVISIONING_FAILURE = 3;
@@ -30,6 +29,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         this.inputJsonData = null;
         this.outputJson = null;
         this.downloadedProfiles = [];
+        this.binaries = null;
         this.verbose = false;
     }
 
@@ -277,12 +277,16 @@ module.exports = class eSimCommands extends CLICommandBase {
         if (!args.lpa) {
             throw new Error('Missing input LPA tool path');
         }
+        if (!args.binary) {
+            throw new Error('Missing folder path to binaries');
+        }
         this.inputJson = args.input;
         const input = fs.readFileSync(this.inputJson);
         this.inputJsonData = JSON.parse(input);
 
         this.outputJson = args.output;
         this.lpa = args.lpa;
+        this.binaries = args.binary;
     }
 
     async _flashATPassThroughFirmware(device, platform) {
@@ -300,7 +304,7 @@ module.exports = class eSimCommands extends CLICommandBase {
         try {
             // Locate the firmware binary
             logAndPush(`${os.EOL}Locating firmware for platform: ${platform}`);
-            const fwBinaries = fs.readdirSync(PATH_TO_PASS_THROUGH_BINARIES);
+            const fwBinaries = fs.readdirSync(this.binaries);
             const validBin = fwBinaries.find((file) => file.endsWith(`${platform}.bin`));
 
             if (!validBin) {
@@ -308,7 +312,7 @@ module.exports = class eSimCommands extends CLICommandBase {
                 return { success: false, output: outputLogs };
             }
 
-            const fwPath = path.join(PATH_TO_PASS_THROUGH_BINARIES, validBin);
+            const fwPath = path.join(this.binaries, validBin);
             logAndPush(`${os.EOL}Found firmware: ${fwPath}`);
 
             // Flash the binary

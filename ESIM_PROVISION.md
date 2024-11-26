@@ -14,7 +14,13 @@
 Put your files in this structure (for example)
 
 ```
-
+/kigen-resources
+├── /binaries
+│   ├── esim-firmware-b5som.bin
+│   ├── esim-firmware-msom.bin
+├── input.json
+├── output.json
+├── lpa
 ```
 
 ### Device Setup 
@@ -29,3 +35,4 @@ particle.js esim provision --input /path/to/input.json --output /path/to/output.
 First, the device(s) are flashed. Once the download process starts on a given device, device will turn its LED into yellow. If the download passes, LED turns green. If the download failed, LED turns red.
 
 ### Notes and Warnings
+1. 
