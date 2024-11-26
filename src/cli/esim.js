@@ -8,26 +8,26 @@ module.exports = ({ commandProcessor, root }) => {
 			'lpa': {
 				description: 'Provide the LPA tool path'
 			},
-            'input': {
-                description: 'Provide the input json file path'
-            },
-            'output': {
-                description: 'Provide the output json file path'
-            },
+			'input': {
+				description: 'Provide the input json file path'
+			},
+			'output': {
+				description: 'Provide the output json file path'
+			},
 			'binary': {
-                description: 'Provide the path to the binaries'
-            },
-            'bulk': {
-                description: 'Provision multiple devices'
-            }
+				description: 'Provide the path to the binaries'
+			},
+			'bulk': {
+				description: 'Provision multiple devices'
+			}
 		}),
 		handler: (args) => {
-            const eSimCommands = require('../cmd/esim');
+			const eSimCommands = require('../cmd/esim');
 			if (args.bulk) {
-                return new eSimCommands().bulkProvisionCommand(args);
-            } else {
-                return new eSimCommands().provisionCommand(args);
-            }
+				return new eSimCommands().bulkProvisionCommand(args);
+			} else {
+				return new eSimCommands().provisionCommand(args);
+			}
 		},
 		examples: {
 			'$0 $command': 'TBD'
