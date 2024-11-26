@@ -12,7 +12,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Provide the input json file path'
 			},
 			'output': {
-				description: 'Provide the output json file path'
+				description: 'Provide the output folder path'
 			},
 			'binary': {
 				description: 'Provide the path to the binaries'

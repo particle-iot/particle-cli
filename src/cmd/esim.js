@@ -26,7 +26,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		this.lpa = null;
 		this.inputJson = null;
 		this.inputJsonData = null;
-		this.outputJson = null;
+		this.outputFolder = null;
 		this.downloadedProfiles = [];
 		this.binaries = null;
 		this.verbose = false;
@@ -47,7 +47,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const device = devices[0];
 		const resp = await this.doProvision(device);
 		await this._changeLed(device, resp.success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
-		this._addToJson(this.outputJson, resp);
+		const outputJsonForDevice = path.join(this.outputFolder, `${device.deviceId}.json`);
+		this._addToJson(outputJsonForDevice, resp);
 	}
 
 	async bulkProvisionCommand(args) {
@@ -61,9 +62,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 					const deviceId = device.deviceId;
 					provisionedDevices.add(deviceId);
 					console.log(`Device ${deviceId} connected`);
-					const resp = await this.doProvision(device, { verbose: true });
+					const outputJsonForDevice = path.join(this.outputFolder, `${deviceId}.json`);
+					const resp = await this.doProvision(device, { verbose: false });
 					await this._changeLed(device, resp.success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
-					this._addToJson(this.outputJson, resp);
+					this._addToJson(outputJsonForDevice, resp);
 				}
 			}
 		}, 1000);
@@ -232,7 +234,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const input = fs.readFileSync(this.inputJson);
 		this.inputJsonData = JSON.parse(input);
 
-		this.outputJson = args.output;
+		this.outputFolder = args.output;
 		this.lpa = args.lpa;
 		this.binaries = args.binary;
 	}
