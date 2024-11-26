@@ -13,9 +13,6 @@ const {
 } = require('particle-usb');
 const deviceProtectionHelper = require('../lib/device-protection-helper');
 const { validateDFUSupport } = require('./device-util');
-const execa = require('execa');
-const os = require('os');
-
 
 // Timeout when reopening a USB device after an update via control requests. This timeout should be
 // long enough to allow the bootloader apply the update
