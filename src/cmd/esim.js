@@ -404,25 +404,14 @@ module.exports = class ESimCommands extends CLICommandBase {
 	// Get the next available profile from availableProvisioningData
 	// Once a profile is fetched, remove it from the set so other devices don't get the same profile
 	_getProfiles() {
-		let outputLogs = [];
-		const logAndPush = (message) => {
-			const messages = Array.isArray(message) ? message : [message];
-			messages.forEach(msg => {
-				outputLogs.push(msg);
-				if (this.verbose) {
-					console.log(msg);
-				}
-			});
-		};
-		logAndPush(`${os.EOL}Getting profiles...`);
 		if (this.availableProvisioningData.size === 0) {
-			logAndPush('No more profiles to provision');
-			return { success: false, output: outputLogs };
+			console.log('No more profiles to provision');
+			return { success: false, output: ['No more profiles to provision'] };
 		}
-		const index = this.availableProvisioningData.values().next().value;
+		const [index] = this.availableProvisioningData;
 		const profiles = this.inputJsonData.provisioning_data[index].profiles;
 		this.availableProvisioningData.delete(index);
-		return { success: true, profiles, output: outputLogs };
+		return { success: true, profiles, output: [] };
 	}
 
 	// Download profiles to the device
