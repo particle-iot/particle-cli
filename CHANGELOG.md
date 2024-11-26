@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.29.1 - Nov 29  2024
+* Allow compiling by using archived Device OS versions
+
 # 3.29.0 - Oct 17 2024
 * Add `particle binary list-assets` and `particle binary strip-assets`
 
