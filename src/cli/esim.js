@@ -14,6 +14,9 @@ module.exports = ({ commandProcessor, root }) => {
             'output': {
                 description: 'Provide the output json file path'
             },
+			'binary': {
+                description: 'Provide the path to the binaries'
+            },
             'bulk': {
                 description: 'Provision multiple devices'
             }
