@@ -96,11 +96,11 @@ module.exports = class ESimCommands extends CLICommandBase {
 	async doProvision(device) {
 		let provisionOutputLogs = [];
 		let eid = null;
-		let timestamp = new Date().toISOString();
+		let timestamp = new Date().toISOString().replace(/:/g, '-');
 		let expectedProfilesArray = [];
 		let downloadedProfilesArray = [];
 		let success = false;
-		const outputJsonFile = path.join(this.outputFolder, `${device.deviceId}-${timestamp}.json`);
+		const outputJsonFile = path.join(this.outputFolder, `${device.deviceId}_${timestamp}.json`);
 
 		// Add the output logs to the output JSON file in one msg
 		const processOutput = async () => {
@@ -240,6 +240,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 		this.inputJsonData = JSON.parse(input);
 
 		this.outputFolder = args.output || 'esim_loading_logs';
+		if (!fs.existsSync(this.outputFolder)) {
+			fs.mkdirSync(this.outputFolder);
+		}
+		
 		this.lpa = args.lpa;
 		this.binaries = args.binary;
 	}
