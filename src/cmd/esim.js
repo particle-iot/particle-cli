@@ -18,6 +18,8 @@ const PROVISIONING_FAILURE = 3;
 const CTRL_REQUEST_APP_CUSTOM = 10;
 const GET_AT_COMMAND_STATUS = 4;
 
+const TEST_ICCIDs = ['89000123456789012341', '89000123456789012358'];
+
 module.exports = class ESimCommands extends CLICommandBase {
 	constructor() { // TODO: Bring ui class
 		super();
@@ -155,11 +157,22 @@ module.exports = class ESimCommands extends CLICommandBase {
 				await processOutput();
 				return;
 			}
-			if (profileCmdResp.details.existingProfiles.length > 0) {
-				success = false;
-				provisionOutputLogs.push('Profiles already exist on the device');
-				await processOutput();
-				return;
+			const existingProfiles = profileCmdResp.details.existingProfiles;
+			if (existingProfiles.length > 0) {
+				// remove profiles with test ICCID from existingProfiles to verify
+				existingProfiles.forEach((profile, index) => {
+					const iccid = profile.split('[')[1].split(',')[0].trim();
+					if (TEST_ICCIDs.includes(iccid)) {
+						existingProfiles.splice(index, 1);
+					}
+				});
+
+				if (existingProfiles.length > 0) {
+					success = false;
+					provisionOutputLogs.push('Profiles already exist on the device');
+					await processOutput();
+					return;
+				}
 			}
 
 			// Get the next available profile list from availableProvisioningData
@@ -244,7 +257,11 @@ module.exports = class ESimCommands extends CLICommandBase {
 		};
 		const profilesOnDeviceAfterDownload = await this._listProfiles(port);
 		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
-		const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(expectedIccids));
+
+		// remove test ICCIDs from iccidsOnDeviceAfterDownload
+		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCIDs.includes(iccid));
+
+		const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
 
 		res.details.iccidsOnDevice = iccidsOnDeviceAfterDownload;
 		res.details.rawLogs.push(equal ? ['Profiles on device match the expected profiles'] :
