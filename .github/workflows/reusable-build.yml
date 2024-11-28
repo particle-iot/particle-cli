@@ -26,8 +26,6 @@ env:
   E2E_PRODUCT_01_ID: ${{ secrets.E2E_PRODUCT_01_ID }}
   E2E_PRODUCT_01_NAME: ${{ secrets.E2E_PRODUCT_01_NAME }}
   E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
-  PARTICLE_WINDOWS_SIGNING_CERT: ${{ secrets.PARTICLE_WINDOWS_SIGNING_CERT }}
-  PARTICLE_WINDOWS_SIGNING_PASS: ${{ secrets.PARTICLE_WINDOWS_SIGNING_PASS }}
 jobs:
   build:
     runs-on: ubuntu-latest  # Choose an appropriate runner
