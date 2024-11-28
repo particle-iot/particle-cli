@@ -85,6 +85,9 @@ jobs:
     runs-on: windows-latest
     needs: build
     steps:
+      - uses: actions/checkout@v3
+      - name: Install NSIS
+        run: choco install nsis -y
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
@@ -103,6 +106,27 @@ jobs:
           # Sign all exes inside the folder
           files-folder: build
           files-folder-filter: exe
+
+      - name: Generate Windows Installer
+        run: makensis.exe installer\windows\ParticleCLISetup.nsi
+
+      - name: Move Installer to Build Folder
+        run: move installer\windows\ParticleCLISetup.exe build\ParticleCLISetup.exe
+
+      - name: Sign Windows Installer
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+
+          # Sign all exes inside the folder
+          files-folder: build
+          files-folder-filter: exe
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
