@@ -1,0 +1,9 @@
+name: Deploy to staging - azure signature
+on:
+  push:
+    branches:
+      - 'feature/sc-131477/sign-cli-windows-executable-and-installer'
+jobs:
+  call-build:
+    uses: ./.github/workflows/reusable-build-2.yml
+    secrets: inherit
