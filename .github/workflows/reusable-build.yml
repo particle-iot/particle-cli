@@ -26,8 +26,6 @@ env:
   E2E_PRODUCT_01_ID: ${{ secrets.E2E_PRODUCT_01_ID }}
   E2E_PRODUCT_01_NAME: ${{ secrets.E2E_PRODUCT_01_NAME }}
   E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
-  PARTICLE_WINDOWS_SIGNING_CERT: ${{ secrets.PARTICLE_WINDOWS_SIGNING_CERT }}
-  PARTICLE_WINDOWS_SIGNING_PASS: ${{ secrets.PARTICLE_WINDOWS_SIGNING_PASS }}
 jobs:
   build:
     runs-on: ubuntu-latest  # Choose an appropriate runner
@@ -70,24 +68,6 @@ jobs:
       - name: Build Package
         run: npm run build
 
-      - name: 'Install makensis (apt)'
-        run: sudo apt update && sudo apt install -y nsis nsis-pluginapi
-
-      - name: Download and unzip osslsigncode binary
-        run: |
-          mkdir osslsigncode
-          curl -LJO https://github.com/mtrojnar/osslsigncode/releases/download/2.6/osslsigncode-2.6-ubuntu-20.04.zip
-          unzip osslsigncode-2.6-ubuntu-20.04.zip -d osslsigncode
-          chmod +x osslsigncode/bin/osslsigncode
-
-      - name: Sign Windows package
-        run: |
-          npm run sign:win -- particle-cli-win-x64 $(pwd)/osslsigncode/bin/osslsigncode
-
-      - name: Generate Windows installer
-        run: |
-          npm run generate:win-installer $(pwd)/osslsigncode/bin/osslsigncode
-
       - name: Save Cache
         uses: actions/cache@v3
         with:
@@ -97,6 +77,56 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
+          name: not_signed
+          path: build/
+  windows-sign:
+    runs-on: windows-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install NSIS
+        run: choco install nsis -y
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: not_signed
+          path: build/
+      - name: Sign Windows Executable
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+
+          # Sign all exes inside the folder
+          files-folder: build
+          files-folder-filter: exe
+
+      - name: Generate Windows Installer
+        run: makensis.exe installer\windows\ParticleCLISetup.nsi
+
+      - name: Move Installer to Build Folder
+        run: move installer\windows\ParticleCLISetup.exe build\ParticleCLISetup.exe
+
+      - name: Sign Windows Installer
+        uses: azure/trusted-signing-action@v0.5.0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_CODE_SIGNING_NAME }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE_NAME }}
+
+          # Sign all exes inside the folder
+          files-folder: build
+          files-folder-filter: exe
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
           name: package
           path: build/
-
