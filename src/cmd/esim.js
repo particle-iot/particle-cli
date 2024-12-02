@@ -18,7 +18,7 @@ const PROVISIONING_FAILURE = 3;
 const CTRL_REQUEST_APP_CUSTOM = 10;
 const GET_AT_COMMAND_STATUS = 4;
 
-const TEST_ICCIDs = ['89000123456789012341', '89000123456789012358'];
+const TEST_ICCID = ['89000123456789012341', '89000123456789012358'];
 
 module.exports = class ESimCommands extends CLICommandBase {
 	constructor() { // TODO: Bring ui class
@@ -162,7 +162,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				// remove profiles with test ICCID from existingProfiles to verify
 				existingProfiles.forEach((profile, index) => {
 					const iccid = profile.split('[')[1].split(',')[0].trim();
-					if (TEST_ICCIDs.includes(iccid)) {
+					if (TEST_ICCID.includes(iccid)) {
 						existingProfiles.splice(index, 1);
 					}
 				});
@@ -259,7 +259,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
 
 		// remove test ICCIDs from iccidsOnDeviceAfterDownload
-		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCIDs.includes(iccid));
+		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCID.includes(iccid));
 
 		const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
 
