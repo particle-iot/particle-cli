@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.30.0 - Dec 1 2024
+* Add manufacturing tool to provision Kigen eSIMs
+
 # 3.29.0 - Oct 17 2024
 * Add `particle binary list-assets` and `particle binary strip-assets`
 
