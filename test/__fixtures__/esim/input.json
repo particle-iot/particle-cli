@@ -1,0 +1,159 @@
+{
+  "provisioning_data": [
+    {
+      "profiles": [
+        {
+          "provider": "twilio",
+          "esim_profile_id": 1,
+          "smdp": "twl.prod.ondemandconnectivity.com",
+          "matching_id": "5M9GX-KJODW-XTQDA-IBJ6H",
+          "iccid": "89883070000051465613"
+        },
+        {
+          "provider": "skylo",
+          "esim_profile_id": 2,
+          "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+          "matching_id": "D626C611-F70D-492C-86B2-E20548D17964",
+          "iccid": "89901980101000000284"
+        },
+        {
+          "provider": "kddi",
+          "esim_profile_id": 3,
+          "smdp": "h3a.prod.ondemandconnectivity.com",
+          "matching_id": "0KHZADMQGX44OO0IY3CQ67W07HLQ8SHA",
+          "iccid": "8943052003855000984"
+        }
+      ]
+    },
+    {
+      "profiles": [
+        {
+          "provider": "twilio",
+          "esim_profile_id": 1,
+          "smdp": "twl.prod.ondemandconnectivity.com",
+          "matching_id": "T9AXX-Z8BMN-4X7ZY-B3O4J",
+          "iccid": "89883070000051465647"
+        },
+        {
+          "provider": "skylo",
+          "esim_profile_id": 2,
+          "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+          "matching_id": "ACABDC4C-71D3-478A-9139-473FCD37BF65",
+          "iccid": "89901980101000000292"
+
+        },
+        {
+          "provider": "kddi",
+          "esim_profile_id": 3,
+          "smdp": "h3a.prod.ondemandconnectivity.com",
+          "matching_id": "FN6CXX6MJI8NNXUU0R0GI96YVIXVLHTY",
+          "iccid": "8943052003855000992"
+        }
+      ]
+    },
+    {
+      "profiles": [
+        {
+          "provider": "twilio",
+          "esim_profile_id": 1,
+          "smdp": "twl.prod.ondemandconnectivity.com",
+          "matching_id": "ZCG7E-IJ7R2-P4320-BAAAB",
+          "iccid": "89883070000051465322"
+        },
+        {
+          "provider": "skylo",
+          "esim_profile_id": 2,
+          "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+          "matching_id": "4ECC316D-B6D4-4E8A-B992-C499CA7BAAAB",
+          "iccid": "89901980101000000222"
+
+        },
+        {
+          "provider": "kddi",
+          "esim_profile_id": 3,
+          "smdp": "h3a.prod.ondemandconnectivity.com",
+          "matching_id": "FN6CXX6MJI8NNXUU0R0GI96YVIXBAAAB",
+          "iccid": "8943052003855000922"
+        }
+      ]
+    },
+    {
+      "profiles": [
+        {
+          "provider": "twilio",
+          "esim_profile_id": 1,
+          "smdp": "twl.prod.ondemandconnectivity.com",
+          "matching_id": "ZCG7E-IJ7R2-P4320-BAAAC",
+          "iccid": "89883070000051465323"
+        },
+        {
+          "provider": "skylo",
+          "esim_profile_id": 2,
+          "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+          "matching_id": "4ECC316D-B6D4-4E8A-B992-C499CA7BAAAC",
+          "iccid": "89901980101000000223"
+
+        },
+        {
+          "provider": "kddi",
+          "esim_profile_id": 3,
+          "smdp": "h3a.prod.ondemandconnectivity.com",
+          "matching_id": "FN6CXX6MJI8NNXUU0R0GI96YVIXBAAAC",
+          "iccid": "8943052003855000923"
+        }
+      ]
+    },
+    {
+      "profiles": [
+        {
+          "provider": "twilio",
+          "esim_profile_id": 1,
+          "smdp": "twl.prod.ondemandconnectivity.com",
+          "matching_id": "ZCG7E-IJ7R2-P4320-BAAAE",
+          "iccid": "89883070000051465324"
+        },
+        {
+          "provider": "skylo",
+          "esim_profile_id": 2,
+          "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+          "matching_id": "4ECC316D-B6D4-4E8A-B992-C499CA7BAAAE",
+          "iccid": "89901980101000000224"
+
+        },
+        {
+          "provider": "kddi",
+          "esim_profile_id": 3,
+          "smdp": "h3a.prod.ondemandconnectivity.com",
+          "matching_id": "FN6CXX6MJI8NNXUU0R0GI96YVIXBAAAE",
+          "iccid": "8943052003855000924"
+        }
+      ]
+    },
+    {
+      "profiles": [
+        {
+          "provider": "twilio",
+          "esim_profile_id": 1,
+          "smdp": "twl.prod.ondemandconnectivity.com",
+          "matching_id": "ZCG7E-IJ7R2-P4320-BAAAF",
+          "iccid": "89883070000051465325"
+        },
+        {
+          "provider": "skylo",
+          "esim_profile_id": 2,
+          "smdp": "smdp-plus-1.eu.cd.rsp.kigen.com",
+          "matching_id": "4ECC316D-B6D4-4E8A-B992-C499CA7BAAAF",
+          "iccid": "89901980101000000225"
+
+        },
+        {
+          "provider": "kddi",
+          "esim_profile_id": 3,
+          "smdp": "h3a.prod.ondemandconnectivity.com",
+          "matching_id": "FN6CXX6MJI8NNXUU0R0GI96YVIXBAAAF",
+          "iccid": "8943052003855000925"
+        }
+      ]
+    }
+  ]
+}
