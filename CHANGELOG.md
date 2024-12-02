@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.30.1 - Dec 1 2024
+* Add manufacturing tool to provision Kigen eSIMs + minor fix to e2e tests
+
 # 3.30.0 - Dec 1 2024
 * Add manufacturing tool to provision Kigen eSIMs
 
