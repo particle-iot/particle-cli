@@ -339,7 +339,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		let usbDevice;
 		let atOkReceived = false;
 		const timeout = Date.now() + 30000; // Set a 30-second timeout
-	
+
 		while (Date.now() < timeout && !atOkReceived) {
 			try {
 				if (!usbDevice?.isOpen) {
@@ -365,7 +365,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 		return atOkReceived;
 	}
-	
+
 	async _runFlashCommand(device, fwPath) {
 		const flashCmdInstance = new FlashCommand();
 		await flashCmdInstance.flashLocal({
