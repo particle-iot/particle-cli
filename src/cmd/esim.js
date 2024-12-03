@@ -67,7 +67,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 					provisionedDevices.add(deviceId);
 					console.log(`Device ${deviceId} connected`);
 					// Do not await here, so that the next device can be processed
-					await this.doProvision(device);
+					this.doProvision(device);
 				}
 			}
 		}, 1000);
@@ -119,7 +119,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			provisionOutputLogs.push({
 				step: 'final_step',
 				timestamp: new Date().toISOString().replace(/:/g, '-'),
-				success: success,
+				success: success ? 'success' : 'failed',
 				details: {
 					rawLogs: success ? ['Provisioning successful'] : ['Provisioning failed', ...logs],
 				}
@@ -287,8 +287,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const stepOutput = () => ({
 			step: 'flash_at_firmware',
 			timestamp,
+			status,
 			details: {
-				status: status,
 				fwPath: fwPath,
 				rawLogs: logs
 			}
@@ -336,28 +336,36 @@ module.exports = class ESimCommands extends CLICommandBase {
 	}
 
 	async _verifyAtOk(device) {
-		const usbDevice = await usbUtils.getOneUsbDevice({ idOrName: device.deviceId });
+		let usbDevice;
 		let atOkReceived = false;
-		const timeout = Date.now() + 30000;
-
+		const timeout = Date.now() + 30000; // Set a 30-second timeout
+	
 		while (Date.now() < timeout && !atOkReceived) {
 			try {
+				if (!usbDevice?.isOpen) {
+					usbDevice = await usbUtils.reopenDevice(device);
+				}
+
 				const resp = await usbDevice.sendControlRequest(CTRL_REQUEST_APP_CUSTOM, JSON.stringify(GET_AT_COMMAND_STATUS));
+
+				// Check response for AT-OK
 				if (resp?.result === 0 && resp.data?.[0] === '1') {
 					atOkReceived = true;
 				}
 			} catch (error) {
-				// Ignore
+				//
 			}
 
 			if (!atOkReceived) {
 				await utilities.delay(1000);
 			}
 		}
-		await usbDevice.close();
+		if (usbDevice?.isOpen) {
+			await usbDevice.close();
+		}
 		return atOkReceived;
 	}
-
+	
 	async _runFlashCommand(device, fwPath) {
 		const flashCmdInstance = new FlashCommand();
 		await flashCmdInstance.flashLocal({
@@ -385,9 +393,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const stepOutput = () => ({
 			step: 'get_eid',
 			timestamp: timestamp,
+			status: status,
 			details: {
 				eid: eid,
-				status: status,
 				command: command,
 				rawLogs: logs
 			}
@@ -544,7 +552,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 				command = `${this.lpa} download ${rspUrl} --serial=${port}`;
 				result = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
 				const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
-
 				if (result?.stdout.includes('Profile successfully downloaded')) {
 					logAndPush(`\n\tProfile ${provider} successfully downloaded in ${timeTaken} sec`);
 					logAndPush('\n\t LPA command result: ' + result?.stdout);
@@ -571,7 +578,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 			} catch (error) {
 				const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
 				logAndPush(`\n\tProfile download failed for ${provider} with error: ${error.message}`);
-				logAndPush('\n\t LPA command result: ' + result?.stdout);
 				downloadedProfiles.push({
 					status: 'failed',
 					iccid: iccid,
@@ -623,7 +629,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 			outputLogs.push(`Failed to change LED state: ${err.message}`);
 			return { success: false, output: outputLogs };
 		} finally {
-			await usbDevice.close();
+			if (usbDevice?.isOpen) {
+				await usbDevice.close();
+			}
 		}
 	}
 };
