@@ -898,31 +898,6 @@ module.exports = class ApiClient {
 		});
 	}
 
-	getBuildTargets(){
-		return new Promise((resolve, reject) => {
-			const options = {
-				uri: '/v1/build_targets',
-				qs: {
-					featured: true
-				},
-				method: 'GET',
-				json: true
-			};
-
-			this.request(options, (error, response, body) => {
-				if (error){
-					return reject(error);
-				}
-
-				if (this.hasBadToken(body)){
-					return reject('Invalid token');
-				}
-
-				resolve(body);
-			});
-		});
-	}
-
 	getClaimCode(){
 		return new Promise((resolve, reject) => {
 			const options = {

@@ -145,15 +145,6 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	listBuildTargets(onlyFeatured){
-		return this._wrap(
-			this.api.listBuildTargets({
-				onlyFeatured,
-				auth: this.accessToken
-			})
-		);
-	}
-
 	listDeviceOsVersions(platformId, internalVersion, perPage=100){
 		return this._wrap(
 			this.api.listDeviceOsVersions({
