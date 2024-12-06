@@ -69,6 +69,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashTachyon({ verbose, binary }) {
 		this.ui.write(`Ensure only one device is connected to a computer${os.EOL}`);
 
+		binary = binary || '.';
 		let unpackToolFolder = '';
 		const stats = await fs.stat(binary);
 		if (stats.isDirectory()) {
