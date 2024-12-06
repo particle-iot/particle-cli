@@ -14,6 +14,7 @@ const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
+const os = require('os');
 const semver = require('semver');
 const {
 	createFlashSteps,
@@ -25,6 +26,7 @@ const {
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
+const execa = require('execa');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -39,9 +41,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		target,
 		port,
 		yes,
+		verbose,
+		tachyon,
 		'application-only': applicationOnly
 	}) {
-		if (!device && !binary && !local) {
+		if (!tachyon && !device && !binary && !local) {
 			// if no device nor files are passed, show help
 			throw usageError('You must specify a device or a file');
 		}
@@ -55,9 +59,97 @@ module.exports = class FlashCommand extends CLICommandBase {
 		} else if (local) {
 			let allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
+		} else if (tachyon) {
+			await this.flashTachyon({ verbose, binary });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
+	}
+
+	async flashTachyon({ verbose, binary }) {
+		this.ui.write(`Ensure only one device is connected to a computer${os.EOL}`);
+
+		let unpackToolFolder = '';
+		const stats = await fs.stat(binary);
+		if (stats.isDirectory()) {
+			unpackToolFolder = binary;
+		}
+		await fs.ensureDir(unpackToolFolder);
+
+		const files = await fs.readdir(unpackToolFolder);
+
+		const elfFiles = files.filter(f => f.startsWith('prog') && f.endsWith('.elf'));
+		const rawProgramFiles = files.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
+		const patchFiles = files.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
+
+		if (!elfFiles.length || !rawProgramFiles.length || !patchFiles.length) {
+			throw new Error('The directory should contain at least one .elf file, one rawprogram file and one patch file');
+		}
+
+		rawProgramFiles.sort((a, b) => {
+			const aNum = parseInt(a.match(/(\d+).xml/)[1]);
+			const bNum = parseInt(b.match(/(\d+).xml/)[1]);
+			return aNum - bNum;
+		});
+
+		patchFiles.sort((a, b) => {
+			const aNum = parseInt(a.match(/(\d+).xml/)[1]);
+			const bNum = parseInt(b.match(/(\d+).xml/)[1]);
+			return aNum - bNum;
+		});
+
+		if (rawProgramFiles.length !== patchFiles.length) {
+			throw new Error('The number of rawprogram files should match the number of patch files');
+		}
+
+		let filesToProgram = [];
+		// interleave the rawprogram files and patch files
+		for (let i = 0; i < rawProgramFiles.length; i++) {
+			filesToProgram.push(rawProgramFiles[i]);
+			filesToProgram.push(patchFiles[i]);
+		}
+
+		filesToProgram.unshift(elfFiles[0]);
+
+		this.ui.write(`Found the following files in the directory:${os.EOL}`);
+		this.ui.write('Loader file:');
+		this.ui.write(`  - ${elfFiles[0]}${os.EOL}`);
+
+		this.ui.write('Program files:');
+		for (const file of rawProgramFiles) {
+			this.ui.write(`  - ${file}`);
+		}
+		this.ui.write(os.EOL);
+
+		this.ui.write('Patch files:');
+		for (const file of patchFiles) {
+			this.ui.write(`  - ${file}`);
+		}
+		this.ui.write(os.EOL);
+
+		const qdl = path.join(__dirname, '../../assets/qdl/qdl');
+		await fs.ensureFile(qdl);
+
+		this.ui.write(`Command: ${qdl} --storage ufs ${filesToProgram.join(' ')}${os.EOL}`);
+		this.ui.write(`Starting download. The download may take several minutes${os.EOL}`);
+
+		try {
+			const res = await execa(qdl, ['--storage', 'ufs', ...filesToProgram], {
+				cwd: unpackToolFolder,
+				stdio: verbose ? 'inherit' : 'pipe'
+			});
+			// put the output in a log file if not verbose
+			if (!verbose) {
+				const outputLog = path.join(process.cwd(), `qdl-${Date.now()}.log`);
+				await fs.writeFile(outputLog, res.stdout);
+				this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
+			} else {
+				this.ui.write(`Download complete${os.EOL}`);
+			}
+		} catch (err) {
+			throw new Error(`Download failed. Try powering up your board in EDL mode and try again.${os.EOL}Error: ${err.message}${os.EOL}`);
+		}
+		// TODO: Handle errors
 	}
 
 	async flashOverUsb({ binary, factory }) {
