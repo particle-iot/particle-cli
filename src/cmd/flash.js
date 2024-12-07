@@ -12,7 +12,7 @@ const CloudCommand = require('./cloud');
 const BundleCommand = require('./bundle');
 const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
-const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
+const { sourcePatterns, binaryPatterns, binaryExtensions, linuxExecPatterns } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const os = require('os');
 const semver = require('semver');
@@ -60,44 +60,53 @@ module.exports = class FlashCommand extends CLICommandBase {
 			let allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
 		} else if (tachyon) {
-			await this.flashTachyon({ verbose, binary });
+			let allFiles = binary ? [binary, ...files] : files;
+			await this.flashTachyon({ verbose, files: allFiles });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
 	}
 
-	async flashTachyon({ verbose, binary }) {
+	async flashTachyon({ verbose, files }) {
 		this.ui.write(`Ensure only one device is connected to a computer${os.EOL}`);
 
-		binary = binary || '.';
-		let unpackToolFolder = '';
-		const stats = await fs.stat(binary);
-		if (stats.isDirectory()) {
-			unpackToolFolder = binary;
+		let unpackToolFolder;
+		if (files.length === 0) {
+			// If no files are passed, assume the current directory
+			unpackToolFolder = process.cwd();
+			files = await fs.readdir(unpackToolFolder);
+		} else if (files.length === 1) {
+			// If only one file is passed, check if it's a directory
+			const stats = await fs.stat(files[0]);
+			if (stats.isDirectory()) {
+				unpackToolFolder = files[0];
+				files = await fs.readdir(files[0]);
+			}
+		} else {
+			// If multiple files are passed, check if the first one is a directory
+			unpackToolFolder = path.dirname(files[0]);
 		}
-		await fs.ensureDir(unpackToolFolder);
 
-		const files = await fs.readdir(unpackToolFolder);
+		const parsedFiles = await this._analyzeFiles(files);
+		let linxuFiles = await this._findLinuxExecutableFiles(parsedFiles.files, { directory: unpackToolFolder });
+		linxuFiles = linxuFiles.map(f => path.basename(f));
+		
 
-		const elfFiles = files.filter(f => f.startsWith('prog') && f.endsWith('.elf'));
-		const rawProgramFiles = files.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
-		const patchFiles = files.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
+		const elfFiles = linxuFiles.filter(f => f.startsWith('prog') && f.endsWith('.elf'));
+		const rawProgramFiles = linxuFiles.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
+		const patchFiles = linxuFiles.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
 
 		if (!elfFiles.length || !rawProgramFiles.length || !patchFiles.length) {
-			throw new Error('The directory should contain at least one .elf file, one rawprogram file and one patch file');
+			throw new Error('The directory should contain at least one .elf file, one rawprogram file, and one patch file');
 		}
 
-		rawProgramFiles.sort((a, b) => {
-			const aNum = parseInt(a.match(/(\d+).xml/)[1]);
-			const bNum = parseInt(b.match(/(\d+).xml/)[1]);
-			return aNum - bNum;
-		});
-
-		patchFiles.sort((a, b) => {
-			const aNum = parseInt(a.match(/(\d+).xml/)[1]);
-			const bNum = parseInt(b.match(/(\d+).xml/)[1]);
-			return aNum - bNum;
-		});
+		const sortByNumber = (a, b) => {
+			const extractNumber = str => parseInt(str.match(/(\d+).xml/)[1]);
+			return extractNumber(a) - extractNumber(b);
+		};
+		
+		rawProgramFiles.sort(sortByNumber);
+		patchFiles.sort(sortByNumber);
 
 		if (rawProgramFiles.length !== patchFiles.length) {
 			throw new Error('The number of rawprogram files should match the number of patch files');
@@ -386,24 +395,37 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _findBinaries(parsedFiles) {
-		const binaries = new Set();
-		for (const filePath of parsedFiles) {
+		return this._findFiles(parsedFiles, binaryPatterns);
+	}
+
+	async _findLinuxExecutableFiles(parsedFiles, { directory }) {
+
+		if (directory) {
+			const files = parsedFiles.map(f => path.join(directory, f));
+			return this._findFiles(files, linuxExecPatterns);
+		}
+		return this._findFiles(parsedFiles, linuxExecPatterns);
+	}
+
+	async _findFiles(files, patterns) {
+		const resFiles = new Set();
+		for (const filePath of files) {
 			try {
 				const stats = await fs.stat(filePath);
 				if (stats.isDirectory()) {
-					const found = utilities.globList(filePath, binaryPatterns);
-					for (const binary of found) {
-						binaries.add(binary);
+					const found = utilities.globList(filePath, patterns);
+					for (const file of found) {
+						resFiles.add(file);
 					}
 				} else {
-					binaries.add(filePath);
+					resFiles.add(filePath);
 				}
 			} catch (error) {
 				throw new Error(`I couldn't find that: ${filePath}`);
 			}
 
 		}
-		return Array.from(binaries);
+		return Array.from(resFiles);
 	}
 
 	async _processBundle({ filesToFlash }) {
