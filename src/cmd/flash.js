@@ -83,14 +83,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 				files = await fs.readdir(files[0]);
 			}
 		} else {
-			// If multiple files are passed, check if the first one is a directory
+			// If multiple files are passed, check the directory from the first file
 			unpackToolFolder = path.dirname(files[0]);
 		}
 
 		const parsedFiles = await this._analyzeFiles(files);
 		let linxuFiles = await this._findLinuxExecutableFiles(parsedFiles.files, { directory: unpackToolFolder });
 		linxuFiles = linxuFiles.map(f => path.basename(f));
-		
+
 
 		const elfFiles = linxuFiles.filter(f => f.startsWith('prog') && f.endsWith('.elf'));
 		const rawProgramFiles = linxuFiles.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
@@ -104,7 +104,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const extractNumber = str => parseInt(str.match(/(\d+).xml/)[1]);
 			return extractNumber(a) - extractNumber(b);
 		};
-		
+
 		rawProgramFiles.sort(sortByNumber);
 		patchFiles.sort(sortByNumber);
 
@@ -150,7 +150,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			});
 			// put the output in a log file if not verbose
 			if (!verbose) {
-				const outputLog = path.join(process.cwd(), `qdl-${Date.now()}.log`);
+				const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
 				await fs.writeFile(outputLog, res.stdout);
 				this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
 			} else {
