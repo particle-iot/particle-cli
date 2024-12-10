@@ -261,7 +261,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		// remove test ICCIDs from iccidsOnDeviceAfterDownload
 		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCID.includes(iccid));
 
-		const equal = _.isEqual(_.sortBy(iccidsOnDeviceAfterDownload), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
+		const equal = _.isEqual(_.sortBy(expectedIccids), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
 
 		res.details.iccidsOnDevice = iccidsOnDeviceAfterDownload;
 		res.details.rawLogs.push(equal ? ['Profiles on device match the expected profiles'] :
