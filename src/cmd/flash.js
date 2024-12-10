@@ -68,7 +68,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async flashTachyon({ verbose, files }) {
-		this.ui.write(`Ensure only one device is connected to a computer${os.EOL}`);
+		this.ui.write(`${os.EOL}Ensure only one device is connected to the computer${os.EOL}`);
 
 		let unpackToolFolder;
 		if (files.length === 0) {
@@ -87,17 +87,15 @@ module.exports = class FlashCommand extends CLICommandBase {
 			unpackToolFolder = path.dirname(files[0]);
 		}
 
-		const parsedFiles = await this._analyzeFiles(files);
-		let linxuFiles = await this._findLinuxExecutableFiles(parsedFiles.files, { directory: unpackToolFolder });
+		let linxuFiles = await this._findLinuxExecutableFiles(files, { directory: unpackToolFolder });
 		linxuFiles = linxuFiles.map(f => path.basename(f));
-
 
 		const elfFiles = linxuFiles.filter(f => f.startsWith('prog') && f.endsWith('.elf'));
 		const rawProgramFiles = linxuFiles.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
 		const patchFiles = linxuFiles.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
 
-		if (!elfFiles.length || !rawProgramFiles.length || !patchFiles.length) {
-			throw new Error('The directory should contain at least one .elf file, one rawprogram file, and one patch file');
+		if (!elfFiles.length || !rawProgramFiles.length) {
+			throw new Error('The directory should contain at least one .elf file and one rawprogram file');
 		}
 
 		const sortByNumber = (a, b) => {
@@ -122,26 +120,27 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToProgram.unshift(elfFiles[0]);
 
 		this.ui.write(`Found the following files in the directory:${os.EOL}`);
-		this.ui.write('Loader file:');
-		this.ui.write(`  - ${elfFiles[0]}${os.EOL}`);
+		this.ui.write('  Loader file:');
+		this.ui.write(`    - ${elfFiles[0]}${os.EOL}`);
 
-		this.ui.write('Program files:');
+		this.ui.write('  Program files:');
 		for (const file of rawProgramFiles) {
-			this.ui.write(`  - ${file}`);
+			this.ui.write(`    - ${file}`);
 		}
 		this.ui.write(os.EOL);
 
-		this.ui.write('Patch files:');
+		this.ui.write('  Patch files:');
 		for (const file of patchFiles) {
-			this.ui.write(`  - ${file}`);
+			this.ui.write(`    - ${file}`);
 		}
 		this.ui.write(os.EOL);
-
-		const qdl = path.join(__dirname, '../../assets/qdl/qdl');
+		
+		const archType = utilities.getArchType();
+		const qdl = path.join(__dirname, `../../assets/qdl/${archType}/qdl`);
 		await fs.ensureFile(qdl);
 
 		this.ui.write(`Command: ${qdl} --storage ufs ${filesToProgram.join(' ')}${os.EOL}`);
-		this.ui.write(`Starting download. The download may take several minutes${os.EOL}`);
+		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
 
 		try {
 			const res = await execa(qdl, ['--storage', 'ufs', ...filesToProgram], {
