@@ -15,10 +15,17 @@ const binaryExtensions = [
 	'.zip'
 ];
 
+const linuxExecExtensions = [
+	'.elf',
+	'.xml'
+];
+
 const binaryPatterns = binaryExtensions.map(ext => `*${ext}`);
+const linuxExecPatterns = linuxExecExtensions.map(ext => `*${ext}`);
 
 module.exports = {
 	sourcePatterns,
 	binaryExtensions,
-	binaryPatterns
+	binaryPatterns,
+	linuxExecPatterns
 };

@@ -12,7 +12,7 @@ const CloudCommand = require('./cloud');
 const BundleCommand = require('./bundle');
 const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
-const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
+const { sourcePatterns, binaryPatterns, binaryExtensions, linuxExecPatterns } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const os = require('os');
 const semver = require('semver');
@@ -26,7 +26,7 @@ const {
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
-const execa = require('execa');
+const qdl = require('../lib/qdl');
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -60,47 +60,51 @@ module.exports = class FlashCommand extends CLICommandBase {
 			let allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
 		} else if (tachyon) {
-			await this.flashTachyon({ verbose, binary });
+			let allFiles = binary ? [binary, ...files] : files;
+			await this.flashTachyon({ verbose, files: allFiles });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
 	}
 
-	async flashTachyon({ verbose, binary }) {
-		this.ui.write(`Ensure only one device is connected to a computer${os.EOL}`);
+	async flashTachyon({ verbose, files }) {
+		this.ui.write(`${os.EOL}Ensure only one device is connected to the computer${os.EOL}`);
 
-		let unpackToolFolder = '';
-		const stats = await fs.stat(binary);
-		if (stats.isDirectory()) {
-			unpackToolFolder = binary;
+		let unpackToolFolder;
+		if (files.length === 0) {
+			// If no files are passed, assume the current directory
+			unpackToolFolder = process.cwd();
+			files = await fs.readdir(unpackToolFolder);
+		} else if (files.length === 1) {
+			// If only one file is passed, check if it's a directory
+			const stats = await fs.stat(files[0]);
+			if (stats.isDirectory()) {
+				unpackToolFolder = files[0];
+				files = await fs.readdir(files[0]);
+			}
+		} else {
+			// If multiple files are passed, check the directory from the first file
+			unpackToolFolder = path.dirname(files[0]);
 		}
-		await fs.ensureDir(unpackToolFolder);
 
-		const files = await fs.readdir(unpackToolFolder);
+		let linxuFiles = await this._findLinuxExecutableFiles(files, { directory: unpackToolFolder });
+		linxuFiles = linxuFiles.map(f => path.basename(f));
 
-		const elfFiles = files.filter(f => f.startsWith('prog') && f.endsWith('.elf'));
-		const rawProgramFiles = files.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
-		const patchFiles = files.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
+		const elfFiles = linxuFiles.filter(f => f.includes('firehose') && f.endsWith('.elf'));
+		const rawProgramFiles = linxuFiles.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
+		const patchFiles = linxuFiles.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
 
-		if (!elfFiles.length || !rawProgramFiles.length || !patchFiles.length) {
-			throw new Error('The directory should contain at least one .elf file, one rawprogram file and one patch file');
+		if (!elfFiles.length || !rawProgramFiles.length) {
+			throw new Error('The directory should contain at least one .elf file and one rawprogram file');
 		}
 
-		rawProgramFiles.sort((a, b) => {
-			const aNum = parseInt(a.match(/(\d+).xml/)[1]);
-			const bNum = parseInt(b.match(/(\d+).xml/)[1]);
-			return aNum - bNum;
-		});
+		const sortByNumber = (a, b) => {
+			const extractNumber = str => parseInt(str.match(/(\d+).xml/)[1]);
+			return extractNumber(a) - extractNumber(b);
+		};
 
-		patchFiles.sort((a, b) => {
-			const aNum = parseInt(a.match(/(\d+).xml/)[1]);
-			const bNum = parseInt(b.match(/(\d+).xml/)[1]);
-			return aNum - bNum;
-		});
-
-		if (rawProgramFiles.length !== patchFiles.length) {
-			throw new Error('The number of rawprogram files should match the number of patch files');
-		}
+		rawProgramFiles.sort(sortByNumber);
+		patchFiles.sort(sortByNumber);
 
 		let filesToProgram = [];
 		// interleave the rawprogram files and patch files
@@ -112,42 +116,40 @@ module.exports = class FlashCommand extends CLICommandBase {
 		filesToProgram.unshift(elfFiles[0]);
 
 		this.ui.write(`Found the following files in the directory:${os.EOL}`);
-		this.ui.write('Loader file:');
-		this.ui.write(`  - ${elfFiles[0]}${os.EOL}`);
+		this.ui.write('  Loader file:');
+		this.ui.write(`    - ${elfFiles[0]}${os.EOL}`);
 
-		this.ui.write('Program files:');
+		this.ui.write('  Program files:');
 		for (const file of rawProgramFiles) {
-			this.ui.write(`  - ${file}`);
+			this.ui.write(`    - ${file}`);
 		}
 		this.ui.write(os.EOL);
 
-		this.ui.write('Patch files:');
+		this.ui.write('  Patch files:');
 		for (const file of patchFiles) {
-			this.ui.write(`  - ${file}`);
+			this.ui.write(`    - ${file}`);
 		}
 		this.ui.write(os.EOL);
 
-		const qdl = path.join(__dirname, '../../assets/qdl/qdl');
-		await fs.ensureFile(qdl);
-
-		this.ui.write(`Command: ${qdl} --storage ufs ${filesToProgram.join(' ')}${os.EOL}`);
-		this.ui.write(`Starting download. The download may take several minutes${os.EOL}`);
+		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
 
 		try {
-			const res = await execa(qdl, ['--storage', 'ufs', ...filesToProgram], {
-				cwd: unpackToolFolder,
-				stdio: verbose ? 'inherit' : 'pipe'
+			const res = await qdl.run({
+				files: filesToProgram,
+				updateFolder: unpackToolFolder,
+				verbose,
+				ui: this.ui
 			});
 			// put the output in a log file if not verbose
 			if (!verbose) {
-				const outputLog = path.join(process.cwd(), `qdl-${Date.now()}.log`);
+				const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
 				await fs.writeFile(outputLog, res.stdout);
 				this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
 			} else {
 				this.ui.write(`Download complete${os.EOL}`);
 			}
 		} catch (err) {
-			throw new Error(`Download failed. Try powering up your board in EDL mode and try again.${os.EOL}Error: ${err.message}${os.EOL}`);
+			throw new Error(`Download failed.${os.EOL}Error: ${err.message}${os.EOL}`);
 		}
 		// TODO: Handle errors
 	}
@@ -385,24 +387,37 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _findBinaries(parsedFiles) {
-		const binaries = new Set();
-		for (const filePath of parsedFiles) {
+		return this._findFiles(parsedFiles, binaryPatterns);
+	}
+
+	async _findLinuxExecutableFiles(parsedFiles, { directory }) {
+
+		if (directory) {
+			const files = parsedFiles.map(f => path.join(directory, f));
+			return this._findFiles(files, linuxExecPatterns);
+		}
+		return this._findFiles(parsedFiles, linuxExecPatterns);
+	}
+
+	async _findFiles(files, patterns) {
+		const resFiles = new Set();
+		for (const filePath of files) {
 			try {
 				const stats = await fs.stat(filePath);
 				if (stats.isDirectory()) {
-					const found = utilities.globList(filePath, binaryPatterns);
-					for (const binary of found) {
-						binaries.add(binary);
+					const found = utilities.globList(filePath, patterns);
+					for (const file of found) {
+						resFiles.add(file);
 					}
 				} else {
-					binaries.add(filePath);
+					resFiles.add(filePath);
 				}
 			} catch (error) {
 				throw new Error(`I couldn't find that: ${filePath}`);
 			}
 
 		}
-		return Array.from(binaries);
+		return Array.from(resFiles);
 	}
 
 	async _processBundle({ filesToFlash }) {

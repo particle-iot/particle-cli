@@ -41,10 +41,6 @@ module.exports = ({ commandProcessor, root }) => {
 			'tachyon' : {
 				boolean: true,
 				description: 'Flash Tachyon'
-			},
-			'verbose' : {
-				boolean: false,
-				description: 'Enable logging'
 			}
 		},
 		handler: (args) => {
@@ -63,7 +59,8 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --local application.zip': 'Flash the pre-compiled binary and assets from the bundle to the device connected over USB',
 			'$0 $command --local tinker': 'Flash the default Tinker app to the device connected over USB',
 			'$0 $command --usb firmware.bin': 'Flash the binary over USB',
-			'$0 $command --tachyon /path/to/unpackaged-tool-and-files': 'Flash Tachyon from the files in the specified directory. Use --verbose to see the progress',
+			'$0 $command --tachyon': 'Flash Tachyon from the files in the current directory',
+			'$0 $command --tachyon /path/to/unpackaged-tool-and-files': 'Flash Tachyon from the files in the specified directory',
 		},
 		epilogue: unindent(`
 		  When passing the --local flag, Device OS will be updated if the version on the device is outdated.
