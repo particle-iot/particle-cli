@@ -75,7 +75,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		let zipFile;
 		let includeDir;
-		let firehoseElf;
+		let firehoseElfWithPath;
 		let programXmlFilesWithPath;
 		let patchXmlFilesWithPath;
 	
@@ -89,10 +89,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const patchXmlFiles = manifestData.targets[0].qcm6490.edl.patch_xml;
 
 			const baseDir = path.join(path.dirname(manifestPath), base);
+			const firehoseElfWithPath = path.join(baseDir, firehose);
 			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
 			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
 
-			return { baseDir, firehose, programXmlFilesWithPath, patchXmlFilesWithPath };
+			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath };
 		};
 	
 		const extractZipManifest = async (zipPath) => {
@@ -111,9 +112,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const programXmlFiles = manifestData.targets[0].qcm6490.edl.program_xml;
 			const patchXmlFiles = manifestData.targets[0].qcm6490.edl.patch_xml;
 			
+			const firehoseElfWithPath = path.join(baseDir, firehose);
 			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
 			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
-			return { baseDir, firehose, programXmlFilesWithPath, patchXmlFilesWithPath };
+			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath };
 		};
 	
 		const sortByNumber = (a, b) => {
@@ -131,21 +133,21 @@ module.exports = class FlashCommand extends CLICommandBase {
 				if (!fs.existsSync(manifestPath)) {
 					throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
 				}
-				({ baseDir: includeDir, firehose: firehoseElf, programXmlFilesWithPath, patchXmlFilesWithPath } = await readManifest(manifestPath));
+				({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath } = await readManifest(manifestPath));
 			} else if (utilities.getFilenameExt(input) === '.zip') {
 				zipFile = path.basename(input);
-				({ baseDir: includeDir, firehose: firehoseElf, programXmlFilesWithPath, patchXmlFilesWithPath } = await extractZipManifest(input));
+				({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath } = await extractZipManifest(input));
 			} else {
 				throw new Error(`The provided file is not a directory or a zip file${os.EOL}`);
 			}
 		} else {
 			includeDir = path.dirname(files[0]);
-			firehoseElf = files.filter(f => f.includes('firehose') && f.endsWith('.elf'));
+			firehoseElfWithPath = files.filter(f => f.includes('firehose') && f.endsWith('.elf'));
 			programXmlFilesWithPath = files.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
 			patchXmlFilesWithPath = files.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
 		}
 
-		if (!firehoseElf.length || !programXmlFilesWithPath.length) {
+		if (!firehoseElfWithPath.length || !programXmlFilesWithPath.length) {
 			throw new Error('The directory should contain at least one .elf file and one rawprogram file');
 		}
 
@@ -158,11 +160,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 			filesToProgram.push(programXmlFilesWithPath[i]);
 			filesToProgram.push(patchXmlFilesWithPath[i]);
 		}
-		filesToProgram.unshift(firehoseElf);
+		filesToProgram.unshift(firehoseElfWithPath);
 
 		this.ui.write(`Found the following files:${os.EOL}`);
 		this.ui.write('  Loader file:');
-		this.ui.write(`    - ${firehoseElf}${os.EOL}`);
+		this.ui.write(`    - ${firehoseElfWithPath}${os.EOL}`);
 
 		this.ui.write('  Program files:');
 		for (const file of programXmlFilesWithPath) {

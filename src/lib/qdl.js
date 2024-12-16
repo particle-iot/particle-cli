@@ -23,6 +23,12 @@ async function run({ files, updateFolder, zip, verbose, ui }) {
 
 	ui.write(`Command: ${qdl} --storage ${TACHYON_STORAGE_TYPE} ${files.join(' ')}${os.EOL}`);
 
+	if (zip) {
+		// remove the first / from the update folder and all the files
+		updateFolder = updateFolder.replace(/^\//, '');
+		files = files.map((file) => file.replace(/^\//, ''));
+	}
+
 	const qdlArgs = [
 		'--storage', 
 		TACHYON_STORAGE_TYPE,
@@ -31,8 +37,6 @@ async function run({ files, updateFolder, zip, verbose, ui }) {
 		updateFolder,
 		...files
 	];
-
-	console.log('qdArgs', qdlArgs);
 
 	const res = await execa(qdl, qdlArgs, {
 		cwd: updateFolder,
