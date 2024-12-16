@@ -93,7 +93,15 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
 			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
 
-			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath };
+			let filesToProgram = [];
+			// interleave the rawprogram files and patch files
+			for (let i = 0; i < programXmlFilesWithPath.length; i++) {
+				filesToProgram.push(programXmlFilesWithPath[i]);
+				filesToProgram.push(patchXmlFilesWithPath[i]);
+			}
+			filesToProgram.unshift(firehoseElfWithPath);
+
+			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram };
 		};
 	
 		const extractZipManifest = async (zipPath) => {
@@ -115,68 +123,39 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const firehoseElfWithPath = path.join(baseDir, firehose);
 			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
 			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
-			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath };
-		};
-	
-		const sortByNumber = (a, b) => {
-			const extractNumber = str => parseInt(str.match(/(\d+).xml/)[1], 10);
-			return extractNumber(a) - extractNumber(b);
+
+			let filesToProgram = [];
+			// interleave the rawprogram files and patch files
+			for (let i = 0; i < programXmlFilesWithPath.length; i++) {
+				filesToProgram.push(programXmlFilesWithPath[i]);
+				filesToProgram.push(patchXmlFilesWithPath[i]);
+			}
+			filesToProgram.unshift(firehoseElfWithPath);
+
+			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram };
 		};
 	
 		if (files.length <= 1) {
 			// If no files are passed, use the current directory
-			const input = files.length === 1 ? files[0] : process.cwd();
-			const stats = await fs.stat(input);
-	
-			if (stats.isDirectory()) {
-				const manifestPath = path.join(input, TACHYON_MANIFEST_FILE);
-				if (!fs.existsSync(manifestPath)) {
-					throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
-				}
-				({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath } = await readManifest(manifestPath));
-			} else if (utilities.getFilenameExt(input) === '.zip') {
-				zipFile = path.basename(input);
-				({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath } = await extractZipManifest(input));
-			} else {
-				throw new Error(`The provided file is not a directory or a zip file${os.EOL}`);
+			files = ['.'];
+		}
+
+		const input = files[0];
+		const stats = await fs.stat(input);
+		let filesToProgram;
+
+		if (stats.isDirectory()) {
+			const manifestPath = path.join(input, TACHYON_MANIFEST_FILE);
+			if (!fs.existsSync(manifestPath)) {
+				throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
 			}
+			({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram } = await readManifest(manifestPath));
+		} else if (utilities.getFilenameExt(input) === '.zip') {
+			zipFile = path.basename(input);
+			({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram } = await extractZipManifest(input));
 		} else {
-			includeDir = path.dirname(files[0]);
-			firehoseElfWithPath = files.filter(f => f.includes('firehose') && f.endsWith('.elf'));
-			programXmlFilesWithPath = files.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
-			patchXmlFilesWithPath = files.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
+			filesToProgram = files;
 		}
-
-		if (!firehoseElfWithPath.length || !programXmlFilesWithPath.length) {
-			throw new Error('The directory should contain at least one .elf file and one rawprogram file');
-		}
-
-		programXmlFilesWithPath.sort(sortByNumber);
-		patchXmlFilesWithPath.sort(sortByNumber);
-
-		let filesToProgram = [];
-		// interleave the rawprogram files and patch files
-		for (let i = 0; i < programXmlFilesWithPath.length; i++) {
-			filesToProgram.push(programXmlFilesWithPath[i]);
-			filesToProgram.push(patchXmlFilesWithPath[i]);
-		}
-		filesToProgram.unshift(firehoseElfWithPath);
-
-		this.ui.write(`Found the following files:${os.EOL}`);
-		this.ui.write('  Loader file:');
-		this.ui.write(`    - ${firehoseElfWithPath}${os.EOL}`);
-
-		this.ui.write('  Program files:');
-		for (const file of programXmlFilesWithPath) {
-			this.ui.write(`    - ${file}`);
-		}
-		this.ui.write(os.EOL);
-
-		this.ui.write('  Patch files:');
-		for (const file of patchXmlFilesWithPath) {
-			this.ui.write(`    - ${file}`);
-		}
-		this.ui.write(os.EOL);
 
 		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
 
