@@ -12,7 +12,7 @@ const CloudCommand = require('./cloud');
 const BundleCommand = require('./bundle');
 const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
-const { sourcePatterns, binaryPatterns, binaryExtensions, linuxExecPatterns } = require('../lib/file-types');
+const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
 const os = require('os');
 const semver = require('semver');
@@ -26,7 +26,10 @@ const {
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
+const unzip = require('unzipper');
 const qdl = require('../lib/qdl');
+
+const TACHYON_MANIFEST_FILE = 'release.json';
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -70,63 +73,105 @@ module.exports = class FlashCommand extends CLICommandBase {
 	async flashTachyon({ verbose, files }) {
 		this.ui.write(`${os.EOL}Ensure only one device is connected to the computer${os.EOL}`);
 
-		let unpackToolFolder;
-		if (files.length === 0) {
-			// If no files are passed, assume the current directory
-			unpackToolFolder = process.cwd();
-			files = await fs.readdir(unpackToolFolder);
-		} else if (files.length === 1) {
-			// If only one file is passed, check if it's a directory
-			const stats = await fs.stat(files[0]);
+		let zipFile;
+		let includeDir;
+		let firehoseElf;
+		let programXmlFilesWithPath;
+		let patchXmlFilesWithPath;
+	
+		const readManifest = async (manifestPath) => {
+			const manifestFile = await fs.readFile(manifestPath, 'utf8');
+			const manifestData = JSON.parse(manifestFile);
+
+			const base = manifestData.targets[0].qcm6490.edl.base;
+			const firehose = manifestData.targets[0].qcm6490.edl.firehose;
+			const programXmlFiles = manifestData.targets[0].qcm6490.edl.program_xml;
+			const patchXmlFiles = manifestData.targets[0].qcm6490.edl.patch_xml;
+
+			const baseDir = path.join(path.dirname(manifestPath), base);
+			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
+			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
+
+			return { baseDir, firehose, programXmlFilesWithPath, patchXmlFilesWithPath };
+		};
+	
+		const extractZipManifest = async (zipPath) => {
+			const dir = await unzip.Open.file(zipPath);
+			const zipName = path.basename(zipPath, '.zip');
+			const manifestFile = dir.files.find(file => file.path === path.join(zipName, TACHYON_MANIFEST_FILE));
+			if (!manifestFile) {
+				throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
+			}
+
+			const manifest = await manifestFile.buffer();
+			const manifestData = JSON.parse(manifest.toString());
+			
+			const baseDir = manifestData.targets[0].qcm6490.edl.base;
+			const firehose = manifestData.targets[0].qcm6490.edl.firehose;
+			const programXmlFiles = manifestData.targets[0].qcm6490.edl.program_xml;
+			const patchXmlFiles = manifestData.targets[0].qcm6490.edl.patch_xml;
+			
+			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
+			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
+			return { baseDir, firehose, programXmlFilesWithPath, patchXmlFilesWithPath };
+		};
+	
+		const sortByNumber = (a, b) => {
+			const extractNumber = str => parseInt(str.match(/(\d+).xml/)[1], 10);
+			return extractNumber(a) - extractNumber(b);
+		};
+	
+		if (files.length <= 1) {
+			// If no files are passed, use the current directory
+			const input = files.length === 1 ? files[0] : process.cwd();
+			const stats = await fs.stat(input);
+	
 			if (stats.isDirectory()) {
-				unpackToolFolder = files[0];
-				files = await fs.readdir(files[0]);
+				const manifestPath = path.join(input, TACHYON_MANIFEST_FILE);
+				if (!fs.existsSync(manifestPath)) {
+					throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
+				}
+				({ baseDir: includeDir, firehose: firehoseElf, programXmlFilesWithPath, patchXmlFilesWithPath } = await readManifest(manifestPath));
+			} else if (utilities.getFilenameExt(input) === '.zip') {
+				zipFile = path.basename(input);
+				({ baseDir: includeDir, firehose: firehoseElf, programXmlFilesWithPath, patchXmlFilesWithPath } = await extractZipManifest(input));
+			} else {
+				throw new Error(`The provided file is not a directory or a zip file${os.EOL}`);
 			}
 		} else {
-			// If multiple files are passed, check the directory from the first file
-			unpackToolFolder = path.dirname(files[0]);
+			includeDir = path.dirname(files[0]);
+			firehoseElf = files.filter(f => f.includes('firehose') && f.endsWith('.elf'));
+			programXmlFilesWithPath = files.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
+			patchXmlFilesWithPath = files.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
 		}
 
-		let linxuFiles = await this._findLinuxExecutableFiles(files, { directory: unpackToolFolder });
-		linxuFiles = linxuFiles.map(f => path.basename(f));
-
-		const elfFiles = linxuFiles.filter(f => f.includes('firehose') && f.endsWith('.elf'));
-		const rawProgramFiles = linxuFiles.filter(f => f.startsWith('rawprogram') && f.endsWith('.xml'));
-		const patchFiles = linxuFiles.filter(f => f.startsWith('patch') && f.endsWith('.xml'));
-
-		if (!elfFiles.length || !rawProgramFiles.length) {
+		if (!firehoseElf.length || !programXmlFilesWithPath.length) {
 			throw new Error('The directory should contain at least one .elf file and one rawprogram file');
 		}
 
-		const sortByNumber = (a, b) => {
-			const extractNumber = str => parseInt(str.match(/(\d+).xml/)[1]);
-			return extractNumber(a) - extractNumber(b);
-		};
-
-		rawProgramFiles.sort(sortByNumber);
-		patchFiles.sort(sortByNumber);
+		programXmlFilesWithPath.sort(sortByNumber);
+		patchXmlFilesWithPath.sort(sortByNumber);
 
 		let filesToProgram = [];
 		// interleave the rawprogram files and patch files
-		for (let i = 0; i < rawProgramFiles.length; i++) {
-			filesToProgram.push(rawProgramFiles[i]);
-			filesToProgram.push(patchFiles[i]);
+		for (let i = 0; i < programXmlFilesWithPath.length; i++) {
+			filesToProgram.push(programXmlFilesWithPath[i]);
+			filesToProgram.push(patchXmlFilesWithPath[i]);
 		}
+		filesToProgram.unshift(firehoseElf);
 
-		filesToProgram.unshift(elfFiles[0]);
-
-		this.ui.write(`Found the following files in the directory:${os.EOL}`);
+		this.ui.write(`Found the following files:${os.EOL}`);
 		this.ui.write('  Loader file:');
-		this.ui.write(`    - ${elfFiles[0]}${os.EOL}`);
+		this.ui.write(`    - ${firehoseElf}${os.EOL}`);
 
 		this.ui.write('  Program files:');
-		for (const file of rawProgramFiles) {
+		for (const file of programXmlFilesWithPath) {
 			this.ui.write(`    - ${file}`);
 		}
 		this.ui.write(os.EOL);
 
 		this.ui.write('  Patch files:');
-		for (const file of patchFiles) {
+		for (const file of patchXmlFilesWithPath) {
 			this.ui.write(`    - ${file}`);
 		}
 		this.ui.write(os.EOL);
@@ -136,7 +181,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		try {
 			const res = await qdl.run({
 				files: filesToProgram,
-				updateFolder: unpackToolFolder,
+				updateFolder: includeDir,
+				zip: zipFile,
 				verbose,
 				ui: this.ui
 			});
@@ -387,37 +433,24 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async _findBinaries(parsedFiles) {
-		return this._findFiles(parsedFiles, binaryPatterns);
-	}
-
-	async _findLinuxExecutableFiles(parsedFiles, { directory }) {
-
-		if (directory) {
-			const files = parsedFiles.map(f => path.join(directory, f));
-			return this._findFiles(files, linuxExecPatterns);
-		}
-		return this._findFiles(parsedFiles, linuxExecPatterns);
-	}
-
-	async _findFiles(files, patterns) {
-		const resFiles = new Set();
-		for (const filePath of files) {
+		const binaries = new Set();
+		for (const filePath of parsedFiles) {
 			try {
 				const stats = await fs.stat(filePath);
 				if (stats.isDirectory()) {
-					const found = utilities.globList(filePath, patterns);
-					for (const file of found) {
-						resFiles.add(file);
+					const found = utilities.globList(filePath, binaryPatterns);
+					for (const binary of found) {
+						binaries.add(binary);
 					}
 				} else {
-					resFiles.add(filePath);
+					binaries.add(filePath);
 				}
 			} catch (error) {
 				throw new Error(`I couldn't find that: ${filePath}`);
 			}
 
 		}
-		return Array.from(resFiles);
+		return Array.from(binaries);
 	}
 
 	async _processBundle({ filesToFlash }) {
