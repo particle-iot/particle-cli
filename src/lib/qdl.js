@@ -21,8 +21,6 @@ async function getExecutable() {
 async function run({ files, updateFolder, zip, verbose, ui }) {
 	const qdl = await getExecutable();
 
-	ui.write(`Command: ${qdl} --storage ${TACHYON_STORAGE_TYPE} ${files.join(' ')}${os.EOL}`);
-
 	if (zip) {
 		// remove the first / from the update folder and all the files
 		updateFolder = updateFolder.replace(/^\//, '');
@@ -37,6 +35,8 @@ async function run({ files, updateFolder, zip, verbose, ui }) {
 		updateFolder,
 		...files
 	];
+
+	ui.write(`Command: ${qdl} ${qdlArgs.join(' ')}`);
 
 	const res = await execa(qdl, qdlArgs, {
 		cwd: updateFolder,
