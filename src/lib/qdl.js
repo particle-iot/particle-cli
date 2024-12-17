@@ -3,7 +3,6 @@ const utilities = require('../lib/utilities');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
-const { update } = require('lodash');
 
 const TACHYON_STORAGE_TYPE = 'ufs';
 
@@ -18,23 +17,23 @@ async function getExecutable() {
 
 /**
  */
-async function run({ files, updateFolder, zip, verbose, ui }) {
+async function run({ files, includeDir, updateFolder, zip, verbose, ui }) {
 	const qdl = await getExecutable();
 
 	const qdlArgs = [
-		'--storage', 
+		'--storage',
 		TACHYON_STORAGE_TYPE,
 		...(zip ? ['--zip', zip] : []),
-		...(updateFolder ? ['--include', updateFolder] : []),
+		...(includeDir ? ['--include', includeDir] : []),
 		...files
 	];
-	
+
 	if (verbose) {
-		ui.write(`Command: ${qdl} ${qdlArgs.join(' ')}`);
+		ui.write(`Command: ${qdl} ${qdlArgs.join(' ')}${os.EOL}`);
 	}
 
 	const res = await execa(qdl, qdlArgs, {
-		cwd: updateFolder,
+		cwd: updateFolder || process.cwd(),
 		stdio: verbose ? 'inherit' : 'pipe'
 	});
 

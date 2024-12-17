@@ -74,9 +74,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 		this.ui.write(`${os.EOL}Ensure only one device is connected to the computer${os.EOL}`);
 
 		let zipFile;
-		let includeDir;
+		let includeDir = '';
+		let updateFolder = '';
 
-		if (files.length == 0) {
+		if (files.length === 0) {
 			// If no files are passed, use the current directory
 			files = ['.'];
 		}
@@ -86,22 +87,32 @@ module.exports = class FlashCommand extends CLICommandBase {
 		let filesToProgram;
 
 		if (stats.isDirectory()) {
-			({ baseDir: includeDir, filesToProgram } = await this._extractFlashFilesFromDir(input));
+			updateFolder = path.dirname(input);
+			const dirInfo = await this._extractFlashFilesFromDir(input);
+			includeDir = path.join(path.basename(input),dirInfo.baseDir);
+			filesToProgram = dirInfo.filesToProgram;
 		} else if (utilities.getFilenameExt(input) === '.zip') {
+			updateFolder = path.dirname(input);
 			zipFile = path.basename(input);
-			({ baseDir: includeDir, filesToProgram } = await this._extractFlashFilesFromZip(input));
+			const zipInfo = await this._extractFlashFilesFromZip(input);
+			const zipFileName = path.basename(input, '.zip'); // remove the .zip extension
+			includeDir = path.join(zipFileName, zipInfo.baseDir);
+			filesToProgram = zipInfo.filesToProgram;
 		} else {
 			filesToProgram = files;
 		}
 		// remove the first / from the update folder and all the files
 		includeDir = includeDir.replace(/^\//, '');
+
+		filesToProgram = filesToProgram.map((file) => path.join(includeDir, file));
 		filesToProgram = filesToProgram.map((file) => file.replace(/^\//, ''));
 
 		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
 
 		const res = await qdl.run({
 			files: filesToProgram,
-			updateFolder: includeDir,
+			includeDir,
+			updateFolder,
 			zip: zipFile,
 			verbose,
 			ui: this.ui
@@ -109,7 +120,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		// put the output in a log file if not verbose
 		if (!verbose) {
 			const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
-			await fs.writeFile(outputLog, res.stdout);
+			if (res?.stdout) {
+				await fs.writeFile(outputLog, res.stdout);
+			}
 			this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
 		} else {
 			this.ui.write(`Download complete${os.EOL}`);
@@ -124,12 +137,13 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 		const data = await this._loadManifestFromFile(manifestPath);
 		const parsed = this._parseManfiestData(data);
-		
-		const baseDir = path.join(path.dirname(manifestPath), parsed.base);
+
+		// const baseDir = path.join(path.dirname(manifestPath), parsed.base);
+		const baseDir = parsed.base;
 		const filesToProgram = await this._getFilesInOrder({
-			programXml: parsed.programXml.map(p => path.join(baseDir, p)),
-			patchXml: parsed.patchXml.map(p => path.join(baseDir, p)),
-			firehoseElf: path.join(baseDir, parsed.firehose)
+			programXml: parsed.programXml,
+			patchXml: parsed.patchXml.map,
+			firehoseElf: parsed.firehose
 		});
 
 		return { baseDir, filesToProgram };
@@ -145,9 +159,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const baseDir = parsed.base;
 
 		const filesToProgram = await this._getFilesInOrder({
-			programXml: parsed.programXml.map(p => path.join(baseDir, p)),
-			patchXml: parsed.patchXml.map(p => path.join(baseDir, p)),
-			firehoseElf: path.join(baseDir, parsed.firehose)
+			programXml: parsed.programXml,
+			patchXml: parsed.patchXml,
+			firehoseElf: parsed.firehose
 		});
 
 		return { baseDir, filesToProgram };
@@ -186,13 +200,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 		if (programXml.length === 0) {
 			throw new Error('Unable to find program xml files');
 		}
-		let files = [];
-		// interleave the rawprogram files and patch files
-		for (let i = 0; i < programXml.length; i++) {
-			files.push(programXml[i]);
-			files.push(patchXml[i]);
-		}
-		files.unshift(firehoseElf);
+		let files = [
+			firehoseElf,
+			...programXml.flatMap((programFile, i) => [
+				programFile,
+				patchXml[i]
+			].filter(Boolean))
+		].filter(Boolean);
+
 		return files;
 	}
 
