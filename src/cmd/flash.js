@@ -29,7 +29,7 @@ const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
 const qdl = require('../lib/qdl');
 
-const TACHYON_MANIFEST_FILE = 'release.json';
+const TACHYON_MANIFEST_FILE = 'manifest.json';
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
