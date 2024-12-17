@@ -91,9 +91,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 			zipFile = path.basename(input);
 			({ baseDir: includeDir, filesToProgram } = await this._extractFlashFilesFromZip(input));
 		} else {
-			// TODO: Add restrictions around `/` 
 			filesToProgram = files;
 		}
+		// remove the first / from the update folder and all the files
+		includeDir = includeDir.replace(/^\//, '');
+		filesToProgram = filesToProgram.map((file) => file.replace(/^\//, ''));
 
 		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
 

@@ -21,18 +21,11 @@ async function getExecutable() {
 async function run({ files, updateFolder, zip, verbose, ui }) {
 	const qdl = await getExecutable();
 
-	if (zip) {
-		// remove the first / from the update folder and all the files
-		updateFolder = updateFolder.replace(/^\//, '');
-		files = files.map((file) => file.replace(/^\//, ''));
-	}
-
 	const qdlArgs = [
 		'--storage', 
 		TACHYON_STORAGE_TYPE,
 		...(zip ? ['--zip', zip] : []),
-		'--include',
-		updateFolder,
+		...(updateFolder ? ['--include', updateFolder] : []),
 		...files
 	];
 	
