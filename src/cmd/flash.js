@@ -75,67 +75,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		let zipFile;
 		let includeDir;
-		let firehoseElfWithPath;
-		let programXmlFilesWithPath;
-		let patchXmlFilesWithPath;
-	
-		const readManifest = async (manifestPath) => {
-			const manifestFile = await fs.readFile(manifestPath, 'utf8');
-			const manifestData = JSON.parse(manifestFile);
 
-			const base = manifestData.targets[0].qcm6490.edl.base;
-			const firehose = manifestData.targets[0].qcm6490.edl.firehose;
-			const programXmlFiles = manifestData.targets[0].qcm6490.edl.program_xml;
-			const patchXmlFiles = manifestData.targets[0].qcm6490.edl.patch_xml;
-
-			const baseDir = path.join(path.dirname(manifestPath), base);
-			const firehoseElfWithPath = path.join(baseDir, firehose);
-			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
-			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
-
-			let filesToProgram = [];
-			// interleave the rawprogram files and patch files
-			for (let i = 0; i < programXmlFilesWithPath.length; i++) {
-				filesToProgram.push(programXmlFilesWithPath[i]);
-				filesToProgram.push(patchXmlFilesWithPath[i]);
-			}
-			filesToProgram.unshift(firehoseElfWithPath);
-
-			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram };
-		};
-	
-		const extractZipManifest = async (zipPath) => {
-			const dir = await unzip.Open.file(zipPath);
-			const zipName = path.basename(zipPath, '.zip');
-			const manifestFile = dir.files.find(file => file.path === path.join(zipName, TACHYON_MANIFEST_FILE));
-			if (!manifestFile) {
-				throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
-			}
-
-			const manifest = await manifestFile.buffer();
-			const manifestData = JSON.parse(manifest.toString());
-			
-			const baseDir = manifestData.targets[0].qcm6490.edl.base;
-			const firehose = manifestData.targets[0].qcm6490.edl.firehose;
-			const programXmlFiles = manifestData.targets[0].qcm6490.edl.program_xml;
-			const patchXmlFiles = manifestData.targets[0].qcm6490.edl.patch_xml;
-			
-			const firehoseElfWithPath = path.join(baseDir, firehose);
-			const programXmlFilesWithPath = programXmlFiles.map(p => path.join(baseDir, p));
-			const patchXmlFilesWithPath = patchXmlFiles.map(p => path.join(baseDir, p));
-
-			let filesToProgram = [];
-			// interleave the rawprogram files and patch files
-			for (let i = 0; i < programXmlFilesWithPath.length; i++) {
-				filesToProgram.push(programXmlFilesWithPath[i]);
-				filesToProgram.push(patchXmlFilesWithPath[i]);
-			}
-			filesToProgram.unshift(firehoseElfWithPath);
-
-			return { baseDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram };
-		};
-	
-		if (files.length <= 1) {
+		if (files.length == 0) {
 			// If no files are passed, use the current directory
 			files = ['.'];
 		}
@@ -145,40 +86,112 @@ module.exports = class FlashCommand extends CLICommandBase {
 		let filesToProgram;
 
 		if (stats.isDirectory()) {
-			const manifestPath = path.join(input, TACHYON_MANIFEST_FILE);
-			if (!fs.existsSync(manifestPath)) {
-				throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
-			}
-			({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram } = await readManifest(manifestPath));
+			({ baseDir: includeDir, filesToProgram } = await this._extractFlashFilesFromDir(input));
 		} else if (utilities.getFilenameExt(input) === '.zip') {
 			zipFile = path.basename(input);
-			({ baseDir: includeDir, firehoseElfWithPath, programXmlFilesWithPath, patchXmlFilesWithPath, filesToProgram } = await extractZipManifest(input));
+			({ baseDir: includeDir, filesToProgram } = await this._extractFlashFilesFromZip(input));
 		} else {
+			// TODO: Add restrictions around `/` 
 			filesToProgram = files;
 		}
 
 		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
 
-		try {
-			const res = await qdl.run({
-				files: filesToProgram,
-				updateFolder: includeDir,
-				zip: zipFile,
-				verbose,
-				ui: this.ui
-			});
-			// put the output in a log file if not verbose
-			if (!verbose) {
-				const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
-				await fs.writeFile(outputLog, res.stdout);
-				this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
-			} else {
-				this.ui.write(`Download complete${os.EOL}`);
-			}
-		} catch (err) {
-			throw new Error(`Download failed.${os.EOL}Error: ${err.message}${os.EOL}`);
+		const res = await qdl.run({
+			files: filesToProgram,
+			updateFolder: includeDir,
+			zip: zipFile,
+			verbose,
+			ui: this.ui
+		});
+		// put the output in a log file if not verbose
+		if (!verbose) {
+			const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
+			await fs.writeFile(outputLog, res.stdout);
+			this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
+		} else {
+			this.ui.write(`Download complete${os.EOL}`);
 		}
 		// TODO: Handle errors
+	}
+
+	async _extractFlashFilesFromDir(dirPath) {
+		const manifestPath = path.join(dirPath, TACHYON_MANIFEST_FILE);
+		if (!fs.existsSync(manifestPath)) {
+			throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
+		}
+		const data = await this._loadManifestFromFile(manifestPath);
+		const parsed = this._parseManfiestData(data);
+		
+		const baseDir = path.join(path.dirname(manifestPath), parsed.base);
+		const filesToProgram = await this._getFilesInOrder({
+			programXml: parsed.programXml.map(p => path.join(baseDir, p)),
+			patchXml: parsed.patchXml.map(p => path.join(baseDir, p)),
+			firehoseElf: path.join(baseDir, parsed.firehose)
+		});
+
+		return { baseDir, filesToProgram };
+	}
+
+	async _extractFlashFilesFromZip(zipPath) {
+		if (!fs.existsSync(zipPath)) {
+			throw new Error(`Unable to find ${zipPath}${os.EOL}`);
+		}
+		const data = await this._loadManifestFromZip(zipPath);
+		const parsed = this._parseManfiestData(data);
+
+		const baseDir = parsed.base;
+
+		const filesToProgram = await this._getFilesInOrder({
+			programXml: parsed.programXml.map(p => path.join(baseDir, p)),
+			patchXml: parsed.patchXml.map(p => path.join(baseDir, p)),
+			firehoseElf: path.join(baseDir, parsed.firehose)
+		});
+
+		return { baseDir, filesToProgram };
+	}
+
+	async _loadManifestFromFile(filePath) {
+		const manifestFile = await fs.readFile(filePath, 'utf8');
+		return JSON.parse(manifestFile);
+	}
+
+	async _loadManifestFromZip(zipPath) {
+		const dir = await unzip.Open.file(zipPath);
+		const zipName = path.basename(zipPath, '.zip');
+		const manifestFile = dir.files.find(file => file.path === path.join(zipName, TACHYON_MANIFEST_FILE));
+		if (!manifestFile) {
+			throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
+		}
+
+		const manifest = await manifestFile.buffer();
+		return JSON.parse(manifest.toString());
+	}
+
+	_parseManfiestData(data) {
+		return {
+			base: data?.targets[0]?.qcm6490?.edl?.base,
+			firehose: data?.targets[0]?.qcm6490?.edl?.firehose,
+			programXml: data?.targets[0]?.qcm6490?.edl?.program_xml,
+			patchXml: data?.targets[0]?.qcm6490?.edl?.patch_xml
+		};
+	}
+
+	async _getFilesInOrder({ programXml, patchXml, firehoseElf }) {
+		if (!firehoseElf) {
+			throw new Error('Unable to find firehose file');
+		}
+		if (programXml.length === 0) {
+			throw new Error('Unable to find program xml files');
+		}
+		let files = [];
+		// interleave the rawprogram files and patch files
+		for (let i = 0; i < programXml.length; i++) {
+			files.push(programXml[i]);
+			files.push(patchXml[i]);
+		}
+		files.unshift(firehoseElf);
+		return files;
 	}
 
 	async flashOverUsb({ binary, factory }) {

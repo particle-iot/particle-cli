@@ -35,8 +35,10 @@ async function run({ files, updateFolder, zip, verbose, ui }) {
 		updateFolder,
 		...files
 	];
-
-	ui.write(`Command: ${qdl} ${qdlArgs.join(' ')}`);
+	
+	if (verbose) {
+		ui.write(`Command: ${qdl} ${qdlArgs.join(' ')}`);
+	}
 
 	const res = await execa(qdl, qdlArgs, {
 		cwd: updateFolder,
