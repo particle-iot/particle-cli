@@ -174,8 +174,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _loadManifestFromZip(zipPath) {
 		const dir = await unzip.Open.file(zipPath);
-		const zipName = path.basename(zipPath, '.zip');
-		const manifestFile = dir.files.find(file => file.path === path.join(zipName, TACHYON_MANIFEST_FILE));
+		const manifestFile = dir.files.find(file => file.path === TACHYON_MANIFEST_FILE);
 		if (!manifestFile) {
 			throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
 		}
