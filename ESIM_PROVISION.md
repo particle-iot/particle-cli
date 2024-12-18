@@ -34,13 +34,13 @@ Automatic update checks are now disabled
 
 $ export PARTICLE_MANIFEST_HOST=binaries.staging.particle.io
 
-$ particle update-cli --version 3.30.3
-Updating the CLI to 3.30.3
+$ particle update-cli --version 3.30.4
+Updating the CLI to 3.30.4
 Automatic update checks are now disabled
 CLI updated successfully
 
 $ particle --version
-3.30.3
+3.30.4
 
 $ 
 ```
