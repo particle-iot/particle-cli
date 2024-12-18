@@ -21,7 +21,7 @@ async function getExecutable() {
 	const tmpDir = await mkdirTemp('qdl');
 	await fs.copy(qdlDir, tmpDir);
 
-	return path.join(tmpDir, 'qdl' + (archName === 'windows' ? '.exe' : ''));
+	return path.join(tmpDir, 'qdl' + (archName === 'win32' ? '.exe' : ''));
 }
 
 /**
