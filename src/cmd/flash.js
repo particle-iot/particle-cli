@@ -95,7 +95,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			updateFolder = path.dirname(input);
 			zipFile = path.basename(input);
 			const zipInfo = await this._extractFlashFilesFromZip(input);
-			includeDir = zipInfo.baseDir;
+			includeDir = path.normalize(zipInfo.baseDir);
 			filesToProgram = zipInfo.filesToProgram;
 		} else {
 			filesToProgram = files;
