@@ -3,16 +3,25 @@ const utilities = require('../lib/utilities');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
+const util = require('util');
+const temp = require('temp').track();
+const mkdirTemp = util.promisify(temp.mkdir);
 
 const TACHYON_STORAGE_TYPE = 'ufs';
 
 async function getExecutable() {
 	const archType = utilities.getArchType();
 	const archName = utilities.getOs();
-	const qdlExec = path.join(__dirname, `../../assets/qdl/${archName}/${archType}/qdl`);
-	await fs.ensureFile(qdlExec);
-	await fs.chmod(qdlExec, 0o755);
-	return qdlExec;
+	const qdlDir = path.join(__dirname, `../../assets/qdl/${archName}/${archType}`);
+	if (!await fs.pathExists(qdlDir)) {
+		throw new Error('Flashing Tachyon is not suppported on your OS');
+	}
+
+	// Copy qdl to a temporary directory, so it can run outside the pkg snapshot
+	const tmpDir = await mkdirTemp('qdl');
+	await fs.copy(qdlDir, tmpDir);
+
+	return path.join(tmpDir, 'qdl' + (archName === 'windows' ? '.exe' : ''));
 }
 
 /**
