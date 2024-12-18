@@ -101,6 +101,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		} else {
 			filesToProgram = files;
 		}
+
+		// TODO: we shouldn't have to remove slashes. In what situation is this code necessary?
 		// remove the first / from the update folder and all the files
 		includeDir = includeDir.replace(/^\//, '');
 
@@ -140,11 +142,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		// const baseDir = path.join(path.dirname(manifestPath), parsed.base);
 		const baseDir = parsed.base;
-		const filesToProgram = await this._getFilesInOrder({
-			programXml: parsed.programXml,
-			patchXml: parsed.patchXml.map,
-			firehoseElf: parsed.firehose
-		});
+		const filesToProgram = [
+			parsed.firehose,
+			...parsed.programXml,
+			...parsed.patchXml
+		];
 
 		return { baseDir, filesToProgram };
 	}
@@ -157,12 +159,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const parsed = this._parseManfiestData(data);
 
 		const baseDir = parsed.base;
-
-		const filesToProgram = await this._getFilesInOrder({
-			programXml: parsed.programXml,
-			patchXml: parsed.patchXml,
-			firehoseElf: parsed.firehose
-		});
+		const filesToProgram = [
+			parsed.firehose,
+			...parsed.programXml,
+			...parsed.patchXml
+		];
 
 		return { baseDir, filesToProgram };
 	}
@@ -190,24 +191,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 			programXml: data?.targets[0]?.qcm6490?.edl?.program_xml,
 			patchXml: data?.targets[0]?.qcm6490?.edl?.patch_xml
 		};
-	}
-
-	async _getFilesInOrder({ programXml, patchXml, firehoseElf }) {
-		if (!firehoseElf) {
-			throw new Error('Unable to find firehose file');
-		}
-		if (programXml.length === 0) {
-			throw new Error('Unable to find program xml files');
-		}
-		let files = [
-			firehoseElf,
-			...programXml.flatMap((programFile, i) => [
-				programFile,
-				patchXml[i]
-			].filter(Boolean))
-		].filter(Boolean);
-
-		return files;
 	}
 
 	async flashOverUsb({ binary, factory }) {
