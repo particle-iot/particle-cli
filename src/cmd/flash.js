@@ -87,26 +87,19 @@ module.exports = class FlashCommand extends CLICommandBase {
 		let filesToProgram;
 
 		if (stats.isDirectory()) {
-			updateFolder = path.dirname(input);
+			updateFolder = input;
 			const dirInfo = await this._extractFlashFilesFromDir(input);
-			includeDir = path.join(path.basename(input), dirInfo.baseDir);
-			filesToProgram = dirInfo.filesToProgram;
+			includeDir = dirInfo.baseDir;
+			filesToProgram = dirInfo.filesToProgram.map((file) => path.join(includeDir, file));
 		} else if (utilities.getFilenameExt(input) === '.zip') {
 			updateFolder = path.dirname(input);
 			zipFile = path.basename(input);
 			const zipInfo = await this._extractFlashFilesFromZip(input);
-			includeDir = path.normalize(zipInfo.baseDir);
-			filesToProgram = zipInfo.filesToProgram;
+			includeDir = zipInfo.baseDir;
+			filesToProgram = zipInfo.filesToProgram.map((file) => path.join(includeDir, file));
 		} else {
 			filesToProgram = files;
 		}
-
-		// TODO: we shouldn't have to remove slashes. In what situation is this code necessary?
-		// remove the first / from the update folder and all the files
-		includeDir = includeDir.replace(/^\//, '');
-
-		filesToProgram = filesToProgram.map((file) => path.join(includeDir, file));
-		filesToProgram = filesToProgram.map((file) => file.replace(/^\//, ''));
 
 		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
 
@@ -139,8 +132,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const data = await this._loadManifestFromFile(manifestPath);
 		const parsed = this._parseManfiestData(data);
 
-		// const baseDir = path.join(path.dirname(manifestPath), parsed.base);
-		const baseDir = parsed.base;
+		const baseDir = path.normalize(parsed.base);
 		const filesToProgram = [
 			parsed.firehose,
 			...parsed.programXml,
@@ -157,7 +149,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const data = await this._loadManifestFromZip(zipPath);
 		const parsed = this._parseManfiestData(data);
 
-		const baseDir = parsed.base;
+		const baseDir = path.normalize(parsed.base);
 		const filesToProgram = [
 			parsed.firehose,
 			...parsed.programXml,
