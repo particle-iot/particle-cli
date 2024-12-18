@@ -412,5 +412,23 @@ module.exports = {
 			.replace(/[^a-z0-9-]/g, '');
 		return slug;
 	},
+
+	/**
+	 * Returns the architecture of the current system
+	 * @return {String} architecture of the current system
+	 * @example 'x64', 'x86-64', etc
+	 */
+	getArchType(){
+		return os.arch();
+	},
+
+	/**
+	 * Returns the os of the current system
+	 * @return {String} os of the current system
+	 * @example 'linux', 'darwin', etc
+	 */
+	getOs(){
+		return os.platform();
+	}
 };
 

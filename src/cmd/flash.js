@@ -14,6 +14,7 @@ const temp = require('temp').track();
 const { knownAppNames, knownAppsForPlatform } = require('../lib/known-apps');
 const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/file-types');
 const deviceOsUtils = require('../lib/device-os-version-util');
+const os = require('os');
 const semver = require('semver');
 const {
 	createFlashSteps,
@@ -25,6 +26,10 @@ const {
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
+const unzip = require('unzipper');
+const qdl = require('../lib/qdl');
+
+const TACHYON_MANIFEST_FILE = 'manifest.json';
 
 module.exports = class FlashCommand extends CLICommandBase {
 	constructor(...args) {
@@ -39,9 +44,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 		target,
 		port,
 		yes,
+		verbose,
+		tachyon,
 		'application-only': applicationOnly
 	}) {
-		if (!device && !binary && !local) {
+		if (!tachyon && !device && !binary && !local) {
 			// if no device nor files are passed, show help
 			throw usageError('You must specify a device or a file');
 		}
@@ -55,9 +62,126 @@ module.exports = class FlashCommand extends CLICommandBase {
 		} else if (local) {
 			let allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
+		} else if (tachyon) {
+			let allFiles = binary ? [binary, ...files] : files;
+			await this.flashTachyon({ verbose, files: allFiles });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
+	}
+
+	async flashTachyon({ verbose, files }) {
+		this.ui.write(`${os.EOL}Ensure only one device is connected to the computer${os.EOL}`);
+
+		let zipFile;
+		let includeDir = '';
+		let updateFolder = '';
+
+		if (files.length === 0) {
+			// If no files are passed, use the current directory
+			files = ['.'];
+		}
+
+		const input = files[0];
+		const stats = await fs.stat(input);
+		let filesToProgram;
+
+		if (stats.isDirectory()) {
+			updateFolder = input;
+			const dirInfo = await this._extractFlashFilesFromDir(input);
+			includeDir = dirInfo.baseDir;
+			filesToProgram = dirInfo.filesToProgram.map((file) => path.join(includeDir, file));
+		} else if (utilities.getFilenameExt(input) === '.zip') {
+			updateFolder = path.dirname(input);
+			zipFile = path.basename(input);
+			const zipInfo = await this._extractFlashFilesFromZip(input);
+			includeDir = zipInfo.baseDir;
+			filesToProgram = zipInfo.filesToProgram.map((file) => path.join(includeDir, file));
+		} else {
+			filesToProgram = files;
+		}
+
+		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
+
+		const res = await qdl.run({
+			files: filesToProgram,
+			includeDir,
+			updateFolder,
+			zip: zipFile,
+			verbose,
+			ui: this.ui
+		});
+		// put the output in a log file if not verbose
+		if (!verbose) {
+			const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
+			if (res?.stdout) {
+				await fs.writeFile(outputLog, res.stdout);
+			}
+			this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
+		} else {
+			this.ui.write(`Download complete${os.EOL}`);
+		}
+		// TODO: Handle errors
+	}
+
+	async _extractFlashFilesFromDir(dirPath) {
+		const manifestPath = path.join(dirPath, TACHYON_MANIFEST_FILE);
+		if (!fs.existsSync(manifestPath)) {
+			throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
+		}
+		const data = await this._loadManifestFromFile(manifestPath);
+		const parsed = this._parseManfiestData(data);
+
+		const baseDir = path.normalize(parsed.base);
+		const filesToProgram = [
+			parsed.firehose,
+			...parsed.programXml,
+			...parsed.patchXml
+		];
+
+		return { baseDir, filesToProgram };
+	}
+
+	async _extractFlashFilesFromZip(zipPath) {
+		if (!fs.existsSync(zipPath)) {
+			throw new Error(`Unable to find ${zipPath}${os.EOL}`);
+		}
+		const data = await this._loadManifestFromZip(zipPath);
+		const parsed = this._parseManfiestData(data);
+
+		const baseDir = path.normalize(parsed.base);
+		const filesToProgram = [
+			parsed.firehose,
+			...parsed.programXml,
+			...parsed.patchXml
+		];
+
+		return { baseDir, filesToProgram };
+	}
+
+	async _loadManifestFromFile(filePath) {
+		const manifestFile = await fs.readFile(filePath, 'utf8');
+		return JSON.parse(manifestFile);
+	}
+
+	async _loadManifestFromZip(zipPath) {
+		const dir = await unzip.Open.file(zipPath);
+		const manifestFile = dir.files.find(file => file.path === TACHYON_MANIFEST_FILE);
+		if (!manifestFile) {
+			throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
+		}
+
+		const manifest = await manifestFile.buffer();
+		return JSON.parse(manifest.toString());
+	}
+
+	_parseManfiestData(data) {
+		return {
+			base: data?.targets[0]?.qcm6490?.edl?.base,
+			firehose: data?.targets[0]?.qcm6490?.edl?.firehose,
+			programXml: data?.targets[0]?.qcm6490?.edl?.program_xml,
+			patchXml: data?.targets[0]?.qcm6490?.edl?.patch_xml
+		};
 	}
 
 	async flashOverUsb({ binary, factory }) {
