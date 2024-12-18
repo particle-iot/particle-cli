@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.30.0 - Dec 18  2024
+* Add support for flashing Tachyon
+
 # 3.29.1 - Nov 29  2024
 * Allow compiling by using archived Device OS versions
 
