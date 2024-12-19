@@ -473,7 +473,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const profilesOutput = resProfiles.stdout;
 		const profilesList = profilesOutput
 			.split('\n')
-			.filter((line) => line.match(/^\d+:\[\w+,\s(?:enabled|disabled),\s?\]$/));
+			.filter((line) => line.match(/^\d+:\[\d+,\s(?:enabled|disabled),\s?\]\r?$/));
 		return profilesList;
 	}
 
