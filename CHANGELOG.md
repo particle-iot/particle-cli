@@ -1,7 +1,10 @@
 # Changelog
 
+# 3.30.2 - Dec 19  2024
+* Update to latest qdl to support zip files larger than 4 GB
+
 # 3.30.1 - Dec 19  2024
-* Update to latest unzipper to support zip files larger than 2 GB
+* Update to latest unzipper to support zip files larger than 4 GB
 
 # 3.30.0 - Dec 18  2024
 * Add support for flashing Tachyon
