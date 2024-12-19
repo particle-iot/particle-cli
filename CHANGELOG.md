@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.31.0 - Dec 18 2024
+* Add manufacturing tool to provision Kigen eSIMs + fixes
+
 # 3.30.3 - Dec 1 2024
 * Add manufacturing tool to provision Kigen eSIMs + fixes
 
