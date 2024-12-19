@@ -80,7 +80,8 @@
     "verror": "^1.10.0",
     "wiring-preprocessor": "^2.2.0",
     "xtend": "^4.0.2",
-    "yargs": "^5.0.0"
+    "yargs": "^5.0.0",
+    "yauzl": "^3.2.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",

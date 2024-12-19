@@ -26,7 +26,8 @@ const {
 } = require('../lib/flash-helper');
 const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
-const unzip = require('unzipper');
+//const unzip = require('unzipper');
+const yauzl = require('yauzl');
 const qdl = require('../lib/qdl');
 
 const TACHYON_MANIFEST_FILE = 'manifest.json';
@@ -164,16 +165,47 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return JSON.parse(manifestFile);
 	}
 
-	async _loadManifestFromZip(zipPath) {
-		const dir = await unzip.Open.file(zipPath);
-		const manifestFile = dir.files.find(file => file.path === TACHYON_MANIFEST_FILE);
-		if (!manifestFile) {
-			throw new Error(`Unable to find ${TACHYON_MANIFEST_FILE}${os.EOL}`);
-		}
-
-		const manifest = await manifestFile.buffer();
-		return JSON.parse(manifest.toString());
-	}
+  async _loadManifestFromZip(zipPath) {
+    return new Promise((resolve, reject) => {
+      yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+        if (err) return reject(err);
+  
+        let found = false;
+  
+        zipfile.on('entry', entry => {
+          if (entry.fileName === TACHYON_MANIFEST_FILE) {
+            found = true;
+  
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) return reject(err);
+  
+              const chunks = [];
+              readStream.on('data', chunk => chunks.push(chunk));
+              readStream.on('end', () => {
+                zipfile.close();
+                try {
+                  const manifest = Buffer.concat(chunks).toString();
+                  resolve(JSON.parse(manifest));
+                } catch (parseError) {
+                  reject(new Error(`Failed to parse manifest JSON: ${parseError.message}`));
+                }
+              });
+            });
+          } else {
+            zipfile.readEntry();
+          }
+        });
+  
+        zipfile.on('end', () => {
+          if (!found) {
+            reject(new Error(`Unable to find ${manifestFileName}`));
+          }
+        });
+  
+        zipfile.readEntry();
+      });
+    });
+  }
 
 	_parseManfiestData(data) {
 		return {

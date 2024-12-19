@@ -37,7 +37,8 @@
         "verror": "^1.10.0",
         "wiring-preprocessor": "^2.2.0",
         "xtend": "^4.0.2",
-        "yargs": "^5.0.0"
+        "yargs": "^5.0.0",
+        "yauzl": "^3.2.0"
       },
       "bin": {
         "particle": "src/index.js"
@@ -6465,6 +6466,11 @@
         "through2": "^2.0.3"
       }
     },
+    "node_modules/pend": {
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/pend/-/pend-1.2.0.tgz",
+      "integrity": "sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg=="
+    },
     "node_modules/picomatch": {
       "version": "2.3.1",
       "resolved": "https://registry.npmjs.org/picomatch/-/picomatch-2.3.1.tgz",
@@ -9227,6 +9233,18 @@
       },
       "engines": {
         "node": ">= 0.10.0"
+      }
+    },
+    "node_modules/yauzl": {
+      "version": "3.2.0",
+      "resolved": "https://registry.npmjs.org/yauzl/-/yauzl-3.2.0.tgz",
+      "integrity": "sha512-Ow9nuGZE+qp1u4JIPvg+uCiUr7xGQWdff7JQSk5VGYTAZMDe2q8lxJ10ygv10qmSj031Ty/6FNJpLO4o1Sgc+w==",
+      "dependencies": {
+        "buffer-crc32": "~0.2.3",
+        "pend": "~1.2.0"
+      },
+      "engines": {
+        "node": ">=12"
       }
     },
     "node_modules/yocto-queue": {
@@ -14338,6 +14356,11 @@
         "through2": "^2.0.3"
       }
     },
+    "pend": {
+      "version": "1.2.0",
+      "resolved": "https://registry.npmjs.org/pend/-/pend-1.2.0.tgz",
+      "integrity": "sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg=="
+    },
     "picomatch": {
       "version": "2.3.1",
       "resolved": "https://registry.npmjs.org/picomatch/-/picomatch-2.3.1.tgz",
@@ -16587,6 +16610,15 @@
             "decamelize": "^1.2.0"
           }
         }
+      }
+    },
+    "yauzl": {
+      "version": "3.2.0",
+      "resolved": "https://registry.npmjs.org/yauzl/-/yauzl-3.2.0.tgz",
+      "integrity": "sha512-Ow9nuGZE+qp1u4JIPvg+uCiUr7xGQWdff7JQSk5VGYTAZMDe2q8lxJ10ygv10qmSj031Ty/6FNJpLO4o1Sgc+w==",
+      "requires": {
+        "buffer-crc32": "~0.2.3",
+        "pend": "~1.2.0"
       }
     },
     "yocto-queue": {
