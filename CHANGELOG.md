@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.30.3 - Dec 20  2024
+* Update to latest qdl to flash files larger than 4 GB inside of zip files
+
 # 3.30.2 - Dec 19  2024
 * Update to latest qdl to support zip files larger than 4 GB
 

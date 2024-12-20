@@ -1,7 +1,7 @@
 {
   "name": "particle-cli",
   "description": "Simple Node commandline application for working with your Particle devices and using the Particle Cloud",
-  "version": "3.30.2",
+  "version": "3.30.3",
   "author": "David Middlecamp",
   "bin": {
     "particle": "./src/index.js"
