@@ -22,11 +22,11 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		}),
 		handler: (args) => {
-			const eSimCommands = require('../cmd/esim');
+			const ESimCommands = require('../cmd/esim');
 			if (args.bulk) {
-				return new eSimCommands().bulkProvisionCommand(args);
+				return new ESimCommands().bulkProvisionCommand(args);
 			} else {
-				return new eSimCommands().provisionCommand(args);
+				return new ESimCommands().provisionCommand(args);
 			}
 		},
 		examples: {
