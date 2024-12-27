@@ -19,6 +19,7 @@ const CTRL_REQUEST_APP_CUSTOM = 10;
 const GET_AT_COMMAND_STATUS = 4;
 
 const TEST_ICCID = ['89000123456789012341', '89000123456789012358'];
+const TWILIO_ICCID_PREFIX = '8988307';
 
 module.exports = class ESimCommands extends CLICommandBase {
 	constructor() { // TODO: Bring ui class
@@ -200,6 +201,26 @@ module.exports = class ESimCommands extends CLICommandBase {
 			const profilesMatch = await this._verifyAgainstListProfiles(port, expectedIccids);
 			provisionOutputLogs.push(profilesMatch);
 			if (profilesMatch.status === 'failed') {
+				await processOutput();
+				return;
+			}
+
+			const iccidToEnable = this._getIccidToEnable(profilesMatch.details.iccidsOnDevice);
+			if (iccidToEnable === null) {
+				success = false;
+				await processOutput('No profile found on the device to enable');
+				return;
+			}
+			const enableResp = await this._enableProfile(port, iccidToEnable);
+			provisionOutputLogs.push(enableResp);
+			if (enableResp.status === 'failed') {
+				await processOutput();
+				return;
+			}
+
+			const verifyIccidEnabledResp = await this._verifyIccidEnaled(port, iccidToEnable);
+			provisionOutputLogs.push(verifyIccidEnabledResp);
+			if (verifyIccidEnabledResp.status === 'failed') {
 				await processOutput();
 				return;
 			}
@@ -591,6 +612,57 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 		return stepOutput();
 	}
+
+	_getIccidToEnable(iccidList) {
+		// get the first available Twilio ICCID and if not found, get the first available profile
+		const twilioIccid = iccidList.find((iccid) => iccid.startsWith(TWILIO_ICCID_PREFIX));
+		return twilioIccid || iccidList[0] || null;
+	}
+
+	async _enableProfile(port, iccid) {
+		const res = {
+			step: 'enable_profile',
+			timestamp: new Date().toISOString().replace(/:/g, '-'),
+			status: 'failed',
+			details: {
+				iccid: iccid,
+				rawLogs: []
+			}
+		};
+
+		const enableProfileCmd = `${this.lpa} enable ${iccid} --serial=${port}`;
+		const enableProfileResp = await execa(this.lpa, ['enable', `${iccid}`, `--serial=${port}`]);
+		res.details.rawLogs.push(enableProfileResp.stdout);
+		res.status = enableProfileResp.stdout.includes('Profile enabled successfully') ? 'success' : 'failed';
+		res.details.command = enableProfileCmd;
+	}
+
+	async _verifyIccidEnaled(port, iccid) {
+		const res = {
+			step: 'verify_iccid_enabled',
+			timestamp: new Date().toISOString().replace(/:/g, '-'),
+			status: 'failed',
+			details: {
+				iccid: iccid,
+				rawLogs: []
+			}
+		};
+
+		const profilesOnDeviceAfterEnable = await this._listProfiles(port);
+		const iccidString = profilesOnDeviceAfterEnable.some((line) => line.includes(iccid));
+		if (iccidString) {
+			// check that you see the string 'enabled'
+			if (iccidString.includes('enabled')) {
+				res.status = 'success';
+				res.details.rawLogs.push(`ICCID ${iccid} enabled successfully`);
+			} else {
+				res.details.rawLogs.push(`ICCID ${iccid} not enabled`);
+			}
+		}
+		res.rawLogs.push(...profilesOnDeviceAfterEnable);
+		return res;
+	}
+
 
 	// Add the output logs to the output JSON file
 	// If previous data exists, append to it
