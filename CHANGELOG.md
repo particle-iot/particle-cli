@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.32.0 - Dec 18 2024
+* Add manufacturing tool to provision Kigen eSIMs + enable profile after dowload
+
 # 3.31.0 - Dec 18 2024
 * Add manufacturing tool to provision Kigen eSIMs + fixes
 
