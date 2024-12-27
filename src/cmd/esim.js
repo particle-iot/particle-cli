@@ -211,6 +211,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				await processOutput('No profile found on the device to enable');
 				return;
 			}
+
 			const enableResp = await this._enableProfile(port, iccidToEnable);
 			provisionOutputLogs.push(enableResp);
 			if (enableResp.status === 'failed') {
@@ -633,8 +634,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const enableProfileCmd = `${this.lpa} enable ${iccid} --serial=${port}`;
 		const enableProfileResp = await execa(this.lpa, ['enable', `${iccid}`, `--serial=${port}`]);
 		res.details.rawLogs.push(enableProfileResp.stdout);
-		res.status = enableProfileResp.stdout.includes('Profile enabled successfully') ? 'success' : 'failed';
+		res.status = enableProfileResp.stdout.includes('Profile successfully enabled') ? 'success' : 'failed';
 		res.details.command = enableProfileCmd;
+		return res;
 	}
 
 	async _verifyIccidEnaled(port, iccid) {
@@ -649,7 +651,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		};
 
 		const profilesOnDeviceAfterEnable = await this._listProfiles(port);
-		const iccidString = profilesOnDeviceAfterEnable.some((line) => line.includes(iccid));
+		const iccidString = profilesOnDeviceAfterEnable.find((line) => line.includes(iccid));
 		if (iccidString) {
 			// check that you see the string 'enabled'
 			if (iccidString.includes('enabled')) {
@@ -659,7 +661,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				res.details.rawLogs.push(`ICCID ${iccid} not enabled`);
 			}
 		}
-		res.rawLogs.push(...profilesOnDeviceAfterEnable);
+		res.details.rawLogs.push(...profilesOnDeviceAfterEnable);
 		return res;
 	}
 
