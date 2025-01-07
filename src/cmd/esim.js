@@ -190,7 +190,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			// Download each profile and update the JSON output
 			await this._changeLed(device, PROVISIONING_PROGRESS);
 
-			// provisionOutputLogs.push(`${os.EOL}Downloading profiles...`);
+			provisionOutputLogs.push(`${os.EOL}Downloading profiles...`);
 			const downloadResp = await this._doDownload(profilesToDownload, port);
 			provisionOutputLogs.push(downloadResp);
 			if (downloadResp.status === 'failed') {
@@ -474,13 +474,14 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 		try {
 			logAndPush(`${os.EOL}Checking for existing profiles...`);
-			const existingProfiles = await this._listProfiles(port);
+			existingProfiles = await this._listProfiles(port);
 
 			if (existingProfiles.length > 0) {
 				logAndPush(`${os.EOL}Existing profiles found on the device:`);
 				existingProfiles.forEach((profile) => logAndPush(`\t${profile}`));
+			} else {
+				logAndPush(`${os.EOL}No existing profiles found on the device`);
 			}
-			logAndPush(`${os.EOL}No existing profiles found on the device`);
 			status = 'success';
 			return stepOutput();
 		} catch (error) {
