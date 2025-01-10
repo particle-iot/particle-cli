@@ -38,19 +38,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async provisionCommand(args) {
 		this.verbose = true;
-		this._validateArgs(args);
+		// this._validateArgs(args);
 
-		await this._generateAvailableProvisioningData();
+		// await this._generateAvailableProvisioningData();
 
 		// Get the serial port and device details
-		const devices = await this.serial.findDevices();
-		if (devices.length !== 1) {
-			const errorMessage = devices.length > 1
-				? 'Multiple devices found. Please unplug all but one device or use the --bulk option.'
-				: 'No devices found.';
-			throw new Error(errorMessage);
-		}
-		const device = devices[0];
+		// const devices = await this.serial.findDevices();
+		const device = await this.serial.whatSerialPortDidYouMean();
 		await this.doProvision(device);
 	}
 
