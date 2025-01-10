@@ -1153,8 +1153,10 @@ module.exports = class SerialCommand extends CLICommandBase {
 
 		const answers = await prompt([question]);
 		const portSelected = answers.port;
-		if (!portSelected || !portSelected.deviceId) {
-			throw new Error('No serial port identified');
+
+
+		if (!portSelected || (portSelected.type != "tachyon" && !portSelected.deviceId)){
+				throw new Error('No serial port identified');
 		}
 		return portSelected;
 	}
