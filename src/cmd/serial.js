@@ -92,7 +92,11 @@ module.exports = class SerialCommand extends CLICommandBase {
 					const matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
 
 					if (!device && matchesManufacturer){
-						device = { port: port.path, type: 'Core' };
+						if (port.vendorId === '2b04' && port.productId === 'c02a') { // FIXME (keeramis)
+							device = { port: port.path, type: 'Tachyon' };
+						} else {
+							device = { port: port.path, type: 'Core' };
+						}
 					}
 
 					if (device){
@@ -1155,8 +1159,8 @@ module.exports = class SerialCommand extends CLICommandBase {
 		const portSelected = answers.port;
 
 
-		if (!portSelected || (portSelected.type != "tachyon" && !portSelected.deviceId)){
-				throw new Error('No serial port identified');
+		if (!portSelected || (portSelected.type !== 'Tachyon' && !portSelected.deviceId)){
+			throw new Error('No serial port identified');
 		}
 		return portSelected;
 	}
