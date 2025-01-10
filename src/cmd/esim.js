@@ -18,6 +18,8 @@ const PROVISIONING_FAILURE = 3;
 const CTRL_REQUEST_APP_CUSTOM = 10;
 const GET_AT_COMMAND_STATUS = 4;
 
+const TACHYON_QLRIL_WAIT_TIMEOUT = 2000;
+
 const TEST_ICCID = ['89000123456789012341', '89000123456789012358'];
 const TWILIO_ICCID_PREFIX = '8988307';
 
@@ -34,18 +36,47 @@ module.exports = class ESimCommands extends CLICommandBase {
 		this.binaries = null;
 		this.verbose = false;
 		this.availableProvisioningData = new Set();
+
+		this.isTachyon = false;
+		this.adbProcess = null;
 	}
 
 	async provisionCommand(args) {
 		this.verbose = true;
-		// this._validateArgs(args);
-
-		// await this._generateAvailableProvisioningData();
-
 		// Get the serial port and device details
-		// const devices = await this.serial.findDevices();
+		// Adding a device selector (since Tachyon might have multiple serial ports)
 		const device = await this.serial.whatSerialPortDidYouMean();
+		if (device.type === "Tachyon") {
+			this.isTachyon = true;
+			await this._initializeQlRil();
+		}
+
+		this._validateArgs(args);
+		await this._generateAvailableProvisioningData();
+		
 		await this.doProvision(device);
+
+		if (this.isTachyon) {
+			await this._exitQlRil();
+		}
+	}
+
+	async _initializeQlRil() {
+		console.log(`${os.EOL}Initalizing qlril app on Tachyon`);
+		return await Promise.race([
+			this.adbProcess = execa('adb', ['shell', 'qlril-app', '--port', '/dev/ttyGS2']),
+			new Promise(resolve => setTimeout(() => resolve(null), TACHYON_QLRIL_WAIT_TIMEOUT))
+		]);
+	}
+
+	async _exitQlRil() {
+		console.log(`${os.EOL}Exiting qlril app on Tachyon`);
+		await Promise.race([
+			execa('adb', ['shell', 'exit']),
+			new Promise(resolve => setTimeout(() => resolve(null), TACHYON_QLRIL_WAIT_TIMEOUT))
+		]);
+		this.adbProcess.kill('SIGINT');
+		return;
 	}
 
 	async bulkProvisionCommand(args) {
@@ -107,7 +138,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 		let eid = null;
 		let timestamp = new Date().toISOString().replace(/:/g, '-');
 		let success = false;
-		const outputJsonFile = path.join(this.outputFolder, `${device.deviceId}_${timestamp}.json`);
+
+		const outputJsonFile = path.join(this.outputFolder, `${this.isTachyon ? 'tachyon' : device.deviceId}_${timestamp}.json`);
 
 		const processOutput = async (failedLogs = []) => {
 			const logs = Array.isArray(failedLogs) ? failedLogs : [failedLogs];
@@ -124,11 +156,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 		};
 
 		try {
-			const platform = platformForId(device.specs.productId).name;
 			const port = device.port;
-
 			// Flash firmware and wait for AT to work
-			const flashResp = await this._flashATPassThroughFirmware(device, platform);
+			const flashResp = await this._flashATPassThroughFirmware(device);
 			provisionOutputLogs.push(flashResp);
 			if (flashResp.status === 'failed') {
 				await processOutput();
@@ -238,7 +268,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		const requiredArgs = {
 			input: 'Missing input JSON file',
 			lpa: 'Missing LPA tool path',
-			binary: 'Missing folder path to binaries'
+			...(this.isTachyon ? {} : { binary: 'Missing folder path to binaries' })
 		};
 
 		for (const [key, errorMessage] of Object.entries(requiredArgs)) {
@@ -271,6 +301,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 				rawLogs: []
 			}
 		};
+
+		logAndPush(`${os.EOL}Verifying profiles on the device after download...`);
 		const profilesOnDeviceAfterDownload = await this._listProfiles(port);
 		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
 
@@ -287,7 +319,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		return res;
 	}
 
-	async _flashATPassThroughFirmware(device, platform) {
+	async _flashATPassThroughFirmware(device) {
 		let status = 'failed';
 		let timestamp = new Date().toISOString().replace(/:/g, '-');
 		let logs = [];
@@ -310,6 +342,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		});
 
+		if (this.isTachyon) {
+			logAndPush(`${os.EOL}Skipping firmware flashing for Tachyon`);
+			status = 'success';
+			return stepOutput();
+		}
+
+		const platform = platformForId(device.specs.productId).name;
 		try {
 			// Locate the firmware binary
 			logAndPush(`${os.EOL}Locating firmware for platform: ${platform}`);
@@ -563,15 +602,15 @@ module.exports = class ESimCommands extends CLICommandBase {
 			const rspUrl = `1$${smdp}$${matching_id}`;
 			const startTime = Date.now();
 
-			logAndPush(`\n${index + 1}. Downloading ${provider} profile from ${rspUrl}`);
+			logAndPush(`${os.EOL}${index + 1}. Downloading ${provider} profile from ${rspUrl}`);
 			let result, command;
 			try {
 				command = `${this.lpa} download ${rspUrl} --serial=${port}`;
 				result = await execa(this.lpa, ['download', rspUrl, `--serial=${port}`]);
 				const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
 				if (result?.stdout.includes('Profile successfully downloaded')) {
-					logAndPush(`\n\tProfile ${provider} successfully downloaded in ${timeTaken} sec`);
-					logAndPush('\n\t LPA command result: ' + result?.stdout);
+					logAndPush(`${os.EOL}\tProfile ${provider} successfully downloaded in ${timeTaken} sec`);
+					// logAndPush('\n\t LPA command result: ' + result?.stdout);
 					overallSuccess = true;
 					downloadedProfiles.push({
 						status: 'success',
@@ -581,8 +620,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 						command: command
 					});
 				} else {
-					logAndPush(`\n\tProfile download failed for ${provider}`);
-					logAndPush('\n\t LPA command result: ' + result?.stdout);
+					logAndPush(`${os.EOL}\tProfile download failed for ${provider}`);
+					logAndPush(`${os.EOL}\t LPA command result: `, result?.stdout);
 					downloadedProfiles.push({
 						status: 'failed',
 						iccid: iccid,
@@ -626,6 +665,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
+		logAndPush(`${os.EOL}Enable profile for ICCID ${iccid}`);
 		const enableProfileCmd = `${this.lpa} enable ${iccid} --serial=${port}`;
 		const enableProfileResp = await execa(this.lpa, ['enable', `${iccid}`, `--serial=${port}`]);
 		res.details.rawLogs.push(enableProfileResp.stdout);
@@ -645,6 +685,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
+		logAndPush(`${os.EOL}Verifying ICCID ${iccid} enabled...`);
 		const profilesOnDeviceAfterEnable = await this._listProfiles(port);
 		const iccidString = profilesOnDeviceAfterEnable.find((line) => line.includes(iccid));
 		if (iccidString) {
@@ -687,6 +728,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	// Sends a control request to change the LED state
 	async _changeLed(device, state) {
+		if (this.isTachyon) {
+			return;
+		}
+
 		let outputLogs = [];
 		let usbDevice;
 		try {
