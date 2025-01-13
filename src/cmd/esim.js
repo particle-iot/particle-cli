@@ -19,7 +19,6 @@ const PROVISIONING_FAILURE = 3;
 const CTRL_REQUEST_APP_CUSTOM = 10;
 const GET_AT_COMMAND_STATUS = 4;
 
-const TACHYON_QLRIL_WAIT_TIMEOUT = 2000;
 
 const TEST_ICCID = ['89000123456789012341', '89000123456789012358'];
 const TWILIO_ICCID_PREFIX = '8988307';
@@ -46,37 +45,14 @@ module.exports = class ESimCommands extends CLICommandBase {
 		this.verbose = true;
 		// Adding a device selector (since Tachyon might have multiple serial ports)
 		const device = await this.serial.whatSerialPortDidYouMean();
-		if (device.type === "Tachyon") {
+		if (device.type === 'Tachyon') {
 			this.isTachyon = true;
-			await this._initializeQlRil();
 		}
 
 		this._validateArgs(args);
 		await this._generateAvailableProvisioningData();
-		
+
 		await this.doProvision(device);
-
-		if (this.isTachyon) {
-			await this._exitQlRil();
-		}
-	}
-
-	async _initializeQlRil() {
-		console.log(`${os.EOL}Initalizing qlril app on Tachyon`);
-		return await Promise.race([
-			this.adbProcess = execa('adb', ['shell', 'qlril-app', '--port', '/dev/ttyGS2']),
-			new Promise(resolve => setTimeout(() => resolve(null), TACHYON_QLRIL_WAIT_TIMEOUT))
-		]);
-	}
-
-	async _exitQlRil() {
-		console.log(`${os.EOL}Exiting qlril app on Tachyon`);
-		await Promise.race([
-			execa('adb', ['shell', 'exit']),
-			new Promise(resolve => setTimeout(() => resolve(null), TACHYON_QLRIL_WAIT_TIMEOUT))
-		]);
-		this.adbProcess.kill('SIGINT');
-		return;
 	}
 
 	async bulkProvisionCommand(args) {
@@ -153,7 +129,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				}
 			});
 			await this._changeLed(device, success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
-			this._addToJson(outputJsonFile, provisionOutputLogs);
+			this._addToJson(outputJsonFile, provisionOutputLogs.filter(Boolean));
 		};
 
 		try {
@@ -161,7 +137,15 @@ module.exports = class ESimCommands extends CLICommandBase {
 			// Flash firmware and wait for AT to work
 			const flashResp = await this._flashATPassThroughFirmware(device);
 			provisionOutputLogs.push(flashResp);
-			if (flashResp.status === 'failed') {
+			if (flashResp?.status === 'failed') {
+				await processOutput();
+				return;
+			}
+
+			// Start qlril-app through ADB for Tachyon
+			const qlrilStep = await this._initializeQlril();
+			provisionOutputLogs.push(qlrilStep);
+			if (qlrilStep?.status === 'failed') {
 				await processOutput();
 				return;
 			}
@@ -255,10 +239,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 			success = true;
 			console.log(`${os.EOL}Provisioning complete for EID ${eid}`);
 			await processOutput();
-			return;
 		} catch (error) {
 			await processOutput(error.message);
-			return;
+		} finally {
+			this._exitQlril();
 		}
 	}
 
@@ -344,9 +328,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		});
 
 		if (this.isTachyon) {
-			logAndPush(`${os.EOL}Skipping firmware flashing for Tachyon`);
-			status = 'success';
-			return stepOutput();
+			return null;
 		}
 
 		const platform = platformForId(device.specs.productId).name;
@@ -431,6 +413,71 @@ module.exports = class ESimCommands extends CLICommandBase {
 		});
 	}
 
+	async _initializeQlril() {
+		let status = 'failed';
+		let timestamp = new Date().toISOString().replace(/:/g, '-');
+		let logs = [];
+		let output = '';
+
+		const logAndPush = (message) => {
+			logs.push(message);
+			if (this.verbose) {
+				console.log(message);
+			}
+		};
+
+		const stepOutput = () => ({
+			step: 'initialize_qlril',
+			timestamp,
+			status,
+			details: {
+				rawLogs: logs,
+				output
+			}
+		});
+
+		if (!this.isTachyon) {
+			return null;
+		}
+
+		logAndPush('Initalizing qlril app on Tachyon through adb');
+		this.adbProcess = execa('adb', ['shell', 'qlril-app', '--port', '/dev/ttyGS2']);
+
+		try {
+			await new Promise((resolve, reject) => {
+				const TACHYON_QLRIL_WAIT_TIMEOUT = 10000;
+
+				this.adbProcess.stdout.on('data', (data) => {
+					output += data.toString();
+
+					if (output.includes('AT Passthrough Mode Started')) {
+						resolve();
+					}
+				});
+				this.adbProcess.then(() => {
+					reject(new Error('adb process ended early'));
+				}, (error) => {
+					reject(error);
+				});
+
+				setTimeout(() => {
+					reject(new Error('Timeout waiting for qlril app to start'));
+				}, TACHYON_QLRIL_WAIT_TIMEOUT);
+			});
+
+			status = 'success';
+		} catch (error) {
+			logAndPush(`Error starting qlril app through adb: ${error.message}`);
+		}
+
+		return stepOutput();
+	}
+
+	async _exitQlril() {
+		if (this.adbProcess) {
+			this.adbProcess.kill('SIGINT');
+		}
+	}
 
 	async _getEid(port) {
 		let status = 'failed';
