@@ -1,6 +1,9 @@
 # Changelog
 
-# 3.32.0 - Dec 18 2024
+# 3.34.0 - Jan 13 2024
+* Support eSIM provisioning on Tachyon
+
+# 3.33.0 - Dec 18 2024
 * Add manufacturing tool to provision Kigen eSIMs + fixes
 
 # 3.32.0 - Dec 18 2024
