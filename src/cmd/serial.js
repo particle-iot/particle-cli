@@ -92,11 +92,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 					const matchesManufacturer = port.manufacturer && (port.manufacturer.indexOf('Particle') >= 0 || port.manufacturer.indexOf('Spark') >= 0 || port.manufacturer.indexOf('Photon') >= 0);
 
 					if (!device && matchesManufacturer){
-						if (port.vendorId === '2b04' && port.productId === 'c02a') { // FIXME (keeramis)
-							device = { port: port.path, type: 'Tachyon' };
-						} else {
-							device = { port: port.path, type: 'Core' };
-						}
+						device = { port: port.path, type: 'Core' };
 					}
 
 					if (device){
