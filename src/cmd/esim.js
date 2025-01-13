@@ -10,6 +10,7 @@ const SerialCommand = require('./serial');
 const FlashCommand = require('./flash');
 const path = require('path');
 const _ = require('lodash');
+const chalk = require('chalk');
 
 // TODO: Get these from exports
 const PROVISIONING_PROGRESS = 1;
@@ -43,7 +44,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async provisionCommand(args) {
 		this.verbose = true;
-		// Get the serial port and device details
 		// Adding a device selector (since Tachyon might have multiple serial ports)
 		const device = await this.serial.whatSerialPortDidYouMean();
 		if (device.type === "Tachyon") {
@@ -80,6 +80,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 	}
 
 	async bulkProvisionCommand(args) {
+		console.log(chalk.red(`Do not use bulk mode for Tachyon${os.EOL}`));
 		this._validateArgs(args);
 
 		await this._generateAvailableProvisioningData();
@@ -182,6 +183,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				await processOutput();
 				return;
 			}
+
 			const existingProfiles = profileCmdResp.details.existingProfiles;
 			if (existingProfiles.length > 0) {
 				// remove profiles with test ICCID from existingProfiles to verify
@@ -302,7 +304,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
-		logAndPush(`${os.EOL}Verifying profiles on the device after download...`);
 		const profilesOnDeviceAfterDownload = await this._listProfiles(port);
 		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
 
@@ -665,7 +666,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
-		logAndPush(`${os.EOL}Enable profile for ICCID ${iccid}`);
 		const enableProfileCmd = `${this.lpa} enable ${iccid} --serial=${port}`;
 		const enableProfileResp = await execa(this.lpa, ['enable', `${iccid}`, `--serial=${port}`]);
 		res.details.rawLogs.push(enableProfileResp.stdout);
@@ -685,7 +685,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
-		logAndPush(`${os.EOL}Verifying ICCID ${iccid} enabled...`);
 		const profilesOnDeviceAfterEnable = await this._listProfiles(port);
 		const iccidString = profilesOnDeviceAfterEnable.find((line) => line.includes(iccid));
 		if (iccidString) {
