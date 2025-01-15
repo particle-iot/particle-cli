@@ -71,7 +71,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async flashTachyon({ verbose, files }) {
-		this.ui.write(`${os.EOL}Ensure only one device is connected to the computer${os.EOL}`);
+		this.ui.write(`${os.EOL}Ensure that only one device is connected to the computer before proceeding.${os.EOL}`);
 
 		let zipFile;
 		let includeDir = '';
@@ -101,27 +101,25 @@ module.exports = class FlashCommand extends CLICommandBase {
 			filesToProgram = files;
 		}
 
-		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
-
-		const res = await qdl.run({
-			files: filesToProgram,
-			includeDir,
-			updateFolder,
-			zip: zipFile,
-			verbose,
-			ui: this.ui
-		});
-		// put the output in a log file if not verbose
-		if (!verbose) {
-			const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
-			if (res?.stdout) {
-				await fs.writeFile(outputLog, res.stdout);
-			}
-			this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
-		} else {
-			this.ui.write(`Download complete${os.EOL}`);
+		this.ui.write(`Starting download. This may take several minutes...${os.EOL}`);
+		const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
+		try {
+			// put the output in a log file if not verbose
+			this.ui.write(`Logs are being written to: ${outputLog}${os.EOL}`);
+			await qdl.run({
+				files: filesToProgram,
+				includeDir,
+				updateFolder,
+				zip: zipFile,
+				verbose,
+				ui: this.ui,
+				outputLogFile: outputLog
+			});
+			fs.appendFileSync(outputLog, 'Download complete.');
+		} catch (error) {
+			this.ui.write('Download failed');
+			fs.appendFileSync(outputLog, 'Download failed.');
 		}
-		// TODO: Handle errors
 	}
 
 	async _extractFlashFilesFromDir(dirPath) {
