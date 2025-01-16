@@ -22,7 +22,8 @@ describe('Utilities', () => {
 				'tracker': 26,
 				'trackerm': 28,
 				'p2': 32,
-				'msom': 35
+				'msom': 35,
+				'electron2': 37
 			});
 		});
 	});
@@ -52,7 +53,8 @@ describe('Utilities', () => {
 				'p2': 32,
 				'photon2': 32,
 				'msom': 35,
-				'muon': 35
+				'muon': 35,
+				'electron2': 37
 			});
 		});
 	});
@@ -73,7 +75,8 @@ describe('Utilities', () => {
 				26: 'Asset Tracker / Monitor One',
 				28: 'Tracker-M',
 				32: 'Photon 2 / P2',
-				35: 'M-SoM'
+				35: 'M-SoM',
+				37: 'Electron 2'
 			});
 		});
 	});
