@@ -27,7 +27,7 @@ const {
 const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
-const qdl = require('../lib/qdl');
+const QdlFlasher = require('../lib/qdl');
 
 const TACHYON_MANIFEST_FILE = 'manifest.json';
 
@@ -44,8 +44,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		target,
 		port,
 		yes,
-		verbose,
 		tachyon,
+		output,
 		'application-only': applicationOnly
 	}) {
 		if (!tachyon && !device && !binary && !local) {
@@ -64,14 +64,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
 		} else if (tachyon) {
 			let allFiles = binary ? [binary, ...files] : files;
-			await this.flashTachyon({ verbose, files: allFiles });
+			await this.flashTachyon({ files: allFiles, output });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
 	}
 
-	async flashTachyon({ verbose, files }) {
-		this.ui.write(`${os.EOL}Ensure only one device is connected to the computer${os.EOL}`);
+	async flashTachyon({ files, output }) {
+		this.ui.write(`${os.EOL}Ensure that only one device is connected to the computer before proceeding.${os.EOL}`);
 
 		let zipFile;
 		let includeDir = '';
@@ -101,27 +101,27 @@ module.exports = class FlashCommand extends CLICommandBase {
 			filesToProgram = files;
 		}
 
-		this.ui.write(`Starting download. The download may take several minutes...${os.EOL}`);
-
-		const res = await qdl.run({
-			files: filesToProgram,
-			includeDir,
-			updateFolder,
-			zip: zipFile,
-			verbose,
-			ui: this.ui
-		});
-		// put the output in a log file if not verbose
-		if (!verbose) {
-			const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
-			if (res?.stdout) {
-				await fs.writeFile(outputLog, res.stdout);
-			}
-			this.ui.write(`Download complete. Output log available at ${outputLog}${os.EOL}`);
-		} else {
-			this.ui.write(`Download complete${os.EOL}`);
+		this.ui.write(`Starting download. This may take several minutes...${os.EOL}`);
+		if (output && !fs.existsSync(output)) {
+			fs.mkdirSync(output);
 		}
-		// TODO: Handle errors
+		const outputLog = path.join(output ? output : process.cwd(), `tachyon_flash_${Date.now()}.log`);
+		try {
+			this.ui.write(`Logs are being written to: ${outputLog}${os.EOL}`);
+			const qdl = new QdlFlasher({
+				files: filesToProgram,
+				includeDir,
+				updateFolder,
+				zip: zipFile,
+				ui: this.ui,
+				outputLogFile: outputLog
+			});
+			await qdl.run();
+			fs.appendFileSync(outputLog, 'Download complete.');
+		} catch (error) {
+			this.ui.write('Download failed');
+			fs.appendFileSync(outputLog, 'Download failed with error: ' + error.message);
+		}
 	}
 
 	async _extractFlashFilesFromDir(dirPath) {
