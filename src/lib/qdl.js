@@ -103,9 +103,9 @@ class QdlFlasher {
 		if (line.includes('status=getProgramInfo')) {
 			this.handleProgramInfo(line);
 		} else if (line.includes('status=Start flashing module')) {
-			this.handleStartFlashingModule(line);
+			this.handleModuleStart(line);
 		} else if (line.includes('status=Flashing module')) {
-			this.handleFlashingModule(line);
+			this.handleModuleProgress(line);
 		}
 	}
 
@@ -120,7 +120,7 @@ class QdlFlasher {
 		}
 	}
 
-	handleStartFlashingModule(line) {
+	handleModuleStart(line) {
 		const moduleNameMatch = line.match(/module=(.*?),/);
 		const sectorsTotalMatch = line.match(/sectors_total=(\d+)/);
 		if (moduleNameMatch && sectorsTotalMatch) {
@@ -140,7 +140,7 @@ class QdlFlasher {
 		}
 	}
 
-	handleFlashingModule(line) {
+	handleModuleProgress(line) {
 		const sectorsFlashedMatch = line.match(/sectors_done=(\d+)/);
 		if (sectorsFlashedMatch) {
 			const sectorsFlashed = parseInt(sectorsFlashedMatch[1], 10);

@@ -107,7 +107,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 		const outputLog = path.join(output ? output : process.cwd(), `tachyon_flash_${Date.now()}.log`);
 		try {
-			// put the output in a log file if not verbose
 			this.ui.write(`Logs are being written to: ${outputLog}${os.EOL}`);
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
@@ -121,7 +120,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			fs.appendFileSync(outputLog, 'Download complete.');
 		} catch (error) {
 			this.ui.write('Download failed');
-			fs.appendFileSync(outputLog, 'Download failed.');
+			fs.appendFileSync(outputLog, 'Download failed with error: ' + error.message);
 		}
 	}
 
