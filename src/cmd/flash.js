@@ -27,7 +27,7 @@ const {
 const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
-const qdl = require('../lib/qdl');
+const QdlFlasher = require('../lib/qdl');
 
 const TACHYON_MANIFEST_FILE = 'manifest.json';
 
@@ -44,8 +44,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		target,
 		port,
 		yes,
-		verbose,
 		tachyon,
+		output,
 		'application-only': applicationOnly
 	}) {
 		if (!tachyon && !device && !binary && !local) {
@@ -64,13 +64,13 @@ module.exports = class FlashCommand extends CLICommandBase {
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
 		} else if (tachyon) {
 			let allFiles = binary ? [binary, ...files] : files;
-			await this.flashTachyon({ verbose, files: allFiles });
+			await this.flashTachyon({ files: allFiles, output });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}
 	}
 
-	async flashTachyon({ verbose, files }) {
+	async flashTachyon({ files, output }) {
 		this.ui.write(`${os.EOL}Ensure that only one device is connected to the computer before proceeding.${os.EOL}`);
 
 		let zipFile;
@@ -102,19 +102,22 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 
 		this.ui.write(`Starting download. This may take several minutes...${os.EOL}`);
-		const outputLog = path.join(process.cwd(), `qdl-output-${Date.now()}.log`);
+		if (output && !fs.existsSync(output)) {
+			fs.mkdirSync(output);
+		}
+		const outputLog = path.join(output ? output : process.cwd(), `tachyon_flash_${Date.now()}.log`);
 		try {
 			// put the output in a log file if not verbose
 			this.ui.write(`Logs are being written to: ${outputLog}${os.EOL}`);
-			await qdl.run({
+			const qdl = new QdlFlasher({
 				files: filesToProgram,
 				includeDir,
 				updateFolder,
 				zip: zipFile,
-				verbose,
 				ui: this.ui,
 				outputLogFile: outputLog
 			});
+			await qdl.run();
 			fs.appendFileSync(outputLog, 'Download complete.');
 		} catch (error) {
 			this.ui.write('Download failed');

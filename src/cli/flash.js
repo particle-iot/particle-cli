@@ -41,7 +41,10 @@ module.exports = ({ commandProcessor, root }) => {
 			'tachyon' : {
 				boolean: true,
 				description: 'Flash Tachyon'
-			}
+			},
+			'output': {
+				describe: 'Folder to output the log file. Only available for Tachyon'
+			},
 		},
 		handler: (args) => {
 			const FlashCommand = require('../cmd/flash');
@@ -61,6 +64,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --usb firmware.bin': 'Flash the binary over USB',
 			'$0 $command --tachyon': 'Flash Tachyon from the files in the current directory',
 			'$0 $command --tachyon /path/to/unpackaged-tool-and-files': 'Flash Tachyon from the files in the specified directory',
+			'$0 $command --tachyon /path/to/package.zip --output /path/to/log-folder': 'Flash Tachyon using the specified zip file and save the log to the given folder',
 		},
 		epilogue: unindent(`
 		  When passing the --local flag, Device OS will be updated if the version on the device is outdated.
