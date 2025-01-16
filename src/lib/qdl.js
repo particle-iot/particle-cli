@@ -25,8 +25,7 @@ async function getExecutable() {
 }
 
 async function run({ files, includeDir, updateFolder, zip, ui, outputLogFile }) {
-	const qdlPath = '/Users/keerthyamisagadda/code/tachyon-qdl/qdl';
-	await fs.chmod(qdlPath, 0o755);
+	const qdlPath = await getExecutable();
 
 	const qdlArguments = [
 		'--storage', TACHYON_STORAGE_TYPE,
