@@ -78,6 +78,16 @@ module.exports = class ESimCommands extends CLICommandBase {
 		console.log('Ready to bulk provision. Connect devices to start. Press Ctrl-C to exit.');
 	}
 
+	async enableCommand() {
+		this.verbose = true;
+		const device = await this.serial.whatSerialPortDidYouMean();
+		if (device.type === 'Tachyon') {
+			this.isTachyon = true;
+		}
+
+		await this.doEnable(device);
+	}
+
 	// Populate the availableProvisioningData set with the indices of the input JSON data
 	// If a profile is already provisioned (output JSON file exists with an entry), remove it from the set
 	async _generateAvailableProvisioningData() {
@@ -246,6 +256,71 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 	}
 
+	async doEnable(device) {
+		let provisionOutputLogs = [];
+		let timestamp = new Date().toISOString().replace(/:/g, '-');
+		let success = false;
+
+		const outputJsonFile = path.join(this.outputFolder, `${this.isTachyon ? 'tachyon' : device.deviceId}_${timestamp}.json`);
+
+		const processOutput = async (failedLogs = []) => {
+			const logs = Array.isArray(failedLogs) ? failedLogs : [failedLogs];
+			provisionOutputLogs.push({
+				step: 'final_step',
+				timestamp: new Date().toISOString().replace(/:/g, '-'),
+				success: success ? 'success' : 'failed',
+				details: {
+					rawLogs: success ? ['Profile enable successful'] : ['Profile enable failed', ...logs],
+				}
+			});
+			await this._changeLed(device, success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
+			this._addToJson(outputJsonFile, provisionOutputLogs.filter(Boolean));
+		};
+
+		try {
+			const port = device.port;
+
+			// Start qlril-app through ADB for Tachyon
+			const qlrilStep = await this._initializeQlril();
+			provisionOutputLogs.push(qlrilStep);
+			if (qlrilStep?.status === 'failed') {
+				await processOutput();
+				return;
+			}
+			
+			const iccidsOnDevice = await this._getIccidOnDevice(port);
+
+			const iccidToEnable = this._getIccidToEnable(iccidsOnDevice);
+			provisionOutputLogs.push(`ICCID to enable: ${iccidToEnable}`);
+			if (iccidToEnable === null) {
+				await processOutput('No profile found on the device to enable');
+				return;
+			}
+
+			const enableResp = await this._enableProfile(port, iccidToEnable);
+			provisionOutputLogs.push(enableResp);
+			if (enableResp.status === 'failed') {
+				await processOutput();
+				return;
+			}
+
+			const verifyIccidEnabledResp = await this._verifyIccidEnaled(port, iccidToEnable);
+			provisionOutputLogs.push(verifyIccidEnabledResp);
+			if (verifyIccidEnabledResp.status === 'failed') {
+				await processOutput();
+				return;
+			}
+
+			success = true;
+			console.log('Profile enabled successfully');
+			await processOutput();
+		} catch (error) {
+			await processOutput(error.message);
+		} finally {
+			this._exitQlril();
+		}
+	}
+
 	_validateArgs(args) {
 		if (!args) {
 			throw new Error('Missing args');
@@ -288,11 +363,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
-		const profilesOnDeviceAfterDownload = await this._listProfiles(port);
-		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
-
-		// remove test ICCIDs from iccidsOnDeviceAfterDownload
-		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCID.includes(iccid));
+		const iccidsOnDeviceAfterDownloadFiltered = await this._getIccidOnDevice(port);
 
 		const equal = _.isEqual(_.sortBy(expectedIccids), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
 
@@ -579,6 +650,16 @@ module.exports = class ESimCommands extends CLICommandBase {
 			.split('\n')
 			.filter((line) => line.match(/^\d+:\[\d+,\s(?:enabled|disabled),\s?\]\r?$/));
 		return profilesList;
+	}
+
+	async _getIccidOnDevice(port) {
+		const profilesOnDeviceAfterDownload = await this._listProfiles(port);
+		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
+
+		// remove test ICCIDs from iccidsOnDeviceAfterDownload
+		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCID.includes(iccid));
+
+		return iccidsOnDeviceAfterDownloadFiltered;
 	}
 
 	// Get the next available profile from availableProvisioningData

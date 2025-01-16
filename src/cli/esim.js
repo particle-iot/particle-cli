@@ -41,6 +41,16 @@ module.exports = ({ commandProcessor, root }) => {
 			TBD TBD
 		`)
 	});
+
+	commandProcessor.createCommand(esim, 'enable', 'Enables a downloaded eSIM profile', {
+		handler: (args) => {
+			const ESimCommands = require('../cmd/esim');
+			return new ESimCommands().enableCommand();
+		},
+		examples: {
+			'$0 $command': 'TBD'
+		}
+	});
 	return esim;
 };
 
