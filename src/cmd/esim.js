@@ -11,7 +11,6 @@ const FlashCommand = require('./flash');
 const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
-const { clear } = require('console');
 
 // TODO: Get these from exports
 const PROVISIONING_PROGRESS = 1;
@@ -79,7 +78,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		console.log('Ready to bulk provision. Connect devices to start. Press Ctrl-C to exit.');
 	}
 
-	async enableCommand(iccid) {
+	async _checkForTachyonDevice() {
 		console.log(chalk.bold(`Ensure only one device is connected${os.EOL}`));
 		this.verbose = true;
 		const device = await this.serial.whatSerialPortDidYouMean();
@@ -87,29 +86,21 @@ module.exports = class ESimCommands extends CLICommandBase {
 			throw new Error('Enable command is only for Tachyon devices');
 		}
 		this.isTachyon = true;
+		return device;
+	}
+
+	async enableCommand(iccid) {
+		await this._checkForTachyonDevice();
 		await this.doEnable(iccid);
 	}
 
-	async deleteCommand(args, iccid) {
-		console.log(chalk.bold(`Ensure only one device is connected${os.EOL}`));
-		this.verbose = true;
-		const device = await this.serial.whatSerialPortDidYouMean();
-		if (device.type !== 'Tachyon') {
-			throw new Error('Delete command is only for Tachyon devices');
-		}
-		this.isTachyon = true;
-		this._validateArgs(args);
+	async deleteCommand(iccid) {
+		const device = await this._checkForTachyonDevice();
 		await this.doDelete(device, iccid);
 	}
 
 	async listCommand() {
-		console.log(chalk.bold(`Ensure only one device is connected${os.EOL}`));
-		this.verbose = true;
-		const device = await this.serial.whatSerialPortDidYouMean();
-		if (device.type !== 'Tachyon') {
-			throw new Error('List command is only for Tachyon devices');
-		}
-		this.isTachyon = true;
+		await this._checkForTachyonDevice();
 		await this.doList();
 	}
 
@@ -284,15 +275,15 @@ module.exports = class ESimCommands extends CLICommandBase {
 	async doEnable(iccid) {
 		const TACHYON_QLRIL_WAIT_TIMEOUT = 20000;
 		let output = '';
-	
+
 		try {
 			this.adbProcess = execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
-	
+
 			await new Promise((resolve, reject) => {
 				const timeout = setTimeout(() => {
 					reject(new Error('Timeout waiting for qlril app to start'));
 				}, TACHYON_QLRIL_WAIT_TIMEOUT);
-	
+
 				this.adbProcess.stdout.on('data', (data) => {
 					output += data.toString();
 					if (output.includes(`ICCID currently active: ${iccid}`)) {
@@ -301,18 +292,18 @@ module.exports = class ESimCommands extends CLICommandBase {
 						resolve();
 					}
 				});
-	
+
 				this.adbProcess.catch((error) => {
 					clearTimeout(timeout);
 					reject(new Error(`ADB process error: ${error.message}`));
 				});
-	
+
 				this.adbProcess.then(() => {
 					clearTimeout(timeout);
 					reject(new Error('ADB process ended early without valid output'));
 				});
 			});
-	
+
 			console.log(os.EOL);
 		} catch (error) {
 			console.error(`Failed to enable profiles: ${error.message}`);
@@ -324,7 +315,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 	async doDelete(device, iccid) {
 		try {
 			const port = device.port;
-			
+
 			await this._initializeQlril();
 
 			const iccidsOnDevice = await this._getIccidOnDevice(port);
@@ -333,10 +324,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 				console.log(`ICCID ${iccid} not found on the device or is a test ICCID`);
 				return;
 			}
-			
+
 			await execa(this.lpa, ['disable', iccid, `--serial=${port}`]);
 			await execa(this.lpa, ['delete', iccid, `--serial=${port}`]);
-	
+
 			console.log('Profile deleted successfully');
 		} catch (error) {
 			console.error(`Failed to delete profile: ${error.message}`);
@@ -348,18 +339,18 @@ module.exports = class ESimCommands extends CLICommandBase {
 	async doList() {
 		const TACHYON_QLRIL_WAIT_TIMEOUT = 10000;
 		let output = '';
-	
+
 		try {
 			this.adbProcess = execa('adb', ['shell', 'qlril-app', 'listProfiles']);
-	
+
 			await new Promise((resolve, reject) => {
 				const timeout = setTimeout(() => {
 					reject(new Error('Timeout waiting for qlril app to start'));
 				}, TACHYON_QLRIL_WAIT_TIMEOUT);
-	
+
 				this.adbProcess.stdout.on('data', (data) => {
 					output += data.toString();
-	
+
 					const iccids = output
 						.trim()
 						.replace(/^\[/, '')
@@ -367,7 +358,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 						.split(',')
 						.map(iccid => iccid.trim())
 						.filter(Boolean);
-	
+
 					if (iccids.length > 0) {
 						console.log(`Profiles found:${os.EOL}`);
 						iccids.forEach(iccid => console.log(`\t- ${iccid}`));
@@ -375,32 +366,32 @@ module.exports = class ESimCommands extends CLICommandBase {
 						resolve();
 					}
 				});
-	
+
 				this.adbProcess.catch((error) => {
 					clearTimeout(timeout);
 					reject(new Error(`ADB process error: ${error.message}`));
 				});
-	
+
 				this.adbProcess.then(() => {
 					clearTimeout(timeout);
 					reject(new Error('ADB process ended early without valid output'));
 				});
 			});
-	
+
 			console.log(os.EOL);
 		} catch (error) {
 			console.error(`Failed to list profiles: ${error.message}`);
 		} finally {
 			this._exitQlril();
 		}
-	}	
-	
+	}
+
 
 	_validateArgs(args) {
 		if (!args?.lpa) {
 			throw new Error('Missing LPA tool path');
 		}
-	
+
 		this.inputJson = args?.input;
 		if (this.inputJson) {
 			try {
@@ -409,7 +400,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				throw new Error(`Invalid JSON in input file: ${error.message}`);
 			}
 		}
-	
+
 		this.outputFolder = args?.output || 'esim_loading_logs';
 		if (!fs.existsSync(this.outputFolder)) {
 			fs.mkdirSync(this.outputFolder);

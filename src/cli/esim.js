@@ -53,7 +53,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(esim, 'delete', '(Only for Tachyon) Deletes an ICCID profile on the eSIM', {
+	commandProcessor.createCommand(esim, 'delete', '(Only for Tachyon) Deletes an eSIM profile', {
 		options: Object.assign({
 			'lpa': {
 				description: 'Provide the LPA tool path'
@@ -69,12 +69,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(esim, 'list', '(Only for Tachyon) Lists all the eSIM profiles on the device', {
-		options: Object.assign({
-			'lpa': {
-				description: 'Provide the LPA tool path'
-			},
-		}),
+	commandProcessor.createCommand(esim, 'list', '(Only for Tachyon) Lists all the profiles on the eSIM', {
 		handler: (args) => {
 			const ESimCommands = require('../cmd/esim');
 			return new ESimCommands().listCommand(args);
