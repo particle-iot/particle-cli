@@ -11,6 +11,7 @@ const FlashCommand = require('./flash');
 const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
+const { clear } = require('console');
 
 // TODO: Get these from exports
 const PROVISIONING_PROGRESS = 1;
@@ -78,14 +79,38 @@ module.exports = class ESimCommands extends CLICommandBase {
 		console.log('Ready to bulk provision. Connect devices to start. Press Ctrl-C to exit.');
 	}
 
-	async enableCommand() {
+	async enableCommand(iccid) {
+		console.log(chalk.bold(`Ensure only one device is connected${os.EOL}`));
 		this.verbose = true;
 		const device = await this.serial.whatSerialPortDidYouMean();
-		if (device.type === 'Tachyon') {
-			this.isTachyon = true;
+		if (device.type !== 'Tachyon') {
+			throw new Error('Enable command is only for Tachyon devices');
 		}
+		this.isTachyon = true;
+		await this.doEnable(iccid);
+	}
 
-		await this.doEnable(device);
+	async deleteCommand(args, iccid) {
+		console.log(chalk.bold(`Ensure only one device is connected${os.EOL}`));
+		this.verbose = true;
+		const device = await this.serial.whatSerialPortDidYouMean();
+		if (device.type !== 'Tachyon') {
+			throw new Error('Delete command is only for Tachyon devices');
+		}
+		this.isTachyon = true;
+		this._validateArgs(args);
+		await this.doDelete(device, iccid);
+	}
+
+	async listCommand() {
+		console.log(chalk.bold(`Ensure only one device is connected${os.EOL}`));
+		this.verbose = true;
+		const device = await this.serial.whatSerialPortDidYouMean();
+		if (device.type !== 'Tachyon') {
+			throw new Error('List command is only for Tachyon devices');
+		}
+		this.isTachyon = true;
+		await this.doList();
 	}
 
 	// Populate the availableProvisioningData set with the indices of the input JSON data
@@ -256,98 +281,141 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 	}
 
-	async doEnable(device) {
-		let provisionOutputLogs = [];
-		let timestamp = new Date().toISOString().replace(/:/g, '-');
-		let success = false;
-
-		const outputJsonFile = path.join(this.outputFolder, `${this.isTachyon ? 'tachyon' : device.deviceId}_${timestamp}.json`);
-
-		const processOutput = async (failedLogs = []) => {
-			const logs = Array.isArray(failedLogs) ? failedLogs : [failedLogs];
-			provisionOutputLogs.push({
-				step: 'final_step',
-				timestamp: new Date().toISOString().replace(/:/g, '-'),
-				success: success ? 'success' : 'failed',
-				details: {
-					rawLogs: success ? ['Profile enable successful'] : ['Profile enable failed', ...logs],
-				}
-			});
-			await this._changeLed(device, success ? PROVISIONING_SUCCESS : PROVISIONING_FAILURE);
-			this._addToJson(outputJsonFile, provisionOutputLogs.filter(Boolean));
-		};
-
+	async doEnable(iccid) {
+		const TACHYON_QLRIL_WAIT_TIMEOUT = 20000;
+		let output = '';
+	
 		try {
-			const port = device.port;
-
-			// Start qlril-app through ADB for Tachyon
-			const qlrilStep = await this._initializeQlril();
-			provisionOutputLogs.push(qlrilStep);
-			if (qlrilStep?.status === 'failed') {
-				await processOutput();
-				return;
-			}
-			
-			const iccidsOnDevice = await this._getIccidOnDevice(port);
-
-			const iccidToEnable = this._getIccidToEnable(iccidsOnDevice);
-			provisionOutputLogs.push(`ICCID to enable: ${iccidToEnable}`);
-			if (iccidToEnable === null) {
-				await processOutput('No profile found on the device to enable');
-				return;
-			}
-
-			const enableResp = await this._enableProfile(port, iccidToEnable);
-			provisionOutputLogs.push(enableResp);
-			if (enableResp.status === 'failed') {
-				await processOutput();
-				return;
-			}
-
-			const verifyIccidEnabledResp = await this._verifyIccidEnaled(port, iccidToEnable);
-			provisionOutputLogs.push(verifyIccidEnabledResp);
-			if (verifyIccidEnabledResp.status === 'failed') {
-				await processOutput();
-				return;
-			}
-
-			success = true;
-			console.log('Profile enabled successfully');
-			await processOutput();
+			this.adbProcess = execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
+	
+			await new Promise((resolve, reject) => {
+				const timeout = setTimeout(() => {
+					reject(new Error('Timeout waiting for qlril app to start'));
+				}, TACHYON_QLRIL_WAIT_TIMEOUT);
+	
+				this.adbProcess.stdout.on('data', (data) => {
+					output += data.toString();
+					if (output.includes(`ICCID currently active: ${iccid}`)) {
+						console.log(`ICCID ${iccid} enabled successfully`);
+						clearTimeout(timeout);
+						resolve();
+					}
+				});
+	
+				this.adbProcess.catch((error) => {
+					clearTimeout(timeout);
+					reject(new Error(`ADB process error: ${error.message}`));
+				});
+	
+				this.adbProcess.then(() => {
+					clearTimeout(timeout);
+					reject(new Error('ADB process ended early without valid output'));
+				});
+			});
+	
+			console.log(os.EOL);
 		} catch (error) {
-			await processOutput(error.message);
+			console.error(`Failed to enable profiles: ${error.message}`);
 		} finally {
 			this._exitQlril();
 		}
 	}
 
-	_validateArgs(args) {
-		if (!args) {
-			throw new Error('Missing args');
+	async doDelete(device, iccid) {
+		try {
+			const port = device.port;
+			
+			await this._initializeQlril();
+
+			const iccidsOnDevice = await this._getIccidOnDevice(port);
+			console.log('Profiles on device:', iccidsOnDevice);
+			if (!iccidsOnDevice.includes(iccid)) {
+				console.log(`ICCID ${iccid} not found on the device or is a test ICCID`);
+				return;
+			}
+			
+			await execa(this.lpa, ['disable', iccid, `--serial=${port}`]);
+			await execa(this.lpa, ['delete', iccid, `--serial=${port}`]);
+	
+			console.log('Profile deleted successfully');
+		} catch (error) {
+			console.error(`Failed to delete profile: ${error.message}`);
+		} finally {
+			this._exitQlril();
 		}
+	}
 
-		const requiredArgs = {
-			input: 'Missing input JSON file',
-			lpa: 'Missing LPA tool path',
-			...(this.isTachyon ? {} : { binary: 'Missing folder path to binaries' })
-		};
+	async doList() {
+		const TACHYON_QLRIL_WAIT_TIMEOUT = 10000;
+		let output = '';
+	
+		try {
+			this.adbProcess = execa('adb', ['shell', 'qlril-app', 'listProfiles']);
+	
+			await new Promise((resolve, reject) => {
+				const timeout = setTimeout(() => {
+					reject(new Error('Timeout waiting for qlril app to start'));
+				}, TACHYON_QLRIL_WAIT_TIMEOUT);
+	
+				this.adbProcess.stdout.on('data', (data) => {
+					output += data.toString();
+	
+					const iccids = output
+						.trim()
+						.replace(/^\[/, '')
+						.replace(/\]$/, '')
+						.split(',')
+						.map(iccid => iccid.trim())
+						.filter(Boolean);
+	
+					if (iccids.length > 0) {
+						console.log(`Profiles found:${os.EOL}`);
+						iccids.forEach(iccid => console.log(`\t- ${iccid}`));
+						clearTimeout(timeout);
+						resolve();
+					}
+				});
+	
+				this.adbProcess.catch((error) => {
+					clearTimeout(timeout);
+					reject(new Error(`ADB process error: ${error.message}`));
+				});
+	
+				this.adbProcess.then(() => {
+					clearTimeout(timeout);
+					reject(new Error('ADB process ended early without valid output'));
+				});
+			});
+	
+			console.log(os.EOL);
+		} catch (error) {
+			console.error(`Failed to list profiles: ${error.message}`);
+		} finally {
+			this._exitQlril();
+		}
+	}	
+	
 
-		for (const [key, errorMessage] of Object.entries(requiredArgs)) {
-			if (!args[key]) {
-				throw new Error(errorMessage);
+	_validateArgs(args) {
+		if (!args?.lpa) {
+			throw new Error('Missing LPA tool path');
+		}
+	
+		this.inputJson = args?.input;
+		if (this.inputJson) {
+			try {
+				this.inputJsonData = JSON.parse(fs.readFileSync(this.inputJson));
+			} catch (error) {
+				throw new Error(`Invalid JSON in input file: ${error.message}`);
 			}
 		}
-
-		this.inputJson = args.input;
-		this.inputJsonData = JSON.parse(fs.readFileSync(this.inputJson));
-
-		this.outputFolder = args.output || 'esim_loading_logs';
+	
+		this.outputFolder = args?.output || 'esim_loading_logs';
 		if (!fs.existsSync(this.outputFolder)) {
 			fs.mkdirSync(this.outputFolder);
 		}
-
 		this.lpa = args.lpa;
-		this.binaries = args.binary;
+		this.binaries = args?.binary;
 	}
 
 
@@ -367,7 +435,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 		const equal = _.isEqual(_.sortBy(expectedIccids), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
 
-		res.details.iccidsOnDevice = iccidsOnDeviceAfterDownload;
+		res.details.iccidsOnDevice = iccidsOnDeviceAfterDownloadFiltered;
 		res.details.rawLogs.push(equal ? ['Profiles on device match the expected profiles'] :
 			['Profiles on device do not match the expected profiles']);
 		res.status = equal ? 'success' : 'failed';
@@ -814,6 +882,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		};
 
 		const profilesOnDeviceAfterEnable = await this._listProfiles(port);
+		console.log('Profiles on device after enable:', profilesOnDeviceAfterEnable);
 		const iccidString = profilesOnDeviceAfterEnable.find((line) => line.includes(iccid));
 		if (iccidString) {
 			// check that you see the string 'enabled'
