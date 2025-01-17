@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.31.0 - Jan 17 2025
+* Add progress bar when flashing Tachyon
+* Include prototype esim provision command
+
 # 3.30.3 - Dec 20  2024
 * Update to latest qdl to flash files larger than 4 GB inside of zip files
 
