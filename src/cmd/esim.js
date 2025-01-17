@@ -319,7 +319,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 			await this._initializeQlril();
 
 			const iccidsOnDevice = await this._getIccidOnDevice(port);
-			console.log('Profiles on device:', iccidsOnDevice);
 			if (!iccidsOnDevice.includes(iccid)) {
 				console.log(`ICCID ${iccid} not found on the device or is a test ICCID`);
 				return;
@@ -422,11 +421,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
-		const iccidsOnDeviceAfterDownloadFiltered = await this._getIccidOnDevice(port);
+		const iccidsOnDevice = await this._getIccidOnDevice(port);
+		// remove test ICCIDs from iccidsOnDeviceAfterDownload
+		const iccidsOnDeviceNotTest = iccidsOnDevice.filter((iccid) => !TEST_ICCID.includes(iccid));
 
-		const equal = _.isEqual(_.sortBy(expectedIccids), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
+		const equal = _.isEqual(_.sortBy(expectedIccids), _.sortBy(iccidsOnDeviceNotTest));
 
-		res.details.iccidsOnDevice = iccidsOnDeviceAfterDownloadFiltered;
+		res.details.iccidsOnDevice = iccidsOnDevice;
 		res.details.rawLogs.push(equal ? ['Profiles on device match the expected profiles'] :
 			['Profiles on device do not match the expected profiles']);
 		res.status = equal ? 'success' : 'failed';
@@ -712,13 +713,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 	}
 
 	async _getIccidOnDevice(port) {
-		const profilesOnDeviceAfterDownload = await this._listProfiles(port);
-		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
-
-		// remove test ICCIDs from iccidsOnDeviceAfterDownload
-		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCID.includes(iccid));
-
-		return iccidsOnDeviceAfterDownloadFiltered;
+		const profiles = await this._listProfiles(port);
+		const iccids = profiles.map((line) => line.split('[')[1].split(',')[0].trim());
+		return iccids;
 	}
 
 	// Get the next available profile from availableProvisioningData
@@ -873,7 +870,6 @@ module.exports = class ESimCommands extends CLICommandBase {
 		};
 
 		const profilesOnDeviceAfterEnable = await this._listProfiles(port);
-		console.log('Profiles on device after enable:', profilesOnDeviceAfterEnable);
 		const iccidString = profilesOnDeviceAfterEnable.find((line) => line.includes(iccid));
 		if (iccidString) {
 			// check that you see the string 'enabled'
