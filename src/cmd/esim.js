@@ -295,8 +295,11 @@ module.exports = class ESimCommands extends CLICommandBase {
 				console.log(`ICCID ${iccid} not found on the device or is a test ICCID`);
 				return;
 			}
-
-			await execa(this.lpa, ['disable', iccid, `--serial=${port}`]);
+			try {
+				await execa(this.lpa, ['disable', iccid, `--serial=${port}`]);
+			} catch (error) {
+				// Ignore the error if the profile is already disabled
+			}
 			await execa(this.lpa, ['delete', iccid, `--serial=${port}`]);
 
 			console.log('Profile deleted successfully');
