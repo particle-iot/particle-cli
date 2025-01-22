@@ -49,7 +49,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			this.isTachyon = true;
 		}
 
-		this._validateArgs(args);
+		this._validateArgs(args, { lpa: true, input: true, output: true, binary: true });
 		await this._generateAvailableProvisioningData();
 
 		await this.doProvision(device);
@@ -57,7 +57,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async bulkProvisionCommand(args) {
 		console.log(chalk.red(`Do not use bulk mode for Tachyon${os.EOL}`));
-		this._validateArgs(args);
+		this._validateArgs(args, { lpa: true, input: true, output: true, binary: true });
 
 		await this._generateAvailableProvisioningData();
 
@@ -94,7 +94,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 		await this.doEnable(iccid);
 	}
 
-	async deleteCommand(iccid) {
+	async deleteCommand(args, iccid) {
+		this._validateArgs(args, { lpa: true });
 		const device = await this._checkForTachyonDevice();
 		await this.doDelete(device, iccid);
 	}
@@ -273,42 +274,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 	}
 
 	async doEnable(iccid) {
-		const TACHYON_QLRIL_WAIT_TIMEOUT = 20000;
-		let output = '';
-
 		try {
-			this.adbProcess = execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
-
-			await new Promise((resolve, reject) => {
-				const timeout = setTimeout(() => {
-					reject(new Error('Timeout waiting for qlril app to start'));
-				}, TACHYON_QLRIL_WAIT_TIMEOUT);
-
-				this.adbProcess.stdout.on('data', (data) => {
-					output += data.toString();
-					if (output.includes(`ICCID currently active: ${iccid}`)) {
-						console.log(`ICCID ${iccid} enabled successfully`);
-						clearTimeout(timeout);
-						resolve();
-					}
-				});
-
-				this.adbProcess.catch((error) => {
-					clearTimeout(timeout);
-					reject(new Error(`ADB process error: ${error.message}`));
-				});
-
-				this.adbProcess.then(() => {
-					clearTimeout(timeout);
-					reject(new Error('ADB process ended early without valid output'));
-				});
-			});
-
-			console.log(os.EOL);
+			const { stdout } = execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
+			if (stdout.includes(`ICCID currently active: ${iccid}`)) {
+				console.log(`ICCID ${iccid} enabled successfully`);
+			}
 		} catch (error) {
 			console.error(`Failed to enable profiles: ${error.message}`);
-		} finally {
-			this._exitQlril();
 		}
 	}
 
@@ -336,61 +308,29 @@ module.exports = class ESimCommands extends CLICommandBase {
 	}
 
 	async doList() {
-		const TACHYON_QLRIL_WAIT_TIMEOUT = 10000;
-		let output = '';
-
 		try {
-			this.adbProcess = execa('adb', ['shell', 'qlril-app', 'listProfiles']);
+			const { stdout } = await execa('adb', ['shell', 'qlril-app', 'listProfiles']);
 
-			await new Promise((resolve, reject) => {
-				const timeout = setTimeout(() => {
-					reject(new Error('Timeout waiting for qlril app to start'));
-				}, TACHYON_QLRIL_WAIT_TIMEOUT);
+			const iccids = stdout
+				.trim()
+				.replace(/^\[/, '')
+				.replace(/\]$/, '')
+				.split(',')
+				.map(iccid => iccid.trim())
+				.filter(Boolean);
 
-				this.adbProcess.stdout.on('data', (data) => {
-					output += data.toString();
-
-					const iccids = output
-						.trim()
-						.replace(/^\[/, '')
-						.replace(/\]$/, '')
-						.split(',')
-						.map(iccid => iccid.trim())
-						.filter(Boolean);
-
-					if (iccids.length > 0) {
-						console.log(`Profiles found:${os.EOL}`);
-						iccids.forEach(iccid => console.log(`\t- ${iccid}`));
-						clearTimeout(timeout);
-						resolve();
-					}
-				});
-
-				this.adbProcess.catch((error) => {
-					clearTimeout(timeout);
-					reject(new Error(`ADB process error: ${error.message}`));
-				});
-
-				this.adbProcess.then(() => {
-					clearTimeout(timeout);
-					reject(new Error('ADB process ended early without valid output'));
-				});
-			});
-
-			console.log(os.EOL);
+			if (iccids.length > 0) {
+				console.log(`Profiles found:${os.EOL}`);
+				iccids.forEach(iccid => console.log(`\t- ${iccid}`));
+			}
 		} catch (error) {
 			console.error(`Failed to list profiles: ${error.message}`);
-		} finally {
-			this._exitQlril();
 		}
 	}
 
 
-	_validateArgs(args) {
-		if (!args?.lpa) {
-			throw new Error('Missing LPA tool path');
-		}
-
+	_validateArgs(args, required) {
+		this.lpa = args?.lpa;
 		this.inputJson = args?.input;
 		if (this.inputJson) {
 			try {
@@ -404,8 +344,14 @@ module.exports = class ESimCommands extends CLICommandBase {
 		if (!fs.existsSync(this.outputFolder)) {
 			fs.mkdirSync(this.outputFolder);
 		}
-		this.lpa = args.lpa;
+
 		this.binaries = args?.binary;
+
+		for (const key in required) {
+			if (required[key] && !args[key]) {
+				throw new Error(`Missing required argument: ${key}`);
+			}
+		}
 	}
 
 
