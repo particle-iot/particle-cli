@@ -53,7 +53,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'cloud', 'compile', 'config', 'device add', 'device remove',
 		'device rename', 'device doctor', 'device',
 		'device-protection status', 'device-protection disable', 'device-protection enable', 'device-protection',
-		'doctor', 'esim provision', 'esim', 'flash',
+		'doctor', 'esim provision', 'esim enable', 'esim delete', 'esim list', 'esim', 'flash',
 		'function list', 'function call', 'function', 'get', 'identify',
 		'keys new', 'keys load', 'keys save', 'keys send', 'keys doctor',
 		'keys server', 'keys address', 'keys', 'library add',

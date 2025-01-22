@@ -83,7 +83,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		this.verbose = true;
 		const device = await this.serial.whatSerialPortDidYouMean();
 		if (device.type !== 'Tachyon') {
-			throw new Error('Enable command is only for Tachyon devices');
+			throw new Error('This command is only for Tachyon devices');
 		}
 		this.isTachyon = true;
 		return device;
