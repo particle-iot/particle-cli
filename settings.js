@@ -209,4 +209,15 @@ settings.override = (profile, key, value) => {
 	}
 };
 
+settings.channels = {
+	production: {
+		name: 'production',
+		url: 'https://binaries.particle.io',
+	},
+	staging: {
+		name: 'staging',
+		url: 'https://binaries.staging.particle.io',
+	}
+};
+
 module.exports = settings;
