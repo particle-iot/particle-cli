@@ -49,7 +49,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			this.isTachyon = true;
 		}
 
-		this._validateArgs(args, { lpa: true, input: true, output: true, binary: true });
+		this._validateArgs(args, { lpa: true, input: true, output: true, binary: !this.isTachyon });
 		await this._generateAvailableProvisioningData();
 
 		await this.doProvision(device);
@@ -275,7 +275,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async doEnable(iccid) {
 		try {
-			const { stdout } = execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
+			const { stdout } = await execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
 			if (stdout.includes(`ICCID currently active: ${iccid}`)) {
 				console.log(`ICCID ${iccid} enabled successfully`);
 			}
