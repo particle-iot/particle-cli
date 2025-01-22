@@ -41,6 +41,43 @@ module.exports = ({ commandProcessor, root }) => {
 			TBD TBD
 		`)
 	});
+
+	commandProcessor.createCommand(esim, 'enable', '(Only for Tachyon) Enables a downloaded eSIM profile', {
+		params: '<iccid>',
+		handler: (args) => {
+			const ESimCommands = require('../cmd/esim');
+			return new ESimCommands().enableCommand(args.params.iccid);
+		},
+		examples: {
+			'$0 $command': 'TBD'
+		}
+	});
+
+	commandProcessor.createCommand(esim, 'delete', '(Only for Tachyon) Deletes an eSIM profile', {
+		options: Object.assign({
+			'lpa': {
+				description: 'Provide the LPA tool path'
+			},
+		}),
+		params: '<iccid>',
+		handler: (args) => {
+			const ESimCommands = require('../cmd/esim');
+			return new ESimCommands().deleteCommand(args, args.params.iccid);
+		},
+		examples: {
+			'$0 $command': 'TBD'
+		}
+	});
+
+	commandProcessor.createCommand(esim, 'list', '(Only for Tachyon) Lists all the profiles on the eSIM', {
+		handler: (args) => {
+			const ESimCommands = require('../cmd/esim');
+			return new ESimCommands().listCommand(args);
+		},
+		examples: {
+			'$0 $command': 'TBD'
+		}
+	});
 	return esim;
 };
 

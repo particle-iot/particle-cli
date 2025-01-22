@@ -49,7 +49,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			this.isTachyon = true;
 		}
 
-		this._validateArgs(args);
+		this._validateArgs(args, { lpa: true, input: true, output: true, binary: !this.isTachyon });
 		await this._generateAvailableProvisioningData();
 
 		await this.doProvision(device);
@@ -57,7 +57,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async bulkProvisionCommand(args) {
 		console.log(chalk.red(`Do not use bulk mode for Tachyon${os.EOL}`));
-		this._validateArgs(args);
+		this._validateArgs(args, { lpa: true, input: true, output: true, binary: true });
 
 		await this._generateAvailableProvisioningData();
 
@@ -76,6 +76,33 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}, 1000);
 
 		console.log('Ready to bulk provision. Connect devices to start. Press Ctrl-C to exit.');
+	}
+
+	async _checkForTachyonDevice() {
+		console.log(chalk.bold(`Ensure only one device is connected${os.EOL}`));
+		this.verbose = true;
+		const device = await this.serial.whatSerialPortDidYouMean();
+		if (device.type !== 'Tachyon') {
+			throw new Error('This command is only for Tachyon devices');
+		}
+		this.isTachyon = true;
+		return device;
+	}
+
+	async enableCommand(iccid) {
+		await this._checkForTachyonDevice();
+		await this.doEnable(iccid);
+	}
+
+	async deleteCommand(args, iccid) {
+		this._validateArgs(args, { lpa: true });
+		const device = await this._checkForTachyonDevice();
+		await this.doDelete(device, iccid);
+	}
+
+	async listCommand() {
+		await this._checkForTachyonDevice();
+		await this.doList();
 	}
 
 	// Populate the availableProvisioningData set with the indices of the input JSON data
@@ -246,33 +273,88 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 	}
 
-	_validateArgs(args) {
-		if (!args) {
-			throw new Error('Missing args');
+	async doEnable(iccid) {
+		try {
+			const { stdout } = await execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
+			if (stdout.includes(`ICCID currently active: ${iccid}`)) {
+				console.log(`ICCID ${iccid} enabled successfully`);
+			}
+		} catch (error) {
+			console.error(`Failed to enable profiles: ${error.message}`);
 		}
+	}
 
-		const requiredArgs = {
-			input: 'Missing input JSON file',
-			lpa: 'Missing LPA tool path',
-			...(this.isTachyon ? {} : { binary: 'Missing folder path to binaries' })
-		};
+	async doDelete(device, iccid) {
+		try {
+			const port = device.port;
 
-		for (const [key, errorMessage] of Object.entries(requiredArgs)) {
-			if (!args[key]) {
-				throw new Error(errorMessage);
+			await this._initializeQlril();
+
+			const iccidsOnDevice = await this._getIccidOnDevice(port);
+			if (!iccidsOnDevice.includes(iccid)) {
+				console.log(`ICCID ${iccid} not found on the device or is a test ICCID`);
+				return;
+			}
+			try {
+				await execa(this.lpa, ['disable', iccid, `--serial=${port}`]);
+			} catch (error) {
+				// Ignore the error if the profile is already disabled
+			}
+			await execa(this.lpa, ['delete', iccid, `--serial=${port}`]);
+
+			console.log('Profile deleted successfully');
+		} catch (error) {
+			console.error(`Failed to delete profile: ${error.message}`);
+		} finally {
+			this._exitQlril();
+		}
+	}
+
+	async doList() {
+		try {
+			const { stdout } = await execa('adb', ['shell', 'qlril-app', 'listProfiles']);
+
+			const iccids = stdout
+				.trim()
+				.replace(/^\[/, '')
+				.replace(/\]$/, '')
+				.split(',')
+				.map(iccid => iccid.trim())
+				.filter(Boolean);
+
+			if (iccids.length > 0) {
+				console.log(`Profiles found:${os.EOL}`);
+				iccids.forEach(iccid => console.log(`\t- ${iccid}`));
+			}
+		} catch (error) {
+			console.error(`Failed to list profiles: ${error.message}`);
+		}
+	}
+
+
+	_validateArgs(args, required) {
+		this.lpa = args?.lpa;
+		this.inputJson = args?.input;
+		if (this.inputJson) {
+			try {
+				this.inputJsonData = JSON.parse(fs.readFileSync(this.inputJson));
+			} catch (error) {
+				throw new Error(`Invalid JSON in input file: ${error.message}`);
 			}
 		}
 
-		this.inputJson = args.input;
-		this.inputJsonData = JSON.parse(fs.readFileSync(this.inputJson));
-
-		this.outputFolder = args.output || 'esim_loading_logs';
+		this.outputFolder = args?.output || 'esim_loading_logs';
 		if (!fs.existsSync(this.outputFolder)) {
 			fs.mkdirSync(this.outputFolder);
 		}
 
-		this.lpa = args.lpa;
-		this.binaries = args.binary;
+		this.binaries = args?.binary;
+
+		for (const key in required) {
+			if (required[key] && !args[key]) {
+				throw new Error(`Missing required argument: ${key}`);
+			}
+		}
 	}
 
 
@@ -288,15 +370,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
-		const profilesOnDeviceAfterDownload = await this._listProfiles(port);
-		const iccidsOnDeviceAfterDownload = profilesOnDeviceAfterDownload.map((line) => line.split('[')[1].split(',')[0].trim());
-
+		const iccidsOnDevice = await this._getIccidOnDevice(port);
 		// remove test ICCIDs from iccidsOnDeviceAfterDownload
-		const iccidsOnDeviceAfterDownloadFiltered = iccidsOnDeviceAfterDownload.filter((iccid) => !TEST_ICCID.includes(iccid));
+		const iccidsOnDeviceNotTest = iccidsOnDevice.filter((iccid) => !TEST_ICCID.includes(iccid));
 
-		const equal = _.isEqual(_.sortBy(expectedIccids), _.sortBy(iccidsOnDeviceAfterDownloadFiltered));
+		const equal = _.isEqual(_.sortBy(expectedIccids), _.sortBy(iccidsOnDeviceNotTest));
 
-		res.details.iccidsOnDevice = iccidsOnDeviceAfterDownload;
+		res.details.iccidsOnDevice = iccidsOnDevice;
 		res.details.rawLogs.push(equal ? ['Profiles on device match the expected profiles'] :
 			['Profiles on device do not match the expected profiles']);
 		res.status = equal ? 'success' : 'failed';
@@ -579,6 +659,12 @@ module.exports = class ESimCommands extends CLICommandBase {
 			.split('\n')
 			.filter((line) => line.match(/^\d+:\[\d+,\s(?:enabled|disabled),\s?\]\r?$/));
 		return profilesList;
+	}
+
+	async _getIccidOnDevice(port) {
+		const profiles = await this._listProfiles(port);
+		const iccids = profiles.map((line) => line.split('[')[1].split(',')[0].trim());
+		return iccids;
 	}
 
 	// Get the next available profile from availableProvisioningData
