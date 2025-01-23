@@ -66,6 +66,7 @@
     "jose": "^4.13.1",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
+    "node-fetch": "^2.7.0",
     "node-wifiscanner2": "^1.2.1",
     "particle-api-js": "^11.1.0",
     "particle-commands": "^1.0.1",
