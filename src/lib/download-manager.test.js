@@ -4,6 +4,7 @@ const nock = require('nock');
 const fs = require('fs-extra');
 const path = require('path');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
+const UI = require('./ui');
 
 describe('DownloadManager', () => {
 	const originalEnv = process.env;
@@ -90,13 +91,17 @@ describe('DownloadManager', () => {
 
 	describe('_downloadFile', () => {
 		let downloadManager;
+		let ui;
 		const channel = {
 			name: 'test',
 			url: 'https://example.com'
 		};
 		beforeEach(() => {
-
-			downloadManager = new DownloadManager(channel);
+			ui = sinon.createStubInstance(UI, {
+				write: sinon.stub(),
+				error: sinon.stub(),
+			});
+			downloadManager = new DownloadManager(channel, ui);
 		});
 		it('downloads a file', async () => {
 			const fileUrl = 'file.txt';

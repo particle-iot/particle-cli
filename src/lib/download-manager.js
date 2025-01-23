@@ -2,18 +2,21 @@ const { ensureFolder } = require('../../settings');
 const fs = require('fs-extra');
 const path = require('path');
 const fetch = require('node-fetch');
+const UI = require('./ui');
 
 class DownloadManager {
 	/**
 	 * @param {Object} channel
 	 * @param {string} channel.name - The name of the channel
  	 * @param {string} channel.url - The URL of the channel
+	 * @param {UI} [ui] - The UI object to use for logging
 	 */
-	constructor(channel) {
+	constructor(channel, ui = new UI()) {
 		const particleDir = ensureFolder();
 		if (!channel) {
 			throw new Error('Channel is required');
 		}
+		this.ui = ui;
 		this.channel = channel;
 		this._baseDir = path.join(particleDir, 'channels', this.channel.name);
 		this._tempDir = path.join(this._baseDir, 'tmp');
@@ -37,7 +40,7 @@ class DownloadManager {
 			// Create the download directory if it doesn't exist
 			fs.mkdirSync(this._downloadDir, { recursive: true });
 		} catch (error) {
-			console.error(`Error creating directories for channel "${this.channel.name}":`, error.message);
+			this.ui.error(`Error creating directories for channel "${this.channel.name}": ${error.message}`);
 			throw error;
 		}
 	}
@@ -50,7 +53,7 @@ class DownloadManager {
 		// TODO (hmontero): Implement cache for downloaded files
 		const cachedFile = await this.getCachedFile(outputFileName);
 		if (cachedFile) {
-			console.log(`Using cached file: ${cachedFile}`);
+			this.ui.write(`Using cached file: ${cachedFile}`);
 			return cachedFile;
 		}
 
@@ -58,7 +61,7 @@ class DownloadManager {
 			let downloadedBytes = 0;
 			if (fs.existsSync(tempFilePath)) {
 				downloadedBytes = fs.statSync(tempFilePath).size;
-				console.log(`Resuming download from byte ${downloadedBytes}`);
+				this.ui.write(`Resuming download from byte ${downloadedBytes}`);
 			}
 
 			const headers = downloadedBytes > 0 ? { Range: `bytes=${downloadedBytes}-` } : {};
@@ -77,9 +80,9 @@ class DownloadManager {
 
 			// Move temp file to final location
 			fs.renameSync(tempFilePath, finalFilePath);
-			console.log(`Download completed: ${finalFilePath}`);
+			this.ui.write(`Download completed: ${finalFilePath}`);
 		} catch (error) {
-			console.error(`Error downloading file from ${url}:`, error.message);
+			this.ui.error(`Error downloading file from ${url}: ${error.message}`);
 			throw error;
 		}
 	}
@@ -102,7 +105,7 @@ class DownloadManager {
 				}
 			}
 		} catch (error) {
-			console.error(`Error cleaning up temp directory for channel "${this.channel.name}":`, error.message);
+			this.ui.error(`Error cleaning up temp directory for channel "${this.channel.name}": ${error.message}`);
 			throw error;
 		}
 	}
