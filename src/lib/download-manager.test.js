@@ -100,6 +100,7 @@ describe('DownloadManager', () => {
 			ui = sinon.createStubInstance(UI, {
 				write: sinon.stub(),
 				error: sinon.stub(),
+				createProgressBar: sinon.stub(),
 			});
 			downloadManager = new DownloadManager(channel, ui);
 		});
@@ -175,6 +176,44 @@ describe('DownloadManager', () => {
 			} catch (error) {
 				expect(error.message).to.include('Unexpected response status: 500');
 			}
+		});
+
+		it('throws an error if checksum does not match', async () => {
+			const fileUrl = 'file.txt';
+			const outputFileName = 'file.txt';
+			const fileContent = 'This is a test file.';
+
+			// Mock the HTTP response
+			nock(channel.url)
+				.get(`/${fileUrl}`)
+				.reply(200, fileContent);
+
+			try {
+				await downloadManager._downloadFile(fileUrl, outputFileName, 'invalidchecksum');
+				throw new Error('Expected method to throw.');
+			} catch (error) {
+				expect(error.message).to.include('Checksum validation failed for file.txt');
+				const tempPath = path.join(downloadManager.tempDir, outputFileName);
+				expect(fs.existsSync(tempPath)).to.be.false;
+			}
+		});
+		it('validates checksum and save the file', async () => {
+			const fileUrl = 'file.txt';
+			const outputFileName = 'file.txt';
+			const fileContent = 'This is a test file.';
+			const checksum = 'f29bc64a9d3732b4b9035125fdb3285f5b6455778edca72414671e0ca3b2e0de';
+
+			// Mock the HTTP response
+			nock(channel.url)
+				.get(`/${fileUrl}`)
+				.reply(200, fileContent);
+
+			await downloadManager._downloadFile(fileUrl, outputFileName, checksum);
+
+			const finalFilePath = path.join(downloadManager.downloadDir, outputFileName);
+			expect(fs.existsSync(finalFilePath)).to.be.true;
+			const content = fs.readFileSync(finalFilePath, 'utf8');
+			expect(content).to.equal(fileContent);
 		});
 	});
 
