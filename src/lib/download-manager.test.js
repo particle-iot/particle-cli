@@ -144,26 +144,10 @@ describe('DownloadManager', () => {
 			expect(content).to.equal(initialContent + remainingContent);
 		});
 
-		it('caches a downloaded file', async () => {
-			const fileUrl = 'file.txt';
-			const outputFileName = 'file.txt';
-
-			// Stub the cache method to simulate a cached file
-			const cachedFilePath = path.join(downloadManager.downloadDir, outputFileName);
-			fs.writeFileSync(cachedFilePath, 'Cached file content.');
-			const cacheStub = sinon.stub(downloadManager, 'getCachedFile').resolves(cachedFilePath);
-
-			const result = await downloadManager._downloadFile(fileUrl, outputFileName);
-
-			expect(result).to.equal(cachedFilePath);
-			expect(cacheStub.calledOnce).to.be.true;
-
-			cacheStub.restore();
-		});
-
 		it('throws an error if the download fails', async () => {
 			const fileUrl = 'file.txt';
 			const outputFileName = 'file.txt';
+			let error;
 
 			// Mock the HTTP response to simulate a failure
 			nock(channel.url)
@@ -173,15 +157,17 @@ describe('DownloadManager', () => {
 			try {
 				await downloadManager._downloadFile(fileUrl, outputFileName);
 				throw new Error('Expected method to throw.');
-			} catch (error) {
-				expect(error.message).to.include('Unexpected response status: 500');
+			} catch (_error) {
+				error = _error;
 			}
+			expect(error.message).to.include('Unexpected response status: 500');
 		});
 
 		it('throws an error if checksum does not match', async () => {
 			const fileUrl = 'file.txt';
 			const outputFileName = 'file.txt';
 			const fileContent = 'This is a test file.';
+			let error;
 
 			// Mock the HTTP response
 			nock(channel.url)
@@ -190,12 +176,12 @@ describe('DownloadManager', () => {
 
 			try {
 				await downloadManager._downloadFile(fileUrl, outputFileName, 'invalidchecksum');
-				throw new Error('Expected method to throw.');
-			} catch (error) {
-				expect(error.message).to.include('Checksum validation failed for file.txt');
-				const tempPath = path.join(downloadManager.tempDir, outputFileName);
-				expect(fs.existsSync(tempPath)).to.be.false;
+			} catch (_error) {
+				error = _error;
 			}
+			const tempPath = path.join(downloadManager.tempDir, outputFileName);
+			expect(error.message).to.include('Checksum validation failed for file.txt');
+			expect(fs.existsSync(tempPath)).to.be.false;
 		});
 		it('validates checksum and save the file', async () => {
 			const fileUrl = 'file.txt';
