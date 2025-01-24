@@ -46,6 +46,7 @@ class DownloadManager {
 
 			return response.json();
 		} catch (err) {
+			console.log(err);
 			throw new Error('Could not download the version file. Please check your internet connection.');
 		}
 	}
@@ -140,11 +141,23 @@ class DownloadManager {
 	}
 
 	_validateChecksum(filePath, expectedChecksum) {
-		const fileBuffer = fs.readFileSync(filePath);
-		const fileChecksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-		if (fileChecksum !== expectedChecksum) {
-			throw new Error(`Checksum validation failed for ${path.basename(filePath)}`);
-		}
+		return new Promise((resolve, reject) => {
+			const hash = crypto.createHash('sha256');
+			const stream = fs.createReadStream(filePath);
+
+			stream.on('data', (chunk) => hash.update(chunk));
+			stream.on('end', () => {
+				const fileChecksum = hash.digest('hex');
+				if (fileChecksum !== expectedChecksum) {
+					reject(new Error(`Checksum validation failed for ${path.basename(filePath)}. Expected: ${expectedChecksum}, Got: ${fileChecksum}`));
+				} else {
+					resolve();
+				}
+			});
+			stream.on('error', (error) => {
+				reject(new Error(`Error reading file for checksum validation: ${error.message}`));
+			});
+		});
 	}
 
 	async cleanup({ fileName, cleanInProgress = false, cleanDownload = true } = {}) {

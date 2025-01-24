@@ -11,6 +11,27 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(tachyon, 'download-package', 'Download a Tachyon package', {
+		options: {
+			region: {
+				description: 'Region to download package for',
+				type: 'string',
+			},
+			version: {
+				description: 'Version to download package for',
+				type: 'string'
+			}
+		},
+		handler: async (args) => {
+			const DownloadTachyonPackageCommand = require('../cmd/download-tachyon-package');
+			return new DownloadTachyonPackageCommand().download(args);
+		},
+		examples: {
+			'$0 $command --region': 'Download a Tachyon package for the US region and version 1.0.0',
+			'$0 $command --region NA --version 1.0.0': 'Download a Tachyon package for the North America region and version 1.0.0'
+		}
+	});
+
 	return tachyon;
 };
 
