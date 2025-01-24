@@ -95,7 +95,7 @@ class DownloadManager {
 			}
 			const totalBytes = parseInt(response.headers.get('content-length') || '0', 10);
 			if (progressBar && totalBytes) {
-				progressBar.start(totalBytes, downloadedBytes, { description: `Downloading ${outputFileName} ...` });
+				progressBar.start((totalBytes+downloadedBytes), downloadedBytes, { description: `Downloading ${outputFileName} ...` });
 			}
 			const writer = fs.createWriteStream(progressFilePath, { flags: 'a' });
 			await new Promise((resolve, reject) => {
