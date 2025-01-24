@@ -11,7 +11,7 @@ const os = require('os');
 const FlashCommand = require('./flash');
 const CloudCommand = require('./cloud');
 
-module.exports = class SetupCommands extends CLICommandBase {
+module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
 		spinnerMixin(this);
@@ -20,7 +20,7 @@ module.exports = class SetupCommands extends CLICommandBase {
 		this.ui = ui || this.ui;
 	}
 
-	async setupTachyon() {
+	async setup() {
 		try {
 			await this._verifyLogin();
 
