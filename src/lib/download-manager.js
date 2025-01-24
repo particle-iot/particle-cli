@@ -12,8 +12,8 @@ class DownloadManager {
 	constructor(ui = new UI()) {
 		const particleDir = ensureFolder();
 		this.ui = ui;
-		this._baseDir = path.join(particleDir, 'downloads');
-		this._downloadDir = path.join(this._baseDir, 'files');
+		this._baseDir = path.join(particleDir);
+		this._downloadDir = path.join(this._baseDir, 'downloads');
 		this._ensureWorkDir();
 	}
 
@@ -24,25 +24,41 @@ class DownloadManager {
 	_ensureWorkDir() {
 		try {
 			// Create the download directory if it doesn't exist
-			fs.mkdirSync(this._downloadDir, { recursive: true });
+			fs.mkdirSync(this.downloadDir, { recursive: true });
 		} catch (error) {
 			this.ui.error(`Error creating directories: ${error.message}`);
 			throw error;
 		}
 	}
 
-	async _downloadFile(fileUrl, outputFileName, expectedChecksum) {
-		const progressFilePath = path.join(this._downloadDir, `${outputFileName}.progress`);
-		const finalFilePath = path.join(this._downloadDir, outputFileName);
-		const progressBar = this.ui.createProgressBar();
-		const url = fileUrl;
+	async download({ url, outputFileName, expectedChecksum }) {
 		// Check cache
 		const cachedFile = await this._getCachedFile(outputFileName, expectedChecksum);
 		if (cachedFile) {
 			this.ui.write(`Using cached file: ${cachedFile}`);
 			return cachedFile;
 		}
+		const filePath = await this._downloadFile(url, outputFileName, expectedChecksum);
+		// Validate checksum after download completes
+		// Validate checksum after download completes
+		try {
+			if (expectedChecksum) {
+				this._validateChecksum(filePath, expectedChecksum);
+			}
+		} catch (error) {
+			// Remove the invalid file
+			await fs.remove(filePath);
+			this.ui.write(`Removed invalid downloaded file: ${outputFileName}`);
+			throw error;
+		}
 
+		return filePath;
+	}
+
+	async _downloadFile(url, outputFileName) {
+		const progressFilePath = path.join(this.downloadDir, `${outputFileName}.progress`);
+		const finalFilePath = path.join(this.downloadDir, outputFileName);
+		const progressBar = this.ui.createProgressBar();
 		try {
 			let downloadedBytes = 0;
 			if (fs.existsSync(progressFilePath)) {
@@ -72,15 +88,6 @@ class DownloadManager {
 				response.body.on('error', reject);
 				writer.on('finish', resolve);
 			});
-			// Validate checksum after download completes
-			if (expectedChecksum) {
-				const fileBuffer = fs.readFileSync(progressFilePath);
-				const fileChecksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-				if (fileChecksum !== expectedChecksum) {
-					await fs.remove(progressFilePath); // Delete the incomplete file if checksum fails
-					throw new Error(`Checksum validation failed for ${outputFileName}`);
-				}
-			}
 			// Rename progress file to final file
 			fs.renameSync(progressFilePath, finalFilePath);
 			this.ui.write(`Download completed: ${finalFilePath}`);
@@ -96,28 +103,47 @@ class DownloadManager {
 	}
 
 	async _getCachedFile(fileName, expectedChecksum) {
-		const cachedFilePath = path.join(this._downloadDir, fileName);
+		const cachedFilePath = path.join(this.downloadDir, fileName);
 		if (fs.existsSync(cachedFilePath)) {
-			const fileBuffer = fs.readFileSync(cachedFilePath);
-			const fileChecksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-			if (expectedChecksum && fileChecksum === expectedChecksum) {
-				return cachedFilePath;
-			} else {
-				this.ui.write(`Cached file checksum mismatch for ${fileName}`);
-				await fs.remove(cachedFilePath); // Remove the invalid cached file
-				this.ui.write(`Removed invalid cached file: ${fileName}`);
+			if (expectedChecksum) {
+				try {
+					this._validateChecksum(cachedFilePath, expectedChecksum);
+					return cachedFilePath;
+				} catch (error) {
+					this.ui.write(`Cached file checksum mismatch for ${fileName}`);
+					await fs.remove(cachedFilePath); // Remove the invalid cached file
+					this.ui.write(`Removed invalid cached file: ${fileName}`);
+				}
 			}
 		}
 		return null;
 	}
 
-	async cleanup({ fileName, cleanDownload = true } = {}) {
+	_validateChecksum(filePath, expectedChecksum) {
+		const fileBuffer = fs.readFileSync(filePath);
+		const fileChecksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+		if (fileChecksum !== expectedChecksum) {
+			throw new Error(`Checksum validation failed for ${path.basename(filePath)}`);
+		}
+	}
+
+	async cleanup({ fileName, cleanInProgress = false, cleanDownload = true } = {}) {
 		try {
 			if (fileName) {
-				await fs.remove(path.join(this._downloadDir, fileName));
-				await fs.remove(path.join(this._downloadDir, `${fileName}.progress`));
+				// Remove specific file and its progress file
+				await fs.remove(path.join(this.downloadDir, fileName));
+				await fs.remove(path.join(this.downloadDir, `${fileName}.progress`));
+			} else if (cleanInProgress) {
+				// Remove all in-progress files
+				const files = (await fs.readdir(this.downloadDir)).filter(file => file.endsWith('.progress'));
+				await Promise.all(files.map(file => fs.remove(path.join(this.downloadDir, file))));
+				files.forEach(file => this.ui.write(`Removed in-progress file: ${file}`));
+				if (cleanDownload) {
+					await fs.remove(this.downloadDir);
+				}
 			} else if (cleanDownload) {
-				await fs.remove(this._downloadDir);
+				// Remove the entire download directory
+				await fs.remove(this.downloadDir);
 			}
 		} catch (error) {
 			this.ui.error(`Error cleaning up directory: ${error.message}`);

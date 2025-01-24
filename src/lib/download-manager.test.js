@@ -19,103 +19,82 @@ describe('DownloadManager', () => {
 	afterEach(async () => {
 		sinon.restore();
 		process.env = originalEnv;
-		await fs.remove(path.join(PATH_TMP_DIR, '.particle/channels/test'));
+		await fs.remove(path.join(PATH_TMP_DIR, '.particle/downloads'));
 	});
 
 	describe('initialize', () => {
 		it('creates a download manager', () => {
-			const channel = {
-				name: 'test',
-				url: 'http://example.com'
-			};
-			const downloadManager = new DownloadManager(channel);
-			expect(downloadManager.channel).to.eql(channel);
-			expect(downloadManager.tempDir).to.eql(path.join(PATH_TMP_DIR, '.particle/channels/test/tmp'));
-			expect(downloadManager.downloadDir).to.eql(path.join(PATH_TMP_DIR,'.particle/channels/test/downloads'));
-			expect(fs.existsSync(downloadManager.tempDir)).to.be.true;
+			const downloadManager = new DownloadManager();
+			expect(downloadManager.downloadDir).to.eql(path.join(PATH_TMP_DIR,'.particle/downloads'));
 			expect(fs.existsSync(downloadManager.downloadDir)).to.be.true;
-		});
-
-		it('throws an error if channel is not provided', () => {
-			expect(() => new DownloadManager()).to.throw('Channel is required');
 		});
 	});
 
 	describe('cleanup', () => {
 		it('removes the download directory', async () => {
-			const channel = {
-				name: 'test',
-				url: 'http://example.com'
-			};
-			const downloadManager = new DownloadManager(channel);
+			const downloadManager = new DownloadManager();
+			await fs.mkdirp(downloadManager.downloadDir);
+			expect(fs.existsSync(downloadManager.downloadDir)).to.be.true;
+
 			await downloadManager.cleanup();
-			expect(fs.existsSync(downloadManager.tempDir)).to.be.false;
 			expect(fs.existsSync(downloadManager.downloadDir)).to.be.false;
 		});
 
 		it('removes a specific file from the download directory', async () => {
-			const channel = {
-				name: 'test',
-				url: 'http://example.com'
-			};
-			const downloadManager = new DownloadManager(channel);
+			const downloadManager = new DownloadManager();
 			const testFile = path.join(downloadManager.downloadDir, 'test.bin');
 			await fs.ensureFile(testFile);
 			expect(fs.existsSync(testFile)).to.be.true;
+
 			await downloadManager.cleanup({ fileName: 'test.bin' });
 			expect(fs.existsSync(testFile)).to.be.false;
 		});
 
-		it('removes only the temp directory when specified', async () => {
-			const channel = {
-				name: 'test',
-				url: 'http://example.com'
-			};
-			const downloadManager = new DownloadManager(channel);
-			await downloadManager.cleanup({ cleanTemp: true, cleanDownload: false });
-			expect(fs.existsSync(downloadManager.tempDir)).to.be.false;
-			expect(fs.existsSync(downloadManager.downloadDir)).to.be.true;
-		});
+		it('removes only in-progress files', async () => {
+			const downloadManager = new DownloadManager();
+			const progressFile = path.join(downloadManager.downloadDir, 'test.bin.progress');
+			const completedFile = path.join(downloadManager.downloadDir, 'test.bin');
 
-		it('removes only the download directory when specified', async () => {
-			const channel = {
-				name: 'test',
-				url: 'http://example.com'
-			};
-			const downloadManager = new DownloadManager(channel);
-			await downloadManager.cleanup({ cleanTemp: false, cleanDownload: true });
-			expect(fs.existsSync(downloadManager.tempDir)).to.be.true;
-			expect(fs.existsSync(downloadManager.downloadDir)).to.be.false;
+			// Create both progress and completed files
+			await fs.ensureFile(progressFile);
+			await fs.ensureFile(completedFile);
+
+			// Verify files exist
+			expect(fs.existsSync(progressFile)).to.be.true;
+			expect(fs.existsSync(completedFile)).to.be.true;
+
+			// Remove only in-progress files
+			await downloadManager.cleanup({ cleanInProgress: true, cleanDownload: false });
+
+			// Verify the progress file is removed and the completed file remains
+			expect(fs.existsSync(progressFile)).to.be.false;
+			expect(fs.existsSync(completedFile)).to.be.true;
 		});
 	});
 
-	describe('_downloadFile', () => {
+	describe('download', () => {
 		let downloadManager;
 		let ui;
-		const channel = {
-			name: 'test',
-			url: 'https://example.com'
-		};
 		beforeEach(() => {
 			ui = sinon.createStubInstance(UI, {
 				write: sinon.stub(),
 				error: sinon.stub(),
 				createProgressBar: sinon.stub(),
 			});
-			downloadManager = new DownloadManager(channel, ui);
+			downloadManager = new DownloadManager(ui);
 		});
 		it('downloads a file', async () => {
-			const fileUrl = 'file.txt';
+			const url = 'https://example.com';
 			const outputFileName = 'file.txt';
 			const fileContent = 'This is a test file.';
 
 			// Mock the HTTP response
-			nock(channel.url)
-				.get(`/${fileUrl}`)
+			nock(url)
+				.get(`/${outputFileName}`)
 				.reply(200, fileContent);
 
-			await downloadManager._downloadFile(fileUrl, outputFileName);
-
+			const result = await downloadManager.download({ url: `${url}/${outputFileName}`, outputFileName });
+			console.log(result);
 			const finalFilePath = path.join(downloadManager.downloadDir, outputFileName);
 			expect(fs.existsSync(finalFilePath)).to.be.true;
 			const content = fs.readFileSync(finalFilePath, 'utf8');
@@ -123,21 +102,21 @@ describe('DownloadManager', () => {
 		});
 
 		it('resumes a download', async () => {
-			const fileUrl = 'file.txt';
+			const url = 'https://example.com';
 			const outputFileName = 'file.txt';
 			const initialContent = 'This is a ';
 			const remainingContent = 'resumed download test.';
-			const tempFilePath = path.join(downloadManager.tempDir, outputFileName);
+			const tempFilePath = path.join(downloadManager.downloadDir, `${outputFileName}.progress`);
 
 			// Create a partial file
 			fs.writeFileSync(tempFilePath, initialContent);
 
 			// Mock the HTTP response with a range
-			nock(channel.url, { reqheaders: { Range: 'bytes=10-' } })
-				.get(`/${fileUrl}`)
+			nock(url, { reqheaders: { Range: 'bytes=10-' } })
+				.get(`/${outputFileName}`)
 				.reply(206, remainingContent);
 
-			await downloadManager._downloadFile(fileUrl, outputFileName);
+			await downloadManager.download({ url: `${url}/${outputFileName}`, outputFileName });
 
 			const finalFilePath = path.join(downloadManager.downloadDir, outputFileName);
 			const content = fs.readFileSync(finalFilePath, 'utf8');
@@ -145,17 +124,17 @@ describe('DownloadManager', () => {
 		});
 
 		it('throws an error if the download fails', async () => {
-			const fileUrl = 'file.txt';
+			const url = 'https://example.com';
 			const outputFileName = 'file.txt';
 			let error;
 
 			// Mock the HTTP response to simulate a failure
-			nock(channel.url)
-				.get(`/${fileUrl}`)
+			nock(url)
+				.get(`/${outputFileName}`)
 				.reply(500);
 
 			try {
-				await downloadManager._downloadFile(fileUrl, outputFileName);
+				await downloadManager.download({ url:`${url}/${outputFileName}`, outputFileName });
 				throw new Error('Expected method to throw.');
 			} catch (_error) {
 				error = _error;
@@ -164,40 +143,44 @@ describe('DownloadManager', () => {
 		});
 
 		it('throws an error if checksum does not match', async () => {
-			const fileUrl = 'file.txt';
+			const url = 'https://example.com';
 			const outputFileName = 'file.txt';
 			const fileContent = 'This is a test file.';
 			let error;
 
 			// Mock the HTTP response
-			nock(channel.url)
-				.get(`/${fileUrl}`)
+			nock(url)
+				.get(`/${outputFileName}`)
 				.reply(200, fileContent);
 
 			try {
-				await downloadManager._downloadFile(fileUrl, outputFileName, 'invalidchecksum');
+				await downloadManager.download({ url:`${url}/${outputFileName}`, outputFileName, expectedChecksum: 'invalidchecksum' });
 			} catch (_error) {
 				error = _error;
 			}
-			const tempPath = path.join(downloadManager.tempDir, outputFileName);
+			const tempPath = path.join(downloadManager.downloadDir, `${outputFileName}.progress`);
+			const finalPath = path.join(downloadManager.downloadDir, `${outputFileName}`);
 			expect(error.message).to.include('Checksum validation failed for file.txt');
 			expect(fs.existsSync(tempPath)).to.be.false;
+			expect(fs.existsSync(finalPath)).to.be.false;
 		});
 		it('validates checksum and save the file', async () => {
-			const fileUrl = 'file.txt';
+			const url = 'https://example.com';
 			const outputFileName = 'file.txt';
 			const fileContent = 'This is a test file.';
 			const checksum = 'f29bc64a9d3732b4b9035125fdb3285f5b6455778edca72414671e0ca3b2e0de';
 
 			// Mock the HTTP response
-			nock(channel.url)
-				.get(`/${fileUrl}`)
+			nock(url)
+				.get(`/${outputFileName}`)
 				.reply(200, fileContent);
 
-			await downloadManager._downloadFile(fileUrl, outputFileName, checksum);
+			await downloadManager.download({ url: `${url}/${outputFileName}`, outputFileName, expectedChecksum: checksum });
 
+			const tempFilePath = path.join(downloadManager.downloadDir, `${outputFileName}.progress`);
 			const finalFilePath = path.join(downloadManager.downloadDir, outputFileName);
 			expect(fs.existsSync(finalFilePath)).to.be.true;
+			expect(fs.existsSync(tempFilePath)).to.be.false;
 			const content = fs.readFileSync(finalFilePath, 'utf8');
 			expect(content).to.equal(fileContent);
 		});
