@@ -28,6 +28,7 @@ const webhook = require('./webhook');
 const whoami = require('./whoami');
 const wifi = require('./wifi');
 const usb = require('./usb');
+const setup = require('./setup');
 
 /**
  * The default function export from this module registers all the available commands.
@@ -75,4 +76,5 @@ module.exports = function registerAllCommands(context) {
 	wifi(context);
 	usb(context);
 	alias(context);
+	setup(context);
 };

@@ -1,7 +1,7 @@
 const unindent = require('../lib/unindent');
 
 module.exports = ({ commandProcessor, root }) => {
-	const wifi = commandProcessor.createCategory(root, 'wifi', 'Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).');
+	const wifi = commandProcessor.createCategory(root, 'wifi', 'Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices)');
 
 	commandProcessor.createCommand(wifi, 'add', 'Adds a Wi-Fi network to your device', {
 		options: Object.assign({

@@ -232,6 +232,43 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	getOrgs() {
+		return this._wrap(
+			this.api.get({
+				uri: '/v1/orgs',
+				auth: this.accessToken
+			})
+		);
+	}
+
+	getRegistrationCode(productId) {
+		return this._wrap(
+			this.api.post({
+				uri: `/v1/products/${productId}/registration_code`,
+				auth: this.accessToken
+			})
+		);
+	}
+
+	createProduct({ name, type, org }) {
+		return this._wrap(
+			this.api.post({
+				uri: `/v1${org ? `/orgs/${org}` : ''}/products`,
+				form: { name, type },
+				auth: this.accessToken
+			})
+		);
+	}
+
+	getProducts(org) {
+		return this._wrap(
+			this.api.get({
+				uri: `/v1${org ? `/orgs/${org}` : ''}/products`,
+				auth: this.accessToken
+			})
+		);
+	}
+
 	getDevice({ deviceId: id }) {
 		return this.api.getDevice({ deviceId: id, auth: this.accessToken });
 	}

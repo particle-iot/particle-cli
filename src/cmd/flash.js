@@ -71,8 +71,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	async flashTachyon({ files, output }) {
-		this.ui.write(`${os.EOL}Ensure that only one device is connected to the computer before proceeding.${os.EOL}`);
-
 		let zipFile;
 		let includeDir = '';
 		let updateFolder = '';
@@ -101,13 +99,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 			filesToProgram = files;
 		}
 
-		this.ui.write(`Starting download. This may take several minutes...${os.EOL}`);
 		if (output && !fs.existsSync(output)) {
 			fs.mkdirSync(output);
 		}
 		const outputLog = path.join(output ? output : process.cwd(), `tachyon_flash_${Date.now()}.log`);
 		try {
-			this.ui.write(`Logs are being written to: ${outputLog}${os.EOL}`);
+			this.ui.write(`Starting download. This may take several minutes. See logs at: ${outputLog}${os.EOL}`);
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
 				includeDir,
