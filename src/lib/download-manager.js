@@ -7,27 +7,14 @@ const crypto = require('crypto');
 
 class DownloadManager {
 	/**
-	 * @param {Object} channel
-	 * @param {string} channel.name - The name of the channel
- 	 * @param {string} channel.url - The URL of the channel
 	 * @param {UI} [ui] - The UI object to use for logging
 	 */
-	constructor(channel, ui = new UI()) {
+	constructor(ui = new UI()) {
 		const particleDir = ensureFolder();
-		if (!channel) {
-			throw new Error('Channel is required');
-		}
 		this.ui = ui;
-		this.channel = channel;
-		this._baseDir = path.join(particleDir, 'channels', this.channel.name);
-		this._tempDir = path.join(this._baseDir, 'tmp');
-		this._downloadDir = path.join(this._baseDir, 'downloads');
+		this._baseDir = path.join(particleDir, 'downloads');
+		this._downloadDir = path.join(this._baseDir, 'files');
 		this._ensureWorkDir();
-
-	}
-
-	get tempDir() {
-		return this._tempDir;
 	}
 
 	get downloadDir() {
@@ -36,24 +23,21 @@ class DownloadManager {
 
 	_ensureWorkDir() {
 		try {
-			// Create the temp directory if it doesn't exist
-			fs.mkdirSync(this._tempDir, { recursive: true });
 			// Create the download directory if it doesn't exist
 			fs.mkdirSync(this._downloadDir, { recursive: true });
 		} catch (error) {
-			this.ui.error(`Error creating directories for channel "${this.channel.name}": ${error.message}`);
+			this.ui.error(`Error creating directories: ${error.message}`);
 			throw error;
 		}
 	}
 
 	async _downloadFile(fileUrl, outputFileName, expectedChecksum) {
-		const tempFilePath = path.join(this._tempDir, outputFileName);
+		const progressFilePath = path.join(this._downloadDir, `${outputFileName}.progress`);
 		const finalFilePath = path.join(this._downloadDir, outputFileName);
-		const baseUrl = this.channel.url;
 		const progressBar = this.ui.createProgressBar();
-		const url = `${baseUrl}/${fileUrl}`;
-		// TODO (hmontero): Implement cache for downloaded files
-		const cachedFile = await this._getCachedFile(outputFileName);
+		const url = fileUrl;
+		// Check cache
+		const cachedFile = await this._getCachedFile(outputFileName, expectedChecksum);
 		if (cachedFile) {
 			this.ui.write(`Using cached file: ${cachedFile}`);
 			return cachedFile;
@@ -61,8 +45,8 @@ class DownloadManager {
 
 		try {
 			let downloadedBytes = 0;
-			if (fs.existsSync(tempFilePath)) {
-				downloadedBytes = fs.statSync(tempFilePath).size;
+			if (fs.existsSync(progressFilePath)) {
+				downloadedBytes = fs.statSync(progressFilePath).size;
 				this.ui.write(`Resuming download file: ${outputFileName}`);
 			}
 
@@ -76,7 +60,7 @@ class DownloadManager {
 			if (progressBar && totalBytes) {
 				progressBar.start(totalBytes, downloadedBytes, { description: `Downloading ${outputFileName} ...` });
 			}
-			const writer = fs.createWriteStream(tempFilePath, { flags: 'a' });
+			const writer = fs.createWriteStream(progressFilePath, { flags: 'a' });
 			await new Promise((resolve, reject) => {
 				response.body.on('data', (chunk) => {
 					downloadedBytes += chunk.length;
@@ -90,15 +74,15 @@ class DownloadManager {
 			});
 			// Validate checksum after download completes
 			if (expectedChecksum) {
-				const fileBuffer = fs.readFileSync(tempFilePath);
+				const fileBuffer = fs.readFileSync(progressFilePath);
 				const fileChecksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
 				if (fileChecksum !== expectedChecksum) {
-					await fs.remove(tempFilePath); // Delete the temporary file if checksum fails
+					await fs.remove(progressFilePath); // Delete the incomplete file if checksum fails
 					throw new Error(`Checksum validation failed for ${outputFileName}`);
 				}
 			}
-			// Move temp file to final location
-			fs.renameSync(tempFilePath, finalFilePath);
+			// Rename progress file to final file
+			fs.renameSync(progressFilePath, finalFilePath);
 			this.ui.write(`Download completed: ${finalFilePath}`);
 			return finalFilePath;
 		} catch (error) {
@@ -127,24 +111,19 @@ class DownloadManager {
 		return null;
 	}
 
-	async cleanup({ fileName, cleanTemp = true, cleanDownload = true } = {}) {
+	async cleanup({ fileName, cleanDownload = true } = {}) {
 		try {
 			if (fileName) {
 				await fs.remove(path.join(this._downloadDir, fileName));
-			} else {
-				if (cleanTemp) {
-					await fs.remove(this._tempDir);
-				}
-				if (cleanDownload) {
-					await fs.remove(this._downloadDir);
-				}
+				await fs.remove(path.join(this._downloadDir, `${fileName}.progress`));
+			} else if (cleanDownload) {
+				await fs.remove(this._downloadDir);
 			}
 		} catch (error) {
-			this.ui.error(`Error cleaning up temp directory for channel "${this.channel.name}": ${error.message}`);
+			this.ui.error(`Error cleaning up directory: ${error.message}`);
 			throw error;
 		}
 	}
-
 }
 
 module.exports = DownloadManager;
