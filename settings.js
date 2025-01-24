@@ -210,14 +210,10 @@ settings.override = (profile, key, value) => {
 };
 
 settings.channels = {
-	production: {
-		name: 'production',
-		url: 'https://binaries.particle.io',
+	stable: {
+		name: 'stable',
+		url: 'https://tachyon-ci.particle.io/meta',
 	},
-	staging: {
-		name: 'staging',
-		url: 'https://binaries.staging.particle.io',
-	}
 };
 
 module.exports = settings;
