@@ -11,6 +11,7 @@ const os = require('os');
 const FlashCommand = require('./flash');
 const CloudCommand = require('./cloud');
 const { sha512crypt } = require('sha512crypt-node');
+const DownloadManager = require('../lib/download-manager');
 
 module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -33,11 +34,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 			const { systemPassword, sshPublicKey, wifi } = await this._userConfiguration();
 
-			const packagePath = await this._download(region, version, product, systemPassword, sshPublicKey);
+			const packagePath = await this._download({ region, version });
 
-			const regCode = await this._getRegistrationCode(product);
+			const registrationCode = await this._getRegistrationCode(product);
 
-			const configBlobPath = await this._createConfigBlob(regCode, systemPassword, wifi?.ssid, wifi?.password, sshPublicKey);
+			const configBlobPath = await this._createConfigBlob({ registrationCode, systemPassword, wifi, sshPublicKey });
 
 			const xmlPath = await this._createXmlFile(configBlobPath);
 
@@ -169,6 +170,21 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return { systemPassword, wifi, sshPublicKey };
 	}
 
+	async _download({ region, version }) {
+		const manager = new DownloadManager(this.ui);
+		const manifest = await manager.getManifest({ version });
+		const build = manifest?.builds.find(build => build.region === region);
+		if (!build) {
+			throw new Error('No builds available for the selected region');
+		}
+		const artifact = build.artifacts[0];
+		const url = artifact.url;
+		const outputFileName = url.replace(/.*\//, '');
+		const expectedChecksum = artifact.sha256_checksum;
+
+		await manager.download({ url, outputFileName, expectedChecksum });
+	}
+
 	async _getSystemPassword() {
 		const question = [
 			{
@@ -231,7 +247,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				message: 'Enter the path to your SSH public key:',
 				validate: (value) => {
 					if (!fs.existsSync(value)) {
-					   return 'You need to provide a path to your SSH public key';
+						return 'You need to provide a path to your SSH public key';
 					}
 					return true;
 				}
@@ -247,20 +263,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return data.registration_code;
 	}
 
-	async _createConfigBlob(regCode, systemPassword, wifiSsid, wifiPassword, sshKey) {
+	async _createConfigBlob({ registrationCode, systemPassword, wifi, sshKey }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
-			registration_code: regCode,
-			system_password : _generateShadowCompatibleHash(systemPassword),
+			registration_code: registrationCode,
+			system_password : this._generateShadowCompatibleHash(systemPassword),
 		};
 
-		if (wifiSsid) {
-			config.wifi = {
-				ssid: wifiSsid,
-				password: wifiPassword,
-			};
+		if (wifi) {
+			config.wifi = wifi;
 		}
-		
+
 		if (sshKey) {
 			config.ssh_key = sshKey;
 		}

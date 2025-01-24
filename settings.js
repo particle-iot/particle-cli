@@ -39,7 +39,9 @@ let settings = {
 
 	cloudKnownApps: {
 		'tinker': true
-	}
+	},
+
+	tachyonMeta: 'https://tachyon-ci.particle.io/meta'
 };
 
 function envValue(varName, defaultValue) {
@@ -207,13 +209,6 @@ settings.override = (profile, key, value) => {
 	} catch (ex) {
 		console.error('There was an error writing ' + settings.overrides + ': ', ex);
 	}
-};
-
-settings.channels = {
-	stable: {
-		name: 'stable',
-		url: 'https://tachyon-ci.particle.io/meta',
-	},
 };
 
 module.exports = settings;

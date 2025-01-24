@@ -1,4 +1,4 @@
-const { ensureFolder } = require('../../settings');
+const settings = require('../../settings');
 const fs = require('fs-extra');
 const path = require('path');
 const fetch = require('node-fetch');
@@ -10,7 +10,7 @@ class DownloadManager {
 	 * @param {UI} [ui] - The UI object to use for logging
 	 */
 	constructor(ui = new UI()) {
-		const particleDir = ensureFolder();
+		const particleDir = settings.ensureFolder();
 		this.ui = ui;
 		this._baseDir = path.join(particleDir);
 		this._downloadDir = path.join(this._baseDir, 'downloads');
@@ -28,6 +28,25 @@ class DownloadManager {
 		} catch (error) {
 			this.ui.error(`Error creating directories: ${error.message}`);
 			throw error;
+		}
+	}
+
+	async fetchManifest({ version }) {
+		const metadataUrl = `${settings.tachyonMeta}/tachyon-${version}.json`;
+
+		try {
+			const response = await fetch(metadataUrl);
+			if (!response.ok) {
+				if (response.status === 404) {
+					throw new Error('Version file not found. Please check the version number and try again.');
+				} else {
+					throw new Error('An error occurred while downloading the version file. Please try again later.');
+				}
+			}
+
+			return response.body;
+		} catch (err) {
+			throw new Error('Could not download the version file. Please check your internet connection.');
 		}
 	}
 
