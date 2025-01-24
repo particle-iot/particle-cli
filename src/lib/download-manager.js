@@ -78,26 +78,25 @@ class DownloadManager {
 			}
 			const writer = fs.createWriteStream(tempFilePath, { flags: 'a' });
 			await new Promise((resolve, reject) => {
-				const hash = crypto.createHash('sha256');
 				response.body.on('data', (chunk) => {
 					downloadedBytes += chunk.length;
-					hash.update(chunk);
 					if (progressBar) {
 						progressBar.increment(chunk.length);
 					}
 				});
 				response.body.pipe(writer);
 				response.body.on('error', reject);
-				writer.on('finish', async () => {
-					const fileChecksum = hash.digest('hex');
-					if (expectedChecksum && fileChecksum !== expectedChecksum) {
-						// if we don't remove the file, the next time we try to download it, it will be resumed
-						await fs.remove(tempFilePath);
-						return reject(new Error(`Checksum validation failed for ${outputFileName}`));
-					}
-					resolve();
-				});
+				writer.on('finish', resolve);
 			});
+			// Validate checksum after download completes
+			if (expectedChecksum) {
+				const fileBuffer = fs.readFileSync(tempFilePath);
+				const fileChecksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+				if (fileChecksum !== expectedChecksum) {
+					await fs.remove(tempFilePath); // Delete the temporary file if checksum fails
+					throw new Error(`Checksum validation failed for ${outputFileName}`);
+				}
+			}
 			// Move temp file to final location
 			fs.renameSync(tempFilePath, finalFilePath);
 			this.ui.write(`Download completed: ${finalFilePath}`);
