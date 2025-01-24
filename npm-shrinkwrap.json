@@ -9,7 +9,7 @@
       "version": "3.31.0",
       "license": "Apache-2.0",
       "dependencies": {
-        "@particle/device-constants": "^3.7.0",
+        "@particle/device-constants": "^3.8.0",
         "binary-version-reader": "^2.5.1",
         "chalk": "^2.4.2",
         "cli-progress": "^3.12.0",
@@ -567,9 +567,9 @@
       }
     },
     "node_modules/@particle/device-constants": {
-      "version": "3.7.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.7.0.tgz",
-      "integrity": "sha512-B6lPf5L0Zgffg/dbgkTAj2Wyk7AAKFqy7rMmL3pqiY0m/gYsVDhvPoqUeyeFKg8jIIkjGKjXHjLywGWBZ/8V1Q==",
+      "version": "3.8.0",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.8.0.tgz",
+      "integrity": "sha512-SyphIgh64z25S7aRMheenBvQ57+5Ta7BfY1hLI4NaAbyFu9NWLwceimK0442cChB1U1JgpekSTTO93d1cP1gAw==",
       "engines": {
         "node": ">=12.x",
         "npm": "8.x"
@@ -10248,9 +10248,9 @@
       }
     },
     "@particle/device-constants": {
-      "version": "3.7.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.7.0.tgz",
-      "integrity": "sha512-B6lPf5L0Zgffg/dbgkTAj2Wyk7AAKFqy7rMmL3pqiY0m/gYsVDhvPoqUeyeFKg8jIIkjGKjXHjLywGWBZ/8V1Q=="
+      "version": "3.8.0",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.8.0.tgz",
+      "integrity": "sha512-SyphIgh64z25S7aRMheenBvQ57+5Ta7BfY1hLI4NaAbyFu9NWLwceimK0442cChB1U1JgpekSTTO93d1cP1gAw=="
     },
     "@particle/device-os-protobuf": {
       "version": "2.6.1",
