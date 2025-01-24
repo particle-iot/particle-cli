@@ -63,7 +63,7 @@ class DownloadManager {
 		// Validate checksum after download completes
 		try {
 			if (expectedChecksum) {
-				this._validateChecksum(filePath, expectedChecksum);
+				await this._validateChecksum(filePath, expectedChecksum);
 			}
 		} catch (error) {
 			// Remove the invalid file
@@ -111,7 +111,6 @@ class DownloadManager {
 			});
 			// Rename progress file to final file
 			fs.renameSync(progressFilePath, finalFilePath);
-			this.ui.write(`Download completed: ${finalFilePath}`);
 			return finalFilePath;
 		} catch (error) {
 			this.ui.error(`Error downloading file from ${url}: ${error.message}`);
@@ -128,7 +127,7 @@ class DownloadManager {
 		if (fs.existsSync(cachedFilePath)) {
 			if (expectedChecksum) {
 				try {
-					this._validateChecksum(cachedFilePath, expectedChecksum);
+					await this._validateChecksum(cachedFilePath, expectedChecksum);
 					return cachedFilePath;
 				} catch (error) {
 					this.ui.write(`Cached file checksum mismatch for ${fileName}`);
@@ -140,8 +139,8 @@ class DownloadManager {
 		return null;
 	}
 
-	_validateChecksum(filePath, expectedChecksum) {
-		return new Promise((resolve, reject) => {
+	async _validateChecksum(filePath, expectedChecksum) {
+		return this.ui.showBusySpinnerUntilResolved('Performing checksum validation...', new Promise((resolve, reject) => {
 			const hash = crypto.createHash('sha256');
 			const stream = fs.createReadStream(filePath);
 
@@ -157,7 +156,8 @@ class DownloadManager {
 			stream.on('error', (error) => {
 				reject(new Error(`Error reading file for checksum validation: ${error.message}`));
 			});
-		});
+		}));
+
 	}
 
 	async cleanup({ fileName, cleanInProgress = false, cleanDownload = true } = {}) {

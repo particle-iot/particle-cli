@@ -22,7 +22,7 @@ module.exports = ({ commandProcessor, root }) => {
 				type: 'string'
 			}
 		},
-		handler: async (args) => {
+		handler: (args) => {
 			const DownloadTachyonPackageCommand = require('../cmd/download-tachyon-package');
 			return new DownloadTachyonPackageCommand().download(args);
 		},
