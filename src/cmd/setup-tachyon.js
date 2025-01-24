@@ -172,7 +172,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _download({ region, version }) {
 		const manager = new DownloadManager(this.ui);
-		const manifest = await manager.getManifest({ version });
+		const manifest = await manager.fetchManifest({ version });
 		const build = manifest?.builds.find(build => build.region === region);
 		if (!build) {
 			throw new Error('No builds available for the selected region');

@@ -31,7 +31,7 @@ class DownloadManager {
 		}
 	}
 
-	async fetchManifest({ version }) {
+	async fetchManifest({ version = 'latest' }) {
 		const metadataUrl = `${settings.tachyonMeta}/tachyon-${version}.json`;
 
 		try {
@@ -73,6 +73,7 @@ class DownloadManager {
 
 		return filePath;
 	}
+
 
 	async _downloadFile(url, outputFileName) {
 		const progressFilePath = path.join(this.downloadDir, `${outputFileName}.progress`);
