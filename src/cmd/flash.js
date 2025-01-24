@@ -80,7 +80,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			files = ['.'];
 		}
 
-		const input = files[0];
+		const [ input, ...rest ] = files;
 		const stats = await fs.stat(input);
 		let filesToProgram;
 
@@ -95,6 +95,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const zipInfo = await this._extractFlashFilesFromZip(input);
 			includeDir = zipInfo.baseDir;
 			filesToProgram = zipInfo.filesToProgram.map((file) => path.join(includeDir, file));
+			filesToProgram.push(...rest);
 		} else {
 			filesToProgram = files;
 		}

@@ -54,54 +54,21 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		try {
 			api.ensureToken();
 		} catch {
-			// User not logged in, prompt to login
-			const choice = await this._promptForLoginType();
 			const cloudCommand = new CloudCommand();
-			if (choice === 'token') {
-                const resp = await this.ui.prompt([
-                    {
-                        type: 'input',
-                        name: 'token',
-                        message: 'Enter your access token:',
-                    },
-                ]);
-				await cloudCommand.login({ token: resp.token });
-			} else {
-				await cloudCommand.login();
-			}
-			// If there was a problem logging in, this method throws an error
+			await cloudCommand.login();
 		}
-	}
-
-	async _promptForLoginType() {
-		const choicesMapping = {
-			'Access Token': 'token',
-			'Credentials': 'credentials',
-            // 'SSO': 'sso',
-			// 'OTP': 'otp',
-		};
-		const question = [
-			{
-				type: 'list',
-				name: 'login',
-				message: 'Login using:',
-				choices: Object.keys(choicesMapping),
-			},
-		];
-		const { login } = await this.ui.prompt(question);
-		return choicesMapping[login];
 	}
 
 	async _selectRegion() {
 		const regionMapping = {
-			'NA (North America)': 'na',
-			'ROW (Rest of the World)': 'row'
+			'NA (North America)': 'NA',
+			'RoW (Rest of the World)': 'RoW'
 		};
 		const question = [
 			{
 				type: 'list',
 				name: 'region',
-				message: 'Select a region:',
+				message: 'Select the region:',
 				choices: Object.keys(regionMapping),
 			},
 		];
@@ -115,7 +82,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				type: 'input',
 				name: 'version',
 				message: 'Enter the version number:',
-				default: 'default',
+				default: 'latest',
 			},
 		];
 		const answer = await this.ui.prompt(question);
@@ -204,10 +171,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _getSystemPassword() {
 		const question = [
 			{
-				type: 'input',
+				type: 'password',
 				name: 'password',
 				message: 'Password for the system account (required):',
-				default: 'default',
+				validate: (value) => {
+					if (!value) {
+					   return 'You need a password to log in';
+					}
+					return true;
+				}
 			},
 		];
 		const answer = await this.ui.prompt(question);
@@ -220,12 +192,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				type: 'input',
 				name: 'setupWifi',
 				message: 'Would you like to set up WiFi for your device? (y/n):',
-				default: true,
+				default: 'y',
 			}
 		];
 		const { setupWifi } = await this.ui.prompt(question);
-		if (setupWifi === 'y') {
-			// TODO: Double check the WiFi credentials with the user
+		if (setupWifi.toLowerCase() === 'y') {
 			return this._getWifiCredentials();
 		}
 
@@ -246,40 +217,33 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			},
 		];
 		const res = await this.ui.prompt(questions);
-		const confirmQuestion = [
-			{
-				type: 'input',
-				name: 'confirm',
-				message: `Are these credentials correct? (y/n)\nSSID: ${res.ssid}\nPassword: ${res.password}`
-			}
-		];
-		const { confirm } = await this.ui.prompt(confirmQuestion);
-		if (confirm === 'n') {
-			return this._getWifiCredentials();
-		}
-
 		return { ssid: res.ssid, password: res.password };
 	}
 
 	async _getKeys() {
+		// TODO: Do you want to add an SSH key to allow login.
+		// If yes, prompt for the path to the key
 		const question = [
 			{
 				type: 'input',
 				name: 'sshKey',
-				message: 'Enter the path to your SSH public key:'
+				message: 'Enter the path to your SSH public key:',
+				validate: (value) => {
+					if (!fs.existsSync(value)) {
+					   return 'You need to provide a path to your SSH public key';
+					}
+					return true;
+				}
 			},
 		];
 
 		const { sshKey } = await this.ui.prompt(question);
-		if (!fs.existsSync(sshKey)) {
-			return this._getKeys();
-		}
-
 		return fs.readFileSync(sshKey, 'utf8');
 	}
 
 	async _getRegistrationCode(product) {
-		return this.api.getRegistrationCode(product);
+		const data = await this.api.getRegistrationCode(product);
+		return data.registration_code;
 	}
 
 	async _createConfigBlob(regCode, systemPassword, wifiSsid, wifiPassword, sshKey) {
@@ -287,18 +251,24 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const config = {
 			registration_code: regCode,
 			system_password : _generateShadowCompatibleHash(systemPassword),
-			wifi: {
+		};
+
+		if (wifiSsid) {
+			config.wifi = {
 				ssid: wifiSsid,
 				password: wifiPassword,
-			},
-			ssh_key : sshKey,
-		};
+			};
+		}
+		
+		if (sshKey) {
+			config.ssh_key = sshKey;
+		}
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
 		// prefixed by the JSON string length as a 32 bit integer
 		let jsonString = JSON.stringify(config);
 		const buffer = Buffer.alloc(4 + Buffer.byteLength(jsonString));
-		buffer.writeInt32LE(Buffer.byteLength(jsonString), 0);
+		buffer.writeUInt32BE(Buffer.byteLength(jsonString), 0);
 		buffer.write(jsonString, 4);
 
 		const tempFile = temp.openSync();
