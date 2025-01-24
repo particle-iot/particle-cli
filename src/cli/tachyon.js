@@ -11,6 +11,6 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	return setup;
+	return tachyon;
 };
 

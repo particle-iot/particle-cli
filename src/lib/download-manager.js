@@ -44,7 +44,7 @@ class DownloadManager {
 				}
 			}
 
-			return response.body;
+			return response.json();
 		} catch (err) {
 			throw new Error('Could not download the version file. Please check your internet connection.');
 		}

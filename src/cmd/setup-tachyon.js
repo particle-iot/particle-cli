@@ -12,6 +12,7 @@ const FlashCommand = require('./flash');
 const CloudCommand = require('./cloud');
 const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
+const { platformForId } = require('../lib/platform');
 
 module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -128,7 +129,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _getProduct(orgSlug) {
 		const productsResp = await this.api.getProducts(orgSlug);
-		const products = productsResp.products;
+		const products = productsResp.products.filter((product) => platformForId(product.platform_id)?.name === 'tachyon');
 
 		if (!products.length) {
 			return null; // No products available
@@ -178,7 +179,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			throw new Error('No builds available for the selected region');
 		}
 		const artifact = build.artifacts[0];
-		const url = artifact.url;
+		const url = artifact.artifact_url;
 		const outputFileName = url.replace(/.*\//, '');
 		const expectedChecksum = artifact.sha256_checksum;
 
@@ -190,10 +191,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			{
 				type: 'password',
 				name: 'password',
-				message: 'Password for the system account (required):',
+				message: 'Password for the system account:',
 				validate: (value) => {
 					if (!value) {
-					   return 'You need a password to log in';
+						return 'You need a password for the system account';
 					}
 					return true;
 				}
@@ -238,9 +239,20 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _getKeys() {
-		// TODO: Do you want to add an SSH key to allow login.
-		// If yes, prompt for the path to the key
-		const question = [
+		let question = [
+			{
+				type: 'input',
+				name: 'addKey',
+				message: 'Would you like to add an SSH key to log in to your device? (y/n):',
+				default: 'y',
+			}
+		];
+		const { addKey } = await this.ui.prompt(question);
+		if (addKey.toLowerCase() !== 'y') {
+			return;
+		}
+
+		question = [
 			{
 				type: 'input',
 				name: 'sshKey',
