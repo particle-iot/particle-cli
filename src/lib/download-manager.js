@@ -53,7 +53,7 @@ class DownloadManager {
 		const progressBar = this.ui.createProgressBar();
 		const url = `${baseUrl}/${fileUrl}`;
 		// TODO (hmontero): Implement cache for downloaded files
-		const cachedFile = await this.getCachedFile(outputFileName);
+		const cachedFile = await this._getCachedFile(outputFileName);
 		if (cachedFile) {
 			this.ui.write(`Using cached file: ${cachedFile}`);
 			return cachedFile;
@@ -100,6 +100,7 @@ class DownloadManager {
 			// Move temp file to final location
 			fs.renameSync(tempFilePath, finalFilePath);
 			this.ui.write(`Download completed: ${finalFilePath}`);
+			return finalFilePath;
 		} catch (error) {
 			this.ui.error(`Error downloading file from ${url}: ${error.message}`);
 			throw error;
@@ -110,8 +111,19 @@ class DownloadManager {
 		}
 	}
 
-	// eslint-disable-next-line no-unused-vars
-	async getCachedFile(fileName) {
+	async _getCachedFile(fileName, expectedChecksum) {
+		const cachedFilePath = path.join(this._downloadDir, fileName);
+		if (fs.existsSync(cachedFilePath)) {
+			const fileBuffer = fs.readFileSync(cachedFilePath);
+			const fileChecksum = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+			if (expectedChecksum && fileChecksum === expectedChecksum) {
+				return cachedFilePath;
+			} else {
+				this.ui.write(`Cached file checksum mismatch for ${fileName}`);
+				await fs.remove(cachedFilePath); // Remove the invalid cached file
+				this.ui.write(`Removed invalid cached file: ${fileName}`);
+			}
+		}
 		return null;
 	}
 
