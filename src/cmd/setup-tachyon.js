@@ -281,10 +281,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	_generateShadowCompatibleHash(password) {
 		const salt = crypto.randomBytes(12).toString('base64');
-		var hash = sha512crypt(password, `$6$${salt}`);
-		hash.update(salt + password);
-		const value = hash.digest('hex');
-		return `$6$${salt}$${value}`;
+		return sha512crypt(password, `$6$${salt}`);
 	}
 
 	async _createXmlFile(configBlobPath) {
