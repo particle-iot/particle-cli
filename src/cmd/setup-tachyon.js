@@ -10,6 +10,7 @@ const temp = require('temp').track();
 const os = require('os');
 const FlashCommand = require('./flash');
 const CloudCommand = require('./cloud');
+const { sha512crypt } = require('sha512crypt-node');
 
 module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -279,8 +280,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	_generateShadowCompatibleHash(password) {
-		const salt = crypto.randomBytes(16).toString('hex');
-		const hash = crypto.createHash('sha512');
+		const salt = crypto.randomBytes(12).toString('base64');
+		var hash = sha512crypt(password, `$6$${salt}`);
 		hash.update(salt + password);
 		const value = hash.digest('hex');
 		return `$6$${salt}$${value}`;

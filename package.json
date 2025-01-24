@@ -75,6 +75,7 @@
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",
     "serialport": "^10.4.0",
+    "sha512crypt-node": "^1.0.2",
     "softap-setup": "^4.1.0",
     "temp": "^0.9.1",
     "unzipper": "^0.12.3",
