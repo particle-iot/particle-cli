@@ -209,9 +209,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _selectProduct() {
-		const orgSlug = await this._getOrg();
+		const { orgName, orgSlug } = await this._getOrg();
 
-		let productId = await this._getProduct(orgSlug);
+		let productId = await this._getProduct(orgName, orgSlug);
 
 		if (!productId) {
 			productId = await this._createProduct(orgSlug);
@@ -227,7 +227,8 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			? await this._promptForOrg([...orgs.map(org => org.name), 'Sandbox'])
 			: 'Sandbox';
 
-		return orgName !== 'Sandbox' ? orgs.find(org => org.name === orgName).slug : null;
+		const orgSlug = orgName !== 'Sandbox' ? orgs.find(org => org.name === orgName).slug : null;
+    return { orgName, orgSlug };
 	}
 
 	async _promptForOrg(choices) {
@@ -243,9 +244,19 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return org;
 	}
 
-	async _getProduct(orgSlug) {
+	async _getProduct(orgName, orgSlug) {
 		const productsResp = await this.api.getProducts(orgSlug);
-		const products = productsResp.products.filter((product) => platformForId(product.platform_id)?.name === 'tachyon');
+
+    //if orgSlug is not null, filter for this org from product.organization_id
+    //if orgSlug is null, filter for an empty field in product.organization_id
+    let products = [];
+    if (orgSlug) {
+      products = productsResp.products.filter((product) => product.org === orgName);
+    } else {
+      products = productsResp.products.filter((product) => !product.org);
+    }
+
+		products = products.filter((product) => platformForId(product.platform_id)?.name === 'tachyon');
 
 		if (!products.length) {
 			return null; // No products available
@@ -254,6 +265,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		const selectedProductName = await this._promptForProduct(products.map(product => product.name));
 
 		const selectedProduct = products.find(p => p.name === selectedProductName);
+
 		return selectedProduct?.id || null;
 	}
 
