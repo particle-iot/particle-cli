@@ -2,9 +2,27 @@ module.exports = ({ commandProcessor, root }) => {
 	const tachyon = commandProcessor.createCategory(root, 'tachyon', 'Setup Particle devices');
 
 	commandProcessor.createCommand(tachyon, 'setup', 'Setup a Tachyon device', {
-		handler: () => {
+		options: {
+      skip_flashing_os: {
+          description: 'Skip flashing the Operating System',
+          boolean: true
+        },
+        version: {
+          description: 'Version to download package for (default: latest). Can include a directory or a local zip file',
+          type: 'string'
+        },
+        load_config: {
+          description: 'Path to a config file to use for setup',
+          type: 'string'
+        },
+        save_config: {
+          description: 'Path to dump the config file to after setup',
+          type: 'string'
+       }
+    },
+		handler: (args) => {
 			const SetupTachyonCommands = require('../cmd/setup-tachyon');
-			return new SetupTachyonCommands().setup();
+			return new SetupTachyonCommands().setup(args);
 		},
 		examples: {
 			'$0 $command': 'Setup a Tachyon device'
