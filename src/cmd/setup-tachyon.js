@@ -25,32 +25,120 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async setup() {
 		try {
-			await this._verifyLogin();
+      this.ui.write(`
+===========================================================
+              Particle Tachyon Setup Command
+===========================================================
 
-			const region = await this._selectRegion();
+Welcome to the Particle Tachyon setup! This interactive command:
 
-			const version = await this._selectVersion();
+- Flashes your Tachyon device
+- Configures it (password, WiFi credentials etc...)
+- Connects it to the internet and the Particle Cloud!
 
-			const product = await this._selectProduct();
+**What you'll need:**
+
+1. Your Tachyon device
+2. The Tachyon battery
+3. A USB-C cable
+
+**Important:**
+- This tool requires you to be logged into your Particle account.
+- For more details, check out the documentation at: https://part.cl/setup-tachyon`);
+
+      this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
+
+      await this._verifyLogin();
+
+      this.ui.write("...All set! You're logged in and ready to go!");
+
+			const region = 'NA'; //await this._selectRegion();
+
+			const version = 'latest'; //await this._selectVersion();
+
+      this._formatAndDisplaySteps(
+        "Now lets capture some information about how you'd like your device to be configured when it first boots.\n\n" +
+        "First, you'll be asked to set a password for the root account on your Tachyon device.\n" +
+        "Don't worry if you forget this—you can always reset your device later.\n\n" +
+        "Next, you'll be prompted to provide an optional Wi-Fi network.\n" +
+        "While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.\n\n" +
+        "Finally, you'll have the option to add an SSH key from your local disk.\n" +
+        "This is optional—you can still SSH into the device using a password. Adding the key just allows for password-free access.",
+        2
+      );
 
 			const { systemPassword, sshPublicKey, wifi } = await this._userConfiguration();
 
+      this._formatAndDisplaySteps(
+        "Next, let's select a Particle organization that you are part of.\n" +
+        "This organization will help manage the Tachyon device and keep things organized.\n\n" +
+        "Once you've selected an organization, you can then choose which product the device will belong to.",
+        3
+      );
+
+			const product = await this._selectProduct();
+
+      this._formatAndDisplaySteps(
+        "Next, we'll download the Tachyon Operating System image.\n" +
+        "Heads up: it's a large file — 2.6GB! Don't worry, though—the download will resume\n" +
+        "if it's interrupted. Feel free to stop the CLI or let it run in the background.",
+        4
+      );
+
 			const packagePath = await this._download({ region, version });
 
+      this._formatAndDisplaySteps(
+        "Great! The download is complete.\n" +
+        "Now, let's register your product on the Particle platform.",
+        5 );
+
 			const registrationCode = await this._getRegistrationCode(product);
+
+      this._formatAndDisplaySteps(
+        "Creating the configuration file to write to the Tachyon device...",
+        6
+      );
 
 			const configBlobPath = await this._createConfigBlob({ registrationCode, systemPassword, wifi, sshPublicKey });
 
 			const xmlPath = await this._createXmlFile(configBlobPath);
 
+      this._formatAndDisplaySteps(
+        "Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.\n" +
+        "Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!\n\n" +
+        "Before we get started, we need to power on your Tachyon board:\n\n" +
+        "1. Plug the USB-C cable into your computer and the Tachyon board.\n" +
+        "   The red light should turn on!\n\n" +
+        "2. Put the Tachyon device into download mode:\n" +
+        "   - Hold the button next to the red LED for 3 seconds.\n" +
+        "   - When the light starts flashing yellow, release the button.\n" +
+        "   Your device is now in flashing mode!",
+        7
+      );
+
 			await this._flash(packagePath, xmlPath);
 
-			this.ui.write('Tachyon setup complete. Device will boot and connect to the Particle Cloud.');
+      this._formatAndDisplaySteps(
+        "All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.\n\n" +
+        "It will also:\n" +
+        "  - Activate the built-in 5G modem\n" +
+        "  - Connect to the Particle Cloud\n" +
+        "  - Run all system services, including battery charging\n\n" +
+        "For more information about Tachyon, visit our developer site at: developer.particle.io!",
+        8
+      );
 
 		} catch (error) {
 			throw new Error(`Error setting up Tachyon: ${error.message}`);
 		}
 	}
+
+  async _formatAndDisplaySteps(text, step) {
+    // Display the formatted step
+    this.ui.write("\n===========================================================\n");
+    this.ui.write(`Step ${step}:\n`);
+    this.ui.write(`${text}\n`);
+  }
 
 	async _verifyLogin() {
 		const api = new ApiClient();
@@ -162,7 +250,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _userConfiguration() {
-		const systemPassword = await this._getSystemPassword();
+    const systemPassword = await this._getSystemPassword();
 
 		const wifi = await this._getWifi();
 
