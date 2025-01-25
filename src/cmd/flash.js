@@ -80,7 +80,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			files = ['.'];
 		}
 
-		const [ input, ...rest ] = files;
+		const [input, ...rest] = files;
 		const stats = await fs.stat(input);
 		let filesToProgram;
 

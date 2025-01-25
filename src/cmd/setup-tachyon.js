@@ -183,7 +183,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const outputFileName = url.replace(/.*\//, '');
 		const expectedChecksum = artifact.sha256_checksum;
 
-		await manager.download({ url, outputFileName, expectedChecksum });
+		return manager.download({ url, outputFileName, expectedChecksum });
 	}
 
 	async _getSystemPassword() {
