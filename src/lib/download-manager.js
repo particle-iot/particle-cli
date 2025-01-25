@@ -32,7 +32,7 @@ class DownloadManager {
 	}
 
 	async fetchManifest({ version = 'latest' }) {
-		const metadataUrl = `${settings.tachyonMeta}/tachyon-${version}.json`;
+		const metadataUrl = `${settings.tachyonMeta}/tachyon-${encodeURIComponent(version)}.json`;
 
 		try {
 			const response = await fetch(metadataUrl);
