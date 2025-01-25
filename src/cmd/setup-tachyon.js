@@ -21,6 +21,12 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { api } = this._particleApi();
 		this.api = api;
 		this.ui = ui || this.ui;
+    this._userConfiguration = this._userConfiguration.bind(this);
+    this._getSystemPassword = this._getSystemPassword.bind(this);
+    this._getWifi = this._getWifi.bind(this);
+    this._getKeys = this._getKeys.bind(this);
+    this._runStepWithTiming = this._runStepWithTiming.bind(this);
+    this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
 	async setup() {
@@ -56,7 +62,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 			const version = 'latest'; //await this._selectVersion();
 
-      this._formatAndDisplaySteps(
+      const { systemPassword, sshPublicKey, wifi } = await this._runStepWithTiming(
         "Now lets capture some information about how you'd like your device to be configured when it first boots.\n\n" +
         "First, you'll be asked to set a password for the root account on your Tachyon device.\n" +
         "Don't worry if you forget this—you can always reset your device later.\n\n" +
@@ -64,46 +70,43 @@ Welcome to the Particle Tachyon setup! This interactive command:
         "While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.\n\n" +
         "Finally, you'll have the option to add an SSH key from your local disk.\n" +
         "This is optional—you can still SSH into the device using a password. Adding the key just allows for password-free access.",
-        2
-      );
+        2,
+        () => this._userConfiguration(),
+        0
+      )
 
-			const { systemPassword, sshPublicKey, wifi } = await this._userConfiguration();
-
-      this._formatAndDisplaySteps(
+      const product = await this._runStepWithTiming(
         "Next, let's select a Particle organization that you are part of.\n" +
         "This organization will help manage the Tachyon device and keep things organized.\n\n" +
         "Once you've selected an organization, you can then choose which product the device will belong to.",
-        3
+        3,
+        () => this._selectProduct()
       );
-
-			const product = await this._selectProduct();
-
-      this._formatAndDisplaySteps(
+      
+      const packagePath = await this._runStepWithTiming(
         "Next, we'll download the Tachyon Operating System image.\n" +
         "Heads up: it's a large file — 2.6GB! Don't worry, though—the download will resume\n" +
-        "if it's interrupted. Feel free to stop the CLI or let it run in the background.",
-        4
+        "if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also\n" +
+        "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
+        4,
+        () => this._download({ region, version })
       );
-
-			const packagePath = await this._download({ region, version });
-
-      this._formatAndDisplaySteps(
+      
+      const registrationCode = await this._runStepWithTiming(
         "Great! The download is complete.\n" +
         "Now, let's register your product on the Particle platform.",
-        5 );
-
-			const registrationCode = await this._getRegistrationCode(product);
-
-      this._formatAndDisplaySteps(
-        "Creating the configuration file to write to the Tachyon device...",
-        6
+        5,
+        () => this._getRegistrationCode(product)
       );
-
-			const configBlobPath = await this._createConfigBlob({ registrationCode, systemPassword, wifi, sshPublicKey });
-
-			const xmlPath = await this._createXmlFile(configBlobPath);
-
-      this._formatAndDisplaySteps(
+      
+      const configBlobPath = await this._runStepWithTiming(
+        "Creating the configuration file to write to the Tachyon device...",
+        6,
+        () => this._createConfigBlob({ registrationCode, systemPassword, wifi, sshPublicKey })
+      );
+      const xmlPath = await this._createXmlFile(configBlobPath);
+            
+      const flashSuccessful = await this._runStepWithTiming(
         "Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.\n" +
         "Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!\n\n" +
         "Before we get started, we need to power on your Tachyon board:\n\n" +
@@ -113,25 +116,50 @@ Welcome to the Particle Tachyon setup! This interactive command:
         "   - Hold the button next to the red LED for 3 seconds.\n" +
         "   - When the light starts flashing yellow, release the button.\n" +
         "   Your device is now in flashing mode!",
-        7
+        7,
+        () => this._flash(packagePath, xmlPath)
       );
 
-			await this._flash(packagePath, xmlPath);
-
-      this._formatAndDisplaySteps(
-        "All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.\n\n" +
-        "It will also:\n" +
-        "  - Activate the built-in 5G modem\n" +
-        "  - Connect to the Particle Cloud\n" +
-        "  - Run all system services, including battery charging\n\n" +
-        "For more information about Tachyon, visit our developer site at: developer.particle.io!",
-        8
-      );
+      if (flashSuccessful) {
+          this._formatAndDisplaySteps(
+            "All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.\n\n" +
+            "It will also:\n" +
+            "  - Activate the built-in 5G modem\n" +
+            "  - Connect to the Particle Cloud\n" +
+            "  - Run all system services, including battery charging\n\n" +
+            "For more information about Tachyon, visit our developer site at: developer.particle.io!",
+            8
+          );
+      } else {
+          this.ui.write(
+            "\nFlashing failed. Please unplug your device and rerun this. We're going to have to try it again.\n" +
+            "If it continues to fail, please select a different USB port or visit https://part.cl/setup-tachyon and the setup link for more information.\n"
+          );
+      }
 
 		} catch (error) {
 			throw new Error(`Error setting up Tachyon: ${error.message}`);
 		}
 	}
+
+  async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
+    this._formatAndDisplaySteps(stepDesc, stepNumber);
+
+    const startTime = Date.now();
+
+    try {
+        const result = await asyncTask();
+        const elapsed = Date.now() - startTime;
+
+        if (elapsed < minDuration) {
+            await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
+        }
+
+        return result;
+    } catch (err) {
+        throw new Error(`Step ${stepNumber} failed: ${err.message}`);
+    }
+  }
 
   async _formatAndDisplaySteps(text, step) {
     // Display the formatted step
@@ -426,8 +454,16 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _flash(packagePath, xmlPath) {
+    const question = {
+      type: 'confirm',
+      name: 'flash',
+      message: 'Is the device powered and its LED flashing yellow?',
+      default: true
+    };
+		await this.ui.prompt(question);
+
 		const flashCommand = new FlashCommand();
-		await flashCommand.flashTachyon({ files : [packagePath, xmlPath] });
+		return await flashCommand.flashTachyon({ files : [packagePath, xmlPath] });
 	}
 
 	_particleApi() {
