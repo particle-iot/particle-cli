@@ -503,7 +503,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
     const question = {
       type: 'confirm',
       name: 'flash',
-      message: 'Is the device powered and its LED flashing yellow?',
+      message: 'Is the device powered, its LED flashing yellow and a USB-C cable plugged in from your computer?',
       default: true
     };
 		await this.ui.prompt(question);
