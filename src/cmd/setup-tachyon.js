@@ -29,7 +29,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skipFlashingOs, version, loadConfig, saveConfig }) {
+	async setup({ skip_flashing_os: skipFlashingOs, version, load_config: loadConfig, save_config: saveConfig }) {
 		try {
 			this.ui.write(`
 ===========================================================
