@@ -349,21 +349,38 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _getSystemPassword() {
-		const question = [
+		const questions = [
 			{
 				type: 'password',
 				name: 'password',
 				message: 'Password for the system account:',
 				validate: (value) => {
 					if (!value) {
-						return 'You need a password for the system account';
+						return 'Enter a password for the root account';
 					}
 					return true;
 				}
 			},
+			{
+				type: 'password',
+				name: 'passwordConfirm',
+				message: 'Re-enter the password for the root account:',
+				validate: (value) => {
+					if (!value) {
+						return 'You need to confirm the password';
+					}
+					return true;
+				}
+			}
 		];
-		const answer = await this.ui.prompt(question);
-		return answer.password;
+		const res = await this.ui.prompt(questions);
+
+    //check if the passwords match
+    if (res.password !== res.passwordConfirm) {
+      throw new Error("Passwords do not match. Please try again.");
+    }
+
+		return res.password;
 	}
 
 	async _getWifi() {
@@ -395,8 +412,18 @@ Welcome to the Particle Tachyon setup! This interactive command:
 				name: 'password',
 				message: 'Enter your WiFi password:'
 			},
+			{
+				type: 'password',
+				name: 'passwordConfirm',
+				message: 'Re-enter your WiFi password:'
+			},
 		];
 		const res = await this.ui.prompt(questions);
+
+    if (res.password !== res.passwordConfirm) {
+      throw new Error("Passwords do not match. Please try again.");
+    }
+
 		return { ssid: res.ssid, password: res.password };
 	}
 
