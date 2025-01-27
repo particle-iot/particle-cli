@@ -80,6 +80,7 @@ describe('DownloadManager', () => {
 				write: sinon.stub(),
 				error: sinon.stub(),
 				createProgressBar: sinon.stub(),
+				showBusySpinnerUntilResolved: sinon.stub().callsFake((text, promise) => promise),
 			});
 			downloadManager = new DownloadManager(ui);
 		});
