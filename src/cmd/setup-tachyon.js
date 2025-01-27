@@ -82,7 +82,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 				);
 			} else {
 				this.ui.write(
-					`${os.EOL}${os.EOL}Skipping Step 3 - Using configuration file: ` + loadConfig + `${os.EOL}`
+					`${os.EOL}${os.EOL}Skipping to Step 3 - Using configuration file: ` + loadConfig + `${os.EOL}`
 				);
 			}
 
