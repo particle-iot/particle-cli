@@ -21,17 +21,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { api } = this._particleApi();
 		this.api = api;
 		this.ui = ui || this.ui;
-    this._userConfiguration = this._userConfiguration.bind(this);
-    this._getSystemPassword = this._getSystemPassword.bind(this);
-    this._getWifi = this._getWifi.bind(this);
-    this._getKeys = this._getKeys.bind(this);
-    this._runStepWithTiming = this._runStepWithTiming.bind(this);
-    this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
+		this._userConfiguration = this._userConfiguration.bind(this);
+		this._getSystemPassword = this._getSystemPassword.bind(this);
+		this._getWifi = this._getWifi.bind(this);
+		this._getKeys = this._getKeys.bind(this);
+		this._runStepWithTiming = this._runStepWithTiming.bind(this);
+		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os, version, load_config, save_config }) {
+	async setup({ skipFlashingOs, version, loadConfig, saveConfig }) {
 		try {
-      this.ui.write(`
+			this.ui.write(`
 ===========================================================
               Particle Tachyon Setup Command
 ===========================================================
@@ -52,148 +52,147 @@ Welcome to the Particle Tachyon setup! This interactive command:
 - This tool requires you to be logged into your Particle account.
 - For more details, check out the documentation at: https://part.cl/setup-tachyon`);
 
-      this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
+			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 
-      await this._verifyLogin();
+			await this._verifyLogin();
 
-      this.ui.write("...All set! You're logged in and ready to go!");
+			this.ui.write("...All set! You're logged in and ready to go!");
 
 			const region = 'NA'; //await this._selectRegion();
 
-      //if version is not provided, set to latest
-      if (!version) {
-			    version = 'latest'; //await this._selectVersion();
-      }
+			//if version is not provided, set to latest
+			if (!version) {
+				version = 'latest'; //await this._selectVersion();
+			}
 
-      let config = { systemPassword: null, wifi: null, sshPublicKey: null };
+			let config = { systemPassword: null, wifi: null, sshPublicKey: null };
 
-      if( !load_config ) {
-          config = await this._runStepWithTiming(
-              "Now lets capture some information about how you'd like your device to be configured when it first boots.\n\n" +
-              "First, you'll be asked to set a password for the root account on your Tachyon device.\n" +
-              "Don't worry if you forget this—you can always reset your device later.\n\n" +
-              "Next, you'll be prompted to provide an optional Wi-Fi network.\n" +
-              "While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.\n\n" +
-              "Finally, you'll have the option to add an SSH key from your local disk.\n" +
-              "This is optional—you can still SSH into the device using a password. Adding the key just allows for password-free access.",
-              2,
-              () => this._userConfiguration(),
-              0
-          )
-      } else {
-        this.ui.write(
-          "\n\nSkipping Step 3 - Using configuration file: " + load_config + "\n"
-        );        
-      }
+			if ( !loadConfig ) {
+				config = await this._runStepWithTiming(
+					`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
+			`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
+			`Don't worry if you forget this—you can always reset your device later.${os.EOL}${os.EOL}` +
+			`Next, you'll be prompted to provide an optional Wi-Fi network.${os.EOL}` +
+			`While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.${os.EOL}${os.EOL}` +
+			`Finally, you'll have the option to add an SSH key from your local disk.${os.EOL}` +
+			'This is optional—you can still SSH into the device using a password. Adding the key just allows for password-free access.',
+					2,
+					() => this._userConfiguration(),
+					0
+				);
+			} else {
+				this.ui.write(
+					`${os.EOL}${os.EOL}Skipping Step 3 - Using configuration file: ` + loadConfig + `${os.EOL}`
+				);
+			}
 
-      const product = await this._runStepWithTiming(
-        "Next, let's select a Particle organization that you are part of.\n" +
-        "This organization will help manage the Tachyon device and keep things organized.\n\n" +
+			const product = await this._runStepWithTiming(
+				`Next, let's select a Particle organization that you are part of.${os.EOL}` +
+        `This organization will help manage the Tachyon device and keep things organized.${os.EOL}${os.EOL}` +
         "Once you've selected an organization, you can then choose which product the device will belong to.",
-        3,
-        () => this._selectProduct()
-      );
+				3,
+				() => this._selectProduct()
+			);
 
-      const packagePath = await this._runStepWithTiming(
-        "Next, we'll download the Tachyon Operating System image.\n" +
-        "Heads up: it's a large file — 2.6GB! Don't worry, though—the download will resume\n" +
-        "if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also\n" +
+			const packagePath = await this._runStepWithTiming(
+				`Next, we'll download the Tachyon Operating System image.${os.EOL}` +
+        `Heads up: it's a large file — 2.6GB! Don't worry, though—the download will resume${os.EOL}` +
+        `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
-        4,
-        () => this._download({ region, version })
-      );
+				4,
+				() => this._download({ region, version })
+			);
 
-      const registrationCode = await this._runStepWithTiming(
-        "Great! The download is complete.\n" +
+			const registrationCode = await this._runStepWithTiming(
+				`Great! The download is complete.${os.EOL}` +
         "Now, let's register your product on the Particle platform.",
-        5,
-        () => this._getRegistrationCode(product)
-      );
+				5,
+				() => this._getRegistrationCode(product)
+			);
 
-      let configBlobPath = load_config;
-      if (configBlobPath) {
-        this.ui.write(
-          "\n\nSkipping Step 6 - Using configuration file: " + load_config + "\n"
-        );
-      }
-      else {
-        configBlobPath = await this._runStepWithTiming(
-          "Creating the configuration file to write to the Tachyon device...",
-          6,
-          () => this._createConfigBlob({ registrationCode, ...config })
-        );
-      }
-      const xmlPath = await this._createXmlFile(configBlobPath);
+			let configBlobPath = loadConfig;
+			if (configBlobPath) {
+				this.ui.write(
+					`${os.EOL}${os.EOL}Skipping Step 6 - Using configuration file: ` + loadConfig + `${os.EOL}`
+				);
+			} else {
+				configBlobPath = await this._runStepWithTiming(
+					'Creating the configuration file to write to the Tachyon device...',
+					6,
+					() => this._createConfigBlob({ registrationCode, ...config })
+				);
+			}
+			const xmlPath = await this._createXmlFile(configBlobPath);
 
-      if (save_config) {
-          this.ui.write(`\n\nConfiguration file written here: ${save_config}\n`);
-          fs.copyFileSync(configBlobPath, save_config);
-      }
+			if (saveConfig) {
+				this.ui.write(`${os.EOL}${os.EOL}Configuration file written here: ${saveConfig}${os.EOL}`);
+				fs.copyFileSync(configBlobPath, saveConfig);
+			}
 
-      //what files to flash? 
-      const filesToFlash = skip_flashing_os ? [xmlPath] : [packagePath, xmlPath];
+			//what files to flash?
+			const filesToFlash = skipFlashingOs ? [xmlPath] : [packagePath, xmlPath];
 
-      const flashSuccessful = await this._runStepWithTiming(
-        "Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.\n" +
-        "Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!\n\n" +
-        "Before we get started, we need to power on your Tachyon board:\n\n" +
-        "1. Plug the USB-C cable into your computer and the Tachyon board.\n" +
-        "   The red light should turn on!\n\n" +
-        "2. Put the Tachyon device into download mode:\n" +
-        "   - Hold the button next to the red LED for 3 seconds.\n" +
-        "   - When the light starts flashing yellow, release the button.\n" +
-        "   Your device is now in flashing mode!",
-        7,
-        () => this._flash(filesToFlash)
-      );
+			const flashSuccessful = await this._runStepWithTiming(
+				`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
+        `Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!${os.EOL}${os.EOL}` +
+        `Before we get started, we need to power on your Tachyon board:${os.EOL}${os.EOL}` +
+        `1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
+        `   The red light should turn on!${os.EOL}${os.EOL}` +
+        `2. Put the Tachyon device into download mode:${os.EOL}` +
+        `   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
+        `   - When the light starts flashing yellow, release the button.${os.EOL}` +
+        '   Your device is now in flashing mode!',
+				7,
+				() => this._flash(filesToFlash)
+			);
 
-      if (flashSuccessful) {
-          this._formatAndDisplaySteps(
-            "All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.\n\n" +
-            "It will also:\n" +
-            "  - Activate the built-in 5G modem\n" +
-            "  - Connect to the Particle Cloud\n" +
-            "  - Run all system services, including battery charging\n\n" +
-            "For more information about Tachyon, visit our developer site at: developer.particle.io!",
-            8
-          );
-      } else {
-          this.ui.write(
-            "\nFlashing failed. Please unplug your device and rerun this. We're going to have to try it again.\n" +
-            "If it continues to fail, please select a different USB port or visit https://part.cl/setup-tachyon and the setup link for more information.\n"
-          );
-      }
+			if (flashSuccessful) {
+				this._formatAndDisplaySteps(
+					`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+            `It will also:${os.EOL}` +
+            `  - Activate the built-in 5G modem${os.EOL}` +
+            `  - Connect to the Particle Cloud${os.EOL}` +
+            `  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
+            'For more information about Tachyon, visit our developer site at: developer.particle.io!',
+					8
+				);
+			} else {
+				this.ui.write(
+					`${os.EOL}Flashing failed. Please unplug your device and rerun this. We're going to have to try it again.${os.EOL}` +
+            `If it continues to fail, please select a different USB port or visit https://part.cl/setup-tachyon and the setup link for more information.${os.EOL}`
+				);
+			}
 
 		} catch (error) {
-			throw new Error(`\nThere was an error setting up Tachyon:\n\n >> ${error.message}\n`);
+			throw new Error(`${os.EOL}There was an error setting up Tachyon:${os.EOL}${os.EOL} >> ${error.message}${os.EOL}`);
 		}
 	}
 
-  async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
-    this._formatAndDisplaySteps(stepDesc, stepNumber);
+	async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
+		this._formatAndDisplaySteps(stepDesc, stepNumber);
 
-    const startTime = Date.now();
+		const startTime = Date.now();
 
-    try {
-        const result = await asyncTask();
-        const elapsed = Date.now() - startTime;
+		try {
+			const result = await asyncTask();
+			const elapsed = Date.now() - startTime;
 
-        if (elapsed < minDuration) {
-            await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
-        }
+			if (elapsed < minDuration) {
+				await new Promise((resolve) => setTimeout(resolve, minDuration - elapsed));
+			}
 
-        return result;
-    } catch (err) {
-        throw new Error(`Step ${stepNumber} failed with the following error: ${err.message}`);
-    }
-  }
+			return result;
+		} catch (err) {
+			throw new Error(`Step ${stepNumber} failed with the following error: ${err.message}`);
+		}
+	}
 
-  async _formatAndDisplaySteps(text, step) {
-    // Display the formatted step
-    this.ui.write("\n===========================================================\n");
-    this.ui.write(`Step ${step}:\n`);
-    this.ui.write(`${text}\n`);
-  }
+	async _formatAndDisplaySteps(text, step) {
+		// Display the formatted step
+		this.ui.write(`${os.EOL}===========================================================${os.EOL}`);
+		this.ui.write(`Step ${step}:${os.EOL}`);
+		this.ui.write(`${text}${os.EOL}`);
+	}
 
 	async _verifyLogin() {
 		const api = new ApiClient();
@@ -255,7 +254,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			: 'Sandbox';
 
 		const orgSlug = orgName !== 'Sandbox' ? orgs.find(org => org.name === orgName).slug : null;
-    return { orgName, orgSlug };
+		return { orgName, orgSlug };
 	}
 
 	async _promptForOrg(choices) {
@@ -274,14 +273,14 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	async _getProduct(orgName, orgSlug) {
 		const productsResp = await this.api.getProducts(orgSlug);
 
-    //if orgSlug is not null, filter for this org from product.organization_id
-    //if orgSlug is null, filter for an empty field in product.organization_id
-    let products = [];
-    if (orgSlug) {
-      products = productsResp.products.filter((product) => product.org === orgName);
-    } else {
-      products = productsResp.products.filter((product) => !product.org);
-    }
+		//if orgSlug is not null, filter for this org from product.organization_id
+		//if orgSlug is null, filter for an empty field in product.organization_id
+		let products = [];
+		if (orgSlug) {
+			products = productsResp.products.filter((product) => product.org === orgName);
+		} else {
+			products = productsResp.products.filter((product) => !product.org);
+		}
 
 		products = products.filter((product) => platformForId(product.platform_id)?.name === 'tachyon');
 
@@ -309,7 +308,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return product;
 	}
 
-	async _createProduct(orgSlug) {
+	async _createProduct() {
 		// It appears that CLI code base does not have a method to create a product readily available
 		// TODO: Discuss with the team to add a method to create a product
 		// For now though, we will return an error
@@ -317,7 +316,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _userConfiguration() {
-    const systemPassword = await this._getSystemPassword();
+		const systemPassword = await this._getSystemPassword();
 
 		const wifi = await this._getWifi();
 
@@ -328,11 +327,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 	async _download({ region, version }) {
 
-    //before downloading a file, we need to check if 'version' is a local file or directory
-    //if it is a local file or directory, we need to return the path to the file
-    if (fs.existsSync(version)) {
-      return version;
-    }
+		//before downloading a file, we need to check if 'version' is a local file or directory
+		//if it is a local file or directory, we need to return the path to the file
+		if (fs.existsSync(version)) {
+			return version;
+		}
 
 		const manager = new DownloadManager(this.ui);
 		const manifest = await manager.fetchManifest({ version });
@@ -375,10 +374,10 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		];
 		const res = await this.ui.prompt(questions);
 
-    //check if the passwords match
-    if (res.password !== res.passwordConfirm) {
-      throw new Error("Passwords do not match. Please try again.");
-    }
+		//check if the passwords match
+		if (res.password !== res.passwordConfirm) {
+			throw new Error('Passwords do not match. Please try again.');
+		}
 
 		return res.password;
 	}
@@ -420,9 +419,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		];
 		const res = await this.ui.prompt(questions);
 
-    if (res.password !== res.passwordConfirm) {
-      throw new Error("Passwords do not match. Please try again.");
-    }
+		if (res.password !== res.passwordConfirm) {
+			throw new Error('Passwords do not match. Please try again.');
+		}
 
 		return { ssid: res.ssid, password: res.password };
 	}
@@ -527,12 +526,12 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _flash(files) {
-    const question = {
-      type: 'confirm',
-      name: 'flash',
-      message: 'Is the device powered, its LED flashing yellow and a USB-C cable plugged in from your computer?',
-      default: true
-    };
+		const question = {
+			type: 'confirm',
+			name: 'flash',
+			message: 'Is the device powered, its LED flashing yellow and a USB-C cable plugged in from your computer?',
+			default: true
+		};
 		await this.ui.prompt(question);
 
 		const flashCommand = new FlashCommand();

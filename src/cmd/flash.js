@@ -70,7 +70,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-  //returns true if successful or false if failed
+	//returns true if successful or false if failed
 	async flashTachyon({ files, output }) {
 		let zipFile;
 		let includeDir = '';
@@ -117,11 +117,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 			});
 			await qdl.run();
 			fs.appendFileSync(outputLog, 'Download complete.');
-      return true;
+			return true;
 		} catch (error) {
 			this.ui.write('Download failed');
 			fs.appendFileSync(outputLog, 'Download failed with error: ' + error.message);
-      return false;
+			return false;
 		}
 	}
 
