@@ -4,6 +4,7 @@ const path = require('path');
 const fetch = require('node-fetch');
 const UI = require('./ui');
 const crypto = require('crypto');
+const { delay } = require('./utilities');
 
 class DownloadManager {
 	/**
@@ -51,14 +52,14 @@ class DownloadManager {
 		}
 	}
 
-	async download({ url, outputFileName, expectedChecksum }) {
+	async download({ url, outputFileName, expectedChecksum, options = {} }) {
 		// Check cache
 		const cachedFile = await this._getCachedFile(outputFileName, expectedChecksum);
 		if (cachedFile) {
 			this.ui.write(`Using cached file: ${cachedFile}`);
 			return cachedFile;
 		}
-		const filePath = await this._downloadFile(url, outputFileName, expectedChecksum);
+		const filePath = await this._downloadFile(url, outputFileName, options);
 		// Validate checksum after download completes
 		// Validate checksum after download completes
 		try {
@@ -76,48 +77,85 @@ class DownloadManager {
 	}
 
 
-	async _downloadFile(url, outputFileName) {
+	// eslint-disable-next-line max-statements
+	async _downloadFile(url, outputFileName, options = {}) {
+		const { maxRetries = 5, timeout = 10000, waitTime = 5000 } = options;
 		const progressFilePath = path.join(this.downloadDir, `${outputFileName}.progress`);
 		const finalFilePath = path.join(this.downloadDir, outputFileName);
 		const progressBar = this.ui.createProgressBar();
-		try {
-			let downloadedBytes = 0;
-			if (fs.existsSync(progressFilePath)) {
-				downloadedBytes = fs.statSync(progressFilePath).size;
-				this.ui.write(`Resuming download file: ${outputFileName}`);
-			}
+		let attempt = 0;
 
-			const headers = downloadedBytes > 0 ? { Range: `bytes=${downloadedBytes}-` } : {};
-			const response = await fetch(url, { headers });
+		while (attempt < maxRetries) {
+			try {
+				let downloadedBytes = 0;
+				if (fs.existsSync(progressFilePath)) {
+					downloadedBytes = fs.statSync(progressFilePath).size;
+					this.ui.write(`Resuming download file: ${outputFileName}`);
+				}
 
-			if (!response.ok && response.status !== 206) {
-				throw new Error(`Unexpected response status: ${response.status}`);
-			}
-			const totalBytes = parseInt(response.headers.get('content-length') || '0', 10);
-			if (progressBar && totalBytes) {
-				progressBar.start((totalBytes+downloadedBytes), downloadedBytes, { description: `Downloading ${outputFileName} ...` });
-			}
-			const writer = fs.createWriteStream(progressFilePath, { flags: 'a' });
-			await new Promise((resolve, reject) => {
-				response.body.on('data', (chunk) => {
-					downloadedBytes += chunk.length;
-					if (progressBar) {
-						progressBar.increment(chunk.length);
-					}
+				const headers = downloadedBytes > 0 ? { Range: `bytes=${downloadedBytes}-` } : {};
+				const controller = new AbortController();
+				const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+				const response = await fetch(url, { headers, signal: controller.signal });
+				clearTimeout(timeoutId); // Clear timeout when fetch completes successfully
+
+				if (!response.ok && response.status !== 206) {
+					throw new Error(`Unexpected response status: ${response.status}`);
+				}
+
+				const totalBytes = parseInt(response.headers.get('content-length') || '0', 10) + downloadedBytes;
+				if (progressBar && totalBytes) {
+					progressBar.start(totalBytes, downloadedBytes, { description: `Downloading ${outputFileName} ...` });
+				}
+
+				const writer = fs.createWriteStream(progressFilePath, { flags: 'a' });
+
+				await new Promise((resolve, reject) => {
+					let streamTimeout = setTimeout(() => {
+						controller.abort(); // Abort the stream if no data is received
+						reject(new Error('Stream timeout'));
+					}, timeout);
+
+					response.body.on('data', (chunk) => {
+						clearTimeout(streamTimeout); // Reset timeout on data receipt
+						streamTimeout = setTimeout(() => {
+							controller.abort();
+							reject(new Error('Stream timeout'));
+						}, timeout);
+
+						downloadedBytes += chunk.length;
+						if (progressBar) {
+							progressBar.increment(chunk.length);
+						}
+					});
+
+					response.body.pipe(writer);
+					response.body.on('error', (err) => {
+						clearTimeout(streamTimeout);
+						reject(err);
+					});
+
+					writer.on('finish', () => {
+						clearTimeout(streamTimeout);
+						resolve();
+					});
 				});
-				response.body.pipe(writer);
-				response.body.on('error', reject);
-				writer.on('finish', resolve);
-			});
-			// Rename progress file to final file
-			fs.renameSync(progressFilePath, finalFilePath);
-			return finalFilePath;
-		} catch (error) {
-			this.ui.error(`Error downloading file from ${url}: ${error.message}`);
-			throw error;
-		} finally {
-			if (progressBar) {
-				progressBar.stop();
+
+				// Rename progress file to final file
+				fs.renameSync(progressFilePath, finalFilePath);
+				this.ui.write(`Download completed: ${finalFilePath}`);
+				return finalFilePath;
+			} catch (error) {
+				attempt++;
+				if (attempt >= maxRetries) {
+					throw new Error(`Failed to download file after ${maxRetries} attempts: ${error.message}`);
+				}
+				await delay(waitTime);
+			} finally {
+				if (progressBar) {
+					progressBar.stop();
+				}
 			}
 		}
 	}

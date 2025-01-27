@@ -135,7 +135,12 @@ describe('DownloadManager', () => {
 				.reply(500);
 
 			try {
-				await downloadManager.download({ url:`${url}/${outputFileName}`, outputFileName });
+				const options = {
+					timeout:100,
+					maxRetries: 1,
+					waitTime: 0,
+				};
+				await downloadManager.download({ url:`${url}/${outputFileName}`, outputFileName, options });
 				throw new Error('Expected method to throw.');
 			} catch (_error) {
 				error = _error;
