@@ -165,7 +165,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
       }
 
 		} catch (error) {
-			throw new Error(`Error setting up Tachyon: ${error.message}`);
+			throw new Error(`\nThere was an error setting up Tachyon:\n\n >> ${error.message}\n`);
 		}
 	}
 
@@ -184,7 +184,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
         return result;
     } catch (err) {
-        throw new Error(`Step ${stepNumber} failed: ${err.message}`);
+        throw new Error(`Step ${stepNumber} failed with the following error: ${err.message}`);
     }
   }
 
