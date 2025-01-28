@@ -77,88 +77,86 @@ class DownloadManager {
 	}
 
 
-	// eslint-disable-next-line max-statements
 	async _downloadFile(url, outputFileName, options = {}) {
 		const { maxRetries = 5, timeout = 10000, waitTime = 5000 } = options;
 		const progressFilePath = path.join(this.downloadDir, `${outputFileName}.progress`);
 		const finalFilePath = path.join(this.downloadDir, outputFileName);
-		const progressBar = this.ui.createProgressBar();
 		let attempt = 0;
-
 		while (attempt < maxRetries) {
 			try {
-				let downloadedBytes = 0;
-				if (fs.existsSync(progressFilePath)) {
-					downloadedBytes = fs.statSync(progressFilePath).size;
-					this.ui.write(`Resuming download file: ${outputFileName}`);
-				}
-
-				const headers = downloadedBytes > 0 ? { Range: `bytes=${downloadedBytes}-` } : {};
-				const controller = new AbortController();
-				const timeoutId = setTimeout(() => controller.abort(), timeout);
-
-				const response = await fetch(url, { headers, signal: controller.signal });
-				clearTimeout(timeoutId); // Clear timeout when fetch completes successfully
-
-				if (!response.ok && response.status !== 206) {
-					throw new Error(`Unexpected response status: ${response.status}`);
-				}
-
-				const totalBytes = parseInt(response.headers.get('content-length') || '0', 10) + downloadedBytes;
-				if (progressBar && totalBytes) {
-					progressBar.start(totalBytes, downloadedBytes, { description: `Downloading ${outputFileName} ...` });
-				}
-
-				const writer = fs.createWriteStream(progressFilePath, { flags: 'a' });
-
-				await new Promise((resolve, reject) => {
-					let streamTimeout = setTimeout(() => {
-						controller.abort(); // Abort the stream if no data is received
-						reject(new Error('Stream timeout'));
-					}, timeout);
-
-					response.body.on('data', (chunk) => {
-						clearTimeout(streamTimeout); // Reset timeout on data receipt
-						streamTimeout = setTimeout(() => {
-							controller.abort();
-							reject(new Error('Stream timeout'));
-						}, timeout);
-
-						downloadedBytes += chunk.length;
-						if (progressBar) {
-							progressBar.increment(chunk.length);
-						}
-					});
-
-					response.body.pipe(writer);
-					response.body.on('error', (err) => {
-						clearTimeout(streamTimeout);
-						reject(err);
-					});
-
-					writer.on('finish', () => {
-						clearTimeout(streamTimeout);
-						resolve();
-					});
-				});
-
-				// Rename progress file to final file
-				fs.renameSync(progressFilePath, finalFilePath);
-				this.ui.write(`Download completed: ${finalFilePath}`);
-				return finalFilePath;
+				return await this._attemptDownload(url, outputFileName, progressFilePath, finalFilePath, timeout);
 			} catch (error) {
 				attempt++;
 				if (attempt >= maxRetries) {
 					throw new Error(`Failed to download file after ${maxRetries} attempts: ${error.message}`);
 				}
+				this.ui.write(`Retrying download for ${outputFileName} after waiting for ${waitTime}ms...`);
 				await delay(waitTime);
-			} finally {
-				if (progressBar) {
-					progressBar.stop();
-				}
 			}
 		}
 	}
+
+	async _attemptDownload(url, outputFileName, progressFilePath, finalFilePath, timeout) {
+		const progressBar = this.ui.createProgressBar();
+		let downloadedBytes = 0;
+		if (fs.existsSync(progressFilePath)) {
+			downloadedBytes = fs.statSync(progressFilePath).size;
+			this.ui.write(`Resuming download file: ${outputFileName}`);
+		}
+		const headers = downloadedBytes > 0 ? { Range: `bytes=${downloadedBytes}-` } : {};
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), timeout);
+		try {
+			const response = await fetch(url, { headers, signal: controller.signal });
+			clearTimeout(timeoutId);
+			if (!response.ok && response.status !== 206) {
+				throw new Error(`Unexpected response status: ${response.status}`);
+			}
+			const totalBytes = parseInt(response.headers.get('content-length') || '0', 10) + downloadedBytes;
+			if (progressBar && totalBytes) {
+				progressBar.start(totalBytes, downloadedBytes, { description: `Downloading ${outputFileName} ...` });
+			}
+			await this._streamToFile(response.body, progressFilePath, progressBar, downloadedBytes, timeout, controller);
+			fs.renameSync(progressFilePath, finalFilePath);
+			this.ui.write(`Download completed: ${finalFilePath}`);
+			return finalFilePath;
+		} finally {
+			if (progressBar) {
+				progressBar.stop();
+			}
+		}
+	}
+
+	async _streamToFile(stream, filePath, progressBar, downloadedBytes, timeout, controller) {
+		const writer = fs.createWriteStream(filePath, { flags: 'a' });
+		return new Promise((resolve, reject) => {
+			let streamTimeout = setTimeout(() => {
+				controller.abort();
+				reject(new Error('Stream timeout'));
+			}, timeout);
+			stream.on('data', (chunk) => {
+				clearTimeout(streamTimeout);
+				streamTimeout = setTimeout(() => {
+					controller.abort();
+					reject(new Error('Stream timeout'));
+				}, timeout);
+				downloadedBytes += chunk.length;
+				if (progressBar) {
+					progressBar.increment(chunk.length);
+				}
+			});
+			stream.pipe(writer);
+			stream.on('error', (err) => {
+				clearTimeout(streamTimeout);
+				reject(err);
+			});
+			writer.on('finish', () => {
+				clearTimeout(streamTimeout);
+				resolve();
+			});
+		});
+	}
+
 
 	async _getCachedFile(fileName, expectedChecksum) {
 		const cachedFilePath = path.join(this.downloadDir, fileName);
