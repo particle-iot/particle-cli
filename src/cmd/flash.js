@@ -70,9 +70,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
+	//returns true if successful or false if failed
 	async flashTachyon({ files, output }) {
-		this.ui.write(`${os.EOL}Ensure that only one device is connected to the computer before proceeding.${os.EOL}`);
-
 		let zipFile;
 		let includeDir = '';
 		let updateFolder = '';
@@ -82,7 +81,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			files = ['.'];
 		}
 
-		const input = files[0];
+		const [input, ...rest] = files;
 		const stats = await fs.stat(input);
 		let filesToProgram;
 
@@ -97,17 +96,17 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const zipInfo = await this._extractFlashFilesFromZip(input);
 			includeDir = zipInfo.baseDir;
 			filesToProgram = zipInfo.filesToProgram.map((file) => path.join(includeDir, file));
+			filesToProgram.push(...rest);
 		} else {
 			filesToProgram = files;
 		}
 
-		this.ui.write(`Starting download. This may take several minutes...${os.EOL}`);
 		if (output && !fs.existsSync(output)) {
 			fs.mkdirSync(output);
 		}
 		const outputLog = path.join(output ? output : process.cwd(), `tachyon_flash_${Date.now()}.log`);
 		try {
-			this.ui.write(`Logs are being written to: ${outputLog}${os.EOL}`);
+			this.ui.write(`Starting download. This may take several minutes. See logs at: ${outputLog}${os.EOL}`);
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
 				includeDir,
@@ -118,9 +117,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 			});
 			await qdl.run();
 			fs.appendFileSync(outputLog, 'Download complete.');
+			return true;
 		} catch (error) {
 			this.ui.write('Download failed');
 			fs.appendFileSync(outputLog, 'Download failed with error: ' + error.message);
+			return false;
 		}
 	}
 

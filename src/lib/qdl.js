@@ -100,11 +100,6 @@ class QdlFlasher {
 	}
 
 	processFlashingLogs(line) {
-		if (!this.preparingDownload) {
-			this.preparingDownload = true;
-			this.ui.stdout.write('Preparing for download...');
-		}
-
 		if (line.includes('status=getProgramInfo')) {
 			this.handleProgramInfo(line);
 		} else if (line.includes('status=Start flashing module')) {
@@ -115,6 +110,10 @@ class QdlFlasher {
 	}
 
 	handleProgramInfo(line) {
+		if (!this.preparingDownload) {
+			this.preparingDownload = true;
+			this.ui.stdout.write('Preparing to download files...');
+		}
 		const match = line.match(/sectors_total=(\d+)/);
 		if (match) {
 			this.totalSectorsInAllFiles += parseInt(match[1], 10);

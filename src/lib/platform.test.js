@@ -8,7 +8,8 @@ const supportedPlatforms = Object.values(deviceConstants).filter(p => p.public);
 describe('Platform utilities', () => {
 	describe('PLATFORMS', () => {
 		it('contains description objects for all supported platforms', () => {
-			expect(PLATFORMS).to.deep.equal(supportedPlatforms);
+			const tachyon = PLATFORMS.find(p => p.name === 'tachyon'); // tachyon is not public yet
+			expect(PLATFORMS).to.deep.equal([...supportedPlatforms, tachyon]);
 		});
 	});
 

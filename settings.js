@@ -39,7 +39,9 @@ let settings = {
 
 	cloudKnownApps: {
 		'tinker': true
-	}
+	},
+
+	tachyonMeta: 'https://tachyon-ci.particle.io/meta'
 };
 
 function envValue(varName, defaultValue) {

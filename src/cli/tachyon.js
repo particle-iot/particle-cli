@@ -1,0 +1,80 @@
+module.exports = ({ commandProcessor, root }) => {
+	const tachyon = commandProcessor.createCategory(root, 'tachyon', 'Setup Particle devices');
+
+	commandProcessor.createCommand(tachyon, 'setup', 'Setup a Tachyon device', {
+		options: {
+			skip_flashing_os: {
+				description: 'Skip flashing the Operating System',
+				boolean: true
+			},
+			version: {
+				description: 'Version to download package for (default: latest). Can include a directory or a local zip file',
+				type: 'string'
+			},
+			load_config: {
+				description: 'Path to a config file to use for setup',
+				type: 'string'
+			},
+			save_config: {
+				description: 'Path to dump the config file to after setup',
+				type: 'string'
+			}
+		},
+		handler: (args) => {
+			const SetupTachyonCommands = require('../cmd/setup-tachyon');
+			return new SetupTachyonCommands().setup(args);
+		},
+		examples: {
+			'$0 $command': 'Setup a Tachyon device'
+		}
+	});
+
+	commandProcessor.createCommand(tachyon, 'download-package', 'Download a Tachyon package', {
+		options: {
+			region: {
+				description: 'Region to download package for',
+				type: 'string',
+			},
+			version: {
+				description: 'Version to download package for',
+				type: 'string'
+			}
+		},
+		handler: (args) => {
+			const DownloadTachyonPackageCommand = require('../cmd/download-tachyon-package');
+			return new DownloadTachyonPackageCommand().download(args);
+		},
+		examples: {
+			'$0 $command --region': 'Download a Tachyon package for the US region and version 1.0.0',
+			'$0 $command --region NA --version 1.0.0': 'Download a Tachyon package for the North America region and version 1.0.0'
+		}
+	});
+
+	commandProcessor.createCommand(tachyon, 'clean-cache', 'Clean the Tachyon package cache', {
+		options: {
+			region: {
+				description: 'Region to download package for',
+				type: 'string',
+			},
+			version: {
+				description: 'Version to download package for',
+				type: 'string'
+			},
+			all: {
+				description: 'Clean all cached packages',
+				boolean: true
+			}
+		},
+		handler: (args) => {
+			const CleanPackageCacheCommand = require('../cmd/download-tachyon-package');
+			return new CleanPackageCacheCommand().cleanUp(args);
+		},
+		examples: {
+			'$0 $command --region NA --version 1.0.0': 'Clean the Tachyon package cache for the North America region and version 1.0.0',
+			'$0 $command --all': 'Clean all cached packages',
+		}
+	});
+
+	return tachyon;
+};
+

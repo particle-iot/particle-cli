@@ -31,7 +31,7 @@ describe('Compile Commands', () => {
 		'  particle compile photon                                  Compile the source code in the current directory in the cloud for a `photon`',
 		'  particle compile electron project --saveTo electron.bin  Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 		'',
-		'Param deviceType can be: core, c, photon, p, p1, electron, e, argon, a, boron, b, xenon, x, esomx, bsom, b5som, tracker, assettracker, trackerm, p2, photon2, msom, muon, electron2',
+		'Param deviceType can be: core, c, photon, p, p1, electron, e, argon, a, boron, b, xenon, x, esomx, bsom, b5som, tracker, assettracker, trackerm, p2, photon2, msom, muon, electron2, tachyon',
 	];
 
 	beforeEach(async () => {
