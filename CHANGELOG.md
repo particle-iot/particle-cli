@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.32.0 - Jan 28 2025
+* Add Tachyon setup command
+
 # 3.31.0 - Jan 17 2025
 * Add progress bar when flashing Tachyon
 * Include prototype esim provision command
