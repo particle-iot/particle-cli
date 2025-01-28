@@ -23,7 +23,8 @@ describe('Utilities', () => {
 				'trackerm': 28,
 				'p2': 32,
 				'msom': 35,
-				'electron2': 37
+				'electron2': 37,
+				'tachyon': 42
 			});
 		});
 	});
@@ -54,7 +55,8 @@ describe('Utilities', () => {
 				'photon2': 32,
 				'msom': 35,
 				'muon': 35,
-				'electron2': 37
+				'electron2': 37,
+				'tachyon': 42
 			});
 		});
 	});
@@ -76,7 +78,8 @@ describe('Utilities', () => {
 				28: 'Tracker-M',
 				32: 'Photon 2 / P2',
 				35: 'M-SoM',
-				37: 'Electron 2'
+				37: 'Electron 2',
+				42: 'Tachyon'
 			});
 		});
 	});
