@@ -36,6 +36,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  publish            Publish an event to the cloud',
 		'  serial             Simple serial interface to your devices',
 		'  subscribe          Listen to device event stream',
+		'  tachyon            Setup Particle devices',
 		'  token              Manage access tokens (require username/password)',
 		'  udp                Talk UDP to repair devices, run patches, check Wi-Fi, and more!',
 		'  update             Update Device OS on a device via USB',
@@ -44,7 +45,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  variable           Retrieve and monitor variables on your device',
 		'  webhook            Manage webhooks that react to device event streams',
 		'  whoami             prints signed-in username',
-		'  wifi               Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices).'
+		'  wifi               Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices)'
 	];
 
 	const allCmds = ['binary inspect', 'binary enable-device-protection', 'binary list-assets', 'binary strip-assets', 'binary', 'bundle', 'call', 'cloud list',
@@ -66,9 +67,9 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'product device list', 'product device add', 'product device remove',
 		'product device', 'product', 'project create', 'project', 'publish',
 		'serial list', 'serial monitor', 'serial identify', 'serial wifi',
-		'serial mac', 'serial inspect', 'serial flash',
-		'serial', 'subscribe', 'token revoke',
-		'token create', 'token', 'udp send', 'udp listen', 'udp', 'update',
+		'serial mac', 'serial inspect', 'serial flash', 'serial', 'subscribe',
+		'tachyon setup', 'tachyon download-package', 'tachyon clean-cache', 'tachyon',
+		'token revoke', 'token create', 'token', 'udp send', 'udp listen', 'udp', 'update',
 		'update-cli', 'usb list', 'usb start-listening', 'usb listen',
 		'usb stop-listening', 'usb safe-mode', 'usb dfu', 'usb reset',
 		'usb setup-done', 'usb configure', 'usb cloud-status', 'usb network-interfaces', 'usb',
@@ -109,9 +110,9 @@ describe('Help & Unknown Command / Argument Handling', () => {
 
 	it('Shows `help` content when run with unknown flag', async () => {
 		const { stdout, stderr, exitCode } = await cli.run('--WATNOPE');
-
 		expect(stdout).to.equal('Unknown argument \'WATNOPE\'');
 		expect(stderr.split('\n')).to.include.members(commandList);
+
 		expect(exitCode).to.equal(1);
 	});
 
