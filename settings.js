@@ -41,7 +41,8 @@ let settings = {
 		'tinker': true
 	},
 
-	tachyonMeta: 'https://tachyon-ci.particle.io/meta'
+	tachyonMeta: 'https://tachyon-ci.particle.io/meta',
+	tachyonCacheLimit: 10
 };
 
 function envValue(varName, defaultValue) {

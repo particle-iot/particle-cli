@@ -59,6 +59,7 @@ class DownloadManager {
 			this.ui.write(`Using cached file: ${cachedFile}`);
 			return cachedFile;
 		}
+		await this._validateCacheLimit({ url, currentFileName: outputFileName });
 		const filePath = await this._downloadFile(url, outputFileName, options);
 		// Validate checksum after download completes
 		// Validate checksum after download completes
@@ -96,6 +97,53 @@ class DownloadManager {
 		}
 	}
 
+	async _validateCacheLimit({ url, maxCacheSize = settings.tachyonCacheLimit, currentFileName }) {
+		const fileHeaders = await fetch(url, { method: 'HEAD' });
+
+		const contentLength = parseInt(fileHeaders.headers.get('content-length') || '0', 10);
+		// get the size of the download directory
+		const downloadDirStats = await this.getDownloadedFilesStats(currentFileName);
+		const totalSize = (downloadDirStats.totalSize + contentLength) / (1024 * 1024 * 1024); // convert to GB
+		if (totalSize > maxCacheSize && downloadDirStats.fileStats.length > 0) {
+			// prompt to delete files
+			const question = {
+				type: 'confirm',
+				name: 'cleanCache',
+				message: 'Downloaded files exceed the cache limit. Do you want to clean up the cache?',
+				default: true
+			};
+			const answer = await this.ui.prompt(question);
+			if (answer.cleanCache) {
+				await this._freeCacheSpace(downloadDirStats);
+			} else {
+				// remove files until the cache limit is satisfied
+				this.ui.write('Cache cleanup skipped. Remove files manually to free up space.');
+			}
+		}
+		return;
+	}
+
+	async getDownloadedFilesStats(currentFile) {
+		const files = await fs.readdir(this.downloadDir);
+		// filter out the current file in progress
+		const filteredFiles = currentFile ? files.filter(file => file !== currentFile && file !== `${currentFile}.progress`) : files;
+		// sort files by date modified
+		const sortedFileStats = filteredFiles.sort((a, b) => {
+			const aStats = fs.statSync(path.join(this.downloadDir, a));
+			const bStats = fs.statSync(path.join(this.downloadDir, b));
+			return aStats.mtime - bStats.mtime;
+		});
+		const fileStats = await Promise.all(sortedFileStats.map(async (file) => {
+			const filePath = path.join(this.downloadDir, file);
+			const stats = await fs.stat(filePath);
+			return { filePath, size: stats.size };
+		}));
+		return {
+			totalSize: fileStats.reduce((sum, file) => sum + file.size, 0),
+			fileStats
+		};
+	}
+
 	async _attemptDownload(url, outputFileName, progressFilePath, finalFilePath, timeout) {
 		const progressBar = this.ui.createProgressBar();
 		let downloadedBytes = 0;
@@ -118,7 +166,6 @@ class DownloadManager {
 			}
 			await this._streamToFile(response.body, progressFilePath, progressBar, downloadedBytes, timeout, controller);
 			fs.renameSync(progressFilePath, finalFilePath);
-			this.ui.write(`Download completed: ${finalFilePath}`);
 			return finalFilePath;
 		} finally {
 			if (progressBar) {
@@ -217,6 +264,20 @@ class DownloadManager {
 		} catch (error) {
 			this.ui.error(`Error cleaning up directory: ${error.message}`);
 			throw error;
+		}
+	}
+
+	async _freeCacheSpace(downloadDirStats) {
+		const { fileStats, totalSize } = downloadDirStats;
+		let deletedSize = 0;
+		for (const file of fileStats) {
+			const { filePath, size } = file;
+			await fs.remove(filePath);
+			this.ui.write(`Removed file: ${file.filePath}`);
+			deletedSize += size;
+			if ((totalSize - deletedSize) <= settings.tachyonCacheLimit) {
+				return;
+			}
 		}
 	}
 }
