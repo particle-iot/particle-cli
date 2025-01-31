@@ -42,7 +42,7 @@ let settings = {
 	},
 
 	tachyonMeta: 'https://tachyon-ci.particle.io/meta',
-	tachyonCacheLimit: 10
+	tachyonCacheLimitGB: 10
 };
 
 function envValue(varName, defaultValue) {
