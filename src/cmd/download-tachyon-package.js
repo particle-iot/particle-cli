@@ -36,7 +36,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		const answer = await this.ui.prompt(question);
 		return answer.version;
 	}
-	async download ({ region, version }) {
+	async download ({ region, version, alwaysCleanCache = false }) {
 		// prompt for region and version if not provided
 		if (!region) {
 			region = await this._selectRegion();
@@ -52,7 +52,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		}
 		const { artifact_url: url, sha256_checksum: expectedChecksum } = build.artifacts[0];
 		const outputFileName = url.replace(/.*\//, '');
-		const filePath = await manager.download({ url, outputFileName, expectedChecksum });
+		const filePath = await manager.download({ url, outputFileName, expectedChecksum, options: { alwaysCleanCache } });
 		this.ui.write(`Downloaded package to: ${filePath}`);
 
 		return filePath;

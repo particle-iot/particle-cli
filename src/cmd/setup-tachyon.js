@@ -31,27 +31,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async setup({ skip_flashing_os: skipFlashingOs, version, load_config: loadConfig, save_config: saveConfig }) {
 		try {
-			this.ui.write(`
-===========================================================
-              Particle Tachyon Setup Command
-===========================================================
-
-Welcome to the Particle Tachyon setup! This interactive command:
-
-- Flashes your Tachyon device
-- Configures it (password, WiFi credentials etc...)
-- Connects it to the internet and the Particle Cloud!
-
-**What you'll need:**
-
-1. Your Tachyon device
-2. The Tachyon battery
-3. A USB-C cable
-
-**Important:**
-- This tool requires you to be logged into your Particle account.
-- For more details, check out the documentation at: https://part.cl/setup-tachyon`);
-
+			this._showWelcomeMessage();
 			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 
 			await this._verifyLogin();
@@ -66,6 +46,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			}
 
 			let config = { systemPassword: null, wifi: null, sshPublicKey: null };
+			let alwaysCleanCache = false;
 
 			if ( !loadConfig ) {
 				config = await this._runStepWithTiming(
@@ -81,6 +62,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 					0
 				);
 			} else {
+				alwaysCleanCache = true;
 				this.ui.write(
 					`${os.EOL}${os.EOL}Skipping to Step 3 - Using configuration file: ` + loadConfig + `${os.EOL}`
 				);
@@ -100,7 +82,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
         `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
 				4,
-				() => this._download({ region, version })
+				() => this._download({ region, version, alwaysCleanCache })
 			);
 
 			const registrationCode = await this._runStepWithTiming(
@@ -168,6 +150,29 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 	}
 
+	async _showWelcomeMessage() {
+		this.ui.write(`
+===================================================================================
+			  Particle Tachyon Setup Command
+===================================================================================
+
+Welcome to the Particle Tachyon setup! This interactive command:
+
+- Flashes your Tachyon device
+- Configures it (password, WiFi credentials etc...)
+- Connects it to the internet and the Particle Cloud!
+
+**What you'll need:**
+
+1. Your Tachyon device
+2. The Tachyon battery
+3. A USB-C cable
+
+**Important:**
+- This tool requires you to be logged into your Particle account.
+- For more details, check out the documentation at: https://part.cl/setup-tachyon`);
+	}
+
 	async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
 		this._formatAndDisplaySteps(stepDesc, stepNumber);
 
@@ -189,7 +194,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 	async _formatAndDisplaySteps(text, step) {
 		// Display the formatted step
-		this.ui.write(`${os.EOL}===========================================================${os.EOL}`);
+		this.ui.write(`${os.EOL}===================================================================================${os.EOL}`);
 		this.ui.write(`Step ${step}:${os.EOL}`);
 		this.ui.write(`${text}${os.EOL}`);
 	}
@@ -325,7 +330,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return { systemPassword, wifi, sshPublicKey };
 	}
 
-	async _download({ region, version }) {
+	async _download({ region, version, alwaysCleanCache }) {
 
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
@@ -344,7 +349,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		const outputFileName = url.replace(/.*\//, '');
 		const expectedChecksum = artifact.sha256_checksum;
 
-		return manager.download({ url, outputFileName, expectedChecksum });
+		return manager.download({ url, outputFileName, expectedChecksum, options: { alwaysCleanCache } });
 	}
 
 	async _getSystemPassword() {
