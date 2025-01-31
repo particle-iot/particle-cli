@@ -99,7 +99,7 @@ class DownloadManager {
 	}
 
 	async _validateCacheLimit({ url, currentFileName, alwaysCleanCache = false }) {
-		const maxCacheSizeGB = settings.tachyonCacheLimitGB;
+		const maxCacheSizeGB = parseFloat(settings.tachyonCacheLimitGB);
 		const fileHeaders = await fetch(url, { method: 'HEAD' });
 
 		const contentLength = parseInt(fileHeaders.headers.get('content-length') || '0', 10);
@@ -142,12 +142,13 @@ class DownloadManager {
 	}
 
 	async _shouldCleanCache({ downloadedCacheSizeGB, alwaysCleanCache, maxCacheSizeGB, totalSizeGB, downloadDirStats }) {
-		if (maxCacheSizeGB === 0 || alwaysCleanCache) {
+		if (parseInt(maxCacheSizeGB) === 0 || alwaysCleanCache) {
 			return true;
 		}
-		if (maxCacheSizeGB === -1) {
+		if (parseInt(maxCacheSizeGB) === -1) {
 			return false;
 		}
+
 		if (totalSizeGB < maxCacheSizeGB || downloadDirStats.fileStats.length === 0) {
 			return false;
 		}
