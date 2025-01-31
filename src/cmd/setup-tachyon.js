@@ -340,11 +340,8 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 	async _userConfiguration() {
 		const systemPassword = await this._getSystemPassword();
-
 		const wifi = await this._getWifi();
-
 		const sshPublicKey = await this._getKeys();
-
 		return { systemPassword, wifi, sshPublicKey };
 	}
 
@@ -371,38 +368,10 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _getSystemPassword() {
-		const questions = [
-			{
-				type: 'password',
-				name: 'password',
-				message: 'Password for the system account:',
-				validate: (value) => {
-					if (!value) {
-						return 'Enter a password for the root account';
-					}
-					return true;
-				}
-			},
-			{
-				type: 'password',
-				name: 'passwordConfirm',
-				message: 'Re-enter the password for the root account:',
-				validate: (value) => {
-					if (!value) {
-						return 'You need to confirm the password';
-					}
-					return true;
-				}
-			}
-		];
-		const res = await this.ui.prompt(questions);
-
-		//check if the passwords match
-		if (res.password !== res.passwordConfirm) {
-			throw new Error('Passwords do not match. Please try again.');
-		}
-
-		return res.password;
+		return this.ui.promptPasswordWithConfirmation({
+			customMessage: 'Enter a password for the system account:',
+			customConfirmationMessage: 'Re-enter the password for the system account:'
+		});
 	}
 
 	async _getWifi() {
@@ -428,25 +397,15 @@ Welcome to the Particle Tachyon setup! This interactive command:
 				type: 'input',
 				name: 'ssid',
 				message: 'Enter your WiFi SSID:'
-			},
-			{
-				type: 'password',
-				name: 'password',
-				message: 'Enter your WiFi password:'
-			},
-			{
-				type: 'password',
-				name: 'passwordConfirm',
-				message: 'Re-enter your WiFi password:'
-			},
+			}
 		];
 		const res = await this.ui.prompt(questions);
+		const { password } = await this.ui.promptPasswordWithConfirmation({
+			customMessage: 'Enter your WiFi password:',
+			customConfirmationMessage: 'Re-enter your WiFi password:'
+		});
 
-		if (res.password !== res.passwordConfirm) {
-			throw new Error('Passwords do not match. Please try again.');
-		}
-
-		return { ssid: res.ssid, password: res.password };
+		return { ssid: res.ssid, password };
 	}
 
 	async _getKeys() {
