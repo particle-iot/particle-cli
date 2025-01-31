@@ -142,16 +142,15 @@ class DownloadManager {
 	}
 
 	async _shouldCleanCache({ downloadedCacheSizeGB, alwaysCleanCache, maxCacheSizeGB, totalSizeGB, downloadDirStats }) {
-		if (totalSizeGB < maxCacheSizeGB || downloadDirStats.fileStats.length === 0) {
-			return false;
-		}
 		if (maxCacheSizeGB === 0 || alwaysCleanCache) {
 			return true;
 		}
 		if (maxCacheSizeGB === -1) {
 			return false;
 		}
-
+		if (totalSizeGB < maxCacheSizeGB || downloadDirStats.fileStats.length === 0) {
+			return false;
+		}
 		const question = {
 			type: 'confirm',
 			name: 'cleanCache',
