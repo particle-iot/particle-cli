@@ -13,6 +13,8 @@ const CloudCommand = require('./cloud');
 const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
 const { platformForId } = require('../lib/platform');
+const path = require('path');
+const { CLILibraryInstallCommandSite } = require('../cli/library_install');
 
 module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -112,7 +114,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			}
 
 			//what files to flash?
-			const filesToFlash = skipFlashingOs ? [xmlPath] : [packagePath, xmlPath];
+			// const filesToFlash = skipFlashingOs ? [xmlPath] : [packagePath, xmlPath];
 
 			const flashSuccessful = await this._runStepWithTiming(
 				`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
@@ -125,7 +127,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
         `   - When the light starts flashing yellow, release the button.${os.EOL}` +
         '   Your device is now in flashing mode!',
 				7,
-				() => this._flash(filesToFlash)
+				() => this._flash({
+					files: [packagePath, xmlPath],
+					skipFlashingOs
+				})
 			);
 
 			if (flashSuccessful) {
@@ -524,13 +529,16 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		].join(os.EOL);
 
 		// Create a temporary file for the XML content
-		const tempFile = temp.openSync();
+		const tempFile = temp.openSync({prefix: "config", suffix: ".xml"});
 		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
 		fs.closeSync(tempFile.fd);
 		return tempFile.path;
 	}
 
-	async _flash(files) {
+	async _flash({ files, skipFlashingOs, output }) {
+
+		const packagePath = files[0];
+
 		const question = {
 			type: 'confirm',
 			name: 'flash',
@@ -540,7 +548,19 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		await this.ui.prompt(question);
 
 		const flashCommand = new FlashCommand();
-		return await flashCommand.flashTachyon({ files });
+
+		if (output && !fs.existsSync(output)) {
+			fs.mkdirSync(output);
+		}
+		const outputLog = path.join(process.cwd(), `tachyon_flash_${Date.now()}.log`);
+		fs.ensureFileSync(outputLog);
+
+		this.ui.write(`Starting download. See logs at: ${outputLog}${os.EOL}`);
+		if (!skipFlashingOs) {
+			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: outputLog, verbose: false });
+		}
+		await flashCommand.flashTachyonXml({ files, output: outputLog });
+		return true;
 	}
 
 	_particleApi() {

@@ -10,7 +10,7 @@ const mkdirTemp = util.promisify(temp.mkdir);
 const TACHYON_STORAGE_TYPE = 'ufs';
 
 class QdlFlasher {
-	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile }) {
+	constructor({ files, configXmlFile, includeDir, updateFolder, zip, ui, outputLogFile, skipReset=false }) {
 		this.files = files;
 		this.includeDir = includeDir;
 		this.updateFolder = updateFolder;
@@ -24,12 +24,14 @@ class QdlFlasher {
 		this.currentModuleSectors = 0;
 		this.progressBarInitialized = false;
 		this.preparingDownload = false;
+		this.skipReset = skipReset;
+		this.configXmlFile = configXmlFile;
 	}
 
 	async run() {
 		try {
 			const qdlPath = await this.getExecutable();
-			const qdlArguments = this.buildArgs({ files: this.files, includeDir: this.includeDir, zip: this.zip });
+			const qdlArguments = this.buildArgs({ files: this.files, configXml: this.configXmlFile, includeDir: this.includeDir, zip: this.zip });
 			this.progressBar = this.ui.createProgressBar();
 			const command = `${qdlPath} ${qdlArguments.join(' ')}`;
 			fs.appendFileSync(this.outputLogFile, `Command: ${command}\n`);
@@ -76,9 +78,11 @@ class QdlFlasher {
 	buildArgs({ files, includeDir, zip }) {
 		return [
 			'--storage', TACHYON_STORAGE_TYPE,
+			this.configXmlFile,
 			...(zip ? ['--zip', zip] : []),
 			...(includeDir ? ['--include', includeDir] : []),
-			...files
+			...files,
+			...(this.skipReset ? ['--skip-reset'] : [])
 		];
 	}
 
