@@ -169,7 +169,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				return;
 			}
 
-			// Start qlril-app through ADB for Tachyon
+			// Start particle-ril through ADB for Tachyon
 			const qlrilStep = await this._initializeQlril();
 			provisionOutputLogs.push(qlrilStep);
 			if (qlrilStep?.status === 'failed') {
@@ -275,7 +275,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async doEnable(iccid) {
 		try {
-			const { stdout } = await execa('adb', ['shell', 'qlril-app', 'enable', iccid]);
+			const { stdout } = await execa('adb', ['shell', 'particle-ril', 'enable', iccid]);
 			if (stdout.includes(`ICCID currently active: ${iccid}`)) {
 				console.log(`ICCID ${iccid} enabled successfully`);
 			}
@@ -312,7 +312,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async doList() {
 		try {
-			const { stdout } = await execa('adb', ['shell', 'qlril-app', 'listProfiles']);
+			const { stdout } = await execa('adb', ['shell', 'particle-ril', 'listProfiles']);
 
 			const iccids = stdout
 				.trim()
@@ -521,7 +521,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 
 		logAndPush('Initalizing qlril app on Tachyon through adb');
-		this.adbProcess = execa('adb', ['shell', 'qlril-app', '--port', '/dev/ttyGS2']);
+		this.adbProcess = execa('adb', ['shell', 'particle-ril', '--port', '/dev/ttyGS2']);
 
 		try {
 			await new Promise((resolve, reject) => {
