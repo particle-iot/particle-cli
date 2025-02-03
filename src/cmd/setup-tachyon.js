@@ -14,7 +14,6 @@ const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
 const { platformForId } = require('../lib/platform');
 const path = require('path');
-const { CLILibraryInstallCommandSite } = require('../cli/library_install');
 
 module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -460,6 +459,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 						return 'You need to provide a path to your SSH public key';
 					}
 					return true;
+				},
+				filter: (value) => {
+					return value.startsWith('~') ? value.replace('~', os.homedir()) : value;
 				}
 			},
 		];
