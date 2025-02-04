@@ -18,6 +18,7 @@ describe('DownloadManager', () => {
 
 	afterEach(async () => {
 		sinon.restore();
+		nock.cleanAll();
 		process.env = originalEnv;
 		await fs.remove(path.join(PATH_TMP_DIR, '.particle/downloads'));
 	});
@@ -91,6 +92,9 @@ describe('DownloadManager', () => {
 
 			// Mock the HTTP response
 			nock(url)
+				.head(`/${outputFileName}`)
+				.reply(200);
+			nock(url)
 				.get(`/${outputFileName}`)
 				.reply(200, fileContent);
 
@@ -113,6 +117,9 @@ describe('DownloadManager', () => {
 			fs.writeFileSync(tempFilePath, initialContent);
 
 			// Mock the HTTP response with a range
+			nock(url)
+				.head(`/${outputFileName}`)
+				.reply(200);
 			nock(url, { reqheaders: { Range: 'bytes=10-' } })
 				.get(`/${outputFileName}`)
 				.reply(206, remainingContent);
@@ -130,6 +137,9 @@ describe('DownloadManager', () => {
 			let error;
 
 			// Mock the HTTP response to simulate a failure
+			nock(url)
+				.head(`/${outputFileName}`)
+				.reply(200);
 			nock(url)
 				.get(`/${outputFileName}`)
 				.reply(500);
@@ -156,6 +166,9 @@ describe('DownloadManager', () => {
 
 			// Mock the HTTP response
 			nock(url)
+				.head(`/${outputFileName}`)
+				.reply(200);
+			nock(url)
 				.get(`/${outputFileName}`)
 				.reply(200, fileContent);
 
@@ -177,6 +190,9 @@ describe('DownloadManager', () => {
 			const checksum = 'f29bc64a9d3732b4b9035125fdb3285f5b6455778edca72414671e0ca3b2e0de';
 
 			// Mock the HTTP response
+			nock(url)
+				.head(`/${outputFileName}`)
+				.reply(200);
 			nock(url)
 				.get(`/${outputFileName}`)
 				.reply(200, fileContent);

@@ -54,11 +54,13 @@ class DownloadManager {
 
 	async download({ url, outputFileName, expectedChecksum, options = {} }) {
 		// Check cache
+		const { alwaysCleanCache = false } = options;
 		const cachedFile = await this._getCachedFile(outputFileName, expectedChecksum);
 		if (cachedFile) {
 			this.ui.write(`Using cached file: ${cachedFile}`);
 			return cachedFile;
 		}
+		await this._validateCacheLimit({ url, currentFileName: outputFileName, alwaysCleanCache });
 		const filePath = await this._downloadFile(url, outputFileName, options);
 		// Validate checksum after download completes
 		// Validate checksum after download completes
@@ -96,6 +98,73 @@ class DownloadManager {
 		}
 	}
 
+	async _validateCacheLimit({ url, currentFileName, alwaysCleanCache = false }) {
+		const maxCacheSizeGB = parseFloat(settings.tachyonCacheLimitGB);
+		const fileHeaders = await fetch(url, { method: 'HEAD' });
+
+		const contentLength = parseInt(fileHeaders.headers.get('content-length') || '0', 10);
+		// get the size of the download directory
+		const downloadDirStats = await this.getDownloadedFilesStats(currentFileName);
+		const totalSizeGB = (downloadDirStats.totalSize + contentLength) / (1024 * 1024 * 1024); // convert to GB
+		const downloadedCacheSizeGB = downloadDirStats.totalSize / (1024 * 1024 * 1024); // convert to GB
+		const shouldCleanCache = await this._shouldCleanCache({
+			downloadedCacheSizeGB,
+			alwaysCleanCache,
+			maxCacheSizeGB,
+			totalSizeGB,
+			downloadDirStats
+		});
+		if (shouldCleanCache) {
+			await this._freeCacheSpace(downloadDirStats);
+		}
+		return;
+	}
+
+	async getDownloadedFilesStats(currentFile) {
+		const files = await fs.readdir(this.downloadDir);
+		// use just the zip files and progress files
+		const packageFiles = files.filter(file => file.endsWith('.zip') || file.endsWith('.progress'));
+		// exclude the current file from the list
+		const filteredFiles = currentFile ? packageFiles.filter(file => file !== currentFile && file !== `${currentFile}.progress`) : packageFiles;
+		// stat to get size, and mtime to sort by date modified
+		const fileStats = await Promise.all(filteredFiles.map(async (file) => {
+			const filePath = path.join(this.downloadDir, file);
+			const stats = await fs.stat(filePath);
+			return { filePath, size: stats.size, mtime: stats.mtime };
+		}));
+		// sort files by date modified
+		const sortedFileStats = fileStats.sort((a, b) => a.mtime - b.mtime);
+
+		return {
+			totalSize: sortedFileStats.reduce((sum, file) => sum + file.size, 0),
+			fileStats
+		};
+	}
+
+	async _shouldCleanCache({ downloadedCacheSizeGB, alwaysCleanCache, maxCacheSizeGB, totalSizeGB, downloadDirStats }) {
+		if (maxCacheSizeGB === 0 || alwaysCleanCache) {
+			return true;
+		}
+		if (maxCacheSizeGB === -1) {
+			return false;
+		}
+
+		if (totalSizeGB < maxCacheSizeGB || downloadDirStats.fileStats.length === 0) {
+			return false;
+		}
+		const question = {
+			type: 'confirm',
+			name: 'cleanCache',
+			message: `Do you want to delete previously downloaded versions to free up ${downloadedCacheSizeGB.toFixed(1)} GB of space?`,
+			default: true
+		};
+		const answer = await this.ui.prompt(question);
+		if (!answer.cleanCache) {
+			this.ui.write('Cache cleanup skipped. Remove files manually to free up space.');
+		}
+		return answer.cleanCache;
+	}
+
 	async _attemptDownload(url, outputFileName, progressFilePath, finalFilePath, timeout) {
 		const progressBar = this.ui.createProgressBar();
 		let downloadedBytes = 0;
@@ -118,7 +187,6 @@ class DownloadManager {
 			}
 			await this._streamToFile(response.body, progressFilePath, progressBar, downloadedBytes, timeout, controller);
 			fs.renameSync(progressFilePath, finalFilePath);
-			this.ui.write(`Download completed: ${finalFilePath}`);
 			return finalFilePath;
 		} finally {
 			if (progressBar) {
@@ -217,6 +285,14 @@ class DownloadManager {
 		} catch (error) {
 			this.ui.error(`Error cleaning up directory: ${error.message}`);
 			throw error;
+		}
+	}
+
+	async _freeCacheSpace(downloadDirStats) {
+		const { fileStats } = downloadDirStats;
+		for (const file of fileStats) {
+			const { filePath } = file;
+			await fs.remove(filePath);
 		}
 	}
 }
