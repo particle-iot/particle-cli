@@ -215,7 +215,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	async _getFirehoseFileFromZip(zipPath) {
 		const dir = await unzip.Open.file(zipPath);
-		const firehoseFile = dir.files.find(file => file.path.includes('firehose'));
+		const { filesToProgram } = await this._extractFlashFilesFromZip(zipPath);
+		const firehoseFile = dir.files.find(file => file.path.endsWith(filesToProgram[0]));
 		if (!firehoseFile) {
 			throw new Error('Unable to find firehose file');
 		}
