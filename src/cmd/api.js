@@ -250,11 +250,22 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	createProduct({ name, type, org }) {
+	createProduct({ name, description = '', platformId, orgSlug, locationOptIn = false } = {}) {
 		return this._wrap(
 			this.api.post({
-				uri: `/v1${org ? `/orgs/${org}` : ''}/products`,
-				form: { name, type },
+				uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : '/user'}/products`,
+				data: {
+					product: {
+						name,
+						description,
+						platform_id: platformId,
+						settings: {
+							location: {
+								opt_in: locationOptIn
+							}
+						},
+					}
+				},
 				auth: this.accessToken
 			})
 		);

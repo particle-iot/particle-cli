@@ -12,7 +12,7 @@ const FlashCommand = require('./flash');
 const CloudCommand = require('./cloud');
 const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
-const { platformForId } = require('../lib/platform');
+const { platformForId, PLATFORMS } = require('../lib/platform');
 const path = require('path');
 
 module.exports = class SetupTachyonCommands extends CLICommandBase {
@@ -263,7 +263,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		let productId = await this._getProduct(orgName, orgSlug);
 
 		if (!productId) {
-			productId = await this._createProduct(orgSlug);
+			productId = await this._createProduct({ orgSlug });
 		}
 		return productId;
 	}
@@ -295,6 +295,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 	async _getProduct(orgName, orgSlug) {
 		const productsResp = await this.api.getProducts(orgSlug);
+		let newProductName = 'Create a new product';
 
 		//if orgSlug is not null, filter for this org from product.organization_id
 		//if orgSlug is null, filter for an empty field in product.organization_id
@@ -311,9 +312,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			return null; // No products available
 		}
 
-		const selectedProductName = await this._promptForProduct(products.map(product => product.name));
+		const selectedProductName = await this._promptForProduct([newProductName, ...products.map(product => product.name)]);
 
-		const selectedProduct = products.find(p => p.name === selectedProductName);
+		const selectedProduct =  selectedProductName !== newProductName ? (selectedProductName !== products.find(p => p.name === selectedProductName)) : null;
 
 		return selectedProduct?.id || null;
 	}
@@ -331,11 +332,22 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return product;
 	}
 
-	async _createProduct() {
-		// It appears that CLI code base does not have a method to create a product readily available
-		// TODO: Discuss with the team to add a method to create a product
-		// For now though, we will return an error
-		throw new Error('No products available. Create a product in the console and return to continue.');
+	async _createProduct({ orgSlug }) {
+		const platformId = PLATFORMS.find(p => p.name === 'tachyon').id;
+		const question = [{
+			type: 'input',
+			name: 'productName',
+			message: 'Enter the product name:',
+		}, {
+			type: 'confirm',
+			name: 'locationOptIn',
+			message: 'Would you like to opt in to location services? (y/n):',
+			default: true
+		}];
+		const { productName, locationOptIn } = await this.ui.prompt(question);
+		const { product } = await this.api.createProduct({ name: productName, platformId, orgSlug, locationOptIn });
+		this.ui.write(`Product ${product.name} created successfully!`);
+		return product?.id;
 	}
 
 	async _userConfiguration() {
