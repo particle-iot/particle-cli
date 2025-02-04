@@ -142,10 +142,10 @@ class DownloadManager {
 	}
 
 	async _shouldCleanCache({ downloadedCacheSizeGB, alwaysCleanCache, maxCacheSizeGB, totalSizeGB, downloadDirStats }) {
-		if (parseInt(maxCacheSizeGB) === 0 || alwaysCleanCache) {
+		if (maxCacheSizeGB === 0 || alwaysCleanCache) {
 			return true;
 		}
-		if (parseInt(maxCacheSizeGB) === -1) {
+		if (maxCacheSizeGB === -1) {
 			return false;
 		}
 
