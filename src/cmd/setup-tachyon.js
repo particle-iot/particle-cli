@@ -13,6 +13,7 @@ const CloudCommand = require('./cloud');
 const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
 const { platformForId } = require('../lib/platform');
+const path = require('path');
 
 module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -93,26 +94,40 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			);
 
 			let configBlobPath = loadConfig;
+			let configBlob = null;
 			if (configBlobPath) {
+				try {
+					const data = fs.readFileSync(configBlobPath, 'utf8');
+					configBlob = JSON.parse(data);
+					const res = await this._createConfigBlob({
+						registrationCode,
+						systemPassword: configBlob.system_password,
+						wifi: configBlob.wifi,
+						sshKey: configBlob.ssh_key
+					});
+					configBlobPath = res.path;
+				} catch (error) {
+					throw new Error(`The configuration file is not a valid JSON file: ${error.message}`);
+				}
 				this.ui.write(
 					`${os.EOL}${os.EOL}Skipping Step 6 - Using configuration file: ` + loadConfig + `${os.EOL}`
 				);
 			} else {
-				configBlobPath = await this._runStepWithTiming(
+				const res = await this._runStepWithTiming(
 					'Creating the configuration file to write to the Tachyon device...',
 					6,
 					() => this._createConfigBlob({ registrationCode, ...config })
 				);
+				configBlobPath = res.path;
+				configBlob = res.configBlob;
 			}
+
 			const xmlPath = await this._createXmlFile(configBlobPath);
 
 			if (saveConfig) {
-				this.ui.write(`${os.EOL}${os.EOL}Configuration file written here: ${saveConfig}${os.EOL}`);
-				fs.copyFileSync(configBlobPath, saveConfig);
+				fs.writeFileSync(saveConfig, JSON.stringify(configBlob, null, 2));
+				this.ui.write(`${os.EOL}Configuration file written here: ${saveConfig}${os.EOL}`);
 			}
-
-			//what files to flash?
-			const filesToFlash = skipFlashingOs ? [xmlPath] : [packagePath, xmlPath];
 
 			const flashSuccessful = await this._runStepWithTiming(
 				`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
@@ -125,7 +140,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
         `   - When the light starts flashing yellow, release the button.${os.EOL}` +
         '   Your device is now in flashing mode!',
 				7,
-				() => this._flash(filesToFlash)
+				() => this._flash({
+					files: [packagePath, xmlPath],
+					skipFlashingOs
+				})
 			);
 
 			if (flashSuccessful) {
@@ -455,6 +473,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 						return 'You need to provide a path to your SSH public key';
 					}
 					return true;
+				},
+				filter: (value) => {
+					return value.startsWith('~') ? value.replace('~', os.homedir()) : value;
 				}
 			},
 		];
@@ -485,7 +506,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
 		// prefixed by the JSON string length as a 32 bit integer
-		let jsonString = JSON.stringify(config);
+		let jsonString = JSON.stringify(config, null, 2);
 		const buffer = Buffer.alloc(4 + Buffer.byteLength(jsonString));
 		buffer.writeUInt32BE(Buffer.byteLength(jsonString), 0);
 		buffer.write(jsonString, 4);
@@ -494,7 +515,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		fs.writeSync(tempFile.fd, buffer);
 		fs.closeSync(tempFile.fd);
 
-		return tempFile.path;
+		return { path: tempFile.path, configBlob: config };
 	}
 
 	_generateShadowCompatibleHash(password) {
@@ -524,13 +545,16 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		].join(os.EOL);
 
 		// Create a temporary file for the XML content
-		const tempFile = temp.openSync();
+		const tempFile = temp.openSync({ prefix: 'config', suffix: '.xml' });
 		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
 		fs.closeSync(tempFile.fd);
 		return tempFile.path;
 	}
 
-	async _flash(files) {
+	async _flash({ files, skipFlashingOs, output }) {
+
+		const packagePath = files[0];
+
 		const question = {
 			type: 'confirm',
 			name: 'flash',
@@ -540,7 +564,19 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		await this.ui.prompt(question);
 
 		const flashCommand = new FlashCommand();
-		return await flashCommand.flashTachyon({ files });
+
+		if (output && !fs.existsSync(output)) {
+			fs.mkdirSync(output);
+		}
+		const outputLog = path.join(process.cwd(), `tachyon_flash_${Date.now()}.log`);
+		fs.ensureFileSync(outputLog);
+
+		this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
+		if (!skipFlashingOs) {
+			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: outputLog, verbose: false });
+		}
+		await flashCommand.flashTachyonXml({ files, output: outputLog });
+		return true;
 	}
 
 	_particleApi() {

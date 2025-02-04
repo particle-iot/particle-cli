@@ -71,7 +71,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	//returns true if successful or false if failed
-	async flashTachyon({ files, output }) {
+	async flashTachyon({ files, skipReset, output, verbose=true }) {
 		let zipFile;
 		let includeDir = '';
 		let updateFolder = '';
@@ -101,28 +101,65 @@ module.exports = class FlashCommand extends CLICommandBase {
 			filesToProgram = files;
 		}
 
-		if (output && !fs.existsSync(output)) {
-			fs.mkdirSync(output);
-		}
-		const outputLog = path.join(output ? output : process.cwd(), `tachyon_flash_${Date.now()}.log`);
+		const outputLog = await this._getOutputLogPath(output);
+
 		try {
-			this.ui.write(`Starting download. This may take several minutes. See logs at: ${outputLog}${os.EOL}`);
+			if (verbose) {
+				this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
+			}
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
 				includeDir,
 				updateFolder,
 				zip: zipFile,
 				ui: this.ui,
-				outputLogFile: outputLog
+				outputLogFile: outputLog,
+				skipReset,
+				currTask: 'OS'
 			});
 			await qdl.run();
-			fs.appendFileSync(outputLog, 'Download complete.');
-			return true;
+			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
 		} catch (error) {
-			this.ui.write('Download failed');
 			fs.appendFileSync(outputLog, 'Download failed with error: ' + error.message);
-			return false;
+			throw new Error('Download failed with error: ' + error.message);
 		}
+	}
+
+	async flashTachyonXml({ files, output }) {
+		try {
+			const zipFile = files.find(f => f.endsWith('.zip'));
+			const xmlFile = files.find(f => f.endsWith('.xml'));
+
+			const firehoseFile = await this._getFirehoseFileFromZip(zipFile);
+			const qdl = new QdlFlasher({
+				files: [firehoseFile, xmlFile],
+				ui: this.ui,
+				outputLogFile: output,
+				currTask: 'Configuration file'
+			});
+
+			await qdl.run();
+			fs.appendFileSync(output, `Config file download complete.${os.EOL}`);
+		} catch (error) {
+			fs.appendFileSync(output, 'Download failed with error: ' + error.message);
+			throw new Error('Download failed with error: ' + error.message);
+		}
+	}
+
+	async _getOutputLogPath(output) {
+		if (output) {
+			const stats = await fs.stat(output);
+			if (stats.isDirectory()) {
+				const logFile = path.join(output, `tachyon_flash_${Date.now()}.log`);
+				await fs.ensureFile(logFile);
+				return logFile;
+			}
+			return output;
+		}
+
+		const defaultLogFile = path.join(process.cwd(), `tachyon_flash_${Date.now()}.log`);
+		await fs.ensureFile(defaultLogFile);
+		return defaultLogFile;
 	}
 
 	async _extractFlashFilesFromDir(dirPath) {
@@ -174,6 +211,21 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		const manifest = await manifestFile.buffer();
 		return JSON.parse(manifest.toString());
+	}
+
+	async _getFirehoseFileFromZip(zipPath) {
+		const dir = await unzip.Open.file(zipPath);
+		const { filesToProgram } = await this._extractFlashFilesFromZip(zipPath);
+		const firehoseFile = dir.files.find(file => file.path.endsWith(filesToProgram[0]));
+		if (!firehoseFile) {
+			throw new Error('Unable to find firehose file');
+		}
+
+		const buffer = await firehoseFile.buffer();
+		const tempFile = temp.openSync({ prefix: 'firehose_', suffix: '.elf' });
+		fs.writeSync(tempFile.fd, buffer);
+		fs.closeSync(tempFile.fd);
+		return tempFile.path;
 	}
 
 	_parseManfiestData(data) {
