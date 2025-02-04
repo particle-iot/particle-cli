@@ -258,9 +258,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _selectProduct() {
-		const { orgName, orgSlug } = await this._getOrg();
+		const { orgSlug } = await this._getOrg();
 
-		let productId = await this._getProduct(orgName, orgSlug);
+		let productId = await this._getProduct(orgSlug);
 
 		if (!productId) {
 			productId = await this._createProduct({ orgSlug });
@@ -293,18 +293,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return org;
 	}
 
-	async _getProduct(orgName, orgSlug) {
-		const productsResp = await this.api.getProducts(orgSlug);
+	async _getProduct(orgSlug) {
+		const productsResp = await this.ui.showBusySpinnerUntilResolved(`Fetching products for ${orgSlug || 'sandbox'}`, this.api.getProducts(orgSlug));
 		let newProductName = 'Create a new product';
+		let products = productsResp?.products || [];
 
-		//if orgSlug is not null, filter for this org from product.organization_id
-		//if orgSlug is null, filter for an empty field in product.organization_id
-		let products = [];
-		if (orgSlug) {
-			products = productsResp.products.filter((product) => product.org === orgName);
-		} else {
-			products = productsResp.products.filter((product) => !product.org);
-		}
 
 		products = products.filter((product) => platformForId(product.platform_id)?.name === 'tachyon');
 

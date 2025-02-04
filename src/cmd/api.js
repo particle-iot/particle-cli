@@ -274,7 +274,7 @@ module.exports = class ParticleApi {
 	getProducts(org) {
 		return this._wrap(
 			this.api.get({
-				uri: `/v1${org ? `/orgs/${org}` : ''}/products`,
+				uri: `/v1${org ? `/orgs/${org}` : '/user'}/products`,
 				auth: this.accessToken
 			})
 		);
