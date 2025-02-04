@@ -545,7 +545,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		].join(os.EOL);
 
 		// Create a temporary file for the XML content
-		const tempFile = temp.openSync({prefix: "config", suffix: ".xml"});
+		const tempFile = temp.openSync({ prefix: 'config', suffix: '.xml' });
 		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
 		fs.closeSync(tempFile.fd);
 		return tempFile.path;
@@ -571,7 +571,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		const outputLog = path.join(process.cwd(), `tachyon_flash_${Date.now()}.log`);
 		fs.ensureFileSync(outputLog);
 
-		this.ui.write(`Starting download. See logs at: ${outputLog}${os.EOL}`);
+		this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
 		if (!skipFlashingOs) {
 			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: outputLog, verbose: false });
 		}

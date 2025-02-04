@@ -105,7 +105,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 		try {
 			if (verbose) {
-				this.ui.write(`Starting download. See logs at: ${outputLog}${os.EOL}`);
+				this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
 			}
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
@@ -114,10 +114,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 				zip: zipFile,
 				ui: this.ui,
 				outputLogFile: outputLog,
-				skipReset
+				skipReset,
+				currTask: 'OS'
 			});
 			await qdl.run();
-			fs.appendFileSync(outputLog, 'OS Download complete.');
+			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
 		} catch (error) {
 			fs.appendFileSync(outputLog, 'Download failed with error: ' + error.message);
 			throw new Error('Download failed with error: ' + error.message);
@@ -133,11 +134,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const qdl = new QdlFlasher({
 				files: [firehoseFile, xmlFile],
 				ui: this.ui,
-				outputLogFile: output
+				outputLogFile: output,
+				currTask: 'Configuration file'
 			});
 
 			await qdl.run();
-			fs.appendFileSync(output, 'Config file download complete.');
+			fs.appendFileSync(output, `Config file download complete.${os.EOL}`);
 		} catch (error) {
 			fs.appendFileSync(output, 'Download failed with error: ' + error.message);
 			throw new Error('Download failed with error: ' + error.message);
