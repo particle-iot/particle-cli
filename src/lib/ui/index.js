@@ -40,6 +40,32 @@ module.exports = class UI {
 		return inquirer.prompt(question);
 	}
 
+	async promptPasswordWithConfirmation({ customMessage, customConfirmationMessage } = {}) {
+		let unmatchedPassword = true;
+		let password;
+		const questions = [{
+			type: 'password',
+			name: 'requestedPassword',
+			message: customMessage || 'Enter your password:'
+		},
+		{
+			type: 'password',
+			name: 'confirmPassword',
+			message: customConfirmationMessage || 'Confirm your password:'
+		}];
+		while (unmatchedPassword) {
+			const { requestedPassword, confirmPassword } = await this.prompt(questions);
+			// Verify that the passwords match
+			if (requestedPassword !== confirmPassword) {
+				this.write('Passwords do not match. Please try again.');
+			} else {
+				password = requestedPassword;
+				unmatchedPassword = false;
+			}
+		}
+		return password;
+	}
+
 	createProgressBar() {
 		return new cliProgress.SingleBar({
 			format: '[{bar}] {percentage}% | {description}',
