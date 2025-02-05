@@ -327,13 +327,18 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			name: 'productName',
 			message: 'Enter the product name:',
 		}, {
-			type: 'confirm',
+			type: 'input',
 			name: 'locationOptIn',
 			message: 'Would you like to opt in to location services? (y/n):',
-			default: true
+			default: 'y'
 		}];
 		const { productName, locationOptIn } = await this.ui.prompt(question);
-		const { product } = await this.api.createProduct({ name: productName, platformId, orgSlug, locationOptIn });
+		const { product } = await this.api.createProduct({
+			name: productName,
+			platformId,
+			orgSlug,
+			locationOptIn: locationOptIn.toLowerCase() === 'y'
+		});
 		this.ui.write(`Product ${product.name} created successfully!`);
 		return product?.id;
 	}
