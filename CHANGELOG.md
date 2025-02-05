@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.32.1 - Feb 05 2025
+* Add load config to Tachyon setup command
+* Allow creating products with Tachyon setup command
+* Add cache limit to Tachyon download directory
+
 # 3.32.0 - Jan 28 2025
 * Add Tachyon setup command
 
