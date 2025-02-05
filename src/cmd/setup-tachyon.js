@@ -46,36 +46,38 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				version = 'latest'; //await this._selectVersion();
 			}
 
-			let config = { systemPassword: null, wifi: null, sshPublicKey: null };
+			let config = {};
 			let alwaysCleanCache = false;
 
-			if ( !loadConfig ) {
+			// load first since we need to know the product to create the registration code
+			if (loadConfig) {
+				alwaysCleanCache = true;
+				config = await this._loadConfig(loadConfig);
+				this.ui.write(
+					`${os.EOL}${os.EOL}Skipping to Step 4 - Using configuration file: ` + loadConfig + `${os.EOL}`
+				);
+			} else {
 				config = await this._runStepWithTiming(
 					`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
-			`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
-			`Don't worry if you forget this—you can always reset your device later.${os.EOL}${os.EOL}` +
-			`Next, you'll be prompted to provide an optional Wi-Fi network.${os.EOL}` +
-			`While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.${os.EOL}${os.EOL}` +
-			`Finally, you'll have the option to add an SSH key from your local disk.${os.EOL}` +
-			'This is optional—you can still SSH into the device using a password. Adding the key just allows for password-free access.',
+					`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
+					`Don't worry if you forget this—you can always reset your device later.${os.EOL}${os.EOL}` +
+					`Next, you'll be prompted to provide an optional Wi-Fi network.${os.EOL}` +
+					`While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.${os.EOL}${os.EOL}` +
+					`Finally, you'll have the option to add an SSH key from your local disk.${os.EOL}` +
+					'This is optional—you can still SSH into the device using a password. Adding the key just allows for password-free access.',
 					2,
 					() => this._userConfiguration(),
 					0
 				);
-			} else {
-				alwaysCleanCache = true;
-				this.ui.write(
-					`${os.EOL}${os.EOL}Skipping to Step 3 - Using configuration file: ` + loadConfig + `${os.EOL}`
+				const product = await this._runStepWithTiming(
+					`Next, let's select a Particle organization that you are part of.${os.EOL}` +
+					`This organization will help manage the Tachyon device and keep things organized.${os.EOL}${os.EOL}` +
+					"Once you've selected an organization, you can then choose which product the device will belong to.",
+					3,
+					() => this._selectProduct()
 				);
+				config.productId = product;
 			}
-
-			const product = await this._runStepWithTiming(
-				`Next, let's select a Particle organization that you are part of.${os.EOL}` +
-        `This organization will help manage the Tachyon device and keep things organized.${os.EOL}${os.EOL}` +
-        "Once you've selected an organization, you can then choose which product the device will belong to.",
-				3,
-				() => this._selectProduct()
-			);
 
 			const packagePath = await this._runStepWithTiming(
 				`Next, we'll download the Tachyon Operating System image.${os.EOL}` +
@@ -90,44 +92,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				`Great! The download is complete.${os.EOL}` +
         "Now, let's register your product on the Particle platform.",
 				5,
-				() => this._getRegistrationCode(product)
+				() => this._getRegistrationCode(config.productId)
 			);
 
-			let configBlobPath = loadConfig;
-			let configBlob = null;
-			if (configBlobPath) {
-				try {
-					const data = fs.readFileSync(configBlobPath, 'utf8');
-					configBlob = JSON.parse(data);
-					const res = await this._createConfigBlob({
-						registrationCode,
-						systemPassword: configBlob.system_password,
-						wifi: configBlob.wifi,
-						sshKey: configBlob.ssh_key
-					});
-					configBlobPath = res.path;
-				} catch (error) {
-					throw new Error(`The configuration file is not a valid JSON file: ${error.message}`);
-				}
-				this.ui.write(
-					`${os.EOL}${os.EOL}Skipping Step 6 - Using configuration file: ` + loadConfig + `${os.EOL}`
-				);
-			} else {
-				const res = await this._runStepWithTiming(
-					'Creating the configuration file to write to the Tachyon device...',
-					6,
-					() => this._createConfigBlob({ registrationCode, ...config })
-				);
-				configBlobPath = res.path;
-				configBlob = res.configBlob;
-			}
-
+			const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
+				'Creating the configuration file to write to the Tachyon device...',
+				6,
+				() => this._createConfigBlob({ registrationCode, ...config })
+			);
 			const xmlPath = await this._createXmlFile(configBlobPath);
-
-			if (saveConfig) {
-				fs.writeFileSync(saveConfig, JSON.stringify(configBlob, null, 2));
-				this.ui.write(`${os.EOL}Configuration file written here: ${saveConfig}${os.EOL}`);
-			}
+			// Save the config file if requested
+			await this._saveConfig({ saveConfig, config: configBlob });
 
 			const flashSuccessful = await this._runStepWithTiming(
 				`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
@@ -142,7 +117,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				7,
 				() => this._flash({
 					files: [packagePath, xmlPath],
-					skipFlashingOs
+					skipFlashingOs,
+					silent: !!loadConfig
 				})
 			);
 
@@ -215,6 +191,26 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		this.ui.write(`${os.EOL}===================================================================================${os.EOL}`);
 		this.ui.write(`Step ${step}:${os.EOL}`);
 		this.ui.write(`${text}${os.EOL}`);
+	}
+
+	async _loadConfig(loadConfig) {
+		try {
+			const data = fs.readFileSync(loadConfig, 'utf8');
+			const config = JSON.parse(data);
+			// validate the config fields
+			const requiredFields = ['systemPassword', 'productId'];
+			await this._validateConfig(config, requiredFields);
+			return config;
+		} catch (error) {
+			throw new Error(`The configuration file is not a valid JSON file: ${error.message}`);
+		}
+	}
+
+	async _validateConfig(config, requiredFields) {
+		const missingFields = requiredFields.filter(field => !config[field]);
+		if (missingFields.length) {
+			throw new Error(`The configuration file is missing required fields: ${missingFields.join(', ')}`);
+		}
 	}
 
 	async _verifyLogin() {
@@ -307,8 +303,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 		const selectedProductName = await this._promptForProduct([newProductName, ...products.map(product => product.name)]);
 
-		const selectedProduct =  selectedProductName !== newProductName ? (selectedProductName !== products.find(p => p.name === selectedProductName)) : null;
-
+		const selectedProduct =  selectedProductName !== newProductName ? (products.find(p => p.name === selectedProductName)) : null;
 		return selectedProduct?.id || null;
 	}
 
@@ -430,7 +425,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		question = [
 			{
 				type: 'input',
-				name: 'sshKey',
+				name: 'sshPublicKey',
 				message: 'Enter the path to your SSH public key:',
 				validate: (value) => {
 					if (!fs.existsSync(value)) {
@@ -444,8 +439,8 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			},
 		];
 
-		const { sshKey } = await this.ui.prompt(question);
-		return fs.readFileSync(sshKey, 'utf8');
+		const { sshPublicKey } = await this.ui.prompt(question);
+		return fs.readFileSync(sshPublicKey, 'utf8');
 	}
 
 	async _getRegistrationCode(product) {
@@ -453,11 +448,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ registrationCode, systemPassword, wifi, sshPublicKey }) {
+	async _createConfigBlob({ registrationCode, systemPassword, wifi, sshPublicKey, productId }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
-			registration_code: registrationCode,
-			system_password : this._generateShadowCompatibleHash(systemPassword),
+			registrationCode: registrationCode,
+			systemPassword : this._generateShadowCompatibleHash(systemPassword),
 		};
 
 		if (wifi) {
@@ -465,7 +460,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 
 		if (sshPublicKey) {
-			config.ssh_key = sshPublicKey;
+			config.sshPublicKey = sshPublicKey;
+		}
+
+		if (productId) {
+			config.productId = productId;
 		}
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
@@ -515,17 +514,19 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return tempFile.path;
 	}
 
-	async _flash({ files, skipFlashingOs, output }) {
+	async _flash({ files, skipFlashingOs, output, silent = false }) {
 
 		const packagePath = files[0];
 
-		const question = {
-			type: 'confirm',
-			name: 'flash',
-			message: 'Is the device powered, its LED flashing yellow and a USB-C cable plugged in from your computer?',
-			default: true
-		};
-		await this.ui.prompt(question);
+		if (!silent) {
+			const question = {
+				type: 'confirm',
+				name: 'flash',
+				message: 'Is the device powered, its LED flashing yellow and a USB-C cable plugged in from your computer?',
+				default: true
+			};
+			await this.ui.prompt(question);
+		}
 
 		const flashCommand = new FlashCommand();
 
@@ -541,6 +542,15 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 		await flashCommand.flashTachyonXml({ files, output: outputLog });
 		return true;
+	}
+
+	async _saveConfig({ saveConfig, config } = {}) {
+		if (saveConfig) {
+			// eslint-disable-next-line no-unused-vars
+			const { registrationCode, ...savedConfig } = config;
+			fs.writeFile(saveConfig, JSON.stringify(savedConfig, null, 2));
+			this.ui.write(`${os.EOL}Configuration file written here: ${saveConfig}${os.EOL}`);
+		}
 	}
 
 	_particleApi() {
