@@ -12,13 +12,12 @@ const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
 
-// TODO: Get these from exports
 const PROVISIONING_PROGRESS = 1;
 const PROVISIONING_SUCCESS = 2;
 const PROVISIONING_FAILURE = 3;
 const CTRL_REQUEST_APP_CUSTOM = 10;
 const GET_AT_COMMAND_STATUS = 4;
-
+const LPA_PROFILE_ENABLE_ERROR = 'profile not in disabled state';
 
 const TEST_ICCID = ['89000123456789012341', '89000123456789012358'];
 const TWILIO_ICCID_PREFIX = '8988307';
@@ -91,11 +90,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async enableCommand(iccid) {
 		await this._checkForTachyonDevice();
-		if (this.isTachyon) {
-			await this.doEnableTachyon(iccid);
-		} else {
-
-		}
+		await this.doEnableTachyon(iccid);
 	}
 
 	async deleteCommand(args, iccid) {
@@ -837,7 +832,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			res.details.command = enableProfileCmd;
 			return res;
 		} catch (error) {
-			if (error.message.includes('profile not in disabled state')) {
+			if (error.message.includes(LPA_PROFILE_ENABLE_ERROR)) {
 				res.details.rawLogs.push(`Profile already enabled: ${iccid}`);
 				return res;
 			}
