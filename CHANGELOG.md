@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.32.2 - Feb 10 2025
+* Modify `esim provision` command to enable already downloaded profiles
+
 # 3.32.1 - Feb 05 2025
 * Add load config to Tachyon setup command
 * Allow creating products with Tachyon setup command
