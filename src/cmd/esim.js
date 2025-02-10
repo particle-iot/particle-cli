@@ -12,13 +12,12 @@ const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
 
-// TODO: Get these from exports
 const PROVISIONING_PROGRESS = 1;
 const PROVISIONING_SUCCESS = 2;
 const PROVISIONING_FAILURE = 3;
 const CTRL_REQUEST_APP_CUSTOM = 10;
 const GET_AT_COMMAND_STATUS = 4;
-
+const LPA_PROFILE_ENABLE_ERROR = 'profile not in disabled state';
 
 const TEST_ICCID = ['89000123456789012341', '89000123456789012358'];
 const TWILIO_ICCID_PREFIX = '8988307';
@@ -49,7 +48,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			this.isTachyon = true;
 		}
 
-		this._validateArgs(args, { lpa: true, input: true, output: true, binary: !this.isTachyon });
+		this._validateArgs(args, { lpa: true, input: true, output: false, binary: !this.isTachyon });
 		await this._generateAvailableProvisioningData();
 
 		await this.doProvision(device);
@@ -57,7 +56,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async bulkProvisionCommand(args) {
 		console.log(chalk.red(`Do not use bulk mode for Tachyon${os.EOL}`));
-		this._validateArgs(args, { lpa: true, input: true, output: true, binary: true });
+		this._validateArgs(args, { lpa: true, input: true, output: false, binary: true });
 
 		await this._generateAvailableProvisioningData();
 
@@ -91,7 +90,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async enableCommand(iccid) {
 		await this._checkForTachyonDevice();
-		await this.doEnable(iccid);
+		await this.doEnableTachyon(iccid);
 	}
 
 	async deleteCommand(args, iccid) {
@@ -169,7 +168,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				return;
 			}
 
-			// Start particle-ril through ADB for Tachyon
+			// Start particle-tachyon-ril through ADB for Tachyon
 			const qlrilStep = await this._initializeQlril();
 			provisionOutputLogs.push(qlrilStep);
 			if (qlrilStep?.status === 'failed') {
@@ -186,8 +185,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 			eid = (eidResp.details.eid).trim();
 
-			// If any profiles already exist on the device, skip provisioning
-			// TODO: Check the TEST PROFILE situation with a brand new eSIM
+			// If atleast one profile exists on the device, skip provisioning
+			// and ensure that the profiles on the device are enabled
 			const profileCmdResp = await this._checkForExistingProfiles(port);
 			provisionOutputLogs.push(profileCmdResp);
 			if (profileCmdResp.status === 'failed') {
@@ -206,8 +205,34 @@ module.exports = class ESimCommands extends CLICommandBase {
 				});
 
 				if (existingProfiles.length > 0) {
-					success = false;
-					provisionOutputLogs.push('Profiles already exist on the device');
+					const iccidsOnDevice = await this._getIccidOnDevice(port);
+					const iccidsOnDeviceNotTest = iccidsOnDevice.filter((iccid) => !TEST_ICCID.includes(iccid));
+
+					const iccidToEnable = this._getIccidToEnable({ iccidList: iccidsOnDeviceNotTest });
+					if (iccidToEnable === null) {
+						success = false;
+						await processOutput('No profile found on the device to enable');
+						return;
+					}
+
+					iccidsOnDeviceNotTest.forEach(async (iccid) => {
+						const enableResp = await this._enableProfile(port, iccid);
+						provisionOutputLogs.push(enableResp);
+						if (enableResp.status === 'failed') {
+							await processOutput();
+							return;
+						}
+
+						const verifyIccidEnabledResp = await this._verifyIccidEnaled(port, iccidToEnable);
+						provisionOutputLogs.push(verifyIccidEnabledResp);
+						if (verifyIccidEnabledResp.status === 'failed') {
+							await processOutput();
+							return;
+						}
+					});
+
+					success = true;
+					console.log(`${os.EOL}Profile ${iccidToEnable} enabled for EID ${eid}`);
 					await processOutput();
 					return;
 				}
@@ -242,7 +267,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				return;
 			}
 
-			const iccidToEnable = this._getIccidToEnable(profilesMatch.details.iccidsOnDevice);
+			const iccidToEnable = this._getIccidToEnable({ iccidList: profilesMatch.details.iccidsOnDevice });
 			if (iccidToEnable === null) {
 				success = false;
 				await processOutput('No profile found on the device to enable');
@@ -273,9 +298,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 	}
 
-	async doEnable(iccid) {
+	async doEnableTachyon(iccid) {
 		try {
-			const { stdout } = await execa('adb', ['shell', 'particle-ril', 'enable', iccid]);
+			const { stdout } = await execa('adb', ['shell', 'particle-tachyon-ril', 'enable', iccid]);
 			if (stdout.includes(`ICCID currently active: ${iccid}`)) {
 				console.log(`ICCID ${iccid} enabled successfully`);
 			}
@@ -312,7 +337,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async doList() {
 		try {
-			const { stdout } = await execa('adb', ['shell', 'particle-ril', 'listProfiles']);
+			const { stdout } = await execa('adb', ['shell', 'particle-tachyon-ril', 'listProfiles']);
 
 			const iccids = stdout
 				.trim()
@@ -343,7 +368,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		}
 
-		this.outputFolder = args?.output || 'esim_loading_logs';
+		this.outputFolder = args?.output || path.join(process.cwd(), 'esim_loading_logs');
 		if (!fs.existsSync(this.outputFolder)) {
 			fs.mkdirSync(this.outputFolder);
 		}
@@ -521,7 +546,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 
 		logAndPush('Initalizing qlril app on Tachyon through adb');
-		this.adbProcess = execa('adb', ['shell', 'particle-ril', '--port', '/dev/ttyGS2']);
+		this.adbProcess = execa('adb', ['shell', 'particle-tachyon-ril', '--port', '/dev/ttyGS2']);
 
 		try {
 			await new Promise((resolve, reject) => {
@@ -782,7 +807,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		return stepOutput();
 	}
 
-	_getIccidToEnable(iccidList) {
+	_getIccidToEnable({ iccidList } = {}) {
 		// get the first available Twilio ICCID and if not found, get the first available profile
 		const twilioIccid = iccidList.find((iccid) => iccid.startsWith(TWILIO_ICCID_PREFIX));
 		return twilioIccid || iccidList[0] || null;
@@ -799,12 +824,20 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 		};
 
-		const enableProfileCmd = `${this.lpa} enable ${iccid} --serial=${port}`;
-		const enableProfileResp = await execa(this.lpa, ['enable', `${iccid}`, `--serial=${port}`]);
-		res.details.rawLogs.push(enableProfileResp.stdout);
-		res.status = enableProfileResp.stdout.includes('Profile successfully enabled') ? 'success' : 'failed';
-		res.details.command = enableProfileCmd;
-		return res;
+		try {
+			const enableProfileCmd = `${this.lpa} enable ${iccid} --serial=${port}`;
+			const enableProfileResp = await execa(this.lpa, ['enable', `${iccid}`, `--serial=${port}`]);
+			res.details.rawLogs.push(enableProfileResp.stdout);
+			res.status = enableProfileResp.stdout.includes('Profile successfully enabled') ? 'success' : 'failed';
+			res.details.command = enableProfileCmd;
+			return res;
+		} catch (error) {
+			if (error.message.includes(LPA_PROFILE_ENABLE_ERROR)) {
+				res.details.rawLogs.push(`Profile already enabled: ${iccid}`);
+				return res;
+			}
+			throw error;
+		}
 	}
 
 	async _verifyIccidEnaled(port, iccid) {
