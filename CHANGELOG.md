@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.32.3 - Feb 11 2025
+* Fix setup Tachyon password configuration when using load config file
+* Fix setup Tachyon wifi password to return the right value
+
 # 3.32.2 - Feb 10 2025
 * Modify `esim provision` command to enable already downloaded profiles
 
