@@ -32,6 +32,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async setup({ skip_flashing_os: skipFlashingOs, version, load_config: loadConfig, save_config: saveConfig }) {
 		try {
+			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
 			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 
@@ -98,7 +99,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
 				'Creating the configuration file to write to the Tachyon device...',
 				6,
-				() => this._createConfigBlob({ registrationCode, ...config })
+				() => this._createConfigBlob({
+					loadedFromFile,
+					registrationCode,
+					...config
+				})
 			);
 			const xmlPath = await this._createXmlFile(configBlobPath);
 			// Save the config file if requested
@@ -118,7 +123,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				() => this._flash({
 					files: [packagePath, xmlPath],
 					skipFlashingOs,
-					silent: !!loadConfig
+					silent: loadedFromFile
 				})
 			);
 
@@ -453,11 +458,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ registrationCode, systemPassword, wifi, sshPublicKey, productId }) {
+	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
 			registrationCode: registrationCode,
-			systemPassword : this._generateShadowCompatibleHash(systemPassword),
+			systemPassword : loadedFromFile ? systemPassword : this._generateShadowCompatibleHash(systemPassword)
 		};
 
 		if (wifi) {
