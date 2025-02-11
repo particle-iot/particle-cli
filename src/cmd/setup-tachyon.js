@@ -410,7 +410,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			}
 		];
 		const res = await this.ui.prompt(questions);
-		const { password } = await this.ui.promptPasswordWithConfirmation({
+		const password = await this.ui.promptPasswordWithConfirmation({
 			customMessage: 'Enter your WiFi password:',
 			customConfirmationMessage: 'Re-enter your WiFi password:'
 		});
