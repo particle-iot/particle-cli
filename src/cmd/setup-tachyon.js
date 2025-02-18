@@ -30,7 +30,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, version, load_config: loadConfig, save_config: saveConfig }) {
+	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version, load_config: loadConfig, save_config: saveConfig }) {
 		try {
 			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
@@ -39,8 +39,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			await this._verifyLogin();
 
 			this.ui.write("...All set! You're logged in and ready to go!");
-
-			const region = 'NA'; //await this._selectRegion();
 
 			//if version is not provided, set to latest
 			if (!version) {
