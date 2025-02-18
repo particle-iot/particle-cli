@@ -71,7 +71,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					() => this._selectProduct()
 				);
 				config.productId = product;
-				config.region = region;
 			}
 
 			const packagePath = await this._runStepWithTiming(
@@ -80,7 +79,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
         `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
 				4,
-				() => this._download({ region: config.region, version, alwaysCleanCache })
+				() => this._download({ region, version, alwaysCleanCache })
 			);
 
 			const registrationCode = await this._runStepWithTiming(
