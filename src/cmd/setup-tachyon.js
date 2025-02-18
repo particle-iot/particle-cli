@@ -30,11 +30,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, region, version='latest', load_config: loadConfig, save_config: saveConfig } = {}) {
+	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version='latest', load_config: loadConfig, save_config: saveConfig } = {}) {
 		try {
 			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
-			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 0);
+			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 
 			await this._verifyLogin();
 
@@ -51,13 +51,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`${os.EOL}${os.EOL}Skipping to Step 4 - Using configuration file: ` + loadConfig + `${os.EOL}`
 				);
 			} else {
-				if (!region) {
-					region = await this._runStepWithTiming(
-						'Next, let\'s select the region to download the Tachyon package from.',
-						1,
-						() => this._selectRegion()
-					);
-				}
 				config = await this._runStepWithTiming(
 					`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
 					`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
