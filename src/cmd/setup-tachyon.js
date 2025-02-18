@@ -30,20 +30,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version, load_config: loadConfig, save_config: saveConfig }) {
+	async setup({ skip_flashing_os: skipFlashingOs, region, version='latest', load_config: loadConfig, save_config: saveConfig } = {}) {
 		try {
 			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
-			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
+			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 0);
 
 			await this._verifyLogin();
 
 			this.ui.write("...All set! You're logged in and ready to go!");
-
-			//if version is not provided, set to latest
-			if (!version) {
-				version = 'latest'; //await this._selectVersion();
-			}
 
 			let config = {};
 			let alwaysCleanCache = false;
@@ -56,6 +51,13 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`${os.EOL}${os.EOL}Skipping to Step 4 - Using configuration file: ` + loadConfig + `${os.EOL}`
 				);
 			} else {
+				if (!region) {
+					region = await this._runStepWithTiming(
+						'Next, let\'s select the region to download the Tachyon package from.',
+						1,
+						() => this._selectRegion()
+					);
+				}
 				config = await this._runStepWithTiming(
 					`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
 					`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
@@ -76,6 +78,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					() => this._selectProduct()
 				);
 				config.productId = product;
+				config.region = region;
 			}
 
 			const packagePath = await this._runStepWithTiming(
@@ -84,7 +87,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
         `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
 				4,
-				() => this._download({ region, version, alwaysCleanCache })
+				() => this._download({ region: config.region, version, alwaysCleanCache })
 			);
 
 			const registrationCode = await this._runStepWithTiming(
@@ -354,7 +357,6 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _download({ region, version, alwaysCleanCache }) {
-
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
 		if (fs.existsSync(version)) {
@@ -456,7 +458,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId }) {
+	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId, region }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
 			registrationCode: registrationCode,
@@ -473,6 +475,10 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 		if (productId) {
 			config.productId = productId;
+		}
+
+		if (region) {
+			config.region = region;
 		}
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
