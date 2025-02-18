@@ -451,7 +451,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId, region }) {
+	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
 			registrationCode: registrationCode,
@@ -468,10 +468,6 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 		if (productId) {
 			config.productId = productId;
-		}
-
-		if (region) {
-			config.region = region;
 		}
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
