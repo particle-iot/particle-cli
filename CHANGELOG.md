@@ -1,6 +1,9 @@
 # Changelog
 
-# 3.32.3 - Feb 11 2025
+# 3.32.4 - Feb 18 2025
+* Add region flag to download the right binary depending on the device
+ 
+## 3.32.3 - Feb 11 2025
 * Fix setup Tachyon password configuration when using load config file
 * Fix setup Tachyon wifi password to return the right value
 
