@@ -18,6 +18,10 @@ module.exports = ({ commandProcessor, root }) => {
 			save_config: {
 				description: 'Path to dump the config file to after setup',
 				type: 'string'
+			},
+			region: {
+				description: 'Region to download package for',
+				type: 'string',
 			}
 		},
 		handler: (args) => {

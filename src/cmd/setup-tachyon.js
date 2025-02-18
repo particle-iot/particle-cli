@@ -30,7 +30,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, version, load_config: loadConfig, save_config: saveConfig }) {
+	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version='latest', load_config: loadConfig, save_config: saveConfig } = {}) {
 		try {
 			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
@@ -39,13 +39,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			await this._verifyLogin();
 
 			this.ui.write("...All set! You're logged in and ready to go!");
-
-			const region = 'NA'; //await this._selectRegion();
-
-			//if version is not provided, set to latest
-			if (!version) {
-				version = 'latest'; //await this._selectVersion();
-			}
 
 			let config = {};
 			let alwaysCleanCache = false;
@@ -356,7 +349,6 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _download({ region, version, alwaysCleanCache }) {
-
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
 		if (fs.existsSync(version)) {
@@ -514,8 +506,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			'        start_byte_hex="0x2208000"',
 			'        start_sector="8712"',
 			'    />',
-			'</data>'
-		].join(os.EOL);
+			'</data>',
+			''
+		].join('\n'); // Must use UNIX line endings for QDL
 
 		// Create a temporary file for the XML content
 		const tempFile = temp.openSync({ prefix: 'config', suffix: '.xml' });
