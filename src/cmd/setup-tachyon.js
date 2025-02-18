@@ -518,8 +518,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			'        start_byte_hex="0x2208000"',
 			'        start_sector="8712"',
 			'    />',
-			'</data>'
-		].join(os.EOL);
+			'</data>',
+			''
+		].join('\n'); // Must use UNIX line endings for QDL
 
 		// Create a temporary file for the XML content
 		const tempFile = temp.openSync({ prefix: 'config', suffix: '.xml' });
