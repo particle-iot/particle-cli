@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.32.5 - Feb 19 2025
+* fix qdl issues on Windows 
+
 # 3.32.4 - Feb 18 2025
 * Add region flag to download the right binary depending on the device
  
