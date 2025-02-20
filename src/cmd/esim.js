@@ -262,11 +262,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 				return;
 			}
 
-			const profilesMatch = await this._verifyAgainstListProfiles(port, expectedIccids);
-			provisionOutputLogs.push(profilesMatch);
-			if (profilesMatch.status === 'failed') {
-				await processOutput();
-				return;
+			if (!this.force) {
+				const profilesMatch = await this._verifyAgainstListProfiles(port, expectedIccids);
+				provisionOutputLogs.push(profilesMatch);
+				if (profilesMatch.status === 'failed') {
+					await processOutput();
+					return;
+				}
 			}
 
 			const iccidToEnable = this._getIccidToEnable({ iccidList: profilesMatch.details.iccidsOnDevice });
