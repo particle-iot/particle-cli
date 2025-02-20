@@ -185,56 +185,58 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 			eid = (eidResp.details.eid).trim();
 
-			// If atleast one profile exists on the device, skip provisioning
-			// and ensure that the profiles on the device are enabled
-			const profileCmdResp = await this._checkForExistingProfiles(port);
-			provisionOutputLogs.push(profileCmdResp);
-			if (profileCmdResp.status === 'failed') {
-				await processOutput();
-				return;
-			}
+			if (!this.force) {
+				// If atleast one profile exists on the device, skip provisioning
+				// and ensure that the profiles on the device are enabled
+				const profileCmdResp = await this._checkForExistingProfiles(port);
+				provisionOutputLogs.push(profileCmdResp);
+				if (profileCmdResp.status === 'failed') {
+					await processOutput();
+					return;
+				}
 
-			const existingProfiles = profileCmdResp.details.existingProfiles;
-			if (existingProfiles.length > 0) {
-				// remove profiles with test ICCID from existingProfiles to verify
-				existingProfiles.forEach((profile, index) => {
-					const iccid = profile.split('[')[1].split(',')[0].trim();
-					if (TEST_ICCID.includes(iccid)) {
-						existingProfiles.splice(index, 1);
-					}
-				});
-
+				const existingProfiles = profileCmdResp.details.existingProfiles;
 				if (existingProfiles.length > 0) {
-					const iccidsOnDevice = await this._getIccidOnDevice(port);
-					const iccidsOnDeviceNotTest = iccidsOnDevice.filter((iccid) => !TEST_ICCID.includes(iccid));
-
-					const iccidToEnable = this._getIccidToEnable({ iccidList: iccidsOnDeviceNotTest });
-					if (iccidToEnable === null) {
-						success = false;
-						await processOutput('No profile found on the device to enable');
-						return;
-					}
-
-					iccidsOnDeviceNotTest.forEach(async (iccid) => {
-						const enableResp = await this._enableProfile(port, iccid);
-						provisionOutputLogs.push(enableResp);
-						if (enableResp.status === 'failed') {
-							await processOutput();
-							return;
-						}
-
-						const verifyIccidEnabledResp = await this._verifyIccidEnaled(port, iccidToEnable);
-						provisionOutputLogs.push(verifyIccidEnabledResp);
-						if (verifyIccidEnabledResp.status === 'failed') {
-							await processOutput();
-							return;
+					// remove profiles with test ICCID from existingProfiles to verify
+					existingProfiles.forEach((profile, index) => {
+						const iccid = profile.split('[')[1].split(',')[0].trim();
+						if (TEST_ICCID.includes(iccid)) {
+							existingProfiles.splice(index, 1);
 						}
 					});
 
-					success = true;
-					console.log(`${os.EOL}Profile ${iccidToEnable} enabled for EID ${eid}`);
-					await processOutput();
-					return;
+					if (existingProfiles.length > 0) {
+						const iccidsOnDevice = await this._getIccidOnDevice(port);
+						const iccidsOnDeviceNotTest = iccidsOnDevice.filter((iccid) => !TEST_ICCID.includes(iccid));
+
+						const iccidToEnable = this._getIccidToEnable({ iccidList: iccidsOnDeviceNotTest });
+						if (iccidToEnable === null) {
+							success = false;
+							await processOutput('No profile found on the device to enable');
+							return;
+						}
+
+						for (const iccid of iccidsOnDeviceNotTest) {
+							const enableResp = await this._enableProfile(port, iccid);
+							provisionOutputLogs.push(enableResp);
+							if (enableResp.status === 'failed') {
+								await processOutput();
+								return;
+							}
+
+							const verifyIccidEnabledResp = await this._verifyIccidEnaled(port, iccidToEnable);
+							provisionOutputLogs.push(verifyIccidEnabledResp);
+							if (verifyIccidEnabledResp.status === 'failed') {
+								await processOutput();
+								return;
+							}
+						}
+
+						success = true;
+						console.log(`${os.EOL}Profile ${iccidToEnable} enabled for EID ${eid}`);
+						await processOutput();
+						return;
+					}
 				}
 			}
 
@@ -360,6 +362,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 	_validateArgs(args, required) {
 		this.lpa = args?.lpa;
 		this.inputJson = args?.input;
+		this.force = args?.force;
 		if (this.inputJson) {
 			try {
 				this.inputJsonData = JSON.parse(fs.readFileSync(this.inputJson));
