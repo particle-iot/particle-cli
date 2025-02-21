@@ -19,6 +19,10 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'bulk': {
 				description: 'Provision multiple devices'
+			},
+			'force': {
+				boolean: true,
+				description: 'Force provisioning profiles in the input JSON without checking profiles already on the device'
 			}
 		}),
 		handler: (args) => {
