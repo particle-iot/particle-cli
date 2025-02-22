@@ -33,7 +33,7 @@ jobs:
 
 
             - name: Download workflow artifact
-              uses: dawidd6/action-download-artifact@v3.1.4
+              uses: dawidd6/action-download-artifact@v6
               with:
                   run_id: ${{ inputs.build_run_id }}
                   name: package
