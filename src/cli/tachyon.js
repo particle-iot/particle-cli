@@ -22,6 +22,10 @@ module.exports = ({ commandProcessor, root }) => {
 			region: {
 				description: 'Region to download package for',
 				type: 'string',
+			},
+			timezone: {
+				description: 'Timezone to set on the device, like America/Los_Angeles. Defaults to the timezone of this computer.',
+				type: 'string'
 			}
 		},
 		handler: (args) => {
