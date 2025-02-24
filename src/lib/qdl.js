@@ -64,6 +64,27 @@ class QdlFlasher {
 		}
 	}
 
+	async waitUntilDeviceIsReady() {
+		return this.ui.showBusySpinnerUntilResolved(
+			'Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode...',
+			new Promise((resolve, reject) => {
+				const interval = setInterval(() => {
+					if (!this.waitForDevice) {
+						clearInterval(interval);
+						resolve();
+					}
+				}, 500);
+
+				// Optional timeout after 5 minutes
+				setTimeout(() => {
+					clearInterval(interval);
+					reject(new Error('⏰ Device not detected within 5 minutes.'));
+				}, 5 * 60 * 1000);
+			})
+		);
+	}
+
+
 	async getExecutable() {
 		const archType = utilities.getArchType();
 		const archName = utilities.getOs();
@@ -91,12 +112,15 @@ class QdlFlasher {
 
 	processLogLine(line, process) {
 		fs.appendFileSync(this.outputLogFile, `${line}\n`);
-
 		if (line.includes('Waiting for EDL device')) {
-			this.handleError(process, `Ensure your device is connected and in EDL mode${os.EOL}`);
+			this.ui.stdout.write('Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode.');
+			this.waitForDevice = true;
+			this.waitUntilDeviceIsReady();
 		} else if (line.includes('[ERROR]')) {
+			this.waitForDevice = false;
 			this.handleError(process, `${os.EOL}Error detected: ${line}${os.EOL}`);
 		} else {
+			this.waitForDevice = false;
 			this.processFlashingLogs(line);
 		}
 	}
