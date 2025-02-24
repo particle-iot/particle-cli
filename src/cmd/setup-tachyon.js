@@ -75,7 +75,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 			const packagePath = await this._runStepWithTiming(
 				`Next, we'll download the Tachyon Operating System image.${os.EOL}` +
-        `Heads up: it's a large file — 2.6GB! Don't worry, though—the download will resume${os.EOL}` +
+        `Heads up: it's a large file — 3GB! Don't worry, though—the download will resume${os.EOL}` +
         `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
 				4,
@@ -299,7 +299,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			return null; // No products available
 		}
 
-		const selectedProductName = await this._promptForProduct([newProductName, ...products.map(product => product.name)]);
+		const selectedProductName = await this._promptForProduct([...products.map(product => product.name), newProductName]);
 
 		const selectedProduct =  selectedProductName !== newProductName ? (products.find(p => p.name === selectedProductName)) : null;
 		return selectedProduct?.id || null;
@@ -370,10 +370,17 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	async _getSystemPassword() {
-		return this.ui.promptPasswordWithConfirmation({
-			customMessage: 'Enter a password for the system account:',
-			customConfirmationMessage: 'Re-enter the password for the system account:'
-		});
+		let password = '';
+		while (password === '') {
+			password = await this.ui.promptPasswordWithConfirmation({
+				customMessage: 'Enter a password for the system account:',
+				customConfirmationMessage: 'Re-enter the password for the system account:'
+			});
+			if (password === '') {
+				this.ui.write('System password cannot be blank.');
+			}
+		}
+		return password;
 	}
 
 	async _getWifi() {
