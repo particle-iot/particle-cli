@@ -2,10 +2,10 @@ const execa = require('execa');
 const utilities = require('../lib/utilities');
 const path = require('path');
 const fs = require('fs-extra');
-const os = require('os');
 const util = require('util');
 const temp = require('temp').track();
 const mkdirTemp = util.promisify(temp.mkdir);
+const { QDLError, DownloadError } = require('../lib/tachyon-errors');
 
 const TACHYON_STORAGE_TYPE = 'ufs';
 
@@ -42,18 +42,29 @@ class QdlFlasher {
 				stdio: 'pipe'
 			});
 
-			const handleStream = (stream) => {
-				stream.on('data', chunk => {
-					chunk.toString().split('\n').map(line => line.trim()).filter(Boolean).forEach(line => {
-						this.processLogLine(line, qdlProcess);
+			await new Promise((resolve, reject) => {
+				const handleStream = (stream) => {
+					stream.on('data', chunk => {
+						chunk.toString().split('\n').map(line => line.trim()).filter(Boolean).forEach(line => {
+							try {
+								this.processLogLine(line);
+							} catch (error) {
+								reject(new QDLError(`QDL Error: ${error.message}`)); // Reject directly
+							}
+						});
 					});
-				});
-			};
+					stream.on('error', (error) => {
+						// stream error
+						reject(new DownloadError(`Download Error: ${error.message}`));
+					});
+				};
 
-			handleStream(qdlProcess.stdout);
-			handleStream(qdlProcess.stderr);
+				handleStream(qdlProcess.stdout);
+				handleStream(qdlProcess.stderr);
 
-			await qdlProcess;
+				qdlProcess.on('close', resolve);
+				qdlProcess.on('error', reject);
+			});
 		} finally {
 			if (this.progressBarInitialized) {
 				this.progressBar.stop();
@@ -110,24 +121,19 @@ class QdlFlasher {
 		];
 	}
 
-	processLogLine(line, process) {
+	processLogLine(line) {
 		fs.appendFileSync(this.outputLogFile, `${line}\n`);
+		if (line.includes('ERROR')) {
+			throw new QDLError(line);
+		}
 		if (line.includes('Waiting for EDL device')) {
 			this.ui.stdout.write('Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode.');
 			this.waitForDevice = true;
 			this.waitUntilDeviceIsReady();
-		} else if (line.includes('[ERROR]')) {
-			this.waitForDevice = false;
-			this.handleError(process, `${os.EOL}Error detected: ${line}${os.EOL}`);
 		} else {
 			this.waitForDevice = false;
 			this.processFlashingLogs(line);
 		}
-	}
-
-	handleError(process, message) {
-		this.ui.stdout.write(message);
-		process.kill();
 	}
 
 	processFlashingLogs(line) {
