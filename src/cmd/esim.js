@@ -11,6 +11,7 @@ const FlashCommand = require('./flash');
 const path = require('path');
 const _ = require('lodash');
 const chalk = require('chalk');
+const ParticleCache = require('../lib/particle-cache');
 
 const PROVISIONING_PROGRESS = 1;
 const PROVISIONING_SUCCESS = 2;
@@ -35,9 +36,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 		this.binaries = null;
 		this.verbose = false;
 		this.availableProvisioningData = new Set();
-
 		this.isTachyon = false;
 		this.adbProcess = null;
+		this.cache = new ParticleCache();
+		this.cacheKey = 'esim_provisioned_profiles';
 	}
 
 	async provisionCommand(args) {
@@ -105,33 +107,21 @@ module.exports = class ESimCommands extends CLICommandBase {
 	}
 
 	// Populate the availableProvisioningData set with the indices of the input JSON data
-	// If a profile is already provisioned (output JSON file exists with an entry), remove it from the set
+	// If a profile is already provisioned (exists in the cache), it removes the corresponding index from the set.
 	async _generateAvailableProvisioningData() {
-		const files = fs.readdirSync(this.outputFolder);
-		const jsonFiles = files.filter((file) => file.endsWith('.json'));
 		for (let i = 0; i < this.inputJsonData.provisioning_data.length; i++) {
 			this.availableProvisioningData.add(i);
 		}
-		for (const file of jsonFiles) {
-			const json = fs.readFileSync(path.join(this.outputFolder, file));
-			const data = JSON.parse(json);
-			for (const entry of data) {
-				// get the entry for which step: "expected_profiles"
-				// once the entry is obtained, get the details.profiles array
 
-				const expectedProfiles = entry.find((block) => block.step === 'expected_profiles');
-				if (!expectedProfiles) {
-					continue;
-				}
+		// Remove indices of already provisioned profiles from the availableProvisioningData set
+		const provisionedProfiles = this.cache.get(this.cacheKey) || [];
+		for (const profileSet of provisionedProfiles) {
+			const index = this.inputJsonData.provisioning_data.findIndex((item) => {
+				return _.isEqual(item.profiles, profileSet);
+			});
 
-				// Find the index of the provisioning_data block that matches the expectedProfiles
-				const index = this.inputJsonData.provisioning_data.findIndex((block) => {
-					return _.isEqual(block.profiles, expectedProfiles.details.profiles);
-				});
-
-				if (index !== -1) {
-					this.availableProvisioningData.delete(index);
-				}
+			if (index !== -1) {
+				this.availableProvisioningData.delete(index);
 			}
 		}
 	}
@@ -295,6 +285,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 			success = true;
 			console.log(`${os.EOL}Provisioning complete for EID ${eid}`);
 			await processOutput();
+
+			// Update the cache with the provisioned profile set
+			const provisionedProfiles = this.cache.get(this.cacheKey) || [];
+			provisionedProfiles.push(profilesToDownload);
+			this.cache.set(this.cacheKey, provisionedProfiles);
+
+			return;
 		} catch (error) {
 			await processOutput(error.message);
 		} finally {
