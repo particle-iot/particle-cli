@@ -1,5 +1,13 @@
 # Changelog
 
+# 3.32.6 - Feb 25 2025
+* Allow provisioning esim even with existing profiles
+* Add timezone during setup
+* Prevent blank system password 
+* Use local cache to esim profile checks
+* Wait EDL device instead of fail if there is no device
+* Improve error messaging on tachyon flashing
+
 # 3.32.5 - Feb 19 2025
 * fix qdl issues on Windows 
 
