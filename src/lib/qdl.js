@@ -2,10 +2,10 @@ const execa = require('execa');
 const utilities = require('../lib/utilities');
 const path = require('path');
 const fs = require('fs-extra');
-const os = require('os');
 const util = require('util');
 const temp = require('temp').track();
 const mkdirTemp = util.promisify(temp.mkdir);
+const os = require('os');
 
 const TACHYON_STORAGE_TYPE = 'ufs';
 
@@ -42,18 +42,25 @@ class QdlFlasher {
 				stdio: 'pipe'
 			});
 
-			const handleStream = (stream) => {
-				stream.on('data', chunk => {
-					chunk.toString().split('\n').map(line => line.trim()).filter(Boolean).forEach(line => {
-						this.processLogLine(line, qdlProcess);
+			await new Promise((resolve, reject) => {
+				const handleStream = (stream) => {
+					stream.on('data', chunk => {
+						chunk.toString().split('\n').map(line => line.trim()).filter(Boolean).forEach(this.processLogLine.bind(this));
 					});
+				};
+
+				handleStream(qdlProcess.stdout);
+				handleStream(qdlProcess.stderr);
+
+				qdlProcess.on('close', (output) => {
+					if (output !== 0) {
+						return reject(new Error('Unable to complete device flashing. See logs for further details.'));
+					} else {
+						return resolve();
+					}
 				});
-			};
-
-			handleStream(qdlProcess.stdout);
-			handleStream(qdlProcess.stderr);
-
-			await qdlProcess;
+				qdlProcess.on('error', reject);
+			});
 		} finally {
 			if (this.progressBarInitialized) {
 				this.progressBar.stop();
@@ -89,25 +96,12 @@ class QdlFlasher {
 		];
 	}
 
-	processLogLine(line, process) {
+	processLogLine(line) {
 		fs.appendFileSync(this.outputLogFile, `${line}\n`);
-
 		if (line.includes('Waiting for EDL device')) {
-			this.handleError(process, `Ensure your device is connected and in EDL mode${os.EOL}`);
-		} else if (line.includes('[ERROR]')) {
-			this.handleError(process, `${os.EOL}Error detected: ${line}${os.EOL}`);
-		} else {
-			this.processFlashingLogs(line);
-		}
-	}
-
-	handleError(process, message) {
-		this.ui.stdout.write(message);
-		process.kill();
-	}
-
-	processFlashingLogs(line) {
-		if (line.includes('status=getProgramInfo')) {
+			const message = `Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode ${os.EOL}`;
+			this.ui.stdout.write(this.ui.chalk.bold(this.ui.chalk.yellow(message)));
+		} else if (line.includes('status=getProgramInfo')) {
 			this.handleProgramInfo(line);
 		} else if (line.includes('status=Start flashing module')) {
 			this.handleModuleStart(line);

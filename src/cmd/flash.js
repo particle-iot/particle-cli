@@ -16,6 +16,7 @@ const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/fil
 const deviceOsUtils = require('../lib/device-os-version-util');
 const os = require('os');
 const semver = require('semver');
+
 const {
 	createFlashSteps,
 	filterModulesToFlash,
@@ -120,8 +121,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 			await qdl.run();
 			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
 		} catch (error) {
-			fs.appendFileSync(outputLog, 'Download failed with error: ' + error.message);
-			throw new Error('Download failed with error: ' + error.message);
+			fs.appendFileSync(outputLog, error.message);
+			throw error;
 		}
 	}
 
