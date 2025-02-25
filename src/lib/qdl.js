@@ -54,7 +54,7 @@ class QdlFlasher {
 
 				qdlProcess.on('close', (output) => {
 					if (output !== 0) {
-						return reject(new Error('The device flashing failed, please check the logs for more information'));
+						return reject(new Error('Unable to complete device flashing. See logs for further details.'));
 					} else {
 						return resolve();
 					}
