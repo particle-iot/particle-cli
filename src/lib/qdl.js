@@ -89,8 +89,8 @@ class QdlFlasher {
 				// Optional timeout after 5 minutes
 				setTimeout(() => {
 					clearInterval(interval);
-					reject(new Error('⏰ Device not detected within 5 minutes.'));
-				}, 5 * 60 * 1000);
+					reject(new Error('⏰ Device not detected within 1 minute.'));
+				}, 1 * 60 * 1000);
 			})
 		);
 	}
