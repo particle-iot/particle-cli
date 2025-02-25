@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 const util = require('util');
 const temp = require('temp').track();
 const mkdirTemp = util.promisify(temp.mkdir);
-const { QDLError, DownloadError } = require('../lib/tachyon-errors');
+const os = require('os');
 
 const TACHYON_STORAGE_TYPE = 'ufs';
 
@@ -45,24 +45,20 @@ class QdlFlasher {
 			await new Promise((resolve, reject) => {
 				const handleStream = (stream) => {
 					stream.on('data', chunk => {
-						chunk.toString().split('\n').map(line => line.trim()).filter(Boolean).forEach(line => {
-							try {
-								this.processLogLine(line);
-							} catch (error) {
-								reject(new QDLError(`QDL Error: ${error.message}`)); // Reject directly
-							}
-						});
-					});
-					stream.on('error', (error) => {
-						// stream error
-						reject(new DownloadError(`Download Error: ${error.message}`));
+						chunk.toString().split('\n').map(line => line.trim()).filter(Boolean).forEach(this.processLogLine.bind(this));
 					});
 				};
 
 				handleStream(qdlProcess.stdout);
 				handleStream(qdlProcess.stderr);
 
-				qdlProcess.on('close', resolve);
+				qdlProcess.on('close', (output) => {
+					if (output !== 0) {
+						return reject(new Error('The device flashing failed, please check the logs for more information'));
+					} else {
+						return resolve();
+					}
+				});
 				qdlProcess.on('error', reject);
 			});
 		} finally {
@@ -74,27 +70,6 @@ class QdlFlasher {
 			}
 		}
 	}
-
-	async waitUntilDeviceIsReady() {
-		return this.ui.showBusySpinnerUntilResolved(
-			'Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode...',
-			new Promise((resolve, reject) => {
-				const interval = setInterval(() => {
-					if (!this.waitForDevice) {
-						clearInterval(interval);
-						resolve();
-					}
-				}, 500);
-
-				// Optional timeout after 5 minutes
-				setTimeout(() => {
-					clearInterval(interval);
-					reject(new Error('⏰ Device not detected within 1 minute.'));
-				}, 1 * 60 * 1000);
-			})
-		);
-	}
-
 
 	async getExecutable() {
 		const archType = utilities.getArchType();
@@ -123,21 +98,10 @@ class QdlFlasher {
 
 	processLogLine(line) {
 		fs.appendFileSync(this.outputLogFile, `${line}\n`);
-		if (line.includes('ERROR')) {
-			throw new QDLError(line);
-		}
 		if (line.includes('Waiting for EDL device')) {
-			this.ui.stdout.write('Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode.');
-			this.waitForDevice = true;
-			this.waitUntilDeviceIsReady();
-		} else {
-			this.waitForDevice = false;
-			this.processFlashingLogs(line);
-		}
-	}
-
-	processFlashingLogs(line) {
-		if (line.includes('status=getProgramInfo')) {
+			const message = `Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode ${os.EOL}`;
+			this.ui.stdout.write(this.ui.chalk.bold(this.ui.chalk.yellow(message)));
+		} else if (line.includes('status=getProgramInfo')) {
 			this.handleProgramInfo(line);
 		} else if (line.includes('status=Start flashing module')) {
 			this.handleModuleStart(line);

@@ -122,7 +122,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
 		} catch (error) {
 			fs.appendFileSync(outputLog, error.message);
-			throw new Error('An error occurred during the process, see logs for more details');
+			throw error;
 		}
 	}
 
