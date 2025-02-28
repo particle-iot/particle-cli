@@ -63,9 +63,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					0
 				);
 				const product = await this._runStepWithTiming(
-					`Next, let's select a Particle organization that you are part of.${os.EOL}` +
-					`This organization will help manage the Tachyon device and keep things organized.${os.EOL}${os.EOL}` +
-					"Once you've selected an organization, you can then choose which product the device will belong to.",
+					`Next, let's select a Particle product for your Tachyon.${os.EOL}` +
+					'A product will help manage the Tachyon device and keep things organized.',
 					3,
 					() => this._selectProduct()
 				);
@@ -329,6 +328,12 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			type: 'input',
 			name: 'productName',
 			message: 'Enter the product name:',
+			validate: (value) => {
+				if (value.length === 0) {
+					return 'You need to provide a product name';
+				}
+				return true;
+			}
 		}, {
 			type: 'input',
 			name: 'locationOptIn',
@@ -442,6 +447,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 				name: 'sshPublicKey',
 				message: 'Enter the path to your SSH public key:',
 				validate: (value) => {
+					if (!value.endsWith('.pub')) {
+						return 'SSH public key must be a .pub file';
+					}
 					if (!fs.existsSync(value)) {
 						return 'You need to provide a path to your SSH public key';
 					}
