@@ -19,8 +19,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
 		spinnerMixin(this);
-		const { api } = this._particleApi();
-		this.api = api;
+		this._setupApi();
 		this.ui = ui || this.ui;
 		this._userConfiguration = this._userConfiguration.bind(this);
 		this._getSystemPassword = this._getSystemPassword.bind(this);
@@ -64,9 +63,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					0
 				);
 				const product = await this._runStepWithTiming(
-					`Next, let's select a Particle organization that you are part of.${os.EOL}` +
-					`This organization will help manage the Tachyon device and keep things organized.${os.EOL}${os.EOL}` +
-					"Once you've selected an organization, you can then choose which product the device will belong to.",
+					`Next, let's select a Particle product for your Tachyon.${os.EOL}` +
+					'A product will help manage the Tachyon device and keep things organized.',
 					3,
 					() => this._selectProduct()
 				);
@@ -127,7 +125,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
             `  - Activate the built-in 5G modem${os.EOL}` +
             `  - Connect to the Particle Cloud${os.EOL}` +
             `  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
-            'For more information about Tachyon, visit our developer site at: developer.particle.io!',
+            'For more information about Tachyon, visit our developer site at: https://developer.particle.io!',
 					8
 				);
 			} else {
@@ -163,6 +161,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 **Important:**
 - This tool requires you to be logged into your Particle account.
 - For more details, check out the documentation at: https://part.cl/setup-tachyon`);
+	}
+
+	_setupApi() {
+		const { api } = this._particleApi();
+		this.api = api;
 	}
 
 	async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
@@ -218,6 +221,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		} catch {
 			const cloudCommand = new CloudCommand();
 			await cloudCommand.login();
+			this._setupApi();
 		}
 	}
 
@@ -324,6 +328,12 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			type: 'input',
 			name: 'productName',
 			message: 'Enter the product name:',
+			validate: (value) => {
+				if (value.length === 0) {
+					return 'You need to provide a product name';
+				}
+				return true;
+			}
 		}, {
 			type: 'input',
 			name: 'locationOptIn',
@@ -437,6 +447,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 				name: 'sshPublicKey',
 				message: 'Enter the path to your SSH public key:',
 				validate: (value) => {
+					if (!value.endsWith('.pub')) {
+						return 'SSH public key must be a .pub file';
+					}
 					if (!fs.existsSync(value)) {
 						return 'You need to provide a path to your SSH public key';
 					}
