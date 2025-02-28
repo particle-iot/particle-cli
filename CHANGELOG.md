@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.32.7 - Feb 28 2025
+* Fix login and product selection during Tachyon setup
+
 # 3.32.6 - Feb 25 2025
 * Allow provisioning esim even with existing profiles
 * Add timezone during setup
