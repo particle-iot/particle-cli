@@ -19,8 +19,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
 		spinnerMixin(this);
-		const { api } = this._particleApi();
-		this.api = api;
+		this._setupApi();
 		this.ui = ui || this.ui;
 		this._userConfiguration = this._userConfiguration.bind(this);
 		this._getSystemPassword = this._getSystemPassword.bind(this);
@@ -127,7 +126,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
             `  - Activate the built-in 5G modem${os.EOL}` +
             `  - Connect to the Particle Cloud${os.EOL}` +
             `  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
-            'For more information about Tachyon, visit our developer site at: developer.particle.io!',
+            'For more information about Tachyon, visit our developer site at: https://developer.particle.io!',
 					8
 				);
 			} else {
@@ -163,6 +162,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 **Important:**
 - This tool requires you to be logged into your Particle account.
 - For more details, check out the documentation at: https://part.cl/setup-tachyon`);
+	}
+
+	_setupApi() {
+		const { api } = this._particleApi();
+		this.api = api;
 	}
 
 	async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
@@ -218,6 +222,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		} catch {
 			const cloudCommand = new CloudCommand();
 			await cloudCommand.login();
+			this._setupApi();
 		}
 	}
 
