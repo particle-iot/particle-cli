@@ -50,6 +50,10 @@ module.exports = ({ commandProcessor, root }) => {
 			version: {
 				description: 'Version to download package for',
 				type: 'string'
+			},
+			variant: {
+				description: 'Variant of the Tachyon package to download',
+				type: 'string'
 			}
 		},
 		handler: (args) => {
