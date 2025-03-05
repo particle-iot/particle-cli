@@ -40,7 +40,11 @@ const PlatformId = PLATFORMS.reduce((out, p) => {
 function platformForId(id) {
 	const p = PLATFORMS_BY_ID.get(id);
 	if (!p) {
-		throw new Error(`Unknown platform ID: ${id}`);
+		if (id === 43) { //TODO (hmontero): remove it when platform is correctly added to device-constants and public
+			return;
+		} else {
+			throw new Error(`Unknown platform ID: ${id}`);
+		}
 	}
 	return p;
 }
