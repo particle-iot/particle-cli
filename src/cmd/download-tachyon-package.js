@@ -36,7 +36,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		const answer = await this.ui.prompt(question);
 		return answer.version;
 	}
-	async download ({ region, version, alwaysCleanCache = false }) {
+	async download ({ region, version, alwaysCleanCache = false, variant = 'headless' }) {
 		// prompt for region and version if not provided
 		if (!region) {
 			region = await this._selectRegion();
@@ -46,7 +46,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		}
 		const manager = new DownloadManager(this.ui);
 		const manifest = await manager.fetchManifest({ version });
-		const build = manifest.builds.find((b) => b.region === region);
+		const build = manifest.builds.find((b) => b.region === region && b.variant === variant);
 		if (!build) {
 			throw new Error(`No build available for region: ${region}`);
 		}
