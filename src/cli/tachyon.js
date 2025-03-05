@@ -26,6 +26,10 @@ module.exports = ({ commandProcessor, root }) => {
 			timezone: {
 				description: 'Timezone to set on the device, like America/Los_Angeles. Defaults to the timezone of this computer.',
 				type: 'string'
+			},
+			variant: {
+				description: 'Variant of the Tachyon package to download',
+				type: 'string'
 			}
 		},
 		handler: (args) => {
