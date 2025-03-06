@@ -30,7 +30,11 @@ module.exports = ({ commandProcessor, root }) => {
 			variant: {
 				description: 'Variant of the Tachyon package to download',
 				type: 'string'
-			}
+			},
+			board: {
+				description: 'Board to download package for',
+				type: 'string'
+			},
 		},
 		handler: (args) => {
 			const SetupTachyonCommands = require('../cmd/setup-tachyon');
@@ -54,6 +58,10 @@ module.exports = ({ commandProcessor, root }) => {
 			variant: {
 				description: 'Variant of the Tachyon package to download',
 				type: 'string'
+			},
+			board: {
+				description: 'Board to download package for',
+				type: 'string'
 			}
 		},
 		handler: (args) => {
@@ -74,6 +82,14 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			version: {
 				description: 'Version to download package for',
+				type: 'string'
+			},
+			variant: {
+				description: 'Variant of the Tachyon package to download',
+				type: 'string'
+			},
+			board: {
+				description: 'Board to download package for',
 				type: 'string'
 			},
 			all: {
