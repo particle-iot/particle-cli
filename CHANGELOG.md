@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.32.8 - Mar 09 2025
+* Add --variant option to pick specific package on setup
+
 # 3.32.7 - Feb 28 2025
 * Fix login and product selection during Tachyon setup
 
