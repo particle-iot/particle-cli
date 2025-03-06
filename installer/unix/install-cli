@@ -14,7 +14,6 @@ DEST_PATH="$HOME/bin"
 DEST="$DEST_PATH/$BINARY"
 MANIFEST_HOST=${MANIFEST_HOST:-binaries.particle.io}
 MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest.json"
-SHELL_CONFIG="$HOME/.bash_profile"
 
 DISABLE_AUTOMATIC_UPDATES=0
 if [ -n "$VERSION" ]; then
@@ -59,16 +58,6 @@ case $PROCESSOR in
         exit 1
         ;;
 esac
-
-# setup for legacy macOS bash
-if [ -e "$HOME/.profile" ] && [ "${OS}" == "darwin" ]; then
-   SHELL_CONFIG="$HOME/.profile"
-fi
-
-# setup for zsh if that's the prefered shell
-if [ -n "$($SHELL -c 'echo $ZSH_VERSION')" ]; then
-   SHELL_CONFIG="$HOME/.zprofile"
-fi
 
 function program_exists {
     hash "$1" 2> /dev/null
@@ -144,25 +133,32 @@ function install_program {
 
 install_program "openssl"
 
-# Add ~/bin to the path
 function file_contains {
     grep "$2" "$1" 1>/dev/null 2>&1
 }
 
-if ! file_contains "$SHELL_CONFIG" "\$HOME/bin"; then
-    cat >> "$SHELL_CONFIG" <<EOL
-
+# Add ~/bin to the path
+function add_to_path {
+    file=$1
+    if [[ -f "$file" ]] && ! file_contains "$file" "\$HOME/bin"; then
+        cat >> "$file" <<EOL
+  
 # added by Particle CLI
 # add home bin directory to PATH if it exists
 if [ -d "\$HOME/bin" ] ; then
     PATH="\$HOME/bin:\$PATH"
 fi
 EOL
-fi
+    fi
+}
 
+add_to_path "$HOME/.profile"
+add_to_path "$HOME/.bash_profile"
+add_to_path "$HOME/.zprofile"
+  
 echo
-echo ":::: The Particle CLI has been installed to: \"$DEST\""
-echo ":::: Your \"$SHELL_CONFIG\" file has been updated to properly set \$PATH"
+echo ":::: The Particle CLI has been installed to: \"$DEST\"" and this directory
+echo ":::: has been added to your \$PATH"
 echo
 echo '************************************************************************'
 echo '** YOU MUST CLOSE AND REOPEN YOUR TERMINAL BEFORE CHANGES TAKE EFFECT **'
