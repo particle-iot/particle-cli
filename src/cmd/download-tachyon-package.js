@@ -48,7 +48,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		const manifest = await manager.fetchManifest({ version });
 		const build = manifest.builds.find((b) => b.region === region && b.variant === variant && b.board === board);
 		if (!build) {
-			throw new Error(`No build available for region: ${region}`);
+			throw new Error('No build available for the provided parameters');
 		}
 		const { artifact_url: url, sha256_checksum: expectedChecksum } = build.artifacts[0];
 		const outputFileName = url.replace(/.*\//, '');
@@ -73,7 +73,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 			const manifest = await manager.fetchManifest({ version });
 			const build = manifest.builds.find((b) => b.region === region && b.variant === variant && b.board === board);
 			if (!build) {
-				throw new Error(`No build available for region: ${region}`);
+				throw new Error('No build available for the provided parameters');
 			}
 			const { artifact_url: url } = build.artifacts[0];
 			const outputFileName = url.replace(/.*\//, '');

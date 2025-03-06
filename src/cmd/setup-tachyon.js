@@ -369,7 +369,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		const manifest = await manager.fetchManifest({ version });
 		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board);
 		if (!build) {
-			throw new Error('No builds available for the selected region, variant or board');
+			throw new Error('No build available for the provided parameters');
 		}
 		const artifact = build.artifacts[0];
 		const url = artifact.artifact_url;
