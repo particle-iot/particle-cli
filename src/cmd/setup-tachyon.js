@@ -29,7 +29,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version = 'latest', timezone, load_config: loadConfig, save_config: saveConfig, variant = 'headless' } = {}) {
+	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version = 'latest', timezone, load_config: loadConfig, save_config: saveConfig, variant = 'headless', board = 'formfactor' } = {}) {
 		try {
 			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
@@ -77,7 +77,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
         `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
 				4,
-				() => this._download({ region, version, alwaysCleanCache, variant })
+				() => this._download({ region, version, alwaysCleanCache, variant, board })
 			);
 
 			const registrationCode = await this._runStepWithTiming(
@@ -358,7 +358,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return { systemPassword, wifi, sshPublicKey };
 	}
 
-	async _download({ region, version, alwaysCleanCache, variant }) {
+	async _download({ region, version, alwaysCleanCache, variant, board }) {
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
 		if (fs.existsSync(version)) {
@@ -367,9 +367,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 
 		const manager = new DownloadManager(this.ui);
 		const manifest = await manager.fetchManifest({ version });
-		const build = manifest?.builds.find(build => build.region === region && build.variant === variant);
+		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board);
 		if (!build) {
-			throw new Error('No builds available for the selected region or variant');
+			throw new Error('No builds available for the selected region, variant or board');
 		}
 		const artifact = build.artifacts[0];
 		const url = artifact.artifact_url;
