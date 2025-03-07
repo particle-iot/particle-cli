@@ -1,6 +1,9 @@
 # Changelog
 
-# 3.32.8 - Mar 09 2025
+# 3.32.9 - Mar 07 2025
+* Add --board option to pick specific package on setup
+
+# 3.32.8 - Mar 06 2025
 * Add --variant option to pick specific package on setup
 
 # 3.32.7 - Feb 28 2025
