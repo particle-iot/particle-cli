@@ -37,9 +37,11 @@
         "softap-setup": "^4.1.0",
         "temp": "^0.9.1",
         "unzipper": "^0.12.3",
+        "uuid": "^11.1.0",
         "verror": "^1.10.0",
         "wiring-preprocessor": "^2.2.0",
         "xtend": "^4.0.2",
+        "yaml": "^2.7.0",
         "yargs": "^5.0.0"
       },
       "bin": {
@@ -9378,6 +9380,18 @@
       "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
       "integrity": "sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8="
     },
+    "node_modules/uuid": {
+      "version": "11.1.0",
+      "resolved": "https://registry.npmjs.org/uuid/-/uuid-11.1.0.tgz",
+      "integrity": "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==",
+      "funding": [
+        "https://github.com/sponsors/broofa",
+        "https://github.com/sponsors/ctavan"
+      ],
+      "bin": {
+        "uuid": "dist/esm/bin/uuid"
+      }
+    },
     "node_modules/validate-npm-package-license": {
       "version": "3.0.1",
       "resolved": "https://registry.npmjs.org/validate-npm-package-license/-/validate-npm-package-license-3.0.1.tgz",
@@ -9566,6 +9580,17 @@
       "resolved": "https://registry.npmjs.org/yallist/-/yallist-2.1.2.tgz",
       "integrity": "sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI=",
       "dev": true
+    },
+    "node_modules/yaml": {
+      "version": "2.7.0",
+      "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.7.0.tgz",
+      "integrity": "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA==",
+      "bin": {
+        "yaml": "bin.mjs"
+      },
+      "engines": {
+        "node": ">= 14"
+      }
     },
     "node_modules/yargs": {
       "version": "5.0.0",
@@ -17186,6 +17211,11 @@
       "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
       "integrity": "sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8="
     },
+    "uuid": {
+      "version": "11.1.0",
+      "resolved": "https://registry.npmjs.org/uuid/-/uuid-11.1.0.tgz",
+      "integrity": "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A=="
+    },
     "validate-npm-package-license": {
       "version": "3.0.1",
       "resolved": "https://registry.npmjs.org/validate-npm-package-license/-/validate-npm-package-license-3.0.1.tgz",
@@ -17353,6 +17383,11 @@
       "resolved": "https://registry.npmjs.org/yallist/-/yallist-2.1.2.tgz",
       "integrity": "sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI=",
       "dev": true
+    },
+    "yaml": {
+      "version": "2.7.0",
+      "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.7.0.tgz",
+      "integrity": "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA=="
     },
     "yargs": {
       "version": "5.0.0",
