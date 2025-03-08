@@ -11,8 +11,10 @@ const settings = require('../../settings');
 const ParticleApi = require('./api');
 const { UnauthorizedError } = require('./api');
 const Table = require('cli-table');
+const { platformForId } = require('../lib/platform');
 
 const DOCKER_CONFIG_URL = 'https://tachyon-ci.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
+const PARTICLE_ENV_FILE = '.particle_env.yaml';
 
 module.exports = class AppCommands extends CLICommandBase {
 	constructor() {
@@ -21,54 +23,50 @@ module.exports = class AppCommands extends CLICommandBase {
 		this.api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
 	}
 
-	async push({ deviceId, appDir }) {
-		if (appDir) {
-			process.chdir(appDir);
-		}
+	async push({ deviceId, appDir = '.' }) {
+		process.chdir(appDir);
 
-		const device = await this._getDevice(deviceId);
+		try {
+			const device = await this._getDevice(deviceId, appDir);
+			deviceId = device.id;
 
-		const appName = await this._getAppName();
-		this.ui.write(`Building application ${appName}...${os.EOL}`);
+			const appName = await this._getAppName();
+			this.ui.write(`Pushing application ${appName} to device ${deviceId}...${os.EOL}`);
 
-		const uuid = uuidv4();
-		const dockerConfigDir = await this._getDockerConfig();
+			this.ui.write('Building application...');
+			const uuid = uuidv4();
+			const dockerConfigDir = await this._getDockerConfig();
 
-		await this._configureDocker(dockerConfigDir);
+			await this._configureDocker(dockerConfigDir);
 
-		// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
-		// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
-		// Then remove the build key from the docker-compose.yaml and replace it by the image key with the serviceTag
-		const dockerCompose = await this._getDockerCompose(appName);
+			// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
+			// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
+			// Then remove the build key from the docker-compose.yaml and replace it by the image key with the serviceTag
+			const dockerCompose = await this._getDockerCompose(appName);
 
-		const services = dockerCompose.get('services');
-		if (services) {
-			for (const { key: { value: service }, value: serviceConfig } of services.items) {
-				const buildDir = serviceConfig.get('build');
-				if (buildDir) {
-					const serviceTag = `particleapp/${service}:${uuid}`;
-					await this._builderContainer(dockerConfigDir, path.join(appName, buildDir), serviceTag);
-					await this._pushContainer(dockerConfigDir, serviceTag);
-					this._updateDockerCompose(serviceConfig, serviceTag);
+			const services = dockerCompose.get('services');
+			if (services) {
+				for (const { key: { value: service }, value: serviceConfig } of services.items) {
+					const buildDir = serviceConfig.get('build');
+					if (buildDir) {
+						const serviceTag = `particleapp/${service}:${uuid}`;
+						await this._builderContainer(dockerConfigDir, path.join(appName, buildDir), serviceTag);
+						await this._pushContainer(dockerConfigDir, serviceTag);
+						this._updateDockerCompose(serviceConfig, serviceTag);
+					}
 				}
 			}
-		}
 
-		this.ui.write(`${os.EOL}Successfully built ${appName}${os.EOL}`);
+			this.ui.write(`${os.EOL}Successfully built ${appName}${os.EOL}`);
 
-		await this._pushApp(device, appName, dockerCompose);
+			await this._pushApp(device, appName, dockerCompose);
 
-		this.ui.write(`Successfully pushed ${appName} to device ${deviceId}${os.EOL}`);
-	}
-
-	async _getDevice(deviceId) {
-		try {
-			return await this.api.getDeviceAttributes(deviceId);
+			this.ui.write(`Successfully pushed ${appName} to device ${deviceId}${os.EOL}`);
 		} catch (error) {
 			if (error instanceof UnauthorizedError) {
 				throw new Error('You must be logged in to push an application to a device.');
 			}
-			throw new Error(`You do not have access to the ${deviceId}: ${error.message}`);
+			throw error;
 		}
 	}
 
@@ -200,7 +198,7 @@ module.exports = class AppCommands extends CLICommandBase {
 
 		} catch (error) {
 			if (error.statusCode === 404) {
-				throw new Error(`Connect ${device.id} to the cloud before pushing an application.`);
+				throw new Error(`Connect ${device.id} to the cloud before pushing an application. Run particle login and try again.`);
 			}
 			console.error('Error pushing application to the device:', error);
 			throw error;
@@ -208,7 +206,8 @@ module.exports = class AppCommands extends CLICommandBase {
 	}
 
 	async list({ deviceId }) {
-		const device = await this._getDevice(deviceId);
+		const device = await this._getDevice(deviceId, '.');
+		deviceId = device.id;
 
 		try {
 			const { data: deviceDoc } = await this.api.getDocument({
@@ -235,7 +234,7 @@ module.exports = class AppCommands extends CLICommandBase {
 				this.ui.write(`Applications running on device ${deviceId}:${os.EOL}`);
 
 				for (const [appName, appDetails] of Object.entries(apps)) {
-					this.ui.write(`${appName}`);
+					this.ui.write(`App name: ${appName}`);
 
 					// Create a table with headers
 					const cols = (process.stdout.columns || 80) - 35;
@@ -253,6 +252,9 @@ module.exports = class AppCommands extends CLICommandBase {
 				this.ui.write(`No applications running on device ${deviceId}.${os.EOL}`);
 			}
 		} catch (error) {
+			if (error instanceof UnauthorizedError) {
+				throw new Error('You must be logged in to list applications. Run particle login and try again.');
+			}
 			if (error.statusCode === 404) {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
@@ -262,7 +264,8 @@ module.exports = class AppCommands extends CLICommandBase {
 	}
 
 	async remove({ deviceId, appName }) {
-		const device = await this._getDevice(deviceId);
+		const device = await this._getDevice(deviceId, '.');
+		deviceId = device.id;
 
 		try {
 			const { data: deviceDoc } = await this.api.getDocument({
@@ -288,6 +291,9 @@ module.exports = class AppCommands extends CLICommandBase {
 				this.ui.write(`Application ${appName} not found on device ${deviceId}.${os.EOL}`);
 			}
 		} catch (error) {
+			if (error instanceof UnauthorizedError) {
+				throw new Error('You must be logged in to remove an application. Run particle login and try again.');
+			}
 			if (error.statusCode === 404) {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
@@ -295,5 +301,156 @@ module.exports = class AppCommands extends CLICommandBase {
 			console.error(`Error removing application ${appName} from device ${deviceId}:`, error);
 			throw error;
 		}
+	}
+
+	async _getDevice(deviceId, appDir) {
+		let device;
+		if (deviceId) {
+			device = await this._getDeviceAttributes(deviceId);
+		} else {
+			device = await this._loadDeviceFromEnv(appDir);
+			if (device) {
+				return device;
+			}
+			device = await this._selectDevice(appDir);
+		}
+		await this._saveDeviceToEnv(device, appDir);
+		return device;
+	}
+
+	async _getDeviceAttributes(deviceId) {
+		try {
+			return await this.api.getDeviceAttributes(deviceId);
+		} catch (error) {
+			throw new Error(`You do not have access to the ${deviceId}: ${error.message}`);
+		}
+	}
+
+	async _loadDeviceFromEnv(appDir) {
+		try {
+			const envPath = path.join(appDir, PARTICLE_ENV_FILE);
+			const envContent = await fs.readFile(envPath, 'utf8');
+			let doc = yaml.parseDocument(envContent);
+			return await this._getDeviceAttributes(doc.get('device_id'));
+		} catch {
+			return null;
+		}
+	}
+
+	async _saveDeviceToEnv(device, appDir) {
+		// load existing env file and parse as yaml doc
+		const envPath = path.join(appDir, PARTICLE_ENV_FILE);
+		let doc;
+		try {
+			const envContent = await fs.readFile(envPath, 'utf8');
+			doc = yaml.parseDocument(envContent);
+		} catch {
+			doc = new yaml.Document();
+		}
+		doc.set('device_id', device.id);
+		// save doc but only warn if it fails
+		try {
+			await fs.writeFile(envPath, doc.toString());
+		} catch (error) {
+			this.ui.write(`Warning: Failed to save ${envPath}: ${error.message}`);
+		}
+	}
+
+	async _selectDevice() {
+		const { orgSlug } = await this._getOrg();
+		let productId = await this._getProduct(orgSlug);
+
+		if (!productId) {
+			throw new Error('You do not have any Linux/Tachyon products available. Create a new product in the Console and try again.');
+		}
+		let device = await this._getDeviceProduct(productId);
+		if (!device) {
+			throw new Error('You do not have any Linux/Tachyon devices in this product. Setup a device and try again.');
+		}
+
+		return device;
+	}
+
+	async _getOrg() {
+		const orgsResp = await this.api.getOrgs();
+		const orgs = orgsResp.organizations;
+
+		const orgName = orgs.length
+			? await this._promptForOrg([...orgs.map(org => org.name), 'Sandbox'])
+			: 'Sandbox';
+
+		const orgSlug = orgName !== 'Sandbox' ? orgs.find(org => org.name === orgName).slug : null;
+		return { orgName, orgSlug };
+	}
+
+	async _promptForOrg(choices) {
+		const question = [
+			{
+				type: 'list',
+				name: 'org',
+				message: 'Select an organization:',
+				choices,
+			},
+		];
+		const { org } = await this.ui.prompt(question);
+		return org;
+	}
+
+	async _getProduct(orgSlug) {
+		const productsResp = await this.api.getProducts(orgSlug);
+		let products = productsResp?.products || [];
+
+		products = products.filter((product) => platformForId(product.platform_id)?.features?.includes('linux'));
+
+		if (!products.length) {
+			return null; // No Linux/Tachyon products available
+		}
+
+		const selectedProductName = await this._promptForProduct(products.map(product => product.name));
+
+		return products.find(p => p.name === selectedProductName)?.id;
+	}
+
+	async _promptForProduct(choices) {
+		const question = [
+			{
+				type: 'list',
+				name: 'product',
+				message: 'Select a product:',
+				choices,
+			},
+		];
+		const { product } = await this.ui.prompt(question);
+		return product;
+	}
+
+
+	async _getDeviceProduct(productId) {
+		const devicesResp = await this.api.listDevices({ product: productId });
+		const devices = devicesResp?.devices || [];
+
+		if (!devices.length) {
+			return null; // No devices in product
+		}
+
+		const choices = devices.map(device => {
+			const displayName = device.name ? `${device.name} (${device.id})` : `${device.id}`;
+			return { name: displayName, value: device };
+		});
+
+		return this._promptForDevice(choices);
+	}
+
+	async _promptForDevice(choices) {
+		const question = [
+			{
+				type: 'list',
+				name: 'device',
+				message: 'Select a device:',
+				choices,
+			},
+		];
+		const { device } = await this.ui.prompt(question);
+		return device;
 	}
 };

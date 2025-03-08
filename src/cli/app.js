@@ -2,7 +2,7 @@ module.exports = ({ commandProcessor, root }) => {
 	const app = commandProcessor.createCategory(root, 'app', 'Manage Edge applications');
 
 	commandProcessor.createCommand(app, 'push', 'Build and push an Edge application to a product or device', {
-		params: '<deviceId> [appDir]',
+		params: '[deviceId] [appDir]',
 		handler: (args) => {
 			const appCommand = require('../cmd/app');
 			return new appCommand().push(args.params);
@@ -13,7 +13,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(app, 'list', 'List Edge applications to a product or device', {
-		params: '<deviceId>',
+		params: '[deviceId]',
 		handler: (args) => {
 			const appCommand = require('../cmd/app');
 			return new appCommand().list(args.params);
@@ -24,7 +24,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(app, 'remove', 'Remove an Edge application from a product or device', {
-		params: '<deviceId> <appName>',
+		params: '<appName> [deviceId]',
 		handler: (args) => {
 			const appCommand = require('../cmd/app');
 			return new appCommand().remove(args.params);
