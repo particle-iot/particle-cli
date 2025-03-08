@@ -80,9 +80,11 @@
     "softap-setup": "^4.1.0",
     "temp": "^0.9.1",
     "unzipper": "^0.12.3",
+    "uuid": "^11.1.0",
     "verror": "^1.10.0",
     "wiring-preprocessor": "^2.2.0",
     "xtend": "^4.0.2",
+    "yaml": "^2.7.0",
     "yargs": "^5.0.0"
   },
   "devDependencies": {
