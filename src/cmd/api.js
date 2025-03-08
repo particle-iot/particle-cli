@@ -356,6 +356,26 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	getDocument({ productId, deviceId, docName, headers, context }) {
+		return this._wrap(this.api.get({
+			uri: `/v1/products/${productId}/devices/${deviceId}/docs/${docName}`,
+			auth: this.accessToken,
+			headers,
+			context
+		}));
+	}
+
+	patchDocument({ productId, deviceId, docName, patchOps, headers, context }) {
+		return this._wrap(this.api.request({
+			uri: `/v1/products/${productId}/devices/${deviceId}/docs/${docName}`,
+			method: 'patch',
+			auth: this.accessToken,
+			data: patchOps,
+			headers,
+			context
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
