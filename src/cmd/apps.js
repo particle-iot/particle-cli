@@ -10,6 +10,7 @@ const CLICommandBase = require('./base');
 const settings = require('../../settings');
 const ParticleApi = require('./api');
 const { UnauthorizedError } = require('./api');
+const Table = require('cli-table');
 
 const DOCKER_CONFIG_URL = 'https://tachyon-ci.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
 
@@ -28,7 +29,7 @@ module.exports = class AppsCommands extends CLICommandBase {
 		const device = await this._getDevice(deviceId);
 
 		const appName = await this._getAppName();
-		this.ui.write(`Building application $\{appName}...${os.EOL}`);
+		this.ui.write(`Building application ${appName}...${os.EOL}`);
 
 		const uuid = uuidv4();
 		const dockerConfigDir = await this._getDockerConfig();
@@ -203,12 +204,93 @@ module.exports = class AppsCommands extends CLICommandBase {
 		}
 	}
 
+	async list({ deviceId }) {
+		const device = await this._getDevice(deviceId);
 
-	list() {
-		throw new Error('Not implemented');
+		try {
+			const { data: deviceDoc } = await this.api.getDocument({
+				productId: device.product_id,
+				deviceId: device.id,
+				docName: 'system'
+			});
+
+			const desiredApps = deviceDoc.features?.applications?.desiredProperties?.apps;
+			if (desiredApps && Object.entries(desiredApps).length > 0) {
+				this.ui.write(`Applications desired for device ${deviceId}:`);
+
+				for (const appName of Object.keys(desiredApps)) {
+					this.ui.write(appName);
+				}
+
+				this.ui.write('');
+			} else {
+				this.ui.write(`No applications desired for device ${deviceId}.${os.EOL}`);
+			}
+
+			const apps = deviceDoc.features?.applications?.properties?.apps;
+			if (apps && Object.entries(apps).length > 0) {
+				this.ui.write(`Applications running on device ${deviceId}:${os.EOL}`);
+
+				for (const [appName, appDetails] of Object.entries(apps)) {
+					this.ui.write(`${appName}`);
+
+					// Create a table with headers
+					const cols = (process.stdout.columns || 80) - 35;
+					const table = new Table({
+						head: ['Container', 'Details'],
+						colWidths: [30, cols],
+						style: { head: ['white'] }
+					});
+					for (const { name: container, ...containerDetails } of appDetails.containers) {
+						table.push([container, JSON.stringify(containerDetails, null, 2)]);
+					}
+					this.ui.write(table.toString() + os.EOL);
+				}
+			} else {
+				this.ui.write(`No applications running on device ${deviceId}.${os.EOL}`);
+			}
+		} catch (error) {
+			if (error.statusCode === 404) {
+				throw new Error(`${device.id} has no cloud application.`);
+			}
+			console.error('Error getting application from the device:', error);
+			throw error;
+		}
 	}
 
-	remove() {
-		throw new Error('Not implemented');
+	async remove({ deviceId, appName }) {
+		const device = await this._getDevice(deviceId);
+
+		try {
+			const { data: deviceDoc } = await this.api.getDocument({
+				productId: device.product_id,
+				deviceId: device.id,
+				docName: 'system'
+			});
+
+			if (deviceDoc.features?.applications?.desiredProperties?.apps && deviceDoc.features.applications.desiredProperties.apps[appName]) {
+				const patchOps = [{
+					op: 'remove',
+					path: `/features/applications/desiredProperties/apps/${appName}`
+				}];
+
+				await this.api.patchDocument({
+					productId: device.product_id,
+					deviceId: device.id,
+					docName: 'system',
+					patchOps
+				});
+				this.ui.write(`Successfully removed ${appName} from device ${deviceId}.${os.EOL}`);
+			} else {
+				this.ui.write(`Application ${appName} not found on device ${deviceId}.${os.EOL}`);
+			}
+		} catch (error) {
+			if (error.statusCode === 404) {
+				throw new Error(`${device.id} has no cloud application.`);
+			}
+
+			console.error(`Error removing application ${appName} from device ${deviceId}:`, error);
+			throw error;
+		}
 	}
 };
