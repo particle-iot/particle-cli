@@ -2,12 +2,13 @@ module.exports = ({ commandProcessor, root }) => {
 	const apps = commandProcessor.createCategory(root, 'apps', 'Manage Edge applications');
 
 	commandProcessor.createCommand(apps, 'push', 'Build and push an Edge application to a product or device', {
-		handler: () => {
+		params: '<deviceId> [appDir]',
+		handler: (args) => {
 			const AppsCommand = require('../cmd/apps');
-			return new AppsCommand().push();
+			return new AppsCommand().push(args.params);
 		},
 		examples: {
-			'$0 $command': 'Build and push this Edge application'
+			'$0 $command my_tachyon': 'Build and push the Edge application in the current directory for the device my_tachyon'
 		}
 	});
 

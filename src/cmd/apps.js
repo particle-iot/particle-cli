@@ -1,17 +1,35 @@
-const CLICommandBase = require('./base');
 const fs = require('fs-extra');
 const path = require('path');
+const os = require('os');
 const yaml = require('yaml');
 const fetch = require('node-fetch');
 const execa = require('execa');
 const { v4: uuidv4 } = require('uuid');
+
+const CLICommandBase = require('./base');
 const settings = require('../../settings');
+const ParticleApi = require('./api');
+const { UnauthorizedError } = require('./api');
 
 const DOCKER_CONFIG_URL = 'https://tachyon-ci.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
 
 module.exports = class AppsCommands extends CLICommandBase {
-	async push() {
+	constructor() {
+		super();
+		const auth = settings.access_token;
+		this.api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+	}
+
+	async push({ deviceId, appDir }) {
+		if (appDir) {
+			process.chdir(appDir);
+		}
+
+		const device = await this._getDevice(deviceId);
+
 		const appName = await this._getAppName();
+		this.ui.write(`Building application $\{appName}...${os.EOL}`);
+
 		const uuid = uuidv4();
 		const dockerConfigDir = await this._getDockerConfig();
 
@@ -35,9 +53,22 @@ module.exports = class AppsCommands extends CLICommandBase {
 			}
 		}
 
-		// HERE print out the updated docker-compose.yaml
+		this.ui.write(`${os.EOL}Successfully built ${appName}${os.EOL}`);
 
-		return `Successfully pushed ${appName}:${uuid}`;
+		await this._pushApp(device, appName, dockerCompose);
+
+		this.ui.write(`Successfully pushed ${appName} to device ${deviceId}${os.EOL}`);
+	}
+
+	async _getDevice(deviceId) {
+		try {
+			return await this.api.getDeviceAttributes(deviceId);
+		} catch (error) {
+			if (error instanceof UnauthorizedError) {
+				throw new Error('You must be logged in to push an application to a device.');
+			}
+			throw new Error(`You do not have access to the ${deviceId}: ${error.message}`);
+		}
 	}
 
 	async _getAppName() {
@@ -122,6 +153,56 @@ module.exports = class AppsCommands extends CLICommandBase {
 		serviceConfig.delete('build');
 		serviceConfig.set('image', serviceTag);
 	}
+
+	async _pushApp(device, appName, dockerCompose) {
+		try {
+			const { data: deviceDoc } = await this.api.getDocument({
+				productId: device.product_id,
+				deviceId: device.id,
+				docName: 'system'
+			});
+
+			// Prepare the JSON Patch document
+			let patchOps = [];
+
+			// Ensure that the necessary paths exist in the document
+			if (!deviceDoc.features) {
+				patchOps.push({ op: 'add', path: '/features', value: {} });
+			}
+			if (!deviceDoc.features?.applications) {
+				patchOps.push({ op: 'add', path: '/features/applications', value: {} });
+			}
+			if (!deviceDoc.features?.applications?.desiredProperties) {
+				patchOps.push({ op: 'add', path: '/features/applications/desiredProperties', value: {} });
+			}
+			if (!deviceDoc.features?.applications?.desiredProperties?.apps) {
+				patchOps.push({ op: 'add', path: '/features/applications/desiredProperties/apps', value: {} });
+			}
+
+			// Add or update the application in the device document
+			patchOps.push({
+				op: 'add',
+				path: `/features/applications/desiredProperties/apps/${appName}`,
+				value: { composeFile: dockerCompose.toString() }
+			});
+
+			// Use PATCH method to update the device document
+			await this.api.patchDocument({
+				productId: device.product_id,
+				deviceId: device.id,
+				docName: 'system',
+				patchOps
+			});
+
+		} catch (error) {
+			if (error.statusCode === 404) {
+				throw new Error(`Connect ${device.id} to the cloud before pushing an application.`);
+			}
+			console.error('Error pushing application to the device:', error);
+			throw error;
+		}
+	}
+
 
 	list() {
 		throw new Error('Not implemented');
