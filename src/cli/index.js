@@ -1,6 +1,6 @@
 const help = require('./help');
 const alias = require('./alias');
-const apps = require('./apps');
+const app = require('./app');
 const binary = require('./binary');
 const bundle = require('./bundle');
 const cloud = require('./cloud');
@@ -48,7 +48,7 @@ module.exports = function registerAllCommands(context) {
 	// help must come first
 	help(context);
 
-	apps(context);
+	app(context);
 	binary(context);
 	bundle(context);
 	cloud(context);

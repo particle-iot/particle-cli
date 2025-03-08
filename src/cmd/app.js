@@ -14,7 +14,7 @@ const Table = require('cli-table');
 
 const DOCKER_CONFIG_URL = 'https://tachyon-ci.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
 
-module.exports = class AppsCommands extends CLICommandBase {
+module.exports = class AppCommands extends CLICommandBase {
 	constructor() {
 		super();
 		const auth = settings.access_token;
@@ -107,8 +107,11 @@ module.exports = class AppsCommands extends CLICommandBase {
 	}
 
 	async _getDockerCompose(appName) {
-		const dockerComposePath = path.join(appName, 'docker-compose.yaml');
+		let dockerComposePath = path.join(appName, 'docker-compose.yaml');
 		try {
+			if (!await fs.exists(dockerComposePath)) {
+				dockerComposePath = path.join(appName, 'docker-compose.yml');
+			}
 			const composeData = await fs.readFile(dockerComposePath, 'utf8');
 			return yaml.parseDocument(composeData);
 		} catch (error) {
