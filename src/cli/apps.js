@@ -13,9 +13,10 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(apps, 'list', 'List Edge applications to a product or device', {
-		handler: () => {
+		params: '<deviceId>',
+		handler: (args) => {
 			const AppsCommand = require('../cmd/apps');
-			return new AppsCommand().list();
+			return new AppsCommand().list(args.params);
 		},
 		examples: {
 			'$0 $command': 'List Edge applications'
@@ -23,9 +24,10 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(apps, 'remove', 'Remove an Edge application from a product or device', {
-		handler: () => {
+		params: '<deviceId> <appName>',
+		handler: (args) => {
 			const AppsCommand = require('../cmd/apps');
-			return new AppsCommand().remove();
+			return new AppsCommand().remove(args.params);
 		},
 		examples: {
 			'$0 $command': 'Remove this Edge application'
