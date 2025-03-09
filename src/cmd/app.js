@@ -156,7 +156,7 @@ module.exports = class AppCommands extends CLICommandBase {
 			// exportContext.stdout.pipe(importContext.stdin);
 			// await importContext;
 
-			await execa('docker', ['--config', dockerConfigDir, 'context', 'use', 'particle']);
+			// await execa('docker', ['--config', dockerConfigDir, 'context', 'use', 'particle']);
 		} catch (error) {
 			throw new Error(`Failed to configure docker. Make sure Docker is installed and running on your machine: ${error.message}`);
 		}
