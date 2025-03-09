@@ -1,7 +1,7 @@
 module.exports = ({ commandProcessor, root }) => {
 	const app = commandProcessor.createCategory(root, 'app', 'Manage Edge applications');
 
-	commandProcessor.createCommand(app, 'Run', 'Run a Edge application on the local machine', {
+	commandProcessor.createCommand(app, 'run', 'Run a Edge application on the local machine', {
 		params: '[blueprintDir]',
 		handler: (args) => {
 			const AppCommand = require('../cmd/app');

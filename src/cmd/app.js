@@ -27,6 +27,9 @@ module.exports = class AppCommands extends CLICommandBase {
 		const appName = await this._getAppName(blueprintDir);
 		this.ui.write(`Running application ${appName}...${os.EOL}`);
 		const composeDir = path.join(blueprintDir, appName);
+		if (!await fs.pathExists(composeDir)) {
+			throw new Error(`Application directory ${composeDir} not found.`);
+		}
 
 		const dockerConfigDir = await this._getDockerConfig();
 
@@ -42,15 +45,13 @@ module.exports = class AppCommands extends CLICommandBase {
 
 		try {
 			// Executing docker-compose up
-			await execa('docker-compose', ['-f', dockerComposePath, 'up'], { stdio: 'inherit', cwd: composeDir });
+			await execa('docker', ['--config', dockerConfigDir, 'compose', 'up'], { stdio: 'inherit', cwd: composeDir });
 		} catch (error) {
 			throw new Error(`Failed to run Docker Compose: ${error.message}`);
 		}
 	}
 
 	async push({ deviceId, blueprintDir = '.' }) {
-		process.chdir(blueprintDir);
-
 		try {
 			const device = await this._getDevice(deviceId, blueprintDir);
 			deviceId = device.id;
@@ -59,6 +60,7 @@ module.exports = class AppCommands extends CLICommandBase {
 			this.ui.write(`Pushing application ${appName} to device ${deviceId}...${os.EOL}`);
 
 			this.ui.write('Building application...');
+			const composeDir = path.join(blueprintDir, appName);
 			const uuid = uuidv4();
 			const dockerConfigDir = await this._getDockerConfig();
 
@@ -67,7 +69,7 @@ module.exports = class AppCommands extends CLICommandBase {
 			// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
 			// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
 			// Then remove the build key from the docker-compose.yaml and replace it by the image key with the serviceTag
-			const dockerCompose = await this._getDockerCompose(appName);
+			const dockerCompose = await this._getDockerCompose(composeDir);
 
 			const services = dockerCompose.get('services');
 			if (services) {
@@ -75,7 +77,7 @@ module.exports = class AppCommands extends CLICommandBase {
 					const buildDir = serviceConfig.get('build');
 					if (buildDir) {
 						const serviceTag = `particleapp/${service}:${uuid}`;
-						await this._builderContainer(dockerConfigDir, path.join(appName, buildDir), serviceTag);
+						await this._builderContainer(dockerConfigDir, path.join(composeDir, buildDir), serviceTag);
 						await this._pushContainer(dockerConfigDir, serviceTag);
 						this._updateDockerCompose(serviceConfig, serviceTag);
 					}
@@ -129,11 +131,11 @@ module.exports = class AppCommands extends CLICommandBase {
 		return dockerConfigDir;
 	}
 
-	async _getDockerCompose(appName) {
-		let dockerComposePath = path.join(appName, 'docker-compose.yaml');
+	async _getDockerCompose(composeDir) {
+		let dockerComposePath = path.join(composeDir, 'docker-compose.yaml');
 		try {
 			if (!await fs.exists(dockerComposePath)) {
-				dockerComposePath = path.join(appName, 'docker-compose.yml');
+				dockerComposePath = path.join(composeDir, 'docker-compose.yml');
 			}
 			const composeData = await fs.readFile(dockerComposePath, 'utf8');
 			return yaml.parseDocument(composeData);
