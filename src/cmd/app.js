@@ -23,14 +23,39 @@ module.exports = class AppCommands extends CLICommandBase {
 		this.api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
 	}
 
-	async push({ deviceId, appDir = '.' }) {
-		process.chdir(appDir);
+	async run({ blueprintDir = '.' }){
+		const appName = await this._getAppName(blueprintDir);
+		this.ui.write(`Running application ${appName}...${os.EOL}`);
+		const composeDir = path.join(blueprintDir, appName);
+
+		const dockerConfigDir = await this._getDockerConfig();
+
+		await this._configureDocker(dockerConfigDir);
+
+		let dockerComposePath = path.join(composeDir, 'docker-compose.yaml');
+		if (!await fs.pathExists(dockerComposePath)) {
+			dockerComposePath = path.join(composeDir, 'docker-compose.yml');
+			if (!await fs.pathExists(dockerComposePath)) {
+				throw new Error(`docker-compose.yaml not found in ${composeDir}.`);
+			}
+		}
 
 		try {
-			const device = await this._getDevice(deviceId, appDir);
+			// Executing docker-compose up
+			await execa('docker-compose', ['-f', dockerComposePath, 'up'], { stdio: 'inherit', cwd: composeDir });
+		} catch (error) {
+			throw new Error(`Failed to run Docker Compose: ${error.message}`);
+		}
+	}
+
+	async push({ deviceId, blueprintDir = '.' }) {
+		process.chdir(blueprintDir);
+
+		try {
+			const device = await this._getDevice(deviceId, blueprintDir);
 			deviceId = device.id;
 
-			const appName = await this._getAppName();
+			const appName = await this._getAppName(blueprintDir);
 			this.ui.write(`Pushing application ${appName} to device ${deviceId}...${os.EOL}`);
 
 			this.ui.write('Building application...');
@@ -70,8 +95,8 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _getAppName() {
-		const blueprintPath = path.resolve('blueprint.yaml');
+	async _getAppName(blueprintDir) {
+		const blueprintPath = path.resolve(blueprintDir, 'blueprint.yaml');
 		if (!await fs.pathExists(blueprintPath)) {
 			throw new Error('blueprint.yaml not found. Run this command inside a directory with a project blueprint.');
 		}
@@ -303,18 +328,19 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _getDevice(deviceId, appDir) {
+	async _getDevice(deviceId, blueprintDir) {
 		let device;
 		if (deviceId) {
 			device = await this._getDeviceAttributes(deviceId);
 		} else {
-			device = await this._loadDeviceFromEnv(appDir);
+			device = await this._loadDeviceFromEnv(blueprintDir);
 			if (device) {
 				return device;
 			}
-			device = await this._selectDevice(appDir);
+			this.ui.write('Select a device for this operation from one of your existing products.\nThis device will be remembered for future operations.');
+			device = await this._selectDevice(blueprintDir);
 		}
-		await this._saveDeviceToEnv(device, appDir);
+		await this._saveDeviceToEnv(device, blueprintDir);
 		return device;
 	}
 
@@ -326,9 +352,9 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _loadDeviceFromEnv(appDir) {
+	async _loadDeviceFromEnv(blueprintDir) {
 		try {
-			const envPath = path.join(appDir, PARTICLE_ENV_FILE);
+			const envPath = path.join(blueprintDir, PARTICLE_ENV_FILE);
 			const envContent = await fs.readFile(envPath, 'utf8');
 			let doc = yaml.parseDocument(envContent);
 			return await this._getDeviceAttributes(doc.get('device_id'));
@@ -337,9 +363,9 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _saveDeviceToEnv(device, appDir) {
+	async _saveDeviceToEnv(device, blueprintDir) {
 		// load existing env file and parse as yaml doc
-		const envPath = path.join(appDir, PARTICLE_ENV_FILE);
+		const envPath = path.join(blueprintDir, PARTICLE_ENV_FILE);
 		let doc;
 		try {
 			const envContent = await fs.readFile(envPath, 'utf8');
