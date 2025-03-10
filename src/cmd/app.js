@@ -13,6 +13,8 @@ const { UnauthorizedError } = require('./api');
 const Table = require('cli-table');
 const { platformForId } = require('../lib/platform');
 
+const _ = require('lodash');
+
 const DOCKER_CONFIG_URL = 'https://tachyon-ci.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
 const PARTICLE_ENV_FILE = '.particle_env.yaml';
 
@@ -20,10 +22,10 @@ module.exports = class AppCommands extends CLICommandBase {
 	constructor() {
 		super();
 		const auth = settings.access_token;
-		this.api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		this.api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 	}
 
-	async run({ blueprintDir = '.' }){
+	async run({ blueprintDir = '.' }) {
 		const instance = Math.random().toString(36).substring(2, 8);
 		const appName = await this._getAppName(blueprintDir);
 		const appInstance = `${appName}_${instance}`;
@@ -35,7 +37,7 @@ module.exports = class AppCommands extends CLICommandBase {
 
 		const dockerConfigDir = await this._getDockerConfig();
 
-		await this._configureDocker(dockerConfigDir);
+		await this._configureDockerContext(dockerConfigDir);
 
 		let dockerComposePath = path.join(composeDir, 'docker-compose.yaml');
 		if (!await fs.pathExists(dockerComposePath)) {
@@ -74,7 +76,7 @@ module.exports = class AppCommands extends CLICommandBase {
 			const uuid = uuidv4();
 			const dockerConfigDir = await this._getDockerConfig();
 
-			await this._configureDocker(dockerConfigDir);
+			await this._configureDockerContext(dockerConfigDir);
 
 			// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
 			// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
@@ -154,19 +156,41 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _configureDocker(dockerConfigDir) {
+	async _copySystemDockerContext(dockerConfigDir) {
+		// Get the name of the current system docker context
+		const dockerContext = (await execa('docker', ['context', 'show'])).stdout;
+		// Export the system context and import it as 'particle' context in the docker config directory
+		const exportContext = execa('docker', ['context', 'export', dockerContext, '-']);
+		const importContext = execa('docker', ['--config', dockerConfigDir, 'context', 'import', 'particle', '-']);
+		exportContext.stdout.pipe(importContext.stdin);
+		await importContext;
+	}
+
+	async _configureDockerContext(dockerConfigDir) {
 		try {
-			// TODO: check if particle context already exists
+			// Check if the 'particle' context exists in the docker config directory
+			const particleDockerContextsList = (await execa('docker', ['--config', dockerConfigDir, 'context', 'ls', '--format', '{{.Name}}'])).stdout;
+			if (!particleDockerContextsList.includes('particle')) {
+				await this._copySystemDockerContext(dockerConfigDir);
+			} else {
+				// We have a context, does it need to be updated?
+				const systemDockerContextInspect = (await execa('docker', ['context', 'inspect']));
+				const particleDockerContextInspect = (await execa('docker', ['--config', dockerConfigDir, 'context', 'inspect', 'particle']));
+				const systemDockerContext = JSON.parse(systemDockerContextInspect.stdout);
+				const particleDockerContext = JSON.parse(particleDockerContextInspect.stdout);
+				const extractEndpoints = (contexts) => contexts.map(ctx => ctx.Endpoints || {});
+				if (!_.isEqual(extractEndpoints(systemDockerContext), extractEndpoints(particleDockerContext))) {
+					// Update the context
+					await execa('docker', ['--config', dockerConfigDir, 'context', 'rm', '-f', 'particle']);
+					await this._copySystemDockerContext(dockerConfigDir);
+				}
+			}
 
-			const dockerContext = (await execa('docker', ['context', 'show'])).stdout;
+			const currentContext = (await execa('docker', ['--config', dockerConfigDir, 'context', 'show'])).stdout;
+			if (currentContext !== 'particle') {
+				await execa('docker', ['--config', dockerConfigDir, 'context', 'use', 'particle']);
+			}
 
-			// Copy the current context to a particle context
-			const exportContext = execa('docker', ['context', 'export', dockerContext, '-']);
-			const importContext = execa('docker', ['--config', dockerConfigDir, 'context', 'import', 'particle', '-']);
-			exportContext.stdout.pipe(importContext.stdin);
-			await importContext;
-
-			await execa('docker', ['--config', dockerConfigDir, 'context', 'use', 'particle']);
 		} catch (error) {
 			throw new Error(`Failed to configure docker. Make sure Docker is installed and running on your machine: ${error.message}`);
 		}
