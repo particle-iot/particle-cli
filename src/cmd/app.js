@@ -58,7 +58,6 @@ module.exports = class AppCommands extends CLICommandBase {
 	async push({ deviceId, instance, blueprintDir = '.' }) {
 		try {
 			const doc = await this._loadFromEnv(blueprintDir);
-
 			deviceId ||= doc.get('deviceId');
 			const device = await this._getDevice(deviceId);
 			deviceId = device.id;
@@ -66,10 +65,11 @@ module.exports = class AppCommands extends CLICommandBase {
 
 			const appName = await this._getAppName(blueprintDir);
 			const appInstance = `${appName}_${instance}`;
-			this.ui.write(`Pushing application ${appInstance} to device ${deviceId}...${os.EOL}`);
 			doc.set('deviceId', deviceId);
 			doc.set('instance', instance);
 			await this._saveToEnv(doc, blueprintDir);
+
+			this.ui.write(`Pushing application ${appInstance} to device ${deviceId}...${os.EOL}`);
 
 			this.ui.write('Building application...');
 			const composeDir = path.join(blueprintDir, appName);
@@ -89,7 +89,7 @@ module.exports = class AppCommands extends CLICommandBase {
 					const buildDir = serviceConfig.get('build');
 					if (buildDir) {
 						const serviceTag = `particleapp/${service}:${uuid}`;
-						await this._builderContainer(dockerConfigDir, path.join(composeDir, buildDir), serviceTag);
+						await this._buildContainer(dockerConfigDir, path.join(composeDir, buildDir), serviceTag);
 						await this._pushContainer(dockerConfigDir, serviceTag);
 						this._updateDockerCompose(serviceConfig, serviceTag);
 					}
@@ -196,7 +196,7 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _builderContainer(dockerConfigDir, buildDir, serviceTag) {
+	async _buildContainer(dockerConfigDir, buildDir, serviceTag) {
 		try {
 			await execa('docker', ['--config', dockerConfigDir, 'build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag], { stdio: 'inherit' });
 		} catch (error) {
@@ -267,7 +267,9 @@ module.exports = class AppCommands extends CLICommandBase {
 	}
 
 	async list({ deviceId }) {
-		const device = await this._getDevice(deviceId, '.');
+		const doc = await this._loadFromEnv('.');
+		deviceId ||= doc.get('deviceId');
+		const device = await this._getDevice(deviceId);
 		deviceId = device.id;
 
 		try {
@@ -325,7 +327,9 @@ module.exports = class AppCommands extends CLICommandBase {
 	}
 
 	async remove({ deviceId, instance }) {
-		const device = await this._getDevice(deviceId, '.');
+		const doc = await this._loadFromEnv('.');
+		deviceId ||= doc.get('deviceId');
+		const device = await this._getDevice(deviceId);
 		deviceId = device.id;
 
 		try {
