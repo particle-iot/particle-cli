@@ -24,8 +24,10 @@ module.exports = class AppCommands extends CLICommandBase {
 	}
 
 	async run({ blueprintDir = '.' }){
+		const instance = Math.random().toString(36).substring(2, 8);
 		const appName = await this._getAppName(blueprintDir);
-		this.ui.write(`Running application ${appName}...${os.EOL}`);
+		const appInstance = `${appName}_${instance}`;
+		this.ui.write(`Running application ${appInstance}...${os.EOL}`);
 		const composeDir = path.join(blueprintDir, appName);
 		if (!await fs.pathExists(composeDir)) {
 			throw new Error(`Application directory ${composeDir} not found.`);
@@ -45,19 +47,27 @@ module.exports = class AppCommands extends CLICommandBase {
 
 		try {
 			// Executing docker-compose up
-			await execa('docker', ['--config', dockerConfigDir, 'compose', 'up'], { stdio: 'inherit', cwd: composeDir });
+			await execa('docker', ['--config', dockerConfigDir, 'compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir });
 		} catch (error) {
 			throw new Error(`Failed to run Docker Compose: ${error.message}`);
 		}
 	}
 
-	async push({ deviceId, blueprintDir = '.' }) {
+	async push({ deviceId, instance, blueprintDir = '.' }) {
 		try {
-			const device = await this._getDevice(deviceId, blueprintDir);
+			const doc = await this._loadFromEnv(blueprintDir);
+
+			deviceId ||= doc.get('deviceId');
+			const device = await this._getDevice(deviceId);
 			deviceId = device.id;
+			instance ||= doc.get('instance') || Math.random().toString(36).substring(2, 8);
 
 			const appName = await this._getAppName(blueprintDir);
-			this.ui.write(`Pushing application ${appName} to device ${deviceId}...${os.EOL}`);
+			const appInstance = `${appName}_${instance}`;
+			this.ui.write(`Pushing application ${appInstance} to device ${deviceId}...${os.EOL}`);
+			doc.set('deviceId', deviceId);
+			doc.set('instance', instance);
+			await this._saveToEnv(doc, blueprintDir);
 
 			this.ui.write('Building application...');
 			const composeDir = path.join(blueprintDir, appName);
@@ -84,11 +94,11 @@ module.exports = class AppCommands extends CLICommandBase {
 				}
 			}
 
-			this.ui.write(`${os.EOL}Successfully built ${appName}${os.EOL}`);
+			this.ui.write(`${os.EOL}Successfully built ${appInstance}${os.EOL}`);
 
-			await this._pushApp(device, appName, dockerCompose);
+			await this._pushApp(device, appInstance, dockerCompose);
 
-			this.ui.write(`Successfully pushed ${appName} to device ${deviceId}${os.EOL}`);
+			this.ui.write(`Successfully pushed ${appInstance} to device ${deviceId}${os.EOL}`);
 		} catch (error) {
 			if (error instanceof UnauthorizedError) {
 				throw new Error('You must be logged in to push an application to a device.');
@@ -290,7 +300,7 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async remove({ deviceId, appName }) {
+	async remove({ deviceId, instance }) {
 		const device = await this._getDevice(deviceId, '.');
 		deviceId = device.id;
 
@@ -301,10 +311,10 @@ module.exports = class AppCommands extends CLICommandBase {
 				docName: 'system'
 			});
 
-			if (deviceDoc.features?.applications?.desiredProperties?.apps && deviceDoc.features.applications.desiredProperties.apps[appName]) {
+			if (deviceDoc.features?.applications?.desiredProperties?.apps && deviceDoc.features.applications.desiredProperties.apps[instance]) {
 				const patchOps = [{
 					op: 'remove',
-					path: `/features/applications/desiredProperties/apps/${appName}`
+					path: `/features/applications/desiredProperties/apps/${instance}`
 				}];
 
 				await this.api.patchDocument({
@@ -313,9 +323,9 @@ module.exports = class AppCommands extends CLICommandBase {
 					docName: 'system',
 					patchOps
 				});
-				this.ui.write(`Successfully removed ${appName} from device ${deviceId}.${os.EOL}`);
+				this.ui.write(`Successfully removed ${instance} from device ${deviceId}.${os.EOL}`);
 			} else {
-				this.ui.write(`Application ${appName} not found on device ${deviceId}.${os.EOL}`);
+				this.ui.write(`Application ${instance} not found on device ${deviceId}.${os.EOL}`);
 			}
 		} catch (error) {
 			if (error instanceof UnauthorizedError) {
@@ -325,25 +335,29 @@ module.exports = class AppCommands extends CLICommandBase {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
 
-			console.error(`Error removing application ${appName} from device ${deviceId}:`, error);
+			console.error(`Error removing application ${instance} from device ${deviceId}:`, error);
 			throw error;
 		}
 	}
 
-	async _getDevice(deviceId, blueprintDir) {
-		let device;
-		if (deviceId) {
-			device = await this._getDeviceAttributes(deviceId);
-		} else {
-			device = await this._loadDeviceFromEnv(blueprintDir);
-			if (device) {
-				return device;
-			}
-			this.ui.write('Select a device for this operation from one of your existing products.\nThis device will be remembered for future operations.');
-			device = await this._selectDevice(blueprintDir);
+	async _loadFromEnv(blueprintDir) {
+		try {
+			const envPath = path.join(blueprintDir, PARTICLE_ENV_FILE);
+			const envContent = await fs.readFile(envPath, 'utf8');
+			return yaml.parseDocument(envContent);
+		} catch {
+			return new yaml.Document();
 		}
-		await this._saveDeviceToEnv(device, blueprintDir);
-		return device;
+
+	}
+
+	async _getDevice(deviceId) {
+		if (deviceId) {
+			return this._getDeviceAttributes(deviceId);
+		} else {
+			this.ui.write('Select a device for this operation from one of your existing products.\nThis device will be remembered for future operations.');
+			return this._selectDevice();
+		}
 	}
 
 	async _getDeviceAttributes(deviceId) {
@@ -365,18 +379,9 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _saveDeviceToEnv(device, blueprintDir) {
+	async _saveToEnv(doc, blueprintDir) {
 		// load existing env file and parse as yaml doc
 		const envPath = path.join(blueprintDir, PARTICLE_ENV_FILE);
-		let doc;
-		try {
-			const envContent = await fs.readFile(envPath, 'utf8');
-			doc = yaml.parseDocument(envContent);
-		} catch {
-			doc = new yaml.Document();
-		}
-		doc.set('device_id', device.id);
-		// save doc but only warn if it fails
 		try {
 			await fs.writeFile(envPath, doc.toString());
 		} catch (error) {
