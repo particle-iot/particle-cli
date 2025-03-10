@@ -8,6 +8,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 	const sandbox = sinon.createSandbox();
 	const commandList = [
 		'Commands:',
+		'  app                Manage Edge applications',
 		'  binary             Inspect binaries',
 		'  bundle             Creates a bundle of application binary and assets',
 		'  call               Call a particular function on a device',
@@ -48,8 +49,10 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'  wifi               Configure Wi-Fi credentials to your device (Supported on Gen 3+ devices)'
 	];
 
-	const allCmds = ['binary inspect', 'binary enable-device-protection', 'binary list-assets', 'binary strip-assets', 'binary', 'bundle', 'call', 'cloud list',
-		'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
+	const allCmds = [
+		'app run', 'app push', 'app list', 'app remove', 'app',
+		'binary inspect', 'binary enable-device-protection', 'binary list-assets', 'binary strip-assets', 'binary', 'bundle',
+		'call', 'cloud list', 'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile', 'config', 'device add', 'device remove',
 		'device rename', 'device doctor', 'device',
