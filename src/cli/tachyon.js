@@ -8,33 +8,30 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true
 			},
 			version: {
-				description: 'Version to download package for (default: latest). Can include a directory or a local zip file',
-				type: 'string'
+				description: 'Version to download package for (default: latest). Can include a directory or a local zip file'
 			},
 			load_config: {
-				description: 'Path to a config file to use for setup',
-				type: 'string'
+				description: 'Path to a config file to use for setup'
 			},
 			save_config: {
-				description: 'Path to dump the config file to after setup',
-				type: 'string'
+				description: 'Path to dump the config file to after setup'
 			},
 			region: {
-				description: 'Region to download package for',
-				type: 'string',
+				description: 'Region to download package for'
 			},
 			timezone: {
-				description: 'Timezone to set on the device, like America/Los_Angeles. Defaults to the timezone of this computer.',
-				type: 'string'
+				description: 'Timezone to set on the device, like America/Los_Angeles. Defaults to the timezone of this computer.'
 			},
 			variant: {
-				description: 'Variant of the Tachyon package to download',
-				type: 'string'
+				description: 'Variant of the Tachyon package to download'
 			},
 			board: {
-				description: 'Board to download package for',
-				type: 'string'
+				description: 'Board to download package for'
 			},
+			skip_cli: {
+				description: 'Do not log in the Particle CLI',
+				type: 'boolean'
+			}
 		},
 		handler: (args) => {
 			const SetupTachyonCommands = require('../cmd/setup-tachyon');

@@ -29,7 +29,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version = 'latest', timezone, load_config: loadConfig, save_config: saveConfig, variant = 'headless', board = 'formfactor' } = {}) {
+	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version = 'latest', timezone, load_config: loadConfig, save_config: saveConfig, variant = 'headless', board = 'formfactor', skip_cli: skipCli } = {}) {
 		try {
 			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
@@ -93,6 +93,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				() => this._createConfigBlob({
 					loadedFromFile,
 					registrationCode,
+					skipCli,
 					...config
 				})
 			);
@@ -119,13 +120,16 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			);
 
 			if (flashSuccessful) {
+				const product = this.api.getProduct({ product: config.productId });
 				this._formatAndDisplaySteps(
 					`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
             `It will also:${os.EOL}` +
             `  - Activate the built-in 5G modem${os.EOL}` +
             `  - Connect to the Particle Cloud${os.EOL}` +
             `  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
-            'For more information about Tachyon, visit our developer site at: https://developer.particle.io!',
+            `For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
+						`${os.EOL}` +
+						`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
 					8
 				);
 			} else {
@@ -187,7 +191,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 	}
 
-	async _formatAndDisplaySteps(text, step) {
+	_formatAndDisplaySteps(text, step) {
 		// Display the formatted step
 		this.ui.write(`${os.EOL}===================================================================================${os.EOL}`);
 		this.ui.write(`Step ${step}:${os.EOL}`);
@@ -431,7 +435,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId, timezone }) {
+	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId, timezone, skipCli }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
 			registrationCode: registrationCode,
@@ -451,6 +455,13 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 
 		config.timezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+		if (!skipCli) {
+			const profileFile = settings.findOverridesFile();
+			if (await fs.exists(profileFile)) {
+				config.cliConfig = await fs.readFile(profileFile, 'utf8');
+			}
+		}
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
 		// prefixed by the JSON string length as a 32 bit integer
