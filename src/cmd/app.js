@@ -154,7 +154,7 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _configureDocker(dockerConfigDir) {
+	async _configureDocker(/* dockerConfigDir */) {
 		try {
 			// TODO: check if particle context already exists
 

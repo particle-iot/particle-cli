@@ -1,7 +1,6 @@
 // TODO: REMOVE THIS FILE!
 
 const { PLATFORMS } = require('./platform');
-const deviceConstants = require('@particle/device-constants');
 const { knownAppsForPlatform } = require('./known-apps');
 
 /* Device specs have the following shape:
