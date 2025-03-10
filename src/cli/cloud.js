@@ -96,7 +96,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command photon': 'Compile the source code in the current directory in the cloud for a `photon`',
 			'$0 $command electron project --saveTo electron.bin': 'Compile the source code in the project directory in the cloud for an `electron` and save it to a file named `electron.bin`',
 		},
-		epilogue: `Param deviceType can be: ${Object.keys(utilities.knownPlatformIdsWithAliases()).join(', ')}`
+		epilogue: `Param deviceType can be: ${Object.keys(utilities.knownPlatformIdsWithAliases((p) => !p.features.includes('linux'))).join(', ')}`
 	});
 
 	commandProcessor.createCommand(cloud, 'nyan', 'Make your device shout rainbows', {

@@ -335,8 +335,11 @@ module.exports = {
 		}, {});
 	},
 
-	knownPlatformIdsWithAliases(){
+	knownPlatformIdsWithAliases(predicate = () => true){
 		return PLATFORMS.reduce((platforms, platform) => {
+			if (!predicate(platform)) {
+				return platforms;
+			}
 			platforms[platform.name] = platform.id;
 			(platform.aliases || []).reduce((platforms, alias) => {
 				platforms[alias] = platform.id;
