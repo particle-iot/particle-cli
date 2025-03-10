@@ -154,19 +154,19 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _configureDocker(/* dockerConfigDir */) {
+	async _configureDocker(dockerConfigDir) {
 		try {
 			// TODO: check if particle context already exists
 
-			// const dockerContext = (await execa('docker', ['context', 'show'])).stdout;
-			//
-			// // Copy the current context to a particle context
-			// const exportContext = execa('docker', ['context', 'export', dockerContext, '-']);
-			// const importContext = execa('docker', ['--config', dockerConfigDir, 'context', 'import', 'particle', '-']);
-			// exportContext.stdout.pipe(importContext.stdin);
-			// await importContext;
+			const dockerContext = (await execa('docker', ['context', 'show'])).stdout;
 
-			// await execa('docker', ['--config', dockerConfigDir, 'context', 'use', 'particle']);
+			// Copy the current context to a particle context
+			const exportContext = execa('docker', ['context', 'export', dockerContext, '-']);
+			const importContext = execa('docker', ['--config', dockerConfigDir, 'context', 'import', 'particle', '-']);
+			exportContext.stdout.pipe(importContext.stdin);
+			await importContext;
+
+			await execa('docker', ['--config', dockerConfigDir, 'context', 'use', 'particle']);
 		} catch (error) {
 			throw new Error(`Failed to configure docker. Make sure Docker is installed and running on your machine: ${error.message}`);
 		}
