@@ -354,8 +354,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	async _userConfiguration() {
 		const systemPassword = await this._getSystemPassword();
 		const wifi = await this._getWifi();
-		const sshPublicKey = await this._getKeys();
-		return { systemPassword, wifi, sshPublicKey };
+		return { systemPassword, wifi };
 	}
 
 	async _download({ region, version, alwaysCleanCache, variant, board }) {
@@ -425,44 +424,6 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		});
 
 		return { ssid: res.ssid, password };
-	}
-
-	async _getKeys() {
-		let question = [
-			{
-				type: 'input',
-				name: 'addKey',
-				message: 'Would you like to add an SSH key to log in to your device? (y/n):',
-				default: 'y',
-			}
-		];
-		const { addKey } = await this.ui.prompt(question);
-		if (addKey.toLowerCase() !== 'y') {
-			return;
-		}
-
-		question = [
-			{
-				type: 'input',
-				name: 'sshPublicKey',
-				message: 'Enter the path to your SSH public key:',
-				validate: (value) => {
-					if (!value.endsWith('.pub')) {
-						return 'SSH public key must be a .pub file';
-					}
-					if (!fs.existsSync(value)) {
-						return 'You need to provide a path to your SSH public key';
-					}
-					return true;
-				},
-				filter: (value) => {
-					return value.startsWith('~') ? value.replace('~', os.homedir()) : value;
-				}
-			},
-		];
-
-		const { sshPublicKey } = await this.ui.prompt(question);
-		return fs.readFileSync(sshPublicKey, 'utf8');
 	}
 
 	async _getRegistrationCode(product) {
