@@ -52,7 +52,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'The device to remove from'
 			},
 			'instance': {
-				description: 'The application instance to push'
+				description: 'The application instance to remove'
 			}
 		},
 		handler: (args) => {
