@@ -128,7 +128,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			);
 
 			if (flashSuccessful) {
-				const product = this.api.getProduct({ product: config.productId });
+				const { product } = await this.api.getProduct({ product: config.productId });
 				this._formatAndDisplaySteps(
 					`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
             `It will also:${os.EOL}` +
