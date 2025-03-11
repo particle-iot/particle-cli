@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.33.1 - Mar 10 2025
+* Fix app remove command
+
 # 3.33.0 - Mar 10 2025
 * Add commands to push apps to Tachyon and Linux devices
 
