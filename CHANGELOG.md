@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.33.3 - Mar 11 2025
+* Add blueprintDir option to app commands
+* Store configuration for app command on push, list and remove
+* Prevent crash when app has no containers
+
 # 3.33.2 - Mar 11 2025
 * Fix tachyon setup command don't ask variant if version is a path
 * Add the right product slug to console url
