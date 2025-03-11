@@ -57,10 +57,10 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const AppCommand = require('../cmd/app');
-			return new AppCommand().remove({ deviceId: args.device, instance: args.instance });
+			return new AppCommand().remove({ deviceId: args.device, appInstance: args.instance });
 		},
 		examples: {
-			'$0 $command': 'Remove this Edge application'
+			'$0 $command --instance hello-world_12345': 'Remove this Edge application'
 		}
 	});
 

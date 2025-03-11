@@ -337,7 +337,12 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async remove({ deviceId, instance }) {
+	async remove({ deviceId, appInstance }) {
+		if (!appInstance) {
+			throw new Error('Application instance is required.');
+
+		}
+
 		const doc = await this._loadFromEnv('.');
 		deviceId ||= doc.get('deviceId');
 		const device = await this._getDevice(deviceId);
@@ -350,10 +355,10 @@ module.exports = class AppCommands extends CLICommandBase {
 				docName: 'system'
 			});
 
-			if (deviceDoc.features?.applications?.desiredProperties?.apps && deviceDoc.features.applications.desiredProperties.apps[instance]) {
+			if (deviceDoc.features?.applications?.desiredProperties?.apps && deviceDoc.features.applications.desiredProperties.apps[appInstance]) {
 				const patchOps = [{
 					op: 'remove',
-					path: `/features/applications/desiredProperties/apps/${instance}`
+					path: `/features/applications/desiredProperties/apps/${appInstance}`
 				}];
 
 				await this.api.patchDocument({
@@ -362,9 +367,9 @@ module.exports = class AppCommands extends CLICommandBase {
 					docName: 'system',
 					patchOps
 				});
-				this.ui.write(`Successfully removed ${instance} from device ${deviceId}.${os.EOL}`);
+				this.ui.write(`Successfully removed ${appInstance} from device ${deviceId}.${os.EOL}`);
 			} else {
-				this.ui.write(`Application ${instance} not found on device ${deviceId}.${os.EOL}`);
+				this.ui.write(`Application ${appInstance} not found on device ${deviceId}.${os.EOL}`);
 			}
 		} catch (error) {
 			if (error instanceof UnauthorizedError) {
@@ -374,7 +379,7 @@ module.exports = class AppCommands extends CLICommandBase {
 				throw new Error(`${device.id} has no cloud application.`);
 			}
 
-			console.error(`Error removing application ${instance} from device ${deviceId}:`, error);
+			console.error(`Error removing application ${appInstance} from device ${deviceId}:`, error);
 			throw error;
 		}
 	}
