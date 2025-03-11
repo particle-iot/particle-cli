@@ -350,7 +350,7 @@ module.exports = class ParticleApi {
 	getProduct({ product, auth, headers, context }) {
 		return this._wrap(this.api.getProduct({
 			product,
-			auth,
+			auth: auth || this.accessToken,
 			headers,
 			context
 		}));
