@@ -277,11 +277,14 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async list({ deviceId }) {
-		const doc = await this._loadFromEnv('.');
+	async list({ deviceId, blueprintDir = '.' }) {
+		const doc = await this._loadFromEnv(blueprintDir);
 		deviceId ||= doc.get('deviceId');
 		const device = await this._getDevice(deviceId);
 		deviceId = device.id;
+
+		doc.set('deviceId', deviceId);
+		await this._saveToEnv(doc, blueprintDir);
 
 		try {
 			const { data: deviceDoc } = await this.api.getDocument({
@@ -341,16 +344,17 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async remove({ deviceId, appInstance }) {
+	async remove({ deviceId, appInstance, blueprintDir = '.' }) {
 		if (!appInstance) {
 			throw new Error('Application instance is required.');
-
 		}
 
-		const doc = await this._loadFromEnv('.');
+		const doc = await this._loadFromEnv(blueprintDir);
 		deviceId ||= doc.get('deviceId');
 		const device = await this._getDevice(deviceId);
 		deviceId = device.id;
+		doc.set('deviceId', deviceId);
+		await this._saveToEnv(doc, blueprintDir);
 
 		try {
 			const { data: deviceDoc } = await this.api.getDocument({
