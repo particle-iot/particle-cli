@@ -66,8 +66,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				config.productId = product;
 			}
 
-			if (variant) {
-				this.ui.write(`Skipping to Step 5 - Using ${variant} operating system.${os.EOL}`);
+			if (variant || this._isProbablyAPath(version)) {
+				this.ui.write(`Skipping to Step 5 - Using ${variant || version} operating system.${os.EOL}`);
 			} else {
 				variant = await this._runStepWithTiming(
 					`Select the variant of the Tachyon operating system to set up.${os.EOL}` +
@@ -405,6 +405,16 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		const expectedChecksum = artifact.sha256_checksum;
 
 		return manager.download({ url, outputFileName, expectedChecksum, options: { alwaysCleanCache } });
+	}
+
+	_isProbablyAPath(input) {
+		return (
+			input.startsWith('~') ||
+			input.startsWith('.') ||
+			input.includes('/') ||
+			input.includes('\\') ||
+			path.extname(input) !== ''
+		);
 	}
 
 	async _getSystemPassword() {
