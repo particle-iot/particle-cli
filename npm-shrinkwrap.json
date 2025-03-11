@@ -9,7 +9,7 @@
       "version": "3.32.9",
       "license": "Apache-2.0",
       "dependencies": {
-        "@particle/device-constants": "^3.8.0",
+        "@particle/device-constants": "^3.8.2",
         "binary-version-reader": "^2.5.1",
         "chalk": "^2.4.2",
         "cli-progress": "^3.12.0",
@@ -37,9 +37,11 @@
         "softap-setup": "^4.1.0",
         "temp": "^0.9.1",
         "unzipper": "^0.12.3",
+        "uuid": "^11.1.0",
         "verror": "^1.10.0",
         "wiring-preprocessor": "^2.2.0",
         "xtend": "^4.0.2",
+        "yaml": "^2.7.0",
         "yargs": "^5.0.0"
       },
       "bin": {
@@ -567,9 +569,9 @@
       }
     },
     "node_modules/@particle/device-constants": {
-      "version": "3.8.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.8.0.tgz",
-      "integrity": "sha512-SyphIgh64z25S7aRMheenBvQ57+5Ta7BfY1hLI4NaAbyFu9NWLwceimK0442cChB1U1JgpekSTTO93d1cP1gAw==",
+      "version": "3.8.2",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.8.2.tgz",
+      "integrity": "sha512-4If7Z5kJQbKMu6/Lzw4U2UbbrB0FevXD0Fm4yDJNo2rwSSdYQzMnGCm2ocNdCOp6SB8NuSbackjdsDZk9jyw8w==",
       "engines": {
         "node": ">=12.x",
         "npm": "8.x"
@@ -9378,6 +9380,18 @@
       "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
       "integrity": "sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8="
     },
+    "node_modules/uuid": {
+      "version": "11.1.0",
+      "resolved": "https://registry.npmjs.org/uuid/-/uuid-11.1.0.tgz",
+      "integrity": "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==",
+      "funding": [
+        "https://github.com/sponsors/broofa",
+        "https://github.com/sponsors/ctavan"
+      ],
+      "bin": {
+        "uuid": "dist/esm/bin/uuid"
+      }
+    },
     "node_modules/validate-npm-package-license": {
       "version": "3.0.1",
       "resolved": "https://registry.npmjs.org/validate-npm-package-license/-/validate-npm-package-license-3.0.1.tgz",
@@ -9566,6 +9580,17 @@
       "resolved": "https://registry.npmjs.org/yallist/-/yallist-2.1.2.tgz",
       "integrity": "sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI=",
       "dev": true
+    },
+    "node_modules/yaml": {
+      "version": "2.7.0",
+      "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.7.0.tgz",
+      "integrity": "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA==",
+      "bin": {
+        "yaml": "bin.mjs"
+      },
+      "engines": {
+        "node": ">= 14"
+      }
     },
     "node_modules/yargs": {
       "version": "5.0.0",
@@ -10248,9 +10273,9 @@
       }
     },
     "@particle/device-constants": {
-      "version": "3.8.0",
-      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.8.0.tgz",
-      "integrity": "sha512-SyphIgh64z25S7aRMheenBvQ57+5Ta7BfY1hLI4NaAbyFu9NWLwceimK0442cChB1U1JgpekSTTO93d1cP1gAw=="
+      "version": "3.8.2",
+      "resolved": "https://registry.npmjs.org/@particle/device-constants/-/device-constants-3.8.2.tgz",
+      "integrity": "sha512-4If7Z5kJQbKMu6/Lzw4U2UbbrB0FevXD0Fm4yDJNo2rwSSdYQzMnGCm2ocNdCOp6SB8NuSbackjdsDZk9jyw8w=="
     },
     "@particle/device-os-protobuf": {
       "version": "2.6.1",
@@ -17186,6 +17211,11 @@
       "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
       "integrity": "sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8="
     },
+    "uuid": {
+      "version": "11.1.0",
+      "resolved": "https://registry.npmjs.org/uuid/-/uuid-11.1.0.tgz",
+      "integrity": "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A=="
+    },
     "validate-npm-package-license": {
       "version": "3.0.1",
       "resolved": "https://registry.npmjs.org/validate-npm-package-license/-/validate-npm-package-license-3.0.1.tgz",
@@ -17353,6 +17383,11 @@
       "resolved": "https://registry.npmjs.org/yallist/-/yallist-2.1.2.tgz",
       "integrity": "sha1-HBH5IY8HYImkfdUS+TxmmaaoHVI=",
       "dev": true
+    },
+    "yaml": {
+      "version": "2.7.0",
+      "resolved": "https://registry.npmjs.org/yaml/-/yaml-2.7.0.tgz",
+      "integrity": "sha512-+hSoy/QHluxmC9kCIJyL/uyFmLmc+e5CFR5Wa+bpIhIj85LVb9ZH2nVnqrHoSvKogwODv0ClqZkmiSSaIH5LTA=="
     },
     "yargs": {
       "version": "5.0.0",

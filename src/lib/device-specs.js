@@ -1,7 +1,6 @@
 // TODO: REMOVE THIS FILE!
 
 const { PLATFORMS } = require('./platform');
-const deviceConstants = require('@particle/device-constants');
 const { knownAppsForPlatform } = require('./known-apps');
 
 /* Device specs have the following shape:
@@ -155,7 +154,11 @@ function deviceIdFromSerialNumber(serialNumber) {
 	}
 }
 function generateDeviceSpecs() {
-	return [...PLATFORMS, deviceConstants['tachyon']].reduce((specs, device) => {
+	return PLATFORMS.reduce((specs, device) => {
+		if (!device.dfu) {
+			return specs;
+		}
+
 		const key = `${device.dfu.vendorId.replace(/0x/, '')}:${device.dfu.productId.replace(/0x/, '')}`;
 
 		specs[key] = {

@@ -21,15 +21,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		spinnerMixin(this);
 		this._setupApi();
 		this.ui = ui || this.ui;
-		this._userConfiguration = this._userConfiguration.bind(this);
-		this._getSystemPassword = this._getSystemPassword.bind(this);
-		this._getWifi = this._getWifi.bind(this);
-		this._getKeys = this._getKeys.bind(this);
-		this._runStepWithTiming = this._runStepWithTiming.bind(this);
-		this._formatAndDisplaySteps = this._formatAndDisplaySteps.bind(this);
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, region = 'NA', version = 'latest', timezone, load_config: loadConfig, save_config: saveConfig, variant = 'headless', board = 'formfactor' } = {}) {
+	async setup({ skip_flashing_os: skipFlashingOs, timezone, load_config: loadConfig, save_config: saveConfig, region = 'NA', version = 'latest', variant, board = 'formfactor', skip_cli: skipCli } = {}) {
 		try {
 			const loadedFromFile = !!loadConfig;
 			this._showWelcomeMessage();
@@ -49,6 +43,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				this.ui.write(
 					`${os.EOL}${os.EOL}Skipping to Step 4 - Using configuration file: ` + loadConfig + `${os.EOL}`
 				);
+				variant = config.variant;
 			} else {
 				config = await this._runStepWithTiming(
 					`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
@@ -71,28 +66,42 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				config.productId = product;
 			}
 
+			if (variant) {
+				this.ui.write(`Skipping to Step 5 - Using ${variant} operating system.${os.EOL}`);
+			} else {
+				variant = await this._runStepWithTiming(
+					`Select the variant of the Tachyon operating system to set up.${os.EOL}` +
+					`The 'desktop' includes a GUI and is best for interacting with the device with a keyboard, mouse, and display.${os.EOL}` +
+					"The 'headless' variant is for remote command line access only,",
+					4,
+					() => this._selectVariant()
+				);
+			}
+			config.variant = variant;
+
 			const packagePath = await this._runStepWithTiming(
 				`Next, we'll download the Tachyon Operating System image.${os.EOL}` +
         `Heads up: it's a large file — 3GB! Don't worry, though—the download will resume${os.EOL}` +
         `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
-				4,
+				5,
 				() => this._download({ region, version, alwaysCleanCache, variant, board })
 			);
 
 			const registrationCode = await this._runStepWithTiming(
 				`Great! The download is complete.${os.EOL}` +
         "Now, let's register your product on the Particle platform.",
-				5,
+				6,
 				() => this._getRegistrationCode(config.productId)
 			);
 
 			const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
 				'Creating the configuration file to write to the Tachyon device...',
-				6,
+				7,
 				() => this._createConfigBlob({
 					loadedFromFile,
 					registrationCode,
+					skipCli,
 					...config
 				})
 			);
@@ -110,7 +119,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
         `   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
         `   - When the light starts flashing yellow, release the button.${os.EOL}` +
         '   Your device is now in flashing mode!',
-				7,
+				8,
 				() => this._flash({
 					files: [packagePath, xmlPath],
 					skipFlashingOs,
@@ -119,14 +128,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			);
 
 			if (flashSuccessful) {
+				const product = this.api.getProduct({ product: config.productId });
 				this._formatAndDisplaySteps(
 					`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
             `It will also:${os.EOL}` +
             `  - Activate the built-in 5G modem${os.EOL}` +
             `  - Connect to the Particle Cloud${os.EOL}` +
             `  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
-            'For more information about Tachyon, visit our developer site at: https://developer.particle.io!',
-					8
+            `For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
+						`${os.EOL}` +
+						`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
+					9
 				);
 			} else {
 				this.ui.write(
@@ -187,7 +199,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 	}
 
-	async _formatAndDisplaySteps(text, step) {
+	_formatAndDisplaySteps(text, step) {
 		// Display the formatted step
 		this.ui.write(`${os.EOL}===================================================================================${os.EOL}`);
 		this.ui.write(`Step ${step}:${os.EOL}`);
@@ -253,6 +265,23 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		];
 		const answer = await this.ui.prompt(question);
 		return answer.version;
+	}
+
+	async _selectVariant() {
+		const variantMapping = {
+			'desktop (GUI)': 'desktop',
+			'headless (command-line only)': 'headless'
+		};
+		const question = [
+			{
+				type: 'list',
+				name: 'variant',
+				message: 'Select the OS variant:',
+				choices: Object.keys(variantMapping),
+			},
+		];
+		const { variant } = await this.ui.prompt(question);
+		return variantMapping[variant];
 	}
 
 	async _selectProduct() {
@@ -354,8 +383,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	async _userConfiguration() {
 		const systemPassword = await this._getSystemPassword();
 		const wifi = await this._getWifi();
-		const sshPublicKey = await this._getKeys();
-		return { systemPassword, wifi, sshPublicKey };
+		return { systemPassword, wifi };
 	}
 
 	async _download({ region, version, alwaysCleanCache, variant, board }) {
@@ -427,50 +455,12 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return { ssid: res.ssid, password };
 	}
 
-	async _getKeys() {
-		let question = [
-			{
-				type: 'input',
-				name: 'addKey',
-				message: 'Would you like to add an SSH key to log in to your device? (y/n):',
-				default: 'y',
-			}
-		];
-		const { addKey } = await this.ui.prompt(question);
-		if (addKey.toLowerCase() !== 'y') {
-			return;
-		}
-
-		question = [
-			{
-				type: 'input',
-				name: 'sshPublicKey',
-				message: 'Enter the path to your SSH public key:',
-				validate: (value) => {
-					if (!value.endsWith('.pub')) {
-						return 'SSH public key must be a .pub file';
-					}
-					if (!fs.existsSync(value)) {
-						return 'You need to provide a path to your SSH public key';
-					}
-					return true;
-				},
-				filter: (value) => {
-					return value.startsWith('~') ? value.replace('~', os.homedir()) : value;
-				}
-			},
-		];
-
-		const { sshPublicKey } = await this.ui.prompt(question);
-		return fs.readFileSync(sshPublicKey, 'utf8');
-	}
-
 	async _getRegistrationCode(product) {
 		const data = await this.api.getRegistrationCode(product);
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId, timezone }) {
+	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId, timezone, skipCli }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
 			registrationCode: registrationCode,
@@ -490,6 +480,13 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 
 		config.timezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+		if (!skipCli) {
+			const profileFile = settings.findOverridesFile();
+			if (await fs.exists(profileFile)) {
+				config.cliConfig = await fs.readFile(profileFile, 'utf8');
+			}
+		}
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
 		// prefixed by the JSON string length as a 32 bit integer

@@ -17,7 +17,7 @@ describe('List Commands', () => {
 		'  -v, --verbose  Increases how much logging to display  [count]',
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
-		'Param filter can be: online, offline, a platform name (core, photon, p1, electron, argon, boron, xenon, esomx, bsom, b5som, tracker, trackerm, p2, msom, electron2, tachyon), a device ID or name'
+		'Param filter can be: online, offline, a platform name (core, photon, p1, electron, argon, boron, xenon, esomx, bsom, b5som, tracker, trackerm, p2, msom, electron2, tachyon, linux), a device ID or name'
 	];
 
 	before(async () => {

@@ -24,7 +24,8 @@ describe('Utilities', () => {
 				'p2': 32,
 				'msom': 35,
 				'electron2': 37,
-				'tachyon': 42
+				'tachyon': 42,
+				'linux': 43
 			});
 		});
 	});
@@ -56,7 +57,8 @@ describe('Utilities', () => {
 				'msom': 35,
 				'muon': 35,
 				'electron2': 37,
-				'tachyon': 42
+				'tachyon': 42,
+				'linux': 43
 			});
 		});
 	});
@@ -79,7 +81,8 @@ describe('Utilities', () => {
 				32: 'Photon 2 / P2',
 				35: 'M-SoM',
 				37: 'Electron 2',
-				42: 'Tachyon'
+				42: 'Tachyon',
+				43: 'Linux'
 			});
 		});
 	});
