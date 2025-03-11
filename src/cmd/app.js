@@ -156,6 +156,16 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
+	async _checkDockerVersion() {
+		const { stdout: dockerVersion } = await execa('docker', ['--version']);
+		const versionMatch = dockerVersion.match(/Docker version (\d+\.\d+\.\d+)/);
+		if (!versionMatch) {
+			throw new Error('Docker version 27 or later is required.');
+		} else if (parseInt(versionMatch[1].split('.')[0]) < 27) {
+			throw new Error(`Docker version 27 or later is required. Version ${versionMatch[1]} detected.`);
+		}
+	}
+
 	async _copySystemDockerContext(dockerConfigDir) {
 		// Get the name of the current system docker context
 		const dockerContext = (await execa('docker', ['context', 'show'])).stdout;
@@ -169,6 +179,7 @@ module.exports = class AppCommands extends CLICommandBase {
 	async _configureDockerContext(dockerConfigDir) {
 		try {
 			// Check if the 'particle' context exists in the docker config directory
+			await this._checkDockerVersion();
 			const particleDockerContextsList = (await execa('docker', ['--config', dockerConfigDir, 'context', 'ls', '--format', '{{.Name}}'])).stdout;
 			if (!particleDockerContextsList.includes('particle')) {
 				await this._copySystemDockerContext(dockerConfigDir);
