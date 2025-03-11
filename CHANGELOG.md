@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.33.0 - Mar 10 2025
+* Add commands to push apps to Tachyon and Linux devices
+
 # 3.32.9 - Mar 07 2025
 * Add --board option to pick specific package on setup
 
