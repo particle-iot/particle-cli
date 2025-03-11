@@ -317,8 +317,12 @@ module.exports = class AppCommands extends CLICommandBase {
 						colWidths: [30, cols],
 						style: { head: ['white'] }
 					});
-					for (const { name: container, ...containerDetails } of appDetails.containers) {
-						table.push([container, JSON.stringify(containerDetails, null, 2)]);
+					if (appDetails.containers) {
+						for (const { name: container, ...containerDetails } of appDetails.containers) {
+							table.push([container, JSON.stringify(containerDetails, null, 2)]);
+						}
+					} else {
+						table.push(['No containers for app', '']);
 					}
 					this.ui.write(table.toString() + os.EOL);
 				}
