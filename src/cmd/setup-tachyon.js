@@ -408,13 +408,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	}
 
 	_isProbablyAPath(input) {
-		return (
-			input.startsWith('~') ||
-			input.startsWith('.') ||
-			input.includes('/') ||
-			input.includes('\\') ||
-			path.extname(input) !== ''
-		);
+		return fs.existsSync(input);
 	}
 
 	async _getSystemPassword() {
