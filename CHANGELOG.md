@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.33.2 - Mar 11 2025
+* Fix tachyon setup command don't ask variant if version is a path
+* Add the right product slug to console url
+
 # 3.33.1 - Mar 10 2025
 * Fix app remove command
 
