@@ -47,6 +47,15 @@ module.exports = class AppCommands extends CLICommandBase {
 			}
 		}
 
+		// provide access to the X server to Docker
+		try {
+			await execa('xhost', ['+local:root']);
+			await execa('xhost', ['+local:particle']);
+			await execa('xhost', ['+SI:localuser:root']);
+		} catch {
+			// ignore errors on non-Linux systems
+		}
+
 		try {
 			// Executing docker-compose up
 			await execa('docker', ['--config', dockerConfigDir, 'compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir });
