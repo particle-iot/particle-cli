@@ -68,6 +68,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				config.productId = product;
 			}
 
+			const isRb3Board = board === 'rb3g2'; // RGB board
+			if (isRb3Board) {
+				region = ''; // no region for RGB board
+			}
+
 			if (variant || isLocalFile) {
 				this.ui.write(`Skipping to Step 5 - Using ${variant || version} operating system.${os.EOL}`);
 			} else {
@@ -76,7 +81,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`The 'desktop' includes a GUI and is best for interacting with the device with a keyboard, mouse, and display.${os.EOL}` +
 					"The 'headless' variant is for remote command line access only,",
 					4,
-					() => this._selectVariant()
+					() => this._selectVariant(isRb3Board)
 				);
 			}
 			config.variant = variant;
@@ -87,7 +92,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
         `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
         "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
 				5,
-				() => this._download({ region, version, alwaysCleanCache, variant, board })
+				() => this._download({ region, version, alwaysCleanCache, variant, board, isRb3Board })
 			);
 
 			const registrationCode = await this._runStepWithTiming(
@@ -283,11 +288,15 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return answer.version;
 	}
 
-	async _selectVariant() {
-		const variantMapping = {
+	async _selectVariant(isRb3Board) {
+		const rgbVariantMapping = {
+			'preinstalled server': 'preinstalled-server'
+		};
+		const tachyonVariantMapping = {
 			'desktop (GUI)': 'desktop',
 			'headless (command-line only)': 'headless'
 		};
+		const variantMapping = isRb3Board ? rgbVariantMapping : tachyonVariantMapping;
 		const question = [
 			{
 				type: 'list',
@@ -402,7 +411,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return { systemPassword, wifi };
 	}
 
-	async _download({ region, version, alwaysCleanCache, variant, board }) {
+	async _download({ region, version, alwaysCleanCache, variant, board, isRb3Board }) {
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
 		if (this._isFile(version)) {
@@ -410,7 +419,8 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		}
 
 		const manager = new DownloadManager(this.ui);
-		const manifest = await manager.fetchManifest({ version });
+		const manifest = await manager.fetchManifest({ version, isRb3Board });
+
 		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board);
 		if (!build) {
 			throw new Error('No build available for the provided parameters');

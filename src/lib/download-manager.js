@@ -32,8 +32,9 @@ class DownloadManager {
 		}
 	}
 
-	async fetchManifest({ version = 'latest' }) {
-		const metadataUrl = `${settings.tachyonMeta}/tachyon-${encodeURIComponent(version)}.json`;
+	async fetchManifest({ version = 'latest', isRb3Board = false }) {
+		const type = isRb3Board ? 'rb3g2' : 'tachyon';
+		const metadataUrl = `${settings.tachyonMeta}/${type}-${encodeURIComponent(version)}.json`;
 
 		try {
 			const response = await fetch(metadataUrl);
