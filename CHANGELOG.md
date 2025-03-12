@@ -1,6 +1,9 @@
 # Changelog
 
-# 3.33.3 - Mar 11 2025
+# 3.33.5 - Mar 12 2025
+* app run: provide access to the X server to Docker
+
+# 3.33.4 - Mar 12 2025
 * Add rb3g2 board option for tachyon setup
 * Handle dir permissions errors for tachyon setup with local package
 
