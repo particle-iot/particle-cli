@@ -30,6 +30,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 
 			await this._verifyLogin();
+			// validate version is a local file
+			const isLocalFile = this._isFile(version);
 
 			this.ui.write("...All set! You're logged in and ready to go!");
 
@@ -66,7 +68,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				config.productId = product;
 			}
 
-			if (variant || this._isProbablyAPath(version)) {
+			if (variant || isLocalFile) {
 				this.ui.write(`Skipping to Step 5 - Using ${variant || version} operating system.${os.EOL}`);
 			} else {
 				variant = await this._runStepWithTiming(
@@ -149,6 +151,20 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 		} catch (error) {
 			throw new Error(`${os.EOL}There was an error setting up Tachyon:${os.EOL}${os.EOL} >> ${error.message}${os.EOL}`);
+		}
+	}
+
+
+	_isFile(input) {
+		try {
+			fs.accessSync(input, fs.constants.R_OK);
+			return true; // file exists and is readable
+		} catch (err) {
+			if (err.code === 'ENOENT') {
+				return false; // if not a file, could be a version
+			}
+			// permissions or any other error
+			throw new Error(`Unable to access "${input}". Please check that the path exists and is readable.`);
 		}
 	}
 
@@ -389,7 +405,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 	async _download({ region, version, alwaysCleanCache, variant, board }) {
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
-		if (fs.existsSync(version)) {
+		if (this._isFile(version)) {
 			return version;
 		}
 
@@ -405,10 +421,6 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		const expectedChecksum = artifact.sha256_checksum;
 
 		return manager.download({ url, outputFileName, expectedChecksum, options: { alwaysCleanCache } });
-	}
-
-	_isProbablyAPath(input) {
-		return fs.existsSync(input);
 	}
 
 	async _getSystemPassword() {
