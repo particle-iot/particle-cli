@@ -1,6 +1,10 @@
 # Changelog
 
 # 3.33.3 - Mar 11 2025
+* Add rb3g2 board option for tachyon setup
+* Handle dir permissions errors for tachyon setup with local package
+
+# 3.33.3 - Mar 11 2025
 * Add blueprintDir option to app commands
 * Store configuration for app command on push, list and remove
 * Prevent crash when app has no containers
