@@ -104,6 +104,32 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(tachyon, 'ext4', '', {
+		handler: async () => {
+			const { withMountedDisk } = require('ext2fs');
+			const { FileDisk, withOpenFile } = require('file-disk');
+
+			const diskImage = '/home/monkbroc/TachyonImages/persist.img';
+			const offset = 0;  // offset of the ext partition you want to mount in that disk image
+			try {
+				await withOpenFile(diskImage, 'r', async (handle) => {
+					const disk = new FileDisk(handle);
+					await withMountedDisk(disk, offset, async ({promises:fs}) => {
+						// List files
+						console.log('readdir', await fs.readdir('/'));
+						await fs.trim();
+						// Show discarded regions
+						console.log('discarded', disk.getDiscardedChunks());
+						// Show ranges of useful data aligned to 1MiB
+						console.log('ranges', await disk.getRanges(1024 ** 2));
+					});
+				});
+			} catch (error) {
+				console.error(error);
+			}
+		}
+	});
+
 	return tachyon;
 };
 
