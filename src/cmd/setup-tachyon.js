@@ -95,8 +95,14 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			try {
 				edlDevices = await getEdlDevices();
 				if (edlDevices.length === 0 && !messageShown) {
-					const message = `No Tachyon devices in EDL mode found. Please put your device in EDL mode and try again.${os.EOL}`;
-					this.ui.stdout.write(this.ui.chalk.bold(this.ui.chalk.yellow(message)));
+					const message = `${this.ui.chalk.bold('Before we get started, we need to power on your Tachyon board')}:` +
+					`${os.EOL}${os.EOL}` +
+					`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
+					`   The red light should turn on!${os.EOL}${os.EOL}` +
+					`2. Put the Tachyon device into ${this.ui.chalk.bold('system update')} mode:${os.EOL}` +
+					`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
+					`   - When the light starts flashing yellow, release the button.${os.EOL}`;
+					this.ui.stdout.write(message);
 					messageShown = true;
 				}
 			} catch (error) {
@@ -104,6 +110,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			}
 			await delay(DEVICE_READY_WAIT_TIME);
 		}
+		this.ui.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!`);
 	}
 
 	async _verifyLogin() {
@@ -305,14 +312,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _flashStep(packagePath, xmlPath, config) {
 		return this._runStepWithTiming(
 			`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
-			`Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!${os.EOL}${os.EOL}` +
-			`Before we get started, we need to power on your Tachyon board:${os.EOL}${os.EOL}` +
-			`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
-			`   The red light should turn on!${os.EOL}${os.EOL}` +
-			`2. Put the Tachyon device into download mode:${os.EOL}` +
-			`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
-			`   - When the light starts flashing yellow, release the button.${os.EOL}` +
-			'   Your device is now in flashing mode!',
+			`Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!${os.EOL}${os.EOL}`,
 			8,
 			() => this._flash({
 				files: [packagePath, xmlPath],
