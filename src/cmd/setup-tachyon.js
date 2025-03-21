@@ -94,7 +94,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		while (edlDevices.length === 0) {
 			try {
 				edlDevices = await getEdlDevices();
-				if (edlDevices.length === 0 && !messageShown) {
+				if (edlDevices.length > 0) {
+					break;
+				}
+				if (!messageShown) {
 					const message = `${this.ui.chalk.bold('Before we get started, we need to power on your Tachyon board')}:` +
 					`${os.EOL}${os.EOL}` +
 					`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
@@ -111,7 +114,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			await delay(DEVICE_READY_WAIT_TIME);
 		}
 		if (messageShown) {
-			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!`);
+			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!${os.EOL}`);
 			await delay(1000); // give the user a moment to read the message
 		}
 	}
