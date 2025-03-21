@@ -298,10 +298,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
 			'Creating the configuration file to write to the Tachyon device...',
 			7,
-			() => this._createConfigBlob({
-				loadedFromFile: config.loadedFromFile,
-				...config
-			})
+			() => this._createConfigBlob(config)
 		);
 		const xmlPath = await this._createXmlFile(configBlobPath);
 		// Save the config file if requested
@@ -549,7 +546,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, productId, timezone, skipCli }) {
+	async _createConfigBlob({ loadedFromFile, registrationCode, systemPassword, wifi, productId, timezone, skipCli }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
 			timezone,
