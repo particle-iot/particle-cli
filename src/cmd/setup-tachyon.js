@@ -110,7 +110,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			}
 			await delay(DEVICE_READY_WAIT_TIME);
 		}
-		this.ui.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!`);
+		if (messageShown) {
+			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!`);
+			await delay(1000); // give the user a moment to read the message
+		}
 	}
 
 	async _verifyLogin() {
@@ -321,7 +324,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		);
 	}
 
-	async _finalStep(flashSuccessful, config) {
+	async _finalStep(flashSuccessful, config) { // TODO (hmontero): once we have the device in the cloud, we should show the device id
 		if (flashSuccessful) {
 			const { product } = await this.api.getProduct({ product: config.productId });
 			this._formatAndDisplaySteps(
