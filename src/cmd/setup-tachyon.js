@@ -255,7 +255,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _pickVariantStep(config) {
-		if (config.isLocalFile || config.variant) {
+		if (config.isLocalVersion || config.variant) {
 			this.ui.write(`Skipping to Step 5 - Using ${config.variant || config.version} operating system.${os.EOL}`);
 			return;
 		}
