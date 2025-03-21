@@ -14,167 +14,13 @@ const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
 const { platformForId, PLATFORMS } = require('../lib/platform');
 const path = require('path');
-
-module.exports = class SetupTachyonCommands extends CLICommandBase {
-	constructor({ ui } = {}) {
-		super();
-		spinnerMixin(this);
-		this._setupApi();
-		this.ui = ui || this.ui;
-	}
-
-	async setup({ skip_flashing_os: skipFlashingOs, timezone, load_config: loadConfig, save_config: saveConfig, region = 'NA', version = 'latest', variant, board = 'formfactor', skip_cli: skipCli } = {}) {
-		try {
-			const loadedFromFile = !!loadConfig;
-			this._showWelcomeMessage();
-			this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
-
-			await this._verifyLogin();
-			// validate version is a local file
-			const isLocalFile = this._isFile(version);
-
-			this.ui.write("...All set! You're logged in and ready to go!");
-
-			let config = { timezone };
-			let alwaysCleanCache = false;
-
-			// load first since we need to know the product to create the registration code
-			if (loadConfig) {
-				alwaysCleanCache = true;
-				config = await this._loadConfig(loadConfig);
-				this.ui.write(
-					`${os.EOL}${os.EOL}Skipping to Step 4 - Using configuration file: ` + loadConfig + `${os.EOL}`
-				);
-				variant = config.variant;
-			} else {
-				config = await this._runStepWithTiming(
-					`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
-					`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
-					`Don't worry if you forget this—you can always reset your device later.${os.EOL}${os.EOL}` +
-					`Next, you'll be prompted to provide an optional Wi-Fi network.${os.EOL}` +
-					`While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.${os.EOL}${os.EOL}` +
-					`Finally, you'll have the option to add an SSH key from your local disk.${os.EOL}` +
-					'This is optional—you can still SSH into the device using a password. Adding the key just allows for password-free access.',
-					2,
-					() => this._userConfiguration(),
-					0
-				);
-				const product = await this._runStepWithTiming(
-					`Next, let's select a Particle product for your Tachyon.${os.EOL}` +
-					'A product will help manage the Tachyon device and keep things organized.',
-					3,
-					() => this._selectProduct()
-				);
-				config.productId = product;
-			}
-
-			const isRb3Board = board === 'rb3g2'; // RGB board
-			if (isRb3Board) {
-				region = ''; // no region for RGB board
-			}
-
-			if (variant || isLocalFile) {
-				this.ui.write(`Skipping to Step 5 - Using ${variant || version} operating system.${os.EOL}`);
-			} else {
-				variant = await this._runStepWithTiming(
-					`Select the variant of the Tachyon operating system to set up.${os.EOL}` +
-					`The 'desktop' includes a GUI and is best for interacting with the device with a keyboard, mouse, and display.${os.EOL}` +
-					"The 'headless' variant is for remote command line access only,",
-					4,
-					() => this._selectVariant(isRb3Board)
-				);
-			}
-			config.variant = variant;
-
-			const packagePath = await this._runStepWithTiming(
-				`Next, we'll download the Tachyon Operating System image.${os.EOL}` +
-        `Heads up: it's a large file — 3GB! Don't worry, though—the download will resume${os.EOL}` +
-        `if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
-        "just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
-				5,
-				() => this._download({ region, version, alwaysCleanCache, variant, board, isRb3Board })
-			);
-
-			const registrationCode = await this._runStepWithTiming(
-				`Great! The download is complete.${os.EOL}` +
-        "Now, let's register your product on the Particle platform.",
-				6,
-				() => this._getRegistrationCode(config.productId)
-			);
-
-			const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
-				'Creating the configuration file to write to the Tachyon device...',
-				7,
-				() => this._createConfigBlob({
-					loadedFromFile,
-					registrationCode,
-					skipCli,
-					...config
-				})
-			);
-			const xmlPath = await this._createXmlFile(configBlobPath);
-			// Save the config file if requested
-			await this._saveConfig({ saveConfig, config: configBlob });
-
-			const flashSuccessful = await this._runStepWithTiming(
-				`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
-        `Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!${os.EOL}${os.EOL}` +
-        `Before we get started, we need to power on your Tachyon board:${os.EOL}${os.EOL}` +
-        `1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
-        `   The red light should turn on!${os.EOL}${os.EOL}` +
-        `2. Put the Tachyon device into download mode:${os.EOL}` +
-        `   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
-        `   - When the light starts flashing yellow, release the button.${os.EOL}` +
-        '   Your device is now in flashing mode!',
-				8,
-				() => this._flash({
-					files: [packagePath, xmlPath],
-					skipFlashingOs,
-					silent: loadedFromFile
-				})
-			);
-
-			if (flashSuccessful) {
-				const { product } = await this.api.getProduct({ product: config.productId });
-				this._formatAndDisplaySteps(
-					`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
-            `It will also:${os.EOL}` +
-            `  - Activate the built-in 5G modem${os.EOL}` +
-            `  - Connect to the Particle Cloud${os.EOL}` +
-            `  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
-            `For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
-						`${os.EOL}` +
-						`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
-					9
-				);
-			} else {
-				this.ui.write(
-					`${os.EOL}Flashing failed. Please unplug your device and rerun this. We're going to have to try it again.${os.EOL}` +
-            `If it continues to fail, please select a different USB port or visit https://part.cl/setup-tachyon and the setup link for more information.${os.EOL}`
-				);
-			}
-
-		} catch (error) {
-			throw new Error(`${os.EOL}There was an error setting up Tachyon:${os.EOL}${os.EOL} >> ${error.message}${os.EOL}`);
-		}
-	}
+const { getEdlDevices } = require('particle-usb');
+const { delay } = require('../lib/utilities');
+const semver = require('semver');
 
 
-	_isFile(input) {
-		try {
-			fs.accessSync(input, fs.constants.R_OK);
-			return true; // file exists and is readable
-		} catch (err) {
-			if (err.code === 'ENOENT') {
-				return false; // if not a file, could be a version
-			}
-			// permissions or any other error
-			throw new Error(`Unable to access "${input}". Please check that the path exists and is readable.`);
-		}
-	}
-
-	async _showWelcomeMessage() {
-		this.ui.write(`
+const DEVICE_READY_WAIT_TIME = 5000; // 5 seconds
+const showWelcomeMessage = (ui) => `
 ===================================================================================
 			  Particle Tachyon Setup Command
 ===================================================================================
@@ -185,20 +31,316 @@ Welcome to the Particle Tachyon setup! This interactive command:
 - Configures it (password, WiFi credentials etc...)
 - Connects it to the internet and the Particle Cloud!
 
-**What you'll need:**
+${ui.chalk.bold('What you\'ll need:')}
 
 1. Your Tachyon device
 2. The Tachyon battery
 3. A USB-C cable
 
-**Important:**
+${ui.chalk.bold('Important:')}
 - This tool requires you to be logged into your Particle account.
-- For more details, check out the documentation at: https://part.cl/setup-tachyon`);
+- For more details, check out the documentation at: https://part.cl/setup-tachyon ${os.EOL}`;
+
+module.exports = class SetupTachyonCommands extends CLICommandBase {
+	constructor({ ui } = {}) {
+		super();
+		spinnerMixin(this);
+		this._setupApi();
+		this.ui = ui || this.ui;
+		this.defaultOptions = {
+			region: 'NA',
+			version: 'latest',
+			board: 'formfactor',
+			variant: null,
+			skipFlashingOs: false,
+			skipCli: false,
+			timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+			alwaysCleanCache: false
+		};
+		this.options = {};
 	}
 
-	_setupApi() {
-		const { api } = this._particleApi();
-		this.api = api;
+
+	async setup({ skip_flashing_os: skipFlashingOs, timezone, load_config: loadConfig, save_config: saveConfig, region, version, variant, board, skip_cli: skipCli } = {}) {
+		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
+		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
+		await this.ui.write(showWelcomeMessage(this.ui));
+		await this._verifyDeviceInEDLMode();
+		// step 1 login
+		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
+		await this._verifyLogin();
+		// check if there is a config file
+		const config = await this._loadConfig(options, requiredFields);
+		config.isLocalVersion = this._validateVersion(config);
+
+		if (config.silent) {
+			this.ui.write(this.ui.chalk.bold(`Skipping to Step 5 - Using configuration file: ${loadConfig} ${os.EOL}`));
+		} else {
+			Object.assign(config, await this._getUserConfigurationStep()); // step 2
+			config.productId = await this._getProductStep(); // step 3
+			config.variant = await this._pickVariantStep(config); // step 4
+		}
+
+		config.packagePath = await this._downloadStep(config); // step 5
+		config.registrationCode = await this._registerDeviceStep(config); // step 6
+		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 7
+		const flashSuccess = await this._flashStep(config.packagePath, xmlPath, config); // step 8
+		await this._finalStep(flashSuccess, config); // step 9
+	}
+
+	async _verifyDeviceInEDLMode() {
+		let edlDevices = [];
+		let messageShown = false;
+		while (edlDevices.length === 0) {
+			try {
+				edlDevices = await getEdlDevices();
+				if (edlDevices.length === 0 && !messageShown) {
+					const message = `No Tachyon devices in EDL mode found. Please put your device in EDL mode and try again.${os.EOL}`;
+					this.ui.stdout.write(this.ui.chalk.bold(this.ui.chalk.yellow(message)));
+					messageShown = true;
+				}
+			} catch (error) {
+				// ignore error
+			}
+			await delay(DEVICE_READY_WAIT_TIME);
+		}
+	}
+
+	async _verifyLogin() {
+		const api = new ApiClient();
+		try {
+			api.ensureToken();
+		} catch {
+			const cloudCommand = new CloudCommand();
+			await cloudCommand.login();
+			this._setupApi();
+		}
+	}
+
+	async _loadConfig(options, requiredFields) {
+		const configFromFile = await this._loadConfigFromFile(options.loadConfig);
+		const cleanedOptions = Object.fromEntries(
+			// eslint-disable-next-line no-unused-vars
+			Object.entries(options).filter(([_, v]) => v !== undefined)
+		);
+		const config = {
+			...this.defaultOptions,
+			...configFromFile,
+			...cleanedOptions
+		};
+		// validate the config file if is silent
+		if (configFromFile?.silent) {
+			await this._validateConfig(config, requiredFields);
+		}
+		return config;
+	}
+
+	async _loadConfigFromFile(loadConfig) {
+		if (loadConfig) {
+			try {
+				const data = fs.readFileSync(loadConfig, 'utf8');
+				const config = JSON.parse(data);
+				return { ...config, silent: true, loadedFromFile: true };
+			} catch (error) {
+				throw new Error(`The configuration file is not a valid JSON file: ${error.message}`);
+			}
+		}
+	}
+
+	async _validateConfig(config, requiredFields) {
+		const missingFields = requiredFields.filter(field => !config[field]);
+		if (missingFields.length) {
+			const message = `The configuration file is missing required fields: ${missingFields.join(', ')}${os.EOL}`;
+			this.ui.stdout.write(this.ui.chalk.red(message));
+			this.ui.write(this.ui.chalk.red('Re-run the command with the correct configuration file.'));
+			throw new Error('Not a valid configuration file');
+		}
+	}
+
+	_validateVersion(config) {
+		const isLocalVersion = this._isFile(config.version);
+		if (!isLocalVersion && config.silent) {
+			// validate we have board and variant
+			if (!config.board || !config.variant) {
+				throw new Error('Board and variant are required for silent mode');
+			}
+		}
+		return isLocalVersion;
+	}
+
+	async _getUserConfigurationStep() {
+		return this._runStepWithTiming(
+			`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
+			`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
+			`Don't worry if you forget this—you can always reset your device later.${os.EOL}${os.EOL}` +
+			`Finally you'll be prompted to provide an optional Wi-Fi network.${os.EOL}` +
+			`While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.${os.EOL}`,
+			2,
+			() => this._userConfiguration(),
+			0
+		);
+	}
+
+	async _userConfiguration() {
+		const systemPassword = await this._getSystemPassword();
+		const wifi = await this._getWifi();
+		return { systemPassword, wifi };
+	}
+
+	async _getSystemPassword() {
+		let password = '';
+		while (password === '') {
+			password = await this.ui.promptPasswordWithConfirmation({
+				customMessage: 'Enter a password for the system account:',
+				customConfirmationMessage: 'Re-enter the password for the system account:'
+			});
+			if (password === '') {
+				this.ui.write('System password cannot be blank.');
+			}
+		}
+		return password;
+	}
+
+	async _getWifi() {
+		const question = [
+			{
+				type: 'input',
+				name: 'setupWifi',
+				message: 'Would you like to set up WiFi for your device? (y/n):',
+				default: 'y',
+			}
+		];
+		const { setupWifi } = await this.ui.prompt(question);
+		if (setupWifi.toLowerCase() === 'y') {
+			return this._getWifiCredentials();
+		}
+
+		return null;
+	}
+
+	async _getWifiCredentials() {
+		const questions = [
+			{
+				type: 'input',
+				name: 'ssid',
+				message: 'Enter your WiFi SSID:'
+			}
+		];
+		const res = await this.ui.prompt(questions);
+		const password = await this.ui.promptPasswordWithConfirmation({
+			customMessage: 'Enter your WiFi password:',
+			customConfirmationMessage: 'Re-enter your WiFi password:'
+		});
+
+		return { ssid: res.ssid, password };
+	}
+
+	async _getProductStep() {
+		return this._runStepWithTiming(
+			`Next, let's select a Particle product for your Tachyon.${os.EOL}` +
+			'A product will help manage the Tachyon device and keep things organized.',
+			3,
+			() => this._selectProduct()
+		);
+	}
+
+	async _pickVariantStep(config) {
+		if (config.isLocalFile || config.variant) {
+			this.ui.write(`Skipping to Step 5 - Using ${config.variant || config.version} operating system.${os.EOL}`);
+			return;
+		}
+		const isRb3Board = config.board === 'rb3g2'; // RGB board
+		let variantDescription = `Select the variant of the Tachyon operating system to set up.${os.EOL}`;
+		if (isRb3Board) {
+			variantDescription += 'The "preinstalled server" variant is for the RGB board.';
+		} else {
+			variantDescription += `The 'desktop' includes a GUI and is best for interacting with the device with a keyboard, mouse, and display.${os.EOL}`;
+			variantDescription += "The 'headless' variant is for remote command line access only.";
+		}
+		return this._runStepWithTiming(
+			variantDescription,
+			4,
+			() => this._selectVariant(isRb3Board)
+		);
+	}
+
+	async _downloadStep(config) {
+		return this._runStepWithTiming(
+			`Next, we'll download the Tachyon Operating System image.${os.EOL}` +
+			`Heads up: it's a large file — 3GB! Don't worry, though—the download will resume${os.EOL}` +
+			`if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
+			"just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
+			5,
+			() => this._download(config)
+		);
+	}
+
+	async _registerDeviceStep(config) {
+		return this._runStepWithTiming(
+			`Great! The download is complete.${os.EOL}` +
+			"Now, let's register your product on the Particle platform.",
+			6,
+			() => this._getRegistrationCode(config.productId)
+		);
+	}
+
+	async _configureConfigAndSaveStep(config) {
+		const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
+			'Creating the configuration file to write to the Tachyon device...',
+			7,
+			() => this._createConfigBlob({
+				loadedFromFile: config.loadedFromFile,
+				...config
+			})
+		);
+		const xmlPath = await this._createXmlFile(configBlobPath);
+		// Save the config file if requested
+		if (config.saveConfig) {
+			await this._saveConfig(config, configBlob);
+		}
+
+		return { xmlPath };
+	}
+
+	async _flashStep(packagePath, xmlPath, config) {
+		return this._runStepWithTiming(
+			`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
+			`Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!${os.EOL}${os.EOL}` +
+			`Before we get started, we need to power on your Tachyon board:${os.EOL}${os.EOL}` +
+			`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
+			`   The red light should turn on!${os.EOL}${os.EOL}` +
+			`2. Put the Tachyon device into download mode:${os.EOL}` +
+			`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
+			`   - When the light starts flashing yellow, release the button.${os.EOL}` +
+			'   Your device is now in flashing mode!',
+			8,
+			() => this._flash({
+				files: [packagePath, xmlPath],
+				skipFlashingOs: config.skipFlashingOs
+			})
+		);
+	}
+
+	async _finalStep(flashSuccessful, config) {
+		if (flashSuccessful) {
+			const { product } = await this.api.getProduct({ product: config.productId });
+			this._formatAndDisplaySteps(
+				`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+				`It will also:${os.EOL}` +
+				`  - Activate the built-in 5G modem${os.EOL}` +
+				`  - Connect to the Particle Cloud${os.EOL}` +
+				`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
+				`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
+				`${os.EOL}` +
+				`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
+				9
+			);
+		} else {
+			this.ui.write(
+				`${os.EOL}Flashing failed. Please unplug your device and rerun this. We're going to have to try it again.${os.EOL}` +
+				`If it continues to fail, please select a different USB port or visit https://part.cl/setup-tachyon and the setup link for more information.${os.EOL}`
+			);
+		}
 	}
 
 	async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
@@ -227,36 +369,7 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		this.ui.write(`${text}${os.EOL}`);
 	}
 
-	async _loadConfig(loadConfig) {
-		try {
-			const data = fs.readFileSync(loadConfig, 'utf8');
-			const config = JSON.parse(data);
-			// validate the config fields
-			const requiredFields = ['systemPassword', 'productId'];
-			await this._validateConfig(config, requiredFields);
-			return config;
-		} catch (error) {
-			throw new Error(`The configuration file is not a valid JSON file: ${error.message}`);
-		}
-	}
 
-	async _validateConfig(config, requiredFields) {
-		const missingFields = requiredFields.filter(field => !config[field]);
-		if (missingFields.length) {
-			throw new Error(`The configuration file is missing required fields: ${missingFields.join(', ')}`);
-		}
-	}
-
-	async _verifyLogin() {
-		const api = new ApiClient();
-		try {
-			api.ensureToken();
-		} catch {
-			const cloudCommand = new CloudCommand();
-			await cloudCommand.login();
-			this._setupApi();
-		}
-	}
 
 	async _selectRegion() {
 		const regionMapping = {
@@ -405,16 +518,11 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return product?.id;
 	}
 
-	async _userConfiguration() {
-		const systemPassword = await this._getSystemPassword();
-		const wifi = await this._getWifi();
-		return { systemPassword, wifi };
-	}
 
-	async _download({ region, version, alwaysCleanCache, variant, board, isRb3Board }) {
+	async _download({ region, version, alwaysCleanCache, variant, board, isRb3Board, isLocalVersion }) {
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
-		if (this._isFile(version)) {
+		if (isLocalVersion) {
 			return version;
 		}
 
@@ -433,62 +541,15 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return manager.download({ url, outputFileName, expectedChecksum, options: { alwaysCleanCache } });
 	}
 
-	async _getSystemPassword() {
-		let password = '';
-		while (password === '') {
-			password = await this.ui.promptPasswordWithConfirmation({
-				customMessage: 'Enter a password for the system account:',
-				customConfirmationMessage: 'Re-enter the password for the system account:'
-			});
-			if (password === '') {
-				this.ui.write('System password cannot be blank.');
-			}
-		}
-		return password;
-	}
-
-	async _getWifi() {
-		const question = [
-			{
-				type: 'input',
-				name: 'setupWifi',
-				message: 'Would you like to set up WiFi for your device? (y/n):',
-				default: 'y',
-			}
-		];
-		const { setupWifi } = await this.ui.prompt(question);
-		if (setupWifi.toLowerCase() === 'y') {
-			return this._getWifiCredentials();
-		}
-
-		return null;
-	}
-
-	async _getWifiCredentials() {
-		const questions = [
-			{
-				type: 'input',
-				name: 'ssid',
-				message: 'Enter your WiFi SSID:'
-			}
-		];
-		const res = await this.ui.prompt(questions);
-		const password = await this.ui.promptPasswordWithConfirmation({
-			customMessage: 'Enter your WiFi password:',
-			customConfirmationMessage: 'Re-enter your WiFi password:'
-		});
-
-		return { ssid: res.ssid, password };
-	}
-
 	async _getRegistrationCode(product) {
 		const data = await this.api.getRegistrationCode(product);
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, sshPublicKey, productId, timezone, skipCli }) {
+	async _createConfigBlob({ loadedFromFile = false, registrationCode, systemPassword, wifi, productId, timezone, skipCli }) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = {
+			timezone,
 			registrationCode: registrationCode,
 			systemPassword : loadedFromFile ? systemPassword : this._generateShadowCompatibleHash(systemPassword)
 		};
@@ -497,15 +558,9 @@ Welcome to the Particle Tachyon setup! This interactive command:
 			config.wifi = wifi;
 		}
 
-		if (sshPublicKey) {
-			config.sshPublicKey = sshPublicKey;
-		}
-
 		if (productId) {
 			config.productId = productId;
 		}
-
-		config.timezone = timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 		if (!skipCli) {
 			const profileFile = settings.findOverridesFile();
@@ -562,20 +617,8 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return tempFile.path;
 	}
 
-	async _flash({ files, skipFlashingOs, output, silent = false }) {
-
+	async _flash({ files, skipFlashingOs, output }) {
 		const packagePath = files[0];
-
-		if (!silent) {
-			const question = {
-				type: 'confirm',
-				name: 'flash',
-				message: 'Is the device powered, its LED flashing yellow and a USB-C cable plugged in from your computer?',
-				default: true
-			};
-			await this.ui.prompt(question);
-		}
-
 		const flashCommand = new FlashCommand();
 
 		if (output && !fs.existsSync(output)) {
@@ -592,13 +635,48 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		return true;
 	}
 
-	async _saveConfig({ saveConfig, config } = {}) {
-		if (saveConfig) {
-			// eslint-disable-next-line no-unused-vars
-			const { registrationCode, ...savedConfig } = config;
-			fs.writeFile(saveConfig, JSON.stringify(savedConfig, null, 2));
-			this.ui.write(`${os.EOL}Configuration file written here: ${saveConfig}${os.EOL}`);
+	async _saveConfig(config, configBlob) {
+		const configFields = [
+			'region',
+			'version',
+			'board',
+			'variant',
+			'skipFlashingOs',
+			'skipCli',
+			'systemPassword',
+			'wifi'
+		];
+		const configData = { ...config, ...configBlob };
+
+		const savedConfig = Object.fromEntries(
+			configFields
+				.filter(key => key in configData && configData[key] != null)
+				.map(key => [key, configData[key]])
+		);
+		await fs.writeFile(config.saveConfig, JSON.stringify(savedConfig, null, 2), 'utf-8');
+		this.ui.write(`${os.EOL}Configuration file written here: ${config.saveConfig}${os.EOL}`);
+	}
+
+	_isFile(version) {
+		const validChannels = ['latest', 'stable', 'beta', 'rc'];
+		const isValidChannel = validChannels.includes(version);
+		const isValidSemver = semver.valid(version);
+		const isFile = !isValidChannel && !isValidSemver;
+
+		// access(OK
+		if (isFile) {
+			try {
+				fs.accessSync(version, fs.constants.F_OK | fs.constants.R_OK);
+			} catch (error) {
+				if (error.code === 'ENOENT') {
+					throw new Error(`The file "${version}" does not exist.`);
+				} else if (error.code === 'EACCES') {
+					throw new Error(`The file "${version}" is not accessible (permission denied).`);
+				}
+				throw error;
+			}
 		}
+		return isFile;
 	}
 
 	_particleApi() {
@@ -606,5 +684,10 @@ Welcome to the Particle Tachyon setup! This interactive command:
 		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
 		const apiCache = createApiCache(api);
 		return { api: apiCache, auth };
+	}
+
+	_setupApi() {
+		const { api } = this._particleApi();
+		this.api = api;
 	}
 };

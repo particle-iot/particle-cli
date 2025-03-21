@@ -30,7 +30,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			skip_cli: {
 				description: 'Do not log in the Particle CLI',
-				type: 'boolean'
+				boolean: true
 			}
 		},
 		handler: (args) => {
