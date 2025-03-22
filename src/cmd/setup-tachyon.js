@@ -195,7 +195,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _userConfiguration() {
-		const systemPassword = await this._getSystemPassword();
+		const passwordAnswer = await this._getSystemPassword();
+		const systemPassword = this._generateShadowCompatibleHash(passwordAnswer);
 		const wifi = await this._getWifi();
 		return { systemPassword, wifi };
 	}
@@ -549,23 +550,13 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return data.registration_code;
 	}
 
-	async _createConfigBlob({ loadedFromFile, registrationCode, systemPassword, wifi, productId, timezone, skipCli }) {
+	async _createConfigBlob(_config) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
-		const config = {
-			timezone,
-			registrationCode: registrationCode,
-			systemPassword : loadedFromFile ? systemPassword : this._generateShadowCompatibleHash(systemPassword)
-		};
+		const config = Object.fromEntries(
+			Object.entries(_config).filter(([_, value]) => value != null) // eslint-disable-line no-unused-vars
+		);
 
-		if (wifi) {
-			config.wifi = wifi;
-		}
-
-		if (productId) {
-			config.productId = productId;
-		}
-
-		if (!skipCli) {
+		if (!config.skipCli) {
 			const profileFile = settings.findOverridesFile();
 			if (await fs.exists(profileFile)) {
 				config.cliConfig = await fs.readFile(profileFile, 'utf8');
@@ -644,16 +635,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			'version',
 			'board',
 			'variant',
-			'skipFlashingOs',
 			'skipCli',
 			'systemPassword',
+			'productId',
+			'timezone',
 			'wifi'
 		];
 		const configData = { ...config, ...configBlob };
 
 		const savedConfig = Object.fromEntries(
 			configFields
-				.filter(key => key in configData && configData[key] != null)
+				.filter(key => key in configData && configData[key] !== null && configData[key] !== undefined)
 				.map(key => [key, configData[key]])
 		);
 		await fs.writeFile(config.saveConfig, JSON.stringify(savedConfig, null, 2), 'utf-8');
