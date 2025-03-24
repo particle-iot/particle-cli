@@ -81,6 +81,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			config.variant = await this._pickVariantStep(config); // step 4
 		}
 
+		const isStaging = settings.apiUrl.includes('staging');
+		config.apiServer = settings.apiUrl;
+		config.server = isStaging ? 'https://host-connect.staging.particle.io': 'https://host-connect.particle.io';
+		config.verbose = isStaging; // Extra logging if connected to staging
+
 		config.packagePath = await this._downloadStep(config); // step 5
 		config.registrationCode = await this._registerDeviceStep(config); // step 6
 		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 7
