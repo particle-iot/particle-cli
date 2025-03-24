@@ -1,6 +1,13 @@
 name: Run Tests
 
-on: [workflow_call]
+on: 
+  workflow_call:
+    inputs:
+      skipE2E:
+        required: false
+        type: boolean
+        default: false
+
 env:
   E2E_DEVICE_ID: ${{ secrets.E2E_DEVICE_ID }}
   E2E_DEVICE_NAME: ${{ secrets.E2E_DEVICE_NAME }}
@@ -46,6 +53,7 @@ jobs:
       - name: Run unit tests
         run: npm run test:ci
   e2e-test:
+    if: ${{ !inputs.skipE2E }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

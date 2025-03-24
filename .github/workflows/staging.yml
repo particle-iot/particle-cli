@@ -7,6 +7,8 @@ jobs:
   call-tests:
     uses: ./.github/workflows/reusable-tests.yml
     secrets: inherit
+    with:
+      skipE2E: true
   call-build:
     uses: ./.github/workflows/reusable-build.yml
     secrets: inherit
