@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.34.0 - Mar 24 2025
+* Improve Tachyon setup
+
 # 3.33.5 - Mar 12 2025
 * app run: provide access to the X server to Docker
 
