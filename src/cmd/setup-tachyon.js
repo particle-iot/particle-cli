@@ -320,7 +320,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			8,
 			() => this._flash({
 				files: [packagePath, xmlPath],
-				skipFlashingOs: config.skipFlashingOs
+				skipFlashingOs: config.skipFlashingOs,
+				skipReset: config.variant === 'desktop'
 			})
 		);
 	}
@@ -328,17 +329,36 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _finalStep(flashSuccessful, config) { // TODO (hmontero): once we have the device in the cloud, we should show the device id
 		if (flashSuccessful) {
 			const { product } = await this.api.getProduct({ product: config.productId });
-			this._formatAndDisplaySteps(
-				`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
-				`It will also:${os.EOL}` +
-				`  - Activate the built-in 5G modem${os.EOL}` +
-				`  - Connect to the Particle Cloud${os.EOL}` +
-				`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
-				`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
-				`${os.EOL}` +
-				`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
-				9
-			);
+			if (config.variant === 'desktop') {
+				this._formatAndDisplaySteps(
+					`All done! Your Tachyon device is ready to boot to the desktop and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+					`To continue:${os.EOL}` +
+					`  - Disconnect the USB-C cable${os.EOL}` +
+					`  - Connect a USB-C Hub with an HDMI monitor, keyboard, and mouse.${os.EOL}` +
+					`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
+					`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
+					`When the device boots it will:${os.EOL}` +
+					`  - Activate the built-in 5G modem.${os.EOL}` +
+					`  - Connect to the Particle Cloud.${os.EOL}` +
+					`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
+					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
+					`${os.EOL}` +
+					`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
+					9
+				);
+			} else {
+				this._formatAndDisplaySteps(
+					`All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+					`It will also:${os.EOL}` +
+					`  - Activate the built-in 5G modem${os.EOL}` +
+					`  - Connect to the Particle Cloud${os.EOL}` +
+					`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
+					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
+					`${os.EOL}` +
+					`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
+					9
+				);
+			}
 		} else {
 			this.ui.write(
 				`${os.EOL}Flashing failed. Please unplug your device and rerun this. We're going to have to try it again.${os.EOL}` +
@@ -553,7 +573,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _createConfigBlob(_config) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = Object.fromEntries(
-			Object.entries(_config).filter(([_, value]) => value != null) // eslint-disable-line no-unused-vars
+			Object.entries(_config).filter(([, value]) => value != null)
 		);
 
 		if (!config.skipCli) {
@@ -611,7 +631,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return tempFile.path;
 	}
 
-	async _flash({ files, skipFlashingOs, output }) {
+	async _flash({ files, skipFlashingOs, skipReset, output }) {
 		const packagePath = files[0];
 		const flashCommand = new FlashCommand();
 
@@ -625,7 +645,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		if (!skipFlashingOs) {
 			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: outputLog, verbose: false });
 		}
-		await flashCommand.flashTachyonXml({ files, output: outputLog });
+		await flashCommand.flashTachyonXml({ files, skipReset, output: outputLog });
 		return true;
 	}
 
