@@ -126,7 +126,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async flashTachyonXml({ files, output }) {
+	async flashTachyonXml({ files, skipReset, output }) {
 		try {
 			const zipFile = files.find(f => f.endsWith('.zip'));
 			const xmlFile = files.find(f => f.endsWith('.xml'));
@@ -136,6 +136,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				files: [firehoseFile, xmlFile],
 				ui: this.ui,
 				outputLogFile: output,
+				skipReset,
 				currTask: 'Configuration file'
 			});
 
