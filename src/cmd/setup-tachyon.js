@@ -333,7 +333,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _finalStep(flashSuccessful, config) { // TODO (hmontero): once we have the device in the cloud, we should show the device id
 		if (flashSuccessful) {
 			const { product } = await this.api.getProduct({ product: config.productId });
-			const consoleUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`
+			const consoleUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
 			if (config.variant === 'desktop') {
 				this._formatAndDisplaySteps(
 					`All done! Your Tachyon device is ready to boot to the desktop and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
