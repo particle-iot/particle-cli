@@ -5,6 +5,9 @@ const _ = require('lodash');
 
 let settings = {
 	apiUrl: 'https://api.particle.io',
+	get isStaging() {
+		return this.apiUrl.includes('staging');
+	},
 	clientId: 'CLI2',
 	access_token: null,
 	username: null,

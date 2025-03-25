@@ -81,10 +81,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			config.variant = await this._pickVariantStep(config); // step 4
 		}
 
-		const isStaging = settings.apiUrl.includes('staging');
 		config.apiServer = settings.apiUrl;
-		config.server = isStaging ? 'https://host-connect.staging.particle.io': 'https://host-connect.particle.io';
-		config.verbose = isStaging; // Extra logging if connected to staging
+		config.server = settings.isStaging ? 'https://host-connect.staging.particle.io': 'https://host-connect.particle.io';
+		config.verbose = settings.isStaging; // Extra logging if connected to staging
 
 		config.packagePath = await this._downloadStep(config); // step 5
 		config.registrationCode = await this._registerDeviceStep(config); // step 6
@@ -334,6 +333,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _finalStep(flashSuccessful, config) { // TODO (hmontero): once we have the device in the cloud, we should show the device id
 		if (flashSuccessful) {
 			const { product } = await this.api.getProduct({ product: config.productId });
+			const consoleUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`
 			if (config.variant === 'desktop') {
 				this._formatAndDisplaySteps(
 					`All done! Your Tachyon device is ready to boot to the desktop and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
@@ -348,7 +348,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
+					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}${os.EOL}`,
 					9
 				);
 			} else {
@@ -360,7 +360,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: https://console.particle.io/${product.slug}${os.EOL}`,
+					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}${os.EOL}`,
 					9
 				);
 			}
