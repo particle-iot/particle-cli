@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.34.1 - Mar 26 2025
+* Update tachyon setup to flash staging server URLs and verbose flag if using staging config
+
 # 3.34.0 - Mar 24 2025
 * Improve Tachyon setup
 
