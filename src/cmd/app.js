@@ -245,8 +245,8 @@ module.exports = class AppCommands extends CLICommandBase {
 			// Add or update the application in the device document
 			patchOps.push({
 				action: 'put',
-				path: ['features', 'applications', 'desiredProperties', 'apps', appName, 'composeFile'],
-				value: dockerCompose.toString()
+				path: ['features', 'applications', 'desiredProperties', 'apps', appName],
+				value: { composeFile: dockerCompose.toString() }
 			});
 
 			// Use PATCH method to update the device document
