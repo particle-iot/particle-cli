@@ -239,33 +239,13 @@ module.exports = class AppCommands extends CLICommandBase {
 
 	async _pushApp(device, appName, dockerCompose) {
 		try {
-			const { data: deviceDoc } = await this.api.getDocument({
-				productId: device.product_id,
-				deviceId: device.id,
-				docName: 'system'
-			});
-
 			// Prepare the JSON Patch document
 			let patchOps = [];
 
-			// Ensure that the necessary paths exist in the document
-			if (!deviceDoc.features) {
-				patchOps.push({ op: 'add', path: '/features', value: {} });
-			}
-			if (!deviceDoc.features?.applications) {
-				patchOps.push({ op: 'add', path: '/features/applications', value: {} });
-			}
-			if (!deviceDoc.features?.applications?.desiredProperties) {
-				patchOps.push({ op: 'add', path: '/features/applications/desiredProperties', value: {} });
-			}
-			if (!deviceDoc.features?.applications?.desiredProperties?.apps) {
-				patchOps.push({ op: 'add', path: '/features/applications/desiredProperties/apps', value: {} });
-			}
-
 			// Add or update the application in the device document
 			patchOps.push({
-				op: 'add',
-				path: `/features/applications/desiredProperties/apps/${appName}`,
+				action: 'put',
+				path: ['features', 'applications', 'desiredProperties', 'apps', appName],
 				value: { composeFile: dockerCompose.toString() }
 			});
 
@@ -374,8 +354,8 @@ module.exports = class AppCommands extends CLICommandBase {
 
 			if (deviceDoc.features?.applications?.desiredProperties?.apps && deviceDoc.features.applications.desiredProperties.apps[appInstance]) {
 				const patchOps = [{
-					op: 'remove',
-					path: `/features/applications/desiredProperties/apps/${appInstance}`
+					action: 'del',
+					path: ['features', 'applications', 'desiredProperties', 'apps', appInstance]
 				}];
 
 				await this.api.patchDocument({
