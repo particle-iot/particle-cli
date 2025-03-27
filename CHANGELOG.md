@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.34.2 - Mar 26 2025
+* Fix app push command not using latest API body 
+
 # 3.34.1 - Mar 26 2025
 * Update tachyon setup to flash staging server URLs and verbose flag if using staging config
 
