@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.34.3 - Mar 28 2025
+* Fix app list command not supporting new containers format
+
 # 3.34.2 - Mar 26 2025
 * Fix app push command not using latest API body 
 
