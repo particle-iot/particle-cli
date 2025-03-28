@@ -310,7 +310,13 @@ module.exports = class AppCommands extends CLICommandBase {
 						style: { head: ['white'] }
 					});
 					if (appDetails.containers) {
-						for (const { name: container, ...containerDetails } of appDetails.containers) {
+						let containers;
+						if (Array.isArray(appDetails.containers)) { // TODO: Legacy, remove in a few weeks when all devices have switched to object format
+							containers = appDetails.containers;
+						} else {
+							containers = Object.entries(appDetails.containers).map(([name, props]) => ({ name, ...props }));
+						}
+						for (const { name: container, ...containerDetails } of containers) {
 							table.push([container, JSON.stringify(containerDetails, null, 2)]);
 						}
 					} else {

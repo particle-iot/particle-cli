@@ -48,6 +48,7 @@
         "particle": "src/index.js"
       },
       "devDependencies": {
+        "@types/cli-table": "^0.3.1",
         "chai": "^4.2.0",
         "chai-as-promised": "^7.1.1",
         "doctoc": "^1.4.0",
@@ -947,6 +948,12 @@
         "traverse": "^0.6.6",
         "unified": "^6.1.6"
       }
+    },
+    "node_modules/@types/cli-table": {
+      "version": "0.3.1",
+      "resolved": "https://registry.npmjs.org/@types/cli-table/-/cli-table-0.3.1.tgz",
+      "integrity": "sha512-m3+6WWfSSl6zqoXy8uQQifbgqV7Gt6fsyWnHLgUWVtJQk75+OfUB+edSZ52YDj7leSiZtX7w1/E4w2x/Hb0orA==",
+      "dev": true
     },
     "node_modules/@types/long": {
       "version": "4.0.2",
@@ -10543,6 +10550,12 @@
         "traverse": "^0.6.6",
         "unified": "^6.1.6"
       }
+    },
+    "@types/cli-table": {
+      "version": "0.3.1",
+      "resolved": "https://registry.npmjs.org/@types/cli-table/-/cli-table-0.3.1.tgz",
+      "integrity": "sha512-m3+6WWfSSl6zqoXy8uQQifbgqV7Gt6fsyWnHLgUWVtJQk75+OfUB+edSZ52YDj7leSiZtX7w1/E4w2x/Hb0orA==",
+      "dev": true
     },
     "@types/long": {
       "version": "4.0.2",
