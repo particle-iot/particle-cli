@@ -47,6 +47,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		yes,
 		tachyon,
 		output,
+		'skip-reset': skipReset,
 		'application-only': applicationOnly
 	}) {
 		if (!tachyon && !device && !binary && !local) {
@@ -65,7 +66,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
 		} else if (tachyon) {
 			let allFiles = binary ? [binary, ...files] : files;
-			await this.flashTachyon({ files: allFiles, output });
+			await this.flashTachyon({ files: allFiles, skipReset, output });
 		} else {
 			await this.flashCloud({ device, files, target });
 		}

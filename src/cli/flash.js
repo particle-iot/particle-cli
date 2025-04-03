@@ -42,6 +42,10 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true,
 				description: 'Flash Tachyon'
 			},
+			'skip-reset': {
+				boolean: true,
+				description: 'Skip resetting the device after flashing. Only available for Tachyon'
+			},
 			'output': {
 				describe: 'Folder to output the log file. Only available for Tachyon'
 			},
