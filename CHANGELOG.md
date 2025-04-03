@@ -1,6 +1,9 @@
 # Changelog
 
-# 3.34.3 - Mar 28 2025
+# 3.34.4 - Apr 03 2025
+* Add --skip-reset flag for tachyon flash to prevent booting after flashing.
+
+## 3.34.3 - Mar 28 2025
 * Fix app list command not supporting new containers format
 
 # 3.34.2 - Mar 26 2025
