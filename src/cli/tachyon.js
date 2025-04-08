@@ -104,6 +104,53 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(tachyon, 'backup', 'Backup Tachyon NV data', {
+		options: {
+			'output-dir': {
+				description: 'Directory to save the backup files'
+			},
+			'log-dir': {
+				description: 'Directory to save the log files'
+			}
+		},
+		handler: (args) => {
+			const BackupRestoreTachyonCommand = require('../cmd/backup-restore-tachyon');
+			return new BackupRestoreTachyonCommand().backup(args);
+		},
+		examples: {
+			'$0 $command ': 'Backup Tachyon NV data for a EDL connected device',
+			'$0 $command --output-dir /path/to/backup': 'Backup Tachyon NV data to the specified directory',
+			'$0 $command --log-dir /path/to/log': 'Backup Tachyon NV data and save logs to the specified directory'
+		}
+	});
+
+	commandProcessor.createCommand(tachyon, 'restore', 'Restore Tachyon NV data', {
+		options: {
+			'nvdata1-filename': {
+				description: 'Path to the first NV data file'
+			},
+			'nvdata2-filename': {
+				description: 'Path to the second NV data file'
+			},
+			'input-dir': {
+				description: 'Directory containing the NV data files'
+			},
+			'log-dir': {
+				description: 'Directory to save the log files'
+			}
+		},
+		handler: (args) => {
+			const BackupRestoreTachyonCommand = require('../cmd/backup-restore-tachyon');
+			return new BackupRestoreTachyonCommand().restore(args);
+		},
+		examples: {
+			'$0 $command ': 'Restore Tachyon NV data for a EDL connected device using the default filenames',
+			'$0 $command --input-dir /path/to/input': 'Restore Tachyon NV data from the specified directory using the default filenames',
+			'$0 $command --log-dir /path/to/log': 'Restore Tachyon NV data and save logs to the specified directory',
+			'$0 $command --nvdata1-filename /path/to/nvdata1.backup --nvdata2-filename /path/to/nvdata2.backup': 'Restore Tachyon NV data from the specified files',
+		}
+	});
+
 	return tachyon;
 };
 
