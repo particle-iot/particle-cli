@@ -18,6 +18,9 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = process.cwd() } = {}) {
 		const serialNumber = await this._getEDLSerialNumber();
+		if (!fs.existsSync(outputDir)) {
+			fs.mkdirSync(outputDir, { recursive: true });
+		}
 		const deviceId = `${this.deviceIdPrefix}${serialNumber}`;
 		const xmlFile = this.generateXmlForRead({ outputDir, deviceId });
 		const files = [
