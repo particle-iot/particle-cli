@@ -1,6 +1,9 @@
 # Changelog
 
-# 3.34.4 - Apr 03 2025
+# 3.35.0 - Apr 03 2025
+* Add `tachyon backup` and `tachyon restore` new commands to backup/restore nvdata on tachyon
+
+## 3.34.4 - Apr 03 2025
 * Add --skip-reset flag for tachyon flash to prevent booting after flashing.
 
 ## 3.34.3 - Mar 28 2025
