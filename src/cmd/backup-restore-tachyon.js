@@ -13,7 +13,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		super();
 		this.ui = ui || this.ui;
 		this.firehoseDir = path.join(__dirname, '../../assets/qdl/firehose/prog_firehose_ddr.elf');
-		this.deviceIdPrefix = '422a060000000000';
 	}
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = process.cwd() } = {}) {
@@ -40,12 +39,12 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	}
 
 	generateXmlForRead({ deviceId, outputDir }) {
-		const nv1Filename = path.join(outputDir,`${deviceId}_0.backup`);
-		const nv2Filename = path.join(outputDir, `${deviceId}_1.backup`);
+		const nv1Filename = path.join(outputDir,`${deviceId}_nvdata1.backup`);
+		const nv2Filename = path.join(outputDir, `${deviceId}_nvdata2.backup`);
 		const xmlContent = this.getReadWriteXmlContent({
 			nv1Filename,
 			nv2Filename,
-			type: 'read'
+			operation: 'read'
 		});
 		const tempFile = temp.openSync({ suffix: '.xml' });
 		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
@@ -84,8 +83,8 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 	generateXmlForWrite({ deviceId, nvdata1Filename, nvdata2Filename, inputDir }) {
 		const fileNames = [
-			path.join(inputDir, `${deviceId}_0.backup`),
-			path.join(inputDir, `${deviceId}_1.backup`)
+			path.join(inputDir, `${deviceId}_nvdata1.backup`),
+			path.join(inputDir, `${deviceId}_nvdata2.backup`)
 		];
 
 		const nv1Filename = nvdata1Filename || fileNames[0];
@@ -93,7 +92,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		const xmlContent = this.getReadWriteXmlContent({
 			nv1Filename,
 			nv2Filename,
-			type: 'program'
+			operation: 'program'
 		});
 		const tempFile = temp.openSync({ suffix: '.xml' });
 		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
@@ -101,24 +100,24 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		return tempFile.path;
 	}
 
-	getReadWriteXmlContent({ nv1Filename, nv2Filename, type='read' }) {
+	getReadWriteXmlContent({ nv1Filename, nv2Filename, operation = 'read' }) {
 		const nvdata = [
 			{
 				start_sector: 8,
 				start_byte_hex: '0x8000',
-				filename: `${nv1Filename}`,
+				filename: nv1Filename,
 				label: 'nvdata1'
 			},
 			{
 				start_sector: 264,
 				start_byte_hex: '0x108000',
-				filename: `${nv2Filename}`,
+				filename: nv2Filename,
 				label: 'nvdata2'
 			}
 		];
 		const elements = nvdata.map(read => [
-			`  <${type}`,
-			'    start_sector="' + read.start_sector + '"',
+			`  <${operation}`,
+			`    start_sector="${read.start_sector}"`,
 			'    size_in_KB="1024.0"',
 			'    physical_partition_number="0"',
 			'    partofsingleimage="false"',
@@ -150,7 +149,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			try {
 				edlDevices = await getEdlDevices();
 				if (edlDevices.length > 0) {
-					return edlDevices[0]._computeDeviceId();
+					return edlDevices[0].id;
 				}
 				if (!messageShown) {
 					this.ui.stdout.write(`Waiting for device to enter EDL mode...${os.EOL}`);
