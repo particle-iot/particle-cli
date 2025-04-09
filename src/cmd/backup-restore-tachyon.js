@@ -17,11 +17,10 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	}
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = process.cwd() } = {}) {
-		const serialNumber = await this._getEDLSerialNumber();
+		const deviceId = await this._getEDLDeviceId();
 		if (!fs.existsSync(outputDir)) {
 			fs.mkdirSync(outputDir, { recursive: true });
 		}
-		const deviceId = `${this.deviceIdPrefix}${serialNumber}`;
 		const xmlFile = this.generateXmlForRead({ outputDir, deviceId });
 		const files = [
 			this.firehoseDir,
@@ -60,8 +59,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = process.cwd(),
 	} = {}) {
-		const serialNumber = await this._getEDLSerialNumber();
-		const deviceId = `${this.deviceIdPrefix}${serialNumber}`;
+		const deviceId = await this._getEDLDeviceId();
 		const xmlFile = this.generateXmlForWrite({
 			deviceId,
 			nvdata1Filename,
@@ -145,14 +143,14 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		return xmlLines.join('\n');
 	}
 
-	async _getEDLSerialNumber() {
+	async _getEDLDeviceId() {
 		let edlDevices = [];
 		let messageShown = false;
 		while (edlDevices.length === 0) {
 			try {
 				edlDevices = await getEdlDevices();
 				if (edlDevices.length > 0) {
-					return edlDevices[0].serialNumber;
+					return edlDevices[0]._computeDeviceId();
 				}
 				if (!messageShown) {
 					this.ui.stdout.write(`Waiting for device to enter EDL mode...${os.EOL}`);
