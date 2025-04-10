@@ -126,6 +126,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 	}
 
+	/* eslint-disable max-statements, max-depth */
 	async doProvision(device) {
 		let provisionOutputLogs = [];
 		let eid = null;
@@ -298,6 +299,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			this._exitQlril();
 		}
 	}
+	/* eslint-enable max-statements, max-depth */
 
 	async doEnableTachyon(iccid) {
 		try {
