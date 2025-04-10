@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.35.1 - Apr 10 2025
+* Improve the background update mechanism
+
 # 3.35.0 - Apr 03 2025
 * Add `tachyon backup` and `tachyon restore` new commands to backup/restore nvdata on tachyon
 
