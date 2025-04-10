@@ -13,7 +13,9 @@ module.exports = {
 	},
 	rules: {
 		'no-console': 'off',
-		'valid-jsdoc': 'off'
+		'valid-jsdoc': 'off',
+		'max-depth': ['warn', 5],
+		'max-statements': ['warn', 40]
 	}
 };
 

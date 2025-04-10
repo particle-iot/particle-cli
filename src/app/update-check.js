@@ -2,17 +2,14 @@ const settings = require('../../settings');
 const childProcess = require('node:child_process');
 
 
-module.exports = async (skip, force) => {
-	if (skip) {
-		return;
-	}
+module.exports = async (skip, force, command) => {
 	if (!process.pkg) { // running from source
 		return;
 	}
 
 	const now = Date.now();
 	const lastCheck = settings.profile_json.last_version_check || 0;
-	const skipUpdates = !!(settings.profile_json.enableUpdates === false || settings.disableUpdateCheck);
+	const skipUpdates = !!(settings.profile_json.enableUpdates === false || skip || command === 'update-cli');
 
 	if ((now - lastCheck >= settings.updateCheckInterval) || force){
 		settings.profile_json.last_version_check = now;

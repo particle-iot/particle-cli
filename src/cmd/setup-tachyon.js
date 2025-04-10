@@ -54,7 +54,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			variant: null,
 			skipFlashingOs: false,
 			skipCli: false,
-			timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+			timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, // eslint-disable-line new-cap
 			alwaysCleanCache: false
 		};
 		this.options = {};
