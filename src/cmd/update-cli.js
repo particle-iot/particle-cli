@@ -12,10 +12,8 @@ const Spinner = require('cli-spinner').Spinner;
 const crypto = require('crypto');
 
 /*
- * The update-cli command tells the CLI installer to reinstall the latest version of the CLI
- * See https://github.com/particle-iot/particle-cli-wrapper/blob/master/shell.go#L12
- *
- * If the CLI was installed using npm, tell the user to update using npm
+ * The update-cli command updates the latest single executable version of the CLI.
+ * If the CLI is not running the single executable version, recommend using the installer.
  */
 class UpdateCliCommand {
 	update({ 'enable-updates': enableUpdates, 'disable-updates': disableUpdates, version }) {

@@ -69,12 +69,28 @@ describe('Update Check', () => {
 		expect(childProcess.spawn).to.have.property('callCount', 0);
 	});
 
-	it('Does nothing when `skip` flag is set', async () => {
+	it('just saves the last update time when `skip` flag is set', async () => {
 		const skip = true;
+		const lastCheck = settings.profile_json.last_version_check;
+
 		const result = await updateCheck(skip);
 
 		expect(result).to.equal(undefined);
-		expect(settings.saveProfileData).to.have.property('callCount', 0);
+		expect(settings.saveProfileData).to.have.property('callCount', 1);
+		expect(settings.profile_json.last_version_check).to.be.at.least(lastCheck);
+		expect(settings.profile_json).to.not.have.property('newer_version');
+		expect(childProcess.spawn).to.have.property('callCount', 0);
+	});
+
+	it('just saves the last update time when the command is `update-cli`', async () => {
+		const lastCheck = settings.profile_json.last_version_check;
+
+		const result = await updateCheck(false, false, 'update-cli');
+
+		expect(result).to.equal(undefined);
+		expect(settings.saveProfileData).to.have.property('callCount', 1);
+		expect(settings.profile_json.last_version_check).to.be.at.least(lastCheck);
+		expect(settings.profile_json).to.not.have.property('newer_version');
 		expect(childProcess.spawn).to.have.property('callCount', 0);
 	});
 

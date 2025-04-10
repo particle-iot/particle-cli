@@ -167,12 +167,14 @@ module.exports = class CLI {
 	async run(args){
 		settings.whichProfile();
 		settings.loadOverrides();
-		settings.disableUpdateCheck = this.hasArg('--no-update-check', args);
+		if (this.hasArg('--no-update-check', args)) {
+			settings.disableUpdateCheck = true;
+		}
 		const force = this.hasArg('--force-update-check', args);
 
 		try {
-			await updateCheck(settings.disableUpdateCheck, force);
 			const cmdargs = args.slice(2); // remove executable and script
+			await updateCheck(settings.disableUpdateCheck, force, cmdargs[0]);
 			return await this.runCommand(cmdargs);
 		} catch (error){
 			const onError = commandProcessor.createErrorHandler();
