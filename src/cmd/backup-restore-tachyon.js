@@ -3,11 +3,9 @@ const QdlFlasher = require('../lib/qdl');
 const path = require('path');
 const temp = require('temp').track();
 const fs = require('fs-extra');
-const { getEdlDevices } = require('particle-usb');
 const os = require('os');
 const GPT = require('gpt');
-const { delay } = require('../lib/utilities');
-const DEVICE_READY_WAIT_TIME = 5000;
+const { addLogHeaders, getEDLDevice, addLogFooter } = require('../lib/tachyon-utils');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
@@ -18,9 +16,9 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	}
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = process.cwd() } = {}) {
-		const deviceId = await this._getEDLDeviceId();
-		if (!await fs.exists(outputDir)) {
-			await fs.mkdir(outputDir, { recursive: true });
+		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
+		if (!fs.existsSync(outputDir)) {
+			fs.mkdirSync(outputDir, { recursive: true });
 		}
 		if (!await fs.exists(logDir)) {
 			await fs.mkdir(logDir, { recursive: true });
@@ -37,9 +35,13 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			this.firehosePath,
 			xmlFile
 		];
-
+		const startTime = new Date();
+		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
+		addLogHeaders({ outputLog, startTime, deviceId });
+		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
+		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		const qdl = new QdlFlasher({
-			outputLogFile: path.join(logDir, `tachyon_${deviceId}_backup_${Date.now()}.log`),
+			outputLogFile: outputLog,
 			files: files,
 			ui: this.ui,
 			currTask: 'Backup',
@@ -47,13 +49,14 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		});
 		await qdl.run();
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId} complete!${os.EOL}`);
+		addLogFooter({ outputLog, startTime, endTime: new Date() });
 	}
 
 	async restore({
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = process.cwd(),
 	} = {})	{
-		const deviceId = await this._getEDLDeviceId();
+		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 		if (!await fs.exists(logDir)) {
 			await fs.mkdir(logDir, { recursive: true });
 		}
@@ -66,10 +69,22 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		await this.verifyFilesExist(partitions);
 
 		const xmlFile = await this.generateXml({ partitions, operation: 'program' });
+		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
+		const xmlFile = this.generateXmlForWrite({
+			deviceId,
+			nvdata1Filename,
+			nvdata2Filename,
+			inputDir
+		});
 		const files = [
 			this.firehosePath,
 			xmlFile
 		];
+		const startTime = new Date();
+		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
+		addLogHeaders({ outputLog, startTime, deviceId });
+		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
+		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		const qdl = new QdlFlasher({
 			outputLogFile: path.join(logDir, `tachyon_${deviceId}_restore_${Date.now()}.log`),
 			files: files,
@@ -79,6 +94,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		});
 		await qdl.run();
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId} complete!${os.EOL}`);
+		addLogFooter({ outputLog, startTime, endTime: new Date() });
 	}
 
 	async initFiles() {
@@ -175,7 +191,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		];
 		return xmlLines.join('\n');
 	}
-
 	async verifyFilesExist(partitions) {
 		for (const partition of partitions) {
 			if (!await fs.exists(partition.filename)) {
@@ -183,25 +198,4 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			}
 		}
 	}
-
-	async _getEDLDeviceId() {
-		let edlDevices = [];
-		let messageShown = false;
-		while (edlDevices.length === 0) {
-			try {
-				edlDevices = await getEdlDevices();
-				if (edlDevices.length > 0) {
-					return edlDevices[0].id;
-				}
-				if (!messageShown) {
-					this.ui.stdout.write(`Waiting for device to enter EDL mode...${os.EOL}`);
-					messageShown = true;
-				}
-			} catch (error) {
-				// ignore error
-			}
-			await delay(DEVICE_READY_WAIT_TIME);
-		}
-	}
-
 };
