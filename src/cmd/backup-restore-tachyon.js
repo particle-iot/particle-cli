@@ -25,7 +25,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		];
 		const startTime = new Date();
 		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
-		addLogHeaders({ outputLog, startTime, deviceId });
+		addLogHeaders({ outputLog, startTime, deviceId, command: 'Tachyon backup' });
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		const qdl = new QdlFlasher({
@@ -73,7 +73,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		];
 		const startTime = new Date();
 		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
-		addLogHeaders({ outputLog, startTime, deviceId });
+		addLogHeaders({ outputLog, startTime, deviceId, command: 'Tachyon restore' });
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		const qdl = new QdlFlasher({
