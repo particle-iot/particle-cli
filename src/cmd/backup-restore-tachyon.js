@@ -3,10 +3,8 @@ const QdlFlasher = require('../lib/qdl');
 const path = require('path');
 const temp = require('temp').track();
 const fs = require('fs-extra');
-const { getEdlDevices } = require('particle-usb');
 const os = require('os');
-const { delay } = require('../lib/utilities');
-const DEVICE_READY_WAIT_TIME = 5000;
+const { addLogHeaders, getEDLDevice, addLogFooter } = require('../lib/tachyon-utils');
 
 module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -16,7 +14,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	}
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = process.cwd() } = {}) {
-		const deviceId = await this._getEDLDeviceId();
+		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 		if (!fs.existsSync(outputDir)) {
 			fs.mkdirSync(outputDir, { recursive: true });
 		}
@@ -25,10 +23,13 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			this.firehoseDir,
 			xmlFile
 		];
-
+		const startTime = new Date();
+		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
+		addLogHeaders({ outputLog, startTime, deviceId });
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
+		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		const qdl = new QdlFlasher({
-			outputLogFile: path.join(logDir, `tachyon_backup_${Date.now()}.log`),
+			outputLogFile: outputLog,
 			files: files,
 			ui: this.ui,
 			currTask: 'Backup',
@@ -36,6 +37,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		});
 		await qdl.run();
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId} complete!${os.EOL}`);
+		addLogFooter({ outputLog, startTime, endTime: new Date() });
 	}
 
 	generateXmlForRead({ deviceId, outputDir }) {
@@ -58,7 +60,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = process.cwd(),
 	} = {}) {
-		const deviceId = await this._getEDLDeviceId();
+		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 		const xmlFile = this.generateXmlForWrite({
 			deviceId,
 			nvdata1Filename,
@@ -69,7 +71,11 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			this.firehoseDir,
 			xmlFile
 		];
+		const startTime = new Date();
+		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
+		addLogHeaders({ outputLog, startTime, deviceId });
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
+		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		const qdl = new QdlFlasher({
 			outputLogFile: path.join(logDir, `tachyon_restore_${Date.now()}.log`),
 			files: files,
@@ -79,6 +85,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		});
 		await qdl.run();
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId} complete!${os.EOL}`);
+		addLogFooter({ outputLog, startTime, endTime: new Date() });
 	}
 
 	generateXmlForWrite({ deviceId, nvdata1Filename, nvdata2Filename, inputDir }) {
@@ -140,26 +147,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			''
 		];
 		return xmlLines.join('\n');
-	}
-
-	async _getEDLDeviceId() {
-		let edlDevices = [];
-		let messageShown = false;
-		while (edlDevices.length === 0) {
-			try {
-				edlDevices = await getEdlDevices();
-				if (edlDevices.length > 0) {
-					return edlDevices[0].id;
-				}
-				if (!messageShown) {
-					this.ui.stdout.write(`Waiting for device to enter EDL mode...${os.EOL}`);
-					messageShown = true;
-				}
-			} catch (error) {
-				// ignore error
-			}
-			await delay(DEVICE_READY_WAIT_TIME);
-		}
 	}
 
 };

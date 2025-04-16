@@ -29,7 +29,7 @@ const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
 const QdlFlasher = require('../lib/qdl');
-const { getEdlDevices } = require('particle-usb');
+const { getEDLDevice, addLogHeaders, addLogFooter, addManifestInfoLog } = require('../lib/tachyon-utils');
 
 const TACHYON_MANIFEST_FILE = 'manifest.json';
 
@@ -87,14 +87,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const [input, ...rest] = files;
 		const stats = await fs.stat(input);
 		let filesToProgram;
-		let version;
+		let manifestInfo;
 
 		if (stats.isDirectory()) {
 			updateFolder = input;
 			const dirInfo = await this._extractFlashFilesFromDir(input);
 			includeDir = dirInfo.baseDir;
 			filesToProgram = dirInfo.filesToProgram.map((file) => path.join(includeDir, file));
-			version = dirInfo.version;
+			manifestInfo = dirInfo.manifest;
 		} else if (utilities.getFilenameExt(input) === '.zip') {
 			updateFolder = path.dirname(input);
 			zipFile = path.basename(input);
@@ -102,7 +102,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			includeDir = zipInfo.baseDir;
 			filesToProgram = zipInfo.filesToProgram.map((file) => path.join(includeDir, file));
 			filesToProgram.push(...rest);
-			version = zipInfo.version;
+			manifestInfo = zipInfo.manifest;
 		} else {
 			filesToProgram = files;
 		}
@@ -114,14 +114,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 				this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
 			}
 			const startTime = new Date();
-			const edlSerialNumber = await this.getTachyonEdlSerialNumber();
-			await this.addLogHeaders({
-				outputLog,
-				startTime,
-				version,
-				serialNumber: edlSerialNumber
-			});
-
+			const { id: deviceId } = await getEDLDevice({ ui: this.ui });
+			addLogHeaders({ outputLog, startTime, deviceId });
+			addManifestInfoLog({ outputLog, manifest: manifestInfo });
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
 				includeDir,
@@ -134,51 +129,23 @@ module.exports = class FlashCommand extends CLICommandBase {
 			});
 			await qdl.run();
 			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
-			await this.addLogFooter({
-				outputLog,
-				startTime,
-				endTime: new Date()
-			});
+			addLogFooter({ outputLog, startTime, endTime: new Date() });
 		} catch (error) {
 			fs.appendFileSync(outputLog, error.message);
 			throw error;
 		}
 	}
 
-	async getTachyonEdlSerialNumber() {
-		const edlDevices = await getEdlDevices();
-		if (edlDevices.length === 0) {
-			throw new Error('No EDL devices found');
-		} else {
-			return edlDevices[0].serialNumber;
-		}
-	}
-
-	async addLogHeaders({ outputLog, startTime, version, serialNumber }) {
-		fs.appendFileSync(outputLog, `Tachyon Flash Log${os.EOL}`);
-		fs.appendFileSync(outputLog, `==================${os.EOL}`);
-		fs.appendFileSync(outputLog, `Flashing device with serial number: ${serialNumber}${os.EOL}`);
-		fs.appendFileSync(outputLog, `Start Time: ${startTime.toISOString()}${os.EOL}`);
-		fs.appendFileSync(outputLog, `Version: ${version}${os.EOL}`);
-		fs.appendFileSync(outputLog, `==================${os.EOL}`);
-	}
-	async addLogFooter({ outputLog, startTime, endTime }) {
-		fs.appendFileSync(outputLog, `==================${os.EOL}`);
-		fs.appendFileSync(outputLog, `Flashing device completed${os.EOL}`);
-		fs.appendFileSync(outputLog, `End Time: ${endTime.toISOString()}${os.EOL}`);
-		fs.appendFileSync(outputLog, `Duration: ${((endTime - startTime) / 1000).toFixed(2)}s${os.EOL}`);
-		fs.appendFileSync(outputLog, `==================${os.EOL}`);
-		fs.appendFileSync(outputLog, `Tachyon Flash Log Ended${os.EOL}`);
-		fs.appendFileSync(outputLog, `==================${os.EOL}`);
-		fs.appendFileSync(outputLog, `${os.EOL}`);
-	}
-
 	async flashTachyonXml({ files, skipReset, output }) {
 		try {
 			const zipFile = files.find(f => f.endsWith('.zip'));
 			const xmlFile = files.find(f => f.endsWith('.xml'));
+			const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 
 			const firehoseFile = await this._getFirehoseFileFromZip(zipFile);
+			// add log headers
+			const startTime = new Date();
+			addLogHeaders({ outputLog: output, startTime, deviceId });
 			const qdl = new QdlFlasher({
 				files: [firehoseFile, xmlFile],
 				ui: this.ui,
@@ -189,6 +156,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 			await qdl.run();
 			fs.appendFileSync(output, `Config file download complete.${os.EOL}`);
+			// add log footer
+			addLogFooter({ outputLog: output, startTime, endTime: new Date() });
 		} catch (error) {
 			fs.appendFileSync(output, 'Download failed with error: ' + error.message);
 			throw new Error('Download failed with error: ' + error.message);
@@ -226,7 +195,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			...parsed.patchXml
 		];
 
-		return { baseDir, filesToProgram, version: data.version };
+		return { baseDir, filesToProgram, manifest: data };
 	}
 
 	async _extractFlashFilesFromZip(zipPath) {
@@ -243,7 +212,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			...parsed.patchXml
 		];
 
-		return { baseDir, filesToProgram, version: parsed.version };
+		return { baseDir, filesToProgram, manifest: data };
 	}
 
 	async _loadManifestFromFile(filePath) {
@@ -279,7 +248,6 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 	_parseManfiestData(data) {
 		return {
-			version: data?.version,
 			base: data?.targets[0]?.qcm6490?.edl?.base,
 			firehose: data?.targets[0]?.qcm6490?.edl?.firehose,
 			programXml: data?.targets[0]?.qcm6490?.edl?.program_xml,
