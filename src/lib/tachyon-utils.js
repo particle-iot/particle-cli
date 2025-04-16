@@ -5,9 +5,10 @@ const { delay } = require('./utilities');
 const DEVICE_READY_WAIT_TIME = 5000;
 const UI = require('./ui');
 
-const addLogHeaders = ({ outputLog, startTime, deviceId }) => {
+const addLogHeaders = ({ outputLog, startTime, deviceId, commandName }) => {
 	fs.appendFileSync(outputLog, `Tachyon Logs:${os.EOL}`);
 	fs.appendFileSync(outputLog, `==================${os.EOL}`);
+	fs.appendFileSync(outputLog, `Command: ${commandName}${os.EOL}`);
 	fs.appendFileSync(outputLog, `Using Device ID: ${deviceId}${os.EOL}`);
 	fs.appendFileSync(outputLog, `Start time: ${startTime.toISOString()}${os.EOL}`);
 	fs.appendFileSync(outputLog, `==================${os.EOL}`);

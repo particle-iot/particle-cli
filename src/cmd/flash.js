@@ -115,7 +115,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			}
 			const startTime = new Date();
 			const { id: deviceId } = await getEDLDevice({ ui: this.ui });
-			addLogHeaders({ outputLog, startTime, deviceId });
+			addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon Flash' });
 			addManifestInfoLog({ outputLog, manifest: manifestInfo });
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
@@ -145,7 +145,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			const firehoseFile = await this._getFirehoseFileFromZip(zipFile);
 			// add log headers
 			const startTime = new Date();
-			addLogHeaders({ outputLog: output, startTime, deviceId });
+			addLogHeaders({ outputLog: output, startTime, deviceId, commandName: 'Tachyon Flash XML' });
 			const qdl = new QdlFlasher({
 				files: [firehoseFile, xmlFile],
 				ui: this.ui,
