@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.35.2 - Apr 16 2025
+* Support erase tag when flashing Tachyon
+
 # 3.35.1 - Apr 10 2025
 * Improve the background update mechanism
 
