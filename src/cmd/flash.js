@@ -29,6 +29,7 @@ const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
 const QdlFlasher = require('../lib/qdl');
+const { getEDLDevice, addLogHeaders, addLogFooter, addManifestInfoLog } = require('../lib/tachyon-utils');
 
 const TACHYON_MANIFEST_FILE = 'manifest.json';
 
@@ -86,12 +87,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const [input, ...rest] = files;
 		const stats = await fs.stat(input);
 		let filesToProgram;
+		let manifestInfo;
 
 		if (stats.isDirectory()) {
 			updateFolder = input;
 			const dirInfo = await this._extractFlashFilesFromDir(input);
 			includeDir = dirInfo.baseDir;
 			filesToProgram = dirInfo.filesToProgram.map((file) => path.join(includeDir, file));
+			manifestInfo = dirInfo.manifest;
 		} else if (utilities.getFilenameExt(input) === '.zip') {
 			updateFolder = path.dirname(input);
 			zipFile = path.basename(input);
@@ -99,6 +102,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			includeDir = zipInfo.baseDir;
 			filesToProgram = zipInfo.filesToProgram.map((file) => path.join(includeDir, file));
 			filesToProgram.push(...rest);
+			manifestInfo = zipInfo.manifest;
 		} else {
 			filesToProgram = files;
 		}
@@ -109,6 +113,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 			if (verbose) {
 				this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
 			}
+			const startTime = new Date();
+			const { id: deviceId } = await getEDLDevice({ ui: this.ui });
+			addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon Flash' });
+			addManifestInfoLog({ outputLog, manifest: manifestInfo });
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
 				includeDir,
@@ -121,6 +129,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			});
 			await qdl.run();
 			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
+			addLogFooter({ outputLog, startTime, endTime: new Date() });
 		} catch (error) {
 			fs.appendFileSync(outputLog, error.message);
 			throw error;
@@ -131,8 +140,12 @@ module.exports = class FlashCommand extends CLICommandBase {
 		try {
 			const zipFile = files.find(f => f.endsWith('.zip'));
 			const xmlFile = files.find(f => f.endsWith('.xml'));
+			const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 
 			const firehoseFile = await this._getFirehoseFileFromZip(zipFile);
+			// add log headers
+			const startTime = new Date();
+			addLogHeaders({ outputLog: output, startTime, deviceId, commandName: 'Tachyon Flash XML' });
 			const qdl = new QdlFlasher({
 				files: [firehoseFile, xmlFile],
 				ui: this.ui,
@@ -143,6 +156,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 
 			await qdl.run();
 			fs.appendFileSync(output, `Config file download complete.${os.EOL}`);
+			// add log footer
+			addLogFooter({ outputLog: output, startTime, endTime: new Date() });
 		} catch (error) {
 			fs.appendFileSync(output, 'Download failed with error: ' + error.message);
 			throw new Error('Download failed with error: ' + error.message);
@@ -180,7 +195,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			...parsed.patchXml
 		];
 
-		return { baseDir, filesToProgram };
+		return { baseDir, filesToProgram, manifest: data };
 	}
 
 	async _extractFlashFilesFromZip(zipPath) {
@@ -197,7 +212,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 			...parsed.patchXml
 		];
 
-		return { baseDir, filesToProgram };
+		return { baseDir, filesToProgram, manifest: data };
 	}
 
 	async _loadManifestFromFile(filePath) {
