@@ -5,78 +5,40 @@ const temp = require('temp').track();
 const fs = require('fs-extra');
 const { getEdlDevices } = require('particle-usb');
 const os = require('os');
+const GPT = require('gpt');
 const { delay } = require('../lib/utilities');
 const DEVICE_READY_WAIT_TIME = 5000;
 
-const PARTITIONS_TO_BACKUP = [
-	{
-		label: 'nvdata1',
-		num_partition_sectors: 256,
-		physical_partition_number: 0,
-		start_byte_hex: '0x8000',
-		start_sector: 8
-	},
-	{
-		label: 'nvdata2',
-		num_partition_sectors: 256,
-		physical_partition_number: 0,
-		start_byte_hex: '0x108000',
-		start_sector: 264
-	},
-	{
-		label: 'modemst1',
-		num_partition_sectors: 768,
-		physical_partition_number: 5,
-		start_byte_hex: '0x20000',
-		start_sector: 32
-	},
-	{
-		label: 'modemst2',
-		num_partition_sectors: 768,
-		physical_partition_number: 5,
-		start_byte_hex: '0x320000',
-		start_sector: 800
-	},
-	{
-		label: 'fsg',
-		num_partition_sectors: 768,
-		physical_partition_number: 5,
-		start_byte_hex: '0x620000',
-		start_sector: 1568
-	},
-	{
-		label: 'fsc',
-		num_partition_sectors: 32,
-		physical_partition_number: 5,
-		start_byte_hex: '0x920000',
-		start_sector: 2336
-	}
-];
+const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
 module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
 		this.ui = ui || this.ui;
 		this.firehosePath = path.join(__dirname, '../../assets/qdl/firehose/prog_firehose_ddr.elf');
+		this.gptXmlPath = path.join(__dirname, '../../assets/qdl/read_gpt.xml');
 	}
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = process.cwd() } = {}) {
 		const deviceId = await this._getEDLDeviceId();
-		if (!fs.existsSync(outputDir)) {
-			fs.mkdirSync(outputDir, { recursive: true });
+		if (!await fs.exists(outputDir)) {
+			await fs.mkdir(outputDir, { recursive: true });
 		}
-		if (!fs.existsSync(logDir)) {
-			fs.mkdirSync(logDir, { recursive: true });
+		if (!await fs.exists(logDir)) {
+			await fs.mkdir(logDir, { recursive: true });
 		}
 
-		const partitions = this.partitionDefinitions({ deviceId, dir: outputDir });
-		const xmlFile = this.generateXml({ partitions, operation: 'read' });
+		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
+
+		const partitionTable = await this.readPartitionsFromDevice({ logDir });
+		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: outputDir });
+
+		const xmlFile = await this.generateXml({ partitions, operation: 'read' });
 		const files = [
 			this.firehosePath,
 			xmlFile
 		];
 
-		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
 		const qdl = new QdlFlasher({
 			outputLogFile: path.join(logDir, `tachyon_backup_${Date.now()}.log`),
 			files: files,
@@ -92,18 +54,22 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = process.cwd(),
 	} = {})	{
-		if (!fs.existsSync(logDir)) {
-			fs.mkdirSync(logDir, { recursive: true });
-		}
 		const deviceId = await this._getEDLDeviceId();
-		const partitions = this.partitionDefinitions({ deviceId, dir: inputDir });
-		this.verifyFilesExist(partitions);
-		const xmlFile = this.generateXml({ partitions, operation: 'program' });
+		if (!await fs.exists(logDir)) {
+			await fs.mkdir(logDir, { recursive: true });
+		}
+
+		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
+
+		const partitionTable = await this.readPartitionsFromDevice({ logDir });
+		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: inputDir });
+		await this.verifyFilesExist(partitions);
+
+		const xmlFile = await this.generateXml({ partitions, operation: 'program' });
 		const files = [
 			this.firehosePath,
 			xmlFile
 		];
-		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
 		const qdl = new QdlFlasher({
 			outputLogFile: path.join(logDir, `tachyon_restore_${Date.now()}.log`),
 			files: files,
@@ -115,35 +81,81 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId} complete!${os.EOL}`);
 	}
 
-	partitionDefinitions({ deviceId, dir }) {
-		return PARTITIONS_TO_BACKUP.map((partition) => {
+	async readPartitionsFromDevice({ logDir }) {
+		const gptPath = await temp.mkdir('tachyon-gpt');
+		const xmlFile = path.join(gptPath, 'read_gpt.xml');
+		await fs.copyFile(this.gptXmlPath, xmlFile);
+
+		const files = [
+			this.firehosePath,
+			xmlFile
+		];
+
+		const qdl = new QdlFlasher({
+			outputLogFile: path.join(logDir, `tachyon_gpt_${Date.now()}.log`),
+			files: files,
+			updateFolder: gptPath,
+			ui: this.ui,
+			currTask: 'Read partitions',
+			skipReset: true,
+		});
+		await qdl.run();
+
+		return this.parsePartitions({ gptPath });
+	}
+
+	async parsePartitions({ gptPath }) {
+		const table = [];
+		for (let i = 0; i <= 5; i++) {
+			const filename = path.join(gptPath, `gpt_main${i}.bin`);
+			const buffer = await fs.readFile(filename);
+			try {
+				const gpt = new GPT({ blockSize: 4096 });
+				const { partitions } = gpt.parse(buffer, gpt.blockSize);  // partition table starts at 4096 bytes for Tachyon
+				partitions.forEach((partition) => {
+					table.push({ lun: i, partition });
+				});
+			} catch {
+				throw new Error(`Failed to parse partition table ${i} from device`);
+			}
+		}
+		return table;
+	}
+
+	partitionDefinitions({ partitionTable, deviceId, dir }) {
+		return PARTITIONS_TO_BACKUP.map((name) => {
+			const entry = partitionTable.find(({ partition }) => partition.name === name);
+			if (!entry) {
+				throw new Error(`Partition ${name} not found in device partition table`);
+			}
 			return {
-				...partition,
-				filename: path.join(dir, `${deviceId}_${partition.label}.backup`)
+				label: entry.partition.name,
+				physical_partition_number: entry.lun,
+				start_sector: Number(entry.partition.firstLBA),
+				num_partition_sectors: Number(entry.partition.lastLBA) - Number(entry.partition.firstLBA) + 1,
+				filename: path.join(dir, `${deviceId}_${entry.partition.name}.backup`)
 			};
 		});
 	}
 
-	generateXml({ partitions, operation }) {
+	async generateXml({ partitions, operation }) {
 		const xmlContent = this.getXmlContent({ partitions, operation });
-		const tempFile = temp.openSync({ suffix: '.xml' });
-		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
-		fs.closeSync(tempFile.fd);
+		const tempFile = await temp.open({ suffix: '.xml' });
+		await fs.write(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
+		await fs.close(tempFile.fd);
 		return tempFile.path;
 	}
 
 	getXmlContent({ partitions, operation = 'read' }) {
 		const elements = partitions.map(partition => [
 			`  <${operation}`,
-			`    start_sector="${partition.start_sector}"`,
+			`    label="${partition.label}"`,
 			`    physical_partition_number="${partition.physical_partition_number}"`,
-			'    file_sector_offset="0"',
+			`    start_sector="${partition.start_sector}"`,
 			`    num_partition_sectors="${partition.num_partition_sectors}"`,
 			`    filename="${partition.filename}"`,
-			'    sparse="false"',
-			`    start_byte_hex="${partition.start_byte_hex}"`,
+			'    file_sector_offset="0"',
 			'    SECTOR_SIZE_IN_BYTES="4096"',
-			`    label="${partition.label}"`,
 			'  />'
 		].join('\n')).join('\n');
 		const xmlLines = [
@@ -157,12 +169,12 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		return xmlLines.join('\n');
 	}
 
-	verifyFilesExist(partitions) {
-		partitions.forEach((partition) => {
-			if (!fs.existsSync(partition.filename)) {
+	async verifyFilesExist(partitions) {
+		for (const partition of partitions) {
+			if (!await fs.exists(partition.filename)) {
 				throw new Error(`File ${partition.filename} does not exist`);
 			}
-		});
+		}
 	}
 
 	async _getEDLDeviceId() {
