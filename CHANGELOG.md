@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.35.3 - Apr 16 2025
+* Use partition map when backing up or restoring nvdata
+
 # 3.35.2 - Apr 16 2025
 * Support erase tag when flashing Tachyon
 
