@@ -30,7 +30,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
 
-		const partitionTable = await this.readPartitionsFromDevice({ logDir });
+		const partitionTable = await this.readPartitionsFromDevice({ logDir, deviceId });
 		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: outputDir });
 
 		const xmlFile = await this.generateXml({ partitions, operation: 'read' });
@@ -40,7 +40,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		];
 
 		const qdl = new QdlFlasher({
-			outputLogFile: path.join(logDir, `tachyon_backup_${Date.now()}.log`),
+			outputLogFile: path.join(logDir, `tachyon_${deviceId}_backup_${Date.now()}.log`),
 			files: files,
 			ui: this.ui,
 			currTask: 'Backup',
@@ -61,7 +61,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
 
-		const partitionTable = await this.readPartitionsFromDevice({ logDir });
+		const partitionTable = await this.readPartitionsFromDevice({ logDir, deviceId });
 		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: inputDir });
 		await this.verifyFilesExist(partitions);
 
@@ -71,7 +71,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			xmlFile
 		];
 		const qdl = new QdlFlasher({
-			outputLogFile: path.join(logDir, `tachyon_restore_${Date.now()}.log`),
+			outputLogFile: path.join(logDir, `tachyon_${deviceId}_restore_${Date.now()}.log`),
 			files: files,
 			ui: this.ui,
 			currTask: 'Restore',
@@ -81,7 +81,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId} complete!${os.EOL}`);
 	}
 
-	async readPartitionsFromDevice({ logDir }) {
+	async readPartitionsFromDevice({ logDir, deviceId }) {
 		const gptPath = await temp.mkdir('tachyon-gpt');
 		const xmlFile = path.join(gptPath, 'read_gpt.xml');
 		await fs.copyFile(this.gptXmlPath, xmlFile);
@@ -92,7 +92,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		];
 
 		const qdl = new QdlFlasher({
-			outputLogFile: path.join(logDir, `tachyon_gpt_${Date.now()}.log`),
+			outputLogFile: path.join(logDir, `tachyon_${deviceId}_gpt_${Date.now()}.log`),
 			files: files,
 			updateFolder: gptPath,
 			ui: this.ui,
