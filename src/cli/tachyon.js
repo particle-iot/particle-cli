@@ -126,12 +126,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(tachyon, 'restore', 'Restore Tachyon NV data', {
 		options: {
-			'nvdata1-filename': {
-				description: 'Path to the first NV data file'
-			},
-			'nvdata2-filename': {
-				description: 'Path to the second NV data file'
-			},
 			'input-dir': {
 				description: 'Directory containing the NV data files'
 			},
@@ -147,7 +141,6 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command ': 'Restore Tachyon NV data for a EDL connected device using the default filenames',
 			'$0 $command --input-dir /path/to/input': 'Restore Tachyon NV data from the specified directory using the default filenames',
 			'$0 $command --log-dir /path/to/log': 'Restore Tachyon NV data and save logs to the specified directory',
-			'$0 $command --nvdata1-filename /path/to/nvdata1.backup --nvdata2-filename /path/to/nvdata2.backup': 'Restore Tachyon NV data from the specified files',
 		}
 	});
 
