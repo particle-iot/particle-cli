@@ -36,7 +36,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			xmlFile
 		];
 		const startTime = new Date();
-		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
+		const outputLog = path.join(logDir, `tachyon_${deviceId}_backup_${Date.now()}.log`);
 		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon backup' });
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
@@ -56,6 +56,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = process.cwd(),
 	} = {})	{
+		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 		if (!await fs.exists(logDir)) {
 			await fs.mkdir(logDir, { recursive: true });
 		}
@@ -68,24 +69,18 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		await this.verifyFilesExist(partitions);
 
 		const xmlFile = await this.generateXml({ partitions, operation: 'program' });
-		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
-		const xmlFile = this.generateXmlForWrite({
-			deviceId,
-			nvdata1Filename,
-			nvdata2Filename,
-			inputDir
-		});
+
 		const files = [
 			this.firehosePath,
 			xmlFile
 		];
 		const startTime = new Date();
-		const outputLog = path.join(logDir, `tachyon_backup_${Date.now()}.log`);
+		const outputLog = path.join(logDir, `tachyon_${deviceId}_restore_${Date.now()}.log`);
 		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon restore' });
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		const qdl = new QdlFlasher({
-		outputLogFile: outputLog,
+			outputLogFile: outputLog,
 			files: files,
 			ui: this.ui,
 			currTask: 'Restore',
