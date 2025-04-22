@@ -17,6 +17,7 @@ const path = require('path');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
+const { prepareFlashFiles } = require('../lib/tachyon-utils');
 
 
 const DEVICE_READY_WAIT_TIME = 5000; // 5 seconds
@@ -47,6 +48,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		spinnerMixin(this);
 		this._setupApi();
 		this.ui = ui || this.ui;
+		this.deviceId = null;
 		this.defaultOptions = {
 			region: 'NA',
 			version: 'latest',
@@ -65,7 +67,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
 		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
 		await this.ui.write(showWelcomeMessage(this.ui));
-		await this._verifyDeviceInEDLMode();
+		await this._verifyDeviceInEDLMode(); // this will fill this.deviceId
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
@@ -99,6 +101,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			try {
 				edlDevices = await getEdlDevices();
 				if (edlDevices.length > 0) {
+					this.deviceId = edlDevices[0].id;
 					break;
 				}
 				if (!messageShown) {
@@ -306,9 +309,20 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
 			'Creating the configuration file to write to the Tachyon device...',
 			7,
-			() => this._createConfigBlob(config)
+			() => this._createConfigBlob(config, this.deviceId)
 		);
-		const xmlPath = await this._createXmlFile(configBlobPath);
+		//const xmlPath = await this._createXmlFile(configBlobPath);
+		const outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
+		fs.ensureFileSync(outputLog);
+		const { xmlFile: xmlPath } = await prepareFlashFiles({
+			logFile: outputLog,
+			ui: this.ui,
+			partitionsList: ['misc'],
+			dir: path.dirname(configBlobPath),
+			deviceId: this.deviceId,
+			operation: 'program',
+			checkFiles: true
+		});
 		// Save the config file if requested
 		if (config.saveConfig) {
 			await this._saveConfig(config, configBlob);
@@ -575,7 +589,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return data.registration_code;
 	}
 
-	async _createConfigBlob(_config) {
+	async _createConfigBlob(_config, deviceId) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = Object.fromEntries(
 			Object.entries(_config).filter(([, value]) => value != null)
@@ -594,46 +608,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const buffer = Buffer.alloc(4 + Buffer.byteLength(jsonString));
 		buffer.writeUInt32BE(Buffer.byteLength(jsonString), 0);
 		buffer.write(jsonString, 4);
+		const filePath = path.join(temp.dir, `${deviceId}_misc.backup`);
+		await fs.writeFile(filePath, buffer);
 
-		const tempFile = temp.openSync();
-		fs.writeSync(tempFile.fd, buffer);
-		fs.closeSync(tempFile.fd);
-
-		return { path: tempFile.path, configBlob: config };
+		return { path: filePath, configBlob: config };
 	}
 
 	_generateShadowCompatibleHash(password) {
 		const salt = crypto.randomBytes(12).toString('base64');
 		return sha512crypt(password, `$6$${salt}`);
-	}
-
-	async _createXmlFile(configBlobPath) {
-		const xmlContent = [
-			'<?xml version="1.0" ?>',
-			'<data>',
-			'    <program',
-			'        SECTOR_SIZE_IN_BYTES="4096"',
-			'        file_sector_offset="0"',
-			`        filename="${configBlobPath}"`,
-			'        label="misc"',
-			'        num_partition_sectors="256"',
-			'        partofsingleimage="false"',
-			'        physical_partition_number="0"',
-			'        readbackverify="false"',
-			'        size_in_KB="1024.0"',
-			'        sparse="false"',
-			'        start_byte_hex="0x2208000"',
-			'        start_sector="8712"',
-			'    />',
-			'</data>',
-			''
-		].join('\n'); // Must use UNIX line endings for QDL
-
-		// Create a temporary file for the XML content
-		const tempFile = temp.openSync({ prefix: 'config', suffix: '.xml' });
-		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
-		fs.closeSync(tempFile.fd);
-		return tempFile.path;
 	}
 
 	async _flash({ files, skipFlashingOs, skipReset, output }) {
