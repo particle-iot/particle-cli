@@ -73,6 +73,28 @@ async function getEDLDevice({ ui = new UI() } = {}) {
 	}
 }
 
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), deviceId, operation }) {
+	const { firehosePath, tempPath, gptXmlPath }  = await initFiles();
+	console.log('reading partitions from device');
+	const partitionTable = await readPartitionsFromDevice({
+		logFile,
+		ui,
+		tempPath,
+		firehosePath,
+		gptXmlPath
+	});
+	console.log('parsing partitions from device');
+	const partitions = partitionDefinitions({
+		partitionList: partitionsList,
+		partitionTable,
+		deviceId,
+		dir
+	});
+	await verifyFilesExist(partitions);
+	const xmlFile = await generateXml({ partitions, tempPath, operation });
+	return { firehosePath, xmlFile };
+}
+
 async function initFiles() {
 	const firehoseAsset = path.join(__dirname, '../../assets/qdl/firehose/prog_firehose_ddr.elf');
 	const gptXmlAsset = path.join(__dirname, '../../assets/qdl/read_gpt.xml');
@@ -83,8 +105,6 @@ async function initFiles() {
 	await fs.copyFile(gptXmlAsset, gptXmlPath);
 	return { firehosePath, gptXmlPath, tempPath };
 }
-
-
 
 async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, gptXmlPath }) {
 	const files = [
@@ -138,6 +158,14 @@ function partitionDefinitions({ partitionList, partitionTable, deviceId, dir }) 
 	});
 }
 
+async function verifyFilesExist(partitions) {
+	for (const partition of partitions) {
+		if (!await fs.exists(partition.filename)) {
+			throw new Error(`File ${partition.filename} does not exist`);
+		}
+	}
+}
+
 async function generateXml({ partitions, operation, tempPath }) {
 	const xmlContent = getXmlContent({ partitions, operation });
 	const xmlFile = path.join(tempPath, `partitions_${operation}.xml`);
@@ -175,8 +203,5 @@ module.exports = {
 	addManifestInfoLog,
 	addLogFooter,
 	getEDLDevice,
-	initFiles,
-	readPartitionsFromDevice,
-	partitionDefinitions,
-	generateXml
+	prepareFlashFiles
 };

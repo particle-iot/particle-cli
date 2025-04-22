@@ -7,10 +7,7 @@ const {
 	addLogHeaders,
 	getEDLDevice,
 	addLogFooter,
-	generateXml,
-	initFiles,
-	readPartitionsFromDevice,
-	partitionDefinitions
+	prepareFlashFiles
 } = require('../lib/tachyon-utils');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
@@ -31,7 +28,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		if (logDirExist) {
 			await fs.ensureDir(logDir);
 		}
-		const { firehosePath, tempPath, gptXmlPath } = await initFiles();
 
 		const startTime = new Date();
 		const outputLog = path.join(logDir, `tachyon_${deviceId}_backup_${Date.now()}.log`);
@@ -39,27 +35,20 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon backup' });
-		const partitionTable = await readPartitionsFromDevice({
-			logFile: outputLog,
-			ui: this.ui,
-			tempPath,
-			firehosePath,
-			gptXmlPath
-		});
-		const partitions = partitionDefinitions({
-			partitionList: PARTITIONS_TO_BACKUP,
-			partitionTable,
-			deviceId,
-			dir: outputDir
-		});
-
-		const xmlFile = await generateXml({ partitions, tempPath, operation: 'read' });
-
-		const files = [
-			firehosePath,
-			xmlFile
-		];
 		try {
+			const { firehosePath, xmlFile } = await prepareFlashFiles({
+				logFile: outputLog,
+				ui: this.ui,
+				partitionsList: PARTITIONS_TO_BACKUP,
+				dir: outputDir,
+				deviceId,
+				operation: 'read'
+			});
+			const files = [
+				firehosePath, // must be first
+				xmlFile,
+			];
+
 			const qdl = new QdlFlasher({
 				outputLogFile: outputLog,
 				files: files,
@@ -86,35 +75,26 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		if (!await fs.exists(logDir)) {
 			await fs.mkdir(logDir, { recursive: true });
 		}
-		const { firehosePath, tempPath, gptXmlPath }  = await initFiles();
 
 		const startTime = new Date();
 		const outputLog = path.join(logDir, `tachyon_${deviceId}_restore_${Date.now()}.log`);
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon restore' });
-		const partitionTable = await readPartitionsFromDevice({
-			logFile: outputLog,
-			ui: this.ui,
-			tempPath,
-			firehosePath,
-			gptXmlPath
-		});
-		const partitions = partitionDefinitions({
-			partitionList: PARTITIONS_TO_BACKUP,
-			partitionTable,
-			deviceId,
-			dir: inputDir
-		});
-		await this.verifyFilesExist(partitions);
-
-		const xmlFile = await generateXml({ partitions, tempPath, operation: 'program' });
-
-		const files = [
-			firehosePath,
-			xmlFile
-		];
 		try {
+			const { firehosePath, xmlFile } = await prepareFlashFiles({
+				logFile: outputLog,
+				ui: this.ui,
+				partitionsList: PARTITIONS_TO_BACKUP,
+				inputDir,
+				deviceId,
+				operation: 'program'
+			});
+			const files = [
+				firehosePath, // must be first
+				xmlFile,
+			];
+
 			const qdl = new QdlFlasher({
 				outputLogFile: outputLog,
 				files: files,
@@ -134,11 +114,4 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		}
 	}
 
-	async verifyFilesExist(partitions) {
-		for (const partition of partitions) {
-			if (!await fs.exists(partition.filename)) {
-				throw new Error(`File ${partition.filename} does not exist`);
-			}
-		}
-	}
 };
