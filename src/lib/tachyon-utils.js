@@ -73,9 +73,9 @@ async function getEDLDevice({ ui = new UI() } = {}) {
 	}
 }
 
-async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), deviceId, operation }) {
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), deviceId, operation, checkFiles = false } = {}) {
 	const { firehosePath, tempPath, gptXmlPath }  = await initFiles();
-	console.log('reading partitions from device');
+
 	const partitionTable = await readPartitionsFromDevice({
 		logFile,
 		ui,
@@ -83,14 +83,16 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		firehosePath,
 		gptXmlPath
 	});
-	console.log('parsing partitions from device');
 	const partitions = partitionDefinitions({
 		partitionList: partitionsList,
 		partitionTable,
 		deviceId,
 		dir
 	});
-	await verifyFilesExist(partitions);
+	if (checkFiles) {
+		await verifyFilesExist(partitions);
+	}
+
 	const xmlFile = await generateXml({ partitions, tempPath, operation });
 	return { firehosePath, xmlFile };
 }
@@ -180,7 +182,7 @@ function getXmlContent({ partitions, operation = 'read' }) {
 		`    physical_partition_number="${partition.physical_partition_number}"`,
 		`    start_sector="${partition.start_sector}"`,
 		`    num_partition_sectors="${partition.num_partition_sectors}"`,
-		`    filename="${partition.filename}"`,
+		`    filename="${ partition.filename}"`,
 		'    file_sector_offset="0"',
 		'    SECTOR_SIZE_IN_BYTES="4096"',
 		'  />'

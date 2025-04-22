@@ -88,7 +88,8 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 				partitionsList: PARTITIONS_TO_BACKUP,
 				inputDir,
 				deviceId,
-				operation: 'program'
+				operation: 'program',
+				checkFiles: true
 			});
 			const files = [
 				firehosePath, // must be first
