@@ -27,9 +27,13 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		}
 		await this.initFiles();
 
-		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
+		const startTime = new Date();
+		const outputLog = path.join(logDir, `tachyon_${deviceId}_backup_${Date.now()}.log`);
 
-		const partitionTable = await this.readPartitionsFromDevice({ logDir, deviceId });
+		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
+		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
+		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon backup' });
+		const partitionTable = await this.readPartitionsFromDevice({ logFile: outputLog, deviceId });
 		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: outputDir });
 
 		const xmlFile = await this.generateXml({ partitions, operation: 'read' });
@@ -37,21 +41,24 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			this.firehosePath,
 			xmlFile
 		];
-		const startTime = new Date();
-		const outputLog = path.join(logDir, `tachyon_${deviceId}_backup_${Date.now()}.log`);
-		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon backup' });
-		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
-		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
-		const qdl = new QdlFlasher({
-			outputLogFile: outputLog,
-			files: files,
-			ui: this.ui,
-			currTask: 'Backup',
-			skipReset: true,
-		});
-		await qdl.run();
-		this.ui.stdout.write(`Backing up NV data from device ${deviceId} complete!${os.EOL}`);
-		addLogFooter({ outputLog, startTime, endTime: new Date() });
+		try { 
+			const qdl = new QdlFlasher({
+				outputLogFile: outputLog,
+				files: files,
+				ui: this.ui,
+				currTask: 'Backup',
+				skipReset: true,
+			});
+			await qdl.run();
+	
+			this.ui.stdout.write(`Backing up NV data from device ${deviceId} complete!${os.EOL}`);
+		} catch (error) {
+			this.ui.stdout.write(`An error ocurred while trying to backing up your tachyon ${os.EOL}`);
+			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
+			this.ui.stdout.write(`Verify your logs ${outputLog} for more information ${os.EOL}`);
+		} finally {
+			addLogFooter({ outputLog, startTime, endTime: new Date() });
+		}
 	}
 
 	async restore({
@@ -64,9 +71,12 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		}
 		await this.initFiles();
 
+		const startTime = new Date();
+		const outputLog = path.join(logDir, `tachyon_${deviceId}_restore_${Date.now()}.log`);
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
-
-		const partitionTable = await this.readPartitionsFromDevice({ logDir, deviceId });
+		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
+		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon restore' });
+		const partitionTable = await this.readPartitionsFromDevice({ logFile: outputLog, deviceId });
 		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: inputDir });
 		await this.verifyFilesExist(partitions);
 
@@ -76,21 +86,24 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			this.firehosePath,
 			xmlFile
 		];
-		const startTime = new Date();
-		const outputLog = path.join(logDir, `tachyon_${deviceId}_restore_${Date.now()}.log`);
-		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon restore' });
-		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
-		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
-		const qdl = new QdlFlasher({
-			outputLogFile: outputLog,
-			files: files,
-			ui: this.ui,
-			currTask: 'Restore',
-			skipReset: true,
-		});
-		await qdl.run();
-		this.ui.stdout.write(`Restoring NV data to device ${deviceId} complete!${os.EOL}`);
-		addLogFooter({ outputLog, startTime, endTime: new Date() });
+		try {
+			const qdl = new QdlFlasher({
+				outputLogFile: outputLog,
+				files: files,
+				ui: this.ui,
+				currTask: 'Restore',
+				skipReset: true,
+			});
+			await qdl.run();
+			this.ui.stdout.write(`Restoring NV data to device ${deviceId} complete!${os.EOL}`);
+
+		} catch (error) {
+			this.ui.stdout.write(`An error ocurred while trying to restore up your tachyon ${os.EOL}`);
+			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
+			this.ui.stdout.write(`Verify your logs ${outputLog} for more information ${os.EOL}`);
+		} finally {
+			addLogFooter({ outputLog, startTime, endTime: new Date() });
+		}
 	}
 
 	async initFiles() {
@@ -105,14 +118,15 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		await fs.copyFile(gptXmlAsset, this.gptXmlPath);
 	}
 
-	async readPartitionsFromDevice({ logDir, deviceId }) {
+	async readPartitionsFromDevice({ logFile, deviceId }) {
 		const files = [
 			this.firehosePath,
 			this.gptXmlPath
 		];
 
+
 		const qdl = new QdlFlasher({
-			outputLogFile: path.join(logDir, `tachyon_${deviceId}_gpt_${Date.now()}.log`),
+			outputLogFile: logFile,
 			files: files,
 			updateFolder: this.tempPath,
 			ui: this.ui,
