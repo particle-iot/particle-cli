@@ -33,7 +33,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon backup' });
-		const partitionTable = await this.readPartitionsFromDevice({ logFile: outputLog, deviceId });
+		const partitionTable = await this.readPartitionsFromDevice({ logFile: outputLog });
 		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: outputDir });
 
 		const xmlFile = await this.generateXml({ partitions, operation: 'read' });
@@ -41,7 +41,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			this.firehosePath,
 			xmlFile
 		];
-		try { 
+		try {
 			const qdl = new QdlFlasher({
 				outputLogFile: outputLog,
 				files: files,
@@ -50,7 +50,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 				skipReset: true,
 			});
 			await qdl.run();
-	
 			this.ui.stdout.write(`Backing up NV data from device ${deviceId} complete!${os.EOL}`);
 		} catch (error) {
 			this.ui.stdout.write(`An error ocurred while trying to backing up your tachyon ${os.EOL}`);
@@ -76,7 +75,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		this.ui.stdout.write(`Restoring NV data to device ${deviceId}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon restore' });
-		const partitionTable = await this.readPartitionsFromDevice({ logFile: outputLog, deviceId });
+		const partitionTable = await this.readPartitionsFromDevice({ logFile: outputLog });
 		const partitions = this.partitionDefinitions({ partitionTable, deviceId, dir: inputDir });
 		await this.verifyFilesExist(partitions);
 
@@ -118,7 +117,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		await fs.copyFile(gptXmlAsset, this.gptXmlPath);
 	}
 
-	async readPartitionsFromDevice({ logFile, deviceId }) {
+	async readPartitionsFromDevice({ logFile }) {
 		const files = [
 			this.firehosePath,
 			this.gptXmlPath
@@ -145,7 +144,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			const buffer = await fs.readFile(filename);
 			try {
 				const gpt = new GPT({ blockSize: 4096 });
-				const { partitions } = gpt.parse(buffer, gpt.blockSize);  // partition table starts at 4096 bytes for Tachyon
+				const { partitions } = gpt.parse(buffer, gpt.blockSize);// partition table starts at 4096 bytes for Tachyon
 				partitions.forEach((partition) => {
 					table.push({ lun: i, partition });
 				});
