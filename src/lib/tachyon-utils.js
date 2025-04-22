@@ -4,17 +4,22 @@ const { getEdlDevices } = require('particle-usb');
 const { delay } = require('./utilities');
 const DEVICE_READY_WAIT_TIME = 5000;
 const UI = require('./ui');
+const QdlFlasher = require('./qdl');
+const path = require('path');
+const GPT = require('gpt');
+const temp = require('temp').track();
 
-const addLogHeaders = ({ outputLog, startTime, deviceId, commandName }) => {
+
+function addLogHeaders({ outputLog, startTime, deviceId, commandName }) {
 	fs.appendFileSync(outputLog, `Tachyon Logs:${os.EOL}`);
 	fs.appendFileSync(outputLog, `==================${os.EOL}`);
 	fs.appendFileSync(outputLog, `Command: ${commandName}${os.EOL}`);
 	fs.appendFileSync(outputLog, `Using Device ID: ${deviceId}${os.EOL}`);
 	fs.appendFileSync(outputLog, `Start time: ${startTime.toISOString()}${os.EOL}`);
 	fs.appendFileSync(outputLog, `==================${os.EOL}`);
-};
+}
 
-const addManifestInfoLog = ({ outputLog, manifest }) => {
+function addManifestInfoLog({ outputLog, manifest }) {
 	if (!manifest) {
 		return;
 	}
@@ -31,9 +36,9 @@ const addManifestInfoLog = ({ outputLog, manifest }) => {
 	fs.appendFileSync(outputLog, `Distribution version: ${manifest.distribution_version || ''}${os.EOL}`);
 	fs.appendFileSync(outputLog, `Distribution variant: ${manifest.distribution_variant || ''}${os.EOL}`);
 	fs.appendFileSync(outputLog, `Build date: ${manifest.build_date || ''}${os.EOL}`);
-};
+}
 
-const addLogFooter = ({ outputLog, startTime, endTime }) => {
+function addLogFooter({ outputLog, startTime, endTime }) {
 	fs.appendFileSync(outputLog, `==================${os.EOL}`);
 	fs.appendFileSync(outputLog, `Process Done${os.EOL}`);
 	fs.appendFileSync(outputLog, `End Time: ${endTime.toISOString()}${os.EOL}`);
@@ -42,9 +47,9 @@ const addLogFooter = ({ outputLog, startTime, endTime }) => {
 	fs.appendFileSync(outputLog, `Tachyon Log Ended${os.EOL}`);
 	fs.appendFileSync(outputLog, `==================${os.EOL}`);
 	fs.appendFileSync(outputLog, `${os.EOL}`);
-};
+}
 
-const getEDLDevice = async ({ ui = new UI() } = {}) => {
+async function getEDLDevice({ ui = new UI() } = {}) {
 	let edlDevices = [];
 	let messageShown = false;
 	while (edlDevices.length === 0) {
@@ -66,11 +71,112 @@ const getEDLDevice = async ({ ui = new UI() } = {}) => {
 		}
 		await delay(DEVICE_READY_WAIT_TIME);
 	}
-};
+}
+
+async function initFiles() {
+	const firehoseAsset = path.join(__dirname, '../../assets/qdl/firehose/prog_firehose_ddr.elf');
+	const gptXmlAsset = path.join(__dirname, '../../assets/qdl/read_gpt.xml');
+	const tempPath = await temp.mkdir('tachyon-init-files');
+	const firehosePath = path.join(tempPath, 'prog_firehose_ddr.elf');
+	const gptXmlPath = path.join(tempPath, 'read_gpt.xml');
+	await fs.copyFile(firehoseAsset, firehosePath);
+	await fs.copyFile(gptXmlAsset, gptXmlPath);
+	return { firehosePath, gptXmlPath, tempPath };
+}
+
+
+
+async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, gptXmlPath }) {
+	const files = [
+		firehosePath,
+		gptXmlPath
+	];
+
+	const qdl = new QdlFlasher({
+		outputLogFile: logFile,
+		files: files,
+		updateFolder: tempPath,
+		ui: ui,
+		currTask: 'Read partitions',
+		skipReset: true
+	});
+	await qdl.run();
+	return parsePartitions({ gptPath: tempPath });
+}
+
+async function parsePartitions({ gptPath }) {
+	const table = [];
+	for (let i = 0; i <= 5; i++) {
+		const filename = path.join(gptPath, `gpt_main${i}.bin`);
+		const buffer = await fs.readFile(filename);
+		try {
+			const gpt = new GPT({ blockSize: 4096 });
+			const { partitions } = gpt.parse(buffer, gpt.blockSize);// partition table starts at 4096 bytes for Tachyon
+			partitions.forEach((partition) => {
+				table.push({ lun: i, partition });
+			});
+		} catch {
+			throw new Error(`Failed to parse partition table ${i} from device`);
+		}
+	}
+	return table;
+}
+
+function partitionDefinitions({ partitionList, partitionTable, deviceId, dir }) {
+	return partitionList.map((name) => {
+		const entry = partitionTable.find(({ partition }) => partition.name === name);
+		if (!entry) {
+			throw new Error(`Partition ${name} not found in device partition table`);
+		}
+		return {
+			label: entry.partition.name,
+			physical_partition_number: entry.lun,
+			start_sector: Number(entry.partition.firstLBA),
+			num_partition_sectors: Number(entry.partition.lastLBA) - Number(entry.partition.firstLBA) + 1,
+			filename: path.join(dir, `${deviceId}_${entry.partition.name}.backup`)
+		};
+	});
+}
+
+async function generateXml({ partitions, operation, tempPath }) {
+	const xmlContent = getXmlContent({ partitions, operation });
+	const xmlFile = path.join(tempPath, `partitions_${operation}.xml`);
+	await fs.writeFile(xmlFile, xmlContent);
+	return xmlFile;
+}
+
+function getXmlContent({ partitions, operation = 'read' }) {
+	const elements = partitions.map(partition => [
+		`  <${operation}`,
+		`    label="${partition.label}"`,
+		`    physical_partition_number="${partition.physical_partition_number}"`,
+		`    start_sector="${partition.start_sector}"`,
+		`    num_partition_sectors="${partition.num_partition_sectors}"`,
+		`    filename="${partition.filename}"`,
+		'    file_sector_offset="0"',
+		'    SECTOR_SIZE_IN_BYTES="4096"',
+		'  />'
+	].join('\n')).join('\n');
+	const xmlLines = [
+		'<?xml version="1.0" encoding="utf-8"?>',
+		'<data>',
+		'  <!--NOTE: This is an ** Autogenerated file **-->',
+		elements,
+		'</data>',
+		''
+	];
+	return xmlLines.join('\n');
+}
+
+
 
 module.exports = {
 	addLogHeaders,
 	addManifestInfoLog,
 	addLogFooter,
-	getEDLDevice
+	getEDLDevice,
+	initFiles,
+	readPartitionsFromDevice,
+	partitionDefinitions,
+	generateXml
 };
