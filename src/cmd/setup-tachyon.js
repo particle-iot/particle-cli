@@ -17,6 +17,7 @@ const path = require('path');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
+const { prepareFlashFiles } = require('../lib/tachyon-utils');
 
 
 const DEVICE_READY_WAIT_TIME = 5000; // 5 seconds
@@ -47,6 +48,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		spinnerMixin(this);
 		this._setupApi();
 		this.ui = ui || this.ui;
+		this.deviceId = null;
+		this.outputLog = null;
 		this.defaultOptions = {
 			region: 'NA',
 			version: 'latest',
@@ -65,7 +68,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
 		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
 		await this.ui.write(showWelcomeMessage(this.ui));
-		await this._verifyDeviceInEDLMode();
+		this.deviceId = await this._verifyDeviceInEDLMode();
+		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
+		await fs.ensureFile(this.outputLog);
+
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
@@ -94,11 +100,13 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _verifyDeviceInEDLMode() {
 		let edlDevices = [];
+		let deviceId;
 		let messageShown = false;
 		while (edlDevices.length === 0) {
 			try {
 				edlDevices = await getEdlDevices();
 				if (edlDevices.length > 0) {
+					deviceId = edlDevices[0].id;
 					break;
 				}
 				if (!messageShown) {
@@ -121,6 +129,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!${os.EOL}`);
 			await delay(1000); // give the user a moment to read the message
 		}
+		return deviceId;
 	}
 
 	async _verifyLogin() {
@@ -306,9 +315,18 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
 			'Creating the configuration file to write to the Tachyon device...',
 			7,
-			() => this._createConfigBlob(config)
+			() => this._createConfigBlob(config, this.deviceId)
 		);
-		const xmlPath = await this._createXmlFile(configBlobPath);
+
+		const { xmlFile: xmlPath } = await prepareFlashFiles({
+			logFile: this.outputLog,
+			ui: this.ui,
+			partitionsList: ['misc'],
+			dir: path.dirname(configBlobPath),
+			deviceId: this.deviceId,
+			operation: 'program',
+			checkFiles: true
+		});
 		// Save the config file if requested
 		if (config.saveConfig) {
 			await this._saveConfig(config, configBlob);
@@ -348,7 +366,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}${os.EOL}`,
+					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
 					9
 				);
 			} else {
@@ -360,7 +378,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}${os.EOL}`,
+					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
 					9
 				);
 			}
@@ -575,7 +593,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return data.registration_code;
 	}
 
-	async _createConfigBlob(_config) {
+	async _createConfigBlob(_config, deviceId) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = Object.fromEntries(
 			Object.entries(_config).filter(([, value]) => value != null)
@@ -594,12 +612,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const buffer = Buffer.alloc(4 + Buffer.byteLength(jsonString));
 		buffer.writeUInt32BE(Buffer.byteLength(jsonString), 0);
 		buffer.write(jsonString, 4);
+		const tempDir = await temp.mkdir('tachyon-config');
+		const filePath = path.join(tempDir, `${deviceId}_misc.backup`);
+		await fs.writeFile(filePath, buffer);
 
-		const tempFile = temp.openSync();
-		fs.writeSync(tempFile.fd, buffer);
-		fs.closeSync(tempFile.fd);
-
-		return { path: tempFile.path, configBlob: config };
+		return { path: filePath, configBlob: config };
 	}
 
 	_generateShadowCompatibleHash(password) {
@@ -607,50 +624,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return sha512crypt(password, `$6$${salt}`);
 	}
 
-	async _createXmlFile(configBlobPath) {
-		const xmlContent = [
-			'<?xml version="1.0" ?>',
-			'<data>',
-			'    <program',
-			'        SECTOR_SIZE_IN_BYTES="4096"',
-			'        file_sector_offset="0"',
-			`        filename="${configBlobPath}"`,
-			'        label="misc"',
-			'        num_partition_sectors="256"',
-			'        partofsingleimage="false"',
-			'        physical_partition_number="0"',
-			'        readbackverify="false"',
-			'        size_in_KB="1024.0"',
-			'        sparse="false"',
-			'        start_byte_hex="0x2208000"',
-			'        start_sector="8712"',
-			'    />',
-			'</data>',
-			''
-		].join('\n'); // Must use UNIX line endings for QDL
-
-		// Create a temporary file for the XML content
-		const tempFile = temp.openSync({ prefix: 'config', suffix: '.xml' });
-		fs.writeSync(tempFile.fd, xmlContent, 0, xmlContent.length, 0);
-		fs.closeSync(tempFile.fd);
-		return tempFile.path;
-	}
-
-	async _flash({ files, skipFlashingOs, skipReset, output }) {
+	async _flash({ files, skipFlashingOs, skipReset }) {
 		const packagePath = files[0];
 		const flashCommand = new FlashCommand();
 
-		if (output && !fs.existsSync(output)) {
-			fs.mkdirSync(output);
-		}
-		const outputLog = path.join(process.cwd(), `tachyon_flash_${Date.now()}.log`);
-		fs.ensureFileSync(outputLog);
-
-		this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
+		this.ui.write(`${os.EOL}Starting download. See logs at: ${this.outputLog}${os.EOL}`);
 		if (!skipFlashingOs) {
-			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: outputLog, verbose: false });
+			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: this.outputLog, verbose: false });
 		}
-		await flashCommand.flashTachyonXml({ files, skipReset, output: outputLog });
+		await flashCommand.flashTachyonXml({ files, skipReset, output: this.outputLog });
 		return true;
 	}
 
