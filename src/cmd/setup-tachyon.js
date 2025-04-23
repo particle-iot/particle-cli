@@ -378,7 +378,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}${os.EOL}`,
+					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
 					9
 				);
 			}
