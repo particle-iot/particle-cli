@@ -17,7 +17,7 @@ const path = require('path');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
-const { prepareFlashFiles, addLogHeaders } = require('../lib/tachyon-utils');
+const { prepareFlashFiles } = require('../lib/tachyon-utils');
 
 
 const DEVICE_READY_WAIT_TIME = 5000; // 5 seconds
