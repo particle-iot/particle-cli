@@ -612,7 +612,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const buffer = Buffer.alloc(4 + Buffer.byteLength(jsonString));
 		buffer.writeUInt32BE(Buffer.byteLength(jsonString), 0);
 		buffer.write(jsonString, 4);
-		const filePath = path.join(temp.dir, `${deviceId}_misc.backup`);
+		const tempDir = await temp.mkdir('tachyon-config');
+		const filePath = path.join(tempDir, `${deviceId}_misc.backup`);
 		await fs.writeFile(filePath, buffer);
 
 		return { path: filePath, configBlob: config };
