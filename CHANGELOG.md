@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.35.5 - Apr 23 2025
+* Add more logs on flash, backup and restore
+* Flash with dynamic data `misc` partition
+
 # 3.35.4 - Apr 18 2025
 * Fix tachyon backup issue on Windows
 
