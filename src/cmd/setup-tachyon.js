@@ -17,7 +17,7 @@ const path = require('path');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
-const { prepareFlashFiles } = require('../lib/tachyon-utils');
+const { prepareFlashFiles, addLogHeaders } = require('../lib/tachyon-utils');
 
 
 const DEVICE_READY_WAIT_TIME = 5000; // 5 seconds
@@ -49,6 +49,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._setupApi();
 		this.ui = ui || this.ui;
 		this.deviceId = null;
+		this.outputLog = null;
 		this.defaultOptions = {
 			region: 'NA',
 			version: 'latest',
@@ -67,7 +68,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
 		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
 		await this.ui.write(showWelcomeMessage(this.ui));
-		await this._verifyDeviceInEDLMode(); // this will fill this.deviceId
+		this.deviceId = await this._verifyDeviceInEDLMode();
+		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
+		await fs.ensureFile(this.outputLog);
+
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
@@ -96,12 +100,13 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _verifyDeviceInEDLMode() {
 		let edlDevices = [];
+		let deviceId;
 		let messageShown = false;
 		while (edlDevices.length === 0) {
 			try {
 				edlDevices = await getEdlDevices();
 				if (edlDevices.length > 0) {
-					this.deviceId = edlDevices[0].id;
+					deviceId = edlDevices[0].id;
 					break;
 				}
 				if (!messageShown) {
@@ -124,6 +129,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!${os.EOL}`);
 			await delay(1000); // give the user a moment to read the message
 		}
+		return deviceId;
 	}
 
 	async _verifyLogin() {
@@ -311,11 +317,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			7,
 			() => this._createConfigBlob(config, this.deviceId)
 		);
-		//const xmlPath = await this._createXmlFile(configBlobPath);
-		const outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
-		fs.ensureFileSync(outputLog);
+
 		const { xmlFile: xmlPath } = await prepareFlashFiles({
-			logFile: outputLog,
+			logFile: this.outputLog,
 			ui: this.ui,
 			partitionsList: ['misc'],
 			dir: path.dirname(configBlobPath),
@@ -362,7 +366,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}${os.EOL}`,
+					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
 					9
 				);
 			} else {
@@ -619,21 +623,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return sha512crypt(password, `$6$${salt}`);
 	}
 
-	async _flash({ files, skipFlashingOs, skipReset, output }) {
+	async _flash({ files, skipFlashingOs, skipReset }) {
 		const packagePath = files[0];
 		const flashCommand = new FlashCommand();
 
-		if (output && !fs.existsSync(output)) {
-			fs.mkdirSync(output);
-		}
-		const outputLog = path.join(process.cwd(), `tachyon_flash_${Date.now()}.log`);
-		fs.ensureFileSync(outputLog);
-
-		this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
+		this.ui.write(`${os.EOL}Starting download. See logs at: ${this.outputLog}${os.EOL}`);
 		if (!skipFlashingOs) {
-			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: outputLog, verbose: false });
+			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: this.outputLog, verbose: false });
 		}
-		await flashCommand.flashTachyonXml({ files, skipReset, output: outputLog });
+		await flashCommand.flashTachyonXml({ files, skipReset, output: this.outputLog });
 		return true;
 	}
 
