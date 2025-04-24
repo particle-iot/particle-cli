@@ -797,6 +797,13 @@ module.exports = class ESimCommands extends CLICommandBase {
 			} catch (error) {
 				const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
 				logAndPush(`\n\tProfile download failed for ${provider} with error: ${error.message}`);
+				if (error.message.includes('The EID is not the same between reservation and request')) {
+					// add the profile to the cache to settled as used
+					const provisionedProfiles = this.cache.get(this.cacheKey) || [];
+					// TODO (hmontero): currently we add all the profiles to the cache if they belong to the same set (change it to add only the failed one)
+					provisionedProfiles.push(profiles);
+					this.cache.set(this.cacheKey, provisionedProfiles);
+				}
 				downloadedProfiles.push({
 					status: 'failed',
 					iccid: iccid,
