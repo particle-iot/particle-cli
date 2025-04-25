@@ -845,6 +845,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 		} catch (error) {
 			if (error.message.includes(LPA_PROFILE_ENABLE_ERROR)) {
 				res.details.rawLogs.push(`Profile already enabled: ${iccid}`);
+				// if the profile is already enabled, we can consider it a success
+				res.status = 'success';
 				return res;
 			}
 			throw error;
