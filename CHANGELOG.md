@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.35.6 - Apr 28 2025
+* Add new command particle tachyon identify to show: `deviceId` `region` `OS version` `Modem data`
+* Fix issues when provisioning eSIM profiles
+
 # 3.35.5 - Apr 23 2025
 * Add more logs on flash, backup and restore
 * Flash with dynamic data `misc` partition
