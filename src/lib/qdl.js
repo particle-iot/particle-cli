@@ -99,7 +99,7 @@ class QdlFlasher {
 	processLogLine(line) {
 		fs.appendFileSync(this.outputLogFile, `${line}\n`);
 		if (line.includes('Waiting for EDL device')) {
-			const message = `Tachyon not found. Disconnect and reconnect the device, and ensure it is in EDL mode ${os.EOL}`;
+			const message = `Tachyon not found. Disconnect and reconnect the device, and ensure it is in system update mode ${os.EOL}`;
 			this.ui.stdout.write(this.ui.chalk.bold(this.ui.chalk.yellow(message)));
 		} else if (line.includes('status=getProgramInfo')) {
 			this.handleProgramInfo(line);

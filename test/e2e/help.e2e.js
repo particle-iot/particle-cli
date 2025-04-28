@@ -72,7 +72,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'serial list', 'serial monitor', 'serial identify', 'serial wifi',
 		'serial mac', 'serial inspect', 'serial flash', 'serial', 'subscribe',
 		'tachyon setup', 'tachyon download-package', 'tachyon clean-cache',
-		'tachyon backup', 'tachyon restore', 'tachyon',
+		'tachyon backup', 'tachyon restore', 'tachyon identify', 'tachyon',
 		'token revoke', 'token create', 'token', 'udp send', 'udp listen', 'udp', 'update',
 		'update-cli', 'usb list', 'usb start-listening', 'usb listen',
 		'usb stop-listening', 'usb safe-mode', 'usb dfu', 'usb reset',

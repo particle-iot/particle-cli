@@ -2,7 +2,7 @@ const fs = require('fs-extra');
 const os = require('os');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('./utilities');
-const DEVICE_READY_WAIT_TIME = 5000;
+const DEVICE_READY_WAIT_TIME = 500; // ms
 const UI = require('./ui');
 const QdlFlasher = require('./qdl');
 const path = require('path');
@@ -60,9 +60,9 @@ async function getEDLDevice({ ui = new UI() } = {}) {
 			}
 			if (!messageShown) {
 				if (ui) {
-					ui.stdout.write(`Waiting for device to enter EDL mode...${os.EOL}`);
+					ui.stdout.write(`Waiting for device to enter system update mode...${os.EOL}`);
 				} else {
-					console.log(`Waiting for device to enter EDL mode...${os.EOL}`);
+					console.log(`Waiting for device to enter system update mode...${os.EOL}`);
 				}
 				messageShown = true;
 			}
@@ -89,12 +89,16 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		deviceId,
 		dir
 	});
+	const partitionFilenames = partitions.reduce((acc, partition) => {
+		acc[partition.label] = partition.filename;
+		return acc;
+	}, {});
 	if (checkFiles) {
 		await verifyFilesExist(partitions);
 	}
 
 	const xmlFile = await generateXml({ partitions, tempPath, operation });
-	return { firehosePath, xmlFile };
+	return { firehosePath, xmlFile, partitionTable, partitionFilenames };
 }
 
 async function initFiles() {
