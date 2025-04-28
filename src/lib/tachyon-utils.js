@@ -60,9 +60,9 @@ async function getEDLDevice({ ui = new UI() } = {}) {
 			}
 			if (!messageShown) {
 				if (ui) {
-					ui.stdout.write(`Waiting for device to enter EDL mode...${os.EOL}`);
+					ui.stdout.write(`Waiting for device to enter system update mode...${os.EOL}`);
 				} else {
-					console.log(`Waiting for device to enter EDL mode...${os.EOL}`);
+					console.log(`Waiting for device to enter system update mode...${os.EOL}`);
 				}
 				messageShown = true;
 			}

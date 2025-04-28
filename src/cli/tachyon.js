@@ -118,7 +118,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new BackupRestoreTachyonCommand().backup(args);
 		},
 		examples: {
-			'$0 $command ': 'Backup Tachyon NV data for a EDL connected device',
+			'$0 $command ': 'Backup Tachyon NV data for a system update mode connected device',
 			'$0 $command --output-dir /path/to/backup': 'Backup Tachyon NV data to the specified directory',
 			'$0 $command --log-dir /path/to/log': 'Backup Tachyon NV data and save logs to the specified directory'
 		}
@@ -138,7 +138,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new BackupRestoreTachyonCommand().restore(args);
 		},
 		examples: {
-			'$0 $command ': 'Restore Tachyon NV data for a EDL connected device using the default filenames',
+			'$0 $command ': 'Restore Tachyon NV data for a system update mode connected device using the default filenames',
 			'$0 $command --input-dir /path/to/input': 'Restore Tachyon NV data from the specified directory using the default filenames',
 			'$0 $command --log-dir /path/to/log': 'Restore Tachyon NV data and save logs to the specified directory',
 		}
