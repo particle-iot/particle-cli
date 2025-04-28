@@ -144,7 +144,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(tachyon, 'identify', 'Identify a Tachyon device', {
+	commandProcessor.createCommand(tachyon, 'identify', 'Identify a Tachyon device in EDL mode', {
 		handler: (args) => {
 			const IdentifyTachyonCommand = require('../cmd/identify-tachyon');
 			return new IdentifyTachyonCommand().identify(args);

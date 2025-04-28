@@ -20,7 +20,7 @@ const semver = require('semver');
 const { prepareFlashFiles } = require('../lib/tachyon-utils');
 
 
-const DEVICE_READY_WAIT_TIME = 5000; // 5 seconds
+const DEVICE_READY_WAIT_TIME = 500; // ms
 const showWelcomeMessage = (ui) => `
 ===================================================================================
 			  Particle Tachyon Setup Command
