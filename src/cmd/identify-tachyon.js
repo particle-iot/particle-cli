@@ -98,7 +98,7 @@ module.exports = class IdentifyTachyonCommand extends CLICommandBase {
 			modemDataString = 'Erased';
 		}
 
-		const nvdataLun = partitionTable.find(partition => partition.name === 'nvdata1')?.lun;
+		const nvdataLun = partitionTable.find(({ partition }) => partition.name === 'nvdata1')?.lun;
 		let osVersion;
 		if (nvdataLun === 0) {
 			osVersion = 'Ubuntu 20.04 EVT';
