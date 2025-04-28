@@ -144,6 +144,16 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(tachyon, 'identify', 'Identify a Tachyon device', {
+		handler: (args) => {
+			const IdentifyTachyonCommand = require('../cmd/identify-tachyon');
+			return new IdentifyTachyonCommand().identify(args);
+		},
+		examples: {
+			'$0 $command': 'Identify a Tachyon device'
+		}
+	});
+
 	return tachyon;
 };
 
