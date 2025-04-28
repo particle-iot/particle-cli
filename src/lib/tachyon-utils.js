@@ -89,12 +89,16 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		deviceId,
 		dir
 	});
+	const partitionFilenames = partitions.reduce((acc, partition) => {
+		acc[partition.label] = partition.filename;
+		return acc;
+	}, {});
 	if (checkFiles) {
 		await verifyFilesExist(partitions);
 	}
 
 	const xmlFile = await generateXml({ partitions, tempPath, operation });
-	return { firehosePath, xmlFile };
+	return { firehosePath, xmlFile, partitionTable, partitionFilenames };
 }
 
 async function initFiles() {
