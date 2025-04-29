@@ -170,8 +170,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		}
 		const config = {
 			...this.defaultOptions,
-			...configFromFile,
 			...optionsFromDevice,
+			...configFromFile,
 			...cleanedOptions
 		};
 
