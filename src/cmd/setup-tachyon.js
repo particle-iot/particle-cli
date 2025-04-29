@@ -17,7 +17,7 @@ const path = require('path');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
-const { prepareFlashFiles } = require('../lib/tachyon-utils');
+const { prepareFlashFiles, getTachyonInfo } = require('../lib/tachyon-utils');
 
 
 const DEVICE_READY_WAIT_TIME = 500; // ms
@@ -71,12 +71,14 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.deviceId = await this._verifyDeviceInEDLMode();
 		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
 		await fs.ensureFile(this.outputLog);
+		// get device info
+		const deviceInfo = await this._getDeviceInfo();
 
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
 		// check if there is a config file
-		const config = await this._loadConfig(options, requiredFields);
+		const config = await this._loadConfig({ options, requiredFields, deviceInfo });
 		config.isLocalVersion = this._validateVersion(config);
 
 		if (config.silent) {
@@ -132,6 +134,18 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return deviceId;
 	}
 
+	async _getDeviceInfo() {
+		try {
+			return await this.ui.showBusySpinnerUntilResolved('Getting device info', getTachyonInfo({
+				outputLog: this.outputLog,
+				ui: this.ui,
+			}));
+		} catch (error) {
+			// ignore error and return default values
+			this.ui.write('We couldn\'t get the device info.');
+		}
+	}
+
 	async _verifyLogin() {
 		const api = new ApiClient();
 		try {
@@ -143,17 +157,24 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		}
 	}
 
-	async _loadConfig(options, requiredFields) {
+	async _loadConfig({ options, requiredFields, deviceInfo }) {
 		const configFromFile = await this._loadConfigFromFile(options.loadConfig);
+		const optionsFromDevice = {};
 		const cleanedOptions = Object.fromEntries(
 			// eslint-disable-next-line no-unused-vars
 			Object.entries(options).filter(([_, v]) => v !== undefined)
 		);
+		if (deviceInfo) {
+			optionsFromDevice.region = deviceInfo.region.toLowerCase() !== 'unknown' ? deviceInfo.region : 'NA';
+			optionsFromDevice.board = deviceInfo.osVersion === 'Ubuntu 20.04' ? 'formfactor_dvt' : 'formfactor';
+		}
 		const config = {
 			...this.defaultOptions,
+			...optionsFromDevice,
 			...configFromFile,
 			...cleanedOptions
 		};
+
 		// validate the config file if is silent
 		if (configFromFile?.silent) {
 			await this._validateConfig(config, requiredFields);
@@ -414,25 +435,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(`${os.EOL}===================================================================================${os.EOL}`);
 		this.ui.write(`Step ${step}:${os.EOL}`);
 		this.ui.write(`${text}${os.EOL}`);
-	}
-
-
-
-	async _selectRegion() {
-		const regionMapping = {
-			'NA (North America)': 'NA',
-			'RoW (Rest of the World)': 'RoW'
-		};
-		const question = [
-			{
-				type: 'list',
-				name: 'region',
-				message: 'Select the region:',
-				choices: Object.keys(regionMapping),
-			},
-		];
-		const { region } = await this.ui.prompt(question);
-		return regionMapping[region];
 	}
 
 	async _selectVersion() {
