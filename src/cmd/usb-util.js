@@ -2,7 +2,7 @@ const { spin } = require('../app/ui');
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
 const { delay, asyncMapSeries } = require('../lib/utilities');
-const { platformForId } = require('../lib/platform');
+const { platformForId, PLATFORMS } = require('../lib/platform');
 const {
 	getDevices,
 	openDeviceById,
@@ -348,6 +348,10 @@ async function getOneUsbDevice({ idOrName, api, auth, ui, flashMode, platformId 
 	if (platformId) {
 		devices = devices.filter(d => d.platformId === platformId);
 	}
+
+	// filter out linux kind devices
+	const linuxPlatforms = PLATFORMS.filter(p => p.features.includes('linux'));
+	devices = devices.filter(d => !linuxPlatforms.includes(platformForId(d.platformId)));
 
 	if (devices.length > 1) {
 		const question = {
