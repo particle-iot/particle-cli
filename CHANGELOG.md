@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.35.7 - Apr 29 2025
+* Infer region and board from tachyon device info
+* Don't show linux devices when getting devices to flash firmwares
+
 # 3.35.6 - Apr 28 2025
 * Add new command particle tachyon identify to show: `deviceId` `region` `OS version` `Modem data`
 * Fix issues when provisioning eSIM profiles
