@@ -11,7 +11,7 @@ const temp = require('temp').track();
 const FSG_PARTITION = 'fsg';
 const REGION_NA_MARKER = Buffer.from('SG560D-NA');
 const REGION_ROW_MARKER = Buffer.from('SG560D-EM');
-const EFS_PARTITION_HEADER = Buffer.from('EFSSuper');
+const EFS_PARTITION_HEADER = Buffer.from('EFS');
 
 function addLogHeaders({ outputLog, startTime, deviceId, commandName }) {
 	fs.appendFileSync(outputLog, `Tachyon Logs:${os.EOL}`);

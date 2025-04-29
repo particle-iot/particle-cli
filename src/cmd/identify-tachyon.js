@@ -12,7 +12,7 @@ const {
 const FSG_PARTITION = 'fsg';
 const REGION_NA_MARKER = Buffer.from('SG560D-NA');
 const REGION_ROW_MARKER = Buffer.from('SG560D-EM');
-const EFS_PARTITION_HEADER = Buffer.from('EFSSuper');
+const EFS_PARTITION_HEADER = Buffer.from('EFS');
 
 module.exports = class IdentifyTachyonCommand extends CLICommandBase {
 	constructor({ ui } = {}) {
