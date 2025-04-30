@@ -52,7 +52,7 @@ function addLogFooter({ outputLog, startTime, endTime }) {
 	fs.appendFileSync(outputLog, `${os.EOL}`);
 }
 
-async function retrieveEDLDevices({ ui = new UI()}) {
+async function retrieveEDLDevices({ ui = new UI(), waitForOne = true } = {}) {
 	let edlDevices = [];
 	let messageShown = false;
 	while (edlDevices.length === 0) {
@@ -60,6 +60,9 @@ async function retrieveEDLDevices({ ui = new UI()}) {
 			edlDevices = await getEdlDevices();
 			if (edlDevices.length > 0) {
 				return edlDevices;
+			}
+			if (!waitForOne) {
+				throw new Error('No devices found in system update mode');
 			}
 			if (!messageShown){
 				ui.stdout.write(`Waiting for device to enter in system update mode...${os.EOL}`);
@@ -72,10 +75,20 @@ async function retrieveEDLDevices({ ui = new UI()}) {
 		await delay(DEVICE_READY_WAIT_TIME);
 	}
 }
-async function getEDLDevice() {
-	const edlDEvices = await retrieveEDLDevices();
-	return edlDevices[0];
 
+async function getEDLDevice({ ui = new UI(), showPrompt = false } = {}) {
+	const edlDevices = await retrieveEDLDevices();
+	if (edlDevices > 1 && showPrompt) {
+		const question = {
+			type: 'list',
+			name: 'deviceId',
+			message: 'Which device would you like to use?',
+			choices: edlDevices.map((device) => device.id)
+		};
+		const { deviceId } = await ui.prompt(question);
+		return edlDevices.find((device) => device.id === deviceId);
+	}
+	return edlDevices[0];
 }
 
 async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), deviceId, operation, checkFiles = false } = {}) {
