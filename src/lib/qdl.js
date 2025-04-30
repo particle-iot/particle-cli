@@ -92,7 +92,8 @@ class QdlFlasher {
 			...(zip ? ['--zip', zip] : []),
 			...(includeDir ? ['--include', includeDir] : []),
 			...files,
-			...(this.skipReset ? ['--skip-reset'] : [])
+			...(this.skipReset ? ['--skip-reset'] : []),
+			'--serial=YOUR_SERIAL_GOES_HERE'  // TODO (hmontero): ADD here --serial to accept the device serial number this actually works
 		];
 	}
 

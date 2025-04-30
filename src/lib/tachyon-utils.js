@@ -88,6 +88,7 @@ async function getEDLDevice({ ui = new UI(), showPrompt = false } = {}) {
 		const { deviceId } = await ui.prompt(question);
 		return edlDevices.find((device) => device.id === deviceId);
 	}
+	console.log('my devices', edlDevices);
 	return edlDevices[0];
 }
 
