@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.35.8 - Apr 30 2025
+* Change modem data to manufacturing data in tachyon identify
+
 # 3.35.7 - Apr 29 2025
 * Infer region and board from tachyon device info
 * Don't show linux devices when getting devices to flash firmwares
