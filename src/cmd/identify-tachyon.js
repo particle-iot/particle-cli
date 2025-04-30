@@ -28,10 +28,10 @@ module.exports = class IdentifyTachyonCommand extends CLICommandBase {
 		}
 	}
 
-	printIdentification({ deviceId, region, modemData, osVersion }) {
+	printIdentification({ deviceId, region, manufacturingData, osVersion }) {
 		this.ui.stdout.write(`Device ID: ${deviceId}${os.EOL}`);
 		this.ui.stdout.write(`Region: ${region}${os.EOL}`);
-		this.ui.stdout.write(`Modem data: ${modemData}${os.EOL}`);
+		this.ui.stdout.write(`Manufacturing data: ${manufacturingData}${os.EOL}`);
 		this.ui.stdout.write(`OS Version: ${osVersion}${os.EOL}`);
 	}
 };

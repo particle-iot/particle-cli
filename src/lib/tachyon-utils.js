@@ -248,11 +248,11 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	}
 
 	const modemDataValid = fsgBuffer.includes(EFS_PARTITION_HEADER);
-	let modemDataString;
+	let manufacturingDataString;
 	if (modemDataValid) {
-		modemDataString = 'Present';
+		manufacturingDataString = 'Found';
 	} else {
-		modemDataString = 'Erased';
+		manufacturingDataString = 'Missing';
 	}
 
 	const nvdataLun = partitionTable.find(({ partition }) => partition.name === 'nvdata1')?.lun;
@@ -268,7 +268,7 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	return {
 		deviceId,
 		region: regionString,
-		modemData: modemDataString,
+		manufacturingData: manufacturingDataString,
 		osVersion
 	};
 }
