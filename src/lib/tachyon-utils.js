@@ -52,28 +52,30 @@ function addLogFooter({ outputLog, startTime, endTime }) {
 	fs.appendFileSync(outputLog, `${os.EOL}`);
 }
 
-async function getEDLDevice({ ui = new UI() } = {}) {
+async function retrieveEDLDevices({ ui = new UI()}) {
 	let edlDevices = [];
 	let messageShown = false;
 	while (edlDevices.length === 0) {
 		try {
 			edlDevices = await getEdlDevices();
 			if (edlDevices.length > 0) {
-				return edlDevices[0];
+				return edlDevices;
 			}
-			if (!messageShown) {
-				if (ui) {
-					ui.stdout.write(`Waiting for device to enter system update mode...${os.EOL}`);
-				} else {
-					console.log(`Waiting for device to enter system update mode...${os.EOL}`);
-				}
+			if (!messageShown){
+				ui.stdout.write(`Waiting for device to enter in system update mode...${os.EOL}`);
 				messageShown = true;
 			}
+
 		} catch (error) {
 			// ignore error
 		}
 		await delay(DEVICE_READY_WAIT_TIME);
 	}
+}
+async function getEDLDevice() {
+	const edlDEvices = await retrieveEDLDevices();
+	return edlDevices[0];
+
 }
 
 async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), deviceId, operation, checkFiles = false } = {}) {
