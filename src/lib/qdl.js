@@ -10,7 +10,7 @@ const os = require('os');
 const TACHYON_STORAGE_TYPE = 'ufs';
 
 class QdlFlasher {
-	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile, skipReset=false, currTask=null }) {
+	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile, skipReset=false, currTask=null, serial }) {
 		this.files = files;
 		this.includeDir = includeDir;
 		this.updateFolder = updateFolder;
@@ -26,6 +26,7 @@ class QdlFlasher {
 		this.preparingDownload = false;
 		this.skipReset = skipReset;
 		this.currTask = currTask;
+		this.serial = serial;
 	}
 
 	async run() {
@@ -93,7 +94,7 @@ class QdlFlasher {
 			...(includeDir ? ['--include', includeDir] : []),
 			...files,
 			...(this.skipReset ? ['--skip-reset'] : []),
-			'--serial=YOUR_SERIAL_GOES_HERE'  // TODO (hmontero): ADD here --serial to accept the device serial number this actually works
+			`--serial=${this.serial}`  // TODO (hmontero): ADD here --serial to accept the device serial number this actually works
 		];
 	}
 
