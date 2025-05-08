@@ -71,6 +71,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.deviceId = await this._verifyDeviceInEDLMode();
 		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
 		await fs.ensureFile(this.outputLog);
+		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
 		// get device info
 		const deviceInfo = await this._getDeviceInfo();
 
@@ -254,13 +255,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			{
 				type: 'input',
 				name: 'setupWifi',
-				message: 'Would you like to set up WiFi for your device? (y/n):',
+				message: 'Internet access is required to activate your cellular connection. Set up Wi-Fi now? (y/n)',
 				default: 'y',
 			}
 		];
 		const { setupWifi } = await this.ui.prompt(question);
 		if (setupWifi.toLowerCase() === 'y') {
 			return this._getWifiCredentials();
+		} else {
+			const wifiWarning = 'Without an internet connection, your device won\'t be able to activate cellular connectivity.\n' +
+				'You can set up Wi-Fi later, but cellular features will remain inactive until then';
+			this.ui.write(this.ui.chalk.yellow(wifiWarning));
 		}
 
 		return null;
@@ -326,9 +331,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _registerDeviceStep(config) {
 		return this._runStepWithTiming(
 			`Great! The download is complete.${os.EOL}` +
-			"Now, let's register your product on the Particle platform.",
+			"Now, let's register your device into your product on the Particle platform.",
 			6,
-			() => this._getRegistrationCode(config.productId)
+			() => this._assignDeviceToProduct({ productId: config.productId, deviceId: this.deviceId })
 		);
 	}
 
@@ -595,6 +600,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return data.registration_code;
 	}
 
+	async _assignDeviceToProduct({ deviceId, productId }) {
+		const data = await this.api.addDeviceToProduct(deviceId, productId);
+		if (data.updatedDeviceIds.length > 0 || data.existingDeviceIds.length > 0) {
+			this.ui.write(`Device ${deviceId} assigned to product ${productId}`);
+		} else {
+			throw new Error(`Failed to assign device ${deviceId} to product ${productId}`);
+		}
+	}
+
 	async _createConfigBlob(_config, deviceId) {
 		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
 		const config = Object.fromEntries(
@@ -630,7 +644,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const packagePath = files[0];
 		const flashCommand = new FlashCommand();
 
-		this.ui.write(`${os.EOL}Starting download. See logs at: ${this.outputLog}${os.EOL}`);
 		if (!skipFlashingOs) {
 			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: this.outputLog, verbose: false });
 		}
