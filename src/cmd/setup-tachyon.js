@@ -91,9 +91,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			config.productId = await this._getProductStep(); // step 3
 			config.variant = await this._pickVariantStep(config); // step 4
 			config.country = await this._getCountryStep(); // step 5
-			config.esim = await this._getESIMProfiles({ deviceId: this.deviceId, country: config.country, productId: config.productId }); // step 5
 		}
 
+		config.esim = await this._getESIMProfiles({ deviceId: this.deviceId, country: config.country, productId: config.productId }); // step 5
 		config.apiServer = settings.apiUrl;
 		config.server = settings.isStaging ? 'https://host-connect.staging.particle.io': 'https://host-connect.particle.io';
 		config.verbose = settings.isStaging; // Extra logging if connected to staging
@@ -690,7 +690,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			'systemPassword',
 			'productId',
 			'timezone',
-			'wifi'
+			'wifi',
+			'country',
 		];
 		const configData = { ...config, ...configBlob };
 
