@@ -1,4 +1,14 @@
 module.exports = {
+	reorderCountries: (defaultCountry = 'USA') => {
+		const { supportedCountries } = module.exports;
+		const defaultCountryIndex = supportedCountries.findIndex(country => country.code === defaultCountry);
+		if (defaultCountryIndex === -1) {
+			return supportedCountries;
+		}
+		const start = supportedCountries.slice(defaultCountryIndex);
+		const end = supportedCountries.slice(0, defaultCountryIndex);
+		return [...start, ...end];
+	},
 	supportedCountries : [
 		{ name: 'Argentina', code: 'ARG' },
 		{ name: 'Armenia', code: 'ARM' },

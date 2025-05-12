@@ -18,7 +18,7 @@ const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
 const { prepareFlashFiles, getTachyonInfo } = require('../lib/tachyon-utils');
-const { supportedCountries } = require('../lib/supported-countries');
+const { supportedCountries, reorderCountries } = require('../lib/supported-countries');
 
 
 const DEVICE_READY_WAIT_TIME = 500; // ms
@@ -334,7 +334,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		try {
 			return await this.api.getESIMProfiles(deviceId, productId, country);
 		} catch (error) {
-			await fs.appendFile(this.outputLog, `Error getting eSIM profiles: ${error.message}${os.EOL}`);
+			const message = `Error getting eSIM profiles: ${error.message}${os.EOL}`;
+			this.ui.write(this.ui.chalk.yellow(message));
 			return null;
 		}
 	}
@@ -595,16 +596,21 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _promptForCountry() {
+		// check if the country is already set
+		const defaultCountry = settings.profile_json.country || this.defaultOptions.country;
+
 		const question = [
 			{
 				type: 'list',
 				name: 'country',
 				message: 'Select your country:',
-				choices: supportedCountries.map(country => country.name)
+				choices: reorderCountries(defaultCountry).map(country => country.name)
 			},
 		];
 		const { country } = await this.ui.prompt(question);
 		const countryCode = supportedCountries.find(c => c.name === country).code;
+		settings.profile_json.country = countryCode;
+		settings.saveProfileData();
 		if (countryCode === 'OTHER') {
 			this.ui.write('No cellular profile will be enabled for your device');
 		}
