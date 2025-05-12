@@ -250,6 +250,16 @@ module.exports = class ParticleApi {
 		);
 	}
 
+	getESIMProfiles(deviceId, productId, countryCode) {
+		return this._wrap(
+			this.api.put({
+				uri: `/v1/products/${productId}/devices/${deviceId}/target_profile`,
+				auth: this.accessToken,
+				data: { country: countryCode },
+			})
+		);
+	}
+
 	createProduct({ name, description = '', platformId, orgSlug, locationOptIn = false } = {}) {
 		return this._wrap(
 			this.api.post({
