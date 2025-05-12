@@ -331,9 +331,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _registerDeviceStep(config) {
 		return this._runStepWithTiming(
 			`Great! The download is complete.${os.EOL}` +
-			"Now, let's register your device into your product on the Particle platform.",
+			"Now, let's register your product on the Particle platform.",
 			6,
-			() => this._assignDeviceToProduct({ productId: config.productId, deviceId: this.deviceId })
+			() => this._getRegistrationCode(config.productId)
 		);
 	}
 
@@ -598,15 +598,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _getRegistrationCode(product) {
 		const data = await this.api.getRegistrationCode(product);
 		return data.registration_code;
-	}
-
-	async _assignDeviceToProduct({ deviceId, productId }) {
-		const data = await this.api.addDeviceToProduct(deviceId, productId);
-		if (data.updatedDeviceIds.length > 0 || data.existingDeviceIds.length > 0) {
-			this.ui.write(`Device ${deviceId} assigned to product ${productId}`);
-		} else {
-			throw new Error(`Failed to assign device ${deviceId} to product ${productId}`);
-		}
 	}
 
 	async _createConfigBlob(_config, deviceId) {
