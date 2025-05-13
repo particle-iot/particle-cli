@@ -20,6 +20,7 @@ module.exports = class UI {
 		this.quiet = quiet;
 		this.chalk = new Chalk(); // TODO (mirande): explicitly enable / disable colors
 		this.EOL = os.EOL;
+		this.Separator = inquirer.Separator;
 		this.isInteractive = isInteractive;
 	}
 

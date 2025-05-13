@@ -18,6 +18,7 @@ const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
 const { prepareFlashFiles, getTachyonInfo } = require('../lib/tachyon-utils');
+const { supportedCountries } = require('../lib/supported-countries');
 
 
 const DEVICE_READY_WAIT_TIME = 500; // ms
@@ -54,6 +55,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			region: 'NA',
 			version: 'latest',
 			board: 'formfactor',
+			country: 'USA',
 			variant: null,
 			skipFlashingOs: false,
 			skipCli: false,
@@ -71,6 +73,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.deviceId = await this._verifyDeviceInEDLMode();
 		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
 		await fs.ensureFile(this.outputLog);
+		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
 		// get device info
 		const deviceInfo = await this._getDeviceInfo();
 
@@ -87,17 +90,19 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			Object.assign(config, await this._getUserConfigurationStep()); // step 2
 			config.productId = await this._getProductStep(); // step 3
 			config.variant = await this._pickVariantStep(config); // step 4
+			config.country = await this._getCountryStep(); // step 5
 		}
 
+		config.esim = await this._getESIMProfiles({ deviceId: this.deviceId, country: config.country, productId: config.productId }); // step 5
 		config.apiServer = settings.apiUrl;
 		config.server = settings.isStaging ? 'https://host-connect.staging.particle.io': 'https://host-connect.particle.io';
 		config.verbose = settings.isStaging; // Extra logging if connected to staging
 
-		config.packagePath = await this._downloadStep(config); // step 5
-		config.registrationCode = await this._registerDeviceStep(config); // step 6
-		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 7
-		const flashSuccess = await this._flashStep(config.packagePath, xmlPath, config); // step 8
-		await this._finalStep(flashSuccess, config); // step 9
+		config.packagePath = await this._downloadStep(config); // step 6
+		config.registrationCode = await this._registerDeviceStep(config); // step 7
+		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 8
+		const flashSuccess = await this._flashStep(config.packagePath, xmlPath, config); // step 9
+		await this._finalStep(flashSuccess, config); // step 10
 	}
 
 	async _verifyDeviceInEDLMode() {
@@ -254,13 +259,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			{
 				type: 'input',
 				name: 'setupWifi',
-				message: 'Would you like to set up WiFi for your device? (y/n):',
+				message: 'Internet access is required to activate your cellular connection. Set up Wi-Fi now? (y/n)',
 				default: 'y',
 			}
 		];
 		const { setupWifi } = await this.ui.prompt(question);
 		if (setupWifi.toLowerCase() === 'y') {
 			return this._getWifiCredentials();
+		} else {
+			const wifiWarning = 'Without an internet connection, your device won\'t be able to activate cellular connectivity.\n' +
+				'You can set up Wi-Fi later, but cellular features will remain inactive until then';
+			this.ui.write(this.ui.chalk.yellow(wifiWarning));
 		}
 
 		return null;
@@ -292,6 +301,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		);
 	}
 
+	async _getCountryStep() {
+		return this._runStepWithTiming(
+			`Next, let's select a country for your Tachyon.${os.EOL}` +
+			'This will help us select the best cellular network for your device.',
+			5,
+			() => this._promptForCountry()
+		);
+	}
+
 	async _pickVariantStep(config) {
 		if (config.isLocalVersion || config.variant) {
 			this.ui.write(`Skipping to Step 5 - Using ${config.variant || config.version} operating system.${os.EOL}`);
@@ -312,13 +330,23 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		);
 	}
 
+	async _getESIMProfiles({ deviceId, country, productId }) {
+		try {
+			return await this.api.getESIMProfiles(deviceId, productId, country);
+		} catch (error) {
+			const message = `Error getting eSIM profiles: ${error.message}${os.EOL}`;
+			this.ui.write(this.ui.chalk.yellow(message));
+			return null;
+		}
+	}
+
 	async _downloadStep(config) {
 		return this._runStepWithTiming(
 			`Next, we'll download the Tachyon Operating System image.${os.EOL}` +
 			`Heads up: it's a large file — 3GB! Don't worry, though—the download will resume${os.EOL}` +
 			`if it's interrupted. If you have to kill the CLI, it will pick up where it left. You can also${os.EOL}` +
 			"just let it run in the background. We'll wait for you to be ready when its time to flash the device.",
-			5,
+			6,
 			() => this._download(config)
 		);
 	}
@@ -327,7 +355,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return this._runStepWithTiming(
 			`Great! The download is complete.${os.EOL}` +
 			"Now, let's register your product on the Particle platform.",
-			6,
+			7,
 			() => this._getRegistrationCode(config.productId)
 		);
 	}
@@ -335,7 +363,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _configureConfigAndSaveStep(config) {
 		const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
 			'Creating the configuration file to write to the Tachyon device...',
-			7,
+			8,
 			() => this._createConfigBlob(config, this.deviceId)
 		);
 
@@ -360,7 +388,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return this._runStepWithTiming(
 			`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
 			`Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!${os.EOL}${os.EOL}`,
-			8,
+			9,
 			() => this._flash({
 				files: [packagePath, xmlPath],
 				skipFlashingOs: config.skipFlashingOs,
@@ -388,7 +416,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
 					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
-					9
+					10
 				);
 			} else {
 				this._formatAndDisplaySteps(
@@ -400,7 +428,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
 					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
-					9
+					10
 				);
 			}
 		} else {
@@ -567,6 +595,27 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return product?.id;
 	}
 
+	async _promptForCountry() {
+		// check if the country is already set
+		const defaultCountry = settings.profile_json.country || this.defaultOptions.country;
+
+		const question = [
+			{
+				type: 'list',
+				name: 'countryCode',
+				message: 'Select your country:',
+				choices: [...supportedCountries, new this.ui.Separator()],
+				default: defaultCountry
+			},
+		];
+		const { countryCode } = await this.ui.prompt(question);
+		settings.profile_json.country = countryCode;
+		settings.saveProfileData();
+		if (countryCode === 'OTHER') {
+			this.ui.write('No cellular profile will be enabled for your device');
+		}
+		return countryCode;
+	}
 
 	async _download({ region, version, alwaysCleanCache, variant, board, isRb3Board, isLocalVersion }) {
 		//before downloading a file, we need to check if 'version' is a local file or directory
@@ -630,7 +679,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const packagePath = files[0];
 		const flashCommand = new FlashCommand();
 
-		this.ui.write(`${os.EOL}Starting download. See logs at: ${this.outputLog}${os.EOL}`);
 		if (!skipFlashingOs) {
 			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: this.outputLog, verbose: false });
 		}
@@ -648,7 +696,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			'systemPassword',
 			'productId',
 			'timezone',
-			'wifi'
+			'wifi',
+			'country',
 		];
 		const configData = { ...config, ...configBlob };
 
