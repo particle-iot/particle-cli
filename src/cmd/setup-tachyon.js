@@ -18,7 +18,7 @@ const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
 const { prepareFlashFiles, getTachyonInfo } = require('../lib/tachyon-utils');
-const { supportedCountries, reorderCountries } = require('../lib/supported-countries');
+const { supportedCountries } = require('../lib/supported-countries');
 
 
 const DEVICE_READY_WAIT_TIME = 500; // ms
@@ -602,13 +602,13 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const question = [
 			{
 				type: 'list',
-				name: 'country',
+				name: 'countryCode',
 				message: 'Select your country:',
-				choices: reorderCountries(defaultCountry).map(country => country.name)
+				choices: [...supportedCountries, new this.ui.Separator()],
+				default: defaultCountry
 			},
 		];
-		const { country } = await this.ui.prompt(question);
-		const countryCode = supportedCountries.find(c => c.name === country).code;
+		const { countryCode } = await this.ui.prompt(question);
 		settings.profile_json.country = countryCode;
 		settings.saveProfileData();
 		if (countryCode === 'OTHER') {
