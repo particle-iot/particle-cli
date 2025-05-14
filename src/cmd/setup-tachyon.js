@@ -640,8 +640,19 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _getRegistrationCode(product) {
+		// add device id to the product
+		await this._assignDeviceToProduct({ productId:product, deviceId: this.deviceId });
 		const data = await this.api.getRegistrationCode(product);
 		return data.registration_code;
+	}
+
+	async _assignDeviceToProduct({ deviceId, productId }) {
+		const data = await this.api.addDeviceToProduct(deviceId, productId);
+		if (data.updatedDeviceIds.length > 0 || data.existingDeviceIds.length > 0) {
+			this.ui.write(`Device ${deviceId} assigned to product ${productId}`);
+		} else {
+			throw new Error(`Failed to assign device ${deviceId} to product ${productId}`);
+		}
 	}
 
 	async _createConfigBlob(_config, deviceId) {
