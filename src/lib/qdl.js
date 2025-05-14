@@ -5,6 +5,7 @@ const fs = require('fs-extra');
 const util = require('util');
 const temp = require('temp').track();
 const mkdirTemp = util.promisify(temp.mkdir);
+const settings = require('../../settings');
 const os = require('os');
 
 const TACHYON_STORAGE_TYPE = 'ufs';
@@ -87,8 +88,10 @@ class QdlFlasher {
 	}
 
 	buildArgs({ files, includeDir, zip }) {
+		const { tachyonFlashChunkSize } = settings;
 		return [
 			'--storage', TACHYON_STORAGE_TYPE,
+			...(tachyonFlashChunkSize ? ['--out-chunk-size', tachyonFlashChunkSize] : []),
 			...(zip ? ['--zip', zip] : []),
 			...(includeDir ? ['--include', includeDir] : []),
 			...files,
