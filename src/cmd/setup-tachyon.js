@@ -648,10 +648,15 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _assignDeviceToProduct({ deviceId, productId }) {
 		const data = await this.api.addDeviceToProduct(deviceId, productId);
-		if (data.updatedDeviceIds.length > 0 || data.existingDeviceIds.length > 0) {
-			this.ui.write(`Device ${deviceId} assigned to product ${productId}`);
-		} else {
-			throw new Error(`Failed to assign device ${deviceId} to product ${productId}`);
+		if (data.updatedDeviceIds.length === 0 && data.existingDeviceIds.length === 0) {
+			let errorDescription = '';
+			if (data.invalidDeviceIds.length > 0) {
+				errorDescription = ': Invalid device ID';
+			}
+			if (data.nonmemberDeviceIds.length > 0) {
+				errorDescription = ': Device is owned by another user';
+			}
+			throw new Error(`Failed to assign device ${deviceId} ${errorDescription}`);
 		}
 	}
 
