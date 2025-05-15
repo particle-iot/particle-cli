@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.36.9 - May 15 2025
+* Fix Tachyon flashing on Windows 10
+
 # 3.35.8 - Apr 30 2025
 * Change modem data to manufacturing data in tachyon identify
 
