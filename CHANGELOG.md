@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.36.10 - May 16 2025
+* Download eSIM profiles during Tachyon setup
+
 # 3.36.9 - May 15 2025
 * Fix Tachyon flashing on Windows 10
 
