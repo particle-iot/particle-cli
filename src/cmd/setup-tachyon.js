@@ -93,13 +93,13 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			config.country = await this._getCountryStep(); // step 5
 		}
 
-		config.esim = await this._getESIMProfiles({ deviceId: this.deviceId, country: config.country, productId: config.productId }); // step 5
 		config.apiServer = settings.apiUrl;
 		config.server = settings.isStaging ? 'https://host-connect.staging.particle.io': 'https://host-connect.particle.io';
 		config.verbose = settings.isStaging; // Extra logging if connected to staging
 
 		config.packagePath = await this._downloadStep(config); // step 6
 		config.registrationCode = await this._registerDeviceStep(config); // step 7
+		config.esim = await this._getESIMProfiles({ deviceId: this.deviceId, country: config.country, productId: config.productId }); // after add device to product
 		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 8
 		const flashSuccess = await this._flashStep(config.packagePath, xmlPath, config); // step 9
 		await this._finalStep(flashSuccess, config); // step 10
