@@ -387,7 +387,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _flashStep(packagePath, xmlPath, config) {
 		return this._runStepWithTiming(
 			`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
-			`Heads up: this is a large image and will take around 10 minutes to complete. Don't worry—we'll show a progress bar as we go!${os.EOL}${os.EOL}`,
+			`Heads up: this is a large image and will take 2 to 8 minutes to complete. We'll show a progress bar as we go!${os.EOL}${os.EOL}`,
 			9,
 			() => this._flash({
 				files: [packagePath, xmlPath],
