@@ -241,11 +241,12 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getRegistrationCode(productId) {
+	getRegistrationCode({ productId, deviceId }) {
 		return this._wrap(
 			this.api.post({
 				uri: `/v1/products/${productId}/registration_code`,
-				auth: this.accessToken
+				auth: this.accessToken,
+				data: { device_id: deviceId }
 			})
 		);
 	}
