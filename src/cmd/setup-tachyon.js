@@ -76,6 +76,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
 		// get device info
 		const deviceInfo = await this._getDeviceInfo();
+		this._printDeviceInfo(deviceInfo);
 
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
@@ -149,6 +150,18 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			// ignore error and return default values
 			this.ui.write('We couldn\'t get the device info.');
 		}
+	}
+
+	async _printDeviceInfo(deviceInfo) {
+		this.ui.write(this.ui.chalk.bold('Device info:'));
+		this.ui.write(`Device ID: ${deviceInfo.deviceId}`);
+		if (deviceInfo.osVersion.includes('EVT')) {
+			this.ui.write('Board: EVT');
+		} else {
+			this.ui.write('Board: DVT');
+		}
+		this.ui.write(`Region: ${deviceInfo.region}`);
+		this.ui.write(`OS Version: ${deviceInfo.osVersion}`);
 	}
 
 	async _verifyLogin() {

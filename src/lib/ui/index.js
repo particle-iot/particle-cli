@@ -41,9 +41,30 @@ module.exports = class UI {
 		return inquirer.prompt(question);
 	}
 
+	async discardAllPendingInputBeforePrompt() {
+		return new Promise((resolve) => {
+			if (!process.stdin.isTTY) {
+				return resolve();
+			}
+
+			process.stdin.resume();
+			process.stdin.setEncoding('utf8');
+
+			const onData = () => {/* discard everything */};
+
+			process.stdin.on('data', onData);
+
+			setTimeout(() => {
+				process.stdin.removeListener('data', onData);
+				resolve();
+			}, 50); // 50ms
+		});
+	}
+
 	async promptPasswordWithConfirmation({ customMessage, customConfirmationMessage } = {}) {
 		let unmatchedPassword = true;
 		let password;
+		await this.discardAllPendingInputBeforePrompt();
 		const questions = [{
 			type: 'password',
 			name: 'requestedPassword',
