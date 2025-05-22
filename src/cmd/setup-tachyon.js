@@ -70,7 +70,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
 		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
 		await this.ui.write(showWelcomeMessage(this.ui));
-		this.deviceId = await this._verifyDeviceInEDLMode();
+		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
+		this.deviceId = deviceId;
+		this.usbVersion = usbVersion;
 		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
 		await fs.ensureFile(this.outputLog);
 		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
@@ -99,6 +101,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		config.verbose = settings.isStaging; // Extra logging if connected to staging
 
 		config.packagePath = await this._downloadStep(config); // step 6
+		this.product = await this._getProductDetails(config.productId);
 		config.registrationCode = await this._registerDeviceStep(config); // step 7
 		config.esim = await this._getESIMProfiles({ deviceId: this.deviceId, country: config.country, productId: config.productId }); // after add device to product
 		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 8
@@ -108,13 +111,13 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _verifyDeviceInEDLMode() {
 		let edlDevices = [];
-		let deviceId;
+		let device;
 		let messageShown = false;
 		while (edlDevices.length === 0) {
 			try {
 				edlDevices = await getEdlDevices();
 				if (edlDevices.length > 0) {
-					deviceId = edlDevices[0].id;
+					device = edlDevices[0];
 					break;
 				}
 				if (!messageShown) {
@@ -137,7 +140,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!${os.EOL}`);
 			await delay(1000); // give the user a moment to read the message
 		}
-		return deviceId;
+		return {
+			deviceId: device.id,
+			usbVersion: device.usbVersion
+		};
 	}
 
 	async _getDeviceInfo() {
@@ -147,8 +153,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				ui: this.ui,
 			}));
 		} catch (error) {
-			// ignore error and return default values
-			this.ui.write('We couldn\'t get the device info.');
+			// If this fails, the flash won't work so abort early.
+			throw new Error('Unable to get device info. Please restart the device and try again.');
 		}
 	}
 
@@ -162,6 +168,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		}
 		this.ui.write(`Region: ${deviceInfo.region}`);
 		this.ui.write(`OS Version: ${deviceInfo.osVersion}`);
+		let usbWarning = '';
+		if (this.usbVersion.major <= 2) {
+			usbWarning = this.ui.chalk.yellow(' (use a USB 3.0 port and USB-C cable for faster flashing)');
+		}
+		this.ui.write(`USB Version: ${this.usbVersion.major}.${this.usbVersion.minor}${usbWarning}`);
 	}
 
 	async _verifyLogin() {
@@ -364,6 +375,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		);
 	}
 
+	async _getProductDetails(productId) {
+		const { product } = await this.api.getProduct({ product: productId });
+		return product;
+	}
+
 	async _registerDeviceStep(config) {
 		return this._runStepWithTiming(
 			`Great! The download is complete.${os.EOL}` +
@@ -398,9 +414,19 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _flashStep(packagePath, xmlPath, config) {
+		let message = `Heads up: this is a large image and flashing will take about 2 minutes to complete.${os.EOL}`;
+		const slowUsb = this.usbVersion.major <= 2;
+		if (slowUsb) {
+			message = `Heads up: this is a large image and flashing will take about 8 minutes to complete.${os.EOL}` +
+				this.ui.chalk.yellow(`The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
+		}
+
 		return this._runStepWithTiming(
 			`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
-			`Heads up: this is a large image and will take 2 to 8 minutes to complete. We'll show a progress bar as we go!${os.EOL}${os.EOL}`,
+			message +
+			`${os.EOL}` +
+			`Meanwhile, you can explore the developer documentation at https://developer.particle.io${os.EOL}` +
+			`You can also view your device on the Console at ${this._consoleLink()}${os.EOL}`,
 			9,
 			() => this._flash({
 				files: [packagePath, xmlPath],
@@ -412,8 +438,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _finalStep(flashSuccessful, config) { // TODO (hmontero): once we have the device in the cloud, we should show the device id
 		if (flashSuccessful) {
-			const { product } = await this.api.getProduct({ product: config.productId });
-			const consoleUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
 			if (config.variant === 'desktop') {
 				this._formatAndDisplaySteps(
 					`All done! Your Tachyon device is ready to boot to the desktop and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
@@ -428,7 +452,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
+					`View your device on the Particle Console at: ${this._consoleLink()}`,
 					10
 				);
 			} else {
@@ -440,7 +464,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
 					`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 					`${os.EOL}` +
-					`View your device on the Particle Console at: ${consoleUrl}/${product.slug}/devices/${this.deviceId}${os.EOL}`,
+					`View your device on the Particle Console at: ${this._consoleLink()}`,
 					10
 				);
 			}
@@ -450,6 +474,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				`If it continues to fail, please select a different USB port or visit https://part.cl/setup-tachyon and the setup link for more information.${os.EOL}`
 			);
 		}
+	}
+
+	_consoleLink() {
+		const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
+		return `${baseUrl}/${this.product.slug}/devices/${this.deviceId}`;
 	}
 
 	async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
@@ -475,7 +504,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		// Display the formatted step
 		this.ui.write(`${os.EOL}===================================================================================${os.EOL}`);
 		this.ui.write(`Step ${step}:${os.EOL}`);
-		this.ui.write(`${text}${os.EOL}`);
+		this.ui.write(`${text}`);
 	}
 
 	async _selectVersion() {
