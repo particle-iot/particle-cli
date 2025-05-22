@@ -639,10 +639,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return manager.download({ url, outputFileName, expectedChecksum, options: { alwaysCleanCache } });
 	}
 
-	async _getRegistrationCode(product) {
-		// add device id to the product
-		await this._assignDeviceToProduct({ productId:product, deviceId: this.deviceId });
-		const data = await this.api.getRegistrationCode(product);
+	async _getRegistrationCode(productId) {
+		await this._assignDeviceToProduct({ productId: productId, deviceId: this.deviceId });
+		const data = await this.api.getRegistrationCode({ productId, deviceId: this.deviceId });
 		return data.registration_code;
 	}
 
