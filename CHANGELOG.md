@@ -1,9 +1,15 @@
 # Changelog
 
-# 3.36.10 - May 16 2025
+# 3.35.11 - May 23 2025
+* Add deviceId to generate registration code endpoint
+* Add device info at the beginning of tachyon setup
+* Remove unsupported contries from tachyon setup
+* Show usb slow warnings in case of detect usb 2.0 on tachyon setup
+
+# 3.35.10 - May 16 2025
 * Download eSIM profiles during Tachyon setup
 
-# 3.36.9 - May 15 2025
+# 3.35.9 - May 15 2025
 * Fix Tachyon flashing on Windows 10
 
 # 3.35.8 - Apr 30 2025
