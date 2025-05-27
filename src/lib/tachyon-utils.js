@@ -315,8 +315,8 @@ async function _scanNetworks(ui) {
 	const networks = await ui.showBusySpinnerUntilResolved(
 		'Scanning for nearby Wi-Fi networks...',
 		_wifiScan()
-	);
-	const ssids = networks.map(n => n.ssid);
+	) || [];
+	const ssids = networks?.map(n => n.ssid);
 	return { networks, ssids };
 }
 
@@ -330,7 +330,7 @@ async function _wifiScan() {
 			resolve(networkList);
 		});
 	});
-	if (networks.length === 1 && !networks[0].ssid && os.platform() === 'darwin') {
+	if (networks?.length === 1 && !networks[0].ssid && os.platform() === 'darwin') {
 		networks = await wifiMacScanner.scan();
 	}
 	return networks;
