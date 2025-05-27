@@ -17,7 +17,7 @@ const path = require('path');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
-const { prepareFlashFiles, getTachyonInfo } = require('../lib/tachyon-utils');
+const { prepareFlashFiles, getTachyonInfo, promptWifiNetworks } = require('../lib/tachyon-utils');
 const { supportedCountries } = require('../lib/supported-countries');
 
 
@@ -260,7 +260,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _userConfiguration() {
 		const passwordAnswer = await this._getSystemPassword();
 		const systemPassword = this._generateShadowCompatibleHash(passwordAnswer);
-		const wifi = await this._getWifi();
+		const wifi = await promptWifiNetworks(this.ui);
 		return { systemPassword, wifi };
 	}
 
@@ -278,43 +278,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return password;
 	}
 
-	async _getWifi() {
-		const question = [
-			{
-				type: 'input',
-				name: 'setupWifi',
-				message: 'Internet access is required to activate your cellular connection. Set up Wi-Fi now? (y/n)',
-				default: 'y',
-			}
-		];
-		const { setupWifi } = await this.ui.prompt(question);
-		if (setupWifi.toLowerCase() === 'y') {
-			return this._getWifiCredentials();
-		} else {
-			const wifiWarning = 'Without an internet connection, your device won\'t be able to activate cellular connectivity.\n' +
-				'You can set up Wi-Fi later, but cellular features will remain inactive until then';
-			this.ui.write(this.ui.chalk.yellow(wifiWarning));
-		}
-
-		return null;
-	}
-
-	async _getWifiCredentials() {
-		const questions = [
-			{
-				type: 'input',
-				name: 'ssid',
-				message: 'Enter your WiFi SSID:'
-			}
-		];
-		const res = await this.ui.prompt(questions);
-		const password = await this.ui.promptPasswordWithConfirmation({
-			customMessage: 'Enter your WiFi password:',
-			customConfirmationMessage: 'Re-enter your WiFi password:'
-		});
-
-		return { ssid: res.ssid, password };
-	}
 
 	async _getProductStep() {
 		return this._runStepWithTiming(
