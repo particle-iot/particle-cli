@@ -316,11 +316,7 @@ async function promptWifiNetworks(ui = new UI()) {
 	} else {
 		pickedSSID = ssid;
 	}
-
-	const password = await ui.promptPasswordWithConfirmation({
-		customMessage: 'Enter your WiFi password: (leave it blank for open networks)',
-		customConfirmationMessage: 'Re-enter your WiFi password: (leave it blank for open networks)'
-	});
+	const password = await _requestWifiPassword({ ui, ssid, networks });
 
 	return { ssid: pickedSSID, password };
 }
@@ -355,6 +351,22 @@ async function _requestWifiSSID(ui) {
 	];
 	const { ssid } = await ui.prompt(questions);
 	return { ssid };
+}
+
+async function _requestWifiPassword({ ui, ssid, networks }) {
+	const network = networks.find((n) => n.ssid === ssid);
+	const isOpen = network?.security === 'none' || network?.security === '';
+	const isManualEntry = !network;
+	const annotation = isManualEntry ? ' (leave it blank for open networks)': '';
+
+	if (isOpen) {
+		return '';
+	}
+
+	return ui.promptPasswordWithConfirmation({
+		customMessage: `Enter your WiFi password:${annotation}`,
+		customConfirmationMessage: `Re-enter your WiFi password:${annotation}`
+	});
 }
 
 module.exports = {
