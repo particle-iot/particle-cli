@@ -279,59 +279,50 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 }
 
 async function promptWifiNetworks(ui = new UI()) {
-	let pickedSSID;
-	ui.write(
-		ui.chalk.bold(
-			`Wi-Fi setup is required to continue.${os.EOL}` +
-			`An active internet connection is necessary to activate cellular connectivity on your device.${os.EOL}`
-		)
-	);
-
-	const networks = await ui.showBusySpinnerUntilResolved(
-		'Scanning for nearby Wi-Fi networks...',
-		_scanNetworks()
-	);
-	const ssids = networks.map(n => n.ssid);
+	const { ssids, networks } = await _scanNetworks(ui);
 	const otherNetworkLabel = '[Other Network]';
+	const rescanLabel = '[Rescan networks]';
+
+	const choices =[
+		new inquirer.Separator(),
+		rescanLabel,
+		new inquirer.Separator(),
+		otherNetworkLabel,
+		new inquirer.Separator(),
+		...ssids
+	];
 	const question = [
 		{
 			type: 'list',
 			name: 'ssid',
 			message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
-			choices: () => {
-				const ns = ssids.slice();
-				ns.unshift(new inquirer.Separator());
-				ns.unshift('[Other Network]');
-				ns.unshift(new inquirer.Separator());
-				return ns;
-			},
-			when: () => {
-				return networks.length;
-			}
+			choices
 		}];
 	const { ssid } = await ui.prompt(question);
-	if (ssid === otherNetworkLabel) {
-		const res = await _requestWifiSSID(ui);
-		pickedSSID = res.ssid;
-	} else {
-		pickedSSID = ssid;
+	if (ssid === rescanLabel) {
+		return promptWifiNetworks(ui);
 	}
+	const pickedSSID = ssid === otherNetworkLabel ?
+		(await _requestWifiSSID(ui)).ssid
+		: ssid;
+
 	const password = await _requestWifiPassword({ ui, ssid, networks });
 
 	return { ssid: pickedSSID, password };
 }
 
-async function _scanNetworks() {
-	let networks;
-	networks = await _wifiScan();
-	if (networks.length === 1 && networks[0].ssid === '' && os.platform() === 'darwin') {
-		networks = await wifiMacScanner.scan();
-	}
-	return networks;
+async function _scanNetworks(ui) {
+	const networks = await ui.showBusySpinnerUntilResolved(
+		'Scanning for nearby Wi-Fi networks...',
+		_wifiScan()
+	);
+	const ssids = networks.map(n => n.ssid);
+	return { networks, ssids };
 }
 
 async function _wifiScan() {
-	return new Promise((resolve, reject) => {
+	let networks = [];
+	networks = await new Promise((resolve, reject) => {
 		wifiScan((err, networkList) => {
 			if (err) {
 				return reject(new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?'));
@@ -339,6 +330,10 @@ async function _wifiScan() {
 			resolve(networkList);
 		});
 	});
+	if (networks.length === 1 && !networks[0].ssid && os.platform() === 'darwin') {
+		networks = await wifiMacScanner.scan();
+	}
+	return networks;
 }
 
 async function _requestWifiSSID(ui) {

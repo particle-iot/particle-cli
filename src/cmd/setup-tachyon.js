@@ -263,8 +263,18 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _userConfiguration() {
 		const passwordAnswer = await this._getSystemPassword();
 		const systemPassword = this._generateShadowCompatibleHash(passwordAnswer);
-		const wifi = await promptWifiNetworks(this.ui);
+		const wifi = await this._getWifiConfiguration();
 		return { systemPassword, wifi };
+	}
+
+	async _getWifiConfiguration() {
+		this.ui.write(
+			this.ui.chalk.bold(
+				`Wi-Fi setup is required to continue.${os.EOL}` +
+				'An active internet connection is necessary to activate cellular connectivity on your device.'
+			)
+		);
+		return promptWifiNetworks(this.ui);
 	}
 
 	async _getSystemPassword() {
