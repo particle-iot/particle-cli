@@ -70,20 +70,17 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
 		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
 		await this.ui.write(showWelcomeMessage(this.ui));
+		// step 1 login
+		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
+		await this._verifyLogin();
+		// step 2 get device info
+		this._formatAndDisplaySteps("Now let's get the device info", 2);
 		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
 		this.deviceId = deviceId;
 		this.usbVersion = usbVersion;
 		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
 		await fs.ensureFile(this.outputLog);
 		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
-
-		// step 1 login
-		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
-		await this._verifyLogin();
-		// get device info after checking the device login
-
-		// step 1 login
-		this._formatAndDisplaySteps("Now let's get the device info", 2);
 		const deviceInfo = await this._getDeviceInfo();
 		this._printDeviceInfo(deviceInfo);
 		// check if there is a config file
