@@ -12,6 +12,11 @@ const FSG_PARTITION = 'fsg';
 const REGION_NA_MARKER = Buffer.from('SG560D-NA');
 const REGION_ROW_MARKER = Buffer.from('SG560D-EM');
 const EFS_PARTITION_HEADER = Buffer.from('EFS');
+const wifiMacScanner = require('./wifi-scanner');
+const VError = require('verror');
+const chalk = require('chalk');
+const inquirer = require('inquirer');
+const wifiScan = require('node-wifiscanner2').scan;
 
 function addLogHeaders({ outputLog, startTime, deviceId, commandName }) {
 	fs.appendFileSync(outputLog, `Tachyon Logs:${os.EOL}`);
@@ -273,6 +278,92 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	};
 }
 
+async function promptWifiNetworks(ui = new UI()) {
+	const { ssids, networks } = await _scanNetworks(ui);
+	const otherNetworkLabel = '[Other Network]';
+	const rescanLabel = '[Rescan networks]';
+
+	const choices =[
+		new inquirer.Separator(),
+		rescanLabel,
+		new inquirer.Separator(),
+		otherNetworkLabel,
+		new inquirer.Separator(),
+		...ssids
+	];
+	const question = [
+		{
+			type: 'list',
+			name: 'ssid',
+			message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
+			choices
+		}];
+	const { ssid } = await ui.prompt(question);
+	if (ssid === rescanLabel) {
+		return promptWifiNetworks(ui);
+	}
+	const pickedSSID = ssid === otherNetworkLabel ?
+		(await _requestWifiSSID(ui)).ssid
+		: ssid;
+
+	const password = await _requestWifiPassword({ ui, ssid, networks });
+
+	return { ssid: pickedSSID, password };
+}
+
+async function _scanNetworks(ui) {
+	const networks = await ui.showBusySpinnerUntilResolved(
+		'Scanning for nearby Wi-Fi networks...',
+		_wifiScan()
+	) || [];
+	const ssids = networks?.map(n => n.ssid);
+	return { networks, ssids };
+}
+
+async function _wifiScan() {
+	let networks = [];
+	networks = await new Promise((resolve, reject) => {
+		wifiScan((err, networkList) => {
+			if (err) {
+				return reject(new VError('Unable to scan for Wi-Fi networks. Do you have permission to do that on this system?'));
+			}
+			resolve(networkList);
+		});
+	});
+	if (networks?.length === 1 && !networks[0].ssid && os.platform() === 'darwin') {
+		networks = await wifiMacScanner.scan();
+	}
+	return networks;
+}
+
+async function _requestWifiSSID(ui) {
+	const questions = [
+		{
+			type: 'input',
+			name: 'ssid',
+			message: 'Enter your WiFi SSID:'
+		}
+	];
+	const { ssid } = await ui.prompt(questions);
+	return { ssid };
+}
+
+async function _requestWifiPassword({ ui, ssid, networks }) {
+	const network = networks.find((n) => n.ssid === ssid);
+	const isOpen = network?.security === 'none' || network?.security === '';
+	const isManualEntry = !network;
+	const annotation = isManualEntry ? ' (leave it blank for open networks)': '';
+
+	if (isOpen) {
+		return '';
+	}
+
+	return ui.promptPasswordWithConfirmation({
+		customMessage: `Enter your WiFi password:${annotation}`,
+		customConfirmationMessage: `Re-enter your WiFi password:${annotation}`
+	});
+}
+
 module.exports = {
 	addLogHeaders,
 	addManifestInfoLog,
@@ -280,4 +371,5 @@ module.exports = {
 	getEDLDevice,
 	prepareFlashFiles,
 	getTachyonInfo,
+	promptWifiNetworks
 };
