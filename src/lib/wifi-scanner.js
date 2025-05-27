@@ -1,4 +1,6 @@
 // TODO (hmontero): Migrate it to node-wifiscanner2
+// since airport is deprecated we need to change it
+// https://apple.stackexchange.com/questions/471886/how-to-replace-functionality-of-deprecated-airport-command-line-application
 
 const execa = require('execa');
 const macProvider = '/usr/sbin/system_profiler';
