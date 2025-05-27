@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.35.12 - May 27 2025
+* Improve wifi selection on tachyon setup
+* Make verify login on tachyon setup be the very first step
+
 # 3.35.11 - May 23 2025
 * Add deviceId to generate registration code endpoint
 * Add device info at the beginning of tachyon setup
