@@ -9,6 +9,7 @@ const {
 	addLogFooter,
 	prepareFlashFiles
 } = require('../lib/tachyon-utils');
+const settings = require('../../settings');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
@@ -16,9 +17,11 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
 		this.ui = ui || this.ui;
+		this._baseDir = settings.ensureFolder();
+		this._logsDir = path.join(this._baseDir, 'logs');
 	}
 
-	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = process.cwd() } = {}) {
+	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = this._logsDir } = {}) {
 		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 		const outputDirExist = await fs.exists(outputDir);
 		const logDirExist = await fs.exists(logDir);
@@ -69,7 +72,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 	async restore({
 		'input-dir': inputDir = process.cwd(),
-		'log-dir': logDir = process.cwd(),
+		'log-dir': logDir = this._logsDir,
 	} = {})	{
 		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
 		if (!await fs.exists(logDir)) {
