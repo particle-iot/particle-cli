@@ -183,6 +183,12 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const api = new ApiClient();
 		try {
 			api.ensureToken();
+			const currentToken = await api.getCurrentToken();
+			const minRemainingTime = 60 * 60 * 1000; // 1 hour
+			const expiresAt = currentToken.expires_at ? new Date(currentToken.expires_at) : null;
+			if (expiresAt !== null && (expiresAt - Date.now()) < minRemainingTime) {
+				throw new Error('Token expired or near to expire');
+			}
 		} catch {
 			const cloudCommand = new CloudCommand();
 			await cloudCommand.login();
