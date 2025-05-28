@@ -174,8 +174,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 			}
 			return output;
 		}
-
-		const defaultLogFile = path.join(process.cwd(), `tachyon_flash_${Date.now()}.log`);
+		const particleDir = settings.ensureFolder();
+		const logsDir = path.join(particleDir, 'logs');
+		await fs.ensureDir(logsDir);
+		const defaultLogFile = path.join(logsDir, `tachyon_flash_${Date.now()}.log`);
 		await fs.ensureFile(defaultLogFile);
 		return defaultLogFile;
 	}

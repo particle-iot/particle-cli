@@ -50,6 +50,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._setupApi();
 		this.ui = ui || this.ui;
 		this.deviceId = null;
+		this._baseDir = settings.ensureFolder();
+		this._logsDir = path.join(this._baseDir, 'logs');
+
 		this.outputLog = null;
 		this.defaultOptions = {
 			region: 'NA',
@@ -65,7 +68,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.options = {};
 	}
 
-
 	async setup({ skip_flashing_os: skipFlashingOs, timezone, load_config: loadConfig, save_config: saveConfig, region, version, variant, board, skip_cli: skipCli } = {}) {
 		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
 		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
@@ -78,7 +80,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
 		this.deviceId = deviceId;
 		this.usbVersion = usbVersion;
-		this.outputLog = path.join(process.cwd(), `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
+		// ensure logs dir
+		await fs.ensureDir(this._logsDir);
+		this.outputLog = path.join(this._logsDir, `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
 		await fs.ensureFile(this.outputLog);
 		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
 		const deviceInfo = await this._getDeviceInfo();
