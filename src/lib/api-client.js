@@ -160,6 +160,25 @@ module.exports = class ApiClient {
 		});
 	}
 
+	getCurrentToken() {
+		return new Promise((resolve, reject) => {
+			const options = {
+				uri: '/v1/access_tokens/current',
+				method: 'GET',
+				json: true,
+			};
+			this.request(options, (error, response, body) => {
+				if (error) {
+					return reject(error);
+				}
+				if (this.hasBadToken(body)) {
+					return reject('Invalid Token');
+				}
+				return resolve(body);
+			});
+		});
+	}
+
 	getUser(){
 		return new Promise((resolve, reject) => {
 			const options = {

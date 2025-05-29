@@ -75,6 +75,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
+		this.ui.write("...All set! You're logged in and ready to go!");
 		// step 2 get device info
 		this._formatAndDisplaySteps("Now let's get the device info", 2);
 		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
@@ -183,6 +184,12 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const api = new ApiClient();
 		try {
 			api.ensureToken();
+			const currentToken = await api.getCurrentToken();
+			const minRemainingTime = 60 * 60 * 1000; // 1 hour
+			const expiresAt = currentToken.expires_at ? new Date(currentToken.expires_at) : null;
+			if (expiresAt !== null && (expiresAt - Date.now()) < minRemainingTime) {
+				throw new Error('Token expired or near to expire');
+			}
 		} catch {
 			const cloudCommand = new CloudCommand();
 			await cloudCommand.login();
