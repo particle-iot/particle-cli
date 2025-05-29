@@ -75,6 +75,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
+		this.ui.write("...All set! You're logged in and ready to go!");
 		// step 2 get device info
 		this._formatAndDisplaySteps("Now let's get the device info", 2);
 		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
