@@ -40,6 +40,7 @@ ${ui.chalk.bold('What you\'ll need:')}
 3. A USB-C cable
 
 ${ui.chalk.bold('Important:')}
+${ui.chalk.bold(`${os.EOL}`)}
 - This tool requires you to be logged into your Particle account.
 - For more details, check out the documentation at: https://part.cl/setup-tachyon ${os.EOL}`;
 
@@ -75,9 +76,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
+		this.ui.write('');
 		this.ui.write("...All set! You're logged in and ready to go!");
 		// step 2 get device info
 		this._formatAndDisplaySteps("Now let's get the device info", 2);
+		this.ui.write('');
 		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
 		this.deviceId = deviceId;
 		this.usbVersion = usbVersion;
@@ -134,6 +137,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
 					`   - When the light starts flashing yellow, release the button.${os.EOL}`;
 					this.ui.stdout.write(message);
+					this.ui.stdout.write(os.EOL);
 					messageShown = true;
 				}
 			} catch (error) {
@@ -165,19 +169,18 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _printDeviceInfo(deviceInfo) {
 		this.ui.write(this.ui.chalk.bold('Device info:'));
-		this.ui.write(`Device ID: ${deviceInfo.deviceId}`);
+		this.ui.write(os.EOL);
+		this.ui.write(` -  Device ID: ${deviceInfo.deviceId}`);
 		if (deviceInfo.osVersion.includes('EVT')) {
-			this.ui.write('Board: EVT');
-		} else {
-			this.ui.write('Board: DVT');
+			this.ui.write(' -  Board: EVT');
 		}
-		this.ui.write(`Region: ${deviceInfo.region}`);
-		this.ui.write(`OS Version: ${deviceInfo.osVersion}`);
+		this.ui.write(` -  Region: ${deviceInfo.region}`);
+		this.ui.write(` -  OS Version: ${deviceInfo.osVersion}`);
 		let usbWarning = '';
 		if (this.usbVersion.major <= 2) {
 			usbWarning = this.ui.chalk.yellow(' (use a USB 3.0 port and USB-C cable for faster flashing)');
 		}
-		this.ui.write(`USB Version: ${this.usbVersion.major}.${this.usbVersion.minor}${usbWarning}`);
+		this.ui.write(` -  USB Version: ${this.usbVersion.major}.${this.usbVersion.minor}${usbWarning}`);
 	}
 
 	async _verifyLogin() {
@@ -278,8 +281,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _getWifiConfiguration() {
 		this.ui.write(
 			this.ui.chalk.bold(
-				`Wi-Fi setup is required to continue.${os.EOL}` +
-				'An active internet connection is necessary to activate cellular connectivity on your device.'
+				`${os.EOL}` +
+				`Wi-Fi setup is required to continue when using Particle setup!${os.EOL}` +
+				`This active internet connection is necessary to activate cellular connectivity on your device.${os.EOL}`
 			)
 		);
 		return promptWifiNetworks(this.ui);
@@ -311,8 +315,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _getCountryStep() {
 		return this._runStepWithTiming(
-			`Next, let's select a country for your Tachyon.${os.EOL}` +
-			'This will help us select the best cellular network for your device.',
+			`Next, let's configure the cellular connection for your Tachyon!.${os.EOL}` +
+			'Select from the list of countries supported for the built in Particle cellular ' +
+			`connection or select 'Other' if your country is not listed.${os.EOL}` +
+			'For more information, visit: https://developer.particle.io/redirect/tachyon-cellular-setup',
 			6,
 			() => this._promptForCountry()
 		);
@@ -402,7 +408,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const slowUsb = this.usbVersion.major <= 2;
 		if (slowUsb) {
 			message = `Heads up: this is a large image and flashing will take about 8 minutes to complete.${os.EOL}` +
-				this.ui.chalk.yellow(`The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
+				this.ui.chalk.yellow(`${os.EOL}The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
 		}
 
 		return this._runStepWithTiming(
@@ -410,6 +416,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			message +
 			`${os.EOL}` +
 			`Meanwhile, you can explore the developer documentation at https://developer.particle.io${os.EOL}` +
+      `${os.EOL}` +
 			`You can also view your device on the Console at ${this._consoleLink()}${os.EOL}`,
 			10,
 			() => this._flash({

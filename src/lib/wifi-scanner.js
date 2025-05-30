@@ -23,6 +23,7 @@ async function parseAirportData(systemProfilerAirport) {
 	const interfaces = airPortData.spairport_airport_interfaces;
 	const en0Interface = interfaces.find(iface => iface._name === 'en0');
 	const networks = en0Interface.spairport_airport_other_local_wireless_networks;
+
 	// filter repeated networks
 	const uniqueNetworks = networks ? filterUniqueNetworks(networks): [];
 

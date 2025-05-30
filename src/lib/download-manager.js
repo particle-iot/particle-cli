@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const UI = require('./ui');
 const crypto = require('crypto');
 const { delay } = require('./utilities');
+const os = require('os');
 
 class DownloadManager {
 	/**
@@ -153,6 +154,7 @@ class DownloadManager {
 		if (totalSizeGB < maxCacheSizeGB || downloadDirStats.fileStats.length === 0) {
 			return false;
 		}
+		this.ui.write(`${os.EOL}`);
 		const question = {
 			type: 'confirm',
 			name: 'cleanCache',
