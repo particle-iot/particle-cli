@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.36.0 - May 30 2025
+* Add token verification on verify login step
+* Change default logs folder to particle folder
+* Add padding and format to tachyon setup process
+
 # 3.35.12 - May 27 2025
 * Improve wifi selection on tachyon setup
 * Make verify login on tachyon setup be the very first step
