@@ -153,6 +153,7 @@ class DownloadManager {
 		if (totalSizeGB < maxCacheSizeGB || downloadDirStats.fileStats.length === 0) {
 			return false;
 		}
+		this.ui.write(`${os.EOL}`);
 		const question = {
 			type: 'confirm',
 			name: 'cleanCache',
