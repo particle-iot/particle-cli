@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const UI = require('./ui');
 const crypto = require('crypto');
 const { delay } = require('./utilities');
+const os = require('os');
 
 class DownloadManager {
 	/**
