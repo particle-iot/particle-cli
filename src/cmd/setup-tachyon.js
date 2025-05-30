@@ -39,8 +39,8 @@ ${ui.chalk.bold('What you\'ll need:')}
 2. The Tachyon battery
 3. A USB-C cable
 
-${ui.chalk.bold('Important:')};
-${ui.chalk.bold('${os.EOL}');
+${ui.chalk.bold('Important:')}
+${ui.chalk.bold(`${os.EOL}`)}
 - This tool requires you to be logged into your Particle account.
 - For more details, check out the documentation at: https://part.cl/setup-tachyon ${os.EOL}`;
 
@@ -283,7 +283,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			this.ui.chalk.bold(
         `${os.EOL}` +
 				`Wi-Fi setup is required to continue when using Particle setup!${os.EOL}` +
-				'This active internet connection is necessary to activate cellular connectivity on your device.${os.EOL}'
+				`This active internet connection is necessary to activate cellular connectivity on your device.${os.EOL}`
 			)
 		);
 		return promptWifiNetworks(this.ui);
