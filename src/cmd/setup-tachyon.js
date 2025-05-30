@@ -76,11 +76,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
-    this.ui.write("");
+		this.ui.write('');
 		this.ui.write("...All set! You're logged in and ready to go!");
 		// step 2 get device info
 		this._formatAndDisplaySteps("Now let's get the device info", 2);
-    this.ui.write("");
+		this.ui.write('');
 		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
 		this.deviceId = deviceId;
 		this.usbVersion = usbVersion;
@@ -137,7 +137,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 					`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
 					`   - When the light starts flashing yellow, release the button.${os.EOL}`;
 					this.ui.stdout.write(message);
-          this.ui.stdout.write(os.EOL);
+					this.ui.stdout.write(os.EOL);
 					messageShown = true;
 				}
 			} catch (error) {
@@ -169,7 +169,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _printDeviceInfo(deviceInfo) {
 		this.ui.write(this.ui.chalk.bold('Device info:'));
-    this.ui.write(os.EOL);
+		this.ui.write(os.EOL);
 		this.ui.write(` -  Device ID: ${deviceInfo.deviceId}`);
 		if (deviceInfo.osVersion.includes('EVT')) {
 			this.ui.write(' -  Board: EVT');
@@ -281,7 +281,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	async _getWifiConfiguration() {
 		this.ui.write(
 			this.ui.chalk.bold(
-        `${os.EOL}` +
+				`${os.EOL}` +
 				`Wi-Fi setup is required to continue when using Particle setup!${os.EOL}` +
 				`This active internet connection is necessary to activate cellular connectivity on your device.${os.EOL}`
 			)
