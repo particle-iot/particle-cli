@@ -315,8 +315,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _getCountryStep() {
 		return this._runStepWithTiming(
-			`Next, let's select a country for your Tachyon.${os.EOL}` +
-			'This will help us select the best cellular network for your device.',
+			`Next, let's configure the cellular connection for your Tachyon!.${os.EOL}` +
+			'Select from the list of countries supported for the built in Particle cellular ' +
+			`connection or select 'Other' if your country is not listed.${os.EOL}` +
+			'For more information, visit: https://developer.particle.io/redirect/tachyon-cellular-setup',
 			6,
 			() => this._promptForCountry()
 		);
