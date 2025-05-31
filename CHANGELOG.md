@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.36.1 - May 31 2025
+* Ensure all generated system passwords are valid
+
 # 3.36.0 - May 30 2025
 * Add token verification on verify login step
 * Change default logs folder to particle folder
