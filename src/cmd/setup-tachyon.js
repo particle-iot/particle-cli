@@ -719,7 +719,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	_generateShadowCompatibleHash(password) {
-		const salt = crypto.randomBytes(12).toString('base64');
+		// crypt uses . instead of + for base64
+		const salt = crypto.randomBytes(12).toString('base64').replaceAll('+', '.');
 		return sha512crypt(password, `$6$${salt}`);
 	}
 
