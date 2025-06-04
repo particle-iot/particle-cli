@@ -186,7 +186,7 @@
       "./node_modules/usb/prebuilds/*/node.napi*.node",
       "./node_modules/node-wifiscanner2/locales/en.json",
       "./node_modules/particle-commands/dist/cmd/templates/project/**/*",
-      "./node_modules/particle-commands/node_modules/particle-library-manager/dist/init/**/*"
+      "./node_modules/particle-library-manager/dist/init/**/*"
     ],
     "outputPath": "build"
   },
