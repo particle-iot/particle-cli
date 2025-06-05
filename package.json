@@ -70,10 +70,10 @@
     "node-fetch": "^2.7.0",
     "node-wifiscanner2": "^1.2.1",
     "particle-api-js": "^11.1.0",
-    "particle-commands": "^1.0.1",
-    "particle-library-manager": "^0.1.15",
+    "particle-commands": "^1.0.2",
+    "particle-library-manager": "^1.0.1",
     "particle-usb": "^3.8.2",
-    "request": "https://github.com/particle-iot/request/releases/download/v2.75.1-relativepath.1/request-2.75.1-relativepath.1.tgz",
+    "request": "^2.79.0",
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",
     "serialport": "^10.4.0",
@@ -109,7 +109,7 @@
     "strip-ansi": "^6.0.1"
   },
   "engines": {
-    "node": ">=12",
+    "node": ">=16",
     "npm": ">=6"
   },
   "homepage": "https://github.com/particle-iot/particle-cli/",
@@ -186,7 +186,7 @@
       "./node_modules/usb/prebuilds/*/node.napi*.node",
       "./node_modules/node-wifiscanner2/locales/en.json",
       "./node_modules/particle-commands/dist/cmd/templates/project/**/*",
-      "./node_modules/particle-commands/node_modules/particle-library-manager/dist/init/**/*"
+      "./node_modules/particle-library-manager/dist/init/**/*"
     ],
     "outputPath": "build"
   },
