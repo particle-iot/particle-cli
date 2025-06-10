@@ -284,12 +284,10 @@ async function promptWifiNetworks(ui = new UI()) {
 	const rescanLabel = '[Rescan networks]';
 
 	const choices =[
-		new inquirer.Separator(),
+		...ssids,
+		otherNetworkLabel,
 		rescanLabel,
 		new inquirer.Separator(),
-		otherNetworkLabel,
-		new inquirer.Separator(),
-		...ssids
 	];
 	const question = [
 		{
@@ -316,7 +314,7 @@ async function _scanNetworks(ui) {
 		'Scanning for nearby Wi-Fi networks...',
 		_wifiScan()
 	) || [];
-	const ssids = networks?.map(n => n.ssid);
+	const ssids = [...new Set(networks?.map(n => n.ssid).filter(Boolean))];
 	return { networks, ssids };
 }
 
