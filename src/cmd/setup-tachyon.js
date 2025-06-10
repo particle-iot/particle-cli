@@ -77,7 +77,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
 		await this._verifyLogin();
 		this.ui.write('');
-		this.ui.write("...All set! You're logged in and ready to go!");
+		this.ui.write(`...All set! You're logged in as ${this.ui.chalk.bold(settings.username)} and ready to go!`);
 		// step 2 get device info
 		this._formatAndDisplaySteps("Now let's get the device info", 2);
 		this.ui.write('');
