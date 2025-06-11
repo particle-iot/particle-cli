@@ -282,39 +282,61 @@ async function promptWifiNetworks(ui = new UI()) {
 	const { ssids, networks } = await _scanNetworks(ui);
 	const otherNetworkLabel = '[Other Network]';
 	const rescanLabel = '[Rescan networks]';
+	let ssid;
 
-	const choices =[
-		...ssids,
-		otherNetworkLabel,
-		rescanLabel,
-		new inquirer.Separator(),
-	];
-	const question = [
-		{
-			type: 'list',
-			name: 'ssid',
-			message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
-			choices
-		}];
-	const { ssid } = await ui.prompt(question);
-	if (ssid === rescanLabel) {
-		return promptWifiNetworks(ui);
+	if (networks) { // error when trying to get networks
+		const choices =[
+			...ssids,
+			otherNetworkLabel,
+			rescanLabel,
+			new inquirer.Separator(),
+		];
+		const question = [
+			{
+				type: 'list',
+				name: 'ssid',
+				message: chalk.bold.white('Select the Wi-Fi network with which you wish to connect your device:'),
+				choices
+			}];
+		const { ssid: selected } = await ui.prompt(question);
+		if (selected === rescanLabel) {
+			return promptWifiNetworks(ui);
+		}
+		ssid = selected === otherNetworkLabel
+			? (await _requestWifiSSID(ui)).ssid
+			: selected;
+	} else {
+		ssid = (await _requestWifiSSID(ui)).ssid;
 	}
-	const pickedSSID = ssid === otherNetworkLabel ?
-		(await _requestWifiSSID(ui)).ssid
-		: ssid;
 
 	const password = await _requestWifiPassword({ ui, ssid, networks });
 
-	return { ssid: pickedSSID, password };
+	return { ssid, password };
 }
 
 async function _scanNetworks(ui) {
-	const networks = await ui.showBusySpinnerUntilResolved(
-		'Scanning for nearby Wi-Fi networks...',
-		_wifiScan()
-	) || [];
-	const ssids = [...new Set(networks?.map(n => n.ssid).filter(Boolean))];
+	let networks;
+	try {
+		networks = await ui.showBusySpinnerUntilResolved(
+			'Scanning for nearby Wi-Fi networks...',
+			_wifiScan()
+		);
+	} catch (error) {
+		// something happened so need to call manual instead of rescanning
+		let message = ui.chalk.yellow('Unable to scan Wi-Fi networks.');
+		let description;
+		if (os.platform() === 'win32') {
+			description = ui.chalk.yellow('Make sure Location Services are enabled in ' +
+				'the Location page of the  Privacy & security settings.');
+		} else {
+			description = ui.chalk.yellow('Ensure your system has the necessary permissions and tools to perform Wi-Fi scans.');
+		}
+		ui.write(`${message} ${description}`);
+	}
+
+	const ssids = networks
+		? [...new Set(networks.map(n => n.ssid).filter(Boolean))]
+		: undefined;
 	return { networks, ssids };
 }
 
@@ -347,7 +369,7 @@ async function _requestWifiSSID(ui) {
 }
 
 async function _requestWifiPassword({ ui, ssid, networks }) {
-	const network = networks.find((n) => n.ssid === ssid);
+	const network = networks?.find((n) => n.ssid === ssid);
 	const isOpen = network?.security === 'none' || network?.security === '';
 	const isManualEntry = !network;
 	const annotation = isManualEntry ? ' (leave it blank for open networks)': '';
