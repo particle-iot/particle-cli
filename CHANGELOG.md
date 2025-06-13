@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.36.2 - Jun 13 2025
+* Handle Wi-Fi scanning not working on Windows and Linux
+
 # 3.36.1 - May 31 2025
 * Ensure all generated system passwords are valid
 
