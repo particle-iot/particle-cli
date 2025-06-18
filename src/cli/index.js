@@ -30,6 +30,7 @@ const whoami = require('./whoami');
 const wifi = require('./wifi');
 const usb = require('./usb');
 const tachyon = require('./tachyon');
+const secrets = require('./secrets');
 
 /**
  * The default function export from this module registers all the available commands.
@@ -65,6 +66,7 @@ module.exports = function registerAllCommands(context) {
 	product(context);
 	project(context);
 	publish(context);
+	secrets(context);
 	serial(context);
 	subscribe(context);
 	tachyon(context);
