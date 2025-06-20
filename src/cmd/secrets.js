@@ -31,14 +31,14 @@ module.exports = class SecretsCommand extends CLICommandBase {
 
 	async update({ name, value, org }) {
 		const secretData = await secrets.update({ api: this.api, name, value, org });
-		this.ui.write(`Secret ${name} has been updated`);
+		this.ui.write(`Secret ${name} updated successfully.`);
 		this._printSecret(secretData);
 	}
 
 	async remove({ org, name }) {
 		const isDeleted = await secrets.remove({ api: this.api, org, name });
 		if (isDeleted) {
-			this.ui.write(`Secret ${name} has been removed`);
+			this.ui.write(`Secret ${name} removed successfully.`);
 		}
 	}
 
