@@ -387,6 +387,46 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	listSecrets({ orgSlug }) {
+		return this._wrap(this.api.request({
+			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets`,
+			auth: this.accessToken
+		}));
+	}
+
+	getSecret({ orgSlug, name }) {
+		return this._wrap(this.api.request({
+			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets/${name}`,
+			auth: this.accessToken
+		}));
+	}
+
+	createSecret({ orgSlug, name, value }) {
+		return this._wrap(this.api.request({
+			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets`,
+			method: 'post',
+			auth: this.accessToken,
+			data: { secret: { name, value } }
+		}));
+	}
+
+	updateSecret({ orgSlug, name, value }) {
+		return this._wrap(this.api.request({
+			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets/${name}`,
+			method: 'put',
+			auth: this.accessToken,
+			data: { secret: { value } }
+		}));
+	}
+
+	removeSecret({ orgSlug, name }) {
+		return this._wrap(this.api.request({
+			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets/${name}`,
+			method: 'delete',
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
