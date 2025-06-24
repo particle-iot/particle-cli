@@ -58,8 +58,6 @@ async function formatSecretList(secretList) {
 			createdAt: secret.created_at,
 			updatedAt: secret.updated_at,
 			lastAccessedAt: secret.last_accessed_at,
-			integrationsCount: secret.integrations.length,
-			logicFunctionsCount: secret.logic_functions.length,
 			usageCount: secret.integrations.length + secret.logic_functions.length,
 		};
 	});

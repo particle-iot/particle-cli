@@ -55,35 +55,36 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		if (secret.usageCount !== undefined) {
 			this.ui.write(`    Usage count: ${secret.usageCount}`);
 		}
-		if (secret.integrationsCount !== undefined) {
-			this.ui.write(`    Integrations usage count: ${secret.integrationsCount}`);
-		}
-		if (secret.logicFunctionsCount !== undefined) {
-			this.ui.write(`    Logic Functions usage count: ${secret.logicFunctionsCount}`);
-		}
-
 		if (secret.logicFunctions) {
-			this.ui.write('    Logic Functions:');
-			secret.logicFunctions.forEach(logicFunction => {
-				const logicUrl = `${this.consoleBaseUrl}/logic/functions/${logicFunction}/details`;
-				this.ui.write(this.ui.chalk.dim(`     - ${logicUrl}`));
-			});
+			if (secret.logicFunctions.length > 0) {
+				this.ui.write('    Logic Functions:');
+				secret.logicFunctions.forEach(logicFunction => {
+					const logicUrl = `${this.consoleBaseUrl}/logic/functions/${logicFunction}/details`;
+					this.ui.write(this.ui.chalk.dim(`     - ${logicUrl}`));
+				});
+			} else {
+				this.ui.write(`    Logic Functions: ${this.ui.chalk.dim('(none)')}`);
+			}
 		}
 		if (secret.integrations) {
-			this.ui.write('    Integrations:');
-			secret.integrations.forEach(integration => {
-				const orgRoute = secret.org ? `orgs/${secret.org}` : '';
-				const productRoute = integration.product_slug ? `${integration.product_slug}` : '';
-				let integrationRoute = '';
-				if (productRoute) {
-					integrationRoute = `${this.consoleBaseUrl}/${productRoute}/integrations/${integration.id}`;
-				} else if (orgRoute) {
-					integrationRoute = `${this.consoleBaseUrl}/${orgRoute}/integrations/${integration.id}`;
-				} else {
-					integrationRoute = `${this.consoleBaseUrl}/integrations/${integration.id}`;
-				}
-				this.ui.write(this.ui.chalk.dim(`     - ${integrationRoute}`));
-			});
+			if (secret.integrations.length > 0) {
+				this.ui.write('    Integrations:');
+				secret.integrations.forEach(integration => {
+					const orgRoute = secret.org ? `orgs/${secret.org}` : '';
+					const productRoute = integration.product_slug ? `${integration.product_slug}` : '';
+					let integrationRoute = '';
+					if (productRoute) {
+						integrationRoute = `${this.consoleBaseUrl}/${productRoute}/integrations/${integration.id}`;
+					} else if (orgRoute) {
+						integrationRoute = `${this.consoleBaseUrl}/${orgRoute}/integrations/${integration.id}`;
+					} else {
+						integrationRoute = `${this.consoleBaseUrl}/integrations/${integration.id}`;
+					}
+					this.ui.write(this.ui.chalk.dim(`     - ${integrationRoute}`));
+				});
+			} else {
+				this.ui.write(`    Integrations: ${this.ui.chalk.dim('(none)')}`);
+			}
 		}
 
 		this.ui.write(`    Created at: ${secret.createdAt}`);
