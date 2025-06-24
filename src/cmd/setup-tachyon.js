@@ -704,6 +704,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 				config.cliConfig = await fs.readFile(profileFile, 'utf8');
 			}
 		}
+		// inject initial time
+		config['initialTime'] = new Date().toISOString();
 
 		// Write config JSON to a temporary file (generate a filename with the temp npm module)
 		// prefixed by the JSON string length as a 32 bit integer
