@@ -13,12 +13,13 @@ module.exports = class SecretsCommand extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
 		this.api = createAPI();
+		this.consoleBaseUrl = 'https://console.particle.io';
 	}
 
 	async list({ org, json }) {
 		const secretsData = await secrets.list({ org, api: this.api });
 		if (!json) {
-			secretsData.forEach((secret) => this._printSecret(secret));
+			secretsData.forEach((secret) => this._printSecret({ ...secret, org }));
 		} else {
 			this.ui.write(JSON.stringify(secretsData, null, 2));
 		}
@@ -26,7 +27,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 
 	async get({ name, org }){
 		const secretData = await secrets.get({ api: this.api, name, org });
-		this._printSecret(secretData);
+		this._printSecret({ ...secretData, org });
 	}
 
 	async update({ name, value, org }) {
@@ -64,13 +65,24 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		if (secret.logicFunctions) {
 			this.ui.write('    Logic Functions:');
 			secret.logicFunctions.forEach(logicFunction => {
-				this.ui.write(`		${logicFunction}`);
+				const logicUrl = `${this.consoleBaseUrl}/logic/functions/${logicFunction}/details`;
+				this.ui.write(this.ui.chalk.dim(`     - ${logicUrl}`));
 			});
 		}
 		if (secret.integrations) {
 			this.ui.write('    Integrations:');
 			secret.integrations.forEach(integration => {
-				this.ui.write(this.ui.chalk.dim(`     - ${integration.name}`));
+				const orgRoute = secret.org ? `orgs/${secret.org}` : '';
+				const productRoute = integration.product_slug ? `${integration.product_slug}` : '';
+				let integrationRoute = '';
+				if (productRoute) {
+					integrationRoute = `${this.consoleBaseUrl}/${productRoute}/integrations/${integration.id}`;
+				} else if (orgRoute) {
+					integrationRoute = `${this.consoleBaseUrl}/${orgRoute}/integrations/${integration.id}`;
+				} else {
+					integrationRoute = `${this.consoleBaseUrl}/integrations/${integration.id}`;
+				}
+				this.ui.write(this.ui.chalk.dim(`     - ${integrationRoute}`));
 			});
 		}
 
