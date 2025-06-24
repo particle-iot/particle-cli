@@ -59,8 +59,6 @@ const formattedSecretList = [
 		createdAt: secretsList.secrets[0].created_at,
 		updatedAt: secretsList.secrets[0].updated_at,
 		lastAccessedAt: secretsList.secrets[0].last_accessed_at,
-		integrationsCount: secretsList.secrets[0].integrations.length,
-		logicFunctionsCount: secretsList.secrets[0].logic_functions.length,
 		usageCount: secretsList.secrets[0].integrations.length + secretsList.secrets[0].logic_functions.length,
 	},
 	{
@@ -68,8 +66,6 @@ const formattedSecretList = [
 		createdAt: secretsList.secrets[1].created_at,
 		updatedAt: secretsList.secrets[1].updated_at,
 		lastAccessedAt: secretsList.secrets[1].last_accessed_at,
-		integrationsCount: secretsList.secrets[1].integrations.length,
-		logicFunctionsCount: secretsList.secrets[1].logic_functions.length,
 		usageCount: secretsList.secrets[1].integrations.length + secretsList.secrets[1].logic_functions.length,
 	}
 ];
