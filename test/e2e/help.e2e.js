@@ -69,6 +69,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'login', 'logout', 'monitor', 'nyan', 'preprocess',
 		'product device list', 'product device add', 'product device remove',
 		'product device', 'product', 'project create', 'project', 'publish',
+		'secrets list', 'secrets get', 'secrets create', 'secrets update', 'secrets remove', 'secrets',
 		'serial list', 'serial monitor', 'serial identify', 'serial wifi',
 		'serial mac', 'serial inspect', 'serial flash', 'serial', 'subscribe',
 		'tachyon setup', 'tachyon download-package', 'tachyon clean-cache',
