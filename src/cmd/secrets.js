@@ -13,7 +13,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
 		this.api = createAPI();
-		this.consoleBaseUrl = 'https://console.particle.io';
+		this.consoleBaseUrl = settings.isStaging ? 'https://console.staging.particle.io': 'https://console.particle.io';
 	}
 
 	async list({ org, json }) {
