@@ -17,7 +17,10 @@ module.exports = class SecretsCommand extends CLICommandBase {
 	}
 
 	async list({ org, json }) {
-		const secretsData = await secrets.list({ org, api: this.api });
+		const secretsData = await this.ui.showBusySpinnerUntilResolved(
+			'Retrieving secrets',
+			secrets.list({ org, api: this.api })
+		);
 		if (!json) {
 			secretsData.forEach((secret) => this._printSecret({ ...secret, org }));
 		} else {
@@ -26,18 +29,27 @@ module.exports = class SecretsCommand extends CLICommandBase {
 	}
 
 	async get({ name, org }){
-		const secretData = await secrets.get({ api: this.api, name, org });
+		const secretData = await this.ui.showBusySpinnerUntilResolved(
+			'Retrieving secret',
+			secrets.get({ api: this.api, name, org })
+		);
 		this._printSecret({ ...secretData, org });
 	}
 
 	async update({ name, value, org }) {
-		const secretData = await secrets.update({ api: this.api, name, value, org });
+		const secretData = await this.ui.showBusySpinnerUntilResolved(
+			'Updating secret',
+			secrets.update({ api: this.api, name, value, org })
+		);
 		this.ui.write(`Secret ${name} updated successfully.`);
 		this._printSecret(secretData);
 	}
 
 	async remove({ org, name }) {
-		const isDeleted = await secrets.remove({ api: this.api, org, name });
+		const isDeleted = await this.ui.showBusySpinnerUntilResolved(
+			'Remove secret',
+			secrets.remove({ api: this.api, org, name })
+		);
 		if (isDeleted) {
 			this.ui.write(`Secret ${name} removed successfully.`);
 		}
