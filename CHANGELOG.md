@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.37.0 - Jun 25 2025
+* Add cloud secrets new commands
+* Add initial time to tachyon setup configuration
+
 # 3.36.2 - Jun 13 2025
 * Handle Wi-Fi scanning not working on Windows and Linux
 
