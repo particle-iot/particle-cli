@@ -14,10 +14,9 @@ const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
 const { platformForId, PLATFORMS } = require('../lib/platform');
 const path = require('path');
-const { getEdlDevices } = require('particle-usb');
 const { delay } = require('../lib/utilities');
 const semver = require('semver');
-const { prepareFlashFiles, getTachyonInfo, promptWifiNetworks } = require('../lib/tachyon-utils');
+const { prepareFlashFiles, getTachyonInfo, promptWifiNetworks, getEDLDevice } = require('../lib/tachyon-utils');
 const { supportedCountries } = require('../lib/supported-countries');
 
 
@@ -81,7 +80,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		// step 2 get device info
 		this._formatAndDisplaySteps("Now let's get the device info", 2);
 		this.ui.write('');
-		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
+		const { deviceId, usbVersion } = await getEDLDevice({ ui: this.ui, showSetupMessage: true });
 		this.deviceId = deviceId;
 		this.usbVersion = usbVersion;
 		// ensure logs dir
@@ -115,44 +114,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 8
 		const flashSuccess = await this._flashStep(config.packagePath, xmlPath, config); // step 9
 		await this._finalStep(flashSuccess, config); // step 10
-	}
-
-	async _verifyDeviceInEDLMode() {
-		let edlDevices = [];
-		let device;
-		let messageShown = false;
-		while (edlDevices.length === 0) {
-			try {
-				edlDevices = await getEdlDevices();
-				if (edlDevices.length > 0) {
-					device = edlDevices[0];
-					break;
-				}
-				if (!messageShown) {
-					const message = `${this.ui.chalk.bold('Before we get started, we need to power on your Tachyon board')}:` +
-					`${os.EOL}${os.EOL}` +
-					`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
-					`   The red light should turn on!${os.EOL}${os.EOL}` +
-					`2. Put the Tachyon device into ${this.ui.chalk.bold('system update')} mode:${os.EOL}` +
-					`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
-					`   - When the light starts flashing yellow, release the button.${os.EOL}`;
-					this.ui.stdout.write(message);
-					this.ui.stdout.write(os.EOL);
-					messageShown = true;
-				}
-			} catch (error) {
-				// ignore error
-			}
-			await delay(DEVICE_READY_WAIT_TIME);
-		}
-		if (messageShown) {
-			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!${os.EOL}`);
-			await delay(1000); // give the user a moment to read the message
-		}
-		return {
-			deviceId: device.id,
-			usbVersion: device.usbVersion
-		};
 	}
 
 	async _getDeviceInfo() {

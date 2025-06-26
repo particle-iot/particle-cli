@@ -15,11 +15,11 @@ module.exports = class IdentifyTachyonCommand extends CLICommandBase {
 	}
 
 	async identify() {
-		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
-		const outputLog = path.join(os.tmpdir(), `tachyon_${deviceId}_identify_${Date.now()}.log`);
+		const device = await getEDLDevice({ ui: this.ui });
+		const outputLog = path.join(os.tmpdir(), `tachyon_${device.id}_identify_${Date.now()}.log`);
 
 		try {
-			const tachyonInfo = await getTachyonInfo({ outputLog, ui: this.ui });
+			const tachyonInfo = await getTachyonInfo({ outputLog, ui: this.ui, device });
 			this.printIdentification(tachyonInfo);
 		} catch (error) {
 			this.ui.stdout.write(`An error ocurred while trying to identify your tachyon ${os.EOL}`);
