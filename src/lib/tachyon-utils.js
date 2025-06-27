@@ -66,7 +66,7 @@ async function getEDLDevice({ ui = new UI(), showSetupMessage = false } = {}) {
 	}
 }
 
-async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), deviceId, operation, checkFiles = false } = {}) {
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false } = {}) {
 	const { firehosePath, tempPath, gptXmlPath }  = await initFiles();
 
 	const partitionTable = await readPartitionsFromDevice({
@@ -74,12 +74,13 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		ui,
 		tempPath,
 		firehosePath,
-		gptXmlPath
+		gptXmlPath,
+		device
 	});
 	const partitions = partitionDefinitions({
 		partitionList: partitionsList,
 		partitionTable,
-		deviceId,
+		deviceId: device.id,
 		dir
 	});
 	const partitionFilenames = partitions.reduce((acc, partition) => {
@@ -105,7 +106,7 @@ async function initFiles() {
 	return { firehosePath, gptXmlPath, tempPath };
 }
 
-async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, gptXmlPath }) {
+async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, gptXmlPath, device }) {
 	const files = [
 		firehosePath,
 		gptXmlPath
@@ -117,7 +118,8 @@ async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, g
 		updateFolder: tempPath,
 		ui: ui,
 		currTask: 'Read partitions',
-		skipReset: true
+		skipReset: true,
+		serialNumber: device.serialNumber
 	});
 	await qdl.run();
 	return parsePartitions({ gptPath: tempPath });
@@ -208,9 +210,10 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 		logFile: outputLog,
 		partitionsList: [FSG_PARTITION],
 		dir: partitionDir,
-		deviceId: device.id,
+		device: device,
 		operation: 'read'
 	});
+	console.log('here still work');
 	const files = [
 		firehosePath,
 		xmlFile
@@ -221,6 +224,7 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 		ui: ui,
 		currTask: 'Identify',
 		skipReset: true,
+		serialNumber: device.serialNumber
 	});
 	await qdl.run();
 	return getIdentification({ deviceId: device.id, partitionTable, partitionFilenames });
