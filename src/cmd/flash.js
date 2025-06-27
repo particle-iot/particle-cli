@@ -74,7 +74,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	//returns true if successful or false if failed
-	async flashTachyon({ files, skipReset, output, verbose=true }) {
+	async flashTachyon({ device, files, skipReset, output, verbose=true }) {
 		let zipFile;
 		let includeDir = '';
 		let updateFolder = '';
@@ -114,8 +114,11 @@ module.exports = class FlashCommand extends CLICommandBase {
 				this.ui.write(`${os.EOL}Starting download. See logs at: ${outputLog}${os.EOL}`);
 			}
 			const startTime = new Date();
-			const { id: deviceId } = await getEDLDevice({ ui: this.ui });
-			addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon Flash' });
+			if (!device) {
+				device = await getEDLDevice({ ui: this.ui });
+			}
+
+			addLogHeaders({ outputLog, startTime, deviceId: device.id, commandName: 'Tachyon Flash' });
 			addManifestInfoLog({ outputLog, manifest: manifestInfo });
 			const qdl = new QdlFlasher({
 				files: filesToProgram,
@@ -125,7 +128,8 @@ module.exports = class FlashCommand extends CLICommandBase {
 				ui: this.ui,
 				outputLogFile: outputLog,
 				skipReset,
-				currTask: 'OS'
+				currTask: 'OS',
+				serialNumber: device.serialNumber
 			});
 			await qdl.run();
 			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
@@ -136,22 +140,26 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async flashTachyonXml({ files, skipReset, output }) {
+	async flashTachyonXml({ device, files, skipReset, output }) {
 		try {
 			const zipFile = files.find(f => f.endsWith('.zip'));
 			const xmlFile = files.find(f => f.endsWith('.xml'));
-			const { id: deviceId } = await getEDLDevice({ ui: this.ui });
+			if (!device) {
+				device = await getEDLDevice({ ui: this.ui });
+			}
+
 
 			const firehoseFile = await this._getFirehoseFileFromZip(zipFile);
 			// add log headers
 			const startTime = new Date();
-			addLogHeaders({ outputLog: output, startTime, deviceId, commandName: 'Tachyon Flash XML' });
+			addLogHeaders({ outputLog: output, startTime, deviceId: device.id, commandName: 'Tachyon Flash XML' });
 			const qdl = new QdlFlasher({
 				files: [firehoseFile, xmlFile],
 				ui: this.ui,
 				outputLogFile: output,
 				skipReset,
-				currTask: 'Configuration file'
+				currTask: 'Configuration file',
+				serialNumber: device.serialNumber
 			});
 
 			await qdl.run();
