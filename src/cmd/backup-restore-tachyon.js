@@ -22,7 +22,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	}
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = this._logsDir } = {}) {
-		const { id: deviceId } = await getEDLDevice({ ui: this.ui });
+		const device  = await getEDLDevice({ ui: this.ui });
 		const outputDirExist = await fs.exists(outputDir);
 		const logDirExist = await fs.exists(logDir);
 		if (!outputDirExist) {
@@ -33,18 +33,18 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		}
 
 		const startTime = new Date();
-		const outputLog = path.join(logDir, `tachyon_${deviceId}_backup_${Date.now()}.log`);
+		const outputLog = path.join(logDir, `tachyon_${device.id}_backup_${Date.now()}.log`);
 
-		this.ui.stdout.write(`Backing up NV data from device ${deviceId}...${os.EOL}`);
+		this.ui.stdout.write(`Backing up NV data from device ${device.id}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
-		addLogHeaders({ outputLog, startTime, deviceId, commandName: 'Tachyon backup' });
+		addLogHeaders({ outputLog, startTime, deviceId: device.id, commandName: 'Tachyon backup' });
 		try {
 			const { firehosePath, xmlFile } = await prepareFlashFiles({
 				logFile: outputLog,
 				ui: this.ui,
 				partitionsList: PARTITIONS_TO_BACKUP,
 				dir: outputDir,
-				deviceId,
+				device,
 				operation: 'read'
 			});
 			const files = [
@@ -58,9 +58,10 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 				ui: this.ui,
 				currTask: 'Backup',
 				skipReset: true,
+				serialNumber: device.serialNumber
 			});
 			await qdl.run();
-			this.ui.stdout.write(`Backing up NV data from device ${deviceId} complete!${os.EOL}`);
+			this.ui.stdout.write(`Backing up NV data from device ${device.id} complete!${os.EOL}`);
 		} catch (error) {
 			this.ui.stdout.write(`An error ocurred while trying to backing up your tachyon ${os.EOL}`);
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
