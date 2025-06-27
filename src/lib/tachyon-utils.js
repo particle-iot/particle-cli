@@ -213,7 +213,7 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 		device: device,
 		operation: 'read'
 	});
-	console.log('here still work');
+
 	const files = [
 		firehosePath,
 		xmlFile
