@@ -230,6 +230,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			try {
 				const data = fs.readFileSync(loadConfig, 'utf8');
 				const config = JSON.parse(data);
+				// remove board to prevent overwriting.
+				delete config.board;
 				return { ...config, silent: true, loadedFromFile: true };
 			} catch (error) {
 				throw new Error(`The configuration file is not a valid JSON file: ${error.message}`);
@@ -741,7 +743,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const configFields = [
 			'region',
 			'version',
-			'board',
 			'variant',
 			'skipCli',
 			'systemPassword',
