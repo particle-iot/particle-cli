@@ -44,7 +44,7 @@ let settings = {
 		'tinker': true
 	},
 
-	tachyonMeta: 'https://tachyon-ci.particle.io/meta',
+	tachyonMeta: 'https://linux-dist.particle.io/meta',
 	tachyonCacheLimitGB: 10
 };
 

@@ -33,7 +33,7 @@ class DownloadManager {
 		}
 	}
 
-	async fetchManifest({ version = 'latest', isRb3Board = false }) {
+	async fetchManifest({ version = 'stable', isRb3Board = false }) {
 		const type = isRb3Board ? 'rb3g2' : 'tachyon';
 		const metadataUrl = `${settings.tachyonMeta}/${type}-${encodeURIComponent(version)}.json`;
 
