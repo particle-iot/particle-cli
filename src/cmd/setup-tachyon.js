@@ -14,14 +14,10 @@ const { sha512crypt } = require('sha512crypt-node');
 const DownloadManager = require('../lib/download-manager');
 const { platformForId, PLATFORMS } = require('../lib/platform');
 const path = require('path');
-const { getEdlDevices } = require('particle-usb');
-const { delay } = require('../lib/utilities');
 const semver = require('semver');
-const { prepareFlashFiles, getTachyonInfo, promptWifiNetworks } = require('../lib/tachyon-utils');
+const { prepareFlashFiles, getTachyonInfo, promptWifiNetworks, getEDLDevice } = require('../lib/tachyon-utils');
 const { supportedCountries } = require('../lib/supported-countries');
 
-
-const DEVICE_READY_WAIT_TIME = 500; // ms
 const showWelcomeMessage = (ui) => `
 ===================================================================================
 			  Particle Tachyon Setup Command
@@ -50,7 +46,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		spinnerMixin(this);
 		this._setupApi();
 		this.ui = ui || this.ui;
-		this.deviceId = null;
+		this.device = null;
 		this._baseDir = settings.ensureFolder();
 		this._logsDir = path.join(this._baseDir, 'logs');
 
@@ -81,12 +77,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		// step 2 get device info
 		this._formatAndDisplaySteps("Now let's get the device info", 2);
 		this.ui.write('');
-		const { deviceId, usbVersion } = await this._verifyDeviceInEDLMode();
-		this.deviceId = deviceId;
-		this.usbVersion = usbVersion;
+		const device = await getEDLDevice({ ui: this.ui, showSetupMessage: true });
+		this.device = device;
 		// ensure logs dir
 		await fs.ensureDir(this._logsDir);
-		this.outputLog = path.join(this._logsDir, `tachyon_flash_${this.deviceId}_${Date.now()}.log`);
+		this.outputLog = path.join(this._logsDir, `tachyon_flash_${this.device.id}_${Date.now()}.log`);
 		await fs.ensureFile(this.outputLog);
 		this.ui.write(`${os.EOL}Starting Process. See logs at: ${this.outputLog}${os.EOL}`);
 		const deviceInfo = await this._getDeviceInfo();
@@ -111,48 +106,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		config.packagePath = await this._downloadStep(config); // step 6
 		this.product = await this._getProductDetails(config.productId);
 		config.registrationCode = await this._registerDeviceStep(config); // step 7
-		config.esim = await this._getESIMProfiles({ deviceId: this.deviceId, country: config.country, productId: config.productId }); // after add device to product
+		config.esim = await this._getESIMProfiles({ deviceId: this.device.id, country: config.country, productId: config.productId }); // after add device to product
 		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 8
 		const flashSuccess = await this._flashStep(config.packagePath, xmlPath, config); // step 9
 		await this._finalStep(flashSuccess, config); // step 10
-	}
-
-	async _verifyDeviceInEDLMode() {
-		let edlDevices = [];
-		let device;
-		let messageShown = false;
-		while (edlDevices.length === 0) {
-			try {
-				edlDevices = await getEdlDevices();
-				if (edlDevices.length > 0) {
-					device = edlDevices[0];
-					break;
-				}
-				if (!messageShown) {
-					const message = `${this.ui.chalk.bold('Before we get started, we need to power on your Tachyon board')}:` +
-					`${os.EOL}${os.EOL}` +
-					`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
-					`   The red light should turn on!${os.EOL}${os.EOL}` +
-					`2. Put the Tachyon device into ${this.ui.chalk.bold('system update')} mode:${os.EOL}` +
-					`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
-					`   - When the light starts flashing yellow, release the button.${os.EOL}`;
-					this.ui.stdout.write(message);
-					this.ui.stdout.write(os.EOL);
-					messageShown = true;
-				}
-			} catch (error) {
-				// ignore error
-			}
-			await delay(DEVICE_READY_WAIT_TIME);
-		}
-		if (messageShown) {
-			this.ui.stdout.write(`Your device is now in ${this.ui.chalk.bold('system update')} mode!${os.EOL}`);
-			await delay(1000); // give the user a moment to read the message
-		}
-		return {
-			deviceId: device.id,
-			usbVersion: device.usbVersion
-		};
 	}
 
 	async _getDeviceInfo() {
@@ -160,6 +117,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			return await this.ui.showBusySpinnerUntilResolved('Getting device info', getTachyonInfo({
 				outputLog: this.outputLog,
 				ui: this.ui,
+				device: this.device
 			}));
 		} catch (error) {
 			// If this fails, the flash won't work so abort early.
@@ -177,10 +135,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(` -  Region: ${deviceInfo.region}`);
 		this.ui.write(` -  OS Version: ${deviceInfo.osVersion}`);
 		let usbWarning = '';
-		if (this.usbVersion.major <= 2) {
+		if (this.device.usbVersion.major <= 2) {
 			usbWarning = this.ui.chalk.yellow(' (use a USB 3.0 port and USB-C cable for faster flashing)');
 		}
-		this.ui.write(` -  USB Version: ${this.usbVersion.major}.${this.usbVersion.minor}${usbWarning}`);
+		this.ui.write(` -  USB Version: ${this.device.usbVersion.major}.${this.device.usbVersion.minor}${usbWarning}`);
 	}
 
 	async _verifyLogin() {
@@ -385,7 +343,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
 			'Creating the configuration file to write to the Tachyon device...',
 			9,
-			() => this._createConfigBlob(config, this.deviceId)
+			() => this._createConfigBlob(config, this.device.id)
 		);
 
 		const { xmlFile: xmlPath } = await prepareFlashFiles({
@@ -393,9 +351,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			ui: this.ui,
 			partitionsList: ['misc'],
 			dir: path.dirname(configBlobPath),
-			deviceId: this.deviceId,
+			deviceId: this.device.id,
 			operation: 'program',
-			checkFiles: true
+			checkFiles: true,
+			device: this.device
 		});
 		// Save the config file if requested
 		if (config.saveConfig) {
@@ -407,7 +366,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _flashStep(packagePath, xmlPath, config) {
 		let message = `Heads up: this is a large image and flashing will take about 2 minutes to complete.${os.EOL}`;
-		const slowUsb = this.usbVersion.major <= 2;
+		const slowUsb = this.device.usbVersion.major <= 2;
 		if (slowUsb) {
 			message = `Heads up: this is a large image and flashing will take about 8 minutes to complete.${os.EOL}` +
 				this.ui.chalk.yellow(`${os.EOL}The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
@@ -471,7 +430,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	_consoleLink() {
 		const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
-		return `${baseUrl}/${this.product.slug}/devices/${this.deviceId}`;
+		return `${baseUrl}/${this.product.slug}/devices/${this.device.id}`;
 	}
 
 	async _runStepWithTiming(stepDesc, stepNumber, asyncTask, minDuration = 2000) {
@@ -675,8 +634,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	async _getRegistrationCode(productId) {
-		await this._assignDeviceToProduct({ productId: productId, deviceId: this.deviceId });
-		const data = await this.api.getRegistrationCode({ productId, deviceId: this.deviceId });
+		await this._assignDeviceToProduct({ productId: productId, deviceId: this.device.id });
+		const data = await this.api.getRegistrationCode({ productId, deviceId: this.device.id });
 		return data.registration_code;
 	}
 
@@ -733,9 +692,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const flashCommand = new FlashCommand();
 
 		if (!skipFlashingOs) {
-			await flashCommand.flashTachyon({ files: [packagePath], skipReset: true, output: this.outputLog, verbose: false });
+			await flashCommand.flashTachyon({ device: this.device, files: [packagePath], skipReset: true, output: this.outputLog, verbose: false });
 		}
-		await flashCommand.flashTachyonXml({ files, skipReset, output: this.outputLog });
+		await flashCommand.flashTachyonXml({ device: this.device, files, skipReset, output: this.outputLog });
 		return true;
 	}
 

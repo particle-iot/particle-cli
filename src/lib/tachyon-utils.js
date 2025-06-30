@@ -57,31 +57,16 @@ function addLogFooter({ outputLog, startTime, endTime }) {
 	fs.appendFileSync(outputLog, `${os.EOL}`);
 }
 
-async function getEDLDevice({ ui = new UI() } = {}) {
-	let edlDevices = [];
-	let messageShown = false;
-	while (edlDevices.length === 0) {
-		try {
-			edlDevices = await getEdlDevices();
-			if (edlDevices.length > 0) {
-				return edlDevices[0];
-			}
-			if (!messageShown) {
-				if (ui) {
-					ui.stdout.write(`Waiting for device to enter system update mode...${os.EOL}`);
-				} else {
-					console.log(`Waiting for device to enter system update mode...${os.EOL}`);
-				}
-				messageShown = true;
-			}
-		} catch (error) {
-			// ignore error
-		}
-		await delay(DEVICE_READY_WAIT_TIME);
+async function getEDLDevice({ ui = new UI(), showSetupMessage = false } = {}) {
+	const devices = await getEDLModeDevices(ui, showSetupMessage);
+	if (devices.length === 1) {
+		return devices[0];
+	} else {
+		return edlModePicker({ ui: ui, devices });
 	}
 }
 
-async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), deviceId, operation, checkFiles = false } = {}) {
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false } = {}) {
 	const { firehosePath, tempPath, gptXmlPath }  = await initFiles();
 
 	const partitionTable = await readPartitionsFromDevice({
@@ -89,12 +74,13 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		ui,
 		tempPath,
 		firehosePath,
-		gptXmlPath
+		gptXmlPath,
+		device
 	});
 	const partitions = partitionDefinitions({
 		partitionList: partitionsList,
 		partitionTable,
-		deviceId,
+		deviceId: device.id,
 		dir
 	});
 	const partitionFilenames = partitions.reduce((acc, partition) => {
@@ -120,7 +106,7 @@ async function initFiles() {
 	return { firehosePath, gptXmlPath, tempPath };
 }
 
-async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, gptXmlPath }) {
+async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, gptXmlPath, device }) {
 	const files = [
 		firehosePath,
 		gptXmlPath
@@ -132,7 +118,8 @@ async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, g
 		updateFolder: tempPath,
 		ui: ui,
 		currTask: 'Read partitions',
-		skipReset: true
+		skipReset: true,
+		serialNumber: device.serialNumber
 	});
 	await qdl.run();
 	return parsePartitions({ gptPath: tempPath });
@@ -210,8 +197,12 @@ function getXmlContent({ partitions, operation = 'read' }) {
 	return xmlLines.join('\n');
 }
 
-async function getTachyonInfo({ outputLog, ui }) {
-	const { id: deviceId } = await getEDLDevice();
+async function getTachyonInfo({ outputLog, ui, device }) {
+	if (!device) {
+		const _device = await getEDLDevice();
+		device = _device;
+	}
+
 	const partitionDir = await temp.mkdir();
 
 	const { firehosePath, xmlFile, partitionTable, partitionFilenames } = await prepareFlashFiles({
@@ -219,9 +210,10 @@ async function getTachyonInfo({ outputLog, ui }) {
 		logFile: outputLog,
 		partitionsList: [FSG_PARTITION],
 		dir: partitionDir,
-		deviceId,
+		device: device,
 		operation: 'read'
 	});
+
 	const files = [
 		firehosePath,
 		xmlFile
@@ -232,9 +224,10 @@ async function getTachyonInfo({ outputLog, ui }) {
 		ui: ui,
 		currTask: 'Identify',
 		skipReset: true,
+		serialNumber: device.serialNumber
 	});
 	await qdl.run();
-	return getIdentification({ deviceId, partitionTable, partitionFilenames });
+	return getIdentification({ deviceId: device.id, partitionTable, partitionFilenames });
 }
 
 async function getIdentification({ deviceId, partitionTable, partitionFilenames }) {
@@ -384,6 +377,55 @@ async function _requestWifiPassword({ ui, ssid, networks }) {
 	});
 }
 
+async function getEDLModeDevices(ui, showSetupMessage) {
+	let edlDevices = [];
+	let devices;
+	let messageShown = false;
+	while (edlDevices.length === 0) {
+		try {
+			edlDevices = await getEdlDevices();
+			if (edlDevices.length > 0) {
+				devices = edlDevices;
+				break;
+			}
+			if (!messageShown) {
+				const defaultMessage = `Waiting for device to enter system update mode...${os.EOL}`;
+				const setupMessage = `${ui.chalk.bold('Before we get started, we need to power on your Tachyon board')}:` +
+					`${os.EOL}${os.EOL}` +
+					`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
+					`   The red light should turn on!${os.EOL}${os.EOL}` +
+					`2. Put the Tachyon device into ${ui.chalk.bold('system update')} mode:${os.EOL}` +
+					`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
+					`   - When the light starts flashing yellow, release the button.${os.EOL}`;
+				ui.stdout.write(showSetupMessage ? setupMessage: defaultMessage);
+				ui.stdout.write(os.EOL);
+				messageShown = true;
+			}
+		} catch (error) {
+			// ignore error
+		}
+		await delay(DEVICE_READY_WAIT_TIME);
+	}
+	if (messageShown && showSetupMessage) {
+		ui.stdout.write(`Your device is now in ${ui.chalk.bold('system update')} mode!${os.EOL}`);
+		await delay(1000); // give the user a moment to read the message
+	}
+	return devices;
+}
+
+async function edlModePicker({ ui, devices }) {
+	const choices = devices.map(device => device.id);
+	const question = [
+		{
+			type: 'list',
+			name: 'deviceId',
+			message: chalk.bold.white('Select a device'),
+			choices
+		}];
+	const { deviceId: selected } = await ui.prompt(question);
+	return devices.find((device) => device.id === selected);
+}
+
 module.exports = {
 	addLogHeaders,
 	addManifestInfoLog,
@@ -391,5 +433,5 @@ module.exports = {
 	getEDLDevice,
 	prepareFlashFiles,
 	getTachyonInfo,
-	promptWifiNetworks
+	promptWifiNetworks,
 };

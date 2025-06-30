@@ -11,7 +11,7 @@ const os = require('os');
 const TACHYON_STORAGE_TYPE = 'ufs';
 
 class QdlFlasher {
-	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile, skipReset=false, currTask=null }) {
+	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile, skipReset=false, currTask=null, serialNumber }) {
 		this.files = files;
 		this.includeDir = includeDir;
 		this.updateFolder = updateFolder;
@@ -27,11 +27,15 @@ class QdlFlasher {
 		this.preparingDownload = false;
 		this.skipReset = skipReset;
 		this.currTask = currTask;
+		this.serialNumber = serialNumber;
 	}
 
 	async run() {
 		let qdlProcess;
 		try {
+			if (!this.serialNumber) {
+				throw new Error('serial Number not provided yet'); // this helps to know if I've implemented everything
+			}
 			const qdlPath = await this.getExecutable();
 			const qdlArguments = this.buildArgs({ files: this.files, includeDir: this.includeDir, zip: this.zip });
 			this.progressBar = this.ui.createProgressBar();
@@ -91,6 +95,7 @@ class QdlFlasher {
 		const { tachyonFlashChunkSize } = settings;
 		return [
 			'--storage', TACHYON_STORAGE_TYPE,
+			'--serial', this.serialNumber,
 			...(tachyonFlashChunkSize ? ['--out-chunk-size', tachyonFlashChunkSize] : []),
 			...(zip ? ['--zip', zip] : []),
 			...(includeDir ? ['--include', includeDir] : []),
