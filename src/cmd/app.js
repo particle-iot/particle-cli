@@ -15,7 +15,7 @@ const { platformForId } = require('../lib/platform');
 
 const _ = require('lodash');
 
-const DOCKER_CONFIG_URL = 'https://tachyon-ci.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
+const DOCKER_CONFIG_URL = 'https://linux-dist.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
 const PARTICLE_ENV_FILE = '.particle_env.yaml';
 
 module.exports = class AppCommands extends CLICommandBase {
