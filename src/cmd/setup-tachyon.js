@@ -459,19 +459,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(`${text}`);
 	}
 
-	async _selectVersion() {
-		const question = [
-			{
-				type: 'input',
-				name: 'version',
-				message: 'Enter the version number:',
-				default: 'latest',
-			},
-		];
-		const answer = await this.ui.prompt(question);
-		return answer.version;
-	}
-
 	async _selectVariant(isRb3Board) {
 		const rgbVariantMapping = {
 			'preinstalled server': 'preinstalled-server'
