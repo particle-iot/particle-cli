@@ -8,7 +8,7 @@ module.exports = ({ commandProcessor, root }) => {
 				boolean: true
 			},
 			version: {
-				description: 'Version to download package for (default: latest). Can include a directory or a local zip file'
+				description: 'Version to download package for (default: stable). Can include a directory or a local zip file'
 			},
 			load_config: {
 				description: 'Path to a config file to use for setup'
