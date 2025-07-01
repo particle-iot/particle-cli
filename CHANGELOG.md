@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.38.1 - Jul 01 2025
+* Fix default channel on tachyon setup and download-package commands
+
 # 3.38.0 - Jul 01 2025
 * Allow to pick between two `update-mode` tachyon devices during setup and other commads
 * Change default channel for tachyon setup
