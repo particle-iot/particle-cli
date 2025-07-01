@@ -53,7 +53,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.outputLog = null;
 		this.defaultOptions = {
 			region: 'NA',
-			version: 'latest',
+			version: 'stable',
 			board: 'formfactor',
 			country: 'USA',
 			variant: null,
@@ -457,19 +457,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(`${os.EOL}===================================================================================${os.EOL}`);
 		this.ui.write(`Step ${step}:${os.EOL}`);
 		this.ui.write(`${text}`);
-	}
-
-	async _selectVersion() {
-		const question = [
-			{
-				type: 'input',
-				name: 'version',
-				message: 'Enter the version number:',
-				default: 'latest',
-			},
-		];
-		const answer = await this.ui.prompt(question);
-		return answer.version;
 	}
 
 	async _selectVariant(isRb3Board) {

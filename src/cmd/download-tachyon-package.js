@@ -30,7 +30,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 				type: 'input',
 				name: 'version',
 				message: 'Enter the version number:',
-				default: 'latest',
+				default: 'stable',
 			},
 		];
 		const answer = await this.ui.prompt(question);
