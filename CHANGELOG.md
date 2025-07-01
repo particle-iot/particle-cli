@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.38.0 - Jul 01 2025
+* Allow to pick between two `update-mode` tachyon devices during setup and other commads
+* Change default channel for tachyon setup
+
 # 3.37.0 - Jun 25 2025
 * Add cloud secrets new commands
 * Add initial time to tachyon setup configuration
