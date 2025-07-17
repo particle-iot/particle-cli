@@ -291,7 +291,7 @@ module.exports = class AppCommands extends CLICommandBase {
 			}
 
 			// We can assume at this point that apps is an array since we migrate both at the same time on device and we return above
-			const apps = deviceDoc.features?.applications?.properties?.apps;
+			const apps = _.get(deviceDoc, 'features.applications.properties.apps');
 			if (!apps || apps.length === 0) {
 				return this.ui.write(`No applications running on device ${deviceId}.${os.EOL}`);
 			}
