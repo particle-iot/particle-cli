@@ -535,7 +535,7 @@ module.exports = class AppCommands extends CLICommandBase {
 		});
 		const apps = _.get(doc, 'features.applications.desiredProperties.apps');
 		if (apps && !Array.isArray(apps)) {
-			throw new Error('There has been an update to applications data format. Please update your particle-linux version to the latest.')
+			throw new Error('There has been an update to applications data format. Please update your particle-linux version to the latest.');
 		}
 		return doc;
 	}
