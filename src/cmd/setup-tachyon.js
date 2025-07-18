@@ -99,9 +99,11 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			config.country = await this._getCountryStep(); // step 6
 		}
 
-		config.apiServer = settings.apiUrl;
-		config.server = settings.isStaging ? 'https://host-connect.staging.particle.io': 'https://host-connect.particle.io';
-		config.verbose = settings.isStaging; // Extra logging if connected to staging
+		if (settings.isStaging) {
+			config.apiServer = settings.apiUrl;
+			config.server = 'https://edge.staging.particle.io';
+			config.verbose = true;
+		}
 
 		config.packagePath = await this._downloadStep(config); // step 6
 		this.product = await this._getProductDetails(config.productId);
