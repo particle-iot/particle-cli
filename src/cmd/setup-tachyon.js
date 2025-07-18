@@ -615,12 +615,23 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		if (!build) {
 			throw new Error('No build available for the provided parameters');
 		}
+
 		const artifact = build.artifacts[0];
+		this._printOSInfo(build);
 		const url = artifact.artifact_url;
 		const outputFileName = url.replace(/.*\//, '');
 		const expectedChecksum = artifact.sha256_checksum;
 
 		return manager.download({ url, outputFileName, expectedChecksum, options: { alwaysCleanCache } });
+	}
+
+	_printOSInfo(build) {
+		const { distribution, variant, distribution_version: distributionVersion, version, region, board } = build;
+		const boardType = board.includes('dvt') ? 'DVT' : 'EVT';
+		this.ui.write(this.ui.chalk.bold('Operating system information:'));
+		this.ui.write(this.ui.chalk.bold(`Tachyon ${distribution} ${distributionVersion} (${variant}, ${region} region)`));
+		this.ui.write(`${this.ui.chalk.bold('Version:')} ${version}`);
+		this.ui.write(`${this.ui.chalk.bold('Board:')} ${boardType}`);
 	}
 
 	async _getRegistrationCode(productId) {
