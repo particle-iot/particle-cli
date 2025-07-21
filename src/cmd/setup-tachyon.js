@@ -626,12 +626,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	}
 
 	_printOSInfo(build) {
-		const { distribution, variant, distribution_version: distributionVersion, version, region, board } = build;
-		const boardType = board.includes('dvt') ? 'DVT' : 'EVT';
+		const { distribution, variant, distribution_version: distributionVersion, version, region } = build;
 		this.ui.write(this.ui.chalk.bold('Operating system information:'));
 		this.ui.write(this.ui.chalk.bold(`Tachyon ${distribution} ${distributionVersion} (${variant}, ${region} region)`));
 		this.ui.write(`${this.ui.chalk.bold('Version:')} ${version}`);
-		this.ui.write(`${this.ui.chalk.bold('Board:')} ${boardType}`);
 	}
 
 	async _getRegistrationCode(productId) {
