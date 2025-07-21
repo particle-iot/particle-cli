@@ -224,9 +224,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return this._runStepWithTiming(
 			`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
 			`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
+			`This same password is used for the user “particle”.${os.EOL}` +
 			`Don't worry if you forget this—you can always reset your device later.${os.EOL}${os.EOL}` +
-			`Finally you'll be prompted to provide an optional Wi-Fi network.${os.EOL}` +
-			`While the 5G cellular connection will automatically connect, Wi-Fi is often much faster for use at home.${os.EOL}`,
+			`Finally you'll be prompted to provide a Wi-Fi network.${os.EOL}` +
+			`This is needed to install the eSIM profile over the air so the device can connect to the 5G cellular network.${os.EOL}`,
 			3,
 			() => this._userConfiguration(),
 			0
@@ -255,8 +256,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		let password = '';
 		while (password === '') {
 			password = await this.ui.promptPasswordWithConfirmation({
-				customMessage: 'Enter a password for the system account:',
-				customConfirmationMessage: 'Re-enter the password for the system account:'
+				customMessage: 'Enter a password for the root and particle accounts:',
+				customConfirmationMessage: 'Re-enter the password for the root and particle accounts:'
 			});
 			if (password === '') {
 				this.ui.write('System password cannot be blank.');
@@ -297,7 +298,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			variantDescription += 'The "preinstalled server" variant is for the RGB board.';
 		} else {
 			variantDescription += `The 'desktop' includes a GUI and is best for interacting with the device with a keyboard, mouse, and display.${os.EOL}`;
-			variantDescription += "The 'headless' variant is for remote command line access only.";
+			variantDescription += "The 'headless' variant is accessed only by a terminal out of the box.";
 		}
 		return this._runStepWithTiming(
 			variantDescription,
