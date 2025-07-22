@@ -36,17 +36,45 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		const answer = await this.ui.prompt(question);
 		return answer.version;
 	}
-	async download ({ region, version, alwaysCleanCache = false, variant = 'headless', board = 'formfactor' }) {
+
+	async _selectVariant(isRb3Board) {
+		const rgbVariantMapping = {
+			'preinstalled server': 'preinstalled-server'
+		};
+		const tachyonVariantMapping = {
+			'desktop (GUI)': 'desktop',
+			'headless (command-line only)': 'headless'
+		};
+		const variantMapping = isRb3Board ? rgbVariantMapping : tachyonVariantMapping;
+		const question = [
+			{
+				type: 'list',
+				name: 'variant',
+				message: 'Select the OS variant:',
+				choices: Object.keys(variantMapping),
+			},
+		];
+		const { variant } = await this.ui.prompt(question);
+		return variantMapping[variant];
+	}
+
+	async download ({ region, version, alwaysCleanCache = false, variant, board = 'formfactor_dvt' }) {
 		// prompt for region and version if not provided
+		const isRb3Board = board === 'rb3g2'; // RGB board
 		if (!region) {
-			region = await this._selectRegion();
+			region = !isRb3Board ? await this._selectRegion() : '';
 		}
 		if (!version) {
 			version = await this._selectVersion();
 		}
+
+		if (!variant) {
+			variant = await this._selectVariant(isRb3Board);
+		}
 		const manager = new DownloadManager(this.ui);
-		const manifest = await manager.fetchManifest({ version });
-		const build = manifest.builds.find((b) => b.region === region && b.variant === variant && b.board === board);
+		const manifest = await manager.fetchManifest({ version, isRb3Board });
+		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board);
+
 		if (!build) {
 			throw new Error('No build available for the provided parameters');
 		}
@@ -58,7 +86,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		return filePath;
 	}
 
-	async cleanUp({ region, version, variant = 'headless', board ='formfactor', all }) {
+	async cleanUp({ region, version, variant = 'headless', board ='formfactor_dvt', all }) {
 		const manager = new DownloadManager(this.ui);
 		if (all) {
 			await manager.cleanup({ cleanDownload: true, cleanInProgress: true });
