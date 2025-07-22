@@ -1,5 +1,11 @@
 # Changelog
 
+# 3.38.2 - Jul 22 2025
+* Show device os information on tachyon setup.
+* Make dvt default to `download-package` command.
+* Allow to pick OS variant from `download-package` command.
+* Update sign action to latest
+
 # 3.38.1 - Jul 01 2025
 * Fix default channel on tachyon setup and download-package commands
 
