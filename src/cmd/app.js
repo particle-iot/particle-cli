@@ -72,6 +72,8 @@ module.exports = class AppCommands extends CLICommandBase {
 			deviceId = device.id;
 			instance ||= doc.get('instance') || Math.random().toString(36).substring(2, 8);
 
+			await this.validateApplicationsHaveBeenMigrated(device);
+
 			const appName = await this._getAppName(blueprintDir);
 			const appInstance = `${appName}_${instance}`;
 			doc.set('deviceId', deviceId);
@@ -107,7 +109,7 @@ module.exports = class AppCommands extends CLICommandBase {
 
 			this.ui.write(`${os.EOL}Successfully built ${appInstance}${os.EOL}`);
 
-			await this._pushApp(device, appInstance, dockerCompose);
+			await this._pushApp(device, appInstance, dockerCompose.toString());
 
 			this.ui.write(`Successfully pushed ${appInstance} to device ${deviceId}${os.EOL}`);
 		} catch (error) {
@@ -237,24 +239,22 @@ module.exports = class AppCommands extends CLICommandBase {
 		serviceConfig.set('image', serviceTag);
 	}
 
-	async _pushApp(device, appName, dockerCompose) {
+	async _pushApp(device, name, composeFile) {
 		try {
-			// Prepare the JSON Patch document
-			let patchOps = [];
-
-			// Add or update the application in the device document
-			patchOps.push({
-				action: 'put',
-				path: ['features', 'applications', 'desiredProperties', 'apps', appName],
-				value: { composeFile: dockerCompose.toString() }
-			});
-
 			// Use PATCH method to update the device document
 			await this.api.patchDocument({
 				productId: device.product_id,
 				deviceId: device.id,
 				docName: 'system',
-				patchOps
+				patchOps: {
+					action: 'upsert',
+					path: ['features', 'applications', 'desiredProperties', 'apps'],
+					key: 'name',
+					value: {
+						name,
+						composeFile
+					}
+				}
 			});
 
 		} catch (error) {
@@ -276,56 +276,46 @@ module.exports = class AppCommands extends CLICommandBase {
 		await this._saveToEnv(doc, blueprintDir);
 
 		try {
-			const { data: deviceDoc } = await this.api.getDocument({
-				productId: device.product_id,
-				deviceId: device.id,
-				docName: 'system'
-			});
+			const deviceDoc = await this.validateApplicationsHaveBeenMigrated(device);
 
-			const desiredApps = deviceDoc.features?.applications?.desiredProperties?.apps;
-			if (desiredApps && Object.entries(desiredApps).length > 0) {
+			const desiredApps = _.get(deviceDoc, 'features.applications.desiredProperties.apps');
+			if (!desiredApps || desiredApps.length === 0) {
+				this.ui.write(`No applications desired for device ${deviceId}.${os.EOL}`);
+			} else { // exists and is an array with length
 				this.ui.write(`Applications desired for device ${deviceId}:`);
 
-				for (const appName of Object.keys(desiredApps)) {
-					this.ui.write(appName);
+				for (const app of desiredApps) {
+					this.ui.write(app.name);
 				}
-
-				this.ui.write('');
-			} else {
-				this.ui.write(`No applications desired for device ${deviceId}.${os.EOL}`);
+				this.ui.write(os.EOL);
 			}
 
-			const apps = deviceDoc.features?.applications?.properties?.apps;
-			if (apps && Object.entries(apps).length > 0) {
-				this.ui.write(`Applications running on device ${deviceId}:${os.EOL}`);
+			// We can assume at this point that apps is an array since we migrate both at the same time on device and we return above
+			const apps = _.get(deviceDoc, 'features.applications.properties.apps');
+			if (!apps || apps.length === 0) {
+				return this.ui.write(`No applications running on device ${deviceId}.${os.EOL}`);
+			}
 
-				for (const [appName, appDetails] of Object.entries(apps)) {
-					this.ui.write(`App name: ${appName}`);
+			this.ui.write(`Applications running on device ${deviceId}:${os.EOL}`);
 
-					// Create a table with headers
-					const cols = (process.stdout.columns || 80) - 35;
-					const table = new Table({
-						head: ['Container', 'Details'],
-						colWidths: [30, cols],
-						style: { head: ['white'] }
-					});
-					if (appDetails.containers) {
-						let containers;
-						if (Array.isArray(appDetails.containers)) { // TODO: Legacy, remove in a few weeks when all devices have switched to object format
-							containers = appDetails.containers;
-						} else {
-							containers = Object.entries(appDetails.containers).map(([name, props]) => ({ name, ...props }));
-						}
-						for (const { name: container, ...containerDetails } of containers) {
-							table.push([container, JSON.stringify(containerDetails, null, 2)]);
-						}
-					} else {
-						table.push(['No containers for app', '']);
+			for (const app of apps) {
+				this.ui.write(`App name: ${app.name}`);
+
+				// Create a table with headers
+				const cols = (process.stdout.columns || 80) - 35;
+				const table = new Table({
+					head: ['Container', 'Details'],
+					colWidths: [30, cols],
+					style: { head: ['white'] }
+				});
+				if (app.containers) {
+					for (const { name, ...details } of app.containers) {
+						table.push([name, JSON.stringify(details, null, 2)]);
 					}
-					this.ui.write(table.toString() + os.EOL);
+				} else {
+					table.push(['No containers for app', '']);
 				}
-			} else {
-				this.ui.write(`No applications running on device ${deviceId}.${os.EOL}`);
+				this.ui.write(table.toString() + os.EOL);
 			}
 		} catch (error) {
 			if (error instanceof UnauthorizedError) {
@@ -352,23 +342,20 @@ module.exports = class AppCommands extends CLICommandBase {
 		await this._saveToEnv(doc, blueprintDir);
 
 		try {
-			const { data: deviceDoc } = await this.api.getDocument({
-				productId: device.product_id,
-				deviceId: device.id,
-				docName: 'system'
-			});
+			const deviceDoc = await this.validateApplicationsHaveBeenMigrated(device);
 
-			if (deviceDoc.features?.applications?.desiredProperties?.apps && deviceDoc.features.applications.desiredProperties.apps[appInstance]) {
-				const patchOps = [{
-					action: 'del',
-					path: ['features', 'applications', 'desiredProperties', 'apps', appInstance]
-				}];
-
+			const apps = _.get(deviceDoc, 'features.applications.desiredProperties.apps');
+			const foundApp = apps?.find((app) => app.name === appInstance);
+			if (foundApp) {
 				await this.api.patchDocument({
 					productId: device.product_id,
 					deviceId: device.id,
 					docName: 'system',
-					patchOps
+					patchOps: {
+						action: 'remove',
+						path: ['features', 'applications', 'desiredProperties', 'apps'],
+						predicate: { name: appInstance }
+					}
 				});
 				this.ui.write(`Successfully removed ${appInstance} from device ${deviceId}.${os.EOL}`);
 			} else {
@@ -532,5 +519,24 @@ module.exports = class AppCommands extends CLICommandBase {
 		];
 		const { device } = await this.ui.prompt(question);
 		return device;
+	}
+
+	/**
+	 * Gets the device doc and validates that applications have been migrated to array format, throwing if not.
+	 * If all is good, returns the device doc to reduce api calls
+	 * @param {{ id: string, product_id: number }} device
+	 * @returns object
+	 */
+	async validateApplicationsHaveBeenMigrated(device) {
+		const { data: doc } = await this.api.getDocument({
+			deviceId: device.id,
+			productId: device.product_id,
+			docName: 'system'
+		});
+		const apps = _.get(doc, 'features.applications.desiredProperties.apps');
+		if (apps && !Array.isArray(apps)) {
+			throw new Error('There has been an update to applications data format. Please update your particle-linux version to the latest.');
+		}
+		return doc;
 	}
 };
