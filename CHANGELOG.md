@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.39.0 - Jul 24 2025
+* Update apps commands to use updated data format
+
 # 3.38.2 - Jul 22 2025
 * Show device os information on tachyon setup.
 * Make dvt default to `download-package` command.
