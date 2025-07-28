@@ -72,11 +72,28 @@ class DownloadManager {
 			}
 		} catch (error) {
 			// Remove the invalid file
-			await fs.remove(filePath);
-			this.ui.write(`Removed invalid downloaded file: ${outputFileName}`);
+			// ask if we should remove it
+			let shouldRetry = false;
+			if (this.ui.isInteractive) {
+				const question = {
+					type: 'confirm',
+					name: 'removeFile',
+					message: `Do you want to remove the invalid downloaded file ${outputFileName}? and retry?`,
+					default: true
+				};
+				const { removeFile } = await this.ui.prompt(question);
+				if (removeFile) {
+					await fs.remove(filePath);
+					this.ui.write(`Removed invalid downloaded file: ${outputFileName}`);
+					shouldRetry = true;
+				}
+			}
+			if (shouldRetry) {
+				return this.download({ url, outputFileName, expectedChecksum, options });
+			}
+			this.ui.write(`Make sure to manually delete "${outputFileName}" before trying again `);
 			throw error;
 		}
-
 		return filePath;
 	}
 
