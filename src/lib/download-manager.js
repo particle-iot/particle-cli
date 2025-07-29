@@ -71,30 +71,41 @@ class DownloadManager {
 				await this._validateChecksum(filePath, expectedChecksum);
 			}
 		} catch (error) {
-			// Remove the invalid file
-			// ask if we should remove it
-			let shouldRetry = false;
-			if (this.ui.isInteractive) {
-				const question = {
-					type: 'confirm',
-					name: 'removeFile',
-					message: `Do you want to remove the invalid downloaded file ${outputFileName}? and retry?`,
-					default: true
-				};
-				const { removeFile } = await this.ui.prompt(question);
-				if (removeFile) {
-					await fs.remove(filePath);
-					this.ui.write(`Removed invalid downloaded file: ${outputFileName}`);
-					shouldRetry = true;
-				}
-			}
-			if (shouldRetry) {
-				return this.download({ url, outputFileName, expectedChecksum, options });
-			}
-			this.ui.write(`Make sure to manually delete "${outputFileName}" before trying again `);
-			throw error;
+			await this._handleInvalidChecksum({
+				error,
+				filePath,
+				displayName: outputFileName,
+				retryCallback: () => this.download({
+					url,
+					outputFileName,
+					expectedChecksum,
+					options
+				})
+			});
 		}
 		return filePath;
+	}
+
+	async _handleInvalidChecksum({ error, filePath, displayName, retryCallback }) {
+		this.ui.write(`${os.EOL}`); // Optional: visual break in terminal
+
+		if (this.ui.isInteractive) {
+			const { removeFile } = await this.ui.prompt({
+				type: 'confirm',
+				name: 'removeFile',
+				message: `Invalid checksum for ${displayName}. Remove and retry?`,
+				default: true
+			});
+
+			if (removeFile) {
+				await fs.remove(filePath);
+				this.ui.write(`Removed invalid downloaded file: ${displayName}`);
+				return retryCallback?.();
+			}
+		}
+
+		this.ui.write(`Make sure to manually delete "${displayName}" before trying again`);
+		throw error;
 	}
 
 
@@ -254,9 +265,11 @@ class DownloadManager {
 					await this._validateChecksum(cachedFilePath, expectedChecksum);
 					return cachedFilePath;
 				} catch (error) {
-					this.ui.write(`Cached file checksum mismatch for ${fileName}`);
-					await fs.remove(cachedFilePath); // Remove the invalid cached file
-					this.ui.write(`Removed invalid cached file: ${fileName}`);
+					await this._handleInvalidChecksum({
+						error: error,
+						filePath: cachedFilePath,
+						displayName: fileName
+					});
 				}
 			}
 		}
