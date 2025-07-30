@@ -162,6 +162,7 @@ describe('DownloadManager', () => {
 			const url = 'https://example.com';
 			const outputFileName = 'file.txt';
 			const fileContent = 'This is a test file.';
+			const filePath = path.join(downloadManager.downloadDir, `${outputFileName}`);
 			let error;
 
 			// Mock the HTTP response
@@ -177,11 +178,9 @@ describe('DownloadManager', () => {
 			} catch (_error) {
 				error = _error;
 			}
-			const tempPath = path.join(downloadManager.downloadDir, `${outputFileName}.progress`);
-			const finalPath = path.join(downloadManager.downloadDir, `${outputFileName}`);
 			expect(error.message).to.include('Checksum validation failed for file.txt');
-			expect(fs.existsSync(tempPath)).to.be.false;
-			expect(fs.existsSync(finalPath)).to.be.false;
+			expect(ui.write).to.be.calledWith('Invalid checksum for file.txt');
+			expect(ui.write).to.be.calledWith(`Make sure to manually delete "${filePath}" before trying again`);
 		});
 		it('validates checksum and save the file', async () => {
 			const url = 'https://example.com';
