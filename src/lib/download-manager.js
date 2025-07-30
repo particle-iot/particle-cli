@@ -88,12 +88,13 @@ class DownloadManager {
 
 	async _handleInvalidChecksum({ error, filePath, displayName, retryCallback }) {
 		this.ui.write(`${os.EOL}`); // Optional: visual break in terminal
+		this.ui.write(`Invalid checksum for ${displayName}`);
 
 		if (this.ui.isInteractive) {
 			const { removeFile } = await this.ui.prompt({
 				type: 'confirm',
 				name: 'removeFile',
-				message: `Invalid checksum for ${displayName}. Remove and retry?`,
+				message: 'Remove and retry?',
 				default: true
 			});
 
@@ -104,7 +105,7 @@ class DownloadManager {
 			}
 		}
 
-		this.ui.write(`Make sure to manually delete "${displayName}" before trying again`);
+		this.ui.write(`Make sure to manually delete "${filePath}" before trying again`);
 		throw error;
 	}
 

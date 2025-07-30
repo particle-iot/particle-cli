@@ -162,6 +162,7 @@ describe('DownloadManager', () => {
 			const url = 'https://example.com';
 			const outputFileName = 'file.txt';
 			const fileContent = 'This is a test file.';
+			const filePath = path.join(downloadManager.downloadDir, `${outputFileName}`);
 			let error;
 
 			// Mock the HTTP response
@@ -178,7 +179,8 @@ describe('DownloadManager', () => {
 				error = _error;
 			}
 			expect(error.message).to.include('Checksum validation failed for file.txt');
-			expect(ui.write).to.be.calledWith('Make sure to manually delete "file.txt" before trying again');
+			expect(ui.write).to.be.calledWith('Invalid checksum for file.txt');
+			expect(ui.write).to.be.calledWith(`Make sure to manually delete "${filePath}" before trying again`);
 		});
 		it('validates checksum and save the file', async () => {
 			const url = 'https://example.com';
