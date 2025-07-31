@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.40.0 - Jul 31 2025
+* Put in maintenance mode app commands
+* Allow to retry download on tachyon setup in case the checksum does not match
+* Update device-constants
+
 # 3.39.0 - Jul 24 2025
 * Update apps commands to use updated data format
 
