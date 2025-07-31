@@ -1,5 +1,5 @@
 const { ensureFolder } = require('../../settings');
-const deviceConstants = require('@particle/device-constants');
+const { platforms } = require('@particle/device-constants');
 const path = require('path');
 const os = require('os');
 const request = require('request');
@@ -17,7 +17,7 @@ const { HalModuleParser } = require('binary-version-reader');
 async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui, verbose=true }){
 	try {
 		// get platform by id from device-constants
-		const platform = Object.values(deviceConstants).filter(p => p.public).find(p => p.id === platformId);
+		const platform = Object.values(platforms).filter(p => p.public).find(p => p.id === platformId);
 		// get the device os versions
 		const deviceOsVersion = await api.getDeviceOsVersions(platformId, version);
 		// omit user part application

@@ -1,10 +1,9 @@
-const deviceConstants = require('@particle/device-constants');
+const { platforms } = require('@particle/device-constants');
 
 /**
  * Array of description objects for all supported platforms.
  */
-const PLATFORMS = Object.values(deviceConstants).filter(p => p.public);
-
+const PLATFORMS = Object.values(platforms).filter(p => p.public);
 const PLATFORMS_BY_ID = PLATFORMS.reduce((map, p) => map.set(p.id, p), new Map());
 
 /**

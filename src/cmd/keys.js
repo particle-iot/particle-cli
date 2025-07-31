@@ -8,7 +8,7 @@ const temp = require('temp').track();
 const utilities = require('../lib/utilities');
 const ApiClient = require('../lib/api-client');
 const { keysDctOffsets } = require('../lib/keys-specs');
-const deviceConstants = require('@particle/device-constants');
+const { platforms } = require('@particle/device-constants');
 const ensureError = require('../lib/utilities').ensureError;
 const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
@@ -289,8 +289,8 @@ module.exports = class KeysCommand {
 		try {
 			let noDevice = false;
 			if (deviceType) {
-				if (!deviceConstants[deviceType]) {
-					throw new VError(`Unknown device type ${deviceType}. Use one of ${Object.keys(deviceConstants).join(', ')}`);
+				if (!platforms[deviceType]) {
+					throw new VError(`Unknown device type ${deviceType}. Use one of ${Object.keys(platforms).join(', ')}`);
 				}
 				this.platform = deviceType;
 				noDevice = true;
@@ -525,7 +525,7 @@ module.exports = class KeysCommand {
 	}
 
 	_getDeviceProtocol() {
-		return deviceConstants[this.platform].features.includes('tcp') ? 'tcp' : 'udp';
+		return platforms[this.platform].features.includes('tcp') ? 'tcp' : 'udp';
 	}
 
 	async _dfuWrite(device, buffer, { altSetting, startAddr, leave, noErase }) {

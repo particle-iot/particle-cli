@@ -1,9 +1,9 @@
 const { PLATFORMS, PlatformId, platformForId, isKnownPlatformId } = require('./platform');
 const { expect } = require('../../test/setup');
 
-const deviceConstants = require('@particle/device-constants');
+const { platforms } = require('@particle/device-constants');
 
-const supportedPlatforms = Object.values(deviceConstants).filter(p => p.public);
+const supportedPlatforms = Object.values(platforms).filter(p => p.public);
 
 describe('Platform utilities', () => {
 	describe('PLATFORMS', () => {
