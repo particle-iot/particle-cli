@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.40.1 - Aug 01 2025
+* Update device-constants to 4.0.2 (fix for generate deviceId from machineId)
+
 # 3.40.0 - Jul 31 2025
 * Put in maintenance mode app commands
 * Allow to retry download on tachyon setup in case the checksum does not match
