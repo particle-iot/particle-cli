@@ -222,12 +222,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	async _getUserConfigurationStep() {
 		return this._runStepWithTiming(
-			`Now lets capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
-			`First, you'll be asked to set a password for the root account on your Tachyon device.${os.EOL}` +
-			`This same password is used for the user “particle”.${os.EOL}` +
-			`Don't worry if you forget this—you can always reset your device later.${os.EOL}${os.EOL}` +
-			`Finally you'll be prompted to provide a Wi-Fi network.${os.EOL}` +
-			`This is needed to install the eSIM profile over the air so the device can connect to the 5G cellular network.${os.EOL}`,
+			`Now let's capture some information about how you'd like your device to be configured when it first boots.${os.EOL}${os.EOL}` +
+			`First, pick a password for the root account on your Tachyon device.${os.EOL}` +
+			`This same password is also used for the "particle" user account.${os.EOL}`,
 			3,
 			() => this._userConfiguration(),
 			0
@@ -245,8 +242,8 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(
 			this.ui.chalk.bold(
 				`${os.EOL}` +
-				`Wi-Fi setup is required to continue when using Particle setup!${os.EOL}` +
-				`This active internet connection is necessary to activate cellular connectivity on your device.${os.EOL}`
+				`Next, provide a Wi-Fi network for your device to connect to the internet.${os.EOL}` +
+				`An internet connection is necessary to activate 5G cellular connectivity on your device.${os.EOL}`
 			)
 		);
 		return promptWifiNetworks(this.ui);
