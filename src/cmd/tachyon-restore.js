@@ -11,14 +11,13 @@ const FlashCommand = require('./flash');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
-module.exports = class TachyonFactoryReset extends CLICommandBase {
-	constructor(args) {
-		const { ui, 'reset-dir': resetDir } = args;
+module.exports = class TachyonRestore extends CLICommandBase {
+	constructor({ ui } = {}) {
 		super();
 		this.ui = ui || this.ui;
 		spinnerMixin(this);
 		this._baseDir = settings.ensureFolder();
-		this._resetDir = path.join(resetDir || process.cwd());
+		this._resetDir = path.join(process.cwd());
 		this._logsDir = path.join(this._baseDir, 'logs');
 		this.outputLog = null;
 		this.device = null;
@@ -27,7 +26,7 @@ module.exports = class TachyonFactoryReset extends CLICommandBase {
 		};
 	}
 
-	async factoryReset({ board } = {}){
+	async restore({ board } = {}){
 		// prepare directories:
 		this.ui.write('Preparing your device for a factory reset...');
 		await fs.ensureDir(this._resetDir);

@@ -154,18 +154,13 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(tachyon, 'factory-reset', 'Reset the tachyon with factory image', {
-		options: {
-			'reset-dir': {
-				description: 'Directory to save the backup and restore files'
-			}
-		},
+	commandProcessor.createCommand(tachyon, 'restore', 'Restore the tachyon with a clean image', {
 		handler: (args) => {
-			const TachyonFactoryResetCommand = require('../cmd/tachyon-factory-reset');
-			return new TachyonFactoryResetCommand(args).factoryReset(args);
+			const TachyonRestore = require('../cmd/tachyon-restore');
+			return new TachyonRestore().restore(args);
 		},
 		examples: {
-			'$0 $command': 'Reset the tachyon with factory image',
+			'$0 $command': 'Restore the tachyon with a clean image',
 		}
 	});
 
