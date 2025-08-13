@@ -50,9 +50,17 @@ module.exports = class TachyonRestore extends CLICommandBase {
 		// flash os
 		this.ui.write('Installing restore image...');
 		await this._flashFactoryOS({ osPath: downloadPath });
-		// restore nv data
-		await this.restoreNVDataStep();
-		await this.setupStep();
+		const hasBackups = await this.hasBackups();
+		if (!hasBackups) {
+			const noDataTitle = this.ui.chak.yellow(`No NV data backup found — device personalization was not restored.${os.EOL}`);
+			const content = `If you obtain the missing files later, run:${os.EOL}`;
+			const command = this.ui.chalk.cyan(`    particle tachyon restore --input-dir /path/to/files ${os.EOL}`);
+			this.ui.write(noDataTitle + content + command);
+		} else {
+			// restore nv data
+			await this.restoreNVDataStep();
+			await this.setupStep();
+		}
 	}
 
 	async _getTachyonInfo() {
@@ -159,14 +167,7 @@ module.exports = class TachyonRestore extends CLICommandBase {
 	}
 
 	async restoreNVDataStep() {
-		const hasBackups = await this.hasBackups();
-		if (!hasBackups) {
-			this.ui.write(
-				this.ui.chalk.yellow('No NV data backup found —  Contact support if you don’t have the missing files')
-			);
-		} else {
-			await this.ui.showBusySpinnerUntilResolved('Restore Tachyon NV data', this._restoreNVData());
-		}
+		await this.ui.showBusySpinnerUntilResolved('Restore Tachyon NV data', this._restoreNVData());
 	}
 	async _restoreNVData() {
 		const restoreCommand = new BackupRestoreCommand({ ui: this.ui });
