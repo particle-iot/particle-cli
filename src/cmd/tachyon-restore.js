@@ -3,14 +3,13 @@ const spinnerMixin = require('../lib/spinner-mixin');
 const settings = require('../../settings');
 const fs = require('fs-extra');
 const path = require('path');
-const { getEDLDevice, getTachyonInfo, prepareFlashFiles } = require('../lib/tachyon-utils');
+const { getEDLDevice, getTachyonInfo } = require('../lib/tachyon-utils');
 const os = require('os');
-const QdlFlasher = require('../lib/qdl');
 const DownloadManager = require('../lib/download-manager');
 const FlashCommand = require('./flash');
 const SetupCommand = require('./setup-tachyon');
+const BackupRestoreCommand = require('./backup-restore-tachyon');
 
-const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
 module.exports = class TachyonRestore extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -41,9 +40,10 @@ module.exports = class TachyonRestore extends CLICommandBase {
 
 		if (this.deviceInfo.manufacturingData === 'Missing') {
 			this._printMissingFilesWarning();
+		} else {
+			// backup nv data
+			await this.backupStep();
 		}
-		// backup nv data
-		await this.backupStep();
 		// download os
 		this.ui.write('Downloading restore image...');
 		const downloadPath = await this._downloadFactoryOS();
@@ -51,7 +51,7 @@ module.exports = class TachyonRestore extends CLICommandBase {
 		this.ui.write('Installing restore image...');
 		await this._flashFactoryOS({ osPath: downloadPath });
 		// restore nv data
-		await this.restoreStep();
+		await this.restoreNVDataStep();
 		await this.setupStep();
 	}
 
@@ -111,7 +111,7 @@ module.exports = class TachyonRestore extends CLICommandBase {
 		} else {
 			await this.ui.showBusySpinnerUntilResolved('Backing up device NV data...', this._backup());
 		}
-		this.ui.write(`Backup up NV data from device ${this.device.id} complete!${os.EOL}`);
+		this.nvDataBackupsExist = true;
 	}
 	async hasBackups() {
 		const names = await fs.readdir(this._resetDir);
@@ -120,34 +120,8 @@ module.exports = class TachyonRestore extends CLICommandBase {
 	}
 
 	async _backup(){
-		try {
-			const { firehosePath, xmlFile } = await prepareFlashFiles({
-				logFile: this.outputLog,
-				ui: this.ui,
-				partitionsList: PARTITIONS_TO_BACKUP,
-				dir: this._resetDir,
-				device: this.device,
-				operation: 'read'
-			});
-			const files = [
-				firehosePath, // must be first
-				xmlFile,
-			];
-
-			const qdl = new QdlFlasher({
-				outputLogFile: this.outputLog,
-				files: files,
-				ui: this.ui,
-				currTask: 'Backup',
-				skipReset: true,
-				serialNumber: this.device.serialNumber
-			});
-			await qdl.run();
-		} catch (error) {
-			this.ui.stdout.write(`An error ocurred while trying to backing up your tachyon ${os.EOL}`);
-			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
-			this.ui.stdout.write(`Verify your logs ${this.outputLog} for more information ${os.EOL}`);
-		}
+		const backupRestoreCmd = new BackupRestoreCommand({ ui: this.ui });
+		await backupRestoreCmd.backup({ existingLog: this.outputLog });
 	}
 
 	async _downloadFactoryOS(){
@@ -177,48 +151,26 @@ module.exports = class TachyonRestore extends CLICommandBase {
 				verbose: false
 			});
 		} catch (error) {
-			this.ui.stdout.write(`An error ocurred while trying to restore up your tachyon ${os.EOL}`);
+			this.ui.stdout.write(`An error occurred while trying to restore up your tachyon ${os.EOL}`);
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${this.outputLog} for more information ${os.EOL}`);
 			throw error;
 		}
 	}
 
-	async restoreStep() {
-		this.ui.write('Restore Tachyon NV data');
-		await this.ui.showBusySpinnerUntilResolved('Restore Tachyon NV data', this._restore());
-		this.ui.write('Restore Tachyon NV data complete!');
-	}
-	async _restore() {
-		try {
-			const { firehosePath, xmlFile } = await prepareFlashFiles({
-				logFile: this.outputLog,
-				ui: this.ui,
-				partitionsList: PARTITIONS_TO_BACKUP,
-				dir: this._resetDir,
-				device: this.device,
-				operation: 'program',
-				checkFiles: true
-			});
-			const files = [
-				firehosePath, // must be first
-				xmlFile,
-			];
-
-			const qdl = new QdlFlasher({
-				outputLogFile: this.outputLog,
-				files: files,
-				ui: this.ui,
-				currTask: 'Restore',
-				skipReset: true,
-				serialNumber: this.device.serialNumber,
-			});
-			await qdl.run();
-		} catch (error) {
-			this.ui.stdout.write(`An error ocurred while trying to restore up your tachyon ${os.EOL}`);
-			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
-			this.ui.stdout.write(`Verify your logs ${this.outputLog} for more information ${os.EOL}`);
+	async restoreNVDataStep() {
+		const hasBackups = await this.hasBackups();
+		if (!hasBackups) {
+			this.ui.write(
+				this.ui.chalk.yellow('No NV data backup found —  Contact support if you don’t have the missing files')
+			);
+		} else {
+			await this.ui.showBusySpinnerUntilResolved('Restore Tachyon NV data', this._restoreNVData());
 		}
+	}
+	async _restoreNVData() {
+		const restoreCommand = new BackupRestoreCommand({ ui: this.ui });
+		await restoreCommand.restore({ existingLog: this.outputLog });
 	}
 
 	async setupStep() {

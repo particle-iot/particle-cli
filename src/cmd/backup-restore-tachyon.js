@@ -21,7 +21,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		this._logsDir = path.join(this._baseDir, 'logs');
 	}
 
-	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = this._logsDir } = {}) {
+	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = this._logsDir, existingLog } = {}) {
 		const device  = await getEDLDevice({ ui: this.ui });
 		const outputDirExist = await fs.exists(outputDir);
 		const logDirExist = await fs.exists(logDir);
@@ -33,7 +33,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		}
 
 		const startTime = new Date();
-		const outputLog = path.join(logDir, `tachyon_${device.id}_backup_${Date.now()}.log`);
+		const outputLog = existingLog || path.join(logDir, `tachyon_${device.id}_backup_${Date.now()}.log`);
 
 		this.ui.stdout.write(`Backing up NV data from device ${device.id}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
@@ -74,6 +74,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	async restore({
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = this._logsDir,
+		existingLog
 	} = {})	{
 		const device = await getEDLDevice({ ui: this.ui });
 		if (!await fs.exists(logDir)) {
@@ -81,7 +82,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		}
 
 		const startTime = new Date();
-		const outputLog = path.join(logDir, `tachyon_${device.id}_restore_${Date.now()}.log`);
+		const outputLog = existingLog || path.join(logDir, `tachyon_${device.id}_restore_${Date.now()}.log`);
 		this.ui.stdout.write(`Restoring NV data to device ${device.id}...${os.EOL}`);
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		addLogHeaders({ outputLog, startTime, deviceId: device.id, commandName: 'Tachyon restore' });
