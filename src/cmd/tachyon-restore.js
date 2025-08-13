@@ -180,6 +180,7 @@ module.exports = class TachyonRestore extends CLICommandBase {
 			this.ui.stdout.write(`An error ocurred while trying to restore up your tachyon ${os.EOL}`);
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${this.outputLog} for more information ${os.EOL}`);
+			throw error;
 		}
 	}
 
