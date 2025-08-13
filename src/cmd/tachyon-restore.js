@@ -22,18 +22,18 @@ module.exports = class TachyonRestore extends CLICommandBase {
 		this.outputLog = null;
 		this.device = null;
 		this.deviceInfo = {
-			board: 'formfactor'
+			board: 'formfactor' // should be formfactor_dvt but the manifest is returning formfactor
 		};
 	}
 
 	async restore({ board } = {}){
 		// prepare directories:
-		this.ui.write('Preparing your device for a factory reset...');
+		this.ui.write('Preparing your device for a restore...');
 		await fs.ensureDir(this._resetDir);
 		await fs.ensureDir(this._logsDir);
 		this.ui.write('Connecting with your device, make sure your device is in system update mode (blinking yellow)');
 		this.device = await getEDLDevice({ ui: this.ui });
-		this.outputLog = path.join(this._logsDir, `tachyon_${this.device.id}_factory_restore_${Date.now()}`);
+		this.outputLog = path.join(this._logsDir, `tachyon_${this.device.id}_restore_${Date.now()}`);
 		this.ui.write(`Logs will be saved in ${this.outputLog}`);
 		// getting device info or ask
 		await this._getTachyonInfo({ board });
@@ -42,16 +42,19 @@ module.exports = class TachyonRestore extends CLICommandBase {
 			this._printMissingFilesWarning();
 		}
 		// backup nv data
-		await this.ui.showBusySpinnerUntilResolved('Backing up device NV data', this._backup());
+		await this.backupStep();
 		// download os
+		this.ui.write('Downloading restore image...');
 		const downloadPath = await this._downloadFactoryOS();
 		// flash os
+		this.ui.write('Installing restore image...');
 		await this._flashFactoryOS({ osPath: downloadPath });
 		// restore nv data
-		await this.ui.showBusySpinnerUntilResolved('Restoring device NV data', this._restore());
+		await this.restoreStep();
+		await this.nextSteps();
 	}
 
-	async _getTachyonInfo({ board } = {}) {
+	async _getTachyonInfo() {
 		let tachyonInfo;
 		try {
 			tachyonInfo = await this.ui.showBusySpinnerUntilResolved('Getting device information...',
@@ -66,7 +69,6 @@ module.exports = class TachyonRestore extends CLICommandBase {
 		}
 
 		this.deviceInfo.manufacturingData - tachyonInfo?.manufacturingData || 'Missing';
-		this.deviceInfo.board = board || 'formfactor';
 		if (!tachyonInfo?.region || tachyonInfo?.region === 'Unknown') {
 			this.deviceInfo.region = await this._selectRegion();
 		} else {
@@ -94,54 +96,57 @@ module.exports = class TachyonRestore extends CLICommandBase {
 	async _printMissingFilesWarning() {
 		const title = this.ui.chalk.yellow(`Missing manufacturing files detected ${os.EOL}`);
 		const content = `Looks like some required files aren’t on this device.${os.EOL}` +
-			`You can continue the factory reset, but you’ll need to run:${os.EOL}`;
+			`You can continue the restoration, but you’ll need to run:${os.EOL}`;
 		const command = this.ui.chalk.cyan(`    particle tachyon restore --input-dir /path/to/files ${os.EOL}`);
 		const bottom = `afterward to restore them. Contact support if you don’t have the missing files.${os.EOL}`;
 		this.ui.write(title + content + command + bottom);
 	}
 
+	async backupStep(){
+		// verify if backups files already exists:
+		const hasBackups = await this.hasBackups();
+		if (hasBackups) {
+			this.ui.write('Backups found in the working directory');
+		} else {
+			await this.ui.showBusySpinnerUntilResolved('Backing up device NV data...', this._backup());
+		}
+		this.ui.write(`Backup up NV data from device ${this.device.id} complete!${os.EOL}`);
+	}
+	async hasBackups() {
+		const names = await fs.readdir(this._resetDir);
+		const prefix = `${this.device.id}_`;
+		return names.some(name => name.startsWith(prefix) && name.endsWith('.backup'));
+	}
+
 	async _backup(){
 		try {
-			// verify if backups files already exists:
-			const hasBackups = await this.hasBackups();
-			if (hasBackups) {
-				this.ui.write('Backups found in the working directory');
-			} else {
-				const { firehosePath, xmlFile } = await prepareFlashFiles({
-					logFile: this.outputLog,
-					ui: this.ui,
-					partitionsList: PARTITIONS_TO_BACKUP,
-					dir: this._resetDir,
-					device: this.device,
-					operation: 'read'
-				});
-				const files = [
-					firehosePath, // must be first
-					xmlFile,
-				];
+			const { firehosePath, xmlFile } = await prepareFlashFiles({
+				logFile: this.outputLog,
+				ui: this.ui,
+				partitionsList: PARTITIONS_TO_BACKUP,
+				dir: this._resetDir,
+				device: this.device,
+				operation: 'read'
+			});
+			const files = [
+				firehosePath, // must be first
+				xmlFile,
+			];
 
-				const qdl = new QdlFlasher({
-					outputLogFile: this.outputLog,
-					files: files,
-					ui: this.ui,
-					currTask: 'Backup',
-					skipReset: true,
-					serialNumber: this.device.serialNumber
-				});
-				await qdl.run();
-				this.ui.stdout.write(`Backup up NV data from device ${this.device.id} complete!${os.EOL}`);
-			}
+			const qdl = new QdlFlasher({
+				outputLogFile: this.outputLog,
+				files: files,
+				ui: this.ui,
+				currTask: 'Backup',
+				skipReset: true,
+				serialNumber: this.device.serialNumber
+			});
+			await qdl.run();
 		} catch (error) {
 			this.ui.stdout.write(`An error ocurred while trying to backing up your tachyon ${os.EOL}`);
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${this.outputLog} for more information ${os.EOL}`);
 		}
-	}
-
-	async hasBackups() {
-		const names = await fs.readdir(this._resetDir);
-		const prefix = `${this.device.id}_`;
-		return names.some(name => name.startsWith(prefix) && name.endsWith('.backup'));
 	}
 
 	async _downloadFactoryOS(){
@@ -176,6 +181,12 @@ module.exports = class TachyonRestore extends CLICommandBase {
 			this.ui.stdout.write(`Verify your logs ${this.outputLog} for more information ${os.EOL}`);
 		}
 	}
+
+	async restoreStep() {
+		this.ui.write('Restore Tachyon NV data');
+		await this.ui.showBusySpinnerUntilResolved('Restore Tachyon NV data', this._restore());
+		this.ui.write('Restore Tachyon NV data complete!');
+	}
 	async _restore() {
 		try {
 			const { firehosePath, xmlFile } = await prepareFlashFiles({
@@ -206,5 +217,11 @@ module.exports = class TachyonRestore extends CLICommandBase {
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${this.outputLog} for more information ${os.EOL}`);
 		}
+	}
+
+	async nextSteps() {
+		this.ui.write('To complete the process, run:');
+		this.ui.write(this.ui.chalk.cyan('particle tachyon setup'));
+		this.ui.write('This will reconfigure your device and prepare it for use.');
 	}
 };
