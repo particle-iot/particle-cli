@@ -8,6 +8,7 @@ const os = require('os');
 const QdlFlasher = require('../lib/qdl');
 const DownloadManager = require('../lib/download-manager');
 const FlashCommand = require('./flash');
+const SetupCommand = require('./setup-tachyon');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
@@ -51,7 +52,7 @@ module.exports = class TachyonRestore extends CLICommandBase {
 		await this._flashFactoryOS({ osPath: downloadPath });
 		// restore nv data
 		await this.restoreStep();
-		await this.nextSteps();
+		await this.setupStep();
 	}
 
 	async _getTachyonInfo() {
@@ -219,9 +220,9 @@ module.exports = class TachyonRestore extends CLICommandBase {
 		}
 	}
 
-	async nextSteps() {
-		this.ui.write('To complete the process, run:');
-		this.ui.write(this.ui.chalk.cyan('particle tachyon setup'));
-		this.ui.write('This will reconfigure your device and prepare it for use.');
+	async setupStep() {
+		this.ui.write('Starting device setup process...');
+		const setupCommand = new SetupCommand({ ui: this.ui });
+		await setupCommand.setup();
 	}
 };
