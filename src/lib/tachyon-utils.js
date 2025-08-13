@@ -389,7 +389,7 @@ async function getEDLModeDevices(ui, showSetupMessage) {
 				break;
 			}
 			if (!messageShown) {
-				const defaultMessage = `Tachyon not found. Disconnect and reconnect the device, and ensure it is in system update mode ${os.EOL}`;
+				const defaultMessage = `Ensure your device is connected, then put it in system update mode...${os.EOL}`;
 				const setupMessage = `${ui.chalk.bold('Before we get started, we need to power on your Tachyon board')}:` +
 					`${os.EOL}${os.EOL}` +
 					`1. Plug the USB-C cable into your computer and the Tachyon board.${os.EOL}` +
