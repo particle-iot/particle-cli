@@ -154,10 +154,10 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(tachyon, 'restore', 'Restore the tachyon with a clean image', {
+	commandProcessor.createCommand(tachyon, 'factory-restore', 'Restore the tachyon with a clean image', {
 		handler: (args) => {
-			const TachyonRestore = require('../cmd/tachyon-restore');
-			return new TachyonRestore().restore(args);
+			const TachyonFactoryRestore = require('../cmd/tachyon-factory-restore');
+			return new TachyonFactoryRestore().restore(args);
 		},
 		examples: {
 			'$0 $command': 'Restore the tachyon with a clean image',

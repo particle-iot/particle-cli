@@ -11,7 +11,7 @@ const SetupCommand = require('./setup-tachyon');
 const BackupRestoreCommand = require('./backup-restore-tachyon');
 
 
-module.exports = class TachyonRestore extends CLICommandBase {
+module.exports = class TachyonFactoryRestore extends CLICommandBase {
 	constructor({ ui } = {}) {
 		super();
 		this.ui = ui || this.ui;
