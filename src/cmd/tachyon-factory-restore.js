@@ -98,6 +98,8 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 					ui: this.ui,
 					device: this.device
 				}));
+			this._printTachyonInfo(tachyonInfo);
+
 		} catch (error) {
 			// if something fails, we're going to ask so omit this issue (the device is bricked so can fail)
 			this.ui.write(this.ui.chalk.yellow(`Couldn't get device info ${os.EOL}`));
@@ -109,6 +111,19 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		} else {
 			this.deviceInfo.region = tachyonInfo.region;
 		}
+	}
+
+	_printTachyonInfo(tachyonInfo) {
+		const border = this.ui.chalk.cyan('─'.repeat(70));
+		this.ui.write(
+			`${border}${os.EOL}` +
+			this.ui.chalk.bold(`Device Info: ${os.EOL}`) +
+			`Device ID: ${tachyonInfo.deviceId}${os.EOL}` +
+			`Region: ${tachyonInfo.region}${os.EOL}` +
+			`Manufacturing data: ${tachyonInfo.manufacturingData}${os.EOL}` +
+			`OS Version: ${tachyonInfo.osVersion}${os.EOL}` +
+			`${border}${os.EOL}`
+		);
 	}
 
 	async _selectRegion() {
