@@ -22,7 +22,7 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		this.outputLog = null;
 		this.device = null;
 		this.deviceInfo = {
-			board: 'formfactor' // should be formfactor_dvt but the manifest is returning formfactor
+			board: 'formfactor_dvt'
 		};
 	}
 
