@@ -27,6 +27,10 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 	}
 
 	async restore({ board } = {}){
+		const continueProcess = await this.confirmProcess();
+		if (!continueProcess) {
+			return;
+		}
 		// prepare directories:
 		this.ui.write('Preparing your device for a restore...');
 		await fs.ensureDir(this._resetDir);
@@ -61,6 +65,28 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 			await this.restoreNVDataStep();
 			await this.setupStep();
 		}
+	}
+
+	async confirmProcess() {
+		const title = this.ui.chalk.bold(` WARNING ${os.EOL}`);
+		const border = this.ui.chalk.yellow('─'.repeat(120));
+		this.ui.write(
+			`${border}${os.EOL}` +
+			`${title}${os.EOL}` +
+			`This process ${this.ui.chalk.bold('will erase')} the operating system, user data, and configuration from your device.${os.EOL}` +
+			`If you do not have a backup of your modem provisioning data, your device ${this.ui.chalk.bold('will not function correctly')} ${os.EOL}` +
+			`until Particle provides a file for your individual device to restore it for you.${os.EOL}` +
+			`${os.EOL}` +
+			`For more information please visit: https://developer.particle.io/tachyon/troubleshooting-and-tricks/restore ${os.EOL}` +
+			`${border}${os.EOL}`
+		);
+		const { continueProcess } = await this.ui.prompt({
+			type: 'confirm',
+			name: 'continueProcess',
+			message: 'Do you want to continue with the process?',
+			default: true
+		});
+		return continueProcess;
 	}
 
 	async _getTachyonInfo() {
