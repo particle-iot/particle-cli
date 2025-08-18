@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.41.0 - Aug 18 2025
+* Clarify Wifi message on tachyon setup
+* Add `factory-restore` option for tachyon command
+
 # 3.40.1 - Aug 01 2025
 * Update device-constants to 4.0.2 (fix for generate deviceId from machineId)
 
