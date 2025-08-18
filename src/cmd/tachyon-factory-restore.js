@@ -10,6 +10,7 @@ const FlashCommand = require('./flash');
 const SetupCommand = require('./setup-tachyon');
 const BackupRestoreCommand = require('./backup-restore-tachyon');
 
+const RESTORE_DOCS_URL = 'https://developer.particle.io/tachyon/troubleshooting-and-tricks/restore';
 
 module.exports = class TachyonFactoryRestore extends CLICommandBase {
 	constructor({ ui } = {}) {
@@ -17,7 +18,7 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		this.ui = ui || this.ui;
 		spinnerMixin(this);
 		this._baseDir = settings.ensureFolder();
-		this._resetDir = path.join(process.cwd());
+		this._backupDir = path.join(process.cwd());
 		this._logsDir = path.join(this._baseDir, 'logs');
 		this.outputLog = null;
 		this.device = null;
@@ -26,45 +27,54 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		};
 	}
 
-	async restore({ board } = {}){
-		const continueProcess = await this.confirmProcess();
+	async restore(){
+		let continueProcess = await this.confirmProcess();
 		if (!continueProcess) {
 			return;
 		}
 		// prepare directories:
-		this.ui.write('Preparing your device for a restore...');
-		await fs.ensureDir(this._resetDir);
+		this.ui.write('Preparing your device for factory restore...');
+		await fs.ensureDir(this._backupDir);
 		await fs.ensureDir(this._logsDir);
-		this.ui.write('Connecting with your device, make sure your device is in system update mode (blinking yellow)');
+		this.ui.write('Connecting with your device, make sure your device is in system update mode (blinking yellow).');
 		this.device = await getEDLDevice({ ui: this.ui });
-		this.outputLog = path.join(this._logsDir, `tachyon_${this.device.id}_restore_${Date.now()}`);
+		this.outputLog = path.join(this._logsDir, `tachyon_${this.device.id}_factory_restore_${Date.now()}.log`);
 		this.ui.write(`Logs will be saved in ${this.outputLog}`);
 		// getting device info or ask
-		await this._getTachyonInfo({ board });
+		await this._getTachyonInfo();
 
-		if (this.deviceInfo.manufacturingData === 'Missing') {
-			this._printMissingFilesWarning();
+		let hasBackups = await this.hasBackups();
+		if (hasBackups) {
+			this.ui.write('Backup of manufacturing data found in the working directory, skipping backup step.');
+		} else if (this.deviceInfo.manufacturingData === 'Missing') {
+			continueProcess = await this._printMissingFilesWarning();
+			if (!continueProcess) {
+				return;
+			}
 		} else {
 			// backup nv data
 			await this.backupStep();
 		}
+
 		// download os
-		this.ui.write('Downloading restore image...');
+		this.ui.write('Downloading factory image...');
 		const downloadPath = await this._downloadFactoryOS();
 		// flash os
-		this.ui.write('Installing restore image...');
+		this.ui.write('Installing factory image...');
 		await this._flashFactoryOS({ osPath: downloadPath });
-		const hasBackups = await this.hasBackups();
+
+		hasBackups = await this.hasBackups();
 		if (!hasBackups) {
-			const noDataTitle = this.ui.chak.yellow(`No NV data backup found — device personalization was not restored.${os.EOL}`);
-			const content = `If you obtain the missing files later, run:${os.EOL}`;
-			const command = this.ui.chalk.cyan(`    particle tachyon restore --input-dir /path/to/files ${os.EOL}`);
+			const noDataTitle = this.ui.chalk.yellow.bold(`Manufacturing data backup not found — modem provisioning data was not restored.${os.EOL}`);
+			const content = `If you obtain the backup files from Particle later, run:${os.EOL}`;
+			const command = this.ui.chalk.cyan(`    particle tachyon restore${os.EOL}`);
 			this.ui.write(noDataTitle + content + command);
 		} else {
 			// restore nv data
 			await this.restoreNVDataStep();
-			await this.setupStep();
 		}
+
+		await this.setupStep();
 	}
 
 	async confirmProcess() {
@@ -77,7 +87,7 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 			`If you do not have a backup of your modem provisioning data, your device ${this.ui.chalk.bold('will not function correctly')} ${os.EOL}` +
 			`until Particle provides a file for your individual device to restore it for you.${os.EOL}` +
 			`${os.EOL}` +
-			`For more information please visit: https://developer.particle.io/tachyon/troubleshooting-and-tricks/restore ${os.EOL}` +
+			`For more information please visit: ${RESTORE_DOCS_URL}${os.EOL}` +
 			`${border}${os.EOL}`
 		);
 		const { continueProcess } = await this.ui.prompt({
@@ -105,7 +115,7 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 			this.ui.write(this.ui.chalk.yellow(`Couldn't get device info ${os.EOL}`));
 		}
 
-		this.deviceInfo.manufacturingData - tachyonInfo?.manufacturingData || 'Missing';
+		this.deviceInfo.manufacturingData = tachyonInfo?.manufacturingData || 'Missing';
 		if (!tachyonInfo?.region || tachyonInfo?.region === 'Unknown') {
 			this.deviceInfo.region = await this._selectRegion();
 		} else {
@@ -144,33 +154,32 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 	}
 
 	async _printMissingFilesWarning() {
-		const title = this.ui.chalk.yellow(`Missing manufacturing files detected ${os.EOL}`);
-		const content = `Looks like some required files aren’t on this device.${os.EOL}` +
-			`You can continue the restoration, but you’ll need to run:${os.EOL}`;
-		const command = this.ui.chalk.cyan(`    particle tachyon restore --input-dir /path/to/files ${os.EOL}`);
-		const bottom = `afterward to restore them. Contact support if you don’t have the missing files.${os.EOL}`;
-		this.ui.write(title + content + command + bottom);
+		const title = this.ui.chalk.yellow.bold(`Manufacturing data is missing on the device.${os.EOL}`);
+		const content = `If you continue with the restore process, your device ${this.ui.chalk.bold('will not function correctly')} until Particle provides${os.EOL}` +
+			`a file for your individual device to restore it for you.${os.EOL}`;
+		const bottom = `To obtain the necessary file, follow the instructions at${os.EOL}  ${RESTORE_DOCS_URL}${os.EOL}`;
+		this.ui.write(title + content + bottom);
+
+		const { continueProcess } = await this.ui.prompt({
+			type: 'confirm',
+			name: 'continueProcess',
+			message: 'Do you want to continue with the process?',
+			default: true
+		});
+		return continueProcess;
 	}
 
-	async backupStep(){
-		// verify if backups files already exists:
-		const hasBackups = await this.hasBackups();
-		if (hasBackups) {
-			this.ui.write('Backups found in the working directory');
-		} else {
-			await this.ui.showBusySpinnerUntilResolved('Backing up device NV data...', this._backup());
-		}
-		this.nvDataBackupsExist = true;
-	}
 	async hasBackups() {
-		const names = await fs.readdir(this._resetDir);
+		const names = await fs.readdir(this._backupDir);
 		const prefix = `${this.device.id}_`;
 		return names.some(name => name.startsWith(prefix) && name.endsWith('.backup'));
 	}
 
-	async _backup(){
-		const backupRestoreCmd = new BackupRestoreCommand({ ui: this.ui });
-		await backupRestoreCmd.backup({ existingLog: this.outputLog });
+	async backupStep(){
+		return this.ui.showBusySpinnerUntilResolved('Backing up device NV data...', async () => {
+			const backupRestoreCmd = new BackupRestoreCommand({ ui: this.ui });
+			await backupRestoreCmd.backup({ existingLog: this.outputLog });
+		});
 	}
 
 	async _downloadFactoryOS(){
