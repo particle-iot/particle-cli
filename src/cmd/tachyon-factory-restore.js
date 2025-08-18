@@ -176,10 +176,12 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 	}
 
 	async backupStep(){
-		return this.ui.showBusySpinnerUntilResolved('Backing up device NV data...', async () => {
-			const backupRestoreCmd = new BackupRestoreCommand({ ui: this.ui });
-			await backupRestoreCmd.backup({ existingLog: this.outputLog });
-		});
+		await this.ui.showBusySpinnerUntilResolved('Backing Tachyon NV data', this._backupNVData());
+	}
+
+	async _backupNVData() {
+		const backupCommand = new BackupRestoreCommand({ ui: this.ui });
+		await backupCommand.backup({ existingLog: this.outputLog });
 	}
 
 	async _downloadFactoryOS(){
