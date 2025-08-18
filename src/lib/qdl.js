@@ -28,6 +28,7 @@ class QdlFlasher {
 		this.skipReset = skipReset;
 		this.currTask = currTask;
 		this.serialNumber = serialNumber;
+		this.connectinoError = null;
 	}
 
 	async run() {
@@ -50,7 +51,11 @@ class QdlFlasher {
 			await new Promise((resolve, reject) => {
 				const handleStream = (stream) => {
 					stream.on('data', chunk => {
-						chunk.toString().split('\n').map(line => line.trim()).filter(Boolean).forEach(this.processLogLine.bind(this));
+						chunk.toString()
+							.split('\n')
+							.map(line => line.trim())
+							.filter(Boolean)
+							.forEach(this.processLogLine.bind(this));
 					});
 				};
 
@@ -59,6 +64,9 @@ class QdlFlasher {
 
 				qdlProcess.on('close', (output) => {
 					if (output !== 0) {
+						if (this.connectinoError) {
+							return reject(new Error(this.connectionErrorMessage()));
+						}
 						return reject(new Error('Unable to complete device flashing. See logs for further details.'));
 					} else {
 						return resolve();
@@ -66,6 +74,7 @@ class QdlFlasher {
 				});
 				qdlProcess.on('error', reject);
 			});
+
 		} finally {
 			if (this.progressBarInitialized) {
 				this.progressBar.stop();
@@ -115,6 +124,8 @@ class QdlFlasher {
 			this.handleModuleStart(line);
 		} else if (line.includes('status=Flashing module')) {
 			this.handleModuleProgress(line);
+		} else if (/configure request failed|Start tag expected,\s*'<' not found/.test(line)) {
+			this.connectinoError = true;
 		}
 	}
 
@@ -166,6 +177,12 @@ class QdlFlasher {
 				this.progressBar.update({ description: `Flashing complete ${this.currTask ? this.currTask : ''}` });
 			}
 		}
+	}
+
+	connectionErrorMessage() {
+		return `Error communicating with the device.${os.EOL}` +
+			'Please power off the device completely by disconnecting the battery and USB-C cable, wait 30 seconds, ' +
+			'then reconnect the battery and USB-C.';
 	}
 
 }

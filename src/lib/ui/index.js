@@ -95,8 +95,10 @@ module.exports = class UI {
 		}, cliProgress.Presets.shades_classic);
 	}
 
-	showBusySpinnerUntilResolved(text, promise){
-		if (this.quiet){
+	showBusySpinnerUntilResolved(text, input) {
+		const promise = typeof input === 'function' ? Promise.resolve().then(() => input()) : input;
+
+		if (this.quiet) {
 			return promise;
 		}
 
@@ -105,15 +107,7 @@ module.exports = class UI {
 
 		spinner.start();
 
-		return promise
-			.then(value => {
-				spinner.stop(clear);
-				return value;
-			})
-			.catch(error => {
-				spinner.stop(clear);
-				throw error;
-			});
+		return promise.finally(() => spinner.stop(clear));
 	}
 
 	logFirstTimeFlashWarning(){

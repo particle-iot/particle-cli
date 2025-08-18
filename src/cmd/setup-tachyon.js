@@ -53,7 +53,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.outputLog = null;
 		this.defaultOptions = {
 			region: 'NA',
-			version: 'stable',
+			version: settings.tachyonVersion || 'stable',
 			board: 'formfactor',
 			country: 'USA',
 			variant: null,

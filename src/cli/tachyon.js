@@ -154,6 +154,16 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(tachyon, 'factory-restore', 'Restore the tachyon with a clean image', {
+		handler: (args) => {
+			const TachyonFactoryRestore = require('../cmd/tachyon-factory-restore');
+			return new TachyonFactoryRestore().restore(args);
+		},
+		examples: {
+			'$0 $command': 'Restore the tachyon with a clean image',
+		}
+	});
+
 	return tachyon;
 };
 
