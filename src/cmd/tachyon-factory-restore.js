@@ -227,6 +227,6 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 	async setupStep() {
 		this.ui.write('Starting device setup process...');
 		const setupCommand = new SetupCommand({ ui: this.ui });
-		await setupCommand.setup();
+		await setupCommand.setup({ region: this.deviceInfo.region });
 	}
 };
