@@ -4,7 +4,7 @@ const os = require('os');
 
 const {
 	getEDLDevice,
-	getTachyonInfo
+	getTachyonInfo, handleFlashError
 } = require('../lib/tachyon-utils');
 
 
@@ -22,6 +22,10 @@ module.exports = class IdentifyTachyonCommand extends CLICommandBase {
 			const tachyonInfo = await getTachyonInfo({ outputLog, ui: this.ui, device });
 			this.printIdentification(tachyonInfo);
 		} catch (error) {
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this.identify();
+			}
 			this.ui.stdout.write(`An error ocurred while trying to identify your tachyon ${os.EOL}`);
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${outputLog} for more information ${os.EOL}`);

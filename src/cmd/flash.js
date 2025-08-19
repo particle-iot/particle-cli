@@ -16,6 +16,7 @@ const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/fil
 const deviceOsUtils = require('../lib/device-os-version-util');
 const os = require('os');
 const semver = require('semver');
+const { handleFlashError } = require('../lib/tachyon-utils');
 
 const {
 	createFlashSteps,
@@ -29,7 +30,6 @@ const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
 const QdlFlasher = require('../lib/qdl');
-const { TachyonConnectionError } = QdlFlasher;
 
 const { getEDLDevice, addLogHeaders, addLogFooter, addManifestInfoLog } = require('../lib/tachyon-utils');
 
@@ -138,37 +138,19 @@ module.exports = class FlashCommand extends CLICommandBase {
 			addLogFooter({ outputLog, startTime, endTime: new Date() });
 		} catch (error) {
 			// check retry here
-			if (error instanceof TachyonConnectionError) {
-				const { retry } = await this._handleConnectionError();
-				if (retry) {
-					return this.flashTachyon({
-						device,
-						files,
-						skipReset,
-						output,
-						verbose
-					});
-				}
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this.flashTachyon({
+					device,
+					files,
+					skipReset,
+					output,
+					verbose
+				});
 			}
 			fs.appendFileSync(outputLog, error.message);
 			throw error;
 		}
-	}
-
-	async _handleConnectionError() {
-		this.ui.write(
-			this.ui.chalk.yellow(`Cannot communicate with the device ${os.EOL}`) +
-			'Please power off the device completely by disconnecting the battery and USB-C cable, ' +
-			`wait 30 seconds, then reconnect the battery and USB-C. ${os.EOL}` +
-			'Once you are ready, hit enter to retry'
-		);
-		const question = {
-			type: 'confirm',
-			name: 'retry',
-			message: 'Retry?',
-			default: true
-		};
-		return this.ui.prompt([question]);
 	}
 
 	async flashTachyonXml({ device, files, skipReset, output }) {
@@ -199,16 +181,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 			addLogFooter({ outputLog: output, startTime, endTime: new Date() });
 		} catch (error) {
 			// check retry here
-			if (error instanceof TachyonConnectionError) {
-				const { retry } = await this._handleConnectionError();
-				if (retry) {
-					return this.flashTachyon({
-						device,
-						files,
-						skipReset,
-						output,
-					});
-				}
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this.flashTachyonXml({
+					device,
+					files,
+					skipReset,
+					output,
+				});
 			}
 			fs.appendFileSync(output, error.message);
 			throw new Error('Download failed with error: ' + error.message);

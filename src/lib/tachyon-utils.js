@@ -17,6 +17,7 @@ const VError = require('verror');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const wifiScan = require('node-wifiscanner2').scan;
+const { TachyonConnectionError } = require('./qdl');
 
 function addLogHeaders({ outputLog, startTime, deviceId, commandName }) {
 	fs.appendFileSync(outputLog, `Tachyon Logs:${os.EOL}`);
@@ -426,6 +427,27 @@ async function edlModePicker({ ui, devices }) {
 	return devices.find((device) => device.id === selected);
 }
 
+async function handleFlashError({ error, ui }) {
+	if (error instanceof TachyonConnectionError) {
+		ui.write(
+			ui.chalk.yellow(`Device not responding ${os.EOL}`) +
+			`Please turn it off completely: ${os.EOL}` +
+			`    1. Remove the battery and USB-C cable ${os.EOL}` +
+			`    2. Wait 30 seconds ${os.EOL}` +
+			`    3. Reconnect both ${os.EOL}${os.EOL}` +
+			'Press Enter once you\'re ready to retry.'
+		);
+		const question = {
+			type: 'confirm',
+			name: 'retry',
+			message: 'Retry?',
+			default: true
+		};
+		return ui.prompt([question]);
+	}
+	return false;
+}
+
 module.exports = {
 	addLogHeaders,
 	addManifestInfoLog,
@@ -434,4 +456,5 @@ module.exports = {
 	prepareFlashFiles,
 	getTachyonInfo,
 	promptWifiNetworks,
+	handleFlashError
 };
