@@ -76,7 +76,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	//returns true if successful or false if failed
-	async flashTachyon({ device, files, skipReset, output, verbose=true }) {
+	async flashTachyon({ device, files, skipReset, output, verbose=true }) { // eslint-disable-line max-statements
 		let zipFile;
 		let includeDir = '';
 		let updateFolder = '';
@@ -198,7 +198,19 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// add log footer
 			addLogFooter({ outputLog: output, startTime, endTime: new Date() });
 		} catch (error) {
-			fs.appendFileSync(output, 'Download failed with error: ' + error.message);
+			// check retry here
+			if (error instanceof TachyonConnectionError) {
+				const { retry } = await this._handleConnectionError();
+				if (retry) {
+					return this.flashTachyon({
+						device,
+						files,
+						skipReset,
+						output,
+					});
+				}
+			}
+			fs.appendFileSync(output, error.message);
 			throw new Error('Download failed with error: ' + error.message);
 		}
 	}
