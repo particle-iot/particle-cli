@@ -28,7 +28,7 @@
         "node-wifiscanner2": "^1.2.1",
         "particle-api-js": "^11.1.0",
         "particle-commands": "^1.0.2",
-        "particle-library-manager": "^1.0.1",
+        "particle-library-manager": "^1.0.2",
         "particle-usb": "^4.0.0",
         "request": "^2.79.0",
         "safe-buffer": "^5.2.0",
@@ -6080,9 +6080,9 @@
       }
     },
     "node_modules/particle-library-manager": {
-      "version": "1.0.1",
-      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-1.0.1.tgz",
-      "integrity": "sha512-amZm+de7OjwW7YP47sBqg8TfA9lyK7HmGuhbX4Bc/y+jE+ZOXIHg7ukHmXydxFhROz5secZuKnno32kdtoxesA==",
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-1.0.2.tgz",
+      "integrity": "sha512-v/h3bQupp78UCvPptitVghsdNJDEqQEVWZy4pPeNBzAA5rZaPDC3e8GZktWU7JejkZKLX8cNb2SnyxVMMB+b7A==",
       "dependencies": {
         "app-root-path": "^2.0.1",
         "async": "^2.0.0-rc.4",
@@ -14295,9 +14295,9 @@
       }
     },
     "particle-library-manager": {
-      "version": "1.0.1",
-      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-1.0.1.tgz",
-      "integrity": "sha512-amZm+de7OjwW7YP47sBqg8TfA9lyK7HmGuhbX4Bc/y+jE+ZOXIHg7ukHmXydxFhROz5secZuKnno32kdtoxesA==",
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/particle-library-manager/-/particle-library-manager-1.0.2.tgz",
+      "integrity": "sha512-v/h3bQupp78UCvPptitVghsdNJDEqQEVWZy4pPeNBzAA5rZaPDC3e8GZktWU7JejkZKLX8cNb2SnyxVMMB+b7A==",
       "requires": {
         "app-root-path": "^2.0.1",
         "async": "^2.0.0-rc.4",
