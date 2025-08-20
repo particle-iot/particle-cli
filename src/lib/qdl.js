@@ -10,6 +10,16 @@ const os = require('os');
 
 const TACHYON_STORAGE_TYPE = 'ufs';
 
+class TachyonConnectionError extends Error {
+	constructor() {
+		super();
+		this.name = TachyonConnectionError.name;
+		this.message = `Error communicating with the device.${os.EOL}` +
+			'Please power off the device completely by disconnecting the battery and USB-C cable, wait 30 seconds, ' +
+			'then reconnect the battery and USB-C.';
+	}
+}
+
 class QdlFlasher {
 	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile, skipReset=false, currTask=null, serialNumber }) {
 		this.files = files;
@@ -65,7 +75,7 @@ class QdlFlasher {
 				qdlProcess.on('close', (output) => {
 					if (output !== 0) {
 						if (this.connectinoError) {
-							return reject(new Error(this.connectionErrorMessage()));
+							return reject(new TachyonConnectionError());
 						}
 						return reject(new Error('Unable to complete device flashing. See logs for further details.'));
 					} else {
@@ -178,14 +188,8 @@ class QdlFlasher {
 			}
 		}
 	}
-
-	connectionErrorMessage() {
-		return `Error communicating with the device.${os.EOL}` +
-			'Please power off the device completely by disconnecting the battery and USB-C cable, wait 30 seconds, ' +
-			'then reconnect the battery and USB-C.';
-	}
-
 }
 
 
 module.exports = QdlFlasher;
+module.exports.TachyonConnectionError = TachyonConnectionError;

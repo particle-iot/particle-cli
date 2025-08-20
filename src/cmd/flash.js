@@ -16,6 +16,7 @@ const { sourcePatterns, binaryPatterns, binaryExtensions } = require('../lib/fil
 const deviceOsUtils = require('../lib/device-os-version-util');
 const os = require('os');
 const semver = require('semver');
+const { handleFlashError } = require('../lib/tachyon-utils');
 
 const {
 	createFlashSteps,
@@ -29,6 +30,7 @@ const createApiCache = require('../lib/api-cache');
 const { validateDFUSupport } = require('./device-util');
 const unzip = require('unzipper');
 const QdlFlasher = require('../lib/qdl');
+
 const { getEDLDevice, addLogHeaders, addLogFooter, addManifestInfoLog } = require('../lib/tachyon-utils');
 
 const TACHYON_MANIFEST_FILE = 'manifest.json';
@@ -74,7 +76,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	//returns true if successful or false if failed
-	async flashTachyon({ device, files, skipReset, output, verbose=true }) {
+	async flashTachyon({ device, files, skipReset, output, verbose=true }) { // eslint-disable-line max-statements
 		let zipFile;
 		let includeDir = '';
 		let updateFolder = '';
@@ -135,6 +137,17 @@ module.exports = class FlashCommand extends CLICommandBase {
 			fs.appendFileSync(outputLog, `OS Download complete.${os.EOL}`);
 			addLogFooter({ outputLog, startTime, endTime: new Date() });
 		} catch (error) {
+			// check retry here
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this.flashTachyon({
+					device,
+					files,
+					skipReset,
+					output,
+					verbose
+				});
+			}
 			fs.appendFileSync(outputLog, error.message);
 			throw error;
 		}
@@ -167,7 +180,17 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// add log footer
 			addLogFooter({ outputLog: output, startTime, endTime: new Date() });
 		} catch (error) {
-			fs.appendFileSync(output, 'Download failed with error: ' + error.message);
+			// check retry here
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this.flashTachyonXml({
+					device,
+					files,
+					skipReset,
+					output,
+				});
+			}
+			fs.appendFileSync(output, error.message);
 			throw new Error('Download failed with error: ' + error.message);
 		}
 	}

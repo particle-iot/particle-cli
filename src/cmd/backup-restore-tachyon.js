@@ -7,7 +7,7 @@ const {
 	addLogHeaders,
 	getEDLDevice,
 	addLogFooter,
-	prepareFlashFiles
+	prepareFlashFiles, handleFlashError
 } = require('../lib/tachyon-utils');
 const settings = require('../../settings');
 
@@ -63,6 +63,14 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			await qdl.run();
 			this.ui.stdout.write(`Backing up NV data from device ${device.id} complete!${os.EOL}`);
 		} catch (error) {
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this.backup({
+					'output-dir': outputDir,
+					'log-dir': logDir,
+					existingLog: outputLog,
+				});
+			}
 			this.ui.stdout.write(`An error ocurred while trying to backing up your tachyon ${os.EOL}`);
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${outputLog} for more information ${os.EOL}`);
@@ -113,6 +121,14 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			this.ui.stdout.write(`Restoring NV data to device ${device.id} complete!${os.EOL}`);
 
 		} catch (error) {
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this.backup({
+					'input-dir': inputDir,
+					'log-dir': logDir,
+					existingLog: outputLog,
+				});
+			}
 			this.ui.stdout.write(`An error ocurred while trying to restore up your tachyon ${os.EOL}`);
 			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${outputLog} for more information ${os.EOL}`);

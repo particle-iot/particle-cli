@@ -15,7 +15,7 @@ const DownloadManager = require('../lib/download-manager');
 const { platformForId, PLATFORMS } = require('../lib/platform');
 const path = require('path');
 const semver = require('semver');
-const { prepareFlashFiles, getTachyonInfo, promptWifiNetworks, getEDLDevice } = require('../lib/tachyon-utils');
+const { prepareFlashFiles, getTachyonInfo, promptWifiNetworks, getEDLDevice, handleFlashError } = require('../lib/tachyon-utils');
 const { supportedCountries } = require('../lib/supported-countries');
 
 const showWelcomeMessage = (ui) => `
@@ -123,6 +123,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			}));
 		} catch (error) {
 			// If this fails, the flash won't work so abort early.
+			const { retry } = await handleFlashError({ error, ui: this.ui });
+			if (retry) {
+				return this._getDeviceInfo();
+			}
 			throw new Error('Unable to get device info. Please restart the device and try again.');
 		}
 	}
