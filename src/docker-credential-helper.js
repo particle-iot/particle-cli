@@ -89,15 +89,67 @@ function runGetCommand() {
         }
       }
     }
-
-    // No matching credentials found
-    process.exit(0);
   });
+}
+
+function runListCommand() {
+  const homeDir = os.homedir();
+  const particleConfigDir = path.join(homeDir, ".particle");
+
+  let files;
+  try {
+    files = fs.readdirSync(particleConfigDir);
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
+  }
+
+  const storedCredentials = {};
+
+  for (const file of files) {
+    if (file.endsWith(".config.json")) {
+      const filePath = path.join(particleConfigDir, file);
+      let config;
+      try {
+        const raw = fs.readFileSync(filePath, "utf8");
+        config = JSON.parse(raw);
+      } catch (err) {
+        console.error(err.message);
+        process.exit(1);
+      }
+
+      if (!config.apiUrl) {
+        continue;
+      }
+
+      const apiHost = getHostnameFromUrl(config.apiUrl);
+      if (!apiHost) continue;
+
+      const apiDomain = apiHost.split(".").slice(1).join(".");
+
+      if (apiDomain.endsWith("particle.io")) {
+        storedCredentials[`registry.${apiDomain}`] = config.username;
+      }
+    }
+  }
+  process.stdout.write(JSON.stringify(storedCredentials));
 }
 
 // If this file is run directly, execute the command
 if (require.main === module) {
-  runGetCommand();
+  runCommand();
 }
 
-module.exports = { runGetCommand };
+function runCommand() {
+  // if executed with an arg of 'get' run the get command
+  if (process.argv[2] === 'get') {
+    runGetCommand();
+  } else if (process.argv[2] === 'list') {
+    runListCommand();
+  } else if (process.argv[2] === 'store' || process.argv[2] === 'erase') {
+    // no-op for now, just exit 0
+    process.exit(0);
+  }
+}
+
+module.exports = { runCommand, runGetCommand };
