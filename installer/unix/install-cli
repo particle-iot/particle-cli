@@ -12,6 +12,7 @@ VERSION=${VERSION}
 BINARY="particle"
 DEST_PATH="$HOME/bin"
 DEST="$DEST_PATH/$BINARY"
+DOCKER_CREDENTIAL_HELPER="$DEST_PATH/docker-credential-particle"
 MANIFEST_HOST=${MANIFEST_HOST:-binaries.particle.io}
 MANIFEST_URL="https://$MANIFEST_HOST/particle-cli/manifest.json"
 
@@ -100,6 +101,7 @@ fi
 
 mv -f "$TMP_FILE" "$DEST"
 chmod +x "$DEST"
+ln -s "$DEST" "$DOCKER_CREDENTIAL_HELPER"
 
 # Turn off automatic updates when installing a specific version
 if [ "$DISABLE_AUTOMATIC_UPDATES" -eq 1 ]; then
