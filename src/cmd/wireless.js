@@ -7,7 +7,7 @@ const inquirer = require('inquirer');
 const prompt = inquirer.prompt;
 const chalk = require('chalk');
 const scan = require('node-wifiscanner2').scan;
-const SAP = require('softap-setup');
+const SAP = require('@particle/softap-setup');
 const path = require('path');
 const spinnerMixin = require('../lib/spinner-mixin');
 

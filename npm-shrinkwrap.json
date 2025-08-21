@@ -10,6 +10,7 @@
       "license": "Apache-2.0",
       "dependencies": {
         "@particle/device-constants": "^4.0.2",
+        "@particle/softap-setup": "^4.1.1",
         "binary-version-reader": "^3.0.1",
         "chalk": "^2.4.2",
         "cli-progress": "^3.12.0",
@@ -25,7 +26,7 @@
         "lodash": "^4.17.15",
         "moment": "^2.24.0",
         "node-fetch": "^2.7.0",
-        "node-wifiscanner2": "^1.2.1",
+        "node-wifiscanner2": "^1.2.2",
         "particle-api-js": "^11.1.4",
         "particle-commands": "^1.0.2",
         "particle-library-manager": "^1.0.2",
@@ -35,7 +36,6 @@
         "semver": "^7.5.2",
         "serialport": "^10.4.0",
         "sha512crypt-node": "^1.0.2",
-        "softap-setup": "^4.1.0",
         "temp": "^0.9.1",
         "unzipper": "^0.12.3",
         "uuid": "^11.1.0",
@@ -589,6 +589,17 @@
       "engines": {
         "node": ">=16.x",
         "npm": "8.x"
+      }
+    },
+    "node_modules/@particle/softap-setup": {
+      "version": "4.1.1",
+      "resolved": "https://registry.npmjs.org/@particle/softap-setup/-/softap-setup-4.1.1.tgz",
+      "integrity": "sha512-jCEfDoGjwNQMbLzCgdwLXJkt4AsnPHaHAqZwk5WIgVz5893q6cUwktQoW3XOlEqPdkAiLOSPamz2jSer/h7x+A==",
+      "dependencies": {
+        "node-rsa": "^0.4.2"
+      },
+      "engines": {
+        "node": ">=4"
       }
     },
     "node_modules/@protobufjs/aspromise": {
@@ -5441,15 +5452,15 @@
     "node_modules/node-rsa": {
       "version": "0.4.2",
       "resolved": "https://registry.npmjs.org/node-rsa/-/node-rsa-0.4.2.tgz",
-      "integrity": "sha1-1jkXKewWqDDtWjgEKzFX0tXXJTA=",
+      "integrity": "sha512-Bvso6Zi9LY4otIZefYrscsUpo2mUpiAVIEmSZV2q41sP8tHZoert3Yu6zv4f/RXJqMNZQKCtnhDugIuCma23YA==",
       "dependencies": {
         "asn1": "0.2.3"
       }
     },
     "node_modules/node-wifiscanner2": {
-      "version": "1.2.1",
-      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.1.tgz",
-      "integrity": "sha512-8D+U7d8HjU/SeL6Z44qWq9X5bZm2Q5LKbJY9irWaELCkEfZf3yss8rvzlUm0oBWOUuX3UdiCMePxyV9bZI3qVg==",
+      "version": "1.2.2",
+      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.2.tgz",
+      "integrity": "sha512-Tf3jXPadoTYc8espdZivzANrzGaAXhv2TTYqF1proKjerCzAYjc/tLHOk0Vi0Mji7+qGkqCERRJd6Agp+VF4Mw==",
       "dependencies": {
         "os-locale": "^1.4.0"
       }
@@ -8114,17 +8125,6 @@
         "node": ">=8"
       }
     },
-    "node_modules/softap-setup": {
-      "version": "4.1.0",
-      "resolved": "https://registry.npmjs.org/softap-setup/-/softap-setup-4.1.0.tgz",
-      "integrity": "sha1-3+rxtaiVZqayyUhmeHKcfsdR6UM=",
-      "dependencies": {
-        "node-rsa": "^0.4.2"
-      },
-      "engines": {
-        "node": ">=4"
-      }
-    },
     "node_modules/spawn-wrap": {
       "version": "1.4.2",
       "resolved": "https://registry.npmjs.org/spawn-wrap/-/spawn-wrap-1.4.2.tgz",
@@ -9993,6 +9993,14 @@
       "integrity": "sha512-B+jJ44hNBYr+MYmX8Upx2DGlLWi5/er9yylGUnFERHXrEjGRtnqkchUN2DSuPNP9tfN4VE90ZS2Ejkm7Evmyug==",
       "requires": {
         "protobufjs": "^6.11.2"
+      }
+    },
+    "@particle/softap-setup": {
+      "version": "4.1.1",
+      "resolved": "https://registry.npmjs.org/@particle/softap-setup/-/softap-setup-4.1.1.tgz",
+      "integrity": "sha512-jCEfDoGjwNQMbLzCgdwLXJkt4AsnPHaHAqZwk5WIgVz5893q6cUwktQoW3XOlEqPdkAiLOSPamz2jSer/h7x+A==",
+      "requires": {
+        "node-rsa": "^0.4.2"
       }
     },
     "@protobufjs/aspromise": {
@@ -13778,15 +13786,15 @@
     "node-rsa": {
       "version": "0.4.2",
       "resolved": "https://registry.npmjs.org/node-rsa/-/node-rsa-0.4.2.tgz",
-      "integrity": "sha1-1jkXKewWqDDtWjgEKzFX0tXXJTA=",
+      "integrity": "sha512-Bvso6Zi9LY4otIZefYrscsUpo2mUpiAVIEmSZV2q41sP8tHZoert3Yu6zv4f/RXJqMNZQKCtnhDugIuCma23YA==",
       "requires": {
         "asn1": "0.2.3"
       }
     },
     "node-wifiscanner2": {
-      "version": "1.2.1",
-      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.1.tgz",
-      "integrity": "sha512-8D+U7d8HjU/SeL6Z44qWq9X5bZm2Q5LKbJY9irWaELCkEfZf3yss8rvzlUm0oBWOUuX3UdiCMePxyV9bZI3qVg==",
+      "version": "1.2.2",
+      "resolved": "https://registry.npmjs.org/node-wifiscanner2/-/node-wifiscanner2-1.2.2.tgz",
+      "integrity": "sha512-Tf3jXPadoTYc8espdZivzANrzGaAXhv2TTYqF1proKjerCzAYjc/tLHOk0Vi0Mji7+qGkqCERRJd6Agp+VF4Mw==",
       "requires": {
         "os-locale": "^1.4.0"
       }
@@ -15840,14 +15848,6 @@
       "resolved": "https://registry.npmjs.org/slash/-/slash-3.0.0.tgz",
       "integrity": "sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==",
       "dev": true
-    },
-    "softap-setup": {
-      "version": "4.1.0",
-      "resolved": "https://registry.npmjs.org/softap-setup/-/softap-setup-4.1.0.tgz",
-      "integrity": "sha1-3+rxtaiVZqayyUhmeHKcfsdR6UM=",
-      "requires": {
-        "node-rsa": "^0.4.2"
-      }
     },
     "spawn-wrap": {
       "version": "1.4.2",
