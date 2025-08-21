@@ -1,4 +1,3 @@
-const { underMaintenance } = require('../lib/maintenance');
 module.exports = ({ commandProcessor, root }) => {
 	const app = commandProcessor.createCategory(root, 'app', 'Manage Edge applications');
 
@@ -9,9 +8,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			//const AppCommand = require('../cmd/app');
-			//return new AppCommand().run({ ...args.params, blueprintDir: args.blueprintDir });
-			return underMaintenance(args);
+			const AppCommand = require('../cmd/app');
+			return new AppCommand().run({ ...args.params, blueprintDir: args.blueprintDir });
 		},
 		examples: {
 			'$0 $command my_tachyon': 'Build and push the Edge application in the current directory for the device my_tachyon'
@@ -31,9 +29,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			//const AppCommand = require('../cmd/app');
-			//return new AppCommand().push({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device, instance: args.instance });
-			return underMaintenance(args);
+			const AppCommand = require('../cmd/app');
+			return new AppCommand().push({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device, instance: args.instance });
 		},
 		examples: {
 			'$0 $command my_tachyon': 'Build and push the Edge application in the current directory for the device my_tachyon'
@@ -50,9 +47,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			//const AppCommand = require('../cmd/app');
-			//return new AppCommand().list({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device });
-			return underMaintenance(args);
+			const AppCommand = require('../cmd/app');
+			return new AppCommand().list({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device });
 		},
 		examples: {
 			'$0 $command': 'List Edge applications'
@@ -72,9 +68,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			//const AppCommand = require('../cmd/app');
-			//return new AppCommand().remove({ deviceId: args.device, appInstance: args.instance, blueprintDir: args.blueprintDir });
-			return underMaintenance(args);
+			const AppCommand = require('../cmd/app');
+			return new AppCommand().remove({ deviceId: args.device, appInstance: args.instance, blueprintDir: args.blueprintDir });
 		},
 		examples: {
 			'$0 $command --instance hello-world_12345': 'Remove this Edge application'

@@ -15,7 +15,6 @@ const { platformForId } = require('../lib/platform');
 
 const _ = require('lodash');
 
-const DOCKER_CONFIG_URL = 'https://linux-dist.particle.io/alpha-assets/2ea71ce0afce170affb38d162a1e3460.json';
 const PARTICLE_ENV_FILE = '.particle_env.yaml';
 
 module.exports = class AppCommands extends CLICommandBase {
@@ -35,9 +34,7 @@ module.exports = class AppCommands extends CLICommandBase {
 			throw new Error(`Application directory ${composeDir} not found.`);
 		}
 
-		const dockerConfigDir = await this._getDockerConfig();
-
-		await this._configureDockerContext(dockerConfigDir);
+		await this._installDockerCredHelper();
 
 		let dockerComposePath = path.join(composeDir, 'docker-compose.yaml');
 		if (!await fs.pathExists(dockerComposePath)) {
@@ -58,7 +55,7 @@ module.exports = class AppCommands extends CLICommandBase {
 
 		try {
 			// Executing docker-compose up
-			await execa('docker', ['--config', dockerConfigDir, 'compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir });
+			await execa('docker', ['compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir });
 		} catch (error) {
 			throw new Error(`Failed to run Docker Compose: ${error.message}`);
 		}
@@ -85,9 +82,8 @@ module.exports = class AppCommands extends CLICommandBase {
 			this.ui.write('Building application...');
 			const composeDir = path.join(blueprintDir, appName);
 			const uuid = uuidv4();
-			const dockerConfigDir = await this._getDockerConfig();
 
-			await this._configureDockerContext(dockerConfigDir);
+			await this._installDockerCredHelper();
 
 			// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
 			// For each container with a build key, build the container and tag it with a uuid, and push it to the registry
@@ -99,9 +95,9 @@ module.exports = class AppCommands extends CLICommandBase {
 				for (const { key: { value: service }, value: serviceConfig } of services.items) {
 					const buildDir = serviceConfig.get('build');
 					if (buildDir) {
-						const serviceTag = `particleapp/${service}:${uuid}`;
-						await this._buildContainer(dockerConfigDir, path.join(composeDir, buildDir), serviceTag);
-						await this._pushContainer(dockerConfigDir, serviceTag);
+						const serviceTag = `registry.particle.io/devices/${deviceId}/${service}:${uuid}`;
+						await this._buildContainer(path.join(composeDir, buildDir), serviceTag);
+						await this._pushContainer(serviceTag);
 						this._updateDockerCompose(serviceConfig, serviceTag);
 					}
 				}
@@ -140,20 +136,6 @@ module.exports = class AppCommands extends CLICommandBase {
 		return appName;
 	}
 
-	async _getDockerConfig() {
-		const particleDir = settings.ensureFolder();
-		const dockerConfigDir = path.join(particleDir, 'docker');
-		await fs.ensureDir(dockerConfigDir);
-		try {
-			const response = await fetch(DOCKER_CONFIG_URL);
-			const data = await response.buffer();
-			await fs.writeFile(path.join(dockerConfigDir, 'config.json'), data);
-		} catch (error) {
-			throw new Error(`Failed to fetch docker config: ${error.message}`);
-		}
-		return dockerConfigDir;
-	}
-
 	async _getDockerCompose(composeDir) {
 		let dockerComposePath = path.join(composeDir, 'docker-compose.yaml');
 		try {
@@ -177,58 +159,38 @@ module.exports = class AppCommands extends CLICommandBase {
 		}
 	}
 
-	async _copySystemDockerContext(dockerConfigDir) {
-		// Get the name of the current system docker context
-		const dockerContext = (await execa('docker', ['context', 'show'])).stdout;
-		// Export the system context and import it as 'particle' context in the docker config directory
-		const exportContext = execa('docker', ['context', 'export', dockerContext, '-']);
-		const importContext = execa('docker', ['--config', dockerConfigDir, 'context', 'import', 'particle', '-']);
-		exportContext.stdout.pipe(importContext.stdin);
-		await importContext;
-	}
-
-	async _configureDockerContext(dockerConfigDir) {
+	async _installDockerCredHelper() {
 		try {
-			// Check if the 'particle' context exists in the docker config directory
-			await this._checkDockerVersion();
-			const particleDockerContextsList = (await execa('docker', ['--config', dockerConfigDir, 'context', 'ls', '--format', '{{.Name}}'])).stdout;
-			if (!particleDockerContextsList.includes('particle')) {
-				await this._copySystemDockerContext(dockerConfigDir);
-			} else {
-				// We have a context, does it need to be updated?
-				const systemDockerContextInspect = (await execa('docker', ['context', 'inspect']));
-				const particleDockerContextInspect = (await execa('docker', ['--config', dockerConfigDir, 'context', 'inspect', 'particle']));
-				const systemDockerContext = JSON.parse(systemDockerContextInspect.stdout);
-				const particleDockerContext = JSON.parse(particleDockerContextInspect.stdout);
-				const extractEndpoints = (contexts) => contexts.map(ctx => ctx.Endpoints || {});
-				if (!_.isEqual(extractEndpoints(systemDockerContext), extractEndpoints(particleDockerContext))) {
-					// Update the context
-					await execa('docker', ['--config', dockerConfigDir, 'context', 'rm', '-f', 'particle']);
-					await this._copySystemDockerContext(dockerConfigDir);
-				}
+			const dockerConfigDir = path.join(os.homedir(), '.docker');
+			const credHelpersConfig = {
+				[`registry.particle.io`]: 'particle'
+			};
+			await fs.ensureDir(dockerConfigDir);
+			// if config.json exists add the credHelpers section, otherwise create a new config.json that contains it
+			const configPath = path.join(dockerConfigDir, 'config.json');
+			let config = {};
+			if (await fs.pathExists(configPath)) {
+				config = await fs.readJson(configPath);
 			}
-
-			const currentContext = (await execa('docker', ['--config', dockerConfigDir, 'context', 'show'])).stdout;
-			if (currentContext !== 'particle') {
-				await execa('docker', ['--config', dockerConfigDir, 'context', 'use', 'particle']);
-			}
-
+			config.credHelpers = config.credHelpers || {};
+			config.credHelpers = Object.assign(config.credHelpers, credHelpersConfig);
+			await fs.writeJson(configPath, config);
 		} catch (error) {
-			throw new Error(`Failed to configure docker. Make sure Docker is installed and running on your machine: ${error.message}`);
+			throw new Error(`Failed to install Docker credential helper: ${error.message}`);
 		}
 	}
 
-	async _buildContainer(dockerConfigDir, buildDir, serviceTag) {
+	async _buildContainer(buildDir, serviceTag) {
 		try {
-			await execa('docker', ['--config', dockerConfigDir, 'build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag], { stdio: 'inherit' });
+			await execa('docker', ['build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag], { stdio: 'inherit' });
 		} catch (error) {
 			throw new Error(`Failed to build container ${serviceTag}. See the Docker output for details: ${error.message}`);
 		}
 	}
 
-	async _pushContainer(dockerConfigDir, serviceTag) {
+	async _pushContainer(serviceTag) {
 		try {
-			await execa('docker', ['--config', dockerConfigDir, 'push', serviceTag], { stdio: 'inherit' });
+			await execa('docker', ['push', serviceTag], { stdio: 'inherit' });
 		} catch (error) {
 			throw new Error(`Failed to push the container ${serviceTag}. See the Docker output for details: ${error.message}`);
 		}
