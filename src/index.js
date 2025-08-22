@@ -10,7 +10,7 @@ const credHelper = require('./docker-credential-helper');
 if (hasValidNodeInstall()) {
 	// if called as docker-credential-particle exec that instead
 	if (process.argv0.includes('docker-credential-particle')) {
-		credHelper.runCommand();
+		credHelper.run();
 	} else {
 		new CLI().run(process.argv);
 	}
