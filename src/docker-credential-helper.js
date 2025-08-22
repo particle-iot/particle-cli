@@ -75,7 +75,7 @@ async function getActiveProfileName() {
 		/** @type {{ name?: string }} */
 		const profile = JSON.parse(await fs.readFile(path.join(PARTICLE_CONFIG_DIR, 'profile.json'), 'utf-8'));
 		return profile.name || DEFAULT_PROFILE_NAME;
-	} catch(err) {
+	} catch (err) {
 		return DEFAULT_PROFILE_NAME;
 	}
 }
@@ -202,7 +202,7 @@ async function runListCommand() {
 	process.stdout.write(JSON.stringify(storedCredentials));
 }
 
-export async function run() {
+async function run() {
 	const command = process.argv[2];
 	// if executed with an arg of 'get' run the get command
 	if (command === 'get') {
@@ -214,3 +214,7 @@ export async function run() {
 		process.exit(0);
 	}
 }
+
+module.exports = {
+	run,
+};
