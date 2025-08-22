@@ -1,4 +1,4 @@
-'use strict';
+
 
 const os = require('node:os');
 const fs = require('node:fs/promises');
@@ -66,7 +66,7 @@ async function findValidConfig(apiHost, configMap) {
 	return null;
 }
 
-const DEFAULT_PROFILE_NAME = 'particle'
+const DEFAULT_PROFILE_NAME = 'particle';
 /**
  * @returns {Promise<string>}
  */
@@ -151,11 +151,11 @@ async function readStdin() {
 		const rl = readline.createInterface({ input: process.stdin });
 
 		let inputData = '';
-		rl.on("line", (line) => {
+		rl.on('line', (line) => {
 			inputData += line;
 		});
 
-		rl.on("close", () => {
+		rl.on('close', () => {
 			res(inputData);
 		});
 	});
@@ -208,7 +208,7 @@ async function runListCommand() {
 		const baseDomain = hostname.split('.').slice(1).join('.');
 		const activeOrFirstConfig = configMap[hostname].active ?? configMap[hostname].files[0];
 
-		storedCredentials[`registry.${baseDomain}`] = activeOrFirstConfig.username
+		storedCredentials[`registry.${baseDomain}`] = activeOrFirstConfig.username;
 	}
 	process.stdout.write(JSON.stringify(storedCredentials));
 }
