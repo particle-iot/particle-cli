@@ -54,7 +54,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 		try {
 			// Executing docker-compose up
-			await execa('docker', ['compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir });
+			await execa('docker', ['compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir, env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
 			throw new Error(`Failed to run Docker Compose: ${error.message}`);
 		}
@@ -160,7 +160,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 	}
 
 	async _checkDockerVersion() {
-		const { stdout: dockerVersion } = await execa('docker', ['--version']);
+		const { stdout: dockerVersion } = await execa('docker', ['--version'], { env: { ...process.env, PKG_EXECPATH: '' } });
 		const versionMatch = dockerVersion.match(/Docker version (\d+\.\d+\.\d+)/);
 		if (!versionMatch) {
 			throw new Error('Docker version 27 or later is required.');
@@ -200,7 +200,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 	async _buildContainer(buildDir, serviceTag) {
 		try {
-			await execa('docker', ['build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag], { stdio: 'inherit' });
+			await execa('docker', ['build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
 			throw new Error(`Failed to build container ${serviceTag}. See the Docker output for details: ${error.message}`);
 		}
@@ -208,7 +208,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 	async _pushContainer(serviceTag) {
 		try {
-			await execa('docker', ['push', serviceTag], { stdio: 'inherit' });
+			await execa('docker', ['push', serviceTag], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
 			throw new Error(`Failed to push the container ${serviceTag}. See the Docker output for details: ${error.message}`);
 		}
