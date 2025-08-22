@@ -104,7 +104,8 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				for (const { key: { value: service }, value: serviceConfig } of services.items) {
 					const buildDir = serviceConfig.get('build');
 					if (buildDir) {
-						const serviceTag = `registry.particle.io/devices/${deviceId}/${service}:${uuid}`;
+						const registryName = this._getRegistryName();
+						const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
 						await this._buildContainer(path.join(composeDir, buildDir), serviceTag);
 						await this._pushContainer(serviceTag);
 						this._updateDockerCompose(serviceConfig, serviceTag);
@@ -168,11 +169,19 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		}
 	}
 
+	_getRegistryName() {
+		if (!settings.isStaging) {
+			return 'registry.particle.io';
+		} else {
+			return 'registry.staging.particle.io';
+		}
+	}
+
 	async _installDockerCredHelper() {
 		try {
 			const dockerConfigDir = path.join(os.homedir(), '.docker');
 			const credHelpersConfig = {
-				['registry.particle.io']: 'particle'
+				[this._getRegistryName()]: 'particle'
 			};
 			await fs.ensureDir(dockerConfigDir);
 			// if config.json exists add the credHelpers section, otherwise create a new config.json that contains it
@@ -183,7 +192,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			}
 			config.credHelpers = config.credHelpers || {};
 			config.credHelpers = Object.assign(config.credHelpers, credHelpersConfig);
-			await fs.writeJson(configPath, config);
+			await fs.writeJson(configPath, config, { spaces: 2 });
 		} catch (error) {
 			throw new Error(`Failed to install Docker credential helper: ${error.message}`);
 		}
