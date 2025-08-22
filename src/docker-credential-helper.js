@@ -4,7 +4,7 @@ const os = require('node:os');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { URL } = require('node:url');
-const readline = require('node:readline/promises');
+const readline = require('node:readline');
 const fetch = require('node-fetch');
 
 const PARTICLE_CONFIG_DIR = path.join(os.homedir(), '.particle');
@@ -146,12 +146,23 @@ function getHostnameFromUrl(urlString) {
 	}
 }
 
+async function readStdin() {
+	return new Promise((res) => {
+		const rl = readline.createInterface({ input: process.stdin });
+
+		let inputData = '';
+		rl.on("line", (line) => {
+			inputData += line;
+		});
+
+		rl.on("close", () => {
+			res(inputData);
+		});
+	});
+}
+
 async function runGetCommand() {
-	const rl = readline.createInterface({ input: process.stdin });
-	let inputData = '';
-	for await (const line of rl) {
-		inputData += line;
-	}
+	const inputData = await readStdin();
 
 	const urlString = inputData.trim();
 	// registry.particle.io, registry.staging.particle.io
