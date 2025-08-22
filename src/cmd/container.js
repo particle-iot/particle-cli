@@ -17,7 +17,7 @@ const _ = require('lodash');
 
 const PARTICLE_ENV_FILE = '.particle_env.yaml';
 
-module.exports = class AppCommands extends CLICommandBase {
+module.exports = class ContainerCommands extends CLICommandBase {
 	constructor() {
 		super();
 		const auth = settings.access_token;
@@ -58,6 +58,16 @@ module.exports = class AppCommands extends CLICommandBase {
 			await execa('docker', ['compose', '-p', appInstance, 'up', '--build'], { stdio: 'inherit', cwd: composeDir });
 		} catch (error) {
 			throw new Error(`Failed to run Docker Compose: ${error.message}`);
+		}
+	}
+
+	async configureDocker() {
+		try {
+			await this._checkDockerVersion();
+			await this._installDockerCredHelper();
+			this.ui.write('Docker is configured successfully.' + os.EOL);
+		} catch (error) {
+			throw new Error(`Failed to configure Docker: ${error.message}`);
 		}
 	}
 
