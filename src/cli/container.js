@@ -78,7 +78,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(container, 'configure-docker', 'Configure docker authenticate with the particle container registry', {
 		options: {},
-		handler: (args) => {
+		handler: () => {
 			const ContainerCommand = require('../cmd/container');
 			return new ContainerCommand().configureDocker();
 		},

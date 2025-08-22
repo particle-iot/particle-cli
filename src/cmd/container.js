@@ -2,7 +2,6 @@ const fs = require('fs-extra');
 const path = require('path');
 const os = require('os');
 const yaml = require('yaml');
-const fetch = require('node-fetch');
 const execa = require('execa');
 const { v4: uuidv4 } = require('uuid');
 
@@ -173,7 +172,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		try {
 			const dockerConfigDir = path.join(os.homedir(), '.docker');
 			const credHelpersConfig = {
-				[`registry.particle.io`]: 'particle'
+				['registry.particle.io']: 'particle'
 			};
 			await fs.ensureDir(dockerConfigDir);
 			// if config.json exists add the credHelpers section, otherwise create a new config.json that contains it
