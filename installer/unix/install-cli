@@ -101,7 +101,7 @@ fi
 
 mv -f "$TMP_FILE" "$DEST"
 chmod +x "$DEST"
-ln -s "$DEST" "$DOCKER_CREDENTIAL_HELPER"
+cp -f "$DEST" "$DOCKER_CREDENTIAL_HELPER"
 
 # Turn off automatic updates when installing a specific version
 if [ "$DISABLE_AUTOMATIC_UPDATES" -eq 1 ]; then
