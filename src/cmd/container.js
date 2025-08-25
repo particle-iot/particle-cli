@@ -106,8 +106,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 					if (buildDir) {
 						const registryName = this._getRegistryName();
 						const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
-						await this._buildContainer(path.join(composeDir, buildDir), serviceTag);
-						await this._pushContainer(serviceTag);
+						await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag);
 						this._updateDockerCompose(serviceConfig, serviceTag);
 					}
 				}
@@ -198,19 +197,11 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		}
 	}
 
-	async _buildContainer(buildDir, serviceTag) {
+	async _buildAndPushContainer(buildDir, serviceTag) {
 		try {
-			await execa('docker', ['build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
+			await execa('docker', ['build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag, '--push'], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
 			throw new Error(`Failed to build container ${serviceTag}. See the Docker output for details: ${error.message}`);
-		}
-	}
-
-	async _pushContainer(serviceTag) {
-		try {
-			await execa('docker', ['push', serviceTag], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
-		} catch (error) {
-			throw new Error(`Failed to push the container ${serviceTag}. See the Docker output for details: ${error.message}`);
 		}
 	}
 
