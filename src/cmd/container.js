@@ -11,6 +11,7 @@ const ParticleApi = require('./api');
 const { UnauthorizedError } = require('./api');
 const Table = require('cli-table');
 const { platformForId } = require('../lib/platform');
+const pkg = require('../../package.json');
 
 const _ = require('lodash');
 
@@ -33,6 +34,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			throw new Error(`Application directory ${composeDir} not found.`);
 		}
 
+		await this._checkDockerVersion();
 		await this._installDockerCredHelper();
 
 		let dockerComposePath = path.join(composeDir, 'docker-compose.yaml');
@@ -92,6 +94,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			const composeDir = path.join(blueprintDir, appName);
 			const uuid = uuidv4();
 
+			await this._checkDockerVersion();
 			await this._installDockerCredHelper();
 
 			// read ${appName}/docker-compose.yaml, parse it and look in the services section for containers with a build key
@@ -178,20 +181,39 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 	async _installDockerCredHelper() {
 		try {
+			// Install our credential helper (this binary by another name) alongside the CLI
+			const binPath = path.dirname(process.execPath);
+			const dockerCredHelperPath = path.join(binPath, 'docker-credential-particle');
+
+			let needsUpdateOrInstall = true;
+			if (await fs.pathExists(dockerCredHelperPath)) {
+				const currentVersion = await execa(dockerCredHelperPath, ['version']);
+				if (currentVersion.exitCode === 0 && currentVersion.stdout === pkg.version) {
+					needsUpdateOrInstall = false;
+				}
+			}
+
+			if (needsUpdateOrInstall) {
+				await fs.copyFile(process.execPath, dockerCredHelperPath);
+			}
+
+
+			// Create the .docker directory if it doesn't exist and read an existing config.json
 			const dockerConfigDir = path.join(os.homedir(), '.docker');
-			const credHelpersConfig = {
-				[this._getRegistryName()]: 'particle'
-			};
 			await fs.ensureDir(dockerConfigDir);
-			// if config.json exists add the credHelpers section, otherwise create a new config.json that contains it
 			const configPath = path.join(dockerConfigDir, 'config.json');
 			let config = {};
 			if (await fs.pathExists(configPath)) {
 				config = await fs.readJson(configPath);
 			}
+
+			// Add the credential helper configuration
 			config.credHelpers = config.credHelpers || {};
-			config.credHelpers = Object.assign(config.credHelpers, credHelpersConfig);
-			await fs.writeJson(configPath, config, { spaces: 2 });
+			const targetRegistry = this._getRegistryName();
+			if (!config.credHelpers[targetRegistry] || config.credHelpers[targetRegistry] !== 'particle') {
+				config.credHelpers[targetRegistry] = 'particle';
+				await fs.writeJson(configPath, config, { spaces: 2 });
+			}
 		} catch (error) {
 			throw new Error(`Failed to install Docker credential helper: ${error.message}`);
 		}
