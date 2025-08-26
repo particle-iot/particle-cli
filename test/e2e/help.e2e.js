@@ -8,13 +8,13 @@ describe('Help & Unknown Command / Argument Handling', () => {
 	const sandbox = sinon.createSandbox();
 	const commandList = [
 		'Commands:',
-		'  app                Manage Edge applications',
 		'  binary             Inspect binaries',
 		'  bundle             Creates a bundle of application binary and assets',
 		'  call               Call a particular function on a device',
 		'  cloud              Access Particle cloud functionality',
 		'  compile            Compile a source file, or directory using the cloud compiler',
 		'  config             Configure and switch between multiple accounts',
+		'  container          Manage containerized applications',
 		'  device             Manipulate a device',
 		'  device-protection  Manage Device Protection',
 		'  doctor             NOT SUPPORTED. Go to the device doctor tool at docs.particle.io/tools/doctor',
@@ -50,12 +50,11 @@ describe('Help & Unknown Command / Argument Handling', () => {
 	];
 
 	const allCmds = [
-		'app run', 'app push', 'app list', 'app remove', 'app',
 		'binary inspect', 'binary enable-device-protection', 'binary list-assets', 'binary strip-assets', 'binary', 'bundle',
 		'call', 'cloud list', 'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
-		'cloud', 'compile', 'config', 'device add', 'device remove',
-		'device rename', 'device doctor', 'device',
+		'cloud', 'compile', 'config', 'container configure-docker', 'container run', 'container push', 'container list',
+		'container remove', 'container', 'device add', 'device remove', 'device rename', 'device doctor', 'device',
 		'device-protection status', 'device-protection disable', 'device-protection enable', 'device-protection',
 		'doctor', 'esim provision', 'esim enable', 'esim delete', 'esim list', 'esim', 'flash',
 		'function list', 'function call', 'function', 'get', 'identify',
@@ -64,7 +63,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'library create', 'library copy', 'library list', 'library migrate',
 		'library search', 'library upload', 'library publish', 'library view',
 		'library', 'list', 'logic-function list', 'logic-function get',
-		'logic-function create', 'logic-function execute','logic-function deploy', 'logic-function disable',
+		'logic-function create', 'logic-function execute', 'logic-function deploy', 'logic-function disable',
 		'logic-function enable', 'logic-function delete', 'logic-function logs', 'logic-function',
 		'login', 'logout', 'monitor', 'nyan', 'preprocess',
 		'product device list', 'product device add', 'product device remove',
@@ -138,11 +137,11 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		expect(called).to.eql(allCmds.reverse().map(c => `${c} --help`));
 	}).timeout(5 * 1000 * 60);
 
-	function dedupe(arr){
+	function dedupe(arr) {
 		return [...new Set(arr)];
 	}
 
-	function findHelpCommands(str){
+	function findHelpCommands(str) {
 		const help = stripANSI(str);
 		const cmdListPtn = /Commands:(.*?)(?:[\r?\n]{2}|$)/sg;
 		const cmdList = matches(help, cmdListPtn)[0] || '';
@@ -150,23 +149,23 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		return matches(cmdList, cmdsPtn);
 	}
 
-	async function expectForEachCommand(cmds, assert){
+	async function expectForEachCommand(cmds, assert) {
 		let cmd;
 
-		while ((cmd = cmds.pop())){
+		while ((cmd = cmds.pop())) {
 			const args = cmd.split(' ');
 			const { stderr: help } = await cli.run([...args, '--help']);
 
 			try {
 				assert(cmd, help);
-			} catch (error){
+			} catch (error) {
 				error.message = `FOR CMD: ${cmd} - ${error.message}`;
 				throw error;
 			}
 
 			const subCmds = findHelpCommands(help).filter(scmd => scmd !== 'Alias');
 
-			if (subCmds.length){
+			if (subCmds.length) {
 				await expectForEachCommand(subCmds.map(scmd => `${cmd} ${scmd}`), assert);
 			}
 		}
