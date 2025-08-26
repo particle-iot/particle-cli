@@ -6,6 +6,7 @@ const path = require('node:path');
 const { URL } = require('node:url');
 const readline = require('node:readline');
 const fetch = require('node-fetch');
+const pkg = require('../package.json');
 
 const PARTICLE_CONFIG_DIR = path.join(os.homedir(), '.particle');
 const PARTICLE_API_URL = 'https://api.particle.io';
@@ -220,6 +221,8 @@ async function run() {
 		await runGetCommand();
 	} else if (command === 'list') {
 		await runListCommand();
+	} else if (command === 'version') {
+		process.stdout.write(`${pkg.version}\n`);
 	} else { // store, erase
 		console.error(`Unknown command ${command}`);
 		process.exit(0);
