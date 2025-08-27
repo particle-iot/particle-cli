@@ -128,7 +128,6 @@ SectionEnd
 Function CopyExecutables
 	CreateDirectory "${BINDIR}"
 	File "/oname=${BINDIR}\${EXE}" "..\..\build\particle-cli-win-x64.exe"
-	CopyFiles /SILENT "${BINDIR}\${EXE}" "${BINDIR}\docker-credential-particle.exe"
 FunctionEnd
 
 
