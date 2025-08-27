@@ -183,7 +183,11 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		try {
 			// Install our credential helper (this binary by another name) alongside the CLI
 			const binPath = path.dirname(process.execPath);
-			const dockerCredHelperPath = path.join(binPath, 'docker-credential-particle');
+			let dockerCredHelperPath = path.join(binPath, 'docker-credential-particle');
+			if (os.platform() === 'win32') {
+				// On Windows, we need to use the .exe extension
+				dockerCredHelperPath = path.join(binPath, 'docker-credential-particle.exe');
+			}
 
 			let needsUpdateOrInstall = true;
 			if (await fs.pathExists(dockerCredHelperPath)) {
@@ -194,6 +198,10 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			}
 
 			if (needsUpdateOrInstall) {
+				// Copy the current executable to docker-credential-particle
+				// We would prefer to do this with a symlink, but there's a bug somewhere in pkg
+				// that causes it to get confused and error with module not found
+				// when the docker instances we invoke call the credhelper.
 				await fs.copyFile(process.execPath, dockerCredHelperPath);
 			}
 
