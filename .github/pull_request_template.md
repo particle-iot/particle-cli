@@ -50,7 +50,7 @@
 ## Completeness
 
 - [x] User is totes amazing for contributing!
-- [ ] Contributor has signed [CLA](https://docs.google.com/a/particle.io/forms/d/1_2P-vRKGUFg5bmpcKLHO_qNZWGi5HKYnfrrkd-sbZoA/viewform)
+- [ ] Contributor has signed [CLA](https://part.cl/icla)
 - [ ] Problem and solution clearly stated
 - [ ] Tests have been provided
 - [ ] Docs have been updated
