@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.42.0 - Aug 29 2025
+* Enable containerized application support for linux devices
+
 # 3.41.0 - Aug 18 2025
 * Clarify Wifi message on tachyon setup
 * Add `factory-restore` option for tachyon command
