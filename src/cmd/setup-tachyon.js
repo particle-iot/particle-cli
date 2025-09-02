@@ -55,6 +55,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 			region: 'NA',
 			version: settings.tachyonVersion || 'stable',
 			board: 'formfactor',
+			distroVersion: '20.04',
 			country: 'USA',
 			variant: null,
 			skipFlashingOs: false,
@@ -65,9 +66,9 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.options = {};
 	}
 
-	async setup({ skip_flashing_os: skipFlashingOs, timezone, load_config: loadConfig, save_config: saveConfig, region, version, variant, board, skip_cli: skipCli } = {}) {
+	async setup({ skip_flashing_os: skipFlashingOs, timezone, load_config: loadConfig, save_config: saveConfig, region, version, variant, board, distro_version: distroVersion, skip_cli: skipCli } = {}) {
 		const requiredFields = ['region', 'version', 'systemPassword', 'productId', 'timezone'];
-		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, skipCli };
+		const options = { skipFlashingOs, timezone, loadConfig, saveConfig, region, version, variant, board, distroVersion, skipCli };
 		await this.ui.write(showWelcomeMessage(this.ui));
 		// step 1 login
 		this._formatAndDisplaySteps("Okay—first up! Checking if you're logged in...", 1);
@@ -602,7 +603,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		return countryCode;
 	}
 
-	async _download({ region, version, alwaysCleanCache, variant, board, isRb3Board, isLocalVersion }) {
+	async _download({ region, version, alwaysCleanCache, variant, board, distroVersion, isRb3Board, isLocalVersion }) {
 		//before downloading a file, we need to check if 'version' is a local file or directory
 		//if it is a local file or directory, we need to return the path to the file
 		if (isLocalVersion) {
@@ -612,7 +613,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const manager = new DownloadManager(this.ui);
 		const manifest = await manager.fetchManifest({ version, isRb3Board });
 
-		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board);
+		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board && (!distroVersion || build.distribution_version === distroVersion));
 		if (!build) {
 			throw new Error('No build available for the provided parameters');
 		}

@@ -58,7 +58,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		return variantMapping[variant];
 	}
 
-	async download ({ region, version, alwaysCleanCache = false, variant, board = 'formfactor_dvt' }) {
+	async download ({ region, version, alwaysCleanCache = false, variant, board = 'formfactor_dvt', distro_version: distroVersion }) {
 		// prompt for region and version if not provided
 		const isRb3Board = board === 'rb3g2'; // RGB board
 		if (!region) {
@@ -71,9 +71,12 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		if (!variant) {
 			variant = await this._selectVariant(isRb3Board);
 		}
+		if (!distroVersion && !isRb3Board) {
+			distroVersion = '20.04';
+		}
 		const manager = new DownloadManager(this.ui);
 		const manifest = await manager.fetchManifest({ version, isRb3Board });
-		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board);
+		const build = manifest?.builds.find(build => build.region === region && build.variant === variant && build.board === board && (!distroVersion || build.distribution_version === distroVersion));
 
 		if (!build) {
 			throw new Error('No build available for the provided parameters');

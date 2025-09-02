@@ -28,6 +28,9 @@ module.exports = ({ commandProcessor, root }) => {
 			board: {
 				description: 'Board to download package for'
 			},
+			distro_version: {
+				description: 'Linux distribution version to use'
+			},
 			skip_cli: {
 				description: 'Do not log in the Particle CLI',
 				boolean: true
@@ -59,6 +62,9 @@ module.exports = ({ commandProcessor, root }) => {
 			board: {
 				description: 'Board to download package for',
 				type: 'string'
+			},
+			distro_version: {
+				description: 'Linux distribution version to use'
 			}
 		},
 		handler: (args) => {
