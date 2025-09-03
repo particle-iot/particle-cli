@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.42.1 - Sep 03 2025
+* Setup 20.04 by default, and allow setup of 24.04
+
 # 3.42.0 - Aug 29 2025
 * Enable containerized application support for linux devices
 
