@@ -36,7 +36,7 @@
         "semver": "^7.5.2",
         "serialport": "^10.4.0",
         "sha512crypt-node": "^1.0.2",
-        "temp": "^0.9.1",
+        "temp": "^0.9.4",
         "unzipper": "^0.12.3",
         "uuid": "^11.1.0",
         "verror": "^1.10.0",
@@ -8525,10 +8525,11 @@
       }
     },
     "node_modules/temp": {
-      "version": "0.9.1",
-      "resolved": "https://registry.npmjs.org/temp/-/temp-0.9.1.tgz",
-      "integrity": "sha512-WMuOgiua1xb5R56lE0eH6ivpVmg/lq2OHm4+LtT/xtEtPQ+sz6N3bBM6WZ5FvO1lO4IKIOb43qnhoc4qxP5OeA==",
+      "version": "0.9.4",
+      "resolved": "https://registry.npmjs.org/temp/-/temp-0.9.4.tgz",
+      "integrity": "sha512-yYrrsWnrXMcdsnu/7YMYAofM1ktpL5By7vZhf15CrXijWWrEYZks5AXBudalfSWJLlnen/QUJUB5aoB0kqZUGA==",
       "dependencies": {
+        "mkdirp": "^0.5.1",
         "rimraf": "~2.6.2"
       },
       "engines": {
@@ -16185,10 +16186,11 @@
       }
     },
     "temp": {
-      "version": "0.9.1",
-      "resolved": "https://registry.npmjs.org/temp/-/temp-0.9.1.tgz",
-      "integrity": "sha512-WMuOgiua1xb5R56lE0eH6ivpVmg/lq2OHm4+LtT/xtEtPQ+sz6N3bBM6WZ5FvO1lO4IKIOb43qnhoc4qxP5OeA==",
+      "version": "0.9.4",
+      "resolved": "https://registry.npmjs.org/temp/-/temp-0.9.4.tgz",
+      "integrity": "sha512-yYrrsWnrXMcdsnu/7YMYAofM1ktpL5By7vZhf15CrXijWWrEYZks5AXBudalfSWJLlnen/QUJUB5aoB0kqZUGA==",
       "requires": {
+        "mkdirp": "^0.5.1",
         "rimraf": "~2.6.2"
       },
       "dependencies": {

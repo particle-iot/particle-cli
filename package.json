@@ -79,7 +79,7 @@
     "semver": "^7.5.2",
     "serialport": "^10.4.0",
     "sha512crypt-node": "^1.0.2",
-    "temp": "^0.9.1",
+    "temp": "^0.9.4",
     "unzipper": "^0.12.3",
     "uuid": "^11.1.0",
     "verror": "^1.10.0",
