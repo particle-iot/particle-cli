@@ -3,6 +3,7 @@ const QdlFlasher = require('../lib/qdl');
 const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
+const temp = require('temp').track();
 const {
 	addLogHeaders,
 	getEDLDevice,
@@ -10,6 +11,7 @@ const {
 	prepareFlashFiles, handleFlashError
 } = require('../lib/tachyon-utils');
 const settings = require('../../settings');
+const { compressDir } = require('../lib/utilities');
 
 const PARTITIONS_TO_BACKUP = ['nvdata1', 'nvdata2', 'fsc', 'fsg', 'modemst1', 'modemst2'];
 
@@ -39,11 +41,12 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		this.ui.stdout.write(`Logs will be saved to ${outputLog}${os.EOL}`);
 		addLogHeaders({ outputLog, startTime, deviceId: device.id, commandName: 'Tachyon backup' });
 		try {
+			const tmpOutputDir = await temp.mkdir('tachyon_backup');
 			const { firehosePath, xmlFile } = await prepareFlashFiles({
 				logFile: outputLog,
 				ui: this.ui,
 				partitionsList: PARTITIONS_TO_BACKUP,
-				dir: outputDir,
+				dir: tmpOutputDir,
 				device,
 				operation: 'read'
 			});
@@ -61,6 +64,18 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 				serialNumber: device.serialNumber
 			});
 			await qdl.run();
+			// zip file
+			const compressedFile = await compressDir({
+				pathToCompress: tmpOutputDir,
+				outputFile: `manufacturing_backup_${device.id}.zip`,
+				outputDir: outputDir
+			});
+			fs.appendFileSync(outputLog, `==================${os.EOL}`);
+			fs.appendFileSync(outputLog, `Backup Done${os.EOL}`);
+			fs.appendFileSync(outputLog, `Created File: ${compressedFile.outputFile}${os.EOL}`);
+			fs.appendFileSync(outputLog, `SHA256: ${compressedFile.sha256}${os.EOL}`);
+			this.ui.stdout.write(`Created File: ${compressedFile.outputFile}${os.EOL}`);
+			this.ui.stdout.write(`SHA256: ${compressedFile.sha256}${os.EOL}`);
 			this.ui.stdout.write(`Backing up NV data from device ${device.id} complete!${os.EOL}`);
 		} catch (error) {
 			const { retry } = await handleFlashError({ error, ui: this.ui });
