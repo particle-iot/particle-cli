@@ -75,7 +75,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			fs.appendFileSync(outputLog, `Created File: ${compressedFile.outputFile}${os.EOL}`);
 			fs.appendFileSync(outputLog, `SHA256: ${compressedFile.sha256}${os.EOL}`);
 			this.ui.stdout.write(`Created File: ${compressedFile.outputFile}${os.EOL}`);
-			this.ui.stdout.write(`SHA256: ${compressedFile.sha256}${os.EOL}`);
 			this.ui.stdout.write(`Backing up NV data from device ${device.id} complete!${os.EOL}`);
 		} catch (error) {
 			const { retry } = await handleFlashError({ error, ui: this.ui });
