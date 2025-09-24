@@ -434,9 +434,9 @@ module.exports = {
 		archive.pipe(output);
 
 		if (pattern) {
-			archive.glob(pattern, { cwd: pathToCompress });
+			archive.glob(pattern, { cwd: pathToCompress, date: new Date(0) });
 		} else {
-			archive.directory(pathToCompress, false);
+			archive.directory(pathToCompress, false, { date: new Date(0) });
 		}
 
 		archive.finalize();
