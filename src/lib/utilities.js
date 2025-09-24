@@ -436,7 +436,11 @@ module.exports = {
 		if (pattern) {
 			archive.glob(pattern, { cwd: pathToCompress, date: new Date(0) });
 		} else {
-			archive.directory(pathToCompress, false, { date: new Date(0) });
+			archive.directory(pathToCompress, false, {
+				date: new Date(0),
+				mode: 0o100644,
+				store: false
+			});
 		}
 
 		archive.finalize();
