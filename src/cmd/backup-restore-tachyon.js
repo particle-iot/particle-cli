@@ -30,7 +30,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		if (!outputDirExist) {
 			await fs.ensureDir(outputDir);
 		}
-		if (logDirExist) {
+		if (!logDirExist) {
 			await fs.ensureDir(logDir);
 		}
 
@@ -99,8 +99,9 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		existingLog
 	} = {})	{
 		const device = await getEDLDevice({ ui: this.ui });
-		if (!await fs.exists(logDir)) {
-			await fs.mkdir(logDir, { recursive: true });
+		const logDirExist = await fs.exists(logDir);
+		if (!logDirExist) {
+			await fs.ensureDir(logDir);
 		}
 
 		const startTime = new Date();
