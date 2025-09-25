@@ -9,7 +9,8 @@ const childProcess = require('child_process');
 const { PLATFORMS } = require('./platform');
 const log = require('./log');
 const { DeviceProtectionError } = require('particle-usb');
-
+const archiver = require('archiver');
+const { createHash } = require('crypto');
 
 module.exports = {
 	deferredChildProcess(exec){
@@ -404,6 +405,76 @@ module.exports = {
 	 */
 	getOs(){
 		return os.platform();
-	}
+	},
+	/**
+	 *
+	 * @param filePath
+	 * @return {Promise<unknown>}
+	 */
+	sha256File(filePath) {
+		return new Promise((resolve, reject) => {
+			const hash = createHash('sha256');
+			const stream = fs.createReadStream(filePath);
+
+			stream.on('data', (chunk) => hash.update(chunk));
+			stream.on('end', () => resolve(hash.digest('hex')));
+			stream.on('error', reject);
+		});
+	},
+
+	/**
+	 *
+	 */
+	compressDir({ pattern, pathToCompress, outputDir, outputFile }) {
+		const outputFilePath = path.join(outputDir, outputFile);
+		const output = fs.createWriteStream(outputFilePath);
+		const archive = archiver('zip', {
+			zlib: { level: 9 } // Sets the compression level.
+		});
+		archive.pipe(output);
+
+		if (pattern) {
+			archive.glob(pattern, { cwd: pathToCompress, date: new Date(0) });
+		} else {
+			archive.directory(pathToCompress, false, {
+				date: new Date(0),
+				mode: 0o100644,
+				store: false
+			});
+		}
+
+		archive.finalize();
+
+		return new Promise((resolve, reject) => {
+			output.on('close', async () => {
+				const sha256 = await module.exports.sha256File(outputFilePath);
+				return resolve({
+					totalBytes: archive.pointer(),
+					zipPath: outputFilePath,
+					outputFile: outputFile,
+					sha256
+				});
+			});
+
+			output.on('end', () => {
+				console.log('Data has been drained');
+			});
+
+			archive.on('warning', (err) => {
+				if (err.code === 'ENOENT') {
+					// log warning
+					console.log('file not found', err);
+				} else {
+					// throw error
+					return reject(err);
+				}
+			});
+
+			archive.on('error', (err) => {
+				return reject(err);
+			});
+		});
+	},
+
 };
 
