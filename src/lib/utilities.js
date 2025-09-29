@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('fs-extra');
 const _ = require('lodash');
 const propertiesParser = require('properties-parser');
 const os = require('os');
@@ -420,6 +420,17 @@ module.exports = {
 			stream.on('end', () => resolve(hash.digest('hex')));
 			stream.on('error', reject);
 		});
+	},
+	/**
+	 *
+	 */
+	async fileExists(filePath){
+		try {
+			await fs.access(filePath);
+			return true;
+		} catch (error) {
+			return false;
+		}
 	},
 
 	/**
