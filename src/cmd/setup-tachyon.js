@@ -54,7 +54,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.defaultOptions = {
 			region: 'NA',
 			version: settings.tachyonVersion || 'stable',
-			board: 'formfactor',
+			board: 'formfactor_dvt',
 			distroVersion: '20.04',
 			country: 'USA',
 			variant: null,
@@ -136,7 +136,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		this.ui.write(this.ui.chalk.bold('Device info:'));
 		this.ui.write(os.EOL);
 		this.ui.write(` -  Device ID: ${deviceInfo.deviceId}`);
-		if (deviceInfo.osVersion.includes('EVT')) {
+		if (deviceInfo.board === 'formfactor') {
 			this.ui.write(' -  Board: EVT');
 		}
 		this.ui.write(` -  Region: ${deviceInfo.region}`);
@@ -174,7 +174,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		);
 		if (deviceInfo) {
 			optionsFromDevice.region = deviceInfo.region.toLowerCase() !== 'unknown' ? deviceInfo.region : 'NA';
-			optionsFromDevice.board = deviceInfo.osVersion === 'Ubuntu 20.04' ? 'formfactor_dvt' : 'formfactor';
+			optionsFromDevice.board = deviceInfo.board;
 		}
 		const config = {
 			...this.defaultOptions,

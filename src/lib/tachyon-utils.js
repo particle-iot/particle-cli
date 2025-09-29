@@ -285,8 +285,10 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	const ubuntu20 = bootABuffer.includes(UBUNTU_20_MARKER) || bootBBuffer.includes(UBUNTU_20_MARKER);
 	const ubuntu24 = bootABuffer.includes(UBUNTU_24_MARKER) || bootBBuffer.includes(UBUNTU_24_MARKER);
 	let osVersion = 'Unknown';
+	let board = 'formfactor_dvt';
 	if (nvdataLun === 0) {
 		osVersion = 'Ubuntu 20.04 EVT';
+		board = 'formfactor';
 	} else if (nvdataLun === 5) {
 		if (ubuntu20 && !ubuntu24) {
 			osVersion = 'Ubuntu 20.04';
@@ -299,7 +301,8 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 		deviceId,
 		region: regionString,
 		manufacturingData: manufacturingDataString,
-		osVersion
+		osVersion,
+		board
 	};
 }
 
