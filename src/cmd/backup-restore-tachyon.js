@@ -12,7 +12,7 @@ const {
 	prepareFlashFiles, handleFlashError
 } = require('../lib/tachyon-utils');
 const settings = require('../../settings');
-const { compressDir, fileExists, delay } = require('../lib/utilities');
+const { compressDir, fileExists } = require('../lib/utilities');
 const ParticleApi = require('./api');
 const createApiCache = require('../lib/api-cache');
 
@@ -202,6 +202,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 		// Extract everything into tmpOutputDir
 		await fs.createReadStream(filePath)
+			// eslint-disable-next-line new-cap
 			.pipe(unzip.Extract({ path: tmpOutputDir }))
 			.promise();
 
