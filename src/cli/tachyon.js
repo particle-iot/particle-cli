@@ -137,6 +137,13 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'log-dir': {
 				description: 'Directory to save the log files'
+			},
+			'force-cloud': {
+				description: 'Force download the backup files from cloud',
+				boolean: true
+			},
+			filepath: {
+				description: 'File path to the backup file',
 			}
 		},
 		handler: (args) => {
@@ -147,6 +154,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command ': 'Restore Tachyon NV data for a system update mode connected device using the default filenames',
 			'$0 $command --input-dir /path/to/input': 'Restore Tachyon NV data from the specified directory using the default filenames',
 			'$0 $command --log-dir /path/to/log': 'Restore Tachyon NV data and save logs to the specified directory',
+			'$0 $command --force-cloud': 'Restore Tachyon NV data using cloud backup',
 		}
 	});
 
