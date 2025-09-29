@@ -169,6 +169,12 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(tachyon, 'factory-restore', 'Restore the tachyon with a clean image', {
+		options: {
+			'force-cloud': {
+				description: 'Force download the backup files from cloud',
+				boolean: true
+			}
+		},
 		handler: (args) => {
 			const TachyonFactoryRestore = require('../cmd/tachyon-factory-restore');
 			return new TachyonFactoryRestore().restore(args);
