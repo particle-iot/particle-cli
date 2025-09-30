@@ -90,8 +90,8 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 				});
 			}
 			this.ui.stdout.write(`An error ocurred while trying to backing up your tachyon ${os.EOL}`);
-			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${outputLog} for more information ${os.EOL}`);
+			throw error;
 		} finally {
 			addLogFooter({ outputLog, startTime, endTime: new Date() });
 		}
@@ -101,7 +101,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = this._logsDir,
 		'force-cloud': forceCloud,
-		filePath,
+		filepath,
 		existingLog
 	} = {})	{
 		const device = await getEDLDevice({ ui: this.ui });
@@ -118,7 +118,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		try {
 			const zipFilePath = await this._getFilePathToRestore({
 				forceCloud,
-				filePath,
+				filepath,
 				deviceId: device.id,
 				inputDir
 			});
@@ -159,25 +159,23 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 				});
 			}
 			this.ui.stdout.write(`An error ocurred while trying to restore up your tachyon ${os.EOL}`);
-			this.ui.stdout.write(`Error: ${error.message} ${os.EOL}`);
 			this.ui.stdout.write(`Verify your logs ${outputLog} for more information ${os.EOL}`);
+			throw error;
 		} finally {
 			addLogFooter({ outputLog, startTime, endTime: new Date() });
 		}
 	}
 
-	async _getFilePathToRestore({ forceCloud, filePath, deviceId, inputDir }) {
+	async _getFilePathToRestore({ forceCloud, filepath, deviceId, inputDir }) {
 		const defaultFileName = path.join(inputDir, `manufacturing_backup_${deviceId}.zip`);
 		const defaultFileExists = await fileExists(defaultFileName);
-		if (filePath) {
-			const exists = await fileExists(filePath);
-			console.log(exists);
-			if (await fileExists(filePath)) {
-				this.ui.stdout.write(`Using zip file from ${filePath} ${os.EOL}`);
-				return filePath;
+		if (filepath) {
+			const exists = await fileExists(filepath);
+			if (exists) {
+				this.ui.stdout.write(`Using zip file from ${filepath} ${os.EOL}`);
+				return filepath;
 			}
-			this.ui.stdout.write(`Unable to find file at ${filePath} ${os.EOL}`);
-			throw new Error('Unable to find file at ' + filePath);
+			throw new Error('Unable to find file at ' + filepath);
 		}
 		if (forceCloud || !defaultFileExists) {
 			this.ui.stdout.write(`Downloading file at ${defaultFileName}${os.EOL}`);
@@ -188,32 +186,15 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		return defaultFileName;
 	}
 
-	async extractZipFile(filePath) {
+	async extractZipFile(filepath) {
 		const tmpOutputDir = await temp.mkdir('tachyon_restore');
 
-		let directory;
-		try {
-			// Try opening the zip — throws if not a zip
-			directory = await unzip.Open.file(filePath);
-		} catch (err) {
-			throw new Error(`Invalid zip file: ${filePath}`); // in case there is no zip or so throw an error
-		}
-		const roots = new Set(directory.files.map(f => f.path.split('/')[0]));
-
 		// Extract everything into tmpOutputDir
-		await fs.createReadStream(filePath)
+		await fs.createReadStream(filepath)
 			// eslint-disable-next-line new-cap
 			.pipe(unzip.Extract({ path: tmpOutputDir }))
 			.promise();
-
-		// Decide what to return
-		if (roots.size === 1) {
-			const [root] = Array.from(roots);
-			const resolved = path.join(tmpOutputDir, root);
-			return resolved;
-		} else {
-			return tmpOutputDir;
-		}
+		return tmpOutputDir;
 	}
 
 	_particleApi() {
