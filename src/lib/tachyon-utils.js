@@ -9,9 +9,15 @@ const path = require('path');
 const GPT = require('gpt');
 const temp = require('temp').track();
 const FSG_PARTITION = 'fsg';
+const BOOT_A_PARTITION = 'boot_a';
+const BOOT_B_PARTITION = 'boot_b';
+
 const REGION_NA_MARKER = Buffer.from('SG560D-NA');
 const REGION_ROW_MARKER = Buffer.from('SG560D-EM');
 const EFS_PARTITION_HEADER = Buffer.from('EFS');
+const UBUNTU_20_MARKER = Buffer.from('ANDROID');
+const UBUNTU_24_MARKER = Buffer.from('UEFI');
+
 const wifiMacScanner = require('./wifi-scanner');
 const VError = require('verror');
 const chalk = require('chalk');
@@ -67,7 +73,7 @@ async function getEDLDevice({ ui = new UI(), showSetupMessage = false } = {}) {
 	}
 }
 
-async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false } = {}) {
+async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, modifyPartitions = (partitions) => partitions } = {}) {
 	const { firehosePath, tempPath, gptXmlPath }  = await initFiles();
 
 	const partitionTable = await readPartitionsFromDevice({
@@ -78,12 +84,12 @@ async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cw
 		gptXmlPath,
 		device
 	});
-	const partitions = partitionDefinitions({
+	const partitions = modifyPartitions(partitionDefinitions({
 		partitionList: partitionsList,
 		partitionTable,
 		deviceId: device.id,
 		dir
-	});
+	}));
 	const partitionFilenames = partitions.reduce((acc, partition) => {
 		acc[partition.label] = partition.filename;
 		return acc;
@@ -122,23 +128,34 @@ async function readPartitionsFromDevice({ logFile, ui, tempPath, firehosePath, g
 		skipReset: true,
 		serialNumber: device.serialNumber
 	});
-	await qdl.run();
+	try {
+		await qdl.run();
+	} catch (error) {
+		if (error instanceof TachyonConnectionError) {
+			throw error;
+		}
+		// Ignore other errors as the gpt read will fail for LUN 6 for EVT devices.
+		// If there was an actual error reading the partitions, it will trigger an error in parsePartitions.
+	}
 	return parsePartitions({ gptPath: tempPath });
 }
 
 async function parsePartitions({ gptPath }) {
 	const table = [];
-	for (let i = 0; i <= 5; i++) {
+	for (let i = 0; i <= 6; i++) {
 		const filename = path.join(gptPath, `gpt_main${i}.bin`);
-		const buffer = await fs.readFile(filename);
 		try {
+			const buffer = await fs.readFile(filename);
 			const gpt = new GPT({ blockSize: 4096 });
 			const { partitions } = gpt.parse(buffer, gpt.blockSize);// partition table starts at 4096 bytes for Tachyon
 			partitions.forEach((partition) => {
 				table.push({ lun: i, partition });
 			});
 		} catch {
-			throw new Error(`Failed to parse partition table ${i} from device`);
+			if (i !== 6) {
+				// LUN 6 does not exist on EVT devices, so ignore the error
+				throw new Error(`Failed to parse partition table ${i} from device`);
+			}
 		}
 	}
 	return table;
@@ -209,10 +226,19 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 	const { firehosePath, xmlFile, partitionTable, partitionFilenames } = await prepareFlashFiles({
 		ui,
 		logFile: outputLog,
-		partitionsList: [FSG_PARTITION],
+		partitionsList: [FSG_PARTITION, BOOT_A_PARTITION, BOOT_B_PARTITION],
 		dir: partitionDir,
 		device: device,
-		operation: 'read'
+		operation: 'read',
+		modifyPartitions: (partitions) => {
+			return partitions.map((p) => {
+				// we only need the first sector of these partitions to determine distribution version
+				if ([BOOT_A_PARTITION, BOOT_B_PARTITION].includes(p.label)) {
+					p.num_partition_sectors = 1;
+				}
+				return p;
+			});
+		}
 	});
 
 	const files = [
@@ -232,8 +258,9 @@ async function getTachyonInfo({ outputLog, ui, device }) {
 }
 
 async function getIdentification({ deviceId, partitionTable, partitionFilenames }) {
-	const fsgFilename = partitionFilenames[FSG_PARTITION];
-	const fsgBuffer = await fs.readFile(fsgFilename);
+	const fsgBuffer = await fs.readFile(partitionFilenames[FSG_PARTITION]);
+	const bootABuffer = await fs.readFile(partitionFilenames[BOOT_A_PARTITION]);
+	const bootBBuffer = await fs.readFile(partitionFilenames[BOOT_B_PARTITION]);
 
 	const regionNa = fsgBuffer.includes(REGION_NA_MARKER);
 	const regionRow = fsgBuffer.includes(REGION_ROW_MARKER);
@@ -255,20 +282,27 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	}
 
 	const nvdataLun = partitionTable.find(({ partition }) => partition.name === 'nvdata1')?.lun;
-	let osVersion;
+	const ubuntu20 = bootABuffer.includes(UBUNTU_20_MARKER) || bootBBuffer.includes(UBUNTU_20_MARKER);
+	const ubuntu24 = bootABuffer.includes(UBUNTU_24_MARKER) || bootBBuffer.includes(UBUNTU_24_MARKER);
+	let osVersion = 'Unknown';
+	let board = 'formfactor_dvt';
 	if (nvdataLun === 0) {
 		osVersion = 'Ubuntu 20.04 EVT';
+		board = 'formfactor';
 	} else if (nvdataLun === 5) {
-		osVersion = 'Ubuntu 20.04';
-	} else {
-		osVersion = 'Unknown';
+		if (ubuntu20 && !ubuntu24) {
+			osVersion = 'Ubuntu 20.04';
+		} else if (ubuntu24 && !ubuntu20) {
+			osVersion = 'Ubuntu 24.04';
+		}
 	}
 
 	return {
 		deviceId,
 		region: regionString,
 		manufacturingData: manufacturingDataString,
-		osVersion
+		osVersion,
+		board
 	};
 }
 
