@@ -170,8 +170,8 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(tachyon, 'factory-restore', 'Restore the tachyon with a clean image', {
 		options: {
-			'force-cloud': {
-				description: 'Force download the backup files from cloud',
+			'from-local': {
+				description: 'Force to get the nv data from local first',
 				boolean: true
 			}
 		},
