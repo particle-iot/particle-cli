@@ -27,7 +27,8 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		};
 	}
 
-	async restore({ 'force-cloud': forceCloud }){
+	async restore({ 'from-local': fromLocal }){
+		const forceCloud = !fromLocal;
 		let continueProcess = await this.confirmProcess();
 		if (!continueProcess) {
 			return;
