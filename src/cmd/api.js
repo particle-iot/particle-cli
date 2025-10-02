@@ -18,15 +18,6 @@ module.exports = class ParticleApi {
 		this.accessToken = options.accessToken;
 	}
 
-	// TODO (hmontero): remove it once api-js is released
-	async downloadManufacturingBackup({ deviceId }) {
-		return this.api.request({
-			uri: `/v1/devices/${deviceId}/backup_files`,
-			method: 'put',
-			isBuffer: true
-		});
-	}
-
 	login(username, password){
 		return this.api.login({ username: username, password: password })
 			.then(result => {
@@ -433,6 +424,15 @@ module.exports = class ParticleApi {
 			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets/${name}`,
 			method: 'delete',
 			auth: this.accessToken
+		}));
+	}
+
+	downloadManufacturingBackup({ deviceId, headers, context }) {
+		return this._wrap(this.api.downloadManufacturingBackup({
+			deviceId,
+			auth: this.accessToken,
+			headers,
+			context
 		}));
 	}
 
