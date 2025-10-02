@@ -27,7 +27,8 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		};
 	}
 
-	async restore(){
+	async restore({ 'from-local': fromLocal }){
+		const forceCloud = !fromLocal;
 		let continueProcess = await this.confirmProcess();
 		if (!continueProcess) {
 			return;
@@ -43,18 +44,23 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		// getting device info or ask
 		await this._getTachyonInfo();
 
-		let hasBackups = await this.hasBackups();
-		if (hasBackups) {
-			this.ui.write('Backup of manufacturing data found in the working directory, skipping backup step.');
-		} else if (this.deviceInfo.manufacturingData === 'Missing') {
-			continueProcess = await this._printMissingFilesWarning();
-			if (!continueProcess) {
-				return;
+		if (!forceCloud) {
+			let hasBackups = await this.hasBackups();
+			if (hasBackups) {
+				this.ui.write('Backup of manufacturing data found in the working directory, skipping backup step.');
+			} else if (this.deviceInfo.manufacturingData === 'Missing') {
+				continueProcess = await this._printMissingFilesWarning();
+				if (!continueProcess) {
+					return;
+				}
+			} else {
+				// backup nv data
+				await this.backupStep();
 			}
 		} else {
-			// backup nv data
-			await this.backupStep();
+			this.ui.write('Backup step omitted; it will be retrieved from the cloud');
 		}
+
 
 		// download os
 		this.ui.write('Downloading factory image...');
@@ -63,15 +69,15 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		this.ui.write('Installing factory image...');
 		await this._flashFactoryOS({ osPath: downloadPath });
 
-		hasBackups = await this.hasBackups();
-		if (!hasBackups) {
+		const hasBackups = await this.hasBackups();
+		if (!hasBackups && !forceCloud) {
 			const noDataTitle = this.ui.chalk.yellow.bold(`Manufacturing data backup not found — modem provisioning data was not restored.${os.EOL}`);
 			const content = `If you obtain the backup files from Particle later, run:${os.EOL}`;
 			const command = this.ui.chalk.cyan(`    particle tachyon restore${os.EOL}`);
 			this.ui.write(noDataTitle + content + command);
 		} else {
 			// restore nv data
-			await this.restoreNVDataStep();
+			await this.restoreNVDataStep({ forceCloud });
 		}
 
 		await this.setupStep();
@@ -171,8 +177,8 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 
 	async hasBackups() {
 		const names = await fs.readdir(this._backupDir);
-		const prefix = `${this.device.id}_`;
-		return names.some(name => name.startsWith(prefix) && name.endsWith('.backup'));
+		const expected = `manufacturing_backup_${this.device.id}.zip`;
+		return names.includes(expected);
 	}
 
 	async backupStep(){
@@ -216,10 +222,10 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		}
 	}
 
-	async restoreNVDataStep() {
+	async restoreNVDataStep({ forceCloud }) {
 		await this.ui.showBusySpinnerUntilResolved('Restore Tachyon NV data', async () => {
 			const restoreCommand = new BackupRestoreCommand({ ui: this.ui });
-			await restoreCommand.restore({ existingLog: this.outputLog });
+			await restoreCommand.restore({ existingLog: this.outputLog, 'force-cloud': forceCloud });
 		});
 	}
 
