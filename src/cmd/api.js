@@ -18,6 +18,15 @@ module.exports = class ParticleApi {
 		this.accessToken = options.accessToken;
 	}
 
+	// TODO (hmontero): remove it once api-js is released
+	async downloadManufacturingBackup({ deviceId }) {
+		return this.api.request({
+			uri: `/v1/devices/${deviceId}/backup_files`,
+			method: 'put',
+			isBuffer: true
+		});
+	}
+
 	login(username, password){
 		return this.api.login({ username: username, password: password })
 			.then(result => {
