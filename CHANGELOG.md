@@ -1,5 +1,11 @@
 # Changelog
 
+# 3.43.0 - Oct 06 2025
+* Change `tachyon backup` to output a bundle instead of separated files
+* Use bundle format on `tachyon restore`
+* Allow to download from cloud the backup on `tachyon factory-restore`
+* Detect OS version and show it correctly on `tachyon identify`.
+
 # 3.42.1 - Sep 03 2025
 * Setup 20.04 by default, and allow setup of 24.04
 
