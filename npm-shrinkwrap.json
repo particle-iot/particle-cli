@@ -28,7 +28,7 @@
         "moment": "^2.24.0",
         "node-fetch": "^2.7.0",
         "node-wifiscanner2": "^1.2.2",
-        "particle-api-js": "^11.1.4",
+        "particle-api-js": "^11.1.7",
         "particle-commands": "^1.0.2",
         "particle-library-manager": "^1.0.2",
         "particle-usb": "^4.0.0",
@@ -6437,9 +6437,9 @@
       }
     },
     "node_modules/particle-api-js": {
-      "version": "11.1.4",
-      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-11.1.4.tgz",
-      "integrity": "sha512-MQS6fAjAHAV57vO9ETC0uJlyXBloMkAC3rc3++Bgz2rdpjMlMVv3dj2nAg008MsZ0ZlW2DkdqJq7LW8bFQdL9Q==",
+      "version": "11.1.7",
+      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-11.1.7.tgz",
+      "integrity": "sha512-7Yg5D+aOquB/tYShgeHVeOGp1jDCUHoZemEuSo7TdeRjXflg9Pa05O4QNenwCF8+7n6q1XYlxj6pldT/i+uscA==",
       "dependencies": {
         "form-data": "^4.0.0",
         "node-fetch": "^2.7.0",
@@ -6447,8 +6447,8 @@
         "stream-http": "^3.2.0"
       },
       "engines": {
-        "node": ">=12.x",
-        "npm": "8.x"
+        "node": ">=16.x",
+        "npm": ">=8.x"
       }
     },
     "node_modules/particle-commands": {
@@ -15152,9 +15152,9 @@
       }
     },
     "particle-api-js": {
-      "version": "11.1.4",
-      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-11.1.4.tgz",
-      "integrity": "sha512-MQS6fAjAHAV57vO9ETC0uJlyXBloMkAC3rc3++Bgz2rdpjMlMVv3dj2nAg008MsZ0ZlW2DkdqJq7LW8bFQdL9Q==",
+      "version": "11.1.7",
+      "resolved": "https://registry.npmjs.org/particle-api-js/-/particle-api-js-11.1.7.tgz",
+      "integrity": "sha512-7Yg5D+aOquB/tYShgeHVeOGp1jDCUHoZemEuSo7TdeRjXflg9Pa05O4QNenwCF8+7n6q1XYlxj6pldT/i+uscA==",
       "requires": {
         "form-data": "^4.0.0",
         "node-fetch": "^2.7.0",
