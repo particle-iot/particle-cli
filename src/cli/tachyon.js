@@ -138,10 +138,6 @@ module.exports = ({ commandProcessor, root }) => {
 			'log-dir': {
 				description: 'Directory to save the log files'
 			},
-			'force-cloud': {
-				description: 'Force download the backup files from cloud',
-				boolean: true
-			},
 			filepath: {
 				description: 'File path to the backup file',
 			}
@@ -154,7 +150,6 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command ': 'Restore Tachyon NV data for a system update mode connected device using the default filenames',
 			'$0 $command --input-dir /path/to/input': 'Restore Tachyon NV data from the specified directory using the default filenames',
 			'$0 $command --log-dir /path/to/log': 'Restore Tachyon NV data and save logs to the specified directory',
-			'$0 $command --force-cloud': 'Restore Tachyon NV data using cloud backup',
 		}
 	});
 
@@ -169,12 +164,6 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(tachyon, 'factory-restore', 'Restore the tachyon with a clean image', {
-		options: {
-			'from-local': {
-				description: 'Force to get the nv data from local first',
-				boolean: true
-			}
-		},
 		handler: (args) => {
 			const TachyonFactoryRestore = require('../cmd/tachyon-factory-restore');
 			return new TachyonFactoryRestore().restore(args);

@@ -100,7 +100,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	async restore({
 		'input-dir': inputDir = process.cwd(),
 		'log-dir': logDir = this._logsDir,
-		'force-cloud': forceCloud,
 		filepath,
 		existingLog
 	} = {})	{
@@ -117,7 +116,6 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		addLogHeaders({ outputLog, startTime, deviceId: device.id, commandName: 'Tachyon restore' });
 		try {
 			const zipFilePath = await this._getFilePathToRestore({
-				forceCloud,
 				filepath,
 				deviceId: device.id,
 				inputDir
@@ -166,9 +164,9 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 		}
 	}
 
-	async _getFilePathToRestore({ forceCloud, filepath, deviceId, inputDir }) {
+	async _getFilePathToRestore({ filepath, deviceId, inputDir }) {
 		const defaultFileName = path.join(inputDir, `manufacturing_backup_${deviceId}.zip`);
-		const defaultFileExists = await fileExists(defaultFileName);
+
 		if (filepath) {
 			const exists = await fileExists(filepath);
 			if (exists) {
@@ -177,24 +175,33 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 			}
 			throw new Error('Unable to find file at ' + filepath);
 		}
-		if (forceCloud || !defaultFileExists) {
-			this.ui.stdout.write(`Downloading file at ${defaultFileName}${os.EOL}`);
-			const resp = await this.api.downloadManufacturingBackup({ deviceId });
-			const buffer = Buffer.from(resp);
-			await fs.writeFile(defaultFileName, buffer);
+		const defaultFileExists = await fileExists(defaultFileName);
+		if (defaultFileExists) {
+			this.ui.stdout.write(`Using zip file from ${defaultFileName} ${os.EOL}`);
+			return defaultFileName;
 		}
+		this.ui.stdout.write(`Downloading file at ${defaultFileName}${os.EOL}`);
+		const resp = await this.api.downloadManufacturingBackup({ deviceId });
+		const buffer = Buffer.from(resp);
+		await fs.writeFile(defaultFileName, buffer);
+
 		return defaultFileName;
 	}
 
 	async extractZipFile(filepath) {
 		const tmpOutputDir = await temp.mkdir('tachyon_restore');
 
-		// Extract everything into tmpOutputDir
-		await fs.createReadStream(filepath)
-			// eslint-disable-next-line new-cap
-			.pipe(unzip.Extract({ path: tmpOutputDir }))
-			.promise();
-		return tmpOutputDir;
+		try {
+			// Extract everything into tmpOutputDir
+			await fs.createReadStream(filepath)
+				// eslint-disable-next-line new-cap
+				.pipe(unzip.Extract({ path: tmpOutputDir }))
+				.promise();
+
+			return tmpOutputDir;
+		} catch (err) {
+			throw new Error(`Zip file could not be extracted: ${err.message}`);
+		}
 	}
 
 	_particleApi() {
