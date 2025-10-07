@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.43.1 - Oct 07 2025
+* Fix library version for api-js to download tachyon nv data backups
+
 # 3.43.0 - Oct 06 2025
 * Change `tachyon backup` to output a bundle instead of separated files
 * Use bundle format on `tachyon restore`
