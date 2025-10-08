@@ -284,13 +284,16 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 	const nvdataLun = partitionTable.find(({ partition }) => partition.name === 'nvdata1')?.lun;
 	const ubuntu20 = bootABuffer.includes(UBUNTU_20_MARKER) || bootBBuffer.includes(UBUNTU_20_MARKER);
 	const ubuntu24 = bootABuffer.includes(UBUNTU_24_MARKER) || bootBBuffer.includes(UBUNTU_24_MARKER);
+	const hasVendorBoot = !!partitionTable.find(({ partition }) => partition.name.startsWith('vendor_boot'));
 	let osVersion = 'Unknown';
 	let board = 'formfactor_dvt';
 	if (nvdataLun === 0) {
 		osVersion = 'Ubuntu 20.04 EVT';
 		board = 'formfactor';
 	} else if (nvdataLun === 5) {
-		if (ubuntu20 && !ubuntu24) {
+		if (hasVendorBoot) {
+			osVersion = 'Android 14';
+		} else if (ubuntu20 && !ubuntu24) {
 			osVersion = 'Ubuntu 20.04';
 		} else if (ubuntu24 && !ubuntu20) {
 			osVersion = 'Ubuntu 24.04';
