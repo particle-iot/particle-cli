@@ -631,7 +631,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		const { distribution, variant, distribution_version: distributionVersion, version, region } = build;
 		this.ui.write(os.EOL);
 		this.ui.write(this.ui.chalk.bold('Operating system information:'));
-		this.ui.write(this.ui.chalk.bold(`Tachyon ${distribution} ${distributionVersion} (${variant}, ${region} region)`));
+		this.ui.write(this.ui.chalk.bold(`Tachyon ${distribution.toUpperCase()} ${distributionVersion} (${variant}, ${region} region)`));
 		this.ui.write(`${this.ui.chalk.bold('Version:')} ${version}`);
 	}
 
