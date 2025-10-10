@@ -1,0 +1,120 @@
+
+		config.packagePath = await this._downloadStep(config); // step 6
+		this.product = await this._getProductDetails(config.productId);
+		config.registrationCode = await this._registerDeviceStep(config); // step 7
+		config.esim = await this._getESIMProfiles({ deviceId: this.device.id, country: config.country, productId: config.productId }); // after add device to product
+		const { xmlPath } = await this._configureConfigAndSaveStep(config); // step 8
+		const flashSuccess = await this._flashStep(config.packagePath, xmlPath, config); // step 9
+		await this._finalStep(flashSuccess, config); // step 10
+
+    	async _configureConfigAndSaveStep(config) {
+    		const { path: configBlobPath, configBlob } = await this._runStepWithTiming(
+    			'Creating the configuration file to write to the Tachyon device...',
+    			9,
+    			() => this._createConfigBlob(config, this.device.id)
+    		);
+
+    		const { xmlFile: xmlPath } = await prepareFlashFiles({
+    			logFile: this.outputLog,
+    			ui: this.ui,
+    			partitionsList: ['misc'],
+    			dir: path.dirname(configBlobPath),
+    			deviceId: this.device.id,
+    			operation: 'program',
+    			checkFiles: true,
+    			device: this.device
+    		});
+    		// Save the config file if requested
+    		if (config.saveConfig) {
+    			await this._saveConfig(config, configBlob);
+    		}
+
+    		return { xmlPath };
+    	}
+
+    	async _flashStep(packagePath, xmlPath, config) {
+    		let message = `Heads up: this is a large image and flashing will take about 2 minutes to complete.${os.EOL}`;
+    		const slowUsb = this.device.usbVersion.major <= 2;
+    		if (slowUsb) {
+    			message = `Heads up: this is a large image and flashing will take about 8 minutes to complete.${os.EOL}` +
+    				this.ui.chalk.yellow(`${os.EOL}The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
+    		}
+
+    		return this._runStepWithTiming(
+    			`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
+    			message +
+    			`${os.EOL}` +
+    			`Meanwhile, you can explore the developer documentation at https://developer.particle.io${os.EOL}` +
+          `${os.EOL}` +
+    			`You can also view your device on the Console at ${this._consoleLink()}${os.EOL}`,
+    			10,
+    			() => this._flash({
+    				files: [packagePath, xmlPath],
+    				skipFlashingOs: config.skipFlashingOs,
+    				skipReset: config.variant === 'desktop'
+    			})
+    		);
+    	}
+
+    	async _createConfigBlob(_config, deviceId) {
+    		// Format the config and registration code into a config blob (JSON file, prefixed by the file size)
+    		const config = Object.fromEntries(
+    			Object.entries(_config).filter(([, value]) => value != null)
+    		);
+
+    		if (!config.skipCli) {
+    			const profileFile = settings.findOverridesFile();
+    			if (await fs.exists(profileFile)) {
+    				config.cliConfig = await fs.readFile(profileFile, 'utf8');
+    			}
+    		}
+    		// inject initial time
+    		config['initialTime'] = new Date().toISOString();
+
+    		// Write config JSON to a temporary file (generate a filename with the temp npm module)
+    		// prefixed by the JSON string length as a 32 bit integer
+    		let jsonString = JSON.stringify(config, null, 2);
+    		const buffer = Buffer.alloc(4 + Buffer.byteLength(jsonString));
+    		buffer.writeUInt32BE(Buffer.byteLength(jsonString), 0);
+    		buffer.write(jsonString, 4);
+    		const tempDir = await temp.mkdir('tachyon-config');
+    		const filePath = path.join(tempDir, `${deviceId}_misc.backup`);
+    		await fs.writeFile(filePath, buffer);
+
+    		return { path: filePath, configBlob: config };
+    	}
+
+    	async _flash({ files, skipFlashingOs, skipReset }) {
+    		const packagePath = files[0];
+    		const flashCommand = new FlashCommand();
+
+    		if (!skipFlashingOs) {
+    			await flashCommand.flashTachyon({ device: this.device, files: [packagePath], skipReset: true, output: this.outputLog, verbose: false });
+    		}
+    		await flashCommand.flashTachyonXml({ device: this.device, files, skipReset, output: this.outputLog });
+    		return true;
+    	}
+
+    	async _saveConfig(config, configBlob) {
+    		const configFields = [
+    			'region',
+    			'version',
+    			'variant',
+    			'skipCli',
+    			'systemPassword',
+    			'productId',
+    			'timezone',
+    			'wifi',
+    			'country',
+    		];
+    		const configData = { ...config, ...configBlob };
+
+    		const savedConfig = Object.fromEntries(
+    			configFields
+    				.filter(key => key in configData && configData[key] !== null && configData[key] !== undefined)
+    				.map(key => [key, configData[key]])
+    		);
+    		await fs.writeFile(config.saveConfig, JSON.stringify(savedConfig, null, 2), 'utf-8');
+    		this.ui.write(`${os.EOL}Configuration file written here: ${config.saveConfig}${os.EOL}`);
+    	}
+

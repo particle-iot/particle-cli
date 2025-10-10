@@ -161,6 +161,19 @@ module.exports = class UI {
 		].join(' '));
 	}
 
+	async promptForList(message, choices) {
+		const question = [
+			{
+				type: 'list',
+				name: 'result',
+				message,
+				choices,
+			},
+		];
+		const { result } = await this.prompt(question);
+		return result;
+	}
+
 	logDeviceDetail(devices, { varsOnly = false, fnsOnly = false } = {}){
 		const { EOL, chalk } = this;
 		const deviceList = Array.isArray(devices) ? devices : [devices];
