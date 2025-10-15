@@ -68,8 +68,31 @@ const ubuntu20 = Object.freeze({
 		distributionVariant: 'ubuntu'
 	},
 	variants: [
-		{ name: 'Desktop (GUI)', value: 'desktop' },
-		{ name: 'Headless (command-line only)', value: 'headless' },
+		{
+			name: 'Desktop (GUI)',
+			value: 'desktop',
+			setupCompletedMessage: 'All done! Your Tachyon device is ready to boot' +
+				`to the desktop and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+				`To continue:${os.EOL}` +
+				`  - Disconnect the USB-C cable${os.EOL}` +
+				`  - Connect a USB-C Hub with an HDMI monitor, keyboard, and mouse.${os.EOL}` +
+				`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
+				`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
+				`When the device boots it will:${os.EOL}` +
+				`  - Activate the built-in 5G modem.${os.EOL}` +
+				`  - Connect to the Particle Cloud.${os.EOL}` +
+				`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}`
+		},
+		{
+			name: 'Headless (command-line only)',
+			value: 'headless',
+			setupCompletedMessage: 'All done! Your Tachyon device is now booting' +
+				`into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+				`It will also:${os.EOL}` +
+				`  - Activate the built-in 5G modem${os.EOL}` +
+				`  - Connect to the Particle Cloud${os.EOL}` +
+				`  - Run all system services, including battery charging${os.EOL}${os.EOL}`
+		},
 	],
 	steps: Object.freeze([
 		steps.pickVariant,
@@ -101,17 +124,28 @@ const ubuntu24 = Object.freeze({
 		version: 'latest',
 	},
 	variants: [
-		{ name: 'Desktop (GUI)', value: 'desktop' },
+		{
+			name: 'Desktop (GUI)',
+			value: 'desktop',
+			setupCompletedMessage: 'All done! Your Tachyon device is ready to boot to the desktop' +
+				`and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
+				`To continue:${os.EOL}` +
+				`  - Disconnect the USB-C cable${os.EOL}` +
+				`  - Connect a USB-C Hub with an HDMI monitor, keyboard, and mouse.${os.EOL}` +
+				`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
+				`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
+				`When the device boots it will:${os.EOL}` +
+				`  - Connect to the Particle Cloud.${os.EOL}`+
+				`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}`
+		},
 	],
 	steps: Object.freeze([
 		steps.pickVariant,
 		steps.getUserConfigurationStep,
 		steps.configureProductStep,
-		steps.getCountryStep,
 		steps.downloadOS,
 		steps.printOSInfo,
 		steps.registerDeviceStep,
-		steps.getESIMProfilesStep,
 		steps.createConfigBlobStep,
 		steps.flashOSAndConfigStep,
 		steps.setupCompletedStep
@@ -132,8 +166,21 @@ const android14 = Object.freeze({
 		variant: 'android'
 	},
 	variants: [
-		{ name: 'Android UI', value: 'android' },
+		{
+			name: 'Android UI',
+			value: 'android',
+			setupCompletedMessage: `All done! Your Tachyon device is ready to boot to Android.${os.EOL}${os.EOL}` +
+				`To continue:${os.EOL}` +
+				`  - Disconnect the USB-C cable${os.EOL}` +
+				`  - Connect a USB-C Hub with an HDMI monitor, keyboard, and mouse.${os.EOL}` +
+				`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
+				`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
+				`After the device boots Android, you can:${os.EOL}` +
+				`  - Connect to Wi-Fi and cellular through the Settings app${os.EOL}` +
+				`  - Install additional apps through adb.${os.EOL}`
+		},
 	],
+	customFlashMessage: `Okay—last step! We're now flashing the device with the operating system${os.EOL}`,
 	selectionWarning: `Heads-up: this setup won’t provision the eSIM or connect to the Particle Cloud.${os.EOL}` +
 		`If you need to provision the SIM, set up Ubuntu 20.04 first. ${os.EOL}`,
 	steps: Object.freeze([

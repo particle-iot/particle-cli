@@ -402,8 +402,8 @@ async function createBlobFile(context) {
 	return { configBlobPath: filePath, configBlob: config };
 }
 
-async function flashOSAndConfigStep({ ui, log, productSlug, device, xmlPath, variant, osFilePath, skipFlashingOs }, stepIndex) {
-	const message = getFlashMessage({ device, productSlug });
+async function flashOSAndConfigStep({ ui, log, productSlug, device, xmlPath, variant, osFilePath, skipFlashingOs, workflow }, stepIndex) {
+	const message = getFlashMessage({ device, productSlug, workflow });
 	return runStepWithTiming(
 		ui,
 		message,
@@ -447,14 +447,16 @@ async function flash({ device, osPath, xmlPath, skipFlashingOs, skipReset, log }
 
 }
 
-function getFlashMessage({ device, productSlug }){
+function getFlashMessage({ device, productSlug, workflow }){
 	let message = `Heads up: this is a large image and flashing will take about 2 minutes to complete.${os.EOL}`;
 	const slowUsb = device.usbVersion.major <= 2;
 	if (slowUsb) {
 		message = `Heads up: this is a large image and flashing will take about 8 minutes to complete.${os.EOL}` +
 			this.ui.chalk.yellow(`${os.EOL}The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
 	}
-	return `Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}` +
+	const messageTitle = workflow.customFlashMessage ||
+		`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}`;
+	return messageTitle +
 	message +
 	`${os.EOL}` +
 	`Meanwhile, you can explore the developer documentation at https://developer.particle.io${os.EOL}` +
@@ -462,48 +464,20 @@ function getFlashMessage({ device, productSlug }){
 	`You can also view your device on the Console at ${consoleLink({ productSlug, deviceId: device.id })}${os.EOL}`;
 }
 
-async function setupCompletedStep({ ui, variant, flashSuccessful, productSlug, deviceInfo }, stepIndex) {
+async function setupCompletedStep({ ui, variant, flashSuccessful, productSlug, deviceInfo, workflow }, stepIndex) {
 	if (flashSuccessful) {
-		if (variant !== 'headless') {
-			const desktopMessage = variant === 'desktop' ? `  - Activate the built-in 5G modem.${os.EOL}` +
-				`  - Connect to the Particle Cloud.${os.EOL}` : '';
-
-			formatAndDisplaySteps(
-				{
-					ui,
-					text: `All done! Your Tachyon device is ready to boot to the desktop and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
-						`To continue:${os.EOL}` +
-						`  - Disconnect the USB-C cable${os.EOL}` +
-						`  - Connect a USB-C Hub with an HDMI monitor, keyboard, and mouse.${os.EOL}` +
-						`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
-						`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
-						`When the device boots it will:${os.EOL}` +
-						desktopMessage +
-						`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
-						`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
-						`${os.EOL}` +
-						`View your device on the Particle Console at: ${consoleLink({ productSlug, deviceId: deviceInfo.deviceId })}`,
-					step: stepIndex,
-				}
-				,
-			);
-		} else {
-			formatAndDisplaySteps({
-				ui,
-				text: `All done! Your Tachyon device is now booting into the operating system and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
-				`It will also:${os.EOL}` +
-				`  - Activate the built-in 5G modem${os.EOL}` +
-				`  - Connect to the Particle Cloud${os.EOL}` +
-				`  - Run all system services, including battery charging${os.EOL}${os.EOL}` +
-				`For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
+		const messageContent = workflow.variants.find(v => v.value === variant)?.setupCompletedMessage;
+		const footer = `For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
 				`${os.EOL}` +
 				`View your device on the Particle Console at: ${consoleLink({
 					productSlug,
-					deviceId: deviceInfo.id,
-				})}`,
-				step: stepIndex
-			});
-		}
+					deviceId: deviceInfo.deviceId
+				})}`;
+		formatAndDisplaySteps({
+			ui,
+			text: messageContent + footer,
+			step: stepIndex
+		});
 	} else {
 		ui.write(
 			`${os.EOL}Flashing failed. Please unplug your device and rerun this. We're going to have to try it again.${os.EOL}` +
@@ -511,6 +485,7 @@ async function setupCompletedStep({ ui, variant, flashSuccessful, productSlug, d
 		);
 	}
 }
+
 
 function consoleLink({ productSlug, deviceId }) {
 	const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
