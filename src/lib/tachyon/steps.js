@@ -10,6 +10,7 @@ const { platformForId, PLATFORMS } = require('../platform');
 const { supportedCountries } = require('../supported-countries');
 const DownloadManager = require('../download-manager');
 const FlashCommand = require('../../cmd/flash');
+const { titleCase } = require('../utilities');
 
 
 /**
@@ -102,7 +103,7 @@ async function printOSInfo({ workflow, variant, buildVersion, version, region, u
 	const { distribution, distributionVersion } = workflow.osInfo;
 	ui.write(os.EOL);
 	ui.write(ui.chalk.bold('Operating system information:'));
-	ui.write(ui.chalk.bold(`Tachyon ${distribution.toUpperCase()} ${distributionVersion} (${variant}, ${region} region)`));
+	ui.write(ui.chalk.bold(`Tachyon ${titleCase(distribution)} ${distributionVersion} (${variant}, ${region} region)`));
 	ui.write(`${ui.chalk.bold('Version:')} ${buildVersion || version }`);
 }
 
@@ -467,7 +468,7 @@ function getFlashMessage({ device, productSlug, workflow }){
 async function setupCompletedStep({ ui, variant, flashSuccessful, productSlug, deviceInfo, workflow }, stepIndex) {
 	if (flashSuccessful) {
 		const messageContent = workflow.variants.find(v => v.value === variant)?.setupCompletedMessage;
-		const footer = `For more information about Tachyon, visit our developer site at: https://developer.particle.io!${os.EOL}` +
+		const footer = `Learn more about Tachyon at our developer site: https://developer.particle.io/tachyon${os.EOL}` +
 				`${os.EOL}` +
 				`View your device on the Particle Console at: ${consoleLink({
 					productSlug,

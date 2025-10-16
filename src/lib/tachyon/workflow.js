@@ -111,10 +111,11 @@ const ubuntu20 = Object.freeze({
 
 /** @type {Workflow} */
 const ubuntu24 = Object.freeze({
-	name: 'Ubuntu 24.04 (alpha)',
+	name: 'Ubuntu 24.04 (beta)',
 	value: 'ubuntu24',
-	selectionWarning: 'Heads-up: Development of Ubuntu 24.04 (alpha) is still in progress. Some features may be ' +
-		`unstable or missing. ${os.EOL}`,
+	selectionWarning: 'Heads-up: Development of Ubuntu 24.04 (beta) is still in progress. Some features may be ' +
+		`unstable or missing.${os.EOL}` +
+		`See https://developer.particle.io/tachyon/software/ubuntu_24_04/overview for more information.${os.EOL}`,
 	osInfo: {
 		distribution: 'ubuntu',
 		distributionVersion: '24.04',
@@ -127,7 +128,7 @@ const ubuntu24 = Object.freeze({
 		{
 			name: 'Desktop (GUI)',
 			value: 'desktop',
-			setupCompletedMessage: 'All done! Your Tachyon device is ready to boot to the desktop' +
+			setupCompletedMessage: 'All done! Your Tachyon device is ready to boot to the desktop ' +
 				`and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
 				`To continue:${os.EOL}` +
 				`  - Disconnect the USB-C cable${os.EOL}` +
@@ -136,7 +137,8 @@ const ubuntu24 = Object.freeze({
 				`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
 				`When the device boots it will:${os.EOL}` +
 				`  - Connect to the Particle Cloud.${os.EOL}`+
-				`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}`
+				`  - Run all system services, including the desktop if an HDMI monitor is connected.${os.EOL}${os.EOL}` +
+				`For more information about what's currently supported on Ubuntu 24.04, visit https://developer.particle.io/tachyon/software/ubuntu_24_04/overview${os.EOL}${os.EOL}`
 		},
 	],
 	steps: Object.freeze([
@@ -176,13 +178,15 @@ const android14 = Object.freeze({
 				`  - Power off the device by holding the power button for 3 seconds and releasing.${os.EOL}` +
 				`  - Power on the device by pressing the power button.${os.EOL}${os.EOL}` +
 				`After the device boots Android, you can:${os.EOL}` +
-				`  - Connect to Wi-Fi and cellular through the Settings app${os.EOL}` +
-				`  - Install additional apps through adb.${os.EOL}`
+				`  - Connect to Wi-Fi and cellular through the Settings app.${os.EOL}` +
+				`  - Install additional apps through adb.${os.EOL}` +
+				`For more information about what's currently supported on Android 14, visit https://developer.particle.io/tachyon/software/android_14/android-14-overview${os.EOL}${os.EOL}`
 		},
 	],
 	customFlashMessage: `Okay—last step! We're now flashing the device with the operating system${os.EOL}`,
 	selectionWarning: `Heads-up: this setup won’t provision the eSIM or connect to the Particle Cloud.${os.EOL}` +
-		`If you need to provision the SIM, set up Ubuntu 20.04 first. ${os.EOL}`,
+		`If you need to provision the SIM, set up Ubuntu 20.04 first.${os.EOL}` +
+		`See https://developer.particle.io/tachyon/software/android_14/android-14-overview for more information.${os.EOL}`,
 	steps: Object.freeze([
 		steps.pickVariant,
 		steps.configureProductStep,
