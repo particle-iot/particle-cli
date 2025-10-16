@@ -63,6 +63,7 @@ const ubuntu20 = Object.freeze({
 	name: 'Ubuntu 20.04 (stable), recommended',
 	value: 'ubuntu20',
 	osInfo: {
+		distributionDisplay: 'Ubuntu 20.04',
 		distribution: 'ubuntu',
 		distributionVersion: '20.04',
 		distributionVariant: 'ubuntu'
@@ -117,6 +118,7 @@ const ubuntu24 = Object.freeze({
 		`unstable or missing.${os.EOL}` +
 		`See https://developer.particle.io/tachyon/software/ubuntu_24_04/overview for more information.${os.EOL}`,
 	osInfo: {
+		distributionDisplay: 'Ubuntu 24.04',
 		distribution: 'ubuntu',
 		distributionVersion: '24.04',
 		distributionVariant: 'ubuntu'
@@ -160,6 +162,7 @@ const android14 = Object.freeze({
 	name: 'Android 14 (beta)',
 	value: 'android14',
 	osInfo: {
+		distributionDisplay: 'Android 14',
 		distribution: 'android',
 		distributionVersion: '14',
 	},

@@ -389,13 +389,6 @@ module.exports = {
 		return slug;
 	},
 
-	titleCase(str) {
-		return str?.replace(
-			/\w\S*/g,
-			(txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
-		);
-	},
-
 	/**
 	 * Returns the architecture of the current system
 	 * @return {String} architecture of the current system

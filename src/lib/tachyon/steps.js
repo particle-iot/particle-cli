@@ -10,8 +10,6 @@ const { platformForId, PLATFORMS } = require('../platform');
 const { supportedCountries } = require('../supported-countries');
 const DownloadManager = require('../download-manager');
 const FlashCommand = require('../../cmd/flash');
-const { titleCase } = require('../utilities');
-
 
 /**
  *
@@ -100,10 +98,10 @@ async function downloadOS({ ui, alwaysCleanCache, isLocalVersion, version, url, 
  * @return {Promise<void>}
  */
 async function printOSInfo({ workflow, variant, buildVersion, version, region, ui }) {
-	const { distribution, distributionVersion } = workflow.osInfo;
+	const { distributionDisplay } = workflow.osInfo;
 	ui.write(os.EOL);
 	ui.write(ui.chalk.bold('Operating system information:'));
-	ui.write(ui.chalk.bold(`Tachyon ${titleCase(distribution)} ${distributionVersion} (${variant}, ${region} region)`));
+	ui.write(ui.chalk.bold(`Tachyon ${distributionDisplay} (${variant}, ${region} region)`));
 	ui.write(`${ui.chalk.bold('Version:')} ${buildVersion || version }`);
 }
 
