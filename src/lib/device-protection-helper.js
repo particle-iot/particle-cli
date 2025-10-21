@@ -1,5 +1,6 @@
 // This helper module is written mainly for the device protection module to not mess with the flash module directly
 // and vice versa. This acts as a bridge between the two modules.
+'use strict';
 const settings = require('../../settings');
 const ParticleApi = require('../cmd/api');
 const createApiCache = require('../lib/api-cache');
@@ -47,7 +48,7 @@ async function turnOffServiceMode(device) {
 
 function _particleApi() {
 	const auth = settings.access_token;
-	const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+	const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 	const apiCache = createApiCache(api);
 	return { api: apiCache, auth };
 }

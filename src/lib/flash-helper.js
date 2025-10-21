@@ -1,8 +1,9 @@
+'use strict';
 const _ = require('lodash');
 const usbUtils = require('../cmd/usb-util');
 const { delay } = require('./utilities');
 const VError = require('verror');
-const { PLATFORMS } =require('./platform');
+const { PLATFORMS } = require('./platform');
 const { moduleTypeFromNumber, sortBinariesByDependency } = require('./dependency-walker');
 const { HalModuleParser: ModuleParser, ModuleInfo, createProtectedModule } = require('binary-version-reader');
 const path = require('path');
@@ -21,7 +22,7 @@ const PROTECTED_MINIMUM_VERSION = '6.1.1';
 const PROTECTED_MINIMUM_SYSTEM_VERSION = 6101;
 const PROTECTED_MINIMUM_BOOTLOADER_VERSION = 3001;
 
-async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose=true }) {
+async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verbose = true }) {
 	let progress = null;
 	progress = verbose ? _createFlashProgress({ flashSteps, ui, verbose }) : null;
 	let success = false;
@@ -49,7 +50,7 @@ async function flashFiles({ device, flashSteps, resetAfterFlash = true, ui, verb
 			if (resetAfterFlash && lastStepDfu) {
 				try {
 					await device.reset();
-				} catch (error) {
+				} catch (_err) {
 					// ignore error: when flashing ncp the device takes too long to connect back to make requests like reset device
 				}
 			}
@@ -71,14 +72,14 @@ async function _flashDeviceInNormalMode(device, data, { name, progress, checkSki
 			device = await usbUtils.reopenDevice(device);
 			if (checkSkip && await checkSkip(device)) {
 				if (progress) {
-					progress({ event: 'skip-file', filename: name, bytes: 2*data.length });
+					progress({ event: 'skip-file', filename: name, bytes: 2 * data.length });
 				}
 				return device;
 			}
 			try {
 				await device.enterListeningMode();
 				await delay(1000); // Just in case
-			} catch (error) {
+			} catch (_err) {
 				// ignore
 			}
 			await device.updateFirmware(data, { progress, timeout: FLASH_TIMEOUT });

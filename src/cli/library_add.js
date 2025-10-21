@@ -1,3 +1,4 @@
+'use strict';
 const chalk = require('chalk');
 const log = require('../lib/log');
 const { spin } = require('../app/ui');
@@ -9,7 +10,7 @@ class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 	constructor(argv, apiClient){
 		super();
 		this._apiClient = apiClient;
-		[this.name, this.version='latest'] = argv.params.name.split('@');
+		[this.name, this.version = 'latest'] = argv.params.name.split('@');
 		this.dir = argv.params.dir || process.cwd();
 	}
 
@@ -35,7 +36,7 @@ class CLILibraryAddCommandSite extends LibraryAddCommandSite {
 
 	async addedLibrary(name, version){
 		log.success(`Library ${chalk.blue(name)} ${version} has been added to the project.`);
-		log.success(`To get started using this library, run ${chalk.bold('particle library view '+name)} to view the library documentation and sources.`);
+		log.success(`To get started using this library, run ${chalk.bold('particle library view ' + name)} to view the library documentation and sources.`);
 	}
 }
 

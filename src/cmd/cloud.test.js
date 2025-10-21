@@ -1,3 +1,4 @@
+'use strict';
 const proxyquire = require('proxyquire');
 const os = require('os');
 const path = require('path');
@@ -546,7 +547,7 @@ describe('Cloud Commands', () => {
 				'lib/spi/src/build.mk'
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
 				cloud._getDefaultIncludes(files, dir, {});
 
@@ -573,9 +574,9 @@ describe('Cloud Commands', () => {
 				'lib/spi/src/spi.txt',
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getDefaultIncludes(files, dir, {} );
+				cloud._getDefaultIncludes(files, dir, {});
 
 				expect([...files]).to.have.same.members([
 					path.resolve(dir, 'src/app.cpp'),
@@ -597,9 +598,9 @@ describe('Cloud Commands', () => {
 				'src/app.def'
 			], { 'particle.include': '**/*.def' }, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.have.same.members([
 					path.resolve(dir, 'src/app.def')
@@ -622,9 +623,9 @@ describe('Cloud Commands', () => {
 				'src/particle.include': '**/*.txt\n**/*.def'
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.have.same.members([
 					path.resolve(dir, 'src/app.def'),
@@ -649,9 +650,9 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': '**/*.txt\n**/*.def'
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.have.same.members([
 					path.resolve(dir, 'src/app.def'),
@@ -677,9 +678,9 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': '**/*.txt\n**/*.def'
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.have.same.members([
 					path.resolve(dir, 'src/app.def'),
@@ -699,9 +700,9 @@ describe('Cloud Commands', () => {
 				'src/app.def'
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -721,9 +722,9 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': ''
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.have.same.members([
 					path.resolve(dir, 'src/app.def')
@@ -745,9 +746,9 @@ describe('Cloud Commands', () => {
 				'lib/particle.include': ''
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -764,9 +765,9 @@ describe('Cloud Commands', () => {
 				'particle.include': '**/*.def',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIncludes(files, dir, {} );
+				cloud._getCustomIncludes(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -784,11 +785,11 @@ describe('Cloud Commands', () => {
 			], {}, async (dir) => {
 				dir = path.resolve(dir);
 				// hardcode a set with 'lib/spi/examples/sensor/init.ino'
-				let files = new Set([
+				const files = new Set([
 					path.join(dir, 'lib/spi/examples/sensor/init.ino')
 				]);
 
-				cloud._getDefaultIgnores(files, dir, {} );
+				cloud._getDefaultIgnores(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -807,11 +808,11 @@ describe('Cloud Commands', () => {
 				'particle.ignore': '**/*.cpp',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set([
+				const files = new Set([
 					path.join(dir, 'src/app.cpp')
 				]);
 
-				cloud._getCustomIgnores(files, dir, {} );
+				cloud._getCustomIgnores(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -830,12 +831,12 @@ describe('Cloud Commands', () => {
 				'lib/particle.ignore': '**/*.h',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set([
+				const files = new Set([
 					path.join(dir, 'src/app.cpp'),
 					path.join(dir, 'lib/spi/src/spi.h')
 				]);
 
-				cloud._getCustomIgnores(files, dir, {} );
+				cloud._getCustomIgnores(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -852,9 +853,9 @@ describe('Cloud Commands', () => {
 				'particle.ignore': '',
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set();
+				const files = new Set();
 
-				cloud._getCustomIgnores(files, dir, {} );
+				cloud._getCustomIgnores(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -873,11 +874,11 @@ describe('Cloud Commands', () => {
 				'lib/particle.ignore': ''
 			}, async (dir) => {
 				dir = path.resolve(dir);
-				let files = new Set([
+				const files = new Set([
 					path.join(dir, 'src/app.cpp')
 				]);
 
-				cloud._getCustomIgnores(files, dir, {} );
+				cloud._getCustomIgnores(files, dir, {});
 
 				expect([...files]).to.be.empty;
 			});
@@ -891,7 +892,7 @@ describe('Cloud Commands', () => {
 		});
 
 		it('parses memory stats', () => {
-			let statsText = '   text	   data	    bss	    dec	    hex	filename\n' +
+			const statsText = '   text	   data	    bss	    dec	    hex	filename\n' +
 				'3308	    112	   1356	   4776	   12a8	/workspace/target/workspace.elf';
 
 			const stats = cloud._parseMemoryStats(statsText);
@@ -906,7 +907,7 @@ describe('Cloud Commands', () => {
 		});
 
 		it('returns null when stats are invalid', () => {
-			let statsText = 'invalid';
+			const statsText = 'invalid';
 
 			const stats = cloud._parseMemoryStats(statsText);
 

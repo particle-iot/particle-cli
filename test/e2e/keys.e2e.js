@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const { expect } = require('../setup');
 const openSSL = require('../lib/open-ssl');

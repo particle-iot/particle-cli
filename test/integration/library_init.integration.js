@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../setup');
 const fs = require('fs-extra');
 const path = require('path');
@@ -13,7 +14,7 @@ describe('library init', () => {
 	});
 
 	it('can run library init without prompts', async function libraryCreate(){
-		this.timeout(18*1000);
+		this.timeout(18 * 1000);
 		const root = commandProcessor.createAppCategory();
 
 		libraryCommands({ commandProcessor, root });

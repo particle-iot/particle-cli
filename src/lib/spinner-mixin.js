@@ -1,3 +1,4 @@
+'use strict';
 const Spinner = require('cli-spinner').Spinner;
 
 

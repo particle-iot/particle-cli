@@ -1,3 +1,4 @@
+'use strict';
 const { platforms } = require('@particle/device-constants');
 
 /**

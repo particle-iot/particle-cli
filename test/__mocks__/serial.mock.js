@@ -1,5 +1,6 @@
-var util = require('util');
-var Duplex = require('stream').Duplex;
+'use strict';
+const util = require('util');
+const Duplex = require('stream').Duplex;
 
 function MockSerial() {
 	Duplex.call(this);

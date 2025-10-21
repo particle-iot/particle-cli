@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const fs = require('fs-extra');
 const path = require('path');
@@ -8,7 +9,7 @@ const LogicFunction = require('../lib/logic-function');
 
 describe('LogicFunctionCommands', () => {
 	let logicFunctionCommands;
-	let originalUi = new LogicFunctionCommands().ui;
+	const originalUi = new LogicFunctionCommands().ui;
 	let logicFunc1 = fs.readFileSync(path.join(PATH_FIXTURES_LOGIC_FUNCTIONS, 'logicFunc1.json'), 'utf-8');
 	logicFunc1 = JSON.parse(logicFunc1);
 
@@ -627,7 +628,7 @@ describe('LogicFunctionCommands', () => {
 	});
 
 	describe('deploy', () => {
-		let logicFunctions = [];
+		const logicFunctions = [];
 		logicFunctions.push(logicFunc1.logic_functions[0]);
 
 		beforeEach(() => {

@@ -1,3 +1,4 @@
+'use strict';
 const _ = require('lodash');
 const EventEmitter = require('events').EventEmitter;
 const log = require('./log');
@@ -26,9 +27,9 @@ module.exports = class SerialTrigger extends EventEmitter {
 	 */
 	start(noLogs) {
 
-		let serialDataCallback = (dataBuffer) => {
-			let self = this;
-			let data = dataBuffer.toString();
+		const serialDataCallback = (dataBuffer) => {
+			const self = this;
+			const data = dataBuffer.toString();
 			this.data += data;
 			let substring = this.data;
 			let matchPrompt = '';
@@ -60,7 +61,7 @@ module.exports = class SerialTrigger extends EventEmitter {
 			if (matchPrompt && substring.length >= matchPrompt.length) {
 				this.data = substring.substring(matchPrompt.length);
 
-				let triggerFn = this.triggers[matchPrompt];
+				const triggerFn = this.triggers[matchPrompt];
 				if (triggerFn) {
 					triggerFn((response, cb) => {
 						if (response) {

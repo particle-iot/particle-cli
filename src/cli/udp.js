@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const udp = commandProcessor.createCategory(root, 'udp', 'Talk UDP to repair devices, run patches, check Wi-Fi, and more!');
 

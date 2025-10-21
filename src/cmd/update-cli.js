@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
@@ -66,7 +67,7 @@ class UpdateCliCommand {
 	async downloadManifest(version) {
 		const fileName = version ? `manifest-${version}.json` : 'manifest.json';
 		const url = `https://${settings.manifestHost}/particle-cli/${fileName}`;
-		return new Promise((resolve, reject ) => {
+		return new Promise((resolve, reject) => {
 			return request(url, (error, response, body) => {
 				if (error) {
 					return this.logAndReject(error, reject, version);
@@ -153,7 +154,7 @@ class UpdateCliCommand {
 
 	getBuildDetailsFromManifest(manifest, _os = os) {
 		const platform = _os.platform();
-		let arch = _os.arch();
+		const arch = _os.arch();
 		const platformKey = platform;
 		const archKey = arch;
 		const platformManifest = manifest.builds && manifest.builds[platformKey];

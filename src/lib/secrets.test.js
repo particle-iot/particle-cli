@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../../test/setup');
 const secrets = require('./secrets');
 const nock = require('nock');

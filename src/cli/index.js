@@ -1,3 +1,4 @@
+'use strict';
 const help = require('./help');
 const alias = require('./alias');
 const container = require('./container');

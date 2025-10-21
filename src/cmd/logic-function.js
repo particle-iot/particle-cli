@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const path = require('path');
 const fs = require('fs-extra');
@@ -96,7 +97,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		const {
 			name: logicFunctionName,
 			description: logicFunctionDescription
-		}  = await this._promptLogicFunctionInput({ _name: name, _description: description, force });
+		} = await this._promptLogicFunctionInput({ _name: name, _description: description, force });
 		this.ui.stdout.write(`${os.EOL}`);
 		this.ui.stdout.write(`Creating Logic Function ${this.ui.chalk.cyan(logicFunctionName)} for ${getOrgName(this.org)}...${os.EOL}`);
 
@@ -130,7 +131,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 		let name = _name, description = _description;
 		if (force) {
 			return {
-				name: name? name.trim() : '',
+				name: name ? name.trim() : '',
 				description: description ? description.trim() : ''
 			};
 		}
@@ -476,7 +477,7 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	_printUpdateLocalFilesOutput({ jsonPath, jsPath, enable }) {
 		this.ui.stdout.write(`${os.EOL}`);
-		this.ui.stdout.write(`The following files were overwritten after ${enable ? 'enabling': 'disabling'} the Logic Function:${os.EOL}`);
+		this.ui.stdout.write(`The following files were overwritten after ${enable ? 'enabling' : 'disabling'} the Logic Function:${os.EOL}`);
 		this.ui.stdout.write(` - ${path.basename(jsonPath)}${os.EOL}`);
 		this.ui.stdout.write(` - ${path.basename(jsPath)}${os.EOL}`);
 		this.ui.stdout.write(`${os.EOL}`);

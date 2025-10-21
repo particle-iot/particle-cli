@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');

@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const _ = require('lodash');
 const VError = require('verror');
@@ -19,7 +20,7 @@ const extend = require('xtend');
 const chalk = require('chalk');
 const temp = require('temp').track();
 const { ssoLogin, waitForLogin, getLoginMessage } = require('../lib/sso');
-const BundleCommands  = require('./bundle');
+const BundleCommands = require('./bundle');
 const { sourcePatterns } = require('../lib/file-types');
 
 const arrow = chalk.green('>');
@@ -157,7 +158,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
 
 				const attrs = await createAPI().getDeviceAttributes(device);
-				let platformId = attrs.platform_id;
+				const platformId = attrs.platform_id;
 				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
 				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
 
@@ -210,7 +211,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		const attrs = await createAPI().getDeviceAttributes(deviceId);
-		let platformId = attrs.platform_id;
+		const platformId = attrs.platform_id;
 
 		if (product || attrs.platform_id !== attrs.product_id){
 			if (!product){
@@ -349,7 +350,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			this.ui.stdout.write(os.EOL);
 		}
 
-		let filename = this._getDownloadPathForBin(deviceType, saveTo);
+		const filename = this._getDownloadPathForBin(deviceType, saveTo);
 		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets);
 		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, bundleFilename });
 	}
@@ -579,7 +580,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		const api = new ApiClient();
 		api.ensureToken();
 
-		let filterFunc = buildDeviceFilter(filter);
+		const filterFunc = buildDeviceFilter(filter);
 
 		return Promise.resolve()
 			.then(() => api.listDevices())
@@ -681,7 +682,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 				if (savedPropObj.assetOtaDir && savedPropObj.assetOtaDir !== '') {
 					return path.join(file, savedPropObj.assetOtaDir);
 				}
-			} catch (error) {
+			} catch (_err) {
 				// Ignore parsing or stat errors
 			}
 		}
@@ -719,7 +720,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			let filestats;
 			try {
 				filestats = fs.statSync(filename);
-			} catch (ex){
+			} catch (_err){
 				console.error("I couldn't find the file " + filename);
 				return null;
 			}
@@ -759,7 +760,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	 */
 	_processDirIncludes(fileMapping, dirname, { followSymlinks } = {}){
 		dirname = path.resolve(dirname);
-		let files = new Set();
+		const files = new Set();
 
 		this._getDefaultIncludes(files, dirname, { followSymlinks });
 		this._getDefaultIgnores(files, dirname, { followSymlinks });
@@ -798,7 +799,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 	_getDefaultIgnores(files, dirname, { followSymlinks }) {
 		// Recursively find default ignore files
-		let ignores = [
+		const ignores = [
 			'lib/*/examples/**/*.*'
 		];
 

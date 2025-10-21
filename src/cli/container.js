@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const container = commandProcessor.createCategory(root, 'container', 'Manage containerized applications');
 

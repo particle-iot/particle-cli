@@ -1,3 +1,4 @@
+'use strict';
 const chalk = require('chalk');
 const { spin } = require('../app/ui');
 const prompt = require('../lib/prompts');
@@ -73,7 +74,7 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 	_buildSections() {
 		const result = {};
 		const sections = this.sectionNames();
-		for (let section of sections) {
+		for (const section of sections) {
 			result[section] = { page: this._page || 1 };
 		}
 		if (result.mine) {
@@ -84,14 +85,14 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 
 	_nextPage() {
 		this._page++;
-		for (let name of this.sectionNames()) {
+		for (const name of this.sectionNames()) {
 			const section = this._sections[name];
 			section.page += 1;
 		}
 	}
 
 	_removeEmptySections(results, sectionNames = this._sectionNames, sections = this._sections) {
-		for (let name of sectionNames) {
+		for (const name of sectionNames) {
 			const section = results[name];
 			if (!section || !section.length) {
 				this._removeSection(name, sectionNames, sections);
@@ -100,7 +101,7 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 		return [sectionNames, sections];
 	}
 
-	_removeSection(name, sectionNames=this._sectionNames, sections=this._sections) {
+	_removeSection(name, sectionNames = this._sectionNames, sections = this._sections) {
 		sectionNames.splice(sectionNames.indexOf(name), 1);
 		delete sections[name];
 	}
@@ -115,8 +116,8 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 				const sections = this.sectionNames();
 
 				if (json){
-					let data = [];
-					for (let name of sections){
+					const data = [];
+					for (const name of sections){
 						const list = results[name];
 						if (list){
 							data.push(...list);
@@ -128,7 +129,7 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 				}
 
 				let separator = false;
-				for (let name of sections) {
+				for (const name of sections) {
 					const list = results[name];
 					if (list) {
 						if (separator) {
@@ -153,11 +154,11 @@ class CLILibraryListCommandSite extends LibraryListCommandSite {
 			return;
 		}
 
-		const page = section.page>1 ? chalk.grey(` page ${section.page}`) : '';
+		const page = section.page > 1 ? chalk.grey(` page ${section.page}`) : '';
 		const heading = this.headings[name] || name;
-		console.log(chalk.bold(heading)+page);
+		console.log(chalk.bold(heading) + page);
 		if (libraries.length) {
-			for (let library of libraries) {
+			for (const library of libraries) {
 				this.showLibrary(section, library);
 			}
 		} else {

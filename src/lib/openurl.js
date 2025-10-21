@@ -1,4 +1,5 @@
 // Copy of https://github.com/rauschma/openurl with additional error handling
+'use strict';
 const spawn = require('child_process').spawn;
 const path = require('path');
 
@@ -37,7 +38,7 @@ function open(url, callback) {
 	});
 	let errorText = '';
 	child.stderr.setEncoding('utf8');
-	child.stderr.on('data', (data)=> {
+	child.stderr.on('data', (data) => {
 		errorText += data;
 	});
 	child.stderr.on('end', () => {

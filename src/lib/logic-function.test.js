@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const LogicFunction = require('./logic-function');
 const nock = require('nock');
@@ -26,16 +27,16 @@ describe('LogicFunction', () => {
 	}
 	describe('list', () => {
 		it('returns an empty array if there are no Logic Functions', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions : [] } );
+				.reply(200, { logic_functions : [] });
 			const logicFunctions = await LogicFunction.listFromCloud();
 			expect(logicFunctions).to.have.lengthOf(0);
 		});
 		it('returns a list of Logic Functions', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/functions', 'GET')
-				.reply(200, { logic_functions : [{ name: 'my-logic-function' }] } );
+				.reply(200, { logic_functions : [{ name: 'my-logic-function' }] });
 
 			const logicFunctions = await LogicFunction.listFromCloud();
 			expect(logicFunctions).to.have.lengthOf(1);
@@ -44,18 +45,18 @@ describe('LogicFunction', () => {
 		});
 
 		it('returns a list of Logic Functions from an specific org', async () => {
-			nock('https://api.particle.io/v1/orgs/', )
+			nock('https://api.particle.io/v1/orgs/',)
 				.intercept('/my-org/logic/functions', 'GET')
-				.reply(200, { logic_functions : [{ name: 'my-logic-function' }] } );
+				.reply(200, { logic_functions : [{ name: 'my-logic-function' }] });
 			const logicFunctions = await LogicFunction.listFromCloud({ org: 'my-org' });
 			expect(logicFunctions).to.have.lengthOf(1);
 			expect(logicFunctions[0]).to.be.an.instanceof(LogicFunction);
 		});
 
 		it('propagates errors', async () => {
-			nock('https://api.particle.io/v1/orgs/', )
+			nock('https://api.particle.io/v1/orgs/',)
 				.intercept('/my-org/logic/functions', 'GET')
-				.reply(500, { error: 'Internal Server Error' } );
+				.reply(500, { error: 'Internal Server Error' });
 
 			try {
 				await LogicFunction.listFromCloud({ org: 'my-org' });
@@ -262,7 +263,7 @@ describe('LogicFunction', () => {
 			fs.emptyDirSync(PATH_TMP_DIR);
 		});
 		it('executes a Logic Function', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/execute', 'POST')
 				.reply(200, { result: { status: 'Success', logs: ['abc1'] } });
 			const trigger = {
@@ -280,7 +281,7 @@ describe('LogicFunction', () => {
 			expect(executeResult.logs).to.deep.equal(['abc1']);
 		});
 		it('returns status as exception and errors if the execution fails', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/execute', 'POST')
 				.reply(200, { result: { status: 'Exception', err: 'Error', logs: [] } });
 			const trigger = {
@@ -299,9 +300,9 @@ describe('LogicFunction', () => {
 			expect(executeResult.logs).to.deep.equal([]);
 		});
 		it('propagates errors', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/execute', 'POST')
-				.reply(500, { error: 'Internal Server Error' } );
+				.reply(500, { error: 'Internal Server Error' });
 			const trigger = {
 				event: {
 					event_name: 'my-event',
@@ -326,7 +327,7 @@ describe('LogicFunction', () => {
 			fs.emptyDirSync(PATH_TMP_DIR);
 		});
 		it('deploys a new Logic Function', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/functions', 'POST')
 				.reply(200, { logic_function: { id: '1234', version: 1 } });
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
@@ -335,9 +336,9 @@ describe('LogicFunction', () => {
 			expect(lf1).to.have.property('version', 1);
 		});
 		it ('deploys existent Logic Function', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/functions/1234', 'PUT')
-				.reply(200, { logic_function: { id: '1234', version: 1 } } );
+				.reply(200, { logic_function: { id: '1234', version: 1 } });
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			lf1.id = '1234';
 			await lf1.deploy();
@@ -345,9 +346,9 @@ describe('LogicFunction', () => {
 			expect(lf1).to.have.property('version', 1);
 		});
 		it('propagates errors', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/functions', 'POST')
-				.reply(500, { error: 'Internal Server Error' } );
+				.reply(500, { error: 'Internal Server Error' });
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			try {
 				await lf1.deploy();
@@ -357,9 +358,9 @@ describe('LogicFunction', () => {
 			}
 		});
 		it('propagates errors when updating', async () => {
-			nock('https://api.particle.io/v1/', )
+			nock('https://api.particle.io/v1/',)
 				.intercept('/logic/functions/1234', 'PUT')
-				.reply(500, { error: 'Internal Server Error' } );
+				.reply(500, { error: 'Internal Server Error' });
 			const lf1 = await createLogicFunction({ name: 'lf1', description: 'Logic Function 1 on SandBox' });
 			lf1.id = '1234';
 			try {

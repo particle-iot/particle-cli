@@ -1,3 +1,4 @@
+'use strict';
 const dgram = require('dgram');
 
 
@@ -27,11 +28,11 @@ module.exports = class UdpCommands {
 		const udpSocket = dgram.createSocket('udp4');
 
 		udpSocket.on('listening', () => {
-			console.log('Listening for UDP packets on port '+port+' ...');
+			console.log('Listening for UDP packets on port ' + port + ' ...');
 		});
 
 		udpSocket.on('message', (msg, rinfo) => {
-			console.log('['+rinfo.address+'] '+msg.toString());
+			console.log('[' + rinfo.address + '] ' + msg.toString());
 		});
 
 		udpSocket.bind(port);

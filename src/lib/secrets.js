@@ -1,3 +1,4 @@
+'use strict';
 async function list({ api, org } = {}) {
 	const response = await api.listSecrets({ orgSlug: org });
 	return response.secrets?.length ? formatSecretList(response.secrets) : [];
@@ -5,7 +6,7 @@ async function list({ api, org } = {}) {
 
 async function create({ api, org, name, value } = {}) {
 	// validate name
-	const regex =/^[A-Z_][A-Z0-9_]*$/;
+	const regex = /^[A-Z_][A-Z0-9_]*$/;
 	if (!regex.test(name)) {
 		throw new Error('Keys may include only uppercase letters, digits, and underscores, and must not begin with a digit.');
 	}

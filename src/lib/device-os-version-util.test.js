@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const fs = require('fs-extra');
 const path = require('path');
@@ -39,11 +40,11 @@ describe('downloadDeviceOsVersionBinaries', () => {
 				]
 			})
 		};
-		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1', )
+		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1',)
 			.intercept('/photon-bootloader@2.3.1+lto.bin', 'GET')
 			.reply(200, binary);
 
-		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1', )
+		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1',)
 			.intercept('/photon-system-part1@2.3.1.bin', 'GET')
 			.reply(200, binary);
 
@@ -68,11 +69,11 @@ describe('downloadDeviceOsVersionBinaries', () => {
 				]
 			})
 		};
-		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1', )
+		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1',)
 			.intercept('/photon-bootloader@2.3.1+lto.bin', 'GET')
 			.reply(200, binary);
 
-		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1', )
+		nock('https://api.particle.io/v1/firmware/device-os/v2.3.1',)
 			.intercept('/photon-system-part1@2.3.1.bin', 'GET')
 			.reply(200, binary);
 
@@ -86,7 +87,7 @@ describe('downloadDeviceOsVersionBinaries', () => {
 
 	});
 
-	it('should fail if the platform is not supported by the requested version', async()=> {
+	it('should fail if the platform is not supported by the requested version', async() => {
 		let error;
 		const api = {
 			getDeviceOsVersions: sinon.stub().rejects(new Error('404'))

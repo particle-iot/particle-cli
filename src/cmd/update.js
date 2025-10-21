@@ -1,3 +1,4 @@
+'use strict';
 const ParticleApi = require('./api');
 const { platformForId } = require('../lib/platform');
 const settings = require('../../settings');

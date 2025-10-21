@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const fs = require('fs-extra');
 const VError = require('verror');

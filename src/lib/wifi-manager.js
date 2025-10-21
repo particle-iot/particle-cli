@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const _ = require('lodash');
 const connect = {
@@ -36,7 +37,7 @@ module.exports = class WiFiManager {
 
 	connect(opts, cb) {
 
-		let self = this;
+		const self = this;
 		let ap;
 
 		if (!opts) {

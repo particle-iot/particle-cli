@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const keys = commandProcessor.createCategory(root, 'keys', "Manage your device's key pair and server public key");
 

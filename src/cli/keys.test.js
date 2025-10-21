@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../../test/setup');
 const commandProcessor = require('../app/command-processor');
 const keys = require('./keys');

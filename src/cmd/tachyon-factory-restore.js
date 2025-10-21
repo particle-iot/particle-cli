@@ -1,3 +1,4 @@
+'use strict';
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const settings = require('../../settings');
@@ -96,7 +97,7 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 				}));
 			this._printTachyonInfo(tachyonInfo);
 
-		} catch (error) {
+		} catch (_err) {
 			// if something fails, we're going to ask so omit this issue (the device is bricked so can fail)
 			this.ui.write(this.ui.chalk.yellow(`Couldn't get device info ${os.EOL}`));
 		}

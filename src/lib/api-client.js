@@ -13,6 +13,7 @@
  *     TODO: How to use this function: a.claimDevice('3').then(function(g,b) { console.log("AAAAAAAAAAA", g,b) })
  *
  **/
+'use strict';
 const fs = require('fs');
 const _ = require('lodash');
 const path = require('path');
@@ -260,7 +261,7 @@ module.exports = class ApiClient {
 
 	//GET /v1/devices
 	listDevices({ silent = false } = {}){
-		let spinner = new Spinner('Retrieving devices...');
+		const spinner = new Spinner('Retrieving devices...');
 		if (!silent){
 			spinner.start();
 		}
@@ -529,15 +530,15 @@ module.exports = class ApiClient {
 			return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
 		}
 
-		let result = [];
-		let map = {};
+		const result = [];
+		const map = {};
 		// prepend each logical path with a slash (since the compile server does that.)
 		Object.keys(fileMapping.map).map(function addSlash(item){
-			map[path.sep+item] = fileMapping.map[item];
+			map[path.sep + item] = fileMapping.map[item];
 		});
 
 		// escape each filename to be regex-safe and create union recogniser
-		let re = new RegExp(Object.keys(map).map(regexEscape).join('|'),'gi');
+		const re = new RegExp(Object.keys(map).map(regexEscape).join('|'),'gi');
 
 		for (let i = 0, n = messages.length; i < n; i++){
 			let message = messages[i];
@@ -554,7 +555,7 @@ module.exports = class ApiClient {
 			fileMapping.map = {};
 			if (fileMapping.list){
 				for (let i = 0; i < fileMapping.list.length; i++){
-					let item = fileMapping.list[i];
+					const item = fileMapping.list[i];
 					fileMapping.map[item] = item;
 				}
 			}
@@ -563,14 +564,14 @@ module.exports = class ApiClient {
 	}
 
 	_addFilesToCompile (r, fileMapping, targetVersion, platformId){
-		let form = r.form();
+		const form = r.form();
 		this._populateFileMapping(fileMapping);
-		let list = Object.keys(fileMapping.map);
+		const list = Object.keys(fileMapping.map);
 		for (let i = 0, n = list.length; i < n; i++){
-			let relativeFilename = list[i];
-			let filename = fileMapping.map[relativeFilename];
+			const relativeFilename = list[i];
+			const filename = fileMapping.map[relativeFilename];
 
-			let name = 'file' + (i ? i : '');
+			const name = 'file' + (i ? i : '');
 			form.append(name, fs.createReadStream(path.resolve(fileMapping.basePath, filename)), {
 				filename: relativeFilename.replace(/\\/g, '/'),
 				includePath: true
@@ -710,10 +711,10 @@ module.exports = class ApiClient {
 					return Promise.reject('No devices found');
 				}
 
-				let promises = [];
+				const promises = [];
 
 				for (let i = 0; i < devices.length; i++){
-					let deviceid = devices[i].id;
+					const deviceid = devices[i].id;
 
 					if (devices[i].connected){
 						promises.push(this.getAttributes(deviceid));

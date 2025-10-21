@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const stripANSI = require('../lib/ansi-strip');

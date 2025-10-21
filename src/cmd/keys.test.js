@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs');
 const proxyquire = require('proxyquire');
 const { expect, sinon } = require('../../test/setup');
@@ -16,8 +17,8 @@ const KeysCommand = proxyquire('./keys', {
 });
 
 describe('Key Command', () => {
-	var key;
-	var filename;
+	let key;
+	let filename;
 
 	function setupCommand(options = {}) {
 		utilities.deferredChildProcess = sinon.stub().returns(Promise.resolve());
@@ -58,14 +59,14 @@ describe('Key Command', () => {
 		// This test fails because of mock-fs used in another part of the tests
 		// Just skip it for now
 		it.skip('lowercases the device ID and removes the file argument', () => {
-			var deviceID = 'deadBEEF';
+			const deviceID = 'deadBEEF';
 			setupCommand();
 
 			filename = key.serverKeyFilename({ alg: 'rsa' });
-			var tempfile;
+			let tempfile;
 
 			utilities.deferredChildProcess = sinon.spy((cmd) => {
-				var args = cmd.split(' ');
+				const args = cmd.split(' ');
 				tempfile = args[args.length - 1];
 				fs.writeFileSync(tempfile, '');
 				return Promise.resolve();

@@ -1,3 +1,4 @@
+'use strict';
 const chalk = require('chalk');
 const VError = require('verror');
 const settings = require('../../settings');

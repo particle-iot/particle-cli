@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const fs = require('fs');
 
@@ -38,13 +39,13 @@ function knownAppsForPlatform(name) {
 				if (appBinary) {
 					knownApps[appName] = path.join(appPath, appBinary);
 				}
-			} catch (e) {
+			} catch (_err) {
 				// ignore errors
 			}
 
 			return knownApps;
 		}, {});
-	} catch (e) {
+	} catch (_err) {
 		// no known apps for this platform
 		return {};
 	}

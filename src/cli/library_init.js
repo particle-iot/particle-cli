@@ -1,3 +1,4 @@
+'use strict';
 const { LibraryInitCommandSite, LibraryInitCommand } = require('../cmd');
 const UI = require('../lib/ui');
 const inquirer = require('inquirer');

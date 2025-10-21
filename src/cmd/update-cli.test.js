@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const UpdateCLI = require('./update-cli');
 const settings = require('../../settings');
@@ -112,7 +113,7 @@ describe('Update CLI Command', () => {
 				.reply(200, 'invalid json');
 			const update = new UpdateCLI();
 			await expect(update.downloadManifest()).to.be.rejectedWith('We were unable to check for updates Please try again later');
-			expect(log.error).to.have.been.calledWith('Unexpected token i in JSON at position 0');
+			expect(log.error).to.have.been.calledWith('Unexpected token \'i\', "invalid json" is not valid JSON');
 		});
 	});
 
@@ -197,7 +198,7 @@ describe('Update CLI Command', () => {
 				}
 			}
 		};
-		const _os = {
+		const mockOs = {
 			platform: sinon.stub().returns('darwin'),
 			arch: sinon.stub().returns('unknown')
 		};
@@ -210,16 +211,15 @@ describe('Update CLI Command', () => {
 			expect(buildDetails).to.equal(manifest.builds[os.platform()][os.arch()]);
 		});
 
-		it('throws an error if the platform is not found in the manifest', () => {
+		it('throws an error if a platform is not found in the manifest', () => {
 			const update = new UpdateCLI();
-			expect(() => update.getBuildDetailsFromManifest(manifest, _os)).to.throw('No CLI build found for darwin unknown');
+			expect(() => update.getBuildDetailsFromManifest(manifest, mockOs)).to.throw('No CLI build found for darwin unknown');
 		});
 
-		it('throws an error if the platform is not found in the manifest', () => {
+		it('throws an error if the platform is not found in the empty manifest', () => {
 			const update = new UpdateCLI();
 			expect(() => update.getBuildDetailsFromManifest({})).to.throw(`No CLI build found for ${os.platform()} ${os.arch()}`);
 		});
-
 	});
 
 	describe('replaceCLI', () => {

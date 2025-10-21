@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../../test/setup');
 const { HalModuleParser, firmwareTestHelper, ModuleInfo } = require('binary-version-reader');
 const { sortBinariesByDependency } = require('./dependency-walker');
@@ -60,11 +61,11 @@ describe('_sortBinariesByDependency', () => {
 	it('returns a list of files sorted by dependency', async () => {
 		const modules = await createModules();
 		const expected = [
-			modules.find( m => m.filename === 'preBootloader.bin'),
-			modules.find( m => m.filename === 'bootloader.bin'),
-			modules.find( m => m.filename === 'systemPart1.bin'),
-			modules.find( m => m.filename === 'systemPart2.bin'),
-			modules.find( m => m.filename === 'userPart1.bin'),
+			modules.find(m => m.filename === 'preBootloader.bin'),
+			modules.find(m => m.filename === 'bootloader.bin'),
+			modules.find(m => m.filename === 'systemPart1.bin'),
+			modules.find(m => m.filename === 'systemPart2.bin'),
+			modules.find(m => m.filename === 'userPart1.bin'),
 		];
 		const binaries = await sortBinariesByDependency(modules);
 		binaries.forEach((binary, index) => {

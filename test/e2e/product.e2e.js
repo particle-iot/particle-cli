@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const path = require('path');
 const { expect } = require('../setup');
@@ -106,7 +107,7 @@ describe('Product Commands', () => {
 			try {
 				expect(stdout).to.not.include(device01Label);
 				expect(stdout).to.include(device02Label);
-			} catch (error){
+			} catch (_err){
 				expect(stdout).to.include(device01Label);
 				expect(stdout).to.not.include(device02Label);
 			}

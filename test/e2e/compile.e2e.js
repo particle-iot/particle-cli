@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
@@ -580,7 +581,7 @@ describe('Compile Commands', () => {
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'projects', 'stroby-with-assets');
 		const destination = path.join(PATH_TMP_DIR, 'bundle.zip');
 		const args = ['compile', platform, '--saveTo', destination];
-		let assetNames = [];
+		const assetNames = [];
 
 		await cliRunWithTimer(args, { cwd });
 		const unpacked = await unpackApplicationAndAssetBundle(destination);
@@ -638,7 +639,7 @@ describe('Compile Commands', () => {
 		await cliRunWithTimer(args, { cwd });
 		const files = await fs.readdir(cwd);
 
-		files.forEach( async (file) => {
+		files.forEach(async (file) => {
 			if (file.match(/tracker_firmware_\d+.bin/)) {
 				expect(false).to.be.true;
 			}

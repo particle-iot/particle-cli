@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const path = require('path');
 const chalk = require('chalk');
@@ -41,7 +42,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async getStatus({ device } = {}) {
 		this.deviceId = device;
-		let addToOutput = [];
+		const addToOutput = [];
 		let s;
 		try {
 			await this._withDevice({ spinner: 'Getting device status' }, async () => {
@@ -90,7 +91,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async disableProtection({ device } = {}) {
 		this.deviceId = device;
-		let addToOutput = [];
+		const addToOutput = [];
 		try {
 			await this._withDevice({ spinner: 'Disabling Device Protection' }, async () => {
 				const deviceStr = await this._getDeviceString();
@@ -136,7 +137,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	async enableProtection({ file, device } = {}) {
 		this.deviceId = device;
-		let addToOutput = [];
+		const addToOutput = [];
 		try {
 			await this._withDevice({ spinner: 'Enabling Device Protection' }, async () => {
 				const deviceStr = await this._getDeviceString();
@@ -200,7 +201,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		});
 	}
 
-	async _getProtectedBinary({ file, verbose=true }) {
+	async _getProtectedBinary({ file, verbose = true }) {
 		const res = await new BinaryCommand().createProtectedBinary({ file, verbose });
 		return res;
 	}
@@ -254,7 +255,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 				await this.api.markAsDevelopmentDevice(this.deviceId, state, this.productId);
 				return true;
 			}
-		} catch (error) {
+		} catch (_err) {
 			// Optionally log the error or handle it as needed
 		}
 		return false;
@@ -292,7 +293,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		try {
 			const attrs = await this.api.getDeviceAttributes(this.deviceId);
 			this.productId = attrs.platform_id !== attrs.product_id ? attrs.product_id : null;
-		} catch (error) {
+		} catch (_err) {
 			return null;
 		}
 	}
@@ -360,7 +361,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async _putDeviceInSafeMode() {
 		try {
 			await this.device.enterSafeMode();
-		} catch (error) {
+		} catch (_err) {
 			// ignore errors
 		}
 		this.device = await usbUtils.reopenInNormalMode({ id: this.deviceId });
@@ -373,7 +374,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	 */
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 		const apiCache = createApiCache(api);
 		return { api: apiCache, auth };
 	}

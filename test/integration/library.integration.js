@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const settings = require('../../settings');
 const { expect, sinon } = require('../setup');
@@ -10,7 +11,7 @@ const ParticleApi = require('../../src/cmd/api');
 
 
 describe('library', () => {
-	before(()=> {
+	before(() => {
 		settings.whichProfile();
 		settings.loadOverrides();
 	});
@@ -67,10 +68,10 @@ describe('library', () => {
 			return sut.listLibraries(site, 'neo').then(result => {
 				expect(Array.isArray(result)).to.be.true;
 
-				const names = result.map( (item) => {
+				const names = result.map((item) => {
 					expect(item).has.property('name');
 					return item.name;
-				} );
+				});
 
 				expect(names).to.include('neopixel');
 				expect(site.notifyListLibrariesStart).to.be.calledOnce;

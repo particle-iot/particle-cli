@@ -1,3 +1,4 @@
+'use strict';
 const ParticleCache = require('./particle-cache');
 
 class ApiCache {

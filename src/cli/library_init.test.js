@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const { LibraryInitGenerator } = require('particle-library-manager');
 const { CLILibraryInitCommandSite } = require('./library_init');
@@ -21,7 +22,7 @@ describe('library init command', () => {
 		});
 
 		it.skip('should configure and run the init generator', function doit() {
-			this.timeout(18*1000);
+			this.timeout(18 * 1000);
 			const site = {};
 			const args = ['args', 'args2'];
 			const options = { a:1, b:2, c:3 };

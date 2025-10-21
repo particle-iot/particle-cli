@@ -1,3 +1,4 @@
+'use strict';
 const { platformForId } = require('../lib/platform');
 const semver = require('semver');
 

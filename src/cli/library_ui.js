@@ -1,8 +1,9 @@
+'use strict';
 const chalk = require('chalk');
 
 
-module.exports.formatLibrary = (library, excludeBadges=[]) => {
-	let badges = [];
+module.exports.formatLibrary = (library, excludeBadges = []) => {
+	const badges = [];
 
 	if (library.official && !excludeBadges.official) {
 		badges.push(chalk.green('[official] '));
@@ -12,7 +13,7 @@ module.exports.formatLibrary = (library, excludeBadges=[]) => {
 		}
 	}
 
-	if (library.visibility==='private' && !excludeBadges.private) {
+	if (library.visibility === 'private' && !excludeBadges.private) {
 		badges.push(chalk.blue('[private] '));
 	} else {
 		if (library.mine && !excludeBadges.mine) {
@@ -23,7 +24,7 @@ module.exports.formatLibrary = (library, excludeBadges=[]) => {
 	const badgesText = badges.join('');
 	const version = library.version;
 	const defaultSentence = '';
-	const formatted = chalk.blue(library.name)+' '+version+' '+badgesText+chalk.grey(library.installs || 0)+' '+ `${library.sentence || defaultSentence}`;
+	const formatted = chalk.blue(library.name) + ' ' + version + ' ' + badgesText + chalk.grey(library.installs || 0) + ' ' + `${library.sentence || defaultSentence}`;
 	return formatted;
 };
 

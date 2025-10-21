@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const path = require('path');
 const os = require('os');
@@ -407,7 +408,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		try {
 			const envPath = path.join(blueprintDir, PARTICLE_ENV_FILE);
 			const envContent = await fs.readFile(envPath, 'utf8');
-			let doc = yaml.parseDocument(envContent);
+			const doc = yaml.parseDocument(envContent);
 			return await this._getDeviceAttributes(doc.get('device_id'));
 		} catch {
 			return null;
@@ -426,12 +427,12 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 	async _selectDevice() {
 		const { orgSlug } = await this._getOrg();
-		let productId = await this._getProduct(orgSlug);
+		const productId = await this._getProduct(orgSlug);
 
 		if (!productId) {
 			throw new Error('You do not have any Linux/Tachyon products available. Create a new product in the Console and try again.');
 		}
-		let device = await this._getDeviceProduct(productId);
+		const device = await this._getDeviceProduct(productId);
 		if (!device) {
 			throw new Error('You do not have any Linux/Tachyon devices in this product. Setup a device and try again.');
 		}

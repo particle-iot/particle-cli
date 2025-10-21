@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const commandProcessor = require('./command-processor');
 
@@ -181,10 +182,8 @@ describe('command-line parsing', () => {
 			}
 		});
 
-		let argv, error;
-
 		// sanity test
-		argv = commandProcessor.parse(app, ['one', '--one']);
+		let argv = commandProcessor.parse(app, ['one', '--one']);
 
 		expect(argv).to.not.have.property('clierror');
 		expect(argv).to.have.property('clicommand').equal(one);
@@ -192,7 +191,7 @@ describe('command-line parsing', () => {
 
 		// the real test
 		argv = commandProcessor.parse(app, ['two', '--one']);
-		error = commandProcessor.errors.unknownArgumentError(['one']);
+		const error = commandProcessor.errors.unknownArgumentError(['one']);
 
 		expect(argv.clicommand).to.equal(undefined);
 		expectCLIError(argv.clierror, error);

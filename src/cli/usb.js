@@ -1,3 +1,4 @@
+'use strict';
 const settings = require('../../settings');
 const utilities = require('../lib/utilities');
 

@@ -1,6 +1,7 @@
 //
 // TODO (mirande): cli commands should have an option to wait for an operation
 // to complete (e.g. `--wait`)
+'use strict';
 module.exports.runForAtLeast = (secs, fn) => {
 	const { delay } = module.exports;
 

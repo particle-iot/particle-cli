@@ -1,3 +1,4 @@
+'use strict';
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
@@ -7,7 +8,7 @@ const {
 	DEVICE_NAME,
 	DEVICE_PLATFORM_NAME
 } = require('../lib/env');
-const stripAnsi = require('strip-ansi');
+const { default: stripAnsi } = require('strip-ansi');
 
 describe('USB Commands for Protected Devices [@device]', function cliUSBCommands(){
 	this.timeout(5 * 60 * 1000);

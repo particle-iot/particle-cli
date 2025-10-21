@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../setup');
 const stripANSI = require('../lib/ansi-strip');
 const matches = require('../lib/capture-matches');

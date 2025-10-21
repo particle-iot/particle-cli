@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../../test/setup');
 const util = require('./utilities');
 const path = require('path');
@@ -142,9 +143,9 @@ describe('Utilities', () => {
 			});
 
 			it('Filters devices by online', () => {
-				let filterByOnline = util.buildDeviceFilter('online');
+				const filterByOnline = util.buildDeviceFilter('online');
 
-				let onlineDevices = deviceList.filter(filterByOnline);
+				const onlineDevices = deviceList.filter(filterByOnline);
 
 				expect(onlineDevices).to.eql([
 					{
@@ -163,9 +164,9 @@ describe('Utilities', () => {
 			});
 
 			it('Filters devices by offline', () => {
-				let filterByOffline = util.buildDeviceFilter('offline');
+				const filterByOffline = util.buildDeviceFilter('offline');
 
-				let offlineDevices = deviceList.filter(filterByOffline);
+				const offlineDevices = deviceList.filter(filterByOffline);
 
 				expect(offlineDevices).to.eql([
 					{
@@ -178,11 +179,11 @@ describe('Utilities', () => {
 			});
 
 			it('Filters devices by platform name', () => {
-				let electronOnly = util.buildDeviceFilter('electron');
-				let boronOnly = util.buildDeviceFilter('boron');
+				const electronOnly = util.buildDeviceFilter('electron');
+				const boronOnly = util.buildDeviceFilter('boron');
 
-				let electrons = deviceList.filter(electronOnly);
-				let borons = deviceList.filter(boronOnly);
+				const electrons = deviceList.filter(electronOnly);
+				const borons = deviceList.filter(boronOnly);
 
 				expect(electrons).to.eql([
 					{
@@ -204,9 +205,9 @@ describe('Utilities', () => {
 			});
 
 			it('Filters devices by Device ID', () => {
-				let filterByName = util.buildDeviceFilter('deadbeef2');
+				const filterByName = util.buildDeviceFilter('deadbeef2');
 
-				let matchingDevices = deviceList.filter(filterByName);
+				const matchingDevices = deviceList.filter(filterByName);
 
 				expect(matchingDevices).to.eql([
 					{
@@ -219,9 +220,9 @@ describe('Utilities', () => {
 			});
 
 			it('Filters devices by Device Name', () => {
-				let filterByName = util.buildDeviceFilter('device-a');
+				const filterByName = util.buildDeviceFilter('device-a');
 
-				let matchingDevices = deviceList.filter(filterByName);
+				const matchingDevices = deviceList.filter(filterByName);
 
 				expect(matchingDevices).to.eql([
 					{
@@ -283,7 +284,7 @@ describe('Utilities', () => {
 
 			try {
 				fs.removeSync(tmpFile);
-			} catch (e) {
+			} catch (_err) {
 				// ignore
 			}
 		});
@@ -301,7 +302,7 @@ describe('Utilities', () => {
 
 			try {
 				fs.removeSync(tmpFile);
-			} catch (e) {
+			} catch (_err) {
 				// ignore
 			}
 		});

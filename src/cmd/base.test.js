@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../../test/setup');
 const CLICommandBase = require('./base');
 const UI = require('../lib/ui');

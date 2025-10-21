@@ -1,3 +1,4 @@
+'use strict';
 const _ = require('lodash');
 const log = require('../lib/log');
 const pkg = require('../../package.json');
@@ -99,7 +100,7 @@ module.exports = class CLI {
 			 */
 			parsed(argv) {
 				global.isInteractive = process.stdin.isTTY && process.stdout.isTTY;
-				global.verboseLevel = argv.verbose+1-argv.quiet;
+				global.verboseLevel = argv.verbose + 1 - argv.quiet;
 				global.outputJson = argv.json;
 			}
 		});

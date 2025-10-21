@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../setup');
 const { delay } = require('../lib/mocha-utils');
 const matches = require('../lib/capture-matches');

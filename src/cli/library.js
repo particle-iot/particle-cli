@@ -1,4 +1,5 @@
 
+'use strict';
 function api() {
 	const ParticleApi = require('../cmd/api');
 	const settings = require('../../settings');

@@ -1,3 +1,4 @@
+'use strict';
 const _ = require('lodash');
 const util = require('util');
 const WiFiManager = require('../lib/wifi-manager');
@@ -422,7 +423,7 @@ module.exports = class WirelessCommand {
 		}
 	}
 
-	/* eslint-disable max-statements */
+
 	configure(ssid, cb) {
 
 		console.log();
@@ -1007,7 +1008,7 @@ module.exports = class WirelessCommand {
 			});
 		}
 	}
-	/* eslint-enable max-statements */
+
 
 	manualAsk(cb) {
 		return this.prompt([{

@@ -1,3 +1,4 @@
+'use strict';
 const UI = require('./ui');
 
 function underMaintenance({ ui = new UI() } = {}) {

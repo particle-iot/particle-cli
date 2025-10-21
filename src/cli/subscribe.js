@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'subscribe', 'Listen to device event stream', {
 		params: '[event]',

@@ -1,5 +1,6 @@
 
 
+'use strict';
 const os = require('node:os');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -76,7 +77,7 @@ async function getActiveProfileName() {
 		/** @type {{ name?: string }} */
 		const profile = JSON.parse(await fs.readFile(path.join(PARTICLE_CONFIG_DIR, 'profile.json'), 'utf-8'));
 		return profile.name || DEFAULT_PROFILE_NAME;
-	} catch (err) {
+	} catch (_err) {
 		return DEFAULT_PROFILE_NAME;
 	}
 }

@@ -1,3 +1,4 @@
+'use strict';
 const packageInfo = require('../package.json');
 
 const fs = require('fs-extra');
@@ -151,7 +152,7 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 				}
 			} else {
 				// means is not an installer file
-				if (excludedFiles.some(regex => file.match(regex)) ) {
+				if (excludedFiles.some(regex => file.match(regex))) {
 					console.log('Skipping excluded file:', file);
 					continue;
 				}

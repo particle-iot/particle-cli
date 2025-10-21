@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
@@ -73,7 +74,7 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 		const { json } = this.argv;
 		let shown = false;
 
-		for (let filename of filenames){
+		for (const filename of filenames){
 			const content = this.loadFile(filename);
 
 			if (content !== undefined){
@@ -110,7 +111,7 @@ class CLILibraryViewCommandSite extends CLILibraryInstallCommandSite {
 	loadFile(filename){
 		try {
 			return fs.readFileSync(filename, 'utf-8');
-		} catch (error){
+		} catch (_err){
 			return undefined;
 		}
 	}

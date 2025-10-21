@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const ParticleApi = require('./api');
 const { ModuleInfo } = require('binary-version-reader');
@@ -65,10 +66,10 @@ module.exports = class FlashCommand extends CLICommandBase {
 		} else if (serial) {
 			await this.flashSerialDeprecated({ binary, port, yes });
 		} else if (local) {
-			let allFiles = binary ? [binary, ...files] : files;
+			const allFiles = binary ? [binary, ...files] : files;
 			await this.flashLocal({ files: allFiles, applicationOnly, target });
 		} else if (tachyon) {
-			let allFiles = binary ? [binary, ...files] : files;
+			const allFiles = binary ? [binary, ...files] : files;
 			await this.flashTachyon({ files: allFiles, skipReset, output });
 		} else {
 			await this.flashCloud({ device, files, target });
@@ -76,7 +77,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	}
 
 	//returns true if successful or false if failed
-	async flashTachyon({ device, files, skipReset, output, verbose=true }) { // eslint-disable-line max-statements
+	async flashTachyon({ device, files, skipReset, output, verbose = true }) {
 		let zipFile;
 		let includeDir = '';
 		let updateFolder = '';
@@ -347,7 +348,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		return new SerialCommands().flashDevice(binary, { port, yes });
 	}
 
-	async flashLocal({ files, applicationOnly, target, verbose=true }) {
+	async flashLocal({ files, applicationOnly, target, verbose = true }) {
 		const { files: parsedFiles, deviceIdOrName, knownApp } = await this._analyzeFiles(files);
 		const { api, auth } = this._particleApi();
 		await usbUtils.executeWithUsbDevice({
@@ -356,7 +357,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		});
 	}
 
-	async _flashLocal(device, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose=true) {
+	async _flashLocal(device, parsedFiles, deviceIdOrName, knownApp, applicationOnly, target, verbose = true) {
 		const platformId = device.platformId;
 		const platformName = platformForId(platformId).name;
 		const currentDeviceOsVersion = device.firmwareVersion;
@@ -446,7 +447,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				deviceIdOrName: null,
 				knownApp: null
 			};
-		} catch (error) {
+		} catch (_err) {
 			// file doesn't exist, assume the first argument is a device
 			const [deviceIdOrName, ...remainingFiles] = files;
 			return {
@@ -460,7 +461,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 	// Should be part fo CLICommandBase??
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 		const apiCache = createApiCache(api);
 		return { api: apiCache, auth };
 	}
@@ -479,7 +480,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		let stats;
 		try {
 			stats = await fs.stat(filePath);
-		} catch (error) {
+		} catch (_err) {
 			// ignore error
 		}
 
@@ -533,7 +534,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				} else {
 					binaries.add(filePath);
 				}
-			} catch (error) {
+			} catch (_err) {
 				throw new Error(`I couldn't find that: ${filePath}`);
 			}
 
@@ -565,7 +566,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 		}
 	}
 
-	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly, verbose=true }) {
+	async _getDeviceOsBinaries({ skipDeviceOSFlash, target, modules, currentDeviceOsVersion, platformId, applicationOnly, verbose = true }) {
 		const { api } = this._particleApi();
 		const { module: application, applicationDeviceOsVersion } = await this._pickApplicationBinary(modules, api);
 
@@ -626,7 +627,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				let applicationDeviceOsVersionData = { version: null };
 				try {
 					applicationDeviceOsVersionData = await api.getDeviceOsVersions(module.prefixInfo.platformID, internalVersion);
-				} catch (error) {
+				} catch (_err) {
 					// ignore if Device OS version from the application cannot be identified
 				}
 				return { module, applicationDeviceOsVersion: applicationDeviceOsVersionData.version };

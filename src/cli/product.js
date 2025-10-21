@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const product = commandProcessor.createCategory(root, 'product', 'Access Particle Product functionality [BETA]');
 	const device = commandProcessor.createCategory(product, 'device', 'Manage the devices associated with your product');

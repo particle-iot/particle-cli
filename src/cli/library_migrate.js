@@ -1,3 +1,4 @@
+'use strict';
 const { LibraryMigrateCommandSite, LibraryMigrateTestCommand, LibraryMigrateCommand } = require('../cmd');
 
 
@@ -26,11 +27,11 @@ class CLIBaseLibraryMigrateCommandSite extends LibraryMigrateCommandSite {
 	}
 
 	handleError(lib, err) {
-		if (err.name==='LibraryNotFoundError') {
+		if (err.name === 'LibraryNotFoundError') {
 			if (this.cwd) {
 				console.error('No valid library found in current directory');
 			} else {
-				console.error('No valid library found in '+lib);
+				console.error('No valid library found in ' + lib);
 			}
 		} else {
 			if (this.cwd) {
@@ -48,7 +49,7 @@ class CLILibraryTestMigrateCommandSite extends CLIBaseLibraryMigrateCommandSite 
 		if (err) {
 			this.handleError(lib, err);
 		} else {
-			if (result===1) {
+			if (result === 1) {
 				if (this.cwd) {
 					console.info('Library can be migrated');
 				} else {

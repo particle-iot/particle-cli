@@ -1,3 +1,4 @@
+'use strict';
 const execa = require('execa');
 const {
 	PATH_REPO_DIR

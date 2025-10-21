@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const PATH_REPO_DIR = path.join(__dirname, '..', '..');
 const PATH_TEST_DIR = path.join(PATH_REPO_DIR, 'test');

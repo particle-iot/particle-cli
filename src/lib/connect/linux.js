@@ -1,3 +1,4 @@
+'use strict';
 const wifiCli = '/usr/bin/nmcli';
 
 const runCommand = require('./executor').runCommand;

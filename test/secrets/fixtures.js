@@ -1,6 +1,7 @@
 // post response
 // get response
 // update response
+'use strict';
 const secretGenericResponse = {
 	secret: {
 		'name': 'HUGO_TEST_KEY',

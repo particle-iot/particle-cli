@@ -1,9 +1,10 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const { withConsoleStubs } = require('../../test/lib/mocha-utils');
 const settings = require('../../settings');
 const ApiClient = require('../lib/api-client');
 const WhoAmICommands = require('./whoami');
-const stripAnsi = require('strip-ansi');
+const { default: stripAnsi } = require('strip-ansi');
 
 
 describe('Whoami Commands', () => {

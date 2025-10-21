@@ -1,3 +1,4 @@
+'use strict';
 const settings = require('../../settings');
 const fs = require('fs-extra');
 const path = require('path');

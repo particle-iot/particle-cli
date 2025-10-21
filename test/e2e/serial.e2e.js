@@ -1,3 +1,4 @@
+'use strict';
 const words = require('lodash/words');
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');

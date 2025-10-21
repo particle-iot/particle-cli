@@ -1,3 +1,4 @@
+'use strict';
 const request = require('request');
 const jose = require('jose');
 const openurl = require('./openurl');
@@ -72,7 +73,7 @@ const ssoLogin = async () => {
 		scope: 'openid profile'
 	};
 
-	const response =  await _makeRequest({
+	const response = await _makeRequest({
 		url: `${ssoConfig.ssoAuthUri}/device/authorize`,
 		form,
 		method: 'POST'

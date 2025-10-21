@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
@@ -123,7 +124,7 @@ describe('Wi-Fi Commands [@device,@wifi]', () => {
 			await cli.run(['wifi', 'add', '--file', WIFI_CREDS_FILE]);
 			const { stdout: listStdoutBeforeClearing } = await cli.run(['wifi', 'list']);
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'clear']);
-			const { stdout : listStdoutAfterClearing }  = await cli.run(['wifi', 'list']);
+			const { stdout : listStdoutAfterClearing } = await cli.run(['wifi', 'list']);
 
 			expect(listStdoutBeforeClearing).to.include(WIFI_SSID);
 			expect(stdout).to.include('Wi-Fi networks cleared successfully.');

@@ -1,3 +1,4 @@
+'use strict';
 const unindent = require('../lib/unindent');
 
 module.exports = ({ commandProcessor, root }) => {

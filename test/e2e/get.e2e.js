@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const capitalize = require('lodash/capitalize');
 const { expect } = require('../setup');

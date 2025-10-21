@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const project = commandProcessor.createCategory(root, 'project', 'Manage application projects');
 

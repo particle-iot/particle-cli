@@ -1,3 +1,4 @@
+'use strict';
 const AccessTokenCommands = require('../cmd/token');
 
 module.exports = ({ commandProcessor, root }) => {

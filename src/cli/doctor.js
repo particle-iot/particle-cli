@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'doctor', 'NOT SUPPORTED. Go to the device doctor tool at docs.particle.io/tools/doctor', {
 		handler: () => {

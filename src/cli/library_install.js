@@ -1,3 +1,4 @@
+'use strict';
 const chalk = require('chalk');
 const { buildAPIClient } = require('./apiclient');
 const { convertApiError } = require('../cmd/api');
@@ -89,7 +90,7 @@ module.exports.command = (cmd, apiJS, argv) => {
 	} else if (cmd === 'install'){
 		return install(argv, apiJS);
 	} else {
-		throw Error('uknown command '+cmd);
+		throw Error('uknown command ' + cmd);
 	}
 };
 

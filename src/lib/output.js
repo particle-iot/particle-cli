@@ -1,7 +1,8 @@
+'use strict';
 module.exports = {
 	formatItems(items, formatter, lines) {
 		items.forEach((item, index, array) => {
-			let output = formatter(item, index, array);
+			const output = formatter(item, index, array);
 			if (Array.isArray(output)) {
 				lines.push.apply(lines, output);
 			} else {
@@ -12,7 +13,7 @@ module.exports = {
 	},
 
 	stringFormatter(item) {
-		return ''+item;
+		return '' + item;
 	},
 
 	print(lines) {

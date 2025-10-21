@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const fs = require('fs-extra');
 const nock = require('nock');

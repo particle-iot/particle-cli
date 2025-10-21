@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const fs = require('fs');
 const _ = require('lodash');
@@ -179,7 +180,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 				if (s.protected) {
 					await disableDeviceProtection(usbDevice);
 				}
-			} catch (err) {
+			} catch (_err) {
 				// ignore error
 			} finally {
 				if (usbDevice && usbDevice.isOpen) {
@@ -259,7 +260,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 	 */
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 		const apiCache = createApiCache(api);
 		return { api: apiCache, auth };
 	}
@@ -457,7 +458,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			for (const m of modules) {
 				const func = FirmwareModuleDisplayNames[m.type];
 				this.ui.stdout.write(`  ${chalk.bold.cyan(_.capitalize(func))} module ${chalk.bold('#' + m.index)} - version ${chalk.bold(m.version)}${os.EOL}`);
-				this.ui.stdout.write(`  Size: ${m.size/1000} kB${m.maxSize ? ` / MaxSize: ${m.maxSize/1000} kB` : ''}${os.EOL}`);
+				this.ui.stdout.write(`  Size: ${m.size / 1000} kB${m.maxSize ? ` / MaxSize: ${m.maxSize / 1000} kB` : ''}${os.EOL}`);
 
 				if (m.type === 'USER_PART' && m.hash) {
 					this.ui.stdout.write(`    UUID: ${m.hash}${os.EOL}`);
@@ -713,7 +714,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			});
 	}
 
-	/* eslint-disable max-statements */
+
 	_serialWifiConfig(device, opts = {}){
 		if (!device){
 			return Promise.reject('No serial port available');
@@ -1200,7 +1201,7 @@ module.exports = class SerialCommand extends CLICommandBase {
 			});
 	}
 
-	/* eslint-enable max-statements */
+
 
 	/**
 	 * Sends a command to the device and retrieves the response.

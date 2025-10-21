@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../../test/setup');
 const windowsWiFi = require('./windows');
 
@@ -465,7 +466,7 @@ describe('Windows wifi', () => {
 
 			expect(connector._buildProfile).to.have.been.calledWith(profile);
 			expect(fs.writeFileSync).to.have.been.calledWith(filename, profileContent);
-			expect(connector._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml', 'interface='+ifaceName]);
+			expect(connector._execWiFiCommand).to.have.been.calledWith(['add', 'profile', 'filename=_wifi_profile.xml', 'interface=' + ifaceName]);
 			expect(fs.unlinkSync).to.have.been.calledWith(filename);
 		});
 	});

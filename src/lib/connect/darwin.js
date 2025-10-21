@@ -1,3 +1,4 @@
+'use strict';
 const runCommand = require('./executor').runCommand;
 
 function getFirstWifiPort(cb) {
@@ -8,7 +9,7 @@ function getFirstWifiPort(cb) {
 		let device;
 		let useNextDevice = false;
 		const lines = stdout.split('\n');
-		for (let i=0; i < lines.length; i++) {
+		for (let i = 0; i < lines.length; i++) {
 			const line = lines[i];
 			if (!line) {
 				continue;

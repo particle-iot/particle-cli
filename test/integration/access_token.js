@@ -1,3 +1,4 @@
+'use strict';
 function accessTokenFromSettings() {
 	const settings = require('../../settings');
 	settings.whichProfile();
@@ -7,7 +8,7 @@ function accessTokenFromSettings() {
 
 let token = undefined;
 function fetchAccessToken(){
-	if (token===undefined) {
+	if (token === undefined) {
 		token = process.env.ACCESS_TOKEN || accessTokenFromSettings() || null;
 	}
 	return token;

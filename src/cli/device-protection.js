@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const deviceProtection = commandProcessor.createCategory(root, 'device-protection', 'Manage Device Protection');
 

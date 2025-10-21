@@ -1,3 +1,4 @@
+'use strict';
 const semver = require('semver');
 const pkgJSON = require('../../package.json');
 const { expect } = require('../setup');

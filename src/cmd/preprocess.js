@@ -1,3 +1,4 @@
+'use strict';
 const wiringPreprocessor = require('wiring-preprocessor');
 const path = require('path');
 const fs = require('fs');
