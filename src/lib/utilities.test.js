@@ -304,7 +304,7 @@ describe('Utilities', () => {
 				await util.parsePropertyFile(tmpFile);
 			} catch (err) {
 				// Windows logs the whole path to the file, so we optionally capture the start of the path D:\a\particle-cli\...\fake-file
-				expect(err.message).to.match(/^ENOENT: no such file or directory, open '[\w\\:-]+?fake-file'$/);
+				expect(err.message).to.match(/^ENOENT: no such file or directory, open '[\w\\:-]*fake-file'$/);
 			}
 		});
 
