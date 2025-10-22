@@ -5,7 +5,6 @@ const path = require('path');
 const fs = require('fs');
 const { PATH_TMP_DIR } = require('../../test/lib/env');
 
-
 describe('Utilities', () => {
 	describe('knownPlatformIds', () => {
 		it('returns a hash of platform ids', () => {
@@ -282,11 +281,7 @@ describe('Utilities', () => {
 				assetOtaDir: 'my_assets_folder'
 			});
 
-			try {
-				fs.removeSync(tmpFile);
-			} catch (_err) {
-				// ignore
-			}
+			fs.unlinkSync(tmpFile);
 		});
 
 		it('returns an empty object if the file is empty', async () => {
@@ -300,19 +295,15 @@ describe('Utilities', () => {
 			const result = await util.parsePropertyFile(tmpFile);
 			expect(result).to.eql({});
 
-			try {
-				fs.removeSync(tmpFile);
-			} catch (_err) {
-				// ignore
-			}
+			fs.unlinkSync(tmpFile);
 		});
 
 		it('returns an error if the file does not exist', async () => {
 			const tmpFile = 'fake-file';
 			try {
 				await util.parsePropertyFile(tmpFile);
-			} catch (e) {
-				expect(e).to.have.property('message', 'ENOENT: no such file or directory, open \'fake-file\'');
+			} catch (err) {
+				expect(err.message).to.eql('ENOENT: no such file or directory, open \'fake-file\'');
 			}
 		});
 
