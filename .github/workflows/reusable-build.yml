@@ -50,6 +50,11 @@ jobs:
           key: node22-pkg-${{ github.run_id }}
           restore-keys: node22-pkg-
 
+      - name: Add pre-built Node for armv7
+        run: |
+          mkdir -p ~/.pkg-cache/v3.5
+          cp .prebuild/node-v22.20.0-linuxstatic-armv7 ~/.pkg-cache/v3.5
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
