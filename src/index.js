@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 global.verboseLevel = 1;
+// TODO(hmontero): Replace 'request' (uses deprecated 'punycode') with 'fetch'.
+process.noDeprecation = true;
 
 const hasValidNodeInstall = require('./lib/has-supported-node');
 const CLI = require('./app/cli');
