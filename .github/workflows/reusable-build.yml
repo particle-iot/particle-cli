@@ -152,7 +152,7 @@ jobs:
           path: build/
           merge-multiple: true
       - name: Build windows x64
-        run: npm run build -- --target node22-windows-x64 -o build/particle-cli-windows-x64
+        run: npm run build -- --target node22-win-x64 -o build/particle-cli-win-x64
       - name: Sign Windows Executable
         uses: azure/trusted-signing-action@v0
         with:
