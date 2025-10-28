@@ -50,11 +50,6 @@ jobs:
           key: node22-pkg-${{ github.run_id }}
           restore-keys: node22-pkg-
 
-      - name: Add pre-built Node for armv7
-        run: |
-          mkdir -p ~/.pkg-cache/v3.5
-          cp .prebuild/node-v22.20.0-linuxstatic-armv7 ~/.pkg-cache/v3.5
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
@@ -66,14 +61,14 @@ jobs:
           tag: v2.1.5-procursus7
 
       - name: Build Package
-        run: npm run build
-      # Follow instructions are required to build macOS on linux
-      - name: Update pkg dependency
-        run: npm install @yao-pkg/pkg@6.9.0 -D # This dependency has the required fixes for Building macOS
-      - name: Build for MacOS x64
-        run: npm run build -- --target node22-macos-x64 -o build/particle-cli-macos-x64
-      - name: Build for MacOS arm64
-        run: npm run build -- --target node22-macos-arm64 -o build/particle-cli-macos-arm64
+        run: npm run build -- --public
+      # Follow instructions are required to build linux and keep backwards compatibility with ubuntu 20.04
+      - name: Build linux x64
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linux-x64 -o build/particle-cli-linux-x64
+      - name: Build linux arm64
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linux-arm64 -o build/particle-cli-linux-arm64
+      - name: Build linux armv7
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linuxstatic-armv7 -o build/particle-cli-linuxstatic-armv7
 
       - name: Save Cache
         uses: actions/cache@v3
