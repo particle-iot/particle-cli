@@ -64,11 +64,11 @@ jobs:
         run: npm run build -- --public
       # Follow instructions are required to build linux and keep backwards compatibility with ubuntu 20.04
       - name: Build linux x64
-        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linux-x64 -o build/particle-cli-linux-x64
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node20-linux-x64 -o build/particle-cli-linux-x64
       - name: Build linux arm64
-        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linux-arm64 -o build/particle-cli-linux-arm64
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node20-linux-arm64 -o build/particle-cli-linux-arm64
       - name: Build linux armv7
-        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linuxstatic-armv7 -o build/particle-cli-linuxstatic-armv7
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node20-linuxstatic-armv7 -o build/particle-cli-linuxstatic-armv7
 
       - name: Save Cache
         uses: actions/cache@v3
