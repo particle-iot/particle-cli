@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const crypto = require('crypto');
 const fs = require('fs-extra');
@@ -250,7 +251,7 @@ async function getProduct({ orgSlug, ui, api }) {
 	const productsResp = await ui.showBusySpinnerUntilResolved(
 		`Fetching products for ${orgSlug || 'sandbox'}`,
 		api.getProducts(orgSlug));
-	let newProductName = 'Create a new product';
+	const newProductName = 'Create a new product';
 	let products = productsResp?.products || [];
 
 
@@ -264,7 +265,7 @@ async function getProduct({ orgSlug, ui, api }) {
 		'Select a product',
 		[...products.map(product => product.name), newProductName]);
 
-	const selectedProduct =  selectedProductName !== newProductName ?
+	const selectedProduct = selectedProductName !== newProductName ?
 		(products.find(p => p.name === selectedProductName)) :
 		null;
 	return selectedProduct?.id || null;
@@ -285,7 +286,7 @@ async function assignDeviceToProduct({ deviceId, productId, ui, api, productSlug
 	ui.write(`Device ${deviceId} Assigned to the product ${productSlug}`);
 }
 
-async function getCountryStep({ ui, country, silent }, stepIndex	) {
+async function getCountryStep({ ui, country, silent }, stepIndex) {
 	if (silent) {
 		ui.write(`${os.EOL}`);
 		ui.write(`Skipping step: ${stepIndex}: Using country ${country}`);
@@ -359,7 +360,7 @@ async function createConfigBlobStep(context, stepIndex) {
 		text: 'Creating the configuration file to write to the Tachyon device...',
 		step: stepIndex,
 	});
-	const { configBlobPath }  = await createBlobFile(context);
+	const { configBlobPath } = await createBlobFile(context);
 	const { xmlFile: xmlPath } = await prepareFlashFiles({
 		logFile: context.log.file,
 		ui: context.ui,
@@ -390,7 +391,7 @@ async function createBlobFile(context) {
 	config['initialTime'] = new Date().toISOString();
 	// Write config JSON to a temporary file (generate a filename with the temp npm module)
 	// prefixed by the JSON string length as a 32 bit integer
-	let jsonString = JSON.stringify(config, null, 2);
+	const jsonString = JSON.stringify(config, null, 2);
 	const buffer = Buffer.alloc(4 + Buffer.byteLength(jsonString));
 	buffer.writeUInt32BE(Buffer.byteLength(jsonString), 0);
 	buffer.write(jsonString, 4);
