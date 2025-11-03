@@ -33,8 +33,7 @@ class DownloadManager {
 		}
 	}
 
-	async fetchManifest({ version = 'stable', isRb3Board = false }) {
-		const type = isRb3Board ? 'rb3g2' : 'tachyon';
+	async fetchManifest({ version = 'stable', type = 'tachyon' }) {
 		const metadataUrl = `${settings.tachyonMeta}/${type}-${encodeURIComponent(version)}.json`;
 
 		try {
@@ -49,7 +48,6 @@ class DownloadManager {
 
 			return response.json();
 		} catch (err) {
-			console.log(err);
 			throw new Error('Could not download the version file. Please check your internet connection.');
 		}
 	}

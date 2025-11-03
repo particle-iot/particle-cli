@@ -1,7 +1,9 @@
 const fs = require('fs-extra');
 const os = require('os');
+const semver = require('semver');
 const { getEdlDevices } = require('particle-usb');
 const { delay } = require('./utilities');
+const unzip = require('unzipper');
 const DEVICE_READY_WAIT_TIME = 500; // ms
 const UI = require('./ui');
 const QdlFlasher = require('./qdl');
@@ -485,6 +487,61 @@ async function handleFlashError({ error, ui }) {
 	return false;
 }
 
+/**
+ *
+ * @param ui
+ * @return {Promise<Workflow>}
+ */
+async function promptOSSelection({ ui, workflows }) {
+	const choices = Object.values(workflows);
+	const question = [{
+		type: 'list',
+		name: 'osType',
+		message: ui.chalk.bold.white('Select the OS Type to setup in your device'),
+		choices
+	}];
+	const { osType } = await ui.prompt(question);
+	return workflows[osType];
+}
+
+async function isFile(version) {
+	const validChannels = ['latest', 'stable', 'beta', 'rc'];
+	const isValidChannel = validChannels.includes(version);
+	const isValidSemver = semver.valid(version);
+	const isFile = !isValidChannel && !isValidSemver;
+
+	// access(OK
+	if (isFile) {
+		try {
+			await fs.access(version, fs.constants.F_OK | fs.constants.R_OK);
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				throw new Error(`The file "${version}" does not exist.`);
+			} else if (error.code === 'EACCES') {
+				throw new Error(`The file "${version}" is not accessible (permission denied).`);
+			}
+			throw error;
+		}
+	}
+	return isFile;
+}
+
+async function readManifestFromLocalFile(path, targetFile = 'manifest.json') {
+	const directory = await unzip.Open.file(path);
+	const entry = directory.files.find(f => f.path.endsWith(targetFile));
+
+	if (!entry) {
+		throw new Error(`File "${targetFile}" not found in ${path}`);
+	}
+	// Stream and parse
+	const content = await entry.buffer();
+	try {
+		return JSON.parse(content.toString('utf8'));
+	} catch (err) {
+		throw new Error(`Invalid JSON in ${targetFile}: ${err.message}`);
+	}
+}
+
 module.exports = {
 	addLogHeaders,
 	addManifestInfoLog,
@@ -493,5 +550,8 @@ module.exports = {
 	prepareFlashFiles,
 	getTachyonInfo,
 	promptWifiNetworks,
-	handleFlashError
+	handleFlashError,
+	promptOSSelection,
+	isFile,
+	readManifestFromLocalFile
 };
