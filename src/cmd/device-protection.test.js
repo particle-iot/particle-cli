@@ -1,3 +1,4 @@
+'use strict';
 const DeviceProtectionCommands = require('./device-protection');
 const { expect, sinon } = require('../../test/setup');
 const deviceProtectionHelper = require('../lib/device-protection-helper');
@@ -144,7 +145,7 @@ describe('DeviceProtectionCommands', () => {
 
 	describe('_markAsDevelopmentDevice', () => {
 		it('clears the device as a development device', async () => {
-			let attributes = { development: true };
+			const attributes = { development: true };
 			deviceProtectionCommands.productId = 12345;
 			deviceProtectionCommands.api = {
 				getDeviceAttributes: sinon.stub().resolves(attributes),
@@ -164,7 +165,7 @@ describe('DeviceProtectionCommands', () => {
 		});
 
 		it('does not clear development mode if not set', async () => {
-			let attributes = { development: false };
+			const attributes = { development: false };
 			deviceProtectionCommands.productId = 12345;
 			deviceProtectionCommands.api = {
 				getDeviceAttributes: sinon.stub().resolves(attributes),

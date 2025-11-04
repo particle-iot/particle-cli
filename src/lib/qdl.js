@@ -1,3 +1,4 @@
+'use strict';
 const execa = require('execa');
 const utilities = require('../lib/utilities');
 const path = require('path');
@@ -21,7 +22,7 @@ class TachyonConnectionError extends Error {
 }
 
 class QdlFlasher {
-	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile, skipReset=false, currTask=null, serialNumber }) {
+	constructor({ files, includeDir, updateFolder, zip, ui, outputLogFile, skipReset = false, currTask = null, serialNumber }) {
 		this.files = files;
 		this.includeDir = includeDir;
 		this.updateFolder = updateFolder;

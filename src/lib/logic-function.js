@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const fs = require('fs-extra');
 const ParticleAPI = require('../cmd/api');
@@ -37,7 +38,7 @@ class LogicFunction {
 		try {
 			const response = await api.getLogicFunctionList({ org: org });
 			const logicFunctions = response.logic_functions.map(logicFunctionData => {
-				const lf =  new LogicFunction({
+				const lf = new LogicFunction({
 					org,
 					...logicFunctionData,
 					triggers: logicFunctionData.logic_triggers,
@@ -55,8 +56,8 @@ class LogicFunction {
 	}
 
 	static async listFromDisk({ filepath, org, api = createAPI() } = {}) {
-		let logicFunctions = [];
-		let malformedLogicFunctions = [];
+		const logicFunctions = [];
+		const malformedLogicFunctions = [];
 		if (!filepath) {
 			filepath = process.cwd();
 		}

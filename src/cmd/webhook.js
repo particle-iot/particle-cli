@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs');
 const VError = require('verror');
 const prompt = require('inquirer').prompt;
@@ -121,12 +122,12 @@ module.exports = class WebhookCommand {
 			.then(hooks => {
 				console.log('Found ' + hooks.length + ' hooks registered\n');
 
-				for (let i=0;i < hooks.length;i++) {
+				for (let i = 0;i < hooks.length;i++) {
 					const hook = hooks[i];
 					const line = [
-						'    ', (i+1),
+						'    ', (i + 1),
 						'.) Hook ID ' + hook.id + ' is watching for ',
-						'"'+hook.event+'"',
+						'"' + hook.event + '"',
 
 						'\n       ', ' and sending to: ' + hook.url,
 

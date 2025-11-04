@@ -1,3 +1,4 @@
+'use strict';
 const CLICommandBase = require('./base');
 const QdlFlasher = require('../lib/qdl');
 const path = require('path');
@@ -28,7 +29,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 	}
 
 	async backup({ 'output-dir': outputDir = process.cwd(), 'log-dir': logDir = this._logsDir, existingLog } = {}) {
-		const device  = await getEDLDevice({ ui: this.ui });
+		const device = await getEDLDevice({ ui: this.ui });
 		const outputDirExist = await fs.exists(outputDir);
 		const logDirExist = await fs.exists(logDir);
 		if (!outputDirExist) {
@@ -206,7 +207,7 @@ module.exports = class BackupRestoreTachyonCommand extends CLICommandBase {
 
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 		const apiCache = createApiCache(api);
 		return { api: apiCache, auth };
 	}

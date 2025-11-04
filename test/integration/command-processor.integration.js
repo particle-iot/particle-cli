@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../setup');
 const CLI = require('../../src/app/cli');
 const commandProcessor = require('../../src/app/command-processor');
@@ -12,7 +13,7 @@ describe('command line parsing', () => {
 				if (argv.clierror) {
 					throw argv.clierror;
 				}
-				if (expected!==undefined) {
+				if (expected !== undefined) {
 					expect(global).to.have.property('verboseLevel').equal(expected);
 				} else {
 					expect(global).to.not.have.property('verboseLevel');

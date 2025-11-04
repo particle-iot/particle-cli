@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const path = require('path');
 const chalk = require('chalk');
@@ -23,7 +24,7 @@ function systemSupportsUdev() {
 	if (_systemSupportsUdev === undefined) {
 		try {
 			_systemSupportsUdev = fs.existsSync(UDEV_RULES_SYSTEM_PATH);
-		} catch (e) {
+		} catch (_err) {
 			_systemSupportsUdev = false;
 		}
 	}
@@ -47,7 +48,7 @@ function udevRulesInstalled() {
 	let current = null;
 	try {
 		current = fs.readFileSync(UDEV_RULES_SYSTEM_FILE);
-	} catch (e) {
+	} catch (_err) {
 		_udevRulesInstalled = false;
 		return false;
 	}

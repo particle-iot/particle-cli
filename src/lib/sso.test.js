@@ -1,3 +1,4 @@
+'use strict';
 const nock = require('nock');
 const jose = require('jose');
 const openurl = require('./openurl');
@@ -8,7 +9,7 @@ const { _makeRequest, waitForLogin, ssoLogin } = require('./sso');
 describe('_makeRequest', () => {
 	it('make a request', async () => {
 		const response = '{"foo":"bar"}';
-		const stub = nock('https://id.staging.particle.io/oauth2/default/v1', )
+		const stub = nock('https://id.staging.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.reply(200, response);
 		const url = 'https://id.staging.particle.io/oauth2/default/v1/token';
@@ -21,7 +22,7 @@ describe('_makeRequest', () => {
 
 	it('reject a request', async () => {
 		const response = 'error message';
-		const stub = nock('https://id.staging.particle.io/oauth2/default/v1', )
+		const stub = nock('https://id.staging.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.replyWithError(response);
 		const url = 'https://id.staging.particle.io/oauth2/default/v1/token';
@@ -55,11 +56,11 @@ describe('waitForLogin', () => {
 			access_token: 'my.generated.token',
 		};
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.reply(200, pendingResponse);
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.reply(200, accessTokenResponse);
 
@@ -79,11 +80,11 @@ describe('waitForLogin', () => {
 			error_description: 'the device code is expired'
 		};
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.reply(200, pendingResponse);
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.reply(200, expiredResponse);
 
@@ -101,11 +102,11 @@ describe('waitForLogin', () => {
 		};
 		const unhandledError = 'error message';
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.reply(200, pendingResponse);
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.replyWithError(unhandledError);
 
@@ -135,11 +136,11 @@ describe('ssoLogin', () => {
 		sandbox.stub(openurl, 'open').value(() => {});
 		const openUrlSpy = sandbox.spy(openurl, 'open');
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/device/authorize', 'POST')
 			.reply(200, authorize);
 
-		nock('https://id.particle.io/oauth2/default/v1', )
+		nock('https://id.particle.io/oauth2/default/v1',)
 			.intercept('/token', 'POST')
 			.reply(200, accessTokenResponse);
 		const response = await ssoLogin();

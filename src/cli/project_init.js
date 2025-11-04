@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const chalk = require('chalk');
 const log = require('../lib/log');
@@ -9,7 +10,7 @@ const { ProjectInitCommand, ProjectInitCommandSite, Projects } = require('../cmd
 // todo - this is pulled from validating_editor in particle-dev-libraries. Please refactor/DRY.
 
 function validationMessage(validationResult, fieldName){
-	return fieldName+' '+validationResult.errors[fieldName];
+	return fieldName + ' ' + validationResult.errors[fieldName];
 }
 
 function fieldValidator(fieldName){
@@ -24,7 +25,7 @@ function fieldValidator(fieldName){
 function yesNoValidator(){
 	const validator = (value) => {
 		if (!value || (value !== 'Y' && value !== 'y' && value !== 'N' && value !== 'n')){
-			return 'Please answer "y" or "n" - you typed '+value;
+			return 'Please answer "y" or "n" - you typed ' + value;
 		}
 	};
 	return validator;
@@ -56,7 +57,7 @@ class CLIProjectInitCommandSite extends ProjectInitCommandSite {
 		};
 
 		function isYes(result){
-			return (result||'').toLowerCase() === 'y';
+			return (result || '').toLowerCase() === 'y';
 		}
 
 		const promptForLocation = (commonLocation, currentLocation) => {

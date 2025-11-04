@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const fs = require('fs-extra');
 const { PATH_PARTICLE_PROFILE } = require('./env');
@@ -12,7 +13,7 @@ module.exports.getDirectoryContents = async (dir, options = {}, contents = [], r
 
 	rootDepth = rootDepth || dir.split(path.sep).length;
 
-	for (let file of files) {
+	for (const file of files) {
 		const filepath = path.join(dir, file);
 		const stats = await stat(filepath);
 

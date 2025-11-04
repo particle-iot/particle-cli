@@ -1,3 +1,4 @@
+'use strict';
 const chalk = require('chalk');
 const log = require('../lib/log');
 const { spin } = require('../app/ui');
@@ -47,7 +48,7 @@ class CLILibrarySearchCommandSite extends LibrarySearchCommandSite {
 		const count = libraries ? libraries.length : 0;
 		const library = count === 1 ? 'library' : 'libraries';
 		log.success(`Found ${count} ${library} matching ${chalk.green(filter)}`);
-		for (let idx in libraries) {
+		for (const idx in libraries) {
 			const lib = libraries[idx];
 			console.log(formatLibrary(lib));
 		}

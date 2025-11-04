@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const stream = require('stream');
 const ParticleAPI = require('./api');

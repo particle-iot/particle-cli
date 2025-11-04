@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	function alias(category, aliasName, path) {
 		const cmd = root.find(path);

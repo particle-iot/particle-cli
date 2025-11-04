@@ -1,3 +1,4 @@
+'use strict';
 module.exports = {
 	supportedCountries : [
 		{ name: 'Australia', value: 'AUS' },

@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const Chalk = require('chalk').constructor;
 const Spinner = require('cli-spinner').Spinner;
@@ -50,7 +51,7 @@ module.exports = class UI {
 			process.stdin.resume();
 			process.stdin.setEncoding('utf8');
 
-			const onData = () => {/* discard everything */};
+			const onData = () => { /* discard everything */ };
 
 			process.stdin.on('data', onData);
 
@@ -123,7 +124,7 @@ module.exports = class UI {
 
 	logDFUModeRequired({ showVersionWarning } = {}) {
 		this.write(`${this.chalk.red('!!!')} The device needs to be in DFU mode for this command.\n`);
-		if (showVersionWarning ) {
+		if (showVersionWarning) {
 			this.write(`${this.chalk.cyan('>')} This version of Device OS doesn't support automatically switching to DFU mode.`);
 		}
 		this.write(`${this.chalk.cyan('>')} To put your device in DFU manually, please:\n`);

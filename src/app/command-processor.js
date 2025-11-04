@@ -16,6 +16,7 @@
  * With each level, the yargs parser is augmented with new commands, options and parameters.
  *
  */
+'use strict';
 const _ = require('lodash');
 const path = require('path');
 const util = require('util');
@@ -46,7 +47,7 @@ class CLICommandItem {
 		}
 		this.commands = {};
 		this.aliases = [];
-		description = description!==undefined ? description : '';
+		description = description !== undefined ? description : '';
 		Object.assign(this, { name, description, options, inherited: options.inherited });
 	}
 
@@ -580,7 +581,7 @@ function parseParams(yargs, argv, path, params){
 		});
 	});
 
-	if (!variadic && required+optional < extra.length){
+	if (!variadic && required + optional < extra.length){
 		throw unknownParametersError(extra.slice(required + optional));
 	}
 }

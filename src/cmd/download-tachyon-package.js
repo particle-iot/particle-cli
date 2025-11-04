@@ -1,3 +1,4 @@
+'use strict';
 const CLICommandBase = require('./base');
 const DownloadManager = require('../lib/download-manager');
 
@@ -89,7 +90,7 @@ module.exports = class DownloadTachyonPackageCommand extends CLICommandBase {
 		return filePath;
 	}
 
-	async cleanUp({ region, version, variant = 'headless', board ='formfactor_dvt', all }) {
+	async cleanUp({ region, version, variant = 'headless', board = 'formfactor_dvt', all }) {
 		const manager = new DownloadManager(this.ui);
 		if (all) {
 			await manager.cleanup({ cleanDownload: true, cleanInProgress: true });

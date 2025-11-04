@@ -1,3 +1,4 @@
+'use strict';
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('../cmd/usb-util');
 const fs = require('fs-extra');
@@ -126,11 +127,11 @@ module.exports = class ESimCommands extends CLICommandBase {
 		}
 	}
 
-	/* eslint-disable max-statements, max-depth */
+
 	async doProvision(device) {
-		let provisionOutputLogs = [];
+		const provisionOutputLogs = [];
 		let eid = null;
-		let timestamp = new Date().toISOString().replace(/:/g, '-');
+		const timestamp = new Date().toISOString().replace(/:/g, '-');
 		let success = false;
 
 		const outputJsonFile = path.join(this.outputFolder, `${this.isTachyon ? 'tachyon' : device.deviceId}_${timestamp}.json`);
@@ -299,7 +300,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			this._exitQlril();
 		}
 	}
-	/* eslint-enable max-statements, max-depth */
+
 
 	async doEnableTachyon(iccid) {
 		try {
@@ -325,7 +326,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			}
 			try {
 				await execa(this.lpa, ['disable', iccid, `--serial=${port}`]);
-			} catch (error) {
+			} catch (_err) {
 				// Ignore the error if the profile is already disabled
 			}
 			await execa(this.lpa, ['delete', iccid, `--serial=${port}`]);
@@ -415,8 +416,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async _flashATPassThroughFirmware(device) {
 		let status = 'failed';
-		let timestamp = new Date().toISOString().replace(/:/g, '-');
-		let logs = [];
+		const timestamp = new Date().toISOString().replace(/:/g, '-');
+		const logs = [];
 		let fwPath = null;
 
 		const logAndPush = (message) => {
@@ -499,7 +500,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 				if (resp?.result === 0 && resp.data?.[0] === '1') {
 					atOkReceived = true;
 				}
-			} catch (error) {
+			} catch (_err) {
 				//
 			}
 
@@ -524,8 +525,8 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async _initializeQlril() {
 		let status = 'failed';
-		let timestamp = new Date().toISOString().replace(/:/g, '-');
-		let logs = [];
+		const timestamp = new Date().toISOString().replace(/:/g, '-');
+		const logs = [];
 		let output = '';
 
 		const logAndPush = (message) => {
@@ -590,10 +591,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	async _getEid(port) {
 		let status = 'failed';
-		let timestamp = new Date().toISOString().replace(/:/g, '-');
-		let logs = [];
+		const timestamp = new Date().toISOString().replace(/:/g, '-');
+		const logs = [];
 		let eid = null;
-		let command = `${this.lpa} getEid --serial=${port}`;
+		const command = `${this.lpa} getEid --serial=${port}`;
 
 		const logAndPush = (message) => {
 			logs.push(message);
@@ -640,10 +641,10 @@ module.exports = class ESimCommands extends CLICommandBase {
 
 	// Check for profiles that are exsting on the device
 	async _checkForExistingProfiles(port) {
-		let logs = [];
+		const logs = [];
 		let existingProfiles = [];
 		let status = 'failed';
-		let timestamp = new Date().toISOString().replace(/:/g, '-');
+		const timestamp = new Date().toISOString().replace(/:/g, '-');
 
 		const logAndPush = (message) => {
 			logs.push(message);
@@ -759,9 +760,9 @@ module.exports = class ESimCommands extends CLICommandBase {
 		});
 
 		for (const [index, profile] of profiles.entries()) {
-			/* eslint-disable-next-line camelcase */
+
 			const { iccid, provider, smdp, matching_id } = profile;
-			/* eslint-disable-next-line camelcase */
+
 			const rspUrl = `1$${smdp}$${matching_id}`;
 			const startTime = Date.now();
 
@@ -910,7 +911,7 @@ module.exports = class ESimCommands extends CLICommandBase {
 			return;
 		}
 
-		let outputLogs = [];
+		const outputLogs = [];
 		let usbDevice;
 		try {
 			usbDevice = await usbUtils.getOneUsbDevice({ idOrName: device.deviceId });

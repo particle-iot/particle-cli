@@ -1,3 +1,4 @@
+'use strict';
 const VError = require('verror');
 const inquirer = require('inquirer');
 const settings = require('../../settings');

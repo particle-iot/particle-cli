@@ -27,15 +27,15 @@ env:
   E2E_PRODUCT_01_NAME: ${{ secrets.E2E_PRODUCT_01_NAME }}
   E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
 jobs:
-  build:
+  linux-build:
     runs-on: ubuntu-latest  # Choose an appropriate runner
     steps:
       - uses: actions/checkout@v3
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '22'
 
       - name: Configure NPM Token
         run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
@@ -47,13 +47,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.pkg-cache
-          key: node16-pkg-${{ github.run_id }}
-          restore-keys: node16-pkg-
-
-      - name: Add pre-built Node for armv7
-        run: |
-          mkdir -p ~/.pkg-cache/v3.4
-          cp .prebuild/built-v16.16.0-linux-armv7 ~/.pkg-cache/v3.4
+          key: node22-pkg-${{ github.run_id }}
+          restore-keys: node22-pkg-
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -64,24 +59,68 @@ jobs:
         uses: MOZGIII/install-ldid-action@v1
         with:
           tag: v2.1.5-procursus7
-
-      - name: Build Package
-        run: npm run build
+      # Follow instructions are required to build linux and keep backwards compatibility with ubuntu 20.04
+      - name: Build linux x64
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linux-x64 -o build/particle-cli-linux-x64
+      - name: Build linux arm64
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linux-arm64 -o build/particle-cli-linux-arm64
+      - name: Build linux armv7
+        run: npx --yes @yao-pkg/pkg@6.3.2 . --target node22-linuxstatic-armv7 -o build/particle-cli-linuxstatic-armv7
 
       - name: Save Cache
         uses: actions/cache@v3
         with:
           path: ~/.pkg-cache
-          key: node16-pkg-${{ github.run_id }}
+          key: node22-pkg-${{ github.run_id }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: not_signed
+          name: not_signed_linux
+          path: build/
+  macos-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Configure NPM Token
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.pkg-cache
+          key: node22-pkg-${{ github.run_id }}
+          restore-keys: node22-pkg-
+      - name: Build macos x64
+        run: npm run build -- --target node22-macos-x64 -o build/particle-cli-macos-x64
+      - name: Build macos arm64
+        run: npm run build -- --target node22-macos-arm64 -o build/particle-cli-macos-arm64
+
+      - name: Save Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.pkg-cache
+          key: node22-pkg-${{ github.run_id }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: not_signed_mac
           path: build/
   windows-sign:
     runs-on: windows-latest
-    needs: build
+    needs:
+      - linux-build
+      - macos-build
     steps:
       - uses: actions/checkout@v3
       - name: Install NSIS
@@ -90,11 +129,30 @@ jobs:
         shell: pwsh
         run: |
           echo "${env:ProgramFiles(x86)}\NSIS\Bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Configure NPM Token
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Restore Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.pkg-cache
+          key: node22-pkg-${{ github.run_id }}
+          restore-keys: node22-pkg-
       - name: Download Artifact
         uses: actions/download-artifact@v5
         with:
-          name: not_signed
           path: build/
+          merge-multiple: true
+      - name: Build windows x64
+        run: npm run build -- --target node22-win-x64 -o build/particle-cli-win-x64
       - name: Sign Windows Executable
         uses: azure/trusted-signing-action@v0
         with:

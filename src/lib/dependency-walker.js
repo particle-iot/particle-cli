@@ -1,3 +1,4 @@
+'use strict';
 const { ModuleInfo } = require('binary-version-reader');
 
 class DependencyWalker {

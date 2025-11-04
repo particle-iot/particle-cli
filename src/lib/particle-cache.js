@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const settings = require('../../settings');
 const fs = require('fs-extra');
@@ -13,7 +14,7 @@ class ParticleCache {
 	get(key) {
 		try {
 			return fs.readJsonSync(path.join(this.path, `${key}.json`));
-		} catch (error) {
+		} catch (_err) {
 			return null;
 		}
 

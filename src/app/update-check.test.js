@@ -1,7 +1,8 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const updateCheck = require('./update-check');
 const settings = require('../../settings');
-const childProcess= require('node:child_process');
+const childProcess = require('node:child_process');
 
 describe('Update Check', () => {
 	const sandbox = sinon.createSandbox();

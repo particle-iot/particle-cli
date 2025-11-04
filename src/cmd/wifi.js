@@ -1,3 +1,4 @@
+'use strict';
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const usbUtils = require('../cmd/usb-util');
@@ -87,7 +88,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 					this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
 					try {
 						await device.leaveListeningMode();
-					} catch (error) {
+					} catch (_err) {
 						// Ignore error
 						// It's not critical that the device does not exit listening mode
 					}
@@ -118,7 +119,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 					this.ui.stdout.write(`Exiting listening mode...${os.EOL}`);
 					try {
 						await device.leaveListeningMode();
-					} catch (error) {
+					} catch (_err) {
 						// Ignore error
 						// It's not critical that the device does not exit listening mode
 					}
@@ -422,7 +423,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 		if (wifiIface && wifiIface.flagsStrings.includes('LOWER_UP')) {
 			try {
 				currentNetwork = await device.getCurrentWifiNetwork({ timeout: REQUEST_TIMEOUT });
-			} catch (error) {
+			} catch (_err) {
 				// Ignore error if the device does not support the getCurrentWifiNetwork command
 			}
 		}
@@ -570,7 +571,7 @@ module.exports = class WiFiCommands extends CLICommandBase {
 
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 		const apiCache = createApiCache(api);
 		return { api: apiCache, auth };
 	}

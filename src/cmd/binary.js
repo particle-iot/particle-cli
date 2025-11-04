@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const os = require('os');
 const path = require('path');
@@ -123,7 +124,7 @@ class BinaryCommand {
 	async _checkFile(file) {
 		try {
 			await fs.access(file);
-		} catch (error) {
+		} catch (_err) {
 			throw new Error(`File does not exist: ${file}`);
 		}
 		return true;

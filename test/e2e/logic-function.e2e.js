@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const fs = require('fs-extra');

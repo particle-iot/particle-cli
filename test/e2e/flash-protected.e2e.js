@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
@@ -10,7 +11,7 @@ const {
 	PATH_FIXTURES_BINARIES_DIR
 } = require('../lib/env');
 const { delay } = require('../lib/mocha-utils');
-const stripAnsi = require('strip-ansi');
+const { default: stripAnsi } = require('strip-ansi');
 
 
 describe('Flash Commands for Protected Devices [@device]', () => {

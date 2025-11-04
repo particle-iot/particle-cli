@@ -1,3 +1,4 @@
+'use strict';
 const settings = require('../../settings');
 const fs = require('fs-extra');
 const path = require('path');
@@ -47,7 +48,7 @@ class DownloadManager {
 			}
 
 			return response.json();
-		} catch (err) {
+		} catch (_err) {
 			throw new Error('Could not download the version file. Please check your internet connection.');
 		}
 	}

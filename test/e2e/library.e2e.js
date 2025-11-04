@@ -1,3 +1,4 @@
+'use strict';
 const path = require('path');
 const semver = require('semver');
 const { expect } = require('../setup');
@@ -1083,7 +1084,7 @@ describe('Library Commands', () => {
 			path.join(PATH_TMP_DIR, 'examples', 'usage', 'usage.ino')
 		];
 
-		for (let file of libFiles){
+		for (const file of libFiles){
 			expect(await fs.pathExists(file)).to.equal(true);
 		}
 		expect(libProps.split('\n')).to.include.members([

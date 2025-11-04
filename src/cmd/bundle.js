@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const path = require('path');
 const CLICommandBase = require('./base');
@@ -41,7 +42,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 
 		await this._checkDeviceOsVersion(appBinary);
 
-		let assetsPath = await this._getAssetsPath(assets);
+		const assetsPath = await this._getAssetsPath(assets);
 		const bundleFilename = this._getBundleSavePath(saveTo, appBinary);
 		return { assetsPath, bundleFilename };
 	}

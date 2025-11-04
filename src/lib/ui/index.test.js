@@ -1,3 +1,4 @@
+'use strict';
 const stream = require('stream');
 const Spinner = require('cli-spinner').Spinner;
 const { expect, sinon } = require('../../../test/setup');

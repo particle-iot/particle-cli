@@ -2,6 +2,7 @@
 // since airport is deprecated we need to change it
 // https://apple.stackexchange.com/questions/471886/how-to-replace-functionality-of-deprecated-airport-command-line-application
 
+'use strict';
 const execa = require('execa');
 const macProvider = '/usr/sbin/system_profiler';
 
@@ -25,7 +26,7 @@ async function parseAirportData(systemProfilerAirport) {
 	const networks = en0Interface.spairport_airport_other_local_wireless_networks;
 
 	// filter repeated networks
-	const uniqueNetworks = networks ? filterUniqueNetworks(networks): [];
+	const uniqueNetworks = networks ? filterUniqueNetworks(networks) : [];
 
 	return uniqueNetworks.map(formatNetwork);
 }

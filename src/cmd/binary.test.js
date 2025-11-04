@@ -1,3 +1,4 @@
+'use strict';
 const BinaryCommand = require('../cmd/binary');
 const { expect } = require('../../test/setup');
 const path = require('path');
@@ -48,7 +49,7 @@ describe('Binary Inspect', () => {
 			let res = false;
 			try {
 				res = await binaryCommand._checkFile(path.join(PATH_FIXTURES_BINARIES_DIR, 'argon_stroby.bin'));
-			} catch (err) {
+			} catch (_err) {
 				// ignore error
 			}
 

@@ -1,3 +1,4 @@
+'use strict';
 module.exports = function unindent(string) {
 	const match = string.match(/\n(\s*)/m);
 	if (!match) {

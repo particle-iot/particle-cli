@@ -1,3 +1,4 @@
+'use strict';
 const { Spinner } = require('cli-spinner');
 const inquirer = require('inquirer');
 const log = require('../lib/log');
@@ -13,8 +14,6 @@ module.exports.prompt = async (question) => {
 };
 
 module.exports.spin = async (promise, str) => {
-	let spinner;
-
 	if (!global.isInteractive){
 		return promise;
 	}
@@ -24,7 +23,7 @@ module.exports.spin = async (promise, str) => {
 		return promise;
 	}
 
-	spinner = new Spinner(str);
+	const spinner = new Spinner(str);
 	spinner.start();
 	return promise.finally(() => spinner.stop(true));
 };

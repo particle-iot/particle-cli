@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const { HalModuleParser, firmwareTestHelper, ModuleInfo, createAssetModule } = require('binary-version-reader');
 const chalk = require('chalk');
@@ -156,7 +157,7 @@ describe('flash-helper', () => {
 
 	describe('filterModulesToFlash', () => {
 		let modules, assetModules, extraModules;
-		beforeEach( async () => {
+		beforeEach(async () => {
 			modules = await createModules();
 			assetModules = await createAssetModules();
 			extraModules = await createExtraModules();
@@ -176,13 +177,13 @@ describe('flash-helper', () => {
 		beforeEach(async() => {
 			modules = await createModules();
 			assetModules = await createAssetModules();
-			const preBootloader = modules.find( m => m.filename === 'preBootloader.bin');
-			const bootloader = modules.find( m => m.filename === 'bootloader.bin');
-			const systemPart1 = modules.find( m => m.filename === 'systemPart1.bin');
-			const systemPart2 = modules.find( m => m.filename === 'systemPart2.bin');
-			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
-			const asset1 = assetModules.find( m => m.filename === 'asset1.bin');
-			const asset2 = assetModules.find( m => m.filename === 'asset2.bin');
+			const preBootloader = modules.find(m => m.filename === 'preBootloader.bin');
+			const bootloader = modules.find(m => m.filename === 'bootloader.bin');
+			const systemPart1 = modules.find(m => m.filename === 'systemPart1.bin');
+			const systemPart2 = modules.find(m => m.filename === 'systemPart2.bin');
+			const userPart1 = modules.find(m => m.filename === 'userPart1.bin');
+			const asset1 = assetModules.find(m => m.filename === 'asset1.bin');
+			const asset2 = assetModules.find(m => m.filename === 'asset2.bin');
 			preBootloaderStep = {
 				name: preBootloader.filename,
 				data: preBootloader.fileBuffer,
@@ -297,7 +298,7 @@ describe('flash-helper', () => {
 				asset1Step,
 			];
 			// remove checkSkip property for easier comparison
-			steps.forEach( step => {
+			steps.forEach(step => {
 				if (step.checkSkip) {
 					delete step.checkSkip;
 				}
@@ -307,7 +308,7 @@ describe('flash-helper', () => {
 		});
 
 		it('puts the user part at the factory address when supported', async () => {
-			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+			const userPart1 = modules.find(m => m.filename === 'userPart1.bin');
 
 			const steps = await createFlashSteps({
 				modules: [userPart1],
@@ -326,7 +327,7 @@ describe('flash-helper', () => {
 		});
 
 		it('rejects when requesting a system part at the factory location', async () => {
-			const systemPart1 = modules.find( m => m.filename === 'systemPart1.bin');
+			const systemPart1 = modules.find(m => m.filename === 'systemPart1.bin');
 
 			let error;
 			try {
@@ -343,7 +344,7 @@ describe('flash-helper', () => {
 		});
 
 		it('rejects when the platform has no factory location', async () => {
-			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+			const userPart1 = modules.find(m => m.filename === 'userPart1.bin');
 
 			let error;
 			try {
@@ -364,9 +365,9 @@ describe('flash-helper', () => {
 		let bootloaderStep, systemPart1Step, userPart1Step, modules;
 		beforeEach(async() => {
 			modules = await createModulesWithDeviceOs3005();
-			const bootloader = modules.find( m => m.filename === 'bootloader.bin');
-			const systemPart1 = modules.find( m => m.filename === 'systemPart1.bin');
-			const userPart1 = modules.find( m => m.filename === 'userPart1.bin');
+			const bootloader = modules.find(m => m.filename === 'bootloader.bin');
+			const systemPart1 = modules.find(m => m.filename === 'systemPart1.bin');
+			const userPart1 = modules.find(m => m.filename === 'userPart1.bin');
 			bootloaderStep = {
 				name: bootloader.filename,
 				data: bootloader.fileBuffer,

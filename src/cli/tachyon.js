@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const tachyon = commandProcessor.createCategory(root, 'tachyon', 'Setup Particle devices');
 

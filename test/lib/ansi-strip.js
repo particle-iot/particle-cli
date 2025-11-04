@@ -1,4 +1,5 @@
 // source: https://github.com/chalk/ansi-regex
+'use strict';
 const ptn = new RegExp(
 	[
 		'[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)',

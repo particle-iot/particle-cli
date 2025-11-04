@@ -1,3 +1,4 @@
+'use strict';
 const util = require('util');
 const Readable = require('stream').Readable;
 const { expect, sinon } = require('../../test/setup');

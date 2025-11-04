@@ -1,5 +1,6 @@
+'use strict';
 module.exports = (str, regex) => {
-	let output = [];
+	const output = [];
 	let matches;
 
 	while ((matches = regex.exec(str))){

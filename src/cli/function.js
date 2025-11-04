@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	const func = commandProcessor.createCategory(root, 'function', 'Call functions on your device');
 

@@ -1,3 +1,4 @@
+'use strict';
 const packageInfo = require('../package.json');
 
 const fs = require('fs-extra');
@@ -24,7 +25,7 @@ function constructUrl(platform, arch) {
 function parseFilename(filename) {
 	// Simplified parsing logic, adjust as needed
 	console.log('parsing', filename);
-	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32' };
+	const platformMap = { macos: 'darwin', linux: 'linux', win: 'win32', linuxstatic: 'linux' };
 	const archMap = { armv7: 'arm' };
 
 	const parts = filename.split('-');
@@ -151,7 +152,7 @@ async function restructureFiles(version, sourceDir, targetBaseDir) {
 				}
 			} else {
 				// means is not an installer file
-				if (excludedFiles.some(regex => file.match(regex)) ) {
+				if (excludedFiles.some(regex => file.match(regex))) {
 					console.log('Skipping excluded file:', file);
 					continue;
 				}

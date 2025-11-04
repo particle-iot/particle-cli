@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs');
 const url = require('url');
 const path = require('path');
@@ -100,9 +101,9 @@ module.exports = class KeysCommand {
 
 		const protocol = this._getDeviceProtocol();
 		const alg = this._getPrivateKeyAlgorithm({ protocol });
-		let prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
+		const prefilename = path.join(path.dirname(filename), 'backup_' + alg + '_' + path.basename(filename));
 		await this._saveKeyFromDevice({ filename: prefilename, force: true, device });
-		let segment = this._getPrivateKeySegment({ protocol });
+		const segment = this._getPrivateKeySegment({ protocol });
 		const buffer = fs.readFileSync(filename, null); // 'null' to get the raw data
 		await this._dfuWrite(device, buffer, { altSetting: segment.alt, startAddr: segment.address, leave: leave, noErase: true });
 
@@ -135,17 +136,17 @@ module.exports = class KeysCommand {
 
 		try {
 			const protocol = this._getDeviceProtocol();
-			let segment = this._getPrivateKeySegment({ protocol });
+			const segment = this._getPrivateKeySegment({ protocol });
 
 			const buf = await this._dfuRead(device, { altSetting: segment.alt, startAddr: segment.address, size: segment.size });
 
 			fs.writeFileSync(filename, buf, 'binary');
 
-			let pubPemFilename = filenameNoExt(filename) + '.pub.pem';
+			const pubPemFilename = filenameNoExt(filename) + '.pub.pem';
 			if (force) {
 				tryDelete(pubPemFilename);
 			}
-			let alg = this._getPrivateKeyAlgorithm({ protocol });
+			const alg = this._getPrivateKeyAlgorithm({ protocol });
 			await deferredChildProcess(`openssl ${alg} -in "${filename}" -inform DER -pubout -out ${pubPemFilename}`)
 				.catch((err) => {
 					throw new VError(err,
@@ -167,7 +168,7 @@ module.exports = class KeysCommand {
 		if (!deviceID) {
 			// default to the connected device if Device ID is not passed
 			// This is only to get the Device ID
-			let device = await usbUtils.getOneUsbDevice({ ui: this.ui });
+			const device = await usbUtils.getOneUsbDevice({ ui: this.ui });
 			deviceID = device.id;
 			await device.close();
 		}
@@ -182,11 +183,11 @@ module.exports = class KeysCommand {
 			}
 		}
 
-		let api = new ApiClient();
+		const api = new ApiClient();
 		api.ensureToken();
 
-		let pubKey = temp.path({ suffix: '.pub.pem' });
-		let inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';
+		const pubKey = temp.path({ suffix: '.pub.pem' });
+		const inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';
 		const cleanup = () => fs.unlinkSync(pubKey);
 
 		try {
@@ -206,7 +207,7 @@ module.exports = class KeysCommand {
 				});
 
 			const keyBuf = await readFile(pubKey);
-			let apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
+			const apiAlg = algorithm === 'rsa' ? 'rsa' : 'ecc';
 			await api.sendPublicKey(deviceID, keyBuf, apiAlg, productId);
 		} catch (err) {
 			cleanup();
@@ -346,12 +347,12 @@ module.exports = class KeysCommand {
 
 		const keyBuf = await this._dfuRead(device, { altSetting: segment.alt, startAddr: segment.address, size: segment.size });
 
-		let offset = segment.addressOffset || 384;
-		let portOffset = segment.portOffset || 450;
-		let type = keyBuf[offset];
-		let len = keyBuf[offset+1];
-		let data = keyBuf.slice(offset + 2, offset + 2 + len);
-		let port = keyBuf[portOffset] << 8 | keyBuf[portOffset+1];
+		const offset = segment.addressOffset || 384;
+		const portOffset = segment.portOffset || 450;
+		const type = keyBuf[offset];
+		const len = keyBuf[offset + 1];
+		const data = keyBuf.slice(offset + 2, offset + 2 + len);
+		let port = keyBuf[portOffset] << 8 | keyBuf[portOffset + 1];
 		if (port === 0xFFFF){
 			port = protocol === 'tcp' ? 5683 : 5684;
 		}
@@ -366,35 +367,35 @@ module.exports = class KeysCommand {
 			}
 		}
 
-		let result = { hostname: host, port: port, protocol: protocol, slashes: true };
+		const result = { hostname: host, port: port, protocol: protocol, slashes: true };
 
 		console.log();
 		console.log(url.format(result));
 	}
 
 	_getServerKeySegment({ protocol }){
-		let segmentName = `${protocol}ServerKey`;
+		const segmentName = `${protocol}ServerKey`;
 		return this._getDctKeySegments()[segmentName];
 	}
 
 	_getServerKeyAlgorithm({ protocol }){
-		let segment = this._getServerKeySegment({ protocol });
+		const segment = this._getServerKeySegment({ protocol });
 		return segment.alg;
 	}
 
 	_getPrivateKeySegment({ protocol }){
-		let segmentName = `${protocol}PrivateKey`;
+		const segmentName = `${protocol}PrivateKey`;
 		return this._getDctKeySegments()[segmentName];
 	}
 
 	_getPrivateKeyAlgorithm({ protocol }){
-		let segment = this._getPrivateKeySegment({ protocol });
+		const segment = this._getPrivateKeySegment({ protocol });
 		return segment.alg;
 	}
 
 	async _getDERPublicKey(filename, { protocol }) {
 		const { getFilenameExt, filenameNoExt, deferredChildProcess } = utilities;
-		let alg = this._getServerKeyAlgorithm({ protocol });
+		const alg = this._getServerKeyAlgorithm({ protocol });
 
 		if (!alg){
 			throw new VError('Unable to get the algorithm for that protocol');
@@ -426,9 +427,9 @@ module.exports = class KeysCommand {
 		return path.join(__dirname, `../../assets/keys/${alg}.pub.der`);
 	}
 
-	// eslint-disable-next-line max-statements
+
 	_formatPublicKey(filename, ipOrDomain, port, { protocol, outputFilename }){
-		let segment = this._getServerKeySegment({ protocol });
+		const segment = this._getServerKeySegment({ protocol });
 
 		if (!segment){
 			throw new VError('No segment found for that protocol');
@@ -437,14 +438,14 @@ module.exports = class KeysCommand {
 		let buf, fileBuf;
 
 		if (ipOrDomain){
-			let alg = segment.alg || 'rsa';
+			const alg = segment.alg || 'rsa';
 			let fileWithAddress = `${utilities.filenameNoExt(filename)}-${utilities.replaceAll(ipOrDomain, '.', '_')}-${alg}.der`;
 
 			if (outputFilename){
 				fileWithAddress = outputFilename;
 			}
 
-			let addressBuf = this._createAddressBuffer(ipOrDomain);
+			const addressBuf = this._createAddressBuffer(ipOrDomain);
 
 			// To generate a file like this, just add a type-length-value (TLV)
 			// encoded IP or domain beginning 384 bytes into the file—on external
@@ -466,7 +467,7 @@ module.exports = class KeysCommand {
 			//fill the rest with "FF"
 			buf.fill(255, fileBuf.length);
 
-			let offset = segment.addressOffset || 384;
+			const offset = segment.addressOffset || 384;
 			addressBuf.copy(buf, offset, 0, addressBuf.length);
 
 			if (port && segment.portOffset){
@@ -480,7 +481,7 @@ module.exports = class KeysCommand {
 			return fileWithAddress;
 		}
 
-		let stats = fs.statSync(filename);
+		const stats = fs.statSync(filename);
 
 		if (stats.size < segment.size){
 			let fileWithSize = `${utilities.filenameNoExt(filename)}-padded.der`;
@@ -513,7 +514,7 @@ module.exports = class KeysCommand {
 	async _putDeviceInSafeMode(device) {
 		await device.enterSafeMode();
 		await device.close();
-		device = await usbUtils.reopenInNormalMode( { id: device.id });
+		device = await usbUtils.reopenInNormalMode({ id: device.id });
 	}
 
 	_getDctKeySegments() {

@@ -1,3 +1,4 @@
+'use strict';
 const { spin } = require('../app/ui');
 const { getDevice, isDeviceId } = require('./device-util');
 const { systemSupportsUdev, promptAndInstallUdevRules } = require('./udev');
@@ -55,7 +56,7 @@ async function _getDeviceName({ id, api, auth, ui }) {
 	try {
 		const device = await getDevice({ id, api, auth, ui });
 		return device && device.name ? device.name : '<no name>';
-	} catch (err) {
+	} catch (_err) {
 		return '<unknown>';
 	}
 }
@@ -141,7 +142,7 @@ async function executeWithUsbDevice({ args, func, enterDfuMode = false, allowPro
 			try {
 				device = await waitForDeviceToRespond(deviceId);
 				await deviceProtectionHelper.turnOffServiceMode(device);
-			} catch (error) {
+			} catch (_err) {
 				// Ignore error. At most, device is left in Service Mode
 			}
 		}
@@ -175,7 +176,7 @@ async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 			// Check device readiness
 			await device.getDeviceId();
 			return device;
-		} catch (error) {
+		} catch (_err) {
 			// ignore errors
 			// device could be open after the last iteration
 			if (device && device.isOpen) {
@@ -196,7 +197,7 @@ async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 async function _putDeviceInSafeMode(dev) {
 	try {
 		await dev.enterSafeMode();
-	} catch (error) {
+	} catch (_err) {
 		// ignore errors
 	}
 	return reopenInNormalMode({ id: this.deviceId });
@@ -280,7 +281,7 @@ async function openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode = false } 
 	}
 
 	if (!device) {
-		let deviceInfo = await getDevice({ id: idOrName, api, auth });
+		const deviceInfo = await getDevice({ id: idOrName, api, auth });
 		try {
 			device = await openDeviceById(deviceInfo.id);
 		} catch (err) {
@@ -450,7 +451,7 @@ async function reopenInNormalMode(device, { reset } = {}) {
 					return device;
 				}
 			}
-		} catch (err) {
+		} catch (_err) {
 			// ignore errors
 		}
 	}
@@ -472,7 +473,7 @@ async function reopenDevice(device) {
 				return device;
 			}
 
-		} catch (err) {
+		} catch (_err) {
 			// ignore error
 		}
 	}
@@ -483,7 +484,7 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 	const msg = 'Getting device information...';
 	const operation = openUsbDevices(args, { dfuMode });
 	let lastError = null;
-	let outputMsg = [];
+	const outputMsg = [];
 	return spin(operation, msg)
 		.then(usbDevices => {
 			const p = usbDevices.map(async (usbDevice) => {

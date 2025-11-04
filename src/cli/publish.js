@@ -1,3 +1,4 @@
+'use strict';
 module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(root, 'publish', 'Publish an event to the cloud', {
 		params: '<event> [data]',

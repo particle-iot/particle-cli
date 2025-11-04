@@ -1,3 +1,4 @@
+'use strict';
 const deviceControlError = {
 	'LIBUSB_ERROR_IO': 'Input/output error',
 	'LIBUSB_ERROR_INVALID_PARAM': 'Invalid parameter',

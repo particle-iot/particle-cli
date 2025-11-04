@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../../test/setup');
 const { loadTemplateFiles } = require('./template-processor');
 const { PATH_TMP_DIR } = require('../../test/lib/env');

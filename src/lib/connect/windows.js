@@ -1,3 +1,4 @@
+'use strict';
 const { delay } = require('../utilities');
 const systemExecutor = require('./executor').systemExecutor;
 
@@ -237,7 +238,7 @@ class Connect {
 		let result;
 		if (colonIndex > 0){
 			const key = line.slice(0, colonIndex).trim().toLowerCase();
-			const value = line.slice(colonIndex+1).trim();
+			const value = line.slice(colonIndex + 1).trim();
 			result = { key: key, value: value };
 		}
 		return result;
@@ -268,7 +269,7 @@ async function asCallback(promise, cb){
 
 		try {
 			cb(null, arg);
-		} catch (error){
+		} catch (_err){
 			// ignore callback error
 		}
 	} catch (error){

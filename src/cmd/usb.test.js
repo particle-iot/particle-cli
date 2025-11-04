@@ -1,5 +1,6 @@
+'use strict';
 const { expect } = require('../../test/setup');
-const stripAnsi = require('strip-ansi');
+const { default: stripAnsi } = require('strip-ansi');
 const UsbCommands = require('./usb');
 
 

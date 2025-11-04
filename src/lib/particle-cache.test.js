@@ -1,3 +1,4 @@
+'use strict';
 const { expect } = require('../../test/setup');
 const ParticleCache = require('./particle-cache');
 const { PATH_TMP_DIR } = require('../../test/lib/env');

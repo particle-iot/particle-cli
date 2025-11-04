@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const os = require('os');
 const semver = require('semver');
@@ -76,7 +77,7 @@ async function getEDLDevice({ ui = new UI(), showSetupMessage = false } = {}) {
 }
 
 async function prepareFlashFiles({ logFile, ui, partitionsList, dir = process.cwd(), device, operation, checkFiles = false, modifyPartitions = (partitions) => partitions } = {}) {
-	const { firehosePath, tempPath, gptXmlPath }  = await initFiles();
+	const { firehosePath, tempPath, gptXmlPath } = await initFiles();
 
 	const partitionTable = await readPartitionsFromDevice({
 		logFile,
@@ -318,7 +319,7 @@ async function promptWifiNetworks(ui = new UI()) {
 	let ssid;
 
 	if (networks) { // error when trying to get networks
-		const choices =[
+		const choices = [
 			...ssids,
 			otherNetworkLabel,
 			rescanLabel,
@@ -354,9 +355,9 @@ async function _scanNetworks(ui) {
 			'Scanning for nearby Wi-Fi networks...',
 			_wifiScan()
 		);
-	} catch (error) {
+	} catch (_err) {
 		// something happened so need to call manual instead of rescanning
-		let message = ui.chalk.yellow('Unable to scan Wi-Fi networks.');
+		const message = ui.chalk.yellow('Unable to scan Wi-Fi networks.');
 		let description;
 		if (os.platform() === 'win32') {
 			description = ui.chalk.yellow('Make sure Location Services are enabled in ' +
@@ -405,7 +406,7 @@ async function _requestWifiPassword({ ui, ssid, networks }) {
 	const network = networks?.find((n) => n.ssid === ssid);
 	const isOpen = network?.security === 'none' || network?.security === '';
 	const isManualEntry = !network;
-	const annotation = isManualEntry ? ' (leave it blank for open networks)': '';
+	const annotation = isManualEntry ? ' (leave it blank for open networks)' : '';
 
 	if (isOpen) {
 		return '';
@@ -437,11 +438,11 @@ async function getEDLModeDevices(ui, showSetupMessage) {
 					`2. Put the Tachyon device into ${ui.chalk.bold('system update')} mode:${os.EOL}` +
 					`   - Hold the button next to the red LED for 3 seconds.${os.EOL}` +
 					`   - When the light starts flashing yellow, release the button.${os.EOL}`;
-				ui.stdout.write(showSetupMessage ? setupMessage: defaultMessage);
+				ui.stdout.write(showSetupMessage ? setupMessage : defaultMessage);
 				ui.stdout.write(os.EOL);
 				messageShown = true;
 			}
-		} catch (error) {
+		} catch (_err) {
 			// ignore error
 		}
 		await delay(DEVICE_READY_WAIT_TIME);

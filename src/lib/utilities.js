@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs-extra');
 const _ = require('lodash');
 const propertiesParser = require('properties-parser');
@@ -30,12 +31,12 @@ module.exports = {
 			try {
 				log.verbose('spawning ' + exec + ' ' + args.join(' '));
 
-				let options = {
+				const options = {
 					stdio: ['ignore', 'pipe', 'pipe']
 				};
 
-				let child = childProcess.spawn(exec, args, options);
-				let stdout = [],
+				const child = childProcess.spawn(exec, args, options);
+				const stdout = [],
 					errors = [];
 
 				if (child.stdout){
@@ -53,7 +54,7 @@ module.exports = {
 				}
 
 				child.on('close', (code) => {
-					let output = { stdout: stdout, stderr: errors };
+					const output = { stdout: stdout, stderr: errors };
 					if (!code){
 						resolve(output);
 					} else {
@@ -150,7 +151,7 @@ module.exports = {
 
 		return new Promise((resolve, reject) => {
 			let lastError = null;
-			let tryTestFn = (async () => {
+			const tryTestFn = (async () => {
 				numTries--;
 
 				if (numTries < 0){
@@ -175,7 +176,7 @@ module.exports = {
 
 	globList(basepath, arr, { followSymlinks } = {}){
 		let line, found, files = [];
-		for (let i=0;i<arr.length;i++){
+		for (let i = 0;i < arr.length;i++){
 			line = arr[i];
 			if (basepath){
 				line = path.join(basepath, line);
@@ -207,12 +208,12 @@ module.exports = {
 			return null;
 		}
 
-		let str = fs.readFileSync(file).toString();
+		const str = fs.readFileSync(file).toString();
 		if (!str){
 			return null;
 		}
 
-		let arr = str.split('\n');
+		const arr = str.split('\n');
 		if (arr && (arr.length > 0)){
 			for (let i = 0; i < arr.length; i++){
 				arr[i] = arr[i].trim();
@@ -222,7 +223,7 @@ module.exports = {
 	},
 
 	arrayToHashSet(arr){
-		let h = {};
+		const h = {};
 		if (arr) {
 			for (let i = 0; i < arr.length; i++) {
 				h[arr[i]] = true;
@@ -261,11 +262,11 @@ module.exports = {
 
 	compliment(arr, excluded){
 		const { arrayToHashSet } = module.exports;
-		let hash = arrayToHashSet(excluded);
+		const hash = arrayToHashSet(excluded);
 
-		let result = [];
-		for (let i=0;i<arr.length;i++){
-			let key = arr[i];
+		const result = [];
+		for (let i = 0;i < arr.length;i++){
+			const key = arr[i];
 			if (!hash[key]){
 				result.push(key);
 			}
@@ -279,7 +280,7 @@ module.exports = {
 				fs.unlinkSync(filename);
 			}
 			return true;
-		} catch (ex){
+		} catch (_err){
 			console.error('error deleting file ' + filename);
 		}
 		return false;
@@ -287,12 +288,12 @@ module.exports = {
 
 	__banner: undefined,
 	banner(){
-		let bannerFile = path.join(__dirname, '../../assets/banner.txt');
+		const bannerFile = path.join(__dirname, '../../assets/banner.txt');
 
 		if (module.exports.__banner === undefined){
 			try {
 				module.exports.__banner = fs.readFileSync(bannerFile, 'utf8');
-			} catch (err){
+			} catch (_err){
 				// ignore missing banner
 			}
 		}
@@ -428,7 +429,7 @@ module.exports = {
 		try {
 			await fs.access(filePath);
 			return true;
-		} catch (error) {
+		} catch (_err) {
 			return false;
 		}
 	},

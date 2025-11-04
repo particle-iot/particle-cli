@@ -1,10 +1,11 @@
+'use strict';
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
 	WIFI_SSID,
 	WIFI_CREDS_FILE
 } = require('../lib/env');
-const stripAnsi = require('strip-ansi');
+const { default: stripAnsi } = require('strip-ansi');
 
 describe('Wi-Fi Commands for Protected Devices [@device,@wifi]', () => {
 	const help = [
@@ -168,7 +169,7 @@ describe('Wi-Fi Commands for Protected Devices [@device,@wifi]', () => {
 			await cli.run(['wifi', 'add', '--file', WIFI_CREDS_FILE]);
 			const { stdout: listStdoutBeforeClearing } = await cli.run(['wifi', 'list']);
 			const { stdout, stderr, exitCode } = await cli.run(['wifi', 'clear']);
-			const { stdout : listStdoutAfterClearing }  = await cli.run(['wifi', 'list']);
+			const { stdout : listStdoutAfterClearing } = await cli.run(['wifi', 'list']);
 			const { stdout: stdoutPAfter } = await cli.run(['device-protection', 'status']);
 
 			expect(stripAnsi(listStdoutBeforeClearing)).to.include(WIFI_SSID);

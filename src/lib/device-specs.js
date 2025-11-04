@@ -1,5 +1,6 @@
 // TODO: REMOVE THIS FILE!
 
+'use strict';
 const { PLATFORMS } = require('./platform');
 const { knownAppsForPlatform } = require('./known-apps');
 

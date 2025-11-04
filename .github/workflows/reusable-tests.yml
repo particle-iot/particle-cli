@@ -1,6 +1,6 @@
 name: Run Tests
 
-on: 
+on:
   workflow_call:
     inputs:
       skipE2E:
@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [22.x]
         os: [ubuntu-latest, windows-latest, macOS-latest]
     steps:
       - uses: actions/checkout@v3
@@ -57,7 +57,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [22.x]
         os: [ubuntu-latest, macOS-latest]
     steps:
       - uses: actions/checkout@v3

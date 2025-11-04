@@ -1,3 +1,4 @@
+'use strict';
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const { getUsbDevices, openUsbDevice, TimeoutError, DeviceProtectionError, forEachUsbDevice, executeWithUsbDevice } = require('./usb-util');
@@ -43,7 +44,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 							}
 						})
 						.then(device => {
-							let info = [device, usbDevice.isInDfuMode];
+							const info = [device, usbDevice.isInDfuMode];
 
 							if (!usbDevice.isInDfuMode){
 								info.push(
@@ -227,7 +228,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 					console.log(status.toLowerCase());
 					return;
 				}
-			} catch (error) {
+			} catch (_err) {
 				// Ignore error and continue polling
 			}
 		}
@@ -238,7 +239,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	// Helper function to convert CIDR notation to netmask to imitate the 'ifconfig' output
 	_cidrToNetmask(cidr) {
-		let mask = [];
+		const mask = [];
 
 		// Calculate number of full '1' octets in the netmask
 		for (let i = 0; i < Math.floor(cidr / 8); i++) {
@@ -283,7 +284,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	async getNetworkIfaceInfo(usbDevice) {
-		let nwIfaces = [];
+		const nwIfaces = [];
 		const ifaceList = await usbDevice.getNetworkInterfaceList();
 		for (const iface of ifaceList) {
 			const ifaceInfo = await usbDevice.getNetworkInterface({ index: iface.index, timeout: 10000 });

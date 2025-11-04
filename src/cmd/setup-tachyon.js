@@ -1,3 +1,4 @@
+'use strict';
 const CLICommandBase = require('./base');
 const spinnerMixin = require('../lib/spinner-mixin');
 const fs = require('fs-extra');
@@ -184,11 +185,10 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 	 * @private
 	 */
 	async _loadConfig({ options, deviceInfo, isLocalVersion }) {
-		let selectedWorkflow;
 		const configFromFile = await this._loadConfigFromFile(options.loadConfig);
 		const optionsFromDevice = {};
 
-		selectedWorkflow = await this._selectWorkflow({
+		const selectedWorkflow = await this._selectWorkflow({
 			isLocalVersion,
 			version: options.version,
 			configFromFile,
@@ -196,7 +196,6 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 		});
 
 		const cleanedOptions = Object.fromEntries(
-			// eslint-disable-next-line no-unused-vars
 			Object.entries(options).filter(([_, v]) => v !== undefined)
 		);
 		if (deviceInfo) {
@@ -300,7 +299,7 @@ module.exports = class SetupTachyonCommands extends CLICommandBase {
 
 	_particleApi() {
 		const auth = settings.access_token;
-		const api = new ParticleApi(settings.apiUrl, { accessToken: auth } );
+		const api = new ParticleApi(settings.apiUrl, { accessToken: auth });
 		const apiCache = createApiCache(api);
 		return { api: apiCache, auth };
 	}

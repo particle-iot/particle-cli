@@ -1,3 +1,4 @@
+'use strict';
 const settings = require('../../settings');
 
 // todo - this is a bad coupling since it calls back up to the enclosing app (via settings)

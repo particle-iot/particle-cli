@@ -1,10 +1,11 @@
+'use strict';
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
 	DEVICE_ID,
 	DEVICE_NAME, DEVICE_PLATFORM_NAME
 } = require('../lib/env');
-const stripAnsi = require('strip-ansi');
+const { default: stripAnsi } = require('strip-ansi');
 const { delay } = require('../lib/mocha-utils');
 
 

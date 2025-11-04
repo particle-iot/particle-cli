@@ -1,3 +1,4 @@
+'use strict';
 const Transform = require('stream').Transform;
 const Buffer = require('safe-buffer').Buffer;
 
@@ -33,7 +34,7 @@ module.exports = class SerialBatchParser extends Transform {
 	}
 
 	pushBatch(){
-		let batch = this.buffer;
+		const batch = this.buffer;
 		this.buffer = Buffer.alloc(0);
 		this.push(batch);
 	}

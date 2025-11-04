@@ -1,3 +1,4 @@
+'use strict';
 const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
 

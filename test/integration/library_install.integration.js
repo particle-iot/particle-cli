@@ -1,3 +1,4 @@
+'use strict';
 const mockfs = require('mock-fs');
 const settings = require('../../settings');
 const { expect } = require('../setup');
@@ -22,7 +23,7 @@ describe('library install', () => {
 	});
 
 	itHasAccessToken('can install a vendored library in an extended application project', function test() {
-		this.timeout(20*1000);
+		this.timeout(20 * 1000);
 		const fs = require('fs');
 		fs.mkdirSync('project');
 		process.chdir('./project');

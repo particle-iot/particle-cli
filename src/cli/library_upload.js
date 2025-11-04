@@ -1,3 +1,4 @@
+'use strict';
 const chalk = require('chalk');
 const log = require('../lib/log');
 const { spin } = require('../app/ui');

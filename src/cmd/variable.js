@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const VError = require('verror');
 const moment = require('moment');

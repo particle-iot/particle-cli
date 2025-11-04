@@ -1,3 +1,4 @@
+'use strict';
 const readline = require('readline');
 const inquirer = require('inquirer');
 const log = require('./log');
@@ -68,7 +69,7 @@ const prompts = {
 		}
 
 		return new Promise((resolve) => {
-			let prompt = prompts.getPrompt(true);
+			const prompt = prompts.getPrompt(true);
 
 			prompt.question(message, () => {
 				prompts.closePrompt();

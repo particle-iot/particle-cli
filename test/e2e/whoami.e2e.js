@@ -1,9 +1,10 @@
+'use strict';
 const { expect } = require('../setup');
 const cli = require('../lib/cli');
 const {
 	USERNAME
 } = require('../lib/env');
-const stripAnsi = require('strip-ansi');
+const { default: stripAnsi } = require('strip-ansi');
 
 
 describe('Whoami Commands', () => {

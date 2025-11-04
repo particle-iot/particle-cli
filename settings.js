@@ -1,3 +1,4 @@
+'use strict';
 const fs = require('fs');
 const path = require('path');
 const extend = require('xtend');
@@ -49,12 +50,12 @@ let settings = {
 };
 
 function envValue(varName, defaultValue) {
-	let value = process.env[varName];
+	const value = process.env[varName];
 	return (typeof value === 'undefined') ? defaultValue : value;
 }
 
 function envValueBoolean(varName, defaultValue) {
-	let value = envValue(varName);
+	const value = envValue(varName);
 	if (value === 'true' || value === 'TRUE' || value === '1') {
 		return true;
 	} else if (value === 'false' || value === 'FALSE' || value === '0') {
@@ -65,15 +66,15 @@ function envValueBoolean(varName, defaultValue) {
 }
 
 settings.findHomePath = () => {
-	let envVars = [
+	const envVars = [
 		'home',
 		'HOME',
 		'HOMEPATH',
 		'USERPROFILE'
 	];
 
-	for (let i=0;i<envVars.length;i++) {
-		let dir = process.env[envVars[i]];
+	for (let i = 0;i < envVars.length;i++) {
+		const dir = process.env[envVars[i]];
 		if (dir && fs.existsSync(dir)) {
 			return dir;
 		}
@@ -82,7 +83,7 @@ settings.findHomePath = () => {
 };
 
 settings.ensureFolder = () => {
-	let particleDir = path.join(settings.findHomePath(), '.particle');
+	const particleDir = path.join(settings.findHomePath(), '.particle');
 	if (!fs.existsSync(particleDir)) {
 		fs.mkdirSync(particleDir);
 	}
@@ -92,7 +93,7 @@ settings.ensureFolder = () => {
 settings.findOverridesFile = (profile) => {
 	profile = profile || settings.profile || 'particle';
 
-	let particleDir = settings.ensureFolder();
+	const particleDir = settings.ensureFolder();
 	return path.join(particleDir, profile + '.config.json');
 };
 
@@ -100,7 +101,7 @@ settings.loadOverrides = (profile) => {
 	profile = profile || settings.profile || 'particle';
 
 	try {
-		let filename = settings.findOverridesFile(profile);
+		const filename = settings.findOverridesFile(profile);
 		if (fs.existsSync(filename)) {
 			settings.overrides = JSON.parse(fs.readFileSync(filename));
 			// need to do an in-situ extend since external clients may have already obtained the settings object
@@ -131,15 +132,15 @@ settings.switchProfile = (profileName) => {
 };
 
 settings.readProfileData = () => {
-	let particleDir = settings.ensureFolder();
-	let proFile = path.join(particleDir, 'profile.json'); //proFile, get it?
+	const particleDir = settings.ensureFolder();
+	const proFile = path.join(particleDir, 'profile.json'); //proFile, get it?
 	if (fs.existsSync(proFile)) {
 		try {
-			let data = JSON.parse(fs.readFileSync(proFile));
+			const data = JSON.parse(fs.readFileSync(proFile));
 			settings.profile = (data) ? data.name : 'particle';
 			settings.profile_json = data;
 		} catch (err) {
-			throw new Error('Error parsing file '+proFile+': '+err);
+			throw new Error('Error parsing file ' + proFile + ': ' + err);
 		}
 	} else {
 		settings.profile = 'particle';
@@ -148,8 +149,8 @@ settings.readProfileData = () => {
 };
 
 settings.saveProfileData = () => {
-	let particleDir = settings.ensureFolder();
-	let proFile = path.join(particleDir, 'profile.json'); //proFile, get it?
+	const particleDir = settings.ensureFolder();
+	const proFile = path.join(particleDir, 'profile.json'); //proFile, get it?
 	fs.writeFileSync(proFile, JSON.stringify(settings.profile_json, null, 2), { mode: '600' });
 };
 
@@ -172,8 +173,8 @@ settings.ssoAuthConfig = () => {
 // when files that utilties requires need settings
 function matchKey(needle, obj, caseInsensitive) {
 	needle = (caseInsensitive) ? needle.toLowerCase() : needle;
-	for (let key in obj) {
-		let keyCopy = (caseInsensitive) ? key.toLowerCase() : key;
+	for (const key in obj) {
+		const keyCopy = (caseInsensitive) ? key.toLowerCase() : key;
 
 		if (keyCopy === needle) {
 			//return the original
@@ -191,7 +192,7 @@ settings.override = (profile, key, value) => {
 
 	if (!settings[key]) {
 		// find any key that matches our key, regardless of case
-		let realKey = matchKey(key, settings, true);
+		const realKey = matchKey(key, settings, true);
 		if (realKey) {
 			//console.log("Using the setting \"" + realKey + "\" instead ");
 			key = realKey;
@@ -208,7 +209,7 @@ settings.override = (profile, key, value) => {
 	settings = extend(settings, settings.overrides);
 
 	try {
-		let filename = settings.findOverridesFile(profile);
+		const filename = settings.findOverridesFile(profile);
 		fs.writeFileSync(filename, JSON.stringify(settings.overrides, null, 2), { mode: '600' });
 	} catch (ex) {
 		console.error('There was an error writing ' + settings.overrides + ': ', ex);

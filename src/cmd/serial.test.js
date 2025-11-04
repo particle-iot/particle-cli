@@ -1,3 +1,4 @@
+'use strict';
 const MockSerial = require('../../test/__mocks__/serial.mock');
 const { expect, sinon } = require('../../test/setup');
 const SerialCommand = require('./serial');

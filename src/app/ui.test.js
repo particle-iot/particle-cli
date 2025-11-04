@@ -1,3 +1,4 @@
+'use strict';
 const { expect, sinon } = require('../../test/setup');
 const { Spinner } = require('cli-spinner');
 const inquirer = require('inquirer');

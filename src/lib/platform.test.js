@@ -1,3 +1,4 @@
+'use strict';
 const { PLATFORMS, PlatformId, platformForId, isKnownPlatformId } = require('./platform');
 const { expect } = require('../../test/setup');
 

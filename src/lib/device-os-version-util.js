@@ -1,3 +1,4 @@
+'use strict';
 const { ensureFolder } = require('../../settings');
 const { platforms } = require('@particle/device-constants');
 const path = require('path');
@@ -14,7 +15,7 @@ const { HalModuleParser } = require('binary-version-reader');
  * @param {Object} ui - allow us to interact in the console
  * @returns {Promise<*[]>} - true if successful
  */
-async function downloadDeviceOsVersionBinaries({ api, platformId, version='latest', ui, verbose=true }){
+async function downloadDeviceOsVersionBinaries({ api, platformId, version = 'latest', ui, verbose = true }){
 	try {
 		// get platform by id from device-constants
 		const platform = Object.values(platforms).filter(p => p.public).find(p => p.id === platformId);
@@ -74,7 +75,7 @@ async function isModuleDownloaded(module, version, platformName) {
 			return info.crc.storedCrc === module.crc.storedCrc && info.crc.actualCrc === module.crc.actualCrc;
 		}
 		return false;
-	} catch (error) {
+	} catch (_err) {
 		return false;
 	}
 }
@@ -100,7 +101,7 @@ function getBinaryPath(version, platformName) {
  * @returns {Promise<string>} - the path to the binary
  */
 async function downloadBinary({ platformName, module, baseUrl, version }) {
-	const binaryPath= getBinaryPath(version, platformName);
+	const binaryPath = getBinaryPath(version, platformName);
 	// fetch the binary
 	const url = `${baseUrl}/${module.filename}`;
 	return downloadFile({

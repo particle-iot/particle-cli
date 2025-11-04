@@ -1,3 +1,4 @@
+'use strict';
 const url = require('url');
 const _ = require('lodash');
 const chalk = require('chalk');
@@ -145,7 +146,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	listDeviceOsVersions(platformId, internalVersion, perPage=100){
+	listDeviceOsVersions(platformId, internalVersion, perPage = 100){
 		return this._wrap(
 			this.api.listDeviceOsVersions({
 				platformId,

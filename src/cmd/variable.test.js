@@ -1,3 +1,4 @@
+'use strict';
 const os = require('os');
 const { expect, sinon } = require('../../test/setup');
 const { withConsoleStubs } = require('../../test/lib/mocha-utils');

@@ -1,3 +1,4 @@
+'use strict';
 const utilities = require('../lib/utilities');
 
 module.exports = ({ commandProcessor, root }) => {

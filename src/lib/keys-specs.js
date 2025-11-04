@@ -1,3 +1,4 @@
+'use strict';
 const keysDctOffsets = {
 	generation1: {
 		tcpServerKey: {

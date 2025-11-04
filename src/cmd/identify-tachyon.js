@@ -1,3 +1,4 @@
+'use strict';
 const CLICommandBase = require('./base');
 const path = require('path');
 const os = require('os');
