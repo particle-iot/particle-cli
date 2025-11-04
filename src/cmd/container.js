@@ -48,9 +48,11 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 		// provide access to the X server to Docker
 		try {
-			await execa('xhost', ['+local:root']);
-			await execa('xhost', ['+local:particle']);
-			await execa('xhost', ['+SI:localuser:root']);
+			if (os.platform() === 'linux') {
+				await execa('xhost', ['+local:root']);
+				await execa('xhost', ['+local:particle']);
+				await execa('xhost', ['+SI:localuser:root']);
+			}
 		} catch {
 			// ignore errors on non-Linux systems
 		}
