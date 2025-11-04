@@ -1,5 +1,11 @@
 # Changelog
 
+# 3.44.0 - Nov 04 2025
+* Upgrade to Node22
+* Add OS selector to setup a tachyon.
+* Add Android and Ubuntu 24.04 to tachyon OS Selector for setup.
+* Update `qdl` version
+
 # 3.43.1 - Oct 07 2025
 * Fix library version for api-js to download tachyon nv data backups
 
