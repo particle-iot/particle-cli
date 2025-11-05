@@ -349,7 +349,7 @@ async function getESIMProfilesStep({ api, ui, deviceInfo, productId, country }, 
 		esim = await api.getESIMProfiles(deviceInfo.deviceId, productId, country);
 	} catch (error) {
 		const message = `Error getting eSIM profiles: ${error.message}${os.EOL}`;
-		ui.write(this.ui.chalk.yellow(message));
+		ui.write(ui.chalk.yellow(message));
 	}
 	return { esim };
 }
@@ -403,7 +403,7 @@ async function createBlobFile(context) {
 }
 
 async function flashOSAndConfigStep({ ui, log, productSlug, device, xmlPath, variant, osFilePath, skipFlashingOs, workflow }, stepIndex) {
-	const message = getFlashMessage({ device, productSlug, workflow });
+	const message = getFlashMessage({ ui, device, productSlug, workflow });
 	return runStepWithTiming(
 		ui,
 		message,
@@ -447,12 +447,12 @@ async function flash({ device, osPath, xmlPath, skipFlashingOs, skipReset, log }
 
 }
 
-function getFlashMessage({ device, productSlug, workflow }){
+function getFlashMessage({ ui, device, productSlug, workflow }){
 	let message = `Heads up: this is a large image and flashing will take about 2 minutes to complete.${os.EOL}`;
 	const slowUsb = device.usbVersion.major <= 2;
 	if (slowUsb) {
 		message = `Heads up: this is a large image and flashing will take about 8 minutes to complete.${os.EOL}` +
-			this.ui.chalk.yellow(`${os.EOL}The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
+			ui.chalk.yellow(`${os.EOL}The device is connected to a slow USB port. Connect a USB Type-C cable directly to a USB 3.0 port to shorten this step to 2 minutes.${os.EOL}`);
 	}
 	const messageTitle = workflow.customFlashMessage ||
 		`Okay—last step! We're now flashing the device with the configuration, including the password, Wi-Fi settings, and operating system.${os.EOL}`;
