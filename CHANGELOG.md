@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.44.1 - Nov 05 2025
+* Fix issue related with setup tachyon when using usbc cable 2.1 or lower
+* Fix serial commands issues on Windows
+* Pkg Update dependency
+
 # 3.44.0 - Nov 04 2025
 * Upgrade to Node22
 * Add OS selector to setup a tachyon.
