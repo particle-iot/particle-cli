@@ -73,7 +73,7 @@ const ubuntu20 = Object.freeze({
 		{
 			name: 'Desktop (GUI)',
 			value: 'desktop',
-			setupCompletedMessage: 'All done! Your Tachyon device is ready to boot' +
+			setupCompletedMessage: 'All done! Your Tachyon device is ready to boot ' +
 				`to the desktop and will automatically connect to Wi-Fi.${os.EOL}${os.EOL}` +
 				`To continue:${os.EOL}` +
 				`  - Disconnect the USB-C cable${os.EOL}` +
