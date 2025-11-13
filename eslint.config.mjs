@@ -7,6 +7,7 @@ export default particle({
 		'no-console': 'off'
 	},
 	globalIgnores: [
-		'./test/__fixtures__/logic_functions/lf*_proj/*.js'
+		'./test/__fixtures__/logic_functions/lf*_proj/*.js',
+		'**/.cache/**'
 	]
 });
