@@ -195,12 +195,13 @@ async function waitForDeviceToRespond(deviceId, { timeout = 10000 } = {}) {
 	 * @returns {Promise<void>}
 	 */
 async function _putDeviceInSafeMode(dev) {
+	const { id: deviceId } = dev;
 	try {
 		await dev.enterSafeMode();
 	} catch (_err) {
 		// ignore errors
 	}
-	return reopenInNormalMode({ id: this.deviceId });
+	return reopenInNormalMode({ id: deviceId });
 }
 
 /**
