@@ -326,7 +326,7 @@ describe('Utilities', () => {
 			})).to.equal('particle');
 
 			expect(util.execName({
-				argv0: 'particle.exe',
+				argv0: 'path/to/particle.exe',
 				pkg: {}
 			})).to.equal('particle');
 		});
