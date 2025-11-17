@@ -230,7 +230,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		}
 	}
 
-	async _buildAndPushContainer(buildDir, serviceTag, { amd64 = false} = {}) {
+	async _buildAndPushContainer(buildDir, serviceTag, { amd64 = false } = {}) {
 		try {
 			const platforms = ['linux/arm64'];
 			if (amd64) {
