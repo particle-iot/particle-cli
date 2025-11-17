@@ -201,11 +201,15 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			}
 
 			if (needsUpdateOrInstall) {
-				// Copy the current executable to docker-credential-particle
-				// We would prefer to do this with a symlink, but there's a bug somewhere in pkg
-				// that causes it to get confused and error with module not found
-				// when the docker instances we invoke call the credhelper.
-				await fs.copyFile(process.execPath, dockerCredHelperPath);
+				if (process.pkg) {
+					// Copy the current executable to docker-credential-particle
+					// We would prefer to do this with a symlink, but there's a bug somewhere in pkg
+					// that causes it to get confused and error with module not found
+					// when the docker instances we invoke call the credhelper.
+					await fs.copyFile(process.execPath, dockerCredHelperPath);
+				} else {
+					await fs.symlink(process.argv[1], dockerCredHelperPath);
+				}
 			}
 
 
