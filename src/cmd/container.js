@@ -75,7 +75,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		}
 	}
 
-	async push({ deviceId, instance, blueprintDir = '.' }) {
+	async push({ deviceId, instance, blueprintDir = '.', amd64 }) {
 		try {
 			const doc = await this._loadFromEnv(blueprintDir);
 			deviceId ||= doc.get('deviceId');
@@ -112,7 +112,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 					if (buildDir) {
 						const registryName = this._getRegistryName();
 						const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
-						await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag);
+						await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag, { amd64 });
 						this._updateDockerCompose(serviceConfig, serviceTag);
 					}
 				}
@@ -230,9 +230,13 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		}
 	}
 
-	async _buildAndPushContainer(buildDir, serviceTag) {
+	async _buildAndPushContainer(buildDir, serviceTag, { amd64 = false} = {}) {
 		try {
-			await execa('docker', ['build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag, '--push'], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
+			const platforms = ['linux/arm64'];
+			if (amd64) {
+				platforms.push('linux/amd64');
+			}
+			await execa('docker', ['build', buildDir, '--platform', platforms.join(','), '--tag', serviceTag, '--push'], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
 			throw new Error(`Failed to build container ${serviceTag}. See the Docker output for details: ${error.message}`);
 		}
