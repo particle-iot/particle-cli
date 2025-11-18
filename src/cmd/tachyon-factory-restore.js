@@ -70,9 +70,8 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		this.ui.write(
 			`${border}${os.EOL}` +
 			`${title}${os.EOL}` +
-			`This process ${this.ui.chalk.bold('will erase')} the operating system, user data, and configuration from your device.${os.EOL}` +
-			`If you do not have a backup of your modem provisioning data, your device ${this.ui.chalk.bold('will not function correctly')} ${os.EOL}` +
-			`until Particle provides a file for your individual device to restore it for you.${os.EOL}` +
+			`This process will restore your device to ${this.ui.chalk.bold('factory defaults')}, erasing the operating system, user data, and configuration.${os.EOL}` +
+			`After this process, your device will be returned to its original factory state.${os.EOL}` +
 			`${os.EOL}` +
 			`For more information please visit: ${RESTORE_DOCS_URL}${os.EOL}` +
 			`${border}${os.EOL}`
