@@ -70,7 +70,7 @@ module.exports = class TachyonFactoryRestore extends CLICommandBase {
 		this.ui.write(
 			`${border}${os.EOL}` +
 			`${title}${os.EOL}` +
-			`This process will ${this.ui.chalk.bold('factory reset')} your device, erasing the operating system, user data, and configuration.${os.EOL}` +
+			`This process will restore your device to ${this.ui.chalk.bold('factory defaults')}, erasing the operating system, user data, and configuration.${os.EOL}` +
 			`After this process, your device will be returned to its original factory state.${os.EOL}` +
 			`${os.EOL}` +
 			`For more information please visit: ${RESTORE_DOCS_URL}${os.EOL}` +
