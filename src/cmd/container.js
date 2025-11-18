@@ -75,7 +75,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		}
 	}
 
-	async push({ deviceId, instance, blueprintDir = '.' }) {
+	async push({ deviceId, instance, blueprintDir = '.', amd64 }) {
 		try {
 			const doc = await this._loadFromEnv(blueprintDir);
 			deviceId ||= doc.get('deviceId');
@@ -112,7 +112,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 					if (buildDir) {
 						const registryName = this._getRegistryName();
 						const serviceTag = `${registryName}/devices/${deviceId}/${service}:${uuid}`;
-						await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag);
+						await this._buildAndPushContainer(path.join(composeDir, buildDir), serviceTag, { amd64 });
 						this._updateDockerCompose(serviceConfig, serviceTag);
 					}
 				}
@@ -201,11 +201,15 @@ module.exports = class ContainerCommands extends CLICommandBase {
 			}
 
 			if (needsUpdateOrInstall) {
-				// Copy the current executable to docker-credential-particle
-				// We would prefer to do this with a symlink, but there's a bug somewhere in pkg
-				// that causes it to get confused and error with module not found
-				// when the docker instances we invoke call the credhelper.
-				await fs.copyFile(process.execPath, dockerCredHelperPath);
+				if (process.pkg) {
+					// Copy the current executable to docker-credential-particle
+					// We would prefer to do this with a symlink, but there's a bug somewhere in pkg
+					// that causes it to get confused and error with module not found
+					// when the docker instances we invoke call the credhelper.
+					await fs.copyFile(process.execPath, dockerCredHelperPath);
+				} else {
+					await fs.symlink(process.argv[1], dockerCredHelperPath);
+				}
 			}
 
 
@@ -230,9 +234,13 @@ module.exports = class ContainerCommands extends CLICommandBase {
 		}
 	}
 
-	async _buildAndPushContainer(buildDir, serviceTag) {
+	async _buildAndPushContainer(buildDir, serviceTag, { amd64 = false } = {}) {
 		try {
-			await execa('docker', ['build', buildDir, '--platform', 'linux/arm64', '--tag', serviceTag, '--push'], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
+			const platforms = ['linux/arm64'];
+			if (amd64) {
+				platforms.push('linux/amd64');
+			}
+			await execa('docker', ['build', buildDir, '--platform', platforms.join(','), '--tag', serviceTag, '--push'], { stdio: 'inherit', env: { ...process.env, PKG_EXECPATH: '' } });
 		} catch (error) {
 			throw new Error(`Failed to build container ${serviceTag}. See the Docker output for details: ${error.message}`);
 		}

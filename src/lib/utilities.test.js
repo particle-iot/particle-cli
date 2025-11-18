@@ -307,8 +307,29 @@ describe('Utilities', () => {
 				expect(err.message).to.match(/^ENOENT: no such file or directory, open '[\w\\:-]*fake-file'$/);
 			}
 		});
-
 	});
 
+	describe('execName', () => {
+		it('returns the script name when executed as a regular script', () => {
+			expect(util.execName({
+				argv: [
+					'/path/to/node',
+					'/path/to/particle-cli/src/index.js'
+				]
+			})).to.equal('index.js');
+		});
+
+		it('returns the binary name when executed as a packaged binary', () => {
+			expect(util.execName({
+				argv0: 'particle',
+				pkg: {}
+			})).to.equal('particle');
+
+			expect(util.execName({
+				argv0: 'path/to/particle.exe',
+				pkg: {}
+			})).to.equal('particle');
+		});
+	});
 });
 

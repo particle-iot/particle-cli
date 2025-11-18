@@ -488,5 +488,15 @@ module.exports = {
 		});
 	},
 
+	/**
+	 * Returns the basename of the script or packaged binary used to start the CLI. Preserves the
+	 * symlink name.
+	 */
+	execName(proc = process) {
+		if (proc.pkg) {
+			return path.basename(proc.argv0, '.exe');
+		} else {
+			return path.basename(proc.argv[1]);
+		}
+	}
 };
-

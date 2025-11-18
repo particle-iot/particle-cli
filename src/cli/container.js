@@ -27,11 +27,16 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'blueprintDir': {
 				description: 'The directory containing the containerized application'
+			},
+			'amd64': {
+				description: 'Build for the AMD64 platform in addition to ARM64',
+				boolean: true,
+				hidden: true // Not supported officially
 			}
 		},
 		handler: (args) => {
 			const ContainerCommand = require('../cmd/container');
-			return new ContainerCommand().push({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device, instance: args.instance });
+			return new ContainerCommand().push({ ...args.params, blueprintDir: args.blueprintDir, deviceId: args.device, instance: args.instance, amd64: args.amd64 });
 		},
 		examples: {
 			'$0 $command my_tachyon': 'Build and push the containerized application in the current directory for the device my_tachyon'
