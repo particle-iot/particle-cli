@@ -437,6 +437,22 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	/**
+	 * Get all env vars for a specific level (sandbox by default)
+	 * @param org - Org ID
+	 * @param productId - Product ID
+	 * @param deviceId - Device ID
+	 */
+	// TODO(hmontero): migrate to particle-api-js
+	listEnvVars({ org, productId, deviceId }) {
+		const uri = getEnvVarsUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
@@ -508,6 +524,18 @@ module.exports = class ParticleApi {
 		}
 	}
 };
+
+function getEnvVarsUri({ org, productId, deviceId }) {
+	let uri;
+	if (org) {
+		uri = `/v1/orgs/${org}/env-vars`;
+	} else if (productId) {
+		uri = `/v1/products/${productId}/env-vars${deviceId ? `/${deviceId}` : ''}`;
+	} else {
+		uri = `/v1/env-vars${deviceId ? `/${deviceId}` : ''}`;
+	}
+	return uri;
+}
 
 module.exports.UnauthorizedError = class UnauthorizedError extends Error {
 	constructor(message){
