@@ -22,7 +22,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	async _displayEnvVars(envVars) {
 		const env = envVars?.env ?? envVars;
 		const noVars =
-			envVars.env ||
+			envVars.env &&
 			(
 				(!env.available || Object.keys(env.available).length === 0) &&
 				(!env.own || Object.keys(env.own).length === 0) &&
