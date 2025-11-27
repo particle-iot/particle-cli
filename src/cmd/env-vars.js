@@ -20,14 +20,27 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async _displayEnvVars(envVars) {
-		const envs = envVars.env;
+		const env = envVars?.env ?? envVars;
+		const noVars =
+			envVars.env ||
+			(
+				(!env.available || Object.keys(env.available).length === 0) &&
+				(!env.own || Object.keys(env.own).length === 0) &&
+				(!env.inherited || Object.keys(env.inherited).length === 0)
+			);
+
+		if (noVars) {
+			this.ui.write('No existing Environment variables found.');
+			return;
+		}
+		const envs = envVars?.env;
 		const mixedEnvs = {
 			...envs.available, // TODO(hmontero): remove it once is removed from api
 			...envs.inherited
 		};
 		const levelDefinedEnvs = envs.own;
 		const inheritedEnvKeys = Object.keys(mixedEnvs);
-		const levelDefinedEnvKeys = Object.keys(envVars.env.own);
+		const levelDefinedEnvKeys = Object.keys(envVars?.env?.own);
 		inheritedEnvKeys.forEach((key) => {
 			if (levelDefinedEnvs[key]) {
 				this._writeEnvBlock(key, levelDefinedEnvs[key], { isOverride: true });

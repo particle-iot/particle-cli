@@ -99,9 +99,14 @@ const sandboxDeviceProductList = {
 
 };
 
+const emptyList = { env : {} };
+
+const emptyListWithKeys = { env: { inherited: {}, own: {} } };
 
 module.exports = {
 	sandboxList,
 	sandboxProductList,
-	sandboxDeviceProductList
+	sandboxDeviceProductList,
+	emptyList,
+	emptyListWithKeys,
 };

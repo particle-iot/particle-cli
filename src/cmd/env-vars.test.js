@@ -1,7 +1,7 @@
 'use strict';
 const { expect, sinon } = require('../../test/setup');
 const nock = require('nock');
-const { sandboxList, sandboxProductList, sandboxDeviceProductList } = require('../../test/__fixtures__/env-vars/list');
+const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env-vars/list');
 const EnvVarsCommands = require('./env-vars');
 
 describe('Env Vars Command', () => {
@@ -95,7 +95,22 @@ describe('Env Vars Command', () => {
 				{ key: 'FOO3_PROD', value: 'prod-bar3-prod', scope: 'Product' },
 				{ key: 'FOO4', value: 'bar', scope: 'Owner' }
 			]);
-
+		});
+		it('show message for empty list', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars', 'GET')
+				.reply(200, emptyList);
+			await envVarsCommands.list({ });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('No existing Environment variables found.');
+		});
+		it('show message for empty list but existing objects', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars', 'GET')
+				.reply(200, emptyListWithKeys);
+			await envVarsCommands.list({ });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('No existing Environment variables found.');
 		});
 	});
 });
