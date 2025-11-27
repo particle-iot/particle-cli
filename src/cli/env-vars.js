@@ -33,5 +33,26 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --device <deviceId>': 'List all environment variables from an specific device',
 		}
 	});
+	commandProcessor.createCommand(envVars, 'set', `Set an environment variable ${os.EOL}${aliasDescription} set[options]`, {
+		params: '<key> <value>',
+		options: {
+			'org': {
+				description: 'Specify the organization'
+			},
+			'product': {
+				description: 'Specify the product id'
+			},
+			'device': {
+				description: 'Specify the device id'
+			},
+		},
+		handler: (args) => {
+			const EnvVarsCommand = require('../cmd/env-vars');
+			return new EnvVarsCommand(args).setEnvVars(args);
+		},
+		examples: {
+			'$0 $command <key> <value>': 'Set env var to user\'s sandbox',
+		}
+	});
 
 };

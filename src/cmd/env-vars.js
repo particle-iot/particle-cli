@@ -20,7 +20,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async _displayEnvVars(envVars) {
-		const env = envVars?.env ?? envVars;
+		const env = envVars?.env ?? envVars; //TODO(hmontero): refine this validation
 		const noVars =
 			envVars.env &&
 			(
@@ -66,6 +66,31 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write(`    Scope: ${from}`);
 		this.ui.write('---------------------------------------------');
 	};
+
+	async setEnvVars({ params: { key, value }, org, product, device }) {
+		const operation = this._buildEnvVarOperation({ key, value, operation: 'set' });
+		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
+			this.api.patchEnvVars({
+				org,
+				productId: product,
+				deviceId: device,
+				operations: [operation]
+			}));
+		this.ui.write(`Key ${key} has been successfully set.`);
+	}
+
+	_buildEnvVarOperation({ key, value, operation }) {
+		const validOperations = ['set', 'unset', 'inherit', 'uninherit'];
+		if (!validOperations.includes(operation)) {
+			throw Error('Invalid operation for patch ' + operation);
+		}
+		return {
+			op: operation,
+			key,
+			value,
+			access: ['Device'] // TODO(hmontero): Remove this once api is fixed
+		};
+	}
 };
 
 function createAPI() {

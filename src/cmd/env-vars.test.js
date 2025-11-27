@@ -67,6 +67,7 @@ describe('Env Vars Command', () => {
 				{ key: 'FOO', value: 'bar', scope: 'Owner' }
 			]);
 		});
+
 		it('list all env vars for a product sandbox user', async () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/products/product-id-123/env-vars', 'GET')
@@ -96,6 +97,7 @@ describe('Env Vars Command', () => {
 				{ key: 'FOO4', value: 'bar', scope: 'Owner' }
 			]);
 		});
+
 		it('show message for empty list', async () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env-vars', 'GET')
@@ -104,6 +106,7 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No existing Environment variables found.');
 		});
+
 		it('show message for empty list but existing objects', async () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env-vars', 'GET')
@@ -111,6 +114,63 @@ describe('Env Vars Command', () => {
 			await envVarsCommands.list({ });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No existing Environment variables found.');
+		});
+	});
+	describe('set env vars', () => {
+		it('set env var for sandbox user', async () => {
+			const params = { key: 'FOO', value: 'bar' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars', 'PATCH')
+				.reply(200, sandboxList);
+			await envVarsCommands.setEnvVars({ params });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+		});
+
+		it('throws an error in case the key, value is invalid', async () => {
+			const apiError = {
+				error_description: 'Validation error: : Must only contain uppercase letters, numbers, and underscores. Must not start with a number. at "ops[0].key"',
+				error:'invalid_request'
+			};
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars', 'PATCH')
+				.reply(400, apiError);
+			let error;
+			try {
+				await envVarsCommands.setEnvVars({ params: { } });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(error.message).to.contains(apiError.error_description);
+		});
+		it('set env var for specific org', async () => {
+			const params = { key: 'FOO', value: 'bar' };
+			nock('https://api.particle.io/v1/orgs/my-org')
+				.intercept('/env-vars', 'PATCH')
+				.reply(200, sandboxList);
+			await envVarsCommands.setEnvVars({ params, org: 'my-org' });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+		});
+		it('set env var for specific product', async () => {
+			const params = { key: 'FOO', value: 'bar' };
+			nock('https://api.particle.io/v1/products/my-product')
+				.intercept('/env-vars', 'PATCH')
+				.reply(200, sandboxList);
+			await envVarsCommands.setEnvVars({ params, product: 'my-product' });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+		});
+		it('set env var for specific device', async () => {
+			const params = { key: 'FOO', value: 'bar' };
+			const deviceId = 'abc123';
+			nock('https://api.particle.io/v1')
+				.intercept(`/env-vars/${deviceId}`, 'PATCH')
+				.reply(200, sandboxList);
+			await envVarsCommands.setEnvVars({ params, device: deviceId });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
 		});
 	});
 });
