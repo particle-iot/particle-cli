@@ -2,6 +2,7 @@
 const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
+const fs = require('node:fs/promises');
 
 module.exports = class EnvVarsCommand extends CLICommandBase {
 	constructor(...args) {
@@ -89,6 +90,32 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 				operations: [operation]
 			}));
 		this.ui.write(`Key ${key} has been successfully unset.`);
+	}
+
+	async patchEnvVars({ params: { filename } }, org, product, device) {
+		const operations = await this._getOperationsFromFile(filename);
+		await this.ui.showBusySpinnerUntilResolved('Patching your environment variables...',
+			this.api.patchEnvVars({
+				org,
+				productId: product,
+				deviceId: device,
+				operations
+			}));
+		this.ui.write(`Environment variables has been patched according the file ${filename}`);
+	}
+
+	async _getOperationsFromFile(filename) {
+		try {
+			const fileInfo = await fs.readFile(filename, 'utf8');
+			const operations = JSON.parse(fileInfo);
+			//TODO (hmontero): remove this once api removes access field
+			operations.ops?.forEach(operation => {
+				operation.access = ['Device'];
+			});
+			return operations.ops;
+		} catch (error) {
+			throw new Error(`Unable to process the file ${filename}: ${ error.message }`);
+		}
 	}
 
 	_buildEnvVarOperation({ key, value, operation }) {

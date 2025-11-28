@@ -1,8 +1,12 @@
 'use strict';
 const { expect, sinon } = require('../../test/setup');
+const { mkdtemp, writeFile } = require('node:fs/promises');
+const { tmpdir } = require('node:os');
+const path = require('node:path');
 const nock = require('nock');
 const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env-vars/list');
 const EnvVarsCommands = require('./env-vars');
+
 
 describe('Env Vars Command', () => {
 	let envVarsCommands;
@@ -232,6 +236,57 @@ describe('Env Vars Command', () => {
 			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+		});
+	});
+
+	describe('patch env vars', () => {
+		it('patch env vars from a file', async () => {
+			let receivedBody;
+			const tempDir = await mkdtemp(path.join(tmpdir(), 'envvars-test-'));
+			const jsonFile = path.join(tempDir, 'file.json');
+			const content = {
+				ops: [
+					{ key: 'FOO', value: 'bar', op: 'set' },
+					{ key: 'FOO', value: 'bar', op: 'unset' },
+					{ key: 'FOO', value: 'bar', op: 'inherit' },
+					{ key: 'FOO', value: 'bar', op: 'unhinerit' },
+				]
+			};
+			const expectedRequest = content.ops.map(env => ({ ...env, access: ['Device'] }));
+			await writeFile(jsonFile, JSON.stringify(content, null, 2));
+
+			const params = { filename: jsonFile };
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars', 'PATCH')
+				.reply((uri, requestBody) => {
+					receivedBody = requestBody;
+					return [200, {}];
+				});
+			await envVarsCommands.patchEnvVars({ params });
+			expect(receivedBody).to.deep.equal({ ops: expectedRequest });
+		});
+		it('throws an error if the file path is not present or does not exist', async () => {
+			const params = { filename: 'my-file.json' };
+			let error;
+			try {
+				await envVarsCommands.patchEnvVars({ params });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.contains('ENOENT: no such file or directory');
+		});
+		it('throws an error if the file content is not a valid JSON', async() => {
+			const tempDir = await mkdtemp(path.join(tmpdir(), 'envvars-test-'));
+			const jsonFile = path.join(tempDir, 'wrong-file.json');
+			await writeFile(jsonFile, 'no a json file');
+			const params = { filename: jsonFile };
+			let error;
+			try {
+				await envVarsCommands.patchEnvVars({ params });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.contains('is not valid JSON');
 		});
 	});
 });

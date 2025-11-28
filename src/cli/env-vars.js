@@ -78,4 +78,26 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(envVars, 'patch', `patch environment variables from a file ${os.EOL}${aliasDescription} patch[options]`, {
+		params: '<filename>',
+		options: {
+			'org': {
+				description: 'Specify the organization'
+			},
+			'product': {
+				description: 'Specify the product id'
+			},
+			'device': {
+				description: 'Specify the device id'
+			},
+		},
+		handler: (args) => {
+			const EnvVarsCommand = require('../cmd/env-vars');
+			return new EnvVarsCommand(args).patchEnvVars(args);
+		},
+		examples: {
+			'$0 $command <filename>': 'Patch environment variables from a file to user\'s sandbox',
+		}
+	});
+
 };

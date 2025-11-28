@@ -58,7 +58,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'cloud', 'compile', 'config', 'container run', 'container push', 'container list', 'container remove',
 		'container configure-docker', 'container', 'device add', 'device remove', 'device rename', 'device doctor', 'device',
 		'device-protection status', 'device-protection disable', 'device-protection enable', 'device-protection',
-		'doctor', 'env-vars list', 'env-vars set', 'env-vars unset', 'env-vars',
+		'doctor', 'env-vars list', 'env-vars set', 'env-vars unset', 'env-vars patch', 'env-vars',
 		'esim provision', 'esim enable', 'esim delete', 'esim list', 'esim', 'flash',
 		'function list', 'function call', 'function', 'get', 'identify',
 		'keys new', 'keys load', 'keys save', 'keys send', 'keys doctor',
