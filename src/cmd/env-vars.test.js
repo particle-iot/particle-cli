@@ -173,4 +173,65 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
 		});
 	});
+
+	describe('unset env vars', () => {
+		it('unset env var for sandbox user', async () => {
+			let receivedBody;
+			const params = { key: 'FOO' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars', 'PATCH')
+				.reply((uri, requestBody) => {
+					receivedBody = requestBody;
+					return [200, {}];
+				});
+			await envVarsCommands.unsetEnvVars({ params });
+			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+		});
+
+		it('unset env var for specific org', async () => {
+			let receivedBody;
+			const params = { key: 'FOO' };
+			nock('https://api.particle.io/v1/orgs/my-org')
+				.intercept('/env-vars', 'PATCH')
+				.reply((uri, requestBody) => {
+					receivedBody = requestBody;
+					return [200, {}];
+				});
+			await envVarsCommands.unsetEnvVars({ params, org: 'my-org' });
+			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+		});
+		it('unset env var for specific product', async () => {
+			let receivedBody;
+			const params = { key: 'FOO' };
+			nock('https://api.particle.io/v1/products/my-product')
+				.intercept('/env-vars', 'PATCH')
+				.reply((uri, requestBody) => {
+					receivedBody = requestBody;
+					return [200, {}];
+				});
+			await envVarsCommands.unsetEnvVars({ params, product: 'my-product' });
+			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+		});
+		it('unset env var for specific device', async () => {
+			let receivedBody;
+			const params = { key: 'FOO', value: 'bar' };
+			const deviceId = 'abc123';
+			nock('https://api.particle.io/v1')
+				.intercept(`/env-vars/${deviceId}`, 'PATCH')
+				.reply((uri, requestBody) => {
+					receivedBody = requestBody;
+					return [200, {}];
+				});
+			await envVarsCommands.unsetEnvVars({ params, device: deviceId });
+			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+		});
+	});
 });

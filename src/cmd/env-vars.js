@@ -79,6 +79,18 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write(`Key ${key} has been successfully set.`);
 	}
 
+	async unsetEnvVars({ params: { key }, org, product, device }) {
+		const operation = this._buildEnvVarOperation({ key, operation: 'unset' });
+		await this.ui.showBusySpinnerUntilResolved('Unsetting environment variable...',
+			this.api.patchEnvVars({
+				org,
+				productId: product,
+				deviceId: device,
+				operations: [operation]
+			}));
+		this.ui.write(`Key ${key} has been successfully unset.`);
+	}
+
 	_buildEnvVarOperation({ key, value, operation }) {
 		const validOperations = ['set', 'unset', 'inherit', 'uninherit'];
 		if (!validOperations.includes(operation)) {
