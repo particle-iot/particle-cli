@@ -118,7 +118,7 @@ describe('Env Vars Command', () => {
 				.reply(200, emptyList);
 			await envVarsCommands.list({ });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('No existing Environment variables found.');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 
 		it('show message for empty list but existing objects', async () => {
@@ -127,7 +127,7 @@ describe('Env Vars Command', () => {
 				.reply(200, emptyListWithKeys);
 			await envVarsCommands.list({ });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('No existing Environment variables found.');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 	});
 	describe('set env vars', () => {
