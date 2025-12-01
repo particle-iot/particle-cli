@@ -4,7 +4,7 @@ const { mkdtemp, writeFile } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const nock = require('nock');
-const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env-vars/list');
+const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys, render } = require('../../test/__fixtures__/env-vars/list');
 const EnvVarsCommands = require('./env-vars');
 
 
@@ -54,6 +54,16 @@ describe('Env Vars Command', () => {
 		}
 
 		return blocks;
+	}
+
+	function parseRenderCalls(calls) {
+		const output = [];
+		const renderValues = calls.filter(line => !line.startsWith('---') && !line.includes('Environment variables:'));
+		for (const line of renderValues) {
+			const [key, value] = line.split(':');
+			output.push({ key: key.trim(), value: value.trim() });
+		}
+		return output;
 	}
 
 	describe('list', () => {
@@ -287,6 +297,71 @@ describe('Env Vars Command', () => {
 				error = _error;
 			}
 			expect(error.message).to.contains('is not valid JSON');
+		});
+	});
+
+	describe('render env vars', () => {
+		it('renders env vars for sandbox user', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars/render', 'GET')
+				.reply(200, render);
+			await envVarsCommands.renderEnvVars({});
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			const parsedOutput = parseRenderCalls(writeCalls);
+			expect(parsedOutput).to.deep.equal([
+				{ key: 'FOO_OTHER', value: 'BAR_other patch' },
+				{ key: 'FOO3', value: 'bar3' },
+				{ key: 'FOO2', value: 'bar' },
+				{ key: 'FOO_PATCH', value: 'BAR_patch' },
+				{ key: 'FOO', value: 'bar' },
+				{ key: 'FOO_CLI', value: 'bar_CLI' }
+			]);
+		});
+		it('renders env vars as json', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars/render', 'GET')
+				.reply(200, render);
+			await envVarsCommands.renderEnvVars({ json: true });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
+		});
+		it('renders env vars for an org', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/orgs/my-org/env-vars/render', 'GET')
+				.reply(200, render);
+			await envVarsCommands.renderEnvVars({ org: 'my-org', json: true });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
+		});
+		it('renders env vars for a product', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/products/my-product/env-vars/render', 'GET')
+				.reply(200, render);
+			await envVarsCommands.renderEnvVars({ product: 'my-product', json: true });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
+		});
+		it('renders env vars for a device', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/products/my-product/env-vars/my-device-id/render', 'GET')
+				.reply(200, render);
+			await envVarsCommands.renderEnvVars({ product: 'my-product', device: 'my-device-id', json: true });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
+		});
+
+		it('shows no variables found in case it returns empty', async () => {
+			nock('https://api.particle.io/v1')
+				.intercept('/env-vars/render', 'GET')
+				.reply(200, {});
+			await envVarsCommands.renderEnvVars({});
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 	});
 });

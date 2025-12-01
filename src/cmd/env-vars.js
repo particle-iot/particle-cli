@@ -31,7 +31,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 			);
 
 		if (noVars) {
-			this.ui.write('No existing Environment variables found.');
+			this.ui.write('No environment variables found.');
 			return;
 		}
 		const envs = envVars?.env;
@@ -117,6 +117,30 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 			throw new Error(`Unable to process the file ${filename}: ${ error.message }`);
 		}
 	}
+
+	async renderEnvVars({ org, product, device, json }){
+		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving Environment Variables...',
+			this.api.renderEnvVars({ org, productId: product, deviceId: device }));
+		if (json) {
+			this.ui.write(JSON.stringify(envVars, null, 2));
+		} else {
+			const keys = Object.keys(envVars?.env ?? {});
+			if (!keys.length) {
+				this.ui.write('No environment variables found.');
+				return;
+			}
+			this._writeRenderBlock(keys, envVars.env);
+		}
+	}
+
+	_writeRenderBlock(keys, env) {
+		this.ui.write(this.ui.chalk.cyan(this.ui.chalk.bold('Environment variables:')));
+		this.ui.write('---------------------------------------------');
+		keys.forEach((key) => {
+			this.ui.write(`    ${key} : ${env[key]}`);
+		});
+		this.ui.write('---------------------------------------------');
+	};
 
 	_buildEnvVarOperation({ key, value, operation }) {
 		const validOperations = ['set', 'unset', 'inherit', 'uninherit'];

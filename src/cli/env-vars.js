@@ -100,4 +100,29 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(envVars, 'render', `render environment variables${os.EOL}${aliasDescription} render[options]`, {
+		options: {
+			'org': {
+				description: 'Specify the organization'
+			},
+			'product': {
+				description: 'Specify the product id'
+			},
+			'device': {
+				description: 'Specify the device id'
+			},
+			'json': {
+				description: 'Show the list in json format',
+				boolean: true
+			}
+		},
+		handler: (args) => {
+			const EnvVarsCommand = require('../cmd/env-vars');
+			return new EnvVarsCommand(args).renderEnvVars(args);
+		},
+		examples: {
+			'$0 $command': 'Patch environment variables from a file to user\'s sandbox',
+		}
+	});
+
 };
