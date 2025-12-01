@@ -2,7 +2,7 @@
 const os = require('os');
 
 module.exports = ({ commandProcessor, root }) => {
-	const envVars = commandProcessor.createCategory(root, 'env-vars', 'Create, update, list and remove environment variables', { alias: 'ev' });
+	const envVars = commandProcessor.createCategory(root, 'env-vars', 'Create, update, list and remove environment variables', { alias: 'ev', hidden: true });
 	const aliasDescription = 'Alias: this command can be also executed as ev';
 
 
