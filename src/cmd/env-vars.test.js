@@ -72,7 +72,7 @@ describe('Env Vars Command', () => {
 				.intercept('/env-vars', 'GET')
 				.reply(200, sandboxList);
 			await envVarsCommands.list({});
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
 			expect(blocks).to.deep.equal([
@@ -87,7 +87,7 @@ describe('Env Vars Command', () => {
 				.intercept('/products/product-id-123/env-vars', 'GET')
 				.reply(200, sandboxProductList);
 			await envVarsCommands.list({ product: 'product-id-123' });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
 			expect(blocks).to.deep.equal([
@@ -101,7 +101,7 @@ describe('Env Vars Command', () => {
 				.intercept('/products/product-id-123/env-vars/abc123', 'GET')
 				.reply(200, sandboxDeviceProductList);
 			await envVarsCommands.list({ product: 'product-id-123', device: 'abc123' });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
 			expect(blocks).to.deep.equal([
@@ -117,7 +117,7 @@ describe('Env Vars Command', () => {
 				.intercept('/env-vars', 'GET')
 				.reply(200, emptyList);
 			await envVarsCommands.list({ });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 
@@ -126,7 +126,7 @@ describe('Env Vars Command', () => {
 				.intercept('/env-vars', 'GET')
 				.reply(200, emptyListWithKeys);
 			await envVarsCommands.list({ });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 	});
@@ -306,7 +306,7 @@ describe('Env Vars Command', () => {
 				.intercept('/env-vars/render', 'GET')
 				.reply(200, render);
 			await envVarsCommands.renderEnvVars({});
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			const parsedOutput = parseRenderCalls(writeCalls);
 			expect(parsedOutput).to.deep.equal([
@@ -323,7 +323,7 @@ describe('Env Vars Command', () => {
 				.intercept('/env-vars/render', 'GET')
 				.reply(200, render);
 			await envVarsCommands.renderEnvVars({ json: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
 		});
@@ -332,7 +332,7 @@ describe('Env Vars Command', () => {
 				.intercept('/orgs/my-org/env-vars/render', 'GET')
 				.reply(200, render);
 			await envVarsCommands.renderEnvVars({ org: 'my-org', json: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
 		});
@@ -341,7 +341,7 @@ describe('Env Vars Command', () => {
 				.intercept('/products/my-product/env-vars/render', 'GET')
 				.reply(200, render);
 			await envVarsCommands.renderEnvVars({ product: 'my-product', json: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
 		});
@@ -350,7 +350,7 @@ describe('Env Vars Command', () => {
 				.intercept('/products/my-product/env-vars/my-device-id/render', 'GET')
 				.reply(200, render);
 			await envVarsCommands.renderEnvVars({ product: 'my-product', device: 'my-device-id', json: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			expect(JSON.parse(writeCalls[0])).to.deep.equal(render);
 		});
@@ -360,7 +360,7 @@ describe('Env Vars Command', () => {
 				.intercept('/env-vars/render', 'GET')
 				.reply(200, {});
 			await envVarsCommands.renderEnvVars({});
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving Environment Variables...');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 	});

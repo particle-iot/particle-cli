@@ -11,7 +11,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async list({ org, product, device, json }){
-		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving Environment Variables...',
+		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
 			this.api.listEnvVars({ org, productId: product, deviceId: device }));
 		if (json) {
 			this.ui.write(JSON.stringify(envVars, null, 2));
@@ -119,7 +119,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async renderEnvVars({ org, product, device, json }){
-		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving Environment Variables...',
+		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
 			this.api.renderEnvVars({ org, productId: product, deviceId: device }));
 		if (json) {
 			this.ui.write(JSON.stringify(envVars, null, 2));
