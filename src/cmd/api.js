@@ -453,6 +453,33 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	/**
+	 * Patch env vars to: set, unset, inherit, un-inherit env-vars
+	 * @param org - Org ID
+	 * @param productId - Product ID
+	 * @param deviceId - Device ID
+	 * @param operations - List of operations to execute for the env-vars
+	 */
+	patchEnvVars({ org, productId, deviceId, operations }) {
+		const uri = getEnvVarsUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'patch',
+			auth: this.accessToken,
+			data: { ops: operations },
+		}));
+	}
+
+	renderEnvVars({ org, productId, deviceId }) {
+		const uri = getEnvVarsUri({ org, productId, deviceId })
+			.concat('/render');
+		return this._wrap(this.api.request({
+			uri,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)

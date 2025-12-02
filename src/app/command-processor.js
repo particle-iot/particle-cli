@@ -346,7 +346,12 @@ class CLICommandCategory extends CLICommandItem {
 				return { argv: command.parse(args, yargs) };
 			};
 
-			yargs.command(command.name, command.description, builder);
+			if (command.options?.hidden) {
+				yargs.command(command.name, false, builder);
+			} else {
+				yargs.command(command.name, command.description, builder);
+			}
+
 
 			if (command.options && command.options.alias){
 				// hidden command

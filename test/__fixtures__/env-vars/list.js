@@ -103,10 +103,23 @@ const emptyList = { env : {} };
 
 const emptyListWithKeys = { env: { inherited: {}, own: {} } };
 
+const render = {
+	env: {
+		FOO_OTHER: 'BAR_other patch',
+		FOO3: 'bar3',
+		FOO2: 'bar',
+		FOO_PATCH: 'BAR_patch',
+		FOO: 'bar',
+		FOO_CLI: 'bar_CLI'
+	},
+	last_updated_at: '2025-11-28T19:04:44.863Z'
+};
+
 module.exports = {
 	sandboxList,
 	sandboxProductList,
 	sandboxDeviceProductList,
 	emptyList,
 	emptyListWithKeys,
+	render
 };

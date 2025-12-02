@@ -2,6 +2,7 @@
 const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
+const fs = require('node:fs/promises');
 
 module.exports = class EnvVarsCommand extends CLICommandBase {
 	constructor(...args) {
@@ -10,7 +11,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async list({ org, product, device, json }){
-		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving Environment Variables...',
+		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
 			this.api.listEnvVars({ org, productId: product, deviceId: device }));
 		if (json) {
 			this.ui.write(JSON.stringify(envVars, null, 2));
@@ -20,7 +21,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async _displayEnvVars(envVars) {
-		const env = envVars?.env ?? envVars;
+		const env = envVars?.env ?? envVars; //TODO(hmontero): refine this validation
 		const noVars =
 			envVars.env &&
 			(
@@ -30,7 +31,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 			);
 
 		if (noVars) {
-			this.ui.write('No existing Environment variables found.');
+			this.ui.write('No environment variables found.');
 			return;
 		}
 		const envs = envVars?.env;
@@ -66,6 +67,93 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write(`    Scope: ${from}`);
 		this.ui.write('---------------------------------------------');
 	};
+
+	async setEnvVars({ params: { key, value }, org, product, device }) {
+		const operation = this._buildEnvVarOperation({ key, value, operation: 'set' });
+		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
+			this.api.patchEnvVars({
+				org,
+				productId: product,
+				deviceId: device,
+				operations: [operation]
+			}));
+		this.ui.write(`Key ${key} has been successfully set.`);
+	}
+
+	async unsetEnvVars({ params: { key }, org, product, device }) {
+		const operation = this._buildEnvVarOperation({ key, operation: 'unset' });
+		await this.ui.showBusySpinnerUntilResolved('Unsetting environment variable...',
+			this.api.patchEnvVars({
+				org,
+				productId: product,
+				deviceId: device,
+				operations: [operation]
+			}));
+		this.ui.write(`Key ${key} has been successfully unset.`);
+	}
+
+	async patchEnvVars({ params: { filename } }, org, product, device) {
+		const operations = await this._getOperationsFromFile(filename);
+		await this.ui.showBusySpinnerUntilResolved('Patching your environment variables...',
+			this.api.patchEnvVars({
+				org,
+				productId: product,
+				deviceId: device,
+				operations
+			}));
+		this.ui.write(`Environment variables has been patched according the file ${filename}`);
+	}
+
+	async _getOperationsFromFile(filename) {
+		try {
+			const fileInfo = await fs.readFile(filename, 'utf8');
+			const operations = JSON.parse(fileInfo);
+			//TODO (hmontero): remove this once api removes access field
+			operations.ops?.forEach(operation => {
+				operation.access = ['Device'];
+			});
+			return operations.ops;
+		} catch (error) {
+			throw new Error(`Unable to process the file ${filename}: ${ error.message }`);
+		}
+	}
+
+	async renderEnvVars({ org, product, device, json }){
+		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
+			this.api.renderEnvVars({ org, productId: product, deviceId: device }));
+		if (json) {
+			this.ui.write(JSON.stringify(envVars, null, 2));
+		} else {
+			const keys = Object.keys(envVars?.env ?? {});
+			if (!keys.length) {
+				this.ui.write('No environment variables found.');
+				return;
+			}
+			this._writeRenderBlock(keys, envVars.env);
+		}
+	}
+
+	_writeRenderBlock(keys, env) {
+		this.ui.write(this.ui.chalk.cyan(this.ui.chalk.bold('Environment variables:')));
+		this.ui.write('---------------------------------------------');
+		keys.forEach((key) => {
+			this.ui.write(`    ${key} : ${env[key]}`);
+		});
+		this.ui.write('---------------------------------------------');
+	};
+
+	_buildEnvVarOperation({ key, value, operation }) {
+		const validOperations = ['set', 'unset', 'inherit', 'uninherit'];
+		if (!validOperations.includes(operation)) {
+			throw Error('Invalid operation for patch ' + operation);
+		}
+		return {
+			op: operation,
+			key,
+			value,
+			access: ['Device'] // TODO(hmontero): Remove this once api is fixed
+		};
+	}
 };
 
 function createAPI() {
