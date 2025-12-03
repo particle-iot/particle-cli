@@ -30,6 +30,7 @@ class BinaryCommand {
 		const parsedAppInfo = await this._parseBinary(extractedFiles.application);
 		await this._showInspectOutput(parsedAppInfo);
 		const assets = extractedFiles.assets;
+		this._printEnvVars(extractedFiles?.vars);
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
@@ -192,6 +193,17 @@ class BinaryCommand {
 			}
 		}
 		return true;
+	}
+
+	async _printEnvVars(vars) {
+		const envVars = vars?.data;
+		const keys = Object.keys(envVars || {});
+		if (keys) {
+			console.log('Environment variables:');
+			for (const key of keys) {
+				console.log(` ${chalk.bold(key)}: ${envVars[key]}`);
+			}
+		}
 	}
 
 	_showCrc(fileInfo){
