@@ -102,13 +102,16 @@ describe('BundleCommands', () => {
 		});
 
 		it('returns a .zip file', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+
 			const args = {
 				params: {
 					appBinary: binPath,
 				},
 				assets: assetsPath,
+				env: env,
 				saveTo: targetBundlePath
 			};
 
@@ -136,13 +139,15 @@ describe('BundleCommands', () => {
 		});
 
 		it('uses the assets in the assets dir when --assets option is specified', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
 			const args = {
 				params: {
 					appBinary: binPath,
 				},
 				assets: assetsPath,
+				env: env,
 				saveTo: targetBundlePath
 			};
 
@@ -162,19 +167,23 @@ describe('BundleCommands', () => {
 				saveTo: targetBundlePath
 			};
 
-			const bundleFilename = await bundleCommands.createBundle(args);
+			await runInDirectory(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'zero_assets'), async () => {
+				const bundleFilename = await bundleCommands.createBundle(args);
 
-			expect(bundleFilename).to.eq(targetBundlePath);
+				expect(bundleFilename).to.eq(targetBundlePath);
+			});
 		});
 
 		it('returns bundle with the default name if saveTo argument is not provided', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid', 'otaAssets');
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
 			const args = {
 				params: {
 					appBinary: binPath,
 				},
 				assets: assetsPath,
+				env: env,
 				saveTo: undefined
 			};
 

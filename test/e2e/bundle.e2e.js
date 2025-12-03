@@ -17,13 +17,15 @@ const helpCommandOutput = [
 	'Options:',
 	'  --saveTo  Specify the filename for the compiled binary  [string]',
 	'  --assets  Optional. Specify the assets directory using --assets /path/to/assets or --assets /path/to/project.properties. If not specified, assets are obtained from the assetOtaDir property in the project.properties file  [string]',
+	'  --env     Environment variables path file  [string]',
 	'',
 	'Examples:',
-	'  particle bundle myApp.bin                                       Creates a bundle of application binary and assets. The assets are obtained from the project.properties in the current directory',
-	'  particle bundle myApp.bin --assets /path/to/assets              Creates a bundle of application binary and assets. The assets are obtained from /path/to/assets directory',
-	'  particle bundle myApp.bin --assets /path/to/project.properties  Creates a bundle of application binary and assets. The assets are picked up from the provided project.properties file',
-	'  particle bundle myApp.bin --assets /path/ --saveTo myApp.zip    Creates a bundle of application binary and assets, and saves it to the myApp.zip file',
-	'  particle bundle myApp.bin --saveTo myApp.zip                    Creates a bundle of application binary and assets as specified in the assetOtaDir if available, and saves the bundle to the myApp.zip file',
+	'  particle bundle myApp.bin                                                  Creates a bundle of application binary and assets. The assets are obtained from the project.properties in the current directory',
+	'  particle bundle myApp.bin --assets /path/to/assets                         Creates a bundle of application binary and assets. The assets are obtained from /path/to/assets directory',
+	'  particle bundle myApp.bin --assets /path/to/project.properties             Creates a bundle of application binary and assets. The assets are picked up from the provided project.properties file',
+	'  particle bundle myApp.bin --assets /path/ --saveTo myApp.zip               Creates a bundle of application binary and assets, and saves it to the myApp.zip file',
+	'  particle bundle myApp.bin --assets /path/ --env /path/ --saveTo myApp.zip  Creates a bundle of application binary and assets with custom env-vars file and saves it to the myApp.zip file',
+	'  particle bundle myApp.bin --saveTo myApp.zip                               Creates a bundle of application binary and assets as specified in the assetOtaDir if available, and saves the bundle to the myApp.zip file',
 	'',
 	'Add assetOtaDir=assets to your project.properties file to bundle assets from the asset directory. The assets path should be relative to the project root.',
 	''
@@ -38,9 +40,10 @@ describe('Bundle Commands', () => {
 	}).timeout(3000);
 
 	it('creates a bundle with name specified by user', async () => {
-		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
-		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--saveTo', 'bundle.zip']);
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars','app.bin');
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath, '--saveTo', 'bundle.zip']);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
 		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
@@ -50,9 +53,10 @@ describe('Bundle Commands', () => {
 	}).timeout(3000);
 
 	it('creates a bundle with default name', async () => {
-		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/app.bin';
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
-		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars','app.bin');
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath]);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
 		expect(stdout).to.include('cat.txt', 'house.txt', 'water.txt');
@@ -64,8 +68,9 @@ describe('Bundle Commands', () => {
 	});
 
 	it('Returns error if app binary is not specified', async () => {
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
-		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--assets', assetsPath]);
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--assets', assetsPath, '--env', envPath]);
 
 		expect(stdout).to.include('Parameter \'appBinary\' is required.');
 		expect(stderr).to.equal(helpCommandOutput);
@@ -73,9 +78,11 @@ describe('Bundle Commands', () => {
 	});
 
 	it('Returns error if app binary does not exist', async () => {
-		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/fake_app.bin';
-		const assetsPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid/otaAssets';
-		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath]);
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'fake_app.bin');
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+
+		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath]);
 
 		expect(stdout).to.include(`The file ${binPath} does not exist`);
 		expect(stderr).to.equal('');
