@@ -104,7 +104,7 @@ describe('BundleCommands', () => {
 		it('returns a .zip file', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
 
 			const args = {
 				params: {
@@ -141,7 +141,7 @@ describe('BundleCommands', () => {
 		it('uses the assets in the assets dir when --assets option is specified', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
 			const args = {
 				params: {
 					appBinary: binPath,
@@ -177,7 +177,7 @@ describe('BundleCommands', () => {
 		it('returns bundle with the default name if saveTo argument is not provided', async () => {
 			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
 			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
 			const args = {
 				params: {
 					appBinary: binPath,
@@ -372,7 +372,7 @@ describe('BundleCommands', () => {
 		});
 		it('returns env-vars module from project properties path', async () => {
 			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars');
-			const expectedJSON = JSON.parse(await fs.readFile(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json'), 'utf-8'));
+			const expectedJSON = JSON.parse(await fs.readFile(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json'), 'utf-8'));
 			await runInDirectory(workingDir, async () => {
 				const vars = await bundleCommands._getEnvVars();
 				expect(vars).to.deep.equal(expectedJSON);

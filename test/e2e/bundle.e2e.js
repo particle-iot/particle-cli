@@ -42,7 +42,7 @@ describe('Bundle Commands', () => {
 	it('creates a bundle with name specified by user', async () => {
 		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars','app.bin');
 		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath, '--saveTo', 'bundle.zip']);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
@@ -55,7 +55,7 @@ describe('Bundle Commands', () => {
 	it('creates a bundle with default name', async () => {
 		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars','app.bin');
 		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath]);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
@@ -69,7 +69,7 @@ describe('Bundle Commands', () => {
 
 	it('Returns error if app binary is not specified', async () => {
 		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--assets', assetsPath, '--env', envPath]);
 
 		expect(stdout).to.include('Parameter \'appBinary\' is required.');
@@ -80,7 +80,7 @@ describe('Bundle Commands', () => {
 	it('Returns error if app binary does not exist', async () => {
 		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'fake_app.bin');
 		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
 
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath]);
 

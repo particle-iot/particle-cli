@@ -56,7 +56,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 		const projectPropertiesPath = path.join(process.cwd(), 'project.properties');
 		const propFile = await utilities.parsePropertyFile(projectPropertiesPath);
 		if (propFile.firmwareEnv && propFile.firmwareEnv !== '') {
-			return path.join(path.dirname(projectPropertiesPath), propFile.firmwareEnv, 'env.json');
+			return path.join(path.dirname(projectPropertiesPath), propFile.firmwareEnv);
 		}
 	}
 
