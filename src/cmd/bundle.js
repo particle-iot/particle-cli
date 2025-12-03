@@ -42,6 +42,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 			return null;
 		}
 		try {
+			this.ui.stdout.write(`Writing ${env} data into the binary...${os.EOL}`);
 			return await fs.readJSON(envPath);
 		} catch (error) {
 			throw new Error(`Env vars in file ${envPath} cannot be processed: ${ error.message }`);
