@@ -1,9 +1,15 @@
 'use strict';
+const fs = require('fs/promises');
 const path = require('path');
 const { expect } = require('../../test/setup');
 const BundleCommands = require('./bundle');
-const { PATH_FIXTURES_THIRDPARTY_OTA_DIR, PATH_TMP_DIR } = require('../../test/lib/env');
-const fs = require('fs-extra');
+const envVars = require('../../test/__fixtures__/env-vars/env.test.json');
+const {
+	PATH_FIXTURES_THIRDPARTY_OTA_DIR,
+	PATH_TMP_DIR,
+	PATH_FIXTURES_ENV_VAR
+} = require('../../test/lib/env');
+
 
 describe('BundleCommands', () => {
 	let bundleCommands ;
@@ -11,7 +17,7 @@ describe('BundleCommands', () => {
 
 	beforeEach(async () => {
 		bundleCommands = new BundleCommands();
-		await fs.ensureDir(PATH_TMP_DIR);
+		await fs.mkdir(PATH_TMP_DIR, { recursive: true });
 		targetBundlePath = path.join(PATH_TMP_DIR, 'app_bundle_test.zip');
 	});
 
@@ -346,6 +352,52 @@ describe('BundleCommands', () => {
 			expect(modulePaths).to.be.an.instanceof(Array);
 			expect(modulePaths).to.have.lengthOf(4);
 			expect(modulePaths.map(module => path.basename(module))).to.eql(expectedRes);
+		});
+	});
+
+	describe('_getEnvVarsModule', () => {
+		it('returns env-vars module from envPath', async () => {
+			const env = path.join(PATH_FIXTURES_ENV_VAR, 'env.test.json');
+			const vars = await bundleCommands._getEnvVars(env);
+			expect(vars).to.deep.equal(envVars);
+		});
+		it('returns env-vars module from project properties path', async () => {
+			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars');
+			const expectedJSON = JSON.parse(await fs.readFile(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'firmwareEnv', 'env.json'), 'utf-8'));
+			await runInDirectory(workingDir, async () => {
+				const vars = await bundleCommands._getEnvVars();
+				expect(vars).to.deep.equal(expectedJSON);
+			});
+
+		});
+		it('returns null in case there are not env-vars path defined', async () => {
+			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
+			await runInDirectory(workingDir, async () => {
+				const vars = await bundleCommands._getEnvVars();
+				expect(vars).to.deep.equal(null);
+			});
+		});
+		it('throws an error in case env-vars path does not exist', async () => {
+			let error;
+			try {
+				await bundleCommands._getEnvVars('/foo/bar/baz.json');
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.contains(`Env vars in file /foo/bar/baz.json cannot be processed:`);
+			expect(error.message).to.contains('no such file or directory');
+		});
+
+		it('throws an error in case of invalid JSON', async () => {
+			const env = path.join(PATH_FIXTURES_ENV_VAR, 'invalid-env-vars');
+			let error;
+			try {
+				await bundleCommands._getEnvVars(env);
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.contains(`Env vars in file ${env} cannot be processed:`);
+			expect(error.message).to.contains('is not valid JSON');
 		});
 	});
 });

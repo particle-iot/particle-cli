@@ -2,11 +2,15 @@
 const fs = require('fs-extra');
 const path = require('path');
 const CLICommandBase = require('./base');
-const { createApplicationAndAssetBundle, unpackApplicationAndAssetBundle, createAssetModule } = require('binary-version-reader');
+const {
+	createApplicationAndAssetBundle,
+	unpackApplicationAndAssetBundle,
+	createAssetModule,
+	HalModuleParser
+} = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const os = require('os');
 const temp = require('temp').track();
-const { HalModuleParser } = require('binary-version-reader');
 
 const MIN_ASSET_SUPPORT_VERSION = 5500;
 
@@ -21,14 +25,39 @@ module.exports = class BundleCommands extends CLICommandBase {
 		super(...args);
 	}
 
-	async createBundle({ saveTo, assets, params: { appBinary } }) {
+	async createBundle({ saveTo, assets, env, params: { appBinary } }) {
 		const { assetsPath, bundleFilename } = await this._validateArguments({ appBinary, saveTo, assets });
 		const assetsList = await this._getAssets({ assetsPath });
 		this._displayAssets({ appBinary, assetsPath, assetsList });
-		await this._generateBundle({ assetsList, appBinary, bundleFilename });
+		const vars = await this._getEnvVars(env);
+		await this._generateBundle({ assetsList, appBinary, bundleFilename, vars });
 		this._displaySuccess({ bundleFilename });
 
 		return bundleFilename;
+	}
+
+	async _getEnvVars(env) {
+		const envPath = await this._resolveEnvPath(env);
+		if (!envPath) {
+			return null;
+		}
+		try {
+			return await fs.readJSON(envPath);
+		} catch (error) {
+			throw new Error(`Env vars in file ${envPath} cannot be processed: ${ error.message }`);
+		}
+	}
+
+	async _resolveEnvPath(env) {
+		if (env) {
+			return env;
+		}
+
+		const projectPropertiesPath = path.join(process.cwd(), 'project.properties');
+		const propFile = await utilities.parsePropertyFile(projectPropertiesPath);
+		if (propFile.firmwareEnv && propFile.firmwareEnv !== '') {
+			return path.join(path.dirname(projectPropertiesPath), propFile.firmwareEnv, 'env.json');
+		}
 	}
 
 	async _validateArguments({ appBinary, saveTo, assets }) {
@@ -128,8 +157,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 		});
 	}
 
-	async _generateBundle({ assetsList, appBinary, bundleFilename }) {
-		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList);
+	async _generateBundle({ assetsList, appBinary, bundleFilename, vars }) {
+		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList, vars);
 		await fs.writeFile(bundleFilename, bundle);
 		return bundle;
 	}
