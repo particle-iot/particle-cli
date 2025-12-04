@@ -14,7 +14,7 @@ const helpCommandOutput = [
 	'',
 	'Examples:',
 	'  particle bundle myApp.bin                                       Creates a bundle of application binary and assets. The assets are obtained from the project.properties in the current directory',
-	'  particle bundle myApp.bin --env /path/                          Creates a bundle of application binary and assets with custom env-vars file',
+	'  particle bundle myApp.bin --env env.json                        Creates a bundle of application binary and assets with custom env-vars file',
 	'  particle bundle myApp.bin --assets /path/to/assets              Creates a bundle of application binary and assets. The assets are obtained from /path/to/assets directory',
 	'  particle bundle myApp.bin --assets /path/to/project.properties  Creates a bundle of application binary and assets. The assets are picked up from the provided project.properties file',
 	'  particle bundle myApp.bin --assets /path/ --saveTo myApp.zip    Creates a bundle of application binary and assets, and saves it to the myApp.zip file',
