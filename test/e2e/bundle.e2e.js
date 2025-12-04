@@ -115,6 +115,19 @@ describe('Bundle Commands', () => {
 		expect(exitCode).to.equal(0);
 	});
 
+	it('uses envs from project.properties if env options does not exist', async () => {
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars_no_assets', 'app.bin');
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars_no_assets');
+
+		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath], { cwd });
+
+		expect(stdout).to.match(/Saved bundle to: bundle_app_\d+\.zip/);
+		expect(stdout).to.match(/Writing\s+(.+?)\s+data into the binary/);
+
+		expect(stderr).to.eq('');
+		expect(exitCode).to.equal(0);
+	});
+
 	it('returns error if project.properties does not have the property for assets', async () => {
 		const binPath = PATH_FIXTURES_THIRDPARTY_OTA_DIR + '/valid-no-prop/app.bin';
 		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid-no-prop');
@@ -125,4 +138,5 @@ describe('Bundle Commands', () => {
 		expect(stderr).to.equal('');
 		expect(exitCode).to.equal(1);
 	});
+
 });

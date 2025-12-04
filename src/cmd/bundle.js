@@ -26,8 +26,11 @@ module.exports = class BundleCommands extends CLICommandBase {
 	}
 
 	async createBundle({ saveTo, assets, env, params: { appBinary } }) {
+		let assetsList = [];
 		const { assetsPath, bundleFilename } = await this._validateArguments({ appBinary, saveTo, assets });
-		const assetsList = await this._getAssets({ assetsPath });
+		if (assetsPath) {
+			assetsList = await this._getAssets({ assetsPath });
+		}
 		this._displayAssets({ appBinary, assetsPath, assetsList });
 		const vars = await this._getEnvVars(env);
 		await this._generateBundle({ assetsList, appBinary, bundleFilename, vars });
@@ -42,7 +45,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 			return null;
 		}
 		try {
-			this.ui.stdout.write(`Writing ${env} data into the binary...${os.EOL}`);
+			this.ui.stdout.write(`Writing ${envPath} data into the binary...${os.EOL}`);
 			return await fs.readJSON(envPath);
 		} catch (error) {
 			throw new Error(`Env vars in file ${envPath} cannot be processed: ${ error.message }`);
@@ -114,6 +117,9 @@ module.exports = class BundleCommands extends CLICommandBase {
 			// get the assets dir relative to the project.properties file
 			return path.join(path.dirname(projectPropertiesPath), propFile.assetOtaDir);
 		} else if (!propFile.assetOtaDir) {
+			if (propFile.firmwareEnv) {
+				return null; // bypass asset ota validation
+			}
 			throw new Error('Add assetOtaDir to your project.properties in order to bundle assets');
 		}
 	}
