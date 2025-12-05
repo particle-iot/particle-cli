@@ -30,8 +30,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 		const { assetsPath, bundleFilename } = await this._validateArguments({ appBinary, saveTo, assets });
 		if (assetsPath) {
 			assetsList = await this._getAssets({ assetsPath });
+			this._displayAssets({ appBinary, assetsPath, assetsList });
 		}
-		this._displayAssets({ appBinary, assetsPath, assetsList });
 		const vars = await this._getEnvVars(env);
 		await this._generateBundle({ assetsList, appBinary, bundleFilename, vars });
 		this._displaySuccess({ bundleFilename });
