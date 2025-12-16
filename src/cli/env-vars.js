@@ -125,4 +125,34 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(envVars, 'rollout', `Rollout environment variables ${os.EOL}${aliasDescription} rollout[options]`, {
+		options: {
+			'org': {
+				description: 'Specify the organization'
+			},
+			'sandbox': {
+				description: 'in case we want sandbox',
+				boolean: true
+			},
+			'product': {
+				description: 'Specify the product id'
+			},
+
+			'device': {
+				description: 'Specify the device id'
+			},
+			'yes': {
+				description: 'Skip confirmation and perform the rollout non-interactively',
+				boolean: true
+			}
+		},
+		handler: (args) => {
+			const EnvVarsCommand = require('../cmd/env-vars');
+			return new EnvVarsCommand(args).rollout(args);
+		},
+		examples: {
+			'$0 $command': 'Rollout environment variables to user\'s sandbox',
+		}
+	});
+
 };

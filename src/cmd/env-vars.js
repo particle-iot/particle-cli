@@ -154,6 +154,10 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 			access: ['Device'] // TODO(hmontero): Remove this once api is fixed
 		};
 	}
+
+	async rollout() {
+		this.ui.write('the rollout command is not implemented yet');
+	}
 };
 
 function createAPI() {

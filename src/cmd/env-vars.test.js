@@ -364,4 +364,11 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 	});
+
+	describe('rollout', () => {
+		it('shows a not implemented message', async () => {
+			await envVarsCommands.rollout({});
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('the rollout command is not implemented yet');
+		});
+	});
 });
