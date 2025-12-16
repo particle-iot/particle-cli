@@ -155,8 +155,45 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		};
 	}
 
-	async rollout() {
-		this.ui.write('the rollout command is not implemented yet');
+	async rollout({ org, product, device, sandbox, yes }) {
+		const scopes = [org, product, device, sandbox].filter(s => s);
+		if (scopes.length === 0) {
+			throw new Error('Please specify a scope for the rollout: --org, --product, --device, or --sandbox');
+		}
+		if (scopes.length > 1) {
+			throw new Error('The --org, --product, --device, and --sandbox flags are mutually exclusive. Please specify only one.');
+		}
+
+		// Fetch and display rollout data before confirmation
+		const rolloutData = await this.ui.showBusySpinnerUntilResolved('Getting rollout information...',this.api.getRollout({ org, product, deviceId: device }));
+		this._displayRollout(rolloutData);
+
+		if (!yes) {
+			const question = {
+				type: 'confirm',
+				name: 'confirm',
+				message: `Are you sure you want to rollout to ${org || product || device || 'sandbox'}?`,
+				default: false
+			};
+			const { confirm } = await this.ui.prompt([question]);
+			if (!confirm) {
+				return;
+			}
+		}
+	}
+
+	_displayRollout(rolloutData) {
+		const { percentage, device_ids, env } = rolloutData;
+		this.ui.write(this.ui.chalk.bold('Rollout Details:'));
+		this.ui.write(`  Rollout Percentage: ${percentage}%`);
+		this.ui.write('  Devices in Rollout:');
+		device_ids.forEach(deviceId => {
+			this.ui.write(`    - ${deviceId}`);
+		});
+		this.ui.write('  Environment Variables:');
+		Object.entries(env).forEach(([key, value]) => {
+			this.ui.write(`    ${key}: ${value}`);
+		});
 	}
 };
 

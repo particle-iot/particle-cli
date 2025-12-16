@@ -366,9 +366,91 @@ describe('Env Vars Command', () => {
 	});
 
 	describe('rollout', () => {
-		it('shows a not implemented message', async () => {
-			await envVarsCommands.rollout({});
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('the rollout command is not implemented yet');
+		const rolloutData = {
+			percentage: 50,
+			device_ids: ['device1', 'device2'],
+			env: {
+				FOO: 'bar',
+				BAZ: 'qux'
+			}
+		};
+
+		beforeEach(() => {
+			sinon.stub(envVarsCommands.api, 'getRollout').resolves(rolloutData);
+		});
+
+		it('should throw an error if no scope is provided', async () => {
+			let error;
+			try {
+				await envVarsCommands.rollout({});
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.equal('Please specify a scope for the rollout: --org, --product, --device, or --sandbox');
+		});
+
+		it('should throw an error if multiple scopes are provided', async () => {
+			let error;
+			try {
+				await envVarsCommands.rollout({ org: 'my-org', product: 'my-product' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error.message).to.equal('The --org, --product, --device, and --sandbox flags are mutually exclusive. Please specify only one.');
+		});
+
+		it('should display rollout information after confirming', async () => {
+			envVarsCommands.ui.prompt.resolves({ confirm: true });
+
+			await envVarsCommands.rollout({ product: 'my-product' });
+
+			expect(envVarsCommands.ui.prompt).to.have.been.calledWith([
+				{
+					type: 'confirm',
+					name: 'confirm',
+					message: 'Are you sure you want to rollout to my-product?',
+					default: false
+				}
+			]);
+			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
+			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			expect(writeCalls).to.include('Rollout Details:');
+		});
+
+		it('should display rollout information but return if confirmation is denied', async () => {
+			envVarsCommands.ui.prompt.resolves({ confirm: false });
+
+			await envVarsCommands.rollout({ product: 'my-product' });
+
+			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
+			expect(envVarsCommands.ui.write.getCalls().map(c => c.args[0])).to.include('Rollout Details:'); // Ensure data was displayed
+			expect(envVarsCommands.ui.prompt).to.have.been.calledOnce;
+			// No further action is taken, but getRollout was called and displayed
+		});
+
+		it('should rollout without confirmation when --yes is passed', async () => {
+			await envVarsCommands.rollout({ product: 'my-product', yes: true });
+
+			expect(envVarsCommands.ui.prompt).to.not.have.been.called;
+			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
+		});
+
+		it('should rollout to a device', async () => {
+			envVarsCommands.ui.prompt.resolves({ confirm: true });
+
+			await envVarsCommands.rollout({ device: 'my-device' });
+
+			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: undefined, deviceId: 'my-device' });
+		});
+
+		it('should rollout to sandbox', async () => {
+			envVarsCommands.ui.prompt.resolves({ confirm: true });
+
+			await envVarsCommands.rollout({ sandbox: true });
+
+			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: undefined, deviceId: undefined });
 		});
 	});
 });

@@ -480,6 +480,23 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	getRollout({ org, productId, deviceId }) {
+		let basePath;
+		if (org) {
+			basePath = `/v1/orgs/${org}/products/${productId}/env-vars`;
+		} else if (productId) {
+			basePath = `/v1/products/${productId}/env-vars`;
+		} else {
+			basePath = `/v1/env-vars`;
+		}
+		const uri = `${basePath}${deviceId ? `/${deviceId}` : ''}/rollout`;
+		return this._wrap(this.api.request({
+			uri,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
