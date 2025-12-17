@@ -1,4 +1,5 @@
 'use strict';
+const os = require('os');
 const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
@@ -164,36 +165,64 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 			throw new Error('The --org, --product, --device, and --sandbox flags are mutually exclusive. Please specify only one.');
 		}
 
-		// Fetch and display rollout data before confirmation
-		const rolloutData = await this.ui.showBusySpinnerUntilResolved('Getting rollout information...',this.api.getRollout({ org, product, deviceId: device }));
-		this._displayRollout(rolloutData);
+		// Determine target for confirmation message
+		const target = org || product || device || 'sandbox';
+
+		// Fetch and display proposed rollout changes
+		const rolloutPreview = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
+			this.api.getRollout({ org, product, deviceId: device }));
+
+		this._displayRolloutChanges(rolloutPreview); // Use the new display function
 
 		if (!yes) {
 			const question = {
 				type: 'confirm',
 				name: 'confirm',
-				message: `Are you sure you want to rollout to ${org || product || device || 'sandbox'}?`,
+				message: `Are you sure you want to apply these changes to ${target}?`,
 				default: false
 			};
 			const { confirm } = await this.ui.prompt([question]);
 			if (!confirm) {
+				this.ui.write('Rollout cancelled.');
 				return;
 			}
 		}
+
+		// Perform the actual rollout
+		await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
+			this.api.performEnvRollout({ org, product, deviceId: device }));
+
+		this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
 	}
 
-	_displayRollout(rolloutData) {
-		const { percentage, device_ids, env } = rolloutData;
-		this.ui.write(this.ui.chalk.bold('Rollout Details:'));
-		this.ui.write(`  Rollout Percentage: ${percentage}%`);
-		this.ui.write('  Devices in Rollout:');
-		device_ids.forEach(deviceId => {
-			this.ui.write(`    - ${deviceId}`);
-		});
-		this.ui.write('  Environment Variables:');
-		Object.entries(env).forEach(([key, value]) => {
-			this.ui.write(`    ${key}: ${value}`);
-		});
+	_displayRolloutChanges(rolloutData) {
+		const { changes, unchanged } = rolloutData;
+
+		this.ui.write(this.ui.chalk.bold('Environment Variable Rollout Details:'));
+		this.ui.write('------------------------------------------------');
+
+		if (changes && changes.length > 0) {
+			this.ui.write(this.ui.chalk.cyan.bold('Changes to be applied:'));
+			changes.forEach(change => {
+				if (change.op === 'Added') {
+					this.ui.write(`  ${this.ui.chalk.green('+')} ${change.key}: ${change.value}`);
+				} else if (change.op === 'Removed') {
+					this.ui.write(`  ${this.ui.chalk.red('-')} ${change.key}`);
+				} else if (change.op === 'Changed') {
+					this.ui.write(`  ${this.ui.chalk.yellow('~')} ${change.key}: ${this.ui.chalk.red(change.before)} -> ${this.ui.chalk.green(change.after)}`);
+				}
+			});
+		} else {
+			this.ui.write(this.ui.chalk.gray('No changes to be applied.'));
+		}
+
+		if (unchanged && Object.keys(unchanged).length > 0) {
+			this.ui.write(this.ui.chalk.bold(`${os.EOL}Unchanged environment variables:`));
+			Object.entries(unchanged).forEach(([key, value]) => {
+				this.ui.write(`  ${key}: ${value}`);
+			});
+		}
+		this.ui.write('------------------------------------------------');
 	}
 };
 

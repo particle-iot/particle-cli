@@ -28,9 +28,14 @@ describe('Env Vars Command', () => {
 				cyan: sinon.stub().callsFake((str) => str),
 				yellow: sinon.stub().callsFake((str) => str),
 				grey: sinon.stub().callsFake((str) => str),
+				gray: sinon.stub().callsFake((str) => str),
 				red: sinon.stub().callsFake((str) => str),
+				green: sinon.stub().callsFake((str) => str),
 			},
 		};
+
+		// To allow chaining like chalk.cyan.bold
+		envVarsCommands.ui.chalk.cyan.bold = sinon.stub().callsFake((str) => str);
 	});
 
 	afterEach(() => {
@@ -366,17 +371,21 @@ describe('Env Vars Command', () => {
 	});
 
 	describe('rollout', () => {
-		const rolloutData = {
-			percentage: 50,
-			device_ids: ['device1', 'device2'],
-			env: {
-				FOO: 'bar',
-				BAZ: 'qux'
+		const rolloutPreviewData = {
+			changes: [
+				{ op: 'Added', key: 'NEW_VAR', value: 'new_value' },
+				{ op: 'Removed', key: 'OLD_VAR' },
+				{ op: 'Changed', key: 'MOD_VAR', before: 'old_value', after: 'new_mod_value' }
+			],
+			unchanged: {
+				'STATIC_VAR': 'static_value'
 			}
 		};
+		const rolloutSuccessResponse = { success: true };
 
 		beforeEach(() => {
-			sinon.stub(envVarsCommands.api, 'getRollout').resolves(rolloutData);
+			sinon.stub(envVarsCommands.api, 'getRollout').resolves(rolloutPreviewData);
+			sinon.stub(envVarsCommands.api, 'performEnvRollout').resolves(rolloutSuccessResponse);
 		});
 
 		it('should throw an error if no scope is provided', async () => {
@@ -401,40 +410,49 @@ describe('Env Vars Command', () => {
 			expect(error.message).to.equal('The --org, --product, --device, and --sandbox flags are mutually exclusive. Please specify only one.');
 		});
 
-		it('should display rollout information after confirming', async () => {
+		it('should display rollout preview and then perform rollout after confirming', async () => {
 			envVarsCommands.ui.prompt.resolves({ confirm: true });
 
 			await envVarsCommands.rollout({ product: 'my-product' });
 
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Getting environment variable rollout preview...');
+			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
+			expect(envVarsCommands.ui.write.getCalls().map(c => c.args[0])).to.include('Environment Variable Rollout Details:');
+			expect(envVarsCommands.ui.write.getCalls().map(c => c.args[0])).to.include(`  ${envVarsCommands.ui.chalk.green('+')} NEW_VAR: new_value`); // Verifying display
 			expect(envVarsCommands.ui.prompt).to.have.been.calledWith([
 				{
 					type: 'confirm',
 					name: 'confirm',
-					message: 'Are you sure you want to rollout to my-product?',
+					message: 'Are you sure you want to apply these changes to my-product?',
 					default: false
 				}
 			]);
-			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
-			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
-			expect(writeCalls).to.include('Rollout Details:');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Applying changes to my-product...');
+			expect(envVarsCommands.api.performEnvRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to my-product.'));
 		});
 
-		it('should display rollout information but return if confirmation is denied', async () => {
+		it('should display rollout preview but return if confirmation is denied', async () => {
 			envVarsCommands.ui.prompt.resolves({ confirm: false });
 
 			await envVarsCommands.rollout({ product: 'my-product' });
 
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Getting environment variable rollout preview...');
 			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
-			expect(envVarsCommands.ui.write.getCalls().map(c => c.args[0])).to.include('Rollout Details:'); // Ensure data was displayed
+			expect(envVarsCommands.ui.write.getCalls().map(c => c.args[0])).to.include('Environment Variable Rollout Details:');
 			expect(envVarsCommands.ui.prompt).to.have.been.calledOnce;
-			// No further action is taken, but getRollout was called and displayed
+			expect(envVarsCommands.api.performEnvRollout).to.not.have.been.called; // No POST request if denied
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('Rollout cancelled.');
 		});
 
 		it('should rollout without confirmation when --yes is passed', async () => {
 			await envVarsCommands.rollout({ product: 'my-product', yes: true });
 
-			expect(envVarsCommands.ui.prompt).to.not.have.been.called;
+			expect(envVarsCommands.ui.prompt).to.not.have.been.called; // No prompt
 			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
+			expect(envVarsCommands.ui.write.getCalls().map(c => c.args[0])).to.include('Environment Variable Rollout Details:');
+			expect(envVarsCommands.api.performEnvRollout).to.have.been.calledWith({ org: undefined, product: 'my-product', deviceId: undefined });
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to my-product.'));
 		});
 
 		it('should rollout to a device', async () => {
@@ -443,6 +461,8 @@ describe('Env Vars Command', () => {
 			await envVarsCommands.rollout({ device: 'my-device' });
 
 			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: undefined, deviceId: 'my-device' });
+			expect(envVarsCommands.api.performEnvRollout).to.have.been.calledWith({ org: undefined, product: undefined, deviceId: 'my-device' });
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to my-device.'));
 		});
 
 		it('should rollout to sandbox', async () => {
@@ -451,6 +471,35 @@ describe('Env Vars Command', () => {
 			await envVarsCommands.rollout({ sandbox: true });
 
 			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: undefined, product: undefined, deviceId: undefined });
+			expect(envVarsCommands.api.performEnvRollout).to.have.been.calledWith({ org: undefined, product: undefined, deviceId: undefined });
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to sandbox.'));
+		});
+
+		it('should handle failed rollout after confirmation', async () => {
+			envVarsCommands.ui.prompt.resolves({ confirm: true });
+			envVarsCommands.api.performEnvRollout.rejects(new Error('API Error: Rollout failed.'));
+
+			let error;
+			try {
+				await envVarsCommands.rollout({ org: 'my-org' });
+			} catch (e) {
+				error = e;
+			}
+
+			expect(envVarsCommands.api.getRollout).to.have.been.calledWith({ org: 'my-org', product: undefined, deviceId: undefined });
+			expect(envVarsCommands.api.performEnvRollout).to.have.been.calledWith({ org: 'my-org', product: undefined, deviceId: undefined });
+			expect(error.message).to.equal('API Error: Rollout failed.');
+		});
+
+		it('should display "No changes to be applied" if getRollout returns empty changes', async () => {
+			const emptyRolloutPreview = { changes: [], unchanged: { 'STATIC_VAR': 'static_value' } };
+			envVarsCommands.api.getRollout.resolves(emptyRolloutPreview);
+			envVarsCommands.ui.prompt.resolves({ confirm: true });
+
+			await envVarsCommands.rollout({ product: 'my-product' });
+
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.gray('No changes to be applied.'));
+			expect(envVarsCommands.api.performEnvRollout).to.have.been.calledOnce;
 		});
 	});
 });
