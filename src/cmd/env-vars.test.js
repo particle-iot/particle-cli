@@ -499,7 +499,7 @@ describe('Env Vars Command', () => {
 			await envVarsCommands.rollout({ product: 'my-product' });
 
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.gray('No changes to be applied.'));
-			expect(envVarsCommands.api.performEnvRollout).to.have.been.calledOnce;
+			expect(envVarsCommands.api.performEnvRollout).to.not.have.been.called;
 		});
 	});
 });

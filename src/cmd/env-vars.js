@@ -166,33 +166,35 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		}
 
 		// Determine target for confirmation message
-		const target = org || product || device || 'sandbox';
+		const target = sandbox ? 'sandbox' : (org || product || device);
 
 		// Fetch and display proposed rollout changes
 		const rolloutPreview = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
 			this.api.getRollout({ org, productId: product, deviceId: device }));
 
-		this._displayRolloutChanges(rolloutPreview); // Use the new display function
+		this._displayRolloutChanges(rolloutPreview);
 
-		if (!yes) {
-			const question = {
-				type: 'confirm',
-				name: 'confirm',
-				message: `Are you sure you want to apply these changes to ${target}?`,
-				default: false
-			};
-			const { confirm } = await this.ui.prompt([question]);
-			if (!confirm) {
-				this.ui.write('Rollout cancelled.');
-				return;
+		if (rolloutPreview.changes.length > 0) {
+			if (!yes) {
+				const question = {
+					type: 'confirm',
+					name: 'confirm',
+					message: `Are you sure you want to apply these changes to ${target}?`,
+					default: false
+				};
+				const { confirm } = await this.ui.prompt([question]);
+				if (!confirm) {
+					this.ui.write('Rollout cancelled.');
+					return;
+				}
 			}
+			// Perform the actual rollout
+			await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
+				this.api.performEnvRollout({ org, productId: product, deviceId: device }));
+
+			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
 		}
 
-		// Perform the actual rollout
-		await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
-			this.api.performEnvRollout({ org, productId: product, deviceId: device }));
-
-		this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
 	}
 
 	_displayRolloutChanges(rolloutData) {
