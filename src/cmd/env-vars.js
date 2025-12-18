@@ -170,7 +170,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 
 		// Fetch and display proposed rollout changes
 		const rolloutPreview = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
-			this.api.getRollout({ org, product, deviceId: device }));
+			this.api.getRollout({ org, productId: product, deviceId: device }));
 
 		this._displayRolloutChanges(rolloutPreview); // Use the new display function
 
@@ -190,7 +190,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 
 		// Perform the actual rollout
 		await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
-			this.api.performEnvRollout({ org, product, deviceId: device }));
+			this.api.performEnvRollout({ org, productId: product, deviceId: device }));
 
 		this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
 	}
