@@ -131,7 +131,7 @@ module.exports = ({ commandProcessor, root }) => {
 				description: 'Specify the organization'
 			},
 			'sandbox': {
-				description: 'in case we want sandbox',
+				description: 'Rollout environment variables to the user\'s sandbox',
 				boolean: true
 			},
 			'product': {
