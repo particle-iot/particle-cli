@@ -151,7 +151,11 @@ module.exports = ({ commandProcessor, root }) => {
 			return new EnvVarsCommand(args).rollout(args);
 		},
 		examples: {
-			'$0 $command': 'Rollout environment variables to user\'s sandbox',
+			'$0 $command --sandbox': 'Rollout environment variables to user\'s sandbox',
+			'$0 $command --sandbox --yes': 'Rollout environment variables to user\'s sandbox without confirmation',
+			'$0 $command --org <org> --yes': 'Rollout environment variables for an organization non-interactively',
+			'$0 $command --product <productId> --yes': 'Rollout environment variables for a product non-interactively',
+			'$0 $command --device <deviceId> --yes': 'Rollout environment variables for a device non-interactively',
 		}
 	});
 
