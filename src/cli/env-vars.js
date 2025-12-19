@@ -125,7 +125,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(envVars, 'rollout', `Rollout environment variables ${os.EOL}${aliasDescription} rollout[options]`, {
+	commandProcessor.createCommand(envVars, 'rollout', `rollout environment variables ${os.EOL}${aliasDescription} rollout[options]`, {
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -137,7 +137,6 @@ module.exports = ({ commandProcessor, root }) => {
 			'product': {
 				description: 'Specify the product id'
 			},
-
 			'device': {
 				description: 'Specify the device id'
 			},
@@ -151,7 +150,7 @@ module.exports = ({ commandProcessor, root }) => {
 			return new EnvVarsCommand(args).rollout(args);
 		},
 		examples: {
-			'$0 $command --sandbox': 'Rollout environment variables to user\'s sandbox',
+			'$0 $command --sandbox': 'Rollout environment variables to the user\'s sandbox',
 			'$0 $command --sandbox --yes': 'Rollout environment variables to user\'s sandbox without confirmation',
 			'$0 $command --org <org> --yes': 'Rollout environment variables for an organization non-interactively',
 			'$0 $command --product <productId> --yes': 'Rollout environment variables for a product non-interactively',
