@@ -174,7 +174,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 
 		this._displayRolloutChanges(rolloutPreview);
 
-		if (rolloutPreview.changes.length > 0) {
+		if (rolloutPreview?.changes?.length > 0) {
 			if (!yes) {
 				const question = {
 					type: 'confirm',
@@ -194,7 +194,6 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 
 			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
 		}
-
 	}
 
 	_displayRolloutChanges(rolloutData) {
