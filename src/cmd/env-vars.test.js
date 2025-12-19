@@ -388,7 +388,7 @@ describe('Env Vars Command', () => {
 			sinon.stub(envVarsCommands.api, 'performEnvRollout').resolves(rolloutSuccessResponse);
 		});
 
-		it('should throw an error if no scope is provided', async () => {
+		it('throws an error if no scope is provided', async () => {
 			let error;
 			try {
 				await envVarsCommands.rollout({});
@@ -399,7 +399,7 @@ describe('Env Vars Command', () => {
 			expect(error.message).to.equal('Please specify a scope for the rollout: --org, --product, --device, or --sandbox');
 		});
 
-		it('should throw an error if multiple scopes are provided', async () => {
+		it('throws an error if multiple scopes are provided', async () => {
 			let error;
 			try {
 				await envVarsCommands.rollout({ org: 'my-org', product: 'my-product' });
@@ -410,7 +410,7 @@ describe('Env Vars Command', () => {
 			expect(error.message).to.equal('The --org, --product, --device, and --sandbox flags are mutually exclusive. Please specify only one.');
 		});
 
-		it('should display rollout preview and then perform rollout after confirming', async () => {
+		it('displays rollout preview and then perform rollout after confirming', async () => {
 			envVarsCommands.ui.prompt.resolves({ confirm: true });
 
 			await envVarsCommands.rollout({ product: 'my-product' });
@@ -432,7 +432,7 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to my-product.'));
 		});
 
-		it('should display rollout preview but return if confirmation is denied', async () => {
+		it('displays rollout preview but return if confirmation is denied', async () => {
 			envVarsCommands.ui.prompt.resolves({ confirm: false });
 
 			await envVarsCommands.rollout({ product: 'my-product' });
@@ -445,7 +445,7 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('Rollout cancelled.');
 		});
 
-		it('should rollout without confirmation when --yes is passed', async () => {
+		it('rollouts without confirmation when --yes is passed', async () => {
 			await envVarsCommands.rollout({ product: 'my-product', yes: true });
 
 			expect(envVarsCommands.ui.prompt).to.not.have.been.called; // No prompt
@@ -455,7 +455,7 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to my-product.'));
 		});
 
-		it('should rollout to a device', async () => {
+		it('rollouts to a device', async () => {
 			envVarsCommands.ui.prompt.resolves({ confirm: true });
 
 			await envVarsCommands.rollout({ device: 'my-device' });
@@ -465,7 +465,7 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to my-device.'));
 		});
 
-		it('should rollout to sandbox', async () => {
+		it('rollouts to sandbox', async () => {
 			envVarsCommands.ui.prompt.resolves({ confirm: true });
 
 			await envVarsCommands.rollout({ sandbox: true });
@@ -475,7 +475,7 @@ describe('Env Vars Command', () => {
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(envVarsCommands.ui.chalk.green('Successfully applied rollout to sandbox.'));
 		});
 
-		it('should handle failed rollout after confirmation', async () => {
+		it('handles failed rollout after confirmation', async () => {
 			envVarsCommands.ui.prompt.resolves({ confirm: true });
 			envVarsCommands.api.performEnvRollout.rejects(new Error('API Error: Rollout failed.'));
 
@@ -491,7 +491,7 @@ describe('Env Vars Command', () => {
 			expect(error.message).to.equal('API Error: Rollout failed.');
 		});
 
-		it('should display "No changes to be applied" if getRollout returns empty changes', async () => {
+		it('displays "No changes to be applied" if getRollout returns empty changes', async () => {
 			const emptyRolloutPreview = { changes: [], unchanged: { 'STATIC_VAR': 'static_value' } };
 			envVarsCommands.api.getRollout.resolves(emptyRolloutPreview);
 			envVarsCommands.ui.prompt.resolves({ confirm: true });
