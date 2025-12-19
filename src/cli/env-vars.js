@@ -143,6 +143,10 @@ module.exports = ({ commandProcessor, root }) => {
 			'yes': {
 				description: 'Skip confirmation and perform the rollout non-interactively',
 				boolean: true
+			},
+			'when': {
+				description: 'Specify when to rollout the environment variables',
+				choices: ['immediate', 'connect']
 			}
 		},
 		handler: (args) => {

@@ -156,7 +156,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		};
 	}
 
-	async rollout({ org, product, device, sandbox, yes }) {
+	async rollout({ org, product, device, sandbox, yes, when }) {
 		const scopes = [org, product, device, sandbox].filter(s => s);
 		if (scopes.length === 0) {
 			throw new Error('Please specify a scope for the rollout: --org, --product, --device, or --sandbox');
@@ -176,21 +176,34 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 
 		if (rolloutPreview?.changes?.length > 0) {
 			if (!yes) {
-				const question = {
+				const confirmQuestion = {
 					type: 'confirm',
 					name: 'confirm',
 					message: `Are you sure you want to apply these changes to ${target}?`,
 					default: false
 				};
-				const { confirm } = await this.ui.prompt([question]);
+				const { confirm } = await this.ui.prompt([confirmQuestion]);
 				if (!confirm) {
 					this.ui.write('Rollout cancelled.');
 					return;
 				}
 			}
+			let rolloutWhen = when || 'connect';
+			if (!yes) {
+				const whenQuestion = {
+					type: 'list',
+					name: 'when',
+					message: 'When should the rollout be applied?',
+					choices: ['immediate', 'connect'],
+					default: 'connect',
+					dataTesting: 'when-prompt'
+				};
+				const { when: whenAnswer } = await this.ui.prompt([whenQuestion]);
+				rolloutWhen = whenAnswer;
+			}
 			// Perform the actual rollout
 			await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
-				this.api.performEnvRollout({ org, productId: product, deviceId: device }));
+				this.api.performEnvRollout({ org, productId: product, deviceId: device, when: rolloutWhen }));
 
 			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
 		}
