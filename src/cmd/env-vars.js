@@ -169,9 +169,9 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		const target = sandbox ? 'sandbox' : (org || product || device);
 
 		// Fetch and display proposed rollout changes
-		const rolloutPreview = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
+		const rolloutPreviewFromSnapShot = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
 			this.api.getRollout({ org, productId: product, deviceId: device }));
-
+		const rolloutPreview = rolloutPreviewFromSnapShot.from_snapshot;
 		this._displayRolloutChanges(rolloutPreview);
 
 		if (rolloutPreview?.changes?.length > 0) {
