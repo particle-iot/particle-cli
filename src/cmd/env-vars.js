@@ -70,7 +70,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	};
 
 	async setEnvVars({ params: { key, value }, org, product, device }) {
-		const operation = this._buildEnvVarOperation({ key, value, operation: 'set' });
+		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
 			this.api.patchEnvVars({
 				org,
@@ -82,7 +82,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async unsetEnvVars({ params: { key }, org, product, device }) {
-		const operation = this._buildEnvVarOperation({ key, operation: 'unset' });
+		const operation = this._buildEnvVarOperation({ key, operation: 'Unset' });
 		await this.ui.showBusySpinnerUntilResolved('Unsetting environment variable...',
 			this.api.patchEnvVars({
 				org,
@@ -144,15 +144,14 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	};
 
 	_buildEnvVarOperation({ key, value, operation }) {
-		const validOperations = ['set', 'unset', 'inherit', 'uninherit'];
+		const validOperations = ['Set', 'Unset', 'Inherit', 'Uninherit'];
 		if (!validOperations.includes(operation)) {
 			throw Error('Invalid operation for patch ' + operation);
 		}
 		return {
 			op: operation,
 			key,
-			value,
-			access: ['Device'] // TODO(hmontero): Remove this once api is fixed
+			value
 		};
 	}
 

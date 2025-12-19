@@ -204,7 +204,7 @@ describe('Env Vars Command', () => {
 					return [200, {}];
 				});
 			await envVarsCommands.unsetEnvVars({ params });
-			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
 		});
@@ -219,7 +219,7 @@ describe('Env Vars Command', () => {
 					return [200, {}];
 				});
 			await envVarsCommands.unsetEnvVars({ params, org: 'my-org' });
-			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
 		});
@@ -233,7 +233,7 @@ describe('Env Vars Command', () => {
 					return [200, {}];
 				});
 			await envVarsCommands.unsetEnvVars({ params, product: 'my-product' });
-			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
 		});
@@ -248,7 +248,7 @@ describe('Env Vars Command', () => {
 					return [200, {}];
 				});
 			await envVarsCommands.unsetEnvVars({ params, device: deviceId });
-			expect(receivedBody).to.deep.equal({ ops: [{ access: ['Device'], key: 'FOO', op: 'unset' }] });
+			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
 		});
