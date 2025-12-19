@@ -116,7 +116,7 @@ describe('ParticleApi', () => {
 				uri: expectedUri,
 				method: 'post',
 				auth: 'test-token',
-				data: { when: 'immediate' }
+				data: { when: 'connect' }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
@@ -134,7 +134,7 @@ describe('ParticleApi', () => {
 				uri: expectedUri,
 				method: 'post',
 				auth: 'test-token',
-				data: { when: 'immediate' }
+				data: { when: 'connect' }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
@@ -151,7 +151,7 @@ describe('ParticleApi', () => {
 				uri: expectedUri,
 				method: 'post',
 				auth: 'test-token',
-				data: { when: 'immediate' }
+				data: { when: 'connect' }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
@@ -163,7 +163,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.performEnvRollout({ deviceId });
+			const result = await particleApi.performEnvRollout({ deviceId, when: 'immediate' });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
