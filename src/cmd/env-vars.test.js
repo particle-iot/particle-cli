@@ -372,14 +372,17 @@ describe('Env Vars Command', () => {
 
 	describe('rollout', () => {
 		const rolloutPreviewData = {
-			changes: [
-				{ op: 'Added', key: 'NEW_VAR', value: 'new_value' },
-				{ op: 'Removed', key: 'OLD_VAR' },
-				{ op: 'Changed', key: 'MOD_VAR', before: 'old_value', after: 'new_mod_value' }
-			],
-			unchanged: {
-				'STATIC_VAR': 'static_value'
+			from_snapshot: {
+				changes: [
+					{ op: 'Added', key: 'NEW_VAR', value: 'new_value' },
+					{ op: 'Removed', key: 'OLD_VAR' },
+					{ op: 'Changed', key: 'MOD_VAR', before: 'old_value', after: 'new_mod_value' }
+				],
+				unchanged: {
+					'STATIC_VAR': 'static_value'
+				}
 			}
+
 		};
 		const rolloutSuccessResponse = { success: true };
 
@@ -502,7 +505,7 @@ describe('Env Vars Command', () => {
 		});
 
 		it('displays "No changes to be applied" if getRollout returns empty changes', async () => {
-			const emptyRolloutPreview = { changes: [], unchanged: { 'STATIC_VAR': 'static_value' } };
+			const emptyRolloutPreview = { from_snapshot: { changes: [], unchanged: { 'STATIC_VAR': 'static_value' } } };
 			envVarsCommands.api.getRollout.resolves(emptyRolloutPreview);
 			envVarsCommands.ui.prompt.resolves({ confirm: true });
 
