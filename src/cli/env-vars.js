@@ -125,4 +125,41 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(envVars, 'rollout', `rollout environment variables ${os.EOL}${aliasDescription} rollout[options]`, {
+		options: {
+			'org': {
+				description: 'Specify the organization'
+			},
+			'sandbox': {
+				description: 'Rollout environment variables to the user\'s sandbox',
+				boolean: true
+			},
+			'product': {
+				description: 'Specify the product id'
+			},
+			'device': {
+				description: 'Specify the device id'
+			},
+			'yes': {
+				description: 'Skip confirmation and perform the rollout non-interactively',
+				boolean: true
+			},
+			'when': {
+				description: 'Specify when to rollout the environment variables',
+				choices: ['immediate', 'connect']
+			}
+		},
+		handler: (args) => {
+			const EnvVarsCommand = require('../cmd/env-vars');
+			return new EnvVarsCommand(args).rollout(args);
+		},
+		examples: {
+			'$0 $command --sandbox': 'Rollout environment variables to the user\'s sandbox',
+			'$0 $command --sandbox --yes': 'Rollout environment variables to user\'s sandbox without confirmation',
+			'$0 $command --org <org> --yes': 'Rollout environment variables for an organization non-interactively',
+			'$0 $command --product <productId> --yes': 'Rollout environment variables for a product non-interactively',
+			'$0 $command --device <deviceId> --yes': 'Rollout environment variables for a device non-interactively',
+		}
+	});
+
 };

@@ -480,6 +480,25 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	performEnvRollout({ org, productId, deviceId, when = 'connect' }) {
+		const uri = getRolloutUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'post',
+			auth: this.accessToken,
+			data: { when }
+		}));
+	}
+
+	getRollout({ org, productId, deviceId }) {
+		const uri = getRolloutUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
@@ -560,6 +579,20 @@ function getEnvVarsUri({ org, productId, deviceId }) {
 		uri = `/v1/products/${productId}/env-vars${deviceId ? `/${deviceId}` : ''}`;
 	} else {
 		uri = `/v1/env-vars${deviceId ? `/${deviceId}` : ''}`;
+	}
+	return uri;
+}
+
+function getRolloutUri({ org, productId, deviceId }) {
+	let uri;
+	if (org) {
+		uri = `/v1/orgs/${org}/env-vars/rollout`;
+	} else if (productId) {
+		uri = `/v1/products/${productId}/env-vars/rollout`;
+	} else if (deviceId) {
+		uri = `/v1/devices/${deviceId}/env-vars/rollout`;
+	} else {
+		uri = '/v1/env-vars/rollout';
 	}
 	return uri;
 }

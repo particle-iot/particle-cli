@@ -1,4 +1,5 @@
 'use strict';
+const os = require('os');
 const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
@@ -69,7 +70,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	};
 
 	async setEnvVars({ params: { key, value }, org, product, device }) {
-		const operation = this._buildEnvVarOperation({ key, value, operation: 'set' });
+		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
 			this.api.patchEnvVars({
 				org,
@@ -81,7 +82,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	async unsetEnvVars({ params: { key }, org, product, device }) {
-		const operation = this._buildEnvVarOperation({ key, operation: 'unset' });
+		const operation = this._buildEnvVarOperation({ key, operation: 'Unset' });
 		await this.ui.showBusySpinnerUntilResolved('Unsetting environment variable...',
 			this.api.patchEnvVars({
 				org,
@@ -143,16 +144,101 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	};
 
 	_buildEnvVarOperation({ key, value, operation }) {
-		const validOperations = ['set', 'unset', 'inherit', 'uninherit'];
+		const validOperations = ['Set', 'Unset'];
 		if (!validOperations.includes(operation)) {
 			throw Error('Invalid operation for patch ' + operation);
 		}
 		return {
 			op: operation,
 			key,
-			value,
-			access: ['Device'] // TODO(hmontero): Remove this once api is fixed
+			value
 		};
+	}
+
+	async rollout({ org, product, device, sandbox, yes, when }) {
+		const scopes = [org, product, device, sandbox].filter(s => s);
+		if (scopes.length === 0) {
+			throw new Error('Please specify a scope for the rollout: --org, --product, --device, or --sandbox');
+		}
+		if (scopes.length > 1) {
+			throw new Error('The --org, --product, --device, and --sandbox flags are mutually exclusive. Please specify only one.');
+		}
+
+		// Determine target for confirmation message
+		const target = sandbox ? 'sandbox' : (org || product || device);
+
+		// Fetch and display proposed rollout changes
+		const rolloutPreviewFromSnapShot = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
+			this.api.getRollout({ org, productId: product, deviceId: device }));
+		const rolloutPreview = rolloutPreviewFromSnapShot.from_snapshot;
+		this._displayRolloutChanges(rolloutPreview);
+
+		if (rolloutPreview?.changes?.length > 0) {
+			if (!yes) {
+				const confirmQuestion = {
+					type: 'confirm',
+					name: 'confirm',
+					message: `Are you sure you want to apply these changes to ${target}?`,
+					default: false
+				};
+				const { confirm } = await this.ui.prompt([confirmQuestion]);
+				if (!confirm) {
+					this.ui.write('Rollout cancelled.');
+					return;
+				}
+			}
+			let rolloutWhen = when || 'connect';
+			if (!yes) {
+				const whenQuestion = {
+					type: 'list',
+					name: 'when',
+					message: 'When should the rollout be applied to each device?',
+					choices: [
+						{ name: 'Immediately', value: 'immediate' },
+						{ name: 'On next connection', value: 'connect' }
+					],
+					default: 'connect',
+					dataTesting: 'when-prompt'
+				};
+				const { when: whenAnswer } = await this.ui.prompt([whenQuestion]);
+				rolloutWhen = whenAnswer;
+			}
+			// Perform the actual rollout
+			await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
+				this.api.performEnvRollout({ org, productId: product, deviceId: device, when: rolloutWhen }));
+
+			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
+		}
+	}
+
+	_displayRolloutChanges(rolloutData) {
+		const { changes, unchanged } = rolloutData;
+
+		this.ui.write(this.ui.chalk.bold('Environment Variable Rollout Details:'));
+		this.ui.write('------------------------------------------------');
+
+		if (changes && changes.length > 0) {
+			this.ui.write(this.ui.chalk.cyan.bold('Changes to be applied:'));
+			changes.forEach(change => {
+				if (change.op === 'Added') {
+					this.ui.write(`  ${this.ui.chalk.green('+')} ${change.key}: ${change.after}`);
+				} else if (change.op === 'Removed') {
+					this.ui.write(`  ${this.ui.chalk.red('-')} ${change.key}`);
+				} else if (change.op === 'Changed') {
+					this.ui.write(`  ${this.ui.chalk.yellow('~')} ${change.key}: ${this.ui.chalk.red(change.before)} -> ${this.ui.chalk.green(change.after)}`);
+				}
+			});
+		} else {
+			this.ui.write(this.ui.chalk.gray('No changes to be applied.'));
+		}
+
+		if (unchanged && Object.keys(unchanged).length > 0) {
+			this.ui.write(this.ui.chalk.bold(`${os.EOL}Unchanged environment variables:`));
+			Object.entries(unchanged).forEach(([key, value]) => {
+				this.ui.write(`  ${key}: ${value}`);
+			});
+		}
+		this.ui.write('------------------------------------------------');
 	}
 };
 
