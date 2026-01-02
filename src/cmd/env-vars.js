@@ -192,8 +192,11 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 				const whenQuestion = {
 					type: 'list',
 					name: 'when',
-					message: 'When should the rollout be applied?',
-					choices: ['immediate', 'connect'],
+					message: 'When should the rollout be applied to each device?',
+					choices: [
+						{ name: 'Immediately', value: 'immediate' },
+						{ name: 'On next connection', value: 'connect' }
+					],
 					default: 'connect',
 					dataTesting: 'when-prompt'
 				};
