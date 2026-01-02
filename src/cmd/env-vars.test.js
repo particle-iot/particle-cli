@@ -374,7 +374,7 @@ describe('Env Vars Command', () => {
 		const rolloutPreviewData = {
 			from_snapshot: {
 				changes: [
-					{ op: 'Added', key: 'NEW_VAR', value: 'new_value' },
+					{ op: 'Added', key: 'NEW_VAR', after: 'new_value' },
 					{ op: 'Removed', key: 'OLD_VAR' },
 					{ op: 'Changed', key: 'MOD_VAR', before: 'old_value', after: 'new_mod_value' }
 				],

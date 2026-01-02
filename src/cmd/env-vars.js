@@ -144,7 +144,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	};
 
 	_buildEnvVarOperation({ key, value, operation }) {
-		const validOperations = ['Set', 'Unset', 'Inherit', 'Uninherit'];
+		const validOperations = ['Set', 'Unset'];
 		if (!validOperations.includes(operation)) {
 			throw Error('Invalid operation for patch ' + operation);
 		}
@@ -218,7 +218,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 			this.ui.write(this.ui.chalk.cyan.bold('Changes to be applied:'));
 			changes.forEach(change => {
 				if (change.op === 'Added') {
-					this.ui.write(`  ${this.ui.chalk.green('+')} ${change.key}: ${change.value}`);
+					this.ui.write(`  ${this.ui.chalk.green('+')} ${change.key}: ${change.after}`);
 				} else if (change.op === 'Removed') {
 					this.ui.write(`  ${this.ui.chalk.red('-')} ${change.key}`);
 				} else if (change.op === 'Changed') {
