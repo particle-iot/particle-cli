@@ -6,6 +6,7 @@ const {
 	createApplicationAndAssetBundle,
 	unpackApplicationAndAssetBundle,
 	createAssetModule,
+	createEnvVarsAssetModule,
 	HalModuleParser
 } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
@@ -184,7 +185,12 @@ module.exports = class BundleCommands extends CLICommandBase {
 		application.path = path.join(modulesDir, application.name);
 		await fs.writeFile(application.path, application.data);
 		for (const asset of assets) {
-			const assetModule = await createAssetModule(asset.data, asset.name);
+			let assetModule;
+			if (asset.name === 'env-vars') {
+				assetModule = await createEnvVarsAssetModule(asset.data);
+			} else {
+				assetModule = await createAssetModule(asset.data, asset.name);
+			}
 			asset.path = path.join(modulesDir, asset.name);
 			await fs.writeFile(asset.path, assetModule);
 		}
