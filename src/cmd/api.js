@@ -437,6 +437,68 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	/**
+	 * Get all env vars for a specific level (sandbox by default)
+	 * @param org - Org ID
+	 * @param productId - Product ID
+	 * @param deviceId - Device ID
+	 */
+	// TODO(hmontero): migrate to particle-api-js
+	listEnvVars({ org, productId, deviceId }) {
+		const uri = getEnvVarsUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
+	/**
+	 * Patch env vars to: set, unset, inherit, un-inherit env-vars
+	 * @param org - Org ID
+	 * @param productId - Product ID
+	 * @param deviceId - Device ID
+	 * @param operations - List of operations to execute for the env-vars
+	 */
+	patchEnvVars({ org, productId, deviceId, operations }) {
+		const uri = getEnvVarsUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'patch',
+			auth: this.accessToken,
+			data: { ops: operations },
+		}));
+	}
+
+	renderEnvVars({ org, productId, deviceId }) {
+		const uri = getEnvVarsUri({ org, productId, deviceId })
+			.concat('/render');
+		return this._wrap(this.api.request({
+			uri,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
+	performEnvRollout({ org, productId, deviceId, when = 'connect' }) {
+		const uri = getRolloutUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'post',
+			auth: this.accessToken,
+			data: { when }
+		}));
+	}
+
+	getRollout({ org, productId, deviceId }) {
+		const uri = getRolloutUri({ org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
@@ -508,6 +570,32 @@ module.exports = class ParticleApi {
 		}
 	}
 };
+
+function getEnvVarsUri({ org, productId, deviceId }) {
+	let uri;
+	if (org) {
+		uri = `/v1/orgs/${org}/env-vars`;
+	} else if (productId) {
+		uri = `/v1/products/${productId}/env-vars${deviceId ? `/${deviceId}` : ''}`;
+	} else {
+		uri = `/v1/env-vars${deviceId ? `/${deviceId}` : ''}`;
+	}
+	return uri;
+}
+
+function getRolloutUri({ org, productId, deviceId }) {
+	let uri;
+	if (org) {
+		uri = `/v1/orgs/${org}/env-vars/rollout`;
+	} else if (productId) {
+		uri = `/v1/products/${productId}/env-vars/rollout`;
+	} else if (deviceId) {
+		uri = `/v1/devices/${deviceId}/env-vars/rollout`;
+	} else {
+		uri = '/v1/env-vars/rollout';
+	}
+	return uri;
+}
 
 module.exports.UnauthorizedError = class UnauthorizedError extends Error {
 	constructor(message){

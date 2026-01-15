@@ -277,10 +277,8 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 	let availableAssets;
 
 	sortedModules.forEach(module => {
-		const data = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
 		const flashStep = {
-			name: path.basename(module.filename),
-			data
+			name: path.basename(module.filename)
 		};
 		const moduleType = moduleTypeFromNumber(module.prefixInfo.moduleFunction);
 		const moduleDefinition = platform.firmwareModules
@@ -331,6 +329,10 @@ async function createFlashSteps({ modules, isInDfuMode, factory, platformId }) {
 			flashStep.address = factoryAddress || parseInt(module.prefixInfo.moduleStartAddy, 16);
 			dfuModules.push(flashStep);
 		}
+
+		// When DFU flashing modules that need to have the actual data start at the exact address (like radio modules), we need to drop the module info
+		const dropModuleInfo = module.prefixInfo.moduleFlags === ModuleInfo.Flags.DROP_MODULE_INFO && flashStep.flashMode === 'dfu';
+		flashStep.data = dropModuleInfo ? module.fileBuffer.slice(module.prefixInfo.prefixSize) : module.fileBuffer;
 	});
 
 	// avoid switching to normal mode if device is already in DFU so a device with broken Device OS can get fixed
