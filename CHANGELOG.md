@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.45.0 - Jan 16 2026
+* Improvements for local development
+
 # 3.44.1 - Nov 05 2025
 * Fix issue related with setup tachyon when using usbc cable 2.1 or lower
 * Fix serial commands issues on Windows
