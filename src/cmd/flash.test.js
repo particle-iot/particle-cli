@@ -13,6 +13,7 @@ const { firmwareTestHelper, createAssetModule, ModuleInfo, HalModuleParser } = r
 describe('FlashCommand', () => {
 	let flash;
 	const originalEnv = process.env;
+	const originalCwd = process.cwd;
 
 	// returns a list of HalModule objects
 	const createModules = async () => {
@@ -96,6 +97,7 @@ describe('FlashCommand', () => {
 
 	afterEach(() => {
 		sinon.restore();
+		process.cwd = originalCwd;
 	});
 
 	describe('_analyzeFiles', () => {
@@ -417,6 +419,88 @@ describe('FlashCommand', () => {
 				modules: [userPart],
 			});
 			expect(binaries).to.eql([]);
+		});
+	});
+
+	describe('_isUrl', () => {
+		it('returns true for http URLs', () => {
+			expect(flash._isUrl('http://example.com/file.zip')).to.be.true;
+		});
+
+		it('returns true for https URLs', () => {
+			expect(flash._isUrl('https://example.com/file.zip')).to.be.true;
+		});
+
+		it('returns false for local file paths', () => {
+			expect(flash._isUrl('/path/to/file.zip')).to.be.false;
+		});
+
+		it('returns false for relative paths', () => {
+			expect(flash._isUrl('file.zip')).to.be.false;
+		});
+
+		it('returns falsy for null/undefined', () => {
+			expect(flash._isUrl(null)).to.not.be.ok;
+			expect(flash._isUrl(undefined)).to.not.be.ok;
+		});
+	});
+
+	describe('_downloadIfUrl', () => {
+		it('returns input unchanged if not a URL', async () => {
+			const result = await flash._downloadIfUrl('/path/to/file.zip');
+			expect(result).to.equal('/path/to/file.zip');
+		});
+
+		it('returns cached file path if file already exists locally', async () => {
+			const dir = await temp.mkdir();
+			process.cwd = () => dir;
+			const existingFile = path.join(dir, 'test-file.zip');
+			await fs.writeFile(existingFile, 'test content');
+			sinon.stub(flash.ui, 'write');
+
+			const result = await flash._downloadIfUrl('https://example.com/test-file.zip');
+
+			expect(result).to.equal(existingFile);
+			expect(flash.ui.write).to.have.been.calledWith(sinon.match(/Found cached file/));
+		});
+
+		it('downloads file to current directory if not cached', async () => {
+			const dir = await temp.mkdir();
+			process.cwd = () => dir;
+			sinon.stub(flash.ui, 'write');
+			sinon.stub(flash.ui, 'createProgressBar').returns(null);
+
+			const scope = nock('https://example.com')
+				.get('/test-download.zip')
+				.reply(200, 'file content', { 'content-length': '12' });
+
+			const result = await flash._downloadIfUrl('https://example.com/test-download.zip');
+
+			expect(result).to.equal(path.join(dir, 'test-download.zip'));
+			expect(await fs.readFile(result, 'utf8')).to.equal('file content');
+			scope.done();
+		});
+
+		it('cleans up partial downloads on error', async () => {
+			const dir = await temp.mkdir();
+			process.cwd = () => dir;
+			sinon.stub(flash.ui, 'write');
+			sinon.stub(flash.ui, 'createProgressBar').returns(null);
+
+			nock('https://example.com')
+				.get('/fail-download.zip')
+				.reply(500, 'Server error');
+
+			let error;
+			try {
+				await flash._downloadIfUrl('https://example.com/fail-download.zip');
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.exist;
+			expect(fs.existsSync(path.join(dir, 'fail-download.zip'))).to.be.false;
+			expect(fs.existsSync(path.join(dir, 'fail-download.zip.progress'))).to.be.false;
 		});
 	});
 });

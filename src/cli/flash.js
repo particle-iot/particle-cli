@@ -70,6 +70,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command --tachyon': 'Flash Tachyon from the files in the current directory',
 			'$0 $command --tachyon /path/to/unpackaged-tool-and-files': 'Flash Tachyon from the files in the specified directory',
 			'$0 $command --tachyon /path/to/package.zip --output /path/to/log-folder': 'Flash Tachyon using the specified zip file and save the log to the given folder',
+			'$0 $command --tachyon https://example.com/tachyon-package.zip': 'Download and flash Tachyon from a URL (cached locally for subsequent runs)',
 		},
 		epilogue: unindent(`
 		  When passing the --local flag, Device OS will be updated if the version on the device is outdated.
