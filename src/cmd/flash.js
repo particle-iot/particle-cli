@@ -41,6 +41,96 @@ module.exports = class FlashCommand extends CLICommandBase {
 		super(...args);
 	}
 
+	_isUrl(input) {
+		return input && (input.startsWith('http://') || input.startsWith('https://'));
+	}
+
+	async _downloadIfUrl(input) {
+		if (!this._isUrl(input)) {
+			return input;
+		}
+
+		const outputFileName = input.replace(/.*\//, '');
+		const localFilePath = path.join(process.cwd(), outputFileName);
+		const progressFilePath = `${localFilePath}.progress`;
+
+		// Check if file already exists in current directory
+		if (fs.existsSync(localFilePath)) {
+			this.ui.write(`${os.EOL}Found cached file: ${localFilePath}${os.EOL}`);
+			return localFilePath;
+		}
+
+		try {
+			this.ui.write(`${os.EOL}Downloading ${outputFileName}...${os.EOL}`);
+			const filePath = await this._downloadFile(input, localFilePath, progressFilePath);
+			return filePath;
+		} catch (error) {
+			// Clean up partial downloads on interruption
+			if (fs.existsSync(progressFilePath)) {
+				await fs.remove(progressFilePath);
+				this.ui.write(`Removed incomplete download: ${progressFilePath}${os.EOL}`);
+			}
+			if (fs.existsSync(localFilePath)) {
+				await fs.remove(localFilePath);
+				this.ui.write(`Removed incomplete download: ${localFilePath}${os.EOL}`);
+			}
+			throw error;
+		}
+	}
+
+	async _downloadFile(url, finalFilePath, progressFilePath) {
+		const fetch = require('node-fetch');
+		const response = await fetch(url);
+
+		if (!response.ok) {
+			throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+		}
+
+		const totalBytes = parseInt(response.headers.get('content-length') || '0', 10);
+		const progressBar = this.ui.createProgressBar();
+
+		if (progressBar && totalBytes) {
+			progressBar.start(totalBytes, 0, { description: `Downloading...` });
+		}
+
+		const writer = fs.createWriteStream(progressFilePath);
+		let downloadedBytes = 0;
+
+		return new Promise((resolve, reject) => {
+			response.body.on('data', (chunk) => {
+				downloadedBytes += chunk.length;
+				if (progressBar) {
+					progressBar.update(downloadedBytes);
+				}
+			});
+
+			response.body.pipe(writer);
+
+			response.body.on('error', (err) => {
+				if (progressBar) {
+					progressBar.stop();
+				}
+				reject(err);
+			});
+
+			writer.on('finish', () => {
+				if (progressBar) {
+					progressBar.stop();
+				}
+				fs.renameSync(progressFilePath, finalFilePath);
+				this.ui.write(`Download complete: ${finalFilePath}${os.EOL}`);
+				resolve(finalFilePath);
+			});
+
+			writer.on('error', (err) => {
+				if (progressBar) {
+					progressBar.stop();
+				}
+				reject(err);
+			});
+		});
+	}
+
 	async flash(device, binary, files, {
 		local,
 		usb,
@@ -86,6 +176,9 @@ module.exports = class FlashCommand extends CLICommandBase {
 			// If no files are passed, use the current directory
 			files = ['.'];
 		}
+
+		// Download URLs if provided
+		files = await Promise.all(files.map((f) => this._downloadIfUrl(f)));
 
 		const [input, ...rest] = files;
 		const stats = await fs.stat(input);
