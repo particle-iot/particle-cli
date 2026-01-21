@@ -40,7 +40,7 @@ module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = fal
 	return api.getDevice({ deviceId: id, auth })
 		.then(res => res.body)
 		.catch(error => {
-			if (error.statusCode === 403 || error.statusCode === 404) {
+			if (error.statusCode === 401 || error.statusCode === 403 || error.statusCode === 404) {
 				if (dontThrow) {
 					return null;
 				}
