@@ -54,7 +54,7 @@ async function _getDeviceInfo(device) {
 
 async function _getDeviceName({ id, api, auth, ui }) {
 	try {
-		const device = await getDevice({ id, api, auth, ui });
+		const device = await getDevice({ id, api, auth, ui, dontThrow: true });
 		return device && device.name ? device.name : '<no name>';
 	} catch (_err) {
 		return '<unknown>';
