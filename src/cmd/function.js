@@ -5,6 +5,7 @@ const ParticleAPI = require('./api');
 const LegacyApiClient = require('../lib/api-client');
 const settings = require('../../settings');
 const CLICommandBase = require('./base');
+const { ensureAuth } = require('../lib/auth-helper');
 
 const { normalizedApiError } = LegacyApiClient;
 
@@ -14,9 +15,9 @@ module.exports = class FunctionCommand extends CLICommandBase {
 		super(...args);
 	}
 
-	listFunctions(){
+	async listFunctions(){
+		await ensureAuth({ required: true });
 		const api = new LegacyApiClient();
-		api.ensureToken();
 
 		return api.getAllAttributes()
 			.then(devices => this.ui.logDeviceDetail(devices, { fnsOnly: true }))

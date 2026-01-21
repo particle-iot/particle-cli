@@ -4,6 +4,7 @@ const VError = require('verror');
 const settings = require('../../settings');
 const ApiClient = require('../lib/api-client');
 const spinnerMixin = require('../lib/spinner-mixin');
+const { ensureAuth } = require('../lib/auth-helper');
 
 const arrow = chalk.green('>');
 
@@ -13,12 +14,12 @@ module.exports = class WhoAmICommand {
 		spinnerMixin(this);
 	}
 
-	getUsername(){
+	async getUsername(){
+		await ensureAuth({ required: true });
 		const api = new ApiClient();
 
 		return Promise.resolve()
 			.then(() => {
-				api.ensureToken();
 
 				this.newSpin('Checking...').start();
 

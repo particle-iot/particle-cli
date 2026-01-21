@@ -1,6 +1,8 @@
 'use strict';
 const { platformForId } = require('../lib/platform');
 const semver = require('semver');
+const { isAuthError, tryWithAuth } = require('../lib/auth-helper');
+const log = require('../lib/log');
 
 /**
  * Check if the string can represent a valid device ID.
@@ -37,17 +39,32 @@ module.exports.formatDeviceInfo = ({ id, type, name = null }) => {
  * @param {Promise<Object>}
  */
 module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = false }) => {
-	return api.getDevice({ deviceId: id, auth })
-		.then(res => res.body)
-		.catch(error => {
-			if (error.statusCode === 401 || error.statusCode === 403 || error.statusCode === 404) {
-				if (dontThrow) {
-					return null;
-				}
-				throw new Error(`Device not found: ${displayName || id}`);
+	return tryWithAuth(
+		async () => {
+			const res = await api.getDevice({ deviceId: id, auth });
+			return res.body;
+		},
+		{
+			optional: dontThrow,
+			context: `device lookup ${displayName || id}`
+		}
+	).catch(error => {
+		// Handle specific error cases
+		if (error.statusCode === 404) {
+			if (dontThrow) {
+				return null;
 			}
-			throw error;
-		});
+			throw new Error(`Device not found: ${displayName || id}`);
+		}
+
+		// Auth errors are already handled by tryWithAuth when dontThrow is true
+		if (isAuthError(error) && dontThrow) {
+			log.verbose(`Auth failed for device lookup, returning null: ${displayName || id}`);
+			return null;
+		}
+
+		throw error;
+	});
 };
 
 module.exports.validateDFUSupport = ({ device, ui }) => {

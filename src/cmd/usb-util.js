@@ -282,8 +282,8 @@ async function openUsbDeviceByIdOrName(idOrName, api, auth, { dfuMode = false } 
 	}
 
 	if (!device) {
-		const deviceInfo = await getDevice({ id: idOrName, api, auth });
 		try {
+			const deviceInfo = await getDevice({ id: idOrName, api, auth });
 			device = await openDeviceById(deviceInfo.id);
 		} catch (err) {
 			// TODO: improve error message when device is not found. Currently it says Device is not found

@@ -11,6 +11,7 @@ const settings = require('../../settings');
 const LegacyApiClient = require('../lib/api-client');
 const ParticleAPI = require('./api');
 const CLICommandBase = require('./base');
+const { ensureAuth } = require('../lib/auth-helper');
 
 const { normalizedApiError } = LegacyApiClient;
 
@@ -80,13 +81,13 @@ module.exports = class VariableCommand extends CLICommandBase {
 			});
 	}
 
-	_getValue(deviceId, variableName, { time }){
+	async _getValue(deviceId, variableName, { time }){
 		if (!Array.isArray(deviceId)){
 			deviceId = [deviceId];
 		}
 
+		await ensureAuth({ required: true });
 		const api = new LegacyApiClient();
-		api.ensureToken();
 
 		const multipleCores = deviceId.length > 1;
 		const getVariables = deviceId.map((id) => api.getVariable(id, variableName));
@@ -213,15 +214,15 @@ module.exports = class VariableCommand extends CLICommandBase {
 		}
 	}
 
-	getAllVariablesWithCache(){
+	async getAllVariablesWithCache(){
 		if (this._cachedVariableList){
-			return Promise.resolve(this._cachedVariableList);
+			return this._cachedVariableList;
 		}
 
 		this.ui.stdout.write(`polling server to see what devices are online, and what variables are available${os.EOL}`);
 
+		await ensureAuth({ required: true });
 		const api = new LegacyApiClient();
-		api.ensureToken();
 
 		return Promise.resolve()
 			.then(() => api.listDevices())

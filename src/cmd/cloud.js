@@ -13,6 +13,7 @@ const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
+const { AUTH_MESSAGES } = require('../lib/auth-helper');
 
 const fs = require('fs-extra');
 const path = require('path');
@@ -907,8 +908,11 @@ function formatAPIErrorMessage(error){
 }
 
 // TODO (mirande): refactor cmd/api.js to do this check by default when appropriate
+/**
+ * @deprecated Use auth-helper.ensureAuth() instead
+ */
 function ensureAPIToken(){
 	if (!settings.access_token){
-		throw new Error(`You're not logged in. Please login using ${chalk.bold.cyan('particle login')} before using this command`);
+		throw new Error(AUTH_MESSAGES.REQUIRED_LOGIN);
 	}
 }

@@ -9,7 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const CLICommandBase = require('./base');
 const settings = require('../../settings');
 const ParticleApi = require('./api');
-const { UnauthorizedError } = require('./api');
+const { isAuthError } = require('../lib/auth-helper');
 const Table = require('cli-table');
 const { platformForId } = require('../lib/platform');
 const pkg = require('../../package.json');
@@ -124,7 +124,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 			this.ui.write(`Successfully pushed ${appInstance} to device ${deviceId}${os.EOL}`);
 		} catch (error) {
-			if (error instanceof UnauthorizedError) {
+			if (isAuthError(error)) {
 				throw new Error('You must be logged in to push an application to a device.');
 			}
 			throw error;
@@ -330,7 +330,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				this.ui.write(table.toString() + os.EOL);
 			}
 		} catch (error) {
-			if (error instanceof UnauthorizedError) {
+			if (isAuthError(error)) {
 				throw new Error('You must be logged in to list applications. Run particle login and try again.');
 			}
 			if (error.statusCode === 404) {
@@ -374,7 +374,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 				this.ui.write(`Application ${appInstance} not found on device ${deviceId}.${os.EOL}`);
 			}
 		} catch (error) {
-			if (error instanceof UnauthorizedError) {
+			if (isAuthError(error)) {
 				throw new Error('You must be logged in to remove an application. Run particle login and try again.');
 			}
 			if (error.statusCode === 404) {

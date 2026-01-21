@@ -519,7 +519,20 @@ module.exports = class ParticleApi {
 				msg = body.error_description || body.error || errorDescription;
 			}
 
-			return Promise.reject(new UnauthorizedError(msg));
+			const authError = new UnauthorizedError(msg);
+			authError.statusCode = err.statusCode;
+			authError.isAuthError = true;
+			// Determine reason based on message patterns
+			const lowerMsg = (msg || '').toLowerCase();
+			if (lowerMsg.includes('expired')) {
+				authError.reason = 'expired';
+			} else if (lowerMsg.includes('invalid') || lowerMsg.includes('unauthorized')) {
+				authError.reason = 'invalid';
+			} else {
+				authError.reason = 'invalid';
+			}
+
+			return Promise.reject(authError);
 		}
 		return Promise.reject(err);
 	}

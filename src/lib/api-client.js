@@ -915,6 +915,12 @@ module.exports = class ApiClient {
 		});
 	}
 
+	/**
+	 * @deprecated Use auth-helper.isAuthError() instead
+	 * Checks if the response body indicates an invalid token
+	 * @param {Object} body - Response body
+	 * @returns {boolean}
+	 */
 	hasBadToken(body){
 		if (body && body.error && body.error.indexOf
 			&& (body.error.indexOf('invalid_token') >= 0)){
@@ -927,6 +933,12 @@ module.exports = class ApiClient {
 		return false;
 	}
 
+	/**
+	 * @deprecated Use auth-helper.isAuthError() instead
+	 * Checks if the response indicates an unauthorized status
+	 * @param {Object} response - HTTP response
+	 * @returns {boolean}
+	 */
 	isUnauthorized(response){
 		if (response && response.statusCode === 401){
 			console.log();

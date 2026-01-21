@@ -19,6 +19,8 @@ let settings = {
 	disableUpdateCheck: envValueBoolean('PARTICLE_DISABLE_UPDATE', false),
 	updateCheckInterval: 4 * 60 * 60 * 1000, // 4 hours
 	updateCheckTimeout: 3000,
+	// Auto-reauth: automatically re-login when token expires in interactive mode
+	autoReauth: envValueBoolean('PARTICLE_AUTO_REAUTH', true),
 
 	//10 megs -- this constant here is arbitrary
 	MAX_FILE_SIZE: 1024 * 1024 * 10,

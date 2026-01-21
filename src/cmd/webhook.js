@@ -4,6 +4,7 @@ const VError = require('verror');
 const prompt = require('inquirer').prompt;
 const ApiClient = require('../lib/api-client');
 const { tryParse, getFilenameExt, asyncMapSeries } = require('../lib/utilities');
+const { ensureAuth } = require('../lib/auth-helper');
 
 
 module.exports = class WebhookCommand {
@@ -23,10 +24,10 @@ module.exports = class WebhookCommand {
 		return this._createHook({ eventName, url, deviceID: device, requestType });
 	}
 
-	_createHook({ eventName, url, deviceID, requestType }) {
+	async _createHook({ eventName, url, deviceID, requestType }) {
+		await ensureAuth({ required: true });
 		const api = new ApiClient();
 
-		api.ensureToken();
 
 		//if they gave us one thing, and it happens to be a file, and we could parse it as json
 		let data = {};
@@ -76,9 +77,9 @@ module.exports = class WebhookCommand {
 		});
 	}
 
-	deleteHook({ hookId }) {
+	async deleteHook({ hookId }) {
+		await ensureAuth({ required: true });
 		const api = new ApiClient();
-		api.ensureToken();
 
 		return Promise.resolve()
 			.then(() => {
@@ -113,10 +114,10 @@ module.exports = class WebhookCommand {
 			});
 	}
 
-	listHooks() {
+	async listHooks() {
+		await ensureAuth({ required: true });
 		const api = new ApiClient();
 
-		api.ensureToken();
 
 		return api.listWebhooks()
 			.then(hooks => {

@@ -15,6 +15,7 @@ const { errors: { usageError } } = require('../app/command-processor');
 const UI = require('../lib/ui');
 const ParticleApi = require('./api');
 const { DeviceProtectionError } = require('particle-usb');
+const { ensureAuth } = require('../lib/auth-helper');
 
 /**
  * Commands for managing encryption keys.
@@ -183,8 +184,8 @@ module.exports = class KeysCommand {
 			}
 		}
 
+		await ensureAuth({ required: true });
 		const api = new ApiClient();
-		api.ensureToken();
 
 		const pubKey = temp.path({ suffix: '.pub.pem' });
 		const inform = path.extname(filename).toLowerCase() === '.der' ? 'DER' : 'PEM';
