@@ -293,7 +293,10 @@ module.exports = class ParticleApi {
 	}
 
 	getDevice({ deviceId: id }) {
-		return this.api.getDevice({ deviceId: id, auth: this.accessToken });
+		return this._wrap(this.api.getDevice({
+			deviceId: id,
+			auth: this.accessToken
+		}));
 	}
 
 	getLogicFunctionList({ org }) {
