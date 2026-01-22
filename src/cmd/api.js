@@ -480,7 +480,7 @@ module.exports = class ParticleApi {
 		}));
 	}
 
-	performEnvRollout({ org, productId, deviceId, when = 'connect' }) {
+	performEnvRollout({ org, productId, deviceId, when = 'Connect' }) {
 		const uri = getRolloutUri({ org, productId, deviceId });
 		return this._wrap(this.api.request({
 			uri,
