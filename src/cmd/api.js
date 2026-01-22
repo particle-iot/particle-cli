@@ -589,10 +589,8 @@ function getRolloutUri({ org, productId, deviceId }) {
 		uri = `/v1/orgs/${org}/env-vars/rollout`;
 	} else if (productId) {
 		uri = `/v1/products/${productId}/env-vars/rollout`;
-	} else if (deviceId) {
-		uri = `/v1/devices/${deviceId}/env-vars/rollout`;
 	} else {
-		uri = '/v1/env-vars/rollout';
+		uri = `/v1/env-vars${deviceId ? `/${deviceId}` : ''}/rollout`;
 	}
 	return uri;
 }
