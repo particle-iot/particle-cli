@@ -499,6 +499,37 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	/**
+	 * Export devices for an organization
+	 * @param {Object} options - Export options
+	 * @param {string} options.orgSlug - Organization ID or slug
+	 * @param {string} [options.format='json'] - Output format ('json' or 'csv')
+	 * @param {number} [options.page=1] - Page number
+	 * @param {number} [options.perPage=1000] - Results per page
+	 * @param {string} [options.productIds] - Comma-separated product IDs filter
+	 * @param {string} [options.groupIds] - Comma-separated group names filter
+	 * @returns {Promise} - API response
+	 */
+	exportOrgDevices({ orgSlug, format = 'json', page = 1, perPage = 1000, productIds, groupIds }) {
+		const queryParams = new URLSearchParams();
+		queryParams.append('format', format);
+		queryParams.append('page', page.toString());
+		queryParams.append('per_page', perPage.toString());
+
+		if (productIds) {
+			queryParams.append('productIds', productIds);
+		}
+		if (groupIds) {
+			queryParams.append('groupIds', groupIds);
+		}
+
+		return this._wrap(this.api.request({
+			uri: `/v1/orgs/${orgSlug}/devices/export?${queryParams.toString()}`,
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
 	_wrap(promise){
 		return Promise.resolve(promise)
 			.then(result => result.body || result)
