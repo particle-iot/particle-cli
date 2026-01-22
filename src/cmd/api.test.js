@@ -69,7 +69,7 @@ describe('ParticleApi', () => {
 
 		it('should call the correct API endpoint for device rollout', async () => {
 			const deviceId = 'testDeviceId';
-			const expectedUri = `/v1/devices/${deviceId}/env-vars/rollout`;
+			const expectedUri = `/v1/env-vars/${deviceId}/rollout`;
 			const expectedResponse = { body: { some: 'sandbox-device-data' } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -116,7 +116,7 @@ describe('ParticleApi', () => {
 				uri: expectedUri,
 				method: 'post',
 				auth: 'test-token',
-				data: { when: 'connect' }
+				data: { when: 'Connect' }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
@@ -134,7 +134,7 @@ describe('ParticleApi', () => {
 				uri: expectedUri,
 				method: 'post',
 				auth: 'test-token',
-				data: { when: 'connect' }
+				data: { when: 'Connect' }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
@@ -151,25 +151,25 @@ describe('ParticleApi', () => {
 				uri: expectedUri,
 				method: 'post',
 				auth: 'test-token',
-				data: { when: 'connect' }
+				data: { when: 'Connect' }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
 
 		it('calls the correct API endpoint for device rollout', async () => {
 			const deviceId = 'testDeviceId';
-			const expectedUri = `/v1/devices/${deviceId}/env-vars/rollout`;
+			const expectedUri = `/v1/env-vars/${deviceId}/rollout`;
 			const expectedResponse = { body: { some: 'sandbox-device-data' } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.performEnvRollout({ deviceId, when: 'immediate' });
+			const result = await particleApi.performEnvRollout({ deviceId, when: 'Immediate' });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
 				method: 'post',
 				auth: 'test-token',
-				data: { when: 'immediate' }
+				data: { when: 'Immediate' }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
