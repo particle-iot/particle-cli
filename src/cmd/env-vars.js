@@ -187,17 +187,17 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 					return;
 				}
 			}
-			let rolloutWhen = when || 'connect';
+			let rolloutWhen = when || 'Connect';
 			if (!yes) {
 				const whenQuestion = {
 					type: 'list',
 					name: 'when',
 					message: 'When should the rollout be applied to each device?',
 					choices: [
-						{ name: 'Immediately', value: 'immediate' },
-						{ name: 'On next connection', value: 'connect' }
+						{ name: 'Immediately', value: 'Immediate' },
+						{ name: 'On next connection', value: 'Connect' }
 					],
-					default: 'connect',
+					default: 'Connect',
 					dataTesting: 'when-prompt'
 				};
 				const { when: whenAnswer } = await this.ui.prompt([whenQuestion]);

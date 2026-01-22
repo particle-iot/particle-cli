@@ -146,7 +146,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 			'when': {
 				description: 'Specify when to rollout the environment variables',
-				choices: ['immediate', 'connect']
+				choices: ['Immediate', 'Connect']
 			}
 		},
 		handler: (args) => {
