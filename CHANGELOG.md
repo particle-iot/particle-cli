@@ -1,5 +1,10 @@
 # Changelog
 
+# 3.45.1 - Jan 23 2026
+* Update signing actions to v1 
+* Fix rollout values for when param
+* Fix uri used for env-vars when using device param
+
 # 3.45.0 - Jan 16 2026
 * Improvements for local development
 
