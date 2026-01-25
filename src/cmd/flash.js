@@ -53,7 +53,14 @@ module.exports = class FlashCommand extends CLICommandBase {
 		const outputFileName = input.replace(/.*\//, '');
 		const localFilePath = path.join(process.cwd(), outputFileName);
 		const progressFilePath = `${localFilePath}.progress`;
-
+process.on('SIGINT', async () => {
+			if (fs.existsSync(progressFilePath)) {
+				await fs.remove(progressFilePath);
+				this.ui.write(`${os.EOL}Process interrupted by user.${os.EOL}`);
+				this.ui.write(`Removed incomplete download: ${progressFilePath}${os.EOL}`);
+				process.exit(1);
+			}
+		});
 		// Check if file already exists in current directory
 		if (fs.existsSync(localFilePath)) {
 			this.ui.write(`${os.EOL}Found cached file: ${localFilePath}${os.EOL}`);
