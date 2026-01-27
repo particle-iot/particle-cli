@@ -19,6 +19,7 @@ module.exports = ({ commandProcessor, root }) => {
 
 	alias(root, 'identify', ['serial', 'identify']);
 
+
 	const device = commandProcessor.createCategory(root, 'device', 'Manipulate a device');
 	alias(device, 'add', ['cloud', 'claim']);
 	alias(device, 'remove', ['cloud', 'remove']);
