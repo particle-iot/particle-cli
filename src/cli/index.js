@@ -5,7 +5,7 @@ const container = require('./container');
 const binary = require('./binary');
 const bundle = require('./bundle');
 const cloud = require('./cloud');
-const config = require('./config');
+const profile = require('./profile');
 const doctor = require('./doctor');
 const esim = require('./esim');
 const protection = require('./device-protection');
@@ -55,7 +55,7 @@ module.exports = function registerAllCommands(context) {
 	binary(context);
 	bundle(context);
 	cloud(context);
-	config(context);
+	profile(context);
 	doctor(context);
 	esim(context);
 	envVars(context);
