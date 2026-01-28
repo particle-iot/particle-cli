@@ -11,7 +11,26 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.api = createAPI();
 	}
 
-	async list({ org, product, device, json }){
+	_validateScope({ sandbox, org, product, device }) {
+		const scopes = [
+			{ name: 'sandbox', value: sandbox },
+			{ name: 'org', value: org },
+			{ name: 'product', value: product },
+			{ name: 'device', value: device }
+		].filter(scope => scope.value);
+
+		if (scopes.length === 0) {
+			throw new Error('You must specify one of: --sandbox, --org, --product, or --device');
+		}
+
+		if (scopes.length > 1) {
+			const scopeNames = scopes.map(s => `--${s.name}`).join(', ');
+			throw new Error(`You can only specify one scope at a time. You provided: ${scopeNames}`);
+		}
+	}
+
+	async list({ org, product, device, sandbox, json }){
+		this._validateScope({ sandbox, org, product, device });
 		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
 			this.api.listEnvVars({ org, productId: product, deviceId: device }));
 		if (json) {
@@ -69,7 +88,8 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write('---------------------------------------------');
 	};
 
-	async setEnvVars({ params: { key, value }, org, product, device }) {
+	async setEnvVars({ params: { key, value }, org, product, device, sandbox }) {
+		this._validateScope({ sandbox, org, product, device });
 		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
 			this.api.patchEnvVars({
@@ -81,7 +101,8 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write(`Key ${key} has been successfully set.`);
 	}
 
-	async deleteEnv({ params: { key }, org, product, device }) {
+	async deleteEnv({ params: { key }, org, product, device, sandbox }) {
+		this._validateScope({ sandbox, org, product, device });
 		const operation = this._buildEnvVarOperation({ key, operation: 'Unset' });
 		await this.ui.showBusySpinnerUntilResolved('Deleting environment variable...',
 			this.api.patchEnvVars({

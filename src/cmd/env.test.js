@@ -63,7 +63,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env-vars', 'GET')
 				.reply(200, sandboxList);
-			await envVarsCommands.list({});
+			await envVarsCommands.list({ sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
@@ -88,11 +88,11 @@ describe('config env Command', () => {
 			]);
 		});
 
-		it('list all env vars for a device that belongs to a product', async () => {
+		it('list all env vars for a device', async () => {
 			nock('https://api.particle.io/v1')
-				.intercept('/products/product-id-123/env-vars/abc123', 'GET')
+				.intercept('/env-vars/abc123', 'GET')
 				.reply(200, sandboxDeviceProductList);
-			await envVarsCommands.list({ product: 'product-id-123', device: 'abc123' });
+			await envVarsCommands.list({ device: 'abc123' });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
@@ -108,7 +108,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env-vars', 'GET')
 				.reply(200, emptyList);
-			await envVarsCommands.list({ });
+			await envVarsCommands.list({ sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
@@ -117,7 +117,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env-vars', 'GET')
 				.reply(200, emptyListWithKeys);
-			await envVarsCommands.list({ });
+			await envVarsCommands.list({ sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
@@ -128,7 +128,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env-vars', 'PATCH')
 				.reply(200, sandboxList);
-			await envVarsCommands.setEnvVars({ params });
+			await envVarsCommands.setEnvVars({ params, sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
 		});
@@ -143,7 +143,7 @@ describe('config env Command', () => {
 				.reply(400, apiError);
 			let error;
 			try {
-				await envVarsCommands.setEnvVars({ params: { } });
+				await envVarsCommands.setEnvVars({ params: {}, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
@@ -190,7 +190,7 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.deleteEnv({ params });
+			await envVarsCommands.deleteEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
@@ -238,6 +238,44 @@ describe('config env Command', () => {
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+		});
+	});
+
+	describe('scope validation', () => {
+		it('throws error when no scope is provided', async () => {
+			let error;
+			try {
+				await envVarsCommands.list({});
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.equal('You must specify one of: --sandbox, --org, --product, or --device');
+		});
+
+		it('throws error when multiple scopes are provided', async () => {
+			let error;
+			try {
+				await envVarsCommands.list({ sandbox: true, org: 'my-org' });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.equal('You can only specify one scope at a time. You provided: --sandbox, --org');
+		});
+
+		it('throws error when all scopes are provided', async () => {
+			let error;
+			try {
+				await envVarsCommands.setEnvVars({
+					params: { key: 'FOO', value: 'bar' },
+					sandbox: true,
+					org: 'my-org',
+					product: 'my-product',
+					device: 'abc123'
+				});
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.equal('You can only specify one scope at a time. You provided: --sandbox, --org, --product, --device');
 		});
 	});
 });
