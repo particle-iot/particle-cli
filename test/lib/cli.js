@@ -65,7 +65,7 @@ module.exports.logout = () => {
 
 module.exports.setProfile = (name) => {
 	const { run } = module.exports;
-	return run(['config', name], { reject: true });
+	return run(['profile', name], { reject: true });
 };
 
 module.exports.setDefaultProfile = () => {

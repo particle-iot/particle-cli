@@ -1,16 +1,16 @@
 'use strict';
 module.exports = ({ commandProcessor, root }) => {
-	commandProcessor.createCommand(root, 'config', 'Configure and switch between multiple accounts', {
+	commandProcessor.createCommand(root, 'profile', 'Configure and switch between multiple accounts', {
 		params: '[profile] [setting] [value]',
 		options: {
 			'list': {
 				boolean: true,
-				description: 'Display available configurations'
+				description: 'Display available profiles'
 			}
 		},
 		handler: (args) => {
-			const ConfigCommands = require('../cmd/config');
-			return new ConfigCommands().configSwitch(args.params.profile, args.params.setting, args.params.value, args);
+			const ProfileCommands = require('../cmd/profile');
+			return new ProfileCommands().profileSwitch(args.params.profile, args.params.setting, args.params.value, args);
 		},
 		examples: {
 			'$0 $command company': 'Switch to a profile called company',
