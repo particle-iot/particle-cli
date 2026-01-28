@@ -4,12 +4,12 @@ const settings = require('../../settings');
 const utilities = require('../lib/utilities');
 
 
-module.exports = class ConfigCommand {
+module.exports = class ProfileCommand {
 	constructor(options) {
 		this.options = options;
 	}
 
-	configSwitch(profile, setting, value, { list }) {
+	profileSwitch(profile, setting, value, { list }) {
 		if (list) {
 			this.listProfiles();
 		} else if (setting) {
@@ -57,8 +57,7 @@ module.exports = class ConfigCommand {
 				console.log((i + 1) + '.) ' + name);
 			}
 		} else {
-			console.log('No configuration files found.');
+			console.log('No profiles found.');
 		}
 	}
 };
-
