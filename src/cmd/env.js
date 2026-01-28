@@ -130,15 +130,6 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		}
 	}
 
-	_writeRenderBlock(keys, env) {
-		this.ui.write(this.ui.chalk.cyan(this.ui.chalk.bold('Environment variables:')));
-		this.ui.write('---------------------------------------------');
-		keys.forEach((key) => {
-			this.ui.write(`    ${key} : ${env[key]}`);
-		});
-		this.ui.write('---------------------------------------------');
-	};
-
 	_buildEnvVarOperation({ key, value, operation }) {
 		const validOperations = ['Set', 'Unset'];
 		if (!validOperations.includes(operation)) {
