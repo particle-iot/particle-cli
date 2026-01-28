@@ -57,8 +57,7 @@ module.exports = class ProfileCommand {
 				console.log((i + 1) + '.) ' + name);
 			}
 		} else {
-			console.log('No configuration files found.');
+			console.log('No profiles found.');
 		}
 	}
 };
-
