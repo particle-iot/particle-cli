@@ -32,7 +32,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	async list({ org, product, device, sandbox, json }){
 		this._validateScope({ sandbox, org, product, device });
 		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
-			this.api.listEnvVars({ org, productId: product, deviceId: device }));
+			this.api.listEnvVars({ sandbox, org, productId: product, deviceId: device }));
 		if (json) {
 			this.ui.write(JSON.stringify(envVars, null, 2));
 		} else {
@@ -93,6 +93,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
 			this.api.patchEnvVars({
+				sandbox,
 				org,
 				productId: product,
 				deviceId: device,
@@ -106,6 +107,7 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		const operation = this._buildEnvVarOperation({ key, operation: 'Unset' });
 		await this.ui.showBusySpinnerUntilResolved('Deleting environment variable...',
 			this.api.patchEnvVars({
+				sandbox,
 				org,
 				productId: product,
 				deviceId: device,
