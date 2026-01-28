@@ -185,6 +185,14 @@ describe('config env Command', () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: { FOO: { value: 'bar' } },
+						inherited: {}
+					}
+				});
+			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
 					receivedBody = requestBody;
@@ -200,6 +208,14 @@ describe('config env Command', () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1/orgs/my-org')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: { FOO: { value: 'bar' } },
+						inherited: {}
+					}
+				});
+			nock('https://api.particle.io/v1/orgs/my-org')
 				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
 					receivedBody = requestBody;
@@ -210,9 +226,18 @@ describe('config env Command', () => {
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
+
 		it('delete env var for specific product', async () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
+			nock('https://api.particle.io/v1/products/my-product')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: { FOO: { value: 'bar' } },
+						inherited: {}
+					}
+				});
 			nock('https://api.particle.io/v1/products/my-product')
 				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
@@ -224,10 +249,19 @@ describe('config env Command', () => {
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
+
 		it('delete env var for specific device', async () => {
 			let receivedBody;
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
+			nock('https://api.particle.io/v1')
+				.intercept(`/env/${deviceId}`, 'GET')
+				.reply(200, {
+					env: {
+						own: { FOO: { value: 'bar' } },
+						inherited: {}
+					}
+				});
 			nock('https://api.particle.io/v1')
 				.intercept(`/env/${deviceId}`, 'PATCH')
 				.reply((uri, requestBody) => {
@@ -238,6 +272,115 @@ describe('config env Command', () => {
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+		});
+
+		it('prevents deletion of inherited-only variables', async () => {
+			const params = { key: 'INHERITED_VAR' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: {},
+						inherited: {
+							INHERITED_VAR: {
+								value: 'inherited_value',
+								from: 'Organization'
+							}
+						}
+					}
+				});
+
+			await envVarsCommands.deleteEnv({ params, sandbox: true });
+
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(
+				envVarsCommands.ui.chalk.yellow(`Warning: 'INHERITED_VAR' is inherited from a parent scope and cannot be deleted at this level.`)
+			);
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
+		});
+
+		it('warns about override before deleting', async () => {
+			const params = { key: 'FOO' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: { FOO: { value: 'override_value' } },
+						inherited: { FOO: { value: 'inherited_value' } }
+					}
+				});
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'PATCH')
+				.reply(200, {});
+
+			await envVarsCommands.deleteEnv({ params, sandbox: true });
+
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(
+				envVarsCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
+			);
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+		});
+
+		it('supports dry-run mode', async () => {
+			const params = { key: 'FOO' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: { FOO: { value: 'bar' } },
+						inherited: {}
+					}
+				});
+
+			await envVarsCommands.deleteEnv({ params, sandbox: true, dryRun: true });
+
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(
+				envVarsCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
+			);
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('Current value: bar');
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
+		});
+
+		it('shows override warning in dry-run mode', async () => {
+			const params = { key: 'FOO' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: { FOO: { value: 'override_value' } },
+						inherited: { FOO: { value: 'inherited_value' } }
+					}
+				});
+
+			await envVarsCommands.deleteEnv({ params, sandbox: true, dryRun: true });
+
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(
+				envVarsCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
+			);
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(
+				envVarsCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
+			);
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
+		});
+
+		it('throws error when trying to delete non-existent variable', async () => {
+			const params = { key: 'NONEXISTENT' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'GET')
+				.reply(200, {
+					env: {
+						own: {},
+						inherited: {}
+					}
+				});
+
+			let error;
+			try {
+				await envVarsCommands.deleteEnv({ params, sandbox: true });
+			} catch (_error) {
+				error = _error;
+			}
+
+			expect(error.message).to.equal(`Environment variable 'NONEXISTENT' does not exist at this scope.`);
 		});
 	});
 
