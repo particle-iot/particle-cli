@@ -16,15 +16,14 @@ describe('ParticleApi', () => {
 		sandbox.restore();
 	});
 
-	describe('getRollout', () => {
-		it('should call the correct API endpoint for product rollout', async () => {
-			const productId = 'testProductId';
-			const expectedUri = `/v1/products/${productId}/env-vars/rollout`;
-			const expectedResponse = { body: { some: 'data' } };
+	describe('listEnvVars', () => {
+		it('should call the correct API endpoint for sandbox', async () => {
+			const expectedUri = '/v1/env-vars';
+			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.getRollout({ productId });
+			const result = await particleApi.listEnvVars({ sandbox: true });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -34,14 +33,14 @@ describe('ParticleApi', () => {
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
 
-		it('should call the correct API endpoint for org rollout', async () => {
+		it('should call the correct API endpoint for org', async () => {
 			const org = 'testOrg';
-			const expectedUri = `/v1/orgs/${org}/env-vars/rollout`;
-			const expectedResponse = { body: { some: 'other-data' } };
+			const expectedUri = `/v1/orgs/${org}/env-vars`;
+			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.getRollout({ org });
+			const result = await particleApi.listEnvVars({ org });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -51,13 +50,14 @@ describe('ParticleApi', () => {
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
 
-		it('should call the correct API endpoint for sandbox rollout when no org or product is provided', async () => {
-			const expectedUri = `/v1/env-vars/rollout`;
-			const expectedResponse = { body: { some: 'sandbox-data' } };
+		it('should call the correct API endpoint for product', async () => {
+			const productId = 'testProductId';
+			const expectedUri = `/v1/products/${productId}/env-vars`;
+			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.getRollout({ sandbox: true });
+			const result = await particleApi.listEnvVars({ productId });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -67,14 +67,14 @@ describe('ParticleApi', () => {
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
 
-		it('should call the correct API endpoint for device rollout', async () => {
+		it('should call the correct API endpoint for device', async () => {
 			const deviceId = 'testDeviceId';
-			const expectedUri = `/v1/env-vars/${deviceId}/rollout`;
-			const expectedResponse = { body: { some: 'sandbox-device-data' } };
+			const expectedUri = `/v1/env-vars/${deviceId}`;
+			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.getRollout({ deviceId });
+			const result = await particleApi.listEnvVars({ deviceId });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -85,7 +85,6 @@ describe('ParticleApi', () => {
 		});
 
 		it('should handle API errors', async () => {
-			const productId = 'testProductId';
 			const expectedError = new Error('API Error');
 			expectedError.statusCode = 401;
 			expectedError.body = { error_description: 'Unauthorized' };
@@ -93,7 +92,7 @@ describe('ParticleApi', () => {
 			sandbox.stub(particleApi.api, 'request').rejects(expectedError);
 
 			try {
-				await particleApi.getRollout({ productId });
+				await particleApi.listEnvVars({ sandbox: true });
 				expect.fail('should have thrown an error');
 			} catch (error) {
 				expect(error.message).to.equal('Unauthorized');
@@ -102,91 +101,135 @@ describe('ParticleApi', () => {
 		});
 	});
 
-	describe('performEnvRollout', () => {
-		it('calls the correct API endpoint for product rollout', async () => {
-			const productId = 'testProductId';
-			const expectedUri = `/v1/products/${productId}/env-vars/rollout`;
-			const expectedResponse = { body: { some: 'data' } };
+	describe('patchEnvVars', () => {
+		const operations = [{ op: 'Set', key: 'FOO', value: 'bar' }];
+
+		it('should call the correct API endpoint for sandbox', async () => {
+			const expectedUri = '/v1/env-vars';
+			const expectedResponse = { body: { success: true } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.performEnvRollout({ productId });
+			const result = await particleApi.patchEnvVars({ sandbox: true, operations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
-				method: 'post',
+				method: 'patch',
 				auth: 'test-token',
-				data: { when: 'Connect' }
+				data: { ops: operations }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
 
-		it('calls the correct API endpoint for org rollout', async () => {
+		it('should call the correct API endpoint for org', async () => {
 			const org = 'testOrg';
-			const expectedUri = `/v1/orgs/${org}/env-vars/rollout`;
-			const expectedResponse = { body: { some: 'other-data' } };
+			const expectedUri = `/v1/orgs/${org}/env-vars`;
+			const expectedResponse = { body: { success: true } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.performEnvRollout({ org });
+			const result = await particleApi.patchEnvVars({ org, operations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
-				method: 'post',
+				method: 'patch',
 				auth: 'test-token',
-				data: { when: 'Connect' }
+				data: { ops: operations }
 			});
 			expect(result).to.deep.equal(expectedResponse.body);
 		});
 
-		it('calls the correct API endpoint for sandbox rollout when no org or product is provided', async () => {
-			const expectedUri = `/v1/env-vars/rollout`;
-			const expectedResponse = { body: { some: 'sandbox-data' } };
-
-			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
-
-			const result = await particleApi.performEnvRollout({ sandbox: true });
-
-			expect(requestStub).to.have.been.calledWithMatch({
-				uri: expectedUri,
-				method: 'post',
-				auth: 'test-token',
-				data: { when: 'Connect' }
-			});
-			expect(result).to.deep.equal(expectedResponse.body);
-		});
-
-		it('calls the correct API endpoint for device rollout', async () => {
-			const deviceId = 'testDeviceId';
-			const expectedUri = `/v1/env-vars/${deviceId}/rollout`;
-			const expectedResponse = { body: { some: 'sandbox-device-data' } };
-
-			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
-
-			const result = await particleApi.performEnvRollout({ deviceId, when: 'Immediate' });
-
-			expect(requestStub).to.have.been.calledWithMatch({
-				uri: expectedUri,
-				method: 'post',
-				auth: 'test-token',
-				data: { when: 'Immediate' }
-			});
-			expect(result).to.deep.equal(expectedResponse.body);
-		});
-
-		it('handles API errors', async () => {
+		it('should call the correct API endpoint for product', async () => {
 			const productId = 'testProductId';
+			const expectedUri = `/v1/products/${productId}/env-vars`;
+			const expectedResponse = { body: { success: true } };
+
+			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
+
+			const result = await particleApi.patchEnvVars({ productId, operations });
+
+			expect(requestStub).to.have.been.calledWithMatch({
+				uri: expectedUri,
+				method: 'patch',
+				auth: 'test-token',
+				data: { ops: operations }
+			});
+			expect(result).to.deep.equal(expectedResponse.body);
+		});
+
+		it('should call the correct API endpoint for device', async () => {
+			const deviceId = 'testDeviceId';
+			const expectedUri = `/v1/env-vars/${deviceId}`;
+			const expectedResponse = { body: { success: true } };
+
+			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
+
+			const result = await particleApi.patchEnvVars({ deviceId, operations });
+
+			expect(requestStub).to.have.been.calledWithMatch({
+				uri: expectedUri,
+				method: 'patch',
+				auth: 'test-token',
+				data: { ops: operations }
+			});
+			expect(result).to.deep.equal(expectedResponse.body);
+		});
+
+		it('should handle set operation', async () => {
+			const setOperations = [{ op: 'Set', key: 'NEW_VAR', value: 'new_value' }];
+			const expectedResponse = { body: { success: true } };
+
+			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
+
+			await particleApi.patchEnvVars({ sandbox: true, operations: setOperations });
+
+			expect(requestStub).to.have.been.calledWithMatch({
+				data: { ops: setOperations }
+			});
+		});
+
+		it('should handle unset operation', async () => {
+			const unsetOperations = [{ op: 'Unset', key: 'OLD_VAR' }];
+			const expectedResponse = { body: { success: true } };
+
+			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
+
+			await particleApi.patchEnvVars({ sandbox: true, operations: unsetOperations });
+
+			expect(requestStub).to.have.been.calledWithMatch({
+				data: { ops: unsetOperations }
+			});
+		});
+
+		it('should handle multiple operations', async () => {
+			const multipleOperations = [
+				{ op: 'Set', key: 'VAR1', value: 'value1' },
+				{ op: 'Set', key: 'VAR2', value: 'value2' },
+				{ op: 'Unset', key: 'VAR3' }
+			];
+			const expectedResponse = { body: { success: true } };
+
+			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
+
+			await particleApi.patchEnvVars({ sandbox: true, operations: multipleOperations });
+
+			expect(requestStub).to.have.been.calledWithMatch({
+				data: { ops: multipleOperations }
+			});
+		});
+
+		it('should handle API errors', async () => {
 			const expectedError = new Error('API Error');
-			expectedError.statusCode = 401;
-			expectedError.body = { error_description: 'Unauthorized' };
+			expectedError.statusCode = 400;
+			expectedError.body = { error_description: 'Invalid operation' };
 
 			sandbox.stub(particleApi.api, 'request').rejects(expectedError);
 
 			try {
-				await particleApi.performEnvRollout({ productId });
+				await particleApi.patchEnvVars({ sandbox: true, operations });
 				expect.fail('should have thrown an error');
 			} catch (error) {
-				expect(error.message).to.equal('Unauthorized');
+				expect(error.message).to.equal('Invalid operation');
 				expect(error.name).to.equal('UnauthorizedError');
 			}
 		});
