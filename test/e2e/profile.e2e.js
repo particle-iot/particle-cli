@@ -20,7 +20,7 @@ describe('Profile Commands', () => {
 		'  -q, --quiet    Decreases how much logging to display  [count]',
 		'',
 		'Options:',
-		'  --list  Display available configurations  [boolean]',
+		'  --list  Display available profiles  [boolean]',
 		'',
 		'Examples:',
 		'  particle profile company                           Switch to a profile called company',
