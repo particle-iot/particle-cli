@@ -5,7 +5,7 @@ module.exports = ({ commandProcessor, root }) => {
 		options: {
 			'list': {
 				boolean: true,
-				description: 'Display available configurations'
+				description: 'Display available profiles'
 			}
 		},
 		handler: (args) => {
