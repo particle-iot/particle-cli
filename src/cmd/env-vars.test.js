@@ -180,8 +180,8 @@ describe('config env Command', () => {
 		});
 	});
 
-	describe('unset env vars', () => {
-		it('unset env var for sandbox user', async () => {
+	describe('delete env vars', () => {
+		it('delete env var for sandbox user', async () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1')
@@ -190,13 +190,13 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.unsetEnvVars({ params });
+			await envVarsCommands.deleteEnv({ params });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
-		it('unset env var for specific org', async () => {
+		it('delete env var for specific org', async () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1/orgs/my-org')
@@ -205,12 +205,12 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.unsetEnvVars({ params, org: 'my-org' });
+			await envVarsCommands.deleteEnv({ params, org: 'my-org' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
-		it('unset env var for specific product', async () => {
+		it('delete env var for specific product', async () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1/products/my-product')
@@ -219,12 +219,12 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.unsetEnvVars({ params, product: 'my-product' });
+			await envVarsCommands.deleteEnv({ params, product: 'my-product' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
-		it('unset env var for specific device', async () => {
+		it('delete env var for specific device', async () => {
 			let receivedBody;
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
@@ -234,10 +234,10 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.unsetEnvVars({ params, device: deviceId });
+			await envVarsCommands.deleteEnv({ params, device: deviceId });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Unsetting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully unset.`);
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 	});
 });
