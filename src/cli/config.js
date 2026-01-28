@@ -88,6 +88,10 @@ module.exports = ({ commandProcessor, root }) => {
 			'device': {
 				description: 'Specify the device id'
 			},
+			'dry-run': {
+				description: 'Preview what would be deleted without actually deleting',
+				boolean: true
+			},
 		},
 		handler: (args) => {
 			const EnvVarsCommand = require('../cmd/env');
@@ -98,6 +102,7 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command <key> --org <org>': 'Delete env var from an organization',
 			'$0 $command <key> --product <productId>': 'Delete env var from a product',
 			'$0 $command <key> --device <deviceId>': 'Delete env var from a device',
+			'$0 $command <key> --sandbox --dry-run': 'Preview deletion without actually deleting',
 		}
 	});
 
