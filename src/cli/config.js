@@ -13,6 +13,10 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(env, 'list', 'List all environment variables', {
 		options: {
+			'sandbox': {
+				description: 'Target the sandbox',
+				boolean: true
+			},
 			'org': {
 				description: 'Specify the organization'
 			},
@@ -29,10 +33,10 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const EnvVarsCommand = require('../cmd/env');
-			return new EnvVarsCommand(args).rollout(args);
+			return new EnvVarsCommand(args).list(args);
 		},
 		examples: {
-			'$0 $command': 'List all environment variables.',
+			'$0 $command --sandbox': 'List all environment variables from sandbox',
 			'$0 $command --org <org>': 'List all environment variables from an specific organization',
 			'$0 $command --product <productId>': 'List all environment variables from an specific product',
 			'$0 $command --device <deviceId>': 'List all environment variables from an specific device',
@@ -42,6 +46,10 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(env, 'set', 'Set an environment variable', {
 		params: '<key> <value>',
 		options: {
+			'sandbox': {
+				description: 'Target the sandbox',
+				boolean: true
+			},
 			'org': {
 				description: 'Specify the organization'
 			},
@@ -54,16 +62,23 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const EnvVarsCommand = require('../cmd/env');
-			return new EnvVarsCommand(args).renderEnvVars(args);
+			return new EnvVarsCommand(args).setEnvVars(args);
 		},
 		examples: {
-			'$0 $command <key> <value>': 'Set env var to user\'s sandbox',
+			'$0 $command <key> <value> --sandbox': 'Set env var to user\'s sandbox',
+			'$0 $command <key> <value> --org <org>': 'Set env var for an organization',
+			'$0 $command <key> <value> --product <productId>': 'Set env var for a product',
+			'$0 $command <key> <value> --device <deviceId>': 'Set env var for a device',
 		}
 	});
 
 	commandProcessor.createCommand(env, 'delete', 'Delete an environment variable', {
 		params: '<key>',
 		options: {
+			'sandbox': {
+				description: 'Target the sandbox',
+				boolean: true
+			},
 			'org': {
 				description: 'Specify the organization'
 			},
@@ -76,10 +91,13 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const EnvVarsCommand = require('../cmd/env');
-			return new EnvVarsCommand(args).patchEnvVars(args);
+			return new EnvVarsCommand(args).deleteEnv(args);
 		},
 		examples: {
-			'$0 $command <key>': 'Unset env var from user\'s sandbox',
+			'$0 $command <key> --sandbox': 'Delete env var from user\'s sandbox',
+			'$0 $command <key> --org <org>': 'Delete env var from an organization',
+			'$0 $command <key> --product <productId>': 'Delete env var from a product',
+			'$0 $command <key> --device <deviceId>': 'Delete env var from a device',
 		}
 	});
 
