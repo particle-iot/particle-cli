@@ -558,13 +558,13 @@ module.exports = class ParticleApi {
 function getEnvVarsUri({ sandbox, org, productId, deviceId }) {
 	let uri;
 	if (sandbox) {
-		uri = '/v1/env-vars';
+		uri = '/v1/env';
 	} else if (org) {
-		uri = `/v1/orgs/${org}/env-vars`;
+		uri = `/v1/orgs/${org}/env`;
 	} else if (productId) {
-		uri = `/v1/products/${productId}/env-vars`;
+		uri = `/v1/products/${productId}/env`;
 	} else if (deviceId) {
-		uri = `/v1/env-vars/${deviceId}`;
+		uri = `/v1/env/${deviceId}`;
 	} else {
 		throw new Error('One of sandbox, org, productId, or deviceId must be provided');
 	}

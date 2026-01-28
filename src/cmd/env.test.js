@@ -61,7 +61,7 @@ describe('config env Command', () => {
 	describe('list', () => {
 		it('list all env vars for sandbox user', async () => {
 			nock('https://api.particle.io/v1')
-				.intercept('/env-vars', 'GET')
+				.intercept('/env', 'GET')
 				.reply(200, sandboxList);
 			await envVarsCommands.list({ sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
@@ -76,7 +76,7 @@ describe('config env Command', () => {
 
 		it('list all env vars for a product sandbox user', async () => {
 			nock('https://api.particle.io/v1')
-				.intercept('/products/product-id-123/env-vars', 'GET')
+				.intercept('/products/product-id-123/env', 'GET')
 				.reply(200, sandboxProductList);
 			await envVarsCommands.list({ product: 'product-id-123' });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
@@ -90,7 +90,7 @@ describe('config env Command', () => {
 
 		it('list all env vars for a device', async () => {
 			nock('https://api.particle.io/v1')
-				.intercept('/env-vars/abc123', 'GET')
+				.intercept('/env/abc123', 'GET')
 				.reply(200, sandboxDeviceProductList);
 			await envVarsCommands.list({ device: 'abc123' });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
@@ -106,7 +106,7 @@ describe('config env Command', () => {
 
 		it('show message for empty list', async () => {
 			nock('https://api.particle.io/v1')
-				.intercept('/env-vars', 'GET')
+				.intercept('/env', 'GET')
 				.reply(200, emptyList);
 			await envVarsCommands.list({ sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
@@ -115,7 +115,7 @@ describe('config env Command', () => {
 
 		it('show message for empty list but existing objects', async () => {
 			nock('https://api.particle.io/v1')
-				.intercept('/env-vars', 'GET')
+				.intercept('/env', 'GET')
 				.reply(200, emptyListWithKeys);
 			await envVarsCommands.list({ sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
@@ -126,7 +126,7 @@ describe('config env Command', () => {
 		it('set env var for sandbox user', async () => {
 			const params = { key: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1')
-				.intercept('/env-vars', 'PATCH')
+				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
 			await envVarsCommands.setEnvVars({ params, sandbox: true });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
@@ -139,7 +139,7 @@ describe('config env Command', () => {
 				error:'invalid_request'
 			};
 			nock('https://api.particle.io/v1')
-				.intercept('/env-vars', 'PATCH')
+				.intercept('/env', 'PATCH')
 				.reply(400, apiError);
 			let error;
 			try {
@@ -153,7 +153,7 @@ describe('config env Command', () => {
 		it('set env var for specific org', async () => {
 			const params = { key: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1/orgs/my-org')
-				.intercept('/env-vars', 'PATCH')
+				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
 			await envVarsCommands.setEnvVars({ params, org: 'my-org' });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
@@ -162,7 +162,7 @@ describe('config env Command', () => {
 		it('set env var for specific product', async () => {
 			const params = { key: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1/products/my-product')
-				.intercept('/env-vars', 'PATCH')
+				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
 			await envVarsCommands.setEnvVars({ params, product: 'my-product' });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
@@ -172,7 +172,7 @@ describe('config env Command', () => {
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
 			nock('https://api.particle.io/v1')
-				.intercept(`/env-vars/${deviceId}`, 'PATCH')
+				.intercept(`/env/${deviceId}`, 'PATCH')
 				.reply(200, sandboxList);
 			await envVarsCommands.setEnvVars({ params, device: deviceId });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
@@ -185,7 +185,7 @@ describe('config env Command', () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1')
-				.intercept('/env-vars', 'PATCH')
+				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
 					receivedBody = requestBody;
 					return [200, {}];
@@ -200,7 +200,7 @@ describe('config env Command', () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1/orgs/my-org')
-				.intercept('/env-vars', 'PATCH')
+				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
 					receivedBody = requestBody;
 					return [200, {}];
@@ -214,7 +214,7 @@ describe('config env Command', () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1/products/my-product')
-				.intercept('/env-vars', 'PATCH')
+				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
 					receivedBody = requestBody;
 					return [200, {}];
@@ -229,7 +229,7 @@ describe('config env Command', () => {
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
 			nock('https://api.particle.io/v1')
-				.intercept(`/env-vars/${deviceId}`, 'PATCH')
+				.intercept(`/env/${deviceId}`, 'PATCH')
 				.reply((uri, requestBody) => {
 					receivedBody = requestBody;
 					return [200, {}];
