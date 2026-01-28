@@ -57,7 +57,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.getRollout({});
+			const result = await particleApi.getRollout({ sandbox: true });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -145,7 +145,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.performEnvRollout({});
+			const result = await particleApi.performEnvRollout({ sandbox: true });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
