@@ -482,24 +482,6 @@ module.exports = class ParticleApi {
 		}));
 	}
 
-	performEnvRollout({ sandbox, org, productId, deviceId, when = 'Connect' }) {
-		const uri = getRolloutUri({ sandbox, org, productId, deviceId });
-		return this._wrap(this.api.request({
-			uri,
-			method: 'post',
-			auth: this.accessToken,
-			data: { when }
-		}));
-	}
-
-	getRollout({ sandbox, org, productId, deviceId }) {
-		const uri = getRolloutUri({ sandbox, org, productId, deviceId });
-		return this._wrap(this.api.request({
-			uri,
-			method: 'get',
-			auth: this.accessToken
-		}));
-	}
 
 	_wrap(promise){
 		return Promise.resolve(promise)
@@ -583,22 +565,6 @@ function getEnvVarsUri({ sandbox, org, productId, deviceId }) {
 		uri = `/v1/products/${productId}/env-vars`;
 	} else if (deviceId) {
 		uri = `/v1/env-vars/${deviceId}`;
-	} else {
-		throw new Error('One of sandbox, org, productId, or deviceId must be provided');
-	}
-	return uri;
-}
-
-function getRolloutUri({ sandbox, org, productId, deviceId }) {
-	let uri;
-	if (sandbox) {
-		uri = '/v1/env-vars/rollout';
-	} else if (org) {
-		uri = `/v1/orgs/${org}/env-vars/rollout`;
-	} else if (productId) {
-		uri = `/v1/products/${productId}/env-vars/rollout`;
-	} else if (deviceId) {
-		uri = `/v1/env-vars/${deviceId}/rollout`;
 	} else {
 		throw new Error('One of sandbox, org, productId, or deviceId must be provided');
 	}
