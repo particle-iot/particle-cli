@@ -2,7 +2,7 @@
 const { expect, sinon } = require('../../test/setup');
 const nock = require('nock');
 const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env-vars/list');
-const EnvVarsCommands = require('./env-vars');
+const EnvVarsCommands = require('./env');
 
 
 describe('config env Command', () => {

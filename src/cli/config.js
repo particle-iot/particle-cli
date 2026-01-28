@@ -28,8 +28,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
-			return new EnvVarsCommand(args).list(args);
+			const EnvVarsCommand = require('../cmd/env');
+			return new EnvVarsCommand(args).rollout(args);
 		},
 		examples: {
 			'$0 $command': 'List all environment variables.',
@@ -53,8 +53,8 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
-			return new EnvVarsCommand(args).setEnvVars(args);
+			const EnvVarsCommand = require('../cmd/env');
+			return new EnvVarsCommand(args).renderEnvVars(args);
 		},
 		examples: {
 			'$0 $command <key> <value>': 'Set env var to user\'s sandbox',
@@ -75,8 +75,8 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
-			return new EnvVarsCommand(args).deleteEnv(args);
+			const EnvVarsCommand = require('../cmd/env');
+			return new EnvVarsCommand(args).patchEnvVars(args);
 		},
 		examples: {
 			'$0 $command <key>': 'Unset env var from user\'s sandbox',

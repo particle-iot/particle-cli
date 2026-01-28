@@ -23,7 +23,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
+			const EnvVarsCommand = require('../cmd/env');
 			return new EnvVarsCommand(args).list(args);
 		},
 		examples: {
@@ -48,7 +48,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
+			const EnvVarsCommand = require('../cmd/env');
 			return new EnvVarsCommand(args).setEnvVars(args);
 		},
 		examples: {
@@ -70,7 +70,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
+			const EnvVarsCommand = require('../cmd/env');
 			return new EnvVarsCommand(args).unsetEnvVars(args);
 		},
 		examples: {
@@ -92,7 +92,7 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
+			const EnvVarsCommand = require('../cmd/env');
 			return new EnvVarsCommand(args).patchEnvVars(args);
 		},
 		examples: {
@@ -117,7 +117,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
+			const EnvVarsCommand = require('../cmd/env');
 			return new EnvVarsCommand(args).renderEnvVars(args);
 		},
 		examples: {
@@ -150,7 +150,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env-vars');
+			const EnvVarsCommand = require('../cmd/env');
 			return new EnvVarsCommand(args).rollout(args);
 		},
 		examples: {
