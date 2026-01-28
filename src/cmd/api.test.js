@@ -18,7 +18,7 @@ describe('ParticleApi', () => {
 
 	describe('listEnvVars', () => {
 		it('should call the correct API endpoint for sandbox', async () => {
-			const expectedUri = '/v1/env-vars';
+			const expectedUri = '/v1/env';
 			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -35,7 +35,7 @@ describe('ParticleApi', () => {
 
 		it('should call the correct API endpoint for org', async () => {
 			const org = 'testOrg';
-			const expectedUri = `/v1/orgs/${org}/env-vars`;
+			const expectedUri = `/v1/orgs/${org}/env`;
 			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -52,7 +52,7 @@ describe('ParticleApi', () => {
 
 		it('should call the correct API endpoint for product', async () => {
 			const productId = 'testProductId';
-			const expectedUri = `/v1/products/${productId}/env-vars`;
+			const expectedUri = `/v1/products/${productId}/env`;
 			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -69,7 +69,7 @@ describe('ParticleApi', () => {
 
 		it('should call the correct API endpoint for device', async () => {
 			const deviceId = 'testDeviceId';
-			const expectedUri = `/v1/env-vars/${deviceId}`;
+			const expectedUri = `/v1/env/${deviceId}`;
 			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -105,7 +105,7 @@ describe('ParticleApi', () => {
 		const operations = [{ op: 'Set', key: 'FOO', value: 'bar' }];
 
 		it('should call the correct API endpoint for sandbox', async () => {
-			const expectedUri = '/v1/env-vars';
+			const expectedUri = '/v1/env';
 			const expectedResponse = { body: { success: true } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -123,7 +123,7 @@ describe('ParticleApi', () => {
 
 		it('should call the correct API endpoint for org', async () => {
 			const org = 'testOrg';
-			const expectedUri = `/v1/orgs/${org}/env-vars`;
+			const expectedUri = `/v1/orgs/${org}/env`;
 			const expectedResponse = { body: { success: true } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -141,7 +141,7 @@ describe('ParticleApi', () => {
 
 		it('should call the correct API endpoint for product', async () => {
 			const productId = 'testProductId';
-			const expectedUri = `/v1/products/${productId}/env-vars`;
+			const expectedUri = `/v1/products/${productId}/env`;
 			const expectedResponse = { body: { success: true } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
@@ -159,7 +159,7 @@ describe('ParticleApi', () => {
 
 		it('should call the correct API endpoint for device', async () => {
 			const deviceId = 'testDeviceId';
-			const expectedUri = `/v1/env-vars/${deviceId}`;
+			const expectedUri = `/v1/env/${deviceId}`;
 			const expectedResponse = { body: { success: true } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
