@@ -472,16 +472,6 @@ module.exports = class ParticleApi {
 		}));
 	}
 
-	renderEnvVars({ sandbox, org, productId, deviceId }) {
-		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId })
-			.concat('/render');
-		return this._wrap(this.api.request({
-			uri,
-			method: 'get',
-			auth: this.accessToken
-		}));
-	}
-
 
 	_wrap(promise){
 		return Promise.resolve(promise)
