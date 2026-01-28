@@ -61,7 +61,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(env, 'unset', 'Unset an environment variable', {
+	commandProcessor.createCommand(env, 'delete', 'Delete an environment variable', {
 		params: '<key>',
 		options: {
 			'org': {
@@ -76,7 +76,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const EnvVarsCommand = require('../cmd/env-vars');
-			return new EnvVarsCommand(args).unsetEnvVars(args);
+			return new EnvVarsCommand(args).deleteEnv(args);
 		},
 		examples: {
 			'$0 $command <key>': 'Unset env var from user\'s sandbox',

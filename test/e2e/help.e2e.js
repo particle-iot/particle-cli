@@ -57,7 +57,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'call', 'cloud list', 'cloud claim', 'cloud remove', 'cloud name', 'cloud flash',
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile',
-		'config env list', 'config env set', 'config env unset', 'config env',
+		'config env list', 'config env set', 'config env delete', 'config env',
 		'config secret list', 'config secret get', 'config secret create', 'config secret update', 'config secret remove', 'config secret',
 		'config',
 		'container run', 'container push', 'container list', 'container remove',
