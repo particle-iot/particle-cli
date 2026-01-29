@@ -37,9 +37,9 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command --sandbox': 'List all environment variables from sandbox',
-			'$0 $command --org <org>': 'List all environment variables from an specific organization',
-			'$0 $command --product <productId>': 'List all environment variables from an specific product',
-			'$0 $command --device <deviceId>': 'List all environment variables from an specific device',
+			'$0 $command --org <org>': 'List all environment variables from a specific organization',
+			'$0 $command --product <productId>': 'List all environment variables from a specific product',
+			'$0 $command --device <deviceId>': 'List all environment variables from a specific device',
 		}
 	});
 
@@ -129,11 +129,11 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command': 'List all secrets',
-			'$0 $command --org <org>': 'List all secrets from an specific org'
+			'$0 $command --org <org>': 'List all secrets from a specific org'
 		}
 	});
 
-	commandProcessor.createCommand(secret, 'get', 'Get an specific secret',{
+	commandProcessor.createCommand(secret, 'get', 'Get a specific secret',{
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -184,7 +184,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(secret, 'remove', 'Remove an specific secret',{
+	commandProcessor.createCommand(secret, 'remove', 'Remove a specific secret',{
 		options: {
 			'org': {
 				description: 'Specify the organization'
