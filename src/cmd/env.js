@@ -88,8 +88,12 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write('---------------------------------------------');
 	};
 
-	async setEnvVars({ params: { key, value }, org, product, device, sandbox }) {
+	async setEnvVars({ params, org, product, device, sandbox }) {
 		this._validateScope({ sandbox, org, product, device });
+
+		// Parse key and value - supports both "key value" and "key=value" formats
+		const { key, value } = this._parseKeyValue(params);
+
 		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
 			this.api.patchEnvVars({
@@ -100,6 +104,28 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 				operations: [operation]
 			}));
 		this.ui.write(`Key ${key} has been successfully set.`);
+	}
+
+	_parseKeyValue(params) {
+		// If params has both key and value, use them directly (e.g., "key value" format)
+		if (params.key && params.value) {
+			return { key: params.key, value: params.value };
+		}
+
+		// Otherwise, check if key contains "=" (e.g., "key=value" format)
+		if (params.key && params.key.includes('=')) {
+			const [key, ...valueParts] = params.key.split('=');
+			const value = valueParts.join('='); // Handle values that contain "="
+
+			if (!key || value === undefined) {
+				throw new Error('Invalid format. Use either "key value" or "key=value"');
+			}
+
+			return { key, value };
+		}
+
+		// If we got here, the format is invalid
+		throw new Error('Invalid format. Use either "key value" or "key=value"');
 	}
 
 	async deleteEnv({ params: { key }, org, product, device, sandbox, dryRun }) {

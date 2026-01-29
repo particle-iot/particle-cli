@@ -44,7 +44,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(env, 'set', 'Set an environment variable', {
-		params: '<key> <value>',
+		params: '<key> [value]',
 		options: {
 			'sandbox': {
 				description: 'Target the sandbox',
@@ -65,9 +65,10 @@ module.exports = ({ commandProcessor, root }) => {
 			return new EnvVarsCommand(args).setEnvVars(args);
 		},
 		examples: {
-			'$0 $command <key> <value> --sandbox': 'Set env var to user\'s sandbox',
+			'$0 $command <key> <value> --sandbox': 'Set env var to user\'s sandbox (space format)',
+			'$0 $command <key=value> --sandbox': 'Set env var to user\'s sandbox (equal sign format)',
 			'$0 $command <key> <value> --org <org>': 'Set env var for an organization',
-			'$0 $command <key> <value> --product <productId>': 'Set env var for a product',
+			'$0 $command <key=value> --product <productId>': 'Set env var for a product',
 			'$0 $command <key> <value> --device <deviceId>': 'Set env var for a device',
 		}
 	});
