@@ -124,7 +124,7 @@ describe('secrets', () => {
 	});
 
 	describe('get secret', () => {
-		it('returns an specific secret', async () => {
+		it('returns a specific secret', async () => {
 			const name = 'SECRET_NAME';
 			nock(baseUrl)
 				.intercept(`/secrets/${name}`, 'GET')
@@ -133,7 +133,7 @@ describe('secrets', () => {
 			expect(secretResponse).to.deep.equal(formattedGenericSecretGet);
 		});
 
-		it('returns an specific secret from org', async () => {
+		it('returns a specific secret from org', async () => {
 			const name = 'SECRET_NAME';
 			const org = 'my-org';
 			nock(baseUrl)
