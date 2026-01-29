@@ -138,12 +138,13 @@ describe('config env Command', () => {
 				error_description: 'Validation error: : Must only contain uppercase letters, numbers, and underscores. Must not start with a number. at "ops[0].key"',
 				error:'invalid_request'
 			};
+			const params = { key: 'invalid-key', value: 'bar' }; // Invalid key with dash
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply(400, apiError);
 			let error;
 			try {
-				await envVarsCommands.setEnvVars({ params: {}, sandbox: true });
+				await envVarsCommands.setEnvVars({ params, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
@@ -177,6 +178,58 @@ describe('config env Command', () => {
 			await envVarsCommands.setEnvVars({ params, device: deviceId });
 			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
 			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+		});
+
+		it('set env var using key=value format', async () => {
+			let receivedBody;
+			const params = { key: 'FOO=bar' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'PATCH')
+				.reply((uri, requestBody) => {
+					receivedBody = requestBody;
+					return [200, sandboxList];
+				});
+			await envVarsCommands.setEnvVars({ params, sandbox: true });
+			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar', op: 'Set' }] });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
+		});
+
+		it('set env var using key=value format with value containing equals sign', async () => {
+			let receivedBody;
+			const params = { key: 'FOO=bar=baz' };
+			nock('https://api.particle.io/v1')
+				.intercept('/env', 'PATCH')
+				.reply((uri, requestBody) => {
+					receivedBody = requestBody;
+					return [200, sandboxList];
+				});
+			await envVarsCommands.setEnvVars({ params, sandbox: true });
+			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar=baz', op: 'Set' }] });
+			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envVarsCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
+		});
+
+		it('throws error when key=value format is invalid (empty key)', async () => {
+			const params = { key: '=bar' };
+			let error;
+			try {
+				await envVarsCommands.setEnvVars({ params, sandbox: true });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.equal('Invalid format. Use either "key value" or "key=value"');
+		});
+
+		it('throws error when neither key/value nor key=value format is provided', async () => {
+			const params = { key: 'FOO' }; // Missing value
+			let error;
+			try {
+				await envVarsCommands.setEnvVars({ params, sandbox: true });
+			} catch (_error) {
+				error = _error;
+			}
+			expect(error.message).to.equal('Invalid format. Use either "key value" or "key=value"');
 		});
 	});
 
