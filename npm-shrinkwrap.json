@@ -30,7 +30,7 @@
         "node-fetch": "^2.7.0",
         "node-wifiscanner2": "^1.2.2",
         "particle-api-js": "^11.1.7",
-        "particle-commands": "^1.0.5",
+        "particle-commands": "^1.0.6",
         "particle-library-manager": "^1.0.6",
         "particle-usb": "^4.0.1",
         "request": "^2.88.2",
@@ -8420,9 +8420,9 @@
       }
     },
     "node_modules/particle-commands": {
-      "version": "1.0.5",
-      "resolved": "https://registry.npmjs.org/particle-commands/-/particle-commands-1.0.5.tgz",
-      "integrity": "sha512-Arp32yoUYL5PtWXpseAaJpKmggC8hEk8IukeylQX9ZgjYtUzuEsHlJhKO4g9n78LSkQMx9FXLBRT8p8o/df/UA==",
+      "version": "1.0.6",
+      "resolved": "https://registry.npmjs.org/particle-commands/-/particle-commands-1.0.6.tgz",
+      "integrity": "sha512-3JtiyZj/9UMJ+S6Qn6t7jp+/E3XLn3mPqBuz+XY9GoboHSLKh/7/rbDtj6H9UEj+D2xlhlLt0cjtnfDuVf11Gw==",
       "license": "Apache-2.0",
       "dependencies": {
         "babel-runtime": "^6.9.2",
