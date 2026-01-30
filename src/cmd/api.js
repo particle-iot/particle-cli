@@ -472,6 +472,25 @@ module.exports = class ParticleApi {
 		}));
 	}
 
+	performEnvRollout({ sandbox, org, productId, deviceId, when = 'Connect' }) {
+		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri: uri + '/rollout',
+			method: 'post',
+			auth: this.accessToken,
+			data: { when }
+		}));
+	}
+
+	getRollout({ sandbox, org, productId, deviceId }) {
+		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId });
+		return this._wrap(this.api.request({
+			uri: uri + '/rollout',
+			method: 'get',
+			auth: this.accessToken
+		}));
+	}
+
 
 	_wrap(promise){
 		return Promise.resolve(promise)
