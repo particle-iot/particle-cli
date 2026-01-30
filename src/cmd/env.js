@@ -90,8 +90,6 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 
 	async setEnvVars({ params, org, product, device, sandbox }) {
 		this._validateScope({ sandbox, org, product, device });
-
-		// Parse key and value - supports both "key value" and "key=value" formats
 		const { key, value } = this._parseKeyValue(params);
 
 		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
@@ -107,15 +105,12 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 	}
 
 	_parseKeyValue(params) {
-		// If params has both key and value, use them directly (e.g., "key value" format)
 		if (params.key && params.value) {
 			return { key: params.key, value: params.value };
 		}
-
-		// Otherwise, check if key contains "=" (e.g., "key=value" format)
 		if (params.key && params.key.includes('=')) {
 			const [key, ...valueParts] = params.key.split('=');
-			const value = valueParts.join('='); // Handle values that contain "="
+			const value = valueParts.join('=');
 
 			if (!key || value === undefined) {
 				throw new Error('Invalid format. Use either "key value" or "key=value"');
@@ -123,30 +118,23 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 
 			return { key, value };
 		}
-
-		// If we got here, the format is invalid
 		throw new Error('Invalid format. Use either "key value" or "key=value"');
 	}
 
 	async deleteEnv({ params: { key }, org, product, device, sandbox, dryRun }) {
 		this._validateScope({ sandbox, org, product, device });
 
-		// Fetch current env vars to check if the key exists and is inherited
 		const envVars = await this.api.listEnvVars({ sandbox, org, productId: product, deviceId: device });
 		const env = envVars?.env || {};
 		const ownVars = env.own || {};
 		const inheritedVars = env.inherited || {};
 
-		// Check if the key exists at this level
 		const isOwnVar = key in ownVars;
 		const isInherited = key in inheritedVars;
 
-		// Variable doesn't exist at all
 		if (!isOwnVar && !isInherited) {
 			throw new Error(`Environment variable '${key}' does not exist at this scope.`);
 		}
-
-		// Variable is only inherited, cannot be deleted at this level
 		if (!isOwnVar && isInherited) {
 			this.ui.write(this.ui.chalk.yellow(`Warning: '${key}' is inherited from a parent scope and cannot be deleted at this level.`));
 			const inheritedFrom = inheritedVars[key]?.from || 'parent scope';
@@ -154,11 +142,8 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 			this.ui.write(this.ui.chalk.yellow(`To delete it, you must delete it from the scope where it's defined.`));
 			return;
 		}
-
-		// Variable exists in own scope
 		const currentValue = ownVars[key]?.value;
 
-		// Check if this is an override (exists in both own and inherited)
 		if (isOwnVar && isInherited) {
 			const inheritedValue = inheritedVars[key]?.value;
 			this.ui.write(this.ui.chalk.yellow(`Note: '${key}' is an overridden variable. If you delete it, the inherited value '${inheritedValue}' will become visible.`));
