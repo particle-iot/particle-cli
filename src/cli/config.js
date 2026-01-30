@@ -1,15 +1,8 @@
 'use strict';
 
 module.exports = ({ commandProcessor, root }) => {
-	// Create the main 'config' category
 	const config = commandProcessor.createCategory(root, 'config', 'Manage environment variables and secrets');
-
-	// Create 'env' subcategory under config
 	const env = commandProcessor.createCategory(config, 'env', 'Manage environment variables');
-
-	// ============================================================
-	// ENV COMMANDS (formerly env-vars)
-	// ============================================================
 
 	commandProcessor.createCommand(env, 'list', 'List all environment variables', {
 		options: {
@@ -106,10 +99,6 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command <key> --sandbox --dry-run': 'Preview deletion without actually deleting',
 		}
 	});
-
-	// ============================================================
-	// SECRET COMMANDS
-	// ============================================================
 
 	const secret = commandProcessor.createCategory(config, 'secrets', 'Manage secrets');
 
