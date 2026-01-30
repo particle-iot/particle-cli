@@ -2,23 +2,29 @@
 
 module.exports = ({ commandProcessor, root }) => {
 	const config = commandProcessor.createCategory(root, 'config', 'Manage environment variables and secrets');
-	const env = commandProcessor.createCategory(config, 'env', 'Manage environment variables');
+
+	const env = commandProcessor.createCategory(config, 'env', 'Manage environment variables', {
+		inherited: {
+			options: {
+				'sandbox': {
+					description: 'Target the sandbox',
+					boolean: true
+				},
+				'org': {
+					description: 'Specify the organization'
+				},
+				'product': {
+					description: 'Specify the product id'
+				},
+				'device': {
+					description: 'Specify the device id'
+				}
+			}
+		}
+	});
 
 	commandProcessor.createCommand(env, 'list', 'List all environment variables', {
 		options: {
-			'sandbox': {
-				description: 'Target the sandbox',
-				boolean: true
-			},
-			'org': {
-				description: 'Specify the organization'
-			},
-			'product': {
-				description: 'Specify the product id'
-			},
-			'device': {
-				description: 'Specify the device id'
-			},
 			'json': {
 				description: 'Show the list in json format',
 				boolean: true
@@ -38,21 +44,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(env, 'set', 'Set an environment variable', {
 		params: '<key> [value]',
-		options: {
-			'sandbox': {
-				description: 'Target the sandbox',
-				boolean: true
-			},
-			'org': {
-				description: 'Specify the organization'
-			},
-			'product': {
-				description: 'Specify the product id'
-			},
-			'device': {
-				description: 'Specify the device id'
-			},
-		},
 		handler: (args) => {
 			const EnvVarsCommand = require('../cmd/env');
 			return new EnvVarsCommand(args).setEnvVars(args);
@@ -69,19 +60,6 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(env, 'delete', 'Delete an environment variable', {
 		params: '<key>',
 		options: {
-			'sandbox': {
-				description: 'Target the sandbox',
-				boolean: true
-			},
-			'org': {
-				description: 'Specify the organization'
-			},
-			'product': {
-				description: 'Specify the product id'
-			},
-			'device': {
-				description: 'Specify the device id'
-			},
 			'dry-run': {
 				description: 'Preview what would be deleted without actually deleting',
 				boolean: true
