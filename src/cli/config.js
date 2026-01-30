@@ -31,8 +31,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env');
-			return new EnvVarsCommand(args).list(args);
+			const EnvCommands = require('../cmd/env');
+			return new EnvCommands(args).list(args);
 		},
 		examples: {
 			'$0 $command --sandbox': 'List all environment variables from sandbox',
@@ -45,8 +45,8 @@ module.exports = ({ commandProcessor, root }) => {
 	commandProcessor.createCommand(env, 'set', 'Set an environment variable', {
 		params: '<key> [value]',
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env');
-			return new EnvVarsCommand(args).setEnvVars(args);
+			const EnvCommands = require('../cmd/env');
+			return new EnvCommands(args).setEnvVars(args);
 		},
 		examples: {
 			'$0 $command <key> <value> --sandbox': 'Set env var to user\'s sandbox (space format)',
@@ -66,8 +66,8 @@ module.exports = ({ commandProcessor, root }) => {
 			},
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env');
-			return new EnvVarsCommand(args).deleteEnv(args);
+			const EnvCommands = require('../cmd/env');
+			return new EnvCommands(args).deleteEnv(args);
 		},
 		examples: {
 			'$0 $command <key> --sandbox': 'Delete env var from user\'s sandbox',
@@ -90,8 +90,8 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		handler: (args) => {
-			const EnvVarsCommand = require('../cmd/env');
-			return new EnvVarsCommand(args).rollout(args);
+			const EnvCommands = require('../cmd/env');
+			return new EnvCommands(args).rollout(args);
 		},
 		examples: {
 			'$0 $command --sandbox': 'Rollout env var changes to sandbox',
