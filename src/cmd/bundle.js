@@ -60,8 +60,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 
 		const projectPropertiesPath = path.join(process.cwd(), 'project.properties');
 		const propFile = await utilities.parsePropertyFile(projectPropertiesPath);
-		if (propFile.firmwareEnv && propFile.firmwareEnv !== '') {
-			return path.join(path.dirname(projectPropertiesPath), propFile.firmwareEnv);
+		if (propFile.env && propFile.env !== '') {
+			return path.join(path.dirname(projectPropertiesPath), propFile.env);
 		}
 	}
 
@@ -118,7 +118,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 			// get the assets dir relative to the project.properties file
 			return path.join(path.dirname(projectPropertiesPath), propFile.assetOtaDir);
 		} else if (!propFile.assetOtaDir) {
-			if (propFile.firmwareEnv) {
+			if (propFile.env) {
 				return null; // bypass asset ota validation
 			}
 			throw new Error('Add assetOtaDir to your project.properties in order to bundle assets');
