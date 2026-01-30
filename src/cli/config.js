@@ -111,7 +111,7 @@ module.exports = ({ commandProcessor, root }) => {
 	// SECRET COMMANDS
 	// ============================================================
 
-	const secret = commandProcessor.createCategory(config, 'secret', 'Manage secrets');
+	const secret = commandProcessor.createCategory(config, 'secrets', 'Manage secrets');
 
 	commandProcessor.createCommand(secret, 'list', 'List all created secrets', {
 		options: {
