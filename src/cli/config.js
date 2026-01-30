@@ -1,7 +1,9 @@
 'use strict';
 
 module.exports = ({ commandProcessor, root }) => {
-	const config = commandProcessor.createCategory(root, 'config', 'Manage environment variables and secrets');
+	const config = commandProcessor.createCategory(root, 'config', 'Manage environment variables and secrets', {
+		epilogue: 'Note: the commands to manage profiles have been renamed from `particle config` to `particle profile`. Run `particle help profile` for details.'
+	});
 
 	const env = commandProcessor.createCategory(config, 'env', 'Manage environment variables', {
 		inherited: {
