@@ -5,7 +5,7 @@ const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const fs = require('node:fs/promises');
 
-module.exports = class EnvVarsCommand extends CLICommandBase {
+module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
 		this.api = createAPI();
