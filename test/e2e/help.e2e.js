@@ -57,7 +57,7 @@ describe('Help & Unknown Command / Argument Handling', () => {
 		'cloud compile', 'cloud nyan', 'cloud login', 'cloud logout',
 		'cloud', 'compile',
 		'config env list', 'config env set', 'config env delete', 'config env',
-		'config secret list', 'config secret get', 'config secret create', 'config secret update', 'config secret remove', 'config secret',
+		'config secrets list', 'config secrets get', 'config secrets create', 'config secrets update', 'config secrets remove', 'config secrets',
 		'config',
 		'container run', 'container push', 'container list', 'container remove',
 		'container configure-docker', 'container', 'device add', 'device remove', 'device rename', 'device doctor', 'device',
