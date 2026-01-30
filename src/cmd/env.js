@@ -167,6 +167,53 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write(`Key ${key} has been successfully deleted.`);
 	}
 
+	async rollout({ org, product, device, sandbox, yes, when }) {
+		this._validateScope({ sandbox, org, product, device });
+
+		const target = sandbox ? 'sandbox' : (org || product || device);
+
+		const rolloutPreviewFromSnapShot = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
+			this.api.getRollout({ sandbox, org, productId: product, deviceId: device }));
+		const rolloutPreview = rolloutPreviewFromSnapShot.from_snapshot;
+		this._displayRolloutChanges(rolloutPreview);
+
+		if (rolloutPreview?.changes?.length > 0) {
+			if (!yes) {
+				const confirmQuestion = {
+					type: 'confirm',
+					name: 'confirm',
+					message: `Are you sure you want to apply these changes to ${target}?`,
+					default: false
+				};
+				const { confirm } = await this.ui.prompt([confirmQuestion]);
+				if (!confirm) {
+					this.ui.write('Rollout cancelled.');
+					return;
+				}
+			}
+			let rolloutWhen = when || 'Connect';
+			if (!yes) {
+				const whenQuestion = {
+					type: 'list',
+					name: 'when',
+					message: 'When should the rollout be applied to each device?',
+					choices: [
+						{ name: 'Immediately', value: 'Immediate' },
+						{ name: 'On next connection', value: 'Connect' }
+					],
+					default: 'Connect',
+					dataTesting: 'when-prompt'
+				};
+				const { when: whenAnswer } = await this.ui.prompt([whenQuestion]);
+				rolloutWhen = whenAnswer;
+			}
+			await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
+				this.api.performEnvRollout({ sandbox, org, productId: product, deviceId: device, when: rolloutWhen }));
+
+			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
+		}
+	}
+
 	async _getOperationsFromFile(filename) {
 		try {
 			const fileInfo = await fs.readFile(filename, 'utf8');
