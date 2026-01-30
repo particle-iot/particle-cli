@@ -698,8 +698,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 			const propPath = path.join(file, 'project.properties');
 			try {
 				const savedPropObj = await utilities.parsePropertyFile(propPath);
-				if (savedPropObj.firmwareEnv && savedPropObj.firmwareEnv !== ''){
-					return path.join(file, savedPropObj.firmwareEnv);
+				if (savedPropObj.env && savedPropObj.env !== ''){
+					return path.join(file, savedPropObj.env);
 				}
 			} catch (_err) {
 				// Ignore parsing or stat errors
