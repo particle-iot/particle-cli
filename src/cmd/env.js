@@ -5,15 +5,34 @@ const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const fs = require('node:fs/promises');
 
-module.exports = class EnvVarsCommand extends CLICommandBase {
+module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
 		super(...args);
 		this.api = createAPI();
 	}
 
-	async list({ org, product, device, json }){
+	_validateScope({ sandbox, org, product, device }) {
+		const scopes = [
+			{ name: 'sandbox', value: sandbox },
+			{ name: 'org', value: org },
+			{ name: 'product', value: product },
+			{ name: 'device', value: device }
+		].filter(scope => scope.value);
+
+		if (scopes.length === 0) {
+			throw new Error('You must specify one of: --sandbox, --org, --product, or --device');
+		}
+
+		if (scopes.length > 1) {
+			const scopeNames = scopes.map(s => `--${s.name}`).join(', ');
+			throw new Error(`You can only specify one scope at a time. You provided: ${scopeNames}`);
+		}
+	}
+
+	async list({ org, product, device, sandbox, json }){
+		this._validateScope({ sandbox, org, product, device });
 		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
-			this.api.listEnvVars({ org, productId: product, deviceId: device }));
+			this.api.listEnvVars({ sandbox, org, productId: product, deviceId: device }));
 		if (json) {
 			this.ui.write(JSON.stringify(envVars, null, 2));
 		} else {
@@ -69,10 +88,14 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write('---------------------------------------------');
 	};
 
-	async setEnvVars({ params: { key, value }, org, product, device }) {
+	async setEnvVars({ params, org, product, device, sandbox }) {
+		this._validateScope({ sandbox, org, product, device });
+		const { key, value } = this._parseKeyValue(params);
+
 		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
 			this.api.patchEnvVars({
+				sandbox,
 				org,
 				productId: product,
 				deviceId: device,
@@ -81,95 +104,76 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 		this.ui.write(`Key ${key} has been successfully set.`);
 	}
 
-	async unsetEnvVars({ params: { key }, org, product, device }) {
+	_parseKeyValue(params) {
+		if (params.key && params.value) {
+			return { key: params.key, value: params.value };
+		}
+		if (params.key && params.key.includes('=')) {
+			const [key, ...valueParts] = params.key.split('=');
+			const value = valueParts.join('=');
+
+			if (!key || value === undefined) {
+				throw new Error('Invalid format. Use either "key value" or "key=value"');
+			}
+
+			return { key, value };
+		}
+		throw new Error('Invalid format. Use either "key value" or "key=value"');
+	}
+
+	async deleteEnv({ params: { key }, org, product, device, sandbox, dryRun }) {
+		this._validateScope({ sandbox, org, product, device });
+
+		const envVars = await this.api.listEnvVars({ sandbox, org, productId: product, deviceId: device });
+		const env = envVars?.env || {};
+		const ownVars = env.own || {};
+		const inheritedVars = env.inherited || {};
+
+		const isOwnVar = key in ownVars;
+		const isInherited = key in inheritedVars;
+
+		if (!isOwnVar && !isInherited) {
+			throw new Error(`Environment variable '${key}' does not exist at this scope.`);
+		}
+		if (!isOwnVar && isInherited) {
+			this.ui.write(this.ui.chalk.yellow(`Warning: '${key}' is inherited from a parent scope and cannot be deleted at this level.`));
+			const inheritedFrom = inheritedVars[key]?.from || 'parent scope';
+			this.ui.write(this.ui.chalk.yellow(`This variable is defined at: ${inheritedFrom}`));
+			this.ui.write(this.ui.chalk.yellow(`To delete it, you must delete it from the scope where it's defined.`));
+			return;
+		}
+		const currentValue = ownVars[key]?.value;
+
+		if (isOwnVar && isInherited) {
+			const inheritedValue = inheritedVars[key]?.value;
+			this.ui.write(this.ui.chalk.yellow(`Note: '${key}' is an overridden variable. If you delete it, the inherited value '${inheritedValue}' will become visible.`));
+		}
+
+		if (dryRun) {
+			this.ui.write(this.ui.chalk.cyan(`[DRY RUN] Would delete environment variable '${key}'`));
+			this.ui.write(`Current value: ${currentValue}`);
+			return;
+		}
+
 		const operation = this._buildEnvVarOperation({ key, operation: 'Unset' });
-		await this.ui.showBusySpinnerUntilResolved('Unsetting environment variable...',
+		await this.ui.showBusySpinnerUntilResolved('Deleting environment variable...',
 			this.api.patchEnvVars({
+				sandbox,
 				org,
 				productId: product,
 				deviceId: device,
 				operations: [operation]
 			}));
-		this.ui.write(`Key ${key} has been successfully unset.`);
-	}
-
-	async patchEnvVars({ params: { filename } }, org, product, device) {
-		const operations = await this._getOperationsFromFile(filename);
-		await this.ui.showBusySpinnerUntilResolved('Patching your environment variables...',
-			this.api.patchEnvVars({
-				org,
-				productId: product,
-				deviceId: device,
-				operations
-			}));
-		this.ui.write(`Environment variables has been patched according the file ${filename}`);
-	}
-
-	async _getOperationsFromFile(filename) {
-		try {
-			const fileInfo = await fs.readFile(filename, 'utf8');
-			const operations = JSON.parse(fileInfo);
-			//TODO (hmontero): remove this once api removes access field
-			operations.ops?.forEach(operation => {
-				operation.access = ['Device'];
-			});
-			return operations.ops;
-		} catch (error) {
-			throw new Error(`Unable to process the file ${filename}: ${ error.message }`);
-		}
-	}
-
-	async renderEnvVars({ org, product, device, json }){
-		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
-			this.api.renderEnvVars({ org, productId: product, deviceId: device }));
-		if (json) {
-			this.ui.write(JSON.stringify(envVars, null, 2));
-		} else {
-			const keys = Object.keys(envVars?.env ?? {});
-			if (!keys.length) {
-				this.ui.write('No environment variables found.');
-				return;
-			}
-			this._writeRenderBlock(keys, envVars.env);
-		}
-	}
-
-	_writeRenderBlock(keys, env) {
-		this.ui.write(this.ui.chalk.cyan(this.ui.chalk.bold('Environment variables:')));
-		this.ui.write('---------------------------------------------');
-		keys.forEach((key) => {
-			this.ui.write(`    ${key} : ${env[key]}`);
-		});
-		this.ui.write('---------------------------------------------');
-	};
-
-	_buildEnvVarOperation({ key, value, operation }) {
-		const validOperations = ['Set', 'Unset'];
-		if (!validOperations.includes(operation)) {
-			throw Error('Invalid operation for patch ' + operation);
-		}
-		return {
-			op: operation,
-			key,
-			value
-		};
+		this.ui.write(`Key ${key} has been successfully deleted.`);
 	}
 
 	async rollout({ org, product, device, sandbox, yes, when }) {
-		const scopes = [org, product, device, sandbox].filter(s => s);
-		if (scopes.length === 0) {
-			throw new Error('Please specify a scope for the rollout: --org, --product, --device, or --sandbox');
-		}
-		if (scopes.length > 1) {
-			throw new Error('The --org, --product, --device, and --sandbox flags are mutually exclusive. Please specify only one.');
-		}
+		this._validateScope({ sandbox, org, product, device });
 
-		// Determine target for confirmation message
 		const target = sandbox ? 'sandbox' : (org || product || device);
 
-		// Fetch and display proposed rollout changes
 		const rolloutPreviewFromSnapShot = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
-			this.api.getRollout({ org, productId: product, deviceId: device }));
+			this.api.getRollout({ sandbox, org, productId: product, deviceId: device }));
 		const rolloutPreview = rolloutPreviewFromSnapShot.from_snapshot;
 		this._displayRolloutChanges(rolloutPreview);
 
@@ -203,12 +207,37 @@ module.exports = class EnvVarsCommand extends CLICommandBase {
 				const { when: whenAnswer } = await this.ui.prompt([whenQuestion]);
 				rolloutWhen = whenAnswer;
 			}
-			// Perform the actual rollout
 			await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
-				this.api.performEnvRollout({ org, productId: product, deviceId: device, when: rolloutWhen }));
+				this.api.performEnvRollout({ sandbox, org, productId: product, deviceId: device, when: rolloutWhen }));
 
 			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
 		}
+	}
+
+	async _getOperationsFromFile(filename) {
+		try {
+			const fileInfo = await fs.readFile(filename, 'utf8');
+			const operations = JSON.parse(fileInfo);
+			//TODO (hmontero): remove this once api removes access field
+			operations.ops?.forEach(operation => {
+				operation.access = ['Device'];
+			});
+			return operations.ops;
+		} catch (error) {
+			throw new Error(`Unable to process the file ${filename}: ${ error.message }`);
+		}
+	}
+
+	_buildEnvVarOperation({ key, value, operation }) {
+		const validOperations = ['Set', 'Unset'];
+		if (!validOperations.includes(operation)) {
+			throw Error('Invalid operation for patch ' + operation);
+		}
+		return {
+			op: operation,
+			key,
+			value
+		};
 	}
 
 	_displayRolloutChanges(rolloutData) {

@@ -39,19 +39,18 @@ describe('Secrets', () => {
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
-	describe('help secrets', () => {
+	describe('help config secret', () => {
 		const help = [
-			'create, update, list and remove secrets',
-			'Usage: particle secrets <command>',
-			'Help:  particle help secrets <command>',
+			'Manage secrets',
+			'Usage: particle config secrets <command>',
+			'Help:  particle help config secrets <command>',
 			'',
 			'Commands:',
-			'  list    List all created secrets.',
-			'          Alias: this command can be also executed as sc list[options]',
-			'  get     Get an specific secret',
+			'  list    List all created secrets',
+			'  get     Get a specific secret',
 			'  create  Creates a new secret',
 			'  update  Updates the value of an existing secret',
-			'  remove  Remove an specific secret',
+			'  remove  Remove a specific secret',
 			'',
 			'Global Options:',
 			'  -v, --verbose  Increases how much logging to display  [count]',
@@ -59,32 +58,24 @@ describe('Secrets', () => {
 			''
 		];
 		it('Shows `help` content', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['help', 'secrets']);
-			expect(stdout).to.equal('');
-			expect(stderr.split('\n')).to.include.members(help);
-			expect(exitCode).to.equal(0);
-		});
-
-		it('Shows `help` content with alias', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['help', 'sc']);
-
+			const { stdout, stderr, exitCode } = await cli.run(['help', 'config', 'secrets']);
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(help);
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Shows `help` content when run with `--help` flag', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['secrets', '--help']);
+			const { stdout, stderr, exitCode } = await cli.run(['config', 'secrets', '--help']);
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(help);
 			expect(exitCode).to.equal(0);
 		});
 	});
 
-	describe('secrets flow (create, get, update, list, delete)', () => {
+	describe('config secret flow (create, get, update, list, delete)', () => {
 		it('creates a new secret for org', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'create',
+				'config', 'secrets', 'create',
 				'--name', secretName,
 				'--value', 'value',
 				'--org', orgName]);
@@ -95,7 +86,7 @@ describe('Secrets', () => {
 		});
 		it('lists the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'list',
+				'config', 'secrets', 'list',
 				'--org', orgName
 			]);
 			expect(stdout).to.include(secretName);
@@ -105,7 +96,7 @@ describe('Secrets', () => {
 
 		it('updates the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'update',
+				'config', 'secrets', 'update',
 				'--name', secretName,
 				'--value', 'updated_value',
 				'--org', orgName
@@ -117,7 +108,7 @@ describe('Secrets', () => {
 
 		it('remove the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'remove',
+				'config', 'secrets', 'remove',
 				'--name', secretName,
 				'--org', orgName
 			]);
