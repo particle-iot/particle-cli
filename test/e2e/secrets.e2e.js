@@ -42,8 +42,8 @@ describe('Secrets', () => {
 	describe('help config secret', () => {
 		const help = [
 			'Manage secrets',
-			'Usage: particle config secret <command>',
-			'Help:  particle help config secret <command>',
+			'Usage: particle config secrets <command>',
+			'Help:  particle help config secrets <command>',
 			'',
 			'Commands:',
 			'  list    List all created secrets',
@@ -58,14 +58,14 @@ describe('Secrets', () => {
 			''
 		];
 		it('Shows `help` content', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['help', 'config', 'secret']);
+			const { stdout, stderr, exitCode } = await cli.run(['help', 'config', 'secrets']);
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(help);
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Shows `help` content when run with `--help` flag', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['config', 'secret', '--help']);
+			const { stdout, stderr, exitCode } = await cli.run(['config', 'secrets', '--help']);
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(help);
 			expect(exitCode).to.equal(0);
@@ -75,7 +75,7 @@ describe('Secrets', () => {
 	describe('config secret flow (create, get, update, list, delete)', () => {
 		it('creates a new secret for org', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'config', 'secret', 'create',
+				'config', 'secrets', 'create',
 				'--name', secretName,
 				'--value', 'value',
 				'--org', orgName]);
@@ -86,7 +86,7 @@ describe('Secrets', () => {
 		});
 		it('lists the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'config', 'secret', 'list',
+				'config', 'secrets', 'list',
 				'--org', orgName
 			]);
 			expect(stdout).to.include(secretName);
@@ -96,7 +96,7 @@ describe('Secrets', () => {
 
 		it('updates the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'config', 'secret', 'update',
+				'config', 'secrets', 'update',
 				'--name', secretName,
 				'--value', 'updated_value',
 				'--org', orgName
@@ -108,7 +108,7 @@ describe('Secrets', () => {
 
 		it('remove the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'config', 'secret', 'remove',
+				'config', 'secrets', 'remove',
 				'--name', secretName,
 				'--org', orgName
 			]);
