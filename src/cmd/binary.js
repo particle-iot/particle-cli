@@ -30,7 +30,7 @@ class BinaryCommand {
 		const parsedAppInfo = await this._parseBinary(extractedFiles.application);
 		await this._showInspectOutput(parsedAppInfo);
 		const assets = extractedFiles.assets;
-		this._printEnvVars(extractedFiles?.vars);
+		this._printEnvVars(extractedFiles?.env);
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
