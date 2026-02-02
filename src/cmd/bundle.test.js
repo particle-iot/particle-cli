@@ -3,11 +3,11 @@ const fs = require('fs/promises');
 const path = require('path');
 const { expect } = require('../../test/setup');
 const BundleCommands = require('./bundle');
-const envVars = require('../../test/__fixtures__/env-vars/env.test.json');
+const expectedEnv = require('../../test/__fixtures__/env/env.test.json');
 const {
 	PATH_FIXTURES_THIRDPARTY_OTA_DIR,
 	PATH_TMP_DIR,
-	PATH_FIXTURES_ENV_VAR
+	PATH_FIXTURES_ENV
 } = require('../../test/lib/env');
 
 
@@ -102,9 +102,9 @@ describe('BundleCommands', () => {
 		});
 
 		it('returns a .zip file', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'otaAssets');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json');
 
 			const args = {
 				params: {
@@ -139,9 +139,9 @@ describe('BundleCommands', () => {
 		});
 
 		it('uses the assets in the assets dir when --assets option is specified', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'otaAssets');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json');
 			const args = {
 				params: {
 					appBinary: binPath,
@@ -175,9 +175,9 @@ describe('BundleCommands', () => {
 		});
 
 		it('returns bundle with the default name if saveTo argument is not provided', async () => {
-			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'app.bin');
-			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
+			const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'app.bin');
+			const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'otaAssets');
+			const env = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json');
 			const args = {
 				params: {
 					appBinary: binPath,
@@ -365,28 +365,27 @@ describe('BundleCommands', () => {
 	});
 
 	describe('_getEnvVarsModule', () => {
-		it('returns env-vars module from envPath', async () => {
-			const env = path.join(PATH_FIXTURES_ENV_VAR, 'env.test.json');
-			const vars = await bundleCommands._getEnvVars(env);
-			expect(vars).to.deep.equal(envVars);
+		it('returns env module from envPath', async () => {
+			const envPath = path.join(PATH_FIXTURES_ENV, 'env.test.json');
+			const env = await bundleCommands._getEnvVars(envPath);
+			expect(env).to.deep.equal(expectedEnv);
 		});
-		it('returns env-vars module from project properties path', async () => {
-			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars');
-			const expectedJSON = JSON.parse(await fs.readFile(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json'), 'utf-8'));
+		it('returns env module from project properties path', async () => {
+			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env');
+			const expectedJSON = JSON.parse(await fs.readFile(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json'), 'utf-8'));
 			await runInDirectory(workingDir, async () => {
-				const vars = await bundleCommands._getEnvVars();
-				expect(vars).to.deep.equal(expectedJSON);
+				const env = await bundleCommands._getEnvVars();
+				expect(env).to.deep.equal(expectedJSON);
 			});
-
 		});
-		it('returns null in case there are not env-vars path defined', async () => {
+		it('returns null in case the project does not include an environment file', async () => {
 			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
 			await runInDirectory(workingDir, async () => {
-				const vars = await bundleCommands._getEnvVars();
-				expect(vars).to.deep.equal(null);
+				const env = await bundleCommands._getEnvVars();
+				expect(env).to.deep.equal(null);
 			});
 		});
-		it('throws an error in case env-vars path does not exist', async () => {
+		it('throws an error in case env path does not exist', async () => {
 			let error;
 			try {
 				await bundleCommands._getEnvVars('/foo/bar/baz.json');
@@ -398,7 +397,7 @@ describe('BundleCommands', () => {
 		});
 
 		it('throws an error in case of invalid JSON', async () => {
-			const env = path.join(PATH_FIXTURES_ENV_VAR, 'invalid-env-vars');
+			const env = path.join(PATH_FIXTURES_ENV, 'invalid-env');
 			let error;
 			try {
 				await bundleCommands._getEnvVars(env);
