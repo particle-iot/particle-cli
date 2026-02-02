@@ -364,31 +364,31 @@ describe('BundleCommands', () => {
 		});
 	});
 
-	describe('_getEnvVarsModule', () => {
+	describe('_loadEnv', () => {
 		it('returns env module from envPath', async () => {
 			const envPath = path.join(PATH_FIXTURES_ENV, 'env.test.json');
-			const env = await bundleCommands._getEnvVars(envPath);
+			const env = await bundleCommands._loadEnv(envPath);
 			expect(env).to.deep.equal(expectedEnv);
 		});
 		it('returns env module from project properties path', async () => {
 			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env');
 			const expectedJSON = JSON.parse(await fs.readFile(path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json'), 'utf-8'));
 			await runInDirectory(workingDir, async () => {
-				const env = await bundleCommands._getEnvVars();
+				const env = await bundleCommands._loadEnv();
 				expect(env).to.deep.equal(expectedJSON);
 			});
 		});
 		it('returns null in case the project does not include an environment file', async () => {
 			const workingDir = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid');
 			await runInDirectory(workingDir, async () => {
-				const env = await bundleCommands._getEnvVars();
+				const env = await bundleCommands._loadEnv();
 				expect(env).to.deep.equal(null);
 			});
 		});
 		it('throws an error in case env path does not exist', async () => {
 			let error;
 			try {
-				await bundleCommands._getEnvVars('/foo/bar/baz.json');
+				await bundleCommands._loadEnv('/foo/bar/baz.json');
 			} catch (_error) {
 				error = _error;
 			}
@@ -400,7 +400,7 @@ describe('BundleCommands', () => {
 			const env = path.join(PATH_FIXTURES_ENV, 'invalid-env');
 			let error;
 			try {
-				await bundleCommands._getEnvVars(env);
+				await bundleCommands._loadEnv(env);
 			} catch (_error) {
 				error = _error;
 			}

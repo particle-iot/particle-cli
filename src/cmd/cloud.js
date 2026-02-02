@@ -247,8 +247,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 		return deviceType + '_firmware_' + Date.now() + '.bin';
 	}
 
-	_getBundleSavePath(deviceType, saveTo, assets, vars){
-		if (!assets && !vars) {
+	_getBundleSavePath(deviceType, saveTo, assets, env){
+		if (!assets && !env) {
 			return;
 		}
 		if (!saveTo){
@@ -290,7 +290,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	}
 
 	async compileCodeImpl({ target, followSymlinks, saveTo, deviceType, platformId, files }) {
-		let targetVersion, assets, vars;
+		let targetVersion, assets, env;
 
 		ensureAPIToken();
 
@@ -326,9 +326,9 @@ module.exports = class CloudCommand extends CLICommandBase {
 			assets = await new BundleCommands()._getAssets({ assetsPath });
 		}
 
-		const envPath = await this._checkForEnvVars(files);
+		const envPath = await this._checkForEnv(files);
 		if (envPath) {
-			vars = await this._getEnvVars(envPath);
+			env = await this._loadEnv(envPath);
 		}
 
 		const fileMapping = await this._handleMultiFileArgs(files, { followSymlinks });
@@ -356,11 +356,11 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		const filename = this._getDownloadPathForBin(deviceType, saveTo);
-		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets, vars);
-		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, vars, bundleFilename });
+		const bundleFilename = this._getBundleSavePath(deviceType, saveTo, assets, env);
+		return this._compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, env, bundleFilename });
 	}
 
-	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, vars, bundleFilename }){
+	async _compileAndDownload({ fileMapping, platformId, filename, targetVersion, assets, env, bundleFilename }){
 		let respSizeInfo, bundle, resp;
 
 		try {
@@ -387,8 +387,8 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 
 		let message = 'Compile succeeded.';
-		if (assets || vars) {
-			bundle = await new BundleCommands()._generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename, vars });
+		if (assets || env) {
+			bundle = await new BundleCommands().generateBundle({ assetsList: assets, appBinary: filename, bundleFilename: bundleFilename, env });
 			message = 'Compile succeeded and bundle created.';
 		}
 
@@ -693,7 +693,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 	}
 
-	async _checkForEnvVars(files) {
+	async _checkForEnv(files) {
 		for (const file of files) {
 			const propPath = path.join(file, 'project.properties');
 			try {
@@ -707,7 +707,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		}
 	}
 
-	async _getEnvVars(envPath) {
+	async _loadEnv(envPath) {
 		try {
 			return await fs.readJSON(envPath);
 		} catch (error) {

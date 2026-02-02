@@ -445,8 +445,8 @@ module.exports = class ParticleApi {
 	 * @param deviceId - Device ID
 	 */
 	// TODO(hmontero): migrate to particle-api-js
-	listEnvVars({ sandbox, org, productId, deviceId }) {
-		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId });
+	listEnv({ sandbox, org, productId, deviceId }) {
+		const uri = getEnvUri({ sandbox, org, productId, deviceId });
 		return this._wrap(this.api.request({
 			uri,
 			method: 'get',
@@ -462,8 +462,8 @@ module.exports = class ParticleApi {
 	 * @param deviceId - Device ID
 	 * @param operations - List of operations to execute for the env vars
 	 */
-	patchEnvVars({ sandbox, org, productId, deviceId, operations }) {
-		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId });
+	patchEnv({ sandbox, org, productId, deviceId, operations }) {
+		const uri = getEnvUri({ sandbox, org, productId, deviceId });
 		return this._wrap(this.api.request({
 			uri,
 			method: 'patch',
@@ -473,7 +473,7 @@ module.exports = class ParticleApi {
 	}
 
 	performEnvRollout({ sandbox, org, productId, deviceId, when = 'Connect' }) {
-		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId });
+		const uri = getEnvUri({ sandbox, org, productId, deviceId });
 		return this._wrap(this.api.request({
 			uri: uri + '/rollout',
 			method: 'post',
@@ -483,7 +483,7 @@ module.exports = class ParticleApi {
 	}
 
 	getRollout({ sandbox, org, productId, deviceId }) {
-		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId });
+		const uri = getEnvUri({ sandbox, org, productId, deviceId });
 		return this._wrap(this.api.request({
 			uri: uri + '/rollout',
 			method: 'get',
@@ -564,7 +564,7 @@ module.exports = class ParticleApi {
 	}
 };
 
-function getEnvVarsUri({ sandbox, org, productId, deviceId }) {
+function getEnvUri({ sandbox, org, productId, deviceId }) {
 	let uri;
 	if (sandbox) {
 		uri = '/v1/env';

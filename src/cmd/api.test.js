@@ -16,14 +16,14 @@ describe('ParticleApi', () => {
 		sandbox.restore();
 	});
 
-	describe('listEnvVars', () => {
+	describe('listEnv', () => {
 		it('should call the correct API endpoint for sandbox', async () => {
 			const expectedUri = '/v1/env';
 			const expectedResponse = { body: { env: { own: { FOO: { value: 'bar' } } } } };
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.listEnvVars({ sandbox: true });
+			const result = await particleApi.listEnv({ sandbox: true });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -40,7 +40,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.listEnvVars({ org });
+			const result = await particleApi.listEnv({ org });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -57,7 +57,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.listEnvVars({ productId });
+			const result = await particleApi.listEnv({ productId });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -74,7 +74,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.listEnvVars({ deviceId });
+			const result = await particleApi.listEnv({ deviceId });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -92,7 +92,7 @@ describe('ParticleApi', () => {
 			sandbox.stub(particleApi.api, 'request').rejects(expectedError);
 
 			try {
-				await particleApi.listEnvVars({ sandbox: true });
+				await particleApi.listEnv({ sandbox: true });
 				expect.fail('should have thrown an error');
 			} catch (error) {
 				expect(error.message).to.equal('Unauthorized');
@@ -101,7 +101,7 @@ describe('ParticleApi', () => {
 		});
 	});
 
-	describe('patchEnvVars', () => {
+	describe('patchEnv', () => {
 		const operations = [{ op: 'Set', key: 'FOO', value: 'bar' }];
 
 		it('should call the correct API endpoint for sandbox', async () => {
@@ -110,7 +110,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.patchEnvVars({ sandbox: true, operations });
+			const result = await particleApi.patchEnv({ sandbox: true, operations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -128,7 +128,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.patchEnvVars({ org, operations });
+			const result = await particleApi.patchEnv({ org, operations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -146,7 +146,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.patchEnvVars({ productId, operations });
+			const result = await particleApi.patchEnv({ productId, operations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -164,7 +164,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			const result = await particleApi.patchEnvVars({ deviceId, operations });
+			const result = await particleApi.patchEnv({ deviceId, operations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				uri: expectedUri,
@@ -181,7 +181,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			await particleApi.patchEnvVars({ sandbox: true, operations: setOperations });
+			await particleApi.patchEnv({ sandbox: true, operations: setOperations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				data: { ops: setOperations }
@@ -194,7 +194,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			await particleApi.patchEnvVars({ sandbox: true, operations: unsetOperations });
+			await particleApi.patchEnv({ sandbox: true, operations: unsetOperations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				data: { ops: unsetOperations }
@@ -211,7 +211,7 @@ describe('ParticleApi', () => {
 
 			const requestStub = sandbox.stub(particleApi.api, 'request').resolves(expectedResponse);
 
-			await particleApi.patchEnvVars({ sandbox: true, operations: multipleOperations });
+			await particleApi.patchEnv({ sandbox: true, operations: multipleOperations });
 
 			expect(requestStub).to.have.been.calledWithMatch({
 				data: { ops: multipleOperations }
@@ -226,7 +226,7 @@ describe('ParticleApi', () => {
 			sandbox.stub(particleApi.api, 'request').rejects(expectedError);
 
 			try {
-				await particleApi.patchEnvVars({ sandbox: true, operations });
+				await particleApi.patchEnv({ sandbox: true, operations });
 				expect.fail('should have thrown an error');
 			} catch (error) {
 				expect(error.message).to.equal('Invalid operation');
