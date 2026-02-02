@@ -31,19 +31,19 @@ module.exports = class EnvCommands extends CLICommandBase {
 
 	async list({ org, product, device, sandbox, json }){
 		this._validateScope({ sandbox, org, product, device });
-		const envVars = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
-			this.api.listEnvVars({ sandbox, org, productId: product, deviceId: device }));
+		const data = await this.ui.showBusySpinnerUntilResolved('Retrieving environment variables...',
+			this.api.listEnv({ sandbox, org, productId: product, deviceId: device }));
 		if (json) {
-			this.ui.write(JSON.stringify(envVars, null, 2));
+			this.ui.write(JSON.stringify(data, null, 2));
 		} else {
-			await this._displayEnvVars(envVars);
+			await this._displayEnv(data);
 		}
 	}
 
-	async _displayEnvVars(envVars) {
-		const env = envVars?.env ?? envVars; //TODO(hmontero): refine this validation
+	async _displayEnv(data) {
+		const env = data?.env ?? data; //TODO(hmontero): refine this validation
 		const noVars =
-			envVars.env &&
+			data.env &&
 			(
 				(!env.available || Object.keys(env.available).length === 0) &&
 				(!env.own || Object.keys(env.own).length === 0) &&
@@ -54,14 +54,14 @@ module.exports = class EnvCommands extends CLICommandBase {
 			this.ui.write('No environment variables found.');
 			return;
 		}
-		const envs = envVars?.env;
+		const envs = data?.env;
 		const mixedEnvs = {
 			...envs.available, // TODO(hmontero): remove it once is removed from api
 			...envs.inherited
 		};
 		const levelDefinedEnvs = envs.own;
 		const inheritedEnvKeys = Object.keys(mixedEnvs);
-		const levelDefinedEnvKeys = Object.keys(envVars?.env?.own);
+		const levelDefinedEnvKeys = Object.keys(data?.env?.own);
 		inheritedEnvKeys.forEach((key) => {
 			if (levelDefinedEnvs[key]) {
 				this._writeEnvBlock(key, levelDefinedEnvs[key], { isOverride: true });
@@ -88,13 +88,13 @@ module.exports = class EnvCommands extends CLICommandBase {
 		this.ui.write('---------------------------------------------');
 	};
 
-	async setEnvVars({ params, org, product, device, sandbox }) {
+	async setEnv({ params, org, product, device, sandbox }) {
 		this._validateScope({ sandbox, org, product, device });
 		const { key, value } = this._parseKeyValue(params);
 
 		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
-			this.api.patchEnvVars({
+			this.api.patchEnv({
 				sandbox,
 				org,
 				productId: product,
@@ -124,8 +124,8 @@ module.exports = class EnvCommands extends CLICommandBase {
 	async deleteEnv({ params: { key }, org, product, device, sandbox, dryRun }) {
 		this._validateScope({ sandbox, org, product, device });
 
-		const envVars = await this.api.listEnvVars({ sandbox, org, productId: product, deviceId: device });
-		const env = envVars?.env || {};
+		const data = await this.api.listEnv({ sandbox, org, productId: product, deviceId: device });
+		const env = data?.env || {};
 		const ownVars = env.own || {};
 		const inheritedVars = env.inherited || {};
 
@@ -157,7 +157,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 
 		const operation = this._buildEnvVarOperation({ key, operation: 'Unset' });
 		await this.ui.showBusySpinnerUntilResolved('Deleting environment variable...',
-			this.api.patchEnvVars({
+			this.api.patchEnv({
 				sandbox,
 				org,
 				productId: product,

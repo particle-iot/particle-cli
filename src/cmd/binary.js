@@ -30,7 +30,7 @@ class BinaryCommand {
 		const parsedAppInfo = await this._parseBinary(extractedFiles.application);
 		await this._showInspectOutput(parsedAppInfo);
 		const assets = extractedFiles.assets;
-		this._printEnvVars(extractedFiles?.env);
+		this._printEnv(extractedFiles?.env);
 		await this._verifyBundle(parsedAppInfo, assets);
 	}
 
@@ -195,13 +195,12 @@ class BinaryCommand {
 		return true;
 	}
 
-	async _printEnvVars(vars) {
-		const envVars = vars?.data;
-		const keys = Object.keys(envVars || {});
-		if (keys) {
+	_printEnv(env) {
+		const envData = env?.data;
+		if (envData) {
 			console.log('Environment variables:');
-			for (const key of keys) {
-				console.log(` ${chalk.bold(key)}: ${envVars[key]}`);
+			for (const key of Object.keys(envData)) {
+				console.log(` ${chalk.bold(key)}: ${envData[key]}`);
 			}
 		}
 	}

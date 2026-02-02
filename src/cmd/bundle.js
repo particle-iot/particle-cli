@@ -27,22 +27,22 @@ module.exports = class BundleCommands extends CLICommandBase {
 		super(...args);
 	}
 
-	async createBundle({ saveTo, assets, env, params: { appBinary } }) {
+	async createBundle({ saveTo, assets, env: explicitEnvPath, params: { appBinary } }) {
 		let assetsList = [];
 		const { assetsPath, bundleFilename } = await this._validateArguments({ appBinary, saveTo, assets });
 		if (assetsPath) {
 			assetsList = await this._getAssets({ assetsPath });
 			this._displayAssets({ appBinary, assetsPath, assetsList });
 		}
-		const vars = await this._getEnvVars(env);
-		await this._generateBundle({ assetsList, appBinary, bundleFilename, vars });
+		const env = await this._loadEnv(explicitEnvPath);
+		await this.generateBundle({ assetsList, appBinary, bundleFilename, env });
 		this._displaySuccess({ bundleFilename });
 
 		return bundleFilename;
 	}
 
-	async _getEnvVars(env) {
-		const envPath = await this._resolveEnvPath(env);
+	async _loadEnv(explicitEnvPath) {
+		const envPath = await this._resolveEnvPath(explicitEnvPath);
 		if (!envPath) {
 			return null;
 		}
@@ -166,8 +166,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 		});
 	}
 
-	async _generateBundle({ assetsList, appBinary, bundleFilename, vars }) {
-		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList, vars);
+	async generateBundle({ assetsList, appBinary, bundleFilename, env }) {
+		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList, env);
 		await fs.writeFile(bundleFilename, bundle);
 		return bundle;
 	}
