@@ -7,7 +7,8 @@ const {
 	unpackApplicationAndAssetBundle,
 	createAssetModule,
 	createEnvVarsAssetModule,
-	HalModuleParser
+	HalModuleParser,
+	ENV_ASSET_NAME
 } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const os = require('os');
@@ -186,7 +187,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 		await fs.writeFile(application.path, application.data);
 		for (const asset of assets) {
 			let assetModule;
-			if (asset.name === 'env-vars') {
+			if (asset.name === ENV_ASSET_NAME) {
 				assetModule = await createEnvVarsAssetModule(asset.data);
 			} else {
 				assetModule = await createAssetModule(asset.data, asset.name);

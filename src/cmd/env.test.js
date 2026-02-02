@@ -1,7 +1,7 @@
 'use strict';
 const { expect, sinon } = require('../../test/setup');
 const nock = require('nock');
-const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env-vars/list');
+const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env/list');
 const EnvVarsCommands = require('./env');
 
 

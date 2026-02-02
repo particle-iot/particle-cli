@@ -455,12 +455,12 @@ module.exports = class ParticleApi {
 	}
 
 	/**
-	 * Patch env vars to: set, unset, inherit, un-inherit env-vars
+	 * Patch env vars to: set, unset env vars
 	 * @param sandbox - Target user's sandbox
 	 * @param org - Org ID
 	 * @param productId - Product ID
 	 * @param deviceId - Device ID
-	 * @param operations - List of operations to execute for the env-vars
+	 * @param operations - List of operations to execute for the env vars
 	 */
 	patchEnvVars({ sandbox, org, productId, deviceId, operations }) {
 		const uri = getEnvVarsUri({ sandbox, org, productId, deviceId });
