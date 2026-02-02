@@ -48,7 +48,7 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<key> [value]',
 		handler: (args) => {
 			const EnvCommands = require('../cmd/env');
-			return new EnvCommands(args).setEnvVars(args);
+			return new EnvCommands(args).setEnv(args);
 		},
 		examples: {
 			'$0 $command <key> <value> --sandbox': 'Set env var to user\'s sandbox (space format)',

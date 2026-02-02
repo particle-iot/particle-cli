@@ -2,14 +2,14 @@
 const { expect, sinon } = require('../../test/setup');
 const nock = require('nock');
 const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env/list');
-const EnvVarsCommands = require('./env');
+const EnvCommands = require('./env');
 
 
 describe('config env Command', () => {
-	let envVarsCommands;
+	let envCommands;
 	beforeEach(() => {
-		envVarsCommands = new EnvVarsCommands();
-		envVarsCommands.ui = {
+		envCommands = new EnvCommands();
+		envCommands.ui = {
 			write: sinon.stub(),
 			stdout: {
 				write: sinon.stub()
@@ -32,7 +32,7 @@ describe('config env Command', () => {
 		};
 
 		// To allow chaining like chalk.cyan.bold
-		envVarsCommands.ui.chalk.cyan.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.cyan.bold = sinon.stub().callsFake((str) => str);
 	});
 
 	afterEach(() => {
@@ -63,9 +63,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, sandboxList);
-			await envVarsCommands.list({ sandbox: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			await envCommands.list({ sandbox: true });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
+			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
 			expect(blocks).to.deep.equal([
 				{ key: 'FOO3', value: 'bar3', scope: 'Owner' },
@@ -78,9 +78,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/products/product-id-123/env', 'GET')
 				.reply(200, sandboxProductList);
-			await envVarsCommands.list({ product: 'product-id-123' });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			await envCommands.list({ product: 'product-id-123' });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
+			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
 			expect(blocks).to.deep.equal([
 				{ key: 'FOO3', value: 'bar3 (Override)', scope: 'Owner' },
@@ -92,9 +92,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env/abc123', 'GET')
 				.reply(200, sandboxDeviceProductList);
-			await envVarsCommands.list({ device: 'abc123' });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			const writeCalls = envVarsCommands.ui.write.getCalls().map(c => c.args[0]);
+			await envCommands.list({ device: 'abc123' });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
+			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
 			const blocks = parseBlocksFromCalls(writeCalls);
 			expect(blocks).to.deep.equal([
 				{ key: 'FOO', value: 'org-bar', scope: 'Owner' },
@@ -108,18 +108,18 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, emptyList);
-			await envVarsCommands.list({ sandbox: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
+			await envCommands.list({ sandbox: true });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
+			expect(envCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 
 		it('show message for empty list but existing objects', async () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, emptyListWithKeys);
-			await envVarsCommands.list({ sandbox: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('No environment variables found.');
+			await envCommands.list({ sandbox: true });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
+			expect(envCommands.ui.write).to.have.been.calledWith('No environment variables found.');
 		});
 	});
 	describe('set env vars', () => {
@@ -128,9 +128,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
-			await envVarsCommands.setEnvVars({ params, sandbox: true });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			await envCommands.setEnv({ params, sandbox: true });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
 		});
 
 		it('throws an error in case the key, value is invalid', async () => {
@@ -144,11 +144,11 @@ describe('config env Command', () => {
 				.reply(400, apiError);
 			let error;
 			try {
-				await envVarsCommands.setEnvVars({ params, sandbox: true });
+				await envCommands.setEnv({ params, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
 			expect(error.message).to.contains(apiError.error_description);
 		});
 		it('set env var for specific org', async () => {
@@ -156,18 +156,18 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1/orgs/my-org')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
-			await envVarsCommands.setEnvVars({ params, org: 'my-org' });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			await envCommands.setEnv({ params, org: 'my-org' });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
 		});
 		it('set env var for specific product', async () => {
 			const params = { key: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1/products/my-product')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
-			await envVarsCommands.setEnvVars({ params, product: 'my-product' });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			await envCommands.setEnv({ params, product: 'my-product' });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
 		});
 		it('set env var for specific device', async () => {
 			const params = { key: 'FOO', value: 'bar' };
@@ -175,9 +175,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept(`/env/${deviceId}`, 'PATCH')
 				.reply(200, sandboxList);
-			await envVarsCommands.setEnvVars({ params, device: deviceId });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			await envCommands.setEnv({ params, device: deviceId });
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
 		});
 
 		it('set env var using key=value format', async () => {
@@ -189,10 +189,10 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, sandboxList];
 				});
-			await envVarsCommands.setEnvVars({ params, sandbox: true });
+			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar', op: 'Set' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
 		});
 
 		it('set env var using key=value format with value containing equals sign', async () => {
@@ -204,17 +204,17 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, sandboxList];
 				});
-			await envVarsCommands.setEnvVars({ params, sandbox: true });
+			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar=baz', op: 'Set' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
 		});
 
 		it('throws error when key=value format is invalid (empty key)', async () => {
 			const params = { key: '=bar' };
 			let error;
 			try {
-				await envVarsCommands.setEnvVars({ params, sandbox: true });
+				await envCommands.setEnv({ params, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
@@ -225,7 +225,7 @@ describe('config env Command', () => {
 			const params = { key: 'FOO' }; // Missing value
 			let error;
 			try {
-				await envVarsCommands.setEnvVars({ params, sandbox: true });
+				await envCommands.setEnv({ params, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
@@ -251,10 +251,10 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.deleteEnv({ params, sandbox: true });
+			await envCommands.deleteEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
 		it('delete env var for specific org', async () => {
@@ -274,10 +274,10 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.deleteEnv({ params, org: 'my-org' });
+			await envCommands.deleteEnv({ params, org: 'my-org' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
 		it('delete env var for specific product', async () => {
@@ -297,10 +297,10 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.deleteEnv({ params, product: 'my-product' });
+			await envCommands.deleteEnv({ params, product: 'my-product' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
 		it('delete env var for specific device', async () => {
@@ -321,10 +321,10 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
-			await envVarsCommands.deleteEnv({ params, device: deviceId });
+			await envCommands.deleteEnv({ params, device: deviceId });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
 		it('prevents deletion of inherited-only variables', async () => {
@@ -343,12 +343,12 @@ describe('config env Command', () => {
 					}
 				});
 
-			await envVarsCommands.deleteEnv({ params, sandbox: true });
+			await envCommands.deleteEnv({ params, sandbox: true });
 
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(
-				envVarsCommands.ui.chalk.yellow(`Warning: 'INHERITED_VAR' is inherited from a parent scope and cannot be deleted at this level.`)
+			expect(envCommands.ui.write).to.have.been.calledWith(
+				envCommands.ui.chalk.yellow(`Warning: 'INHERITED_VAR' is inherited from a parent scope and cannot be deleted at this level.`)
 			);
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
+			expect(envCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
 		});
 
 		it('warns about override before deleting', async () => {
@@ -365,12 +365,12 @@ describe('config env Command', () => {
 				.intercept('/env', 'PATCH')
 				.reply(200, {});
 
-			await envVarsCommands.deleteEnv({ params, sandbox: true });
+			await envCommands.deleteEnv({ params, sandbox: true });
 
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(
-				envVarsCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
+			expect(envCommands.ui.write).to.have.been.calledWith(
+				envCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
 			);
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
 		it('supports dry-run mode', async () => {
@@ -384,13 +384,13 @@ describe('config env Command', () => {
 					}
 				});
 
-			await envVarsCommands.deleteEnv({ params, sandbox: true, dryRun: true });
+			await envCommands.deleteEnv({ params, sandbox: true, dryRun: true });
 
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(
-				envVarsCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
+			expect(envCommands.ui.write).to.have.been.calledWith(
+				envCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
 			);
-			expect(envVarsCommands.ui.write).to.have.been.calledWith('Current value: bar');
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
+			expect(envCommands.ui.write).to.have.been.calledWith('Current value: bar');
+			expect(envCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
 		});
 
 		it('shows override warning in dry-run mode', async () => {
@@ -404,15 +404,15 @@ describe('config env Command', () => {
 					}
 				});
 
-			await envVarsCommands.deleteEnv({ params, sandbox: true, dryRun: true });
+			await envCommands.deleteEnv({ params, sandbox: true, dryRun: true });
 
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(
-				envVarsCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
+			expect(envCommands.ui.write).to.have.been.calledWith(
+				envCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
 			);
-			expect(envVarsCommands.ui.write).to.have.been.calledWith(
-				envVarsCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
+			expect(envCommands.ui.write).to.have.been.calledWith(
+				envCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
 			);
-			expect(envVarsCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
+			expect(envCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
 		});
 
 		it('throws error when trying to delete non-existent variable', async () => {
@@ -428,7 +428,7 @@ describe('config env Command', () => {
 
 			let error;
 			try {
-				await envVarsCommands.deleteEnv({ params, sandbox: true });
+				await envCommands.deleteEnv({ params, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
@@ -441,7 +441,7 @@ describe('config env Command', () => {
 		it('throws error when no scope is provided', async () => {
 			let error;
 			try {
-				await envVarsCommands.list({});
+				await envCommands.list({});
 			} catch (_error) {
 				error = _error;
 			}
@@ -451,7 +451,7 @@ describe('config env Command', () => {
 		it('throws error when multiple scopes are provided', async () => {
 			let error;
 			try {
-				await envVarsCommands.list({ sandbox: true, org: 'my-org' });
+				await envCommands.list({ sandbox: true, org: 'my-org' });
 			} catch (_error) {
 				error = _error;
 			}
@@ -461,7 +461,7 @@ describe('config env Command', () => {
 		it('throws error when all scopes are provided', async () => {
 			let error;
 			try {
-				await envVarsCommands.setEnvVars({
+				await envCommands.setEnv({
 					params: { key: 'FOO', value: 'bar' },
 					sandbox: true,
 					org: 'my-org',
