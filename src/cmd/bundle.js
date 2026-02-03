@@ -7,7 +7,8 @@ const {
 	unpackApplicationAndAssetBundle,
 	createAssetModule,
 	createEnvVarsAssetModule,
-	HalModuleParser
+	HalModuleParser,
+	ENV_ASSET_NAME
 } = require('binary-version-reader');
 const utilities = require('../lib/utilities');
 const os = require('os');
@@ -26,22 +27,22 @@ module.exports = class BundleCommands extends CLICommandBase {
 		super(...args);
 	}
 
-	async createBundle({ saveTo, assets, env, params: { appBinary } }) {
+	async createBundle({ saveTo, assets, env: explicitEnvPath, params: { appBinary } }) {
 		let assetsList = [];
 		const { assetsPath, bundleFilename } = await this._validateArguments({ appBinary, saveTo, assets });
 		if (assetsPath) {
 			assetsList = await this._getAssets({ assetsPath });
 			this._displayAssets({ appBinary, assetsPath, assetsList });
 		}
-		const vars = await this._getEnvVars(env);
-		await this._generateBundle({ assetsList, appBinary, bundleFilename, vars });
+		const env = await this._loadEnv(explicitEnvPath);
+		await this.generateBundle({ assetsList, appBinary, bundleFilename, env });
 		this._displaySuccess({ bundleFilename });
 
 		return bundleFilename;
 	}
 
-	async _getEnvVars(env) {
-		const envPath = await this._resolveEnvPath(env);
+	async _loadEnv(explicitEnvPath) {
+		const envPath = await this._resolveEnvPath(explicitEnvPath);
 		if (!envPath) {
 			return null;
 		}
@@ -60,8 +61,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 
 		const projectPropertiesPath = path.join(process.cwd(), 'project.properties');
 		const propFile = await utilities.parsePropertyFile(projectPropertiesPath);
-		if (propFile.firmwareEnv && propFile.firmwareEnv !== '') {
-			return path.join(path.dirname(projectPropertiesPath), propFile.firmwareEnv);
+		if (propFile.env && propFile.env !== '') {
+			return path.join(path.dirname(projectPropertiesPath), propFile.env);
 		}
 	}
 
@@ -118,7 +119,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 			// get the assets dir relative to the project.properties file
 			return path.join(path.dirname(projectPropertiesPath), propFile.assetOtaDir);
 		} else if (!propFile.assetOtaDir) {
-			if (propFile.firmwareEnv) {
+			if (propFile.env) {
 				return null; // bypass asset ota validation
 			}
 			throw new Error('Add assetOtaDir to your project.properties in order to bundle assets');
@@ -165,8 +166,8 @@ module.exports = class BundleCommands extends CLICommandBase {
 		});
 	}
 
-	async _generateBundle({ assetsList, appBinary, bundleFilename, vars }) {
-		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList, vars);
+	async generateBundle({ assetsList, appBinary, bundleFilename, env }) {
+		const bundle = await createApplicationAndAssetBundle(appBinary, assetsList, env);
 		await fs.writeFile(bundleFilename, bundle);
 		return bundle;
 	}
@@ -186,7 +187,7 @@ module.exports = class BundleCommands extends CLICommandBase {
 		await fs.writeFile(application.path, application.data);
 		for (const asset of assets) {
 			let assetModule;
-			if (asset.name === 'env-vars') {
+			if (asset.name === ENV_ASSET_NAME) {
 				assetModule = await createEnvVarsAssetModule(asset.data);
 			} else {
 				assetModule = await createAssetModule(asset.data, asset.name);
