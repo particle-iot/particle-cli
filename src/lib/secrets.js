@@ -4,28 +4,17 @@ async function list({ api, org } = {}) {
 	return response.secrets?.length ? formatSecretList(response.secrets) : [];
 }
 
-async function create({ api, org, name, value } = {}) {
+async function get({ api, org, name }) {
+	const response = await api.getSecret({ api, orgSlug: org, name });
+	return formatSecret(response);
+}
+
+async function update({ api, org, name, value } = {}) {
 	// validate name
 	const regex = /^[A-Z_][A-Z0-9_]*$/;
 	if (!regex.test(name)) {
 		throw new Error('Keys may include only uppercase letters, digits, and underscores, and must not begin with a digit.');
 	}
-	if (!value) {
-		throw new Error('value is required');
-	}
-	const response = await api.createSecret({ orgSlug: org, name, value });
-	if (response.secret) {
-		return formatSecret(response);
-	} else {
-		throw new Error('Unable to create secret');
-	}
-}
-
-async function get({ api, org, name }) {
-	const response = await api.getSecret({ api, orgSlug: org, name });
-	return formatSecret(response);
-}
-async function update({ api, org, name, value } = {}) {
 	if (!value) {
 		throw new Error('value is required');
 	}
@@ -65,7 +54,6 @@ async function formatSecretList(secretList) {
 }
 module.exports = {
 	list,
-	create,
 	update,
 	remove,
 	get

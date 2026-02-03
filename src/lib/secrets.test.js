@@ -49,9 +49,9 @@ describe('secrets', () => {
 				value: 'value'
 			};
 			nock(baseUrl)
-				.intercept('/secrets', 'POST')
+				.intercept(`/secrets/${secret.name}`, 'PUT')
 				.reply(200, secretGenericResponse);
-			const secretResponse = await secrets.create({ api, ...secret });
+			const secretResponse = await secrets.update({ api, ...secret });
 			expect(secretResponse).to.deep.equal(formattedGenericSecretGet);
 		});
 
@@ -62,9 +62,9 @@ describe('secrets', () => {
 			};
 			const orgId = 'my-org';
 			nock(baseUrl)
-				.intercept(`/orgs/${orgId}/secrets`, 'POST')
+				.intercept(`/orgs/${orgId}/secrets/${secret.name}`, 'PUT')
 				.reply(200, secretGenericResponse);
-			const secretResponse = await secrets.create({ api, ...secret, org: orgId });
+			const secretResponse = await secrets.update({ api, ...secret, org: orgId });
 			expect(secretResponse).to.deep.equal(formattedGenericSecretGet);
 		});
 
@@ -74,7 +74,7 @@ describe('secrets', () => {
 				value: 'value'
 			};
 			const org = 'my-org';
-			const secretResponse = secrets.create({ api, ...secret, org });
+			const secretResponse = secrets.update({ api, ...secret, org });
 			await expect(secretResponse).to.be.rejectedWith('Keys may include only uppercase letters, digits, and underscores, and must not begin with a digit.');
 		});
 		it('throws an error if secret key is not uppercase', async () => {
@@ -82,7 +82,7 @@ describe('secrets', () => {
 				name: 'secret_name',
 				value: 'value'
 			};
-			const secretResponse = secrets.create({ api, ...secret });
+			const secretResponse = secrets.update({ api, ...secret });
 			await expect(secretResponse).to.be.rejectedWith('Keys may include only uppercase letters, digits, and underscores, and must not begin with a digit.');
 		});
 
@@ -92,9 +92,9 @@ describe('secrets', () => {
 				value: 'value'
 			};
 			nock(baseUrl)
-				.intercept('/secrets', 'POST')
+				.intercept(`/secrets/${secret.name}`, 'PUT')
 				.reply(400, { ok: false, error: 'Failed to create secret: Name already in use' });
-			const secretResponse = secrets.create({ api, ...secret });
+			const secretResponse = secrets.update({ api, ...secret });
 			await expect(secretResponse).to.be.rejectedWith('Failed to create secret: Name already in use');
 		});
 	});
