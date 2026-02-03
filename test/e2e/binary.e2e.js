@@ -240,7 +240,7 @@ describe('Binary Commands', () => {
 
 			const { stdout, stderr, exitCode } = await cli.run(args);
 
-			expect(stdout).to.equal('Could not parse app.txt: Attempt to access memory outside buffer bounds');
+			expect(stdout).to.equal('The file does not contain a valid application binary. Please ensure the bundle includes an application .bin file.');
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(1);
 		});
