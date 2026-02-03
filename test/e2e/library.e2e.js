@@ -544,7 +544,7 @@ describe('Library Commands', () => {
 
 			const projProps = await fs.readFile(projPropsPath, 'utf8');
 
-			expect(projProps).to.equal(`name=test-proj\n#assetOtaDir=assets\ndependencies.dotstar=${version}\n`);
+			expect(projProps).to.equal(`name=test-proj\n#assetOtaDir=assets\n#env=env.json\ndependencies.dotstar=${version}\n`);
 			expect(await fs.pathExists(libPath)).to.equal(false);
 		});
 
@@ -565,7 +565,7 @@ describe('Library Commands', () => {
 
 			const projProps = await fs.readFile(projPropsPath, 'utf8');
 
-			expect(projProps).to.equal(`name=test-proj\n#assetOtaDir=assets\ndependencies.dotstar=${version}\n`);
+			expect(projProps).to.equal(`name=test-proj\n#assetOtaDir=assets\n#env=env.json\ndependencies.dotstar=${version}\n`);
 			expect(await fs.pathExists(libPath)).to.equal(false);
 		});
 
@@ -650,7 +650,7 @@ describe('Library Commands', () => {
 			const contents = await fs.getDirectoryContents(libPath, { maxDepth: 2 });
 			const stripRoot = (x) => x.replace(projPath + path.sep, '');
 
-			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n#env=env.json\n');
 			expect(contents.map(stripRoot)).to.include.members([
 				'lib/dotstar/library.properties',
 				'lib/dotstar/src/dotstar.cpp',
@@ -674,7 +674,7 @@ describe('Library Commands', () => {
 			const contents = await fs.getDirectoryContents(libPath, { maxDepth: 2 });
 			const stripRoot = (x) => x.replace(projPath + path.sep, '');
 
-			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n#env=env.json\n');
 			expect(contents.map(stripRoot)).to.eql([
 				'lib/dotstar',
 				'lib/dotstar/LICENSE',
@@ -719,7 +719,7 @@ describe('Library Commands', () => {
 			const projPropsPath = path.join(projPath, 'project.properties');
 			const projProps = await fs.readFile(projPropsPath, 'utf8');
 
-			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n#env=env.json\n');
 		});
 
 		it('Installs a library to a project using the `--copy` flag', async () => {
@@ -742,7 +742,7 @@ describe('Library Commands', () => {
 			const contents = await fs.getDirectoryContents(localLibPath, { maxDepth: 2 });
 			const stripRoot = (x) => x.replace(projPath + path.sep, '');
 
-			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n#env=env.json\n');
 			expect(contents.map(stripRoot)).to.eql([
 				'lib/dotstar',
 				'lib/dotstar/.git',
@@ -762,7 +762,7 @@ describe('Library Commands', () => {
 			const projPropsPath = path.join(projPath, 'project.properties');
 			let projProps = await fs.readFile(projPropsPath, 'utf8');
 
-			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n');
+			expect(projProps).to.equal('name=test-proj\n#assetOtaDir=assets\n#env=env.json\n');
 
 			projProps += 'dependencies.dotstar=0.0.5\n';
 			projProps += 'dependencies.neopixel=1.0.0\n';
@@ -793,6 +793,7 @@ describe('Library Commands', () => {
 			expect(projProps).to.equal([
 				'name=test-proj',
 				'#assetOtaDir=assets',
+				'#env=env.json',
 				'dependencies.dotstar=0.0.5',
 				'dependencies.neopixel=1.0.0\n'
 			].join('\n'));
