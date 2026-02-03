@@ -27,6 +27,7 @@ class BinaryCommand {
 	async inspectBinary(file) {
 		await this._checkFile(file);
 		const extractedFiles = await this._extractApplicationFiles(file);
+		this._validateExtractedFiles(extractedFiles);
 		const parsedAppInfo = await this._parseBinary(extractedFiles.application);
 		await this._showInspectOutput(parsedAppInfo);
 		const assets = extractedFiles.assets;
@@ -70,6 +71,7 @@ class BinaryCommand {
 	async listAssetsFromApplication(file) {
 		await this._checkFile(file);
 		const extractedFile = await this._extractApplicationFiles(file);
+		this._validateExtractedFiles(extractedFile);
 		const parsedAppInfo = await this._parseBinary(extractedFile.application);
 
 		const assets = await listModuleExtensions({
@@ -94,8 +96,9 @@ class BinaryCommand {
 
 	async stripAssetsFromApplication(file) {
 		// Verify that the file exists and that it has assets
-		this._checkFile(file);
+		await this._checkFile(file);
 		const extractedFile = await this._extractApplicationFiles(file);
+		this._validateExtractedFiles(extractedFile);
 		const parsedAppInfo = await this._parseBinary(extractedFile.application);
 
 		const assets = await listModuleExtensions({
@@ -129,6 +132,12 @@ class BinaryCommand {
 			throw new Error(`File does not exist: ${file}`);
 		}
 		return true;
+	}
+
+	_validateExtractedFiles(extractedFiles) {
+		if (!extractedFiles?.application?.name || !extractedFiles?.application?.data) {
+			throw new VError(`The file does not contain a valid application binary. Please ensure the bundle includes an application .bin file.`);
+		}
 	}
 
 	async _extractApplicationFiles(file) {
