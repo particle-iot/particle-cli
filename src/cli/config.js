@@ -142,7 +142,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(secret, 'create', 'Creates a new secret', {
+	commandProcessor.createCommand(secret, 'set', 'Creates a new secret', {
 		options: {
 			'org': {
 				description: 'Specify the organization'
@@ -156,7 +156,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
-			return new SecretsCommand(args).create(args);
+			return new SecretsCommand(args).set(args);
 		}
 	});
 
