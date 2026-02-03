@@ -99,7 +99,7 @@ describe('Binary Inspect', () => {
 
 			const binaryInfo = await binaryCommand._extractApplicationFiles(zipPath);
 
-			expect(binaryInfo).to.have.property('application').with.property('name', 'app.txt');
+			expect(binaryInfo).to.not.have.property('application');
 			expect(binaryInfo).to.have.property('assets').with.lengthOf(0);
 
 		});
