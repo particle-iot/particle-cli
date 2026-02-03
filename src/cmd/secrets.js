@@ -56,7 +56,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		}
 	}
 
-	async create({ name, value, org }) {
+	async set({ name, value, org }) {
 		const secretData = await secrets.create({ api: this.api, name, org , value });
 		this.ui.write(`Secret ${name} created successfully.`);
 		this._printSecret(secretData);
