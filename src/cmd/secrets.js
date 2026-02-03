@@ -37,28 +37,22 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		this._printSecret({ ...secretData, org });
 	}
 
-	async update({ name, value, org }) {
-		const secretData = await this.ui.showBusySpinnerUntilResolved(
-			'Updating secret',
-			secrets.update({ api: this.api, name, value, org })
-		);
-		this.ui.write(`Secret ${name} updated successfully.`);
-		this._printSecret(secretData);
-	}
-
-	async remove({ org, name }) {
+	async deleteSecret({ org, name }) {
 		const isDeleted = await this.ui.showBusySpinnerUntilResolved(
-			'Remove secret',
+			'Deleting secret',
 			secrets.remove({ api: this.api, org, name })
 		);
 		if (isDeleted) {
-			this.ui.write(`Secret ${name} removed successfully.`);
+			this.ui.write(`Secret ${name} deleted successfully.`);
 		}
 	}
 
 	async set({ name, value, org }) {
-		const secretData = await secrets.create({ api: this.api, name, org , value });
-		this.ui.write(`Secret ${name} created successfully.`);
+		const secretData = await this.ui.showBusySpinnerUntilResolved(
+			'Setting secret',
+			secrets.update({ api: this.api, name, org, value })
+		);
+		this.ui.write(`Secret ${name} set successfully.`);
 		this._printSecret(secretData);
 	}
 
