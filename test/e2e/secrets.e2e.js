@@ -49,11 +49,15 @@ describe('Secrets', () => {
 			'  list    List all created secrets',
 			'  get     Get a specific secret',
 			'  set     Set a secret',
-			'  remove  Remove a specific secret',
+			'  delete  Delete a specific secret',
 			'',
 			'Global Options:',
 			'  -v, --verbose  Increases how much logging to display  [count]',
 			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --sandbox  Target the sandbox  [boolean]',
+			'  --org      Specify the organization  [string]',
 			''
 		];
 		it('Shows `help` content', async () => {
@@ -71,7 +75,7 @@ describe('Secrets', () => {
 		});
 	});
 
-	describe('config secret flow (set, get, list, remove)', () => {
+	describe('config secret flow (set, get, list, delete)', () => {
 		it('sets a new secret for org', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
 				'config', 'secrets', 'set',
@@ -103,9 +107,9 @@ describe('Secrets', () => {
 			expect(exitCode).to.equal(0);
 		});
 
-		it('remove the secret', async () => {
+		it('delete the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'config', 'secrets', 'remove',
+				'config', 'secrets', 'delete',
 				secretName,
 				'--org', orgName
 			]);
