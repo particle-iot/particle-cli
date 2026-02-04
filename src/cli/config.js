@@ -169,8 +169,8 @@ module.exports = ({ commandProcessor, root }) => {
 			return new SecretsCommand(args).deleteSecret(args);
 		},
 		examples: {
-			'$0 $command <key> --sandbox': 'Remove a secret from sandbox',
-			'$0 $command <key> --org <org>': 'Remove a secret from a specific organization'
+			'$0 $command <key> --sandbox': 'Delete a secret from sandbox',
+			'$0 $command <key> --org <org>': 'Delete a secret from a specific organization'
 		}
 	});
 };
