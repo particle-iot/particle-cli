@@ -5,24 +5,24 @@ declare module 'particle:core' {
         export const REPLACE: "Replace";
         export interface Ledger {
             /**
-             * Gets the current value of the ledger.
-             * Empty ledger returns {}, error returns null
-             * @returns {Object} the current value of the ledger
+             * Gets the current value of the ledger instance
+             * An empty ledger will return { updatedAt: null, data: {} }
+             * @returns {Object} the current value of the ledger instance
              * @throws {Error} if the ledger doesn't exist or there was an error getting the ledger instance
              */
-            get(): { updatedAt: string, data: Record<string, any> },
+            get(): { updatedAt: string | null, data: Record<string, any> },
 
             /**
-             * Sets the value of the ledger. If the ledger does not exist, it will be created.
+             * Sets the value of the ledger instance. If the ledger instance does not exist, it will be created.
              *
-             * @param data The data you would like to put into the ledger
-             * @param setMode Whether to replace or merge the new data into the ledger. Defaults to Replace. You can use the constants MERGE and REPLACE here
+             * @param data The data you would like to put into the ledger instance
+             * @param setMode Whether to replace or merge the new data into the ledger instance. Defaults to Replace. You can use the constants MERGE and REPLACE here
              * @throws {Error} if the ledger doesn't exist or there was an error setting the ledger instance
              */
             set(data: Record<string, any>, setMode: "Replace" | "Merge"): null,
 
             /**
-             * Deletes the ledger data
+             * Deletes the ledger instance data
              * @throws {Error} if there was an error deleting the ledger instance
              */
             delete(): null
@@ -79,11 +79,13 @@ declare module 'particle:core' {
          * and only one of them will be present at a time (logic functions can only have one type of trigger).
          */
         export interface FunctionContext {
-            functionInfo: FunctionInfo;
-            trigger: TriggerInfo;
-            event?: EventInfo;
-            scheduled?: ScheduledInfo;
-            ledgerChange?: LedgerChangeInfo;
+            functionInfo: FunctionInfo,
+            trigger: TriggerInfo,
+            secrets: Record<string, string | null>,
+            env: Record<string, string>,
+            event?: EventInfo,
+            scheduled?: ScheduledInfo,
+            ledgerChange?: LedgerChangeInfo
         }
 
         /**
@@ -103,6 +105,71 @@ declare module 'particle:core' {
          * @throws {Error} if there was an error publishing the event
          */
         export function publish(name: string, data: any | undefined, options: { productId: number, asDeviceId: string }): null;
+
+        /***********************************************PARTICLE API********************************************************/
+        export interface ParticleApiResponse {
+            status: number;
+            body: Record<string, any>;
+        }
+        
+        export interface ListDeviceOptions {
+            groups?: string[];
+            sortAttr?: 'deviceId' | 'firmwareVersion' | 'lastHeard' | 'deviceName';
+            sortDir?: 'asc' | 'desc';
+            page?: number;
+            perPage?: number;
+        }
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#list-devices-in-a-product */
+        export function listDevices(productIdOrSlug: string | number, options?: ListDeviceOptions): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#get-device-information */
+        export function getDevice(deviceId: string): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#get-last-known-device-vitals */
+        export function getLastDeviceVitals(deviceId: string): Promise<ParticleApiResponse>;
+
+        export interface GetDeviceLocationOptions {
+            dateRange?: string,
+            rectBl?: string,
+            rectTr?: string,
+        }
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#query-location-for-one-device-within-a-product */
+        export function getDeviceLocation(productIdOrSlug: string | number, deviceId: string, options?: GetDeviceLocationOptions): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#list-integrations */
+        export function listIntegrations(productIdOrSlug: string | number): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#get-integration */
+        export function getIntegration(productIdOrSlug: string | number, integrationId: string): Promise<ParticleApiResponse>;
+
+        export interface IntegrationsMetricsOptions {
+            startDate?: string;
+            endDate?: string;
+            bucketSize?: number;
+            productFw?: number;
+            deviceOsVersion?: string,
+            deviceGroup?: string
+        }
+        
+        /** https://docs.particle.io/reference/cloud-apis/api/#get-integration-traffic-health-metrics */
+        export function integrationsMetrics(productIdOrSlug: string | number, options?: IntegrationsMetricsOptions): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#list-products */
+        export function listProducts(): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#list-products */
+        export function listUserProducts(): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#list-products */
+        export function listOrgProducts(orgIdOrSlug: string): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#retrieve-a-product */
+        export function getProduct(productIdOrSlug: string | number): Promise<ParticleApiResponse>;
+
+        /** https://docs.particle.io/reference/cloud-apis/api/#retrieve-a-product */
+        export function getOrgProduct(orgIdOrSlug: string, productIdOrSlug: string | number): Promise<ParticleApiResponse>;
     }
 
     export = Particle;
