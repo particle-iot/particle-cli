@@ -17,7 +17,24 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		this.consoleBaseUrl = settings.isStaging ? 'https://console.staging.particle.io' : 'https://console.particle.io';
 	}
 
-	async list({ org, json }) {
+	_validateScope({ sandbox, org }) {
+		const scopes = [
+			{ name: 'sandbox', value: sandbox },
+			{ name: 'org', value: org }
+		].filter(scope => scope.value);
+
+		if (scopes.length === 0) {
+			throw new Error('You must specify one of: --sandbox or --org');
+		}
+
+		if (scopes.length > 1) {
+			const scopeNames = scopes.map(s => `--${s.name}`).join(', ');
+			throw new Error(`You can only specify one scope at a time. You provided: ${scopeNames}`);
+		}
+	}
+
+	async list({ org, sandbox, json }) {
+		this._validateScope({ sandbox, org });
 		const secretsData = await this.ui.showBusySpinnerUntilResolved(
 			'Retrieving secrets',
 			secrets.list({ org, api: this.api })
@@ -29,7 +46,9 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		}
 	}
 
-	async get({ name, org }){
+	async get({ params, org, sandbox }){
+		this._validateScope({ sandbox, org });
+		const name = params.key;
 		const secretData = await this.ui.showBusySpinnerUntilResolved(
 			'Retrieving secret',
 			secrets.get({ api: this.api, name, org })
@@ -37,7 +56,9 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		this._printSecret({ ...secretData, org });
 	}
 
-	async deleteSecret({ org, name }) {
+	async deleteSecret({ params, org, sandbox }) {
+		this._validateScope({ sandbox, org });
+		const name = params.key;
 		const isDeleted = await this.ui.showBusySpinnerUntilResolved(
 			'Deleting secret',
 			secrets.remove({ api: this.api, org, name })
@@ -47,13 +68,32 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		}
 	}
 
-	async set({ name, value, org }) {
+	async set({ params, org, sandbox }) {
+		this._validateScope({ sandbox, org });
+		const { key, value } = this._parseKeyValue(params);
 		const secretData = await this.ui.showBusySpinnerUntilResolved(
 			'Setting secret',
-			secrets.update({ api: this.api, name, org, value })
+			secrets.update({ api: this.api, name: key, org, value })
 		);
-		this.ui.write(`Secret ${name} set successfully.`);
+		this.ui.write(`Secret ${key} set successfully.`);
 		this._printSecret(secretData);
+	}
+
+	_parseKeyValue(params) {
+		if (params.key && params.value) {
+			return { key: params.key, value: params.value };
+		}
+		if (params.key && params.key.includes('=')) {
+			const [key, ...valueParts] = params.key.split('=');
+			const value = valueParts.join('=');
+
+			if (!key || value === undefined) {
+				throw new Error('Invalid format. Use either "key value" or "key=value"');
+			}
+
+			return { key, value };
+		}
+		throw new Error('Invalid format. Use either "key value" or "key=value"');
 	}
 
 	_printSecret(secret) {

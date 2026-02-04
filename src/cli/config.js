@@ -105,13 +105,22 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	const secret = commandProcessor.createCategory(config, 'secrets', 'Manage secrets');
+	const secret = commandProcessor.createCategory(config, 'secrets', 'Manage secrets', {
+		inherited: {
+			options: {
+				'sandbox': {
+					description: 'Target the sandbox',
+					boolean: true
+				},
+				'org': {
+					description: 'Specify the organization'
+				}
+			}
+		}
+	});
 
 	commandProcessor.createCommand(secret, 'list', 'List all created secrets', {
 		options: {
-			'org': {
-				description: 'Specify the organization'
-			},
 			'json': {
 				description: 'Show the list in json format',
 				boolean: true
@@ -122,60 +131,46 @@ module.exports = ({ commandProcessor, root }) => {
 			return new SecretsCommand(args).list(args);
 		},
 		examples: {
-			'$0 $command': 'List all secrets',
-			'$0 $command --org <org>': 'List all secrets from a specific org'
+			'$0 $command --sandbox': 'List all secrets from sandbox',
+			'$0 $command --org <org>': 'List all secrets from a specific organization'
 		}
 	});
 
 	commandProcessor.createCommand(secret, 'get', 'Get a specific secret',{
-		options: {
-			'org': {
-				description: 'Specify the organization'
-			},
-			'name': {
-				description: 'Secret name'
-			}
-		},
+		params: '<key>',
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).get(args);
+		},
+		examples: {
+			'$0 $command <key> --sandbox': 'Get a secret from sandbox',
+			'$0 $command <key> --org <org>': 'Get a secret from a specific organization'
 		}
 	});
 
 	commandProcessor.createCommand(secret, 'set', 'Set a secret', {
-		options: {
-			'org': {
-				description: 'Specify the organization'
-			},
-			'name': {
-				description: 'Secret name'
-			},
-			'value': {
-				description: 'Secret value'
-			}
-		},
+		params: '<key> [value]',
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).set(args);
 		},
 		examples: {
-			'$0 $command --name <name> --value <value>': 'Set a secret',
-			'$0 $command --name <name> --value <value> --org <org>': 'Set a secret in a specific org'
+			'$0 $command <key> <value> --sandbox': 'Set secret to user\'s sandbox (space format)',
+			'$0 $command <key=value> --sandbox': 'Set secret to user\'s sandbox (equal sign format)',
+			'$0 $command <key> <value> --org <org>': 'Set secret for an organization',
+			'$0 $command <key=value> --org <org>': 'Set secret for an organization (equal sign format)'
 		}
 	});
 
 	commandProcessor.createCommand(secret, 'remove', 'Remove a specific secret',{
-		options: {
-			'org': {
-				description: 'Specify the organization'
-			},
-			'name': {
-				description: 'Secret name'
-			}
-		},
+		params: '<key>',
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
-			return new SecretsCommand(args).remove(args);
+			return new SecretsCommand(args).deleteSecret(args);
+		},
+		examples: {
+			'$0 $command <key> --sandbox': 'Remove a secret from sandbox',
+			'$0 $command <key> --org <org>': 'Remove a secret from a specific organization'
 		}
 	});
 };
