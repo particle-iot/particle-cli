@@ -7,6 +7,9 @@
             "type": "JavaScript"
         },
         "enabled": true,
+        "api_username": null,
+        "secrets": null,
+        "use_env": null,
         "logic_triggers": []
     }
 }
