@@ -296,6 +296,12 @@ describe('SecretsCommand', () => {
 				secretsCommand._parseKeyValue({ key: '=value' });
 			}).to.throw('Invalid format. Use either "key value" or "key=value"');
 		});
+
+		it('throws error when value is empty in key=value format', () => {
+			expect(() => {
+				secretsCommand._parseKeyValue({ key: 'MY_KEY=' });
+			}).to.throw('Invalid format. Use either "key value" or "key=value"');
+		});
 	});
 
 	describe('_printSecret', () => {
