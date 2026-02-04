@@ -162,7 +162,7 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(secret, 'remove', 'Remove a specific secret',{
+	commandProcessor.createCommand(secret, 'delete', 'Delete a specific secret',{
 		params: '<key>',
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
