@@ -87,7 +87,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 			const [key, ...valueParts] = params.key.split('=');
 			const value = valueParts.join('=');
 
-			if (!key || value === undefined) {
+			if (!key || value === undefined || value === '') {
 				throw new Error('Invalid format. Use either "key value" or "key=value"');
 			}
 
