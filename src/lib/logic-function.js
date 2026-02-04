@@ -9,7 +9,7 @@ const { slugify, globList } = require('./utilities');
 const templateProcessor = require('./template-processor');
 
 class LogicFunction {
-	constructor({ org, name, id, description, type, enabled, _path, version, triggers, api = createAPI() }) {
+	constructor({ org, name, id, description, type, enabled, _path, version, api_username, secrets, use_env, triggers, api = createAPI() }) {
 		// throw if api is not provided
 		this.org = org;
 		this.name = name;
@@ -20,7 +20,10 @@ class LogicFunction {
 		this.enabled = !!enabled;
 		this.version = version || 0;
 		this.triggers = triggers || [];
-		this.type = type || 'JavaScript',
+		this.type = type || 'JavaScript';
+		this.api_username = api_username;
+		this.secrets = secrets;
+		this.use_env = use_env;
 		this.files = {
 			sourceCode: {
 				name: name ? slugify(name) + '.js' : '',
@@ -155,7 +158,10 @@ class LogicFunction {
 			source: {
 				type: this.type,
 				code: this.files.sourceCode.content
-			}
+			},
+			api_username: this.api_username,
+			secrets: this.secrets,
+			use_env: this.use_env
 		};
 		try {
 			const { result } =
@@ -179,6 +185,9 @@ class LogicFunction {
 				type: this.type,
 				code: this.files.sourceCode.content
 			},
+			api_username: this.api_username,
+			secrets: this.secrets,
+			use_env: this.use_env,
 			logic_triggers: this.triggers
 		};
 		if (this.id) {
@@ -232,6 +241,9 @@ class LogicFunction {
 		this.description = logicFunction.description;
 		this.enabled = logicFunction.enabled;
 		this.type = logicFunction.type;
+		this.api_username = logicFunction.api_username;
+		this.secrets = logicFunction.secrets;
+		this.use_env = logicFunction.use_env;
 		this.triggers = logicFunction.triggers;
 		this.files.sourceCode.content = logicFunction.files.sourceCode.content;
 		this.files.configuration.content = logicFunction.files.configuration.content;
@@ -318,6 +330,9 @@ class LogicFunction {
 				source: {
 					type: this.type,
 				},
+				api_username: this.api_username,
+				secrets: this.secrets,
+				use_env: this.use_env,
 				logic_triggers: this.triggers
 			}
 		}, null, 2);
@@ -331,6 +346,9 @@ class LogicFunction {
 		this.version = data.version;
 		this.enabled = data.enabled;
 		this.type = data.source.type;
+		this.api_username = data.api_username;
+		this.secrets = data.secrets;
+		this.use_env = data.use_env;
 		this.triggers = data.logic_triggers;
 	}
 }
