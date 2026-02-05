@@ -20,7 +20,7 @@ describe('secrets', () => {
 				.intercept('/secrets', 'GET')
 				.reply(200, emptySecretsList);
 
-			const secretsResponse = await secrets.list({ api });
+			const secretsResponse = await secrets.list({ api, sandbox: true });
 			expect(secretsResponse).to.deep.equal([]);
 		});
 
@@ -28,7 +28,7 @@ describe('secrets', () => {
 			nock(baseUrl)
 				.intercept('/secrets', 'GET')
 				.reply(200, secretsList);
-			const secretsResponse = await secrets.list({ api });
+			const secretsResponse = await secrets.list({ api, sandbox: true });
 			expect(secretsResponse).to.deep.equal(formattedSecretList);
 		});
 
@@ -49,9 +49,9 @@ describe('secrets', () => {
 				value: 'value'
 			};
 			nock(baseUrl)
-				.intercept('/secrets', 'POST')
+				.intercept(`/secrets/${secret.name}`, 'PUT')
 				.reply(200, secretGenericResponse);
-			const secretResponse = await secrets.create({ api, ...secret });
+			const secretResponse = await secrets.update({ api, ...secret, sandbox: true });
 			expect(secretResponse).to.deep.equal(formattedGenericSecretGet);
 		});
 
@@ -62,9 +62,9 @@ describe('secrets', () => {
 			};
 			const orgId = 'my-org';
 			nock(baseUrl)
-				.intercept(`/orgs/${orgId}/secrets`, 'POST')
+				.intercept(`/orgs/${orgId}/secrets/${secret.name}`, 'PUT')
 				.reply(200, secretGenericResponse);
-			const secretResponse = await secrets.create({ api, ...secret, org: orgId });
+			const secretResponse = await secrets.update({ api, ...secret, org: orgId });
 			expect(secretResponse).to.deep.equal(formattedGenericSecretGet);
 		});
 
@@ -74,7 +74,7 @@ describe('secrets', () => {
 				value: 'value'
 			};
 			const org = 'my-org';
-			const secretResponse = secrets.create({ api, ...secret, org });
+			const secretResponse = secrets.update({ api, ...secret, org });
 			await expect(secretResponse).to.be.rejectedWith('Keys may include only uppercase letters, digits, and underscores, and must not begin with a digit.');
 		});
 		it('throws an error if secret key is not uppercase', async () => {
@@ -82,7 +82,7 @@ describe('secrets', () => {
 				name: 'secret_name',
 				value: 'value'
 			};
-			const secretResponse = secrets.create({ api, ...secret });
+			const secretResponse = secrets.update({ api, ...secret, sandbox: true });
 			await expect(secretResponse).to.be.rejectedWith('Keys may include only uppercase letters, digits, and underscores, and must not begin with a digit.');
 		});
 
@@ -92,9 +92,9 @@ describe('secrets', () => {
 				value: 'value'
 			};
 			nock(baseUrl)
-				.intercept('/secrets', 'POST')
+				.intercept(`/secrets/${secret.name}`, 'PUT')
 				.reply(400, { ok: false, error: 'Failed to create secret: Name already in use' });
-			const secretResponse = secrets.create({ api, ...secret });
+			const secretResponse = secrets.update({ api, ...secret, sandbox: true });
 			await expect(secretResponse).to.be.rejectedWith('Failed to create secret: Name already in use');
 		});
 	});
@@ -109,7 +109,7 @@ describe('secrets', () => {
 				.intercept(`/secrets/${secret.name}`, 'PUT')
 				.reply(200, secretGenericResponse);
 
-			const secretResponse = await secrets.update({ api, ...secret });
+			const secretResponse = await secrets.update({ api, ...secret, sandbox: true });
 			expect(secretResponse).to.deep.equal(formattedGenericSecretGet);
 		});
 		it('updates an org secret', async () => {
@@ -129,7 +129,7 @@ describe('secrets', () => {
 			nock(baseUrl)
 				.intercept(`/secrets/${name}`, 'GET')
 				.reply(200, secretGenericResponse);
-			const secretResponse = await secrets.get({ api, name });
+			const secretResponse = await secrets.get({ api, name, sandbox: true });
 			expect(secretResponse).to.deep.equal(formattedGenericSecretGet);
 		});
 
@@ -149,7 +149,7 @@ describe('secrets', () => {
 			nock(baseUrl)
 				.intercept(`/secrets/${name}`, 'GET')
 				.reply(404, { ok: false, error: 'not found' });
-			const secretResponse = secrets.get({ api, name });
+			const secretResponse = secrets.get({ api, name, sandbox: true });
 			await expect(secretResponse).to.be.rejectedWith(errorMessage);
 		});
 
@@ -161,7 +161,7 @@ describe('secrets', () => {
 			nock(baseUrl)
 				.intercept(`/secrets/${name}`, 'DELETE')
 				.reply(204);
-			const secretResponse = await secrets.remove({ api, name });
+			const secretResponse = await secrets.remove({ api, name, sandbox: true });
 			expect(secretResponse).to.equal(true);
 		});
 
@@ -185,7 +185,7 @@ describe('secrets', () => {
 				.intercept(`/secrets/${name}`, 'DELETE')
 				.reply(400, errorMessage);
 
-			const secretResponse = secrets.remove({ api, name });
+			const secretResponse = secrets.remove({ api, name, sandbox: true });
 			await expect(secretResponse).to.be.rejectedWith(errorMessage.error);
 			scope.done();
 		});
