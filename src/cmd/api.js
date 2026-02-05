@@ -404,16 +404,6 @@ module.exports = class ParticleApi {
 		}));
 	}
 
-	createSecret({ sandbox, orgSlug, name, value }) {
-		const uri = sandbox ? '/v1/secrets' : `/v1/orgs/${orgSlug}/secrets`;
-		return this._wrap(this.api.request({
-			uri,
-			method: 'post',
-			auth: this.accessToken,
-			data: { secret: { name, value } }
-		}));
-	}
-
 	updateSecret({ sandbox, orgSlug, name, value }) {
 		const uri = sandbox ? `/v1/secrets/${name}` : `/v1/orgs/${orgSlug}/secrets/${name}`;
 		return this._wrap(this.api.request({
