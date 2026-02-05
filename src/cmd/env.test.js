@@ -234,7 +234,7 @@ describe('config env Command', () => {
 	});
 
 	describe('delete env vars', () => {
-		it('delete env var for sandbox user', async () => {
+		it('deletes env var for sandbox user', async () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1')
@@ -257,7 +257,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
-		it('delete env var for specific org', async () => {
+		it('deletes env var for specific org', async () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1/orgs/my-org')
@@ -280,7 +280,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
-		it('delete env var for specific product', async () => {
+		it('deletes env var for specific product', async () => {
 			let receivedBody;
 			const params = { key: 'FOO' };
 			nock('https://api.particle.io/v1/products/my-product')
@@ -303,7 +303,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
 		});
 
-		it('delete env var for specific device', async () => {
+		it('deletes env var for specific device', async () => {
 			let receivedBody;
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
