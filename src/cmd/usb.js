@@ -127,6 +127,14 @@ module.exports = class UsbCommand extends CLICommandBase {
 			});
 	}
 
+	getEnv(args) {
+		return forEachUsbDevice(args, usbDevice => {
+			return usbDevice.getEnv();
+		}).then(result => {
+			console.log('my result', result);
+		});
+	};
+
 	stopListening(args) {
 		args.api = this._api;
 		args.auth = this._auth;
