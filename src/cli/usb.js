@@ -168,6 +168,19 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(usb, 'env', 'Get environment variables from a device', {
+		params: '[devices...]',
+		options: commonOptions,
+		examples: {
+			'$0 $command': 'Get environment variables from the connected device',
+			'$0 $command --all': 'Get environment variables from all devices connected over USB',
+			'$0 $command my_device': 'Get environment variables from the device named "my_device"'
+		},
+		handler: (args) => {
+			return usbCommand().getEnv(args);
+		}
+	});
+
 	commandProcessor.createCommand(usb, 'send-request', 'Send an application-specific request to the device over USB', {
 		params: '<payload> [devices...]',
 		options: {
@@ -188,19 +201,6 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		handler: (args) => {
 			return usbCommand().sendRequest(args);
-		}
-	});
-
-	commandProcessor.createCommand(usb, 'env', 'Get environment variables from a device', {
-		params: '[devices...]',
-		options: commonOptions,
-		examples: {
-			'$0 $command': 'Get environment variables from the connected device',
-			'$0 $command --all': 'Get environment variables from all devices connected over USB',
-			'$0 $command my_device': 'Get environment variables from the device named "my_device"'
-		},
-		handler: (args) => {
-			return usbCommand().getEnv(args);
 		}
 	});
 
