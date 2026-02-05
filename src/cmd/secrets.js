@@ -37,7 +37,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		this._validateScope({ sandbox, org });
 		const secretsData = await this.ui.showBusySpinnerUntilResolved(
 			'Retrieving secrets',
-			secrets.list({ org, api: this.api })
+			secrets.list({ org, sandbox, api: this.api })
 		);
 		if (!json) {
 			secretsData.forEach((secret) => this._printSecret({ ...secret, org }));
@@ -51,7 +51,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		const name = params.key;
 		const secretData = await this.ui.showBusySpinnerUntilResolved(
 			'Retrieving secret',
-			secrets.get({ api: this.api, name, org })
+			secrets.get({ api: this.api, name, org, sandbox })
 		);
 		this._printSecret({ ...secretData, org });
 	}
@@ -61,7 +61,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		const name = params.key;
 		const isDeleted = await this.ui.showBusySpinnerUntilResolved(
 			'Deleting secret',
-			secrets.remove({ api: this.api, org, name })
+			secrets.remove({ api: this.api, org, sandbox, name })
 		);
 		if (isDeleted) {
 			this.ui.write(`Secret ${name} deleted successfully.`);
@@ -73,7 +73,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		const { key, value } = this._parseKeyValue(params);
 		const secretData = await this.ui.showBusySpinnerUntilResolved(
 			'Setting secret',
-			secrets.update({ api: this.api, name: key, org, value })
+			secrets.update({ api: this.api, name: key, org, sandbox, value })
 		);
 		this.ui.write(`Secret ${key} set successfully.`);
 		this._printSecret(secretData);

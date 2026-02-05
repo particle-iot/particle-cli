@@ -1,15 +1,15 @@
 'use strict';
-async function list({ api, org } = {}) {
-	const response = await api.listSecrets({ orgSlug: org });
+async function list({ api, org, sandbox } = {}) {
+	const response = await api.listSecrets({ sandbox, orgSlug: org });
 	return response.secrets?.length ? formatSecretList(response.secrets) : [];
 }
 
-async function get({ api, org, name }) {
-	const response = await api.getSecret({ api, orgSlug: org, name });
+async function get({ api, org, sandbox, name }) {
+	const response = await api.getSecret({ sandbox, orgSlug: org, name });
 	return formatSecret(response);
 }
 
-async function update({ api, org, name, value } = {}) {
+async function update({ api, org, sandbox, name, value } = {}) {
 	// validate name
 	const regex = /^[A-Z_][A-Z0-9_]*$/;
 	if (!regex.test(name)) {
@@ -18,12 +18,12 @@ async function update({ api, org, name, value } = {}) {
 	if (!value) {
 		throw new Error('value is required');
 	}
-	const response = await api.updateSecret({ orgSlug: org, name, value });
+	const response = await api.updateSecret({ sandbox, orgSlug: org, name, value });
 	return formatSecret(response);
 }
 
-async function remove({ api, org, name } = {}) {
-	const response = await api.removeSecret({ orgSlug: org, name });
+async function remove({ api, org, sandbox, name } = {}) {
+	const response = await api.removeSecret({ sandbox, orgSlug: org, name });
 	if (!response.error) {
 		return true;
 	}
