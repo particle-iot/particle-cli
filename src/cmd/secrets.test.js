@@ -101,7 +101,7 @@ describe('SecretsCommand', () => {
 
 			await secretsCommand.list({ org: 'my-org' });
 
-			expect(secretsStub.list).to.have.been.calledWith({ org: 'my-org', api: secretsCommand.api });
+			expect(secretsStub.list).to.have.been.calledWith({ org: 'my-org', api: secretsCommand.api, sandbox: undefined });
 			expect(secretsCommand.ui.showBusySpinnerUntilResolved).to.have.been.calledWith('Retrieving secrets');
 		});
 
@@ -149,7 +149,8 @@ describe('SecretsCommand', () => {
 			expect(secretsStub.get).to.have.been.calledWith({
 				api: secretsCommand.api,
 				name: 'MY_SECRET',
-				org: undefined
+				org: undefined,
+				sandbox: true
 			});
 			expect(secretsCommand.ui.showBusySpinnerUntilResolved).to.have.been.calledWith('Retrieving secret');
 		});
@@ -170,7 +171,8 @@ describe('SecretsCommand', () => {
 			expect(secretsStub.get).to.have.been.calledWith({
 				api: secretsCommand.api,
 				name: 'ORG_SECRET',
-				org: 'my-org'
+				org: 'my-org',
+				sandbox: undefined
 			});
 		});
 	});
@@ -184,6 +186,7 @@ describe('SecretsCommand', () => {
 			expect(secretsStub.remove).to.have.been.calledWith({
 				api: secretsCommand.api,
 				org: undefined,
+				sandbox: true,
 				name: 'MY_SECRET'
 			});
 			expect(secretsCommand.ui.write).to.have.been.calledWith('Secret MY_SECRET deleted successfully.');
@@ -197,6 +200,7 @@ describe('SecretsCommand', () => {
 			expect(secretsStub.remove).to.have.been.calledWith({
 				api: secretsCommand.api,
 				org: 'my-org',
+				sandbox: undefined,
 				name: 'ORG_SECRET'
 			});
 			expect(secretsCommand.ui.write).to.have.been.calledWith('Secret ORG_SECRET deleted successfully.');
@@ -221,6 +225,7 @@ describe('SecretsCommand', () => {
 				api: secretsCommand.api,
 				name: 'MY_SECRET',
 				org: undefined,
+				sandbox: true,
 				value: 'secret-value'
 			});
 			expect(secretsCommand.ui.write).to.have.been.calledWith('Secret MY_SECRET set successfully.');
@@ -243,6 +248,7 @@ describe('SecretsCommand', () => {
 				api: secretsCommand.api,
 				name: 'MY_SECRET',
 				org: undefined,
+				sandbox: true,
 				value: 'secret-value'
 			});
 		});
@@ -264,6 +270,7 @@ describe('SecretsCommand', () => {
 				api: secretsCommand.api,
 				name: 'ORG_SECRET',
 				org: 'my-org',
+				sandbox: undefined,
 				value: 'org-value'
 			});
 		});
