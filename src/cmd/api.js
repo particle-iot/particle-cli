@@ -388,41 +388,36 @@ module.exports = class ParticleApi {
 		}));
 	}
 
-	listSecrets({ orgSlug }) {
+	listSecrets({ sandbox, orgSlug }) {
+		const uri = sandbox ? '/v1/secrets' : `/v1/orgs/${orgSlug}/secrets`;
 		return this._wrap(this.api.request({
-			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets`,
+			uri,
 			auth: this.accessToken
 		}));
 	}
 
-	getSecret({ orgSlug, name }) {
+	getSecret({ sandbox, orgSlug, name }) {
+		const uri = sandbox ? `/v1/secrets/${name}` : `/v1/orgs/${orgSlug}/secrets/${name}`;
 		return this._wrap(this.api.request({
-			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets/${name}`,
+			uri,
 			auth: this.accessToken
 		}));
 	}
 
-	createSecret({ orgSlug, name, value }) {
+	updateSecret({ sandbox, orgSlug, name, value }) {
+		const uri = sandbox ? `/v1/secrets/${name}` : `/v1/orgs/${orgSlug}/secrets/${name}`;
 		return this._wrap(this.api.request({
-			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets`,
-			method: 'post',
-			auth: this.accessToken,
-			data: { secret: { name, value } }
-		}));
-	}
-
-	updateSecret({ orgSlug, name, value }) {
-		return this._wrap(this.api.request({
-			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets/${name}`,
+			uri,
 			method: 'put',
 			auth: this.accessToken,
 			data: { secret: { value } }
 		}));
 	}
 
-	removeSecret({ orgSlug, name }) {
+	removeSecret({ sandbox, orgSlug, name }) {
+		const uri = sandbox ? `/v1/secrets/${name}` : `/v1/orgs/${orgSlug}/secrets/${name}`;
 		return this._wrap(this.api.request({
-			uri: `/v1${orgSlug ? `/orgs/${orgSlug}` : ''}/secrets/${name}`,
+			uri,
 			method: 'delete',
 			auth: this.accessToken
 		}));
