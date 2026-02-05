@@ -107,7 +107,7 @@ describe('Secrets', () => {
 			expect(exitCode).to.equal(0);
 		});
 
-		it('delete the secret', async () => {
+		it('deletes the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
 				'config', 'secrets', 'delete',
 				secretName,
