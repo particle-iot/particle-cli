@@ -1,4 +1,5 @@
 'use strict';
+const os = require('os');
 const { expect } = require('../../test/setup');
 const { default: stripAnsi } = require('strip-ansi');
 const UsbCommands = require('./usb');
@@ -109,6 +110,170 @@ describe('USB Commands', () => {
 			const res = usbCommands._formatNetworkIfaceOutput(nwInfo, 'p2', '0123456789abcdef');
 
 			expect(res.map(stripAnsi)).to.eql(expectedOutput);
+		});
+	});
+
+	describe('_formatEnvOutput', () => {
+		let usbCommands;
+
+		beforeEach(() => {
+			usbCommands = new UsbCommands({
+				access_token: '1234',
+				apiUrl: 'https://api.particle.io'
+			});
+		});
+
+		it('formats output with application variables only', () => {
+			const result = {
+				env: {
+					FOO: { value: 'bar', isApp: true },
+					TEST: { value: 'baz', isApp: true }
+				}
+			};
+
+			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
+			const cleanOutput = output.map(stripAnsi);
+
+			expect(cleanOutput).to.deep.equal([
+				'',
+				'Device: 0123456789abcdef (P2)',
+				'\nEnvironment Variables:',
+				'  Application:',
+				'    FOO=bar',
+				'    TEST=baz',
+				''
+			]);
+		});
+
+		it('formats output with system variables only', () => {
+			const result = {
+				env: {
+					SYS_VAR1: { value: 'value1', isApp: false },
+					SYS_VAR2: { value: 'value2', isApp: false }
+				}
+			};
+
+			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
+			const cleanOutput = output.map(stripAnsi);
+
+			expect(cleanOutput).to.deep.equal([
+				'',
+				'Device: 0123456789abcdef (P2)',
+				'\nEnvironment Variables:',
+				'  System:',
+				'    SYS_VAR1=value1',
+				'    SYS_VAR2=value2',
+				''
+			]);
+		});
+
+		it('formats output with both application and system variables', () => {
+			const result = {
+				env: {
+					APP_KEY: { value: 'app_value', isApp: true },
+					SYS_KEY: { value: 'sys_value', isApp: false },
+					ANOTHER_APP: { value: 'another_app', isApp: true }
+				}
+			};
+
+			const output = usbCommands._formatEnvOutput(result, 'Photon', 'abc123def456');
+			const cleanOutput = output.map(stripAnsi);
+
+			expect(cleanOutput).to.deep.equal([
+				'',
+				'Device: abc123def456 (Photon)',
+				'\nEnvironment Variables:',
+				'  Application:',
+				'    ANOTHER_APP=another_app',
+				'    APP_KEY=app_value',
+				'',
+				'  System:',
+				'    SYS_KEY=sys_value',
+				''
+			]);
+		});
+
+		it('formats output when no environment variables are set', () => {
+			const result = {
+				env: {}
+			};
+
+			const output = usbCommands._formatEnvOutput(result, 'Argon', 'device123');
+			const cleanOutput = output.map(stripAnsi);
+
+			expect(cleanOutput).to.deep.equal([
+				'',
+				'Device: device123 (Argon)',
+				'  No environment variables set',
+				''
+			]);
+		});
+
+		it('includes snapshot hash when present', () => {
+			const result = {
+				env: {
+					MY_VAR: { value: 'my_value', isApp: true }
+				},
+				snapshot: {
+					hash: 'abc123def456789'
+				}
+			};
+
+			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
+			const cleanOutput = output.map(stripAnsi);
+
+			expect(cleanOutput).to.deep.equal([
+				'',
+				'Device: 0123456789abcdef (P2)',
+				'Snapshot Hash: abc123def456789',
+				'\nEnvironment Variables:',
+				'  Application:',
+				'    MY_VAR=my_value',
+				''
+			]);
+		});
+
+		it('sorts variables alphabetically within each category', () => {
+			const result = {
+				env: {
+					ZEBRA: { value: 'z', isApp: true },
+					APPLE: { value: 'a', isApp: true },
+					BANANA: { value: 'b', isApp: true },
+					SYS_Z: { value: 'sz', isApp: false },
+					SYS_A: { value: 'sa', isApp: false }
+				}
+			};
+
+			const output = usbCommands._formatEnvOutput(result, 'P2', 'device123');
+			const cleanOutput = output.map(stripAnsi);
+
+			expect(cleanOutput).to.deep.equal([
+				'',
+				'Device: device123 (P2)',
+				`${os.EOL}Environment Variables:`,
+				'  Application:',
+				'    APPLE=a',
+				'    BANANA=b',
+				'    ZEBRA=z',
+				'',
+				'  System:',
+				'    SYS_A=sa',
+				'    SYS_Z=sz',
+				''
+			]);
+		});
+
+		it('handles special characters in values', () => {
+			const result = {
+				env: {
+					SPECIAL: { value: 'value with spaces & symbols!@#$%', isApp: true }
+				}
+			};
+
+			const output = usbCommands._formatEnvOutput(result, 'P2', 'device123');
+			const cleanOutput = output.map(stripAnsi);
+
+			expect(cleanOutput[4]).to.equal('    SPECIAL=value with spaces & symbols!@#$%');
 		});
 	});
 });
