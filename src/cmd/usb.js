@@ -1,4 +1,5 @@
 'use strict';
+const os = require('os');
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const {
@@ -128,12 +129,71 @@ module.exports = class UsbCommand extends CLICommandBase {
 	}
 
 	getEnv(args) {
-		return forEachUsbDevice(args, usbDevice => {
-			return usbDevice.getEnv();
-		}).then(result => {
-			console.log('my result', result);
+		args.api = this._api;
+		args.auth = this._auth;
+		const output = [];
+
+		return forEachUsbDevice(args, async (usbDevice) => {
+			const result = await usbDevice.getEnv();
+			const platform = platformForId(usbDevice.platformId);
+			const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
+			output.push(...formattedOutput);
+			return result;
+		}).then(() => {
+			output.forEach(line => console.log(line));
 		});
-	};
+	}
+
+	_formatEnvOutput(result, platformName, deviceId) {
+		const output = [];
+
+		output.push('');
+		output.push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
+
+		if (result.snapshot) {
+			output.push(`${chalk.bold('Snapshot Hash:')} ${chalk.gray(result.snapshot.hash)}`);
+		}
+
+		const envVars = result.env;
+		const envKeys = Object.keys(envVars);
+
+		if (envKeys.length === 0) {
+			output.push(chalk.yellow('  No environment variables set'));
+		} else {
+			output.push(chalk.bold(`${os.EOL}Environment Variables:`));
+			const appVars = [];
+			const systemVars = [];
+
+			envKeys.forEach(key => {
+				const varInfo = envVars[key];
+				if (varInfo.isApp) {
+					appVars.push({ key, value: varInfo.value });
+				} else {
+					systemVars.push({ key, value: varInfo.value });
+				}
+			});
+
+			if (appVars.length > 0) {
+				output.push(chalk.dim('  Application:'));
+				appVars.sort((a, b) => a.key.localeCompare(b.key)).forEach(({ key, value }) => {
+					output.push(`    ${chalk.green(key)}=${chalk.white(value)}`);
+				});
+			}
+
+			if (systemVars.length > 0) {
+				if (appVars.length > 0) {
+					output.push('');
+				}
+				output.push(chalk.dim('  System:'));
+				systemVars.sort((a, b) => a.key.localeCompare(b.key)).forEach(({ key, value }) => {
+					output.push(`    ${chalk.cyan(key)}=${chalk.white(value)}`);
+				});
+			}
+		}
+		output.push('');
+
+		return output;
+	}
 
 	stopListening(args) {
 		args.api = this._api;
