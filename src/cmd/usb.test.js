@@ -145,8 +145,8 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: 0123456789abcdef (P2)',
-				'\nEnvironment Variables:',
-				'  Application:',
+				`${os.EOL}Environment Variables:`,
+				'  Firmware:',
 				'    FOO=bar',
 				'    TEST=baz',
 				''
@@ -167,8 +167,8 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: 0123456789abcdef (P2)',
-				'\nEnvironment Variables:',
-				'  System:',
+				`${os.EOL}Environment Variables:`,
+				'  Cloud:',
 				'    SYS_VAR1=value1',
 				'    SYS_VAR2=value2',
 				''
@@ -190,12 +190,12 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: abc123def456 (Photon)',
-				'\nEnvironment Variables:',
-				'  Application:',
+				`${os.EOL}Environment Variables:`,
+				'  Firmware:',
 				'    ANOTHER_APP=another_app',
 				'    APP_KEY=app_value',
 				'',
-				'  System:',
+				'  Cloud:',
 				'    SYS_KEY=sys_value',
 				''
 			]);
@@ -234,8 +234,8 @@ describe('USB Commands', () => {
 				'',
 				'Device: 0123456789abcdef (P2)',
 				'Snapshot Hash: abc123def456789',
-				'\nEnvironment Variables:',
-				'  Application:',
+				`${os.EOL}Environment Variables:`,
+				'  Firmware:',
 				'    MY_VAR=my_value',
 				''
 			]);
@@ -259,12 +259,12 @@ describe('USB Commands', () => {
 				'',
 				'Device: device123 (P2)',
 				`${os.EOL}Environment Variables:`,
-				'  Application:',
+				'  Firmware:',
 				'    APPLE=a',
 				'    BANANA=b',
 				'    ZEBRA=z',
 				'',
-				'  System:',
+				'  Cloud:',
 				'    SYS_A=sa',
 				'    SYS_Z=sz',
 				''
@@ -281,7 +281,14 @@ describe('USB Commands', () => {
 			const output = usbCommands._formatEnvOutput(result, 'P2', 'device123');
 			const cleanOutput = output.map(stripAnsi);
 
-			expect(cleanOutput[4]).to.equal('    SPECIAL=value with spaces & symbols!@#$%');
+			expect(cleanOutput).to.deep.equal([
+				'',
+				'Device: device123 (P2)',
+				`${os.EOL}Environment Variables:`,
+				'  Firmware:',
+				'    SPECIAL=value with spaces & symbols!@#$%',
+				''
+			]);
 		});
 	});
 
