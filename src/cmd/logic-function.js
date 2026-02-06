@@ -32,8 +32,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	_getLogicFunctionListWithSpinner() {
 		return this.ui.showBusySpinnerUntilResolved(
-			`Fetching Logic Functions for ${getOrgName(this.org)}...`
-			,LogicFunction.listFromCloud({ org: this.org, api: this.api }));
+			`Fetching Logic Functions for ${getOrgName(this.org)}...`,
+			LogicFunction.listFromCloud({ org: this.org, api: this.api })
+		);
 	}
 
 	_printListHelperOutput({ fromFile } = {}) {
@@ -241,8 +242,9 @@ module.exports = class LogicFunctionsCommand extends CLICommandBase {
 
 	async _executeLogicFunctionWithSpinner(logicFunction, eventData) {
 		return this.ui.showBusySpinnerUntilResolved(
-			`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...`
-			,logicFunction.execute(eventData));
+			`Executing Logic Function ${this.ui.chalk.bold(logicFunction.name)} for ${getOrgName(this.org)}...`,
+			logicFunction.execute(eventData)
+		);
 	}
 	async _pickLogicFunctionFromDisk({ filepath, name, id, action = 'execute' }) {
 		let { logicFunctions, malformedLogicFunctions } = await LogicFunction.listFromDisk({ filepath, api: this.api, org: this.org });
