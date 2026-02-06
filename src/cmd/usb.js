@@ -137,53 +137,57 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	_formatEnvOutput(result, platformName, deviceId) {
 		const output = [];
+		const push = line => output.push(line);
 
-		output.push('');
-		output.push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
+		push('');
+		push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
 
 		if (result.snapshot) {
-			output.push(`${chalk.bold('Snapshot Hash:')} ${chalk.gray(result.snapshot.hash)}`);
+			push(`${chalk.bold('Snapshot Hash:')} ${chalk.gray(result.snapshot.hash)}`);
 		}
 
-		const envVars = result.env;
-		const envKeys = Object.keys(envVars);
+		const envVars = result.env ?? {};
+		const entries = Object.entries(envVars);
 
-		if (envKeys.length === 0) {
-			output.push(chalk.yellow('  No environment variables set'));
-		} else {
-			output.push(chalk.bold(`${os.EOL}Environment Variables:`));
-			const appVars = [];
-			const systemVars = [];
+		if (entries.length === 0) {
+			push(chalk.yellow('  No environment variables set'));
+			push('');
+			return output;
+		}
 
-			envKeys.forEach(key => {
-				const varInfo = envVars[key];
-				if (varInfo.isApp) {
-					appVars.push({ key, value: varInfo.value });
-				} else {
-					systemVars.push({ key, value: varInfo.value });
-				}
+		push(chalk.bold(`${os.EOL}Environment Variables:`));
+
+		const { appVars, systemVars } = this._groupEnvVars(entries);
+
+		this._renderEnvGroup(output, '  Firmware:', appVars, 'green');
+		appVars.length > 0 && systemVars.length > 0 && push('');
+		this._renderEnvGroup(output, '  Cloud:', systemVars, 'cyan');
+
+		push('');
+		return output;
+	}
+
+	_groupEnvVars(entries) {
+		return entries.reduce(
+			(acc, [key, { value, isApp }]) => {
+				const target = isApp ? acc.appVars : acc.systemVars;
+				target.push({ key, value });
+				return acc;
+			},
+			{ appVars: [], systemVars: [] }
+		);
+	}
+
+	_renderEnvGroup(output, title, vars, color) {
+		if (vars.length === 0) {
+			return;
+		}
+		output.push(chalk.dim(title));
+		vars.sort((a, b) => a.key.localeCompare(b.key))
+			.forEach(({ key, value }) => {
+				output.push(`    ${chalk[color](key)}=${chalk.white(value)}`);
 			});
 
-			if (appVars.length > 0) {
-				output.push(chalk.dim('  Application:'));
-				appVars.sort((a, b) => a.key.localeCompare(b.key)).forEach(({ key, value }) => {
-					output.push(`    ${chalk.green(key)}=${chalk.white(value)}`);
-				});
-			}
-
-			if (systemVars.length > 0) {
-				if (appVars.length > 0) {
-					output.push('');
-				}
-				output.push(chalk.dim('  System:'));
-				systemVars.sort((a, b) => a.key.localeCompare(b.key)).forEach(({ key, value }) => {
-					output.push(`    ${chalk.cyan(key)}=${chalk.white(value)}`);
-				});
-			}
-		}
-		output.push('');
-
-		return output;
 	}
 
 	stopListening(args) {
