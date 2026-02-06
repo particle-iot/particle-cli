@@ -1,5 +1,8 @@
 # Changelog
 
+# 3.46.0 - Feb 06 2026
+* Add support for api_username, secrets, and env in logic-function commands
+
 # 3.45.1 - Jan 23 2026
 * Update signing actions to v1 
 * Fix rollout values for when param
