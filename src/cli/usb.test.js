@@ -382,83 +382,6 @@ describe('USB Command-Line Interface', () => {
 			expect(argv.timeout).to.equal(60000);
 		});
 
-		describe('Handles `usb network-interfaces` Command', () => {
-			it('Parses arguments', () => {
-				const argv = commandProcessor.parse(root, ['usb', 'network-interfaces']);
-				expect(argv.clierror).to.equal(undefined);
-				expect(argv.all).to.equal(false);
-			});
-
-			it('Includes help with examples', () => {
-				commandProcessor.parse(root, ['usb', 'network-interfaces', '--help'], termWidth);
-				commandProcessor.showHelp((helpText) => {
-					expect(helpText).to.equal([
-						'Gets the network configuration of the device',
-						'Usage: particle usb network-interfaces [options] [devices...]',
-						'',
-						'Options:',
-						'  --all  Send the command to all devices connected to the host computer  [boolean]',
-						'',
-						'Examples:',
-						'  particle usb network-interfaces            Gets the network configuration of the device',
-						'  particle usb network-interfaces --all      Gets the network configuration of all the devices connected over USB',
-						'  particle usb network-interfaces my_device  Gets the network configuration of the device named "my_device"',
-						''
-					].join('\n'));
-				});
-			});
-		});
-
-		describe('Handles `usb send-request` Command', () => {
-			it('Parses arguments', () => {
-				const argv = commandProcessor.parse(root, ['usb', 'send-request', '{"op":"status"}']);
-				expect(argv.clierror).to.equal(undefined);
-				expect(argv.params).to.eql({ payload: '{"op":"status"}', devices: [] });
-				expect(argv.timeout).to.equal(60000);
-			});
-
-			it('Parses payload with device name', () => {
-				const argv = commandProcessor.parse(root, ['usb', 'send-request', '{"op":"status"}', 'my-device']);
-				expect(argv.clierror).to.equal(undefined);
-				expect(argv.params).to.eql({ payload: '{"op":"status"}', devices: ['my-device'] });
-				expect(argv.timeout).to.equal(60000);
-			});
-
-			it('Parses payload with multiple devices', () => {
-				const argv = commandProcessor.parse(root, ['usb', 'send-request', 'test_payload', 'device1', 'device2']);
-				expect(argv.clierror).to.equal(undefined);
-				expect(argv.params).to.eql({ payload: 'test_payload', devices: ['device1', 'device2'] });
-				expect(argv.timeout).to.equal(60000);
-			});
-
-			it('Parses custom timeout option', () => {
-				const argv = commandProcessor.parse(root, ['usb', 'send-request', '{"key":"value"}', '--timeout', '5000']);
-				expect(argv.clierror).to.equal(undefined);
-				expect(argv.params).to.eql({ payload: '{"key":"value"}', devices: [] });
-				expect(argv.timeout).to.equal(5000);
-			});
-
-			it('Includes help with examples', () => {
-				commandProcessor.parse(root, ['usb', 'send-request', '--help'], termWidth);
-				commandProcessor.showHelp((helpText) => {
-					expect(helpText).to.equal([
-						'Send an application-specific request to the device over USB',
-						'Usage: particle usb send-request [options] <payload> [devices...]',
-						'',
-						'Options:',
-						'  --silent   Do not print the response from the device to the console  [boolean]',
-						'  --timeout  How long to wait (in ms) for the request to complete  [number] [default: 60000]',
-						'  --all      Send the command to all devices connected to the host computer  [boolean]',
-						'',
-						'Examples:',
-						'  particle usb send-request \'{"op":"status"}\' my_device  Send a custom request with a JSON payload to the device named "my_device"',
-						'  particle usb send-request \'{"op":"status"}\' --all      Send a custom request with a JSON payload all connected devices over USB',
-						''
-					].join('\n'));
-				});
-			});
-		});
-
 		it('Includes help with examples', () => {
 			commandProcessor.parse(root, ['usb', 'cloud-status', '--help'], termWidth);
 			commandProcessor.showHelp((helpText) => {
@@ -473,6 +396,123 @@ describe('USB Command-Line Interface', () => {
 					'Examples:',
 					'  particle usb cloud-status blue                   Check the cloud connection status for the device named `blue`',
 					'  particle usb cloud-status red --until connected  Poll cloud connection status for the device named `red` until it reports `connected`',
+					''
+				].join('\n'));
+			});
+		});
+	});
+
+	describe('Handles `usb network-interfaces` Command', () => {
+		it('Parses arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'network-interfaces']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.all).to.equal(false);
+		});
+
+		it('Includes help with examples', () => {
+			commandProcessor.parse(root, ['usb', 'network-interfaces', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Gets the network configuration of the device',
+					'Usage: particle usb network-interfaces [options] [devices...]',
+					'',
+					'Options:',
+					'  --all  Send the command to all devices connected to the host computer  [boolean]',
+					'',
+					'Examples:',
+					'  particle usb network-interfaces            Gets the network configuration of the device',
+					'  particle usb network-interfaces --all      Gets the network configuration of all the devices connected over USB',
+					'  particle usb network-interfaces my_device  Gets the network configuration of the device named "my_device"',
+					''
+				].join('\n'));
+			});
+		});
+	});
+
+	describe('Handles `usb env` Command', () => {
+		it('Parses arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'env']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.all).to.equal(false);
+		});
+
+		it('Parses optional arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'env', 'my-device']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ devices: ['my-device'] });
+			expect(argv.all).to.equal(false);
+		});
+
+		it('Parses options flags', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'env', '--all']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ devices: [] });
+			expect(argv.all).to.equal(true);
+		});
+
+		it('Includes help with examples', () => {
+			commandProcessor.parse(root, ['usb', 'env', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Gets environment variables from a device',
+					'Usage: particle usb env [options] [devices...]',
+					'',
+					'Options:',
+					'  --all  Send the command to all devices connected to the host computer  [boolean]',
+					'',
+					'Examples:',
+					'  particle usb env            Gets environment variables from the connected device',
+					'  particle usb env --all      Gets environment variables from all devices connected over USB',
+					'  particle usb env my_device  Gets environment variables from the device named "my_device"',
+					''
+				].join('\n'));
+			});
+		});
+	});
+	describe('Handles `usb send-request` Command', () => {
+		it('Parses arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'send-request', '{"op":"status"}']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ payload: '{"op":"status"}', devices: [] });
+			expect(argv.timeout).to.equal(60000);
+		});
+
+		it('Parses payload with device name', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'send-request', '{"op":"status"}', 'my-device']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ payload: '{"op":"status"}', devices: ['my-device'] });
+			expect(argv.timeout).to.equal(60000);
+		});
+
+		it('Parses payload with multiple devices', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'send-request', 'test_payload', 'device1', 'device2']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ payload: 'test_payload', devices: ['device1', 'device2'] });
+			expect(argv.timeout).to.equal(60000);
+		});
+
+		it('Parses custom timeout option', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'send-request', '{"key":"value"}', '--timeout', '5000']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ payload: '{"key":"value"}', devices: [] });
+			expect(argv.timeout).to.equal(5000);
+		});
+
+		it('Includes help with examples', () => {
+			commandProcessor.parse(root, ['usb', 'send-request', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Send an application-specific request to the device over USB',
+					'Usage: particle usb send-request [options] <payload> [devices...]',
+					'',
+					'Options:',
+					'  --silent   Do not print the response from the device to the console  [boolean]',
+					'  --timeout  How long to wait (in ms) for the request to complete  [number] [default: 60000]',
+					'  --all      Send the command to all devices connected to the host computer  [boolean]',
+					'',
+					'Examples:',
+					'  particle usb send-request \'{"op":"status"}\' my_device  Send a custom request with a JSON payload to the device named "my_device"',
+					'  particle usb send-request \'{"op":"status"}\' --all      Send a custom request with a JSON payload all connected devices over USB',
 					''
 				].join('\n'));
 			});
