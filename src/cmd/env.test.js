@@ -39,69 +39,109 @@ describe('config env Command', () => {
 		sinon.restore();
 	});
 
-	function parseBlocksFromCalls(calls) {
-		const logicalLines = calls.filter(line => !line.startsWith('---'));
-
-		const blocks = [];
-		for (let i = 0; i < logicalLines.length; i += 3) {
-			const keyLine = logicalLines[i];
-			const valueLine = logicalLines[i + 1];
-			const scopeLine = logicalLines[i + 2];
-
-			const key = keyLine;
-			const value = valueLine.replace('    Value: ', '');
-			const scope = scopeLine.replace('    Scope: ', '');
-
-			blocks.push({ key, value, scope });
-		}
-
-		return blocks;
-	}
 
 	describe('list', () => {
+		const { default: stripAnsi } = require('strip-ansi');
+
 		it('list all env vars for sandbox user', async () => {
+			// Update fixture to include last_snapshot
+			const sandboxListWithSnapshot = {
+				...sandboxList,
+				last_snapshot: {
+					rendered: {
+						FOO3: 'bar3',
+						FOO2: 'bar',
+						FOO: 'bar'
+					}
+				}
+			};
+
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
-				.reply(200, sandboxList);
+				.reply(200, sandboxListWithSnapshot);
 			await envCommands.list({ sandbox: true });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
-			const blocks = parseBlocksFromCalls(writeCalls);
-			expect(blocks).to.deep.equal([
-				{ key: 'FOO3', value: 'bar3', scope: 'Owner' },
-				{ key: 'FOO2', value: 'bar', scope: 'Owner' },
-				{ key: 'FOO', value: 'bar', scope: 'Owner' }
-			]);
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Verify table structure
+			expect(tableOutput).to.include('Name');
+			expect(tableOutput).to.include('Value');
+			expect(tableOutput).to.include('Scope');
+			expect(tableOutput).to.include('Overridden');
+
+			// Verify all variables are present
+			expect(tableOutput).to.include('FOO3');
+			expect(tableOutput).to.include('FOO2');
+			expect(tableOutput).to.include('FOO');
+			expect(tableOutput).to.include('bar3');
+			expect(tableOutput).to.include('bar');
+
+			// All should be Organization scope for sandbox
+			const rows = tableOutput.split('\n').filter(line =>
+				line.includes('FOO3') || line.includes('FOO2') || line.includes('FOO ')
+			);
+			rows.forEach(row => {
+				expect(row).to.include('Organization');
+			});
 		});
 
 		it('list all env vars for a product sandbox user', async () => {
+			const sandboxProductListWithSnapshot = {
+				...sandboxProductList,
+				last_snapshot: {
+					rendered: {
+						FOO3: 'bar3',
+						FOO: 'bar'
+					}
+				}
+			};
+
 			nock('https://api.particle.io/v1')
 				.intercept('/products/product-id-123/env', 'GET')
-				.reply(200, sandboxProductList);
+				.reply(200, sandboxProductListWithSnapshot);
 			await envCommands.list({ product: 'product-id-123' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
-			const blocks = parseBlocksFromCalls(writeCalls);
-			expect(blocks).to.deep.equal([
-				{ key: 'FOO3', value: 'bar3 (Override)', scope: 'Owner' },
-				{ key: 'FOO', value: 'bar', scope: 'Owner' }
-			]);
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Verify table has the variables
+			expect(tableOutput).to.include('FOO3');
+			expect(tableOutput).to.include('FOO');
+			expect(tableOutput).to.include('bar3');
+			expect(tableOutput).to.include('bar');
+
+			// FOO3 should be Product scope and Overridden
+			const foo3Row = tableOutput.split('\n').find(line => line.includes('FOO3'));
+			expect(foo3Row).to.include('Product');
+			expect(foo3Row).to.include('Yes'); // Overridden
 		});
 
 		it('list all env vars for a device', async () => {
+			const sandboxDeviceProductListWithSnapshot = {
+				...sandboxDeviceProductList,
+				last_snapshot: {
+					rendered: {
+						FOO: 'org-bar'
+					}
+				}
+			};
+
 			nock('https://api.particle.io/v1')
 				.intercept('/env/abc123', 'GET')
-				.reply(200, sandboxDeviceProductList);
+				.reply(200, sandboxDeviceProductListWithSnapshot);
 			await envCommands.list({ device: 'abc123' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
-			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
-			const blocks = parseBlocksFromCalls(writeCalls);
-			expect(blocks).to.deep.equal([
-				{ key: 'FOO', value: 'org-bar', scope: 'Owner' },
-				{ key: 'FOO3', value: 'bar3 (Override)', scope: 'Owner' },
-				{ key: 'FOO3_PROD', value: 'prod-bar3-prod', scope: 'Product' },
-				{ key: 'FOO4', value: 'bar', scope: 'Owner' }
-			]);
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Verify table includes On Device column for device scope
+			expect(tableOutput).to.include('On Device');
+			expect(tableOutput).to.include('FOO');
+			expect(tableOutput).to.include('org-bar');
 		});
 
 		it('show message for empty list', async () => {
@@ -472,6 +512,336 @@ describe('config env Command', () => {
 				error = _error;
 			}
 			expect(error.message).to.equal('You can only specify one scope at a time. You provided: --sandbox, --org, --product, --device');
+		});
+	});
+
+	describe('_displayEnv table rendering', () => {
+		const { default: stripAnsi } = require('strip-ansi');
+
+		it('displays product scope with inherited variables from organization', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'baz-prod',
+						BAZ: 'foo',
+						KEY: 'value'
+					},
+					rollout_at: '2026-02-09T17:47:17.121Z',
+					rollout_by: '60468db2509eb004820e11e0'
+				},
+				env: {
+					inherited: {
+						FOO: { from: 'Owner', value: 'test/data' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {
+						FOO: { value: 'baz-prod' }
+					}
+				}
+			};
+
+			await envCommands._displayEnv(data, { product: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			expect(tableOutput).to.include('Name');
+			expect(tableOutput).to.include('Value');
+			expect(tableOutput).to.include('Scope');
+			expect(tableOutput).to.include('Overridden');
+			expect(tableOutput).to.include('BAZ');
+			expect(tableOutput).to.include('foo');
+			expect(tableOutput).to.include('Organization');
+			expect(tableOutput).to.include('FOO');
+			expect(tableOutput).to.include('baz-prod');
+			expect(tableOutput).to.include('Product');
+			expect(tableOutput).to.include('KEY');
+			expect(tableOutput).to.include('value');
+
+			// Check that FOO shows as overridden (Yes) because it's in both own and inherited and applied
+			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
+			expect(fooRow).to.include('Yes');
+
+			// Check that BAZ shows as not overridden (No)
+			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
+			expect(bazRow).to.include('No');
+		});
+
+		it('displays product scope with pending changes and shows warning', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'baz-prod',
+						BAZ: 'foo',
+						KEY: 'value'
+					}
+				},
+				env: {
+					inherited: {
+						FOO: { from: 'Owner', value: 'test/data' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {
+						FOO: { value: 'baz-prod' },
+						BAZ: { value: 'product' }
+					}
+				}
+			};
+
+			await envCommands._displayEnv(data, { product: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// BAZ should show 'foo' (from snapshot), not 'product' (from own)
+			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
+			expect(bazRow).to.include('foo');
+			expect(bazRow).to.not.include('product');
+
+			// BAZ should show as not overridden because change is pending
+			expect(bazRow).to.include('No');
+
+			// Should show pending changes warning
+			expect(writeCalls.join('\n')).to.include('There are pending changes that need to be applied');
+		});
+
+		it('does not show pending variables not in last_snapshot', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'test/data',
+						BAZ: 'foo',
+						KEY: 'value'
+					}
+				},
+				env: {
+					inherited: {},
+					own: {
+						FOO: { value: 'test/data' },
+						BAZ: { value: 'foo' },
+						KEY: { value: 'value' },
+						NEW: { value: 'set' }
+					}
+				}
+			};
+
+			await envCommands._displayEnv(data, { sandbox: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Should NOT show NEW variable
+			expect(tableOutput).to.not.include('NEW');
+			expect(tableOutput).to.not.include('set');
+
+			// Should show the three that are in last_snapshot
+			expect(tableOutput).to.include('FOO');
+			expect(tableOutput).to.include('BAZ');
+			expect(tableOutput).to.include('KEY');
+
+			// Should show pending changes warning
+			expect(writeCalls.join('\n')).to.include('There are pending changes that need to be applied');
+		});
+
+		it('displays device scope with on_device column showing missing when null', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'baz-prod',
+						BAZ: 'foo',
+						KEY: 'value'
+					}
+				},
+				env: {
+					inherited: {
+						FOO: { from: 'Product', value: 'baz-prod' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {}
+				},
+				on_device: null
+			};
+
+			await envCommands._displayEnv(data, { device: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Should have On Device column
+			expect(tableOutput).to.include('On Device');
+
+			// All should show 'missing' since on_device is null
+			const rows = tableOutput.split('\n').filter(line => line.includes('│'));
+			const dataRows = rows.slice(2); // Skip header rows
+			dataRows.forEach(row => {
+				if (row.includes('FOO') || row.includes('BAZ') || row.includes('KEY')) {
+					expect(row).to.include('missing');
+				}
+			});
+
+			// Check scope based on 'from' field
+			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
+			expect(fooRow).to.include('Product');
+
+			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
+			expect(bazRow).to.include('Organization');
+		});
+
+		it('displays device scope with on_device values when provided', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'baz-prod',
+						BAZ: 'foo',
+						KEY: 'value'
+					}
+				},
+				env: {
+					inherited: {
+						FOO: { from: 'Product', value: 'baz-prod' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {}
+				},
+				on_device: {
+					FOO: 'old-value',
+					BAZ: 'bar'
+				}
+			};
+
+			await envCommands._displayEnv(data, { device: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Should show on_device values
+			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
+			expect(fooRow).to.include('old-value');
+
+			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
+			expect(bazRow).to.include('bar');
+
+			// KEY should show 'missing' since it's not in on_device
+			const keyRow = tableOutput.split('\n').find(line => line.includes('KEY'));
+			expect(keyRow).to.include('missing');
+		});
+
+		it('does not show on_device column for product scope', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'baz-prod'
+					}
+				},
+				env: {
+					inherited: {
+						FOO: { from: 'Owner', value: 'test/data' }
+					},
+					own: {
+						FOO: { value: 'baz-prod' }
+					}
+				}
+			};
+
+			await envCommands._displayEnv(data, { product: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Should NOT have On Device column
+			expect(tableOutput).to.not.include('On Device');
+
+			// Should have Name, Value, Scope, Overridden
+			expect(tableOutput).to.include('Name');
+			expect(tableOutput).to.include('Value');
+			expect(tableOutput).to.include('Scope');
+			expect(tableOutput).to.include('Overridden');
+		});
+
+		it('shows all scopes as Organization for sandbox', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'test/data',
+						BAZ: 'foo',
+						KEY: 'value'
+					}
+				},
+				env: {
+					inherited: {},
+					own: {
+						FOO: { value: 'test/data' },
+						BAZ: { value: 'foo' },
+						KEY: { value: 'value' }
+					}
+				}
+			};
+
+			await envCommands._displayEnv(data, { sandbox: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// All variables should show Organization scope
+			const rows = tableOutput.split('\n').filter(line =>
+				line.includes('FOO') || line.includes('BAZ') || line.includes('KEY')
+			);
+			rows.forEach(row => {
+				expect(row).to.include('Organization');
+			});
+		});
+
+		it('displays empty state when no variables exist', async () => {
+			const data = {
+				last_snapshot: { rendered: {} },
+				env: {
+					inherited: {},
+					own: {}
+				}
+			};
+
+			await envCommands._displayEnv(data, { sandbox: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
+			expect(writeCalls[0]).to.equal('No environment variables found.');
+		});
+
+		it('sorts variables alphabetically', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						ZEBRA: 'z',
+						APPLE: 'a',
+						BANANA: 'b'
+					}
+				},
+				env: {
+					inherited: {
+						ZEBRA: { from: 'Owner', value: 'z' },
+						APPLE: { from: 'Owner', value: 'a' },
+						BANANA: { from: 'Owner', value: 'b' }
+					},
+					own: {}
+				}
+			};
+
+			await envCommands._displayEnv(data, { sandbox: true });
+
+			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
+			const tableOutput = writeCalls[0];
+
+			// Find the order of variables in the output
+			const appleIndex = tableOutput.indexOf('APPLE');
+			const bananaIndex = tableOutput.indexOf('BANANA');
+			const zebraIndex = tableOutput.indexOf('ZEBRA');
+
+			// Should be alphabetically sorted: APPLE < BANANA < ZEBRA
+			expect(appleIndex).to.be.lessThan(bananaIndex);
+			expect(bananaIndex).to.be.lessThan(zebraIndex);
 		});
 	});
 });

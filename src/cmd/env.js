@@ -4,6 +4,7 @@ const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const fs = require('node:fs/promises');
+const Table = require('cli-table');
 
 module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
@@ -36,42 +37,176 @@ module.exports = class EnvCommands extends CLICommandBase {
 		if (json) {
 			this.ui.write(JSON.stringify(data, null, 2));
 		} else {
-			await this._displayEnv(data);
+			await this._displayEnv(data, { sandbox, org, product, device });
 		}
 	}
 
-	async _displayEnv(data) {
-		const env = data?.env ?? data; //TODO(hmontero): refine this validation
-		const noVars =
-			data.env &&
-			(
-				(!env.available || Object.keys(env.available).length === 0) &&
-				(!env.own || Object.keys(env.own).length === 0) &&
-				(!env.inherited || Object.keys(env.inherited).length === 0)
-			);
+	async _displayEnv(data, scope = {}) {
+		const lastSnapshotRendered = data?.last_snapshot?.rendered || {};
+		const envInherited = data?.env?.inherited || {};
+		const envOwn = data?.env?.own || {};
+		const onDeviceData = data?.on_device || null;
 
-		if (noVars) {
+		// Check if there are any variables at all
+		const hasLastSnapshot = Object.keys(lastSnapshotRendered).length > 0;
+		const hasInherited = Object.keys(envInherited).length > 0;
+		const hasOwn = Object.keys(envOwn).length > 0;
+
+		if (!hasLastSnapshot && !hasInherited && !hasOwn) {
 			this.ui.write('No environment variables found.');
 			return;
 		}
-		const envs = data?.env;
-		const mixedEnvs = {
-			...envs.available, // TODO(hmontero): remove it once is removed from api
-			...envs.inherited
-		};
-		const levelDefinedEnvs = envs.own;
-		const inheritedEnvKeys = Object.keys(mixedEnvs);
-		const levelDefinedEnvKeys = Object.keys(data?.env?.own);
-		inheritedEnvKeys.forEach((key) => {
-			if (levelDefinedEnvs[key]) {
-				this._writeEnvBlock(key, levelDefinedEnvs[key], { isOverride: true });
-			} else {
-				this._writeEnvBlock(key, mixedEnvs[key]);
+
+		// Check for pending changes
+		// A change is pending if:
+		// 1. A variable is in env.own but NOT in last_snapshot.rendered (new variable)
+		// 2. A variable is in both but with different values (updated variable)
+		let hasPendingChanges = false;
+		for (const key in envOwn) {
+			if (!(key in lastSnapshotRendered) || lastSnapshotRendered[key] !== envOwn[key].value) {
+				hasPendingChanges = true;
+				break;
 			}
+		}
+
+		// Determine if we should show the "On Device" column (only for --device)
+		const showOnDevice = !!scope.device;
+
+		// Calculate column widths
+		const nameWidth = 25;
+		const valueWidth = 30;
+		const onDeviceWidth = 15;
+		const scopeWidth = 20;
+		const overriddenWidth = 12;
+
+		// Create table with headers based on whether we show "On Device"
+		const headers = ['Name', 'Value'];
+		const colWidths = [nameWidth, valueWidth];
+
+		if (showOnDevice) {
+			headers.push('On Device');
+			colWidths.push(onDeviceWidth);
+		}
+
+		headers.push('Scope', 'Overridden');
+		colWidths.push(scopeWidth, overriddenWidth);
+
+		const table = new Table({
+			head: headers,
+			colWidths: colWidths,
+			style: { head: ['cyan', 'bold'] },
+			wordWrap: true
 		});
-		levelDefinedEnvKeys
-			.filter(key => !inheritedEnvKeys.includes(key))
-			.forEach((key) => this._writeEnvBlock(key, levelDefinedEnvs[key]));
+
+		// Collect all unique keys - ONLY from last_snapshot.rendered and env.inherited
+		// Do NOT include keys from env.own that aren't in rendered, as those are pending changes
+		const allKeys = new Set([
+			...Object.keys(lastSnapshotRendered),
+			...Object.keys(envInherited)
+		]);
+
+		// Sort keys alphabetically for consistent display
+		const sortedKeys = Array.from(allKeys).sort();
+
+		// Process each environment variable
+		sortedKeys.forEach((key) => {
+			const snapshotValue = lastSnapshotRendered[key];
+			const inheritedEntry = envInherited[key];
+			const ownEntry = envOwn[key];
+
+			const isInOwn = !!ownEntry;
+			const isInherited = !!inheritedEntry;
+
+			// Determine the current value - use snapshot value (what's actually on devices)
+			// not the pending value from env.own
+			let value;
+			if (snapshotValue !== undefined) {
+				value = snapshotValue;
+			} else if (ownEntry) {
+				// If not in snapshot yet but in own, use own value
+				value = ownEntry.value;
+			} else if (inheritedEntry) {
+				value = inheritedEntry.value;
+			}
+
+			// Get on device value from on_device field if available
+			let onDeviceValue = 'missing';
+			if (showOnDevice) {
+				if (onDeviceData && onDeviceData[key] !== undefined) {
+					onDeviceValue = onDeviceData[key];
+				}
+			}
+
+			let envScope;
+			let isOverridden = false;
+
+			// Determine scope based on parameters
+			if (scope.sandbox || scope.org) {
+				// For sandbox or org, all scopes are "Organization"
+				envScope = 'Organization';
+			} else if (scope.product) {
+				// For product: use the 'from' field from inherited if in own is false
+				// otherwise it's "Product"
+				if (isInOwn) {
+					envScope = 'Product';
+					// It's overridden only if the change is already applied (in snapshot) AND there's an inherited value
+					// If it's only in env.own but not in snapshot yet, it's pending and not overriding yet
+					const isApplied = snapshotValue !== undefined && snapshotValue === ownEntry.value;
+					isOverridden = isApplied && isInherited;
+				} else if (inheritedEntry) {
+					// Use the 'from' field to determine scope
+					envScope = inheritedEntry.from === 'Product' ? 'Product' : 'Organization';
+				}
+			} else if (scope.device) {
+				// For device: if in own, it's "Device", otherwise use 'from' field
+				if (isInOwn) {
+					envScope = 'Device';
+					// It's overridden only if the change is already applied (in snapshot or on_device) AND there's an inherited value
+					const isApplied = (snapshotValue !== undefined && snapshotValue === ownEntry.value) ||
+						(onDeviceData && onDeviceData[key] !== undefined && onDeviceData[key] === ownEntry.value);
+					isOverridden = isApplied && isInherited;
+				} else if (inheritedEntry) {
+					// Use the 'from' field to determine scope
+					const fromField = inheritedEntry.from || '';
+					if (fromField === 'Device') {
+						envScope = 'Device';
+					} else if (fromField === 'Product') {
+						envScope = 'Product';
+					} else {
+						envScope = 'Organization';
+					}
+				}
+			}
+
+			// Truncate long values
+			const displayValue = value && value.length > valueWidth - 3
+				? value.substring(0, valueWidth - 6) + '...'
+				: value;
+
+			const displayOnDeviceValue = onDeviceValue && onDeviceValue.length > onDeviceWidth - 3
+				? onDeviceValue.substring(0, onDeviceWidth - 6) + '...'
+				: onDeviceValue;
+
+			// Build the row based on whether we show "On Device"
+			const row = [key, displayValue || ''];
+
+			if (showOnDevice) {
+				row.push(displayOnDeviceValue);
+			}
+
+			row.push(envScope || '', isOverridden ? 'Yes' : 'No');
+
+			table.push(row);
+		});
+
+		this.ui.write(table.toString());
+
+		// Show pending changes notice if applicable
+		if (hasPendingChanges) {
+			this.ui.write('');
+			this.ui.write(this.ui.chalk.yellow('⚠ There are pending changes that need to be applied.'));
+			this.ui.write(this.ui.chalk.yellow(`Run 'particle config env rollout' or visit ${this.ui.chalk.cyan('https://console.particle.io')} to apply them.`));
+		}
 	}
 
 	_writeEnvBlock(key, envEntry, { isOverride = false } = {}) {
