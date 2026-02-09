@@ -1,5 +1,4 @@
 'use strict';
-const os = require('os');
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
 const {
@@ -164,7 +163,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 			return output;
 		}
 
-		push(chalk.bold(`${os.EOL}Environment Variables:`));
+		push('');
+		push(chalk.bold(`Environment Variables:`));
 
 		const { appVars, systemVars } = this._groupEnvVars(entries);
 

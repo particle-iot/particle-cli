@@ -145,7 +145,8 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: 0123456789abcdef (P2)',
-				`${os.EOL}Environment Variables:`,
+				'',
+				'Environment Variables:',
 				'  Firmware:',
 				'    FOO=bar',
 				'    TEST=baz',
