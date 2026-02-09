@@ -40,6 +40,7 @@ describe('USB Command-Line Interface', () => {
 					'  configure           Update the system USB configuration',
 					'  cloud-status        Check a device\'s cloud connection state',
 					'  network-interfaces  Gets the network configuration of the device',
+					'  env                 Gets environment variables from a device',
 					''
 				].join('\n'));
 			});
@@ -380,33 +381,6 @@ describe('USB Command-Line Interface', () => {
 			expect(argv.timeout).to.equal(60000);
 		});
 
-		describe('Handles `usb network-interfaces` Command', () => {
-			it('Parses arguments', () => {
-				const argv = commandProcessor.parse(root, ['usb', 'network-interfaces']);
-				expect(argv.clierror).to.equal(undefined);
-				expect(argv.all).to.equal(false);
-			});
-
-			it('Includes help with examples', () => {
-				commandProcessor.parse(root, ['usb', 'network-interfaces', '--help'], termWidth);
-				commandProcessor.showHelp((helpText) => {
-					expect(helpText).to.equal([
-						'Gets the network configuration of the device',
-						'Usage: particle usb network-interfaces [options] [devices...]',
-						'',
-						'Options:',
-						'  --all  Send the command to all devices connected to the host computer  [boolean]',
-						'',
-						'Examples:',
-						'  particle usb network-interfaces            Gets the network configuration of the device',
-						'  particle usb network-interfaces --all      Gets the network configuration of all the devices connected over USB',
-						'  particle usb network-interfaces my_device  Gets the network configuration of the device named "my_device"',
-						''
-					].join('\n'));
-				});
-			});
-		});
-
 		it('Includes help with examples', () => {
 			commandProcessor.parse(root, ['usb', 'cloud-status', '--help'], termWidth);
 			commandProcessor.showHelp((helpText) => {
@@ -426,5 +400,74 @@ describe('USB Command-Line Interface', () => {
 			});
 		});
 	});
+
+	describe('Handles `usb network-interfaces` Command', () => {
+		it('Parses arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'network-interfaces']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.all).to.equal(false);
+		});
+
+		it('Includes help with examples', () => {
+			commandProcessor.parse(root, ['usb', 'network-interfaces', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Gets the network configuration of the device',
+					'Usage: particle usb network-interfaces [options] [devices...]',
+					'',
+					'Options:',
+					'  --all  Send the command to all devices connected to the host computer  [boolean]',
+					'',
+					'Examples:',
+					'  particle usb network-interfaces            Gets the network configuration of the device',
+					'  particle usb network-interfaces --all      Gets the network configuration of all the devices connected over USB',
+					'  particle usb network-interfaces my_device  Gets the network configuration of the device named "my_device"',
+					''
+				].join('\n'));
+			});
+		});
+	});
+
+	describe('Handles `usb env` Command', () => {
+		it('Parses arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'env']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.all).to.equal(false);
+		});
+
+		it('Parses optional arguments', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'env', 'my-device']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ devices: ['my-device'] });
+			expect(argv.all).to.equal(false);
+		});
+
+		it('Parses options flags', () => {
+			const argv = commandProcessor.parse(root, ['usb', 'env', '--all']);
+			expect(argv.clierror).to.equal(undefined);
+			expect(argv.params).to.eql({ devices: [] });
+			expect(argv.all).to.equal(true);
+		});
+
+		it('Includes help with examples', () => {
+			commandProcessor.parse(root, ['usb', 'env', '--help'], termWidth);
+			commandProcessor.showHelp((helpText) => {
+				expect(helpText).to.equal([
+					'Gets environment variables from a device',
+					'Usage: particle usb env [options] [devices...]',
+					'',
+					'Options:',
+					'  --all  Send the command to all devices connected to the host computer  [boolean]',
+					'',
+					'Examples:',
+					'  particle usb env            Gets environment variables from the connected device',
+					'  particle usb env --all      Gets environment variables from all devices connected over USB',
+					'  particle usb env my_device  Gets environment variables from the device named "my_device"',
+					''
+				].join('\n'));
+			});
+		});
+	});
+
 });
 

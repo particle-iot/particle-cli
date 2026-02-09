@@ -68,7 +68,7 @@
     "particle-api-js": "^11.1.7",
     "particle-commands": "^1.0.6",
     "particle-library-manager": "^1.0.6",
-    "particle-usb": "^4.0.1",
+    "particle-usb": "^4.1.0",
     "request": "^2.88.2",
     "safe-buffer": "^5.2.0",
     "semver": "^7.5.2",

@@ -118,6 +118,74 @@ module.exports = class UsbCommand extends CLICommandBase {
 			});
 	}
 
+	getEnv(args) {
+		args.api = this._api;
+		args.auth = this._auth;
+		const output = [];
+
+		return forEachUsbDevice(args, async (usbDevice) => {
+			const result = await usbDevice.getEnv();
+			const platform = platformForId(usbDevice.platformId);
+			const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
+			output.push(...formattedOutput);
+			return result;
+		}).then(() => {
+			output.forEach(line => console.log(line));
+		});
+	}
+
+	_formatEnvOutput(result, platformName, deviceId) {
+		const output = [];
+		const push = line => output.push(line);
+
+		push('');
+		push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
+
+		const envVars = result.env ?? {};
+		const entries = Object.entries(envVars);
+
+		if (entries.length === 0) {
+			push(chalk.yellow('  No environment variables set'));
+			push('');
+			return output;
+		}
+
+		push('');
+		push(chalk.bold(`Environment Variables:`));
+
+		const { appVars, systemVars } = this._groupEnvVars(entries);
+
+		this._renderEnvGroup(output, '  Firmware:', appVars, 'green');
+		appVars.length > 0 && systemVars.length > 0 && push('');
+		this._renderEnvGroup(output, '  Cloud:', systemVars, 'cyan');
+
+		push('');
+		return output;
+	}
+
+	_groupEnvVars(entries) {
+		return entries.reduce(
+			(acc, [key, { value, isApp }]) => {
+				const target = isApp ? acc.appVars : acc.systemVars;
+				target.push({ key, value });
+				return acc;
+			},
+			{ appVars: [], systemVars: [] }
+		);
+	}
+
+	_renderEnvGroup(output, title, vars, color) {
+		if (vars.length === 0) {
+			return;
+		}
+		output.push(chalk.dim(title));
+		vars.sort((a, b) => a.key.localeCompare(b.key))
+			.forEach(({ key, value }) => {
+				output.push(`    ${chalk[color](key)}=${chalk.white(value)}`);
+			});
+
+	}
+
 	stopListening(args) {
 		args.api = this._api;
 		args.auth = this._auth;
