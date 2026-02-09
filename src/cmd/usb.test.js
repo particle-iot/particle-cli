@@ -1,5 +1,4 @@
 'use strict';
-const os = require('os');
 const { expect } = require('../../test/setup');
 const { default: stripAnsi } = require('strip-ansi');
 const UsbCommands = require('./usb');
@@ -160,7 +159,8 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: 0123456789abcdef (P2)',
-				`${os.EOL}Environment Variables:`,
+				'',
+				'Environment Variables:',
 				'  Cloud:',
 				'    SYS_VAR1=value1',
 				'    SYS_VAR2=value2',
@@ -183,7 +183,8 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: abc123def456 (Photon)',
-				`${os.EOL}Environment Variables:`,
+				'',
+				'Environment Variables:',
 				'  Firmware:',
 				'    ANOTHER_APP=another_app',
 				'    APP_KEY=app_value',
@@ -227,7 +228,8 @@ describe('USB Commands', () => {
 				'',
 				'Device: 0123456789abcdef (P2)',
 				'Snapshot Hash: abc123def456789',
-				`${os.EOL}Environment Variables:`,
+				'',
+				'Environment Variables:',
 				'  Firmware:',
 				'    MY_VAR=my_value',
 				''
@@ -251,7 +253,8 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: device123 (P2)',
-				`${os.EOL}Environment Variables:`,
+				'',
+				'Environment Variables:',
 				'  Firmware:',
 				'    APPLE=a',
 				'    BANANA=b',
@@ -277,7 +280,8 @@ describe('USB Commands', () => {
 			expect(cleanOutput).to.deep.equal([
 				'',
 				'Device: device123 (P2)',
-				`${os.EOL}Environment Variables:`,
+				'',
+				'Environment Variables:',
 				'  Firmware:',
 				'    SPECIAL=value with spaces & symbols!@#$%',
 				''
