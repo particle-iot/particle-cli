@@ -141,10 +141,6 @@ module.exports = class UsbCommand extends CLICommandBase {
 		push('');
 		push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
 
-		if (result.snapshot) {
-			push(`${chalk.bold('Snapshot Hash:')} ${chalk.gray(result.snapshot.hash)}`);
-		}
-
 		const envVars = result.env ?? {};
 		const entries = Object.entries(envVars);
 

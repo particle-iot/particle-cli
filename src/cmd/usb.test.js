@@ -211,31 +211,6 @@ describe('USB Commands', () => {
 			]);
 		});
 
-		it('includes snapshot hash when present', () => {
-			const result = {
-				env: {
-					MY_VAR: { value: 'my_value', isApp: true }
-				},
-				snapshot: {
-					hash: 'abc123def456789'
-				}
-			};
-
-			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
-			const cleanOutput = output.map(stripAnsi);
-
-			expect(cleanOutput).to.deep.equal([
-				'',
-				'Device: 0123456789abcdef (P2)',
-				'Snapshot Hash: abc123def456789',
-				'',
-				'Environment Variables:',
-				'  Firmware:',
-				'    MY_VAR=my_value',
-				''
-			]);
-		});
-
 		it('sorts variables alphabetically within each category', () => {
 			const result = {
 				env: {
