@@ -3,7 +3,7 @@ const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const fs = require('node:fs/promises');
-const { displayEnv, displayRolloutChanges } = require('../lib/env');
+const { displayEnv, displayRolloutChanges, displayRolloutInstructions } = require('../lib/env');
 
 module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
@@ -69,6 +69,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 				operations: [operation]
 			}));
 		this.ui.write(`Key ${key} has been successfully set.`);
+		await displayRolloutInstructions({ sandbox, org, product, device }, this.ui, this.api);
 	}
 
 	_parseKeyValue(params) {
