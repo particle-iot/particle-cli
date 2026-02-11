@@ -979,6 +979,11 @@ describe('lib/env', () => {
 						product_id: 99999
 					}
 				}),
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
 				accessToken: 'test-token'
 			};
 
@@ -999,7 +1004,7 @@ describe('lib/env', () => {
 			await displayEnv(data, { device: 'device123' }, ui, mockApi);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('https://console.particle.io/99999/devices/device123');
+			expect(output).to.include('https://console.particle.io/my-product/devices/device123');
 		});
 	});
 
@@ -1159,6 +1164,11 @@ describe('lib/env', () => {
 						product_id: 99999
 					}
 				}),
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
 				accessToken: 'test-token'
 			};
 
@@ -1169,10 +1179,15 @@ describe('lib/env', () => {
 				auth: 'test-token'
 			});
 
+			expect(mockApi.getProduct).to.have.been.calledWith({
+				product: 99999,
+				auth: 'test-token'
+			});
+
 			const output = ui._writes.join('\n');
 			expect(output).to.include('Changes have been saved successfully');
 			expect(output).to.include('To apply these changes, you need to perform a rollout');
-			expect(output).to.include('https://console.particle.io/99999/devices/device123');
+			expect(output).to.include('https://console.particle.io/my-product/devices/device123');
 		});
 
 		it('displays device URL without product_id when device is not in a product', async () => {
@@ -1181,6 +1196,9 @@ describe('lib/env', () => {
 					body: {
 						id: 'device456'
 					}
+				}),
+				getProduct: sinon.stub().resolves({
+					product: null
 				}),
 				accessToken: 'test-token'
 			};
@@ -1208,6 +1226,76 @@ describe('lib/env', () => {
 
 			expect(error).to.exist;
 			expect(error.message).to.equal('API instance is required to get device information');
+		});
+
+		describe('staging environment', () => {
+			const settings = require('../../settings');
+
+			afterEach(() => {
+				// Restore original value
+				sinon.restore();
+			});
+
+			it('uses staging console URL for sandbox when isStaging is true', async () => {
+				sinon.stub(settings, 'isStaging').value(true);
+
+				await displayRolloutInstructions({ sandbox: true }, ui);
+
+				const output = ui._writes.join('\n');
+				expect(output).to.include('https://console.staging.particle.io/env/roll-out');
+			});
+
+			it('uses staging console URL for org when isStaging is true', async () => {
+				sinon.stub(settings, 'isStaging').value(true);
+
+				await displayRolloutInstructions({ org: 'my-org' }, ui);
+
+				const output = ui._writes.join('\n');
+				expect(output).to.include('https://console.staging.particle.io/orgs/my-org/env/rollout');
+			});
+
+			it('uses staging console URL for product when isStaging is true', async () => {
+				sinon.stub(settings, 'isStaging').value(true);
+
+				await displayRolloutInstructions({ product: '12345' }, ui);
+
+				const output = ui._writes.join('\n');
+				expect(output).to.include('https://console.staging.particle.io/12345/env/roll-out');
+			});
+
+			it('uses staging console URL for device when isStaging is true', async () => {
+				sinon.stub(settings, 'isStaging').value(true);
+
+				const mockApi = {
+					getDevice: sinon.stub().resolves({
+						body: {
+							id: 'device123',
+							product_id: 99999
+						}
+					}),
+					getProduct: sinon.stub().resolves({
+						product: {
+							slug: 'my-product'
+						}
+					}),
+					accessToken: 'test-token'
+				};
+
+				await displayRolloutInstructions({ device: 'device123' }, ui, mockApi);
+
+				const output = ui._writes.join('\n');
+				expect(output).to.include('https://console.staging.particle.io/my-product/devices/device123');
+			});
+
+			it('uses production console URL when isStaging is false', async () => {
+				sinon.stub(settings, 'isStaging').value(false);
+
+				await displayRolloutInstructions({ sandbox: true }, ui);
+
+				const output = ui._writes.join('\n');
+				expect(output).to.include('https://console.particle.io/env/roll-out');
+				expect(output).to.not.include('.staging');
+			});
 		});
 	});
 });

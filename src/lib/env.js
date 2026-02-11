@@ -1,6 +1,7 @@
 'use strict';
 const os = require('os');
 const Table = require('cli-table');
+const settings = require('../../settings');
 
 /**
  * Check if there are pending changes between snapshot and own environment variables
@@ -315,27 +316,27 @@ function displayRolloutChanges(rolloutData, ui) {
  * @returns {Promise<void>}
  */
 async function displayRolloutInstructions(scope, ui, api = null) {
+	const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
 	let url;
 
 	if (scope.sandbox) {
-		url = 'https://console.particle.io/env/roll-out';
+		url = `${baseUrl}/env/roll-out`;
 	} else if (scope.org) {
-		url = `https://console.particle.io/orgs/${scope.org}/env/rollout`;
+		url = `${baseUrl}/orgs/${scope.org}/env/rollout`;
 	} else if (scope.product) {
-		url = `https://console.particle.io/${scope.product}/env/roll-out`;
+		url = `${baseUrl}/${scope.product}/env/roll-out`;
 	} else if (scope.device) {
 		if (!api) {
 			throw new Error('API instance is required to get device information');
 		}
-
-		// Fetch device to get its product_id
 		const device = await api.getDevice({ deviceId: scope.device, auth: api.accessToken });
-		const productId = device.body?.product_id;
+		const product = await api.getProduct({ product: device.body?.product_id, auth: api.accessToken });
+		const productSlug = product?.product?.slug;
 
-		if (productId) {
-			url = `https://console.particle.io/${productId}/devices/${scope.device}`;
+		if (productSlug) {
+			url = `${baseUrl}/${productSlug}/devices/${scope.device}`;
 		} else {
-			url = `https://console.particle.io/devices/${scope.device}`;
+			url = `${baseUrl}/devices/${scope.device}`;
 		}
 	}
 

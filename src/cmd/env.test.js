@@ -215,6 +215,15 @@ describe('config env Command', () => {
 		it('set env var for specific device', async () => {
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
+
+			// Stub API methods for displayRolloutInstructions
+			sinon.stub(envCommands.api, 'getDevice').resolves({
+				body: { id: deviceId, product_id: 12345 }
+			});
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'my-product' }
+			});
+
 			nock('https://api.particle.io/v1')
 				.intercept(`/env/${deviceId}`, 'PATCH')
 				.reply(200, sandboxList);
