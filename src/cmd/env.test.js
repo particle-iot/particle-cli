@@ -3,6 +3,7 @@ const { expect, sinon } = require('../../test/setup');
 const nock = require('nock');
 const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env/list');
 const EnvCommands = require('./env');
+const { displayEnv } = require('../lib/env');
 
 
 describe('config env Command', () => {
@@ -541,7 +542,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { product: true });
+			displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -590,7 +591,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { product: true });
+			displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -627,7 +628,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { sandbox: true });
+			displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -665,7 +666,7 @@ describe('config env Command', () => {
 				on_device: null
 			};
 
-			await envCommands._displayEnv(data, { device: true });
+			displayEnv(data, { device: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -713,7 +714,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { device: true });
+			displayEnv(data, { device: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -747,7 +748,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { product: true });
+			displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -781,7 +782,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { sandbox: true });
+			displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -804,7 +805,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { sandbox: true });
+			displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
 			expect(writeCalls[0]).to.equal('No environment variables found.');
@@ -829,7 +830,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await envCommands._displayEnv(data, { sandbox: true });
+			displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
