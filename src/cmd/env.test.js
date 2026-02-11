@@ -125,7 +125,9 @@ describe('config env Command', () => {
 				...sandboxDeviceProductList,
 				last_snapshot: {
 					rendered: {
-						FOO: 'org-bar'
+						FOO: 'org-bar',
+						FOO3: 'bar3',
+						FOO4: 'bar'
 					}
 				}
 			};
@@ -542,7 +544,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { product: true }, envCommands.ui);
+			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -591,7 +593,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { product: true }, envCommands.ui);
+			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -604,8 +606,9 @@ describe('config env Command', () => {
 			// BAZ should show as not overridden because change is pending
 			expect(bazRow).to.include('No');
 
-			// Should show pending changes warning
-			expect(writeCalls.join('\n')).to.include('There are pending changes that need to be applied');
+			// Should show rollout instructions
+			expect(writeCalls.join('\n')).to.include('Changes have been saved successfully');
+			expect(writeCalls.join('\n')).to.include('To apply these changes, you need to perform a rollout');
 		});
 
 		it('does not show pending variables not in last_snapshot', async () => {
@@ -628,7 +631,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, envCommands.ui);
+			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -642,8 +645,9 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('BAZ');
 			expect(tableOutput).to.include('KEY');
 
-			// Should show pending changes warning
-			expect(writeCalls.join('\n')).to.include('There are pending changes that need to be applied');
+			// Should show rollout instructions
+			expect(writeCalls.join('\n')).to.include('Changes have been saved successfully');
+			expect(writeCalls.join('\n')).to.include('To apply these changes, you need to perform a rollout');
 		});
 
 		it('displays device scope with on_device column showing missing when null', async () => {
@@ -666,7 +670,7 @@ describe('config env Command', () => {
 				on_device: null
 			};
 
-			displayEnv(data, { device: true }, envCommands.ui);
+			await displayEnv(data, { device: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -714,7 +718,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { device: true }, envCommands.ui);
+			await displayEnv(data, { device: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -748,7 +752,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { product: true }, envCommands.ui);
+			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -782,7 +786,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, envCommands.ui);
+			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
@@ -805,7 +809,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, envCommands.ui);
+			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
 			expect(writeCalls[0]).to.equal('No environment variables found.');
@@ -830,7 +834,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, envCommands.ui);
+			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];

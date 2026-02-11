@@ -36,7 +36,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 		if (json) {
 			this.ui.write(JSON.stringify(data, null, 2));
 		} else {
-			displayEnv(data, { sandbox, org, product, device }, this.ui);
+			await displayEnv(data, { sandbox, org, product, device }, this.ui, this.api);
 		}
 	}
 
