@@ -1,6 +1,5 @@
 'use strict';
-
-const { expect } = require('../../test/setup');
+const { expect, sinon } = require('../../test/setup');
 const {
 	hasPendingChanges,
 	getSortedEnvKeys,
@@ -838,7 +837,8 @@ describe('lib/env', () => {
 				chalk: {
 					yellow: (str) => str,
 					cyan: (str) => str,
-					bold: (str) => str
+					bold: (str) => str,
+					green: (str) => str
 				}
 			};
 			// Capture writes
@@ -849,7 +849,7 @@ describe('lib/env', () => {
 			ui.chalk.cyan.bold = (str) => str;
 		});
 
-		it('displays table when variables exist', () => {
+		it('displays table when variables exist', async () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -864,14 +864,14 @@ describe('lib/env', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, ui);
+			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('FOO');
 			expect(output).to.include('bar');
 		});
 
-		it('displays "No environment variables found" when empty', () => {
+		it('displays "No environment variables found" when empty', async () => {
 			const data = {
 				last_snapshot: { rendered: {} },
 				env: {
@@ -880,12 +880,12 @@ describe('lib/env', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, ui);
+			await displayEnv(data, { sandbox: true }, ui);
 
 			expect(ui._writes[0]).to.equal('No environment variables found.');
 		});
 
-		it('displays pending changes warning when changes exist', () => {
+		it('displays pending changes warning when changes exist', async () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -900,13 +900,14 @@ describe('lib/env', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, ui);
+			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('There are pending changes that need to be applied');
+			expect(output).to.include('Changes have been saved successfully');
+			expect(output).to.include('To apply these changes, you need to perform a rollout');
 		});
 
-		it('does not display pending changes warning when no changes exist', () => {
+		it('does not display pending changes warning when no changes exist', async () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -921,10 +922,84 @@ describe('lib/env', () => {
 				}
 			};
 
-			displayEnv(data, { sandbox: true }, ui);
+			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.not.include('There are pending changes that need to be applied');
+			expect(output).to.not.include('Changes have been saved successfully');
+			expect(output).to.not.include('To apply these changes, you need to perform a rollout');
+		});
+
+		it('displays rollout URL for sandbox when pending changes exist', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'old-value'
+					}
+				},
+				env: {
+					inherited: {},
+					own: {
+						FOO: { value: 'new-value' }
+					}
+				}
+			};
+
+			await displayEnv(data, { sandbox: true }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('https://console.particle.io/env/roll-out');
+		});
+
+		it('displays rollout URL for product when pending changes exist', async () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'old-value'
+					}
+				},
+				env: {
+					inherited: {},
+					own: {
+						FOO: { value: 'new-value' }
+					}
+				}
+			};
+
+			await displayEnv(data, { product: '12345' }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('https://console.particle.io/12345/env/roll-out');
+		});
+
+		it('displays device rollout URL when pending changes exist and device has product', async () => {
+			const mockApi = {
+				getDevice: sinon.stub().resolves({
+					body: {
+						id: 'device123',
+						product_id: 99999
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'old-value'
+					}
+				},
+				env: {
+					inherited: {},
+					own: {
+						FOO: { value: 'new-value' }
+					}
+				}
+			};
+
+			await displayEnv(data, { device: 'device123' }, ui, mockApi);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('https://console.particle.io/99999/devices/device123');
 		});
 	});
 
@@ -1026,6 +1101,113 @@ describe('lib/env', () => {
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('No changes to be applied');
+		});
+	});
+
+	describe('displayRolloutInstructions', () => {
+		const { displayRolloutInstructions } = require('./env');
+		let ui;
+
+		beforeEach(() => {
+			ui = {
+				write: [],
+				chalk: {
+					green: (str) => str,
+					yellow: (str) => str,
+					cyan: (str) => str
+				}
+			};
+			// Capture writes
+			ui.write = function(str) {
+				this._writes = this._writes || [];
+				this._writes.push(str);
+			};
+		});
+
+		it('displays sandbox rollout URL', async () => {
+			await displayRolloutInstructions({ sandbox: true }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Changes have been saved successfully');
+			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('https://console.particle.io/env/roll-out');
+		});
+
+		it('displays org rollout URL', async () => {
+			await displayRolloutInstructions({ org: 'my-org' }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Changes have been saved successfully');
+			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('https://console.particle.io/orgs/my-org/env/rollout');
+		});
+
+		it('displays product rollout URL', async () => {
+			await displayRolloutInstructions({ product: '12345' }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Changes have been saved successfully');
+			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('https://console.particle.io/12345/env/roll-out');
+		});
+
+		it('displays device URL with product_id when device is in a product', async () => {
+			const mockApi = {
+				getDevice: sinon.stub().resolves({
+					body: {
+						id: 'device123',
+						product_id: 99999
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
+			await displayRolloutInstructions({ device: 'device123' }, ui, mockApi);
+
+			expect(mockApi.getDevice).to.have.been.calledWith({
+				deviceId: 'device123',
+				auth: 'test-token'
+			});
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Changes have been saved successfully');
+			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('https://console.particle.io/99999/devices/device123');
+		});
+
+		it('displays device URL without product_id when device is not in a product', async () => {
+			const mockApi = {
+				getDevice: sinon.stub().resolves({
+					body: {
+						id: 'device456'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
+			await displayRolloutInstructions({ device: 'device456' }, ui, mockApi);
+
+			expect(mockApi.getDevice).to.have.been.calledWith({
+				deviceId: 'device456',
+				auth: 'test-token'
+			});
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Changes have been saved successfully');
+			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('https://console.particle.io/devices/device456');
+		});
+
+		it('throws error when api is not provided for device scope', async () => {
+			let error;
+			try {
+				await displayRolloutInstructions({ device: 'device123' }, ui);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).to.exist;
+			expect(error.message).to.equal('API instance is required to get device information');
 		});
 	});
 });

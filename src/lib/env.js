@@ -246,8 +246,9 @@ function buildEnvTable(data, scope) {
  * @param {Object} data - The environment data
  * @param {Object} scope - The scope parameters
  * @param {Object} ui - UI instance for writing output
+ * @param {Object} api - API instance for fetching device information (required for device scope with pending changes)
  */
-function displayEnv(data, scope, ui) {
+async function displayEnv(data, scope, ui, api = null) {
 	const lastSnapshotRendered = data?.last_snapshot?.rendered || {};
 	const envInherited = data?.env?.inherited || {};
 	const envOwn = data?.env?.own || {};
@@ -267,9 +268,7 @@ function displayEnv(data, scope, ui) {
 	ui.write(table.toString());
 
 	if (pendingChanges) {
-		ui.write('');
-		ui.write(ui.chalk.yellow('⚠ There are pending changes that need to be applied.'));
-		ui.write(ui.chalk.yellow(`visit ${ui.chalk.cyan('https://console.particle.io')} to apply them.`));
+		await displayRolloutInstructions(scope, ui, api);
 	}
 }
 
@@ -308,6 +307,45 @@ function displayRolloutChanges(rolloutData, ui) {
 	ui.write('------------------------------------------------');
 }
 
+/**
+ * Display instructions for applying the rollout with the appropriate console URL
+ * @param {Object} scope - The scope parameters (sandbox, org, product, device)
+ * @param {Object} ui - UI instance for writing output
+ * @param {Object} api - API instance for fetching device information (required for device scope)
+ * @returns {Promise<void>}
+ */
+async function displayRolloutInstructions(scope, ui, api = null) {
+	let url;
+
+	if (scope.sandbox) {
+		url = 'https://console.particle.io/env/roll-out';
+	} else if (scope.org) {
+		url = `https://console.particle.io/orgs/${scope.org}/env/rollout`;
+	} else if (scope.product) {
+		url = `https://console.particle.io/${scope.product}/env/roll-out`;
+	} else if (scope.device) {
+		if (!api) {
+			throw new Error('API instance is required to get device information');
+		}
+
+		// Fetch device to get its product_id
+		const device = await api.getDevice({ deviceId: scope.device, auth: api.accessToken });
+		const productId = device.body?.product_id;
+
+		if (productId) {
+			url = `https://console.particle.io/${productId}/devices/${scope.device}`;
+		} else {
+			url = `https://console.particle.io/devices/${scope.device}`;
+		}
+	}
+
+	ui.write('');
+	ui.write(ui.chalk.green('✓ Changes have been saved successfully.'));
+	ui.write('');
+	ui.write(ui.chalk.yellow('⚠ To apply these changes, you need to perform a rollout.'));
+	ui.write(ui.chalk.cyan(`Visit: ${url}`));
+}
+
 module.exports = {
 	hasPendingChanges,
 	getSortedEnvKeys,
@@ -317,6 +355,7 @@ module.exports = {
 	buildEnvRow,
 	buildEnvTable,
 	displayEnv,
-	displayRolloutChanges
+	displayRolloutChanges,
+	displayRolloutInstructions
 };
 
