@@ -116,11 +116,9 @@ function resolveScope(key, data, scope) {
  * @param {string} key - The environment variable key
  * @param {Object} data - The environment data
  * @param {Object} scope - The scope parameters
- * @param {Object} columnWidths - Column width settings
  * @returns {Array} Array representing the table row
  */
-function buildEnvRow(key, data, scope, columnWidths) {
-	const { valueWidth, onDeviceWidth } = columnWidths;
+function buildEnvRow(key, data, scope) {
 	const showOnDevice = !!scope.device;
 	const onDeviceData = data?.on_device || null;
 
@@ -135,23 +133,72 @@ function buildEnvRow(key, data, scope, columnWidths) {
 
 	const { scope: envScope, isOverridden } = resolveScope(key, data, scope);
 
-	const displayValue = value && value.length > valueWidth - 3
-		? value.substring(0, valueWidth - 6) + '...'
-		: value;
-
-	const displayOnDeviceValue = onDeviceValue && onDeviceValue.length > onDeviceWidth - 3
-		? onDeviceValue.substring(0, onDeviceWidth - 6) + '...'
-		: onDeviceValue;
-
-	const row = [key, displayValue || ''];
+	const row = [key, value || ''];
 
 	if (showOnDevice) {
-		row.push(displayOnDeviceValue);
+		row.push(onDeviceValue);
 	}
 
 	row.push(envScope || '', isOverridden ? 'Yes' : 'No');
 
 	return row;
+}
+
+/**
+ * Calculate dynamic column widths based on content
+ * @param {string[]} sortedKeys - Sorted array of environment variable keys
+ * @param {Object} data - The environment data
+ * @param {Object} scope - The scope parameters
+ * @returns {Object} Object with calculated column widths
+ */
+function calculateColumnWidths(sortedKeys, data, scope) {
+	const showOnDevice = !!scope.device;
+	const onDeviceData = data?.on_device || null;
+
+	// Minimum widths for headers and basic content
+	let nameWidth = 'Name'.length;
+	let valueWidth = 'Value'.length;
+	let onDeviceWidth = 'On Device'.length;
+	let scopeWidth = 'Scope'.length;
+	let overriddenWidth = 'Overridden'.length;
+
+	// Calculate maximum widths based on actual content
+	sortedKeys.forEach((key) => {
+		// Name column
+		nameWidth = Math.max(nameWidth, key.length);
+
+		// Value column
+		const value = resolveValue(key, data);
+		if (value) {
+			valueWidth = Math.max(valueWidth, value.length);
+		}
+
+		// On Device column
+		if (showOnDevice) {
+			let onDeviceValue = 'missing';
+			if (onDeviceData && onDeviceData[key] !== undefined) {
+				onDeviceValue = onDeviceData[key];
+			}
+			if (onDeviceValue) {
+				onDeviceWidth = Math.max(onDeviceWidth, onDeviceValue.length);
+			}
+		}
+
+		// Scope column
+		const { scope: envScope } = resolveScope(key, data, scope);
+		if (envScope) {
+			scopeWidth = Math.max(scopeWidth, envScope.length);
+		}
+	});
+
+	// Add some padding to make it more readable
+	nameWidth += 2;
+	valueWidth += 2;
+	onDeviceWidth += 2;
+	scopeWidth += 2;
+	overriddenWidth += 2;
+
+	return { nameWidth, valueWidth, onDeviceWidth, scopeWidth, overriddenWidth };
 }
 
 /**
@@ -162,13 +209,11 @@ function buildEnvRow(key, data, scope, columnWidths) {
  */
 function buildEnvTable(data, scope) {
 	const showOnDevice = !!scope.device;
-	const nameWidth = 25;
-	const valueWidth = 30;
-	const onDeviceWidth = 15;
-	const scopeWidth = 20;
-	const overriddenWidth = 12;
+	const sortedKeys = getSortedEnvKeys(data);
 
-	const columnWidths = { nameWidth, valueWidth, onDeviceWidth, scopeWidth, overriddenWidth };
+	// Calculate dynamic column widths
+	const columnWidths = calculateColumnWidths(sortedKeys, data, scope);
+	const { nameWidth, valueWidth, onDeviceWidth, scopeWidth, overriddenWidth } = columnWidths;
 
 	const headers = ['Name', 'Value'];
 	const colWidths = [nameWidth, valueWidth];
@@ -188,9 +233,8 @@ function buildEnvTable(data, scope) {
 		wordWrap: true
 	});
 
-	const sortedKeys = getSortedEnvKeys(data);
 	sortedKeys.forEach((key) => {
-		const row = buildEnvRow(key, data, scope, columnWidths);
+		const row = buildEnvRow(key, data, scope);
 		table.push(row);
 	});
 
@@ -269,6 +313,7 @@ module.exports = {
 	getSortedEnvKeys,
 	resolveValue,
 	resolveScope,
+	calculateColumnWidths,
 	buildEnvRow,
 	buildEnvTable,
 	displayEnv,
