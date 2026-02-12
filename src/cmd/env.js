@@ -133,6 +133,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 				operations: [operation]
 			}));
 		this.ui.write(`Key ${key} has been successfully deleted.`);
+		await displayRolloutInstructions({ sandbox, org, product, device }, this.ui, this.api);
 	}
 
 	async rollout({ org, product, device, sandbox, yes, when }) {
