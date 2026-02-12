@@ -89,7 +89,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 		throw new Error('Invalid format. Use either "name value" or "name=value"');
 	}
 
-	async deleteEnv({ params: { name }, org, product, device, sandbox, dryRun }) {
+	async deleteEnv({ params: { name }, org, product, device, sandbox }) {
 		this._validateScope({ sandbox, org, product, device });
 
 		const data = await this.api.listEnv({ sandbox, org, productId: product, deviceId: device });
@@ -110,17 +110,10 @@ module.exports = class EnvCommands extends CLICommandBase {
 			this.ui.write(this.ui.chalk.yellow(`To delete it, you must delete it from the scope where it's defined.`));
 			return;
 		}
-		const currentValue = ownVars[name]?.value;
 
 		if (isOwnVar && isInherited) {
 			const inheritedValue = inheritedVars[name]?.value;
 			this.ui.write(this.ui.chalk.yellow(`Note: '${name}' is an overridden variable. If you delete it, the inherited value '${inheritedValue}' will become visible.`));
-		}
-
-		if (dryRun) {
-			this.ui.write(this.ui.chalk.cyan(`[DRY RUN] Would delete environment variable '${name}'`));
-			this.ui.write(`Current value: ${currentValue}`);
-			return;
 		}
 
 		const operation = this._buildEnvVarOperation({ key: name, operation: 'Unset' });
