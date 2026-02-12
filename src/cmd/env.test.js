@@ -171,7 +171,7 @@ describe('config env Command', () => {
 				error_description: 'Validation error: : Must only contain uppercase letters, numbers, and underscores. Must not start with a number. at "ops[0].key"',
 				error:'invalid_request'
 			};
-			const params = { key: 'invalid-key', value: 'bar' };
+			const params = { name: 'invalid-key', value: 'bar' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply(400, apiError);
@@ -553,7 +553,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
