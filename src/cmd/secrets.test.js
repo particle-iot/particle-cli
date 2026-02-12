@@ -181,7 +181,7 @@ describe('SecretsCommand', () => {
 		it('deletes a secret from sandbox', async () => {
 			secretsStub.remove.resolves(true);
 
-			await secretsCommand.deleteSecret({ params: { key: 'MY_SECRET' }, sandbox: true });
+			await secretsCommand.deleteSecret({ params: { name: 'MY_SECRET' }, sandbox: true });
 
 			expect(secretsStub.remove).to.have.been.calledWith({
 				api: secretsCommand.api,
@@ -195,7 +195,7 @@ describe('SecretsCommand', () => {
 		it('deletes a secret from org', async () => {
 			secretsStub.remove.resolves(true);
 
-			await secretsCommand.deleteSecret({ params: { key: 'ORG_SECRET' }, org: 'my-org' });
+			await secretsCommand.deleteSecret({ params: { name: 'ORG_SECRET' }, org: 'my-org' });
 
 			expect(secretsStub.remove).to.have.been.calledWith({
 				api: secretsCommand.api,
