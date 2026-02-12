@@ -32,8 +32,8 @@ describe('config env Command', () => {
 			},
 		};
 
-		// To allow chaining like chalk.cyan.bold
 		envCommands.ui.chalk.cyan.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.yellow.bold = sinon.stub().callsFake((str) => str);
 	});
 
 	afterEach(() => {
@@ -45,7 +45,6 @@ describe('config env Command', () => {
 		const { default: stripAnsi } = require('strip-ansi');
 
 		it('list all env vars for sandbox user', async () => {
-			// Update fixture to include last_snapshot
 			const sandboxListWithSnapshot = {
 				...sandboxList,
 				last_snapshot: {
@@ -66,20 +65,15 @@ describe('config env Command', () => {
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
 
-			// Verify table structure
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
 			expect(tableOutput).to.include('Scope');
 			expect(tableOutput).to.include('Overridden');
-
-			// Verify all variables are present
 			expect(tableOutput).to.include('FOO3');
 			expect(tableOutput).to.include('FOO2');
 			expect(tableOutput).to.include('FOO');
 			expect(tableOutput).to.include('bar3');
 			expect(tableOutput).to.include('bar');
-
-			// All should be Organization scope for sandbox
 			const rows = tableOutput.split('\n').filter(line =>
 				line.includes('FOO3') || line.includes('FOO2') || line.includes('FOO ')
 			);
@@ -108,13 +102,10 @@ describe('config env Command', () => {
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
 
-			// Verify table has the variables
 			expect(tableOutput).to.include('FOO3');
 			expect(tableOutput).to.include('FOO');
 			expect(tableOutput).to.include('bar3');
 			expect(tableOutput).to.include('bar');
-
-			// FOO3 should be Product scope and Overridden
 			const foo3Row = tableOutput.split('\n').find(line => line.includes('FOO3'));
 			expect(foo3Row).to.include('Product');
 			expect(foo3Row).to.include('Yes'); // Overridden
@@ -141,7 +132,6 @@ describe('config env Command', () => {
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
 
-			// Verify table includes On Device column for device scope
 			expect(tableOutput).to.include('On Device');
 			expect(tableOutput).to.include('FOO');
 			expect(tableOutput).to.include('org-bar');
@@ -181,7 +171,7 @@ describe('config env Command', () => {
 				error_description: 'Validation error: : Must only contain uppercase letters, numbers, and underscores. Must not start with a number. at "ops[0].key"',
 				error:'invalid_request'
 			};
-			const params = { key: 'invalid-key', value: 'bar' }; // Invalid key with dash
+			const params = { key: 'invalid-key', value: 'bar' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply(400, apiError);
@@ -215,8 +205,6 @@ describe('config env Command', () => {
 		it('set env var for specific device', async () => {
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
-
-			// Stub API methods for displayRolloutInstructions
 			sinon.stub(envCommands.api, 'getDevice').resolves({
 				body: { id: deviceId, product_id: 12345 }
 			});
@@ -274,7 +262,7 @@ describe('config env Command', () => {
 		});
 
 		it('throws error when neither key/value nor key=value format is provided', async () => {
-			const params = { key: 'FOO' }; // Missing value
+			const params = { key: 'FOO' };
 			let error;
 			try {
 				await envCommands.setEnv({ params, sandbox: true });
@@ -577,12 +565,8 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Product');
 			expect(tableOutput).to.include('KEY');
 			expect(tableOutput).to.include('value');
-
-			// Check that FOO shows as overridden (Yes) because it's in both own and inherited and applied
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
 			expect(fooRow).to.include('Yes');
-
-			// Check that BAZ shows as not overridden (No)
 			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
 			expect(bazRow).to.include('No');
 		});
@@ -613,18 +597,12 @@ describe('config env Command', () => {
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
-
-			// BAZ should show 'foo' (from snapshot), not 'product' (from own)
 			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
 			expect(bazRow).to.include('foo');
 			expect(bazRow).to.not.include('product');
-
-			// BAZ should show as not overridden because change is pending
 			expect(bazRow).to.include('No');
-
-			// Should show rollout instructions
-			expect(writeCalls.join('\n')).to.include('Changes have been saved successfully');
-			expect(writeCalls.join('\n')).to.include('To apply these changes, you need to perform a rollout');
+			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
+			expect(writeCalls.join('\n')).to.include('To review and save this changes in the console');
 		});
 
 		it('does not show pending variables not in last_snapshot', async () => {
@@ -651,19 +629,13 @@ describe('config env Command', () => {
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
-
-			// Should NOT show NEW variable
 			expect(tableOutput).to.not.include('NEW');
 			expect(tableOutput).to.not.include('set');
-
-			// Should show the three that are in last_snapshot
 			expect(tableOutput).to.include('FOO');
 			expect(tableOutput).to.include('BAZ');
 			expect(tableOutput).to.include('KEY');
-
-			// Should show rollout instructions
-			expect(writeCalls.join('\n')).to.include('Changes have been saved successfully');
-			expect(writeCalls.join('\n')).to.include('To apply these changes, you need to perform a rollout');
+			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
+			expect(writeCalls.join('\n')).to.include('To review and save this changes in the console');
 		});
 
 		it('displays device scope with on_device column showing missing when null', async () => {
@@ -690,11 +662,7 @@ describe('config env Command', () => {
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
-
-			// Should have On Device column
 			expect(tableOutput).to.include('On Device');
-
-			// All should show 'missing' since on_device is null
 			const rows = tableOutput.split('\n').filter(line => line.includes('│'));
 			const dataRows = rows.slice(2); // Skip header rows
 			dataRows.forEach(row => {
@@ -702,11 +670,8 @@ describe('config env Command', () => {
 					expect(row).to.include('missing');
 				}
 			});
-
-			// Check scope based on 'from' field
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
 			expect(fooRow).to.include('Product');
-
 			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
 			expect(bazRow).to.include('Organization');
 		});
@@ -738,15 +703,12 @@ describe('config env Command', () => {
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
-
-			// Should show on_device values
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
 			expect(fooRow).to.include('old-value');
 
 			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
 			expect(bazRow).to.include('bar');
 
-			// KEY should show 'missing' since it's not in on_device
 			const keyRow = tableOutput.split('\n').find(line => line.includes('KEY'));
 			expect(keyRow).to.include('missing');
 		});
@@ -772,11 +734,7 @@ describe('config env Command', () => {
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
-
-			// Should NOT have On Device column
 			expect(tableOutput).to.not.include('On Device');
-
-			// Should have Name, Value, Scope, Overridden
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
 			expect(tableOutput).to.include('Scope');
@@ -807,7 +765,6 @@ describe('config env Command', () => {
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
 
-			// All variables should show Organization scope
 			const rows = tableOutput.split('\n').filter(line =>
 				line.includes('FOO') || line.includes('BAZ') || line.includes('KEY')
 			);
@@ -855,12 +812,9 @@ describe('config env Command', () => {
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[0];
 
-			// Find the order of variables in the output
 			const appleIndex = tableOutput.indexOf('APPLE');
 			const bananaIndex = tableOutput.indexOf('BANANA');
 			const zebraIndex = tableOutput.indexOf('ZEBRA');
-
-			// Should be alphabetically sorted: APPLE < BANANA < ZEBRA
 			expect(appleIndex).to.be.lessThan(bananaIndex);
 			expect(bananaIndex).to.be.lessThan(zebraIndex);
 		});

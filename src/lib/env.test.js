@@ -847,6 +847,7 @@ describe('lib/env', () => {
 				this._writes.push(str);
 			};
 			ui.chalk.cyan.bold = (str) => str;
+			ui.chalk.yellow.bold = (str) => str;
 		});
 
 		it('displays table when variables exist', async () => {
@@ -903,8 +904,8 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('Changes have been saved successfully');
-			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('There are pending changes that have not been applied yet.');
+			expect(output).to.include('To review and save this changes in the console');
 		});
 
 		it('does not display pending changes warning when no changes exist', async () => {
@@ -925,8 +926,8 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.not.include('Changes have been saved successfully');
-			expect(output).to.not.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.not.include('There are pending changes that have not been applied yet.');
+			expect(output).to.not.include('To review and save this changes in the console');
 		});
 
 		it('displays rollout URL for sandbox when pending changes exist', async () => {
@@ -947,7 +948,7 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('https://console.particle.io/env/roll-out');
+			expect(output).to.include('https://console.particle.io/env/edit');
 		});
 
 		it('displays rollout URL for product when pending changes exist', async () => {
@@ -968,7 +969,7 @@ describe('lib/env', () => {
 			await displayEnv(data, { product: '12345' }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('https://console.particle.io/12345/env/roll-out');
+			expect(output).to.include('https://console.particle.io/12345/env/edit');
 		});
 
 		it('displays device rollout URL when pending changes exist and device has product', async () => {
@@ -1133,27 +1134,24 @@ describe('lib/env', () => {
 			await displayRolloutInstructions({ sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('Changes have been saved successfully');
-			expect(output).to.include('To apply these changes, you need to perform a rollout');
-			expect(output).to.include('https://console.particle.io/env/roll-out');
+			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('https://console.particle.io/env/edit');
 		});
 
 		it('displays org rollout URL', async () => {
 			await displayRolloutInstructions({ org: 'my-org' }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('Changes have been saved successfully');
-			expect(output).to.include('To apply these changes, you need to perform a rollout');
-			expect(output).to.include('https://console.particle.io/orgs/my-org/env/rollout');
+			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('https://console.particle.io/orgs/my-org/env/edit');
 		});
 
 		it('displays product rollout URL', async () => {
 			await displayRolloutInstructions({ product: '12345' }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('Changes have been saved successfully');
-			expect(output).to.include('To apply these changes, you need to perform a rollout');
-			expect(output).to.include('https://console.particle.io/12345/env/roll-out');
+			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('https://console.particle.io/12345/env/edit');
 		});
 
 		it('displays device URL with product_id when device is in a product', async () => {
@@ -1185,8 +1183,7 @@ describe('lib/env', () => {
 			});
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('Changes have been saved successfully');
-			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('To review and save this changes in the console');
 			expect(output).to.include('https://console.particle.io/my-product/devices/device123');
 		});
 
@@ -1211,8 +1208,7 @@ describe('lib/env', () => {
 			});
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('Changes have been saved successfully');
-			expect(output).to.include('To apply these changes, you need to perform a rollout');
+			expect(output).to.include('To review and save this changes in the console');
 			expect(output).to.include('https://console.particle.io/devices/device456');
 		});
 
@@ -1242,7 +1238,7 @@ describe('lib/env', () => {
 				await displayRolloutInstructions({ sandbox: true }, ui);
 
 				const output = ui._writes.join('\n');
-				expect(output).to.include('https://console.staging.particle.io/env/roll-out');
+				expect(output).to.include('https://console.staging.particle.io/env/edit');
 			});
 
 			it('uses staging console URL for org when isStaging is true', async () => {
@@ -1251,7 +1247,7 @@ describe('lib/env', () => {
 				await displayRolloutInstructions({ org: 'my-org' }, ui);
 
 				const output = ui._writes.join('\n');
-				expect(output).to.include('https://console.staging.particle.io/orgs/my-org/env/rollout');
+				expect(output).to.include('https://console.staging.particle.io/orgs/my-org/env/edit');
 			});
 
 			it('uses staging console URL for product when isStaging is true', async () => {
@@ -1260,7 +1256,7 @@ describe('lib/env', () => {
 				await displayRolloutInstructions({ product: '12345' }, ui);
 
 				const output = ui._writes.join('\n');
-				expect(output).to.include('https://console.staging.particle.io/12345/env/roll-out');
+				expect(output).to.include('https://console.staging.particle.io/12345/env/edit');
 			});
 
 			it('uses staging console URL for device when isStaging is true', async () => {
@@ -1293,7 +1289,7 @@ describe('lib/env', () => {
 				await displayRolloutInstructions({ sandbox: true }, ui);
 
 				const output = ui._writes.join('\n');
-				expect(output).to.include('https://console.particle.io/env/roll-out');
+				expect(output).to.include('https://console.particle.io/env/edit');
 				expect(output).to.not.include('.staging');
 			});
 		});
