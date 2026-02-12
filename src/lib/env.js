@@ -243,6 +243,41 @@ function buildEnvTable(data, scope) {
 }
 
 /**
+ * Display the scope title
+ * @param {Object} scope - The scope parameters
+ * @param {Object} ui - UI instance for writing output
+ * @param {Object} api - API instance for fetching additional information
+ */
+async function displayScopeTitle(scope, ui, api = null) {
+	let title = 'Scope: ';
+
+	if (scope.sandbox) {
+		title += 'Sandbox';
+	} else if (scope.org) {
+		title += `Organization (${scope.org})`;
+	} else if (scope.product) {
+		// Try to get product name if api is available
+		if (api) {
+			try {
+				const productData = await api.getProduct({ product: scope.product, auth: api.accessToken });
+				const productName = productData?.product?.name || scope.product;
+				title += `Product (${productName})`;
+			} catch (_error) {
+				// Fall back to product ID if we can't get the name
+				title += `Product (${scope.product})`;
+			}
+		} else {
+			title += `Product (${scope.product})`;
+		}
+	} else if (scope.device) {
+		title += `Device (${scope.device})`;
+	}
+
+	ui.write(ui.chalk.bold(title));
+	ui.write('');
+}
+
+/**
  * Display environment variables in a formatted table
  * @param {Object} data - The environment data
  * @param {Object} scope - The scope parameters
@@ -257,6 +292,9 @@ async function displayEnv(data, scope, ui, api = null) {
 	const hasLastSnapshot = Object.keys(lastSnapshotRendered).length > 0;
 	const hasInherited = Object.keys(envInherited).length > 0;
 	const hasOwn = Object.keys(envOwn).length > 0;
+
+	// Display scope title
+	await displayScopeTitle(scope, ui, api);
 
 	if (!hasLastSnapshot && !hasInherited && !hasOwn) {
 		ui.write('No environment variables found.');
@@ -353,6 +391,7 @@ module.exports = {
 	calculateColumnWidths,
 	buildEnvRow,
 	buildEnvTable,
+	displayScopeTitle,
 	displayEnv,
 	displayRolloutChanges,
 	displayRolloutInstructions

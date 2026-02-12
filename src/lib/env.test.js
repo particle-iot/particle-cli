@@ -868,6 +868,7 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Sandbox');
 			expect(output).to.include('FOO');
 			expect(output).to.include('bar');
 		});
@@ -883,7 +884,9 @@ describe('lib/env', () => {
 
 			await displayEnv(data, { sandbox: true }, ui);
 
-			expect(ui._writes[0]).to.equal('No environment variables found.');
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Sandbox');
+			expect(output).to.include('No environment variables found.');
 		});
 
 		it('displays pending changes warning when changes exist', async () => {
@@ -1006,6 +1009,86 @@ describe('lib/env', () => {
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('https://console.particle.io/my-product/devices/device123');
+		});
+	});
+
+	describe('displayScopeTitle', () => {
+		const { displayScopeTitle } = require('./env');
+		let ui;
+
+		beforeEach(() => {
+			ui = {
+				write: [],
+				chalk: {
+					bold: (str) => str
+				}
+			};
+			// Capture writes
+			ui.write = function(str) {
+				this._writes = this._writes || [];
+				this._writes.push(str);
+			};
+		});
+
+		it('displays "Scope: Sandbox" for sandbox scope', async () => {
+			await displayScopeTitle({ sandbox: true }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Sandbox');
+		});
+
+		it('displays "Scope: Organization (org-slug)" for org scope', async () => {
+			await displayScopeTitle({ org: 'my-org' }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Organization (my-org)');
+		});
+
+		it('displays "Scope: Product (product-id)" for product scope without api', async () => {
+			await displayScopeTitle({ product: '12345' }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Product (12345)');
+		});
+
+		it('displays "Scope: Product (product-name)" for product scope with api', async () => {
+			const mockApi = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						name: 'My Product'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
+			await displayScopeTitle({ product: '12345' }, ui, mockApi);
+
+			expect(mockApi.getProduct).to.have.been.calledWith({
+				product: '12345',
+				auth: 'test-token'
+			});
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Product (My Product)');
+		});
+
+		it('displays "Scope: Product (product-id)" when api fails to get product name', async () => {
+			const mockApi = {
+				getProduct: sinon.stub().rejects(new Error('API error')),
+				accessToken: 'test-token'
+			};
+
+			await displayScopeTitle({ product: '12345' }, ui, mockApi);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Product (12345)');
+		});
+
+		it('displays "Scope: Device (device-id)" for device scope', async () => {
+			await displayScopeTitle({ device: 'abc123' }, ui);
+
+			const output = ui._writes.join('\n');
+			expect(output).to.include('Scope: Device (abc123)');
 		});
 	});
 

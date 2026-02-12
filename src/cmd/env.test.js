@@ -63,7 +63,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
@@ -100,7 +100,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 
 			expect(tableOutput).to.include('FOO3');
 			expect(tableOutput).to.include('FOO');
@@ -108,7 +108,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('bar');
 			const foo3Row = tableOutput.split('\n').find(line => line.includes('FOO3'));
 			expect(foo3Row).to.include('Product');
-			expect(foo3Row).to.include('Yes'); // Overridden
+			expect(foo3Row).to.include('Yes');
 		});
 
 		it('list all env vars for a device', async () => {
@@ -130,7 +130,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 
 			expect(tableOutput).to.include('On Device');
 			expect(tableOutput).to.include('FOO');
@@ -551,7 +551,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
@@ -596,7 +596,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
 			expect(bazRow).to.include('foo');
 			expect(bazRow).to.not.include('product');
@@ -628,7 +628,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 			expect(tableOutput).to.not.include('NEW');
 			expect(tableOutput).to.not.include('set');
 			expect(tableOutput).to.include('FOO');
@@ -661,10 +661,10 @@ describe('config env Command', () => {
 			await displayEnv(data, { device: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 			expect(tableOutput).to.include('On Device');
 			const rows = tableOutput.split('\n').filter(line => line.includes('│'));
-			const dataRows = rows.slice(2); // Skip header rows
+			const dataRows = rows.slice(2);
 			dataRows.forEach(row => {
 				if (row.includes('FOO') || row.includes('BAZ') || row.includes('KEY')) {
 					expect(row).to.include('missing');
@@ -702,7 +702,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { device: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
 			expect(fooRow).to.include('old-value');
 
@@ -733,7 +733,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
+			const tableOutput = writeCalls[2];
 			expect(tableOutput).to.not.include('On Device');
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
@@ -763,8 +763,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
-
+			const tableOutput = writeCalls[2];
 			const rows = tableOutput.split('\n').filter(line =>
 				line.includes('FOO') || line.includes('BAZ') || line.includes('KEY')
 			);
@@ -785,7 +784,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => c.args[0]);
-			expect(writeCalls[0]).to.equal('No environment variables found.');
+			expect(writeCalls.join('\n')).to.include('No environment variables found.');
 		});
 
 		it('sorts variables alphabetically', async () => {
@@ -810,8 +809,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[0];
-
+			const tableOutput = writeCalls[2];
 			const appleIndex = tableOutput.indexOf('APPLE');
 			const bananaIndex = tableOutput.indexOf('BANANA');
 			const zebraIndex = tableOutput.indexOf('ZEBRA');
