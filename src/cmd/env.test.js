@@ -422,48 +422,6 @@ describe('config env Command', () => {
 			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
 		});
 
-		it('supports dry-run mode', async () => {
-			const params = { name: 'FOO' };
-			nock('https://api.particle.io/v1')
-				.intercept('/env', 'GET')
-				.reply(200, {
-					env: {
-						own: { FOO: { value: 'bar' } },
-						inherited: {}
-					}
-				});
-
-			await envCommands.deleteEnv({ params, sandbox: true, dryRun: true });
-
-			expect(envCommands.ui.write).to.have.been.calledWith(
-				envCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
-			);
-			expect(envCommands.ui.write).to.have.been.calledWith('Current value: bar');
-			expect(envCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
-		});
-
-		it('shows override warning in dry-run mode', async () => {
-			const params = { name: 'FOO' };
-			nock('https://api.particle.io/v1')
-				.intercept('/env', 'GET')
-				.reply(200, {
-					env: {
-						own: { FOO: { value: 'override_value' } },
-						inherited: { FOO: { value: 'inherited_value' } }
-					}
-				});
-
-			await envCommands.deleteEnv({ params, sandbox: true, dryRun: true });
-
-			expect(envCommands.ui.write).to.have.been.calledWith(
-				envCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
-			);
-			expect(envCommands.ui.write).to.have.been.calledWith(
-				envCommands.ui.chalk.cyan(`[DRY RUN] Would delete environment variable 'FOO'`)
-			);
-			expect(envCommands.ui.showBusySpinnerUntilResolved).not.to.have.been.called;
-		});
-
 		it('throws error when trying to delete non-existent variable', async () => {
 			const params = { name: 'NONEXISTENT' };
 			nock('https://api.particle.io/v1')

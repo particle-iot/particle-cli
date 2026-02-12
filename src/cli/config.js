@@ -61,12 +61,6 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(env, 'delete', 'Delete an environment variable', {
 		params: '<name>',
-		options: {
-			'dry-run': {
-				description: 'Preview what would be deleted without actually deleting',
-				boolean: true
-			},
-		},
 		handler: (args) => {
 			const EnvCommands = require('../cmd/env');
 			return new EnvCommands(args).deleteEnv(args);
@@ -76,7 +70,6 @@ module.exports = ({ commandProcessor, root }) => {
 			'$0 $command <name> --org <org>': 'Delete env var from an organization',
 			'$0 $command <name> --product <productId>': 'Delete env var from a product',
 			'$0 $command <name> --device <deviceId>': 'Delete env var from a device',
-			'$0 $command <name> --sandbox --dry-run': 'Preview deletion without actually deleting',
 		}
 	});
 
