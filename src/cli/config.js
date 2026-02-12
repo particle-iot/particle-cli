@@ -80,31 +80,6 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
-	commandProcessor.createCommand(env, 'rollout', 'Apply environment variable changes to devices', {
-		options: {
-			'yes': {
-				description: 'Skip confirmation prompts',
-				boolean: true
-			},
-			'when': {
-				description: 'When to apply the rollout (Immediate or Connect)',
-				choices: ['Immediate', 'Connect']
-			}
-		},
-		handler: (args) => {
-			const EnvCommands = require('../cmd/env');
-			return new EnvCommands(args).rollout(args);
-		},
-		examples: {
-			'$0 $command --sandbox': 'Rollout env var changes to sandbox',
-			'$0 $command --org <org>': 'Rollout env var changes to an organization',
-			'$0 $command --product <productId>': 'Rollout env var changes to a product',
-			'$0 $command --device <deviceId>': 'Rollout env var changes to a device',
-			'$0 $command --sandbox --yes': 'Rollout without confirmation prompts',
-			'$0 $command --sandbox --when Immediate': 'Apply rollout immediately',
-		}
-	});
-
 	const secret = commandProcessor.createCategory(config, 'secrets', 'Manage secrets', {
 		inherited: {
 			options: {
