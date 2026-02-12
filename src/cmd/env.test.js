@@ -157,16 +157,16 @@ describe('config env Command', () => {
 	});
 	describe('set env vars', () => {
 		it('set env var for sandbox user', async () => {
-			const params = { key: 'FOO', value: 'bar' };
+			const params = { name: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
 		});
 
-		it('throws an error in case the key, value is invalid', async () => {
+		it('throws an error in case the name, value is invalid', async () => {
 			const apiError = {
 				error_description: 'Validation error: : Must only contain uppercase letters, numbers, and underscores. Must not start with a number. at "ops[0].key"',
 				error:'invalid_request'
@@ -185,26 +185,28 @@ describe('config env Command', () => {
 			expect(error.message).to.contains(apiError.error_description);
 		});
 		it('set env var for specific org', async () => {
-			const params = { key: 'FOO', value: 'bar' };
+			const params = { name: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1/orgs/my-org')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, org: 'my-org' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
 		});
 		it('set env var for specific product', async () => {
-			const params = { key: 'FOO', value: 'bar' };
+			const params = { name: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1/products/my-product')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, product: 'my-product' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
 		});
 		it('set env var for specific device', async () => {
-			const params = { key: 'FOO', value: 'bar' };
+			const params = { name: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
+
+			// Stub API methods for displayRolloutInstructions
 			sinon.stub(envCommands.api, 'getDevice').resolves({
 				body: { id: deviceId, product_id: 12345 }
 			});
@@ -217,12 +219,12 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, device: deviceId });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
 		});
 
 		it('set env var using key=value format', async () => {
 			let receivedBody;
-			const params = { key: 'FOO=bar' };
+			const params = { name: 'FOO=bar' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
@@ -232,12 +234,12 @@ describe('config env Command', () => {
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar', op: 'Set' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
+			expect(envCommands.ui.write).to.have.been.calledWith('Environment variable FOO has been successfully set.');
 		});
 
 		it('set env var using key=value format with value containing equals sign', async () => {
 			let receivedBody;
-			const params = { key: 'FOO=bar=baz' };
+			const params = { name: 'FOO=bar=baz' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'PATCH')
 				.reply((uri, requestBody) => {
@@ -247,36 +249,36 @@ describe('config env Command', () => {
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar=baz', op: 'Set' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith('Key FOO has been successfully set.');
+			expect(envCommands.ui.write).to.have.been.calledWith('Environment variable FOO has been successfully set.');
 		});
 
 		it('throws error when key=value format is invalid (empty key)', async () => {
-			const params = { key: '=bar' };
+			const params = { name: '=bar' };
 			let error;
 			try {
 				await envCommands.setEnv({ params, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
-			expect(error.message).to.equal('Invalid format. Use either "key value" or "key=value"');
+			expect(error.message).to.equal('Invalid format. Use either "name value" or "name=value"');
 		});
 
 		it('throws error when neither key/value nor key=value format is provided', async () => {
-			const params = { key: 'FOO' };
+			const params = { name: 'FOO' }; // Missing value
 			let error;
 			try {
 				await envCommands.setEnv({ params, sandbox: true });
 			} catch (_error) {
 				error = _error;
 			}
-			expect(error.message).to.equal('Invalid format. Use either "key value" or "key=value"');
+			expect(error.message).to.equal('Invalid format. Use either "name value" or "name=value"');
 		});
 	});
 
 	describe('delete env vars', () => {
 		it('deletes env var for sandbox user', async () => {
 			let receivedBody;
-			const params = { key: 'FOO' };
+			const params = { name: 'FOO' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -294,12 +296,12 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
 		});
 
 		it('deletes env var for specific org', async () => {
 			let receivedBody;
-			const params = { key: 'FOO' };
+			const params = { name: 'FOO' };
 			nock('https://api.particle.io/v1/orgs/my-org')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -317,12 +319,12 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, org: 'my-org' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
 		});
 
 		it('deletes env var for specific product', async () => {
 			let receivedBody;
-			const params = { key: 'FOO' };
+			const params = { name: 'FOO' };
 			nock('https://api.particle.io/v1/products/my-product')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -340,12 +342,12 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, product: 'my-product' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
 		});
 
 		it('deletes env var for specific device', async () => {
 			let receivedBody;
-			const params = { key: 'FOO', value: 'bar' };
+			const params = { name: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
 			sinon.stub(envCommands.api, 'getDevice').resolves({
 				body: { id: deviceId, product_id: 12345 }
@@ -371,11 +373,11 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, device: deviceId });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
 		});
 
 		it('prevents deletion of inherited-only variables', async () => {
-			const params = { key: 'INHERITED_VAR' };
+			const params = { name: 'INHERITED_VAR' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -399,7 +401,7 @@ describe('config env Command', () => {
 		});
 
 		it('warns about override before deleting', async () => {
-			const params = { key: 'FOO' };
+			const params = { name: 'FOO' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -417,11 +419,11 @@ describe('config env Command', () => {
 			expect(envCommands.ui.write).to.have.been.calledWith(
 				envCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
 			);
-			expect(envCommands.ui.write).to.have.been.calledWith(`Key ${params.key} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
 		});
 
 		it('supports dry-run mode', async () => {
-			const params = { key: 'FOO' };
+			const params = { name: 'FOO' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -441,7 +443,7 @@ describe('config env Command', () => {
 		});
 
 		it('shows override warning in dry-run mode', async () => {
-			const params = { key: 'FOO' };
+			const params = { name: 'FOO' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -463,7 +465,7 @@ describe('config env Command', () => {
 		});
 
 		it('throws error when trying to delete non-existent variable', async () => {
-			const params = { key: 'NONEXISTENT' };
+			const params = { name: 'NONEXISTENT' };
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
@@ -509,7 +511,7 @@ describe('config env Command', () => {
 			let error;
 			try {
 				await envCommands.setEnv({
-					params: { key: 'FOO', value: 'bar' },
+					params: { name: 'FOO', value: 'bar' },
 					sandbox: true,
 					org: 'my-org',
 					product: 'my-product',
@@ -551,7 +553,7 @@ describe('config env Command', () => {
 			await displayEnv(data, { product: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[2];
+			const tableOutput = writeCalls[0];
 
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');

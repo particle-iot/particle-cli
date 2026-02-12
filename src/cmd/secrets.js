@@ -80,20 +80,20 @@ module.exports = class SecretsCommand extends CLICommandBase {
 	}
 
 	_parseKeyValue(params) {
-		if (params.key && params.value) {
-			return { key: params.key, value: params.value };
+		if (params.name && params.value) {
+			return { key: params.name, value: params.value };
 		}
-		if (params.key && params.key.includes('=')) {
-			const [key, ...valueParts] = params.key.split('=');
+		if (params.name && params.name.includes('=')) {
+			const [key, ...valueParts] = params.name.split('=');
 			const value = valueParts.join('=');
 
 			if (!key || !value) {
-				throw new Error('Invalid format. Use either "key value" or "key=value"');
+				throw new Error('Invalid format. Use either "name value" or "name=value"');
 			}
 
 			return { key, value };
 		}
-		throw new Error('Invalid format. Use either "key value" or "key=value"');
+		throw new Error('Invalid format. Use either "name value" or "name=value"');
 	}
 
 	_printSecret(secret) {
