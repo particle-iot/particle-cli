@@ -58,7 +58,7 @@ module.exports = class SecretsCommand extends CLICommandBase {
 
 	async deleteSecret({ params, org, sandbox }) {
 		this._validateScope({ sandbox, org });
-		const name = params.key;
+		const name = params.name;
 		const isDeleted = await this.ui.showBusySpinnerUntilResolved(
 			'Deleting secret',
 			secrets.remove({ api: this.api, org, sandbox, name })
