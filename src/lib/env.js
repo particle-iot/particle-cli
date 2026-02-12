@@ -269,7 +269,8 @@ async function displayEnv(data, scope, ui, api = null) {
 	ui.write(table.toString());
 
 	if (pendingChanges) {
-		await displayRolloutInstructions(scope, ui, api);
+		ui.write(ui.chalk.yellow.bold('There are pending changes that have not been applied yet.'));
+		await displayRolloutInstructions(scope, ui, api, true);
 	}
 }
 
@@ -320,11 +321,11 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 	let url;
 
 	if (scope.sandbox) {
-		url = `${baseUrl}/env/roll-out`;
+		url = `${baseUrl}/env/edit`;
 	} else if (scope.org) {
-		url = `${baseUrl}/orgs/${scope.org}/env/rollout`;
+		url = `${baseUrl}/orgs/${scope.org}/env/edit`;
 	} else if (scope.product) {
-		url = `${baseUrl}/${scope.product}/env/roll-out`;
+		url = `${baseUrl}/${scope.product}/env/edit`;
 	} else if (scope.device) {
 		if (!api) {
 			throw new Error('API instance is required to get device information');
@@ -339,11 +340,8 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 			url = `${baseUrl}/devices/${scope.device}`;
 		}
 	}
-
 	ui.write('');
-	ui.write(ui.chalk.green('✓ Changes have been saved successfully.'));
-	ui.write('');
-	ui.write(ui.chalk.yellow('⚠ To apply these changes, you need to perform a rollout.'));
+	ui.write(ui.chalk.yellow('To review and save this changes in the console'));
 	ui.write(ui.chalk.cyan(`Visit: ${url}`));
 }
 
