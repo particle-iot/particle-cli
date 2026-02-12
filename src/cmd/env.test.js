@@ -359,6 +359,13 @@ describe('config env Command', () => {
 			let receivedBody;
 			const params = { key: 'FOO', value: 'bar' };
 			const deviceId = 'abc123';
+			sinon.stub(envCommands.api, 'getDevice').resolves({
+				body: { id: deviceId, product_id: 12345 }
+			});
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'my-product' }
+			});
+
 			nock('https://api.particle.io/v1')
 				.intercept(`/env/${deviceId}`, 'GET')
 				.reply(200, {
