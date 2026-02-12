@@ -219,7 +219,7 @@ describe('SecretsCommand', () => {
 			};
 			secretsStub.update.resolves(mockSecret);
 
-			await secretsCommand.set({ params: { key: 'MY_SECRET', value: 'secret-value' }, sandbox: true });
+			await secretsCommand.set({ params: { name: 'MY_SECRET', value: 'secret-value' }, sandbox: true });
 
 			expect(secretsStub.update).to.have.been.calledWith({
 				api: secretsCommand.api,
@@ -242,7 +242,7 @@ describe('SecretsCommand', () => {
 			};
 			secretsStub.update.resolves(mockSecret);
 
-			await secretsCommand.set({ params: { key: 'MY_SECRET=secret-value' }, sandbox: true });
+			await secretsCommand.set({ params: { name: 'MY_SECRET=secret-value' }, sandbox: true });
 
 			expect(secretsStub.update).to.have.been.calledWith({
 				api: secretsCommand.api,
@@ -264,7 +264,7 @@ describe('SecretsCommand', () => {
 			};
 			secretsStub.update.resolves(mockSecret);
 
-			await secretsCommand.set({ params: { key: 'ORG_SECRET', value: 'org-value' }, org: 'my-org' });
+			await secretsCommand.set({ params: { name: 'ORG_SECRET', value: 'org-value' }, org: 'my-org' });
 
 			expect(secretsStub.update).to.have.been.calledWith({
 				api: secretsCommand.api,
@@ -278,36 +278,36 @@ describe('SecretsCommand', () => {
 
 	describe('_parseKeyValue', () => {
 		it('parses key and value when both are provided', () => {
-			const result = secretsCommand._parseKeyValue({ key: 'MY_KEY', value: 'my-value' });
+			const result = secretsCommand._parseKeyValue({ name: 'MY_KEY', value: 'my-value' });
 			expect(result).to.deep.equal({ key: 'MY_KEY', value: 'my-value' });
 		});
 
 		it('parses key=value format', () => {
-			const result = secretsCommand._parseKeyValue({ key: 'MY_KEY=my-value' });
+			const result = secretsCommand._parseKeyValue({ name: 'MY_KEY=my-value' });
 			expect(result).to.deep.equal({ key: 'MY_KEY', value: 'my-value' });
 		});
 
 		it('parses key=value format with = in value', () => {
-			const result = secretsCommand._parseKeyValue({ key: 'MY_KEY=value=with=equals' });
+			const result = secretsCommand._parseKeyValue({ name: 'MY_KEY=value=with=equals' });
 			expect(result).to.deep.equal({ key: 'MY_KEY', value: 'value=with=equals' });
 		});
 
 		it('throws error for invalid format', () => {
 			expect(() => {
-				secretsCommand._parseKeyValue({ key: 'MY_KEY' });
-			}).to.throw('Invalid format. Use either "key value" or "key=value"');
+				secretsCommand._parseKeyValue({ name: 'MY_KEY' });
+			}).to.throw('Invalid format. Use either "name value" or "name=value"');
 		});
 
 		it('throws error when key is empty in key=value format', () => {
 			expect(() => {
-				secretsCommand._parseKeyValue({ key: '=value' });
-			}).to.throw('Invalid format. Use either "key value" or "key=value"');
+				secretsCommand._parseKeyValue({ name: '=value' });
+			}).to.throw('Invalid format. Use either "name value" or "name=value"');
 		});
 
 		it('throws error when value is empty in key=value format', () => {
 			expect(() => {
-				secretsCommand._parseKeyValue({ key: 'MY_KEY=' });
-			}).to.throw('Invalid format. Use either "key value" or "key=value"');
+				secretsCommand._parseKeyValue({ name: 'MY_KEY=' });
+			}).to.throw('Invalid format. Use either "name value" or "name=value"');
 		});
 	});
 
