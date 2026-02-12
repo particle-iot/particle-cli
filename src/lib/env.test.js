@@ -55,10 +55,69 @@ describe('lib/env', () => {
 			expect(result).to.equal(true);
 		});
 
-		it('returns false when envOwn is empty', () => {
+		it('returns true when envOwn is empty but snapshot has variables (deletion)', () => {
 			const lastSnapshotRendered = {
 				FOO: 'bar'
 			};
+			const envOwn = {};
+			const envInherited = {}; // Not inherited, so this is a deletion
+
+			const result = hasPendingChanges(lastSnapshotRendered, envOwn, envInherited);
+			expect(result).to.equal(true);
+		});
+
+		it('returns true when a variable is deleted from envOwn', () => {
+			const lastSnapshotRendered = {
+				FOO: 'bar',
+				BAZ: 'qux',
+				KEY: 'value'
+			};
+			const envOwn = {
+				FOO: { value: 'bar' }
+				// BAZ and KEY have been deleted
+			};
+			const envInherited = {};
+
+			const result = hasPendingChanges(lastSnapshotRendered, envOwn, envInherited);
+			expect(result).to.equal(true);
+		});
+
+		it('returns false when variable exists only in inherited and matches snapshot', () => {
+			const lastSnapshotRendered = {
+				FOO: 'bar',
+				BAZ: 'qux'
+			};
+			const envOwn = {
+				FOO: { value: 'bar' }
+			};
+			const envInherited = {
+				BAZ: { value: 'qux', from: 'Owner' }
+			};
+
+			const result = hasPendingChanges(lastSnapshotRendered, envOwn, envInherited);
+			expect(result).to.equal(false); // BAZ is inherited and matches, no pending change
+		});
+
+		it('returns true when deleted override reveals different inherited value', () => {
+			const lastSnapshotRendered = {
+				FOO: 'override-value',
+				BAZ: 'qux'
+			};
+			const envOwn = {
+				BAZ: { value: 'qux' }
+				// FOO was deleted from own
+			};
+			const envInherited = {
+				FOO: { value: 'inherited-value', from: 'Owner' }, // Different from snapshot
+				BAZ: { value: 'qux', from: 'Owner' }
+			};
+
+			const result = hasPendingChanges(lastSnapshotRendered, envOwn, envInherited);
+			expect(result).to.equal(true); // FOO deletion is pending
+		});
+
+		it('returns false when both snapshot and envOwn are empty', () => {
+			const lastSnapshotRendered = {};
 			const envOwn = {};
 
 			const result = hasPendingChanges(lastSnapshotRendered, envOwn);

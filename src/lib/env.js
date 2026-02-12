@@ -7,14 +7,30 @@ const settings = require('../../settings');
  * Check if there are pending changes between snapshot and own environment variables
  * @param {Object} lastSnapshotRendered - The rendered snapshot data
  * @param {Object} envOwn - The own environment variables
+ * @param {Object} envInherited - The inherited environment variables
  * @returns {boolean} True if there are pending changes
  */
-function hasPendingChanges(lastSnapshotRendered, envOwn) {
+function hasPendingChanges(lastSnapshotRendered, envOwn, envInherited = {}) {
+	// Check for additions and modifications in envOwn
 	for (const key in envOwn) {
 		if (!(key in lastSnapshotRendered) || lastSnapshotRendered[key] !== envOwn[key].value) {
 			return true;
 		}
 	}
+
+	// Check for deletions - keys that exist in snapshot but not in envOwn
+	// However, if the key only exists in inherited and matches snapshot, it's not a deletion
+	for (const key in lastSnapshotRendered) {
+		if (!(key in envOwn)) {
+			// If this key is in inherited and its value matches the snapshot, it's not a pending change
+			const inheritedValue = envInherited[key]?.value;
+			if (inheritedValue !== lastSnapshotRendered[key]) {
+				// This is a real deletion - the snapshot value doesn't match inherited
+				return true;
+			}
+		}
+	}
+
 	return false;
 }
 
@@ -301,7 +317,7 @@ async function displayEnv(data, scope, ui, api = null) {
 		return;
 	}
 
-	const pendingChanges = hasPendingChanges(lastSnapshotRendered, envOwn);
+	const pendingChanges = hasPendingChanges(lastSnapshotRendered, envOwn, envInherited);
 
 	const table = buildEnvTable(data, scope);
 	ui.write(table.toString());
@@ -378,9 +394,8 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 			url = `${baseUrl}/devices/${scope.device}`;
 		}
 	}
-	ui.write('');
-	ui.write(ui.chalk.yellow('To review and save this changes in the console'));
-	ui.write(ui.chalk.cyan(`Visit: ${url}`));
+	ui.write('To review and save this changes in the console');
+	ui.write(`Visit ${ui.chalk.cyan(url)}`);
 }
 
 module.exports = {
