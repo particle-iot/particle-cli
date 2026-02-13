@@ -8,6 +8,7 @@ const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
+const Table = require('cli-table');
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -136,55 +137,32 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	_formatEnvOutput(result, platformName, deviceId) {
 		const output = [];
-		const push = line => output.push(line);
-
-		push('');
-		push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
-
+		const tableRows = [];
 		const envVars = result.env ?? {};
 		const entries = Object.entries(envVars);
+		const push = line => output.push(line);
+		const table = new Table({
+			head: ['Name', 'Value', 'Scope'],
+			style: { head: ['cyan', 'bold'] }
+		});
+
+		push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
+		push('');
 
 		if (entries.length === 0) {
 			push(chalk.yellow('  No environment variables set'));
-			push('');
 			return output;
 		}
-
-		push('');
-		push(chalk.bold(`Environment Variables:`));
-
-		const { appVars, systemVars } = this._groupEnvVars(entries);
-
-		this._renderEnvGroup(output, '  Firmware:', appVars, 'green');
-		appVars.length > 0 && systemVars.length > 0 && push('');
-		this._renderEnvGroup(output, '  Cloud:', systemVars, 'cyan');
-
-		push('');
+		entries.forEach(([key, { value, isApp }]) => {
+			const scope = isApp ? 'Firmware' : 'Cloud';
+			tableRows.push([key, value, scope]);
+		});
+		tableRows.sort((a, b) => a[0].localeCompare(b[0]));
+		tableRows.forEach(row => table.push(row));
+		push(table.toString());
 		return output;
 	}
 
-	_groupEnvVars(entries) {
-		return entries.reduce(
-			(acc, [key, { value, isApp }]) => {
-				const target = isApp ? acc.appVars : acc.systemVars;
-				target.push({ key, value });
-				return acc;
-			},
-			{ appVars: [], systemVars: [] }
-		);
-	}
-
-	_renderEnvGroup(output, title, vars, color) {
-		if (vars.length === 0) {
-			return;
-		}
-		output.push(chalk.dim(title));
-		vars.sort((a, b) => a.key.localeCompare(b.key))
-			.forEach(({ key, value }) => {
-				output.push(`    ${chalk[color](key)}=${chalk.white(value)}`);
-			});
-
-	}
 
 	stopListening(args) {
 		args.api = this._api;
