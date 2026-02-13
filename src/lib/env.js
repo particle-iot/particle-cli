@@ -11,23 +11,22 @@ const settings = require('../../settings');
  * @returns {boolean} True if there are pending changes
  */
 function hasPendingChanges(lastSnapshotRendered, envOwn, envInherited = {}) {
-	// Check for additions and modifications in envOwn
-	for (const key in envOwn) {
-		if (!(key in lastSnapshotRendered) || lastSnapshotRendered[key] !== envOwn[key].value) {
-			return true;
-		}
-	}
+	const keys = new Set([
+		...Object.keys(lastSnapshotRendered),
+		...Object.keys(envOwn)
+	]);
 
-	// Check for deletions - keys that exist in snapshot but not in envOwn
-	// However, if the key only exists in inherited and matches snapshot, it's not a deletion
-	for (const key in lastSnapshotRendered) {
-		if (!(key in envOwn)) {
-			// If this key is in inherited and its value matches the snapshot, it's not a pending change
-			const inheritedValue = envInherited[key]?.value;
-			if (inheritedValue !== lastSnapshotRendered[key]) {
-				// This is a real deletion - the snapshot value doesn't match inherited
-				return true;
-			}
+	for (const key of keys) {
+		const snap = lastSnapshotRendered[key];
+
+		// Own overrides inherited; if neither exists, value is undefined
+		const effective = envOwn[key]?.value ?? envInherited[key]?.value;
+
+		// If snapshot has no entry for this key, treat as undefined too
+		const snapVal = key in lastSnapshotRendered ? snap : undefined;
+
+		if (snapVal !== effective) {
+			return true;
 		}
 	}
 
@@ -389,9 +388,9 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 		const productSlug = product?.product?.slug;
 
 		if (productSlug) {
-			url = `${baseUrl}/${productSlug}/devices/${scope.device}`;
+			url = `${baseUrl}/${productSlug}/devices/${scope.device}/env/edit`;
 		} else {
-			url = `${baseUrl}/devices/${scope.device}`;
+			url = `${baseUrl}/devices/${scope.device}/env/edit`;
 		}
 	}
 	ui.write('To review and save this changes in the console');
