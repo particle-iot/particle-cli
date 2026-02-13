@@ -45,38 +45,31 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(env, 'set', 'Set an environment variable', {
-		params: '<key> [value]',
+		params: '<name> [value]',
 		handler: (args) => {
 			const EnvCommands = require('../cmd/env');
 			return new EnvCommands(args).setEnv(args);
 		},
 		examples: {
-			'$0 $command <key> <value> --sandbox': 'Set env var to user\'s sandbox (space format)',
-			'$0 $command <key=value> --sandbox': 'Set env var to user\'s sandbox (equal sign format)',
-			'$0 $command <key> <value> --org <org>': 'Set env var for an organization',
-			'$0 $command <key=value> --product <productId>': 'Set env var for a product',
-			'$0 $command <key> <value> --device <deviceId>': 'Set env var for a device',
+			'$0 $command <name> <value> --sandbox': 'Set env var to user\'s sandbox (space format)',
+			'$0 $command <name=value> --sandbox': 'Set env var to user\'s sandbox (equal sign format)',
+			'$0 $command <name> <value> --org <org>': 'Set env var for an organization',
+			'$0 $command <name=value> --product <productId>': 'Set env var for a product',
+			'$0 $command <name> <value> --device <deviceId>': 'Set env var for a device',
 		}
 	});
 
 	commandProcessor.createCommand(env, 'delete', 'Delete an environment variable', {
-		params: '<key>',
-		options: {
-			'dry-run': {
-				description: 'Preview what would be deleted without actually deleting',
-				boolean: true
-			},
-		},
+		params: '<name>',
 		handler: (args) => {
 			const EnvCommands = require('../cmd/env');
 			return new EnvCommands(args).deleteEnv(args);
 		},
 		examples: {
-			'$0 $command <key> --sandbox': 'Delete env var from user\'s sandbox',
-			'$0 $command <key> --org <org>': 'Delete env var from an organization',
-			'$0 $command <key> --product <productId>': 'Delete env var from a product',
-			'$0 $command <key> --device <deviceId>': 'Delete env var from a device',
-			'$0 $command <key> --sandbox --dry-run': 'Preview deletion without actually deleting',
+			'$0 $command <name> --sandbox': 'Delete env var from user\'s sandbox',
+			'$0 $command <name> --org <org>': 'Delete env var from an organization',
+			'$0 $command <name> --product <productId>': 'Delete env var from a product',
+			'$0 $command <name> --device <deviceId>': 'Delete env var from a device',
 		}
 	});
 
@@ -112,40 +105,40 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(secret, 'get', 'Get a specific secret',{
-		params: '<key>',
+		params: '<name>',
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).get(args);
 		},
 		examples: {
-			'$0 $command <key> --sandbox': 'Get a secret from sandbox',
-			'$0 $command <key> --org <org>': 'Get a secret from a specific organization'
+			'$0 $command <name> --sandbox': 'Get a secret from sandbox',
+			'$0 $command <name> --org <org>': 'Get a secret from a specific organization'
 		}
 	});
 
 	commandProcessor.createCommand(secret, 'set', 'Set a secret', {
-		params: '<key> [value]',
+		params: '<name> [value]',
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).set(args);
 		},
 		examples: {
-			'$0 $command <key> <value> --sandbox': 'Set secret to user\'s sandbox (space format)',
-			'$0 $command <key=value> --sandbox': 'Set secret to user\'s sandbox (equal sign format)',
-			'$0 $command <key> <value> --org <org>': 'Set secret for an organization',
-			'$0 $command <key=value> --org <org>': 'Set secret for an organization (equal sign format)'
+			'$0 $command <name> <value> --sandbox': 'Set secret to user\'s sandbox (space format)',
+			'$0 $command <name=value> --sandbox': 'Set secret to user\'s sandbox (equal sign format)',
+			'$0 $command <name> <value> --org <org>': 'Set secret for an organization',
+			'$0 $command <name=value> --org <org>': 'Set secret for an organization (equal sign format)'
 		}
 	});
 
 	commandProcessor.createCommand(secret, 'delete', 'Delete a specific secret',{
-		params: '<key>',
+		params: '<name>',
 		handler: (args) => {
 			const SecretsCommand = require('../cmd/secrets');
 			return new SecretsCommand(args).deleteSecret(args);
 		},
 		examples: {
-			'$0 $command <key> --sandbox': 'Delete a secret from sandbox',
-			'$0 $command <key> --org <org>': 'Delete a secret from a specific organization'
+			'$0 $command <name> --sandbox': 'Delete a secret from sandbox',
+			'$0 $command <name> --org <org>': 'Delete a secret from a specific organization'
 		}
 	});
 };
