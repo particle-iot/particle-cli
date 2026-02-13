@@ -2,8 +2,9 @@
 const { expect, sinon } = require('../../test/setup');
 const {
 	hasPendingChanges,
+	getLatestValues,
 	getSortedEnvKeys,
-	resolveValue,
+
 	resolveScope,
 	calculateColumnWidths,
 	buildEnvRow,
@@ -125,8 +126,67 @@ describe('lib/env', () => {
 		});
 	});
 
+	describe('getLatestValues', () => {
+		it('returns snapshot values merged with Firmware inherited defaults', () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'bar'
+					}
+				},
+				env: {
+					inherited: {
+						PARTICLE_BLE: { from: 'Firmware', value: 'true' },
+						FOO: { from: 'Owner', value: 'inherited' }
+					}
+				}
+			};
+
+			const result = getLatestValues(data);
+			expect(result).to.deep.equal({ FOO: 'bar', PARTICLE_BLE: 'true' });
+		});
+
+		it('snapshot values override Firmware defaults for the same key', () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						PARTICLE_BLE: 'false'
+					}
+				},
+				env: {
+					inherited: {
+						PARTICLE_BLE: { from: 'Firmware', value: 'true' }
+					}
+				}
+			};
+
+			const result = getLatestValues(data);
+			expect(result).to.deep.equal({ PARTICLE_BLE: 'false' });
+		});
+
+		it('excludes non-Firmware inherited values', () => {
+			const data = {
+				last_snapshot: { rendered: {} },
+				env: {
+					inherited: {
+						FOO: { from: 'Owner', value: 'bar' },
+						BAZ: { from: 'Product', value: 'qux' }
+					}
+				}
+			};
+
+			const result = getLatestValues(data);
+			expect(result).to.deep.equal({});
+		});
+
+		it('handles missing data gracefully', () => {
+			expect(getLatestValues({})).to.deep.equal({});
+			expect(getLatestValues(null)).to.deep.equal({});
+		});
+	});
+
 	describe('getSortedEnvKeys', () => {
-		it('returns sorted keys from last_snapshot.rendered and env.inherited', () => {
+		it('returns sorted keys from latestValues (snapshot + Firmware inherited)', () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -136,7 +196,7 @@ describe('lib/env', () => {
 				},
 				env: {
 					inherited: {
-						BANANA: { from: 'Owner', value: 'b' }
+						BANANA: { from: 'Firmware', value: 'b' }
 					}
 				}
 			};
@@ -145,7 +205,47 @@ describe('lib/env', () => {
 			expect(result).to.deep.equal(['APPLE', 'BANANA', 'ZEBRA']);
 		});
 
-		it('returns unique keys when keys exist in both snapshot and inherited', () => {
+		it('does not include non-Firmware inherited keys', () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'bar'
+					}
+				},
+				env: {
+					inherited: {
+						ANOTHER: { from: 'Owner', value: 'value' }
+					}
+				}
+			};
+
+			const result = getSortedEnvKeys(data);
+			expect(result).to.deep.equal(['FOO']);
+		});
+
+		it('includes on_device keys in the result', () => {
+			const data = {
+				last_snapshot: {
+					rendered: {
+						FOO: 'bar'
+					}
+				},
+				env: {
+					inherited: {}
+				},
+				on_device: {
+					rendered: {
+						FOO: 'bar',
+						DEVICE_ONLY: 'val'
+					}
+				}
+			};
+
+			const result = getSortedEnvKeys(data);
+			expect(result).to.deep.equal(['DEVICE_ONLY', 'FOO']);
+		});
+
+		it('returns unique keys when keys exist in both snapshot and on_device', () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -155,14 +255,19 @@ describe('lib/env', () => {
 				},
 				env: {
 					inherited: {
-						FOO: { from: 'Owner', value: 'inherited' },
-						ANOTHER: { from: 'Owner', value: 'value' }
+						FIRMWARE_KEY: { from: 'Firmware', value: 'fw' }
+					}
+				},
+				on_device: {
+					rendered: {
+						FOO: 'bar',
+						FIRMWARE_KEY: 'fw'
 					}
 				}
 			};
 
 			const result = getSortedEnvKeys(data);
-			expect(result).to.deep.equal(['ANOTHER', 'BAZ', 'FOO']);
+			expect(result).to.deep.equal(['BAZ', 'FIRMWARE_KEY', 'FOO']);
 		});
 
 		it('returns empty array when no keys exist', () => {
@@ -179,7 +284,7 @@ describe('lib/env', () => {
 			const data = {
 				env: {
 					inherited: {
-						FOO: { from: 'Owner', value: 'bar' }
+						FOO: { from: 'Firmware', value: 'bar' }
 					}
 				}
 			};
@@ -199,74 +304,6 @@ describe('lib/env', () => {
 
 			const result = getSortedEnvKeys(data);
 			expect(result).to.deep.equal(['FOO']);
-		});
-	});
-
-	describe('resolveValue', () => {
-		it('returns snapshot value when available', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'snapshot-value'
-					}
-				},
-				env: {
-					inherited: {
-						FOO: { from: 'Owner', value: 'inherited-value' }
-					},
-					own: {
-						FOO: { value: 'own-value' }
-					}
-				}
-			};
-
-			const result = resolveValue('FOO', data);
-			expect(result).to.equal('snapshot-value');
-		});
-
-		it('returns own value when snapshot is not available', () => {
-			const data = {
-				last_snapshot: { rendered: {} },
-				env: {
-					inherited: {
-						FOO: { from: 'Owner', value: 'inherited-value' }
-					},
-					own: {
-						FOO: { value: 'own-value' }
-					}
-				}
-			};
-
-			const result = resolveValue('FOO', data);
-			expect(result).to.equal('own-value');
-		});
-
-		it('returns inherited value when snapshot and own are not available', () => {
-			const data = {
-				last_snapshot: { rendered: {} },
-				env: {
-					inherited: {
-						FOO: { from: 'Owner', value: 'inherited-value' }
-					},
-					own: {}
-				}
-			};
-
-			const result = resolveValue('FOO', data);
-			expect(result).to.equal('inherited-value');
-		});
-
-		it('returns empty string when no value is found', () => {
-			const data = {
-				last_snapshot: { rendered: {} },
-				env: {
-					inherited: {},
-					own: {}
-				}
-			};
-
-			const result = resolveValue('NONEXISTENT', data);
-			expect(result).to.equal('');
 		});
 	});
 
@@ -379,6 +416,20 @@ describe('lib/env', () => {
 				const result = resolveScope('FOO', data, { product: 'my-product' });
 				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
 			});
+
+			it('returns Firmware scope for inherited variable from Firmware', () => {
+				const data = {
+					env: {
+						inherited: {
+							PARTICLE_BLE: { from: 'Firmware', value: 'true' }
+						},
+						own: {}
+					}
+				};
+
+				const result = resolveScope('PARTICLE_BLE', data, { product: 'my-product' });
+				expect(result).to.deep.equal({ scope: 'Firmware', isOverridden: false });
+			});
 		});
 
 		describe('device scope', () => {
@@ -425,7 +476,7 @@ describe('lib/env', () => {
 			it('returns isOverridden true when own variable matches on_device', () => {
 				const data = {
 					on_device: {
-						FOO: 'device-value'
+						rendered: { FOO: 'device-value' }
 					},
 					env: {
 						inherited: {
@@ -482,6 +533,20 @@ describe('lib/env', () => {
 				const result = resolveScope('FOO', data, { device: 'my-device' });
 				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
 			});
+
+			it('returns Firmware scope for inherited variable from Firmware', () => {
+				const data = {
+					env: {
+						inherited: {
+							PARTICLE_BLE: { from: 'Firmware', value: 'true' }
+						},
+						own: {}
+					}
+				};
+
+				const result = resolveScope('PARTICLE_BLE', data, { device: 'my-device' });
+				expect(result).to.deep.equal({ scope: 'Firmware', isOverridden: false });
+			});
 		});
 	});
 
@@ -528,7 +593,7 @@ describe('lib/env', () => {
 					}
 				},
 				on_device: {
-					FOO: 'very-long-on-device-value'
+					rendered: { FOO: 'very-long-on-device-value' }
 				}
 			};
 
@@ -601,7 +666,7 @@ describe('lib/env', () => {
 			expect(result).to.deep.equal(['FOO', 'bar', 'Organization', 'No']);
 		});
 
-		it('includes on_device column when device scope is used', () => {
+		it('includes on_device column before value when device scope is used', () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -615,12 +680,12 @@ describe('lib/env', () => {
 					}
 				},
 				on_device: {
-					FOO: 'on-device-value'
+					rendered: { FOO: 'on-device-value' }
 				}
 			};
 
 			const result = buildEnvRow('FOO', data, { device: 'my-device' });
-			expect(result).to.deep.equal(['FOO', 'bar', 'on-device-value', 'Device', 'No']);
+			expect(result).to.deep.equal(['FOO', 'on-device-value', 'bar', 'Device', 'No']);
 		});
 
 		it('shows "missing" for on_device when value is not present', () => {
@@ -636,11 +701,13 @@ describe('lib/env', () => {
 						FOO: { value: 'bar' }
 					}
 				},
-				on_device: {}
+				on_device: {
+					rendered: {}
+				}
 			};
 
 			const result = buildEnvRow('FOO', data, { device: 'my-device' });
-			expect(result).to.deep.equal(['FOO', 'bar', 'missing', 'Device', 'No']);
+			expect(result).to.deep.equal(['FOO', 'missing', 'bar', 'Device', 'No']);
 		});
 
 		it('shows "Yes" for overridden status when applicable', () => {
@@ -798,7 +865,7 @@ describe('lib/env', () => {
 					}
 				},
 				on_device: {
-					CONFIG: longOnDeviceValue
+					rendered: { CONFIG: longOnDeviceValue }
 				}
 			};
 
@@ -824,7 +891,7 @@ describe('lib/env', () => {
 					}
 				},
 				on_device: {
-					FOO: 'device-val'
+					rendered: { FOO: 'device-val' }
 				}
 			};
 

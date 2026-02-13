@@ -654,8 +654,10 @@ describe('config env Command', () => {
 					own: {}
 				},
 				on_device: {
-					FOO: 'old-value',
-					BAZ: 'bar'
+					rendered: {
+						FOO: 'old-value',
+						BAZ: 'bar'
+					}
 				}
 			};
 
