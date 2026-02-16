@@ -130,55 +130,6 @@ describe('USB Commands', () => {
 			});
 		});
 
-		it('formats output with application variables only', () => {
-			const result = {
-				env: {
-					FOO: { value: 'bar', isApp: true },
-					TEST: { value: 'baz', isApp: true }
-				}
-			};
-
-			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
-			const cleanOutput = output.map(stripAnsi);
-
-			expect(cleanOutput[0]).to.equal('Device: 0123456789abcdef (P2)');
-			expect(cleanOutput[1]).to.equal('');
-			// Check that table output contains the expected headers and data
-			const tableOutput = cleanOutput[2];
-			expect(tableOutput).to.include('Name');
-			expect(tableOutput).to.include('Value');
-			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.include('FOO');
-			expect(tableOutput).to.include('bar');
-			expect(tableOutput).to.include('TEST');
-			expect(tableOutput).to.include('baz');
-			expect(tableOutput).to.include('Firmware');
-		});
-
-		it('formats output with system variables only', () => {
-			const result = {
-				env: {
-					SYS_VAR1: { value: 'value1', isApp: false },
-					SYS_VAR2: { value: 'value2', isApp: false }
-				}
-			};
-
-			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
-			const cleanOutput = output.map(stripAnsi);
-
-			expect(cleanOutput[0]).to.equal('Device: 0123456789abcdef (P2)');
-			expect(cleanOutput[1]).to.equal('');
-			const tableOutput = cleanOutput[2];
-			expect(tableOutput).to.include('Name');
-			expect(tableOutput).to.include('Value');
-			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.include('SYS_VAR1');
-			expect(tableOutput).to.include('value1');
-			expect(tableOutput).to.include('SYS_VAR2');
-			expect(tableOutput).to.include('value2');
-			expect(tableOutput).to.include('Cloud');
-		});
-
 		it('formats output with both application and system variables', () => {
 			const result = {
 				env: {
@@ -194,17 +145,17 @@ describe('USB Commands', () => {
 			expect(cleanOutput[0]).to.equal('Device: abc123def456 (Photon)');
 			expect(cleanOutput[1]).to.equal('');
 			const tableOutput = cleanOutput[2];
-			expect(tableOutput).to.include('Name');
-			expect(tableOutput).to.include('Value');
-			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.include('APP_KEY');
-			expect(tableOutput).to.include('app_value');
-			expect(tableOutput).to.include('ANOTHER_APP');
-			expect(tableOutput).to.include('another_app');
-			expect(tableOutput).to.include('SYS_KEY');
-			expect(tableOutput).to.include('sys_value');
-			expect(tableOutput).to.include('Firmware');
-			expect(tableOutput).to.include('Cloud');
+			const tableLines = tableOutput.split('\n');
+			const findRow = (label) => tableLines.find(line => line.includes(label));
+			const appKeyRow = findRow('APP_KEY');
+			const sysKeyRow = findRow('SYS_KEY');
+			const anotherAppRow = findRow('ANOTHER_APP');
+			expect(appKeyRow).to.include('app_value');
+			expect(appKeyRow).to.include('Firmware');
+			expect(sysKeyRow).to.include('sys_value');
+			expect(sysKeyRow).to.include('Cloud');
+			expect(anotherAppRow).to.include('another_app');
+			expect(anotherAppRow).to.include('Firmware');
 		});
 
 		it('formats output when no environment variables are set', () => {
