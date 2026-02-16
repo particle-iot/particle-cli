@@ -67,7 +67,7 @@ describe('config env Command', () => {
 				line.includes('FOO3') || line.includes('FOO2') || line.includes('FOO ')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Organization');
+				expect(row).to.include('Sandbox');
 			});
 		});
 
@@ -495,7 +495,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Overridden');
 			expect(tableOutput).to.include('BAZ');
 			expect(tableOutput).to.include('foo');
-			expect(tableOutput).to.include('Organization');
+			expect(tableOutput).to.include('Owner');
 			expect(tableOutput).to.include('FOO');
 			expect(tableOutput).to.include('baz-prod');
 			expect(tableOutput).to.include('Product');
@@ -629,7 +629,7 @@ describe('config env Command', () => {
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
 			expect(fooRow).to.include('Product');
 			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
-			expect(bazRow).to.include('Organization');
+			expect(bazRow).to.include('Owner');
 		});
 
 		it('displays device scope with on_device values when provided', async () => {
@@ -711,7 +711,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Overridden');
 		});
 
-		it('shows all scopes as Organization for sandbox', async () => {
+		it('shows all scopes as Sandbox for sandbox', async () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -744,7 +744,7 @@ describe('config env Command', () => {
 				line.includes('FOO') || line.includes('BAZ') || line.includes('KEY')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Organization');
+				expect(row).to.include('Sandbox');
 			});
 		});
 
