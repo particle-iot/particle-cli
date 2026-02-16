@@ -242,7 +242,7 @@ describe('lib/env', () => {
 
 	describe('resolveScope', () => {
 		describe('sandbox/org scope', () => {
-			it('returns Organization for sandbox scope', () => {
+			it('returns Sandbox for sandbox scope', () => {
 				const data = {
 					last_snapshot: {
 						inherited: {},
@@ -253,7 +253,7 @@ describe('lib/env', () => {
 				};
 
 				const result = resolveScope('FOO', data.last_snapshot, { sandbox: true });
-				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
+				expect(result).to.deep.equal({ scope: 'Sandbox', isOverridden: false });
 			});
 
 			it('returns Organization for org scope', () => {
@@ -308,7 +308,7 @@ describe('lib/env', () => {
 				expect(result).to.deep.equal({ scope: 'Product', isOverridden: true });
 			});
 
-			it('returns Organization scope for inherited variable from Owner', () => {
+			it('returns Owner scope for inherited variable from Owner', () => {
 				const data = {
 					last_snapshot: {
 						rendered: {
@@ -322,7 +322,7 @@ describe('lib/env', () => {
 				};
 
 				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
-				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
+				expect(result).to.deep.equal({ scope: 'Owner', isOverridden: false });
 			});
 
 			it('returns Product scope for inherited variable from Product', () => {
@@ -422,7 +422,7 @@ describe('lib/env', () => {
 				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
 			});
 
-			it('returns Organization scope for inherited variable from Owner', () => {
+			it('returns Owner scope for inherited variable from Owner', () => {
 				const data = {
 					last_snapshot: {
 						inherited: {
@@ -433,7 +433,7 @@ describe('lib/env', () => {
 				};
 
 				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
+				expect(result).to.deep.equal({ scope: 'Owner', isOverridden: false });
 			});
 
 			it('returns Firmware scope for inherited variable from Firmware', () => {
@@ -475,8 +475,8 @@ describe('lib/env', () => {
 			expect(result.nameWidth).to.be.at.least('VERY_LONG_VARIABLE_NAME'.length);
 			// Value column should be at least as wide as the longest value plus padding
 			expect(result.valueWidth).to.be.at.least('this is a very long value'.length);
-			// Scope column should accommodate 'Organization'
-			expect(result.scopeWidth).to.be.at.least('Organization'.length);
+			// Scope column should accommodate 'Sandbox'
+			expect(result.scopeWidth).to.be.at.least('Sandbox'.length);
 		});
 
 		it('includes onDevice column width when device scope is used', () => {
@@ -551,7 +551,7 @@ describe('lib/env', () => {
 			};
 
 			const result = buildEnvRow('FOO', lastSnapshotData, null, { sandbox: true });
-			expect(result).to.deep.equal(['FOO', 'bar', 'Organization', 'No']);
+			expect(result).to.deep.equal(['FOO', 'bar', 'Sandbox', 'No']);
 		});
 
 		it('includes on_device column before value when device scope is used', () => {
@@ -631,7 +631,7 @@ describe('lib/env', () => {
 			expect(output).to.include('Overridden');
 			expect(output).to.include('FOO');
 			expect(output).to.include('bar');
-			expect(output).to.include('Organization');
+			expect(output).to.include('Sandbox');
 		});
 
 		it('handles very long environment variable names without truncation', () => {
