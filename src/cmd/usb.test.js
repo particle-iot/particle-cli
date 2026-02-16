@@ -217,7 +217,7 @@ describe('USB Commands', () => {
 		it('sorts variables alphabetically within each category', () => {
 			const result = {
 				env: {
-					ZEBRA: { value: 'z', isApp: true },
+					ZEBRA: { value: 'z', isApp: false },
 					APPLE: { value: 'a', isApp: true },
 					BANANA: { value: 'b', isApp: true },
 					SYS_Z: { value: 'sz', isApp: false },
@@ -231,16 +231,13 @@ describe('USB Commands', () => {
 			expect(cleanOutput[0]).to.equal('Device: device123 (P2)');
 			expect(cleanOutput[1]).to.equal('');
 			const tableOutput = cleanOutput[2];
-			// Verify all variables are present and sorted
-			expect(tableOutput).to.include('APPLE');
-			expect(tableOutput).to.include('BANANA');
-			expect(tableOutput).to.include('ZEBRA');
-			expect(tableOutput).to.include('SYS_A');
-			expect(tableOutput).to.include('SYS_Z');
-			// Check that APPLE comes before ZEBRA in the output (alphabetical order)
-			const appleIndex = tableOutput.indexOf('APPLE');
-			const zebraIndex = tableOutput.indexOf('ZEBRA');
-			expect(appleIndex).to.be.lessThan(zebraIndex);
+			let previousIndex = -1, currentIndex = -1;
+			['APPLE', 'BANANA', 'SYS_A', 'SYS_Z', 'ZEBRA'].forEach(varName => {
+				expect(tableOutput).to.include(varName);
+				previousIndex = currentIndex;
+				currentIndex = tableOutput.indexOf(varName);
+				expect(currentIndex).to.be.greaterThan(previousIndex);
+			});
 		});
 
 		it('handles special characters in values', () => {
