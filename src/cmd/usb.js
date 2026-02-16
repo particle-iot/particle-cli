@@ -146,7 +146,6 @@ module.exports = class UsbCommand extends CLICommandBase {
 
 	_formatEnvOutput(result, platformName, deviceId) {
 		const output = [];
-		const tableRows = [];
 		const envVars = result.env ?? {};
 		const entries = Object.entries(envVars);
 		const push = line => output.push(line);
@@ -163,12 +162,12 @@ module.exports = class UsbCommand extends CLICommandBase {
 			push(chalk.yellow('  No environment variables set'));
 			return output;
 		}
-		entries.forEach(([key, { value, isApp }]) => {
-			const scope = isApp ? 'Firmware' : 'Cloud';
-			tableRows.push([key, value, scope]);
-		});
-		tableRows.sort((a, b) => a[0].localeCompare(b[0]));
-		tableRows.forEach(row => table.push(row));
+		entries
+			.sort((a, b) => a[0].localeCompare(b[0]))
+			.forEach(([key, { value, isApp }]) => {
+				const scope = isApp ? 'Firmware' : 'Cloud';
+				table.push([key, value, scope]);
+			});
 		push(table.toString());
 		return output;
 	}
