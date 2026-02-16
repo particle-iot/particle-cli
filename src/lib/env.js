@@ -11,48 +11,39 @@ const settings = require('../../settings');
  * @returns {Object} Object with scope and isOverridden properties
  */
 function resolveScope(key, lastSnapshotData, scope) {
-	const lastSnapshotInherited = lastSnapshotData?.inherited || {};
-	const lastSnapshotOwn = lastSnapshotData?.own || {};
+	const inherited = lastSnapshotData?.inherited ?? {};
+	const own = lastSnapshotData?.own ?? {};
 
-	const inheritedEntry = lastSnapshotInherited[key];
-	const isInOwn = key in lastSnapshotOwn;
-	const isInherited = !!inheritedEntry;
+	const inheritedEntry = inherited[key];
+	const isInOwn = key in own;
+	const isInherited = Boolean(inheritedEntry);
+	const from = inheritedEntry?.from ?? '';
 
-	let envScope;
+	let envScope = '';
 	let isOverridden = false;
 
-	if (scope.sandbox || scope.org) {
-		envScope = 'Organization';
+	if (scope.org || scope.sandbox) {
+		envScope = scope.sandbox ? 'Sandbox' : 'Organization';
+		isOverridden = isInOwn && isInherited;
 	} else if (scope.product) {
 		if (isInOwn) {
 			envScope = 'Product';
 			isOverridden = isInherited;
-		} else if (inheritedEntry) {
-			const fromField = inheritedEntry.from || '';
-			if (fromField === 'Product') {
-				envScope = 'Product';
-			} else if (fromField === 'Firmware') {
-				envScope = 'Firmware';
-			} else {
-				envScope = 'Organization';
-			}
+		} else if (isInherited) {
+			envScope = from === 'Product' || from === 'Firmware' ? from : 'Owner';
 		}
 	} else if (scope.device) {
 		if (isInOwn) {
 			envScope = 'Device';
 			isOverridden = isInherited;
-		} else if (inheritedEntry) {
-			const fromField = inheritedEntry.from || '';
-			if (fromField === 'Device') {
-				envScope = 'Device';
-			} else if (fromField === 'Product') {
-				envScope = 'Product';
-			} else if (fromField === 'Firmware') {
-				envScope = 'Firmware';
-			} else {
-				envScope = 'Organization';
-			}
+		} else if (isInherited) {
+			envScope =
+				from === 'Device' || from === 'Product' || from === 'Firmware'
+					? from
+					: from;
 		}
+	} else {
+		envScope = from;
 	}
 
 	return { scope: envScope, isOverridden };
