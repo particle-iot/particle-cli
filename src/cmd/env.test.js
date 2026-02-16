@@ -45,20 +45,9 @@ describe('config env Command', () => {
 		const { default: stripAnsi } = require('strip-ansi');
 
 		it('list all env vars for sandbox user', async () => {
-			const sandboxListWithSnapshot = {
-				...sandboxList,
-				last_snapshot: {
-					rendered: {
-						FOO3: 'bar3',
-						FOO2: 'bar',
-						FOO: 'bar'
-					}
-				}
-			};
-
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
-				.reply(200, sandboxListWithSnapshot);
+				.reply(200, sandboxList);
 			await envCommands.list({ sandbox: true });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
@@ -83,19 +72,9 @@ describe('config env Command', () => {
 		});
 
 		it('list all env vars for a product sandbox user', async () => {
-			const sandboxProductListWithSnapshot = {
-				...sandboxProductList,
-				last_snapshot: {
-					rendered: {
-						FOO3: 'bar3',
-						FOO: 'bar'
-					}
-				}
-			};
-
 			nock('https://api.particle.io/v1')
 				.intercept('/products/product-id-123/env', 'GET')
-				.reply(200, sandboxProductListWithSnapshot);
+				.reply(200, sandboxProductList);
 			await envCommands.list({ product: 'product-id-123' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
@@ -112,20 +91,9 @@ describe('config env Command', () => {
 		});
 
 		it('list all env vars for a device', async () => {
-			const sandboxDeviceProductListWithSnapshot = {
-				...sandboxDeviceProductList,
-				last_snapshot: {
-					rendered: {
-						FOO: 'org-bar',
-						FOO3: 'bar3',
-						FOO4: 'bar'
-					}
-				}
-			};
-
 			nock('https://api.particle.io/v1')
 				.intercept('/env/abc123', 'GET')
-				.reply(200, sandboxDeviceProductListWithSnapshot);
+				.reply(200, sandboxDeviceProductList);
 			await envCommands.list({ device: 'abc123' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
@@ -493,6 +461,14 @@ describe('config env Command', () => {
 						BAZ: 'foo',
 						KEY: 'value'
 					},
+					inherited: {
+						FOO: { from: 'Owner', value: 'test/data' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {
+						FOO: { value: 'baz-prod' }
+					},
 					rollout_at: '2026-02-09T17:47:17.121Z',
 					rollout_by: '60468db2509eb004820e11e0'
 				},
@@ -538,6 +514,14 @@ describe('config env Command', () => {
 						FOO: 'baz-prod',
 						BAZ: 'foo',
 						KEY: 'value'
+					},
+					inherited: {
+						FOO: { from: 'Owner', value: 'test/data' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {
+						FOO: { value: 'baz-prod' }
 					}
 				},
 				env: {
@@ -572,6 +556,12 @@ describe('config env Command', () => {
 						FOO: 'test/data',
 						BAZ: 'foo',
 						KEY: 'value'
+					},
+					inherited: {},
+					own: {
+						FOO: { value: 'test/data' },
+						BAZ: { value: 'foo' },
+						KEY: { value: 'value' }
 					}
 				},
 				env: {
@@ -605,7 +595,13 @@ describe('config env Command', () => {
 						FOO: 'baz-prod',
 						BAZ: 'foo',
 						KEY: 'value'
-					}
+					},
+					inherited: {
+						FOO: { from: 'Product', value: 'baz-prod' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {}
 				},
 				env: {
 					inherited: {
@@ -643,7 +639,13 @@ describe('config env Command', () => {
 						FOO: 'baz-prod',
 						BAZ: 'foo',
 						KEY: 'value'
-					}
+					},
+					inherited: {
+						FOO: { from: 'Product', value: 'baz-prod' },
+						BAZ: { from: 'Owner', value: 'foo' },
+						KEY: { from: 'Owner', value: 'value' }
+					},
+					own: {}
 				},
 				env: {
 					inherited: {
@@ -680,6 +682,12 @@ describe('config env Command', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'baz-prod'
+					},
+					inherited: {
+						FOO: { from: 'Owner', value: 'test/data' }
+					},
+					own: {
+						FOO: { value: 'baz-prod' }
 					}
 				},
 				env: {
@@ -710,6 +718,12 @@ describe('config env Command', () => {
 						FOO: 'test/data',
 						BAZ: 'foo',
 						KEY: 'value'
+					},
+					inherited: {},
+					own: {
+						FOO: { value: 'test/data' },
+						BAZ: { value: 'foo' },
+						KEY: { value: 'value' }
 					}
 				},
 				env: {
@@ -736,7 +750,7 @@ describe('config env Command', () => {
 
 		it('displays empty state when no variables exist', async () => {
 			const data = {
-				last_snapshot: { rendered: {} },
+				last_snapshot: { rendered: {}, inherited: {}, own: {} },
 				env: {
 					inherited: {},
 					own: {}
@@ -756,7 +770,13 @@ describe('config env Command', () => {
 						ZEBRA: 'z',
 						APPLE: 'a',
 						BANANA: 'b'
-					}
+					},
+					inherited: {
+						ZEBRA: { from: 'Owner', value: 'z' },
+						APPLE: { from: 'Owner', value: 'a' },
+						BANANA: { from: 'Owner', value: 'b' }
+					},
+					own: {}
 				},
 				env: {
 					inherited: {

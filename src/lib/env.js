@@ -4,90 +4,18 @@ const Table = require('cli-table');
 const settings = require('../../settings');
 
 /**
- * Check if there are pending changes between snapshot and own environment variables
- * @param {Object} lastSnapshotRendered - The rendered snapshot data
- * @param {Object} envOwn - The own environment variables
- * @param {Object} envInherited - The inherited environment variables
- * @returns {boolean} True if there are pending changes
- */
-function hasPendingChanges(lastSnapshotRendered, envOwn, envInherited = {}) {
-	const keys = new Set([
-		...Object.keys(lastSnapshotRendered),
-		...Object.keys(envOwn)
-	]);
-
-	for (const key of keys) {
-		const snap = lastSnapshotRendered[key];
-
-		// Own overrides inherited; if neither exists, value is undefined
-		const effective = envOwn[key]?.value ?? envInherited[key]?.value;
-
-		// If snapshot has no entry for this key, treat as undefined too
-		const snapVal = key in lastSnapshotRendered ? snap : undefined;
-
-		if (snapVal !== effective) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-/**
- * Compute the latest values by augmenting last_snapshot.rendered with Firmware inherited defaults.
- * Firmware values act as defaults; last_snapshot values take precedence for the same key.
- * @param {Object} data - The environment data
- * @returns {Object} Flat key-value map of latest values
- */
-function getLatestValues(data) {
-	const lastSnapshotRendered = data?.last_snapshot?.rendered || {};
-	const envInherited = data?.env?.inherited || {};
-
-	const firmwareValues = Object.entries(envInherited).reduce((acc, [key, entry]) => {
-		if (entry.from === 'Firmware') {
-			acc[key] = entry.value;
-		}
-		return acc;
-	}, {});
-
-	return { ...firmwareValues, ...lastSnapshotRendered };
-}
-
-/**
- * Get sorted environment variable keys from the data.
- * The key set is the union of on_device keys (if any) and latestValues keys
- * (last_snapshot augmented with Firmware inherited defaults).
- * @param {Object} data - The environment data
- * @returns {string[]} Sorted array of keys
- */
-function getSortedEnvKeys(data) {
-	const latestValues = getLatestValues(data);
-	const onDeviceRendered = data?.on_device?.rendered || {};
-	const allKeys = new Set([
-		...Object.keys(latestValues),
-		...Object.keys(onDeviceRendered)
-	]);
-	return Array.from(allKeys).sort();
-}
-
-/**
  * Resolve the scope and override status for a given environment variable
  * @param {string} key - The environment variable key
  * @param {Object} data - The environment data
  * @param {Object} scope - The scope parameters (sandbox, org, product, device)
  * @returns {Object} Object with scope and isOverridden properties
  */
-function resolveScope(key, data, scope) {
-	const lastSnapshotRendered = data?.last_snapshot?.rendered || {};
-	const envInherited = data?.env?.inherited || {};
-	const envOwn = data?.env?.own || {};
-	const onDeviceData = data?.on_device?.rendered || null;
+function resolveScope(key, lastSnapshotData, scope) {
+	const lastSnapshotInherited = lastSnapshotData?.inherited || {};
+	const lastSnapshotOwn = lastSnapshotData?.own || {};
 
-	const snapshotValue = lastSnapshotRendered[key];
-	const inheritedEntry = envInherited[key];
-	const ownEntry = envOwn[key];
-
-	const isInOwn = !!ownEntry;
+	const inheritedEntry = lastSnapshotInherited[key];
+	const isInOwn = key in lastSnapshotOwn;
 	const isInherited = !!inheritedEntry;
 
 	let envScope;
@@ -98,8 +26,7 @@ function resolveScope(key, data, scope) {
 	} else if (scope.product) {
 		if (isInOwn) {
 			envScope = 'Product';
-			const isApplied = snapshotValue !== undefined && snapshotValue === ownEntry.value;
-			isOverridden = isApplied && isInherited;
+			isOverridden = isInherited;
 		} else if (inheritedEntry) {
 			const fromField = inheritedEntry.from || '';
 			if (fromField === 'Product') {
@@ -113,9 +40,7 @@ function resolveScope(key, data, scope) {
 	} else if (scope.device) {
 		if (isInOwn) {
 			envScope = 'Device';
-			const isApplied = (snapshotValue !== undefined && snapshotValue === ownEntry.value) ||
-				(onDeviceData && onDeviceData[key] !== undefined && onDeviceData[key] === ownEntry.value);
-			isOverridden = isApplied && isInherited;
+			isOverridden = isInherited;
 		} else if (inheritedEntry) {
 			const fromField = inheritedEntry.from || '';
 			if (fromField === 'Device') {
@@ -134,95 +59,91 @@ function resolveScope(key, data, scope) {
 }
 
 /**
- * Build a table row for an environment variable
- * @param {string} key - The environment variable key
+ * Display environment variables in a formatted table
  * @param {Object} data - The environment data
  * @param {Object} scope - The scope parameters
- * @returns {Array} Array representing the table row
+ * @param {Object} ui - UI instance for writing output
+ * @param {Object} api - API instance for fetching device information (required for device scope with pending changes)
  */
-function buildEnvRow(key, data, scope) {
-	const showOnDevice = !!scope.device;
-	const onDeviceData = data?.on_device?.rendered || null;
-	const latestValues = getLatestValues(data);
+async function displayEnv(data, scope, ui, api = null) {
+	const lastSnapshotRendered = data?.last_snapshot?.rendered || {};
+	const envInherited = data?.env?.inherited || {};
+	const envOwn = data?.env?.own || {};
 
-	const value = latestValues[key] ?? '';
+	const hasSnapshotValues = Object.keys(lastSnapshotRendered).length > 0;
+	const pendingChanges = hasPendingChanges(lastSnapshotRendered, envOwn, envInherited);
 
-	let onDeviceValue = 'missing';
-	if (showOnDevice) {
-		if (onDeviceData && onDeviceData[key] !== undefined) {
-			onDeviceValue = onDeviceData[key];
-		}
+	await displayScopeTitle(scope, ui, api);
+
+	if (!hasSnapshotValues) {
+		ui.write('No environment variables found.');
+	} else {
+		const table = buildEnvTable(data, scope);
+		ui.write(table.toString());
 	}
 
-	const { scope: envScope, isOverridden } = resolveScope(key, data, scope);
-
-	const row = [key];
-
-	if (showOnDevice) {
-		row.push(onDeviceValue);
+	if (pendingChanges) {
+		ui.write(ui.chalk.yellow.bold('There are pending changes that have not been applied yet.'));
+		await displayRolloutInstructions(scope, ui, api);
 	}
-
-	row.push(value || '', envScope || '', isOverridden ? 'Yes' : 'No');
-
-	return row;
 }
 
 /**
- * Calculate dynamic column widths based on content
- * @param {string[]} sortedKeys - Sorted array of environment variable keys
- * @param {Object} data - The environment data
- * @param {Object} scope - The scope parameters
- * @returns {Object} Object with calculated column widths
+ * Check if there are pending changes between snapshot and own environment variables
+ * @param {Object} lastSnapshotRendered - The rendered snapshot data
+ * @param {Object} envOwn - The own environment variables
+ * @param {Object} envInherited - The inherited environment variables
+ * @returns {boolean} True if there are pending changes
  */
-function calculateColumnWidths(sortedKeys, data, scope) {
-	const showOnDevice = !!scope.device;
-	const onDeviceData = data?.on_device?.rendered || null;
-	const latestValues = getLatestValues(data);
+function hasPendingChanges(lastSnapshotRendered, envOwn, envInherited = {}) {
+	const keys = new Set([
+		...Object.keys(lastSnapshotRendered),
+		...Object.keys(envOwn)
+	]);
 
-	// Minimum widths for headers and basic content
-	let nameWidth = 'Name'.length;
-	let valueWidth = 'Value'.length;
-	let onDeviceWidth = 'On Device'.length;
-	let scopeWidth = 'Scope'.length;
-	let overriddenWidth = 'Overridden'.length;
-
-	// Calculate maximum widths based on actual content
-	sortedKeys.forEach((key) => {
-		// Name column
-		nameWidth = Math.max(nameWidth, key.length);
-
-		// Value column
-		const value = latestValues[key] ?? '';
-		if (value) {
-			valueWidth = Math.max(valueWidth, value.length);
+	for (const key of keys) {
+		const snap = lastSnapshotRendered[key];
+		const effective = envOwn[key]?.value ?? envInherited[key]?.value;
+		const snapVal = key in lastSnapshotRendered ? snap : undefined;
+		if (snapVal !== effective) {
+			return true;
 		}
+	}
+	return false;
+}
 
-		// On Device column
-		if (showOnDevice) {
-			let onDeviceValue = 'missing';
-			if (onDeviceData && onDeviceData[key] !== undefined) {
-				onDeviceValue = onDeviceData[key];
-			}
-			if (onDeviceValue) {
-				onDeviceWidth = Math.max(onDeviceWidth, onDeviceValue.length);
-			}
-		}
+async function displayScopeTitle(scope, ui, api = null) {
+	const label = await resolveScopeLabel(scope, api);
+	ui.write(ui.chalk.bold(`Scope: ${label}`));
+	ui.write('');
+}
 
-		// Scope column
-		const { scope: envScope } = resolveScope(key, data, scope);
-		if (envScope) {
-			scopeWidth = Math.max(scopeWidth, envScope.length);
-		}
-	});
+async function resolveScopeLabel(scope, api) {
+	if (scope.sandbox) {
+		return 'Sandbox';
+	}
+	if (scope.org) {
+		return `Organization (${scope.org})`;
+	}
+	if (scope.product) {
+		const productName = await getProductName(scope.product, api);
+		return `Product (${productName})`;
+	}
+	if (scope.device) {
+		return `Device (${scope.device})`;
+	}
+}
 
-	// Add some padding to make it more readable
-	nameWidth += 2;
-	valueWidth += 2;
-	onDeviceWidth += 2;
-	scopeWidth += 2;
-	overriddenWidth += 2;
-
-	return { nameWidth, valueWidth, onDeviceWidth, scopeWidth, overriddenWidth };
+async function getProductName(productSlug, api) {
+	try {
+		const productData = await api.getProduct({
+			product: productSlug,
+			auth: api.accessToken
+		});
+		return productData?.product?.name || productSlug;
+	} catch {
+		return productSlug;
+	}
 }
 
 /**
@@ -234,11 +155,8 @@ function calculateColumnWidths(sortedKeys, data, scope) {
 function buildEnvTable(data, scope) {
 	const showOnDevice = !!scope.device;
 	const sortedKeys = getSortedEnvKeys(data);
-
-	// Calculate dynamic column widths
 	const columnWidths = calculateColumnWidths(sortedKeys, data, scope);
 	const { nameWidth, valueWidth, onDeviceWidth, scopeWidth, overriddenWidth } = columnWidths;
-
 	const headers = ['Name'];
 	const colWidths = [nameWidth];
 
@@ -258,7 +176,7 @@ function buildEnvTable(data, scope) {
 	});
 
 	sortedKeys.forEach((key) => {
-		const row = buildEnvRow(key, data, scope);
+		const row = buildEnvRow(key, data.last_snapshot, data.on_device, scope);
 		table.push(row);
 	});
 
@@ -266,72 +184,101 @@ function buildEnvTable(data, scope) {
 }
 
 /**
- * Display the scope title
- * @param {Object} scope - The scope parameters
- * @param {Object} ui - UI instance for writing output
- * @param {Object} api - API instance for fetching additional information
+ * Get sorted environment variable keys from the data.
+ * The key set is the union of on_device keys (if any) and last_snapshot.rendered keys.
+ * @param {Object} data - The environment data
+ * @returns {string[]} Sorted array of keys
  */
-async function displayScopeTitle(scope, ui, api = null) {
-	let title = 'Scope: ';
-
-	if (scope.sandbox) {
-		title += 'Sandbox';
-	} else if (scope.org) {
-		title += `Organization (${scope.org})`;
-	} else if (scope.product) {
-		// Try to get product name if api is available
-		if (api) {
-			try {
-				const productData = await api.getProduct({ product: scope.product, auth: api.accessToken });
-				const productName = productData?.product?.name || scope.product;
-				title += `Product (${productName})`;
-			} catch (_error) {
-				// Fall back to product ID if we can't get the name
-				title += `Product (${scope.product})`;
-			}
-		} else {
-			title += `Product (${scope.product})`;
-		}
-	} else if (scope.device) {
-		title += `Device (${scope.device})`;
-	}
-
-	ui.write(ui.chalk.bold(title));
-	ui.write('');
+function getSortedEnvKeys(data) {
+	const latestValues = data?.last_snapshot?.rendered || {};
+	const onDeviceRendered = data?.on_device?.rendered || {};
+	const allKeys = new Set([
+		...Object.keys(latestValues),
+		...Object.keys(onDeviceRendered)
+	]);
+	return Array.from(allKeys).sort();
 }
 
 /**
- * Display environment variables in a formatted table
+ * Calculate dynamic column widths based on content
+ * @param {string[]} sortedKeys - Sorted array of environment variable keys
  * @param {Object} data - The environment data
  * @param {Object} scope - The scope parameters
- * @param {Object} ui - UI instance for writing output
- * @param {Object} api - API instance for fetching device information (required for device scope with pending changes)
+ * @returns {Object} Object with calculated column widths
  */
-async function displayEnv(data, scope, ui, api = null) {
-	const latestValues = getLatestValues(data);
-	const envInherited = data?.env?.inherited || {};
-	const envOwn = data?.env?.own || {};
+function calculateColumnWidths(sortedKeys, data, scope) {
+	const showOnDevice = Boolean(scope.device);
+	const onDeviceData = data?.on_device?.rendered ?? null;
+	const latestValues = data?.last_snapshot?.rendered || {};
 
-	const hasLatestValues = Object.keys(latestValues).length > 0;
-	const hasOwn = Object.keys(envOwn).length > 0;
+	const widths = {
+		name: 'Name'.length,
+		value: 'Value'.length,
+		onDevice: 'On Device'.length,
+		scope: 'Scope'.length,
+		overridden: 'Overridden'.length
+	};
 
-	// Display scope title
-	await displayScopeTitle(scope, ui, api);
+	const updateWidth = (key, content) => {
+		if (content) {
+			widths[key] = Math.max(widths[key], content.length);
+		}
+	};
 
-	if (!hasLatestValues && !hasOwn) {
-		ui.write('No environment variables found.');
-		return;
+	for (const key of sortedKeys) {
+		updateWidth('name', key);
+		const value = latestValues[key] ?? '';
+		updateWidth('value', value);
+		if (showOnDevice) {
+			const onDeviceValue =
+				onDeviceData && onDeviceData[key] !== undefined
+					? onDeviceData[key]
+					: 'missing';
+
+			updateWidth('onDevice', onDeviceValue);
+		}
+		const { scope: envScope } = resolveScope(key, data.last_snapshot, scope);
+		updateWidth('scope', envScope);
+	}
+	for (const col of Object.keys(widths)) {
+		widths[col] += 2;
 	}
 
-	const pendingChanges = hasPendingChanges(latestValues, envOwn, envInherited);
+	return {
+		nameWidth: widths.name,
+		valueWidth: widths.value,
+		onDeviceWidth: widths.onDevice,
+		scopeWidth: widths.scope,
+		overriddenWidth: widths.overridden
+	};
+}
 
-	const table = buildEnvTable(data, scope);
-	ui.write(table.toString());
+/**
+ * Build a table row for an environment variable
+ * @param {string} key - The environment variable key
+ * @param {Object} data - The environment data
+ * @param {Object} scope - The scope parameters
+ * @returns {Array} Array representing the table row
+ */
+function buildEnvRow(key, lastSnapshotData, onDeviceData, scope) {
+	const showOnDevice = !!scope.device;
+	const value = lastSnapshotData.rendered[key] ?? '';
 
-	if (pendingChanges) {
-		ui.write(ui.chalk.yellow.bold('There are pending changes that have not been applied yet.'));
-		await displayRolloutInstructions(scope, ui, api, true);
+	const onDeviceValue = showOnDevice && onDeviceData?.rendered[key] !== undefined
+		? onDeviceData.rendered[key]
+		: 'missing';
+
+	const { scope: envScope, isOverridden } = resolveScope(key, lastSnapshotData, scope);
+
+	const row = [key];
+
+	if (showOnDevice) {
+		row.push(onDeviceValue);
 	}
+
+	row.push(value || '', envScope || '', isOverridden ? 'Yes' : 'No');
+
+	return row;
 }
 
 /**
@@ -406,9 +353,7 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 
 module.exports = {
 	hasPendingChanges,
-	getLatestValues,
 	getSortedEnvKeys,
-
 	resolveScope,
 	calculateColumnWidths,
 	buildEnvRow,

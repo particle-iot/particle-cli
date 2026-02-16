@@ -1,6 +1,25 @@
 'use strict';
 
 const sandboxList = {
+	'last_snapshot': {
+		'rendered': {
+			'FOO3': 'bar3',
+			'FOO2': 'bar',
+			'FOO': 'bar'
+		},
+		'inherited': {},
+		'own': {
+			'FOO3': {
+				'value': 'bar3'
+			},
+			'FOO2': {
+				'value': 'bar'
+			},
+			'FOO': {
+				'value': 'bar'
+			}
+		}
+	},
 	'env': {
 		'own': {
 			'FOO3': {
@@ -30,14 +49,35 @@ const sandboxList = {
 };
 
 const sandboxProductList = {
-	'env': {
-		inherited: {
+	'last_snapshot': {
+		'rendered': {
+			'FOO3': 'bar3',
+			'FOO': 'bar'
+		},
+		'inherited': {
 			'FOO3': {
-				value: 'org-bar3',
-				access: ['Device']
+				'from': 'Owner',
+				'value': 'org-bar3'
 			}
 		},
-		own: {
+		'own': {
+			'FOO3': {
+				'value': 'bar3'
+			},
+			'FOO': {
+				'value': 'bar'
+			}
+		}
+	},
+	'env': {
+		'inherited': {
+			'FOO3': {
+				'from': 'Owner',
+				'value': 'org-bar3',
+				'access': ['Device']
+			}
+		},
+		'own': {
 			'FOO3': {
 				'value': 'bar3',
 				'access': [
@@ -59,25 +99,54 @@ const sandboxProductList = {
 };
 
 const sandboxDeviceProductList = {
-	'env': {
-		inherited: {
+	'last_snapshot': {
+		'rendered': {
+			'FOO': 'org-bar',
+			'FOO3': 'bar3',
+			'FOO4': 'bar'
+		},
+		'inherited': {
 			'FOO': {
-				from: 'Owner',
-				value: 'org-bar',
-				access: ['Device']
+				'from': 'Owner',
+				'value': 'org-bar'
 			},
 			'FOO3': {
-				from: 'Product',
-				value: 'prod-bar3',
-				access: ['Device']
+				'from': 'Product',
+				'value': 'prod-bar3'
 			},
 			'FOO3_PROD': {
-				from: 'Product',
-				value: 'prod-bar3-prod',
-				access: ['Device']
-			},
+				'from': 'Product',
+				'value': 'prod-bar3-prod'
+			}
 		},
-		own: {
+		'own': {
+			'FOO3': {
+				'value': 'bar3'
+			},
+			'FOO4': {
+				'value': 'bar'
+			}
+		}
+	},
+	'env': {
+		'inherited': {
+			'FOO': {
+				'from': 'Owner',
+				'value': 'org-bar',
+				'access': ['Device']
+			},
+			'FOO3': {
+				'from': 'Product',
+				'value': 'prod-bar3',
+				'access': ['Device']
+			},
+			'FOO3_PROD': {
+				'from': 'Product',
+				'value': 'prod-bar3-prod',
+				'access': ['Device']
+			}
+		},
+		'own': {
 			'FOO3': {
 				'value': 'bar3',
 				'access': [
@@ -99,9 +168,15 @@ const sandboxDeviceProductList = {
 
 };
 
-const emptyList = { env : {} };
+const emptyList = {
+	last_snapshot: { rendered: {}, inherited: {}, own: {} },
+	env: {}
+};
 
-const emptyListWithKeys = { env: { inherited: {}, own: {} } };
+const emptyListWithKeys = {
+	last_snapshot: { rendered: {}, inherited: {}, own: {} },
+	env: { inherited: {}, own: {} }
+};
 
 module.exports = {
 	sandboxList,

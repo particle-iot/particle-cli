@@ -127,17 +127,12 @@ describe('lib/env', () => {
 	});
 
 	describe('getLatestValues', () => {
-		it('returns snapshot values merged with Firmware inherited defaults', () => {
+		it('returns last_snapshot.rendered values directly', () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
-						FOO: 'bar'
-					}
-				},
-				env: {
-					inherited: {
-						PARTICLE_BLE: { from: 'Firmware', value: 'true' },
-						FOO: { from: 'Owner', value: 'inherited' }
+						FOO: 'bar',
+						PARTICLE_BLE: 'true'
 					}
 				}
 			};
@@ -146,7 +141,7 @@ describe('lib/env', () => {
 			expect(result).to.deep.equal({ FOO: 'bar', PARTICLE_BLE: 'true' });
 		});
 
-		it('snapshot values override Firmware defaults for the same key', () => {
+		it('returns last_snapshot.rendered even when env has different values', () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -164,7 +159,7 @@ describe('lib/env', () => {
 			expect(result).to.deep.equal({ PARTICLE_BLE: 'false' });
 		});
 
-		it('excludes non-Firmware inherited values', () => {
+		it('returns empty object when last_snapshot.rendered is empty', () => {
 			const data = {
 				last_snapshot: { rendered: {} },
 				env: {
@@ -186,17 +181,13 @@ describe('lib/env', () => {
 	});
 
 	describe('getSortedEnvKeys', () => {
-		it('returns sorted keys from latestValues (snapshot + Firmware inherited)', () => {
+		it('returns sorted keys from last_snapshot.rendered', () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
 						ZEBRA: 'z',
-						APPLE: 'a'
-					}
-				},
-				env: {
-					inherited: {
-						BANANA: { from: 'Firmware', value: 'b' }
+						APPLE: 'a',
+						BANANA: 'b'
 					}
 				}
 			};
@@ -205,7 +196,7 @@ describe('lib/env', () => {
 			expect(result).to.deep.equal(['APPLE', 'BANANA', 'ZEBRA']);
 		});
 
-		it('does not include non-Firmware inherited keys', () => {
+		it('returns only keys from last_snapshot.rendered', () => {
 			const data = {
 				last_snapshot: {
 					rendered: {
@@ -250,12 +241,8 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'bar',
-						BAZ: 'qux'
-					}
-				},
-				env: {
-					inherited: {
-						FIRMWARE_KEY: { from: 'Firmware', value: 'fw' }
+						BAZ: 'qux',
+						FIRMWARE_KEY: 'fw'
 					}
 				},
 				on_device: {
@@ -290,7 +277,7 @@ describe('lib/env', () => {
 			};
 
 			const result = getSortedEnvKeys(data);
-			expect(result).to.deep.equal(['FOO']);
+			expect(result).to.deep.equal([]);
 		});
 
 		it('handles missing env.inherited', () => {
@@ -311,7 +298,7 @@ describe('lib/env', () => {
 		describe('sandbox/org scope', () => {
 			it('returns Organization for sandbox scope', () => {
 				const data = {
-					env: {
+					last_snapshot: {
 						inherited: {},
 						own: {
 							FOO: { value: 'bar' }
@@ -325,7 +312,7 @@ describe('lib/env', () => {
 
 			it('returns Organization for org scope', () => {
 				const data = {
-					env: {
+					last_snapshot: {
 						inherited: {},
 						own: {
 							FOO: { value: 'bar' }
@@ -344,9 +331,7 @@ describe('lib/env', () => {
 					last_snapshot: {
 						rendered: {
 							FOO: 'bar'
-						}
-					},
-					env: {
+						},
 						inherited: {},
 						own: {
 							FOO: { value: 'bar' }
@@ -363,9 +348,7 @@ describe('lib/env', () => {
 					last_snapshot: {
 						rendered: {
 							FOO: 'product-value'
-						}
-					},
-					env: {
+						},
 						inherited: {
 							FOO: { from: 'Owner', value: 'org-value' }
 						},
@@ -384,9 +367,7 @@ describe('lib/env', () => {
 					last_snapshot: {
 						rendered: {
 							FOO: 'bar'
-						}
-					},
-					env: {
+						},
 						inherited: {
 							FOO: { from: 'Owner', value: 'bar' }
 						},
@@ -403,9 +384,7 @@ describe('lib/env', () => {
 					last_snapshot: {
 						rendered: {
 							FOO: 'bar'
-						}
-					},
-					env: {
+						},
 						inherited: {
 							FOO: { from: 'Product', value: 'bar' }
 						},
@@ -419,7 +398,7 @@ describe('lib/env', () => {
 
 			it('returns Firmware scope for inherited variable from Firmware', () => {
 				const data = {
-					env: {
+					last_snapshot: {
 						inherited: {
 							PARTICLE_BLE: { from: 'Firmware', value: 'true' }
 						},
@@ -438,9 +417,7 @@ describe('lib/env', () => {
 					last_snapshot: {
 						rendered: {
 							FOO: 'bar'
-						}
-					},
-					env: {
+						},
 						inherited: {},
 						own: {
 							FOO: { value: 'bar' }
@@ -452,33 +429,12 @@ describe('lib/env', () => {
 				expect(result).to.deep.equal({ scope: 'Device', isOverridden: false });
 			});
 
-			it('returns isOverridden true when own variable matches snapshot', () => {
+			it('returns isOverridden true when own variable overrides inherited', () => {
 				const data = {
 					last_snapshot: {
 						rendered: {
 							FOO: 'device-value'
-						}
-					},
-					env: {
-						inherited: {
-							FOO: { from: 'Product', value: 'product-value' }
 						},
-						own: {
-							FOO: { value: 'device-value' }
-						}
-					}
-				};
-
-				const result = resolveScope('FOO', data, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Device', isOverridden: true });
-			});
-
-			it('returns isOverridden true when own variable matches on_device', () => {
-				const data = {
-					on_device: {
-						rendered: { FOO: 'device-value' }
-					},
-					env: {
 						inherited: {
 							FOO: { from: 'Product', value: 'product-value' }
 						},
@@ -494,7 +450,7 @@ describe('lib/env', () => {
 
 			it('returns Device scope for inherited variable from Device', () => {
 				const data = {
-					env: {
+					last_snapshot: {
 						inherited: {
 							FOO: { from: 'Device', value: 'bar' }
 						},
@@ -508,7 +464,7 @@ describe('lib/env', () => {
 
 			it('returns Product scope for inherited variable from Product', () => {
 				const data = {
-					env: {
+					last_snapshot: {
 						inherited: {
 							FOO: { from: 'Product', value: 'bar' }
 						},
@@ -522,7 +478,7 @@ describe('lib/env', () => {
 
 			it('returns Organization scope for inherited variable from Owner', () => {
 				const data = {
-					env: {
+					last_snapshot: {
 						inherited: {
 							FOO: { from: 'Owner', value: 'bar' }
 						},
@@ -536,7 +492,7 @@ describe('lib/env', () => {
 
 			it('returns Firmware scope for inherited variable from Firmware', () => {
 				const data = {
-					env: {
+					last_snapshot: {
 						inherited: {
 							PARTICLE_BLE: { from: 'Firmware', value: 'true' }
 						},
@@ -557,9 +513,7 @@ describe('lib/env', () => {
 					rendered: {
 						'SHORT': 'val',
 						'VERY_LONG_VARIABLE_NAME': 'this is a very long value'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						'SHORT': { value: 'val' },
@@ -584,9 +538,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'bar'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
@@ -608,9 +560,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'bar'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
@@ -628,11 +578,7 @@ describe('lib/env', () => {
 
 		it('sets minimum widths based on headers', () => {
 			const data = {
-				last_snapshot: { rendered: {} },
-				env: {
-					inherited: {},
-					own: {}
-				}
+				last_snapshot: { rendered: {}, inherited: {}, own: {} }
 			};
 
 			const sortedKeys = [];
@@ -652,9 +598,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'bar'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
@@ -671,9 +615,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'bar'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
@@ -693,9 +635,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'bar'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
@@ -715,9 +655,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'override-value'
-					}
-				},
-				env: {
+					},
 					inherited: {
 						FOO: { from: 'Owner', value: 'original' }
 					},
@@ -738,9 +676,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						FOO: 'bar'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
@@ -766,9 +702,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						[longName]: 'value'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						[longName]: { value: 'value' }
@@ -791,9 +725,7 @@ describe('lib/env', () => {
 				last_snapshot: {
 					rendered: {
 						API_KEY: longValue
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						API_KEY: { value: longValue }
@@ -821,9 +753,7 @@ describe('lib/env', () => {
 						MEDIUM_LENGTH_VAR: 'medium value here',
 						VERY_LONG_VARIABLE_NAME_EXCEEDING_NORMAL_LIMITS: 'this is a very long value that should be fully displayed without any truncation at all',
 						X: 'y'
-					}
-				},
-				env: {
+					},
 					inherited: {},
 					own: {
 						SHORT: { value: 'val' },
