@@ -2,7 +2,6 @@
 const { expect, sinon } = require('../../test/setup');
 const {
 	hasPendingChanges,
-	getLatestValues,
 	getSortedEnvKeys,
 
 	resolveScope,
@@ -126,59 +125,6 @@ describe('lib/env', () => {
 		});
 	});
 
-	describe('getLatestValues', () => {
-		it('returns last_snapshot.rendered values directly', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar',
-						PARTICLE_BLE: 'true'
-					}
-				}
-			};
-
-			const result = getLatestValues(data);
-			expect(result).to.deep.equal({ FOO: 'bar', PARTICLE_BLE: 'true' });
-		});
-
-		it('returns last_snapshot.rendered even when env has different values', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						PARTICLE_BLE: 'false'
-					}
-				},
-				env: {
-					inherited: {
-						PARTICLE_BLE: { from: 'Firmware', value: 'true' }
-					}
-				}
-			};
-
-			const result = getLatestValues(data);
-			expect(result).to.deep.equal({ PARTICLE_BLE: 'false' });
-		});
-
-		it('returns empty object when last_snapshot.rendered is empty', () => {
-			const data = {
-				last_snapshot: { rendered: {} },
-				env: {
-					inherited: {
-						FOO: { from: 'Owner', value: 'bar' },
-						BAZ: { from: 'Product', value: 'qux' }
-					}
-				}
-			};
-
-			const result = getLatestValues(data);
-			expect(result).to.deep.equal({});
-		});
-
-		it('handles missing data gracefully', () => {
-			expect(getLatestValues({})).to.deep.equal({});
-			expect(getLatestValues(null)).to.deep.equal({});
-		});
-	});
 
 	describe('getSortedEnvKeys', () => {
 		it('returns sorted keys from last_snapshot.rendered', () => {
@@ -306,7 +252,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { sandbox: true });
+				const result = resolveScope('FOO', data.last_snapshot, { sandbox: true });
 				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
 			});
 
@@ -320,7 +266,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { org: 'my-org' });
+				const result = resolveScope('FOO', data.last_snapshot, { org: 'my-org' });
 				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
 			});
 		});
@@ -339,7 +285,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { product: 'my-product' });
+				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
 				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
 			});
 
@@ -358,7 +304,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { product: 'my-product' });
+				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
 				expect(result).to.deep.equal({ scope: 'Product', isOverridden: true });
 			});
 
@@ -375,7 +321,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { product: 'my-product' });
+				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
 				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
 			});
 
@@ -392,7 +338,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { product: 'my-product' });
+				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
 				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
 			});
 
@@ -406,7 +352,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('PARTICLE_BLE', data, { product: 'my-product' });
+				const result = resolveScope('PARTICLE_BLE', data.last_snapshot, { product: 'my-product' });
 				expect(result).to.deep.equal({ scope: 'Firmware', isOverridden: false });
 			});
 		});
@@ -425,7 +371,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { device: 'my-device' });
+				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
 				expect(result).to.deep.equal({ scope: 'Device', isOverridden: false });
 			});
 
@@ -444,7 +390,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { device: 'my-device' });
+				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
 				expect(result).to.deep.equal({ scope: 'Device', isOverridden: true });
 			});
 
@@ -458,7 +404,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { device: 'my-device' });
+				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
 				expect(result).to.deep.equal({ scope: 'Device', isOverridden: false });
 			});
 
@@ -472,7 +418,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { device: 'my-device' });
+				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
 				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
 			});
 
@@ -486,7 +432,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('FOO', data, { device: 'my-device' });
+				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
 				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
 			});
 
@@ -500,7 +446,7 @@ describe('lib/env', () => {
 					}
 				};
 
-				const result = resolveScope('PARTICLE_BLE', data, { device: 'my-device' });
+				const result = resolveScope('PARTICLE_BLE', data.last_snapshot, { device: 'my-device' });
 				expect(result).to.deep.equal({ scope: 'Firmware', isOverridden: false });
 			});
 		});
@@ -594,78 +540,70 @@ describe('lib/env', () => {
 
 	describe('buildEnvRow', () => {
 		it('builds a row with key, value, scope, and overridden status', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					},
-					inherited: {},
-					own: {
-						FOO: { value: 'bar' }
-					}
+			const lastSnapshotData = {
+				rendered: {
+					FOO: 'bar'
+				},
+				inherited: {},
+				own: {
+					FOO: { value: 'bar' }
 				}
 			};
 
-			const result = buildEnvRow('FOO', data, { sandbox: true });
+			const result = buildEnvRow('FOO', lastSnapshotData, null, { sandbox: true });
 			expect(result).to.deep.equal(['FOO', 'bar', 'Organization', 'No']);
 		});
 
 		it('includes on_device column before value when device scope is used', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					},
-					inherited: {},
-					own: {
-						FOO: { value: 'bar' }
-					}
+			const lastSnapshotData = {
+				rendered: {
+					FOO: 'bar'
 				},
-				on_device: {
-					rendered: { FOO: 'on-device-value' }
+				inherited: {},
+				own: {
+					FOO: { value: 'bar' }
 				}
 			};
+			const onDeviceData = {
+				rendered: { FOO: 'on-device-value' }
+			};
 
-			const result = buildEnvRow('FOO', data, { device: 'my-device' });
+			const result = buildEnvRow('FOO', lastSnapshotData, onDeviceData, { device: 'my-device' });
 			expect(result).to.deep.equal(['FOO', 'on-device-value', 'bar', 'Device', 'No']);
 		});
 
 		it('shows "missing" for on_device when value is not present', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					},
-					inherited: {},
-					own: {
-						FOO: { value: 'bar' }
-					}
+			const lastSnapshotData = {
+				rendered: {
+					FOO: 'bar'
 				},
-				on_device: {
-					rendered: {}
+				inherited: {},
+				own: {
+					FOO: { value: 'bar' }
 				}
 			};
+			const onDeviceData = {
+				rendered: {}
+			};
 
-			const result = buildEnvRow('FOO', data, { device: 'my-device' });
+			const result = buildEnvRow('FOO', lastSnapshotData, onDeviceData, { device: 'my-device' });
 			expect(result).to.deep.equal(['FOO', 'missing', 'bar', 'Device', 'No']);
 		});
 
 		it('shows "Yes" for overridden status when applicable', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'override-value'
-					},
-					inherited: {
-						FOO: { from: 'Owner', value: 'original' }
-					},
-					own: {
-						FOO: { value: 'override-value' }
-					}
+			const lastSnapshotData = {
+				rendered: {
+					FOO: 'override-value'
+				},
+				inherited: {
+					FOO: { from: 'Owner', value: 'original' }
+				},
+				own: {
+					FOO: { value: 'override-value' }
 				}
 			};
 
-			const result = buildEnvRow('FOO', data, { product: 'my-product' });
+			const result = buildEnvRow('FOO', lastSnapshotData, null, { product: 'my-product' });
 			expect(result).to.deep.equal(['FOO', 'override-value', 'Product', 'Yes']);
 		});
 	});
