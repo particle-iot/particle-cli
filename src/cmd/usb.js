@@ -152,7 +152,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 		const push = line => output.push(line);
 		const table = new Table({
 			head: ['Name', 'Value', 'Scope'],
-			style: { head: ['cyan', 'bold'] }
+			style: { head: ['cyan', 'bold'] },
+			wordWrap: true,
 		});
 
 		push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
