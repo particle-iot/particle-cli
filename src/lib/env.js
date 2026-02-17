@@ -25,25 +25,20 @@ async function displayEnv(data, scope, ui, api = null) {
 }
 
 async function displayScopeTitle(scope, ui, api = null) {
-	const label = await resolveScopeLabel(scope, api);
-	ui.write(ui.chalk.bold(`Scope: ${label}`));
-	ui.write('');
-}
+	let label = 'Sandbox';
 
-async function resolveScopeLabel(scope, api) {
-	if (scope.sandbox) {
-		return 'Sandbox';
-	}
 	if (scope.org) {
-		return `Organization (${scope.org})`;
+		label = `Organization (${scope.org})`;
 	}
 	if (scope.product) {
 		const productName = await getProductName(scope.product, api);
-		return `Product (${productName})`;
+		label = `Product (${productName})`;
 	}
 	if (scope.device) {
-		return `Device (${scope.device})`;
+		label = `Device (${scope.device})`;
 	}
+	ui.write(ui.chalk.bold(`Scope: ${label}`));
+	ui.write('');
 }
 
 async function getProductName(productSlug, api) {
