@@ -1,9 +1,9 @@
 'use strict';
-const os = require('os');
 const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const fs = require('node:fs/promises');
+const { displayEnv, displayRolloutInstructions } = require('../lib/env');
 
 module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
@@ -36,43 +36,10 @@ module.exports = class EnvCommands extends CLICommandBase {
 		if (json) {
 			this.ui.write(JSON.stringify(data, null, 2));
 		} else {
-			await this._displayEnv(data);
+			await displayEnv(data, { sandbox, org, product, device }, this.ui, this.api);
 		}
 	}
 
-	async _displayEnv(data) {
-		const env = data?.env ?? data; //TODO(hmontero): refine this validation
-		const noVars =
-			data.env &&
-			(
-				(!env.available || Object.keys(env.available).length === 0) &&
-				(!env.own || Object.keys(env.own).length === 0) &&
-				(!env.inherited || Object.keys(env.inherited).length === 0)
-			);
-
-		if (noVars) {
-			this.ui.write('No environment variables found.');
-			return;
-		}
-		const envs = data?.env;
-		const mixedEnvs = {
-			...envs.available, // TODO(hmontero): remove it once is removed from api
-			...envs.inherited
-		};
-		const levelDefinedEnvs = envs.own;
-		const inheritedEnvKeys = Object.keys(mixedEnvs);
-		const levelDefinedEnvKeys = Object.keys(data?.env?.own);
-		inheritedEnvKeys.forEach((key) => {
-			if (levelDefinedEnvs[key]) {
-				this._writeEnvBlock(key, levelDefinedEnvs[key], { isOverride: true });
-			} else {
-				this._writeEnvBlock(key, mixedEnvs[key]);
-			}
-		});
-		levelDefinedEnvKeys
-			.filter(key => !inheritedEnvKeys.includes(key))
-			.forEach((key) => this._writeEnvBlock(key, levelDefinedEnvs[key]));
-	}
 
 	_writeEnvBlock(key, envEntry, { isOverride = false } = {}) {
 		if (!envEntry) {
@@ -90,9 +57,9 @@ module.exports = class EnvCommands extends CLICommandBase {
 
 	async setEnv({ params, org, product, device, sandbox }) {
 		this._validateScope({ sandbox, org, product, device });
-		const { key, value } = this._parseKeyValue(params);
+		const { name, value } = this._parseKeyValue(params);
 
-		const operation = this._buildEnvVarOperation({ key, value, operation: 'Set' });
+		const operation = this._buildEnvVarOperation({ key: name, value, operation: 'Set' });
 		await this.ui.showBusySpinnerUntilResolved('Setting environment variable...',
 			this.api.patchEnv({
 				sandbox,
@@ -101,27 +68,28 @@ module.exports = class EnvCommands extends CLICommandBase {
 				deviceId: device,
 				operations: [operation]
 			}));
-		this.ui.write(`Key ${key} has been successfully set.`);
+		this.ui.write(`Environment variable ${name} has been successfully set.`);
+		await displayRolloutInstructions({ sandbox, org, product, device }, this.ui, this.api);
 	}
 
 	_parseKeyValue(params) {
-		if (params.key && params.value) {
-			return { key: params.key, value: params.value };
+		if (params.name && params.value) {
+			return { name: params.name, value: params.value };
 		}
-		if (params.key && params.key.includes('=')) {
-			const [key, ...valueParts] = params.key.split('=');
+		if (params.name && params.name.includes('=')) {
+			const [name, ...valueParts] = params.name.split('=');
 			const value = valueParts.join('=');
 
-			if (!key || value === undefined) {
-				throw new Error('Invalid format. Use either "key value" or "key=value"');
+			if (!name || value === undefined) {
+				throw new Error('Invalid format. Use either "name value" or "name=value"');
 			}
 
-			return { key, value };
+			return { name, value };
 		}
-		throw new Error('Invalid format. Use either "key value" or "key=value"');
+		throw new Error('Invalid format. Use either "name value" or "name=value"');
 	}
 
-	async deleteEnv({ params: { key }, org, product, device, sandbox, dryRun }) {
+	async deleteEnv({ params: { name }, org, product, device, sandbox }) {
 		this._validateScope({ sandbox, org, product, device });
 
 		const data = await this.api.listEnv({ sandbox, org, productId: product, deviceId: device });
@@ -129,33 +97,26 @@ module.exports = class EnvCommands extends CLICommandBase {
 		const ownVars = env.own || {};
 		const inheritedVars = env.inherited || {};
 
-		const isOwnVar = key in ownVars;
-		const isInherited = key in inheritedVars;
+		const isOwnVar = name in ownVars;
+		const isInherited = name in inheritedVars;
 
 		if (!isOwnVar && !isInherited) {
-			throw new Error(`Environment variable '${key}' does not exist at this scope.`);
+			throw new Error(`Environment variable '${name}' does not exist at this scope.`);
 		}
 		if (!isOwnVar && isInherited) {
-			this.ui.write(this.ui.chalk.yellow(`Warning: '${key}' is inherited from a parent scope and cannot be deleted at this level.`));
-			const inheritedFrom = inheritedVars[key]?.from || 'parent scope';
+			this.ui.write(this.ui.chalk.yellow(`Warning: '${name}' is inherited from a parent scope and cannot be deleted at this level.`));
+			const inheritedFrom = inheritedVars[name]?.from || 'parent scope';
 			this.ui.write(this.ui.chalk.yellow(`This variable is defined at: ${inheritedFrom}`));
 			this.ui.write(this.ui.chalk.yellow(`To delete it, you must delete it from the scope where it's defined.`));
 			return;
 		}
-		const currentValue = ownVars[key]?.value;
 
 		if (isOwnVar && isInherited) {
-			const inheritedValue = inheritedVars[key]?.value;
-			this.ui.write(this.ui.chalk.yellow(`Note: '${key}' is an overridden variable. If you delete it, the inherited value '${inheritedValue}' will become visible.`));
+			const inheritedValue = inheritedVars[name]?.value;
+			this.ui.write(this.ui.chalk.yellow(`Note: '${name}' is an overridden variable. If you delete it, the inherited value '${inheritedValue}' will become visible.`));
 		}
 
-		if (dryRun) {
-			this.ui.write(this.ui.chalk.cyan(`[DRY RUN] Would delete environment variable '${key}'`));
-			this.ui.write(`Current value: ${currentValue}`);
-			return;
-		}
-
-		const operation = this._buildEnvVarOperation({ key, operation: 'Unset' });
+		const operation = this._buildEnvVarOperation({ key: name, operation: 'Unset' });
 		await this.ui.showBusySpinnerUntilResolved('Deleting environment variable...',
 			this.api.patchEnv({
 				sandbox,
@@ -164,54 +125,8 @@ module.exports = class EnvCommands extends CLICommandBase {
 				deviceId: device,
 				operations: [operation]
 			}));
-		this.ui.write(`Key ${key} has been successfully deleted.`);
-	}
-
-	async rollout({ org, product, device, sandbox, yes, when }) {
-		this._validateScope({ sandbox, org, product, device });
-
-		const target = sandbox ? 'sandbox' : (org || product || device);
-
-		const rolloutPreviewFromSnapShot = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
-			this.api.getRollout({ sandbox, org, productId: product, deviceId: device }));
-		const rolloutPreview = rolloutPreviewFromSnapShot.from_snapshot;
-		this._displayRolloutChanges(rolloutPreview);
-
-		if (rolloutPreview?.changes?.length > 0) {
-			if (!yes) {
-				const confirmQuestion = {
-					type: 'confirm',
-					name: 'confirm',
-					message: `Are you sure you want to apply these changes to ${target}?`,
-					default: false
-				};
-				const { confirm } = await this.ui.prompt([confirmQuestion]);
-				if (!confirm) {
-					this.ui.write('Rollout cancelled.');
-					return;
-				}
-			}
-			let rolloutWhen = when || 'Connect';
-			if (!yes) {
-				const whenQuestion = {
-					type: 'list',
-					name: 'when',
-					message: 'When should the rollout be applied to each device?',
-					choices: [
-						{ name: 'Immediately', value: 'Immediate' },
-						{ name: 'On next connection', value: 'Connect' }
-					],
-					default: 'Connect',
-					dataTesting: 'when-prompt'
-				};
-				const { when: whenAnswer } = await this.ui.prompt([whenQuestion]);
-				rolloutWhen = whenAnswer;
-			}
-			await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
-				this.api.performEnvRollout({ sandbox, org, productId: product, deviceId: device, when: rolloutWhen }));
-
-			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
-		}
+		this.ui.write(`Environment variable ${name} has been successfully deleted.`);
+		await displayRolloutInstructions({ sandbox, org, product, device }, this.ui, this.api);
 	}
 
 	async _getOperationsFromFile(filename) {
@@ -238,36 +153,6 @@ module.exports = class EnvCommands extends CLICommandBase {
 			key,
 			value
 		};
-	}
-
-	_displayRolloutChanges(rolloutData) {
-		const { changes, unchanged } = rolloutData;
-
-		this.ui.write(this.ui.chalk.bold('Environment Variable Rollout Details:'));
-		this.ui.write('------------------------------------------------');
-
-		if (changes && changes.length > 0) {
-			this.ui.write(this.ui.chalk.cyan.bold('Changes to be applied:'));
-			changes.forEach(change => {
-				if (change.op === 'Added') {
-					this.ui.write(`  ${this.ui.chalk.green('+')} ${change.key}: ${change.after}`);
-				} else if (change.op === 'Removed') {
-					this.ui.write(`  ${this.ui.chalk.red('-')} ${change.key}`);
-				} else if (change.op === 'Changed') {
-					this.ui.write(`  ${this.ui.chalk.yellow('~')} ${change.key}: ${this.ui.chalk.red(change.before)} -> ${this.ui.chalk.green(change.after)}`);
-				}
-			});
-		} else {
-			this.ui.write(this.ui.chalk.gray('No changes to be applied.'));
-		}
-
-		if (unchanged && Object.keys(unchanged).length > 0) {
-			this.ui.write(this.ui.chalk.bold(`${os.EOL}Unchanged environment variables:`));
-			Object.entries(unchanged).forEach(([key, value]) => {
-				this.ui.write(`  ${key}: ${value}`);
-			});
-		}
-		this.ui.write('------------------------------------------------');
 	}
 };
 
