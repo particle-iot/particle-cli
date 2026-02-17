@@ -333,9 +333,9 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 		const productSlug = product?.product?.slug;
 
 		if (productSlug) {
-			url = `${baseUrl}/${productSlug}/devices/${scope.device}/env/edit`;
+			url = `${baseUrl}/${productSlug}/devices/${scope.device}/environment`;
 		} else {
-			url = `${baseUrl}/devices/${scope.device}/env/edit`;
+			url = `${baseUrl}/devices/${scope.device}/environment`;
 		}
 	}
 	ui.write('To review and save this changes in the console');
