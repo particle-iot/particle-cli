@@ -2,6 +2,7 @@
 const os = require('os');
 const Table = require('cli-table');
 const settings = require('../../settings');
+const _ = require('lodash');
 
 /**
  * Resolve the scope and override status for a given environment variable
@@ -57,16 +58,12 @@ function resolveScope(key, lastSnapshotData, scope) {
  * @param {Object} api - API instance for fetching device information (required for device scope with pending changes)
  */
 async function displayEnv(data, scope, ui, api = null) {
-	const lastSnapshotRendered = data?.last_snapshot?.rendered || {};
-	const envInherited = data?.env?.inherited || {};
-	const envOwn = data?.env?.own || {};
-
-	const hasSnapshotValues = Object.keys(lastSnapshotRendered).length > 0;
-	const pendingChanges = hasPendingChanges(lastSnapshotRendered, envOwn, envInherited);
+	const noData = Object.keys({ ...data.last_snapshot?.own, ...data.last_snapshot?.inherited }).length === 0;
+	const pendingChanges = _.isEqual(data.last_snapshot?.own, data.env?.own);
 
 	await displayScopeTitle(scope, ui, api);
 
-	if (!hasSnapshotValues) {
+	if (noData) {
 		ui.write('No environment variables found.');
 	} else {
 		const table = buildEnvTable(data, scope);
@@ -74,33 +71,9 @@ async function displayEnv(data, scope, ui, api = null) {
 	}
 
 	if (pendingChanges) {
-		ui.write(ui.chalk.yellow.bold('There are pending changes that have not been applied yet.'));
+		ui.write(ui.chalk.yellow.bold('\nThere are pending changes that have not been applied yet.'));
 		await displayRolloutInstructions(scope, ui, api);
 	}
-}
-
-/**
- * Check if there are pending changes between snapshot and own environment variables
- * @param {Object} lastSnapshotRendered - The rendered snapshot data
- * @param {Object} envOwn - The own environment variables
- * @param {Object} envInherited - The inherited environment variables
- * @returns {boolean} True if there are pending changes
- */
-function hasPendingChanges(lastSnapshotRendered, envOwn, envInherited = {}) {
-	const keys = new Set([
-		...Object.keys(lastSnapshotRendered),
-		...Object.keys(envOwn)
-	]);
-
-	for (const key of keys) {
-		const snap = lastSnapshotRendered[key];
-		const effective = envOwn[key]?.value ?? envInherited[key]?.value;
-		const snapVal = key in lastSnapshotRendered ? snap : undefined;
-		if (snapVal !== effective) {
-			return true;
-		}
-	}
-	return false;
 }
 
 async function displayScopeTitle(scope, ui, api = null) {
@@ -338,12 +311,11 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 			url = `${baseUrl}/devices/${scope.device}/environment`;
 		}
 	}
-	ui.write('To review and save this changes in the console');
-	ui.write(`Visit ${ui.chalk.cyan(url)}`);
+	ui.write('To review and save these changes in the Console, visit:');
+	ui.write(ui.chalk.cyan(url));
 }
 
 module.exports = {
-	hasPendingChanges,
 	getSortedEnvKeys,
 	resolveScope,
 	calculateColumnWidths,
