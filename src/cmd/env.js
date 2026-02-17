@@ -3,7 +3,7 @@ const CLICommandBase = require('./base');
 const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const fs = require('node:fs/promises');
-const { displayEnv, displayRolloutChanges, displayRolloutInstructions } = require('../lib/env');
+const { displayEnv, displayRolloutInstructions } = require('../lib/env');
 
 module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
@@ -127,53 +127,6 @@ module.exports = class EnvCommands extends CLICommandBase {
 			}));
 		this.ui.write(`Environment variable ${name} has been successfully deleted.`);
 		await displayRolloutInstructions({ sandbox, org, product, device }, this.ui, this.api);
-	}
-
-	async rollout({ org, product, device, sandbox, yes, when }) {
-		this._validateScope({ sandbox, org, product, device });
-
-		const target = sandbox ? 'sandbox' : (org || product || device);
-
-		const rolloutPreviewFromSnapShot = await this.ui.showBusySpinnerUntilResolved('Getting environment variable rollout preview...',
-			this.api.getRollout({ sandbox, org, productId: product, deviceId: device }));
-		const rolloutPreview = rolloutPreviewFromSnapShot.from_snapshot;
-		displayRolloutChanges(rolloutPreview, this.ui);
-
-		if (rolloutPreview?.changes?.length > 0) {
-			if (!yes) {
-				const confirmQuestion = {
-					type: 'confirm',
-					name: 'confirm',
-					message: `Are you sure you want to apply these changes to ${target}?`,
-					default: false
-				};
-				const { confirm } = await this.ui.prompt([confirmQuestion]);
-				if (!confirm) {
-					this.ui.write('Rollout cancelled.');
-					return;
-				}
-			}
-			let rolloutWhen = when || 'Connect';
-			if (!yes) {
-				const whenQuestion = {
-					type: 'list',
-					name: 'when',
-					message: 'When should the rollout be applied to each device?',
-					choices: [
-						{ name: 'Immediately', value: 'Immediate' },
-						{ name: 'On next connection', value: 'Connect' }
-					],
-					default: 'Connect',
-					dataTesting: 'when-prompt'
-				};
-				const { when: whenAnswer } = await this.ui.prompt([whenQuestion]);
-				rolloutWhen = whenAnswer;
-			}
-			await this.ui.showBusySpinnerUntilResolved(`Applying changes to ${target}...`,
-				this.api.performEnvRollout({ sandbox, org, productId: product, deviceId: device, when: rolloutWhen }));
-
-			this.ui.write(this.ui.chalk.green(`Successfully applied rollout to ${target}.`));
-		}
 	}
 
 	async _getOperationsFromFile(filename) {
