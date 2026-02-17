@@ -1,26 +1,25 @@
 'use strict';
 const { expect, sinon } = require('../../test/setup');
 const {
-	hasPendingChanges,
 	getSortedEnvKeys,
-
-	resolveScope,
 	calculateColumnWidths,
-	buildEnvRow,
 	buildEnvTable,
+	displayScopeTitle,
 	displayEnv,
-	displayRolloutChanges
+	displayRolloutInstructions
 } = require('./env');
 
 describe('lib/env', () => {
 	describe('getSortedEnvKeys', () => {
-		it('returns sorted keys from last_snapshot.rendered', () => {
+		it('returns sorted keys from last_snapshot.own and last_snapshot.inherited', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						ZEBRA: 'z',
-						APPLE: 'a',
-						BANANA: 'b'
+					own: {
+						ZEBRA: { value: 'z' },
+						APPLE: { value: 'a' }
+					},
+					inherited: {
+						BANANA: { value: 'b', from: 'Owner' }
 					}
 				}
 			};
@@ -29,32 +28,12 @@ describe('lib/env', () => {
 			expect(result).to.deep.equal(['APPLE', 'BANANA', 'ZEBRA']);
 		});
 
-		it('returns only keys from last_snapshot.rendered', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					}
-				},
-				env: {
-					inherited: {
-						ANOTHER: { from: 'Owner', value: 'value' }
-					}
-				}
-			};
-
-			const result = getSortedEnvKeys(data);
-			expect(result).to.deep.equal(['FOO']);
-		});
-
 		it('includes on_device keys in the result', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					}
-				},
-				env: {
+					own: {
+						FOO: { value: 'bar' }
+					},
 					inherited: {}
 				},
 				on_device: {
@@ -69,31 +48,34 @@ describe('lib/env', () => {
 			expect(result).to.deep.equal(['DEVICE_ONLY', 'FOO']);
 		});
 
-		it('returns unique keys when keys exist in both snapshot and on_device', () => {
+		it('returns unique keys when keys exist in multiple sources', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'bar',
-						BAZ: 'qux',
-						FIRMWARE_KEY: 'fw'
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {
+						FOO: { value: 'inherited', from: 'Owner' },
+						BAZ: { value: 'qux', from: 'Owner' }
 					}
 				},
 				on_device: {
 					rendered: {
-						FOO: 'bar',
-						FIRMWARE_KEY: 'fw'
+						FOO: 'bar'
 					}
 				}
 			};
 
 			const result = getSortedEnvKeys(data);
-			expect(result).to.deep.equal(['BAZ', 'FIRMWARE_KEY', 'FOO']);
+			expect(result).to.deep.equal(['BAZ', 'FOO']);
 		});
 
 		it('returns empty array when no keys exist', () => {
 			const data = {
-				last_snapshot: { rendered: {} },
-				env: { inherited: {} }
+				last_snapshot: {
+					own: {},
+					inherited: {}
+				}
 			};
 
 			const result = getSortedEnvKeys(data);
@@ -101,411 +83,66 @@ describe('lib/env', () => {
 		});
 
 		it('handles missing last_snapshot', () => {
-			const data = {
-				env: {
-					inherited: {
-						FOO: { from: 'Firmware', value: 'bar' }
-					}
-				}
-			};
+			const data = {};
 
 			const result = getSortedEnvKeys(data);
 			expect(result).to.deep.equal([]);
-		});
-
-		it('handles missing env.inherited', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					}
-				}
-			};
-
-			const result = getSortedEnvKeys(data);
-			expect(result).to.deep.equal(['FOO']);
-		});
-	});
-
-	describe('resolveScope', () => {
-		describe('sandbox/org scope', () => {
-			it('returns Sandbox for sandbox scope', () => {
-				const data = {
-					last_snapshot: {
-						inherited: {},
-						own: {
-							FOO: { value: 'bar' }
-						}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { sandbox: true });
-				expect(result).to.deep.equal({ scope: 'Sandbox', isOverridden: false });
-			});
-
-			it('returns Organization for org scope', () => {
-				const data = {
-					last_snapshot: {
-						inherited: {},
-						own: {
-							FOO: { value: 'bar' }
-						}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { org: 'my-org' });
-				expect(result).to.deep.equal({ scope: 'Organization', isOverridden: false });
-			});
-		});
-
-		describe('product scope', () => {
-			it('returns Product scope for own variable', () => {
-				const data = {
-					last_snapshot: {
-						rendered: {
-							FOO: 'bar'
-						},
-						inherited: {},
-						own: {
-							FOO: { value: 'bar' }
-						}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
-				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
-			});
-
-			it('returns isOverridden true when own variable overrides inherited', () => {
-				const data = {
-					last_snapshot: {
-						rendered: {
-							FOO: 'product-value'
-						},
-						inherited: {
-							FOO: { from: 'Owner', value: 'org-value' }
-						},
-						own: {
-							FOO: { value: 'product-value' }
-						}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
-				expect(result).to.deep.equal({ scope: 'Product', isOverridden: true });
-			});
-
-			it('returns Owner scope for inherited variable from Owner', () => {
-				const data = {
-					last_snapshot: {
-						rendered: {
-							FOO: 'bar'
-						},
-						inherited: {
-							FOO: { from: 'Owner', value: 'bar' }
-						},
-						own: {}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
-				expect(result).to.deep.equal({ scope: 'Owner', isOverridden: false });
-			});
-
-			it('returns Product scope for inherited variable from Product', () => {
-				const data = {
-					last_snapshot: {
-						rendered: {
-							FOO: 'bar'
-						},
-						inherited: {
-							FOO: { from: 'Product', value: 'bar' }
-						},
-						own: {}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { product: 'my-product' });
-				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
-			});
-
-			it('returns Firmware scope for inherited variable from Firmware', () => {
-				const data = {
-					last_snapshot: {
-						inherited: {
-							PARTICLE_BLE: { from: 'Firmware', value: 'true' }
-						},
-						own: {}
-					}
-				};
-
-				const result = resolveScope('PARTICLE_BLE', data.last_snapshot, { product: 'my-product' });
-				expect(result).to.deep.equal({ scope: 'Firmware', isOverridden: false });
-			});
-		});
-
-		describe('device scope', () => {
-			it('returns Device scope for own variable', () => {
-				const data = {
-					last_snapshot: {
-						rendered: {
-							FOO: 'bar'
-						},
-						inherited: {},
-						own: {
-							FOO: { value: 'bar' }
-						}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Device', isOverridden: false });
-			});
-
-			it('returns isOverridden true when own variable overrides inherited', () => {
-				const data = {
-					last_snapshot: {
-						rendered: {
-							FOO: 'device-value'
-						},
-						inherited: {
-							FOO: { from: 'Product', value: 'product-value' }
-						},
-						own: {
-							FOO: { value: 'device-value' }
-						}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Device', isOverridden: true });
-			});
-
-			it('returns Device scope for inherited variable from Device', () => {
-				const data = {
-					last_snapshot: {
-						inherited: {
-							FOO: { from: 'Device', value: 'bar' }
-						},
-						own: {}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Device', isOverridden: false });
-			});
-
-			it('returns Product scope for inherited variable from Product', () => {
-				const data = {
-					last_snapshot: {
-						inherited: {
-							FOO: { from: 'Product', value: 'bar' }
-						},
-						own: {}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Product', isOverridden: false });
-			});
-
-			it('returns Owner scope for inherited variable from Owner', () => {
-				const data = {
-					last_snapshot: {
-						inherited: {
-							FOO: { from: 'Owner', value: 'bar' }
-						},
-						own: {}
-					}
-				};
-
-				const result = resolveScope('FOO', data.last_snapshot, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Owner', isOverridden: false });
-			});
-
-			it('returns Firmware scope for inherited variable from Firmware', () => {
-				const data = {
-					last_snapshot: {
-						inherited: {
-							PARTICLE_BLE: { from: 'Firmware', value: 'true' }
-						},
-						own: {}
-					}
-				};
-
-				const result = resolveScope('PARTICLE_BLE', data.last_snapshot, { device: 'my-device' });
-				expect(result).to.deep.equal({ scope: 'Firmware', isOverridden: false });
-			});
 		});
 	});
 
 	describe('calculateColumnWidths', () => {
 		it('calculates widths based on content', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						'SHORT': 'val',
-						'VERY_LONG_VARIABLE_NAME': 'this is a very long value'
-					},
-					inherited: {},
-					own: {
-						'SHORT': { value: 'val' },
-						'VERY_LONG_VARIABLE_NAME': { value: 'this is a very long value' }
-					}
-				}
-			};
+			const tableRows = [
+				{ key: 'SHORT', onDeviceValue: 'missing', value: 'val', scope: 'Owner', isOverriden: 'No' },
+				{ key: 'VERY_LONG_VARIABLE_NAME', onDeviceValue: 'missing', value: 'this is a very long value', scope: 'Owner', isOverriden: 'No' }
+			];
 
-			const sortedKeys = ['SHORT', 'VERY_LONG_VARIABLE_NAME'];
-			const result = calculateColumnWidths(sortedKeys, data, { sandbox: true });
+			const result = calculateColumnWidths(tableRows);
 
-			// Name column should be at least as wide as the longest key plus padding
-			expect(result.nameWidth).to.be.at.least('VERY_LONG_VARIABLE_NAME'.length);
-			// Value column should be at least as wide as the longest value plus padding
-			expect(result.valueWidth).to.be.at.least('this is a very long value'.length);
-			// Scope column should accommodate 'Sandbox'
-			expect(result.scopeWidth).to.be.at.least('Sandbox'.length);
+			expect(result['Name']).to.be.at.least('VERY_LONG_VARIABLE_NAME'.length + 2);
+			expect(result['Value']).to.be.at.least('this is a very long value'.length + 2);
 		});
 
-		it('includes onDevice column width when device scope is used', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					},
-					inherited: {},
-					own: {
-						FOO: { value: 'bar' }
-					}
-				},
-				on_device: {
-					rendered: { FOO: 'very-long-on-device-value' }
-				}
-			};
+		it('sets minimum widths based on column headers', () => {
+			const tableRows = [];
+			const result = calculateColumnWidths(tableRows);
 
-			const sortedKeys = ['FOO'];
-			const result = calculateColumnWidths(sortedKeys, data, { device: 'my-device' });
-
-			expect(result.onDeviceWidth).to.be.at.least('very-long-on-device-value'.length);
+			expect(result['Name']).to.be.at.least('Name'.length + 2);
+			expect(result['On Device']).to.be.at.least('On Device'.length + 2);
+			expect(result['Value']).to.be.at.least('Value'.length + 2);
+			expect(result['Scope']).to.be.at.least('Scope'.length + 2);
+			expect(result['Overridden']).to.be.at.least('Overridden'.length + 2);
 		});
 
-		it('handles missing on_device data', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					},
-					inherited: {},
-					own: {
-						FOO: { value: 'bar' }
-					}
-				},
-				on_device: null
-			};
+		it('accounts for on device values in column width', () => {
+			const tableRows = [
+				{ key: 'FOO', onDeviceValue: 'very-long-on-device-value', value: 'bar', scope: 'Device', isOverriden: 'No' }
+			];
 
-			const sortedKeys = ['FOO'];
-			const result = calculateColumnWidths(sortedKeys, data, { device: 'my-device' });
+			const result = calculateColumnWidths(tableRows);
 
-			// Should at least accommodate 'missing'
-			expect(result.onDeviceWidth).to.be.at.least('missing'.length);
+			expect(result['On Device']).to.be.at.least('very-long-on-device-value'.length + 2);
 		});
 
-		it('sets minimum widths based on headers', () => {
-			const data = {
-				last_snapshot: { rendered: {}, inherited: {}, own: {} }
-			};
+		it('accounts for scope values in column width', () => {
+			const tableRows = [
+				{ key: 'FOO', onDeviceValue: 'missing', value: 'bar', scope: 'Organization', isOverriden: 'No' }
+			];
 
-			const sortedKeys = [];
-			const result = calculateColumnWidths(sortedKeys, data, { sandbox: true });
+			const result = calculateColumnWidths(tableRows);
 
-			// Headers + padding
-			expect(result.nameWidth).to.be.at.least('Name'.length + 2);
-			expect(result.valueWidth).to.be.at.least('Value'.length + 2);
-			expect(result.scopeWidth).to.be.at.least('Scope'.length + 2);
-			expect(result.overriddenWidth).to.be.at.least('Overridden'.length + 2);
-		});
-	});
-
-	describe('buildEnvRow', () => {
-		it('builds a row with key, value, scope, and overridden status', () => {
-			const lastSnapshotData = {
-				rendered: {
-					FOO: 'bar'
-				},
-				inherited: {},
-				own: {
-					FOO: { value: 'bar' }
-				}
-			};
-
-			const result = buildEnvRow('FOO', lastSnapshotData, null, { sandbox: true });
-			expect(result).to.deep.equal(['FOO', 'bar', 'Sandbox', 'No']);
-		});
-
-		it('includes on_device column before value when device scope is used', () => {
-			const lastSnapshotData = {
-				rendered: {
-					FOO: 'bar'
-				},
-				inherited: {},
-				own: {
-					FOO: { value: 'bar' }
-				}
-			};
-			const onDeviceData = {
-				rendered: { FOO: 'on-device-value' }
-			};
-
-			const result = buildEnvRow('FOO', lastSnapshotData, onDeviceData, { device: 'my-device' });
-			expect(result).to.deep.equal(['FOO', 'on-device-value', 'bar', 'Device', 'No']);
-		});
-
-		it('shows "missing" for on_device when value is not present', () => {
-			const lastSnapshotData = {
-				rendered: {
-					FOO: 'bar'
-				},
-				inherited: {},
-				own: {
-					FOO: { value: 'bar' }
-				}
-			};
-			const onDeviceData = {
-				rendered: {}
-			};
-
-			const result = buildEnvRow('FOO', lastSnapshotData, onDeviceData, { device: 'my-device' });
-			expect(result).to.deep.equal(['FOO', 'missing', 'bar', 'Device', 'No']);
-		});
-
-		it('shows "Yes" for overridden status when applicable', () => {
-			const lastSnapshotData = {
-				rendered: {
-					FOO: 'override-value'
-				},
-				inherited: {
-					FOO: { from: 'Owner', value: 'original' }
-				},
-				own: {
-					FOO: { value: 'override-value' }
-				}
-			};
-
-			const result = buildEnvRow('FOO', lastSnapshotData, null, { product: 'my-product' });
-			expect(result).to.deep.equal(['FOO', 'override-value', 'Product', 'Yes']);
+			expect(result['Scope']).to.be.at.least('Organization'.length + 2);
 		});
 	});
 
 	describe('buildEnvTable', () => {
-		it('builds a table with proper structure', () => {
+		it('builds a table with proper structure for sandbox scope', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					},
-					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
-					}
+					},
+					inherited: {}
 				}
 			};
 
@@ -518,132 +155,114 @@ describe('lib/env', () => {
 			expect(output).to.include('Overridden');
 			expect(output).to.include('FOO');
 			expect(output).to.include('bar');
-			expect(output).to.include('Sandbox');
+			expect(output).to.include('Owner');
 		});
 
-		it('handles very long environment variable names without truncation', () => {
-			const longName = 'VERY_LONG_ENVIRONMENT_VARIABLE_NAME_THAT_EXCEEDS_TYPICAL_LENGTH';
+		it('shows scope from inherited "from" field', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						[longName]: 'value'
-					},
-					inherited: {},
-					own: {
-						[longName]: { value: 'value' }
+					own: {},
+					inherited: {
+						FOO: { value: 'bar', from: 'Firmware' }
 					}
-				}
-			};
-
-			const table = buildEnvTable(data, { sandbox: true });
-			const output = table.toString();
-
-			// Should include the full name without truncation
-			expect(output).to.include(longName);
-			// Should not include truncation indicator
-			expect(output).to.not.include('...');
-		});
-
-		it('handles very long environment variable values without truncation', () => {
-			const longValue = 'var_too_long_1234567890abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz1234567890';
-			const data = {
-				last_snapshot: {
-					rendered: {
-						API_KEY: longValue
-					},
-					inherited: {},
-					own: {
-						API_KEY: { value: longValue }
-					}
-				}
-			};
-
-			const table = buildEnvTable(data, { sandbox: true });
-			const output = table.toString();
-
-			// Should include the full value without truncation
-			expect(output).to.include(longValue);
-			// Should not include truncation indicator at the value position
-			const lines = output.split('\n');
-			const apiKeyLine = lines.find(line => line.includes('API_KEY'));
-			expect(apiKeyLine).to.exist;
-			expect(apiKeyLine).to.include(longValue);
-		});
-
-		it('handles multiple variables with varying lengths and adjusts columns accordingly', () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						SHORT: 'val',
-						MEDIUM_LENGTH_VAR: 'medium value here',
-						VERY_LONG_VARIABLE_NAME_EXCEEDING_NORMAL_LIMITS: 'this is a very long value that should be fully displayed without any truncation at all',
-						X: 'y'
-					},
-					inherited: {},
-					own: {
-						SHORT: { value: 'val' },
-						MEDIUM_LENGTH_VAR: { value: 'medium value here' },
-						VERY_LONG_VARIABLE_NAME_EXCEEDING_NORMAL_LIMITS: { value: 'this is a very long value that should be fully displayed without any truncation at all' },
-						X: { value: 'y' }
-					}
-				}
-			};
-
-			const table = buildEnvTable(data, { sandbox: true });
-			const output = table.toString();
-
-			// All variable names should be present
-			expect(output).to.include('SHORT');
-			expect(output).to.include('MEDIUM_LENGTH_VAR');
-			expect(output).to.include('VERY_LONG_VARIABLE_NAME_EXCEEDING_NORMAL_LIMITS');
-			expect(output).to.include('X');
-
-			// All values should be present in full
-			expect(output).to.include('val');
-			expect(output).to.include('medium value here');
-			expect(output).to.include('this is a very long value that should be fully displayed without any truncation at all');
-			expect(output).to.include('y');
-		});
-
-		it('handles long on_device values for device scope without truncation', () => {
-			const longOnDeviceValue = 'on-device-value-that-is-extremely-long-and-should-not-be-truncated-123456789';
-			const data = {
-				last_snapshot: {
-					rendered: {
-						CONFIG: 'bar'
-					}
-				},
-				env: {
-					inherited: {},
-					own: {
-						CONFIG: { value: 'bar' }
-					}
-				},
-				on_device: {
-					rendered: { CONFIG: longOnDeviceValue }
 				}
 			};
 
 			const table = buildEnvTable(data, { device: 'my-device' });
 			const output = table.toString();
 
-			// Should include the full on_device value
-			expect(output).to.include(longOnDeviceValue);
-			expect(output).to.include('On Device');
+			expect(output).to.include('Firmware');
+		});
+
+		it('shows overridden as Yes when key exists in both own and inherited', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'override-value' }
+					},
+					inherited: {
+						FOO: { value: 'original', from: 'Owner' }
+					}
+				}
+			};
+
+			const table = buildEnvTable(data, { product: 'my-product' });
+			const output = table.toString();
+
+			expect(output).to.include('Yes');
+		});
+
+		it('shows overridden as No when key is only in own', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { sandbox: true });
+			const output = table.toString();
+
+			expect(output).to.include('No');
+		});
+
+		it('uses "Owner" as scope for own variables in sandbox/org scope', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { sandbox: true });
+			const output = table.toString();
+
+			expect(output).to.include('Owner');
+		});
+
+		it('uses "Product" as scope for own variables in product scope', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { product: 'my-product' });
+			const output = table.toString();
+
+			expect(output).to.include('Product');
+		});
+
+		it('uses "Device" as scope for own variables in device scope', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { device: 'my-device' });
+			const output = table.toString();
+
+			expect(output).to.include('Device');
 		});
 
 		it('includes On Device column for device scope', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					}
-				},
-				env: {
-					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
-					}
+					},
+					inherited: {}
 				},
 				on_device: {
 					rendered: { FOO: 'device-val' }
@@ -660,15 +279,10 @@ describe('lib/env', () => {
 		it('does not include On Device column for non-device scopes', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					}
-				},
-				env: {
-					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
-					}
+					},
+					inherited: {}
 				}
 			};
 
@@ -678,22 +292,34 @@ describe('lib/env', () => {
 			expect(output).to.not.include('On Device');
 		});
 
+		it('shows "missing" for on_device when value is not present', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				},
+				on_device: {
+					rendered: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { device: 'my-device' });
+			const output = table.toString();
+
+			expect(output).to.include('missing');
+		});
+
 		it('sorts variables alphabetically', () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						ZEBRA: 'z',
-						APPLE: 'a',
-						BANANA: 'b'
-					}
-				},
-				env: {
-					inherited: {
-						ZEBRA: { from: 'Owner', value: 'z' },
-						APPLE: { from: 'Owner', value: 'a' },
-						BANANA: { from: 'Owner', value: 'b' }
+					own: {
+						ZEBRA: { value: 'z' },
+						APPLE: { value: 'a' },
+						BANANA: { value: 'b' }
 					},
-					own: {}
+					inherited: {}
 				}
 			};
 
@@ -707,6 +333,62 @@ describe('lib/env', () => {
 			expect(appleIndex).to.be.lessThan(bananaIndex);
 			expect(bananaIndex).to.be.lessThan(zebraIndex);
 		});
+
+		it('handles very long environment variable names without truncation', () => {
+			const longName = 'VERY_LONG_ENVIRONMENT_VARIABLE_NAME_THAT_EXCEEDS_TYPICAL_LENGTH';
+			const data = {
+				last_snapshot: {
+					own: {
+						[longName]: { value: 'value' }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { sandbox: true });
+			const output = table.toString();
+
+			expect(output).to.include(longName);
+			expect(output).to.not.include('...');
+		});
+
+		it('handles very long environment variable values without truncation', () => {
+			const longValue = 'var_too_long_1234567890abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrstuvwxyz1234567890';
+			const data = {
+				last_snapshot: {
+					own: {
+						API_KEY: { value: longValue }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { sandbox: true });
+			const output = table.toString();
+
+			expect(output).to.include(longValue);
+		});
+
+		it('handles long on_device values for device scope without truncation', () => {
+			const longOnDeviceValue = 'on-device-value-that-is-extremely-long-and-should-not-be-truncated-123456789';
+			const data = {
+				last_snapshot: {
+					own: {
+						CONFIG: { value: 'bar' }
+					},
+					inherited: {}
+				},
+				on_device: {
+					rendered: { CONFIG: longOnDeviceValue }
+				}
+			};
+
+			const table = buildEnvTable(data, { device: 'my-device' });
+			const output = table.toString();
+
+			expect(output).to.include(longOnDeviceValue);
+			expect(output).to.include('On Device');
+		});
 	});
 
 	describe('displayEnv', () => {
@@ -714,18 +396,16 @@ describe('lib/env', () => {
 
 		beforeEach(() => {
 			ui = {
-				write: [],
+				_writes: [],
+				write: function(str) {
+					this._writes.push(str);
+				},
 				chalk: {
 					yellow: (str) => str,
 					cyan: (str) => str,
 					bold: (str) => str,
 					green: (str) => str
 				}
-			};
-			// Capture writes
-			ui.write = function(str) {
-				this._writes = this._writes || [];
-				this._writes.push(str);
 			};
 			ui.chalk.cyan.bold = (str) => str;
 			ui.chalk.yellow.bold = (str) => str;
@@ -734,14 +414,14 @@ describe('lib/env', () => {
 		it('displays table when variables exist', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					}
-				},
-				env: {
-					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				},
+				env: {
+					own: {
+						FOO: { value: 'different' }
 					}
 				}
 			};
@@ -756,9 +436,11 @@ describe('lib/env', () => {
 
 		it('displays "No environment variables found" when empty', async () => {
 			const data = {
-				last_snapshot: { rendered: {} },
+				last_snapshot: {
+					own: {},
+					inherited: {}
+				},
 				env: {
-					inherited: {},
 					own: {}
 				}
 			};
@@ -770,37 +452,15 @@ describe('lib/env', () => {
 			expect(output).to.include('No environment variables found.');
 		});
 
-		it('displays pending changes warning when changes exist', async () => {
+		it('displays pending changes warning when last_snapshot.own equals env.own', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'old-value'
-					}
-				},
-				env: {
-					inherited: {},
 					own: {
-						FOO: { value: 'new-value' }
-					}
-				}
-			};
-
-			await displayEnv(data, { sandbox: true }, ui);
-
-			const output = ui._writes.join('\n');
-			expect(output).to.include('There are pending changes that have not been applied yet.');
-			expect(output).to.include('To review and save this changes in the console');
-		});
-
-		it('does not display pending changes warning when no changes exist', async () => {
-			const data = {
-				last_snapshot: {
-					rendered: {
-						FOO: 'bar'
-					}
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
 				},
 				env: {
-					inherited: {},
 					own: {
 						FOO: { value: 'bar' }
 					}
@@ -810,21 +470,41 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
+			expect(output).to.include('There are pending changes that have not been applied yet.');
+		});
+
+		it('does not display pending changes warning when last_snapshot.own differs from env.own', async () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'old-value' }
+					},
+					inherited: {}
+				},
+				env: {
+					own: {
+						FOO: { value: 'new-value' }
+					}
+				}
+			};
+
+			await displayEnv(data, { sandbox: true }, ui);
+
+			const output = ui._writes.join('\n');
 			expect(output).to.not.include('There are pending changes that have not been applied yet.');
-			expect(output).to.not.include('To review and save this changes in the console');
 		});
 
 		it('displays rollout URL for sandbox when pending changes exist', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'old-value'
-					}
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
 				},
 				env: {
-					inherited: {},
 					own: {
-						FOO: { value: 'new-value' }
+						FOO: { value: 'bar' }
 					}
 				}
 			};
@@ -838,14 +518,14 @@ describe('lib/env', () => {
 		it('displays rollout URL for product when pending changes exist', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'old-value'
-					}
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
 				},
 				env: {
-					inherited: {},
 					own: {
-						FOO: { value: 'new-value' }
+						FOO: { value: 'bar' }
 					}
 				}
 			};
@@ -874,14 +554,14 @@ describe('lib/env', () => {
 
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'old-value'
-					}
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
 				},
 				env: {
-					inherited: {},
 					own: {
-						FOO: { value: 'new-value' }
+						FOO: { value: 'bar' }
 					}
 				}
 			};
@@ -894,20 +574,17 @@ describe('lib/env', () => {
 	});
 
 	describe('displayScopeTitle', () => {
-		const { displayScopeTitle } = require('./env');
 		let ui;
 
 		beforeEach(() => {
 			ui = {
-				write: [],
+				_writes: [],
+				write: function(str) {
+					this._writes.push(str);
+				},
 				chalk: {
 					bold: (str) => str
 				}
-			};
-			// Capture writes
-			ui.write = function(str) {
-				this._writes = this._writes || [];
-				this._writes.push(str);
 			};
 		});
 
@@ -973,124 +650,20 @@ describe('lib/env', () => {
 		});
 	});
 
-	describe('displayRolloutChanges', () => {
-		let ui;
-
-		beforeEach(() => {
-			ui = {
-				write: [],
-				chalk: {
-					bold: (str) => str,
-					cyan: {
-						bold: (str) => str
-					},
-					green: (str) => str,
-					red: (str) => str,
-					yellow: (str) => str,
-					gray: (str) => str
-				}
-			};
-			// Capture writes
-			ui.write = function(str) {
-				this._writes = this._writes || [];
-				this._writes.push(str);
-			};
-		});
-
-		it('displays added changes', () => {
-			const rolloutData = {
-				changes: [
-					{ op: 'Added', key: 'NEW_VAR', after: 'new-value' }
-				],
-				unchanged: {}
-			};
-
-			displayRolloutChanges(rolloutData, ui);
-
-			const output = ui._writes.join('\n');
-			expect(output).to.include('NEW_VAR');
-			expect(output).to.include('new-value');
-			expect(output).to.include('+');
-		});
-
-		it('displays removed changes', () => {
-			const rolloutData = {
-				changes: [
-					{ op: 'Removed', key: 'OLD_VAR' }
-				],
-				unchanged: {}
-			};
-
-			displayRolloutChanges(rolloutData, ui);
-
-			const output = ui._writes.join('\n');
-			expect(output).to.include('OLD_VAR');
-			expect(output).to.include('-');
-		});
-
-		it('displays changed variables', () => {
-			const rolloutData = {
-				changes: [
-					{ op: 'Changed', key: 'MODIFIED', before: 'old', after: 'new' }
-				],
-				unchanged: {}
-			};
-
-			displayRolloutChanges(rolloutData, ui);
-
-			const output = ui._writes.join('\n');
-			expect(output).to.include('MODIFIED');
-			expect(output).to.include('old');
-			expect(output).to.include('new');
-			expect(output).to.include('~');
-		});
-
-		it('displays unchanged variables', () => {
-			const rolloutData = {
-				changes: [],
-				unchanged: {
-					SAME: 'value'
-				}
-			};
-
-			displayRolloutChanges(rolloutData, ui);
-
-			const output = ui._writes.join('\n');
-			expect(output).to.include('SAME');
-			expect(output).to.include('value');
-			expect(output).to.include('Unchanged environment variables');
-		});
-
-		it('displays "No changes to be applied" when no changes', () => {
-			const rolloutData = {
-				changes: [],
-				unchanged: {}
-			};
-
-			displayRolloutChanges(rolloutData, ui);
-
-			const output = ui._writes.join('\n');
-			expect(output).to.include('No changes to be applied');
-		});
-	});
-
 	describe('displayRolloutInstructions', () => {
-		const { displayRolloutInstructions } = require('./env');
 		let ui;
 
 		beforeEach(() => {
 			ui = {
-				write: [],
+				_writes: [],
+				write: function(str) {
+					this._writes.push(str);
+				},
 				chalk: {
 					green: (str) => str,
 					yellow: (str) => str,
 					cyan: (str) => str
 				}
-			};
-			// Capture writes
-			ui.write = function(str) {
-				this._writes = this._writes || [];
-				this._writes.push(str);
 			};
 		});
 
@@ -1098,7 +671,7 @@ describe('lib/env', () => {
 			await displayRolloutInstructions({ sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('To review and save these changes in the Console, visit:');
 			expect(output).to.include('https://console.particle.io/env/edit');
 		});
 
@@ -1106,7 +679,7 @@ describe('lib/env', () => {
 			await displayRolloutInstructions({ org: 'my-org' }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('To review and save these changes in the Console, visit:');
 			expect(output).to.include('https://console.particle.io/orgs/my-org/env/edit');
 		});
 
@@ -1114,11 +687,11 @@ describe('lib/env', () => {
 			await displayRolloutInstructions({ product: '12345' }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('To review and save these changes in the Console, visit:');
 			expect(output).to.include('https://console.particle.io/12345/env/edit');
 		});
 
-		it('displays device URL with product_id when device is in a product', async () => {
+		it('displays device URL with product slug when device is in a product', async () => {
 			const mockApi = {
 				getDevice: sinon.stub().resolves({
 					body: {
@@ -1147,11 +720,11 @@ describe('lib/env', () => {
 			});
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('To review and save these changes in the Console, visit:');
 			expect(output).to.include('https://console.particle.io/my-product/devices/device123');
 		});
 
-		it('displays device URL without product_id when device is not in a product', async () => {
+		it('displays device URL without product slug when product has no slug', async () => {
 			const mockApi = {
 				getDevice: sinon.stub().resolves({
 					body: {
@@ -1172,7 +745,7 @@ describe('lib/env', () => {
 			});
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('To review and save this changes in the console');
+			expect(output).to.include('To review and save these changes in the Console, visit:');
 			expect(output).to.include('https://console.particle.io/devices/device456');
 		});
 
@@ -1192,7 +765,6 @@ describe('lib/env', () => {
 			const settings = require('../../settings');
 
 			afterEach(() => {
-				// Restore original value
 				sinon.restore();
 			});
 
@@ -1259,4 +831,3 @@ describe('lib/env', () => {
 		});
 	});
 });
-
