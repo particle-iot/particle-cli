@@ -452,28 +452,7 @@ describe('lib/env', () => {
 			expect(output).to.include('No environment variables found.');
 		});
 
-		it('displays pending changes warning when last_snapshot.own equals env.own', async () => {
-			const data = {
-				last_snapshot: {
-					own: {
-						FOO: { value: 'bar' }
-					},
-					inherited: {}
-				},
-				env: {
-					own: {
-						FOO: { value: 'bar' }
-					}
-				}
-			};
-
-			await displayEnv(data, { sandbox: true }, ui);
-
-			const output = ui._writes.join('\n');
-			expect(output).to.include('There are pending changes that have not been applied yet.');
-		});
-
-		it('does not display pending changes warning when last_snapshot.own differs from env.own', async () => {
+		it('displays pending changes warning when last_snapshot.own differs from env.own', async () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -491,10 +470,10 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.not.include('There are pending changes that have not been applied yet.');
+			expect(output).to.include('There are pending changes that have not been applied yet.');
 		});
 
-		it('displays rollout URL for sandbox when pending changes exist', async () => {
+		it('does not display pending changes warning when last_snapshot.own equals env.own', async () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -512,6 +491,27 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
+			expect(output).to.not.include('There are pending changes that have not been applied yet.');
+		});
+
+		it('displays rollout URL for sandbox when pending changes exist', async () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'old-value' }
+					},
+					inherited: {}
+				},
+				env: {
+					own: {
+						FOO: { value: 'new-value' }
+					}
+				}
+			};
+
+			await displayEnv(data, { sandbox: true }, ui);
+
+			const output = ui._writes.join('\n');
 			expect(output).to.include('https://console.particle.io/env/edit');
 		});
 
@@ -519,13 +519,13 @@ describe('lib/env', () => {
 			const data = {
 				last_snapshot: {
 					own: {
-						FOO: { value: 'bar' }
+						FOO: { value: 'old-value' }
 					},
 					inherited: {}
 				},
 				env: {
 					own: {
-						FOO: { value: 'bar' }
+						FOO: { value: 'new-value' }
 					}
 				}
 			};
@@ -555,13 +555,13 @@ describe('lib/env', () => {
 			const data = {
 				last_snapshot: {
 					own: {
-						FOO: { value: 'bar' }
+						FOO: { value: 'old-value' }
 					},
 					inherited: {}
 				},
 				env: {
 					own: {
-						FOO: { value: 'bar' }
+						FOO: { value: 'new-value' }
 					}
 				}
 			};
