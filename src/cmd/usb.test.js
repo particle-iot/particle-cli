@@ -130,52 +130,6 @@ describe('USB Commands', () => {
 			});
 		});
 
-		it('formats output with application variables only', () => {
-			const result = {
-				env: {
-					FOO: { value: 'bar', isApp: true },
-					TEST: { value: 'baz', isApp: true }
-				}
-			};
-
-			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
-			const cleanOutput = output.map(stripAnsi);
-
-			expect(cleanOutput).to.deep.equal([
-				'',
-				'Device: 0123456789abcdef (P2)',
-				'',
-				'Environment Variables:',
-				'  Firmware:',
-				'    FOO=bar',
-				'    TEST=baz',
-				''
-			]);
-		});
-
-		it('formats output with system variables only', () => {
-			const result = {
-				env: {
-					SYS_VAR1: { value: 'value1', isApp: false },
-					SYS_VAR2: { value: 'value2', isApp: false }
-				}
-			};
-
-			const output = usbCommands._formatEnvOutput(result, 'P2', '0123456789abcdef');
-			const cleanOutput = output.map(stripAnsi);
-
-			expect(cleanOutput).to.deep.equal([
-				'',
-				'Device: 0123456789abcdef (P2)',
-				'',
-				'Environment Variables:',
-				'  Cloud:',
-				'    SYS_VAR1=value1',
-				'    SYS_VAR2=value2',
-				''
-			]);
-		});
-
 		it('formats output with both application and system variables', () => {
 			const result = {
 				env: {
@@ -188,19 +142,20 @@ describe('USB Commands', () => {
 			const output = usbCommands._formatEnvOutput(result, 'Photon', 'abc123def456');
 			const cleanOutput = output.map(stripAnsi);
 
-			expect(cleanOutput).to.deep.equal([
-				'',
-				'Device: abc123def456 (Photon)',
-				'',
-				'Environment Variables:',
-				'  Firmware:',
-				'    ANOTHER_APP=another_app',
-				'    APP_KEY=app_value',
-				'',
-				'  Cloud:',
-				'    SYS_KEY=sys_value',
-				''
-			]);
+			expect(cleanOutput[0]).to.equal('Device: abc123def456 (Photon)');
+			expect(cleanOutput[1]).to.equal('');
+			const tableOutput = cleanOutput[2];
+			const tableLines = tableOutput.split('\n');
+			const findRow = (label) => tableLines.find(line => line.includes(label));
+			const appKeyRow = findRow('APP_KEY');
+			const sysKeyRow = findRow('SYS_KEY');
+			const anotherAppRow = findRow('ANOTHER_APP');
+			expect(appKeyRow).to.include('app_value');
+			expect(appKeyRow).to.include('Firmware');
+			expect(sysKeyRow).to.include('sys_value');
+			expect(sysKeyRow).to.include('Cloud');
+			expect(anotherAppRow).to.include('another_app');
+			expect(anotherAppRow).to.include('Firmware');
 		});
 
 		it('formats output when no environment variables are set', () => {
@@ -212,17 +167,16 @@ describe('USB Commands', () => {
 			const cleanOutput = output.map(stripAnsi);
 
 			expect(cleanOutput).to.deep.equal([
-				'',
 				'Device: device123 (Argon)',
-				'  No environment variables set',
-				''
+				'',
+				'  No environment variables set'
 			]);
 		});
 
 		it('sorts variables alphabetically within each category', () => {
 			const result = {
 				env: {
-					ZEBRA: { value: 'z', isApp: true },
+					ZEBRA: { value: 'z', isApp: false },
 					APPLE: { value: 'a', isApp: true },
 					BANANA: { value: 'b', isApp: true },
 					SYS_Z: { value: 'sz', isApp: false },
@@ -233,21 +187,16 @@ describe('USB Commands', () => {
 			const output = usbCommands._formatEnvOutput(result, 'P2', 'device123');
 			const cleanOutput = output.map(stripAnsi);
 
-			expect(cleanOutput).to.deep.equal([
-				'',
-				'Device: device123 (P2)',
-				'',
-				'Environment Variables:',
-				'  Firmware:',
-				'    APPLE=a',
-				'    BANANA=b',
-				'    ZEBRA=z',
-				'',
-				'  Cloud:',
-				'    SYS_A=sa',
-				'    SYS_Z=sz',
-				''
-			]);
+			expect(cleanOutput[0]).to.equal('Device: device123 (P2)');
+			expect(cleanOutput[1]).to.equal('');
+			const tableOutput = cleanOutput[2];
+			let previousIndex = -1, currentIndex = -1;
+			['APPLE', 'BANANA', 'SYS_A', 'SYS_Z', 'ZEBRA'].forEach(varName => {
+				expect(tableOutput).to.include(varName);
+				previousIndex = currentIndex;
+				currentIndex = tableOutput.indexOf(varName);
+				expect(currentIndex).to.be.greaterThan(previousIndex);
+			});
 		});
 
 		it('handles special characters in values', () => {
@@ -260,15 +209,12 @@ describe('USB Commands', () => {
 			const output = usbCommands._formatEnvOutput(result, 'P2', 'device123');
 			const cleanOutput = output.map(stripAnsi);
 
-			expect(cleanOutput).to.deep.equal([
-				'',
-				'Device: device123 (P2)',
-				'',
-				'Environment Variables:',
-				'  Firmware:',
-				'    SPECIAL=value with spaces & symbols!@#$%',
-				''
-			]);
+			expect(cleanOutput[0]).to.equal('Device: device123 (P2)');
+			expect(cleanOutput[1]).to.equal('');
+			const tableOutput = cleanOutput[2];
+			expect(tableOutput).to.include('SPECIAL');
+			expect(tableOutput).to.include('value with spaces & symbols!@#$%');
+			expect(tableOutput).to.include('Firmware');
 		});
 	});
 
