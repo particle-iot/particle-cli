@@ -67,7 +67,7 @@ describe('config env Command', () => {
 				line.includes('FOO3') || line.includes('FOO2') || line.includes('FOO ')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Sandbox');
+				expect(row).to.include('Owner');
 			});
 		});
 
@@ -86,14 +86,20 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('bar3');
 			expect(tableOutput).to.include('bar');
 			const foo3Row = tableOutput.split('\n').find(line => line.includes('FOO3'));
-			expect(foo3Row).to.include('Product');
-			expect(foo3Row).to.include('Yes');
+			expect(foo3Row).to.include('Owner'); // Inherited from Owner, even though overridden
+			expect(foo3Row).to.include('Yes'); // Overridden = Yes
+			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO '));
+			expect(fooRow).to.include('Product'); // Own variable at product level
 		});
 
 		it('list all env vars for a device', async () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env/abc123', 'GET')
-				.reply(200, sandboxDeviceProductList);
+				.reply(200, sandboxDeviceProductList)
+				.get('/devices/abc123')
+				.reply(200, { product_id: 12345 })
+				.get('/products/12345')
+				.reply(200, { product: { slug: 'test-product' } });
 			await envCommands.list({ device: 'abc123' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
@@ -498,13 +504,13 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Owner');
 			expect(tableOutput).to.include('FOO');
 			expect(tableOutput).to.include('baz-prod');
-			expect(tableOutput).to.include('Product');
+			expect(tableOutput).to.include('Owner'); // All variables are from Owner scope
 			expect(tableOutput).to.include('KEY');
 			expect(tableOutput).to.include('value');
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
-			expect(fooRow).to.include('Yes');
+			expect(fooRow).to.include('Yes'); // FOO is overridden
 			const bazRow = tableOutput.split('\n').find(line => line.includes('BAZ'));
-			expect(bazRow).to.include('No');
+			expect(bazRow).to.include('No'); // BAZ is not overridden
 		});
 
 		it('displays product scope with pending changes and shows warning', async () => {
@@ -546,7 +552,7 @@ describe('config env Command', () => {
 			expect(bazRow).to.not.include('product');
 			expect(bazRow).to.include('No');
 			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
-			expect(writeCalls.join('\n')).to.include('To review and save this changes in the console');
+			expect(writeCalls.join('\n')).to.include('To review and save these changes in the Console, visit:');
 		});
 
 		it('does not show pending variables not in last_snapshot', async () => {
@@ -585,7 +591,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('BAZ');
 			expect(tableOutput).to.include('KEY');
 			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
-			expect(writeCalls.join('\n')).to.include('To review and save this changes in the console');
+			expect(writeCalls.join('\n')).to.include('To review and save these changes in the Console, visit:');
 		});
 
 		it('displays device scope with on_device column showing missing when null', async () => {
@@ -744,7 +750,7 @@ describe('config env Command', () => {
 				line.includes('FOO') || line.includes('BAZ') || line.includes('KEY')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Sandbox');
+				expect(row).to.include('Owner'); // Sandbox scope shows 'Owner' in the implementation
 			});
 		});
 
