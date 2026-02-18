@@ -11,7 +11,7 @@ const _ = require('lodash');
  * @param {Object} api - API instance for fetching device information (required for device scope with pending changes)
  */
 async function displayEnv(data, scope, ui, api = null) {
-	const pendingChanges = !_.isEqual(data.last_snapshot?.own, data.env?.own);
+	const pendingChanges = !_.isEqual(data.last_snapshot?.own, data.latest?.own);
 
 	await displayScopeTitle(scope, ui, api);
 
