@@ -168,6 +168,23 @@ module.exports = ({ commandProcessor, root }) => {
 		}
 	});
 
+	commandProcessor.createCommand(usb, 'send-request', 'Send an application-specific request to the device over USB', {
+		params: '<customRequest> [devices...]',
+		options: {
+			timeout: {
+				description: 'How long should polling wait (in ms) for the requested status?',
+				number: true,
+				default: 1 * 60 * 1000
+			}
+		},
+		examples: {
+			'$0 $command my_device \'{"op":"status"}\'': 'Send a custom request with a JSON payload to the device named "my_device"'
+		},
+		handler: (args) => {
+			return usbCommand().sendRequest(args);
+		}
+	});
+
 	return usb;
 };
 

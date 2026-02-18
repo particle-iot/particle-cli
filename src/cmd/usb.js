@@ -8,6 +8,8 @@ const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
+const { Result } = require('particle-usb');
+const CUSTOM_CONTROL_REQUEST_CODE = 10;
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -323,6 +325,35 @@ module.exports = class UsbCommand extends CLICommandBase {
 			}
 		}
 		return output;
+	}
+
+	async sendRequest(args) {
+		args.api = this._api;
+		args.auth = this._auth;
+		const output = [];
+		const options = {
+			timeout: args.timeout
+		};
+		return forEachUsbDevice(args, async (usbDevice) => {
+			try {
+
+				const response = await usbDevice.sendControlRequest(CUSTOM_CONTROL_REQUEST_CODE, args.params.customRequest, options);
+				output.push(chalk.bold.cyan(`Device ${usbDevice.id}:`));
+				if (response.result === 0) {
+					output.push(chalk.green(`Command was successfully sent to device ${usbDevice.id}.`));
+					if (response.data) {
+						output.push(`Response from device ${usbDevice.id}: ${response.data}`);
+					}
+				} else {
+					const error = Object.entries(Result).find(([, value]) => value === response.result)?.[0];
+					output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error || response.result}`));
+				}
+			} catch (error) {
+				output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error.message}`));
+			}
+		}).then(() => {
+			output.forEach(line => console.log(line));
+		});
 	}
 
 };

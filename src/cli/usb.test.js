@@ -40,6 +40,7 @@ describe('USB Command-Line Interface', () => {
 					'  configure           Update the system USB configuration',
 					'  cloud-status        Check a device\'s cloud connection state',
 					'  network-interfaces  Gets the network configuration of the device',
+					'  send-request        Send an application-specific request to the device over USB',
 					''
 				].join('\n'));
 			});

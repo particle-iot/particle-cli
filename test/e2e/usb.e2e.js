@@ -31,6 +31,7 @@ describe('USB Commands [@device]', function cliUSBCommands(){
 		'  configure           Update the system USB configuration',
 		'  cloud-status        Check a device\'s cloud connection state',
 		'  network-interfaces  Gets the network configuration of the device',
+		'  send-request        Send an application-specific request to the device over USB',
 		'',
 		'Global Options:',
 		'  -v, --verbose  Increases how much logging to display  [count]',
