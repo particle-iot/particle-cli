@@ -17,7 +17,7 @@ const ParticleCache = require('../lib/particle-cache');
 const PROVISIONING_PROGRESS = 1;
 const PROVISIONING_SUCCESS = 2;
 const PROVISIONING_FAILURE = 3;
-const CTRL_REQUEST_APP_CUSTOM = 10;
+const CTRL_REQUEST_APP_CUSTOM = usbUtils.CUSTOM_CONTROL_REQUEST_CODE;
 const GET_AT_COMMAND_STATUS = 4;
 const LPA_PROFILE_ENABLE_ERROR = 'profile not in disabled state';
 

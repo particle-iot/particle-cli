@@ -1,7 +1,15 @@
 'use strict';
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, TimeoutError, DeviceProtectionError, forEachUsbDevice, executeWithUsbDevice } = require('./usb-util');
+const {
+	CUSTOM_CONTROL_REQUEST_CODE,
+	getUsbDevices,
+	openUsbDevice,
+	TimeoutError,
+	DeviceProtectionError,
+	forEachUsbDevice,
+	executeWithUsbDevice
+} = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
@@ -9,7 +17,6 @@ const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
 const { Result } = require('particle-usb');
-const CUSTOM_CONTROL_REQUEST_CODE = 10;
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {

@@ -20,6 +20,7 @@ const { validateDFUSupport } = require('./device-util');
 const REOPEN_TIMEOUT = 60000;
 // When reopening a device that was about to reset, give it some time to boot into the firmware
 const REOPEN_DELAY = 500;
+const CUSTOM_CONTROL_REQUEST_CODE = 10;
 
 async function _getDeviceInfo(device) {
 	let id = null;
@@ -562,6 +563,7 @@ async function handleUsbError(err){
 }
 
 module.exports = {
+	CUSTOM_CONTROL_REQUEST_CODE,
 	openUsbDevice,
 	openUsbDeviceById,
 	openUsbDeviceByIdOrName,
