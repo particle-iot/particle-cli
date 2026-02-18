@@ -172,13 +172,14 @@ module.exports = ({ commandProcessor, root }) => {
 		params: '<payload> [devices...]',
 		options: {
 			timeout: {
-				description: 'How long should polling wait (in ms) for the requested status?',
+				description: 'How long to wait (in ms) for the request to complete',
 				number: true,
 				default: 1 * 60 * 1000
 			}
 		},
 		examples: {
-			'$0 $command \'{"op":"status"}\' my_device': 'Send a custom request with a JSON payload to the device named "my_device"'
+			'$0 $command \'{"op":"status"}\' my_device': 'Send a custom request with a JSON payload to the device named "my_device"',
+			'$0 $command \'{"op":"status"}\' --all': 'Send a custom request with a JSON payload all connected devices over USB'
 		},
 		handler: (args) => {
 			return usbCommand().sendRequest(args);
