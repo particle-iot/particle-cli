@@ -2,11 +2,6 @@
 
 const sandboxList = {
 	'last_snapshot': {
-		'rendered': {
-			'FOO3': 'bar3',
-			'FOO2': 'bar',
-			'FOO': 'bar'
-		},
 		'inherited': {},
 		'own': {
 			'FOO3': {
@@ -20,7 +15,7 @@ const sandboxList = {
 			}
 		}
 	},
-	'env': {
+	'latest': {
 		'own': {
 			'FOO3': {
 				'value': 'bar3',
@@ -50,10 +45,6 @@ const sandboxList = {
 
 const sandboxProductList = {
 	'last_snapshot': {
-		'rendered': {
-			'FOO3': 'bar3',
-			'FOO': 'bar'
-		},
 		'inherited': {
 			'FOO3': {
 				'from': 'Owner',
@@ -69,7 +60,7 @@ const sandboxProductList = {
 			}
 		}
 	},
-	'env': {
+	'latest': {
 		'inherited': {
 			'FOO3': {
 				'from': 'Owner',
@@ -100,11 +91,6 @@ const sandboxProductList = {
 
 const sandboxDeviceProductList = {
 	'last_snapshot': {
-		'rendered': {
-			'FOO': 'org-bar',
-			'FOO3': 'bar3',
-			'FOO4': 'bar'
-		},
 		'inherited': {
 			'FOO': {
 				'from': 'Owner',
@@ -128,7 +114,7 @@ const sandboxDeviceProductList = {
 			}
 		}
 	},
-	'env': {
+	'latest': {
 		'inherited': {
 			'FOO': {
 				'from': 'Owner',
@@ -161,6 +147,13 @@ const sandboxDeviceProductList = {
 			}
 		}
 	},
+	'on_device': {
+		'rendered': {
+			'FOO': 'org-bar',
+			'FOO3': 'bar3',
+			'FOO4': 'bar'
+		}
+	},
 	'created_at': '2025-11-26T14:22:15.502Z',
 	'updated_at': '2025-11-26T15:27:41.278Z',
 	'created_by': '60468db2509eb004820e11e0',
@@ -169,13 +162,13 @@ const sandboxDeviceProductList = {
 };
 
 const emptyList = {
-	last_snapshot: { rendered: {}, inherited: {}, own: {} },
-	env: {}
+	last_snapshot: { inherited: {}, own: {} },
+	latest: {}
 };
 
 const emptyListWithKeys = {
-	last_snapshot: { rendered: {}, inherited: {}, own: {} },
-	env: { inherited: {}, own: {} }
+	last_snapshot: { inherited: {}, own: {} },
+	latest: { inherited: {}, own: {} }
 };
 
 module.exports = {

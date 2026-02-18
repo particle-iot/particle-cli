@@ -256,7 +256,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
-					env: {
+					latest: {
 						own: { FOO: { value: 'bar' } },
 						inherited: {}
 					}
@@ -279,7 +279,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1/orgs/my-org')
 				.intercept('/env', 'GET')
 				.reply(200, {
-					env: {
+					latest: {
 						own: { FOO: { value: 'bar' } },
 						inherited: {}
 					}
@@ -302,7 +302,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1/products/my-product')
 				.intercept('/env', 'GET')
 				.reply(200, {
-					env: {
+					latest: {
 						own: { FOO: { value: 'bar' } },
 						inherited: {}
 					}
@@ -333,7 +333,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept(`/env/${deviceId}`, 'GET')
 				.reply(200, {
-					env: {
+					latest: {
 						own: { FOO: { value: 'bar' } },
 						inherited: {}
 					}
@@ -355,7 +355,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
-					env: {
+					latest: {
 						own: {},
 						inherited: {
 							INHERITED_VAR: {
@@ -379,7 +379,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
-					env: {
+					latest: {
 						own: { FOO: { value: 'override_value' } },
 						inherited: { FOO: { value: 'inherited_value' } }
 					}
@@ -401,7 +401,7 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/env', 'GET')
 				.reply(200, {
-					env: {
+					latest: {
 						own: {},
 						inherited: {}
 					}
@@ -462,11 +462,6 @@ describe('config env Command', () => {
 		it('displays product scope with inherited variables from organization', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'baz-prod',
-						BAZ: 'foo',
-						KEY: 'value'
-					},
 					inherited: {
 						FOO: { from: 'Owner', value: 'test/data' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -478,7 +473,7 @@ describe('config env Command', () => {
 					rollout_at: '2026-02-09T17:47:17.121Z',
 					rollout_by: '60468db2509eb004820e11e0'
 				},
-				env: {
+				latest: {
 					inherited: {
 						FOO: { from: 'Owner', value: 'test/data' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -516,11 +511,6 @@ describe('config env Command', () => {
 		it('displays product scope with pending changes and shows warning', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'baz-prod',
-						BAZ: 'foo',
-						KEY: 'value'
-					},
 					inherited: {
 						FOO: { from: 'Owner', value: 'test/data' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -530,7 +520,7 @@ describe('config env Command', () => {
 						FOO: { value: 'baz-prod' }
 					}
 				},
-				env: {
+				latest: {
 					inherited: {
 						FOO: { from: 'Owner', value: 'test/data' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -558,11 +548,6 @@ describe('config env Command', () => {
 		it('does not show pending variables not in last_snapshot', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'test/data',
-						BAZ: 'foo',
-						KEY: 'value'
-					},
 					inherited: {},
 					own: {
 						FOO: { value: 'test/data' },
@@ -570,7 +555,7 @@ describe('config env Command', () => {
 						KEY: { value: 'value' }
 					}
 				},
-				env: {
+				latest: {
 					inherited: {},
 					own: {
 						FOO: { value: 'test/data' },
@@ -597,11 +582,6 @@ describe('config env Command', () => {
 		it('displays device scope with on_device column showing missing when null', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'baz-prod',
-						BAZ: 'foo',
-						KEY: 'value'
-					},
 					inherited: {
 						FOO: { from: 'Product', value: 'baz-prod' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -609,7 +589,7 @@ describe('config env Command', () => {
 					},
 					own: {}
 				},
-				env: {
+				latest: {
 					inherited: {
 						FOO: { from: 'Product', value: 'baz-prod' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -641,11 +621,6 @@ describe('config env Command', () => {
 		it('displays device scope with on_device values when provided', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'baz-prod',
-						BAZ: 'foo',
-						KEY: 'value'
-					},
 					inherited: {
 						FOO: { from: 'Product', value: 'baz-prod' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -653,7 +628,7 @@ describe('config env Command', () => {
 					},
 					own: {}
 				},
-				env: {
+				latest: {
 					inherited: {
 						FOO: { from: 'Product', value: 'baz-prod' },
 						BAZ: { from: 'Owner', value: 'foo' },
@@ -686,9 +661,6 @@ describe('config env Command', () => {
 		it('does not show on_device column for product scope', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'baz-prod'
-					},
 					inherited: {
 						FOO: { from: 'Owner', value: 'test/data' }
 					},
@@ -696,7 +668,7 @@ describe('config env Command', () => {
 						FOO: { value: 'baz-prod' }
 					}
 				},
-				env: {
+				latest: {
 					inherited: {
 						FOO: { from: 'Owner', value: 'test/data' }
 					},
@@ -720,11 +692,6 @@ describe('config env Command', () => {
 		it('shows all scopes as Sandbox for sandbox', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						FOO: 'test/data',
-						BAZ: 'foo',
-						KEY: 'value'
-					},
 					inherited: {},
 					own: {
 						FOO: { value: 'test/data' },
@@ -732,7 +699,7 @@ describe('config env Command', () => {
 						KEY: { value: 'value' }
 					}
 				},
-				env: {
+				latest: {
 					inherited: {},
 					own: {
 						FOO: { value: 'test/data' },
@@ -756,8 +723,8 @@ describe('config env Command', () => {
 
 		it('displays empty state when no variables exist', async () => {
 			const data = {
-				last_snapshot: { rendered: {}, inherited: {}, own: {} },
-				env: {
+				last_snapshot: { inherited: {}, own: {} },
+				latest: {
 					inherited: {},
 					own: {}
 				}
@@ -772,11 +739,6 @@ describe('config env Command', () => {
 		it('sorts variables alphabetically', async () => {
 			const data = {
 				last_snapshot: {
-					rendered: {
-						ZEBRA: 'z',
-						APPLE: 'a',
-						BANANA: 'b'
-					},
 					inherited: {
 						ZEBRA: { from: 'Owner', value: 'z' },
 						APPLE: { from: 'Owner', value: 'a' },
@@ -784,7 +746,7 @@ describe('config env Command', () => {
 					},
 					own: {}
 				},
-				env: {
+				latest: {
 					inherited: {
 						ZEBRA: { from: 'Owner', value: 'z' },
 						APPLE: { from: 'Owner', value: 'a' },
