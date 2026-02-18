@@ -169,7 +169,7 @@ module.exports = ({ commandProcessor, root }) => {
 	});
 
 	commandProcessor.createCommand(usb, 'send-request', 'Send an application-specific request to the device over USB', {
-		params: '<customRequest> [devices...]',
+		params: '<payload> [devices...]',
 		options: {
 			timeout: {
 				description: 'How long should polling wait (in ms) for the requested status?',

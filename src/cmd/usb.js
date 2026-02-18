@@ -337,7 +337,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 		return forEachUsbDevice(args, async (usbDevice) => {
 			try {
 
-				const response = await usbDevice.sendControlRequest(CUSTOM_CONTROL_REQUEST_CODE, args.params.customRequest, options);
+				const response = await usbDevice.sendControlRequest(CUSTOM_CONTROL_REQUEST_CODE, args.params.payload, options);
 				output.push(chalk.bold.cyan(`Device ${usbDevice.id}:`));
 				if (response.result === 0) {
 					output.push(chalk.green(`Command was successfully sent to device ${usbDevice.id}.`));
