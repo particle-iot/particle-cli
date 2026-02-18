@@ -346,7 +346,12 @@ module.exports = class UsbCommand extends CLICommandBase {
 					}
 				} else {
 					const error = Object.entries(Result).find(([, value]) => value === response.result)?.[0];
-					output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error || response.result}`));
+					if (error === 'NOT_SUPPORTED') {
+						output.push(chalk.red('Your firmware doesn\'t include a handler for application-specific requests. ' +
+							'Define ctrl_request_custom_handler in your code and try again.'));
+					} else {
+						output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error || response.result}`));
+					}
 				}
 			} catch (error) {
 				output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error.message}`));
