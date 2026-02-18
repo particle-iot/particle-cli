@@ -93,9 +93,9 @@ module.exports = class EnvCommands extends CLICommandBase {
 		this._validateScope({ sandbox, org, product, device });
 
 		const data = await this.api.listEnv({ sandbox, org, productId: product, deviceId: device });
-		const env = data?.env || {};
-		const ownVars = env.own || {};
-		const inheritedVars = env.inherited || {};
+		const latest = data?.latest || {};
+		const ownVars = latest.own || {};
+		const inheritedVars = latest.inherited || {};
 
 		const isOwnVar = name in ownVars;
 		const isInherited = name in inheritedVars;
