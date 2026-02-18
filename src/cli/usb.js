@@ -178,7 +178,7 @@ module.exports = ({ commandProcessor, root }) => {
 			}
 		},
 		examples: {
-			'$0 $command my_device \'{"op":"status"}\'': 'Send a custom request with a JSON payload to the device named "my_device"'
+			'$0 $command \'{"op":"status"}\' my_device': 'Send a custom request with a JSON payload to the device named "my_device"'
 		},
 		handler: (args) => {
 			return usbCommand().sendRequest(args);
