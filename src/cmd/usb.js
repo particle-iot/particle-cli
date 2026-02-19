@@ -337,6 +337,7 @@ module.exports = class UsbCommand extends CLICommandBase {
 	async sendRequest(args) {
 		args.api = this._api;
 		args.auth = this._auth;
+		const silent = args.silent;
 		const output = [];
 		const options = {
 			timeout: args.timeout
@@ -344,6 +345,10 @@ module.exports = class UsbCommand extends CLICommandBase {
 		return forEachUsbDevice(args, async (usbDevice) => {
 			try {
 				const response = await usbDevice.sendControlRequest(CUSTOM_CONTROL_REQUEST_CODE, args.params.payload, options);
+				if (silent) {
+					console.log(JSON.stringify({ deviceId: usbDevice.id, ...response }));
+					return;
+				}
 				output.push(chalk.bold.cyan(`Device ${usbDevice.id}:`));
 				if (response.result === 0) {
 					output.push(chalk.green(`Command was successfully sent to device ${usbDevice.id}.`));
@@ -360,6 +365,14 @@ module.exports = class UsbCommand extends CLICommandBase {
 					}
 				}
 			} catch (error) {
+				if (silent) {
+					console.log(JSON.stringify({
+						deviceId: usbDevice.id,
+						result: -1,
+						error: error.message
+					}));
+					return;
+				}
 				output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error.message}`));
 			}
 		}).then(() => {

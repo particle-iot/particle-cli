@@ -483,11 +483,14 @@ async function reopenDevice(device) {
 }
 
 async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
+	const silent = args.silent;
 	const msg = 'Getting device information...';
 	const operation = openUsbDevices(args, { dfuMode });
 	let lastError = null;
 	const outputMsg = [];
-	return spin(operation, msg)
+	const getDevices = silent ? operation : spin(operation, msg);
+
+	return getDevices
 		.then(usbDevices => {
 			const p = usbDevices.map(async (usbDevice) => {
 				return Promise.resolve()
@@ -500,10 +503,11 @@ async function forEachUsbDevice(args, func, { dfuMode = false } = {}){
 					})
 					.catch(e => lastError = e);
 			});
-			return spin(Promise.all(p), 'Sending a command to the device...');
+			const runCommands = Promise.all(p);
+			return silent ? runCommands : spin(runCommands, 'Sending a command to the device...');
 		})
 		.then(() => {
-			if (outputMsg.length > 0) {
+			if (!silent && outputMsg.length > 0) {
 				outputMsg.forEach(msg => console.log(msg));
 			}
 			if (lastError){
