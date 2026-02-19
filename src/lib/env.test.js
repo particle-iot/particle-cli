@@ -419,7 +419,7 @@ describe('lib/env', () => {
 					},
 					inherited: {}
 				},
-				env: {
+				latest: {
 					own: {
 						FOO: { value: 'different' }
 					}
@@ -440,7 +440,7 @@ describe('lib/env', () => {
 					own: {},
 					inherited: {}
 				},
-				env: {
+				latest: {
 					own: {}
 				}
 			};
@@ -452,7 +452,7 @@ describe('lib/env', () => {
 			expect(output).to.include('No environment variables found.');
 		});
 
-		it('displays pending changes warning when last_snapshot.own differs from env.own', async () => {
+		it('displays pending changes warning when last_snapshot.own differs from latest.own', async () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -460,7 +460,7 @@ describe('lib/env', () => {
 					},
 					inherited: {}
 				},
-				env: {
+				latest: {
 					own: {
 						FOO: { value: 'new-value' }
 					}
@@ -473,7 +473,7 @@ describe('lib/env', () => {
 			expect(output).to.include('There are pending changes that have not been applied yet.');
 		});
 
-		it('does not display pending changes warning when last_snapshot.own equals env.own', async () => {
+		it('does not display pending changes warning when last_snapshot.own equals latest.own', async () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -481,7 +481,7 @@ describe('lib/env', () => {
 					},
 					inherited: {}
 				},
-				env: {
+				latest: {
 					own: {
 						FOO: { value: 'bar' }
 					}
@@ -502,7 +502,7 @@ describe('lib/env', () => {
 					},
 					inherited: {}
 				},
-				env: {
+				latest: {
 					own: {
 						FOO: { value: 'new-value' }
 					}
@@ -523,7 +523,7 @@ describe('lib/env', () => {
 					},
 					inherited: {}
 				},
-				env: {
+				latest: {
 					own: {
 						FOO: { value: 'new-value' }
 					}
@@ -559,7 +559,7 @@ describe('lib/env', () => {
 					},
 					inherited: {}
 				},
-				env: {
+				latest: {
 					own: {
 						FOO: { value: 'new-value' }
 					}
