@@ -342,42 +342,48 @@ module.exports = class UsbCommand extends CLICommandBase {
 		const options = {
 			timeout: args.timeout
 		};
-		return forEachUsbDevice(args, async (usbDevice) => {
-			try {
-				const response = await usbDevice.sendControlRequest(CUSTOM_CONTROL_REQUEST_CODE, args.params.payload, options);
-				if (silent) {
-					console.log(JSON.stringify({ deviceId: usbDevice.id, ...response }));
-					return;
-				}
-				output.push(chalk.bold.cyan(`Device ${usbDevice.id}:`));
-				if (response.result === 0) {
-					output.push(chalk.green(`Command was successfully sent to device ${usbDevice.id}.`));
-					if (response.data) {
-						output.push(`Response from device ${usbDevice.id}: ${response.data}`);
-					}
-				} else {
-					const error = Object.entries(Result).find(([, value]) => value === response.result)?.[0];
-					if (error === 'NOT_SUPPORTED') {
-						output.push(chalk.red('Your firmware doesn\'t include a handler for application-specific requests. ' +
-							'Define ctrl_request_custom_handler in your code and try again.'));
-					} else {
-						output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error || response.result}`));
-					}
-				}
-			} catch (error) {
-				if (silent) {
-					console.log(JSON.stringify({
-						deviceId: usbDevice.id,
-						result: -1,
-						error: error.message
-					}));
-					return;
-				}
-				output.push(chalk.red(`Error sending request to device ${usbDevice.id}: ${error.message}`));
+
+		await forEachUsbDevice(args, async (usbDevice) => {
+			const response = await usbDevice.sendControlRequest(CUSTOM_CONTROL_REQUEST_CODE, args.params.payload, options);
+			if (silent) {
+				this._handleSilentRequestResponse(response);
+				return;
 			}
-		}).then(() => {
-			output.forEach(line => console.log(line));
+			output.push(chalk.bold.cyan(`Device ${usbDevice.id}:`));
+			if (response.result === 0) {
+				this._handleSuccessRequestResponse(response, usbDevice.id, output);
+			} else {
+				this._handleErrorRequestResponse(response, usbDevice.id, output);
+			}
 		});
+		output.forEach(line => console.log(line));
+	}
+
+	_handleSilentRequestResponse(response) {
+		if (response.result === 0) {
+			if (response?.data != null) {
+				console.log(response.data);
+			}
+		} else {
+			console.log(response.result);
+		}
+	}
+
+	_handleSuccessRequestResponse(response, deviceId, output) {
+		output.push(chalk.green(`Command was successfully sent to device ${deviceId}.`));
+		if (response.data) {
+			output.push(`Response from device ${deviceId}: ${response.data}`);
+		}
+	}
+
+	_handleErrorRequestResponse(response, deviceId, output) {
+		const error = Object.entries(Result).find(([, value]) => value === response.result)?.[0];
+		if (error === 'NOT_SUPPORTED') {
+			output.push(chalk.red('Your firmware doesn\'t include a handler for application-specific requests. ' +
+				'Define ctrl_request_custom_handler in your code and try again.'));
+		} else {
+			output.push(chalk.red(`Error sending request to device ${deviceId}: ${error || response.result}`));
+		}
 	}
 
 };
