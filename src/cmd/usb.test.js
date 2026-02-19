@@ -1,16 +1,25 @@
 'use strict';
-const { expect } = require('../../test/setup');
+const { expect, sinon } = require('../../test/setup');
 const { default: stripAnsi } = require('strip-ansi');
-const UsbCommands = require('./usb');
+const proxyquire = require('proxyquire');
+const { Result } = require('particle-usb');
 
 
 describe('USB Commands', () => {
+	let sandbox;
+
+	beforeEach(() => {
+		sandbox = sinon.createSandbox();
+	});
+
 	afterEach(() => {
+		sandbox.restore();
 	});
 
 
 	describe('_formatNetworkIfaceOutput', () => {
 		it('formats the interface information to imitate linux `ifconfig` command', () => {
+			const UsbCommands = require('./usb');
 			const nwInfo = [
 				{
 					'index': 5,
@@ -109,6 +118,182 @@ describe('USB Commands', () => {
 			const res = usbCommands._formatNetworkIfaceOutput(nwInfo, 'p2', '0123456789abcdef');
 
 			expect(res.map(stripAnsi)).to.eql(expectedOutput);
+		});
+	});
+
+	describe('sendRequest', () => {
+		let UsbCommands;
+		let usbCommands;
+		let forEachUsbDeviceStub;
+		let consoleLogStub;
+
+		beforeEach(() => {
+			forEachUsbDeviceStub = sandbox.stub();
+			consoleLogStub = sandbox.stub(console, 'log');
+
+			UsbCommands = proxyquire('./usb', {
+				'./usb-util': {
+					CUSTOM_CONTROL_REQUEST_CODE: 10,
+					forEachUsbDevice: forEachUsbDeviceStub,
+					getUsbDevices: sandbox.stub(),
+					openUsbDevice: sandbox.stub(),
+					TimeoutError: class TimeoutError extends Error {},
+					DeviceProtectionError: class DeviceProtectionError extends Error {},
+					executeWithUsbDevice: sandbox.stub()
+				}
+			});
+
+			usbCommands = new UsbCommands({
+				access_token: '1234'
+			});
+		});
+
+		it('sends a control request successfully without response data', async () => {
+			const args = {
+				params: {
+					payload: 'test_payload',
+					devices: []
+				},
+				timeout: 5000
+			};
+
+			const mockUsbDevice = {
+				id: 'test_device_id',
+				sendControlRequest: sandbox.stub().resolves({
+					result: 0,
+					data: null
+				})
+			};
+
+			forEachUsbDeviceStub.callsFake(async (args, callback) => {
+				await callback(mockUsbDevice);
+			});
+
+			await usbCommands.sendRequest(args);
+
+			expect(mockUsbDevice.sendControlRequest).to.have.been.calledWith(10, 'test_payload', { timeout: 5000 });
+			const calls = consoleLogStub.getCalls().map(call => stripAnsi(call.args[0]));
+			expect(calls).to.include.members([
+				'Device test_device_id:',
+				'Command was successfully sent to device test_device_id.'
+			]);
+		});
+
+		it('sends a control request successfully with response data', async () => {
+			const args = {
+				params: {
+					payload: '{"key":"value"}',
+					devices: []
+				},
+				timeout: 10000
+			};
+
+			const mockUsbDevice = {
+				id: 'test_device_id',
+				sendControlRequest: sandbox.stub().resolves({
+					result: 0,
+					data: 'response_data'
+				})
+			};
+
+			forEachUsbDeviceStub.callsFake(async (args, callback) => {
+				await callback(mockUsbDevice);
+			});
+
+			await usbCommands.sendRequest(args);
+
+			expect(mockUsbDevice.sendControlRequest).to.have.been.calledWith(10, '{"key":"value"}', { timeout: 10000 });
+			const calls = consoleLogStub.getCalls().map(call => stripAnsi(call.args[0]));
+			expect(calls).to.include.members([
+				'Device test_device_id:',
+				'Command was successfully sent to device test_device_id.',
+				'Response from device test_device_id: response_data'
+			]);
+		});
+
+		it('handles NOT_SUPPORTED error result with helpful message', async () => {
+			const args = {
+				params: {
+					payload: 'test',
+					devices: []
+				},
+				timeout: 5000
+			};
+
+			const mockUsbDevice = {
+				id: 'test_device_id',
+				sendControlRequest: sandbox.stub().resolves({
+					result: Result.NOT_SUPPORTED,
+					data: null
+				})
+			};
+
+			forEachUsbDeviceStub.callsFake(async (args, callback) => {
+				await callback(mockUsbDevice);
+			});
+
+			await usbCommands.sendRequest(args);
+
+			const calls = consoleLogStub.getCalls().map(call => stripAnsi(call.args[0]));
+			expect(calls).to.include('Device test_device_id:');
+			expect(calls.some(call => call.includes('Your firmware doesn\'t include a handler for application-specific requests'))).to.be.true;
+			expect(calls.some(call => call.includes('ctrl_request_custom_handler'))).to.be.true;
+		});
+
+		it('handles NOT_ALLOWED error result', async () => {
+			const args = {
+				params: {
+					payload: 'test',
+					devices: []
+				},
+				timeout: 5000
+			};
+
+			const mockUsbDevice = {
+				id: 'test_device_id',
+				sendControlRequest: sandbox.stub().resolves({
+					result: Result.NOT_ALLOWED,
+					data: null
+				})
+			};
+
+			forEachUsbDeviceStub.callsFake(async (args, callback) => {
+				await callback(mockUsbDevice);
+			});
+
+			await usbCommands.sendRequest(args);
+
+			const calls = consoleLogStub.getCalls().map(call => stripAnsi(call.args[0]));
+			expect(calls).to.include('Device test_device_id:');
+			expect(calls.some(call => call.includes('Error sending request to device test_device_id: NOT_ALLOWED'))).to.be.true;
+		});
+
+		it('handles unknown error result code', async () => {
+			const args = {
+				params: {
+					payload: 'test',
+					devices: []
+				},
+				timeout: 5000
+			};
+
+			const mockUsbDevice = {
+				id: 'test_device_id',
+				sendControlRequest: sandbox.stub().resolves({
+					result: 9999,
+					data: null
+				})
+			};
+
+			forEachUsbDeviceStub.callsFake(async (args, callback) => {
+				await callback(mockUsbDevice);
+			});
+
+			await usbCommands.sendRequest(args);
+
+			const calls = consoleLogStub.getCalls().map(call => stripAnsi(call.args[0]));
+			expect(calls).to.include('Device test_device_id:');
+			expect(calls.some(call => call.includes('Error sending request to device test_device_id: 9999'))).to.be.true;
 		});
 	});
 });

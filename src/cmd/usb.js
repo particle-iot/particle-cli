@@ -1,13 +1,22 @@
 'use strict';
 const { asyncMapSeries, buildDeviceFilter } = require('../lib/utilities');
 const { getDevice, formatDeviceInfo } = require('./device-util');
-const { getUsbDevices, openUsbDevice, TimeoutError, DeviceProtectionError, forEachUsbDevice, executeWithUsbDevice } = require('./usb-util');
+const {
+	CUSTOM_CONTROL_REQUEST_CODE,
+	getUsbDevices,
+	openUsbDevice,
+	TimeoutError,
+	DeviceProtectionError,
+	forEachUsbDevice,
+	executeWithUsbDevice
+} = require('./usb-util');
 const { systemSupportsUdev, udevRulesInstalled, installUdevRules } = require('./udev');
 const { platformForId, isKnownPlatformId } = require('../lib/platform');
 const ParticleApi = require('./api');
 const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
+const { Result } = require('particle-usb');
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -323,6 +332,58 @@ module.exports = class UsbCommand extends CLICommandBase {
 			}
 		}
 		return output;
+	}
+
+	async sendRequest(args) {
+		args.api = this._api;
+		args.auth = this._auth;
+		const silent = args.silent;
+		const output = [];
+		const options = {
+			timeout: args.timeout
+		};
+
+		await forEachUsbDevice(args, async (usbDevice) => {
+			const response = await usbDevice.sendControlRequest(CUSTOM_CONTROL_REQUEST_CODE, args.params.payload, options);
+			if (silent) {
+				this._handleSilentRequestResponse(response);
+				return;
+			}
+			output.push(chalk.bold.cyan(`Device ${usbDevice.id}:`));
+			if (response.result === 0) {
+				this._handleSuccessRequestResponse(response, usbDevice.id, output);
+			} else {
+				this._handleErrorRequestResponse(response, usbDevice.id, output);
+			}
+		});
+		output.forEach(line => console.log(line));
+	}
+
+	_handleSilentRequestResponse(response) {
+		if (response.result === 0) {
+			if (response?.data != null) {
+				console.log(response.data);
+			}
+		} else {
+			console.log(response.result);
+		}
+	}
+
+	_handleSuccessRequestResponse(response, deviceId, output) {
+		output.push(chalk.green(`Command was successfully sent to device ${deviceId}.`));
+		if (response.data) {
+			output.push(`Response from device ${deviceId}: ${response.data}`);
+		}
+	}
+
+	_handleErrorRequestResponse(response, deviceId, output) {
+		const error = Object.entries(Result).find(([, value]) => value === response.result)?.[0];
+		if (error === 'NOT_SUPPORTED') {
+			output.push(chalk.red('Your firmware doesn\'t include a handler for application-specific requests. ' +
+				'Define ctrl_request_custom_handler in your code and try again.'));
+		} else {
+			output.push(chalk.red(`Error sending request to device ${deviceId}: ${error || response.result}`));
+		}
 	}
 
 };
