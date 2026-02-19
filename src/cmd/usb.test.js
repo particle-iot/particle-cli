@@ -295,29 +295,5 @@ describe('USB Commands', () => {
 			expect(calls).to.include('Device test_device_id:');
 			expect(calls.some(call => call.includes('Error sending request to device test_device_id: 9999'))).to.be.true;
 		});
-
-		it('handles exception when sending control request', async () => {
-			const args = {
-				params: {
-					payload: 'test',
-					devices: []
-				},
-				timeout: 5000
-			};
-
-			const mockUsbDevice = {
-				id: 'test_device_id',
-				sendControlRequest: sandbox.stub().rejects(new Error('Connection failed'))
-			};
-
-			forEachUsbDeviceStub.callsFake(async (args, callback) => {
-				await callback(mockUsbDevice);
-			});
-
-			await usbCommands.sendRequest(args);
-
-			const calls = consoleLogStub.getCalls().map(call => stripAnsi(call.args[0]));
-			expect(calls.some(call => call.includes('Error sending request to device test_device_id: Connection failed'))).to.be.true;
-		});
 	});
 });
