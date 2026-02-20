@@ -103,7 +103,7 @@ function getTableRows(data, scope) {
 		return {
 			key,
 			onDeviceValue: data.on_device?.rendered?.[key] ?? 'missing',
-			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key].value ?? 'missing',
+			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key]?.value ?? 'missing',
 			scope: data.last_snapshot?.inherited?.[key]?.from ?? thisScope,
 			isOverriden: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
 		};
