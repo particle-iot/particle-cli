@@ -1,4 +1,12 @@
 # Changelog
+# 3.47.0 - Feb 23 2026
+* Add `config env` command to handle env vars 
+* Add `particle usb env` command to get env vars defined into a device
+* Allow compile and bundle an application with env vars
+* Add `particle usb send-request` to send custom request to a device.
+* Breaking: `particle secrets` has been moved to `config secrets` as part of the new unified config command group for managing secrets and environment variables.
+* Breaking: `config profile` commands has been moved to `profile <profile>` 
+
 
 # 3.46.0 - Feb 06 2026
 * Add support for api_username, secrets, and env in logic-function commands
