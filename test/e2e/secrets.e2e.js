@@ -39,63 +39,56 @@ describe('Secrets', () => {
 		await cli.logout();
 		await cli.setDefaultProfile();
 	});
-	describe('help secrets', () => {
+	describe('help config secret', () => {
 		const help = [
-			'create, update, list and remove secrets',
-			'Usage: particle secrets <command>',
-			'Help:  particle help secrets <command>',
+			'Manage secrets',
+			'Usage: particle config secrets <command>',
+			'Help:  particle help config secrets <command>',
 			'',
 			'Commands:',
-			'  list    List all created secrets.',
-			'          Alias: this command can be also executed as sc list[options]',
-			'  get     Get an specific secret',
-			'  create  Creates a new secret',
-			'  update  Updates the value of an existing secret',
-			'  remove  Remove an specific secret',
+			'  list    List all created secrets',
+			'  get     Get a specific secret',
+			'  set     Set a secret',
+			'  delete  Delete a specific secret',
 			'',
 			'Global Options:',
 			'  -v, --verbose  Increases how much logging to display  [count]',
 			'  -q, --quiet    Decreases how much logging to display  [count]',
+			'',
+			'Options:',
+			'  --sandbox  Target the sandbox  [boolean]',
+			'  --org      Specify the organization  [string]',
 			''
 		];
 		it('Shows `help` content', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['help', 'secrets']);
-			expect(stdout).to.equal('');
-			expect(stderr.split('\n')).to.include.members(help);
-			expect(exitCode).to.equal(0);
-		});
-
-		it('Shows `help` content with alias', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['help', 'sc']);
-
+			const { stdout, stderr, exitCode } = await cli.run(['help', 'config', 'secrets']);
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(help);
 			expect(exitCode).to.equal(0);
 		});
 
 		it('Shows `help` content when run with `--help` flag', async () => {
-			const { stdout, stderr, exitCode } = await cli.run(['secrets', '--help']);
+			const { stdout, stderr, exitCode } = await cli.run(['config', 'secrets', '--help']);
 			expect(stdout).to.equal('');
 			expect(stderr.split('\n')).to.include.members(help);
 			expect(exitCode).to.equal(0);
 		});
 	});
 
-	describe('secrets flow (create, get, update, list, delete)', () => {
-		it('creates a new secret for org', async () => {
+	describe('config secret flow (set, get, list, delete)', () => {
+		it('sets a new secret for org', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'create',
-				'--name', secretName,
-				'--value', 'value',
+				'config', 'secrets', 'set',
+				secretName, 'value',
 				'--org', orgName]);
-			const expectedOutput = `Secret ${secretName} created successfully.`;
+			const expectedOutput = `Secret ${secretName} set successfully.`;
 			expect(stdout).to.include(expectedOutput);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 		it('lists the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'list',
+				'config', 'secrets', 'list',
 				'--org', orgName
 			]);
 			expect(stdout).to.include(secretName);
@@ -105,23 +98,22 @@ describe('Secrets', () => {
 
 		it('updates the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'update',
-				'--name', secretName,
-				'--value', 'updated_value',
+				'config', 'secrets', 'set',
+				secretName, 'updated_value',
 				'--org', orgName
 			]);
-			expect(stdout).to.include(`Secret ${secretName} updated successfully.`);
+			expect(stdout).to.include(`Secret ${secretName} set successfully.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});
 
-		it('remove the secret', async () => {
+		it('deletes the secret', async () => {
 			const { stdout, stderr, exitCode } = await cli.run([
-				'secrets', 'remove',
-				'--name', secretName,
+				'config', 'secrets', 'delete',
+				secretName,
 				'--org', orgName
 			]);
-			expect(stdout).to.include(`Secret ${secretName} removed successfully.`);
+			expect(stdout).to.include(`Secret ${secretName} deleted successfully.`);
 			expect(stderr).to.equal('');
 			expect(exitCode).to.equal(0);
 		});

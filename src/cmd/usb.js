@@ -17,6 +17,7 @@ const spinnerMixin = require('../lib/spinner-mixin');
 const CLICommandBase = require('./base');
 const chalk = require('chalk');
 const { Result } = require('particle-usb');
+const Table = require('cli-table');
 
 module.exports = class UsbCommand extends CLICommandBase {
 	constructor(settings) {
@@ -126,6 +127,51 @@ module.exports = class UsbCommand extends CLICommandBase {
 				console.log('Done.');
 			});
 	}
+
+	getEnv(args) {
+		args.api = this._api;
+		args.auth = this._auth;
+		const output = [];
+
+		return forEachUsbDevice(args, async (usbDevice) => {
+			const result = await usbDevice.getEnv();
+			const platform = platformForId(usbDevice.platformId);
+			const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
+			output.push(...formattedOutput);
+			return result;
+		}).then(() => {
+			output.forEach(line => console.log(line));
+		});
+	}
+
+	_formatEnvOutput(result, platformName, deviceId) {
+		const output = [];
+		const envVars = result.env ?? {};
+		const entries = Object.entries(envVars);
+		const push = line => output.push(line);
+		const table = new Table({
+			head: ['Name', 'Value', 'Scope'],
+			style: { head: ['cyan', 'bold'] },
+			wordWrap: true,
+		});
+
+		push(`${chalk.bold('Device:')} ${chalk.cyan(deviceId)} (${chalk.cyan(platformName)})`);
+		push('');
+
+		if (entries.length === 0) {
+			push(chalk.yellow('  No environment variables set'));
+			return output;
+		}
+		entries
+			.sort((a, b) => a[0].localeCompare(b[0]))
+			.forEach(([key, { value, isApp }]) => {
+				const scope = isApp ? 'Firmware' : 'Cloud';
+				table.push([key, value, scope]);
+			});
+		push(table.toString());
+		return output;
+	}
+
 
 	stopListening(args) {
 		args.api = this._api;

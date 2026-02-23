@@ -17,10 +17,27 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		this.consoleBaseUrl = settings.isStaging ? 'https://console.staging.particle.io' : 'https://console.particle.io';
 	}
 
-	async list({ org, json }) {
+	_validateScope({ sandbox, org }) {
+		const scopes = [
+			{ name: 'sandbox', value: sandbox },
+			{ name: 'org', value: org }
+		].filter(scope => scope.value);
+
+		if (scopes.length === 0) {
+			throw new Error('You must specify one of: --sandbox or --org');
+		}
+
+		if (scopes.length > 1) {
+			const scopeNames = scopes.map(s => `--${s.name}`).join(', ');
+			throw new Error(`You can only specify one scope at a time. You provided: ${scopeNames}`);
+		}
+	}
+
+	async list({ org, sandbox, json }) {
+		this._validateScope({ sandbox, org });
 		const secretsData = await this.ui.showBusySpinnerUntilResolved(
 			'Retrieving secrets',
-			secrets.list({ org, api: this.api })
+			secrets.list({ org, sandbox, api: this.api })
 		);
 		if (!json) {
 			secretsData.forEach((secret) => this._printSecret({ ...secret, org }));
@@ -29,37 +46,54 @@ module.exports = class SecretsCommand extends CLICommandBase {
 		}
 	}
 
-	async get({ name, org }){
+	async get({ params, org, sandbox }){
+		this._validateScope({ sandbox, org });
+		const name = params.key;
 		const secretData = await this.ui.showBusySpinnerUntilResolved(
 			'Retrieving secret',
-			secrets.get({ api: this.api, name, org })
+			secrets.get({ api: this.api, name, org, sandbox })
 		);
 		this._printSecret({ ...secretData, org });
 	}
 
-	async update({ name, value, org }) {
-		const secretData = await this.ui.showBusySpinnerUntilResolved(
-			'Updating secret',
-			secrets.update({ api: this.api, name, value, org })
-		);
-		this.ui.write(`Secret ${name} updated successfully.`);
-		this._printSecret(secretData);
-	}
-
-	async remove({ org, name }) {
+	async deleteSecret({ params, org, sandbox }) {
+		this._validateScope({ sandbox, org });
+		const name = params.name;
 		const isDeleted = await this.ui.showBusySpinnerUntilResolved(
-			'Remove secret',
-			secrets.remove({ api: this.api, org, name })
+			'Deleting secret',
+			secrets.remove({ api: this.api, org, sandbox, name })
 		);
 		if (isDeleted) {
-			this.ui.write(`Secret ${name} removed successfully.`);
+			this.ui.write(`Secret ${name} deleted successfully.`);
 		}
 	}
 
-	async create({ name, value, org }) {
-		const secretData = await secrets.create({ api: this.api, name, org , value });
-		this.ui.write(`Secret ${name} created successfully.`);
+	async set({ params, org, sandbox }) {
+		this._validateScope({ sandbox, org });
+		const { key, value } = this._parseKeyValue(params);
+		const secretData = await this.ui.showBusySpinnerUntilResolved(
+			'Setting secret',
+			secrets.update({ api: this.api, name: key, org, sandbox, value })
+		);
+		this.ui.write(`Secret ${key} set successfully.`);
 		this._printSecret(secretData);
+	}
+
+	_parseKeyValue(params) {
+		if (params.name && params.value) {
+			return { key: params.name, value: params.value };
+		}
+		if (params.name && params.name.includes('=')) {
+			const [key, ...valueParts] = params.name.split('=');
+			const value = valueParts.join('=');
+
+			if (!key || !value) {
+				throw new Error('Invalid format. Use either "name value" or "name=value"');
+			}
+
+			return { key, value };
+		}
+		throw new Error('Invalid format. Use either "name value" or "name=value"');
 	}
 
 	_printSecret(secret) {

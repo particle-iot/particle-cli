@@ -21,7 +21,7 @@ const helpCommandOutput = [
 	'',
 	'Examples:',
 	'  particle bundle myApp.bin                                       Creates a bundle of application binary and assets. The assets are obtained from the project.properties in the current directory',
-	'  particle bundle myApp.bin --env env.json                        Creates a bundle of application binary and assets with custom env-vars file',
+	'  particle bundle myApp.bin --env env.json                        Creates a bundle of application binary and assets with custom environment file',
 	'  particle bundle myApp.bin --assets /path/to/assets              Creates a bundle of application binary and assets. The assets are obtained from /path/to/assets directory',
 	'  particle bundle myApp.bin --assets /path/to/project.properties  Creates a bundle of application binary and assets. The assets are picked up from the provided project.properties file',
 	'  particle bundle myApp.bin --assets /path/ --saveTo myApp.zip    Creates a bundle of application binary and assets, and saves it to the myApp.zip file',
@@ -40,9 +40,9 @@ describe('Bundle Commands', () => {
 	}).timeout(50000);
 
 	it('creates a bundle with name specified by user', async () => {
-		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars','app.bin');
-		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env','app.bin');
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json');
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath, '--saveTo', 'bundle.zip']);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
@@ -53,9 +53,9 @@ describe('Bundle Commands', () => {
 	}).timeout(3000);
 
 	it('creates a bundle with default name', async () => {
-		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars','app.bin');
-		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env','app.bin');
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json');
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath]);
 
 		expect(stdout).to.include(`Bundling ${binPath} with ${assetsPath}:`);
@@ -68,8 +68,8 @@ describe('Bundle Commands', () => {
 	});
 
 	it('Returns error if app binary is not specified', async () => {
-		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json');
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', '--assets', assetsPath, '--env', envPath]);
 
 		expect(stdout).to.include('Parameter \'appBinary\' is required.');
@@ -78,9 +78,9 @@ describe('Bundle Commands', () => {
 	});
 
 	it('Returns error if app binary does not exist', async () => {
-		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'fake_app.bin');
-		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env_vars', 'otaAssets');
-		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars', 'env.json');
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'fake_app.bin');
+		const assetsPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR,'valid_env', 'otaAssets');
+		const envPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env', 'env.json');
 
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath, '--assets', assetsPath, '--env', envPath]);
 
@@ -116,8 +116,8 @@ describe('Bundle Commands', () => {
 	});
 
 	it('uses envs from project.properties if env options does not exist', async () => {
-		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars_no_assets', 'app.bin');
-		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_vars_no_assets');
+		const binPath = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_no_assets', 'app.bin');
+		const cwd = path.join(PATH_FIXTURES_THIRDPARTY_OTA_DIR, 'valid_env_no_assets');
 
 		const { stdout, stderr, exitCode } = await cli.run(['bundle', binPath], { cwd });
 
