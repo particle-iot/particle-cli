@@ -318,7 +318,7 @@ async function promptWifiNetworks(ui = new UI()) {
 	const rescanLabel = '[Rescan networks]';
 	let ssid;
 
-	if (networks && os.platform() !== 'darwin') { // error when trying to get networks on macOS, so just show manual entry option
+	if (networks) { // error when trying to get networks or macOS returning null since we skip it, so just show manual entry option
 		const choices = [
 			...ssids,
 			otherNetworkLabel,
