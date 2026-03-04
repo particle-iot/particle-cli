@@ -27,7 +27,6 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const wifiScan = require('node-wifiscanner2').scan;
 const { TachyonConnectionError } = require('./qdl');
-const { platforms } = require('@particle/device-constants');
 
 function addLogHeaders({ outputLog, startTime, deviceId, commandName }) {
 	fs.appendFileSync(outputLog, `Tachyon Logs:${os.EOL}`);
