@@ -313,12 +313,12 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 }
 
 async function promptWifiNetworks(ui = new UI()) {
-	const { ssids, networks } = await _scanNetworks(ui);
+	const { ssids, networks } = os.platform() !== 'darwin' ? await _scanNetworks(ui) : { ssids: null, networks: null }; // skip scanning on macOS due to errors and just show manual entry option
 	const otherNetworkLabel = '[Other Network]';
 	const rescanLabel = '[Rescan networks]';
 	let ssid;
 
-	if (networks) { // error when trying to get networks
+	if (networks) { // error when trying to get networks or macOS returning null since we skip it, so just show manual entry option
 		const choices = [
 			...ssids,
 			otherNetworkLabel,
