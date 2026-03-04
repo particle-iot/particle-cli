@@ -1,4 +1,8 @@
 # Changelog
+
+# 3.47.1 - Mar 04 2026
+* Remove Wi-Fi picker from macOS Tachyon setup and prompt users for manual network entry.
+
 # 3.47.0 - Feb 23 2026
 * Add `config env` command to handle env vars 
 * Add `particle usb env` command to get env vars defined into a device
