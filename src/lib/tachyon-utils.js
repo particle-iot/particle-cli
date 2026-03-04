@@ -27,6 +27,7 @@ const chalk = require('chalk');
 const inquirer = require('inquirer');
 const wifiScan = require('node-wifiscanner2').scan;
 const { TachyonConnectionError } = require('./qdl');
+const { platforms } = require('@particle/device-constants');
 
 function addLogHeaders({ outputLog, startTime, deviceId, commandName }) {
 	fs.appendFileSync(outputLog, `Tachyon Logs:${os.EOL}`);
@@ -313,12 +314,12 @@ async function getIdentification({ deviceId, partitionTable, partitionFilenames 
 }
 
 async function promptWifiNetworks(ui = new UI()) {
-	const { ssids, networks } = await _scanNetworks(ui);
+	const { ssids, networks } = os.platform() !== 'darwin' ? await _scanNetworks(ui) : { ssids: null, networks: null }; // skip scanning on macOS due to errors and just show manual entry option
 	const otherNetworkLabel = '[Other Network]';
 	const rescanLabel = '[Rescan networks]';
 	let ssid;
 
-	if (networks) { // error when trying to get networks
+	if (networks && os.platform() !== 'darwin') { // error when trying to get networks on macOS, so just show manual entry option
 		const choices = [
 			...ssids,
 			otherNetworkLabel,
