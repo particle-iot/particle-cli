@@ -131,12 +131,19 @@ module.exports = class UsbCommand extends CLICommandBase {
 	async getEnv(args) {
 		args.api = this._api;
 		args.auth = this._auth;
+		const jsonFormat = args.json;
 		const output = [];
 
+
 		await forEachUsbDevice(args, async (usbDevice) => {
+
 			try {
 				const result = await usbDevice.getEnv();
 				const platform = platformForId(usbDevice.platformId);
+				if (jsonFormat) {
+					output.push(JSON.stringify(result, null, 2));
+					return;
+				}
 				const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
 				output.push(...formattedOutput);
 			} catch (error) {

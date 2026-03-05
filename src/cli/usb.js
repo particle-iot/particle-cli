@@ -170,7 +170,13 @@ module.exports = ({ commandProcessor, root }) => {
 
 	commandProcessor.createCommand(usb, 'env', 'Gets environment variables from a device', {
 		params: '[devices...]',
-		options: commonOptions,
+		options: {
+			...commonOptions,
+			'json': {
+				description: 'Output the environment variables in JSON format',
+				boolean: true
+			}
+		},
 		examples: {
 			'$0 $command': 'Gets environment variables from the connected device',
 			'$0 $command --all': 'Gets environment variables from all devices connected over USB',
