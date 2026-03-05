@@ -128,20 +128,24 @@ module.exports = class UsbCommand extends CLICommandBase {
 			});
 	}
 
-	getEnv(args) {
+	async getEnv(args) {
 		args.api = this._api;
 		args.auth = this._auth;
 		const output = [];
 
-		return forEachUsbDevice(args, async (usbDevice) => {
-			const result = await usbDevice.getEnv();
-			const platform = platformForId(usbDevice.platformId);
-			const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
-			output.push(...formattedOutput);
-			return result;
-		}).then(() => {
-			output.forEach(line => console.log(line));
+		await forEachUsbDevice(args, async (usbDevice) => {
+			try {
+				const result = await usbDevice.getEnv();
+				const platform = platformForId(usbDevice.platformId);
+				const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
+				output.push(...formattedOutput);
+			} catch (error) {
+				if (error.message.includes('Not supported')) {
+					output.push(chalk.red(`USB env is only supported on Device OS 6.3.4 and onwards`));
+				}
+			}
 		});
+		output.forEach(line => console.log(line));
 	}
 
 	_formatEnvOutput(result, platformName, deviceId) {
