@@ -57,7 +57,7 @@ describe('Secrets', () => {
 			'',
 			'Options:',
 			'  --sandbox  Target the sandbox  [boolean]',
-			'  --org      Specify the organization  [string]',
+			'  --org      Specify the organization slug (e.g. my-org)  [string]',
 			''
 		];
 		it('Shows `help` content', async () => {
