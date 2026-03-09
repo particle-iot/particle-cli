@@ -68,7 +68,7 @@ describe('config env Command', () => {
 				line.includes('FOO3') || line.includes('FOO2') || line.includes('FOO ')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Owner');
+				expect(row).to.include('Sandbox');
 			});
 		});
 
@@ -736,7 +736,7 @@ describe('config env Command', () => {
 				line.includes('FOO') || line.includes('BAZ') || line.includes('KEY')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Owner'); // Sandbox scope shows 'Owner' in the implementation
+				expect(row).to.include('Sandbox');
 			});
 		});
 

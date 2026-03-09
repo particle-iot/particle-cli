@@ -106,7 +106,7 @@ function buildEnvTable(data, scope) {
 function getTableRows(data, scope) {
 	const sortedKeys = getSortedEnvKeys(data);
 	// eslint-disable-next-line no-nested-ternary
-	const thisScope = (scope.sandbox || scope.org) ? 'Owner' : scope.product ? 'Product' : 'Device';
+	const thisScope = scope.sandbox ? 'Sandbox' : scope.org ? 'Organization' : scope.product ? 'Product' : 'Device';
 
 	return sortedKeys.map((key) => {
 		return {

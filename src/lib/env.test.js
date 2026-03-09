@@ -155,7 +155,7 @@ describe('lib/env', () => {
 			expect(output).to.not.include('Overridden');
 			expect(output).to.include('FOO');
 			expect(output).to.include('bar');
-			expect(output).to.include('Owner');
+			expect(output).to.include('Sandbox');
 		});
 
 		it('shows scope from inherited "from" field', () => {
@@ -221,7 +221,23 @@ describe('lib/env', () => {
 			const table = buildEnvTable(data, { sandbox: true });
 			const output = table.toString();
 
-			expect(output).to.include('Owner');
+			expect(output).to.include('Sandbox');
+		});
+
+		it('uses "Owner" as scope for own variables in sandbox/org scope', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { sandbox: false, org: 'my-org' });
+			const output = table.toString();
+
+			expect(output).to.include('Organization');
 		});
 
 		it('uses "Product" as scope for own variables in product scope', () => {
