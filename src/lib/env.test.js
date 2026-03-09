@@ -4,10 +4,13 @@ const {
 	getSortedEnvKeys,
 	calculateColumnWidths,
 	buildEnvTable,
+	buildPendingChangesTable,
 	displayScopeTitle,
 	displayEnv,
 	displayRolloutInstructions
 } = require('./env');
+
+const EM_DASH = '\u2014';
 
 describe('lib/env', () => {
 	describe('getSortedEnvKeys', () => {
@@ -93,8 +96,8 @@ describe('lib/env', () => {
 	describe('calculateColumnWidths', () => {
 		it('calculates widths based on content', () => {
 			const tableRows = [
-				{ key: 'SHORT', onDeviceValue: 'missing', value: 'val', scope: 'Owner', isOverriden: 'No' },
-				{ key: 'VERY_LONG_VARIABLE_NAME', onDeviceValue: 'missing', value: 'this is a very long value', scope: 'Owner', isOverriden: 'No' }
+				{ key: 'SHORT', onDeviceValue: EM_DASH, value: 'val', scope: 'Owner', isOverridden: 'No' },
+				{ key: 'VERY_LONG_VARIABLE_NAME', onDeviceValue: EM_DASH, value: 'this is a very long value', scope: 'Owner', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -116,7 +119,7 @@ describe('lib/env', () => {
 
 		it('accounts for on device values in column width', () => {
 			const tableRows = [
-				{ key: 'FOO', onDeviceValue: 'very-long-on-device-value', value: 'bar', scope: 'Device', isOverriden: 'No' }
+				{ key: 'FOO', onDeviceValue: 'very-long-on-device-value', value: 'bar', scope: 'Device', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -126,7 +129,7 @@ describe('lib/env', () => {
 
 		it('accounts for scope values in column width', () => {
 			const tableRows = [
-				{ key: 'FOO', onDeviceValue: 'missing', value: 'bar', scope: 'Organization', isOverriden: 'No' }
+				{ key: 'FOO', onDeviceValue: EM_DASH, value: 'bar', scope: 'Organization', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -152,10 +155,10 @@ describe('lib/env', () => {
 			expect(output).to.include('Name');
 			expect(output).to.include('Value');
 			expect(output).to.include('Scope');
-			expect(output).to.include('Overridden');
+			expect(output).to.not.include('Overridden');
 			expect(output).to.include('FOO');
 			expect(output).to.include('bar');
-			expect(output).to.include('Owner');
+			expect(output).to.include('Sandbox');
 		});
 
 		it('shows scope from inherited "from" field', () => {
@@ -192,7 +195,7 @@ describe('lib/env', () => {
 			expect(output).to.include('Yes');
 		});
 
-		it('shows overridden as No when key is only in own', () => {
+		it('hides Overridden when key is only in own', () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -205,7 +208,7 @@ describe('lib/env', () => {
 			const table = buildEnvTable(data, { sandbox: true });
 			const output = table.toString();
 
-			expect(output).to.include('No');
+			expect(output).to.not.include('Overridden');
 		});
 
 		it('uses "Owner" as scope for own variables in sandbox/org scope', () => {
@@ -221,7 +224,23 @@ describe('lib/env', () => {
 			const table = buildEnvTable(data, { sandbox: true });
 			const output = table.toString();
 
-			expect(output).to.include('Owner');
+			expect(output).to.include('Sandbox');
+		});
+
+		it('uses "Owner" as scope for own variables in sandbox/org scope', () => {
+			const data = {
+				last_snapshot: {
+					own: {
+						FOO: { value: 'bar' }
+					},
+					inherited: {}
+				}
+			};
+
+			const table = buildEnvTable(data, { sandbox: false, org: 'my-org' });
+			const output = table.toString();
+
+			expect(output).to.include('Organization');
 		});
 
 		it('uses "Product" as scope for own variables in product scope', () => {
@@ -292,7 +311,7 @@ describe('lib/env', () => {
 			expect(output).to.not.include('On Device');
 		});
 
-		it('shows "missing" for on_device when value is not present', () => {
+		it('shows em dash for on_device when value is not present', () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -308,7 +327,7 @@ describe('lib/env', () => {
 			const table = buildEnvTable(data, { device: 'my-device' });
 			const output = table.toString();
 
-			expect(output).to.include('missing');
+			expect(output).to.include(EM_DASH);
 		});
 
 		it('sorts variables alphabetically', () => {
@@ -391,6 +410,109 @@ describe('lib/env', () => {
 		});
 	});
 
+	describe('buildPendingChangesTable', () => {
+		let ui;
+
+		beforeEach(() => {
+			ui = {
+				chalk: {
+					green: { bold: (str) => str },
+					yellow: { bold: (str) => str },
+					red: { bold: (str) => str }
+				}
+			};
+		});
+
+		it('classifies added variables', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: { own: { NEW_VAR: { value: 'hello' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Added');
+			expect(output).to.include('NEW_VAR');
+			expect(output).to.include('hello');
+		});
+
+		it('classifies removed variables', () => {
+			const data = {
+				last_snapshot: { own: { OLD_VAR: { value: 'bye' } } },
+				latest: { own: {} }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Removed');
+			expect(output).to.include('OLD_VAR');
+			expect(output).to.include('bye');
+		});
+
+		it('classifies updated variables', () => {
+			const data = {
+				last_snapshot: { own: { MY_VAR: { value: 'old' } } },
+				latest: { own: { MY_VAR: { value: 'new' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Updated');
+			expect(output).to.include('MY_VAR');
+			expect(output).to.include('old');
+			expect(output).to.include('new');
+		});
+
+		it('skips unchanged variables', () => {
+			const data = {
+				last_snapshot: { own: { SAME: { value: 'val' }, CHANGED: { value: 'old' } } },
+				latest: { own: { SAME: { value: 'val' }, CHANGED: { value: 'new' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.not.include('SAME');
+			expect(output).to.include('CHANGED');
+		});
+
+		it('shows em dash for missing old value (Added)', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: { own: { NEW_VAR: { value: 'hello' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('\u2014');
+		});
+
+		it('shows em dash for missing new value (Removed)', () => {
+			const data = {
+				last_snapshot: { own: { OLD_VAR: { value: 'bye' } } },
+				latest: { own: {} }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('\u2014');
+		});
+
+		it('sorts rows by change type then name alphabetically', () => {
+			const data = {
+				last_snapshot: { own: { Z_UPDATE: { value: 'old' }, A_REMOVE: { value: 'x' }, B_REMOVE: { value: 'y' } } },
+				latest: { own: { Z_UPDATE: { value: 'new' }, B_ADD: { value: 'b' }, A_ADD: { value: 'a' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			const addIdx = output.indexOf('A_ADD');
+			const add2Idx = output.indexOf('B_ADD');
+			const updateIdx = output.indexOf('Z_UPDATE');
+			const removeIdx = output.indexOf('A_REMOVE');
+			const remove2Idx = output.indexOf('B_REMOVE');
+
+			// Added before Updated before Removed
+			expect(addIdx).to.be.lessThan(updateIdx);
+			expect(updateIdx).to.be.lessThan(removeIdx);
+			// Within same type, alphabetical
+			expect(addIdx).to.be.lessThan(add2Idx);
+			expect(removeIdx).to.be.lessThan(remove2Idx);
+		});
+	});
+
 	describe('displayEnv', () => {
 		let ui;
 
@@ -404,7 +526,9 @@ describe('lib/env', () => {
 					yellow: (str) => str,
 					cyan: (str) => str,
 					bold: (str) => str,
-					green: (str) => str
+					green: { bold: (str) => str },
+					white: { bold: (str) => str },
+					red: { bold: (str) => str }
 				}
 			};
 			ui.chalk.cyan.bold = (str) => str;
@@ -452,7 +576,7 @@ describe('lib/env', () => {
 			expect(output).to.include('No environment variables found.');
 		});
 
-		it('displays pending changes warning when last_snapshot.own differs from latest.own', async () => {
+		it('displays pending changes table when last_snapshot.own differs from latest.own', async () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -470,7 +594,12 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('There are pending changes that have not been applied yet.');
+			expect(output).to.include('Pending changes');
+			expect(output).to.include('Updated');
+			expect(output).to.include('FOO');
+			expect(output).to.include('old-value');
+			expect(output).to.include('new-value');
+			expect(output).to.not.include('There are pending changes that have not been applied yet.');
 		});
 
 		it('does not display pending changes warning when last_snapshot.own equals latest.own', async () => {
@@ -516,6 +645,15 @@ describe('lib/env', () => {
 		});
 
 		it('displays rollout URL for product when pending changes exist', async () => {
+			const api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
 			const data = {
 				last_snapshot: {
 					own: {
@@ -530,14 +668,14 @@ describe('lib/env', () => {
 				}
 			};
 
-			await displayEnv(data, { product: '12345' }, ui);
+			await displayEnv(data, { product: '12345' }, ui, api);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('https://console.particle.io/12345/env/edit');
+			expect(output).to.include('https://console.particle.io/my-product/env/edit');
 		});
 
 		it('displays device rollout URL when pending changes exist and device has product', async () => {
-			const mockApi = {
+			const api = {
 				getDevice: sinon.stub().resolves({
 					body: {
 						id: 'device123',
@@ -566,7 +704,7 @@ describe('lib/env', () => {
 				}
 			};
 
-			await displayEnv(data, { device: 'device123' }, ui, mockApi);
+			await displayEnv(data, { device: 'device123' }, ui, api);
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('https://console.particle.io/my-product/devices/device123');
@@ -610,7 +748,7 @@ describe('lib/env', () => {
 		});
 
 		it('displays "Scope: Product (product-name)" for product scope with api', async () => {
-			const mockApi = {
+			const api = {
 				getProduct: sinon.stub().resolves({
 					product: {
 						name: 'My Product'
@@ -619,9 +757,9 @@ describe('lib/env', () => {
 				accessToken: 'test-token'
 			};
 
-			await displayScopeTitle({ product: '12345' }, ui, mockApi);
+			await displayScopeTitle({ product: '12345' }, ui, api);
 
-			expect(mockApi.getProduct).to.have.been.calledWith({
+			expect(api.getProduct).to.have.been.calledWith({
 				product: '12345',
 				auth: 'test-token'
 			});
@@ -631,12 +769,12 @@ describe('lib/env', () => {
 		});
 
 		it('displays "Scope: Product (product-id)" when api fails to get product name', async () => {
-			const mockApi = {
+			const api = {
 				getProduct: sinon.stub().rejects(new Error('API error')),
 				accessToken: 'test-token'
 			};
 
-			await displayScopeTitle({ product: '12345' }, ui, mockApi);
+			await displayScopeTitle({ product: '12345' }, ui, api);
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('Scope: Product (12345)');
@@ -684,15 +822,29 @@ describe('lib/env', () => {
 		});
 
 		it('displays product rollout URL', async () => {
-			await displayRolloutInstructions({ product: '12345' }, ui);
+			const api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
+			await displayRolloutInstructions({ product: '12345' }, ui, api);
+
+			expect(api.getProduct).to.have.been.calledWith({
+				product: '12345',
+				auth: 'test-token'
+			});
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('To review and save these changes in the Console, visit:');
-			expect(output).to.include('https://console.particle.io/12345/env/edit');
+			expect(output).to.include('https://console.particle.io/my-product/env/edit');
 		});
 
 		it('displays device URL with product slug when device is in a product', async () => {
-			const mockApi = {
+			const api = {
 				getDevice: sinon.stub().resolves({
 					body: {
 						id: 'device123',
@@ -707,14 +859,14 @@ describe('lib/env', () => {
 				accessToken: 'test-token'
 			};
 
-			await displayRolloutInstructions({ device: 'device123' }, ui, mockApi);
+			await displayRolloutInstructions({ device: 'device123' }, ui, api);
 
-			expect(mockApi.getDevice).to.have.been.calledWith({
+			expect(api.getDevice).to.have.been.calledWith({
 				deviceId: 'device123',
 				auth: 'test-token'
 			});
 
-			expect(mockApi.getProduct).to.have.been.calledWith({
+			expect(api.getProduct).to.have.been.calledWith({
 				product: 99999,
 				auth: 'test-token'
 			});
@@ -725,7 +877,7 @@ describe('lib/env', () => {
 		});
 
 		it('displays device URL without product slug when product has no slug', async () => {
-			const mockApi = {
+			const api = {
 				getDevice: sinon.stub().resolves({
 					body: {
 						id: 'device456'
@@ -737,9 +889,9 @@ describe('lib/env', () => {
 				accessToken: 'test-token'
 			};
 
-			await displayRolloutInstructions({ device: 'device456' }, ui, mockApi);
+			await displayRolloutInstructions({ device: 'device456' }, ui, api);
 
-			expect(mockApi.getDevice).to.have.been.calledWith({
+			expect(api.getDevice).to.have.been.calledWith({
 				deviceId: 'device456',
 				auth: 'test-token'
 			});
@@ -747,18 +899,6 @@ describe('lib/env', () => {
 			const output = ui._writes.join('\n');
 			expect(output).to.include('To review and save these changes in the Console, visit:');
 			expect(output).to.include('https://console.particle.io/devices/device456');
-		});
-
-		it('throws error when api is not provided for device scope', async () => {
-			let error;
-			try {
-				await displayRolloutInstructions({ device: 'device123' }, ui);
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.exist;
-			expect(error.message).to.equal('API instance is required to get device information');
 		});
 
 		describe('staging environment', () => {
@@ -789,16 +929,25 @@ describe('lib/env', () => {
 			it('uses staging console URL for product when isStaging is true', async () => {
 				sinon.stub(settings, 'isStaging').value(true);
 
-				await displayRolloutInstructions({ product: '12345' }, ui);
+				const api = {
+					getProduct: sinon.stub().resolves({
+						product: {
+							slug: 'my-product'
+						}
+					}),
+					accessToken: 'test-token'
+				};
+
+				await displayRolloutInstructions({ product: '12345' }, ui, api);
 
 				const output = ui._writes.join('\n');
-				expect(output).to.include('https://console.staging.particle.io/12345/env/edit');
+				expect(output).to.include('https://console.staging.particle.io/my-product/env/edit');
 			});
 
 			it('uses staging console URL for device when isStaging is true', async () => {
 				sinon.stub(settings, 'isStaging').value(true);
 
-				const mockApi = {
+				const api = {
 					getDevice: sinon.stub().resolves({
 						body: {
 							id: 'device123',
@@ -813,7 +962,7 @@ describe('lib/env', () => {
 					accessToken: 'test-token'
 				};
 
-				await displayRolloutInstructions({ device: 'device123' }, ui, mockApi);
+				await displayRolloutInstructions({ device: 'device123' }, ui, api);
 
 				const output = ui._writes.join('\n');
 				expect(output).to.include('https://console.staging.particle.io/my-product/devices/device123');

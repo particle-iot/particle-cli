@@ -4,7 +4,9 @@ const nock = require('nock');
 const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env/list');
 const EnvCommands = require('./env');
 const { displayEnv } = require('../lib/env');
+const os = require('os');
 
+const EM_DASH = '\u2014';
 
 describe('config env Command', () => {
 	let envCommands;
@@ -29,11 +31,15 @@ describe('config env Command', () => {
 				gray: sinon.stub().callsFake((str) => str),
 				red: sinon.stub().callsFake((str) => str),
 				green: sinon.stub().callsFake((str) => str),
+				white: sinon.stub().callsFake((str) => str),
 			},
 		};
 
 		envCommands.ui.chalk.cyan.bold = sinon.stub().callsFake((str) => str);
 		envCommands.ui.chalk.yellow.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.green.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.red.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.white.bold = sinon.stub().callsFake((str) => str);
 	});
 
 	afterEach(() => {
@@ -57,7 +63,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
 			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.include('Overridden');
+			expect(tableOutput).to.not.include('Overridden');
 			expect(tableOutput).to.include('FOO3');
 			expect(tableOutput).to.include('FOO2');
 			expect(tableOutput).to.include('FOO');
@@ -67,7 +73,7 @@ describe('config env Command', () => {
 				line.includes('FOO3') || line.includes('FOO2') || line.includes('FOO ')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Owner');
+				expect(row).to.include('Sandbox');
 			});
 		});
 
@@ -75,6 +81,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/products/product-id-123/env', 'GET')
 				.reply(200, sandboxProductList);
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'product-id-123' }
+			});
 			await envCommands.list({ product: 'product-id-123' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
@@ -137,7 +146,7 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 
 		it('throws an error in case the name, value is invalid', async () => {
@@ -165,16 +174,19 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, org: 'my-org' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 		it('set env var for specific product', async () => {
 			const params = { name: 'FOO', value: 'bar' };
 			nock('https://api.particle.io/v1/products/my-product')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'my-product' }
+			});
 			await envCommands.setEnv({ params, product: 'my-product' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 		it('set env var for specific device', async () => {
 			const params = { name: 'FOO', value: 'bar' };
@@ -193,7 +205,7 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, device: deviceId });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 
 		it('set env var using key=value format', async () => {
@@ -208,7 +220,7 @@ describe('config env Command', () => {
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar', op: 'Set' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith('Environment variable FOO has been successfully set.');
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable FOO has been successfully set.${os.EOL}`);
 		});
 
 		it('set env var using key=value format with value containing equals sign', async () => {
@@ -223,7 +235,7 @@ describe('config env Command', () => {
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar=baz', op: 'Set' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith('Environment variable FOO has been successfully set.');
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable FOO has been successfully set.${os.EOL}`);
 		});
 
 		it('throws error when key=value format is invalid (empty key)', async () => {
@@ -270,7 +282,7 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('deletes env var for specific org', async () => {
@@ -293,7 +305,7 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, org: 'my-org' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('deletes env var for specific product', async () => {
@@ -313,10 +325,13 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'my-product' }
+			});
 			await envCommands.deleteEnv({ params, product: 'my-product' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('deletes env var for specific device', async () => {
@@ -347,7 +362,7 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, device: deviceId });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('prevents deletion of inherited-only variables', async () => {
@@ -393,7 +408,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.write).to.have.been.calledWith(
 				envCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
 			);
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('throws error when trying to delete non-existent variable', async () => {
@@ -509,6 +524,15 @@ describe('config env Command', () => {
 		});
 
 		it('displays product scope with pending changes and shows warning', async () => {
+			const api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
 			const data = {
 				last_snapshot: {
 					inherited: {
@@ -533,7 +557,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await displayEnv(data, { product: true }, envCommands.ui);
+			await displayEnv(data, { product: true }, envCommands.ui, api);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[2];
@@ -541,8 +565,10 @@ describe('config env Command', () => {
 			expect(bazRow).to.include('foo');
 			expect(bazRow).to.not.include('product');
 			expect(bazRow).to.include('No');
-			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
-			expect(writeCalls.join('\n')).to.include('To review and save these changes in the Console, visit:');
+			const allOutput = writeCalls.join('\n');
+			expect(allOutput).to.include('Pending changes');
+			expect(allOutput).to.include('Added');
+			expect(allOutput).to.include('To review and save these changes in the Console, visit:');
 		});
 
 		it('does not show pending variables not in last_snapshot', async () => {
@@ -569,17 +595,19 @@ describe('config env Command', () => {
 			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[2];
-			expect(tableOutput).to.not.include('NEW');
-			expect(tableOutput).to.not.include('set');
-			expect(tableOutput).to.include('FOO');
-			expect(tableOutput).to.include('BAZ');
-			expect(tableOutput).to.include('KEY');
-			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
-			expect(writeCalls.join('\n')).to.include('To review and save these changes in the Console, visit:');
+			const envTable = writeCalls[2];
+			expect(envTable).to.not.include('NEW');
+			expect(envTable).to.include('FOO');
+			expect(envTable).to.include('BAZ');
+			expect(envTable).to.include('KEY');
+			const allOutput = writeCalls.join('\n');
+			expect(allOutput).to.include('Pending changes');
+			expect(allOutput).to.include('Added');
+			expect(allOutput).to.include('NEW');
+			expect(allOutput).to.include('To review and save these changes in the Console, visit:');
 		});
 
-		it('displays device scope with on_device column showing missing when null', async () => {
+		it('displays device scope with on_device column showing em dash when null', async () => {
 			const data = {
 				last_snapshot: {
 					inherited: {
@@ -609,7 +637,7 @@ describe('config env Command', () => {
 			const dataRows = rows.slice(2);
 			dataRows.forEach(row => {
 				if (row.includes('FOO') || row.includes('BAZ') || row.includes('KEY')) {
-					expect(row).to.include('missing');
+					expect(row).to.include(EM_DASH);
 				}
 			});
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
@@ -655,7 +683,7 @@ describe('config env Command', () => {
 			expect(bazRow).to.include('bar');
 
 			const keyRow = tableOutput.split('\n').find(line => line.includes('KEY'));
-			expect(keyRow).to.include('missing');
+			expect(keyRow).to.include(EM_DASH);
 		});
 
 		it('does not show on_device column for product scope', async () => {
@@ -717,7 +745,7 @@ describe('config env Command', () => {
 				line.includes('FOO') || line.includes('BAZ') || line.includes('KEY')
 			);
 			rows.forEach(row => {
-				expect(row).to.include('Owner'); // Sandbox scope shows 'Owner' in the implementation
+				expect(row).to.include('Sandbox');
 			});
 		});
 

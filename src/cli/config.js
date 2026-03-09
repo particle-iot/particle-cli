@@ -13,7 +13,7 @@ module.exports = ({ commandProcessor, root }) => {
 					boolean: true
 				},
 				'org': {
-					description: 'Specify the organization'
+					description: 'Specify the organization slug (e.g. my-org)'
 				},
 				'product': {
 					description: 'Specify the product id'
@@ -38,7 +38,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command --sandbox': 'List all environment variables from sandbox',
-			'$0 $command --org <org>': 'List all environment variables from a specific organization',
+			'$0 $command --org <slug>': 'List all environment variables from a specific organization',
 			'$0 $command --product <productId>': 'List all environment variables from a specific product',
 			'$0 $command --device <deviceId>': 'List all environment variables from a specific device',
 		}
@@ -53,7 +53,7 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command <name> <value> --sandbox': 'Set env var to user\'s sandbox (space format)',
 			'$0 $command <name=value> --sandbox': 'Set env var to user\'s sandbox (equal sign format)',
-			'$0 $command <name> <value> --org <org>': 'Set env var for an organization',
+			'$0 $command <name> <value> --org <slug>': 'Set env var for an organization',
 			'$0 $command <name=value> --product <productId>': 'Set env var for a product',
 			'$0 $command <name> <value> --device <deviceId>': 'Set env var for a device',
 		}
@@ -67,7 +67,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command <name> --sandbox': 'Delete env var from user\'s sandbox',
-			'$0 $command <name> --org <org>': 'Delete env var from an organization',
+			'$0 $command <name> --org <slug>': 'Delete env var from an organization',
 			'$0 $command <name> --product <productId>': 'Delete env var from a product',
 			'$0 $command <name> --device <deviceId>': 'Delete env var from a device',
 		}
@@ -81,7 +81,7 @@ module.exports = ({ commandProcessor, root }) => {
 					boolean: true
 				},
 				'org': {
-					description: 'Specify the organization'
+					description: 'Specify the organization slug (e.g. my-org)'
 				}
 			}
 		}
@@ -100,7 +100,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command --sandbox': 'List all secrets from sandbox',
-			'$0 $command --org <org>': 'List all secrets from a specific organization'
+			'$0 $command --org <slug>': 'List all secrets from a specific organization'
 		}
 	});
 
@@ -112,7 +112,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command <name> --sandbox': 'Get a secret from sandbox',
-			'$0 $command <name> --org <org>': 'Get a secret from a specific organization'
+			'$0 $command <name> --org <slug>': 'Get a secret from a specific organization'
 		}
 	});
 
@@ -125,8 +125,8 @@ module.exports = ({ commandProcessor, root }) => {
 		examples: {
 			'$0 $command <name> <value> --sandbox': 'Set secret to user\'s sandbox (space format)',
 			'$0 $command <name=value> --sandbox': 'Set secret to user\'s sandbox (equal sign format)',
-			'$0 $command <name> <value> --org <org>': 'Set secret for an organization',
-			'$0 $command <name=value> --org <org>': 'Set secret for an organization (equal sign format)'
+			'$0 $command <name> <value> --org <slug>': 'Set secret for an organization',
+			'$0 $command <name=value> --org <slug>': 'Set secret for an organization (equal sign format)'
 		}
 	});
 
@@ -138,7 +138,7 @@ module.exports = ({ commandProcessor, root }) => {
 		},
 		examples: {
 			'$0 $command <name> --sandbox': 'Delete a secret from sandbox',
-			'$0 $command <name> --org <org>': 'Delete a secret from a specific organization'
+			'$0 $command <name> --org <slug>': 'Delete a secret from a specific organization'
 		}
 	});
 };

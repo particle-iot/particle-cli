@@ -19,7 +19,10 @@ async function displayEnv(data, scope, ui, api = null) {
 	ui.write(table.toString());
 
 	if (pendingChanges) {
-		ui.write(ui.chalk.yellow.bold('\nThere are pending changes that have not been applied yet.'));
+		ui.write('');
+		ui.write(ui.chalk.white.bold('Pending changes'));
+		ui.write(buildPendingChangesTable(data, ui).toString());
+		ui.write('');
 		await displayRolloutInstructions(scope, ui, api);
 	}
 }
@@ -61,6 +64,7 @@ async function getProductName(productSlug, api) {
  */
 function buildEnvTable(data, scope) {
 	const showOnDevice = !!scope.device;
+	const hideOverridden = scope.sandbox || scope.org;
 	const tableRows = getTableRows(data, scope);
 
 	if (tableRows.length === 0) {
@@ -70,6 +74,10 @@ function buildEnvTable(data, scope) {
 	const widths = calculateColumnWidths(tableRows);
 	if (!showOnDevice) {
 		delete widths['On Device'];
+	}
+
+	if (hideOverridden) {
+		delete widths['Overridden'];
 	}
 	const head = Object.keys(widths);
 	const colWidths = Object.values(widths);
@@ -87,7 +95,7 @@ function buildEnvTable(data, scope) {
 			...(showOnDevice ? [row.onDeviceValue] : []),
 			row.value,
 			row.scope,
-			row.isOverriden
+			...(!hideOverridden ? [row.isOverridden] : [])
 		]);
 	});
 
@@ -97,15 +105,15 @@ function buildEnvTable(data, scope) {
 function getTableRows(data, scope) {
 	const sortedKeys = getSortedEnvKeys(data);
 	// eslint-disable-next-line no-nested-ternary
-	const thisScope = (scope.sandbox || scope.org) ? 'Owner' : scope.product ? 'Product' : 'Device';
+	const thisScope = scope.sandbox ? 'Sandbox' : scope.org ? 'Organization' : scope.product ? 'Product' : 'Device';
 
 	return sortedKeys.map((key) => {
 		return {
 			key,
-			onDeviceValue: data.on_device?.rendered?.[key] ?? 'missing',
-			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key]?.value ?? 'missing',
+			onDeviceValue: data.on_device?.rendered?.[key] ?? EM_DASH,
+			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key]?.value ?? EM_DASH,
 			scope: data.last_snapshot?.inherited?.[key]?.from ?? thisScope,
-			isOverriden: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
+			isOverridden: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
 		};
 	});
 }
@@ -142,6 +150,76 @@ function calculateColumnWidths(tableRows) {
 	return widths;
 }
 
+const CHANGE_ORDER = { 'Added': 0, 'Updated': 1, 'Removed': 2 };
+const EM_DASH = '\u2014';
+
+function buildPendingChangesTable(data, ui) {
+	const snapshotOwn = data.last_snapshot?.own || {};
+	const latestOwn = data.latest?.own || {};
+	const allKeys = [...new Set([...Object.keys(snapshotOwn), ...Object.keys(latestOwn)])];
+
+	const rows = [];
+	for (const key of allKeys) {
+		const inSnapshot = key in snapshotOwn;
+		const inLatest = key in latestOwn;
+
+		if (inSnapshot && inLatest && snapshotOwn[key].value === latestOwn[key].value) {
+			continue;
+		}
+
+		let change;
+		if (!inSnapshot && inLatest) {
+			change = 'Added';
+		} else if (inSnapshot && !inLatest) {
+			change = 'Removed';
+		} else {
+			change = 'Updated';
+		}
+
+		rows.push({
+			change,
+			name: key,
+			oldValue: inSnapshot ? snapshotOwn[key].value : EM_DASH,
+			newValue: inLatest ? latestOwn[key].value : EM_DASH
+		});
+	}
+
+	rows.sort((a, b) => (CHANGE_ORDER[a.change] - CHANGE_ORDER[b.change]) || a.name.localeCompare(b.name));
+
+	const colorFn = {
+		'Added': (s) => ui.chalk.green.bold(s),
+		'Updated': (s) => ui.chalk.yellow.bold(s),
+		'Removed': (s) => ui.chalk.red.bold(s)
+	};
+
+	const columns = ['Change', 'Name', 'Old value', 'New value'];
+	const widths = Object.fromEntries(columns.map(col => [col, col.length]));
+
+	for (const row of rows) {
+		widths['Change'] = Math.max(widths['Change'], row.change.length);
+		widths['Name'] = Math.max(widths['Name'], row.name.length);
+		widths['Old value'] = Math.max(widths['Old value'], row.oldValue.length);
+		widths['New value'] = Math.max(widths['New value'], row.newValue.length);
+	}
+
+	for (const col of columns) {
+		widths[col] += 2;
+	}
+
+	const table = new Table({
+		head: columns,
+		colWidths: Object.values(widths),
+		style: { head: ['cyan', 'bold'] },
+		wordWrap: true
+	});
+
+	for (const row of rows) {
+		table.push([colorFn[row.change](row.change), row.name, row.oldValue, row.newValue]);
+	}
+
+	return table;
+}
+
 /**
  * Display instructions for applying the rollout with the appropriate console URL
  * @param {Object} scope - The scope parameters (sandbox, org, product, device)
@@ -150,37 +228,51 @@ function calculateColumnWidths(tableRows) {
  * @returns {Promise<void>}
  */
 async function displayRolloutInstructions(scope, ui, api = null) {
-	const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
-	let url;
+	const url = await getConsoleEnvSaveUrl(scope, api);
+	ui.write('To review and save these changes in the Console, visit:');
+	ui.write(ui.chalk.cyan(url));
+}
 
+async function getConsoleEnvSaveUrl(scope, api) {
+	const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
 	if (scope.sandbox) {
-		url = `${baseUrl}/env/edit`;
-	} else if (scope.org) {
-		url = `${baseUrl}/orgs/${scope.org}/env/edit`;
-	} else if (scope.product) {
-		url = `${baseUrl}/${scope.product}/env/edit`;
-	} else if (scope.device) {
-		if (!api) {
-			throw new Error('API instance is required to get device information');
-		}
-		const device = await api.getDevice({ deviceId: scope.device, auth: api.accessToken });
-		const product = await api.getProduct({ product: device.body?.product_id, auth: api.accessToken });
+		return `${baseUrl}/env/edit`;
+	}
+	if (scope.org) {
+		return `${baseUrl}/orgs/${scope.org}/env/edit`;
+	}
+	if (scope.product) {
+		const product = await api.getProduct({
+			product: scope.product,
+			auth: api.accessToken
+		});
+		return `${baseUrl}/${product?.product?.slug}/env/edit`;
+	}
+	if (scope.device) {
+		const device = await api.getDevice({
+			deviceId: scope.device,
+			auth: api.accessToken
+		});
+
+		const product = await api.getProduct({
+			product: device.body?.product_id,
+			auth: api.accessToken
+		});
+
 		const productSlug = product?.product?.slug;
 
 		if (productSlug) {
-			url = `${baseUrl}/${productSlug}/devices/${scope.device}/environment`;
-		} else {
-			url = `${baseUrl}/devices/${scope.device}/environment`;
+			return `${baseUrl}/${productSlug}/devices/${scope.device}/environment`;
 		}
+		return `${baseUrl}/devices/${scope.device}/environment`;
 	}
-	ui.write('To review and save these changes in the Console, visit:');
-	ui.write(ui.chalk.cyan(url));
 }
 
 module.exports = {
 	getSortedEnvKeys,
 	calculateColumnWidths,
 	buildEnvTable,
+	buildPendingChangesTable,
 	displayScopeTitle,
 	displayEnv,
 	displayRolloutInstructions

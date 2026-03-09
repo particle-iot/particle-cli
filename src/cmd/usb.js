@@ -128,20 +128,50 @@ module.exports = class UsbCommand extends CLICommandBase {
 			});
 	}
 
-	getEnv(args) {
+	async getEnv(args) {
 		args.api = this._api;
 		args.auth = this._auth;
+		const jsonFormat = args.json;
+		const jsonResults = [];
 		const output = [];
 
-		return forEachUsbDevice(args, async (usbDevice) => {
-			const result = await usbDevice.getEnv();
+		await forEachUsbDevice(args, async (usbDevice) => {
 			const platform = platformForId(usbDevice.platformId);
-			const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
-			output.push(...formattedOutput);
-			return result;
-		}).then(() => {
-			output.forEach(line => console.log(line));
+			try {
+				const result = await usbDevice.getEnv();
+				if (jsonFormat) {
+					jsonResults.push({
+						deviceId: usbDevice.id,
+						platformId: usbDevice.platformId,
+						platform: platform.displayName,
+						...result
+					});
+					return;
+				}
+				const formattedOutput = this._formatEnvOutput(result, platform.displayName, usbDevice.id);
+				output.push(...formattedOutput);
+			} catch (error) {
+				const errorMessage = error.message.includes('Not supported')
+					? 'USB env is only supported on Device OS 6.4.0 or later'
+					: `Error getting environment variables for device ${usbDevice.id}: ${error.message}`;
+				if (jsonFormat) {
+					jsonResults.push({
+						deviceId: usbDevice.id,
+						platformId: usbDevice.platformId,
+						platform: platform.displayName,
+						error: errorMessage
+					});
+					return;
+				}
+				output.push(chalk.red(errorMessage));
+			}
 		});
+
+		if (jsonFormat) {
+			console.log(JSON.stringify(jsonResults, null, 2));
+		} else {
+			output.forEach(line => console.log(line));
+		}
 	}
 
 	_formatEnvOutput(result, platformName, deviceId) {
