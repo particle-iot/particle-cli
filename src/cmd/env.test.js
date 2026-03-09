@@ -4,6 +4,7 @@ const nock = require('nock');
 const { sandboxList, sandboxProductList, sandboxDeviceProductList, emptyList, emptyListWithKeys } = require('../../test/__fixtures__/env/list');
 const EnvCommands = require('./env');
 const { displayEnv } = require('../lib/env');
+const os = require('os');
 
 
 describe('config env Command', () => {
@@ -137,7 +138,7 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 
 		it('throws an error in case the name, value is invalid', async () => {
@@ -165,7 +166,7 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, org: 'my-org' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 		it('set env var for specific product', async () => {
 			const params = { name: 'FOO', value: 'bar' };
@@ -174,7 +175,7 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, product: 'my-product' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 		it('set env var for specific device', async () => {
 			const params = { name: 'FOO', value: 'bar' };
@@ -193,7 +194,7 @@ describe('config env Command', () => {
 				.reply(200, sandboxList);
 			await envCommands.setEnv({ params, device: deviceId });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully set.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
 		});
 
 		it('set env var using key=value format', async () => {
@@ -208,7 +209,7 @@ describe('config env Command', () => {
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar', op: 'Set' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith('Environment variable FOO has been successfully set.');
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable FOO has been successfully set.${os.EOL}`);
 		});
 
 		it('set env var using key=value format with value containing equals sign', async () => {
@@ -223,7 +224,7 @@ describe('config env Command', () => {
 			await envCommands.setEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', value: 'bar=baz', op: 'Set' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith('Environment variable FOO has been successfully set.');
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable FOO has been successfully set.${os.EOL}`);
 		});
 
 		it('throws error when key=value format is invalid (empty key)', async () => {
@@ -270,7 +271,7 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, sandbox: true });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('deletes env var for specific org', async () => {
@@ -293,7 +294,7 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, org: 'my-org' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('deletes env var for specific product', async () => {
@@ -316,7 +317,7 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, product: 'my-product' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('deletes env var for specific device', async () => {
@@ -347,7 +348,7 @@ describe('config env Command', () => {
 			await envCommands.deleteEnv({ params, device: deviceId });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('prevents deletion of inherited-only variables', async () => {
@@ -393,7 +394,7 @@ describe('config env Command', () => {
 			expect(envCommands.ui.write).to.have.been.calledWith(
 				envCommands.ui.chalk.yellow(`Note: 'FOO' is an overridden variable. If you delete it, the inherited value 'inherited_value' will become visible.`)
 			);
-			expect(envCommands.ui.write).to.have.been.calledWith(`Environment variable ${params.name} has been successfully deleted.`);
+			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully deleted.${os.EOL}`);
 		});
 
 		it('throws error when trying to delete non-existent variable', async () => {
