@@ -149,6 +149,8 @@ module.exports = class UsbCommand extends CLICommandBase {
 			} catch (error) {
 				if (error.message.includes('Not supported')) {
 					output.push(chalk.red(`USB env is only supported on Device OS 6.3.4 and onwards`));
+				} else {
+					output.push(chalk.red(`Error getting environment variables for device ${usbDevice.id}: ${error.message}`));
 				}
 			}
 		});
