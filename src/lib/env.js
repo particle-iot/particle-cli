@@ -2,6 +2,7 @@
 const Table = require('cli-table');
 const settings = require('../../settings');
 const _ = require('lodash');
+const os = require('os');
 
 /**
  * Display environment variables in a formatted table
@@ -19,7 +20,7 @@ async function displayEnv(data, scope, ui, api = null) {
 	ui.write(table.toString());
 
 	if (pendingChanges) {
-		ui.write(ui.chalk.yellow.bold('\nThere are pending changes that have not been applied yet.'));
+		ui.write(ui.chalk.yellow.bold(`${os.EOL}There are pending changes that have not been applied yet.${os.EOL}`));
 		await displayRolloutInstructions(scope, ui, api);
 	}
 }
