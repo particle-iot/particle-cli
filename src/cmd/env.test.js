@@ -76,6 +76,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1')
 				.intercept('/products/product-id-123/env', 'GET')
 				.reply(200, sandboxProductList);
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'product-id-123' }
+			});
 			await envCommands.list({ product: 'product-id-123' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Retrieving environment variables...');
 
@@ -173,6 +176,9 @@ describe('config env Command', () => {
 			nock('https://api.particle.io/v1/products/my-product')
 				.intercept('/env', 'PATCH')
 				.reply(200, sandboxList);
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'my-product' }
+			});
 			await envCommands.setEnv({ params, product: 'my-product' });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Setting environment variable...');
 			expect(envCommands.ui.write).to.have.been.calledWith(`${os.EOL}Environment variable ${params.name} has been successfully set.${os.EOL}`);
@@ -314,6 +320,9 @@ describe('config env Command', () => {
 					receivedBody = requestBody;
 					return [200, {}];
 				});
+			sinon.stub(envCommands.api, 'getProduct').resolves({
+				product: { slug: 'my-product' }
+			});
 			await envCommands.deleteEnv({ params, product: 'my-product' });
 			expect(receivedBody).to.deep.equal({ ops: [{ key: 'FOO', op: 'Unset' }] });
 			expect(envCommands.ui.showBusySpinnerUntilResolved).calledWith('Deleting environment variable...');
@@ -510,6 +519,15 @@ describe('config env Command', () => {
 		});
 
 		it('displays product scope with pending changes and shows warning', async () => {
+			const api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
 			const data = {
 				last_snapshot: {
 					inherited: {
@@ -534,7 +552,7 @@ describe('config env Command', () => {
 				}
 			};
 
-			await displayEnv(data, { product: true }, envCommands.ui);
+			await displayEnv(data, { product: true }, envCommands.ui, api);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
 			const tableOutput = writeCalls[2];

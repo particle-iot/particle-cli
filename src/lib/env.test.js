@@ -516,6 +516,15 @@ describe('lib/env', () => {
 		});
 
 		it('displays rollout URL for product when pending changes exist', async () => {
+			const api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
 			const data = {
 				last_snapshot: {
 					own: {
@@ -530,14 +539,14 @@ describe('lib/env', () => {
 				}
 			};
 
-			await displayEnv(data, { product: '12345' }, ui);
+			await displayEnv(data, { product: '12345' }, ui, api);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('https://console.particle.io/12345/env/edit');
+			expect(output).to.include('https://console.particle.io/my-product/env/edit');
 		});
 
 		it('displays device rollout URL when pending changes exist and device has product', async () => {
-			const mockApi = {
+			const api = {
 				getDevice: sinon.stub().resolves({
 					body: {
 						id: 'device123',
@@ -566,7 +575,7 @@ describe('lib/env', () => {
 				}
 			};
 
-			await displayEnv(data, { device: 'device123' }, ui, mockApi);
+			await displayEnv(data, { device: 'device123' }, ui, api);
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('https://console.particle.io/my-product/devices/device123');
@@ -610,7 +619,7 @@ describe('lib/env', () => {
 		});
 
 		it('displays "Scope: Product (product-name)" for product scope with api', async () => {
-			const mockApi = {
+			const api = {
 				getProduct: sinon.stub().resolves({
 					product: {
 						name: 'My Product'
@@ -619,9 +628,9 @@ describe('lib/env', () => {
 				accessToken: 'test-token'
 			};
 
-			await displayScopeTitle({ product: '12345' }, ui, mockApi);
+			await displayScopeTitle({ product: '12345' }, ui, api);
 
-			expect(mockApi.getProduct).to.have.been.calledWith({
+			expect(api.getProduct).to.have.been.calledWith({
 				product: '12345',
 				auth: 'test-token'
 			});
@@ -631,12 +640,12 @@ describe('lib/env', () => {
 		});
 
 		it('displays "Scope: Product (product-id)" when api fails to get product name', async () => {
-			const mockApi = {
+			const api = {
 				getProduct: sinon.stub().rejects(new Error('API error')),
 				accessToken: 'test-token'
 			};
 
-			await displayScopeTitle({ product: '12345' }, ui, mockApi);
+			await displayScopeTitle({ product: '12345' }, ui, api);
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('Scope: Product (12345)');
@@ -684,15 +693,29 @@ describe('lib/env', () => {
 		});
 
 		it('displays product rollout URL', async () => {
-			await displayRolloutInstructions({ product: '12345' }, ui);
+			const api = {
+				getProduct: sinon.stub().resolves({
+					product: {
+						slug: 'my-product'
+					}
+				}),
+				accessToken: 'test-token'
+			};
+
+			await displayRolloutInstructions({ product: '12345' }, ui, api);
+
+			expect(api.getProduct).to.have.been.calledWith({
+				product: '12345',
+				auth: 'test-token'
+			});
 
 			const output = ui._writes.join('\n');
 			expect(output).to.include('To review and save these changes in the Console, visit:');
-			expect(output).to.include('https://console.particle.io/12345/env/edit');
+			expect(output).to.include('https://console.particle.io/my-product/env/edit');
 		});
 
 		it('displays device URL with product slug when device is in a product', async () => {
-			const mockApi = {
+			const api = {
 				getDevice: sinon.stub().resolves({
 					body: {
 						id: 'device123',
@@ -707,14 +730,14 @@ describe('lib/env', () => {
 				accessToken: 'test-token'
 			};
 
-			await displayRolloutInstructions({ device: 'device123' }, ui, mockApi);
+			await displayRolloutInstructions({ device: 'device123' }, ui, api);
 
-			expect(mockApi.getDevice).to.have.been.calledWith({
+			expect(api.getDevice).to.have.been.calledWith({
 				deviceId: 'device123',
 				auth: 'test-token'
 			});
 
-			expect(mockApi.getProduct).to.have.been.calledWith({
+			expect(api.getProduct).to.have.been.calledWith({
 				product: 99999,
 				auth: 'test-token'
 			});
@@ -725,7 +748,7 @@ describe('lib/env', () => {
 		});
 
 		it('displays device URL without product slug when product has no slug', async () => {
-			const mockApi = {
+			const api = {
 				getDevice: sinon.stub().resolves({
 					body: {
 						id: 'device456'
@@ -737,9 +760,9 @@ describe('lib/env', () => {
 				accessToken: 'test-token'
 			};
 
-			await displayRolloutInstructions({ device: 'device456' }, ui, mockApi);
+			await displayRolloutInstructions({ device: 'device456' }, ui, api);
 
-			expect(mockApi.getDevice).to.have.been.calledWith({
+			expect(api.getDevice).to.have.been.calledWith({
 				deviceId: 'device456',
 				auth: 'test-token'
 			});
@@ -758,7 +781,6 @@ describe('lib/env', () => {
 			}
 
 			expect(error).to.exist;
-			expect(error.message).to.equal('API instance is required to get device information');
 		});
 
 		describe('staging environment', () => {
@@ -789,16 +811,25 @@ describe('lib/env', () => {
 			it('uses staging console URL for product when isStaging is true', async () => {
 				sinon.stub(settings, 'isStaging').value(true);
 
-				await displayRolloutInstructions({ product: '12345' }, ui);
+				const api = {
+					getProduct: sinon.stub().resolves({
+						product: {
+							slug: 'my-product'
+						}
+					}),
+					accessToken: 'test-token'
+				};
+
+				await displayRolloutInstructions({ product: '12345' }, ui, api);
 
 				const output = ui._writes.join('\n');
-				expect(output).to.include('https://console.staging.particle.io/12345/env/edit');
+				expect(output).to.include('https://console.staging.particle.io/my-product/env/edit');
 			});
 
 			it('uses staging console URL for device when isStaging is true', async () => {
 				sinon.stub(settings, 'isStaging').value(true);
 
-				const mockApi = {
+				const api = {
 					getDevice: sinon.stub().resolves({
 						body: {
 							id: 'device123',
@@ -813,7 +844,7 @@ describe('lib/env', () => {
 					accessToken: 'test-token'
 				};
 
-				await displayRolloutInstructions({ device: 'device123' }, ui, mockApi);
+				await displayRolloutInstructions({ device: 'device123' }, ui, api);
 
 				const output = ui._writes.join('\n');
 				expect(output).to.include('https://console.staging.particle.io/my-product/devices/device123');

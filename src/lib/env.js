@@ -151,31 +151,44 @@ function calculateColumnWidths(tableRows) {
  * @returns {Promise<void>}
  */
 async function displayRolloutInstructions(scope, ui, api = null) {
-	const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
-	let url;
+	const url = await getConsoleEnvSaveUrl(scope, api);
+	ui.write('To review and save these changes in the Console, visit:');
+	ui.write(ui.chalk.cyan(url));
+}
 
+async function getConsoleEnvSaveUrl(scope, api) {
+	const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
 	if (scope.sandbox) {
-		url = `${baseUrl}/env/edit`;
-	} else if (scope.org) {
-		url = `${baseUrl}/orgs/${scope.org}/env/edit`;
-	} else if (scope.product) {
-		url = `${baseUrl}/${scope.product}/env/edit`;
-	} else if (scope.device) {
-		if (!api) {
-			throw new Error('API instance is required to get device information');
-		}
-		const device = await api.getDevice({ deviceId: scope.device, auth: api.accessToken });
-		const product = await api.getProduct({ product: device.body?.product_id, auth: api.accessToken });
+		return `${baseUrl}/env/edit`;
+	}
+	if (scope.org) {
+		return `${baseUrl}/orgs/${scope.org}/env/edit`;
+	}
+	if (scope.product) {
+		const product = await api.getProduct({
+			product: scope.product,
+			auth: api.accessToken
+		});
+		return `${baseUrl}/${product?.product?.slug}/env/edit`;
+	}
+	if (scope.device) {
+		const device = await api.getDevice({
+			deviceId: scope.device,
+			auth: api.accessToken
+		});
+
+		const product = await api.getProduct({
+			product: device.body?.product_id,
+			auth: api.accessToken
+		});
+
 		const productSlug = product?.product?.slug;
 
 		if (productSlug) {
-			url = `${baseUrl}/${productSlug}/devices/${scope.device}/environment`;
-		} else {
-			url = `${baseUrl}/devices/${scope.device}/environment`;
+			return `${baseUrl}/${productSlug}/devices/${scope.device}/environment`;
 		}
+		return `${baseUrl}/devices/${scope.device}/environment`;
 	}
-	ui.write('To review and save these changes in the Console, visit:');
-	ui.write(ui.chalk.cyan(url));
 }
 
 module.exports = {
