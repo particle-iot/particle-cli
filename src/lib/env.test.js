@@ -93,8 +93,8 @@ describe('lib/env', () => {
 	describe('calculateColumnWidths', () => {
 		it('calculates widths based on content', () => {
 			const tableRows = [
-				{ key: 'SHORT', onDeviceValue: 'missing', value: 'val', scope: 'Owner', isOverriden: 'No' },
-				{ key: 'VERY_LONG_VARIABLE_NAME', onDeviceValue: 'missing', value: 'this is a very long value', scope: 'Owner', isOverriden: 'No' }
+				{ key: 'SHORT', onDeviceValue: 'missing', value: 'val', scope: 'Owner', isOverridden: 'No' },
+				{ key: 'VERY_LONG_VARIABLE_NAME', onDeviceValue: 'missing', value: 'this is a very long value', scope: 'Owner', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -116,7 +116,7 @@ describe('lib/env', () => {
 
 		it('accounts for on device values in column width', () => {
 			const tableRows = [
-				{ key: 'FOO', onDeviceValue: 'very-long-on-device-value', value: 'bar', scope: 'Device', isOverriden: 'No' }
+				{ key: 'FOO', onDeviceValue: 'very-long-on-device-value', value: 'bar', scope: 'Device', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -126,7 +126,7 @@ describe('lib/env', () => {
 
 		it('accounts for scope values in column width', () => {
 			const tableRows = [
-				{ key: 'FOO', onDeviceValue: 'missing', value: 'bar', scope: 'Organization', isOverriden: 'No' }
+				{ key: 'FOO', onDeviceValue: 'missing', value: 'bar', scope: 'Organization', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -152,7 +152,7 @@ describe('lib/env', () => {
 			expect(output).to.include('Name');
 			expect(output).to.include('Value');
 			expect(output).to.include('Scope');
-			expect(output).to.include('Overridden');
+			expect(output).to.not.include('Overridden');
 			expect(output).to.include('FOO');
 			expect(output).to.include('bar');
 			expect(output).to.include('Owner');
@@ -192,7 +192,7 @@ describe('lib/env', () => {
 			expect(output).to.include('Yes');
 		});
 
-		it('shows overridden as No when key is only in own', () => {
+		it('hides Overridden when key is only in own', () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -205,7 +205,7 @@ describe('lib/env', () => {
 			const table = buildEnvTable(data, { sandbox: true });
 			const output = table.toString();
 
-			expect(output).to.include('No');
+			expect(output).to.not.include('Overridden');
 		});
 
 		it('uses "Owner" as scope for own variables in sandbox/org scope', () => {

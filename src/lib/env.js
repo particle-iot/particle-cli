@@ -62,6 +62,7 @@ async function getProductName(productSlug, api) {
  */
 function buildEnvTable(data, scope) {
 	const showOnDevice = !!scope.device;
+	const hideOverridden = scope.sandbox || scope.org;
 	const tableRows = getTableRows(data, scope);
 
 	if (tableRows.length === 0) {
@@ -71,6 +72,10 @@ function buildEnvTable(data, scope) {
 	const widths = calculateColumnWidths(tableRows);
 	if (!showOnDevice) {
 		delete widths['On Device'];
+	}
+
+	if (hideOverridden) {
+		delete widths['Overridden'];
 	}
 	const head = Object.keys(widths);
 	const colWidths = Object.values(widths);
@@ -83,13 +88,16 @@ function buildEnvTable(data, scope) {
 	});
 
 	tableRows.forEach((row) => {
-		table.push([
+		const rowData = [
 			row.key,
 			...(showOnDevice ? [row.onDeviceValue] : []),
 			row.value,
-			row.scope,
-			row.isOverriden
-		]);
+			row.scope
+		];
+		if (!hideOverridden) {
+			rowData.push(row.isOverridden);
+		}
+		table.push(rowData);
 	});
 
 	return table;
@@ -106,7 +114,7 @@ function getTableRows(data, scope) {
 			onDeviceValue: data.on_device?.rendered?.[key] ?? 'missing',
 			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key]?.value ?? 'missing',
 			scope: data.last_snapshot?.inherited?.[key]?.from ?? thisScope,
-			isOverriden: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
+			isOverridden: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
 		};
 	});
 }

@@ -58,7 +58,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
 			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.include('Overridden');
+			expect(tableOutput).to.not.include('Overridden');
 			expect(tableOutput).to.include('FOO3');
 			expect(tableOutput).to.include('FOO2');
 			expect(tableOutput).to.include('FOO');
