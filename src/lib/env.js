@@ -20,7 +20,10 @@ async function displayEnv(data, scope, ui, api = null) {
 	ui.write(table.toString());
 
 	if (pendingChanges) {
-		ui.write(ui.chalk.yellow.bold(`${os.EOL}There are pending changes that have not been applied yet.${os.EOL}`));
+		ui.write('');
+		ui.write(ui.chalk.white.bold('Pending changes'));
+		ui.write(buildPendingChangesTable(data, ui).toString());
+		ui.write('');
 		await displayRolloutInstructions(scope, ui, api);
 	}
 }
@@ -151,6 +154,76 @@ function calculateColumnWidths(tableRows) {
 	return widths;
 }
 
+const CHANGE_ORDER = { 'Added': 0, 'Updated': 1, 'Removed': 2 };
+const EM_DASH = '\u2014';
+
+function buildPendingChangesTable(data, ui) {
+	const snapshotOwn = data.last_snapshot?.own || {};
+	const latestOwn = data.latest?.own || {};
+	const allKeys = [...new Set([...Object.keys(snapshotOwn), ...Object.keys(latestOwn)])];
+
+	const rows = [];
+	for (const key of allKeys) {
+		const inSnapshot = key in snapshotOwn;
+		const inLatest = key in latestOwn;
+
+		if (inSnapshot && inLatest && snapshotOwn[key].value === latestOwn[key].value) {
+			continue;
+		}
+
+		let change;
+		if (!inSnapshot && inLatest) {
+			change = 'Added';
+		} else if (inSnapshot && !inLatest) {
+			change = 'Removed';
+		} else {
+			change = 'Updated';
+		}
+
+		rows.push({
+			change,
+			name: key,
+			oldValue: inSnapshot ? snapshotOwn[key].value : EM_DASH,
+			newValue: inLatest ? latestOwn[key].value : EM_DASH
+		});
+	}
+
+	rows.sort((a, b) => (CHANGE_ORDER[a.change] - CHANGE_ORDER[b.change]) || a.name.localeCompare(b.name));
+
+	const colorFn = {
+		'Added': (s) => ui.chalk.green.bold(s),
+		'Updated': (s) => ui.chalk.yellow.bold(s),
+		'Removed': (s) => ui.chalk.red.bold(s)
+	};
+
+	const columns = ['Change', 'Name', 'Old value', 'New value'];
+	const widths = Object.fromEntries(columns.map(col => [col, col.length]));
+
+	for (const row of rows) {
+		widths['Change'] = Math.max(widths['Change'], row.change.length);
+		widths['Name'] = Math.max(widths['Name'], row.name.length);
+		widths['Old value'] = Math.max(widths['Old value'], row.oldValue.length);
+		widths['New value'] = Math.max(widths['New value'], row.newValue.length);
+	}
+
+	for (const col of columns) {
+		widths[col] += 2;
+	}
+
+	const table = new Table({
+		head: columns,
+		colWidths: Object.values(widths),
+		style: { head: ['cyan', 'bold'] },
+		wordWrap: true
+	});
+
+	for (const row of rows) {
+		table.push([colorFn[row.change](row.change), row.name, row.oldValue, row.newValue]);
+	}
+
+	return table;
+}
+
 /**
  * Display instructions for applying the rollout with the appropriate console URL
  * @param {Object} scope - The scope parameters (sandbox, org, product, device)
@@ -203,6 +276,7 @@ module.exports = {
 	getSortedEnvKeys,
 	calculateColumnWidths,
 	buildEnvTable,
+	buildPendingChangesTable,
 	displayScopeTitle,
 	displayEnv,
 	displayRolloutInstructions

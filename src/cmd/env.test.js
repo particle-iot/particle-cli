@@ -30,11 +30,15 @@ describe('config env Command', () => {
 				gray: sinon.stub().callsFake((str) => str),
 				red: sinon.stub().callsFake((str) => str),
 				green: sinon.stub().callsFake((str) => str),
+				white: sinon.stub().callsFake((str) => str),
 			},
 		};
 
 		envCommands.ui.chalk.cyan.bold = sinon.stub().callsFake((str) => str);
 		envCommands.ui.chalk.yellow.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.green.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.red.bold = sinon.stub().callsFake((str) => str);
+		envCommands.ui.chalk.white.bold = sinon.stub().callsFake((str) => str);
 	});
 
 	afterEach(() => {
@@ -560,8 +564,10 @@ describe('config env Command', () => {
 			expect(bazRow).to.include('foo');
 			expect(bazRow).to.not.include('product');
 			expect(bazRow).to.include('No');
-			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
-			expect(writeCalls.join('\n')).to.include('To review and save these changes in the Console, visit:');
+			const allOutput = writeCalls.join('\n');
+			expect(allOutput).to.include('Pending changes');
+			expect(allOutput).to.include('Added');
+			expect(allOutput).to.include('To review and save these changes in the Console, visit:');
 		});
 
 		it('does not show pending variables not in last_snapshot', async () => {
@@ -588,14 +594,16 @@ describe('config env Command', () => {
 			await displayEnv(data, { sandbox: true }, envCommands.ui);
 
 			const writeCalls = envCommands.ui.write.getCalls().map(c => stripAnsi(c.args[0]));
-			const tableOutput = writeCalls[2];
-			expect(tableOutput).to.not.include('NEW');
-			expect(tableOutput).to.not.include('set');
-			expect(tableOutput).to.include('FOO');
-			expect(tableOutput).to.include('BAZ');
-			expect(tableOutput).to.include('KEY');
-			expect(writeCalls.join('\n')).to.include('There are pending changes that have not been applied yet.');
-			expect(writeCalls.join('\n')).to.include('To review and save these changes in the Console, visit:');
+			const envTable = writeCalls[2];
+			expect(envTable).to.not.include('NEW');
+			expect(envTable).to.include('FOO');
+			expect(envTable).to.include('BAZ');
+			expect(envTable).to.include('KEY');
+			const allOutput = writeCalls.join('\n');
+			expect(allOutput).to.include('Pending changes');
+			expect(allOutput).to.include('Added');
+			expect(allOutput).to.include('NEW');
+			expect(allOutput).to.include('To review and save these changes in the Console, visit:');
 		});
 
 		it('displays device scope with on_device column showing missing when null', async () => {

@@ -4,6 +4,7 @@ const {
 	getSortedEnvKeys,
 	calculateColumnWidths,
 	buildEnvTable,
+	buildPendingChangesTable,
 	displayScopeTitle,
 	displayEnv,
 	displayRolloutInstructions
@@ -407,6 +408,109 @@ describe('lib/env', () => {
 		});
 	});
 
+	describe('buildPendingChangesTable', () => {
+		let ui;
+
+		beforeEach(() => {
+			ui = {
+				chalk: {
+					green: { bold: (str) => str },
+					yellow: { bold: (str) => str },
+					red: { bold: (str) => str }
+				}
+			};
+		});
+
+		it('classifies added variables', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: { own: { NEW_VAR: { value: 'hello' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Added');
+			expect(output).to.include('NEW_VAR');
+			expect(output).to.include('hello');
+		});
+
+		it('classifies removed variables', () => {
+			const data = {
+				last_snapshot: { own: { OLD_VAR: { value: 'bye' } } },
+				latest: { own: {} }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Removed');
+			expect(output).to.include('OLD_VAR');
+			expect(output).to.include('bye');
+		});
+
+		it('classifies updated variables', () => {
+			const data = {
+				last_snapshot: { own: { MY_VAR: { value: 'old' } } },
+				latest: { own: { MY_VAR: { value: 'new' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Updated');
+			expect(output).to.include('MY_VAR');
+			expect(output).to.include('old');
+			expect(output).to.include('new');
+		});
+
+		it('skips unchanged variables', () => {
+			const data = {
+				last_snapshot: { own: { SAME: { value: 'val' }, CHANGED: { value: 'old' } } },
+				latest: { own: { SAME: { value: 'val' }, CHANGED: { value: 'new' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.not.include('SAME');
+			expect(output).to.include('CHANGED');
+		});
+
+		it('shows em dash for missing old value (Added)', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: { own: { NEW_VAR: { value: 'hello' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('\u2014');
+		});
+
+		it('shows em dash for missing new value (Removed)', () => {
+			const data = {
+				last_snapshot: { own: { OLD_VAR: { value: 'bye' } } },
+				latest: { own: {} }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('\u2014');
+		});
+
+		it('sorts rows by change type then name alphabetically', () => {
+			const data = {
+				last_snapshot: { own: { Z_UPDATE: { value: 'old' }, A_REMOVE: { value: 'x' }, B_REMOVE: { value: 'y' } } },
+				latest: { own: { Z_UPDATE: { value: 'new' }, B_ADD: { value: 'b' }, A_ADD: { value: 'a' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			const addIdx = output.indexOf('A_ADD');
+			const add2Idx = output.indexOf('B_ADD');
+			const updateIdx = output.indexOf('Z_UPDATE');
+			const removeIdx = output.indexOf('A_REMOVE');
+			const remove2Idx = output.indexOf('B_REMOVE');
+
+			// Added before Updated before Removed
+			expect(addIdx).to.be.lessThan(updateIdx);
+			expect(updateIdx).to.be.lessThan(removeIdx);
+			// Within same type, alphabetical
+			expect(addIdx).to.be.lessThan(add2Idx);
+			expect(removeIdx).to.be.lessThan(remove2Idx);
+		});
+	});
+
 	describe('displayEnv', () => {
 		let ui;
 
@@ -420,7 +524,9 @@ describe('lib/env', () => {
 					yellow: (str) => str,
 					cyan: (str) => str,
 					bold: (str) => str,
-					green: (str) => str
+					green: { bold: (str) => str },
+					white: { bold: (str) => str },
+					red: { bold: (str) => str }
 				}
 			};
 			ui.chalk.cyan.bold = (str) => str;
@@ -468,7 +574,7 @@ describe('lib/env', () => {
 			expect(output).to.include('No environment variables found.');
 		});
 
-		it('displays pending changes warning when last_snapshot.own differs from latest.own', async () => {
+		it('displays pending changes table when last_snapshot.own differs from latest.own', async () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -486,7 +592,12 @@ describe('lib/env', () => {
 			await displayEnv(data, { sandbox: true }, ui);
 
 			const output = ui._writes.join('\n');
-			expect(output).to.include('There are pending changes that have not been applied yet.');
+			expect(output).to.include('Pending changes');
+			expect(output).to.include('Updated');
+			expect(output).to.include('FOO');
+			expect(output).to.include('old-value');
+			expect(output).to.include('new-value');
+			expect(output).to.not.include('There are pending changes that have not been applied yet.');
 		});
 
 		it('does not display pending changes warning when last_snapshot.own equals latest.own', async () => {

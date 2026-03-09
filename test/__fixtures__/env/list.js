@@ -171,10 +171,27 @@ const emptyListWithKeys = {
 	latest: { inherited: {}, own: {} }
 };
 
+const pendingChangesList = {
+	last_snapshot: {
+		own: {
+			UPDATED_VAR: { value: 'old-value' },
+			REMOVED_VAR: { value: 'gone-soon' }
+		},
+		inherited: {}
+	},
+	latest: {
+		own: {
+			UPDATED_VAR: { value: 'new-value', access: ['Device'] },
+			ADDED_VAR: { value: 'brand-new', access: ['Device'] }
+		}
+	}
+};
+
 module.exports = {
 	sandboxList,
 	sandboxProductList,
 	sandboxDeviceProductList,
 	emptyList,
-	emptyListWithKeys
+	emptyListWithKeys,
+	pendingChangesList
 };
