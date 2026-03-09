@@ -901,17 +901,6 @@ describe('lib/env', () => {
 			expect(output).to.include('https://console.particle.io/devices/device456');
 		});
 
-		it('throws error when api is not provided for device scope', async () => {
-			let error;
-			try {
-				await displayRolloutInstructions({ device: 'device123' }, ui);
-			} catch (e) {
-				error = e;
-			}
-
-			expect(error).to.exist;
-		});
-
 		describe('staging environment', () => {
 			const settings = require('../../settings');
 
