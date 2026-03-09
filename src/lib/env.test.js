@@ -10,6 +10,8 @@ const {
 	displayRolloutInstructions
 } = require('./env');
 
+const EM_DASH = '\u2014';
+
 describe('lib/env', () => {
 	describe('getSortedEnvKeys', () => {
 		it('returns sorted keys from last_snapshot.own and last_snapshot.inherited', () => {
@@ -94,8 +96,8 @@ describe('lib/env', () => {
 	describe('calculateColumnWidths', () => {
 		it('calculates widths based on content', () => {
 			const tableRows = [
-				{ key: 'SHORT', onDeviceValue: 'missing', value: 'val', scope: 'Owner', isOverridden: 'No' },
-				{ key: 'VERY_LONG_VARIABLE_NAME', onDeviceValue: 'missing', value: 'this is a very long value', scope: 'Owner', isOverridden: 'No' }
+				{ key: 'SHORT', onDeviceValue: EM_DASH, value: 'val', scope: 'Owner', isOverridden: 'No' },
+				{ key: 'VERY_LONG_VARIABLE_NAME', onDeviceValue: EM_DASH, value: 'this is a very long value', scope: 'Owner', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -127,7 +129,7 @@ describe('lib/env', () => {
 
 		it('accounts for scope values in column width', () => {
 			const tableRows = [
-				{ key: 'FOO', onDeviceValue: 'missing', value: 'bar', scope: 'Organization', isOverridden: 'No' }
+				{ key: 'FOO', onDeviceValue: EM_DASH, value: 'bar', scope: 'Organization', isOverridden: 'No' }
 			];
 
 			const result = calculateColumnWidths(tableRows);
@@ -309,7 +311,7 @@ describe('lib/env', () => {
 			expect(output).to.not.include('On Device');
 		});
 
-		it('shows "missing" for on_device when value is not present', () => {
+		it('shows em dash for on_device when value is not present', () => {
 			const data = {
 				last_snapshot: {
 					own: {
@@ -325,7 +327,7 @@ describe('lib/env', () => {
 			const table = buildEnvTable(data, { device: 'my-device' });
 			const output = table.toString();
 
-			expect(output).to.include('missing');
+			expect(output).to.include(EM_DASH);
 		});
 
 		it('sorts variables alphabetically', () => {

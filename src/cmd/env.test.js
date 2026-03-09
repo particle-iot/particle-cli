@@ -6,6 +6,7 @@ const EnvCommands = require('./env');
 const { displayEnv } = require('../lib/env');
 const os = require('os');
 
+const EM_DASH = '\u2014';
 
 describe('config env Command', () => {
 	let envCommands;
@@ -606,7 +607,7 @@ describe('config env Command', () => {
 			expect(allOutput).to.include('To review and save these changes in the Console, visit:');
 		});
 
-		it('displays device scope with on_device column showing missing when null', async () => {
+		it('displays device scope with on_device column showing em dash when null', async () => {
 			const data = {
 				last_snapshot: {
 					inherited: {
@@ -636,7 +637,7 @@ describe('config env Command', () => {
 			const dataRows = rows.slice(2);
 			dataRows.forEach(row => {
 				if (row.includes('FOO') || row.includes('BAZ') || row.includes('KEY')) {
-					expect(row).to.include('missing');
+					expect(row).to.include(EM_DASH);
 				}
 			});
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO'));
@@ -682,7 +683,7 @@ describe('config env Command', () => {
 			expect(bazRow).to.include('bar');
 
 			const keyRow = tableOutput.split('\n').find(line => line.includes('KEY'));
-			expect(keyRow).to.include('missing');
+			expect(keyRow).to.include(EM_DASH);
 		});
 
 		it('does not show on_device column for product scope', async () => {
