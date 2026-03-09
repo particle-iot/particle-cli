@@ -2,7 +2,6 @@
 const Table = require('cli-table');
 const settings = require('../../settings');
 const _ = require('lodash');
-const os = require('os');
 
 /**
  * Display environment variables in a formatted table
