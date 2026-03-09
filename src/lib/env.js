@@ -91,16 +91,13 @@ function buildEnvTable(data, scope) {
 	});
 
 	tableRows.forEach((row) => {
-		const rowData = [
+		table.push([
 			row.key,
 			...(showOnDevice ? [row.onDeviceValue] : []),
 			row.value,
-			row.scope
-		];
-		if (!hideOverridden) {
-			rowData.push(row.isOverridden);
-		}
-		table.push(rowData);
+			row.scope,
+			...(!hideOverridden ? [row.isOverridden] : [])
+		]);
 	});
 
 	return table;
@@ -114,8 +111,8 @@ function getTableRows(data, scope) {
 	return sortedKeys.map((key) => {
 		return {
 			key,
-			onDeviceValue: data.on_device?.rendered?.[key] ?? 'missing',
-			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key]?.value ?? 'missing',
+			onDeviceValue: data.on_device?.rendered?.[key] ?? EM_DASH,
+			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key]?.value ?? EM_DASH,
 			scope: data.last_snapshot?.inherited?.[key]?.from ?? thisScope,
 			isOverridden: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
 		};
