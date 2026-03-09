@@ -4,6 +4,7 @@ const ParticleAPI = require('./api');
 const settings = require('../../settings');
 const fs = require('node:fs/promises');
 const { displayEnv, displayRolloutInstructions } = require('../lib/env');
+const os = require('os');
 
 module.exports = class EnvCommands extends CLICommandBase {
 	constructor(...args) {
@@ -68,7 +69,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 				deviceId: device,
 				operations: [operation]
 			}));
-		this.ui.write(`Environment variable ${name} has been successfully set.`);
+		this.ui.write(`${os.EOL}Environment variable ${name} has been successfully set.${os.EOL}`);
 		await displayRolloutInstructions({ sandbox, org, product, device }, this.ui, this.api);
 	}
 
@@ -125,7 +126,7 @@ module.exports = class EnvCommands extends CLICommandBase {
 				deviceId: device,
 				operations: [operation]
 			}));
-		this.ui.write(`Environment variable ${name} has been successfully deleted.`);
+		this.ui.write(`${os.EOL}Environment variable ${name} has been successfully deleted.${os.EOL}`);
 		await displayRolloutInstructions({ sandbox, org, product, device }, this.ui, this.api);
 	}
 
