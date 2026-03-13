@@ -65,7 +65,7 @@
     "moment": "^2.24.0",
     "node-fetch": "^2.7.0",
     "node-wifiscanner2": "^1.2.2",
-    "particle-api-js": "^11.1.7",
+    "particle-api-js": "^12.0.0",
     "particle-commands": "^1.0.6",
     "particle-library-manager": "^1.0.6",
     "particle-usb": "^4.1.0",
