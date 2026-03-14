@@ -12,7 +12,7 @@
         "@particle/device-constants": "^4.1.0",
         "@particle/softap-setup": "^4.1.2",
         "archiver": "^7.0.1",
-        "binary-version-reader": "^4.0.0",
+        "binary-version-reader": "^4.0.2",
         "chalk": "^2.4.2",
         "cli-progress": "^3.12.0",
         "cli-spinner": "^0.2.10",
@@ -23,6 +23,7 @@
         "glob": "^7.1.6",
         "gpt": "^3.0.0",
         "handlebars": "^4.1.2",
+        "https-proxy-agent": "5.0.1",
         "inquirer": "^6.5.2",
         "jose": "^4.13.1",
         "lodash": "^4.17.15",
@@ -1775,7 +1776,6 @@
       "version": "6.0.2",
       "resolved": "https://registry.npmjs.org/agent-base/-/agent-base-6.0.2.tgz",
       "integrity": "sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==",
-      "dev": true,
       "license": "MIT",
       "dependencies": {
         "debug": "4"
@@ -1788,7 +1788,6 @@
       "version": "4.4.3",
       "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
       "integrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==",
-      "dev": true,
       "license": "MIT",
       "dependencies": {
         "ms": "^2.1.3"
@@ -1806,7 +1805,6 @@
       "version": "2.1.3",
       "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
-      "dev": true,
       "license": "MIT"
     },
     "node_modules/ajv": {
@@ -2424,9 +2422,9 @@
       }
     },
     "node_modules/binary-version-reader": {
-      "version": "4.0.0",
-      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-4.0.0.tgz",
-      "integrity": "sha512-zoqAEtlhg59zyNWiGNwtO2QbQ2wLUIjprvn+1Q8p4KhNEowBFd0aUm/9ouTw2kRLWMOyT6hrLBc1bvSTB11IdA==",
+      "version": "4.0.2",
+      "resolved": "https://registry.npmjs.org/binary-version-reader/-/binary-version-reader-4.0.2.tgz",
+      "integrity": "sha512-SJm7KBBSgjIFFw4JiAsIKU/70L7rrvFtF8ZYYJL5w2sMeWOx84NFbYO/n9sPA2TT1JcAsx2Xo6mUo9cgDzrT6w==",
       "license": "Apache-2.0",
       "dependencies": {
         "@particle/device-os-protobuf": "^2.7.0",
@@ -5551,7 +5549,6 @@
       "version": "5.0.1",
       "resolved": "https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz",
       "integrity": "sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==",
-      "dev": true,
       "license": "MIT",
       "dependencies": {
         "agent-base": "6",
@@ -5565,7 +5562,6 @@
       "version": "4.4.3",
       "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
       "integrity": "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==",
-      "dev": true,
       "license": "MIT",
       "dependencies": {
         "ms": "^2.1.3"
@@ -5583,7 +5579,6 @@
       "version": "2.1.3",
       "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz",
       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
-      "dev": true,
       "license": "MIT"
     },
     "node_modules/human-signals": {
