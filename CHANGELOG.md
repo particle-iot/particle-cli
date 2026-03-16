@@ -1,5 +1,9 @@
 # Changelog
 
+# 3.47.2 - Mar 16 2026
+* Add support for HTTPS proxy (through HTTPS_PROXY env var or particle profile set proxyUrl http://proxy:8080)
+* Limit firmware to 100 env vars at a time
+
 # 3.47.1 - Mar 04 2026
 * Remove Wi-Fi picker from macOS Tachyon setup and prompt users for manual network entry.
 
