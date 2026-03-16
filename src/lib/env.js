@@ -236,17 +236,17 @@ async function displayRolloutInstructions(scope, ui, api = null) {
 async function getConsoleEnvSaveUrl(scope, api) {
 	const baseUrl = `https://console${settings.isStaging ? '.staging' : ''}.particle.io`;
 	if (scope.sandbox) {
-		return `${baseUrl}/env/edit`;
+		return `${baseUrl}/env`;
 	}
 	if (scope.org) {
-		return `${baseUrl}/orgs/${scope.org}/env/edit`;
+		return `${baseUrl}/orgs/${scope.org}/env`;
 	}
 	if (scope.product) {
 		const product = await api.getProduct({
 			product: scope.product,
 			auth: api.accessToken
 		});
-		return `${baseUrl}/${product?.product?.slug}/env/edit`;
+		return `${baseUrl}/${product?.product?.slug}/env`;
 	}
 	if (scope.device) {
 		const device = await api.getDevice({
@@ -262,9 +262,9 @@ async function getConsoleEnvSaveUrl(scope, api) {
 		const productSlug = product?.product?.slug;
 
 		if (productSlug) {
-			return `${baseUrl}/${productSlug}/devices/${scope.device}/environment`;
+			return `${baseUrl}/${productSlug}/devices/${scope.device}?tab=env-vars`;
 		}
-		return `${baseUrl}/devices/${scope.device}/environment`;
+		return `${baseUrl}/devices/${scope.device}?tab=env-vars`;
 	}
 }
 
