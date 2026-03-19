@@ -491,6 +491,109 @@ describe('lib/env', () => {
 			expect(output).to.include('\u2014');
 		});
 
+		it('classifies as Added when variable is added to own but exists in inherited', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: {
+					own: { MY_VAR: { value: 'own-value' } },
+					inherited: { MY_VAR: { value: 'inherited-value', from: 'Organization' } }
+				}
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Added');
+			expect(output).to.not.include('Updated');
+			expect(output).to.include('MY_VAR');
+			expect(output).to.include('inherited-value');
+			expect(output).to.include('own-value');
+		});
+
+		it('classifies as Removed when variable is removed from own but exists in inherited', () => {
+			const data = {
+				last_snapshot: { own: { MY_VAR: { value: 'own-value' } } },
+				latest: {
+					own: {},
+					inherited: { MY_VAR: { value: 'inherited-value', from: 'Organization' } }
+				}
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Removed');
+			expect(output).to.not.include('Updated');
+			expect(output).to.include('MY_VAR');
+			expect(output).to.include('own-value');
+			expect(output).to.include('inherited-value');
+		});
+
+		it('shows inherited value as old value when variable is added and inherited exists', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: {
+					own: { MY_VAR: { value: 'new-own' } },
+					inherited: { MY_VAR: { value: 'from-parent', from: 'Organization' } }
+				}
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('from-parent');
+			expect(output).to.include('new-own');
+			expect(output).to.not.include(EM_DASH);
+		});
+
+		it('shows inherited value as new value when variable is removed and inherited exists', () => {
+			const data = {
+				last_snapshot: { own: { MY_VAR: { value: 'old-own' } } },
+				latest: {
+					own: {},
+					inherited: { MY_VAR: { value: 'from-parent', from: 'Organization' } }
+				}
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('old-own');
+			expect(output).to.include('from-parent');
+			expect(output).to.not.include(EM_DASH);
+		});
+
+		it('classifies as Added when variable is new and not in inherited', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: {
+					own: { NEW_VAR: { value: 'hello' } },
+					inherited: { OTHER_VAR: { value: 'other', from: 'Organization' } }
+				}
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Added');
+			expect(output).to.include('NEW_VAR');
+		});
+
+		it('classifies as Removed when variable is deleted and not in inherited', () => {
+			const data = {
+				last_snapshot: { own: { OLD_VAR: { value: 'bye' } } },
+				latest: {
+					own: {},
+					inherited: { OTHER_VAR: { value: 'other', from: 'Organization' } }
+				}
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Removed');
+			expect(output).to.include('OLD_VAR');
+		});
+
+		it('handles missing inherited data gracefully', () => {
+			const data = {
+				last_snapshot: { own: {} },
+				latest: { own: { NEW_VAR: { value: 'hello' } } }
+			};
+
+			const output = buildPendingChangesTable(data, ui).toString();
+			expect(output).to.include('Added');
+			expect(output).to.include('NEW_VAR');
+		});
+
 		it('sorts rows by change type then name alphabetically', () => {
 			const data = {
 				last_snapshot: { own: { Z_UPDATE: { value: 'old' }, A_REMOVE: { value: 'x' }, B_REMOVE: { value: 'y' } } },
