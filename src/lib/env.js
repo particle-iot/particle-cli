@@ -156,12 +156,14 @@ const EM_DASH = '\u2014';
 function buildPendingChangesTable(data, ui) {
 	const snapshotOwn = data.last_snapshot?.own || {};
 	const latestOwn = data.latest?.own || {};
+	const inherited = data.latest?.inherited || {};
 	const allKeys = [...new Set([...Object.keys(snapshotOwn), ...Object.keys(latestOwn)])];
 
 	const rows = [];
 	for (const key of allKeys) {
 		const inSnapshot = key in snapshotOwn;
 		const inLatest = key in latestOwn;
+		const inInherited = key in inherited;
 
 		if (inSnapshot && inLatest && snapshotOwn[key].value === latestOwn[key].value) {
 			continue;
@@ -176,11 +178,29 @@ function buildPendingChangesTable(data, ui) {
 			change = 'Updated';
 		}
 
+		let oldValue;
+		if (inSnapshot) {
+			oldValue = snapshotOwn[key].value;
+		} else if (inInherited) {
+			oldValue = inherited[key].value;
+		} else {
+			oldValue = EM_DASH;
+		}
+		let newValue;
+		if (inLatest) {
+			newValue = latestOwn[key].value;
+		} else if (inInherited) {
+			newValue = inherited[key].value;
+		} else {
+			newValue = EM_DASH;
+		}
+
+
 		rows.push({
 			change,
 			name: key,
-			oldValue: inSnapshot ? snapshotOwn[key].value : EM_DASH,
-			newValue: inLatest ? latestOwn[key].value : EM_DASH
+			oldValue,
+			newValue
 		});
 	}
 
