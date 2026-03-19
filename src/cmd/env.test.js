@@ -63,7 +63,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
 			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.not.include('Overridden');
+			expect(tableOutput).to.not.include('Override');
 			expect(tableOutput).to.include('FOO3');
 			expect(tableOutput).to.include('FOO2');
 			expect(tableOutput).to.include('FOO');
@@ -96,7 +96,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('bar');
 			const foo3Row = tableOutput.split('\n').find(line => line.includes('FOO3'));
 			expect(foo3Row).to.include('Owner'); // Inherited from Owner, even though overridden
-			expect(foo3Row).to.include('Yes'); // Overridden = Yes
+			expect(foo3Row).to.include('Yes'); // Override = Yes
 			const fooRow = tableOutput.split('\n').find(line => line.includes('FOO '));
 			expect(fooRow).to.include('Product'); // Own variable at product level
 		});
@@ -508,7 +508,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
 			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.include('Overridden');
+			expect(tableOutput).to.include('Override');
 			expect(tableOutput).to.include('BAZ');
 			expect(tableOutput).to.include('foo');
 			expect(tableOutput).to.include('Owner');
@@ -714,7 +714,7 @@ describe('config env Command', () => {
 			expect(tableOutput).to.include('Name');
 			expect(tableOutput).to.include('Value');
 			expect(tableOutput).to.include('Scope');
-			expect(tableOutput).to.include('Overridden');
+			expect(tableOutput).to.include('Override');
 		});
 
 		it('shows all scopes as Sandbox for sandbox', async () => {

@@ -64,7 +64,7 @@ async function getProductName(productSlug, api) {
  */
 function buildEnvTable(data, scope) {
 	const showOnDevice = !!scope.device;
-	const hideOverridden = scope.sandbox || scope.org;
+	const hideOverride = scope.sandbox || scope.org;
 	const tableRows = getTableRows(data, scope);
 
 	if (tableRows.length === 0) {
@@ -76,8 +76,8 @@ function buildEnvTable(data, scope) {
 		delete widths['On Device'];
 	}
 
-	if (hideOverridden) {
-		delete widths['Overridden'];
+	if (hideOverride) {
+		delete widths['Override'];
 	}
 	const head = Object.keys(widths);
 	const colWidths = Object.values(widths);
@@ -95,7 +95,7 @@ function buildEnvTable(data, scope) {
 			...(showOnDevice ? [row.onDeviceValue] : []),
 			row.value,
 			row.scope,
-			...(!hideOverridden ? [row.isOverridden] : [])
+			...(!hideOverride ? [row.isOverride] : [])
 		]);
 	});
 
@@ -113,7 +113,7 @@ function getTableRows(data, scope) {
 			onDeviceValue: data.on_device?.rendered?.[key] ?? EM_DASH,
 			value: data.last_snapshot?.own?.[key]?.value ?? data.last_snapshot?.inherited?.[key]?.value ?? EM_DASH,
 			scope: data.last_snapshot?.inherited?.[key]?.from ?? thisScope,
-			isOverridden: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
+			isOverride: data.last_snapshot?.inherited?.[key] && data.last_snapshot?.own?.[key] ? 'Yes' : 'No'
 		};
 	});
 }
@@ -127,7 +127,7 @@ function getSortedEnvKeys(data) {
 }
 
 function calculateColumnWidths(tableRows) {
-	const columns = ['Name', 'On Device', 'Value', 'Scope', 'Overridden'];
+	const columns = ['Name', 'On Device', 'Value', 'Scope', 'Override'];
 	const widths = Object.fromEntries(columns.map(col => [col, col.length]));
 
 	const updateWidth = (key, content) => {
