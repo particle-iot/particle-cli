@@ -366,7 +366,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		try {
 			resp = await createAPI().compileCode(fileMapping, platformId, targetVersion);
 		} catch (error) {
-			throw normalizedApiError(error);
+			throw normalizedApiError(error?.error || error); // get first the wrapped error from the API client, if it exists, otherwise use the original error
 		}
 
 		if (resp && resp.binary_url && resp.binary_id) {
