@@ -49,7 +49,7 @@ describe('downloadDeviceOsVersionBinaries', () => {
 			.reply(200, binary);
 
 		const data = await downloadDeviceOsVersionBinaries({ api, platformId: 6, ui });
-		expect(api.getDeviceOsVersions).to.have.been.calledWith(6, 'latest');
+		expect(api.getDeviceOsVersions).to.have.been.calledWith({ platformId: 6, version: 'latest' });
 		expect(data).to.be.an('array').with.lengthOf(2);
 		const files = fs.readdirSync(path.join(PATH_TMP_DIR, '.particle/device-os-flash/binaries/2.3.1/photon'));
 		expect(fs.existsSync(expectedPath)).to.be.true;
@@ -78,7 +78,7 @@ describe('downloadDeviceOsVersionBinaries', () => {
 			.reply(200, binary);
 
 		const data = await downloadDeviceOsVersionBinaries({ api, platformId: 6, version: '2.3.1', ui });
-		expect(api.getDeviceOsVersions).to.have.been.calledWith(6, '2.3.1');
+		expect(api.getDeviceOsVersions).to.have.been.calledWith({ platformId: 6, version: '2.3.1' });
 		expect(data).to.be.an('array').with.lengthOf(2);
 		const files = fs.readdirSync(path.join(PATH_TMP_DIR, '.particle/device-os-flash/binaries/2.3.1/photon'));
 		expect(files).to.be.an('array').with.lengthOf(2);

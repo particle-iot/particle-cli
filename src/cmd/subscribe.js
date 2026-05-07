@@ -63,7 +63,7 @@ module.exports = class SubscribeCommand extends CLICommandBase {
 			this.ui.stdout.write(`This command will exit after receiving ${max} event(s)...${os.EOL}`);
 		}
 
-		const fetchStream = createAPI().getEventStream(device, event, product);
+		const fetchStream = createAPI().getEventStream({ deviceId: device, name: event, product });
 		return this.ui.showBusySpinnerUntilResolved('Fetching event stream...', fetchStream)
 			.then(stream => {
 				this.ui.stdout.write(os.EOL);

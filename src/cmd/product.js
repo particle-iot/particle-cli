@@ -113,7 +113,7 @@ module.exports = class ProductCommand extends CLICommandBase {
 
 	showDeviceDetail({ json, params: { product, device } }){
 		const msg = `Fetching device ${device} detail`;
-		const fetchData = createAPI().getDeviceAttributes(device, product);
+		const fetchData = createAPI().getDeviceAttributes({ deviceId: device, product });
 		return (json ? fetchData : this.ui.showBusySpinnerUntilResolved(msg, fetchData))
 			.then(res => {
 				if (json){

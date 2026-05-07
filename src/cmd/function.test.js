@@ -51,7 +51,7 @@ describe('Function Command', () => {
 					expect(ParticleAPI.prototype.callFunction)
 						.to.have.property('callCount', 1);
 					expect(ParticleAPI.prototype.callFunction.firstCall.args)
-						.to.eql([device, fn, arg, product]);
+						.to.eql([{ deviceId: device, name: fn, argument: arg, product }]);
 				});
 		});
 
@@ -64,7 +64,7 @@ describe('Function Command', () => {
 					expect(ParticleAPI.prototype.callFunction)
 						.to.have.property('callCount', 1);
 					expect(ParticleAPI.prototype.callFunction.firstCall.args)
-						.to.eql([device, fn, arg, product]);
+						.to.eql([{ deviceId: device, name: fn, argument: arg, product }]);
 				});
 		});
 	});

@@ -991,7 +991,7 @@ module.exports = class WirelessCommand {
 				// todo - retrieve existing name of the device?
 				const deviceName = ans.deviceName;
 				if (deviceName) {
-					self.api.renameDevice(deviceId, deviceName).then(() => {
+					self.api.renameDevice({ deviceId, name: deviceName }).then(() => {
 						console.log();
 						console.log(arrow, 'Your Photon has been given the name', chalk.bold.cyan(deviceName));
 						console.log(arrow, "Congratulations! You've just won the internet!");

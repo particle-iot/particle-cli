@@ -408,7 +408,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 
 	async _getDeviceAttributes(deviceId) {
 		try {
-			return await this.api.getDeviceAttributes(deviceId);
+			return await this.api.getDeviceAttributes({ deviceId });
 		} catch (error) {
 			throw new Error(`You do not have access to the ${deviceId}: ${error.message}`);
 		}
@@ -476,7 +476,7 @@ module.exports = class ContainerCommands extends CLICommandBase {
 	}
 
 	async _getProduct(orgSlug) {
-		const productsResp = await this.api.getProducts(orgSlug);
+		const productsResp = await this.api.getProducts({ org: orgSlug });
 		let products = productsResp?.products || [];
 
 		products = products.filter((product) => platformForId(product.platform_id)?.features?.includes('linux'));

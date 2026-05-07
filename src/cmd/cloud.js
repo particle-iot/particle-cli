@@ -11,6 +11,7 @@ const { normalizedApiError } = require('../lib/api-client');
 const utilities = require('../lib/utilities');
 const ensureError = require('../lib/utilities').ensureError;
 const ParticleAPI = require('./api');
+const apiInstance = require('../lib/api-instance');
 const prompts = require('../lib/prompts');
 const CLICommandBase = require('./base');
 
@@ -53,7 +54,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 		this.ui.stdout.write(`Claiming device ${deviceID}${os.EOL}`);
 
-		return api.claimDevice(deviceID)
+		return api.claimDevice({ deviceId: deviceID })
 			.then(() => this.ui.stdout.write(`Successfully claimed device ${deviceID}${os.EOL}`))
 			.catch((err) => {
 				const error = formatAPIErrorMessage(err);
@@ -69,7 +70,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 					return prompt(question)
 						.then(({ transfer }) => {
 							if (transfer){
-								return api.claimDevice(deviceID, true)
+								return api.claimDevice({ deviceId: deviceID, requestTransfer: true })
 									.then(() => this.ui.stdout.write(`Transfer requested. You will receive an email if your transfer is approved or denied.${os.EOL}`));
 							}
 							throw new Error('You cannot claim a device owned by someone else');
@@ -103,7 +104,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 					throw new Error('Not confirmed');
 				}
 				this.ui.stdout.write(`releasing device ${device}${os.EOL}`);
-				return createAPI().removeDevice(device);
+				return createAPI().removeDevice({ deviceId: device });
 			})
 			.then(() => this.ui.stdout.write(`Okay!${os.EOL}`))
 			.catch((error) => {
@@ -115,7 +116,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 	renameDevice({ params: { device, name } }){
 		this.ui.stdout.write(`Renaming device ${device}${os.EOL}`);
 		return Promise.resolve()
-			.then(() => createAPI().renameDevice(device, name))
+			.then(() => createAPI().renameDevice({ deviceId: device, name }))
 			.catch(err => {
 				if (err.info && err.info.includes('I didn\'t recognize that device name or ID')){
 					throw new Error('Device not found');
@@ -157,7 +158,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			} else {
 				this.ui.stdout.write(`Compiling code for ${device}${os.EOL}`);
 
-				const attrs = await createAPI().getDeviceAttributes(device);
+				const attrs = await createAPI().getDeviceAttributes({ deviceId: device });
 				const platformId = attrs.platform_id;
 				const deviceType = PLATFORMS_ID_TO_NAME[platformId];
 				const saveTo = temp.path({ suffix: '.zip' }); // compileCodeImpl will pick between .bin and .zip as appropriate
@@ -180,13 +181,13 @@ module.exports = class CloudCommand extends CLICommandBase {
 		try {
 			if (product) {
 				this.ui.stdout.write(`Marking device ${deviceId} as a development device${os.EOL}`);
-				await createAPI().markAsDevelopmentDevice(deviceId, true, product);
+				await createAPI().markAsDevelopmentDevice({ deviceId, development: true, product });
 			}
 
 			this.ui.logFirstTimeFlashWarning();
 			this.ui.stdout.write(`Flashing firmware to your device ${deviceId}${os.EOL}`);
 
-			const resp = await createAPI().flashDevice(deviceId, fileMapping, targetVersion, product);
+			const resp = await createAPI().flashDevice({ deviceId, files: fileMapping, targetVersion, product });
 			if (!resp.status && !resp.message) {
 				throw normalizedApiError(resp);
 			}
@@ -210,7 +211,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			throw new VError(`I couldn't find that file: ${filePath}`);
 		}
 
-		const attrs = await createAPI().getDeviceAttributes(deviceId);
+		const attrs = await createAPI().getDeviceAttributes({ deviceId });
 		const platformId = attrs.platform_id;
 
 		if (product || attrs.platform_id !== attrs.product_id){
@@ -301,7 +302,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 			let data;
 			try {
-				data = await createAPI().listDeviceOsVersions(platformId);
+				data = await createAPI().listDeviceOsVersions({ platformId });
 			} catch (error) {
 				throw normalizedApiError(error);
 			}
@@ -364,7 +365,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		let respSizeInfo, bundle, resp;
 
 		try {
-			resp = await createAPI().compileCode(fileMapping, platformId, targetVersion);
+			resp = await createAPI().compileCode({ files: fileMapping, platformId, targetVersion });
 		} catch (error) {
 			throw normalizedApiError(error?.error || error); // get first the wrapped error from the API client, if it exists, otherwise use the original error
 		}
@@ -372,7 +373,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		if (resp && resp.binary_url && resp.binary_id) {
 			let data;
 			try {
-				data = await createAPI().downloadFirmwareBinary(resp.binary_id);
+				data = await createAPI().downloadFirmwareBinary({ binaryId: resp.binary_id });
 			} catch (error) {
 				throw normalizedApiError(error);
 			}
@@ -509,6 +510,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 
 				this.ui.stdout.write(`${arrow} Successfully completed login!${os.EOL}`);
 				settings.override(null, 'access_token', token);
+				apiInstance.setTokenOnAll(token);
 
 				if (username){
 					settings.override(null, 'username', username);
@@ -574,6 +576,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 			this.ui.stdout.write(`${arrow} You have been logged out from ${chalk.bold.cyan(settings.username)}${os.EOL}`);
 			settings.override(null, 'username', null);
 			settings.override(null, 'access_token', null);
+			apiInstance.setTokenOnAll(null);
 		} catch (err) {
 			throw new VError(ensureError(err), 'There was an error revoking the token');
 		}
@@ -644,7 +647,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 		return Promise.resolve()
 			.then(() => {
 				if (device){
-					return api.signalDevice(device, onOff, product);
+					return api.signalDevice({ deviceId: device, signal: onOff, product });
 				} else {
 					return Promise.resolve()
 						.then(() => api.listDevices())
@@ -659,7 +662,7 @@ module.exports = class CloudCommand extends CLICommandBase {
 										promises.push(Promise.resolve(device));
 										return;
 									}
-									promises.push(api.signalDevice(device.id, onOff, product));
+									promises.push(api.signalDevice({ deviceId: device.id, signal: onOff, product }));
 								});
 								return Promise.all(promises);
 							}

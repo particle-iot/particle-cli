@@ -949,10 +949,8 @@ describe('lib/env', () => {
 		it('displays device URL with product slug when device is in a product', async () => {
 			const api = {
 				getDevice: sinon.stub().resolves({
-					body: {
-						id: 'device123',
-						product_id: 99999
-					}
+					id: 'device123',
+					product_id: 99999
 				}),
 				getProduct: sinon.stub().resolves({
 					product: {

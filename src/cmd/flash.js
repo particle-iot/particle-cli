@@ -726,7 +726,7 @@ module.exports = class FlashCommand extends CLICommandBase {
 				const internalVersion = module.prefixInfo.depModuleVersion;
 				let applicationDeviceOsVersionData = { version: null };
 				try {
-					applicationDeviceOsVersionData = await api.getDeviceOsVersions(module.prefixInfo.platformID, internalVersion);
+					applicationDeviceOsVersionData = await api.getDeviceOsVersions({ platformId: module.prefixInfo.platformID, version: internalVersion });
 				} catch (_err) {
 					// ignore if Device OS version from the application cannot be identified
 				}

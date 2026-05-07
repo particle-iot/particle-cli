@@ -21,8 +21,8 @@ describe('api-cache', () => {
 
 			const apiCache = createApiCache(api);
 			const expectedKey = apiCache.cache._generateKey('device_os_version', { platformId: 6, version: 'latest' });
-			await apiCache.getDeviceOsVersions(6, 'latest');
-			expect(api.getDeviceOsVersions).to.have.been.calledWith(6, 'latest');
+			await apiCache.getDeviceOsVersions({ platformId: 6, version: 'latest' });
+			expect(api.getDeviceOsVersions).to.have.been.calledWith({ platformId: 6, version: 'latest' });
 			expect(ParticleCache.prototype.set).to.have.been.calledWith(expectedKey, {});
 		});
 
@@ -34,11 +34,11 @@ describe('api-cache', () => {
 			const apiCache = createApiCache(api);
 			const expectedKey = apiCache.cache._generateKey('device_os_version', { platformId: 6, version: 'latest' });
 			try {
-				await apiCache.getDeviceOsVersions(6, 'latest');
+				await apiCache.getDeviceOsVersions({ platformId: 6, version: 'latest' });
 			} catch (_error) {
 				error = _error;
 			}
-			expect(api.getDeviceOsVersions).to.have.been.calledWith(6, 'latest');
+			expect(api.getDeviceOsVersions).to.have.been.calledWith({ platformId: 6, version: 'latest' });
 			expect(ParticleCache.prototype.get).to.have.been.calledWith(expectedKey);
 			expect(error.message).to.equal('Device OS version not found in cache for platform: 6 version: latest and there was an internet connection error');
 		});

@@ -19,7 +19,7 @@ module.exports = class PublishCommand extends CLICommandBase {
 			epilogue += ` to product: ${product}`;
 		}
 
-		const publishEvent = createAPI().publishEvent(event, data, product);
+		const publishEvent = createAPI().publishEvent({ name: event, data, product });
 		return this.ui.showBusySpinnerUntilResolved(`Publishing ${epilogue}`, publishEvent)
 			.then(() => this.ui.stdout.write(`Published ${epilogue}${os.EOL}${os.EOL}`))
 			.catch(error => {

@@ -38,7 +38,7 @@ module.exports = class FunctionCommand extends CLICommandBase {
 			msg += ` in product ${product}`;
 		}
 
-		const fetchVar = createAPI().callFunction(device, fn, arg, product);
+		const fetchVar = createAPI().callFunction({ deviceId: device, name: fn, argument: arg, product });
 		return this.ui.showBusySpinnerUntilResolved(msg, fetchVar)
 			.then(res => {
 				if (!res || !Object.prototype.hasOwnProperty.call(res, 'return_value')){

@@ -250,7 +250,7 @@ async function getOrg({ api, ui }) {
 async function getProduct({ orgSlug, ui, api }) {
 	const productsResp = await ui.showBusySpinnerUntilResolved(
 		`Fetching products for ${orgSlug || 'sandbox'}`,
-		api.getProducts(orgSlug));
+		api.getProducts({ org: orgSlug }));
 	const newProductName = 'Create a new product';
 	let products = productsResp?.products || [];
 
@@ -272,7 +272,7 @@ async function getProduct({ orgSlug, ui, api }) {
 }
 
 async function assignDeviceToProduct({ deviceId, productId, ui, api, productSlug }) {
-	const data = await api.addDeviceToProduct(deviceId, productId);
+	const data = await api.addDeviceToProduct({ deviceId, product: productId });
 	if (data.updatedDeviceIds.length === 0 && data.existingDeviceIds.length === 0) {
 		let errorDescription = '';
 		if (data.invalidDeviceIds.length > 0) {
@@ -346,7 +346,7 @@ async function getESIMProfilesStep({ api, ui, deviceInfo, productId, country }, 
 		step: stepIndex,
 	});
 	try {
-		esim = await api.getESIMProfiles(deviceInfo.deviceId, productId, country);
+		esim = await api.getESIMProfiles({ deviceId: deviceInfo.deviceId, productId, countryCode: country });
 	} catch (error) {
 		const message = `Error getting eSIM profiles: ${error.message}${os.EOL}`;
 		ui.write(ui.chalk.yellow(message));

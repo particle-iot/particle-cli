@@ -60,7 +60,7 @@ module.exports = class AccessTokenCommands {
 
 		const particle = new ParticleApi(settings.apiUrl, { accessToken: settings.access_token });
 		const results = await Promise.allSettled(
-			tokens.map((token) => particle.revokeAccessToken(token))
+			tokens.map((token) => particle.revokeAccessToken({ token }))
 		);
 
 		const fails = results.filter((result) => result.status === 'rejected');

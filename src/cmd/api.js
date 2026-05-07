@@ -1,4 +1,5 @@
 'use strict';
+
 const url = require('url');
 const _ = require('lodash');
 const chalk = require('chalk');
@@ -7,6 +8,7 @@ const ParticleCmds = require('particle-commands');
 const HttpsProxyAgent = require('https-proxy-agent');
 const log = require('../lib/log');
 const settings = require('../../settings');
+const apiInstance = require('../lib/api-instance');
 
 
 module.exports = class ParticleApi {
@@ -21,8 +23,16 @@ module.exports = class ParticleApi {
 			httpAgent: proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined
 		});
 		this.accessToken = options.accessToken;
+		apiInstance.register(this);
 	}
 
+	setAccessToken(token){
+		this.accessToken = token;
+	}
+
+	// `login` does NOT route through `_wrap`. It rejects with the body shape from
+	// `particle-api-js` (top-level `error`, `error_description`, `mfa_token`),
+	// which `cloud.js` reads directly. Changing this would break those reads.
 	login(username, password){
 		return this.api.login({ username: username, password: password })
 			.then(result => {
@@ -43,7 +53,7 @@ module.exports = class ParticleApi {
 	 * @param {string} token
 	 * @returns {Promise<void>}
 	 */
-	async revokeAccessToken(token) {
+	async revokeAccessToken({ token }) {
 		return this._wrap(this.api.deleteAccessToken({ token }));
 	}
 
@@ -51,6 +61,44 @@ module.exports = class ParticleApi {
 		return this._wrap(
 			this.api.getUserInfo({ auth: this.accessToken })
 		);
+	}
+
+	// Like `login` (above), this does NOT route through `_wrap`. Callers depend on
+	// the body-shaped rejection (top-level `error`, `error_description`, `mfa_token`).
+	createAccessToken({ username, password, expiresIn }){
+		return this.api.login({
+			username,
+			password,
+			tokenDuration: expiresIn
+		}).then(result => result.body);
+	}
+
+	// Same envelope contract as `createAccessToken`.
+	sendOtp({ mfaToken, otp }){
+		return this.api.sendOtp({ mfaToken, otp })
+			.then(result => result.body);
+	}
+
+	createWebhookWithObj(obj){
+		return this._wrap(this.api.request({
+			uri: '/v1/webhooks',
+			method: 'post',
+			auth: this.accessToken,
+			data: obj
+		}));
+	}
+
+	deleteWebhook({ hookId }){
+		return this._wrap(this.api.deleteWebhook({
+			hookId,
+			auth: this.accessToken
+		}));
+	}
+
+	listWebhooks(){
+		return this._wrap(this.api.listWebhooks({
+			auth: this.accessToken
+		}));
 	}
 
 	listDevices(options){
@@ -63,7 +111,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getDeviceAttributes(deviceId, product){
+	getDeviceAttributes({ deviceId, product }){
 		return this._wrap(
 			this.api.getDevice({
 				product,
@@ -73,7 +121,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	addDeviceToProduct(deviceId, product, file){
+	addDeviceToProduct({ deviceId, product, file }){
 		return this._wrap(
 			this.api.addDeviceToProduct({
 				product,
@@ -84,7 +132,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	markAsDevelopmentDevice(deviceId, development, product){
+	markAsDevelopmentDevice({ deviceId, development, product }){
 		return this._wrap(
 			this.api.markAsDevelopmentDevice({
 				development,
@@ -95,7 +143,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	claimDevice(deviceId, requestTransfer){
+	claimDevice({ deviceId, requestTransfer }){
 		return this._wrap(
 			this.api.claimDevice({
 				// TODO (mirande): push these tweaks upstream to `particle-api-js`
@@ -106,7 +154,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	removeDevice(deviceId, product){
+	removeDevice({ deviceId, product }){
 		return this._wrap(
 			this.api.removeDevice({
 				product,
@@ -116,7 +164,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	renameDevice(deviceId, name){
+	renameDevice({ deviceId, name }){
 		return this._wrap(
 			this.api.renameDevice({
 				deviceId,
@@ -126,7 +174,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	flashDevice(deviceId, files, targetVersion, product){
+	flashDevice({ deviceId, files, targetVersion, product }){
 		return this._wrap(
 			this.api.flashDevice({
 				deviceId,
@@ -139,7 +187,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	signalDevice(deviceId, signal, product){
+	signalDevice({ deviceId, signal, product }){
 		return this._wrap(
 			this.api.signalDevice({
 				deviceId,
@@ -150,7 +198,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	listDeviceOsVersions(platformId, internalVersion, perPage = 100){
+	listDeviceOsVersions({ platformId, internalVersion, perPage = 100 }){
 		return this._wrap(
 			this.api.listDeviceOsVersions({
 				platformId,
@@ -161,7 +209,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	compileCode(files, platformId, targetVersion){
+	compileCode({ files, platformId, targetVersion }){
 		return this._wrap(
 			this.api.compileCode({
 				platformId,
@@ -173,7 +221,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getVariable(deviceId, name, product){
+	getVariable({ deviceId, name, product }){
 		return this._wrap(
 			this.api.getVariable({
 				name,
@@ -184,7 +232,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	callFunction(deviceId, name, argument, product){
+	callFunction({ deviceId, name, argument, product }){
 		return this._wrap(
 			this.api.callFunction({
 				name,
@@ -196,7 +244,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	downloadFirmwareBinary(binaryId){
+	downloadFirmwareBinary({ binaryId }){
 		return this._wrap(
 			this.api.downloadFirmwareBinary({
 				binaryId,
@@ -205,7 +253,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getEventStream(deviceId, name, product){
+	getEventStream({ deviceId, name, product }){
 		return this._wrap(
 			this.api.getEventStream({
 				name,
@@ -216,7 +264,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	publishEvent(name, data, product){
+	publishEvent({ name, data, product }){
 		return this._wrap(
 			this.api.publishEvent({
 				name,
@@ -228,7 +276,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getDeviceOsVersions(platformId, version) {
+	getDeviceOsVersions({ platformId, version }) {
 		return this._wrap(
 			this.api.get({
 				uri: `/v1/device-os/versions/${version}?platform_id=${platformId}`,
@@ -256,7 +304,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getESIMProfiles(deviceId, productId, countryCode) {
+	getESIMProfiles({ deviceId, productId, countryCode }) {
 		return this._wrap(
 			this.api.put({
 				uri: `/v1/products/${productId}/devices/${deviceId}/target_profile`,
@@ -287,7 +335,7 @@ module.exports = class ParticleApi {
 		);
 	}
 
-	getProducts(org) {
+	getProducts({ org } = {}) {
 		return this._wrap(
 			this.api.get({
 				uri: `/v1${org ? `/orgs/${org}` : '/user'}/products`,
@@ -297,7 +345,7 @@ module.exports = class ParticleApi {
 	}
 
 	getDevice({ deviceId: id }) {
-		return this.api.getDevice({ deviceId: id, auth: this.accessToken });
+		return this._wrap(this.api.getDevice({ deviceId: id, auth: this.accessToken }));
 	}
 
 	getLogicFunctionList({ org }) {

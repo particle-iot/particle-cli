@@ -38,7 +38,9 @@ module.exports.formatDeviceInfo = ({ id, type, name = null }) => {
  */
 module.exports.getDevice = ({ id, api, auth, displayName = null, dontThrow = false }) => {
 	return api.getDevice({ deviceId: id, auth })
-		.then(res => res.body)
+		// `api` may be either a raw `particle-api-js` instance (returns `{body, ...}`)
+		// or a wrapped one (returns the unwrapped body). Handle both.
+		.then(res => res.body || res)
 		.catch(error => {
 			if (error.statusCode === 403 || error.statusCode === 404) {
 				if (dontThrow) {

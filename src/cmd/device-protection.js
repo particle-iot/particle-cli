@@ -248,11 +248,11 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 	async _markAsDevelopmentDevice(state) {
 		try {
 			if (this.productId) {
-				const data = await this.api.getDeviceAttributes(this.deviceId, this.productId);
+				const data = await this.api.getDeviceAttributes({ deviceId: this.deviceId, product: this.productId });
 				if (data.development === state) {
 					return;
 				}
-				await this.api.markAsDevelopmentDevice(this.deviceId, state, this.productId);
+				await this.api.markAsDevelopmentDevice({ deviceId: this.deviceId, development: state, product: this.productId });
 				return true;
 			}
 		} catch (_err) {
@@ -291,7 +291,7 @@ module.exports = class DeviceProtectionCommands extends CLICommandBase {
 		}
 
 		try {
-			const attrs = await this.api.getDeviceAttributes(this.deviceId);
+			const attrs = await this.api.getDeviceAttributes({ deviceId: this.deviceId });
 			this.productId = attrs.platform_id !== attrs.product_id ? attrs.product_id : null;
 		} catch (_err) {
 			return null;

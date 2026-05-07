@@ -7,10 +7,10 @@ class ApiCache {
 		this.cache = new ParticleCache();
 	}
 
-	async getDeviceOsVersions(platformId, version) {
+	async getDeviceOsVersions({ platformId, version }) {
 		const key = this.cache._generateKey('device_os_version', { platformId, version });
 		try {
-			const deviceOsVersion = await this.api.getDeviceOsVersions(platformId, version);
+			const deviceOsVersion = await this.api.getDeviceOsVersions({ platformId, version });
 			this.cache.set(key, deviceOsVersion);
 			return deviceOsVersion;
 		} catch (error) {
