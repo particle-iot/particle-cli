@@ -24,7 +24,7 @@ const chalk = require('chalk');
 const VError = require('verror');
 const yargsFactory = require('yargs/yargs');
 const { JSONErrorResult } = require('../lib/json-result');
-const { AuthenticationError, MfaRequiredError } = require('../lib/auth-errors');
+const { AuthenticationError, MfaRequiredError, MissingTokenError } = require('../lib/auth-errors');
 
 // It's important to run yargs in the directory of the script so it picks up options from package.json
 const Yargs = yargsFactory(process.argv.slice(2), path.resolve(__dirname, '../..'));
@@ -460,7 +460,12 @@ function consoleErrorLogger(console, yargs, exit, error){
 			);
 		} else if (error instanceof AuthenticationError && !(error instanceof MfaRequiredError)){
 			console.log(chalk.red('!'), error.message);
-			console.log('  Run', chalk.cyan('particle login'), 'to refresh your access token.');
+			// MissingTokenError's message already directs the user to `particle login`;
+			// only add the hint for the bad-token case where the message is short
+			// (e.g. extracted server text like "Invalid token").
+			if (!(error instanceof MissingTokenError)){
+				console.log('  Run', chalk.cyan('particle login'), 'to log in again.');
+			}
 			if (!usage && error.stack && verbose){
 				console.log(VError.fullStack(error));
 			}

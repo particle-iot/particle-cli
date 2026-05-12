@@ -1,14 +1,13 @@
 'use strict';
-const VError = require('verror');
 const inquirer = require('inquirer');
 const settings = require('../../settings');
-const ApiClient = require('../lib/api-client');
 const prompts = require('../lib/prompts');
 const CloudCommand = require('./cloud');
-const ParticleApi = require('./api');
+const CLICommandBase = require('./base');
+const { classifyAuthError, MfaRequiredError } = require('../lib/auth-errors');
 
 
-module.exports = class AccessTokenCommands {
+module.exports = class AccessTokenCommands extends CLICommandBase {
 	getCredentials({ includeOTP = false } = {}) {
 		if (!settings.username){
 			return prompts.getCredentials();
@@ -58,9 +57,9 @@ module.exports = class AccessTokenCommands {
 			}
 		}
 
-		const particle = new ParticleApi(settings.apiUrl, { accessToken: settings.access_token });
+		const { api } = this._particleApi();
 		const results = await Promise.allSettled(
-			tokens.map((token) => particle.revokeAccessToken({ token }))
+			tokens.map((token) => api.revokeAccessToken({ token }))
 		);
 
 		const fails = results.filter((result) => result.status === 'rejected');
@@ -76,38 +75,32 @@ module.exports = class AccessTokenCommands {
 	 * Creates an access token using the given client name.
 	 * @returns {Promise} Will print the access token to the console, along with the expiration date.
 	 */
-	createAccessToken ({ expiresIn, neverExpires }) {
-		const clientName = 'user';
-
-		const api = new ApiClient();
-
+	async createAccessToken({ expiresIn, neverExpires }) {
 		if (neverExpires) {
 			expiresIn = 0;
 		}
 
-		return Promise.resolve().then(() => {
-			return this.getCredentials();
-		}).then(creds => {
-			return api.createAccessToken(clientName, creds.username, creds.password, expiresIn).catch((error) => {
-				if (error.error === 'mfa_required') {
-					const cloud = new CloudCommand();
-					return cloud.enterOtp({ mfaToken: error.mfa_token });
-				}
-				throw error;
-			});
-		}).then(result => {
-			if (result.expires_in) {
-				const nowUnix = Date.now();
-				const expiresUnix = nowUnix + (result.expires_in * 1000);
-				const expiresDate = new Date(expiresUnix);
-				console.log('New access token expires on ' + expiresDate);
-			} else {
-				console.log('New access token never expires');
+		const { api } = this._particleApi();
+		const { username, password } = await this.getCredentials();
+
+		let result;
+		try {
+			result = await api.createAccessToken({ username, password, expiresIn });
+		} catch (error) {
+			const typed = classifyAuthError(error);
+			if (typed instanceof MfaRequiredError) {
+				const cloud = new CloudCommand();
+				return cloud.enterOtp({ mfaToken: typed.mfaToken });
 			}
-			console.log('    ' + result.access_token);
-		}).catch(err => {
-			throw new VError(api.normalizedApiError(err), 'Error while creating a new access token');
-		});
+			throw typed || error;
+		}
+
+		if (result.expires_in) {
+			const expiresDate = new Date(Date.now() + (result.expires_in * 1000));
+			console.log('New access token expires on ' + expiresDate);
+		} else {
+			console.log('New access token never expires');
+		}
+		console.log('    ' + result.access_token);
 	}
 };
-

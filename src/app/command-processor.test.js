@@ -502,30 +502,33 @@ describe('consoleErrorLogger (auth-error rendering)', () => {
 		return fakeConsole.log.getCalls().map(c => c.args.join(' ')).join('\n');
 	}
 
-	it('renders the "run particle login" hint for InvalidTokenError', () => {
+	it('renders the "log in again" hint for InvalidTokenError', () => {
 		const err = new InvalidTokenError('Your token expired');
 		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
 		expect(output()).to.match(/Your token expired/);
-		expect(output()).to.match(/particle login/);
+		expect(output()).to.match(/Run.*particle login.*log in again/);
 	});
 
-	it('renders the "run particle login" hint for MissingTokenError', () => {
+	it('relies on MissingTokenError.message for the call-to-action and does NOT add the secondary "log in again" hint', () => {
 		const err = new MissingTokenError();
 		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
-		expect(output()).to.match(/not logged in|Run.*particle login/);
-		expect(output()).to.match(/particle login/);
+		expect(output()).to.match(/not logged in/);
+		expect(output()).to.match(/particle login.*to authenticate/);
+		// No duplicate hint line
+		expect(output()).to.not.match(/log in again/);
 	});
 
-	it('renders the "run particle login" hint for any AuthenticationError subtype except MFA', () => {
+	it('renders the "log in again" hint for any AuthenticationError subtype except MFA and MissingToken', () => {
 		const err = new AuthenticationError('whatever');
 		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
-		expect(output()).to.match(/particle login/);
+		expect(output()).to.match(/Run.*particle login.*log in again/);
 	});
 
-	it('does NOT render the auth hint for MfaRequiredError (login handles it)', () => {
+	it('does NOT render any hint for MfaRequiredError (login handles it)', () => {
 		const err = new MfaRequiredError({ mfaToken: 'xyz' });
 		consoleErrorLogger(fakeConsole, fakeYargs, false, err);
-		expect(output()).to.not.match(/Run.*particle login.*refresh/);
+		expect(output()).to.not.match(/log in again/);
+		expect(output()).to.not.match(/particle login/);
 	});
 
 	it('renders a generic message for non-auth errors', () => {

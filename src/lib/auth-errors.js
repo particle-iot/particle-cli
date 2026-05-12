@@ -12,14 +12,14 @@ class AuthenticationError extends Error {
 
 class MissingTokenError extends AuthenticationError {
 	constructor(message) {
-		super(message || 'You\'re not logged in. Run `particle login` to get started.');
+		super(message || 'You\'re not logged in. Run `particle login` to authenticate.');
 		this.kind = 'missing';
 	}
 }
 
 class InvalidTokenError extends AuthenticationError {
 	constructor(message) {
-		super(message || 'Your access token is invalid or has expired. Run `particle login` to refresh.');
+		super(message || 'Your access token is invalid or has expired.');
 		this.kind = 'invalid';
 	}
 }
